@@ -160,30 +160,31 @@ table {
   width: 100%;
   background-color: transparent;
   font-size: 20px;
+  color: white;
 }
 
 thead th {
   position: sticky;
   top: 0;
-  background-color: #333;
-  color: white !important;
+  background-color: #ffffff;
+  color: #333 !important;
   z-index: 51;
   white-space: normal;
   min-width: 100px;
   font-size: 20px;
   font-weight: bold;
   padding: 10px 10px;
-  border: 2px solid #fff;
   text-align: center;
   box-sizing: border-box;
 }
 
 table td {
-  color: black;
+  color: rgb(255, 255, 255);
 }
 
 th, td {
-  border: 2px solid #000000;
+  border: 2px solid #ffffff;
+  color: white;
   padding: 10px 12px;
   text-align: center;
   vertical-align: middle;
@@ -191,5 +192,5 @@ th, td {
 }
 
 tr.TE {
-  background-color: #ffffff; /* table background */
+  background-color: #333; /* table background */
 }
