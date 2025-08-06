@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Player Averages Table</title>
+<link rel="stylesheet" href="styles.css?v=12345">
+</head>
+<body>
+
+  <!-- Home button fixed top-left -->
+  <a href="../index.html" class="home-button">Home</a>
+
+  <!-- Fixed header content -->
+  <div class="header-bg"></div>
+  <div class="title-container">
+    <h1>Player Averages</h1>
+  </div>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search player..." />
+    <button onclick="searchPlayer()">Search</button>
+  </div>
+
+  <!-- Scrollable container with table -->
+  <div class="scroll-container">
+    <table id="averages-table">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

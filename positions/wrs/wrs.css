@@ -1,0 +1,191 @@
+/* =========================
+   Fixed Header Styles
+========================= */
+
+.home-button {
+  position: fixed;
+  top: 0;
+  left: 20px;
+  height: 80px;
+  line-height: 80px;
+  color: white;
+  background-color: transparent;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 18px;
+  z-index: 102;
+  padding: 0 10px;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.home-button:hover {
+  background-color: #555;
+}
+
+.ranking-button {
+  margin-left: 66px; /* space between Home and Ranking */
+}
+
+/* Dropdown container */
+.dropdown {
+  position: fixed;
+  top: 0;
+  left: 173px; /* adjust based on how far you want it from the left */
+  height: 80px;
+  z-index: 102;
+  display: flex;
+  align-items: center;
+}
+
+/* Dropdown button */
+.dropbtn {
+  background-color: transparent;
+  color: white;
+  padding: 0 10px;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  height: 80px;
+  line-height: 80px;
+  font-family: inherit;
+}
+
+/* Dropdown content (hidden by default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 80px;
+  left: 0;
+  background-color: #2b2b2b;
+  min-width: 120px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+  z-index: 103;
+}
+
+/* Dropdown links */
+.dropdown-content a {
+  color: white;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  font-size: 16px;
+}
+
+/* Hover states */
+.dropdown-content a:hover {
+  background-color: #444;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown:hover .dropbtn {
+  background-color: #555;
+}
+
+
+.header-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 80px;
+  width: 100%;
+  background-color: #2b2b2b;
+  z-index: 90;
+  border-bottom: 2px solid #fff;
+}
+
+.title-container {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.title-container h1 {
+  margin: 0;
+  font-size: 50px;
+  color: white;
+  white-space: nowrap;
+  pointer-events: none;
+  padding-top: 10px;
+}
+
+.search-box {
+  position: fixed;
+  top: 0;
+  right: 20px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  background-color: #2b2b2b;
+  padding: 0 10px;
+  z-index: 101;
+}
+
+.search-box input {
+  padding: 6px 10px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  color: black;
+}
+
+.scroll-container {
+  margin-top: 80px;
+  padding: 0 24px 24px 24px;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 80px);
+  width: 100vw;
+  box-sizing: border-box;
+}
+
+table {
+  border-collapse: collapse;
+  margin: 0;
+  width: 100%;
+  background-color: transparent;
+  font-size: 20px;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background-color: #333;
+  color: white !important;
+  z-index: 51;
+  white-space: normal;
+  min-width: 100px;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 10px 10px;
+  border: 2px solid #fff;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+table td {
+  color: black;
+}
+
+th, td {
+  border: 2px solid #000000;
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+  word-break: break-word;
+}
+
+tr.WR {
+  background-color: #ffffff; /* table background */
+}

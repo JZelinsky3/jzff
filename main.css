@@ -1,0 +1,113 @@
+body {
+  background-color: #2b2b2b;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  margin: 0;
+  padding: 40px 20px;
+}
+
+h1 {
+  font-size: 60px;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+h2 {
+  font-size: 30px;
+}
+
+/* Remove default bullets and padding from ul */
+ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 0;
+  margin-bottom: 1em;
+  color: white;
+}
+
+/* Flex align items and custom bullet */
+li {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-left: 1.2em; /* space for bullet */
+  margin-bottom: 0.5em;
+}
+
+li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: white;
+  font-size: 1.2em;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+a {
+  color: #ffffff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  font-size: 25px;
+}
+
+a:hover {
+  color: #920707;
+  text-decoration: none;
+}
+
+/* === Dropdown Styles for Positions Menu === */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-button {
+  background-color: transparent;
+  color: #ffffff;
+  font-size: 25px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  padding: 0;
+}
+
+.dropdown-button:hover {
+  color: #920707;
+  text-decoration: none;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  background-color: #1f1f1f;
+  border: 1px solid #444;
+  min-width: 200px;
+  border-radius: 4px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+  z-index: 100;
+}
+
+.dropdown-content a {
+  display: block;
+  padding: 10px 16px;
+  color: white;
+  font-size: 18px;
+}
+
+.dropdown-content a:hover {
+  background-color: #333;
+  color: #ff4d4d;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
