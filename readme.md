@@ -45,8 +45,8 @@ Search Box: Real-time filtering of player rows
 Row Highlighting: Enlarges and colors matching rows with a bold red left border
 Expandable Panels: (Optional) Reveals nested tables or extended stats when clicked
 🔧 Future Improvements (Planned/Optional)
-Full mobile and tablet responsiveness
-Click-to-sort columns by stat values
-Import/export support for JSON or CSV data
-Player avatar images next to names
-Accordion-style UI for collapsible sections
+- Full mobile and tablet responsiveness
+- Click-to-sort columns by stat values
+- Import/export support for JSON or CSV data
+- Player avatar images next to names
+- Accordion-style UI for collapsible sections
