@@ -83,7 +83,7 @@ h2 {
 .dropdown-content {
   display: none;
   position: absolute;
-  top: 60px;
+  top: 70px;
   left: 50%;
   transform: translateX(-50%);
   background-color: #1f1f1f;
