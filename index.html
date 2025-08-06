@@ -7,24 +7,26 @@
   <link rel="stylesheet" href="main.css?v=12345" />
 </head>
 <body>
-  <h1>JZ Fantasy Football</h1>
+  <header>
+    <h1>JZ Fantasy Football</h1>
+  </header>
+  <div class="container">
+    <h2>Fantasy 25</h2>
 
-  <h2>Fantasy 25</h2>
-  <ul>
-    <li><a href="./averages/averages.html">Rankings</a></li>
+    <div class="nav-grid">
+      <a class="nav-card" href="./averages/averages.html">📊 Rankings</a>
+      <a class="nav-card" href="./draft/draft.html">📝 Draft Board</a>
 
-    <li><a href="./draft/draft.html">Draft Board</a></li>
-
-    <li class="dropdown">
-      <button class="dropdown-button">Positions</button>
-      <div class="dropdown-content">
-        <a href="./positions/qbs.html">Quarterbacks</a>
-        <a href="./positions/rbs.html">Runningbacks</a>
-        <a href="./positions/wrs.html">Wide Receivers</a>
-        <a href="./positions/tes.html">Tight Ends</a>
+      <div class="nav-card dropdown">
+        <button class="dropdown-button">📌 Positions ▾</button>
+        <div class="dropdown-content">
+          <a href="./positions/qbs.html">Quarterbacks</a>
+          <a href="./positions/rbs.html">Running Backs</a>
+          <a href="./positions/wrs.html">Wide Receivers</a>
+          <a href="./positions/tes.html">Tight Ends</a>
+        </div>
       </div>
-    </li>
-
-  </ul>
+    </div>
+  </div>
 </body>
 </html>
