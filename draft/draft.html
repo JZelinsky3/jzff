@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fantasy Football Draft Board</title>
+  <link rel="stylesheet" href="draft.css">
+</head>
+<body>
+
+  <!-- Header Background -->
+  <div class="header-bg"></div>
+
+  <!-- Home Button -->
+  <a href="../index.html" class="home-button">Home</a>
+
+  <!-- Ranking Button -->
+  <a href="../averages/averages.html" class="home-button ranking-button">Ranking</a>
+
+  <!-- Position Dropdown -->
+  <div class="dropdown">
+    <button class="dropbtn">Positions</button>
+    <div class="dropdown-content">
+      <a href="../positions/qbs.html">Quarterbacks</a>
+      <a href="../positions/rbs.html">Runningbacks</a>
+      <a href="../positions/wrs.html">Wide Receivers</a>
+      <a href="../positions/tes.html">Tight Ends</a>
+    </div>
+  </div>
+
+  <!-- Title -->
+  <div class="title-container">
+    <h1>Draft Board</h1>
+  </div>
+
+  <!-- Draft Tables Container -->
+  <div id="draftTablesContainer"></div>
+
+  <script>
+    fetch('draft.json')
+      .then(response => response.json())
+      .then(players => {
+        const container = document.getElementById("draftTablesContainer");
+
+        // Group players by round
+        const rounds = {};
+        players.forEach(player => {
+          const round = parseInt(player.pick.split(".")[0]);
+          if (!rounds[round]) rounds[round] = [];
+          rounds[round].push(player);
+        });
+
+        // Create a table for each round
+        for (let round = 1; round <= 5; round++) {
+          if (!rounds[round]) continue;
+
+          const title = document.createElement("h2");
+          title.textContent = `Round ${round}`;
+          container.appendChild(title);
+
+          const table = document.createElement("table");
+          table.classList.add("draft-table");
+
+          const thead = document.createElement("thead");
+          thead.innerHTML = `
+            <tr>
+              <th>Pick</th>
+              <th>Name</th>
+              <th>Position</th>
+            </tr>
+          `;
+          table.appendChild(thead);
+
+          const tbody = document.createElement("tbody");
+          rounds[round].forEach(player => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${player.pick}</td>
+              <td>${player.name}</td>
+              <td>${player.position}</td>
+            `;
+            tbody.appendChild(row);
+          });
+          table.appendChild(tbody);
+
+          container.appendChild(table);
+        }
+
+        // Search filter
+        document.getElementById("searchInput").addEventListener("input", function () {
+          const filter = this.value.toLowerCase();
+          const tables = document.querySelectorAll("table.draft-table tbody tr");
+          tables.forEach(row => {
+            const name = row.cells[1].textContent.toLowerCase();
+            row.style.display = name.includes(filter) ? "" : "none";
+          });
+        });
+      });
+  </script>
+
+</body>
+</html>

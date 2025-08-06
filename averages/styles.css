@@ -22,10 +22,77 @@ body {
   text-decoration: none;
   font-weight: bold;
   font-size: 18px;
-  z-index: 102; /* highest */
+  z-index: 102;
   padding: 0 10px;
   pointer-events: auto;
   user-select: none;
+}
+
+.home-button:hover {
+  background-color: #555;
+}
+
+.draft-button {
+  margin-left: 71px;
+}
+
+/* Dropdown container */
+.dropdown {
+  position: fixed;
+  top: 0;
+  left: 154px; /* adjust based on how far you want it from the left */
+  height: 80px;
+  z-index: 102;
+  display: flex;
+  align-items: center;
+}
+
+/* Dropdown button */
+.dropbtn {
+  background-color: transparent;
+  color: white;
+  padding: 0 10px;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  height: 80px;
+  line-height: 80px;
+  font-family: inherit;
+}
+
+/* Dropdown content (hidden by default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 80px;
+  left: 0;
+  background-color: #2b2b2b;
+  min-width: 120px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+  z-index: 103;
+}
+
+/* Dropdown links */
+.dropdown-content a {
+  color: white;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  font-size: 16px;
+}
+
+/* Hover states */
+.dropdown-content a:hover {
+  background-color: #444;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown:hover .dropbtn {
+  background-color: #555;
 }
 
 /* Header background bar */

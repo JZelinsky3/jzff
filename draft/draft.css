@@ -28,15 +28,11 @@
   margin-left: 66px; /* space between Home and Ranking */
 }
 
-.draft-button {
-  margin-left: 154px;
-}
-
 /* Dropdown container */
 .dropdown {
   position: fixed;
   top: 0;
-  left: 236px; /* adjust based on how far you want it from the left */
+  left: 173px;
   height: 80px;
   z-index: 102;
   display: flex;
@@ -90,7 +86,6 @@
 .dropdown:hover .dropbtn {
   background-color: #555;
 }
-
 
 /* Header background bar */
 .header-bg {
@@ -153,8 +148,8 @@
 ========================= */
 
 .scroll-container {
-  margin-top: 80px;           /* space for fixed header */
-  padding: 0 24px 24px 24px; /* horizontal and bottom padding only */
+  margin-top: 80px;            /* space for fixed header */
+  padding: 0 24px 24px 24px;   /* horizontal and bottom padding only */
   overflow-x: auto;
   overflow-y: auto;
   max-height: calc(100vh - 80px);
@@ -165,8 +160,8 @@
 /* Table */
 table {
   border-collapse: collapse;
-  margin: 0;                  /* no margin */
-  width: 100%;                /* full width */
+  margin: 0;
+  width: 100%;
   background-color: transparent;
   font-size: 20px;
 }
@@ -174,10 +169,10 @@ table {
 /* Sticky table headers */
 thead th {
   position: sticky;
-  top: 0;                    /* stick at top of scroll container (below fixed header) */
+  top: 0;
   background-color: #333;
   color: white !important;
-  z-index: 51;               /* above table rows, below fixed header */
+  z-index: 51;
   white-space: normal;
   min-width: 100px;
   font-size: 20px;
@@ -202,7 +197,71 @@ th, td {
   word-break: break-word;
 }
 
-/* RB row background color */
-tr.RB {
-  background-color: #ffffff; /* background color */
+/* Optional: Alternating row backgrounds for readability */
+tbody tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #ffffff;
+}
+
+/* =========================
+   Draft Tables Container & Styling
+========================= */
+
+/* Center the draft tables container */
+#draftTablesContainer {
+  max-width: 800px;      /* limit width */
+  margin: 80px auto 40px auto; /* center horizontally; top margin for header */
+  padding: 0 12px;
+}
+
+/* Round headings */
+#draftTablesContainer h2 {
+  color: #2b2b2b;
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 12px;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* Extra top margin ONLY for the first round heading */
+#draftTablesContainer h2:first-of-type {
+  margin-top: 110px;  /* bigger space from header */
+}
+
+/* Draft tables */
+table.draft-table {
+  width: 100%;               /* fill container width */
+  border-collapse: collapse;
+  margin-bottom: 40px;
+  background-color: #f9f9f9;
+  box-shadow: 0 0 8px rgba(0,0,0,0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Draft table header */
+table.draft-table thead th {
+  background-color: #2b2b2b;
+  color: white;
+  font-weight: bold;
+  padding: 12px;
+  text-align: center;
+  border: none;
+}
+
+/* Draft table cells */
+table.draft-table td {
+  padding: 10px 12px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  color: #222;
+}
+
+/* Hover highlight for draft rows */
+table.draft-table tbody tr:hover {
+  background-color: #eaeaea;
 }

@@ -27,11 +27,15 @@
   margin-left: 66px; /* space between Home and Ranking */
 }
 
+.draft-button {
+  margin-left: 154px;
+}
+
 /* Dropdown container */
 .dropdown {
   position: fixed;
   top: 0;
-  left: 173px; /* adjust based on how far you want it from the left */
+  left: 236px; /* adjust based on how far you want it from the left */
   height: 80px;
   z-index: 102;
   display: flex;
