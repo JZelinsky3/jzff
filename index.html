@@ -125,5 +125,28 @@
       });
     });
   </script>
+
+  <script>
+  // Enable dropdown open/close on tap for mobile
+  document.querySelectorAll('.dropdown .dropbtn').forEach(button => {
+    button.addEventListener('click', (e) => {
+      const dropdown = button.parentElement;
+      dropdown.classList.toggle('open');
+
+      // Close others
+      document.querySelectorAll('.dropdown').forEach(d => {
+        if (d !== dropdown) d.classList.remove('open');
+      });
+    });
+  });
+
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dropdown')) {
+      document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+    }
+  });
+</script>
+
 </body>
 </html>
