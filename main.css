@@ -1,3 +1,48 @@
+/* Make container padding smaller and width full on mobile */
+@media (max-width: 600px) {
+  body {
+    padding: 10px 10px;
+  }
+  
+  .container {
+    max-width: 100%;
+    padding: 0 10px;
+  }
+
+  h1 {
+    font-size: 36px;
+    margin-bottom: 15px;
+  }
+
+  h2 {
+    font-size: 24px;
+    margin-bottom: 25px;
+  }
+
+  /* Stack nav cards vertically */
+  .nav-grid {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  /* Nav cards full width on mobile */
+  .nav-card {
+    min-width: auto;
+    width: 100%;
+    font-size: 18px;
+    padding: 15px 20px;
+  }
+
+  /* Dropdown menu full width and better positioning */
+  .dropdown-content {
+    top: 50px;
+    left: 0;
+    transform: none;
+    min-width: 100%;
+    border-radius: 0 0 8px 8px;
+  }
+}
+
 body {
   background-color: #2b2b2b;
   color: white;

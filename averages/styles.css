@@ -309,3 +309,106 @@ td.empty-cell {
 .active-player-row span {
   color: white !important;
 }
+
+@media (max-width: 600px) {
+
+  /* Reduce font sizes for headers */
+  .title-container h1 {
+    font-size: 28px !important;
+    padding-top: 5px;
+  }
+
+  /* Fix fixed elements (home, draft, dropdown, search) layout */
+  .home-button, .draft-button {
+    height: 50px;
+    line-height: 50px;
+    font-size: 14px;
+    top: 0;
+    left: auto;
+    padding: 0 8px;
+  }
+
+  .home-button {
+    left: 10px;
+  }
+  .draft-button {
+    left: 70px;
+  }
+
+  .dropdown {
+    top: 0;
+    left: 130px;
+    height: 50px;
+  }
+
+  .dropbtn {
+    height: 50px;
+    line-height: 50px;
+    font-size: 14px;
+    padding: 0 8px;
+  }
+
+  .dropdown-content {
+    top: 50px;
+    min-width: 140px;
+  }
+
+  .search-box {
+    top: 0;
+    right: 10px;
+    height: 50px;
+  }
+
+  .search-box input, .search-box button {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  /* Shrink fixed header height */
+  .header-bg {
+    height: 50px;
+  }
+
+  .title-container {
+    height: 50px;
+  }
+
+  /* Scroll container margin top to match smaller header */
+  .scroll-container {
+    margin-top: 50px;
+  }
+
+  /* Table adjustments */
+  table {
+    width: 100% !important; /* Let table use full width on mobile */
+    table-layout: auto; /* Let columns size automatically */
+  }
+
+  thead th {
+    font-size: 12px;
+    min-width: 70px !important;
+    padding: 6px 8px;
+  }
+
+  tbody td {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  /* Name column less wide on mobile */
+  #averages-table th:nth-child(3),
+  #averages-table td:nth-child(3) {
+    width: auto !important;
+    white-space: normal;
+  }
+
+  /* Highlighted row scale effect removed on mobile for stability */
+  .highlighted-row {
+    transform: none !important;
+  }
+
+  /* Fix horizontal overflow from fixed elements */
+  body, html {
+    overflow-x: hidden;
+  }
+}

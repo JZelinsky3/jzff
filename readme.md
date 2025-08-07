@@ -1,52 +1,82 @@
- Fantasy Football Stats Viewer – Project Summary
-🎯 Purpose
-This web app displays and interacts with fantasy football player data, focusing on a sortable, searchable, and visually organized table. It allows users to:
-Search for players by name
-Highlight selected players
-Easily identify positions with color-coded rows
-⚙️ Technologies Used
-HTML: Structures the page and content semantically.
-CSS: Implements custom styling, including:
-Fixed and sticky headers
-Color-coded player positions
-Responsive and accessible layout
-JavaScript (optional/assumed): Adds interactivity such as:
-Search filtering
-Dynamic row highlighting
-Excel (Data Source): Player stats are pulled from Excel sheets and imported into the site via HTML or JavaScript.
-🧱 Site Structure
-1. Fixed Header Elements
-These remain visible as the user scrolls:
-.header-bg: Full-width dark background bar (80px tall)
-.home-button: Fixed-position "Home" link (top-left)
-.title-container: Fixed center title – “Player Averages”
-.search-box: Search input field (top-right)
-2. Scrollable Content Area
-.scroll-container: Contains the player stats table
-Includes padding-top: 80px to ensure content begins below the fixed header
-3. Player Stats Table
-<table id="averages-table">: Main table displaying player stats
-<thead>: Sticky headers (using top: 80px)
-<tbody>: Player data rows with the following features:
-Row Types:
-Position classes: .WR, .RB, .QB, .TE, .K, .DST
-.highlighted-row: Used for search results
-.active-player-row: Visually distinct for selected players
-.collapsible-panel: Expandable sections for more data (optional)
-🎨 CSS Features
-Fixed Headers: Persistent top elements for better navigation
-Sticky Table Headers: Keep column names visible while scrolling
-Color Coding: Visual separation of positions
-Responsive Layout: Adapts using flex and relative positioning
-Accessibility: High contrast, readable fonts, and visual emphasis
-Transitions: Smooth animations for row highlighting and expansion
-🔍 Search & Interaction
-Search Box: Real-time filtering of player rows
-Row Highlighting: Enlarges and colors matching rows with a bold red left border
-Expandable Panels: (Optional) Reveals nested tables or extended stats when clicked
-🔧 Future Improvements (Planned/Optional)
-- Full mobile and tablet responsiveness
-- Click-to-sort columns by stat values
-- Import/export support for JSON or CSV data
-- Player avatar images next to names
-- Accordion-style UI for collapsible sections
+# Fantasy Football Tiers
+
+A web application that allows users to organize fantasy football players into customizable tiers via drag-and-drop, with persistent storage using Firebase Firestore.
+
+---
+
+## Features
+
+- Display a scrollable list of fantasy football players.
+- Drag and drop players into 10 tier columns.
+- Save and load tier assignments from Firebase Firestore.
+- Clear tiers and reset all players to the original list.
+- Responsive and modern dark-themed user interface.
+- Toast notifications for save and clear actions.
+
+---
+
+## Demo
+
+*(Add a link here if you deploy the app online, e.g., GitHub Pages, Vercel, Netlify)*
+
+---
+
+## Technologies Used
+
+- **HTML5** and **CSS3** with Flexbox layout
+- **JavaScript (ES6 Modules)** for DOM manipulation and drag-and-drop
+- **Firebase Firestore** for backend data persistence
+- **Firebase JavaScript SDK v10** for Firestore integration
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- A Firebase project with Firestore enabled
+- Local web server (e.g., VS Code Live Server)
+
+### Installation
+
+1. Clone or download this repository.
+
+2. Replace the Firebase configuration in `index.html` with your own Firebase project's config.
+
+3. Ensure Firestore rules allow read/write access for your testing user or implement authentication.
+
+4. Run a local server and open `index.html` in your browser.
+
+### Usage
+
+- Drag players from the left list into any tier column.
+- Click **Save Tiers** to save your current setup.
+- Click **Clear Tiers** to reset all players back to the list and clear saved data.
+- Notifications will appear in the center bottom of the screen confirming actions.
+
+---
+
+## File Structure
+
+- `index.html` — Main HTML layout and JavaScript module for app logic.
+- `tiers.css` — Styling for the app, including layout, colors, and toast notifications.
+- `tiers.json` — Sample JSON file containing player data (name, position, ADP, id).
+- Firebase project and Firestore handle persistent storage.
+
+---
+
+## Firebase Setup
+
+1. Create a Firebase project at [https://console.firebase.google.com/](https://console.firebase.google.com/).
+
+2. Enable Firestore Database and configure rules to allow your app to read/write:
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /tiers/{userId} {
+      allow read, write: if true;  // For testing only — restrict in production
+    }
+  }
+}

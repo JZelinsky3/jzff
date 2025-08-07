@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fantasy Football Tiers</title>
+  <link rel="stylesheet" href="tiers.css" />
+  <!-- Firebase SDK & Init -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+      authDomain: "ffootball-1ffa4.firebaseapp.com",
+      projectId: "ffootball-1ffa4",
+      storageBucket: "ffootball-1ffa4.appspot.com",
+      messagingSenderId: "214820317243",
+      appId: "1:214820317243:web:00907255d3ee230f21541e",
+      measurementId: "G-H9LQY4GWSN"
+    };
+
+    if (!window.firebaseApp) {
+      window.firebaseApp = initializeApp(firebaseConfig);
+      window.db = getFirestore(window.firebaseApp);
+    }
+  </script>
+</head>
+<body>
+
+  <!-- NAV BAR -->
+  <a href="../index.html" class="home-button">Home</a>
+  <a href="../averages/averages.html" class="home-button ranking-button">Ranking</a>
+  <a href="../draft/draft.html" class="home-button draft-button">Draft</a>
+
+  <div class="dropdown">
+    <button class="dropbtn">Positions</button>
+    <div class="dropdown-content">
+      <a href="../positions/qbs.html">QBs</a>
+      <a href="../positions/rbs.html">RBs</a>
+      <a href="../positions/wrs.html">WRs</a>
+      <a href="../positions/tes.html">TEs</a>
+    </div>
+  </div>
+
+  <div class="header-bg"></div>
+
+  <div class="title-container">
+    <h1>Player Tiers</h1>
+  </div>
+
+  <!-- MAIN CONTENT BELOW HEADER -->
+  <main class="main-container">
+    <section id="player-list" class="player-list">
+      <h2>Players</h2>
+      <ul id="players"></ul>
+    </section>
+
+    <section id="tiers" class="tiers">
+      <div id="tier-container"></div>
+    </section>
+  </main>
+
+  <div id="button-container">
+    <button id="saveBtn">Save</button>
+    <button id="clearBtn">Clear</button>
+  </div>
+
+  <div id="toast"></div>
+
+  <script type="module">
+    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const db = window.db;
+    const playersList = document.getElementById("players");
+    const tierContainer = document.getElementById("tier-container");
+    const saveBtn = document.getElementById("saveBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const NUM_TIERS = 10;
+
+    for (let i = 1; i <= NUM_TIERS; i++) {
+      const tierDiv = document.createElement("div");
+      tierDiv.className = "tier-column";
+      tierDiv.dataset.tier = i;
+      tierDiv.innerHTML = `<h3>Tier ${i}</h3><ul class="dropzone"></ul>`;
+
+      const dropzone = tierDiv.querySelector(".dropzone");
+      dropzone.addEventListener("dragover", e => e.preventDefault());
+      dropzone.addEventListener("drop", e => {
+        e.preventDefault();
+        const id = e.dataTransfer.getData("text/plain");
+        const draggedEl = document.getElementById(id);
+        if (draggedEl) dropzone.appendChild(draggedEl);
+      });
+
+      tierContainer.appendChild(tierDiv);
+    }
+
+    async function loadPlayers() {
+      const res = await fetch("tiers.json");
+      const data = await res.json();
+
+      data.forEach(player => {
+        const li = document.createElement("li");
+        li.textContent = `${player.name} (${player.position}, ADP: ${player.adp})`;
+        li.id = `player-${player.id || player.name.replace(/\s+/g, "-").toLowerCase()}`;
+        li.className = "player-item";
+        li.draggable = true;
+        li.addEventListener("dragstart", e => {
+          e.dataTransfer.setData("text/plain", li.id);
+        });
+        playersList.appendChild(li);
+      });
+    }
+
+    async function saveTiers() {
+      const result = {};
+      const tiers = document.querySelectorAll(".tier-column");
+
+      tiers.forEach(tier => {
+        const tierNum = tier.dataset.tier;
+        const players = Array.from(tier.querySelectorAll(".dropzone > li"))
+          .map(li => li.textContent);
+        result[`Tier_${tierNum}`] = players;
+      });
+
+      try {
+        await setDoc(doc(db, "tiers", "user1"), result);
+        showToast("Saved!");
+      } catch (err) {
+        showToast("Error saving tiers: " + err.message);
+      }
+    }
+
+    async function loadSavedTiers() {
+      try {
+        const docSnap = await getDoc(doc(db, "tiers", "user1"));
+        if (docSnap.exists()) {
+          const savedData = docSnap.data();
+
+          for (const [tierKey, playerList] of Object.entries(savedData)) {
+            const tierNum = tierKey.split("_")[1];
+            const dropzone = document.querySelector(`.tier-column[data-tier='${tierNum}'] .dropzone`);
+
+            playerList.forEach(text => {
+              const allPlayers = document.querySelectorAll("#players li, .tier-column .dropzone > li");
+              const match = Array.from(allPlayers).find(li => li.textContent === text);
+              if (match) dropzone.appendChild(match);
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error loading saved tiers:", err);
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.style.visibility = "visible";
+      toast.style.opacity = "1";
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.visibility = "hidden";
+      }, 3000);
+    }
+
+    async function clearTiers() {
+      const tierPlayers = document.querySelectorAll(".tier-column .dropzone > li");
+      tierPlayers.forEach(player => {
+        playersList.appendChild(player);
+      });
+
+      try {
+        await setDoc(doc(db, "tiers", "user1"), {});
+        showToast("Tiers cleared!");
+      } catch (err) {
+        showToast("Error clearing tiers: " + err.message);
+      }
+    }
+
+    (async () => {
+      await loadPlayers();
+      await loadSavedTiers();
+      saveBtn.addEventListener("click", saveTiers);
+      clearBtn.addEventListener("click", clearTiers);
+    })();
+  </script>
+</body>
+</html>
