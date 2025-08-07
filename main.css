@@ -65,7 +65,7 @@ header {
 .dropdown-content {
   display: none;
   position: absolute;
-  top: 70px;
+  top: 30px;
   right: 0; /* align to right edge of the button */
   background-color: #1f1f1f;
   border: 1px solid #444;
