@@ -17,7 +17,7 @@ body {
   left: 20px;
   height: 80px;
   line-height: 80px;
-  color: white;
+  color: #ffffff;
   background-color: transparent;
   text-decoration: none;
   font-weight: bold;
@@ -30,6 +30,8 @@ body {
 
 .home-button:hover {
   background-color: #555;
+  color: #ff4d4d;
+  border-radius: 8px;
 }
 
 .draft-button {
@@ -50,7 +52,7 @@ body {
 /* Dropdown button */
 .dropbtn {
   background-color: transparent;
-  color: white;
+  color: #ffffff;
   padding: 0 10px;
   font-size: 18px;
   font-weight: bold;
@@ -59,6 +61,12 @@ body {
   height: 80px;
   line-height: 80px;
   font-family: inherit;
+}
+
+.dropbtn:hover {
+  color: #ff4d4d;
+  background-color: #1e1e1e;
+  border-radius: 8px;
 }
 
 /* Draft dropdown position */
@@ -83,6 +91,7 @@ body {
   min-width: 120px;
   box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
   z-index: 103;
+  border-radius: 8px;
 }
 
 /* Dropdown links */
@@ -175,7 +184,7 @@ body {
   padding: 6px 12px;
   margin-left: 5px;
   font-size: 14px;
-  background-color: #007bff;
+  background-color: #ff4d4d;
   color: white;
   border: none;
   border-radius: 4px;
@@ -183,7 +192,7 @@ body {
 }
 
 .search-box button:hover {
-  background-color: #0056b3;
+  background-color: #902c2c;
 }
 
 /* Table */

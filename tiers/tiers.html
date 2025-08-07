@@ -3,9 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fantasy Football Tiers</title>
+  <title>JZ Fantasy Football - Player Tiers</title>
+
+  <!-- CSS -->
   <link rel="stylesheet" href="tiers.css" />
-  <!-- Firebase SDK & Init -->
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -27,47 +33,47 @@
   </script>
 </head>
 <body>
-
-  <!-- NAV BAR -->
-  <a href="../index.html" class="home-button">Home</a>
-  <a href="../averages/averages.html" class="home-button ranking-button">Ranking</a>
-  <a href="../draft/draft.html" class="home-button draft-button">Draft</a>
-
-  <div class="dropdown">
-    <button class="dropbtn">Positions</button>
-    <div class="dropdown-content">
-      <a href="../positions/qbs.html">QBs</a>
-      <a href="../positions/rbs.html">RBs</a>
-      <a href="../positions/wrs.html">WRs</a>
-      <a href="../positions/tes.html">TEs</a>
+  <!-- HEADER / NAV -->
+  <header class="header">
+    <div class="nav-left">
+      <a href="../index.html" class="nav-link">Home</a>
+      <a href="../averages/averages.html" class="nav-link">Rankings</a>
+      <a href="../draft/draft.html" class="nav-link">Draft</a>
     </div>
-  </div>
+    <div class="nav-right dropdown">
+      <button class="dropbtn">Positions ▾</button>
+      <div class="dropdown-content">
+        <a href="../positions/qbs.html">QBs</a>
+        <a href="../positions/rbs.html">RBs</a>
+        <a href="../positions/wrs.html">WRs</a>
+        <a href="../positions/tes.html">TEs</a>
+      </div>
+    </div>
+  </header>
 
-  <div class="header-bg"></div>
-
-  <div class="title-container">
-    <h1>Player Tiers</h1>
-  </div>
-
-  <!-- MAIN CONTENT BELOW HEADER -->
   <main class="main-container">
-    <section id="player-list" class="player-list">
-      <h2>Players</h2>
+    <!-- Player List Panel -->
+    <section class="player-list">
+      <h1>Player List</h1>
       <ul id="players"></ul>
     </section>
 
-    <section id="tiers" class="tiers">
-      <div id="tier-container"></div>
+    <!-- Tier Columns Panel -->
+    <section id="tier-container" class="tier-container">
+      <!-- Tier columns will be injected by JS -->
     </section>
   </main>
 
+  <!-- Action Buttons -->
   <div id="button-container">
-    <button id="saveBtn">Save</button>
-    <button id="clearBtn">Clear</button>
+    <button id="saveBtn" class="btn save-btn">Save</button>
+    <button id="clearBtn" class="btn clear-btn">Clear</button>
   </div>
 
+  <!-- Toast Notification -->
   <div id="toast"></div>
 
+  <!-- JS -->
   <script type="module">
     import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -76,44 +82,59 @@
     const tierContainer = document.getElementById("tier-container");
     const saveBtn = document.getElementById("saveBtn");
     const clearBtn = document.getElementById("clearBtn");
+    const toast = document.getElementById("toast");
 
     const NUM_TIERS = 10;
 
-    for (let i = 1; i <= NUM_TIERS; i++) {
-      const tierDiv = document.createElement("div");
-      tierDiv.className = "tier-column";
-      tierDiv.dataset.tier = i;
-      tierDiv.innerHTML = `<h3>Tier ${i}</h3><ul class="dropzone"></ul>`;
+    // Create Tier Columns dynamically
+    function createTiers() {
+      for (let i = 1; i <= NUM_TIERS; i++) {
+        const tierDiv = document.createElement("div");
+        tierDiv.className = "tier-column";
+        tierDiv.dataset.tier = i;
+        tierDiv.innerHTML = `<h2>Tier ${i}</h2><ul class="dropzone" aria-label="Tier ${i} dropzone"></ul>`;
 
-      const dropzone = tierDiv.querySelector(".dropzone");
-      dropzone.addEventListener("dragover", e => e.preventDefault());
-      dropzone.addEventListener("drop", e => {
-        e.preventDefault();
-        const id = e.dataTransfer.getData("text/plain");
-        const draggedEl = document.getElementById(id);
-        if (draggedEl) dropzone.appendChild(draggedEl);
-      });
+        const dropzone = tierDiv.querySelector(".dropzone");
 
-      tierContainer.appendChild(tierDiv);
-    }
-
-    async function loadPlayers() {
-      const res = await fetch("tiers.json");
-      const data = await res.json();
-
-      data.forEach(player => {
-        const li = document.createElement("li");
-        li.textContent = `${player.name} (${player.position}, ADP: ${player.adp})`;
-        li.id = `player-${player.id || player.name.replace(/\s+/g, "-").toLowerCase()}`;
-        li.className = "player-item";
-        li.draggable = true;
-        li.addEventListener("dragstart", e => {
-          e.dataTransfer.setData("text/plain", li.id);
+        dropzone.addEventListener("dragover", e => e.preventDefault());
+        dropzone.addEventListener("drop", e => {
+          e.preventDefault();
+          const id = e.dataTransfer.getData("text/plain");
+          const draggedEl = document.getElementById(id);
+          if (draggedEl && dropzone !== draggedEl.parentElement) {
+            dropzone.appendChild(draggedEl);
+          }
         });
-        playersList.appendChild(li);
-      });
+
+        tierContainer.appendChild(tierDiv);
+      }
     }
 
+    // Load players from tiers.json (local file)
+    async function loadPlayers() {
+      try {
+        const res = await fetch("tiers.json");
+        const data = await res.json();
+
+        data.forEach(player => {
+          const li = document.createElement("li");
+          li.textContent = `${player.name} (${player.position}, ADP: ${player.adp})`;
+          li.id = `player-${player.id || player.name.replace(/\s+/g, "-").toLowerCase()}`;
+          li.className = "player-item";
+          li.draggable = true;
+
+          li.addEventListener("dragstart", e => {
+            e.dataTransfer.setData("text/plain", li.id);
+          });
+
+          playersList.appendChild(li);
+        });
+      } catch (err) {
+        showToast("Error loading players: " + err.message);
+      }
+    }
+
+    // Save tiers to Firestore
     async function saveTiers() {
       const result = {};
       const tiers = document.querySelectorAll(".tier-column");
@@ -127,12 +148,13 @@
 
       try {
         await setDoc(doc(db, "tiers", "user1"), result);
-        showToast("Saved!");
+        showToast("Tiers saved!");
       } catch (err) {
         showToast("Error saving tiers: " + err.message);
       }
     }
 
+    // Load saved tiers from Firestore
     async function loadSavedTiers() {
       try {
         const docSnap = await getDoc(doc(db, "tiers", "user1"));
@@ -151,22 +173,11 @@
           }
         }
       } catch (err) {
-        console.error("Error loading saved tiers:", err);
+        showToast("Error loading saved tiers: " + err.message);
       }
     }
 
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.textContent = message;
-      toast.style.visibility = "visible";
-      toast.style.opacity = "1";
-
-      setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.visibility = "hidden";
-      }, 3000);
-    }
-
+    // Clear tiers and return all players to player list
     async function clearTiers() {
       const tierPlayers = document.querySelectorAll(".tier-column .dropzone > li");
       tierPlayers.forEach(player => {
@@ -181,7 +192,21 @@
       }
     }
 
+    // Show toast notification
+    function showToast(message) {
+      toast.textContent = message;
+      toast.style.visibility = "visible";
+      toast.style.opacity = "1";
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.visibility = "hidden";
+      }, 3000);
+    }
+
+    // Initialize app
     (async () => {
+      createTiers();
       await loadPlayers();
       await loadSavedTiers();
       saveBtn.addEventListener("click", saveTiers);

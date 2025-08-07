@@ -1,132 +1,149 @@
-/* =========================
-   Fixed Header Styles
-========================= */
+/* ====================
+   Base Styles
+==================== */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&family=Open+Sans&display=swap');
 
-/* Home button (fixed top-left) */
-.home-button {
+body {
+  margin: 0;
+  font-family: 'Open Sans', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #121212;
+  color: #ff4d4d;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
+  color: #ff4d4d;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #e03e3e;
+}
+
+/* ====================
+   Header
+==================== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1a1a1a;
+  padding: 0 24px;
+  height: 80px;
+  border-bottom: 2px solid #ff4d4d;
   position: fixed;
   top: 0;
-  left: 20px;
-  height: 80px;
-  line-height: 80px;
-  color: white;
-  background-color: transparent;
-  text-decoration: none;
-  font-weight: bold;
-  font-size: 18px;
-  z-index: 102;
-  padding: 0 10px;
-  pointer-events: auto;
+  width: 100%;
+  z-index: 100;
   user-select: none;
 }
 
-.home-button:hover {
-  background-color: #555;
-}
-
-.ranking-button {
-  margin-left: 66px; /* space between Home and Ranking */
-}
-
-.available-button {
-  margin-left: 153px; /* space between Home and Ranking */
-}
-
-/* Dropdown container */
-.dropdown {
-  position: fixed;
-  top: 0;
-  left: 265px;
-  height: 80px;
-  z-index: 102;
+.nav-left,
+.nav-right {
   display: flex;
   align-items: center;
+  gap: 20px;
 }
 
-/* Dropdown button */
+.nav-link {
+  font-weight: 600;
+  font-size: 17px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  color: #ff4d4d;
+  background-color: transparent;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.nav-link:hover {
+  background-color: #ff4d4d;
+  color: #121212;
+}
+
+/* Center Draft Board title */
+.nav-center {
+  position: fixed;
+  top: 0;
+  left: 47%;
+  transform: translateX(-50%);
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  width: 300px;
+  user-select: none;
+  z-index: 101;
+}
+
+.site-title {
+  font-family: 'Roboto Slab', serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #ff4d4d;
+  margin: 0;
+}
+
+/* ====================
+   Dropdown
+==================== */
+.dropdown {
+  position: relative;
+}
+
 .dropbtn {
   background-color: transparent;
-  color: white;
-  padding: 0 10px;
-  font-size: 18px;
-  font-weight: bold;
   border: none;
+  color: #ff4d4d;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  height: 80px;
-  line-height: 80px;
-  font-family: inherit;
+  padding: 10px 14px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
 }
 
-/* Dropdown content (hidden by default) */
+.dropbtn:hover {
+  background-color: #ff4d4d;
+  color: #121212;
+}
+
 .dropdown-content {
   display: none;
   position: absolute;
-  top: 80px;
+  background-color: #1a1a1a;
+  min-width: 180px;
+  top: 45px;
   left: 0;
-  background-color: #2b2b2b;
-  min-width: 120px;
-  box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
-  z-index: 103;
+  border-radius: 6px;
+  overflow: hidden;
+  z-index: 101;
+  box-shadow: 0 2px 8px rgba(255, 77, 77, 0.25);
 }
 
-/* Dropdown links */
 .dropdown-content a {
-  color: white;
-  padding: 12px 16px;
-  text-decoration: none;
   display: block;
-  font-size: 16px;
+  color: #ff4d4d;
+  padding: 14px 20px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: background-color 0.25s ease;
 }
 
-/* Hover states */
 .dropdown-content a:hover {
-  background-color: #444;
+  background-color: #ff4d4d;
+  color: #121212;
 }
 
 .dropdown:hover .dropdown-content {
   display: block;
 }
 
-.dropdown:hover .dropbtn {
-  background-color: #555;
-}
-
-/* Header background bar */
-.header-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 80px;
-  width: 100%;
-  background-color: #2b2b2b;
-  z-index: 90;
-  border-bottom: 2px solid #fff;
-}
-
-/* Title container (fixed center top) */
-.title-container {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.title-container h1 {
-  margin: 0;
-  font-size: 50px;
-  color: white;
-  white-space: nowrap;
-  pointer-events: none;
-  padding-top: 10px;
-}
-
-/* Search box (fixed top right) */
+/* ====================
+   Search
+==================== */
 .search-box {
   position: fixed;
   top: 0;
@@ -134,142 +151,149 @@
   height: 80px;
   display: flex;
   align-items: center;
-  background-color: #2b2b2b;
-  padding: 0 10px;
+  background-color: #1a1a1a;
+  padding: 0 20px 0 10px;
+  border-radius: 6px;
   z-index: 101;
 }
 
 .search-box input {
-  padding: 6px 10px;
-  font-size: 14px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  color: black;
-}
-
-/* =========================
-   Scroll Container & Table
-========================= */
-
-.scroll-container {
-  margin-top: 80px;            /* space for fixed header */
-  padding: 0 24px 24px 24px;   /* horizontal and bottom padding only */
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: calc(100vh - 80px);
-  width: 100vw;
-  box-sizing: border-box;
-}
-
-body {
-  background-color: #5c5c5c;
-}
-
-/* Table */
-table {
-  border-collapse: collapse;
-  margin: 0;
-  width: 100%;
-  background-color: transparent;
-  font-size: 20px;
-}
-
-/* Sticky table headers */
-thead th {
-  position: sticky;
-  top: 0;
-  background-color: #333;
-  color: white !important;
-  z-index: 51;
-  white-space: normal;
-  min-width: 100px;
-  font-size: 20px;
-  font-weight: bold;
-  padding: 10px 10px;
-  border: 2px solid #fff;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-/* Table body cells */
-table td {
-  color: black;
-}
-
-/* Borders and padding for all cells */
-th, td {
-  border: 2px solid #000000;
-  padding: 10px 12px;
-  text-align: center;
-  vertical-align: middle;
-  word-break: break-word;
-}
-
-/* Optional: Alternating row backgrounds for readability */
-tbody tr:nth-child(odd) {
-  background-color: #f9f9f9;
-}
-
-tbody tr:nth-child(even) {
-  background-color: #ffffff;
-}
-
-/* =========================
-   Draft Tables Container & Styling
-========================= */
-
-/* Center the draft tables container */
-#draftTablesContainer {
-  max-width: 800px;      /* limit width */
-  margin: 80px auto 40px auto; /* center horizontally; top margin for header */
-  padding: 0 12px;
-}
-
-/* Round headings */
-#draftTablesContainer h2 {
-  color: #ffffff;
-  text-align: center;
-  margin-top: 40px;
-  margin-bottom: 12px;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-/* Extra top margin ONLY for the first round heading */
-#draftTablesContainer h2:first-of-type {
-  margin-top: 110px;  /* bigger space from header */
-}
-
-/* Draft tables */
-table.draft-table {
-  width: 100%;               /* fill container width */
-  border-collapse: collapse;
-  margin-bottom: 40px;
-  background-color: #f9f9f9;
-  box-shadow: 0 0 8px rgba(0,0,0,0.15);
+  padding: 10px 20px 10px 14px;
+  font-size: 15px;
   border-radius: 8px;
-  overflow: hidden;
-}
-
-/* Draft table header */
-table.draft-table thead th {
-  background-color: #2b2b2b;
-  color: white;
-  font-weight: bold;
-  padding: 12px;
-  text-align: center;
   border: none;
+  width: 220px;
+  max-width: 90vw;
+  color: #121212;
+  font-weight: 600;
+  outline-offset: 2px;
+  outline-color: #ff4d4d;
 }
 
-/* Draft table cells */
-table.draft-table td {
-  padding: 10px 12px;
+/* ====================
+   Main Content
+==================== */
+.main-content {
+  padding: 120px 20px 40px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* ====================
+   Rounds & Tables
+==================== */
+#draftTablesContainer h2 {
+  font-family: 'Roboto Slab', serif;
+  font-size: 26px;
+  color: #ff4d4d;
+  margin: 40px 0 20px 33%;
+  font-weight: 700;
+  text-align: left;
+}
+
+.draft-table {
+  width: 100%;
+  margin: 0 auto 50px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #ff4d4d;
+  font-weight: 600;
+  font-size: 16px;
+  user-select: none;
+  border: 1px solid #ff4d4d88;
+}
+
+.draft-table thead th {
+  background-color: #2c2c2c;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 14px 16px;
   text-align: center;
-  border-bottom: 1px solid #ddd;
-  color: #222;
+  border-bottom: 2px solid #ff4d4d;
+
 }
 
-/* Hover highlight for draft rows */
-table.draft-table tbody tr:hover {
-  background-color: #d2d1d1;
+.draft-table td {
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 15px;
+  border-bottom: 1.5px solid #ffffffcc;
+  color: #ffffffcc;
+  user-select: text;
+}
+
+.draft-table tbody tr:nth-child(even) {
+  background-color: #2b2b2b;
+}
+
+.draft-table tbody tr:hover {
+  background-color: #440000;
+  color: #fff1f1;
+  cursor: default;
+}
+
+/* Round label inside table */
+.round-label {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ff4d4dcc;
+  padding: 12px 0;
+  background-color: #440000;
+  text-align: center;
+  user-select: none;
+  border-bottom: 1.5px solid #8c0000;
+}
+
+/* Remove table caption styling */
+.table-caption {
+  display: none;
+}
+
+/* Round label styling */
+.draft-table thead th.round-label {
+  font-size: 28px;
+  font-weight: 900;
+}
+
+/* Column headers styling */
+.draft-table thead tr:last-child th {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+
+/* ====================
+   Responsive
+==================== */
+@media (max-width: 768px) {
+  .nav-left, .nav-right {
+    gap: 10px;
+  }
+
+  .nav-link, .dropbtn {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  .site-title {
+    font-size: 24px;
+  }
+
+  #draftTablesContainer h2 {
+    font-size: 20px;
+    margin-left: 25%;
+  }
+
+  .draft-table thead th,
+  .draft-table td {
+    font-size: 14px;
+  }
+
+  .search-box input {
+    width: 160px;
+  }
 }
