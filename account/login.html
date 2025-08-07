@@ -25,12 +25,9 @@
       Continue with Google
     </button>
 
-<!-- Continue as Guest as a smaller text link -->
-<p style="margin-top: 8px; font-size: 14px; color: #aaa; cursor: pointer;">
-  <a href="../index.html" id="guestLink">
-    Continue as Guest
-  </a>
-</p>
+    <p style="margin-top: 8px; font-size: 14px; color: #aaa; cursor: pointer;">
+      <a href="../index.html" id="guestLink">Continue as Guest</a>
+    </p>
 
     <p>
       Don't have an account? <a href="register.html">Register here</a>
@@ -50,8 +47,15 @@
       browserSessionPersistence,
       signInWithEmailAndPassword,
       GoogleAuthProvider,
-      signInWithPopup
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { 
+      getFirestore,
+      doc,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
@@ -65,8 +69,9 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // Login form submit with persistence
+    // Handle email/password login
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
@@ -74,11 +79,7 @@
       const rememberMe = document.getElementById("rememberMe").checked;
 
       try {
-        if (rememberMe) {
-          await setPersistence(auth, browserLocalPersistence);
-        } else {
-          await setPersistence(auth, browserSessionPersistence);
-        }
+        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
         await signInWithEmailAndPassword(auth, email, password);
         window.location.href = "account.html";
       } catch (err) {
@@ -86,23 +87,47 @@
       }
     });
 
-    // Google Login
-    const googleLoginBtn = document.getElementById("googleLoginBtn");
+    // Handle Google login
     const provider = new GoogleAuthProvider();
+    const googleLoginBtn = document.getElementById("googleLoginBtn");
 
     googleLoginBtn.addEventListener("click", async () => {
       try {
-        await signInWithPopup(auth, provider);
-        window.location.href = "account.html";
+        const isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          await signInWithRedirect(auth, provider);
+        } else {
+          const result = await signInWithPopup(auth, provider);
+          const user = result.user;
+
+          // Save role if user is new
+          await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
+
+          window.location.href = "account.html";
+        }
       } catch (err) {
         alert(err.message);
       }
     });
 
-    // Continue as guest button
-    const guestBtn = document.getElementById("guestBtn");
-    guestBtn.addEventListener("click", () => {
-      // Redirect guest users to homepage or public content
+    // Handle Google redirect login result
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result) {
+          const user = result.user;
+
+          await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
+
+          window.location.href = "account.html";
+        }
+      })
+      .catch((err) => {
+        console.error("Redirect login error:", err.message);
+      });
+
+    // Guest button
+    const guestLink = document.getElementById("guestLink");
+    guestLink.addEventListener("click", () => {
       window.location.href = "../index.html";
     });
   </script>

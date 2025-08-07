@@ -47,7 +47,9 @@
       browserSessionPersistence,
       createUserWithEmailAndPassword,
       GoogleAuthProvider,
-      signInWithPopup
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import {
       getFirestore,
@@ -69,6 +71,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // Email/password registration
     document.getElementById("registerForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
@@ -76,19 +79,11 @@
       const rememberMe = document.getElementById("rememberMe").checked;
 
       try {
-        if (rememberMe) {
-          await setPersistence(auth, browserLocalPersistence);
-        } else {
-          await setPersistence(auth, browserSessionPersistence);
-        }
-
+        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Set default role in Firestore
-        await setDoc(doc(db, "users", user.uid), {
-          role: "member"
-        });
+        await setDoc(doc(db, "users", user.uid), { role: "member" });
 
         window.location.href = "account.html";
       } catch (err) {
@@ -96,28 +91,45 @@
       }
     });
 
+    // Google register/login
     const googleRegisterBtn = document.getElementById("googleRegisterBtn");
     const provider = new GoogleAuthProvider();
 
     googleRegisterBtn.addEventListener("click", async () => {
       try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
+        const isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          await signInWithRedirect(auth, provider);
+        } else {
+          const result = await signInWithPopup(auth, provider);
+          const user = result.user;
 
-        // Set default role in Firestore for Google users
-        await setDoc(doc(db, "users", user.uid), {
-          role: "member"
-        });
+          await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
 
-        window.location.href = "account.html";
+          window.location.href = "account.html";
+        }
       } catch (err) {
         alert(err.message);
       }
     });
 
+    // Handle Google redirect result
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result) {
+          const user = result.user;
+          await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
+          window.location.href = "account.html";
+        }
+      })
+      .catch((err) => {
+        console.error("Redirect login error:", err.message);
+      });
+
+    // Guest navigation
     const guestLink = document.getElementById("guestLink");
     guestLink.addEventListener("click", () => {
-      // Optional: add guest behavior here if needed
+      window.location.href = "../index.html";
     });
   </script>
 </body>
