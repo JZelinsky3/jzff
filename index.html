@@ -13,37 +13,41 @@
       <div class="logo">
         <img src="pics/jzff.png" alt="JZ Fantasy Football Logo" class="logo-img">
       </div>
-      <nav class="nav-links">
-        <a href="./averages/averages.html">Rankings</a>
-        <a href="./tiers/tiers.html">Tiers</a>
-        <div class="dropdown">
-          <button class="dropbtn">Draft ▾</button>
-          <div class="dropdown-content">
-            <a href="./draft/draft.html">Draft Board</a>
-            <a href="./draft/available.html">Picks</a>
-          </div>
-        </div>
-        <div class="dropdown">
-          <button class="dropbtn">Positions ▾</button>
-          <div class="dropdown-content">
-            <a href="./positions/qbs.html">Quarterbacks</a>
-            <a href="./positions/rbs.html">Running Backs</a>
-            <a href="./positions/wrs.html">Wide Receivers</a>
-            <a href="./positions/tes.html">Tight Ends</a>
-          </div>
-        </div>
+     <nav class="nav-links">
+  <a href="./averages/averages.html" class="role-editor" style="display: none;">Rankings</a>
 
-        <!-- ✅ Account Dropdown -->
-        <div class="dropdown" id="accountDropdown">
-          <a href="./account/register.html" class="dropbtn" id="accountLink">Account ▾</a>
-          <div class="dropdown-content" id="accountMenu">
-            <a href="./account/register.html" id="registerLink">Register</a>
-            <a href="./account/login.html" id="loginLink">Login</a>
-            <a href="./account/account.html" id="accountDetailsLink" style="display: none;">My Account</a>
-            <a href="#" id="logoutLink" style="display: none;">Logout</a>
-          </div>
-        </div>
-      </nav>
+  <a href="./tiers/tiers.html">Tiers</a> <!-- Always visible -->
+
+  <div class="dropdown role-editor" style="display: none;">
+    <button class="dropbtn">Draft ▾</button>
+    <div class="dropdown-content">
+      <a href="./draft/draft.html">Draft Board</a>
+      <a href="./draft/available.html">Picks</a>
+    </div>
+  </div>
+
+  <div class="dropdown role-editor" style="display: none;">
+    <button class="dropbtn">Positions ▾</button>
+    <div class="dropdown-content">
+      <a href="./positions/qbs.html">Quarterbacks</a>
+      <a href="./positions/rbs.html">Running Backs</a>
+      <a href="./positions/wrs.html">Wide Receivers</a>
+      <a href="./positions/tes.html">Tight Ends</a>
+    </div>
+  </div>
+
+  <!-- ✅ Account always visible -->
+  <div class="dropdown" id="accountDropdown">
+    <a href="./account/register.html" class="dropbtn" id="accountLink">Account ▾</a>
+    <div class="dropdown-content" id="accountMenu">
+      <a href="./account/register.html" id="registerLink">Register</a>
+      <a href="./account/login.html" id="loginLink">Login</a>
+      <a href="./account/account.html" id="accountDetailsLink" style="display: none;">My Account</a>
+      <a href="#" id="logoutLink" style="display: none;">Logout</a>
+    </div>
+  </div>
+</nav>
+
     </div>
   </header>
 
