@@ -7,32 +7,31 @@
 </head>
 <body>
 
-  <div class="header-bg"></div>
+  <!-- Header bar with nav -->
+  <header class="main-header">
+    <div class="nav-container">
+      <a href="../index.html" class="nav-link">Home</a>
+      <a href="../averages/averages.html" class="nav-link">Rankings</a>
+      <a href="/draft/draft.html" class="nav-link">Draft</a>
 
-  <!-- Home Button -->
-  <a href="../index.html" class="home-button">Home</a>
-
-  <!-- Ranking Button -->
-  <a href="../averages/averages.html" class="home-button ranking-button">Ranking</a>
-
-  <a href="/draft/draft.html" class="home-button draft-button">Draft</a>
-
-  <!-- Position Dropdown -->
-  <div class="dropdown">
-    <button class="dropbtn">Positions</button>
-    <div class="dropdown-content">
-      <a href="../positions/qbs.html">Quarterbacks</a>
-      <a href="../positions/rbs.html">Runningbacks</a>
-      <a href="../positions/wrs.html">Wide Receivers</a>
-      <a href="../positions/tes.html">Tight Ends</a>
+      <div class="dropdown">
+        <button class="dropbtn">Positions ▾</button>
+        <div class="dropdown-content">
+          <a href="../positions/qbs.html">Quarterbacks</a>
+          <a href="../positions/rbs.html">Runningbacks</a>
+          <a href="../positions/wrs.html">Wide Receivers</a>
+          <a href="../positions/tes.html">Tight Ends</a>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="title-container">
-    <h1>Players at Each Pick</h1>
-  </div>
+    <h1 class="page-title">Available Draft Picks</h1>
+  </header>
 
-  <table id="picksTable" aria-label="Draft picks table"></table>
+  <!-- Table display -->
+  <main>
+    <table id="picksTable" aria-label="Draft picks table"></table>
+  </main>
 
   <script>
     async function loadDraft() {
@@ -40,7 +39,6 @@
       const players = await response.json();
 
       const picksTable = document.getElementById('picksTable');
-
       let openedPanelIndex = null;
 
       function closeOpenedPanel() {
@@ -58,7 +56,6 @@
         return parseInt(pickStr.split('.')[0]);
       }
 
-      // Group players by round
       const rounds = {};
       players.forEach((player, idx) => {
         const round = getRound(player.pick);
@@ -66,9 +63,7 @@
         rounds[round].push({ ...player, idx });
       });
 
-      // Render rounds sorted
-      Object.keys(rounds).sort((a,b) => a - b).forEach(roundNum => {
-        // Round header row
+      Object.keys(rounds).sort((a, b) => a - b).forEach(roundNum => {
         const roundHeaderRow = document.createElement('tr');
         roundHeaderRow.classList.add('round-header');
         const roundHeaderCell = document.createElement('td');
@@ -88,7 +83,6 @@
           pickCell.textContent = player.pick;
           pickCell.setAttribute('tabindex', '0');
           pickCell.classList.add('pick-cell');
-
           pickRow.appendChild(pickCell);
           picksTable.appendChild(pickRow);
 
@@ -98,7 +92,6 @@
               return;
             }
             closeOpenedPanel();
-
             pickRow.classList.add('selected');
 
             let start = idx - 3;
@@ -129,7 +122,6 @@
 
             panelCell.appendChild(ul);
             panelRow.appendChild(panelCell);
-
             picksTable.insertBefore(panelRow, pickRow.nextSibling);
 
             openedPanelIndex = idx;
