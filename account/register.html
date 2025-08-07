@@ -71,7 +71,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Email/password registration
+    // Handle email/password registration
     document.getElementById("registerForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
@@ -91,29 +91,31 @@
       }
     });
 
-    // Google register/login
+    // Handle Google Register with popup-first, fallback to redirect
     const googleRegisterBtn = document.getElementById("googleRegisterBtn");
     const provider = new GoogleAuthProvider();
 
     googleRegisterBtn.addEventListener("click", async () => {
       try {
-        const isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
-        if (isMobile) {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
+
+        window.location.href = "account.html";
+      } catch (error) {
+        if (
+          error.code === "auth/popup-blocked" ||
+          error.code === "auth/operation-not-supported-in-this-environment"
+        ) {
           await signInWithRedirect(auth, provider);
         } else {
-          const result = await signInWithPopup(auth, provider);
-          const user = result.user;
-
-          await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
-
-          window.location.href = "account.html";
+          alert("Google sign-in failed: " + error.message);
         }
-      } catch (err) {
-        alert(err.message);
       }
     });
 
-    // Handle Google redirect result
+    // Handle redirect result (fallback path)
     getRedirectResult(auth)
       .then(async (result) => {
         if (result) {
@@ -123,12 +125,11 @@
         }
       })
       .catch((err) => {
-        console.error("Redirect login error:", err.message);
+        console.error("Redirect error:", err.message);
       });
 
-    // Guest navigation
-    const guestLink = document.getElementById("guestLink");
-    guestLink.addEventListener("click", () => {
+    // Guest link behavior
+    document.getElementById("guestLink").addEventListener("click", () => {
       window.location.href = "../index.html";
     });
   </script>

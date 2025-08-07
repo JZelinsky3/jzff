@@ -224,7 +224,7 @@ footer {
   }
 
   .dropdown:hover .dropdown-content {
-    display: none; /* Disable hover dropdown on mobile */
+    display: none;
   }
 
   .dropdown .dropbtn::after {
@@ -235,35 +235,4 @@ footer {
   .dropdown.open .dropdown-content {
     display: block;
   }
-
-  /* Hero section tweaks */
-  .hero h1 {
-    font-size: 38px;
-  }
-
-  .hero p {
-    font-size: 18px;
-  }
-
-  /* Features section and cards */
-  .features {
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .card {
-    width: 90%;
-    padding: 20px;
-  }
-
-  footer {
-    font-size: 13px;
-    padding: 15px;
-  }
-
-  .logo img.logo-img {
-    height: 40px;
-  }
-
 }

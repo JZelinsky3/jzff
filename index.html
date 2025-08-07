@@ -134,6 +134,16 @@
     
   </script>
 
+  <script>
+  if (window.innerWidth < 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+    document.querySelectorAll(".dropdown .dropbtn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        btn.parentElement.classList.toggle("open");
+      });
+    });
+  }
+</script>
+
   <script type="module" src="./account/auth-roles.js"></script>
   
 </body>
