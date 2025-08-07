@@ -17,7 +17,7 @@ A web application that allows users to organize fantasy football players into cu
 
 ## Demo
 
-*https://jzelinsky3.github.io/ffootball/index.html*
+*(Add a link here if you deploy the app online, e.g., GitHub Pages, Vercel, Netlify)*
 
 ---
 
