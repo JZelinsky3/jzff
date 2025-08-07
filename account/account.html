@@ -14,6 +14,7 @@
     <section id="profileSection" style="margin-top: 20px;">
       <p><strong>Email:</strong> <span id="email"></span></p>
       <p><strong>Name:</strong> <span id="displayName"></span></p>
+      <p><strong>Role:</strong> <span id="userRole"></span></p>
     </section>
 
     <section id="changePasswordSection" style="margin-top: 30px;">
@@ -52,6 +53,12 @@
       reauthenticateWithCredential
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
+    import {
+  getFirestore,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
     const firebaseConfig = {
   apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
   authDomain: "ffootball-1ffa4.firebaseapp.com",
@@ -73,25 +80,41 @@
     const newPasswordInput = document.getElementById("newPassword");
     const logoutBtn = document.getElementById("logoutBtn");
 
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        userInfoDiv.textContent = "";
-        emailSpan.textContent = user.email || "(no email)";
-        displayNameSpan.textContent = user.displayName || "(no display name)";
+    onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    // Clear loading message
+    userInfoDiv.textContent = "";
 
-        // Load saved notification preference
-        const savedNotif = localStorage.getItem("notifEnabled");
-        notifToggle.checked = savedNotif === "true";
+    // Show basic account info
+    emailSpan.textContent = user.email || "(no email)";
+    displayNameSpan.textContent = user.displayName || "(no display name)";
 
-        // Disable password change for Google sign-in users (no password)
-        if (user.providerData.some(p => p.providerId === "google.com")) {
-          changePasswordForm.style.display = "none";
-        }
-      } else {
-        // Not logged in, redirect to login page
-        window.location.href = "login.html";
-      }
-    });
+    // Load saved notification preference
+    const savedNotif = localStorage.getItem("notifEnabled");
+    notifToggle.checked = savedNotif === "true";
+
+    // Hide password change form for Google sign-ins
+    if (user.providerData.some(p => p.providerId === "google.com")) {
+      changePasswordForm.style.display = "none";
+    }
+
+    // 🔐 Load and show user role from Firestore
+    try {
+      const db = getFirestore(app);
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const role = userDoc.exists() ? userDoc.data().role : "guest";
+
+      const userRoleSpan = document.getElementById("userRole");
+      userRoleSpan.textContent = role;
+    } catch (err) {
+      console.error("Error fetching user role:", err);
+    }
+
+  } else {
+    // Not logged in, redirect to login
+    window.location.href = "login.html";
+  }
+});
 
     // Update notification toggle in localStorage
     notifToggle.addEventListener("change", () => {

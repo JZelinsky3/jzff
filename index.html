@@ -54,24 +54,27 @@
     </section>
 
     <section class="features">
-      <div class="card">
-        <h2>📊 Rankings</h2>
-        <p>Track player averages and projections with dynamic stats.</p>
-        <a href="./averages/averages.html" class="button">View Rankings</a>
-      </div>
+  <!-- Visible to all roles -->
+  <div class="card role-member">
+    <h2>🏅 Tiers</h2>
+    <p>Create and manage personalized player tiers, saved in the cloud.</p>
+    <a href="./tiers/tiers.html" class="button">Build Tiers</a>
+  </div>
 
-      <div class="card">
-        <h2>🏅 Tiers</h2>
-        <p>Create and manage personalized player tiers, saved in the cloud.</p>
-        <a href="./tiers/tiers.html" class="button">Build Tiers</a>
-      </div>
+  <!-- Editors/Admins/Masters only -->
+  <div class="card role-editor" style="display: none;">
+    <h2>📊 Rankings</h2>
+    <p>Track player averages and projections with dynamic stats.</p>
+    <a href="./averages/averages.html" class="button">View Rankings</a>
+  </div>
 
-      <div class="card">
-        <h2>📝 Draft Tools</h2>
-        <p>Manage your draft picks and keep your strategy in check.</p>
-        <a href="./draft/draft.html" class="button">Draft Board</a>
-      </div>
-    </section>
+  <div class="card role-editor" style="display: none;">
+    <h2>📝 Draft Tools</h2>
+    <p>Manage your draft picks and keep your strategy in check.</p>
+    <a href="./draft/draft.html" class="button">Draft Board</a>
+  </div>
+</section>
+
   </main>
 
   <footer>
@@ -124,29 +127,10 @@
         window.location.href = "./account/login.html";
       });
     });
+    
   </script>
 
-  <script>
-  // Enable dropdown open/close on tap for mobile
-  document.querySelectorAll('.dropdown .dropbtn').forEach(button => {
-    button.addEventListener('click', (e) => {
-      const dropdown = button.parentElement;
-      dropdown.classList.toggle('open');
-
-      // Close others
-      document.querySelectorAll('.dropdown').forEach(d => {
-        if (d !== dropdown) d.classList.remove('open');
-      });
-    });
-  });
-
-  // Close dropdowns when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.dropdown')) {
-      document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
-    }
-  });
-</script>
-
+  <script type="module" src="./account/auth-roles.js"></script>
+  
 </body>
 </html>

@@ -25,11 +25,8 @@
       Continue with Google
     </button>
 
-    <!-- Continue as Guest as a smaller text link -->
     <p style="margin-top: 8px; font-size: 14px; color: #aaa; cursor: pointer;">
-      <a href="../index.html" id="guestLink">
-        Continue as Guest
-      </a>
+      <a href="../index.html" id="guestLink">Continue as Guest</a>
     </p>
 
     <p style="margin-top: 20px;">
@@ -52,6 +49,11 @@
       GoogleAuthProvider,
       signInWithPopup
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
@@ -65,8 +67,8 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // Register form submit with persistence
     document.getElementById("registerForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
@@ -79,32 +81,43 @@
         } else {
           await setPersistence(auth, browserSessionPersistence);
         }
-        await createUserWithEmailAndPassword(auth, email, password);
+
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Set default role in Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          role: "member"
+        });
+
         window.location.href = "account.html";
       } catch (err) {
         alert(err.message);
       }
     });
 
-    // Google Register/Login
     const googleRegisterBtn = document.getElementById("googleRegisterBtn");
     const provider = new GoogleAuthProvider();
 
     googleRegisterBtn.addEventListener("click", async () => {
       try {
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        // Set default role in Firestore for Google users
+        await setDoc(doc(db, "users", user.uid), {
+          role: "member"
+        });
+
         window.location.href = "account.html";
       } catch (err) {
         alert(err.message);
       }
     });
 
-    // Guest Link behavior
     const guestLink = document.getElementById("guestLink");
-    guestLink.addEventListener("click", (e) => {
-      // Default anchor click navigates anyway, but this is here if you want custom logic
-      // e.preventDefault();
-      // window.location.href = "../index.html";
+    guestLink.addEventListener("click", () => {
+      // Optional: add guest behavior here if needed
     });
   </script>
 </body>
