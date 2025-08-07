@@ -28,11 +28,15 @@
   margin-left: 66px; /* space between Home and Ranking */
 }
 
+.available-button {
+  margin-left: 153px; /* space between Home and Ranking */
+}
+
 /* Dropdown container */
 .dropdown {
   position: fixed;
   top: 0;
-  left: 173px;
+  left: 265px;
   height: 80px;
   z-index: 102;
   display: flex;
@@ -157,6 +161,10 @@
   box-sizing: border-box;
 }
 
+body {
+  background-color: #5c5c5c;
+}
+
 /* Table */
 table {
   border-collapse: collapse;
@@ -219,7 +227,7 @@ tbody tr:nth-child(even) {
 
 /* Round headings */
 #draftTablesContainer h2 {
-  color: #2b2b2b;
+  color: #ffffff;
   text-align: center;
   margin-top: 40px;
   margin-bottom: 12px;
@@ -263,5 +271,5 @@ table.draft-table td {
 
 /* Hover highlight for draft rows */
 table.draft-table tbody tr:hover {
-  background-color: #eaeaea;
+  background-color: #d2d1d1;
 }

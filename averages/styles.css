@@ -40,7 +40,7 @@ body {
 .dropdown {
   position: fixed;
   top: 0;
-  left: 154px; /* adjust based on how far you want it from the left */
+  left: 155px; /* adjust based on how far you want it from the left */
   height: 80px;
   z-index: 102;
   display: flex;
@@ -59,6 +59,18 @@ body {
   height: 80px;
   line-height: 80px;
   font-family: inherit;
+}
+
+/* Draft dropdown position */
+.draft-dropdown {
+  position: fixed;
+  top: 0;
+  left: 230px; /* Adjust so it's next to Positions dropdown */
+  height: 80px;
+  z-index: 102;
+  display: flex;
+  align-items: center;
+  margin-left: -63px;
 }
 
 /* Dropdown content (hidden by default) */

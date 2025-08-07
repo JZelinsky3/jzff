@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Available Draft Picks</title>
+  <link rel="stylesheet" href="available.css" />
+</head>
+<body>
+
+  <div class="header-bg"></div>
+
+  <!-- Home Button -->
+  <a href="../index.html" class="home-button">Home</a>
+
+  <!-- Ranking Button -->
+  <a href="../averages/averages.html" class="home-button ranking-button">Ranking</a>
+
+  <a href="/draft/draft.html" class="home-button draft-button">Draft</a>
+
+  <!-- Position Dropdown -->
+  <div class="dropdown">
+    <button class="dropbtn">Positions</button>
+    <div class="dropdown-content">
+      <a href="../positions/qbs.html">Quarterbacks</a>
+      <a href="../positions/rbs.html">Runningbacks</a>
+      <a href="../positions/wrs.html">Wide Receivers</a>
+      <a href="../positions/tes.html">Tight Ends</a>
+    </div>
+  </div>
+
+  <div class="title-container">
+    <h1>Players at Each Pick</h1>
+  </div>
+
+  <table id="picksTable" aria-label="Draft picks table"></table>
+
+  <script>
+    async function loadDraft() {
+      const response = await fetch('draft.json');
+      const players = await response.json();
+
+      const picksTable = document.getElementById('picksTable');
+
+      let openedPanelIndex = null;
+
+      function closeOpenedPanel() {
+        if (openedPanelIndex !== null) {
+          const panelRow = picksTable.querySelector(`#panel-${openedPanelIndex}`);
+          if (panelRow) panelRow.remove();
+
+          const oldPickRow = picksTable.querySelector(`#pick-${openedPanelIndex}`);
+          if (oldPickRow) oldPickRow.classList.remove('selected');
+          openedPanelIndex = null;
+        }
+      }
+
+      function getRound(pickStr) {
+        return parseInt(pickStr.split('.')[0]);
+      }
+
+      // Group players by round
+      const rounds = {};
+      players.forEach((player, idx) => {
+        const round = getRound(player.pick);
+        if (!rounds[round]) rounds[round] = [];
+        rounds[round].push({ ...player, idx });
+      });
+
+      // Render rounds sorted
+      Object.keys(rounds).sort((a,b) => a - b).forEach(roundNum => {
+        // Round header row
+        const roundHeaderRow = document.createElement('tr');
+        roundHeaderRow.classList.add('round-header');
+        const roundHeaderCell = document.createElement('td');
+        roundHeaderCell.textContent = `Round ${roundNum}`;
+        roundHeaderCell.setAttribute('colspan', '1');
+        roundHeaderCell.classList.add('round-header-cell');
+        roundHeaderRow.appendChild(roundHeaderCell);
+        picksTable.appendChild(roundHeaderRow);
+
+        rounds[roundNum].forEach(player => {
+          const idx = player.idx;
+          const pickRow = document.createElement('tr');
+          pickRow.id = `pick-${idx}`;
+          pickRow.classList.add('pick-row');
+
+          const pickCell = document.createElement('td');
+          pickCell.textContent = player.pick;
+          pickCell.setAttribute('tabindex', '0');
+          pickCell.classList.add('pick-cell');
+
+          pickRow.appendChild(pickCell);
+          picksTable.appendChild(pickRow);
+
+          function togglePanel() {
+            if (openedPanelIndex === idx) {
+              closeOpenedPanel();
+              return;
+            }
+            closeOpenedPanel();
+
+            pickRow.classList.add('selected');
+
+            let start = idx - 3;
+            if (start < 0) start = 0;
+            let end = start + 7;
+            if (end > players.length) {
+              end = players.length;
+              start = Math.max(0, end - 7);
+            }
+
+            const panelRow = document.createElement('tr');
+            panelRow.id = `panel-${idx}`;
+            panelRow.classList.add('panel-row');
+
+            const panelCell = document.createElement('td');
+            panelCell.setAttribute('colspan', '1');
+            panelCell.classList.add('panel-cell');
+
+            const ul = document.createElement('ul');
+            ul.classList.add('player-list');
+
+            for (let i = start; i < end; i++) {
+              const p = players[i];
+              const li = document.createElement('li');
+              li.textContent = `${p.pick}: ${p.name} (${p.position})`;
+              ul.appendChild(li);
+            }
+
+            panelCell.appendChild(ul);
+            panelRow.appendChild(panelCell);
+
+            picksTable.insertBefore(panelRow, pickRow.nextSibling);
+
+            openedPanelIndex = idx;
+            panelRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+
+          pickCell.addEventListener('click', togglePanel);
+          pickCell.addEventListener('keypress', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              togglePanel();
+            }
+          });
+        });
+      });
+    }
+
+    loadDraft();
+  </script>
+
+</body>
+</html>
