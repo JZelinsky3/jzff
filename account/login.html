@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login - JZ Fantasy Football</title>
+  <link rel="stylesheet" href="account.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="auth-container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+
+      <label class="remember-me" for="rememberMe">
+        Remember Me
+        <input type="checkbox" id="rememberMe" />
+      </label>
+
+      <button type="submit" class="button">Login</button>
+    </form>
+
+    <button id="googleLoginBtn" class="button">
+      Continue with Google
+    </button>
+
+<!-- Continue as Guest as a smaller text link -->
+<p style="margin-top: 8px; font-size: 14px; color: #aaa; cursor: pointer;">
+  <a href="../index.html" id="guestLink">
+    Continue as Guest
+  </a>
+</p>
+
+    <p>
+      Don't have an account? <a href="register.html">Register here</a>
+    </p>
+
+    <a href="../index.html" class="button" style="margin-top: 25px; background-color: #444;">
+      Home
+    </a>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { 
+      getAuth, 
+      setPersistence,
+      browserLocalPersistence,
+      browserSessionPersistence,
+      signInWithEmailAndPassword,
+      GoogleAuthProvider,
+      signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+      authDomain: "ffootball-1ffa4.firebaseapp.com",
+      projectId: "ffootball-1ffa4",
+      storageBucket: "ffootball-1ffa4.appspot.com",
+      messagingSenderId: "214820317243",
+      appId: "1:214820317243:web:00907255d3ee230f21541e",
+      measurementId: "G-H9LQY4GWSN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Login form submit with persistence
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const rememberMe = document.getElementById("rememberMe").checked;
+
+      try {
+        if (rememberMe) {
+          await setPersistence(auth, browserLocalPersistence);
+        } else {
+          await setPersistence(auth, browserSessionPersistence);
+        }
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = "account.html";
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    // Google Login
+    const googleLoginBtn = document.getElementById("googleLoginBtn");
+    const provider = new GoogleAuthProvider();
+
+    googleLoginBtn.addEventListener("click", async () => {
+      try {
+        await signInWithPopup(auth, provider);
+        window.location.href = "account.html";
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    // Continue as guest button
+    const guestBtn = document.getElementById("guestBtn");
+    guestBtn.addEventListener("click", () => {
+      // Redirect guest users to homepage or public content
+      window.location.href = "../index.html";
+    });
+  </script>
+</body>
+</html>

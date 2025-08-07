@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Account - JZ Fantasy Football</title>
+  <link rel="stylesheet" href="account.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="auth-container">
+    <h2>My Account</h2>
+    <div id="userInfo">Loading user info...</div>
+
+    <section id="profileSection" style="margin-top: 20px;">
+      <p><strong>Email:</strong> <span id="email"></span></p>
+      <p><strong>Name:</strong> <span id="displayName"></span></p>
+    </section>
+
+    <section id="changePasswordSection" style="margin-top: 30px;">
+      <h3>Change Password</h3>
+      <form id="changePasswordForm">
+        <input type="password" id="newPassword" placeholder="New password" required minlength="6" />
+        <button type="submit" class="button">Update Password</button>
+      </form>
+    </section>
+
+    <section id="preferencesSection" style="margin-top: 30px;">
+      <h3>Preferences</h3>
+      <label>
+        <input type="checkbox" id="notifToggle" />
+        Email Notifications
+      </label>
+    </section>
+
+    <button id="logoutBtn" class="button" style="margin-top: 30px; background-color: #444;">
+      Logout
+    </button>
+
+    <a href="../index.html" class="button" style="margin-top: 20px;">
+      Go Back
+    </a>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      updatePassword,
+      signOut,
+      EmailAuthProvider,
+      reauthenticateWithCredential
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+  authDomain: "ffootball-1ffa4.firebaseapp.com",
+  projectId: "ffootball-1ffa4",
+  storageBucket: "ffootball-1ffa4.appspot.com",
+  messagingSenderId: "214820317243",
+  appId: "1:214820317243:web:00907255d3ee230f21541e",
+  measurementId: "G-H9LQY4GWSN"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const userInfoDiv = document.getElementById("userInfo");
+    const emailSpan = document.getElementById("email");
+    const displayNameSpan = document.getElementById("displayName");
+    const notifToggle = document.getElementById("notifToggle");
+    const changePasswordForm = document.getElementById("changePasswordForm");
+    const newPasswordInput = document.getElementById("newPassword");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        userInfoDiv.textContent = "";
+        emailSpan.textContent = user.email || "(no email)";
+        displayNameSpan.textContent = user.displayName || "(no display name)";
+
+        // Load saved notification preference
+        const savedNotif = localStorage.getItem("notifEnabled");
+        notifToggle.checked = savedNotif === "true";
+
+        // Disable password change for Google sign-in users (no password)
+        if (user.providerData.some(p => p.providerId === "google.com")) {
+          changePasswordForm.style.display = "none";
+        }
+      } else {
+        // Not logged in, redirect to login page
+        window.location.href = "login.html";
+      }
+    });
+
+    // Update notification toggle in localStorage
+    notifToggle.addEventListener("change", () => {
+      localStorage.setItem("notifEnabled", notifToggle.checked);
+      alert(`Email notifications ${notifToggle.checked ? "enabled" : "disabled"}.`);
+    });
+
+    // Password change handler
+    changePasswordForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      const newPass = newPasswordInput.value.trim();
+
+      if (!user) {
+        alert("No user logged in.");
+        return;
+      }
+
+      if (newPass.length < 6) {
+        alert("Password must be at least 6 characters.");
+        return;
+      }
+
+      try {
+        // Optional: reauthenticate user for security before password change
+        // For example, prompt for current password if needed.
+        // Here we assume user recently logged in or Google users can't change password.
+
+        await updatePassword(user, newPass);
+        alert("Password updated successfully!");
+        newPasswordInput.value = "";
+      } catch (error) {
+        alert("Error updating password: " + error.message);
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth).then(() => {
+        window.location.href = "login.html";
+      });
+    });
+  </script>
+</body>
+</html>

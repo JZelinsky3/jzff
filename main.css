@@ -69,11 +69,16 @@ header {
   position: relative;
 }
 
+/* Make dropdown align left under Account button if needed */
+#accountDropdown .dropdown-content {
+  right: -25px;
+}
+
 .dropdown-content {
   display: none;
   position: absolute;
   top: 30px;
-  right: -15px; /* align to right edge of the button */
+  right: -45px; /* align to right edge of the button */
   background-color: #1f1f1f;
   border: 1px solid #444;
   border-radius: 8px;

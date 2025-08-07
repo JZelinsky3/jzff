@@ -11,8 +11,8 @@
   <header>
     <div class="navbar">
       <div class="logo">
-  <img src="pics/jzff.png" alt="JZ Fantasy Football Logo" class="logo-img">
-</div>
+        <img src="pics/jzff.png" alt="JZ Fantasy Football Logo" class="logo-img">
+      </div>
       <nav class="nav-links">
         <a href="./averages/averages.html">Rankings</a>
         <a href="./tiers/tiers.html">Tiers</a>
@@ -30,6 +30,17 @@
             <a href="./positions/rbs.html">Running Backs</a>
             <a href="./positions/wrs.html">Wide Receivers</a>
             <a href="./positions/tes.html">Tight Ends</a>
+          </div>
+        </div>
+
+        <!-- ✅ Account Dropdown -->
+        <div class="dropdown" id="accountDropdown">
+          <a href="./account/register.html" class="dropbtn" id="accountLink">Account ▾</a>
+          <div class="dropdown-content" id="accountMenu">
+            <a href="./account/register.html" id="registerLink">Register</a>
+            <a href="./account/login.html" id="loginLink">Login</a>
+            <a href="./account/account.html" id="accountDetailsLink" style="display: none;">My Account</a>
+            <a href="#" id="logoutLink" style="display: none;">Logout</a>
           </div>
         </div>
       </nav>
@@ -66,5 +77,53 @@
   <footer>
     <p>&copy; 2025 JZ Fantasy Football. All rights reserved.</p>
   </footer>
+
+  <!-- ✅ Firebase Auth Handler -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+  authDomain: "ffootball-1ffa4.firebaseapp.com",
+  projectId: "ffootball-1ffa4",
+  storageBucket: "ffootball-1ffa4.appspot.com",
+  messagingSenderId: "214820317243",
+  appId: "1:214820317243:web:00907255d3ee230f21541e",
+  measurementId: "G-H9LQY4GWSN"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const accountLink = document.getElementById("accountLink");
+    const registerLink = document.getElementById("registerLink");
+    const loginLink = document.getElementById("loginLink");
+    const accountDetailsLink = document.getElementById("accountDetailsLink");
+    const logoutLink = document.getElementById("logoutLink");
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        accountLink.href = "./account/account.html";
+        registerLink.style.display = "none";
+        loginLink.style.display = "none";
+        accountDetailsLink.style.display = "block";
+        logoutLink.style.display = "block";
+      } else {
+        accountLink.href = "./account/register.html";
+        registerLink.style.display = "block";
+        loginLink.style.display = "block";
+        accountDetailsLink.style.display = "none";
+        logoutLink.style.display = "none";
+      }
+    });
+
+    logoutLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      signOut(auth).then(() => {
+        window.location.href = "./account/login.html";
+      });
+    });
+  </script>
 </body>
 </html>

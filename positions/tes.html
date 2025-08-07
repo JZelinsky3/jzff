@@ -9,25 +9,33 @@
 <body>
 
   <!-- Fixed header elements -->
-  <a href="../index.html" class="home-button">Home</a>
-<a href="../averages/averages.html" class="home-button ranking-button">Ranking</a>
-<a href="../draft/draft.html" class="home-button draft-button">Draft</a>
+  <header class="header-bg">
+    <div class="header-content">
 
-<div class="dropdown">
-  <button class="dropbtn">Positions</button>
-  <div class="dropdown-content">
-    <a href="../positions/qbs.html">QBs</a>
-    <a href="../positions/rbs.html">RBs</a>
-    <a href="../positions/wrs.html">WRs</a>
-  </div>
-</div>
-  <div class="header-bg"></div>
-  <div class="title-container">
-    <h1>Tight Ends</h1>
-  </div>
-  <div class="search-box">
-    <input type="text" id="search-box" placeholder="Search players..." />
-  </div>
+      <nav class="main-nav">
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="../averages/averages.html" class="nav-link">Ranking</a>
+        <a href="../draft/draft.html" class="nav-link">Draft</a>
+        <div class="dropdown">
+          <button class="dropbtn">Positions</button>
+          <div class="dropdown-content">
+            <a href="../positions/qbs.html">QBs</a>
+            <a href="../positions/rbs.html">RBs</a>
+            <a href="../positions/wrs.html">WRs</a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="title-container">
+        <h1>Tight Ends</h1>
+      </div>
+
+      <div class="search-box">
+        <input type="text" id="search-box" placeholder="Search players..." />
+      </div>
+
+    </div>
+  </header>
 
   <!-- Scrollable table container -->
   <div class="scroll-container">
