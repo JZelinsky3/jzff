@@ -9,14 +9,22 @@
 <body>
 
   <!-- Nav/Header -->
-  <!-- Nav/Header -->
 <header class="header">
   <div class="nav-left">
     <a href="../index.html" class="nav-link">Home</a>
-    <a href="../averages/averages.html" class="nav-link role-admin" style="display: none;">Ranking</a>
-    <a href="draft.html" class="nav-link role-admin" style="display: none;">Draft</a>
-    <div class="dropdown role-admin" style="display: none;">
-      <button class="dropbtn">Positions</button>
+
+    <a href="../averages/averages.html" class="nav-link role-admin-only" style="display: none;">Ranking</a>
+
+    <div class="dropdown role-admin-only" style="display: none;">
+      <button class="dropbtn">Draft ▾</button>
+      <div class="dropdown-content">
+        <a href="../draft/draft.html">Draft Board</a>
+        <a href="../draft/available.html">Available Picks</a>
+      </div>
+    </div>
+
+    <div class="dropdown role-admin-only" style="display: none;">
+      <button class="dropbtn">Positions ▾</button>
       <div class="dropdown-content">
         <a href="../positions/qbs.html">Quarterbacks</a>
         <a href="../positions/rbs.html">Runningbacks</a>
@@ -25,11 +33,11 @@
       </div>
     </div>
   </div>
+
   <div class="nav-center">
     <h1 class="site-title">Full Draft Board</h1>
   </div>
 </header>
-
 
   <!-- Main Content -->
 <main class="main-content">
@@ -126,11 +134,14 @@
   import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
   const firebaseConfig = {
-    apiKey: "YOUR_KEY",
-    authDomain: "YOUR_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    // ... add other config if needed
-  };
+      apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+      authDomain: "ffootball-1ffa4.firebaseapp.com",
+      projectId: "ffootball-1ffa4",
+      storageBucket: "ffootball-1ffa4.appspot.com",
+      messagingSenderId: "214820317243",
+      appId: "1:214820317243:web:00907255d3ee230f21541e",
+      measurementId: "G-H9LQY4GWSN"
+    };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -144,8 +155,10 @@
     const role = userSnap.exists() ? userSnap.data().role : "guest";
 
     if (role === "admin" || role === "master") {
-      document.querySelectorAll(".role-admin").forEach(el => el.style.display = "inline-block");
-    }
+  document.querySelectorAll(".role-admin-only").forEach(el => {
+    el.style.display = "inline-block";
+  });
+  }
   });
 </script>
 
