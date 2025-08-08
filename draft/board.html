@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Snake Draft Board</title>
+  <link rel="stylesheet" href="draft.css" />
+  <link rel="stylesheet" href="board.css" />
+</head>
+<body>
+
+  <!-- Nav/Header -->
+  <!-- Nav/Header -->
+<header class="header">
+  <div class="nav-left">
+    <a href="../index.html" class="nav-link">Home</a>
+    <a href="../averages/averages.html" class="nav-link role-admin" style="display: none;">Ranking</a>
+    <a href="draft.html" class="nav-link role-admin" style="display: none;">Draft</a>
+    <div class="dropdown role-admin" style="display: none;">
+      <button class="dropbtn">Positions</button>
+      <div class="dropdown-content">
+        <a href="../positions/qbs.html">Quarterbacks</a>
+        <a href="../positions/rbs.html">Runningbacks</a>
+        <a href="../positions/wrs.html">Wide Receivers</a>
+        <a href="../positions/tes.html">Tight Ends</a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-center">
+    <h1 class="site-title">Full Draft Board</h1>
+  </div>
+</header>
+
+
+  <!-- Main Content -->
+<main class="main-content">
+  <div class="layout-wrapper">
+    <div class="board-scroll-wrapper">
+      <div class="board-scroll-inner">
+        <div class="sidebar">
+          <label for="pickSelector">🎯 Your Draft Slot:</label>
+          <select id="pickSelector">
+            <option value="">Select Your Pick</option>
+          </select>
+        </div>
+        <div id="boardContainer"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+
+
+  <script>
+    let userPickNum = null;
+
+    const pickSelector = document.getElementById("pickSelector");
+    for (let i = 1; i <= 12; i++) {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = `Pick ${i}`;
+      pickSelector.appendChild(option);
+    }
+
+    pickSelector.addEventListener("change", () => {
+      userPickNum = parseInt(pickSelector.value);
+      renderBoard();
+    });
+
+    function renderBoard() {
+      const board = document.getElementById("boardContainer");
+      board.innerHTML = "";
+
+      const numRounds = 15;
+      const numTeams = 12;
+
+      const table = document.createElement("table");
+      table.classList.add("draft-table");
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      headerRow.innerHTML = "<th>Round</th>" + [...Array(numTeams)].map((_, i) => `<th>Pick ${i + 1}</th>`).join('');
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      for (let round = 1; round <= numRounds; round++) {
+        const row = document.createElement("tr");
+
+        const roundCell = document.createElement("td");
+        roundCell.textContent = round;
+        roundCell.classList.add("round-label");
+        row.appendChild(roundCell);
+
+        const isEven = round % 2 === 0;
+
+        for (let team = 1; team <= numTeams; team++) {
+          const cell = document.createElement("td");
+          const pickNumber = (round - 1) * numTeams + team;
+
+          if (userPickNum) {
+            const snakePick = isEven ? numTeams - userPickNum + 1 : userPickNum;
+            if (team === snakePick) {
+              cell.classList.add("highlight-pick");
+              cell.textContent = `Pick ${pickNumber}`;
+            }
+          }
+
+          row.appendChild(cell);
+        }
+
+        tbody.appendChild(row);
+      }
+
+      table.appendChild(tbody);
+      board.appendChild(table);
+    }
+
+    renderBoard();
+  </script>
+
+  <!-- Firebase Auth Role Check -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    // ... add other config if needed
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    const role = userSnap.exists() ? userSnap.data().role : "guest";
+
+    if (role === "admin" || role === "master") {
+      document.querySelectorAll(".role-admin").forEach(el => el.style.display = "inline-block");
+    }
+  });
+</script>
+
+</body>
+</html>
