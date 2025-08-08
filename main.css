@@ -193,19 +193,23 @@ footer {
   header {
     padding: 15px 20px;
   }
-
   .navbar {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
+  }
+
+  .logo {
+    flex: 0 1 auto;
   }
 
   .nav-links {
-    flex-wrap: wrap;
+    flex: 1;
     justify-content: flex-end;
-    width: 100%;
+    flex-wrap: wrap;
     gap: 10px;
-    margin-top: 10px;
   }
 
   .nav-links a,
@@ -235,7 +239,6 @@ footer {
   }
 
   .dropdown .dropbtn::after {
-    content: "▼";
     float: right;
   }
 

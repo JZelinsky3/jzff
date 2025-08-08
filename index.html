@@ -2,149 +2,152 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>JZ Fantasy Football</title>
-  <link rel="stylesheet" href="main.css?v=1" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="main.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
 </head>
-<body>
+<body style="display: none;">
   <header>
-    <div class="navbar">
+    <nav class="navbar">
       <div class="logo">
-        <img src="pics/jzff.png" alt="JZ Fantasy Football Logo" class="logo-img">
+        <img src="/pics/jzff.png" alt="JZ Logo" class="logo-img" />
       </div>
-     <nav class="nav-links">
-  <a href="./averages/averages.html" class="role-editor" style="display: none;">Rankings</a>
 
-  <a href="./tiers/tiers.html">Tiers</a> <!-- Always visible -->
-
-  <div class="dropdown role-editor" style="display: none;">
-    <button class="dropbtn">Draft ▾</button>
-    <div class="dropdown-content">
-      <a href="./draft/draft.html">Draft Board</a>
-      <a href="./draft/available.html">Picks</a>
-    </div>
-  </div>
-
-  <div class="dropdown role-editor" style="display: none;">
-    <button class="dropbtn">Positions ▾</button>
-    <div class="dropdown-content">
-      <a href="./positions/qbs.html">Quarterbacks</a>
-      <a href="./positions/rbs.html">Running Backs</a>
-      <a href="./positions/wrs.html">Wide Receivers</a>
-      <a href="./positions/tes.html">Tight Ends</a>
-    </div>
-  </div>
-
-  <!-- ✅ Account always visible -->
-  <div class="dropdown" id="accountDropdown">
-    <a href="./account/register.html" class="dropbtn" id="accountLink">Account ▾</a>
-    <div class="dropdown-content" id="accountMenu">
-      <a href="./account/register.html" id="registerLink">Register</a>
-      <a href="./account/login.html" id="loginLink">Login</a>
-      <a href="./account/account.html" id="accountDetailsLink" style="display: none;">My Account</a>
-      <a href="#" id="logoutLink" style="display: none;">Logout</a>
-    </div>
-  </div>
-</nav>
-
-    </div>
+      <div class="nav-links">
+        <a href="rankings.html" class="role-editor role-admin role-master" style="display: none;">Rankings</a>
+        <a href="/tiers/tiers.html">Tiers</a>
+        <div class="dropdown" id="draftDropdown">
+          <button class="dropbtn role-editor role-admin role-master" style="display: none;">Draft ▾</button>
+          <div class="dropdown-content">
+            <a href="draft/overview.html">Overview</a>
+            <a href="draft/strategy.html">Strategy</a>
+          </div>
+        </div>
+        <div class="dropdown" id="positionsDropdown">
+          <button class="dropbtn role-editor role-admin role-master" style="display: none;">Positions ▾</button>
+          <div class="dropdown-content">
+            <a href="positions/qb.html">QB</a>
+            <a href="positions/rb.html">RB</a>
+            <a href="positions/wr.html">WR</a>
+            <a href="positions/te.html">TE</a>
+          </div>
+        </div>
+        <div class="dropdown" id="accountDropdown">
+          <a href="#" id="accountLink" class="dropbtn">Account ▾</a>
+          <div class="dropdown-content" id="accountDropdownContent">
+            <a href="./account/register.html" id="registerLink">Register</a>
+            <a href="./account/login.html" id="loginLink">Login</a>
+            <a href="./account/account.html" id="accountDetailsLink" style="display: none;">My Account</a>
+            <a href="#" id="logoutBtn" style="display: none;">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
   </header>
 
-  <main>
-    <section class="hero">
-      <h1>Fantasy 25</h1>
-      <p>Your hub for data-driven draft domination.</p>
-    </section>
+  <section class="hero">
+    <h1>Welcome to JZ Fantasy Football</h1>
+    <p>The sharpest tools for winning your league.</p>
+  </section>
 
-    <section class="features">
-  <!-- Visible to all roles -->
-  <div class="card role-member">
-    <h2>🏅 Tiers</h2>
-    <p>Create and manage personalized player tiers, saved in the cloud.</p>
-    <a href="./tiers/tiers.html" class="button">Build Tiers</a>
-  </div>
-
-  <!-- Editors/Admins/Masters only -->
-  <div class="card role-editor" style="display: none;">
-    <h2>📊 Rankings</h2>
-    <p>Track player averages and projections with dynamic stats.</p>
-    <a href="./averages/averages.html" class="button">View Rankings</a>
-  </div>
-
-  <div class="card role-editor" style="display: none;">
-    <h2>📝 Draft Tools</h2>
-    <p>Manage your draft picks and keep your strategy in check.</p>
-    <a href="./draft/draft.html" class="button">Draft Board</a>
-  </div>
-</section>
-
-  </main>
+  <section class="features">
+    <div class="card">
+      <h2>Tiered Rankings</h2>
+      <p>Navigate your draft with confidence using smart, updated tiers.</p>
+      <a href="tiers/index.html" class="button">Explore Tiers</a>
+    </div>
+    <div class="card role-editor role-admin role-master" style="display: none;">
+      <h2>Custom Rankings</h2>
+      <p>Create, edit, and share your own custom rankings lists.</p>
+      <a href="rankings.html" class="button">View Rankings</a>
+    </div>
+    <div class="card role-editor role-admin role-master" style="display: none;">
+      <h2>Positional Previews</h2>
+      <p>Get insights on every key position for the 2025 season.</p>
+      <a href="positions/qb.html" class="button">QB Rankings</a>
+    </div>
+  </section>
 
   <footer>
-    <p>&copy; 2025 JZ Fantasy Football. All rights reserved.</p>
+    <p>© 2025 JZ Fantasy Football. All rights reserved.</p>
   </footer>
 
-  <!-- ✅ Firebase Auth Handler -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
-  authDomain: "ffootball-1ffa4.firebaseapp.com",
-  projectId: "ffootball-1ffa4",
-  storageBucket: "ffootball-1ffa4.appspot.com",
-  messagingSenderId: "214820317243",
-  appId: "1:214820317243:web:00907255d3ee230f21541e",
-  measurementId: "G-H9LQY4GWSN"
-};
+      apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+      authDomain: "ffootball-1ffa4.firebaseapp.com",
+      projectId: "ffootball-1ffa4",
+      storageBucket: "ffootball-1ffa4.appspot.com",
+      messagingSenderId: "214820317243",
+      appId: "1:214820317243:web:00907255d3ee230f21541e",
+      measurementId: "G-H9LQY4GWSN"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
     const accountLink = document.getElementById("accountLink");
-    const registerLink = document.getElementById("registerLink");
     const loginLink = document.getElementById("loginLink");
+    const registerLink = document.getElementById("registerLink");
     const accountDetailsLink = document.getElementById("accountDetailsLink");
-    const logoutLink = document.getElementById("logoutLink");
+    const logoutBtn = document.getElementById("logoutBtn");
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        accountLink.href = "./account/account.html";
-        registerLink.style.display = "none";
-        loginLink.style.display = "none";
-        accountDetailsLink.style.display = "block";
-        logoutLink.style.display = "block";
-      } else {
-        accountLink.href = "./account/register.html";
-        registerLink.style.display = "block";
+    onAuthStateChanged(auth, async (user) => {
+      document.body.style.display = "block";
+
+      if (!user) {
+        accountLink.href = "javascript:void(0)";
         loginLink.style.display = "block";
+        registerLink.style.display = "block";
         accountDetailsLink.style.display = "none";
-        logoutLink.style.display = "none";
+        logoutBtn.style.display = "none";
+        return;
+      }
+
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+      const role = docSnap.exists() ? docSnap.data().role : "guest";
+
+      localStorage.setItem("userRole", role);
+      accountLink.href = "./account/account.html";
+      loginLink.style.display = "none";
+      registerLink.style.display = "none";
+      accountDetailsLink.style.display = "block";
+      logoutBtn.style.display = "block";
+
+      // Role-based display
+      if (["member", "editor", "admin", "master"].includes(role)) {
+        document.querySelectorAll(".role-member").forEach(el => el.style.display = "block");
+      }
+      if (["editor", "admin", "master"].includes(role)) {
+        document.querySelectorAll(".role-editor").forEach(el => el.style.display = "block");
+      }
+      if (["admin", "master"].includes(role)) {
+        document.querySelectorAll(".role-admin").forEach(el => el.style.display = "block");
+      }
+      if (role === "master") {
+        document.querySelectorAll(".role-master").forEach(el => el.style.display = "block");
       }
     });
 
-    logoutLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      signOut(auth).then(() => {
-        window.location.href = "./account/login.html";
-      });
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      localStorage.clear();
+      window.location.href = "./account/login.html";
     });
-    
   </script>
-
-  <script>
-  if (window.innerWidth < 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-    document.querySelectorAll(".dropdown .dropbtn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        btn.parentElement.classList.toggle("open");
-      });
-    });
-  }
-</script>
-
-  <script type="module" src="./account/auth-roles.js"></script>
-  
 </body>
 </html>

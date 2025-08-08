@@ -12,12 +12,10 @@
     <form id="loginForm">
       <input type="email" id="email" placeholder="Email" required />
       <input type="password" id="password" placeholder="Password" required />
-
       <label class="remember-me" for="rememberMe">
         Remember Me
         <input type="checkbox" id="rememberMe" />
       </label>
-
       <button type="submit" class="button">Login</button>
     </form>
 
@@ -29,7 +27,7 @@
       <a href="../index.html" id="guestLink">Continue as Guest</a>
     </p>
 
-    <p>
+    <p style="margin-top: 20px; font-size: 14px; color: #aaa; cursor: pointer;">
       Don't have an account? <a href="register.html">Register here</a>
     </p>
 
@@ -40,18 +38,17 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { 
-      getAuth, 
+    import {
+      getAuth,
       setPersistence,
       browserLocalPersistence,
       browserSessionPersistence,
       signInWithEmailAndPassword,
       GoogleAuthProvider,
       signInWithPopup,
-      signInWithRedirect,
       getRedirectResult
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import { 
+    import {
       getFirestore,
       doc,
       setDoc
@@ -71,7 +68,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Handle email/password login
+    // Email/password login
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value;
@@ -87,49 +84,31 @@
       }
     });
 
-    // Handle Google login
+    // Google login
     const provider = new GoogleAuthProvider();
-    const googleLoginBtn = document.getElementById("googleLoginBtn");
-
-    googleLoginBtn.addEventListener("click", async () => {
+    document.getElementById("googleLoginBtn").addEventListener("click", async () => {
       try {
-        const isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          await signInWithRedirect(auth, provider);
-        } else {
-          const result = await signInWithPopup(auth, provider);
-          const user = result.user;
-
-          // Save role if user is new
-          await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
-
-          window.location.href = "../index.html";
-        }
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
+        window.location.href = "../index.html";
       } catch (err) {
         alert(err.message);
       }
     });
 
-    // Handle Google redirect login result
+    // Handle redirect result (optional fallback)
     getRedirectResult(auth)
       .then(async (result) => {
         if (result) {
           const user = result.user;
-
           await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
-
           window.location.href = "../index.html";
         }
       })
       .catch((err) => {
         console.error("Redirect login error:", err.message);
       });
-
-    // Guest button
-    const guestLink = document.getElementById("guestLink");
-    guestLink.addEventListener("click", () => {
-      window.location.href = "../index.html";
-    });
   </script>
 </body>
 </html>
