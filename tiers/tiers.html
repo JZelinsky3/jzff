@@ -4,44 +4,56 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, user-scalable=yes" />
   <title>JZ Fantasy Football - Player Tiers</title>
-
-  <!-- CSS -->
   <link rel="stylesheet" href="tiers.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
   <div id="scale-wrapper">
+    <header class="header">
+      <div class="nav-left">
+        <a href="../index.html" class="nav-link">Home</a>
+        <a href="../averages/averages.html" class="nav-link role-admin-only" style="display: none;">Rankings</a>
+        <a href="../draft/draft.html" class="nav-link role-admin-only" style="display: none;">Draft</a>
+      </div>
+      <h1 class="header-title">Tiers</h1>
+      <div class="nav-right dropdown role-admin-only" style="display: none;">
+        <button class="dropbtn">Positions ▾</button>
+        <div class="dropdown-content">
+          <a href="../positions/qbs.html">QBs</a>
+          <a href="../positions/rbs.html">RBs</a>
+          <a href="../positions/wrs.html">WRs</a>
+          <a href="../positions/tes.html">TEs</a>
+        </div>
+      </div>
+    </header>
 
-  <header class="header">
-    <div class="nav-left">
-      <a href="../index.html" class="nav-link">Home</a>
-      <a href="../averages/averages.html" class="nav-link role-admin-only" style="display: none;">Rankings</a>
-      <a href="../draft/draft.html" class="nav-link role-admin-only" style="display: none;">Draft</a>
-    </div>
+    <main class="main-container">
+      <section class="player-list">
+        <h1>Player List</h1>
+        <ul id="players"></ul>
+      </section>
+      <section id="tier-container" class="tier-container"></section>
+    </main>
 
-    <h1 class="header-title">Tiers</h1>
+    <div id="toast"></div>
 
-    <div class="nav-right dropdown role-admin-only" style="display: none;">
-      <button class="dropbtn">Positions ▾</button>
-      <div class="dropdown-content">
-        <a href="../positions/qbs.html">QBs</a>
-        <a href="../positions/rbs.html">RBs</a>
-        <a href="../positions/wrs.html">WRs</a>
-        <a href="../positions/tes.html">TEs</a>
+    <!-- Guest Modal -->
+    <div id="guest-modal" class="modal hidden">
+      <div class="modal-content">
+        <span class="modal-close" id="modal-close">&times;</span>
+        <p>You need an account to save your tiers.<br />Would you like to sign in or register?</p>
+        <div class="modal-actions">
+          <button id="modal-register" class="btn save-btn">Register</button>
+          <button id="modal-login" class="btn clear-btn">Login</button>
+        </div>
       </div>
     </div>
-  </header>
 
-  <main class="main-container">
-    <section class="player-list">
-      <h1>Player List</h1>
-      <ul id="players"></ul>
-    </section>
-
-    <section id="tier-container" class="tier-container"></section>
-  </main>
-
-  <div id="toast"></div>
+    <div id="button-container">
+      <button id="saveBtn" class="btn save-btn">Save</button>
+      <button id="clearBtn" class="btn clear-btn">Clear</button>
+    </div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -67,7 +79,13 @@
     const saveBtn = document.getElementById("saveBtn");
     const clearBtn = document.getElementById("clearBtn");
     const toast = document.getElementById("toast");
+    const modal = document.getElementById("guest-modal");
+    const modalLogin = document.getElementById("modal-login");
+    const modalRegister = document.getElementById("modal-register");
+    const modalClose = document.getElementById("modal-close");
+
     const NUM_TIERS = 10;
+    let currentUser = null;
 
     function createTiers() {
       for (let i = 1; i <= NUM_TIERS; i++) {
@@ -75,7 +93,6 @@
         tierDiv.className = "tier-column";
         tierDiv.dataset.tier = i;
         tierDiv.innerHTML = `<h2>Tier ${i}</h2><ul class="dropzone"></ul>`;
-
         const dropzone = tierDiv.querySelector(".dropzone");
 
         dropzone.addEventListener("dragover", e => e.preventDefault());
@@ -167,7 +184,9 @@
       });
 
       try {
-        await setDoc(doc(db, "tiers", uid), {});
+        if (uid) {
+          await setDoc(doc(db, "tiers", uid), {});
+        }
         showToast("Tiers cleared!");
       } catch (err) {
         showToast("Error clearing tiers: " + err.message);
@@ -184,10 +203,19 @@
       }, 3000);
     }
 
+    function showModal() {
+      modal.classList.remove("hidden");
+    }
+
+    function hideModal() {
+      modal.classList.add("hidden");
+    }
+
     onAuthStateChanged(auth, async user => {
       createTiers();
 
       let role = "guest";
+      currentUser = user;
 
       if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -201,18 +229,33 @@
 
         await loadPlayers(role);
         await loadSavedTiers(user.uid);
-        saveBtn.addEventListener("click", () => saveTiers(user.uid));
-        clearBtn.addEventListener("click", () => clearTiers(user.uid));
       } else {
         await loadPlayers(role);
       }
     });
-  </script>
-  </div>
 
-  <div id="button-container">
-    <button id="saveBtn" class="btn save-btn">Save</button>
-    <button id="clearBtn" class="btn clear-btn">Clear</button>
-  </div>
+    saveBtn.addEventListener("click", () => {
+      if (!currentUser) {
+        showModal();
+        return;
+      }
+      saveTiers(currentUser.uid);
+    });
+
+    clearBtn.addEventListener("click", () => {
+      const uid = currentUser?.uid || null;
+      clearTiers(uid);
+    });
+
+    modalRegister.addEventListener("click", () => {
+      window.location.href = "../register.html";
+    });
+
+    modalLogin.addEventListener("click", () => {
+      window.location.href = "../login.html";
+    });
+
+    modalClose.addEventListener("click", hideModal);
+  </script>
 </body>
 </html>

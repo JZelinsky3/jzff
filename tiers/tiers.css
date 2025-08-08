@@ -27,7 +27,7 @@ body {
   border-bottom: 1px solid #2c2c2c;
   user-select: none;
   flex-shrink: 0;
-  position: relative; /* Needed for absolute positioning of title */
+  position: relative;
 }
 
 .header-title {
@@ -41,7 +41,8 @@ body {
   user-select: none;
 }
 
-.nav-left, .nav-right {
+.nav-left,
+.nav-right {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -88,7 +89,7 @@ body {
   right: 0;
   background-color: #1f1f1f;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   min-width: 140px;
   z-index: 1000;
 }
@@ -126,7 +127,7 @@ body {
 /* Player List */
 .player-list {
   background-color: #1e1e1e;
-  width: 780px;
+  width: 1280px;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 0 20px rgba(255, 77, 77, 0.2);
@@ -186,14 +187,13 @@ body {
 
 /* Each tier column */
 .tier-column {
-  background-color: #333;
   border-radius: 12px;
-  width: 220px;
+  width: 420px;
   padding: 15px 10px;
   box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);
   display: flex;
   flex-direction: column;
-  max-height: 75vh;
+  max-height: 95vh;
   user-select: none;
   color: white;
   flex-shrink: 0;
@@ -202,7 +202,6 @@ body {
 .tier-column h2 {
   margin-bottom: 15px;
   text-align: center;
-  color: #ffffff;
   font-weight: 700;
   font-size: 20px;
   border-bottom: 2px solid #ff4d4d;
@@ -226,7 +225,7 @@ body {
   cursor: grab;
 }
 
-/* Scrollbar styling */
+/* Scrollbars */
 #players::-webkit-scrollbar,
 .dropzone::-webkit-scrollbar {
   width: 8px;
@@ -239,7 +238,7 @@ body {
   border-radius: 10px;
 }
 
-/* Button container */
+/* Button Container */
 #button-container {
   position: sticky;
   bottom: 10px;
@@ -272,7 +271,6 @@ body {
 
 .save-btn:hover {
   background: linear-gradient(135deg, #0a20df, #6386f6);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.5);
 }
 
 .clear-btn {
@@ -281,10 +279,9 @@ body {
 
 .clear-btn:hover {
   background: linear-gradient(135deg, #01a728, #68f571);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.5);
 }
 
-/* Toast notification */
+/* Toast */
 #toast {
   visibility: hidden;
   min-width: 250px;
@@ -305,7 +302,66 @@ body {
   user-select: none;
 }
 
-/* Tier colors */
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0; /* replaces top: 0; left: 0; width: 100vw; height: 100vh */
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 0 12px;
+
+  /* Fix mobile viewport issues */
+  max-height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-content {
+  position: relative;
+  background-color: #1e1e1e;
+  padding: 30px 40px;
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(255, 77, 77, 0.4);
+  text-align: center;
+  color: #fff;
+  width: 100%;
+  max-width: 500px;
+  box-sizing: border-box;
+}
+
+.modal-content p {
+  font-size: 18px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #ff4d4d;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Hidden Utility */
+.hidden {
+  display: none;
+}
+
+/* Tier Colors */
 .tier-column[data-tier="1"]  { background-color: #003f5c; }
 .tier-column[data-tier="2"]  { background-color: #ffa600; }
 .tier-column[data-tier="3"]  { background-color: #a05195; }
@@ -317,16 +373,7 @@ body {
 .tier-column[data-tier="9"]  { background-color: #d45087; }
 .tier-column[data-tier="10"] { background-color: #bc5090; }
 
-/* Mobile hint text */
-.mobile-hint {
-  display: none;
-  text-align: center;
-  color: #ccc;
-  font-size: 14px;
-  margin: 10px 0;
-}
-
-/* Responsive layout */
+/* ===== MOBILE ===== */
 @media (max-width: 900px) {
   .main-container {
     flex-direction: column;
@@ -335,13 +382,13 @@ body {
 
   .player-list {
     width: 100%;
-    max-height: 300px;
-    padding: 10px;
+    max-height: 380px;
+    padding: 14px;
   }
 
   .tier-container {
     width: 100%;
-    max-height: 350px;
+    max-height: calc(100vh - 420px);
     gap: 16px;
     padding: 10px;
   }
@@ -351,83 +398,49 @@ body {
     max-height: 300px;
   }
 
- #button-container {
-  position: fixed;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1100;
-  display: flex;
-  gap: 16px;
-  padding: 0;
-  background: transparent;   /* ⬅️ no background box */
-  border-radius: 0;          /* ⬅️ no rounded edges */
-  pointer-events: none;      /* ⬅️ optional: allows content behind it to be interacted with */
-}
+  #button-container {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    z-index: 1100;
+  }
 
-#button-container .btn {
-  pointer-events: auto; /* ⬅️ re-enable clicks only on the buttons */
-}
-
-
-  .btn {
-    font-size: 16px;
+  #button-container .btn {
+    font-size: 14px;
     padding: 10px 24px;
   }
-}
 
-@media (max-width: 600px) {
-  .player-list h1 {
-    position: sticky;
-    top: 0;
-    background-color: #1e1e1e;
-    z-index: 10;
-    padding-top: 10px;
-  }
-
-  @media (max-width: 900px) {
-  .player-list {
-    width: 100%;
-    max-height: 380px; /* ⬅️ slightly taller */
-    padding: 14px;
-  }
-
-  .tier-container {
-    max-height: calc(100vh - 420px); /* ⬅️ prevent overlap with player list */
-  }
-}
-
-  .btn {
-    font-size: 12px;
-    padding: 8px 10px;
-    margin-bottom: 18px;
-  }
-
-  .tier-container {
-    gap: 12px;
+  .tier-column .player-item {
+    font-size: 13px;
+    padding: 6px 10px;
   }
 
   .tier-column h2 {
     font-size: 18px;
   }
 
-  .mobile-hint {
-    display: block;
+  .header-title {
+    font-size: 28px;
   }
-}
 
-@media (max-width: 600px) {
   #scale-wrapper {
     transform: scale(0.75);
     transform-origin: top left;
-    width: 133.33%; /* 100% / 0.75 to preserve layout width */
+    width: 133.33%;
     overflow-x: hidden;
   }
 }
 
 @media (max-width: 600px) {
-  .tier-column .player-item {
-    font-size: 13px;
-    padding: 6px 10px;
+  #button-container {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
