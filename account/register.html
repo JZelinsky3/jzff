@@ -2,58 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Register - JZ Fantasy Football</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="no-referrer-when-downgrade" />
+  <title>My Account - JZ Fantasy Football</title>
   <link rel="stylesheet" href="account.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
   <main class="auth-container">
-    <h2>Register</h2>
-    <form id="registerForm">
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
+    <h2>My Account</h2>
+    <div id="userInfo">Loading user info...</div>
 
-      <label class="remember-me" for="rememberMe">
-        Remember Me
-        <input type="checkbox" id="rememberMe" />
+    <section id="profileSection" style="margin-top: 20px;">
+      <p><strong>Email:</strong> <span id="email"></span></p>
+      <p><strong>Name:</strong> <span id="displayName"></span></p>
+      <p><strong>Role:</strong> <span id="userRole"></span></p>
+    </section>
+
+    <section id="changePasswordSection" style="margin-top: 30px;">
+      <h3>Change Password</h3>
+      <form id="changePasswordForm">
+        <input type="password" id="newPassword" placeholder="New password" required minlength="6" />
+        <button type="submit" class="button">Update Password</button>
+      </form>
+    </section>
+
+    <section id="preferencesSection" style="margin-top: 30px;">
+      <h3>Preferences</h3>
+      <label>
+        <input type="checkbox" id="notifToggle" />
+        Email Notifications
       </label>
+    </section>
 
-      <button type="submit" class="button">Register</button>
-    </form>
-
-    <button id="googleRegisterBtn" class="button" style="background-color: #4285F4; margin-top: 10px;">
-      Continue with Google
+    <button id="logoutBtn" class="button" style="margin-top: 30px; background-color: #444;">
+      Logout
     </button>
 
-    <p style="margin-top: 8px; font-size: 14px; color: #aaa; cursor: pointer;">
-      <a href="../index.html" id="guestLink">Continue as Guest</a>
-    </p>
-
-    <p style="margin-top: 20px;">
-      Already have an account? <a href="login.html">Login here</a>
-    </p>
-
-    <a href="../index.html" class="button" style="margin-top: 25px; background-color: #444;">
-      Home
+    <a href="../index.html" class="button" style="margin-top: 20px;">
+      Go Back
     </a>
   </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { 
-      getAuth, 
-      setPersistence,
-      browserLocalPersistence,
-      browserSessionPersistence,
-      createUserWithEmailAndPassword,
-      GoogleAuthProvider,
-      signInWithPopup,
-      signInWithRedirect,
+    import {
+      getAuth,
+      onAuthStateChanged,
+      updatePassword,
+      signOut,
       getRedirectResult
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import {
       getFirestore,
       doc,
+      getDoc,
       setDoc
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
@@ -71,66 +74,79 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Handle email/password registration
-    document.getElementById("registerForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const rememberMe = document.getElementById("rememberMe").checked;
+    const userInfoDiv = document.getElementById("userInfo");
+    const emailSpan = document.getElementById("email");
+    const displayNameSpan = document.getElementById("displayName");
+    const userRoleSpan = document.getElementById("userRole");
+    const notifToggle = document.getElementById("notifToggle");
+    const changePasswordForm = document.getElementById("changePasswordForm");
+    const newPasswordInput = document.getElementById("newPassword");
+    const logoutBtn = document.getElementById("logoutBtn");
 
-      try {
-        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        await setDoc(doc(db, "users", user.uid), { role: "member" });
-
-        window.location.href = "account.html";
-      } catch (err) {
-        alert(err.message);
-      }
-    });
-
-    // Handle Google Register with popup-first, fallback to redirect
-    const googleRegisterBtn = document.getElementById("googleRegisterBtn");
-    const provider = new GoogleAuthProvider();
-
-    googleRegisterBtn.addEventListener("click", async () => {
-      try {
-        const result = await signInWithPopup(auth, provider);
+    // Handle redirect result (if user just signed in via redirect)
+    getRedirectResult(auth).then(async (result) => {
+      if (result?.user) {
         const user = result.user;
-
         await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
+      }
+    }).catch(err => {
+      console.error("Redirect login error:", err.message);
+    });
 
-        window.location.href = "account.html";
-      } catch (error) {
-        if (
-          error.code === "auth/popup-blocked" ||
-          error.code === "auth/operation-not-supported-in-this-environment"
-        ) {
-          await signInWithRedirect(auth, provider);
-        } else {
-          alert("Google sign-in failed: " + error.message);
-        }
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      userInfoDiv.textContent = "";
+      emailSpan.textContent = user.email || "(no email)";
+      displayNameSpan.textContent = user.displayName || "(no display name)";
+
+      const savedNotif = localStorage.getItem("notifEnabled");
+      notifToggle.checked = savedNotif === "true";
+
+      // Hide password form for Google users
+      if (user.providerData.some(p => p.providerId === "google.com")) {
+        changePasswordForm.style.display = "none";
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const role = userDoc.exists() ? userDoc.data().role : "guest";
+        userRoleSpan.textContent = role;
+      } catch (err) {
+        console.error("Error fetching role:", err.message);
+        userRoleSpan.textContent = "(unknown)";
       }
     });
 
-    // Handle redirect result (fallback path)
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result) {
-          const user = result.user;
-          await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
-          window.location.href = "account.html";
-        }
-      })
-      .catch((err) => {
-        console.error("Redirect error:", err.message);
-      });
+    notifToggle.addEventListener("change", () => {
+      localStorage.setItem("notifEnabled", notifToggle.checked);
+      alert(`Email notifications ${notifToggle.checked ? "enabled" : "disabled"}.`);
+    });
 
-    // Guest link behavior
-    document.getElementById("guestLink").addEventListener("click", () => {
-      window.location.href = "../index.html";
+    changePasswordForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      const newPass = newPasswordInput.value.trim();
+
+      if (!user) return alert("No user logged in.");
+      if (newPass.length < 6) return alert("Password must be at least 6 characters.");
+
+      try {
+        await updatePassword(user, newPass);
+        alert("Password updated successfully!");
+        newPasswordInput.value = "";
+      } catch (err) {
+        alert("Error updating password: " + err.message);
+      }
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth).then(() => {
+        window.location.href = "login.html";
+      });
     });
   </script>
 </body>
