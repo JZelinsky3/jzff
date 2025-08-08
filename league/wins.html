@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>All Time Win Leaders | PA Milk Society</title>
+  <link rel="stylesheet" href="wins.css" />
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <div class="logo">
+      <img src="pics/pamilk.png" alt="PA Milk Logo" class="logo-img" />
+    </div>
+
+    <h1 class="league-title">PA Milk Society</h1>
+      <nav class="nav-links">
+        <a href="league.html">League Hub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="hero">
+      <h1>🥇 All-Time Win Leaders</h1>
+    </section>
+
+    <section class="features">
+      <div class="card">
+        <table id="winsTable">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Manager</th>
+              <th>Wins</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 PA Milk Society. All rights reserved.</p>
+  </footer>
+
+  <script>
+    fetch('wins.json')
+      .then(res => res.json())
+      .then(data => {
+        const sorted = data.sort((a, b) => b.wins - a.wins);
+        const tbody = document.querySelector('#winsTable tbody');
+        sorted.forEach((entry, index) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td style="text-transform: capitalize;">${entry.manager}</td>
+            <td style="text-align: right;">${entry.wins}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(err => {
+        const tbody = document.querySelector('#winsTable tbody');
+        tbody.innerHTML = `<tr><td colspan="3" class="error">Failed to load win data</td></tr>`;
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
