@@ -2,45 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, user-scalable=yes" />
   <title>JZ Fantasy Football - Player Tiers</title>
 
   <!-- CSS -->
   <link rel="stylesheet" href="tiers.css" />
-
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
-      authDomain: "ffootball-1ffa4.firebaseapp.com",
-      projectId: "ffootball-1ffa4",
-      storageBucket: "ffootball-1ffa4.appspot.com",
-      messagingSenderId: "214820317243",
-      appId: "1:214820317243:web:00907255d3ee230f21541e",
-      measurementId: "G-H9LQY4GWSN"
-    };
-
-    if (!window.firebaseApp) {
-      window.firebaseApp = initializeApp(firebaseConfig);
-      window.db = getFirestore(window.firebaseApp);
-    }
-  </script>
 </head>
 <body>
-  <!-- HEADER / NAV -->
+  <div id="scale-wrapper">
+
   <header class="header">
     <div class="nav-left">
       <a href="../index.html" class="nav-link">Home</a>
-      <a href="../averages/averages.html" class="nav-link">Rankings</a>
-      <a href="../draft/draft.html" class="nav-link">Draft</a>
+      <a href="../averages/averages.html" class="nav-link role-admin-only" style="display: none;">Rankings</a>
+      <a href="../draft/draft.html" class="nav-link role-admin-only" style="display: none;">Draft</a>
     </div>
-    <div class="nav-right dropdown">
+
+    <h1 class="header-title">Tiers</h1>
+
+    <div class="nav-right dropdown role-admin-only" style="display: none;">
       <button class="dropbtn">Positions ▾</button>
       <div class="dropdown-content">
         <a href="../positions/qbs.html">QBs</a>
@@ -52,47 +33,48 @@
   </header>
 
   <main class="main-container">
-    <!-- Player List Panel -->
     <section class="player-list">
       <h1>Player List</h1>
       <ul id="players"></ul>
     </section>
 
-    <!-- Tier Columns Panel -->
-    <section id="tier-container" class="tier-container">
-      <!-- Tier columns will be injected by JS -->
-    </section>
+    <section id="tier-container" class="tier-container"></section>
   </main>
 
-  <!-- Action Buttons -->
-  <div id="button-container">
-    <button id="saveBtn" class="btn save-btn">Save</button>
-    <button id="clearBtn" class="btn clear-btn">Clear</button>
-  </div>
-
-  <!-- Toast Notification -->
   <div id="toast"></div>
 
-  <!-- JS -->
   <script type="module">
-    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    const db = window.db;
+    const firebaseConfig = {
+      apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+      authDomain: "ffootball-1ffa4.firebaseapp.com",
+      projectId: "ffootball-1ffa4",
+      storageBucket: "ffootball-1ffa4.appspot.com",
+      messagingSenderId: "214820317243",
+      appId: "1:214820317243:web:00907255d3ee230f21541e",
+      measurementId: "G-H9LQY4GWSN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth();
+
     const playersList = document.getElementById("players");
     const tierContainer = document.getElementById("tier-container");
     const saveBtn = document.getElementById("saveBtn");
     const clearBtn = document.getElementById("clearBtn");
     const toast = document.getElementById("toast");
-
     const NUM_TIERS = 10;
 
-    // Create Tier Columns dynamically
     function createTiers() {
       for (let i = 1; i <= NUM_TIERS; i++) {
         const tierDiv = document.createElement("div");
         tierDiv.className = "tier-column";
         tierDiv.dataset.tier = i;
-        tierDiv.innerHTML = `<h2>Tier ${i}</h2><ul class="dropzone" aria-label="Tier ${i} dropzone"></ul>`;
+        tierDiv.innerHTML = `<h2>Tier ${i}</h2><ul class="dropzone"></ul>`;
 
         const dropzone = tierDiv.querySelector(".dropzone");
 
@@ -110,15 +92,19 @@
       }
     }
 
-    // Load players from tiers.json (local file)
-    async function loadPlayers() {
+    async function loadPlayers(role = "guest") {
+      const jsonFile = (role === "admin" || role === "master") ? "tiers.json" : "basic.json";
+      const showAdp = (role === "admin" || role === "master");
+
       try {
-        const res = await fetch("tiers.json");
+        const res = await fetch(jsonFile);
         const data = await res.json();
 
         data.forEach(player => {
           const li = document.createElement("li");
-          li.textContent = `${player.name} (${player.position}, ADP: ${player.adp})`;
+          li.textContent = showAdp
+            ? `${player.name} (${player.position}, ADP: ${player.adp})`
+            : `${player.name} (${player.position})`;
           li.id = `player-${player.id || player.name.replace(/\s+/g, "-").toLowerCase()}`;
           li.className = "player-item";
           li.draggable = true;
@@ -134,8 +120,7 @@
       }
     }
 
-    // Save tiers to Firestore
-    async function saveTiers() {
+    async function saveTiers(uid) {
       const result = {};
       const tiers = document.querySelectorAll(".tier-column");
 
@@ -147,20 +132,18 @@
       });
 
       try {
-        await setDoc(doc(db, "tiers", "user1"), result);
+        await setDoc(doc(db, "tiers", uid), result);
         showToast("Tiers saved!");
       } catch (err) {
         showToast("Error saving tiers: " + err.message);
       }
     }
 
-    // Load saved tiers from Firestore
-    async function loadSavedTiers() {
+    async function loadSavedTiers(uid) {
       try {
-        const docSnap = await getDoc(doc(db, "tiers", "user1"));
+        const docSnap = await getDoc(doc(db, "tiers", uid));
         if (docSnap.exists()) {
           const savedData = docSnap.data();
-
           for (const [tierKey, playerList] of Object.entries(savedData)) {
             const tierNum = tierKey.split("_")[1];
             const dropzone = document.querySelector(`.tier-column[data-tier='${tierNum}'] .dropzone`);
@@ -177,41 +160,59 @@
       }
     }
 
-    // Clear tiers and return all players to player list
-    async function clearTiers() {
+    async function clearTiers(uid) {
       const tierPlayers = document.querySelectorAll(".tier-column .dropzone > li");
       tierPlayers.forEach(player => {
         playersList.appendChild(player);
       });
 
       try {
-        await setDoc(doc(db, "tiers", "user1"), {});
+        await setDoc(doc(db, "tiers", uid), {});
         showToast("Tiers cleared!");
       } catch (err) {
         showToast("Error clearing tiers: " + err.message);
       }
     }
 
-    // Show toast notification
     function showToast(message) {
       toast.textContent = message;
       toast.style.visibility = "visible";
       toast.style.opacity = "1";
-
       setTimeout(() => {
         toast.style.opacity = "0";
         toast.style.visibility = "hidden";
       }, 3000);
     }
 
-    // Initialize app
-    (async () => {
+    onAuthStateChanged(auth, async user => {
       createTiers();
-      await loadPlayers();
-      await loadSavedTiers();
-      saveBtn.addEventListener("click", saveTiers);
-      clearBtn.addEventListener("click", clearTiers);
-    })();
+
+      let role = "guest";
+
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        role = userDoc.exists() ? userDoc.data().role : "guest";
+
+        if (role === "admin" || role === "master") {
+          document.querySelectorAll(".role-admin-only").forEach(el => {
+            el.style.display = "flex";
+          });
+        }
+
+        await loadPlayers(role);
+        await loadSavedTiers(user.uid);
+        saveBtn.addEventListener("click", () => saveTiers(user.uid));
+        clearBtn.addEventListener("click", () => clearTiers(user.uid));
+      } else {
+        await loadPlayers(role);
+      }
+    });
   </script>
+  </div>
+
+  <div id="button-container">
+    <button id="saveBtn" class="btn save-btn">Save</button>
+    <button id="clearBtn" class="btn clear-btn">Clear</button>
+  </div>
 </body>
 </html>
