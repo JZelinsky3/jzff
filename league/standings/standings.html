@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2025 Standings | PA Milk Society</title>
+  <link rel="stylesheet" href="standings.css" />
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <div class="logo">
+        <img src="/league/pics/pamilk.png" alt="PA Milk Logo" class="logo-img" />
+      </div>
+
+      <h1 class="page-title">2025 Standings</h1>
+
+      <!-- Hamburger -->
+      <div class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
+        <div></div><div></div><div></div>
+      </div>
+
+      <!-- Dropdown Menu -->
+      <nav class="nav-links" id="navMenu" role="menu" aria-label="Primary">
+        <a href="../league.html" role="menuitem">League Hub</a>
+        <a href="../wins/wins.html" role="menuitem">All-Time Wins</a>
+        <a href="../per-records/pr.html" role="menuitem">Personal Records</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="hero">
+      <h2>Current Season (2025)</h2>
+      <p>Live table of wins, losses, win %, streaks, and more.</p>
+    </section>
+
+    <section class="table-wrap">
+      <table id="standingsTable" class="records-table" aria-label="League Standings">
+        <thead>
+          <tr>
+            <th class="left">#</th>
+            <th class="left">Manager</th>
+            <th class="num">W</th>
+            <th class="num">L</th>
+            <th class="num">Win%</th>
+            <th class="num">PF</th>
+            <th class="num">PA</th>
+            <th class="num">+/−</th>
+            <th class="center">Streak</th>
+            <th class="center">Last 5</th>
+          </tr>
+        </thead>
+        <tbody id="standingsBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 PA Milk Society. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Helper: compute win % and +/- if not provided
+    function pct(w, l) {
+      const total = Number(w) + Number(l);
+      return total ? (Number(w) / total) : 0;
+    }
+
+    // Sort: win% desc, then wins desc, then PF desc, then +/- desc, then name asc
+    function standingsSort(a, b) {
+      const ap = a.winPct ?? pct(a.wins, a.losses);
+      const bp = b.winPct ?? pct(b.wins, b.losses);
+      if (bp !== ap) return bp - ap;
+      if (b.wins !== a.wins) return b.wins - a.wins;
+      if ((b.pf ?? 0) !== (a.pf ?? 0)) return (b.pf ?? 0) - (a.pf ?? 0);
+      const aDiff = (a.pf ?? 0) - (a.pa ?? 0);
+      const bDiff = (b.pf ?? 0) - (b.pa ?? 0);
+      if (bDiff !== aDiff) return bDiff - aDiff;
+      return (a.manager || '').localeCompare(b.manager || '');
+    }
+
+    async function loadStandings() {
+      const res = await fetch('standings.json');
+      const data = await res.json(); // { season: 2025, teams: [...] }
+
+      const teams = Array.isArray(data.teams) ? data.teams.slice() : [];
+      teams.forEach(t => {
+        // Normalize/compute fields
+        t.wins   = Number(t.wins ?? 0);
+        t.losses = Number(t.losses ?? 0);
+        t.pf     = Number(t.pf ?? 0);
+        t.pa     = Number(t.pa ?? 0);
+        t.diff   = ('diff' in t) ? Number(t.diff) : (t.pf - t.pa);
+        t.winPct = ('winPct' in t) ? Number(t.winPct) : pct(t.wins, t.losses);
+      });
+
+      teams.sort(standingsSort);
+
+      const body = document.getElementById('standingsBody');
+      body.innerHTML = '';
+
+      teams.forEach((t, i) => {
+        const tr = document.createElement('tr');
+
+        const pctStr = (t.winPct).toLocaleString(undefined, { style:'percent', minimumFractionDigits:3, maximumFractionDigits:3 });
+        const diffStr = (t.diff >= 0 ? '+' : '') + t.diff;
+
+        tr.innerHTML = `
+          <td class="left rank">${i + 1}</td>
+          <td class="left name"><span class="dot" aria-hidden="true"></span>${t.manager}</td>
+          <td class="num">${t.wins}</td>
+          <td class="num">${t.losses}</td>
+          <td class="num strong">${pctStr}</td>
+          <td class="num">${t.pf.toFixed(1)}</td>
+          <td class="num">${t.pa.toFixed(1)}</td>
+          <td class="num ${t.diff >= 0 ? 'pos' : 'neg'}">${diffStr}</td>
+          <td class="center ${/^W/.test(t.streak||'') ? 'win' : /^L/.test(t.streak||'') ? 'loss' : ''}">${t.streak || '-'}</td>
+          <td class="center">${t.last5 || '-'}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    loadStandings().catch(err => {
+      console.error(err);
+      const body = document.getElementById('standingsBody');
+      body.innerHTML = `<tr><td colspan="10" class="error">Failed to load standings</td></tr>`;
+    });
+
+    // Hamburger toggle
+    const btn = document.getElementById('menuToggle');
+    const menu = document.getElementById('navMenu');
+
+    function toggleMenu() {
+      menu.classList.toggle('show');
+      btn.classList.toggle('active');
+      btn.setAttribute('aria-expanded', menu.classList.contains('show'));
+    }
+
+    btn.addEventListener('click', toggleMenu);
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        if (menu.classList.contains('show')) toggleMenu();
+      }
+    });
+  </script>
+</body>
+</html>

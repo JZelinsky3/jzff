@@ -1,0 +1,163 @@
+/* Header */
+.header {
+  height: 80px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+/* Main Layout */
+.main-content {
+  display: block;
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 120px 20px 40px;
+}
+
+.layout-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 30px;
+}
+
+/* Make the board scrollable and push right edge */
+.board-scroll-wrapper {
+  overflow-x: auto;
+  padding-right: 40px;
+  width: 100%;
+}
+
+.board-scroll-inner {
+  display: flex;
+  align-items: flex-start; /* ✅ prevents sidebar from stretching down */
+  gap: 30px;
+  min-width: 100%;
+}
+
+
+#boardContainer {
+  flex-grow: 1;
+  min-width: 100%;
+  display: block;
+}
+
+/* Draft Table */
+.draft-table {
+  width: 100%;
+  max-width: 1680px;
+  border-collapse: collapse;
+  border: 1px solid #ff4d4d55;
+}
+
+.draft-table thead th,
+.draft-table td {
+  border: 1px solid #ff4d4d55;
+  padding: 14px 18px;
+  text-align: center;
+  height: 50px;
+}
+
+.draft-table thead th {
+  background-color: #2c2c2c;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.round-label {
+  font-weight: bold;
+  background-color: #440000;
+  color: #ff4d4d;
+}
+
+.draft-table tbody tr:nth-child(even) {
+  background-color: #1a1a1a;
+}
+
+.draft-table tbody tr:nth-child(odd) {
+  background-color: #121212;
+}
+
+.highlight-pick {
+  background-color: #ff4d4d;
+  color: #121212;
+  font-weight: bold;
+}
+
+/* Sidebar (smaller and tighter) */
+.sidebar {
+  flex-shrink: 0;
+  width: 180px;
+  background-color: #1a1a1a;
+  padding: 12px 14px;
+  border: 1px solid #2c2c2c;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  font-family: 'Open Sans', sans-serif;
+  color: #ffffff;
+  margin-top: 0;
+}
+
+.sidebar label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #e4e4e4;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.sidebar select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border: 1px solid #3a3a3a;
+  border-radius: 5px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='20,50 70,90 120,50' stroke='%23ff4d4d' stroke-width='20' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.sidebar select:hover {
+  border-color: #ff4d4d;
+  background-color: #232323;
+}
+
+.sidebar select:focus {
+  border-color: #ff4d4d;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.3);
+}
+
+/* Mobile layout: stack table then sidebar */
+@media (max-width: 768px) {
+  .layout-wrapper {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    margin-top: 40px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .sidebar label {
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .sidebar select {
+    font-size: 16px;
+    padding: 12px;
+  }
+}
