@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JZ Fantasy Football</title>
+  <link rel="stylesheet" href="main.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body style="display: none;">
+  <header>
+    <nav class="navbar">
+      <div class="logo">
+        <img src="/2025/pics/jzff.png" alt="JZ Logo" class="logo-img" />
+      </div>
+
+      <div class="nav-links">
+        <a href="/2025/averages/averages.html" class="role-editor role-admin role-master" style="display: none;">Rankings</a>
+        <a href="/2025/draft/board.html">Board</a>
+        <a href="/2025/tiers/tiers.html">Tiers</a>
+        <div class="dropdown" id="draftDropdown">
+          <button class="dropbtn role-editor role-admin role-master" style="display: none;">Draft ▾</button>
+          <div class="dropdown-content">
+            <a href="/2025/draft/draft.html">Overview</a>
+            <a href="/2025/draft/available.html">Strategy</a>
+            <a href="/2025/draft/board.html">Board</a>
+          </div>
+        </div>
+        <div class="dropdown" id="positionsDropdown">
+          <button class="dropbtn role-editor role-admin role-master" style="display: none;">Positions ▾</button>
+          <div class="dropdown-content">
+            <a href="/2025/positions/qbs.html">QB</a>
+            <a href="/2025/positions/rbs.html">RB</a>
+            <a href="/2025/positions/wrs.html">WR</a>
+            <a href="/2025/positions/tes.html">TE</a>
+          </div>
+        </div>
+        <div class="dropdown" id="accountDropdown">
+          <a href="#" id="accountLink" class="dropbtn">Account ▾</a>
+          <div class="dropdown-content" id="accountDropdownContent">
+            <a href="./account/register.html" id="registerLink">Register</a>
+            <a href="./account/login.html" id="loginLink">Login</a>
+            <a href="./account/account.html" id="accountDetailsLink" style="display: none;">My Account</a>
+            <a href="#" id="logoutBtn" style="display: none;">Logout</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Welcome to JZ Fantasy Football</h1>
+    <p>The sharpest tools for winning your league.</p>
+  </section>
+
+  <section class="features">
+    <div class="card">
+      <h2>📋 Draft Board</h2>
+      <p>View the full draft layout across all 15 rounds with your highlighted picks.</p>
+      <a href="/2025/draft/board.html" class="button">Open Board</a>
+    </div>
+    <div class="card">
+      <h2>Tiered Rankings</h2>
+      <p>Navigate your draft with confidence using smart, updated tiers.</p>
+      <a href="/2025/tiers/tiers.html" class="button">Explore Tiers</a>
+    </div>
+    <div class="card role-editor role-admin role-master" style="display: none;">
+      <h2>Custom Rankings</h2>
+      <p>Create, edit, and share your own custom rankings lists.</p>
+      <a href="/2025/averages/averages.html" class="button">View Rankings</a>
+    </div>
+    <div class="card role-editor role-admin role-master" style="display: none;">
+      <h2>Positional Previews</h2>
+      <p>Get insights on every key position for the 2025 season.</p>
+      <a href="/2025/positions/qbs.html" class="button">QB Rankings</a>
+    </div>
+  </section>
+
+  <section class="league-section">
+  <div class="league-container">
+    <h2>🏆 PA Milk Society</h2>
+    <p>Track your league activity, scores, trades, and more.</p>
+    <a href="./league/league.html" class="league-button">Enter League Hub</a>
+  </div>
+</section>
+
+
+  <footer>
+    <p>© 2025 JZ Fantasy Football. All rights reserved.</p>
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+      authDomain: "ffootball-1ffa4.firebaseapp.com",
+      projectId: "ffootball-1ffa4",
+      storageBucket: "ffootball-1ffa4.appspot.com",
+      messagingSenderId: "214820317243",
+      appId: "1:214820317243:web:00907255d3ee230f21541e",
+      measurementId: "G-H9LQY4GWSN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const accountLink = document.getElementById("accountLink");
+    const loginLink = document.getElementById("loginLink");
+    const registerLink = document.getElementById("registerLink");
+    const accountDetailsLink = document.getElementById("accountDetailsLink");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    onAuthStateChanged(auth, async (user) => {
+      document.body.style.display = "block";
+
+      if (!user) {
+        accountLink.href = "javascript:void(0)";
+        loginLink.style.display = "block";
+        registerLink.style.display = "block";
+        accountDetailsLink.style.display = "none";
+        logoutBtn.style.display = "none";
+        return;
+      }
+
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+      const role = docSnap.exists() ? docSnap.data().role : "guest";
+
+      localStorage.setItem("userRole", role);
+      accountLink.href = "./account/account.html";
+      loginLink.style.display = "none";
+      registerLink.style.display = "none";
+      accountDetailsLink.style.display = "block";
+      logoutBtn.style.display = "block";
+
+      // Role-based display
+      if (["member", "editor", "admin", "master"].includes(role)) {
+        document.querySelectorAll(".role-member").forEach(el => el.style.display = "block");
+      }
+      if (["editor", "admin", "master"].includes(role)) {
+        document.querySelectorAll(".role-editor").forEach(el => el.style.display = "block");
+      }
+      if (["admin", "master"].includes(role)) {
+        document.querySelectorAll(".role-admin").forEach(el => el.style.display = "block");
+      }
+      if (role === "master") {
+        document.querySelectorAll(".role-master").forEach(el => el.style.display = "block");
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      localStorage.clear();
+      window.location.href = "./account/login.html";
+    });
+  </script>
+</body>
+</html>

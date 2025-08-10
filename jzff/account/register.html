@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Register - JZ Fantasy Football</title>
+  <link rel="stylesheet" href="account.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body style="display: none;">
+  <main class="auth-container">
+    <h2>Register</h2>
+    <form id="registerForm">
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <label class="remember-me" for="rememberMe">
+        Remember Me
+        <input type="checkbox" id="rememberMe" />
+      </label>
+      <button type="submit" class="button">Register</button>
+    </form>
+
+    <button id="googleRegisterBtn" class="button" style="background-color: #4285F4; margin-top: 10px;">
+      Continue with Google
+    </button>
+
+    <p style="margin-top: 8px; font-size: 14px; color: #aaa; cursor: pointer;">
+      <a href="../index.html" id="guestLink">Continue as Guest</a>
+    </p>
+
+    <p style="margin-top: 20px;">
+      Already have an account? <a href="login.html">Login here</a>
+    </p>
+
+    <a href="../index.html" class="button" style="margin-top: 25px; background-color: #444;">
+      Home
+    </a>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getAuth,
+      setPersistence,
+      browserLocalPersistence,
+      browserSessionPersistence,
+      createUserWithEmailAndPassword,
+      onAuthStateChanged,
+      GoogleAuthProvider,
+      signInWithPopup,
+      getRedirectResult
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+      authDomain: "ffootball-1ffa4.firebaseapp.com",
+      projectId: "ffootball-1ffa4",
+      storageBucket: "ffootball-1ffa4.appspot.com",
+      messagingSenderId: "214820317243",
+      appId: "1:214820317243:web:00907255d3ee230f21541e",
+      measurementId: "G-H9LQY4GWSN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        window.location.href = "../index.html";
+      } else {
+        document.body.style.display = "block";
+      }
+    });
+
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const rememberMe = document.getElementById("rememberMe").checked;
+
+      try {
+        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        await setDoc(doc(db, "users", user.uid), {
+          role: "member"
+        });
+
+        window.location.href = "../index.html";
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    const googleRegisterBtn = document.getElementById("googleRegisterBtn");
+    const provider = new GoogleAuthProvider();
+
+    googleRegisterBtn.addEventListener("click", async () => {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        await setDoc(doc(db, "users", user.uid), {
+          role: "member"
+        }, { merge: true });
+
+        window.location.href = "../index.html";
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result) {
+          const user = result.user;
+          await setDoc(doc(db, "users", user.uid), { role: "member" }, { merge: true });
+          window.location.href = "../index.html";
+        }
+      })
+      .catch(err => console.error("Google Redirect Error:", err));
+  </script>
+</body>
+</html>

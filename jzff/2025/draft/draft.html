@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fantasy Football Draft Board</title>
+  <link rel="stylesheet" href="draft.css" />
+</head>
+<body>
+
+  <!-- Header / Navigation -->
+  <header class="header">
+    <div class="nav-left">
+      <a href="../index.html" class="nav-link">Home</a>
+      <a href="../averages/averages.html" class="nav-link">Ranking</a>
+      
+      <div class="dropdown">
+        <button class="dropbtn">Draft</button>
+          <div class="dropdown-content">
+            <a href="/draft/available.html">Strategy</a>
+            <a href="/draft/board.html">Board</a>
+          </div>
+        </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Positions</button>
+        <div class="dropdown-content">
+          <a href="../positions/qbs.html">Quarterbacks</a>
+          <a href="../positions/rbs.html">Runningbacks</a>
+          <a href="../positions/wrs.html">Wide Receivers</a>
+          <a href="../positions/tes.html">Tight Ends</a>
+        </div>
+      </div>
+    </div>
+    <div class="nav-center">
+      <h1 class="site-title">Draft Board</h1>
+    </div>
+    <div class="nav-right">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by name..." />
+      </div>
+    </div>
+  </header>
+
+  <!-- Draft Tables -->
+  <main class="main-content">
+    <div id="draftTablesContainer"></div>
+  </main>
+
+  <script>
+    fetch('draft.json')
+      .then(response => response.json())
+      .then(players => {
+        const container = document.getElementById("draftTablesContainer");
+        const rounds = {};
+
+        players.forEach(player => {
+          const round = parseInt(player.pick.split(".")[0]);
+          if (!rounds[round]) rounds[round] = [];
+          rounds[round].push(player);
+        });
+
+        for (let round = 1; round <= 5; round++) {
+          if (!rounds[round]) continue;
+
+          const table = document.createElement("table");
+          table.classList.add("draft-table");
+
+          const thead = document.createElement("thead");
+
+// Round label row aligned with Name column
+const roundLabelRow = document.createElement("tr");
+roundLabelRow.innerHTML = `
+  <th></th>
+  <th class="round-label" colspan="1">Round ${round}</th>
+  <th></th>
+`;
+
+// Column header row
+const headerRow = document.createElement("tr");
+headerRow.innerHTML = `
+  <th>Pick</th>
+  <th>Name</th>
+  <th>Position</th>
+`;
+
+thead.appendChild(roundLabelRow);
+thead.appendChild(headerRow);
+table.appendChild(thead);
+
+
+          const tbody = document.createElement("tbody");
+          rounds[round].forEach(player => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${player.pick}</td>
+              <td>${player.name}</td>
+              <td>${player.position}</td>
+            `;
+            tbody.appendChild(row);
+          });
+          table.appendChild(tbody);
+          container.appendChild(table);
+        }
+
+        // Search filtering
+        document.getElementById("searchInput").addEventListener("input", function () {
+          const filter = this.value.toLowerCase();
+          const rows = document.querySelectorAll(".draft-table tbody tr");
+          rows.forEach(row => {
+            const name = row.cells[1].textContent.toLowerCase();
+            row.style.display = name.includes(filter) ? "" : "none";
+          });
+        });
+      });
+  </script>
+</body>
+</html>

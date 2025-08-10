@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>League Hub | JZ Fantasy Football</title>
+  <link rel="stylesheet" href="league.css" />
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <div class="logo">
+      <a href="../index.html">
+        <img src="pics/pamilk.png" alt="JZ Fantasy Logo" class="logo-img" />
+      </a>
+      </div>
+      <nav class="nav-links">
+        <a href="../index.html">Home</a>
+        <a href="standings/standings.html">Standings</a>
+        <a href="wins/wins.html">All-Time Wins</a>
+        <a href="per-records/pr.html">Personal Records</a>
+        <a href="players/players.html">Managers</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="hero">
+      <h1>🏆 PA Milk Society</h1>
+      <p class="league-desc">Welcome to the command center for your personal fantasy football league.</p>
+    </section>
+
+    <section class="features">
+      <div class="card">
+        <h2>📅 Schedule</h2>
+        <p>Weekly matchups and game dates.</p>
+      </div>
+
+      <div class="card">
+        <h2>📈 Standings</h2>
+        <p>Track league rankings, win/loss records, and more.</p>
+        <a href="standings/standings.html" class="button">Standings  →</a>
+      </div>
+
+      <div class="card">
+        <h2>🥇 All-Time Wins</h2>
+        <p>See the winningest managers in league history.</p>
+        <a href="wins/wins.html" class="button">View Leaders →</a>
+      </div>
+
+      <div class="card">
+        <h2>📊 All-Time Personal Records</h2>
+        <p>Head-to-head records between every manager in league history.</p>
+        <a href="per-records/pr.html" class="button">View Records →</a>
+      </div>
+
+      <div class="card">
+        <h2>📋 Locker Room</h2>
+        <p>View all 12 league managers, their records, playoff history, and trophies in one place.</p>
+        <a href="players/players.html" class="button">View Players →</a>
+      </div>
+
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 JZ Fantasy Football. All rights reserved.</p>
+  </footer>
+</body>
+</html>
+
+
+<script>
+  // Filter logic for pillbar
+  const pills = document.querySelectorAll('.pillbar .pill');
+  const cards = document.querySelectorAll('.grid-cards .card');
+
+  function applyFilter(filter) {
+    cards.forEach(card => {
+      if (filter === 'all') { card.style.display = ''; return; }
+      const cats = (card.getAttribute('data-cat') || '').split(/\s+/);
+      card.style.display = cats.includes(filter) ? '' : 'none';
+    });
+  }
+
+  pills.forEach(p => {
+    p.addEventListener('click', () => {
+      pills.forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      applyFilter(p.dataset.filter);
+    });
+  });
+</script>
