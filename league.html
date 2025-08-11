@@ -1,0 +1,193 @@
+<!-- league.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PA Milk Society League Hub</title>
+  <link rel="stylesheet" href="league.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <header>
+  <div class="navbar">
+    <div class="logo">
+      <a href="../league.html">
+        <img src="/league/pics/players.png" alt="PA Milk Logo" class="logo-img" />
+      </a>
+    </div>
+
+    <h1 class="page-title">League Hub</h1>
+
+    <!-- Hamburger -->
+    <div class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
+      <div></div><div></div><div></div>
+    </div>
+
+    <!-- Dropdown Menu -->
+    <nav class="nav-links" id="navMenu" role="menu" aria-label="Primary">
+      <a href="standings/standings.html" role="menuitem">Standings</a>
+      <a href="wins/wins.html" role="menuitem">All-Time Wins</a>
+      <a href="per-records/pr.html" role="menuitem">Personal Records</a>
+      <a href="players/players.html" role="menuitem">Managers</a>
+    </nav>
+  </div>
+</header>
+
+
+  <!-- Football field dashboard -->
+  <main class="field container">
+    <!-- Left: Past Champ -->
+    <section class="endzone left" aria-labelledby="pastChampTitle">
+      <div class="champ-card" id="champCard">
+        <h3 id="pastChampTitle">Past Champs</h3>
+        <div class="champ-body" id="champBody"><p>Loading…</p></div>
+      </div>
+    </section>
+
+    <!-- Middle: links with buttons -->
+    <section class="midfield" aria-label="League shortcuts">
+      <!-- yard lines and numbers live only over midfield so they start after endzones -->
+      <div class="mid-overlay" aria-hidden="true">
+        <div class="numbers top">
+          <span>10</span><span>20</span><span>30</span><span>40</span><span>50</span>
+          <span>40</span><span>30</span><span>20</span><span>10</span>
+        </div>
+        <div class="numbers bottom">
+          <span>10</span><span>20</span><span>30</span><span>40</span><span>50</span>
+          <span>40</span><span>30</span><span>20</span><span>10</span>
+        </div>
+      </div>
+
+      <div class="score-strip">
+        <span class="title">PA Milk Society</span>
+        <span class="subtitle">League Command Center</span>
+      </div>
+
+      <div class="links-row">
+        <div class="card">
+          <h3>All Time Wins</h3>
+          <p>Who stacks the most W's</p>
+          <a class="button" href="wins/wins.html">View Leaders</a>
+        </div>
+        <div class="card">
+          <h3>Personal Records</h3>
+          <p>Head to Head history</p>
+          <a class="button" href="per-records/pr.html">View Records</a>
+        </div>
+        <div class="card">
+          <h3>Members</h3>
+          <p>Profiles, trophies, and more</p>
+          <a class="button" href="players/players.html">View Members</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: standings table only -->
+    <section class="sideline right" aria-labelledby="standingsTitle">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 id="standingsTitle">Current Standings</h2>
+          <a class="mini" href="standings/standings.html">Full Page</a>
+        </div>
+        <div class="table-wrap">
+          <table class="standings-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Manager</th>
+                <th>W</th>
+                <th>L</th>
+              </tr>
+            </thead>
+            <tbody id="standingsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 JZ Fantasy Football. All rights reserved.</p>
+  </footer>
+
+  <script>
+    async function loadChamp() {
+  try {
+    const res = await fetch('champ.json');
+    const champs = await res.json(); // array now
+
+    const champHTML = champs.map(c => {
+      const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+        .format(c.earnings || 0);
+      const rings = c.championships > 1
+        ? `🏆 ×${c.championships}`
+        : (c.championships ? '🏆' : '');
+
+      return `
+        <div class="champ-card">
+          <div class="champ-header">
+            <span class="champ-year">${c.year}</span>
+            <span class="champ-name">${c.name}</span>
+            ${rings ? `<span class="champ-trophy">${rings}</span>` : ''}
+          </div>
+          <div class="champ-meta">
+            <span class="chip">Final ${c.finalRecord}</span>
+            <span class="chip">${money}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('champBody').innerHTML = champHTML;
+  } catch {
+    document.getElementById('champBody').innerHTML = '<p>Could not load champs</p>';
+  }
+}
+
+
+    async function loadStandings() {
+      try {
+        const res = await fetch('standings/standings.json');
+        const data = await res.json();
+        const sorted = data.teams.slice().sort((a, b) => {
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          if (b.pf !== a.pf) return b.pf - a.pf;
+          return a.manager.localeCompare(b.manager);
+        });
+        document.getElementById('standingsBody').innerHTML = sorted.map((t, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${t.manager}</td>
+            <td>${t.wins}</td>
+            <td>${t.losses}</td>
+          </tr>`).join('');
+      } catch {
+        document.getElementById('standingsBody').innerHTML =
+          '<tr><td colspan="7" style="text-align:center">Failed to load standings</td></tr>';
+      }
+    }
+
+    loadChamp();
+    loadStandings();
+  </script>
+
+  <script>
+  const btn = document.getElementById('menuToggle');
+  const menu = document.getElementById('navMenu');
+
+  function toggleMenu() {
+    menu.classList.toggle('show');
+    btn.classList.toggle('active');
+    btn.setAttribute('aria-expanded', menu.classList.contains('show'));
+  }
+
+  btn.addEventListener('click', toggleMenu);
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      if (menu.classList.contains('show')) toggleMenu();
+    }
+  });
+</script>
+
+</body>
+</html>
