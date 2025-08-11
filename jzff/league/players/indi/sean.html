@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sean | Locker Room</title>
+
+  <!-- Smooth condensed numerals for jersey numbers -->
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../players.css" />
+  <link rel="stylesheet" href="all.css" />
+
+  <!-- Small overrides requested: sleeves wider out + extra gap between team and number -->
+  <style>
+    /* start sleeves a bit farther out */
+    .jersey.gridiron::before{ left:-22%; width:32%; }
+    .jersey.gridiron::after{  right:-22%; width:32%; }
+
+    /* add a little gap between team and number */
+    .jersey.gridiron .team{ top: 25%; }  /* was ~26-27% */
+    .jersey.gridiron .num { top: 50%; }  /* was ~46% */
+  </style>
+</head>
+<body>
+  <header>
+    <div class="navbar" style="gap:14px">
+      <a href="../players.html" class="back-link">← All Managers</a>
+      <h1 class="page-title">Sean Locker</h1>
+      <div style="width:82px"></div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="locker-layout" aria-label="Locker layout">
+      <!-- Left column -->
+      <aside class="panel" id="leftCol">
+        <h2>Profile and Toals</h2>
+
+        <div class="stat" aria-live="polite">
+          <p class="sub">All-Time Record</p>
+          <p class="big" id="allTimeWL">—</p>
+          <p class="sub" id="winPct">Win Percent —</p>
+        </div>
+
+        <div class="row">
+          <div class="stat">
+            <p class="sub">Playoff Appearances</p>
+            <p class="big" id="poApps">—</p>
+          </div>
+          <div class="stat">
+            <p class="sub">Playoff Record</p>
+            <p class="big" id="poWL">—</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="stat">
+            <p class="sub">Top 3 Finishes</p>
+            <p class="big" id="top3">—</p>
+          </div>
+          <div class="stat">
+            <p class="sub">Championships</p>
+            <p class="big" id="titles">—</p>
+          </div>
+        </div>
+
+        <div class="stat">
+          <p class="sub">Current Season Snapshot</p>
+          <p class="big" id="thisSeasonWL">—</p>
+          <p class="sub" id="thisSeasonEtc">PF — • PA —</p>
+        </div>
+
+        <div class="panel" style="margin-top:12px">
+          <h2>Quick Chips</h2>
+          <div class="meta" id="chips" style="margin-top:6px"></div>
+        </div>
+      </aside>
+
+      <!-- Center column: trophy case only -->
+      <section class="panel locker" id="centerCol" aria-label="Trophy case">
+        <div class="locker-header">
+          <div class="nameplate">
+            <div class="avatar" data-initial="J"></div>
+            <span>Sean</span>
+          </div>
+          <div class="chip" id="titleChip" title="Championships">🏆 0</div>
+        </div>
+
+        <div class="locker-body">
+          <div class="trophy-case">
+            <h3>Trophy Case</h3>
+            <div class="shelf" id="trophyShelf">
+              <div class="slot"><img src="pics/trophy.png" alt="Trophy"></div>
+              <div class="slot empty"></div>
+              <div class="slot empty"></div>
+              <div class="slot empty"></div>
+              <div class="slot empty"></div>
+              <div class="slot empty"></div>
+              <div class="slot empty"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right column: head to head -->
+      <aside class="panel" id="rightCol">
+        <h2>Head to Head</h2>
+        <div class="stat" style="margin-bottom:14px">
+          <p class="sub">Career versus league managers</p>
+          <p class="sub" id="h2hSummary">Loading…</p>
+        </div>
+
+        <div class="panel" style="padding:0">
+          <table aria-label="Head to head table">
+            <thead>
+              <tr>
+                <th>Opponent</th>
+                <th style="text-align:right">Record</th>
+              </tr>
+            </thead>
+            <tbody id="h2hBody"></tbody>
+          </table>
+        </div>
+      </aside>
+
+      <!-- Full width seasons jersey wall -->
+      <section class="panel jersey-wall" id="jerseyWall" aria-label="Seasons jersey wall">
+        <h2>Seasons Wall</h2>
+        <div class="frame">
+          <div class="locker-grid" id="lockerGrid" style="--bays: 1"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 PA Milk Society. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // ---------- helpers ----------
+    const fmtPct = (w,l) => {
+      const t = (w||0) + (l||0);
+      if (!t) return "0.000";
+      return (w / t).toFixed(3);
+    };
+    const indexBy = (arr, key="manager") =>
+      Object.fromEntries((arr||[]).map(r => [String(r?.[key]||"").toLowerCase(), r]));
+
+    async function fetchFirst(paths){
+      for (const p of paths){
+        try{
+          const res = await fetch(p, { cache: "no-store" });
+          if (res.ok) return res.json();
+        }catch(e){}
+      }
+      throw new Error("Failed to load any of: " + paths.join(", "));
+    }
+
+    // --- record helpers (force W-L with a dash) ---
+    const dash = (w, l) => `${(w ?? 0)}-${(l ?? 0)}`;
+    const normalizeRecord = (val) => {
+      if (val == null) return "";
+      const s = String(val).trim();
+      const m = s.match(/(\d+)\s*[-–—:\/ ]\s*(\d+)/); // common separators
+      if (m) return `${m[1]}-${m[2]}`;
+      const m2 = s.match(/(\d+)\D+(\d+)/); // fallback
+      return m2 ? `${m2[1]}-${m2[2]}` : s;
+    };
+
+    // flexible paths
+    const PATHS = {
+      winsAll:   ["../winsall.json", "../../winsall.json", "/winsall.json"],
+      playoffs:  ["../playoffs.json", "../../playoffs.json", "/playoffs.json"],
+      standings: ["../standings.json", "../../standings/standings.json", "/standings.json"],
+      pr:        ["../pr.json", "../../per-records/pr.json", "/pr.json"],
+      team:      ["team.json", "./team.json", "../indi/team.json"]
+    };
+
+    const COLOR_PRESETS = [
+      { base:"#0ea5e9", dark:"#073b63", stripe1:"#ffffff", stripe2:"#073b63", num:"#ffffff", outline:"#101218" },
+      { base:"#10b981", dark:"#065f46", stripe1:"#d1fae5", stripe2:"#064e3b", num:"#ffffff", outline:"#0b1e16" },
+      { base:"#f59e0b", dark:"#92400e", stripe1:"#fff7ed", stripe2:"#7c2d12", num:"#ffffff", outline:"#3b1a05" },
+      { base:"#ef4444", dark:"#7f1d1d", stripe1:"#fee2e2", stripe2:"#7f1d1d", num:"#ffffff", outline:"#330909" },
+      { base:"#8b5cf6", dark:"#4c1d95", stripe1:"#ede9fe", stripe2:"#4c1d95", num:"#ffffff", outline:"#24104a" },
+      { base:"#06b6d4", dark:"#0e7490", stripe1:"#cffafe", stripe2:"#155e75", num:"#ffffff", outline:"#073344" },
+      { base:"#f97316", dark:"#7c2d12", stripe1:"#ffedd5", stripe2:"#7c2d12", num:"#ffffff", outline:"#3a1406" },
+      { base:"#22c55e", dark:"#14532d", stripe1:"#dcfce7", stripe2:"#14532d", num:"#ffffff", outline:"#0b2b18" }
+    ];
+
+    function makeJerseyBay(season, presetIndex){
+      const bay = document.createElement("div");
+      bay.className = "bay";
+
+      // top cubby with year
+      const top = document.createElement("div");
+      top.className = "top-shelf";
+      top.innerHTML = `<div class="cubby"><div class="year">${season.year ?? ""}</div></div>`;
+
+      // hanging zone
+      const center = document.createElement("div");
+      center.className = "hang-area";
+      center.innerHTML = `<div class="rod"></div><div class="hanger"></div>`;
+
+      // jersey element
+      const jersey = document.createElement("div");
+      jersey.className = "jersey gridiron";
+      jersey.style.setProperty("--j-w","116px");
+      jersey.style.setProperty("--j-h","150px");
+
+      const c = season.colors || COLOR_PRESETS[presetIndex % COLOR_PRESETS.length];
+      jersey.style.setProperty("--base", c.base);
+      jersey.style.setProperty("--dark", c.dark);
+      jersey.style.setProperty("--stripe1", c.stripe1);
+      jersey.style.setProperty("--stripe2", c.stripe2);
+      jersey.style.setProperty("--num", c.num);
+      jersey.style.setProperty("--outline", c.outline);
+
+      jersey.innerHTML = `
+        <span class="torso"></span>
+        <span class="collar"></span>
+        <span class="team">${String(season.team || "")}</span>
+        <span class="num">${season.rank ?? ""}</span>
+      `;
+      center.appendChild(jersey);
+
+      const teamEl = jersey.querySelector(".team");
+        // Option A: hardcode just this name
+        if (/^on jah$/i.test(String(season.team || ""))) {
+            teamEl.classList.add("one-line");
+        }
+
+        // (Optional) Option B: data-driven — if you add "oneLine": true in team.json for any season
+        if (season.oneLine) {
+            teamEl.classList.add("one-line");
+        }
+
+
+      // bottom plaque with normalized record
+      const bottom = document.createElement("div");
+      bottom.className = "bottom-shelf";
+      bottom.innerHTML = `<div class="plaque">Record ${normalizeRecord(season.record) || "N/A"}</div>`;
+
+      bay.append(top, center, bottom);
+      return bay;
+    }
+
+    async function loadPage(){
+      const [winsAllData, playoffsData, standingsData, prData, teamData] = await Promise.all([
+        fetchFirst(PATHS.winsAll),
+        fetchFirst(PATHS.playoffs),
+        fetchFirst(PATHS.standings),
+        fetchFirst(PATHS.pr),
+        fetchFirst(PATHS.team)
+      ]);
+
+      // indexes
+      const winsAllIdx = indexBy(winsAllData);
+      const poIdx      = indexBy(playoffsData);
+      const sean = winsAllIdx["sean"] || { manager:"Sean", wins:0, losses:0 };
+      const po   = poIdx["sean"] || { appearances:0, playoff_wl:"0-0", top3:0, championships:0 };
+
+      // left column (normalized dashes)
+      document.getElementById("allTimeWL").textContent = dash(sean.wins, sean.losses);
+      document.getElementById("winPct").textContent    = `Win Percent ${fmtPct(sean.wins, sean.losses)}`;
+
+      const [pW=0, pL=0] = normalizeRecord(po.playoff_wl || "0-0").split("-").map(n=>parseInt(n||0,10));
+      document.getElementById("poApps").textContent = po.appearances ?? 0;
+      document.getElementById("poWL").textContent   = dash(pW, pL);
+      document.getElementById("top3").textContent   = po.top3 ?? 0;
+      document.getElementById("titles").textContent = po.championships ?? 0;
+      document.getElementById("titleChip").textContent = `🏆 ${po.championships ?? 0}`;
+
+      // current season snapshot
+      const team = (standingsData?.teams||[]).find(t => String(t.manager).toLowerCase() === "sean");
+      if (team){
+        document.getElementById("thisSeasonWL").textContent = dash(team.wins, team.losses);
+        document.getElementById("thisSeasonEtc").textContent = `PF ${team.pf} • PA ${team.pa}`;
+      }
+
+      // quick chips
+const chips = document.getElementById("chips");
+chips.innerHTML = "";
+
+const addChip = (label, cls = "") => {
+  const s = document.createElement("span");
+  s.className = "chip" + (cls ? " " + cls : "");
+  s.textContent = label;
+  chips.appendChild(s);
+};
+
+const pf = Number(sean.points_for ?? 0);
+const pa = Number(sean.points_against ?? 0);
+const diff = Number(sean.difference ?? 0);
+const wstreak = sean.wstreak ?? 0;
+
+addChip(`PF: ${pf.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+addChip(`PA: ${pa.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+addChip(`Diff: ${diff.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, diff > 0 ? "green" : diff < 0 ? "red" : "");
+addChip(`Win Streak: ${wstreak}`);
+
+      // right column head to head
+      const mgrList = prData?.managers || [];
+      const rows    = prData?.records || [];
+      const iSean   = mgrList.findIndex(n => String(n).toLowerCase() === "sean");
+      const myRows  = iSean >= 0 ? (rows[iSean]||[]) : [];
+
+      const leagueSet = new Set(["Andrew","Charlie","Chris","Connie","Connor","Evan","Isaac","Joey","Kyle","Luke","Mason","Sean"].map(s=>s.toLowerCase()));
+      const tbody = document.getElementById("h2hBody");
+      tbody.innerHTML = "";
+
+      let tw = 0, tl = 0;
+      myRows.forEach(line => {
+        const parts = String(line).split(" ");
+        const opp = parts.slice(0, -1).join(" ");
+        const rec = parts.at(-1) || "0-0";
+        const [w=0, l=0] = normalizeRecord(rec).split("-").map(x=>parseInt(x||0,10));
+        const k = opp.toLowerCase();
+        if (!leagueSet.has(k) || k === "sean") return;
+
+        tw += w; tl += l;
+
+        const tr = document.createElement("tr");
+        const tdA = document.createElement("td");
+        const tdB = document.createElement("td");
+        tdA.textContent = opp;
+        tdB.textContent = normalizeRecord(rec);
+        tdB.style.textAlign = "right";
+        tdB.className = (w >= l) ? "greenish" : "reddish";
+        tr.append(tdA, tdB);
+        tbody.appendChild(tr);
+      });
+      document.getElementById("h2hSummary").textContent = `Total vs league ${dash(tw, tl)}`;
+
+      // seasons jersey wall
+      const mgrName = (document.querySelector('.nameplate span')?.textContent || 'Isaac').trim();
+const entry = (teamData?.managers || []).find(m =>
+  String(m.manager).toLowerCase() === mgrName.toLowerCase()
+);
+const seasons = Array.isArray(entry?.seasons) ? entry.seasons : [];
+
+      const grid = document.getElementById("lockerGrid");
+      const bays = Math.max(1, seasons.length);
+      grid.style.setProperty("--bays", bays);
+      grid.innerHTML = "";
+      seasons.forEach((s, i) => grid.appendChild(makeJerseyBay(s, i)));
+
+      // --- Auto-resize team names (wrap to max 2 lines) ---
+document.querySelectorAll('.jersey.gridiron .team').forEach(el => {
+  // ensure wrapping is allowed (in case CSS didn't load yet)
+  el.style.whiteSpace = 'normal';
+  el.style.wordBreak = 'keep-all';
+  el.style.lineHeight = '1.05';
+  el.style.textAlign = 'center';
+
+  const containerWidth = el.offsetWidth;
+
+  // Start a bit larger; we’ll shrink as needed
+  let fontSize = 16; // px, tweak if your base is different
+  el.style.fontSize = fontSize + 'px';
+
+  // Helper to compute max allowed height for 2 lines
+  const twoLineMax = () => {
+    const lh = parseFloat(getComputedStyle(el).lineHeight);
+    return (isNaN(lh) ? fontSize * 1.05 : lh) * 2 + 0.5; // small cushion
+  };
+
+  // Shrink until it fits within width and two lines
+  // guard against infinite loops with a floor
+  while ((el.scrollWidth > containerWidth || el.scrollHeight > twoLineMax()) && fontSize > 6) {
+    fontSize -= 0.5;
+    el.style.fontSize = fontSize + 'px';
+  }
+});
+
+    }
+
+    loadPage().catch(err => {
+      console.error(err);
+      document.getElementById("h2hSummary").textContent = "Failed to load data.";
+    });
+  </script>
+</body>
+</html>

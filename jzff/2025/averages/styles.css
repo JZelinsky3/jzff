@@ -1,0 +1,435 @@
+/* General body layout */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #2b2b2b;
+  color: white;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Home button */
+.home-button {
+  position: fixed;
+  top: 0;
+  left: 20px;
+  height: 80px;
+  line-height: 80px;
+  color: #ffffff;
+  background-color: transparent;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 18px;
+  z-index: 102;
+  padding: 0 10px;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.home-button:hover {
+  background-color: #555;
+  color: #ff4d4d;
+  border-radius: 8px;
+}
+
+.draft-button {
+  margin-left: 71px;
+}
+
+/* Dropdown container */
+.dropdown {
+  position: fixed;
+  top: 0;
+  left: 155px; /* adjust based on how far you want it from the left */
+  height: 80px;
+  z-index: 102;
+  display: flex;
+  align-items: center;
+}
+
+/* Dropdown button */
+.dropbtn {
+  background-color: transparent;
+  color: #ffffff;
+  padding: 0 10px;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  height: 80px;
+  line-height: 80px;
+  font-family: inherit;
+}
+
+.dropbtn:hover {
+  color: #ff4d4d;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+}
+
+/* Draft dropdown position */
+.draft-dropdown {
+  position: fixed;
+  top: 0;
+  left: 230px; /* Adjust so it's next to Positions dropdown */
+  height: 80px;
+  z-index: 102;
+  display: flex;
+  align-items: center;
+  margin-left: -63px;
+}
+
+/* Dropdown content (hidden by default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 80px;
+  left: 0;
+  background-color: #2b2b2b;
+  min-width: 120px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+  z-index: 103;
+  border-radius: 8px;
+}
+
+/* Dropdown links */
+.dropdown-content a {
+  color: white;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  font-size: 16px;
+}
+
+/* Hover states */
+.dropdown-content a:hover {
+  background-color: #444;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown:hover .dropbtn {
+  background-color: #555;
+}
+
+/* Header background bar */
+.header-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 80px;
+  width: 100%;
+  background-color: #2b2b2b;
+  z-index: 90;
+  border-bottom: 2px solid #ffffff;
+}
+
+/* Scrollable container */
+.scroll-container {
+  flex-grow: 1;
+  overflow: auto;
+  position: relative;
+  padding-top: 0;      /* NO padding */
+  margin-top: 80px;    /* Push scroll container down below fixed header */
+}
+
+/* Player Averages (fixed center top) */
+.title-container {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100; /* above header-bg but below home-button */
+  pointer-events: none;
+}
+
+.title-container h1 {
+  margin: 0;
+  font-size: 50px;
+  color: white;
+  white-space: nowrap;
+  pointer-events: none;
+  padding-top: 10px;
+}
+
+/* Search box (fixed top right) */
+.search-box {
+  position: fixed;
+  top: 0;
+  right: 20px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  background-color: #2b2b2b;
+  padding: 0 10px;
+  z-index: 101; /* below home-button but above header-bg */
+}
+
+.search-box input {
+  padding: 6px 10px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.search-box button {
+  padding: 6px 12px;
+  margin-left: 5px;
+  font-size: 14px;
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.search-box button:hover {
+  background-color: #902c2c;
+}
+
+/* Table */
+table {
+  border-collapse: collapse;
+  margin: 0; /* no margin */
+  width: max-content;
+  background-color: transparent;
+}
+
+/* Sticky table headers */
+thead th {
+  position: sticky;
+  top: 0; /* stick at top of scroll container (below fixed header) */
+  background-color: #333;
+  color: white !important;
+  z-index: 51; /* above table rows, below fixed header */
+  white-space: normal;
+  min-width: 100px;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 10px 10px;
+  border: 2px solid #fff;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* Table data cells */
+table td {
+  color: black;
+}
+
+th, td {
+  border: 2px solid #fff;
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+  word-break: break-word;
+}
+
+/* Color-coded rows */
+tr.WR { background-color: #bbdefb; }
+tr.RB { background-color: #c8e6c9; }
+tr.QB { background-color: #fff9c4; }
+tr.TE { background-color: #d1c4e9; }
+tr.K { background-color: #cfd8dc; }
+tr.DST { background-color: #f8bbd0; }
+
+/* Gray out empty cells */
+td.empty-cell {
+  background-color: #f0f0f0;
+  color: black;
+}
+
+/* Name column wider */
+#averages-table th:nth-child(3),
+#averages-table td:nth-child(3) {
+  width: 210px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Highlighted search result row */
+.highlighted-row {
+  background-color: black !important;
+  color: white !important;
+  font-weight: bold;
+  transform: scaleY(1.3);
+  transition: transform 0.3s ease;
+}
+
+.highlighted-row td {
+  background-color: black !important;
+  color: white !important;
+}
+
+.highlighted-row span {
+  color: white !important;
+}
+
+/* Collapsible panel */
+.collapsible-panel {
+  display: table-row;
+  margin: 0;
+  padding: 0;
+  border: none !important;
+}
+
+.collapsible-panel td {
+  background-color: #f9f9f9;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #ccc;
+  vertical-align: top;
+}
+
+.collapsible-panel td table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  padding: 0;
+  border-spacing: 0;
+}
+
+.collapsible-panel td table th,
+.collapsible-panel td table td {
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  margin: 0;
+  vertical-align: top;
+}
+
+/* Row spacing fix */
+#averages-table,
+#averages-table tbody,
+#averages-table tbody tr,
+#averages-table tbody tr.collapsible-panel,
+#averages-table tbody tr.active-player-row {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin: 0;
+  padding: 0;
+  line-height: 1.2;
+}
+
+/* Active player row */
+.active-player-row {
+  background-color: #2b2b2b !important;
+  font-weight: bold;
+  color: white;
+  font-size: 20px;
+}
+
+.active-player-row td,
+.active-player-row span {
+  color: white !important;
+}
+
+@media (max-width: 600px) {
+
+  /* Reduce font sizes for headers */
+  .title-container h1 {
+    font-size: 28px !important;
+    padding-top: 5px;
+  }
+
+  /* Fix fixed elements (home, draft, dropdown, search) layout */
+  .home-button, .draft-button {
+    height: 50px;
+    line-height: 50px;
+    font-size: 14px;
+    top: 0;
+    left: auto;
+    padding: 0 8px;
+  }
+
+  .home-button {
+    left: 10px;
+  }
+  .draft-button {
+    left: 70px;
+  }
+
+  .dropdown {
+    top: 0;
+    left: 130px;
+    height: 50px;
+  }
+
+  .dropbtn {
+    height: 50px;
+    line-height: 50px;
+    font-size: 14px;
+    padding: 0 8px;
+  }
+
+  .dropdown-content {
+    top: 50px;
+    min-width: 140px;
+  }
+
+  .search-box {
+    top: 0;
+    right: 10px;
+    height: 50px;
+  }
+
+  .search-box input, .search-box button {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  /* Shrink fixed header height */
+  .header-bg {
+    height: 50px;
+  }
+
+  .title-container {
+    height: 50px;
+  }
+
+  /* Scroll container margin top to match smaller header */
+  .scroll-container {
+    margin-top: 50px;
+  }
+
+  /* Table adjustments */
+  table {
+    width: 100% !important; /* Let table use full width on mobile */
+    table-layout: auto; /* Let columns size automatically */
+  }
+
+  thead th {
+    font-size: 12px;
+    min-width: 70px !important;
+    padding: 6px 8px;
+  }
+
+  tbody td {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  /* Name column less wide on mobile */
+  #averages-table th:nth-child(3),
+  #averages-table td:nth-child(3) {
+    width: auto !important;
+    white-space: normal;
+  }
+
+  /* Highlighted row scale effect removed on mobile for stability */
+  .highlighted-row {
+    transform: none !important;
+  }
+
+  /* Fix horizontal overflow from fixed elements */
+  body, html {
+    overflow-x: hidden;
+  }
+}
