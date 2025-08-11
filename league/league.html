@@ -18,6 +18,7 @@
         <a href="standings/standings.html">Standings</a>
         <a href="wins/wins.html">All-Time Wins</a>
         <a href="per-records/pr.html">Personal Records</a>
+        <a href="players/players.html">Managers</a>
       </nav>
     </div>
   </header>
@@ -41,11 +42,6 @@
       </div>
 
       <div class="card">
-        <h2>🔁 Trades</h2>
-        <p>Monitor proposed and completed trades.</p>
-      </div>
-
-      <div class="card">
         <h2>🥇 All-Time Wins</h2>
         <p>See the winningest managers in league history.</p>
         <a href="wins/wins.html" class="button">View Leaders →</a>
@@ -57,6 +53,12 @@
         <a href="per-records/pr.html" class="button">View Records →</a>
       </div>
 
+      <div class="card">
+        <h2>📋 Locker Room</h2>
+        <p>View all 12 league managers, their records, playoff history, and trophies in one place.</p>
+        <a href="players/players.html" class="button">View Players →</a>
+      </div>
+
     </section>
   </main>
 
@@ -65,3 +67,26 @@
   </footer>
 </body>
 </html>
+
+
+<script>
+  // Filter logic for pillbar
+  const pills = document.querySelectorAll('.pillbar .pill');
+  const cards = document.querySelectorAll('.grid-cards .card');
+
+  function applyFilter(filter) {
+    cards.forEach(card => {
+      if (filter === 'all') { card.style.display = ''; return; }
+      const cats = (card.getAttribute('data-cat') || '').split(/\s+/);
+      card.style.display = cats.includes(filter) ? '' : 'none';
+    });
+  }
+
+  pills.forEach(p => {
+    p.addEventListener('click', () => {
+      pills.forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      applyFilter(p.dataset.filter);
+    });
+  });
+</script>

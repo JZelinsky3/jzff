@@ -55,7 +55,7 @@ header {
 .navbar .nav-links {
   display: none !important;
   position: absolute;
-  top: 72px;
+  top: 42px;
   right: 40px;
   background-color: #141826;
   border: 1px solid #06b6d4;
@@ -173,12 +173,6 @@ tbody tr:hover {
 
 .rank { color: #94a3b8; }
 .name { font-weight: 700; }
-.name .dot {
-  display: inline-block;
-  width: 6px; height: 6px; border-radius: 50%;
-  background-color: #22d3ee;
-  margin-right: 10px; position: relative; top: -1px;
-}
 
 /* ===== Footer ===== */
 footer {
@@ -201,10 +195,20 @@ footer {
   .hero h2 { font-size: 22px; }
 
   .records-table {
-    font-size: 12px;
+    font-size: 8px;
     min-width: unset;
     width: 100%;
   }
 
+  th {
+    font-size: 9px;
+  }
+
   th, td { padding: 8px 6px; }
+
+  .logo .logo-img {
+  height: 30px;
+  border-radius: 5px;
+  }
+  
 }

@@ -55,7 +55,7 @@ header {
 .navbar .nav-links {
   display: none !important;
   position: absolute;
-  top: 72px;
+  top: 42px;
   right: 40px;
   background-color: #1a1a2e;
   border: 1px solid #d97706;
@@ -171,21 +171,29 @@ footer {
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .page-title { font-size: 24px; }
-  .navbar .nav-links { right: 20px; }
-}
-
-@media (max-width: 480px) {
-  .page-title { font-size: 20px; }
-  .hero h1 { font-size: 22px; }
+  .page-title { font-size: 16px; }
+  .hero h1 { font-size: 20px; }
 
   .records-table,
   table {
-    font-size: 12px;
+    font-size: 7px;
     min-width: unset;
-    width: 100%;
+    width: 90%;
     margin: 0 auto;
   }
 
-  th, td { padding: 6px 8px; }
+  th {
+    font-size: 19px;
+  }
+
+  .logo .logo-img {
+  height: 30px;
+  border-radius: 5px;
+  }
+
+  th, td { 
+    padding: 6px 8px;
+  }
+
+
 }

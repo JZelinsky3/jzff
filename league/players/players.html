@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Managers | PA Milk Society</title>
+  <link rel="stylesheet" href="players.css" />
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <div class="logo">
+        <a href="../league.html">
+          <img src="/league/pics/players.png" alt="PA Milk Logo" class="logo-img" />
+        </a>
+      </div>
+
+      <h1 class="page-title">League Members</h1>
+
+      <!-- Hamburger -->
+      <div class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
+        <div></div><div></div><div></div>
+      </div>
+
+      <!-- Dropdown Menu -->
+      <nav class="nav-links" id="navMenu" role="menu" aria-label="Primary">
+        <a href="../league.html" role="menuitem">League Hub</a>
+        <a href="../wins/wins.html" role="menuitem">All-Time Wins</a>
+        <a href="../per-records/pr.html" role="menuitem">Personal Records</a>
+        <a href="../standings/standings.html" role="menuitem">Standings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="hero">
+      <h2>Members</h2>
+      <p>Tap a card to view a manager’s profile, head-to-heads, streaks, trophies and more.</p>
+
+      <div class="tools">
+        <input id="searchInput" class="search" type="search" placeholder="Search managers…" aria-label="Search managers" />
+        <div class="pill-group" role="group" aria-label="Quick filters">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="division-a">Skim</button>
+          <button class="pill" data-filter="division-b">Whole</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid" id="managerGrid" aria-label="Managers">
+      <!-- Cards injected by JS -->
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 PA Milk Society. All rights reserved.</p>
+  </footer>
+
+ <script>
+  // ===== Division Map =====
+  const DIVISION_MAP = {
+    andrew:  'division-a',
+    charlie: 'division-a',
+    chris:   'division-a',
+    connie:  'division-a',
+    luke:    'division-a',
+    evan:    'division-a',
+
+    connor:  'division-b',
+    isaac:   'division-b',
+    joey:    'division-b',
+    kyle:    'division-b',
+    mason:   'division-b',
+    sean:    'division-b'
+  };
+
+  // ===== Utilities =====
+  const pct = (w, l) => {
+    const t = (w||0) + (l||0);
+    return t ? (w / t) : 0;
+  };
+
+  // Sort: wins desc -> win% desc -> name asc
+  function sortManagers(a, b) {
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    const pa = pct(a.wins, a.losses);
+    const pb = pct(b.wins, b.losses);
+    if (pb !== pa) return pb - pa;
+    return (a.manager || '').localeCompare(b.manager || '');
+  }
+
+  // Build a card element (chips filled from playoffs data)
+  function cardTemplate(mgr, po) {
+    const slug = (mgr.slug || mgr.manager || '').toLowerCase();
+    const divisionClass = DIVISION_MAP[slug] || 'division-a';
+
+    const playoffsApps = po?.appearances ?? '—';
+    const playoffsWL   = po?.playoff_wl ?? '—';
+    const champs       = po?.championships ?? 0;
+    const trophyHTML   = champs ? ` <span class="trophy" title="${champs} championship${champs>1?'s':''}">🏆${champs>1?`×${champs}`:''}</span>` : '';
+
+    const a = document.createElement('a');
+    a.className = `card ${divisionClass}`;
+    a.href = `indi/${slug}.html`;
+    console.log('card href →', a.href);
+    a.innerHTML = `
+      <div class="avatar" data-initial="${(mgr.manager || '?').charAt(0)}"></div>
+      <div class="info">
+        <h3>${mgr.manager}${trophyHTML}</h3>
+        <p class="sub">All-time record • ${mgr.wins}-${mgr.losses}</p>
+        <div class="meta">
+          <span class="chip">PA: ${playoffsApps}</span>
+          <span class="chip">Playoffs: ${playoffsWL}</span>
+        </div>
+      </div>
+    `;
+    return a;
+  }
+
+  async function loadManagers() {
+    const [winsRes, poRes] = await Promise.all([
+      fetch('winsall.json'),
+      fetch('playoffs.json')
+    ]);
+    const winsData = await winsRes.json(); // [{manager,wins,losses,slug?}]
+    const poData   = await poRes.json();   // [{manager,appearances,playoff_wl,top3,championships}]
+
+    const poIndex = Object.fromEntries(
+      poData.map(r => [String(r.manager || '').toLowerCase(), r])
+    );
+
+    const grid = document.getElementById('managerGrid');
+    grid.innerHTML = '';
+
+    winsData.sort(sortManagers).forEach(m => {
+      const po = poIndex[String(m.manager || '').toLowerCase()];
+      grid.appendChild(cardTemplate(m, po));
+    });
+
+    // Search + pill filter combined
+    const search = document.getElementById('searchInput');
+    const pills = document.querySelectorAll('.pill');
+
+    function applyFilters() {
+      const q = (search.value || '').trim().toLowerCase();
+      const active = document.querySelector('.pill.active')?.dataset.filter || 'all';
+
+      [...grid.querySelectorAll('.card')].forEach(card => {
+        const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
+        const matchesText = !q || name.includes(q);
+        const matchesDiv  = (active === 'all') || card.classList.contains(active);
+        card.style.display = (matchesText && matchesDiv) ? '' : 'none';
+      });
+    }
+
+    search.addEventListener('input', applyFilters);
+    pills.forEach(p => p.addEventListener('click', () => {
+      pills.forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      applyFilters();
+    }));
+  }
+
+  loadManagers().catch(err => {
+    console.error(err);
+    document.getElementById('managerGrid').innerHTML =
+      '<p style="opacity:.8;text-align:center">Failed to load managers.</p>';
+  });
+
+  // ===== Hamburger toggle =====
+  const btn = document.getElementById('menuToggle');
+  const menu = document.getElementById('navMenu');
+
+  function toggleMenu() {
+    menu.classList.toggle('show');
+    btn.classList.toggle('active');
+    btn.setAttribute('aria-expanded', menu.classList.contains('show'));
+  }
+
+  btn.addEventListener('click', toggleMenu);
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      if (menu.classList.contains('show')) toggleMenu();
+    }
+  });
+</script>
+
+</body>
+</html>

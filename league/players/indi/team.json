@@ -1,0 +1,26 @@
+{
+  "managers": [
+    {
+      "manager": "Joey",
+      "seasons": [
+        { "year": 2019, "team": "On Jah",           "rank": 1,  "record": "9-4",  "oneLine": true },
+        { "year": 2020, "team": "Deshaun Dotson",   "rank": 3,  "record": "7-6" },
+        { "year": 2021, "team": "Oreos",            "rank": 2,  "record": "9-5" },
+        { "year": 2022, "team": "Space Mav",        "rank": 3,  "record": "12-2" },
+        { "year": 2023, "team": "Win Streak",       "rank": 12, "record": "4-10" },
+        { "year": 2024, "team": "PWD",              "rank": 8,  "record": "5-9" }
+      ]
+    },
+    {
+      "manager": "Kyle",
+      "seasons": [
+        { "year": 2019, "team": "Fuk Joey",           "rank": 13, "record": "3-10" },
+        { "year": 2020, "team": "Ginger Ninger",      "rank": 5,  "record": "6-7" },
+        { "year": 2021, "team": "Ginger Ninger",      "rank": 4,  "record": "9-5" },
+        { "year": 2022, "team": "Wyle Wiverd",        "rank": 4,  "record": "10-4" },
+        { "year": 2023, "team": "Ginger Ninger",      "rank": 11, "record": "5-9" },
+        { "year": 2024, "team": "Devin Singularity",  "rank": 9,  "record": "5-9" }
+      ]
+    }
+  ]
+}
