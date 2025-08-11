@@ -183,14 +183,27 @@ header .navbar{ justify-content: space-between; }
   padding: 14px 14px 8px;
 }
 
-/* force a team name to stay on one line */
-.jersey.gridiron .team.one-line{
-  display: block;
-  white-space: nowrap;
-  -webkit-line-clamp: unset;
+.jersey.gridiron .team {
+  position: absolute;
+  top: 26%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 92%;
+  text-align: center;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+  font-size: clamp(8px, 1.4vw, 14px); /* scales between min and max size */
+  white-space: normal;                /* prevents wrapping */
   overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,.55);
+  word-break: break-word;   /* break long words if needed */
+  hyphens: auto;            /* optional: nicer breaks */
+  z-index: 5;
+  pointer-events: none;
 }
-
 
 /* grid of bays  one bay per season */
 .locker-grid{

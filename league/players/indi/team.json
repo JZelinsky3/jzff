@@ -3,23 +3,127 @@
     {
       "manager": "Joey",
       "seasons": [
-        { "year": 2019, "team": "On Jah",           "rank": 1,  "record": "9-4",  "oneLine": true },
-        { "year": 2020, "team": "Deshaun Dotson",   "rank": 3,  "record": "7-6" },
-        { "year": 2021, "team": "Oreos",            "rank": 2,  "record": "9-5" },
-        { "year": 2022, "team": "Space Mav",        "rank": 3,  "record": "12-2" },
-        { "year": 2023, "team": "Win Streak",       "rank": 12, "record": "4-10" },
-        { "year": 2024, "team": "PWD",              "rank": 8,  "record": "5-9" }
+        { "year": 2019, "team": "On Jah", "rank": 1, "record": "9-4", "oneLine": true },
+        { "year": 2020, "team": "Deshaun Dotson", "rank": 3, "record": "7-6" },
+        { "year": 2021, "team": "Oreos", "rank": 2, "record": "9-5" },
+        { "year": 2022, "team": "Space Mav", "rank": 3, "record": "12-2" },
+        { "year": 2023, "team": "Win Streak", "rank": 12, "record": "4-10" },
+        { "year": 2024, "team": "PWD", "rank": 8, "record": "5-9" }
       ]
     },
     {
       "manager": "Kyle",
       "seasons": [
-        { "year": 2019, "team": "Fuk Joey",           "rank": 13, "record": "3-10" },
-        { "year": 2020, "team": "Ginger Ninger",      "rank": 5,  "record": "6-7" },
-        { "year": 2021, "team": "Ginger Ninger",      "rank": 4,  "record": "9-5" },
-        { "year": 2022, "team": "Wyle Wiverd",        "rank": 4,  "record": "10-4" },
-        { "year": 2023, "team": "Ginger Ninger",      "rank": 11, "record": "5-9" },
-        { "year": 2024, "team": "Devin Singularity",  "rank": 9,  "record": "5-9" }
+        { "year": 2019, "team": "Fuk Joey", "rank": 13, "record": "3-10" },
+        { "year": 2020, "team": "Ginger Ninger", "rank": 5, "record": "6-7" },
+        { "year": 2021, "team": "Ginger Ninger", "rank": 4, "record": "9-5" },
+        { "year": 2022, "team": "Wyle Wiverd", "rank": 4, "record": "10-4" },
+        { "year": 2023, "team": "Ginger Ninger", "rank": 11, "record": "5-9" },
+        { "year": 2024, "team": "Devin Singularity", "rank": 9, "record": "5-9" }
+      ]
+    },
+    {
+      "manager": "Andrew",
+      "seasons": [
+        { "year": 2019, "team": "Huntingfor kickers", "rank": 1, "record": "4-9" },
+        { "year": 2020, "team": "Huntingfor kickers", "rank": 1, "record": "7-6" },
+        { "year": 2021, "team": "McKittle", "rank": 1, "record": "5-9" },
+        { "year": 2022, "team": "HAPPY MAV", "rank": 1, "record": "8-6" },
+        { "year": 2023, "team": "KIM JOE UN", "rank": 1, "record": "5-9" },
+        { "year": 2024, "team": "OG CARHARTT", "rank": 1, "record": "10-4" }
+      ]
+    },
+    {
+      "manager": "Charlie",
+      "seasons": [
+        { "year": 2019, "team": "PurpleCobras", "rank": 1, "record": "7-6" },
+        { "year": 2020, "team": "Sarcastaball", "rank": 1, "record": "4-9" },
+        { "year": 2021, "team": "Sarcastaball", "rank": 1, "record": "6-8" },
+        { "year": 2022, "team": "The Peak", "rank": 1, "record": "7-7" },
+        { "year": 2023, "team": "Gang", "rank": 1, "record": "8-6" },
+        { "year": 2024, "team": "Sex God", "rank": 1, "record": "7-7" }
+      ]
+    },
+    {
+      "manager": "Chris",
+      "seasons": [
+        { "year": 2019, "team": "Prestige Worldwide", "rank": 1, "record": "7-6" },
+        { "year": 2020, "team": "C-Money", "rank": 1, "record": "6-7" },
+        { "year": 2021, "team": "Stafford University", "rank": 1, "record": "10-4" },
+        { "year": 2022, "team": "kamaravirus", "rank": 1, "record": "7-7" },
+        { "year": 2023, "team": "Mao Zelinskdong", "rank": 1, "record": "6-8" },
+        { "year": 2024, "team": "Naz Reid", "rank": 1, "record": "9-5" }
+      ]
+    },
+    {
+      "manager": "Connie",
+      "seasons": [
+        { "year": 2019, "team": "THICCCCFILA", "rank": 1, "record": "6-7" },
+        { "year": 2020, "team": "THICCCCFILA", "rank": 1, "record": "6-7" },
+        { "year": 2021, "team": "4th Quarter Hurts", "rank": 1, "record": "3-11" },
+        { "year": 2022, "team": "Short Bus Express", "rank": 1, "record": "7-7" },
+        { "year": 2023, "team": "Milk Man", "rank": 1, "record": "8-6" },
+        { "year": 2024, "team": "RIP Rashee", "rank": 1, "record": "9-5" }
+      ]
+    },
+    {
+      "manager": "Connor",
+      "seasons": [
+        { "year": 2019, "team": "Tight end 1", "rank": 1, "record": "7-6" },
+        { "year": 2020, "team": "bolsh", "rank": 1, "record": "5-8" },
+        { "year": 2021, "team": "Gage is gay", "rank": 1, "record": "6-8" },
+        { "year": 2022, "team": "the people's tight end", "rank": 1, "record": "2-12" },
+        { "year": 2023, "team": "CR North Indians", "rank": 1, "record": "7-7" },
+        { "year": 2024, "team": "CR North Indians", "rank": 1, "record": "8-6" }
+      ]
+    },
+    {
+      "manager": "Evan",
+      "seasons": [
+        { "year": 2023, "team": "Thanksgiving", "rank": 1, "record": "7-7" },
+        { "year": 2024, "team": "WHITEBOY FOOTBALL", "rank": 1, "record": "5-9" }
+      ]
+    },
+    {
+      "manager": "Isaac",
+      "seasons": [
+        { "year": 2020, "team": "The I Sack Shake", "rank": 1, "record": "5-8" },
+        { "year": 2021, "team": "Adam Rank", "rank": 1, "record": "9-5" },
+        { "year": 2022, "team": "Pat Bateman", "rank": 1, "record": "7-7" },
+        { "year": 2023, "team": "Nathanael Bartholomew", "rank": 1, "record": "11-3" },
+        { "year": 2024, "team": "Sean Costigan", "rank": 1, "record": "4-10" }
+      ]
+    },
+    {
+      "manager": "Luke",
+      "seasons": [
+        { "year": 2020, "team": "The GLIZZYS", "rank": 1, "record": "7-6" },
+        { "year": 2021, "team": "The GLIZZYS", "rank": 1, "record": "7-7" },
+        { "year": 2022, "team": "The GLIZZYS", "rank": 1, "record": "4-10" },
+        { "year": 2023, "team": "The GLIZZYS", "rank": 1, "record": "8-6" },
+        { "year": 2024, "team": "The GLIZZYS", "rank": 1, "record": "8-6" }
+      ]
+    },
+    {
+      "manager": "Mason",
+      "seasons": [
+        { "year": 2019, "team": "Mdog346", "rank": 1, "record": "11-2" },
+        { "year": 2020, "team": "Show Me your TDS", "rank": 1, "record": "9-4" },
+        { "year": 2021, "team": "Show Me your TDS", "rank": 1, "record": "8-6" },
+        { "year": 2022, "team": "Show Me your TDS", "rank": 1, "record": "7-7" },
+        { "year": 2023, "team": "Luh TD lickr", "rank": 1, "record": "7-7" },
+        { "year": 2024, "team": "Rizzlers", "rank": 1, "record": "4-10" }
+      ]
+    },
+    {
+      "manager": "Sean",
+      "seasons": [
+        { "year": 2019, "team": "dumb thots", "rank": 1, "record": "7-6" },
+        { "year": 2020, "team": "Meatzzas", "rank": 1, "record": "6-7" },
+        { "year": 2021, "team": "Dude Lipas", "rank": 1, "record": "10-4" },
+        { "year": 2022, "team": "Dude Lipas", "rank": 1, "record": "9-5" },
+        { "year": 2023, "team": "BIG BALLER BRAND", "rank": 1, "record": "8-6" },
+        { "year": 2024, "team": "3-Star REECHIE", "rank": 1, "record": "10-4" }
       ]
     }
   ]

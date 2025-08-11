@@ -327,7 +327,7 @@
       document.getElementById("h2hSummary").textContent = `Total vs league ${dash(tw, tl)}`;
 
       // seasons jersey wall
-      const mgrName = (document.querySelector('.nameplate span')?.textContent || 'Joey').trim();
+      const mgrName = (document.querySelector('.nameplate span')?.textContent || 'Isaac').trim();
 const entry = (teamData?.managers || []).find(m =>
   String(m.manager).toLowerCase() === mgrName.toLowerCase()
 );
@@ -338,6 +338,35 @@ const seasons = Array.isArray(entry?.seasons) ? entry.seasons : [];
       grid.style.setProperty("--bays", bays);
       grid.innerHTML = "";
       seasons.forEach((s, i) => grid.appendChild(makeJerseyBay(s, i)));
+
+      // --- Auto-resize team names (wrap to max 2 lines) ---
+document.querySelectorAll('.jersey.gridiron .team').forEach(el => {
+  // ensure wrapping is allowed (in case CSS didn't load yet)
+  el.style.whiteSpace = 'normal';
+  el.style.wordBreak = 'keep-all';
+  el.style.lineHeight = '1.05';
+  el.style.textAlign = 'center';
+
+  const containerWidth = el.offsetWidth;
+
+  // Start a bit larger; we’ll shrink as needed
+  let fontSize = 16; // px, tweak if your base is different
+  el.style.fontSize = fontSize + 'px';
+
+  // Helper to compute max allowed height for 2 lines
+  const twoLineMax = () => {
+    const lh = parseFloat(getComputedStyle(el).lineHeight);
+    return (isNaN(lh) ? fontSize * 1.05 : lh) * 2 + 0.5; // small cushion
+  };
+
+  // Shrink until it fits within width and two lines
+  // guard against infinite loops with a floor
+  while ((el.scrollWidth > containerWidth || el.scrollHeight > twoLineMax()) && fontSize > 6) {
+    fontSize -= 0.5;
+    el.style.fontSize = fontSize + 'px';
+  }
+});
+
     }
 
     loadPage().catch(err => {

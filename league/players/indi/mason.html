@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Kyle | Locker Room</title>
+  <title>Mason | Locker Room</title>
 
   <!-- Smooth condensed numerals for jersey numbers -->
   <link href="https://fonts.googleapis.com/css2?family=Teko:wght@600;700&display=swap" rel="stylesheet">
@@ -26,7 +26,7 @@
   <header>
     <div class="navbar" style="gap:14px">
       <a href="../players.html" class="back-link">← All Managers</a>
-      <h1 class="page-title">Kyle Locker</h1>
+      <h1 class="page-title">Mason Locker</h1>
       <div style="width:82px"></div>
     </div>
   </header>
@@ -35,10 +35,10 @@
     <section class="locker-layout" aria-label="Locker layout">
       <!-- Left column -->
       <aside class="panel" id="leftCol">
-        <h2>Profile and Totals</h2>
+        <h2>Profile and Toals</h2>
 
         <div class="stat" aria-live="polite">
-          <p class="sub">All time record</p>
+          <p class="sub">All-Time Record</p>
           <p class="big" id="allTimeWL">—</p>
           <p class="sub" id="winPct">Win Percent —</p>
         </div>
@@ -82,7 +82,7 @@
         <div class="locker-header">
           <div class="nameplate">
             <div class="avatar" data-initial="J"></div>
-            <span>Kyle</span>
+            <span>Mason</span>
           </div>
           <div class="chip" id="titleChip" title="Championships">🏆 0</div>
         </div>
@@ -91,6 +91,12 @@
           <div class="trophy-case">
             <h3>Trophy Case</h3>
             <div class="shelf" id="trophyShelf">
+              <div class="slot"><img src="pics/trophy.png" alt="Trophy"></div>
+              <div class="slot empty"></div>
+              <div class="slot empty"></div>
+              <div class="slot empty"></div>
+              <div class="slot empty"></div>
+              <div class="slot empty"></div>
               <div class="slot empty"></div>
             </div>
           </div>
@@ -120,7 +126,7 @@
 
       <!-- Full width seasons jersey wall -->
       <section class="panel jersey-wall" id="jerseyWall" aria-label="Seasons jersey wall">
-        <h2></h2>
+        <h2>Seasons Wall</h2>
         <div class="frame">
           <div class="locker-grid" id="lockerGrid" style="--bays: 1"></div>
         </div>
@@ -252,12 +258,12 @@
       // indexes
       const winsAllIdx = indexBy(winsAllData);
       const poIdx      = indexBy(playoffsData);
-      const kyle = winsAllIdx["kyle"] || { manager:"Kyle", wins:0, losses:0 };
-      const po   = poIdx["kyle"] || { appearances:0, playoff_wl:"0-0", top3:0, championships:0 };
+      const mason = winsAllIdx["mason"] || { manager:"Mason", wins:0, losses:0 };
+      const po   = poIdx["mason"] || { appearances:0, playoff_wl:"0-0", top3:0, championships:0 };
 
       // left column (normalized dashes)
-      document.getElementById("allTimeWL").textContent = dash(kyle.wins, kyle.losses);
-      document.getElementById("winPct").textContent    = `Win Percent ${fmtPct(kyle.wins, kyle.losses)}`;
+      document.getElementById("allTimeWL").textContent = dash(mason.wins, mason.losses);
+      document.getElementById("winPct").textContent    = `Win Percent ${fmtPct(mason.wins, mason.losses)}`;
 
       const [pW=0, pL=0] = normalizeRecord(po.playoff_wl || "0-0").split("-").map(n=>parseInt(n||0,10));
       document.getElementById("poApps").textContent = po.appearances ?? 0;
@@ -267,7 +273,7 @@
       document.getElementById("titleChip").textContent = `🏆 ${po.championships ?? 0}`;
 
       // current season snapshot
-      const team = (standingsData?.teams||[]).find(t => String(t.manager).toLowerCase() === "kyle");
+      const team = (standingsData?.teams||[]).find(t => String(t.manager).toLowerCase() === "mason");
       if (team){
         document.getElementById("thisSeasonWL").textContent = dash(team.wins, team.losses);
         document.getElementById("thisSeasonEtc").textContent = `PF ${team.pf} • PA ${team.pa}`;
@@ -282,16 +288,16 @@
         s.textContent = label;
         chips.appendChild(s);
       };
-      addChip(`All time ${dash(kyle.wins, kyle.losses)}`);
-      addChip(`Win pct ${fmtPct(kyle.wins, kyle.losses)}`);
+      addChip(`All time ${dash(mason.wins, mason.losses)}`);
+      addChip(`Win pct ${fmtPct(mason.wins, mason.losses)}`);
       addChip(`Playoffs ${normalizeRecord(po.playoff_wl || "0-0")}`);
       addChip(`Titles ${po.championships || 0}`, (po.championships||0) ? "green" : "");
 
       // right column head to head
       const mgrList = prData?.managers || [];
       const rows    = prData?.records || [];
-      const iKyle   = mgrList.findIndex(n => String(n).toLowerCase() === "kyle");
-      const myRows  = iKyle >= 0 ? (rows[iKyle]||[]) : [];
+      const iMason   = mgrList.findIndex(n => String(n).toLowerCase() === "mason");
+      const myRows  = iMason >= 0 ? (rows[iMason]||[]) : [];
 
       const leagueSet = new Set(["Andrew","Charlie","Chris","Connie","Connor","Evan","Isaac","Joey","Kyle","Luke","Mason","Sean"].map(s=>s.toLowerCase()));
       const tbody = document.getElementById("h2hBody");
@@ -304,7 +310,7 @@
         const rec = parts.at(-1) || "0-0";
         const [w=0, l=0] = normalizeRecord(rec).split("-").map(x=>parseInt(x||0,10));
         const k = opp.toLowerCase();
-        if (!leagueSet.has(k) || k === "kyle") return;
+        if (!leagueSet.has(k) || k === "mason") return;
 
         tw += w; tl += l;
 
