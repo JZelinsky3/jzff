@@ -280,18 +280,26 @@
       }
 
       // quick chips
-      const chips = document.getElementById("chips");
-      chips.innerHTML = "";
-      const addChip = (label, cls="") => {
-        const s = document.createElement("span");
-        s.className = "chip" + (cls ? " " + cls : "");
-        s.textContent = label;
-        chips.appendChild(s);
-      };
-      addChip(`All time ${dash(charlie.wins, charlie.losses)}`);
-      addChip(`Win pct ${fmtPct(charlie.wins, charlie.losses)}`);
-      addChip(`Playoffs ${normalizeRecord(po.playoff_wl || "0-0")}`);
-      addChip(`Titles ${po.championships || 0}`, (po.championships||0) ? "green" : "");
+const chips = document.getElementById("chips");
+chips.innerHTML = "";
+
+const addChip = (label, cls = "") => {
+  const s = document.createElement("span");
+  s.className = "chip" + (cls ? " " + cls : "");
+  s.textContent = label;
+  chips.appendChild(s);
+};
+
+const pf = Number(charlie.points_for ?? 0);
+const pa = Number(charlie.points_against ?? 0);
+const diff = Number(charlie.difference ?? 0);
+const wstreak = charlie.wstreak ?? 0;
+
+addChip(`PF: ${pf.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+addChip(`PA: ${pa.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+addChip(`Diff: ${diff.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, diff > 0 ? "green" : diff < 0 ? "red" : "");
+addChip(`Win Streak: ${wstreak}`);
+
 
       // right column head to head
       const mgrList = prData?.managers || [];

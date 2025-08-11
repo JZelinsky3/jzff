@@ -1,14 +1,14 @@
 [
-  { "manager": "Andrew",  "wins": 39, "losses": 43, "slug": "andrew" },
-  { "manager": "Charlie", "wins": 39, "losses": 43, "slug": "charlie" },
-  { "manager": "Chris",   "wins": 45, "losses": 37, "slug": "chris" },
-  { "manager": "Connie",  "wins": 39, "losses": 43, "slug": "connie" },
-  { "manager": "Connor",  "wins": 35, "losses": 47, "slug": "connor" },
-  { "manager": "Evan",    "wins": 12, "losses": 16, "slug": "evan" },
-  { "manager": "Isaac",   "wins": 36, "losses": 33, "slug": "isaac" },
-  { "manager": "Joey",    "wins": 46, "losses": 36, "slug": "joey" },
-  { "manager": "Kyle",    "wins": 38, "losses": 44, "slug": "kyle" },
-  { "manager": "Luke",    "wins": 34, "losses": 35, "slug": "luke" },
-  { "manager": "Sean",    "wins": 50, "losses": 32, "slug": "sean" },
-  { "manager": "Mason",   "wins": 46, "losses": 36, "slug": "mason" }
+  { "manager": "Andrew",  "wins": 39, "losses": 43, "slug": "andrew", "points_for": 9829.92, "points_against": 9856.36, "difference": -26.44, "wstreak": 7  },
+  { "manager": "Charlie", "wins": 39, "losses": 43, "slug": "charlie", "points_for": 9621.84, "points_against": 9870.06, "difference": -248.22, "wstreak": 4  },
+  { "manager": "Chris",   "wins": 45, "losses": 37, "slug": "chris", "points_for": 10153.98, "points_against": 9695.18, "difference": 458.80, "wstreak": 5   },
+  { "manager": "Connie",  "wins": 39, "losses": 43, "slug": "connie", "points_for": 10071.26, "points_against": 10029.70, "difference": 41.56, "wstreak": 4   },
+  { "manager": "Connor",  "wins": 35, "losses": 47, "slug": "connor", "points_for": 9799.56, "points_against": 9967.30, "difference": -167.74, "wstreak": 4   },
+  { "manager": "Evan",    "wins": 12, "losses": 16, "slug": "evan", "points_for": 3258.70, "points_against": 3530.22, "difference": -271.52, "wstreak": 4   },
+  { "manager": "Isaac",   "wins": 36, "losses": 33, "slug": "isaac", "points_for": 8266.84, "points_against": 8314.34, "difference": -47.50, "wstreak": 4   },
+  { "manager": "Joey",    "wins": 46, "losses": 36, "slug": "joey", "points_for": 10538.80, "points_against": 10306.66, "difference": 232.14, "wstreak": 6   },
+  { "manager": "Kyle",    "wins": 38, "losses": 44, "slug": "kyle", "points_for": 9838.90, "points_against": 9923.80, "difference": -84.90, "wstreak": 6   },
+  { "manager": "Luke",    "wins": 34, "losses": 35, "slug": "luke", "points_for": 8059.76, "points_against": 8414.06, "difference": -354.30, "wstreak": 5   },
+  { "manager": "Sean",    "wins": 50, "losses": 32, "slug": "sean", "points_for": 10164.86, "points_against": 9601.44, "difference": 563.42, "wstreak": 6   },
+  { "manager": "Mason",   "wins": 46, "losses": 36, "slug": "mason", "points_for": 10063.78, "points_against": 9556.24, "difference": 507.54, "wstreak": 5   }
 ]

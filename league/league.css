@@ -281,7 +281,12 @@ footer{text-align:center;padding:20px;font-size:14px;color:#9fb3a4;border-top:1p
 @media (max-width:1200px){.field{grid-template-columns:220px 1fr 380px}}
 @media (max-width:980px){
   .field{grid-template-columns:1fr;grid-template-areas:"mid" "right" "left"}
-  .links-row{grid-template-columns:1fr}
+
+  .links-row{
+    grid-template-columns:1fr;
+    justify-items: center;
+    align-items: center;  
+  }
 }
 @media (max-width:768px){
   .navbar{flex-direction:column;align-items:flex-start;gap:10px}
@@ -314,7 +319,7 @@ footer{text-align:center;padding:20px;font-size:14px;color:#9fb3a4;border-top:1p
 /* header row (year • name • trophy) */
 .champ-header,
 .champ-head {
-  display: flex;
+  word-spacing: 15px;
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
@@ -339,7 +344,7 @@ footer{text-align:center;padding:20px;font-size:14px;color:#9fb3a4;border-top:1p
 
 .champ-trophy,
 .rings {
-  margin-left: 6px;
+  margin-left: 0px;
   font-size: 18px;
   opacity: .95;
 }

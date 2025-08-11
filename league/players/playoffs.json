@@ -1,15 +1,15 @@
 [
-  { "manager": "Joey", "appearances": 4, "playoff_wl": "4-3", "top3": 4, "championships": 1 },
+  { "manager": "Joey", "appearances": 4, "playoff_wl": "5-3", "top3": 4, "championships": 1 },
   { "manager": "Mason", "appearances": 2, "playoff_wl": "1-2", "top3": 1, "championships": 0 },
   { "manager": "Connor", "appearances": 2, "playoff_wl": "1-2", "top3": 1, "championships": 0 },
   { "manager": "CJ", "appearances": 2, "playoff_wl": "1-2", "top3": 1, "championships": 0 },
   { "manager": "Chris", "appearances": 4, "playoff_wl": "4-3", "top3": 2, "championships": 1 },
-  { "manager": "Andrew", "appearances": 4, "playoff_wl": "4-2", "top3": 2, "championships": 1 },
+  { "manager": "Andrew", "appearances": 3, "playoff_wl": "4-2", "top3": 2, "championships": 1 },
   { "manager": "Luke", "appearances": 3, "playoff_wl": "3-2", "top3": 1, "championships": 1 },
   { "manager": "Kyle", "appearances": 3, "playoff_wl": "1-3", "top3": 0, "championships": 0 },
-  { "manager": "Connie", "appearances": 3, "playoff_wl": "3-3", "top3": 2, "championships": 1 },
+  { "manager": "Connie", "appearances": 3, "playoff_wl": "4-2", "top3": 2, "championships": 1 },
   { "manager": "Isaac", "appearances": 3, "playoff_wl": "4-2", "top3": 2, "championships": 1 },
   { "manager": "Charlie", "appearances": 2, "playoff_wl": "1-2", "top3": 0, "championships": 0 },
-  { "manager": "Sean", "appearances": 4, "playoff_wl": "2-4", "top3": 2, "championships": 0 },
+  { "manager": "Sean", "appearances": 4, "playoff_wl": "1-4", "top3": 2, "championships": 0 },
   { "manager": "Evan", "appearances": 1, "playoff_wl": "0-1", "top3": 0, "championships": 0 }
 ]
