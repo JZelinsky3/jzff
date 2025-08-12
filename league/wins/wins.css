@@ -187,3 +187,9 @@ footer {
 
   th, td { padding: 6px 8px; }
 }
+
+/* red numbers for managers no longer in league */
+.inactive {
+  color: #ef4444;
+  font-weight: bold;
+}

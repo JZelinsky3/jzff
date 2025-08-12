@@ -55,25 +55,33 @@
 
   <script>
     fetch('wins.json')
-      .then(res => res.json())
-      .then(data => {
-        const sorted = data.sort((a, b) => b.wins - a.wins);
-        const tbody = document.querySelector('#winsTable tbody');
-        sorted.forEach((entry, index) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${index + 1}</td>
-            <td style="text-transform: capitalize;">${entry.manager}</td>
-            <td style="text-align: right;">${entry.wins}</td>
-          `;
-          tbody.appendChild(row);
-        });
-      })
-      .catch(err => {
-        const tbody = document.querySelector('#winsTable tbody');
-        tbody.innerHTML = `<tr><td colspan="3" class="error">Failed to load win data</td></tr>`;
-        console.error(err);
-      });
+  .then(res => res.json())
+  .then(data => {
+    const sorted = data.sort((a, b) => b.wins - a.wins);
+    const tbody = document.querySelector('#winsTable tbody');
+
+    // List managers no longer in league
+    const inactiveManagers = ["ari", "costigan", "john", "krish", "cj"]; // lowercase names
+
+    sorted.forEach((entry, index) => {
+      const isInactive = inactiveManagers.includes(entry.manager.toLowerCase());
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td style="text-transform: capitalize;">${entry.manager}</td>
+        <td style="text-align: right;" class="${isInactive ? 'inactive' : ''}">
+          ${Number(entry.wins).toLocaleString()}
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  })
+  .catch(err => {
+    const tbody = document.querySelector('#winsTable tbody');
+    tbody.innerHTML = `<tr><td colspan="3" class="error">Failed to load win data</td></tr>`;
+    console.error(err);
+  });
   </script>
 
   <script>
@@ -105,6 +113,7 @@
       const body = document.getElementById('recordsBody');
       body.innerHTML = `<tr><td colspan="99" class="error">Could not load personal records</td></tr>`;
     });
+    
   </script>
 
 <script>
