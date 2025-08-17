@@ -22,12 +22,11 @@
         <div></div><div></div><div></div>
       </div>
 
-      <!-- Dropdown Menu -->
-      <nav class="nav-links" id="navMenu" role="menu" aria-label="Primary">
+      <nav class="nav-links" id="navMenu" role="menu">
         <a href="../league.html" role="menuitem">League Hub</a>
-        <a href="../wins/wins.html" role="menuitem">All-Time Wins</a>
-        <a href="../per-records/pr.html" role="menuitem">Personal Records</a>
         <a href="../standings/standings.html" role="menuitem">Standings</a>
+        <a href="../odds/odds.html" role="menuitem">Season Odds</a>
+        <a href="../history/history.html" role="menuitem">League History</a>
       </nav>
     </div>
   </header>
@@ -50,6 +49,13 @@
     <section class="grid" id="managerGrid" aria-label="Managers">
       <!-- Cards injected by JS -->
     </section>
+
+    <section class="records-link">
+  <h2>📊 Personal Records</h2>
+  <p>Compare every manager’s all-time head-to-head record.</p>
+  <a href="per-records/pr.html" class="records-button">View Personal Records →</a>
+</section>
+
   </main>
 
   <footer>
@@ -142,16 +148,22 @@
     const pills = document.querySelectorAll('.pill');
 
     function applyFilters() {
-      const q = (search.value || '').trim().toLowerCase();
-      const active = document.querySelector('.pill.active')?.dataset.filter || 'all';
+  const q = (search.value || '').trim().toLowerCase();
+  const active = document.querySelector('.pill.active')?.dataset.filter || 'all';
 
-      [...grid.querySelectorAll('.card')].forEach(card => {
-        const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
-        const matchesText = !q || name.includes(q);
-        const matchesDiv  = (active === 'all') || card.classList.contains(active);
-        card.style.display = (matchesText && matchesDiv) ? '' : 'none';
-      });
-    }
+  [...grid.querySelectorAll('.card')].forEach(card => {
+    const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
+    const matchesText = !q || name.includes(q);
+    const matchesDiv  = (active === 'all') || card.classList.contains(active);
+    card.style.display = (matchesText && matchesDiv) ? '' : 'none';
+  });
+
+  // Hide records section on division filter
+  const recordsSection = document.querySelector('.records-link');
+  if (recordsSection) {
+    recordsSection.style.display = (active === 'all') ? '' : 'none';
+  }
+}
 
     search.addEventListener('input', applyFilters);
     pills.forEach(p => p.addEventListener('click', () => {

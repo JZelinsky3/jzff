@@ -335,3 +335,39 @@ input:focus-visible {
     transition: none !important;
   }
 }
+
+.records-link {
+  margin-top: 100px;
+  text-align: center;
+  border-top: 2px solid var(--border);
+  padding-top: 90px;
+}
+
+.records-link h2 {
+  font-size: 24px;
+  color: var(--accent-2);
+  margin-bottom: 8px;
+}
+
+.records-link p {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.records-button {
+  display: inline-block;
+  padding: 10px 22px;
+  background-color: #8b5cf6;
+  color: #0f0b16;
+  font-weight: 700;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px var(--glow);
+  transition: transform 0.2s ease;
+  text-decoration: none;
+}
+
+.records-button:hover {
+  transform: translateY(-2px);
+  background-color: #ffffff;
+}
