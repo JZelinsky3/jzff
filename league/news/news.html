@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>League News | PA Milk Society</title>
+  <link rel="stylesheet" href="news.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="navbar">
+        <a href="../league.html" class="back-link">← Back to Hub</a>
+        <h1 class="league-title">PA Milk Society</h1>
+        <button id="authBtn" class="login-btn">Login</button>
+      </div>
+    </header>
+
+    <main class="main-layout">
+      <div class="left-margin"></div>
+
+      <div class="news-feed bordered">
+        <h2>League News</h2>
+        <div id="adminPostBox" style="display:none;">
+          <h4>Create New Post</h4>
+          <input type="text" id="newTitle" placeholder="Title" />
+          <textarea id="newBody" placeholder="Body of post"></textarea>
+          <button id="submitPost">Post</button>
+        </div>
+        <div id="newsList"></div>
+      </div>
+
+      <aside class="league-chat">
+        <h3>💬 League Chat</h3>
+        <div class="chat-messages" id="chatMessagesFixed"></div>
+        <form id="chatFormFixed">
+          <input type="text" id="chatNameFixed" placeholder="Your name" required />
+          <textarea id="chatInputFixed" placeholder="Type a message..." required></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </aside>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 PA Milk Society</p>
+    </footer>
+  </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
+    <script src="../firebase-config.js"></script> <!-- this MUST come before news.js -->
+    <script type="module" src="news.js"></script>
+</body>
+</html>
