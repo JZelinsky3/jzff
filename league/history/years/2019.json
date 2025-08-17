@@ -1,0 +1,60 @@
+{
+  "season": 2019,
+  "rankings": [
+    { "rank": 1, "name": "Joey",  "record": "9-4", "points_for": 1759.7,  "points_against": 1479.02, "point_diff": 280.68 },
+    { "rank": 2, "name": "Mason", "record": "11-2","points_for": 1768.48, "points_against": 1459.24, "point_diff": 309.24 },
+    { "rank": 3, "name": "Krish", "record": "7-6", "points_for": 1690.54, "points_against": 1503.8,  "point_diff": 186.74 },
+    { "rank": 4, "name": "Ari",   "record": "8-5", "points_for": 1475.7,  "points_against": 1585.3,  "point_diff": -109.6 },
+    { "rank": 5, "name": "CJ",    "record": "7-6", "points_for": 1504.52, "points_against": 1433.16, "point_diff": 71.36 },
+    { "rank": 6, "name": "Connor","record": "7-6", "points_for": 1558.92, "points_against": 1431.1,  "point_diff": 127.82 },
+    { "rank": 7, "name": "Charlie","record": "7-6","points_for": 1455.22, "points_against": 1493.06, "point_diff": -37.84 },
+    { "rank": 8, "name": "Chris", "record": "7-6", "points_for": 1448.96, "points_against": 1465.28, "point_diff": -16.32 },
+    { "rank": 9, "name": "Sean",  "record": "7-6", "points_for": 1441.1,  "points_against": 1501.8,  "point_diff": -60.7 },
+    { "rank": 10,"name": "Connie","record": "6-7", "points_for": 1430.96, "points_against": 1544.18, "point_diff": -113.22 },
+    { "rank": 11,"name": "Costigan","record": "6-7","points_for": 1302.84, "points_against": 1461.62, "point_diff": -158.78 },
+    { "rank": 12,"name": "Andrew","record": "4-9", "points_for": 1418.28, "points_against": 1467.28, "point_diff": -49.0 },
+    { "rank": 13,"name": "Kyle",  "record": "3-10","points_for": 1362.84, "points_against": 1541.4,  "point_diff": -178.56 },
+    { "rank": 14,"name": "John",  "record": "2-11","points_for": 1475.82, "points_against": 1727.64, "point_diff": -251.82 }
+  ],
+  "playoffs": {
+    "champion": "Joey",
+    "runner_up": "Mason",
+    "third_place": "Krish",
+    "games": {
+      "wildcard": [
+        { "id": "B1", "type": "bye",   "seed": 1, "team": "Mason" },
+        { "id": "W1", "type": "match", "title": "Game 1",
+          "teams": [{ "seed": 4, "name": "Krish" }, { "seed": 5, "name": "Connor" }],
+          "winner": "Krish"
+        },
+        { "id": "W2", "type": "match", "title": "Game 2",
+          "teams": [{ "seed": 3, "name": "Ari" }, { "seed": 6, "name": "CJ" }],
+          "winner": "Ari"
+        },
+        { "id": "B2", "type": "bye",   "seed": 2, "team": "Joey" }
+      ],
+      "divisional": [
+        { "id": "D1", "type": "match", "title": "Game 3",
+          "teams": [{ "seed": 1, "name": "Mason", "from": "B1" }, { "seed": 4, "name": "Krish", "from": "W1" }],
+          "winner": "Mason"
+        },
+        { "id": "D2", "type": "match", "title": "Game 4",
+          "teams": [{ "seed": 2, "name": "Joey",  "from": "B2" }, { "seed": 3, "name": "Ari",   "from": "W2" }],
+          "winner": "Joey"
+        }
+      ],
+      "championship": [
+        { "id": "F1", "type": "match", "title": "Championship",
+          "teams": [{ "seed": 1, "name": "Mason", "from": "D1" }, { "seed": 2, "name": "Joey", "from": "D2" }],
+          "winner": "Joey"
+        }
+      ],
+      "third": [
+        { "id": "TP", "type": "match", "title": "3rd Place Game",
+          "teams": [{ "seed": 4, "name": "Krish", "from": "D1L" }, { "seed": 3, "name": "Ari", "from": "D2L" }],
+          "winner": "Krish"
+        }
+      ]
+    }
+  }
+}

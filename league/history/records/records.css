@@ -1,0 +1,120 @@
+/* Records page: fresh teal + citrus highlight */
+:root{
+  --bg: #0e1216;
+  --panel: #111827;
+  --text: #e6f2ff;
+  --muted: #9fb6c6;
+  --accent: #06b6d4;   /* teal */
+  --accent-2: #fbbf24; /* amber */
+  --border: #1f2a37;
+  --green: #22c55e;
+  --red: #ef4444;
+}
+
+*{ box-sizing: border-box; }
+body{
+  margin:0; font-family:"Inter", system-ui, Arial, sans-serif;
+  background:
+    radial-gradient(1400px 900px at 10% -10%, rgba(6,182,212,.10), transparent 60%),
+    radial-gradient(1400px 900px at 120% 10%, rgba(251,191,36,.10), transparent 60%),
+    var(--bg);
+  color: var(--text);
+}
+
+/* Header / Navbar (copied layout, recolored) */
+header{
+  background:#0b1220;
+  padding:20px 40px;
+  border-bottom:2px solid var(--accent);
+}
+
+.back-link {
+  color: #06b6d4;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 16px;
+  border: 1px solid #06b6d4;
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.back-link:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: white;
+}
+
+.navbar{
+  position:relative; display:flex; justify-content:space-between; align-items:center;
+}
+.logo img.logo-img{ height:60px; border-radius:6px; }
+.league-title{
+  position:absolute; left:50%; transform:translateX(-50%);
+  font-weight:800; font-size:30px; color:var(--accent);
+  white-space:nowrap;
+}
+
+.menu-toggle{ display:flex; flex-direction:column; gap:5px; cursor:pointer; }
+.menu-toggle div{ width:26px; height:3px; background:var(--accent); transition:.3s; }
+.menu-toggle.active div:nth-child(1){ transform: translateY(8px) rotate(45deg); }
+.menu-toggle.active div:nth-child(2){ opacity:0; }
+.menu-toggle.active div:nth-child(3){ transform: translateY(-8px) rotate(-45deg); }
+
+.nav-links{
+  display:none !important; position:absolute; top:42px; right:40px;
+  background:#0b1220; border:1px solid var(--border); border-radius:12px;
+  width:240px; padding:10px 0; box-shadow:0 10px 24px rgba(0,0,0,.35); z-index:1000;
+}
+.nav-links.show{ display:flex !important; flex-direction:column; }
+.nav-links a{
+  padding:12px 16px; color:var(--accent); text-decoration:none; font-weight:700;
+}
+.nav-links a:hover{ background:rgba(6,182,212,.12); color:#fff; }
+
+/* Hero */
+.main-content{ padding:56px 20px 72px; }
+.hero{ text-align:center; margin-bottom:24px; }
+.hero h1{ margin:0 0 6px; font-size:40px; color:var(--accent-2); }
+.hero .sub{ color:var(--muted); }
+
+/* Board layout */
+.board{
+  margin: 0 auto; width:min(1100px, 92vw);
+  display:grid; gap:18px;
+  grid-template-columns: 1fr;
+}
+.card{
+  background:
+    linear-gradient(180deg, rgba(6,182,212,.06) 0%, rgba(6,182,212,0) 100%),
+    var(--panel);
+  border:1px solid rgba(6,182,212,.35);
+  border-radius:16px; padding:18px 18px 8px;
+  box-shadow:0 6px 18px rgba(0,0,0,.35);
+}
+.card-h{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.card h2{ margin:0; color:#fff; font-size:22px; }
+.hint{ color:var(--muted); font-size:12px; }
+
+/* Tables */
+.records-table{
+  width:100%; border-collapse:collapse; font-size:15px;
+}
+.records-table thead th{
+  text-align:left; padding:10px 12px; color:#0e1216; background:var(--accent); font-weight:900; letter-spacing:.02em;
+}
+.records-table td{ padding:12px; border-bottom:1px dashed rgba(255,255,255,.08); }
+.records-table tbody tr:nth-child(even){ background: rgba(255,255,255,.02); }
+.records-table tbody tr:hover{ background: rgba(251,191,36,.08); }
+
+.green{ color: var(--green); font-weight:800; }
+.red{ color: var(--red); font-weight:800; }
+.muted{ color: var(--muted); text-align:center; padding:12px; }
+
+/* Footer */
+footer{ text-align:center; padding:20px; color:#a3b1c6; border-top:1px solid var(--border); margin-top:40px; }
+
+/* Responsive */
+@media (max-width:720px){
+  .league-title{ font-size:22px; }
+  .records-table{ font-size:14px; }
+}

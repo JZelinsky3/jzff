@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>All-Time Records | PA Milk Society</title>
+  <link rel="stylesheet" href="records.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header / Navbar -->
+  <header>
+    <div class="navbar">
+      
+      <div class="logo">
+        <a href="../history.html" class="back-link">← Back to History</a>
+      </div>
+
+      <h1 class="league-title">PA Milk Society</h1>
+
+      <div class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
+        <div></div><div></div><div></div>
+      </div>
+
+      <nav class="nav-links" id="navMenu" role="menu">
+        <a href="../../league.html" role="menuitem">League Hub</a>
+        <a href="../../standings/standings.html" role="menuitem">Standings</a>
+        <a href="../../odds/odds.html" role="menuitem">Season Odds</a>
+        <a href="../../players/players.html" role="menuitem">Managers</a>
+        <a href="../history.html" role="menuitem">League History</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="hero">
+      <h1>📊 All‑Time Records Book</h1>
+      <p class="sub">Career, season, and weekly marks across league history.</p>
+    </section>
+
+    <section class="board">
+      <!-- Career -->
+      <article class="card">
+        <header class="card-h">
+          <h2>Career Records</h2>
+        </header>
+        <table class="records-table" id="careerTbl" aria-label="Career records">
+          <thead>
+            <tr>
+              <th>Record</th>
+              <th>Holder</th>
+              <th>Value</th>
+              <th>Seasons</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+
+      <!-- Season -->
+      <article class="card">
+        <header class="card-h">
+          <h2>Season Records</h2>
+        </header>
+        <table class="records-table" id="seasonTbl" aria-label="Season records">
+          <thead>
+            <tr>
+              <th>Record</th>
+              <th>Holder</th>
+              <th>Value</th>
+              <th>Year</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+
+      <!-- Week -->
+      <article class="card">
+        <header class="card-h">
+          <h2>Weekly Records</h2>
+        </header>
+        <table class="records-table" id="weekTbl" aria-label="Weekly records">
+          <thead>
+            <tr>
+              <th>Record</th>
+              <th>Holder</th>
+              <th>Value</th>
+              <th>Year • Week</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 PA Milk Society. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // ===== Nav hamburger =====
+    const btn = document.getElementById('menuToggle');
+    const menu = document.getElementById('navMenu');
+    function toggleMenu() {
+      menu.classList.toggle('show');
+      btn.classList.toggle('active');
+      btn.setAttribute('aria-expanded', menu.classList.contains('show'));
+    }
+    btn.addEventListener('click', toggleMenu);
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        if (menu.classList.contains('show')) toggleMenu();
+      }
+    });
+
+    // ===== helpers =====
+    const fmt = (n, d=2) => {
+      if (n == null || n === "") return "—";
+      const num = Number(n);
+      if (Number.isNaN(num)) return "—";
+      return num.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+    };
+    const fmtInt = (n) => {
+      if (n == null || n === "") return "—";
+      const num = Number(n);
+      if (Number.isNaN(num)) return "—";
+      return num.toLocaleString();
+    };
+    const spanText = (recs) => {
+      const s = recs?.career_span || {};
+      const start = Number(s.from || s.start || s.first || 0);
+      const end = Number(s.to || s.end || s.last || 0);
+      return (start && end) ? `${start}–${end}` : "—";
+    };
+    const yw = (o)=> (o?.year ? `${o.year} • Wk ${o?.week ?? "—"}` : "—");
+
+    const setRow = (tbody, label, holder, val, meta, isDiff=false) => {
+      const prettyVal = val;
+      const cls = isDiff && typeof val === "number"
+        ? (val > 0 ? "green" : val < 0 ? "red" : "")
+        : "";
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${label}</td>
+        <td>${holder || '—'}</td>
+        <td class="${cls}">${(typeof prettyVal === "string") ? prettyVal : (Number.isInteger(prettyVal) ? fmtInt(prettyVal) : fmt(prettyVal))}</td>
+        <td>${meta || '—'}</td>
+      `;
+      tbody.appendChild(tr);
+    };
+
+    async function loadRecords(){
+      // Single source of truth
+      const res = await fetch('records.json', { cache: 'no-store' });
+      if (!res.ok) {
+        console.error('Failed to load records.json');
+        return;
+      }
+      const recs = await res.json();
+
+      // ===== Career =====
+const ctb = document.querySelector("#careerTbl tbody");
+ctb.innerHTML = "";
+
+const c = recs?.career || {};
+const customSpans = c.custom_spans || {};
+
+// helpers
+const fmtSpan = (from, to) => (from && to) ? `${from}–${to}` : "2019–2024";
+const defaultSpan = fmtSpan(c.from, c.to);
+
+// case-insensitive lookup for custom spans
+const customIndex = Object.fromEntries(
+  Object.entries(customSpans).map(([name, span]) => [String(name).toLowerCase(), span])
+);
+
+function spanFor(holder) {
+  if (!holder) return defaultSpan;
+  const hit = customIndex[String(holder).toLowerCase()];
+  return hit ? fmtSpan(hit.from, hit.to) : defaultSpan;
+}
+
+// values + per-holder spans
+setRow(
+  ctb, "Wins",
+  c.wins?.holder,
+  c.wins?.value ?? c.wins,
+  spanFor(c.wins?.holder)
+);
+
+setRow(
+  ctb, "Losses",
+  c.losses?.holder,
+  c.losses?.value ?? c.losses,
+  spanFor(c.losses?.holder)
+);
+
+setRow(
+  ctb, "Playoff Wins",
+  c.playoff_wins?.holder,
+  c.playoff_wins?.value ?? c.playoff_wins,
+  spanFor(c.playoff_wins?.holder)
+);
+
+setRow(
+  ctb, "Playoff Losses",
+  c.playoff_losses?.holder,
+  c.playoff_losses?.value ?? c.losses,
+  spanFor(c.playoff_losses?.holder)
+);
+
+setRow(
+  ctb, "Points For",
+  c.points_for?.holder,
+  c.points_for?.value ?? c.points_for,
+  spanFor(c.points_for?.holder)
+);
+
+setRow(
+  ctb, "Points Against",
+  c.points_against?.holder,
+  c.points_against?.value ?? c.points_against,
+  spanFor(c.points_against?.holder)
+);
+
+setRow(
+  ctb, "Point Differential",
+  c.point_diff?.holder,
+  c.point_diff?.value ?? c.point_diff,
+  spanFor(c.point_diff?.holder),
+  true
+);
+
+setRow(
+  ctb, "Point Differential",
+  c.point_diff_negative?.holder,
+  c.point_diff_negative?.value ?? c.point_diff_negative,
+  spanFor(c.point_diff_negative?.holder),
+  true
+);
+
+      // ===== Season =====
+      const stb = document.querySelector("#seasonTbl tbody");
+      stb.innerHTML = "";
+      const s = recs?.season || {};
+
+      // wins in a season: support either {value} or {wins, losses}
+      let winsDisplay = "—";
+      if (s.wins?.value != null) {
+        winsDisplay = fmtInt(s.wins.value);
+      } else if (s.wins?.wins != null && s.wins?.losses != null) {
+        winsDisplay = `${fmtInt(s.wins.wins)}-${fmtInt(s.wins.losses)}`;
+      }
+      const winsHolder = s.wins?.holder || "";
+      const winsYear = s.wins?.year ?? "—";
+      const trWins = document.createElement('tr');
+      trWins.innerHTML = `
+        <td>Most Wins</td>
+        <td>${winsHolder || '—'}</td>
+        <td>${winsDisplay}</td>
+        <td>${winsYear}</td>
+      `;
+      stb.appendChild(trWins);
+
+      // most losses in a season: supports {value} or {wins, losses}
+let lossesDisplay = "—";
+if (s.losses?.value != null) {
+  lossesDisplay = fmtInt(s.losses.value);
+} else if (s.losses?.wins != null && s.losses?.losses != null) {
+  lossesDisplay = `${fmtInt(s.losses.wins)}-${fmtInt(s.losses.losses)}`;
+}
+const lossesHolder = s.losses?.holder || "";
+const lossesYear = s.losses?.year ?? "—";
+const trLosses = document.createElement('tr');
+trLosses.innerHTML = `
+  <td>Most Losses</td>
+  <td>${lossesHolder || '—'}</td>
+  <td>${lossesDisplay}</td>
+  <td>${lossesYear}</td>
+`;
+stb.appendChild(trLosses);
+
+// best start (season)
+setRow(
+  stb,
+  "Best Start",
+  s.best_start?.holder,
+  s.best_start?.value ?? null, // keeps "5-0"
+  s.best_start?.year ?? "—"
+);
+
+// worst start (season)
+setRow(
+  stb,
+  "Worst Start",
+  s.worst_start?.holder,
+  s.worst_start?.value ?? null,
+  s.worst_start?.year ?? "—"
+);
+
+setRow(
+        stb, "Longest Win Streak",
+        s.win_streak?.holder,
+        s.win_streak?.value ?? s.win_streak,
+        s.win_streak?.year
+    );
+
+    setRow(
+        stb, "Longest Losing Streak",
+        s.loss_streak?.holder,
+        s.loss_streak?.value ?? s.loss_streak,
+        s.loss_streak?.year
+    );
+
+// total points
+      setRow(stb, "Total Points",         s.total_points?.holder,   s.total_points?.value ?? null,               s.total_points?.year ?? "—");
+
+      // total points against
+      setRow(stb, "Total Points Against", s.points_against?.holder, s.points_against?.value ?? null,             s.points_against?.year ?? "—");
+
+      // point differential (season)
+      setRow(
+        stb,
+        "Point Differential",
+        s.point_diff?.holder,
+        Number(s.point_diff?.value ?? null),
+        s.point_diff?.year ?? "—",
+        true
+    );
+
+      // ===== Weekly =====
+      const wtb = document.querySelector("#weekTbl tbody");
+      wtb.innerHTML = "";
+      const w = recs?.week || {};
+
+      setRow(wtb, "Highest Scoring Player", w.highest_player?.holder, w.highest_player?.value ?? null, yw(w.highest_player));
+      setRow(wtb, "Highest Team Score",     w.highest_team?.holder,   w.highest_team?.value ?? null,   yw(w.highest_team));
+      setRow(wtb, "Highest Scoring Week",   w.highest_game?.holder,   w.highest_game?.value ?? null,   yw(w.highest_game));
+    }
+
+    loadRecords().catch(err => console.error(err));
+  </script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>2020 Season | JZ Fantasy Football</title>
+  <link rel="stylesheet" href="../../league.css" />
+  <link rel="stylesheet" href="years.css" />
+</head>
+<body>
+  <header>
+  <div class="navbar">
+    <div class="logo">
+      <a href="../../../index.html">
+        <img src="../../pics/pamilk.png" alt="JZ Fantasy Logo" class="logo-img" />
+      </a>
+    </div>
+
+    <h1 class="page-title">League History</h1>
+
+    <div class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false">
+      <div></div><div></div><div></div>
+    </div>
+
+    <nav class="nav-links" id="navLinks">
+      <a href="../../league.html">League Hub</a>
+      <a href="../../standings/standings.html">Standings</a>
+      <a href="../../records/record.html">Record Book</a>
+      <a href="../../odds/odds.html">Season Odds</a>
+      <a href="../../wins/wins.html">All Time Wins</a>
+      <a href="../../per-records/pr.html">Personal Records</a>
+      <a href="../../players/players.html">Managers</a>
+      <a href="../history.html">History</a>
+    </nav>
+  </div>
+</header>
+  <main class="year-wrap">
+    <section class="year-hero">
+      <h1>2020 Season</h1>
+      <p>Season 2020 recap with podium, table, and bracket.</p>
+      <div class="year-links">
+        <a href="2019.html">2019</a>
+        <a href="2020.html" aria-current="page">2020</a>
+        <a href="2021.html">2021</a>
+        <a href="2022.html">2022</a>
+        <a href="2023.html">2023</a>
+        <a href="2024.html">2024</a>
+      </div>
+    </section>
+
+    <section class="year-grid">
+      <!-- Podium + Standings -->
+      <article class="card">
+        <h2>Podium and Rankings</h2>
+        <div class="podium" id="podium"></div>
+        <table class="table" id="standingsTable">
+          <thead>
+            <tr>
+              <th>Rank</th><th>Name</th><th>Record</th><th>PF</th><th>PA</th><th>Diff</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+
+      <!-- Bracket -->
+      <section class="card full-width">
+        <h2>Playoffs Bracket</h2>
+        <div class="bracket-wrap" id="bracketWrap">
+          <svg class="bracket-svg" id="bracketSvg" aria-hidden="true"></svg>
+          <div class="bracket" id="bracket"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 JZ Fantasy Football. All rights reserved.</p>
+  </footer>
+
+  <script>
+/* =========================
+   Helpers & Nav
+========================= */
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, html) => {
+  const x = document.createElement(tag);
+  if (cls) x.className = cls;
+  if (html !== undefined) x.innerHTML = html;
+  return x;
+};
+const seedChip = (seed) => `<span class="seedchip">#${seed}</span>`;
+const toStatsBlock = (r) => {
+  if (!r) return '<div class="stats">PF  PA  Diff</div>';
+  const pf = Number(r.points_for).toFixed(1),
+        pa = Number(r.points_against).toFixed(1),
+        df = Number(r.point_diff).toFixed(1);
+  return `<div class="stats"><div>PF ${pf}</div><div>PA ${pa}</div><div>Diff ${df}</div></div>`;
+};
+
+// Hamburger menu toggle (works at all widths; menu stays hidden until opened)
+(function setupMenu(){
+  const menuBtn = document.getElementById('menuToggle');
+  const navLinks = document.getElementById('navLinks');
+  if(menuBtn && navLinks){
+    menuBtn.addEventListener('click', () => {
+      menuBtn.classList.toggle('active');
+      const open = navLinks.classList.toggle('show');
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
+})();
+
+/* =========================
+   Podium
+========================= */
+function buildPodium(first, second, third){
+  const wrap = $('podium');
+  wrap.append(
+    el('div','place third',
+      `<h3>Third</h3>
+       <div class="name">${third?.name||'TBD'} ${third?`(${third.record})`:''}</div>
+       <div class="pedestal">${toStatsBlock(third)}</div>`),
+    el('div','place first',
+      `<h3>Champion</h3>
+       <div class="name">${first?.name||'TBD'} ${first?`(${first.record})`:''}</div>
+       <div class="pedestal">${toStatsBlock(first)}</div>`),
+    el('div','place second',
+      `<h3>Second</h3>
+       <div class="name">${second?.name||'TBD'} ${second?`(${second.record})`:''}</div>
+       <div class="pedestal">${toStatsBlock(second)}</div>`)
+  );
+}
+
+/* =========================
+   Bracket nodes
+========================= */
+function nodeMatch(obj, cls=''){
+  const n = el('div', `node ${cls}`.trim());
+  n.id = obj.id;
+  const [t1, t2] = obj.teams || [{}, {}];
+  const row = (t) => {
+    const r = el('div','team');
+    r.innerHTML = `<div class="name">${t.seed ? seedChip(t.seed) : ''} ${t.name||'TBD'}</div>`;
+    if(obj.winner && t.name === obj.winner) r.appendChild(el('span','win-badge','Winner'));
+    return r;
+  };
+  n.append(
+    el('div','node-head', `<span>${obj.title||''}</span>`),
+    el('div','teams','')
+  );
+  n.querySelector('.teams').append(row(t1), row(t2));
+  return n;
+}
+
+/* =========================
+   Connectors & Layout
+========================= */
+function lineBetween(svg, a, b){
+  if(!svg || !a || !b) return;
+  const ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect(), sc=svg.getBoundingClientRect();
+  const x1=ra.right-sc.left, y1=ra.top+ra.height/2-sc.top;
+  const x2=rb.left -sc.left, y2=rb.top+rb.height/2-sc.top;
+  const mx=(x1+x2)/2;
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d',`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+  p.setAttribute('fill','none');
+  p.setAttribute('stroke','rgba(99,102,241,.55)');
+  p.setAttribute('stroke-width','2');
+  p.setAttribute('stroke-linecap','round');
+  svg.appendChild(p);
+}
+
+function centerTargetsFromSources(targetId, sourceIds){
+  const target = $(targetId);
+  const sources = sourceIds.map(id => $(id)).filter(Boolean);
+  if(!target || sources.length === 0) return;
+  const avgY = (els) => {
+    const ys = els.map(e => {
+      const r = e.getBoundingClientRect();
+      return r.top + r.height/2;
+    });
+    return ys.reduce((a,b)=>a+b,0)/ys.length;
+  };
+  const cur = target.getBoundingClientRect();
+  const curCenter = cur.top + cur.height/2;
+  const desired = avgY(sources);
+  const delta = (desired - curCenter);
+  target.style.transform = `translateY(${delta.toFixed(1)}px)`;
+}
+
+function drawConnectorsFromMapping(mapping){
+  const svg = $('bracketSvg'), wrap = $('bracketWrap');
+  if(!svg || !wrap) return;
+  const r = wrap.getBoundingClientRect();
+  svg.innerHTML='';
+  svg.setAttribute('width', r.width);
+  svg.setAttribute('height', r.height);
+  svg.setAttribute('viewBox', `0 0 ${r.width} ${r.height}`);
+
+  // Draw curved lines for each mapping
+  Object.entries(mapping).forEach(([toId, fromIds]) => {
+    const toEl = $(toId);
+    if(!toEl) return;
+    fromIds.forEach(fid => {
+      const fromEl = $(fid);
+      if(fromEl) lineBetween(svg, fromEl, toEl);
+    });
+  });
+}
+
+/* Build a mapping like:
+   { S1: ['Q1','Q2'], S2: ['Q3','Q4'], F1: ['S1','S2'] }
+   based purely on "from" fields inside the JSON.
+*/
+function buildFlowMapping(games){
+  const map = {};
+  const add = (to, from) => {
+    if(!to || !from) return;
+    map[to] = map[to] || [];
+    if(!map[to].includes(from)) map[to].push(from);
+  };
+
+  (games.semifinals||[]).forEach(g => {
+    (g.teams||[]).forEach(t => add(g.id, t.from));
+  });
+  (games.championship||[]).forEach(g => {
+    (g.teams||[]).forEach(t => add(g.id, t.from));
+  });
+  // We intentionally skip "third" so it's not connected.
+  return map;
+}
+
+function centerAllFromMapping(mapping){
+  // For each "to" node, center it between its sources.
+  Object.entries(mapping).forEach(([toId, fromIds]) => centerTargetsFromSources(toId, fromIds));
+}
+
+/* =========================
+   Render
+========================= */
+async function init(){
+  try{
+    const res = await fetch('2020.json');
+    if(!res.ok) throw new Error('JSON not found');
+    const data = await res.json();
+
+    // Podium + table
+    const byRank=[...data.rankings].sort((a,b)=>a.rank-b.rank);
+    buildPodium(byRank[0], byRank[1], byRank[2]);
+
+    const tbody = document.querySelector('#standingsTable tbody');
+    tbody.innerHTML = byRank
+      .filter(r=>r.rank>3)
+      .map(r=>`
+        <tr>
+          <td>${r.rank}</td><td>${r.name}</td><td>${r.record}</td>
+          <td>${Number(r.points_for).toFixed(1)}</td>
+          <td>${Number(r.points_against).toFixed(1)}</td>
+          <td>${Number(r.point_diff).toFixed(1)}</td>
+        </tr>`).join('');
+
+    // Bracket columns (8-team: Quarterfinals -> Semifinals -> Championship)
+    const bracket=$('bracket');
+    const col = t => { const c=el('div','round-col'); c.appendChild(el('div','round-title',t)); return c; };
+
+    const games = data.playoffs?.games || {};
+    const qf = col('Quarterfinals'); (games.quarterfinals||[]).forEach(g => qf.appendChild(nodeMatch(g)));
+    const sf = col('Semifinals');    (games.semifinals||[]).forEach(g => sf.appendChild(nodeMatch(g)));
+    const ch = col('Championship');  (games.championship||[]).forEach(g => ch.appendChild(nodeMatch(g)));
+    ch.appendChild(el('div','round-title third-spacer','')); // spacer for layout only
+    (games.third||[]).forEach(g => { const n=nodeMatch(g); n.classList.add('third'); ch.appendChild(n); });
+
+    bracket.append(qf, sf, ch);
+
+    // Build flow mapping from "from" refs and lay out
+    const mapping = buildFlowMapping(games);
+
+    // After first paint, center and draw. Re-run on resize.
+    const redraw = () => {
+      // Clear any previous transforms on targets so centering works repeatedly
+      Object.keys(mapping).forEach(id => { const el = $(id); if(el) el.style.transform=''; });
+      centerAllFromMapping(mapping);
+      requestAnimationFrame(() => drawConnectorsFromMapping(mapping));
+    };
+
+    requestAnimationFrame(redraw);
+    window.addEventListener('resize', () => requestAnimationFrame(redraw));
+    window.addEventListener('load',   () => requestAnimationFrame(redraw));
+    setTimeout(() => requestAnimationFrame(redraw), 120);
+  }catch(err){
+    const tbl = document.querySelector('#standingsTable').parentElement;
+    tbl.appendChild(el('p','subtle','Could not load 2020.json. If you are opening this file directly, run a local server so fetch() can load JSON (e.g., python -m http.server).'));
+    console.error(err);
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>
