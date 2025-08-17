@@ -20,9 +20,20 @@ header {
   align-items: center;
 }
 
-.logo .logo-img {
-  height: 60px;
-  border-radius: 5px;
+.back-link {
+  color: #fbbf24;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 16px;
+  border: 1px solid #fbbf24;
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.back-link:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: white;
 }
 
 /* Centered page title in header */
@@ -171,7 +182,10 @@ footer {
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .page-title { font-size: 16px; }
+  .page-title { 
+    font-size: 11px; 
+    margin-left: 7px;
+  }
   .hero h1 { font-size: 20px; }
 
   .records-table,
@@ -186,14 +200,16 @@ footer {
     font-size: 19px;
   }
 
-  .logo .logo-img {
-  height: 30px;
-  border-radius: 5px;
-  }
-
   th, td { 
     padding: 6px 8px;
   }
 
+}
 
+@media (max-width: 600px) {
+  .back-link {
+    font-size: 6px;
+    padding: 4px 5px;
+    margin-left: -19px;
+  }
 }
