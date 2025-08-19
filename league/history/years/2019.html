@@ -10,9 +10,7 @@
   <header>
     <div class="navbar">
       <div class="logo">
-        <a href="../../../index.html">
-          <img src="../../pics/pamilk.png" alt="JZ Fantasy Logo" class="logo-img" />
-        </a>
+        <a href="../history.html" class="back-link">← Back to History</a>
       </div>
 
       <h1 class="page-title">League History</h1>
@@ -21,15 +19,12 @@
         <div></div><div></div><div></div>
       </div>
 
-      <nav class="nav-links" id="navLinks">
-        <a href="../../league.html">League Hub</a>
-        <a href="../../standings/standings.html">Standings</a>
-        <a href="../../records/record.html">Record Book</a>
-        <a href="../../odds/odds.html">Season Odds</a>
-        <a href="../../wins/wins.html">All Time Wins</a>
-        <a href="../../per-records/pr.html">Personal Records</a>
-        <a href="../../players/players.html">Managers</a>
-        <a href="../history.html">History</a>
+      <nav class="nav-links" id="navMenu" role="menu">
+        <a href="../../league.html" role="menuitem">League Hub</a>
+        <a href="../../standings/standings.html" role="menuitem">Standings</a>
+        <a href="../../odds/odds.html" role="menuitem">Season Odds</a>
+        <a href="../../players/players.html" role="menuitem">Managers</a>
+        <a href="../../news/news.html" role="menuitem">League News</a>
       </nav>
     </div>
   </header>
@@ -97,9 +92,9 @@
   function buildPodium(first, second, third){
     const wrap = $('podium');
     wrap.append(
-      el('div','place third',  `<h3>Third</h3><div class="name">${third?.name||'TBD'} ${third?`(${third.record})`:''}</div><div class="pedestal">${toStatsBlock(third)}</div>`),
+      el('div','place second', `<h3>Second</h3><div class="name">${second?.name||'TBD'} ${second?`(${second.record})`:''}</div><div class="pedestal">${toStatsBlock(second)}</div>`),
       el('div','place first',  `<h3>Champion</h3><div class="name">${first?.name||'TBD'} ${first?`(${first.record})`:''}</div><div class="pedestal">${toStatsBlock(first)}</div>`),
-      el('div','place second', `<h3>Second</h3><div class="name">${second?.name||'TBD'} ${second?`(${second.record})`:''}</div><div class="pedestal">${toStatsBlock(second)}</div>`)
+      el('div','place third',  `<h3>Third</h3><div class="name">${third?.name||'TBD'} ${third?`(${third.record})`:''}</div><div class="pedestal">${toStatsBlock(third)}</div>`)
     );
   }
 
@@ -278,15 +273,23 @@
 </script>
 
 <script>
-  const menuBtn = document.getElementById('menuToggle');
-  const navLinks = document.getElementById('navLinks');
-  if(menuBtn && navLinks){
-    menuBtn.addEventListener('click', () => {
-      menuBtn.classList.toggle('active');
-      const open = navLinks.classList.toggle('show');
-      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
+  const btn = document.getElementById('menuToggle');
+  const menu = document.getElementById('navMenu');
+
+  function toggleMenu() {
+    menu.classList.toggle('show');
+    btn.classList.toggle('active');
+    btn.setAttribute('aria-expanded', menu.classList.contains('show'));
   }
+
+  btn.addEventListener('click', toggleMenu);
+
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      if (menu.classList.contains('show')) toggleMenu();
+    }
+  });
 </script>
 
 </body>
