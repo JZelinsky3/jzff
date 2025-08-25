@@ -34,6 +34,18 @@ body {
   border-radius: 8px;
 }
 
+/* Movers link (reuse Home button style + slight offset) */
+.movers-link {
+  left: 257px; /* position to the right of Home button */
+}
+
+/* Optional: add subtle hover effect for consistency */
+.movers-link:hover {
+  background-color: #555;
+  color: #28a745; /* green hover to indicate 'rising' theme */
+  border-radius: 8px;
+}
+
 .draft-button {
   margin-left: 71px;
 }
@@ -432,4 +444,13 @@ td.empty-cell {
   body, html {
     overflow-x: hidden;
   }
+}
+
+/* Highlight movers by border */
+.moved-up td {
+  border: 4px solid #28a745 !important; /* green */
+}
+
+.moved-down td {
+  border: 4px solid #dc3545 !important; /* red */
 }

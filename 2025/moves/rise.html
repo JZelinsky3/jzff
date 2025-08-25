@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fantasy Risers & Fallers</title>
+  <link rel="stylesheet" href="rise.css" />
+  <style>
+
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header-bg">
+    <div class="nav-container">
+      <a href="../../index.html" class="nav-link">Home</a>
+      <a href="../averages/averages.html" class="nav-link">Rankings</a>
+      
+      <div class="dropdown">
+        <button class="dropbtn">Draft</button>
+          <div class="dropdown-content">
+            <a href="/2025/draft/available.html">Strategy</a>
+            <a href="/2025/draft/draft.html">Overview</a>
+            <a href="/2025/draft/board.html">Board</a>
+          </div>
+      </div>
+
+      <div class="dropdown">
+        <button class="dropbtn">Positions</button>
+        <div class="dropdown-content">
+          <a href="../positions/qbs.html">Quarterbacks</a>
+          <a href="../positions/rbs.html">Runningbacks</a>
+          <a href="../positions/wrs.html">Wide Receivers</a>
+          <a href="../positions/tes.html">Tight Ends</a>
+        </div>
+      </div>
+
+    <div class="nav-center">
+      <h1>Fantasy Risers & Fallers</h1>
+    </div>
+  </header>
+
+  <!-- Main container -->
+  <div class="scroll-container">
+    <div class="moves-container">
+      <table id="moves-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Player</th>
+            <th>New Rank</th>
+            <th>Move</th>
+            <th>Previous Rank</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Fantasy Football Tracker © 2025</p>
+  </footer>
+
+  <script>
+    const movesTableBody = document.querySelector('#moves-table tbody');
+
+    async function loadPlayers() {
+      const res = await fetch('move.json');
+      const players = await res.json();
+
+      function getRank(s) {
+        const match = s.new.match(/\d+/);
+        return match ? parseInt(match[0]) : 999;
+      }
+
+      function renderTable(list) {
+        movesTableBody.innerHTML = '';
+
+        list.sort((a, b) => getRank(a) - getRank(b));
+
+        list.forEach(p => {
+          const row = document.createElement('tr');
+
+          let arrow = '';
+          let status = '';
+          let moveNum = p.moved.replace(/[^0-9]/g, '');
+
+          if (p.moved.startsWith('>=')) {
+            arrow = `<span class="arrow-up">⬆⬆</span>`;
+            status = '<span class="badge badge-riser">Riser</span>';
+            row.classList.add('riser');
+          } else if (p.moved.startsWith('+')) {
+            arrow = `<span class="arrow-up">⬆</span>`;
+            status = '<span class="badge badge-riser">Riser</span>';
+            row.classList.add('riser');
+          } else if (p.moved.startsWith('-')) {
+            arrow = `<span class="arrow-down">⬇</span>`;
+            status = '<span class="badge badge-faller">Faller</span>';
+            row.classList.add('faller');
+          }
+
+          row.innerHTML = `
+            <td>${status}</td>
+            <td>${p.name}</td>
+            <td><strong>${p.new}</strong></td>
+            <td class="move-cell">${arrow} ${moveNum}</td>
+            <td>${p.previous}</td>
+            <td>${p.reason || '—'}</td>
+          `;
+          movesTableBody.appendChild(row);
+        });
+      }
+
+      renderTable(players);
+    }
+
+    loadPlayers();
+  </script>
+</body>
+</html>

@@ -1,3 +1,17 @@
+const movedUp = [
+  "Emeka Egbuka","Chase Brown","Jacory Croskey-Merrit","Matthew Golden",
+  "Austin Ekeler","Jonathan Taylor","Michael Pittman Jr","Keon Coleman",
+  "TreVeyon Henderson","JK Dobbins","D'Andre Swift","Christian McCaffrey",
+  "Omarion Hampton","Keenan Allen","Jordan Mason","Cooper Kupp",
+  "Stefon Diggs","Jayden Higgins"
+];
+
+const movedDown = [
+  "Brian Robinson Jr","Joe Mixon","Quinshon Judkins","Marvin Mims Jr",
+  "Breece Hall","Bo Nix","Justin Herbert","Caleb WIlliams",
+  "Marvin Harrison Jr","Jordan Addison","Khalil Shakir"
+];
+
 const visibleColumns = [
   "PRank Avg",
   "Avg Rank",
@@ -21,9 +35,29 @@ const visibleColumns = [
 
 let playerData = {}; // stores merged WR/TE + RB data
 
-// Utility: Strip team abbreviation from name
+// Utility: Strip team abbreviation and normalize
 function stripTeam(name) {
-  return name.replace(/\s*\(.*?\)\s*$/, '').trim();
+  return name.replace(/\s*\(.*?\)\s*$/, '').trim().toLowerCase();
+}
+
+// Highlight movers
+function highlightMovers() {
+  const rows = document.querySelectorAll('#averages-table tbody tr');
+  rows.forEach(row => {
+    const nameCell = row.cells[2]; // Name column
+    if (!nameCell) return;
+
+    const playerName = stripTeam(nameCell.textContent);
+
+    // Remove previous classes first
+    row.classList.remove('moved-up', 'moved-down');
+
+    if (movedUp.some(name => stripTeam(name) === playerName)) {
+      row.classList.add("moved-up");
+    } else if (movedDown.some(name => stripTeam(name) === playerName)) {
+      row.classList.add("moved-down");
+    }
+  });
 }
 
 // Load WR/TE and RB CSVs
@@ -31,24 +65,24 @@ Promise.all([
   fetch('./data/wrs_tes.csv').then(r => r.ok ? r.text() : Promise.reject('wrs_tes.csv failed')),
   fetch('./data/rbs.csv').then(r => r.ok ? r.text() : Promise.reject('rbs.csv failed'))
 ])
-  .then(([wrsText, rbsText]) => {
-    [wrsText, rbsText].forEach(csvText => {
-      const lines = csvText.trim().split('\n');
-      const headers = lines[0].split(',').map(h => h.trim());
+.then(([wrsText, rbsText]) => {
+  [wrsText, rbsText].forEach(csvText => {
+    const lines = csvText.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
 
-      for (let i = 1; i < lines.length; i++) {
-        const row = lines[i].split(',').map(c => c.trim());
-        const playerName = row[headers.indexOf("Names")];
-        playerData[playerName] = {};
-        headers.forEach((header, idx) => {
-          playerData[playerName][header] = row[idx];
-        });
-      }
-    });
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(',').map(c => c.trim());
+      const playerName = row[headers.indexOf("Names")];
+      playerData[playerName] = {};
+      headers.forEach((header, idx) => {
+        playerData[playerName][header] = row[idx];
+      });
+    }
+  });
 
-    loadAveragesTable();
-  })
-  .catch(err => console.error('Error loading WR/RB CSVs:', err));
+  loadAveragesTable();
+})
+.catch(err => console.error('Error loading WR/RB CSVs:', err));
 
 // Load averages.csv and build main table
 function loadAveragesTable() {
@@ -104,7 +138,7 @@ function loadAveragesTable() {
             // Skip togglePanel for K, QB, DST
             span.addEventListener('click', () => {
               if (tr.classList.contains('K') || tr.classList.contains('QB') || tr.classList.contains('DST')) {
-                return; // Do nothing for these positions
+                return;
               }
               togglePanel(cell, tr);
             });
@@ -125,6 +159,9 @@ function loadAveragesTable() {
 
         tbody.appendChild(tr);
       }
+
+      // Highlight movers **after all rows are added**
+      highlightMovers();
     })
     .catch(err => console.error('Error loading averages.csv:', err));
 }
@@ -132,8 +169,6 @@ function loadAveragesTable() {
 // Toggle collapsible panel for player
 function togglePanel(playerNameWithTeam, tableRow) {
   const tbody = document.querySelector('#averages-table tbody');
-
-  // If panel open, close it
   const nextRow = tableRow.nextElementSibling;
   if (nextRow && nextRow.classList.contains('collapsible-panel')) {
     tbody.removeChild(nextRow);
@@ -141,11 +176,9 @@ function togglePanel(playerNameWithTeam, tableRow) {
     return;
   }
 
-  // Remove any other open panels and active highlights
   document.querySelectorAll('.collapsible-panel').forEach(p => p.remove());
   document.querySelectorAll('.active-player-row').forEach(r => r.classList.remove('active-player-row'));
 
-  // Highlight current row
   tableRow.classList.add('active-player-row');
 
   const panelRow = document.createElement('tr');
@@ -154,8 +187,8 @@ function togglePanel(playerNameWithTeam, tableRow) {
   const td = document.createElement('td');
   td.colSpan = visibleColumns.length;
 
-  const strippedName = stripTeam(playerNameWithTeam).toLowerCase();
-  const matchedKey = Object.keys(playerData).find(key => key.toLowerCase() === strippedName);
+  const strippedName = stripTeam(playerNameWithTeam);
+  const matchedKey = Object.keys(playerData).find(key => stripTeam(key) === strippedName);
   const extraData = matchedKey ? playerData[matchedKey] : null;
 
   if (!extraData) {
@@ -198,21 +231,20 @@ function togglePanel(playerNameWithTeam, tableRow) {
   tbody.insertBefore(panelRow, tableRow.nextSibling);
 }
 
-// Clear all search highlights
+// Search & highlight functions (unchanged)
 function clearHighlights() {
   const highlightedRows = document.querySelectorAll('.highlighted-row');
   highlightedRows.forEach(row => {
     row.classList.remove('highlighted-row');
-    row.style.backgroundColor = ''; // clear inline background
+    row.style.backgroundColor = '';
     const nameSpan = row.querySelector('td:nth-child(3) span');
-    if (nameSpan) nameSpan.style.color = ''; // clear inline color
+    if (nameSpan) nameSpan.style.color = '';
   });
 }
 
-// Search function
 function searchPlayer() {
   const input = document.getElementById('searchInput').value.trim().toLowerCase();
-  if (!input) return; // ignore empty search
+  if (!input) return;
 
   clearHighlights();
 
@@ -223,11 +255,10 @@ function searchPlayer() {
 
   for (const row of rows) {
     if (row.classList.contains('active-player-row')) continue;
-
     const nameSpan = row.querySelector('td:nth-child(3) span');
     if (!nameSpan) continue;
 
-    const playerName = nameSpan.textContent.trim().toLowerCase();
+    const playerName = stripTeam(nameSpan.textContent);
 
     if (playerName.includes(input)) {
       row.classList.add('highlighted-row');
@@ -238,26 +269,9 @@ function searchPlayer() {
     }
   }
 
-  if (!foundAny) {
-    alert(`No player found matching: "${input}"`);
-  }
+  if (!foundAny) alert(`No player found matching: "${input}"`);
 }
 
-// Remove highlights on click outside table or search box
-const table = document.getElementById('averages-table');
-const searchBox = document.querySelector('.search-box');
-
-document.addEventListener('click', (event) => {
-  const target = event.target;
-  if (searchBox.contains(target)) {
-    // Clicking in search box keeps highlights
-    return;
-  }
-  // Clicking anywhere else (including table) clears highlights
-  clearHighlights();
-});
-
-// Support Enter key to trigger search
 document.getElementById('searchInput').addEventListener('keydown', function (e) {
   if (e.key === 'Enter') {
     e.preventDefault();
@@ -265,11 +279,14 @@ document.getElementById('searchInput').addEventListener('keydown', function (e) 
   }
 });
 
-// Keep title horizontally centered during horizontal scroll
+const searchBox = document.querySelector('.search-box');
+document.addEventListener('click', (event) => {
+  if (!searchBox.contains(event.target)) clearHighlights();
+});
+
+// Horizontal scroll title fix
 window.addEventListener('scroll', () => {
   const scrollX = window.scrollX;
   const titleContainer = document.querySelector('.title-container');
-  if (titleContainer) {
-    titleContainer.style.setProperty('--scroll-x', `${scrollX}px`);
-  }
+  if (titleContainer) titleContainer.style.setProperty('--scroll-x', `${scrollX}px`);
 });

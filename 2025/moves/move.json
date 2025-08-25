@@ -1,0 +1,198 @@
+[
+  {
+    "name": "Christian McCaffrey",
+    "moved": "+8",
+    "new": "7 | RB4",
+    "previous": "15 | RB6",
+    "reason": "less scared of injury"
+  },
+  {
+    "name": "Jonathan Taylor",
+    "moved": "+6",
+    "new": "17 | RB17",
+    "previous": "23 | RB9",
+    "reason": "less rushing qb"
+  },
+  {
+    "name": "Chase Brown",
+    "moved": "+14",
+    "new": "23 | RB11",
+    "previous": "37 | RB13",
+    "reason": "good offense"
+  },
+  {
+    "name": "Omarion Hampton",
+    "moved": "+10",
+    "new": "37 | RB14",
+    "previous": "47 | RB17",
+    "reason": "risky with najee"
+  },
+  {
+    "name": "Marvin Harrison Jr",
+    "moved": "-10",
+    "new": "46 | WR19",
+    "previous": "36 | WR17",
+    "reason": "not sure"
+  },
+  {
+    "name": "TreVeyon Henderson",
+    "moved": "+41",
+    "new": "43 | RB18",
+    "previous": "84 | RB27",
+    "reason": "good preseason"
+  },
+  {
+    "name": "Breece Hall",
+    "moved": "-12",
+    "new": "51 | RB20",
+    "previous": "39 | RB14",
+    "reason": "competitive rb room"
+  },
+  {
+    "name": "D'Andre Swift",
+    "moved": "+18",
+    "new": "52 | RB21",
+    "previous": "70 | RB23",
+    "reason": "looks like workhorse, complete control"
+  },
+  {
+    "name": "Bo Nix",
+    "moved": "-18",
+    "new": "87 | QB8",
+    "previous": "69 | QB8",
+    "reason": "less value (qb)"
+  },
+  {
+    "name": "Austin Ekeler",
+    "moved": "+46",
+    "new": "91 | RB31",
+    "previous": "137 | RB39",
+    "reason": "traded starter (brj)"
+  },
+  {
+    "name": "Joe Mixon",
+    "moved": "-51",
+    "new": "92 | RB32",
+    "previous": "41 | RB15",
+    "reason": "hurt"
+  },
+  {
+    "name": "JK Dobbins",
+    "moved": ">=57",
+    "new": "93 | WR33",
+    "previous": ">150",
+    "reason": "not sure"
+  },
+  {
+    "name": "Jordan Addison",
+    "moved": "-36",
+    "new": "96 | WR42",
+    "previous": "60 | WR30",
+    "reason": "3 game suspension"
+  },
+  {
+    "name": "Khalil Shakir",
+    "moved": "-15",
+    "new": "97 | WR43",
+    "previous": "82 | WR40",
+    "reason": "high-ankle sprain in practice"
+  },
+  {
+    "name": "Emeka Egbuka",
+    "moved": "+33",
+    "new": "98 | WR44",
+    "previous": "131 | WR53",
+    "reason": "injuries (godwin, mcmillan)"
+  },
+  {
+    "name": "Keon Coleman",
+    "moved": "+23",
+    "new": "102 | WR48",
+    "previous": "125 | WR52",
+    "reason": "good camp"
+  },
+  {
+    "name": "Justin Herbert",
+    "moved": "-16",
+    "new": "103 | QB11",
+    "previous": "87 | QB11",
+    "reason": "less value (qb)"
+  },
+  {
+    "name": "Caleb WIlliams",
+    "moved": "-14",
+    "new": "104 | QB12",
+    "previous": "90 | QB12",
+    "reason": "less value (qb)"
+  },
+  {
+    "name": "Keenan Allen",
+    "moved": ">=42",
+    "new": "108 | WR50",
+    "previous": ">150",
+    "reason": "signed to chargers"
+  },
+  {
+    "name": "Jayden Higgins",
+    "moved": ">=38",
+    "new": "112 | WR54",
+    "previous": ">150",
+    "reason": "elite size and speed, tank dell hurt"
+  },
+  {
+    "name": "Jordan Mason",
+    "moved": ">=32",
+    "new": "118 | RB40",
+    "previous": ">150",
+    "reason": "good camp (jones old)"
+  },
+  {
+    "name": "Quinshon Judkins",
+    "moved": "-29",
+    "new": "120 | RB42",
+    "previous": "91 | RB30",
+    "reason": "contract"
+  },
+  {
+    "name": "Michael Pittman Jr",
+    "moved": "+37",
+    "new": "77 | WR39",
+    "previous": "114 | WR49",
+    "reason": "more passing qb"
+  },
+  {
+    "name": "Matthew Golden",
+    "moved": "+34",
+    "new": "76 | WR38",
+    "previous": "110 | WR48",
+    "reason": "injuries (whole room)"
+  },
+  {
+    "name": "Stefon Diggs",
+    "moved": "+12",
+    "new": "79 | WR41",
+    "previous": "91 | WR43",
+    "reason": "psoitive news about acl injury"
+  },
+  {
+    "name": "Cooper Kupp",
+    "moved": "+11",
+    "new": "78 | WR40",
+    "previous": "89 | WR42",
+    "reason": "some believe will thrive with new oc"
+  },
+  {
+    "name": "Marvin Mims Jr",
+    "moved": "-30",
+    "new": "153 | WR61",
+    "previous": "123 | WR51",
+    "reason": "concerns for snap share and role for team"
+  },
+  {
+    "name": "Brian Robinson Jr",
+    "moved": "-49",
+    "new": "160 | RB55",
+    "previous": "111 | RB33",
+    "reason": "traded to SF (backup)"
+  }
+]
