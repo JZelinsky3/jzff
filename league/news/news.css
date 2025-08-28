@@ -1,3 +1,6 @@
+/* =======================
+   THEME / BASE
+======================= */
 :root {
   --bg: #0f0d1a;
   --panel: #1a1125;
@@ -7,18 +10,40 @@
   --border: #3d2a5a;
 }
 
-html, body {
-  height: 100%;
+html,
+body {
+  /* use min-height so background continues past viewport */
+  min-height: 100%;
   margin: 0;
   font-family: 'Inter', sans-serif;
-  background:
-    radial-gradient(1200px 800px at 0% -20%, rgba(56,189,248,0.12), transparent 60%),
-    radial-gradient(1200px 800px at 120% 0%, rgba(232,121,249,0.12), transparent 60%),
-    var(--bg);
   color: var(--text);
+  background:
+    radial-gradient(1200px 800px at 0% -20%, rgba(56,189,248,.12), transparent 60%),
+    radial-gradient(1200px 800px at 120% 0%, rgba(232,121,249,.12), transparent 60%),
+    var(--bg);
+  background-repeat: no-repeat;
+  background-attachment: scroll; /* avoids mobile jank */
 }
 
-/* ===== PAGE LAYOUT ===== */
+/* Login button */
+.login-btn {
+  background: rgba(56,189,248,.12);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid var(--accent);
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: inline-block;
+  box-shadow: 0 0 12px rgba(56,189,248,.35);
+  transition: background .15s ease, color .15s ease, transform .05s ease;
+}
+.login-btn:hover { background: rgba(56,189,248,.2); color: #fff; }
+.login-btn:active { transform: translateY(1px); }
+
+/* =======================
+   LAYOUT
+======================= */
 .page {
   display: flex;
   flex-direction: column;
@@ -27,168 +52,24 @@ html, body {
 
 main.main-layout {
   display: grid;
-  grid-template-columns: 20% 60% 20%;
+  grid-template-columns: 15% 58% 27%; /* was 20 60 20 (more space for chat) */
   max-width: 1600px;
   width: 100%;
   margin: 40px auto;
   padding: 0 20px;
-  gap: 20px;
+  gap: 16px;
 }
 
-.left-margin {
-  /* empty for visual spacing */
-}
+.left-margin {}
 
-/* ===== NEWS FEED CENTER ===== */
-.news-feed {
-  padding: 0 24px;
-  border-left: 2px solid var(--border);
-  border-right: 2px solid var(--border);
-}
-
-.news-feed h2 {
-  text-align: center;
-  font-size: 36px;
-  margin-bottom: 20px;
-  color: var(--accent);
-  text-shadow: 0 0 6px rgba(167,139,250,0.3);
-}
-
-#newsList {
-  max-height: 1600px;
-  overflow: hidden;
-  position: relative;
-}
-
-#newsList article {
-  background: #121a2f;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px 24px;
-  margin-bottom: 30px;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.4);
-  transition: box-shadow 0.3s;
-}
-
-#newsList article:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-}
-
-#newsList h4 {
-  margin-top: 0;
-  font-size: 22px;
-  color: var(--accent);
-}
-
-#newsList p {
-  line-height: 1.7;
-  font-size: 16px;
-  color: #e4ecf7;
-}
-
-/* ===== COMMENTS ===== */
-.comment-section {
-  margin-top: 16px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border);
-  font-size: 14px;
-}
-
-.comment-section form {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-/* ===== PAGINATION ===== */
-#pagination {
-  text-align: center;
-  margin-top: 20px;
-}
-
-#pagination button {
-  margin: 0 4px;
-  padding: 4px 10px;
-  background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  border-radius: 6px;
-}
-
-/* ===== CHAT PANEL ===== */
-.league-chat {
-  flex: 0 0 10%;
-  max-width: 64%;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  max-height: 600px;
-  overflow: hidden;
-  font-size: 13px;
-}
-
-
-.league-chat h3 {
-  font-size: 16px;
-  margin-bottom: 12px;
-  color: var(--accent-2);
-  text-align: center;
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  background: #121a2f;
-  border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 12px;
-  max-height: 400px;
-}
-
-.chat-messages p {
-  font-size: 14px;
-  background: #1f1f2f;
-  padding: 6px 8px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-}
-
-#chatFormFixed {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-#chatFormFixed input,
-#chatFormFixed textarea {
-  background: #1a2233;
-  border: 1px solid #2d3748;
-  color: white;
-  padding: 6px;
-  font-size: 12px;
-  border-radius: 6px;
-}
-
-#chatFormFixed button {
-  background: var(--accent);
-  color: #0f1220;
-  font-weight: bold;
-  padding: 8px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-/* ===== HEADER ===== */
+/* =======================
+   HEADER / NAV
+======================= */
 header {
   background: #12091e;
   padding: 20px 40px;
   border-bottom: 2px solid var(--accent);
-  box-shadow: 0 0 12px rgba(56,189,248,0.3);
+  box-shadow: 0 0 12px rgba(56,189,248,.3);
   position: relative;
   z-index: 10;
 }
@@ -208,13 +89,9 @@ header {
   padding: 6px 12px;
   border-radius: 8px;
   display: inline-block;
-  box-shadow: 0 0px 12px rgba(56,189,248,0.4);
+  box-shadow: 0 0 12px rgba(56,189,248,.4);
 }
-
-.back-link:hover {
-  background-color: rgba(56,189,248,0.1);
-  color: white;
-}
+.back-link:hover { background: rgba(56,189,248,.1); color: #fff; }
 
 .league-title {
   position: absolute;
@@ -224,209 +101,101 @@ header {
   font-size: 30px;
   font-weight: 800;
   white-space: nowrap;
-  text-shadow: 0 0px 24px rgba(232,121,249,0.4);
+  text-shadow: 0 0 24px rgba(232,121,249,.4);
 }
 
-.menu-toggle {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
-  box-shadow: 0 0px 24px rgba(56,189,248,0.3);
+/* =======================
+   NEWS FEED
+======================= */
+.news-feed {
+  padding: 0 24px;
+  border-left: 2px solid var(--border);
+  border-right: 2px solid var(--border);
 }
 
-.menu-toggle div {
-  width: 26px;
-  height: 3px;
-  background: var(--accent);
-  transition: 0.3s;
-}
-
-.menu-toggle.active div:nth-child(1) {
-  transform: translateY(8px) rotate(45deg);
-}
-.menu-toggle.active div:nth-child(2) {
-  opacity: 0;
-}
-.menu-toggle.active div:nth-child(3) {
-  transform: translateY(-8px) rotate(-45deg);
-}
-
-.nav-links {
-  display: none !important;
-  position: absolute;
-  top: 42px;
-  right: 40px;
-  background: #0f0d1a;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  width: 240px;
-  padding: 10px 0;
-  box-shadow: 0 10px 24px rgba(56,189,248,0.3);
-  z-index: 1000;
-}
-
-.nav-links.show {
-  display: flex !important;
-  flex-direction: column;
-}
-
-.nav-links a {
-  padding: 12px 16px;
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 700;
-}
-
-.nav-links a:hover {
-  background: rgba(232,121,249,0.12);
-  color: #fff;
-}
-
-/* ===== FOOTER ===== */
-footer {
+.news-feed h2 {
   text-align: center;
-  padding: 20px;
-  font-size: 14px;
-  color: #a3b1c6;
-  border-top: 1px solid var(--border);
-  background: #0b1220;
-  margin-top: auto;
-}
-
-/* ===== MOBILE ===== */
-@media (max-width: 1000px) {
-  main.main-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .news-feed {
-    border: none;
-    padding: 0 12px;
-  }
-
-  .league-chat {
-    margin-top: 40px;
-    max-width: 100%;
-  }
-}
-
-.admin-login {
-  background: var(--accent-2);
-  color: black;
-  font-weight: bold;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.login-modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-.login-content {
-  background: #1a1a2d;
-  padding: 24px;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-#adminTools {
-  margin-bottom: 24px;
-}
-
-#adminTools input,
-#adminTools textarea {
-  width: 100%;
-  background: #111927;
-  color: white;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #333;
-}
-
-#adminPostBox {
-  background: #181825;
-  border: 1px solid var(--border);
-  padding: 12px;
-  margin-bottom: 24px;
-  border-radius: 8px;
-}
-
-#adminPostBox input,
-#adminPostBox textarea {
-  width: 100%;
-  margin-bottom: 10px;
-  padding: 10px;
-  background: #0e1628;
-  border: 1px solid #2a3b5c;
-  color: #fff;
-  border-radius: 6px;
-}
-
-#adminPostBox button {
-  background: var(--accent);
-  color: #0f1220;
-  font-weight: bold;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.login-btn {
+  font-size: 36px;
+  margin-bottom: 20px;
   color: var(--accent);
-  font-weight: bold;
+  text-shadow: 0 0 6px rgba(167,139,250,.3);
+}
+
+#newsList {
+  height: 720px;
+  overflow-y: auto;
+  position: relative;
+  padding-right: 6px;
+}
+
+#newsList article {
+  background: #121a2f;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 30px;
+  box-shadow: 0 6px 14px rgba(0,0,0,.4);
+  transition: box-shadow 0.3s;
+}
+
+#newsList article:hover { box-shadow: 0 8px 24px rgba(0,0,0,.6); }
+
+#newsList h4 {
+  margin: 0 0 10px 0;
+  font-size: 22px;
+  color: var(--accent);
+}
+
+#newsList p {
+  line-height: 1.7;
+  font-size: 16px;
+  color: #e4ecf7;
+}
+
+/* Pagination */
+#pagination { text-align: center; margin-top: 12px; }
+#pagination button {
+  margin: 0 4px;
+  padding: 4px 10px;
   background: transparent;
   border: 1px solid var(--accent);
-  padding: 6px 12px;
+  color: var(--accent);
   border-radius: 6px;
   cursor: pointer;
 }
+#pagination button.active { background: var(--accent); color: #0f1220; font-weight: 700; }
 
+/* =======================
+   COMMENTS
+======================= */
 .comment-section {
-  margin-top: 20px;
-  padding-top: 16px;
+  margin-top: 16px;
+  padding: 16px 16px 0;
   border-top: 1px dashed var(--border);
   font-size: 14px;
   background: #121726;
   border-radius: 10px;
-  padding: 16px;
 }
-
 .comment-section strong {
   display: block;
   margin-bottom: 12px;
   font-size: 15px;
   color: var(--accent-2);
 }
-
 .comment-section p {
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
   font-size: 14px;
   background: #1c2333;
   padding: 8px 12px;
   border-radius: 6px;
   line-height: 1.5;
 }
-
 .comment-section form {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-top: 10px;
 }
-
 .comment-section input,
 .comment-section textarea {
   background: #1a2233;
@@ -436,12 +205,7 @@ footer {
   font-size: 14px;
   border-radius: 6px;
 }
-
-.comment-section textarea {
-  resize: vertical;
-  min-height: 70px;
-}
-
+.comment-section textarea { resize: vertical; min-height: 70px; }
 .comment-section button {
   align-self: flex-start;
   background: var(--accent);
@@ -453,35 +217,329 @@ footer {
   cursor: pointer;
   transition: background 0.2s ease-in-out;
 }
+.comment-section button:hover { background: #f29dff; }
 
-.comment-section button:hover {
-  background: #f29dff;
-}
-
-.comment-form {
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 10px;
-}
-
-.toggle-comment {
+/* Delete buttons (comments / chat) */
+.chat-del,
+.delete-comment {
+  margin-left: 8px;
+  border: 1px solid #ef4444;
   background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-weight: bold;
-  border-radius: 6px;
-  padding: 6px 10px;
-  margin-top: 10px;
+  color: #ef9a9a;
+  font-size: 12px;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.toggle-comment:hover {
-  background: rgba(232,121,249,0.1);
-  color: white;
+/* =======================
+   ADMIN POST BOX
+======================= */
+#adminPostBox {
+  background: #181825;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+}
+#adminPostBox h4 { margin: 0 0 12px 0; font-size: 18px; color: var(--accent-2); }
+#adminPostBox input,
+#adminPostBox textarea {
+  width: 100%;
+  background: #0e1628;
+  border: 1px solid #2a3b5c;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+#adminPostBox input:focus,
+#adminPostBox textarea:focus {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(56,189,248,.25);
+}
+#adminPostBox textarea { min-height: 120px; resize: vertical; }
+#adminPostBox button#submitPost {
+  background: var(--accent);
+  color: #0f1220;
+  font-weight: 700;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: transform .05s ease, background .15s ease;
+}
+#adminPostBox button#submitPost:hover { background: #f29dff; }
+#adminPostBox button#submitPost:active { transform: translateY(1px); }
+
+/* =======================
+   CHAT — shared
+======================= */
+.chat-wrapper { /* differs by breakpoint */ }
+
+.league-chat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
 }
 
-.post-date {
-  margin-top: 16px;
-  font-size: 13px;
+.league-chat h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: var(--accent-2);
+  text-align: center;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  background: #0f1527;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+}
+.chat-msg {
+  background: #151b2f;
+  border: 1px solid #2a3655;
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+.chat-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  color: var(--accent-2);
+  margin-bottom: 4px;
+}
+.chat-text {
+  color: #e6edf7;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Chat form (stacked) */
+#chatFormFixed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#chatFormFixed input,
+#chatFormFixed textarea {
+  width: 100%;
+  background: #0e1628;
+  border: 1px solid #2a3b5c;
+  color: #e6edf7;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+#chatFormFixed input::placeholder,
+#chatFormFixed textarea::placeholder { color: #93a6c2; }
+#chatFormFixed input:focus,
+#chatFormFixed textarea:focus {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(56,189,248,.25);
+}
+#chatFormFixed textarea { min-height: 68px; resize: vertical; }
+#chatFormFixed button {
+  align-self: flex-start;
+  background: var(--accent);
+  color: #0f1220;
+  font-weight: 700;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s ease, transform .05s ease;
+}
+#chatFormFixed button:hover { background: #f29dff; }
+#chatFormFixed button:active { transform: translateY(1px); }
+
+/* Mobile-only controls default hidden (desktop never shows these) */
+.chat-fab,
+.chat-backdrop,
+.chat-close { display: none; }
+
+/* =======================
+   FOOTER
+======================= */
+footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
   color: #a3b1c6;
+  border-top: 1px solid var(--border);
+  background: transparent; /* let page background continue; removes seam line */
+  margin-top: auto;
+}
+
+/* =======================
+   DESKTOP (≥1001px)
+   - Chat in 3rd column, left-aligned, narrow
+======================= */
+@media (min-width: 1001px) {
+  .chat-wrapper {
+    position: static;        /* normal grid slot (3rd column) */
+    align-self: start;
+    justify-self: start;     /* align to left within column */
+    width: 100%;
+  }
+
+  .league-chat {
+    position: relative;
+    width: 100%;
+    max-width: 350px;        /* narrower so it never feels oversized */
+    height: calc(100vh - 220px);
+    max-height: calc(100vh - 220px);
+    margin: 0;               /* hug the column’s left edge */
+    transform: none;
+    box-shadow: 0 10px 24px rgba(0,0,0,.35);
+  }
+
+  .chat-messages { max-height: none; }
+}
+
+/* =======================
+   MOBILE (≤1000px)
+   - News full width
+   - Fab button shows
+   - Chat opens FROM THE BUTTON at the RIGHT (no off-screen)
+======================= */
+@media (max-width: 1000px) {
+  main.main-layout {
+    display: block;
+    max-width: 100%;
+    padding: 0 12px;
+  }
+
+  .left-margin { display: none; }
+  .news-feed { border: none; padding: 0; }
+  #newsList { height: 1200px; max-height: 80vh; }
+  #newsList article { margin-bottom: 22px; }
+
+  /* show mobile controls */
+  .chat-fab,
+  .chat-backdrop,
+  .chat-close { display: block; }
+
+  /* anchor the trigger near the right edge */
+  .chat-wrapper {
+    position: fixed;
+    right: 16px;
+    top: 100px;
+    z-index: 1002;
+  }
+
+  .chat-fab {
+    position: relative;
+    z-index: 2;
+    border: 2px solid var(--accent);
+    background: var(--panel);
+    color: var(--accent);
+    font-weight: 700;
+    padding: 14px 20px;
+    font-size: 18px;
+    border-radius: 9999px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  }
+
+  .chat-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 1000;
+  }
+  .chat-backdrop[hidden] { display: none; }
+
+  .chat-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #ef9a9a;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+
+  /* POPUP: anchored to the RIGHT under the button (not centered) */
+  .league-chat {
+    position: absolute;
+    top: 110%;
+    right: 0;                /* anchor to right edge of wrapper */
+    left: auto;
+    width: 86vw;             /* roomy but avoids edges */
+    max-width: 420px;
+    max-height: 30vh;
+    transform: scaleY(0);    /* closed state */
+    transform-origin: top right; /* open down from button */
+    padding: 14px;
+    border-radius: 14px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.55);
+  }
+
+  /* Hide chat-fab when chat drawer is open */
+.league-chat.open + .chat-fab,
+.chat-wrapper.open .chat-fab {
+  display: none;
+}
+
+.chat-fab.hide {
+  display: none !important;
+}
+
+  .chat-messages {
+    flex: 1;
+    min-height: 200px;
+    max-height: 60vh;     /* scrolling window */
+    overflow-y: auto;
+  }
+}
+
+/* Hide FAB when we explicitly add .hide from JS */
+.chat-fab.hide {
+  display: none !important;
+}
+
+/* Ensure drawer is actually visible when "open" */
+@media (max-width: 1000px) {
+  .chat-wrapper {
+    position: fixed;
+    right: 16px;
+    top: 100px;
+    z-index: 1002; /* anchor layer */
+  }
+
+  .league-chat {
+    position: absolute;
+    top: 110%;
+    right: 0;                    /* open from the button to the left */
+    left: auto;
+    width: 86vw;
+    max-width: 420px;
+    max-height: 30vh;
+    transform: scaleY(0);        /* default closed */
+    transform-origin: top right; /* open down from button */
+    will-change: transform;
+    z-index: 1003;               /* ABOVE the FAB and page */
+  }
+
+  .league-chat.open {
+    transform: scaleY(1);        /* visible when open */
+  }
 }

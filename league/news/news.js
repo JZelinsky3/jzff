@@ -77,20 +77,31 @@ document.getElementById("submitPost").addEventListener("click", async () => {
   loadNews();
 });
 
-// ===== Load all posts =====
-async function loadNews() {
+// ===== News paging state  NEW =====
+let allPosts = [];
+let currentPage = 1;
+const perPage = 6;
+
+// ensure a pagination bar exists right after #newsList  NEW
+let paginationBar = document.getElementById("pagination");
+function ensurePaginationBar() {
+  if (!paginationBar) {
+    const list = document.getElementById("newsList");
+    paginationBar = document.createElement("div");
+    paginationBar.id = "pagination";
+    list.after(paginationBar);
+  }
+}
+
+// render one page  NEW
+function renderNewsPage() {
   const container = document.getElementById("newsList");
   container.innerHTML = "";
 
-  const querySnapshot = await getDocs(collection(db, "league_news"));
-  const posts = [];
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    data.id = docSnap.id;
-    posts.push(data);
-  });
+  const start = (currentPage - 1) * perPage;
+  const pageItems = allPosts.slice(start, start + perPage);
 
-  posts.reverse().forEach(post => {
+  pageItems.forEach(post => {
     const article = document.createElement("article");
     article.innerHTML = `
       <h4>${post.title}</h4>
@@ -128,13 +139,50 @@ async function loadNews() {
     container.appendChild(article);
   });
 
-  // Show/hide comment form
+  // toggle comment forms
   document.querySelectorAll(".toggle-comment").forEach(btn => {
     btn.addEventListener("click", () => {
       const form = btn.nextElementSibling;
       form.style.display = form.style.display === "none" ? "flex" : "none";
     });
   });
+
+  // update pagination buttons
+  renderPagination();
+}
+
+// render pagination buttons  NEW
+function renderPagination() {
+  ensurePaginationBar();
+  const totalPages = Math.max(1, Math.ceil(allPosts.length / perPage));
+  paginationBar.innerHTML = "";
+
+  for (let p = 1; p <= totalPages; p++) {
+    const b = document.createElement("button");
+    b.textContent = String(p);
+    if (p === currentPage) b.classList.add("active");
+    b.addEventListener("click", () => {
+      currentPage = p;
+      renderNewsPage();
+      document.getElementById("newsList").scrollTop = 0; // reset scroll to top on new page
+    });
+    paginationBar.appendChild(b);
+  }
+}
+
+// ===== Load all posts  tweaked to fill paging =====
+async function loadNews() {
+  const querySnapshot = await getDocs(collection(db, "league_news"));
+  const posts = [];
+  querySnapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    data.id = docSnap.id;
+    posts.push(data);
+  });
+
+  allPosts = posts.reverse();     // newest first
+  currentPage = 1;
+  renderNewsPage();               // render current page only
 }
 
 // ===== Save comment =====
@@ -145,9 +193,7 @@ window.saveComment = async (postId, form) => {
 
   const comment = { name, text };
   const postRef = doc(db, "league_news", postId);
-  await updateDoc(postRef, {
-    comments: arrayUnion(comment)
-  });
+  await updateDoc(postRef, { comments: arrayUnion(comment) });
 
   form.reset();
   loadNews();
@@ -174,7 +220,7 @@ document.addEventListener("click", async e => {
   }
 });
 
-// ===== League Chat =====
+// ===== League Chat  unchanged submit =====
 document.getElementById("chatFormFixed").addEventListener("submit", async e => {
   e.preventDefault();
   const name = document.getElementById("chatNameFixed").value.trim();
@@ -190,16 +236,79 @@ document.getElementById("chatFormFixed").addEventListener("submit", async e => {
   document.getElementById("chatInputFixed").value = "";
 });
 
-// ===== Live chat feed =====
+// ===== Live chat feed  now shows admin delete buttons and uses ids  NEW =====
+// ===== Live chat feed (name on its own line, better markup) =====
+function escapeHTML(s){
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
 onSnapshot(collection(db, "league_chat"), snapshot => {
   const messages = [];
-  snapshot.forEach(doc => messages.push(doc.data()));
+  snapshot.forEach(d => {
+    const m = d.data();
+    m.id = d.id;
+    messages.push(m);
+  });
   messages.sort((a, b) => a.timestamp - b.timestamp);
 
   const box = document.getElementById("chatMessagesFixed");
-  box.innerHTML = messages.map(m => `<p><strong>${m.name}:</strong> ${m.text}</p>`).join('');
+  box.innerHTML = messages.map(m => {
+    const del = isAdmin ? `<button class="chat-del" data-id="${m.id}" title="Delete">🗑</button>` : "";
+    return `
+      <div class="chat-msg">
+        <div class="chat-name">
+          <span>${escapeHTML(m.name)}</span>
+          ${del}
+        </div>
+        <div class="chat-text">${escapeHTML(m.text)}</div>
+      </div>
+    `;
+  }).join('');
   box.scrollTop = box.scrollHeight;
 });
+
+// delegate chat delete clicks  NEW
+document.addEventListener("click", async e => {
+  if (e.target.classList.contains("chat-del")) {
+    const id = e.target.getAttribute("data-id");
+    if (!id) return;
+    if (!confirm("Delete this chat message?")) return;
+    await deleteDoc(doc(db, "league_chat", id));
+  }
+});
+
+// mobile chat drawer toggle
+const chatFab = document.getElementById("chatFab");
+const chatDrawer = document.querySelector(".league-chat");
+const chatBackdrop = document.getElementById("chatBackdrop");
+const chatClose = document.getElementById("chatClose");
+
+function openChat(){
+  chatDrawer.classList.add("open");
+  chatFab.classList.add("hide");   // hide the button
+  chatFab.setAttribute("aria-expanded", "true");
+  if (chatBackdrop) chatBackdrop.hidden = false;
+}
+function closeChat(){
+  chatDrawer.classList.remove("open");
+  chatFab.classList.remove("hide"); // show the button again
+  chatFab.setAttribute("aria-expanded", "false");
+  if (chatBackdrop) chatBackdrop.hidden = true;
+}
+
+if (chatFab){
+  chatFab.addEventListener("click", () => {
+    if (chatDrawer.classList.contains("open")) closeChat(); else openChat();
+  });
+}
+if (chatClose){ chatClose.addEventListener("click", closeChat); }
+if (chatBackdrop){ chatBackdrop.addEventListener("click", closeChat); }
+
 
 // ===== Init =====
 loadNews();
