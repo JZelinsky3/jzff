@@ -142,17 +142,24 @@ header .navbar{ justify-content: space-between; }
   max-width: 100%;
 }
 
-.trophy-case .shelf{
+/* Trophy case — always 3 per row on larger screens */
+.trophy-case .shelf {
   display: grid;
   grid-template-columns: repeat(2, minmax(120px, 1fr));
-  gap: 10px;
+  gap: 16px;
 }
 
 @media (min-width: 520px){
-  .trophy-case .shelf{ grid-template-columns: repeat(3, minmax(100px, 1fr)); }
+  .trophy-case .shelf {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
+
+/* keep it 3 on desktop as well */
 @media (min-width: 820px){
-  .trophy-case .shelf{ grid-template-columns: repeat(4, minmax(88px, 1fr)); }
+  .trophy-case .shelf {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .trophy-case .slot{
