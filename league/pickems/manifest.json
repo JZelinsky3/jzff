@@ -1,0 +1,6 @@
+{
+  "season": 2025,
+  "weeks": [
+    { "id": "w01", "label": "Week 1", "data": "weeks/week-01.json" }
+  ]
+}
