@@ -224,3 +224,12 @@ footer{ text-align:center; padding:20px; color:#a3b1c6; border-top:1px solid var
   .div-grid .bar em{ font-size:11px; padding:1px 5px; }
   .div-grid .div-row{ grid-template-columns: 1.2fr 1fr; } /* give names a touch more room */
 }
+
+.arrow {
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+.arrow.up { color: #22c55e; }   /* green */
+.arrow.down { color: #ef4444; } /* red */
+.arrow.same { color: #9ca3af; } /* muted gray */

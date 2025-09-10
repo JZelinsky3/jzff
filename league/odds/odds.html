@@ -59,9 +59,9 @@
       </article>
 
       <!-- Record projections -->
-      <article class="panel span-3">
+       <article class="panel span-3">
         <header class="panel-h">
-          <h3>Record Predictions</h3>
+          <h3>Week 1 Record Predictions</h3>
         </header>
         <table class="tbl" id="recordTbl" aria-label="Record predictions">
           <thead>
@@ -76,11 +76,35 @@
           <tbody></tbody>
         </table>
       </article>
+      
+      <article class="panel span-3">
+        <header class="panel-h">
+          <h3>Pre-Season Record Predictions</h3>
+        </header>
+        <table class="tbl" id="preseasonRecordTbl" aria-label="Preseason record predictions">
+          <thead>
+            <tr>
+              <th>Manager</th>
+              <th>Proj W L</th>
+              <th>Playoff%</th>
+              <th>Bye%</th>
+              <th>Miss%</th>
+            </tr>
+          </thead>
+        <tbody></tbody>
+        </table>
+      </article>
 
       <!-- Extra markets -->
       <article class="panel">
         <header class="panel-h">
-          <h3>Other Markets</h3>
+          <h3>Pre-Season Picks</h3>
+        </header>
+        <ul id="preseason_extraMarkets" class="bullets"></ul>
+      </article>
+      <article class="panel">
+        <header class="panel-h">
+          <h3>New Favorites</h3>
         </header>
         <ul id="extraMarkets" class="bullets"></ul>
       </article>
@@ -139,6 +163,20 @@
             ${bar(row.prob)}
           </div>
         `;
+        const arrow = row.delta > 0
+  ? `<span class="arrow up">▲ ${row.delta}</span>`
+  : row.delta < 0
+    ? `<span class="arrow down">▼ ${Math.abs(row.delta)}</span>`
+    : `<span class="arrow same">–</span>`;
+
+li.innerHTML = `
+  <div class="row">
+    <span class="rank">${i+1}</span>
+    <span class="name">${row.manager} ${arrow}</span>
+    ${bar(row.prob)}
+  </div>
+`;
+
         list.appendChild(li);
       });
 
@@ -157,25 +195,60 @@
             </div>
           `).join('')}
         `;
+        const arrowFor = d => d > 0
+  ? `<span class="arrow up">▲ ${d}</span>`
+  : d < 0
+    ? `<span class="arrow down">▼ ${Math.abs(d)}</span>`
+    : `<span class="arrow same">•</span>`;
+
+card.innerHTML = `
+  <h4>${div.division}</h4>
+  ${div.teams.map(t => `
+    <div class="div-row">
+      <span class="name">${t.manager} ${arrowFor(t.delta || 0)}</span>
+      ${bar(t.win_prob)}
+    </div>
+  `).join('')}
+`;
         divBox.appendChild(card);
       });
 
-      // records table
-      const tbody = document.querySelector('#recordTbl tbody');
-      tbody.innerHTML = '';
-      (data.record_projections || []).forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${r.manager}</td>
-          <td>${wl(r)}</td>
-          <td>${pct(r.playoff_prob)}</td>
-          <td>${pct(r.bye_prob)}</td>
-          <td>${pct(r.miss_prob)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+      // helper stays the same
+const pct = n => `${(Number(n) || 0).toFixed(1)}%`;
+const wl  = o => `${o.wins}-${o.losses}`;
+
+// generic renderer for any record table by id
+function renderRecordTable(tblId, rows){
+  const tbody = document.querySelector(`#${tblId} tbody`);
+  if (!tbody || !Array.isArray(rows)) return;
+  tbody.innerHTML = '';
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.manager}</td>
+      <td>${wl(r)}</td>
+      <td>${pct(r.playoff_prob)}</td>
+      <td>${pct(r.bye_prob)}</td>
+      <td>${pct(r.miss_prob)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// inside loadOdds after you fetch data:
+renderRecordTable('recordTbl', data.record_projections);
+renderRecordTable('preseasonRecordTbl', data.preseason_record_projections);
+
 
       // extra markets
+      const preseason_extra = document.getElementById('preseason_extraMarkets');
+      preseason_extra.innerHTML = '';
+      (data.preseason_extra_markets || []).forEach(m => {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${m.market}:</strong> ${m.value}`;
+        preseason_extra.appendChild(li);
+      });
+
       const extra = document.getElementById('extraMarkets');
       extra.innerHTML = '';
       (data.extra_markets || []).forEach(m => {

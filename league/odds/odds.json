@@ -1,116 +1,44 @@
 {
-  "updated": "2025-08-12",
+  "updated": "2025-09-10",
   "title_odds": [
-    {
-      "manager": "Sean",
-      "prob": 10.41
-    },
-    {
-      "manager": "Mason",
-      "prob": 9.44
-    },
-    {
-      "manager": "Joey",
-      "prob": 9.38
-    },
-    {
-      "manager": "Chris",
-      "prob": 9.18
-    },
-    {
-      "manager": "Isaac",
-      "prob": 8.62
-    },
-    {
-      "manager": "Luke",
-      "prob": 8.14
-    },
-    {
-      "manager": "Connie",
-      "prob": 7.86
-    },
-    {
-      "manager": "Andrew",
-      "prob": 7.8
-    },
-    {
-      "manager": "Charlie",
-      "prob": 7.75
-    },
-    {
-      "manager": "Kyle",
-      "prob": 7.6
-    },
-    {
-      "manager": "Evan",
-      "prob": 6.92
-    },
-    {
-      "manager": "Connor",
-      "prob": 6.89
-    }
-  ],
+  { "manager": "Isaac", "prob": 11.2, "delta": 4 },
+  { "manager": "Sean", "prob": 10.3, "delta": -1 },
+  { "manager": "Mason", "prob": 10.1, "delta": -1 },
+  { "manager": "Andrew", "prob": 9.7, "delta": 4 },
+  { "manager": "Joey", "prob": 9.4, "delta": -2 },
+  { "manager": "Chris", "prob": 8.9, "delta": -2 },
+  { "manager": "Luke", "prob": 8.8, "delta": -1 },
+  { "manager": "Connor", "prob": 8.3, "delta": 4 },
+  { "manager": "Charlie", "prob": 7.8, "delta": 0 },
+  { "manager": "Evan", "prob": 7.6, "delta": 1 },
+  { "manager": "Kyle", "prob": 7.0, "delta": -1 },
+  { "manager": "Connie", "prob": 6.9, "delta": -5 }
+],
   "division_odds": [
-    {
-      "division": "Skim",
-      "teams": [
-        {
-          "manager": "Chris",
-          "win_prob": 18.48
-        },
-        {
-          "manager": "Luke",
-          "win_prob": 16.96
-        },
-        {
-          "manager": "Connie",
-          "win_prob": 16.55
-        },
-        {
-          "manager": "Andrew",
-          "win_prob": 16.46
-        },
-        {
-          "manager": "Charlie",
-          "win_prob": 16.39
-        },
-        {
-          "manager": "Evan",
-          "win_prob": 15.16
-        }
-      ]
-    },
-    {
-      "division": "Whole",
-      "teams": [
-        {
-          "manager": "Sean",
-          "win_prob": 18.92
-        },
-        {
-          "manager": "Mason",
-          "win_prob": 17.62
-        },
-        {
-          "manager": "Joey",
-          "win_prob": 17.55
-        },
-        {
-          "manager": "Isaac",
-          "win_prob": 16.53
-        },
-        {
-          "manager": "Kyle",
-          "win_prob": 15.17
-        },
-        {
-          "manager": "Connor",
-          "win_prob": 14.21
-        }
-      ]
-    }
-  ],
-  "record_projections": [
+  {
+    "division": "Skim",
+    "teams": [
+      { "manager": "Andrew", "win_prob": 19.0, "delta": 3 },
+      { "manager": "Chris",  "win_prob": 17.0, "delta": -1 },
+      { "manager": "Luke",   "win_prob": 17.0, "delta": -1 },
+      { "manager": "Charlie","win_prob": 16.0, "delta": -1 },
+      { "manager": "Evan",   "win_prob": 16.0, "delta": 1 },
+      { "manager": "Connie", "win_prob": 15.0, "delta": -4 }
+    ]
+  },
+  {
+    "division": "Whole",
+    "teams": [
+      { "manager": "Isaac",  "win_prob": 19.5, "delta": 3 },
+      { "manager": "Sean",   "win_prob": 18.0, "delta": -1 },
+      { "manager": "Mason",  "win_prob": 18.0, "delta": -1 },
+      { "manager": "Joey",   "win_prob": 17.0, "delta": -1 },
+      { "manager": "Connor", "win_prob": 14.0, "delta": 1 },
+      { "manager": "Kyle",   "win_prob": 13.5, "delta": -1 }
+    ]
+  }
+],
+  "preseason_record_projections": [
     {
       "manager": "Sean",
       "wins": 9,
@@ -208,7 +136,21 @@
       "miss_prob": 58.32
     }
   ],
-  "extra_markets": [
+  "record_projections": [
+    { "manager": "Isaac", "wins": 9, "losses": 5, "playoff_prob": 66.0, "bye_prob": 33.0, "miss_prob": 34.0 },
+    { "manager": "Sean", "wins": 9, "losses": 5, "playoff_prob": 63.0, "bye_prob": 31.0, "miss_prob": 37.0 },
+    { "manager": "Mason", "wins": 8, "losses": 6, "playoff_prob": 60.0, "bye_prob": 29.0, "miss_prob": 40.0 },
+    { "manager": "Andrew", "wins": 8, "losses": 6, "playoff_prob": 59.0, "bye_prob": 28.0, "miss_prob": 41.0 },
+    { "manager": "Joey", "wins": 8, "losses": 6, "playoff_prob": 57.0, "bye_prob": 27.0, "miss_prob": 43.0 },
+    { "manager": "Chris", "wins": 7, "losses": 7, "playoff_prob": 52.0, "bye_prob": 25.0, "miss_prob": 48.0 },
+    { "manager": "Luke", "wins": 7, "losses": 7, "playoff_prob": 51.0, "bye_prob": 25.0, "miss_prob": 49.0 },
+    { "manager": "Connor", "wins": 7, "losses": 7, "playoff_prob": 49.0, "bye_prob": 24.0, "miss_prob": 51.0 },
+    { "manager": "Charlie", "wins": 7, "losses": 7, "playoff_prob": 48.0, "bye_prob": 23.0, "miss_prob": 52.0 },
+    { "manager": "Evan", "wins": 6, "losses": 8, "playoff_prob": 45.0, "bye_prob": 22.0, "miss_prob": 55.0 },
+    { "manager": "Kyle", "wins": 6, "losses": 8, "playoff_prob": 43.0, "bye_prob": 21.0, "miss_prob": 57.0 },
+    { "manager": "Connie", "wins": 6, "losses": 8, "playoff_prob": 40.0, "bye_prob": 20.0, "miss_prob": 60.0 }
+  ],
+  "preseason_extra_markets": [
     {
       "market": "Make Playoffs Favorite",
       "value": "Sean 62.98%"
@@ -225,5 +167,11 @@
       "market": "Best Regular Season Record Favorite",
       "value": "Sean"
     }
+  ],
+  "extra_markets": [
+    { "market": "Make Playoffs Favorite", "value": "Isaac 66.0%" },
+    { "market": "Most Points Favorite", "value": "Andrew" },
+    { "market": "Fewest Points Risk", "value": "Connie" },
+    { "market": "Best Regular Season Record Favorite", "value": "Isaac" }
   ]
 }
