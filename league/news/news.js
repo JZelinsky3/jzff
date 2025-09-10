@@ -68,7 +68,8 @@ document.getElementById("submitPost").addEventListener("click", async () => {
   await addDoc(collection(db, "league_news"), {
     title,
     body,
-    date: timestamp,
+    date: timestamp,       // human readable
+    createdAt: Date.now(), // numeric for reliable sorting
     comments: []
   });
 
@@ -77,12 +78,12 @@ document.getElementById("submitPost").addEventListener("click", async () => {
   loadNews();
 });
 
-// ===== News paging state  NEW =====
+// ===== News paging state =====
 let allPosts = [];
 let currentPage = 1;
 const perPage = 6;
 
-// ensure a pagination bar exists right after #newsList  NEW
+// ensure a pagination bar exists right after #newsList
 let paginationBar = document.getElementById("pagination");
 function ensurePaginationBar() {
   if (!paginationBar) {
@@ -93,7 +94,7 @@ function ensurePaginationBar() {
   }
 }
 
-// render one page  NEW
+// render one page
 function renderNewsPage() {
   const container = document.getElementById("newsList");
   container.innerHTML = "";
@@ -139,7 +140,6 @@ function renderNewsPage() {
     container.appendChild(article);
   });
 
-  // toggle comment forms
   document.querySelectorAll(".toggle-comment").forEach(btn => {
     btn.addEventListener("click", () => {
       const form = btn.nextElementSibling;
@@ -147,11 +147,10 @@ function renderNewsPage() {
     });
   });
 
-  // update pagination buttons
   renderPagination();
 }
 
-// render pagination buttons  NEW
+// render pagination buttons
 function renderPagination() {
   ensurePaginationBar();
   const totalPages = Math.max(1, Math.ceil(allPosts.length / perPage));
@@ -164,13 +163,13 @@ function renderPagination() {
     b.addEventListener("click", () => {
       currentPage = p;
       renderNewsPage();
-      document.getElementById("newsList").scrollTop = 0; // reset scroll to top on new page
+      document.getElementById("newsList").scrollTop = 0;
     });
     paginationBar.appendChild(b);
   }
 }
 
-// ===== Load all posts  tweaked to fill paging =====
+// ===== Load all posts =====
 async function loadNews() {
   const querySnapshot = await getDocs(collection(db, "league_news"));
   const posts = [];
@@ -180,9 +179,16 @@ async function loadNews() {
     posts.push(data);
   });
 
-  allPosts = posts.reverse();     // newest first
+  // sort newest first using createdAt if present else fallback to parsed date
+  posts.sort((a, b) => {
+    const A = typeof a.createdAt === "number" ? a.createdAt : Date.parse(a.date || 0);
+    const B = typeof b.createdAt === "number" ? b.createdAt : Date.parse(b.date || 0);
+    return B - A;
+  });
+
+  allPosts = posts;
   currentPage = 1;
-  renderNewsPage();               // render current page only
+  renderNewsPage();
 }
 
 // ===== Save comment =====
@@ -220,7 +226,7 @@ document.addEventListener("click", async e => {
   }
 });
 
-// ===== League Chat  unchanged submit =====
+// ===== League Chat submit =====
 document.getElementById("chatFormFixed").addEventListener("submit", async e => {
   e.preventDefault();
   const name = document.getElementById("chatNameFixed").value.trim();
@@ -236,8 +242,7 @@ document.getElementById("chatFormFixed").addEventListener("submit", async e => {
   document.getElementById("chatInputFixed").value = "";
 });
 
-// ===== Live chat feed  now shows admin delete buttons and uses ids  NEW =====
-// ===== Live chat feed (name on its own line, better markup) =====
+// live chat feed
 function escapeHTML(s){
   return String(s)
     .replace(/&/g,"&amp;")
@@ -272,7 +277,6 @@ onSnapshot(collection(db, "league_chat"), snapshot => {
   box.scrollTop = box.scrollHeight;
 });
 
-// delegate chat delete clicks  NEW
 document.addEventListener("click", async e => {
   if (e.target.classList.contains("chat-del")) {
     const id = e.target.getAttribute("data-id");
@@ -290,13 +294,13 @@ const chatClose = document.getElementById("chatClose");
 
 function openChat(){
   chatDrawer.classList.add("open");
-  chatFab.classList.add("hide");   // hide the button
+  chatFab.classList.add("hide");
   chatFab.setAttribute("aria-expanded", "true");
   if (chatBackdrop) chatBackdrop.hidden = false;
 }
 function closeChat(){
   chatDrawer.classList.remove("open");
-  chatFab.classList.remove("hide"); // show the button again
+  chatFab.classList.remove("hide");
   chatFab.setAttribute("aria-expanded", "false");
   if (chatBackdrop) chatBackdrop.hidden = true;
 }
@@ -308,7 +312,6 @@ if (chatFab){
 }
 if (chatClose){ chatClose.addEventListener("click", closeChat); }
 if (chatBackdrop){ chatBackdrop.addEventListener("click", closeChat); }
-
 
 // ===== Init =====
 loadNews();
