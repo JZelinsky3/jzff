@@ -470,61 +470,83 @@ function liveTally(w, revealAt){
   onSnapshot(qRef, snap => {
     const show = new Date() >= revealAt;
 
+    // init counts for this week
     const counts = {};
-    for(const m of w.matchups){ counts[m.id] = { [m.home]:0, [m.away]:0 }; }
+    for (const m of w.matchups) counts[m.id] = { [m.home]: 0, [m.away]: 0 };
 
-    const hl = { highest:{}, lowest:{} };
+    const hl = { highest: {}, lowest: {} };
 
+    // aggregate votes
     snap.forEach(docSnap => {
       const d = docSnap.data();
-      if(d.picks){
-        for(const [mid, tid] of Object.entries(d.picks)){
-          if(counts[mid] && counts[mid][tid] != null) counts[mid][tid]++;
+      if (d.picks) {
+        for (const [mid, tid] of Object.entries(d.picks)) {
+          if (counts[mid] && counts[mid][tid] != null) counts[mid][tid]++;
         }
       }
-      if(d.hl){
-        for(const k of ["highest","lowest"]){
-          if(d.hl[k]) hl[k][d.hl[k]] = (hl[k][d.hl[k]]||0)+1;
+      if (d.hl) {
+        for (const k of ["highest", "lowest"]) {
+          if (d.hl[k]) hl[k][d.hl[k]] = (hl[k][d.hl[k]] || 0) + 1;
         }
       }
     });
 
-    for(const m of w.matchups){
-      const bar = document.getElementById(`bar-${w.id}-${m.id}`);
-      const lab = document.getElementById(`lab-${w.id}-${m.id}`);
-      if(!lab) continue;
+    // update each matchup bar and text
+    for (const m of w.matchups) {
+      const bar   = document.getElementById(`bar-${w.id}-${m.id}`);
+      const left  = document.getElementById(`l-${w.id}-${m.id}`);
+      const right = document.getElementById(`r-${w.id}-${m.id}`);
+      if (!bar || !left || !right) continue;
 
       const a = counts[m.id][m.home];
       const b = counts[m.id][m.away];
-      const total = a+b;
-      let pctA = 0, pctB = 0;
-      if(total>0){ pctA = Math.round((a/total)*100); pctB = 100-pctA; }
+      const total = a + b;
 
-      if(show){
-        if(bar) bar.style.width = `${Math.max(pctA,pctB)}%`;
-        lab.textContent = `${state.teams[m.home]?.name||m.home} ${pctA}%  •  ${state.teams[m.away]?.name||m.away} ${pctB}%  •  ${total} votes`;
-      } else {
-        if(bar) bar.style.width = "0%";
-        lab.textContent = "Votes hidden until reveal";
+      let pctA = 50, pctB = 50;        // default neutral display
+      if (show && total > 0) {
+        pctA = Math.round((a / total) * 100);
+        pctB = 100 - pctA;
       }
+
+      // widths and the numbers you see inside the bar
+      left.style.width  = pctA + "%";
+      right.style.width = pctB + "%";
+      left.textContent  = pctA + "%";
+      right.textContent = pctB + "%";
+
+      if (!show) {
+        left.style.color = "transparent";
+        right.style.color = "transparent";
+        left.style.textShadow = "none";
+        right.style.textShadow = "none";
+      } else {
+        left.style.color = "#041016";   // your normal text color
+        right.style.color = "#041016";
+        left.style.textShadow = "0 1px 0 rgba(255,255,255,.25)";
+        right.style.textShadow = "0 1px 0 rgba(255,255,255,.25)";
+      }
+
+      // helpful tooltip
+      bar.title = show
+        ? `${state.teams[m.home]?.name || m.home} ${pctA}%  •  ${state.teams[m.away]?.name || m.away} ${pctB}%  •  ${total} votes`
+        : "Votes hidden until reveal";
     }
 
+    // highest lowest box stays as you had it
     const hlBox = document.getElementById(`hl-reveal-${w.id}`);
-    if(hlBox){
-      if(w.hlWinners){
+    if (hlBox) {
+      if (w.hlWinners) {
         const hi = (w.hlWinners.highest || []).map(id => state.teams[id]?.name || id).join(", ") || "TBD";
         const lo = (w.hlWinners.lowest  || []).map(id => state.teams[id]?.name || id).join(", ") || "TBD";
         hlBox.innerHTML = `<span class="badge">Highest winner ${hi}</span> <span class="badge">Lowest winner ${lo}</span>`;
+      } else if (show) {
+        const hi = leaders(hl.highest);
+        const lo = leaders(hl.lowest);
+        const hiNames = hi.length ? hi.map(id => state.teams[id]?.name || id).join(", ") : "TBD";
+        const loNames = lo.length ? lo.map(id => state.teams[id]?.name || id).join(", ") : "TBD";
+        hlBox.innerHTML = `<span class="badge">Highest leader ${hiNames}</span> <span class="badge">Lowest leader ${loNames}</span>`;
       } else {
-        if(show){
-          const hi = leaders(hl.highest);
-          const lo = leaders(hl.lowest);
-          const hiNames = hi.length ? hi.map(id => state.teams[id]?.name || id).join(", ") : "TBD";
-          const loNames = lo.length ? lo.map(id => state.teams[id]?.name || id).join(", ") : "TBD";
-          hlBox.innerHTML = `<span class="badge">Highest leader ${hiNames}</span> <span class="badge">Lowest leader ${loNames}</span>`;
-        } else {
-          hlBox.innerHTML = `<span class="bar-label">Highest and Lowest leaders reveal at Thursday 12 pm</span>`;
-        }
+        hlBox.innerHTML = `<span class="bar-label">Highest and Lowest leaders reveal at Thursday 12 pm</span>`;
       }
     }
   });
