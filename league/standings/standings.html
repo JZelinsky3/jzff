@@ -10,30 +10,28 @@
   <header>
     <div class="navbar">
       <div class="logo">
-        <img src="/league/pics/standings.png" alt="PA Milk Logo" class="logo-img" />
+        <a href="../league.html" class="back-link">← Back to Hub</a>
       </div>
 
       <h1 class="page-title">2025 Standings</h1>
 
-      <!-- Hamburger -->
       <div class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
         <div></div><div></div><div></div>
       </div>
 
-      <!-- Dropdown Menu -->
       <nav class="nav-links" id="navMenu" role="menu" aria-label="Primary">
         <a href="../league.html" role="menuitem">League Hub</a>
-        <a href="../wins/wins.html" role="menuitem">All-Time Wins</a>
-        <a href="../per-records/pr.html" role="menuitem">Personal Records</a>
-        <a href="../players/players.html" role="menuitem" aria-current="page">Managers</a>
+        <a href="../odds/odds.html" role="menuitem">Season Odds</a>
+        <a href="../players/players.html" role="menuitem">Managers</a>
+        <a href="../history/history.html" role="menuitem">League History</a>
       </nav>
     </div>
   </header>
 
   <main class="main-content">
     <section class="hero">
-      <h2>Current Season (2025)</h2>
-      <p>Live table of wins, losses, win %, streaks, and more.</p>
+      <h2>Current Season 2025</h2>
+      <p>Live table of wins losses win percent streaks and more.</p>
     </section>
 
     <section class="table-wrap">
@@ -62,13 +60,17 @@
   </footer>
 
   <script>
-    // Helper: compute win % and +/- if not provided
+    // numeric helpers
+    const round2 = x => Math.round((Number(x) + Number.EPSILON) * 100) / 100;
+    const num2   = x => round2(x).toFixed(2);
+
+    // win percent from wins and losses
     function pct(w, l) {
       const total = Number(w) + Number(l);
       return total ? (Number(w) / total) : 0;
     }
 
-    // Sort: win% desc, then wins desc, then PF desc, then +/- desc, then name asc
+    // sort order  win% desc  wins desc  PF desc  diff desc  name asc
     function standingsSort(a, b) {
       const ap = a.winPct ?? pct(a.wins, a.losses);
       const bp = b.winPct ?? pct(b.wins, b.losses);
@@ -78,21 +80,26 @@
       const aDiff = (a.pf ?? 0) - (a.pa ?? 0);
       const bDiff = (b.pf ?? 0) - (b.pa ?? 0);
       if (bDiff !== aDiff) return bDiff - aDiff;
-      return (a.manager || '').localeCompare(b.manager || '');
+      return (a.manager || "").localeCompare(b.manager || "");
     }
 
     async function loadStandings() {
-      const res = await fetch('standings.json');
+      const res = await fetch('standings.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to load standings.json');
       const data = await res.json(); // { season: 2025, teams: [...] }
 
       const teams = Array.isArray(data.teams) ? data.teams.slice() : [];
+
       teams.forEach(t => {
-        // Normalize/compute fields
         t.wins   = Number(t.wins ?? 0);
         t.losses = Number(t.losses ?? 0);
-        t.pf     = Number(t.pf ?? 0);
-        t.pa     = Number(t.pa ?? 0);
-        t.diff   = ('diff' in t) ? Number(t.diff) : (t.pf - t.pa);
+
+        // round PF and PA so display and math match
+        t.pf = round2(t.pf ?? 0);
+        t.pa = round2(t.pa ?? 0);
+
+        // compute diff from rounded PF and PA then round again
+        t.diff   = ('diff' in t) ? round2(t.diff) : round2(t.pf - t.pa);
         t.winPct = ('winPct' in t) ? Number(t.winPct) : pct(t.wins, t.losses);
       });
 
@@ -104,8 +111,8 @@
       teams.forEach((t, i) => {
         const tr = document.createElement('tr');
 
-        const pctStr = (t.winPct).toLocaleString(undefined, { style:'percent', minimumFractionDigits:3, maximumFractionDigits:3 });
-        const diffStr = (t.diff >= 0 ? '+' : '') + t.diff;
+        const pctStr  = (t.winPct).toLocaleString(undefined, { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const diffStr = (t.diff >= 0 ? '+' : '') + num2(t.diff);
 
         tr.innerHTML = `
           <td class="left rank">${i + 1}</td>
@@ -113,8 +120,8 @@
           <td class="num">${t.wins}</td>
           <td class="num">${t.losses}</td>
           <td class="num strong">${pctStr}</td>
-          <td class="num">${t.pf.toFixed(1)}</td>
-          <td class="num">${t.pa.toFixed(1)}</td>
+          <td class="num">${num2(t.pf)}</td>
+          <td class="num">${num2(t.pa)}</td>
           <td class="num ${t.diff >= 0 ? 'pos' : 'neg'}">${diffStr}</td>
           <td class="center ${/^W/.test(t.streak||'') ? 'win' : /^L/.test(t.streak||'') ? 'loss' : ''}">${t.streak || '-'}</td>
           <td class="center">${t.last5 || '-'}</td>
@@ -129,16 +136,14 @@
       body.innerHTML = `<tr><td colspan="10" class="error">Failed to load standings</td></tr>`;
     });
 
-    // Hamburger toggle
+    // hamburger menu
     const btn = document.getElementById('menuToggle');
     const menu = document.getElementById('navMenu');
-
     function toggleMenu() {
       menu.classList.toggle('show');
       btn.classList.toggle('active');
       btn.setAttribute('aria-expanded', menu.classList.contains('show'));
     }
-
     btn.addEventListener('click', toggleMenu);
     document.addEventListener('click', (e) => {
       if (!menu.contains(e.target) && !btn.contains(e.target)) {

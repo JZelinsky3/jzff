@@ -3,111 +3,111 @@
   "teams": [
     {
       "manager": "Andrew",
-      "wins": 0,
+      "wins": 1,
       "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "pf": 122.04,
+      "pa": 108.92,
+      "streak": "W1",
+      "last5": "1-0"
     },
     {
       "manager": "Charlie",
       "wins": 0,
-      "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "losses": 1,
+      "pf": 98.10,
+      "pa": 106.12,
+      "streak": "L1",
+      "last5": "0-1"
     },
     {
       "manager": "Chris",
       "wins": 0,
-      "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "losses": 1,
+      "pf": 108.92,
+      "pa": 122.03,
+      "streak": "L1",
+      "last5": "0-1"
     },
     {
       "manager": "Connie",
       "wins": 0,
-      "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "losses": 1,
+      "pf": 103.62,
+      "pa": 131.46,
+      "streak": "L1",
+      "last5": "0-1"
     },
     {
       "manager": "Connor",
-      "wins": 0,
+      "wins": 1,
       "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "pf": 128.02,
+      "pa": 113.78,
+      "streak": "W1",
+      "last5": "1-0"
     },
     {
       "manager": "Evan",
-      "wins": 0,
+      "wins": 1,
       "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "pf": 131.46,
+      "pa": 103.62,
+      "streak": "W1",
+      "last5": "1-0"
     },
     {
       "manager": "Isaac",
-      "wins": 0,
+      "wins": 1,
       "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "pf": 116.06,
+      "pa": 103.92,
+      "streak": "W1",
+      "last5": "1-0"
     },
     {
       "manager": "Joey",
       "wins": 0,
-      "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "losses": 1,
+      "pf": 95.82,
+      "pa": 114.58,
+      "streak": "L1",
+      "last5": "0-1"
     },
     {
       "manager": "Kyle",
       "wins": 0,
-      "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "losses": 1,
+      "pf": 113.78,
+      "pa": 128.02,
+      "streak": "L1",
+      "last5": "0-1"
     },
     {
       "manager": "Luke",
-      "wins": 0,
+      "wins": 1,
       "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "pf": 106.12,
+      "pa": 98.10,
+      "streak": "W1",
+      "last5": "1-0"
     },
     {
       "manager": "Mason",
-      "wins": 0,
+      "wins": 1,
       "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "pf": 114.58,
+      "pa": 95.82,
+      "streak": "W1",
+      "last5": "1-0"
     },
     {
       "manager": "Sean",
       "wins": 0,
-      "losses": 0,
-      "pf": 0,
-      "pa": 0,
-      "streak": "",
-      "last5": "0"
+      "losses": 1,
+      "pf": 103.92,
+      "pa": 116.06,
+      "streak": "L1",
+      "last5": "0-1"
     }
   ]
 }

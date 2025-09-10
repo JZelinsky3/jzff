@@ -13,6 +13,22 @@ header {
   border-bottom: 2px solid #06b6d4; /* cyan accent (no yellow) */
 }
 
+.back-link {
+  color: #06b6d4;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 16px;
+  border: 1px solid #06b6d4;
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.back-link:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: white;
+}
+
 .navbar {
   position: relative;
   display: flex;
@@ -205,10 +221,13 @@ footer {
   }
 
   th, td { padding: 8px 6px; }
+ 
+}
 
-  .logo .logo-img {
-  height: 30px;
-  border-radius: 5px;
+@media (max-width: 600px) {
+  .back-link {
+    font-size: 7px;
+    padding: 4px 5px;
+    margin-left: -10px;
   }
-  
 }
