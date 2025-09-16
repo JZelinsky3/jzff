@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Personal Records | PA Milk Society</title>
+  <link rel="stylesheet" href="pr.css" />
+</head>
+<body>
+  <header>
+    <div class="navbar">
+      <div class="logo">
+        <a href="../players.html" class="back-link">← Back to Managers</a>
+      </div>
+
+      <h1 class="page-title">All-Time Personal Records</h1>
+      <div class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
+        <div></div><div></div><div></div>
+      </div>
+
+      <nav class="nav-links" id="navMenu" role="menu">
+        <a href="../../league.html" role="menuitem">League Hub</a>
+        <a href="../../standings/standings.html" role="menuitem">Standings</a>
+        <a href="../../odds/odds.html" role="menuitem">Season Odds</a>
+        <a href="../../history/history.html" role="menuitem">League History</a>
+      </nav>
+
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p></p>
+    </section>
+
+    <section class="table-wrap">
+      <table id="recordsTable" class="records-table">
+        <thead>
+          <tr id="recordsHeader"></tr>
+        </thead>
+        <tbody id="recordsBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 PA Milk Society. All rights reserved.</p>
+  </footer>
+
+  <script>
+    async function loadRecords() {
+      const res = await fetch('pr.json');
+      const data = await res.json();
+
+      const header = document.getElementById('recordsHeader');
+      const body = document.getElementById('recordsBody');
+
+      // Build headers
+      header.innerHTML = data.managers.map(m => `<th>${m}</th>`).join('');
+
+      // Find the tallest column
+      const maxRows = Math.max(...data.records.map(col => col.length));
+
+      // Build rows
+      for (let i = 0; i < maxRows; i++) {
+        const tr = document.createElement('tr');
+        const rankCell = `<td class="rank-cell">${i + 1}</td>`;
+        const cells = data.records.map(col => `<td>${col[i] || ''}</td>`).join('');
+        tr.innerHTML = cells;
+        body.appendChild(tr);
+      }
+    }
+
+    loadRecords().catch(err => {
+      console.error(err);
+      const body = document.getElementById('recordsBody');
+      body.innerHTML = `<tr><td colspan="99" class="error">Could not load personal records</td></tr>`;
+    });
+  </script>
+
+<script>
+  const btn = document.getElementById('menuToggle');
+  const menu = document.getElementById('navMenu');
+
+  function toggleMenu() {
+    menu.classList.toggle('show');
+    btn.classList.toggle('active');
+    btn.setAttribute('aria-expanded', menu.classList.contains('show'));
+  }
+
+  btn.addEventListener('click', toggleMenu);
+
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      if (menu.classList.contains('show')) toggleMenu();
+    }
+  });
+</script>
+
+
+</body>
+</html>
