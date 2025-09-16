@@ -1,0 +1,425 @@
+/* ======================== pickems.css ======================== */
+:root{
+  --bg:#0f0d1a;
+  --panel:#151126;
+  --panel-2:#1c1532;
+  --text:#f3f4f9;
+  --muted:#c9c9d8;
+  --accent:#e879f9;
+  --accent-2:#38bdf8;
+  --good:#22c55e;
+  --bad:#ef4444;
+  --border:rgba(255,255,255,.08);
+  --glow: 0 0 0 2px rgba(232,121,249,.15), 0 10px 30px rgba(56,189,248,.12);
+}
+
+/* Base */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:
+    radial-gradient(900px 600px at 10% -10%, rgba(232,121,249,.08), transparent 50%),
+    radial-gradient(900px 600px at 110% 10%, rgba(56,189,248,.08), transparent 50%),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* App shell width */
+.pe-app{max-width:1100px; margin:0 auto; padding:12px}
+
+/* ---------------- HEADER (back left, centered title) ---------------- */
+.site-header{ padding:8px 12px; }
+.navbar{
+  display:grid;
+  grid-template-columns: 1fr auto 1fr; /* back | title | spacer */
+  align-items:center;
+  gap:8px;
+}
+.nav-left{ justify-self:start; }
+.nav-right{ justify-self:end; }
+.league-title{
+  justify-self:center;
+  font-weight:800; font-size:20px; line-height:1;
+  color:#a78bfa; text-shadow:0 0 18px rgba(6,181,212,.35);
+  margin:0;
+}
+.back-link{
+  color: rgb(6, 182, 212);
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 14px;
+  border: 1px solid rgb(6, 182, 212);
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: inline-block;
+  box-shadow:0 0 12px rgba(167,139,250,0.45)
+}
+.back-link:hover{ background-color: rgba(59,130,246,0.1); color: white; }
+@media (max-width: 600px){
+  .back-link{ font-size:10px; padding:3px 6px; }
+}
+
+/* ---------------- AUTH (centered, polished) ---------------- */
+.pe-auth{
+  display:flex; justify-content:center;
+  gap:8px; align-items:center; flex-wrap:wrap;
+  margin:10px 0; padding-bottom:10px;
+}
+.pe-login{
+  display:flex; gap:6px; align-items:center;
+  padding:8px; border:1px solid var(--border); border-radius:12px;
+  background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+  box-shadow: var(--glow);
+}
+.pe-login input{
+  background:rgba(255,255,255,.05); color:var(--text);
+  border:1px solid var(--border); border-radius:10px;
+  padding:8px 10px; font-size:12px; width:150px; min-height:36px;
+}
+.pe-btn{
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  color:#041016;border:0;padding:6px 10px;border-radius:10px;
+  font-weight:700;cursor:pointer;box-shadow:var(--glow);font-size:12px
+}
+.pe-btn:hover{filter:brightness(1.06)}
+.pe-btn:disabled{opacity:.6;cursor:not-allowed}
+.pe-btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);box-shadow:none}
+.pe-pill{padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.04);font-size:11px}
+
+/* ---------------- WEEKS / TABS ---------------- */
+.pe-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px}
+.pe-tab{
+  padding:4px 8px;border-radius:10px;border:1px solid var(--border);
+  color:var(--muted);cursor:pointer;background:rgba(255,255,255,.02);font-size:10px;overflow:hidden; /* helps clamp on Safari */
+}
+.pe-tab[data-active="true"]{
+  background:linear-gradient(90deg, rgba(232,121,249,.15), rgba(56,189,248,.15));
+  color:var(--text); border-color:transparent
+}
+.pe-weeks{display:block}
+.week[data-active="true"]{ display:flex; flex-direction:column; gap:8px; }
+
+/* Week info badges (one line; dates formatted without year in JS) */
+.week-info{
+  display:flex; gap:6px; flex-wrap:nowrap; white-space:nowrap; overflow:hidden;
+  margin:6px 0 8px 0; font-size:11px;
+}
+.week-info .badge{ padding:4px 8px; }
+
+/* Only show the active week */
+.week{ display:none; }
+
+/* Grid: always one matchup per row */
+.pe-grid{ display:grid; grid-template-columns:1fr; gap:8px; order:1; }
+
+/* Submit bar (sticky) */
+.pe-submitbar{
+  position:sticky; bottom:10px; z-index:10;
+  display:flex; align-items:center; gap:10px; justify-content:center;
+  padding:12px;
+  background:linear-gradient(180deg, rgba(15,13,26,0), rgba(15,13,26,.95));
+  backdrop-filter: blur(4px);
+  border-top:1px solid var(--border);
+  border-radius:12px;
+  margin-top:10px;
+}
+.pe-submit-hint{font-size:16px; color:var(--muted)}
+
+/* ---------------- HIGH/LOW (bottom) ---------------- */
+.hl-card{
+  order:2; margin:2px 0 0 0; padding:10px;
+  border:1px solid var(--border); border-radius:12px;
+  background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01))
+}
+.hl-row{display:flex; gap:6px; flex-wrap:wrap}
+.hl-card label {
+  display:block;
+  margin-bottom: -10px;
+  font-size:12px;
+  font-weight:600;
+}
+.select{position:relative; flex:1 1 150px}
+.select select{
+  appearance:none; -webkit-appearance:none;
+  background:rgba(255,255,255,.04); color:var(--text);
+  padding:7px 28px 7px 10px; border:1px solid var(--border);
+  border-radius:10px; font-weight:700; font-size:12px; width:100%;
+  min-height:34px;
+}
+.select::after{content:"▾"; position:absolute; right:10px; top:68%; font-size:20px; transform:translateY(-50%); color:var(--muted)}
+
+/* ---------------- GOTW ---------------- */
+.gotw-title{
+  margin:8px 0 -2px 0; text-align:center; font-weight:800; font-size:13px;
+  letter-spacing:.4px; color:var(--text); position:relative; padding-bottom:20px;
+}
+.gotw-title .sub{ display:block; font-size:10px; color:var(--muted); margin-top:2px; }
+.gotw-title::after{
+  content:""; display:block; height:2px; width:84px; margin:6px auto 0;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  border-radius:999px; box-shadow:0 0 16px rgba(232,121,249,.35);
+}
+.match{
+  display:flex; flex-direction:column; gap:6px; position:relative;
+  background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+  border:1px solid var(--border); border-radius:12px; padding:8px; /* tighter */
+}
+.match[data-gotw="true"]{
+  border-color:transparent;
+  background:
+    radial-gradient(600px 200px at 50% -20%, rgba(232,121,249,.18), transparent 60%),
+    radial-gradient(600px 200px at 50% 120%, rgba(56,189,248,.18), transparent 60%),
+    linear-gradient(135deg, rgba(232,121,249,.10), rgba(56,189,248,.10));
+  box-shadow:var(--glow);
+}
+.match[data-gotw="true"] + .match{ margin-top:6px }
+.match[data-locked="true"]::after{
+  content:"Locked"; position:absolute; top:6px; right:6px;
+  font-size:9px; color:var(--muted);
+  border:1px solid var(--border); padding:1px 6px; border-radius:999px;
+}
+
+/* ---------------- TEAMS ROW ---------------- */
+.match-top{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:6px; flex-wrap:nowrap;
+}
+.match-top .vs{
+  flex:0 0 auto; font-weight:800; color:var(--muted); font-size:10px; margin:0 4px;
+}
+
+/* Team blocks */
+.team{ display:flex; align-items:center; gap:8px; min-width:0; flex:1 1 0; }
+.logo{ 
+    border-radius:7px; 
+    overflow:hidden; 
+    border:1px solid var(--border); 
+    background:rgba(0,0,0,.2); 
+    flex:0 0 24px 
+}
+.logo img{ 
+    width:100%; 
+    height:100%;
+    display: block;
+    object-fit:cover 
+}
+.meta{ display:flex; flex-direction:column; min-width:0 }
+
+/* Auto-shrink text; ensure record is always visible */
+.team-name{
+  font-weight:800; letter-spacing:.1px;
+  font-size: clamp(9px, 3.6vw, 10px); /* smaller on mobile */
+  line-height:1.12;
+  display:flex; align-items:center; gap:4px;
+  white-space:normal; word-break:break-word; /* allow wrap for long names */
+}
+.team-name .record{
+  display:block;               /* stays on its own line under the name */
+  white-space:nowrap;          /* <-- prevent 0-0 from breaking to two lines */
+  word-break:normal;
+  overflow-wrap:normal;
+  font-size: clamp(9px, 2.8vw, 10.5px);
+  color:var(--muted);
+  margin-top:2px;
+}
+.manager{
+  font-size: clamp(9px, 2.6vw, 10px);
+  color:var(--muted);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.proj{
+  font-weight:700; margin-top:1px;
+  font-size: clamp(10px, 2.8vw, 11.5px);
+}
+
+/* ---------------- VOTE (two buttons meet at center) ---------------- */
+.vote{
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  width:100%; padding-top:6px; border-top:1px dashed var(--border)
+}
+.vote .buttons{
+  display:grid; grid-template-columns: 1fr 1fr; align-items:center; width:100%; gap:0;
+}
+.vote .buttons .vote-btn:first-child{ justify-self:end; }
+.vote .buttons .vote-btn:last-child{ justify-self:start; }
+
+.vote-btn{
+  position:relative;
+  min-width:42%;
+  max-width:200px;
+  text-align:center;
+  padding:5px 8px; border-radius:10px; border:1px solid var(--border);
+  background:rgba(255,255,255,.03); color:var(--text); font-weight:800; cursor:pointer; font-size:12px;
+  transition:transform .08s ease, filter .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+}
+.vote-btn:hover,
+.vote-btn:focus-visible{ filter:brightness(1.08); box-shadow:0 0 0 3px rgba(56,189,248,.2); }
+.vote-btn:active{ transform:scale(.98) }
+.vote-btn[data-picked="true"]{
+  background:linear-gradient(90deg, rgba(232,121,249,.30), rgba(56,189,248,.30));
+  border-color:transparent;
+  box-shadow:0 0 0 2px rgba(232,121,249,.35), 0 6px 14px rgba(56,189,248,.20);
+}
+.vote-btn[data-picked="true"]::after{
+  content:"✓";
+  position:absolute; right:-6px; top:-6px;
+  width:16px; height:16px; display:grid; place-items:center;
+  font-size:11px; font-weight:900; color:#041016;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  border-radius:999px; box-shadow:var(--glow);
+}
+
+/* Bars */
+.bar{width:130px;height:4px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+.bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%}
+.bar-label{font-size:10px;color:var(--muted)}
+
+/* Two sided percent bar */
+.bar2{
+  width: 280px;
+  height: 16px;
+  display: flex;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+}
+.bar2 > span{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  color: #041016;                 /* dark text on light tint for legibility */
+  text-shadow: 0 1px 0 rgba(255,255,255,.25);
+  transition: width .25s ease;
+  width: 50%;                     /* default 50 50 */
+}
+.bar2 > span.left{  background: #f3f1f3c6; } /* purple tint */
+.bar2 > span.right{ background: #38bff8b7; }  /* teal tint */
+
+/* Percent text in the two sided bar */
+.bar2, .bar2 > span{
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 800;
+  font-size: 8px;      /* tweak size here */
+  letter-spacing: .2px;
+  font-variant-numeric: tabular-nums; /* clean aligned digits */
+}
+
+@media (min-width: 600px){
+  .bar2{ width: 200px; height: 18px; }
+}
+
+/* Badges + crown */
+.badge{font-size:10px; padding:3px 8px; border-radius:999px; border:1px solid var(--border); color:var(--muted)}
+.badge.win{background:rgba(34,197,94,.15); color:#b7f7cc; border-color:rgba(34,197,94,.25)}
+.crown{font-size:11px; padding:2px 6px; border-radius:999px; border:1px solid var(--border);
+  background:linear-gradient(90deg, rgba(232,121,249,.20), rgba(56,189,248,.20));
+}
+
+/* Footer */
+.pe-footer{margin-top:14px; color:var(--muted); font-size:11px}
+
+/* Ultra-narrow phones */
+@media (max-width: 380px){
+  .logo{ width:22px; height:22px; }
+  .team-name{ font-size: clamp(11px, 4vw, 12.5px); }
+  .team-name .record{ font-size: clamp(9px, 3vw, 10px); }
+  .manager{ font-size: clamp(9px, 3vw, 9.5px); }
+  .proj{ font-size: clamp(10px, 3vw, 11px); }
+  .bar{ width:120px; height:4px; }
+  .vote-btn{ min-width:41%; max-width:190px; font-size:11.5px; }
+}
+
+/* Tablet */
+@media (min-width: 600px){
+  .pe-app{padding:16px}
+  .logo{width:30px;height:30px}
+  .bar{width:180px;height:6px}
+}
+
+/* Desktop */
+@media (min-width: 860px){
+  .match{padding:10px}
+  .logo{width:28px;height:28px}
+  .bar{width:200px;height:6px}
+}
+
+/* Winner highlighting */
+.team.win .team-name { 
+  color: var(--good); 
+}
+.team.win .team-name .record{
+  color: var(--good);       /* record turns green */
+  font-weight: 700;         /* optional pop */
+}
+.match .vote-btn[data-winner="true"] {
+  background: linear-gradient(90deg, rgba(34,197,94,.35), rgba(34,197,94,.35));
+  border-color: rgba(34,197,94,.35);
+  color: #b7f7cc;
+  box-shadow: 0 0 0 2px rgba(34,197,94,.3), 0 6px 14px rgba(34,197,94,.2);
+}
+.match[data-winner]{
+  border: 1px solid rgba(34,197,94,.35);
+}
+
+.week-locked {
+  text-align:center;
+  font-size:12px;
+  font-weight:700;
+  color: var(--muted);
+  margin: 0px 0 0px;
+}
+
+/* Tab states */
+/* Active tab  fully painted edge */
+.pe-tab[data-active="true"]{
+  border:1px solid transparent; /* real border becomes a canvas for layer 2 */
+  background:
+    /* layer 1  the inner fill */
+    linear-gradient(90deg, rgba(255,255,255,.558), rgba(17,85,114,.563)) padding-box,
+    /* layer 2  the outer 1px border */
+    linear-gradient(90deg, rgba(6,182,212,.45), rgba(167,139,250,.45)) border-box;
+  color:var(--text);
+  box-shadow: 0 0 0 3px rgba(6,182,212,.25), 0 8px 20px rgba(167,139,250,.2);
+}
+
+/* Current week but not the one you are viewing  softer outline */
+.pe-tab[data-current="true"]:not([data-active="true"]){
+  border:1px solid transparent;
+  background:
+    linear-gradient(90deg, rgba(38, 164, 80, 0.534), rgba(25, 129, 173, 0.513)) padding-box,
+    linear-gradient(90deg, rgba(6,182,212,.28), rgba(167,139,250,.28)) border-box;
+  color:var(--text);
+}
+.pe-tab .tab-sub {
+  display: inline-block;
+  font-size: 9px;
+  color: var(--muted);
+  margin-left: 3px;
+}
+
+/* Smaller vote label for the two long names only */
+.vote-btn[data-team="whiteboyfootball"],
+.vote-btn[data-team="whiteboyfootball"] .btn-label,
+.vote-btn[data-team="thepeoplestightend"],
+.vote-btn[data-team="thepeoplestightend"] .btn-label{
+  font-size: 9px;      /* was 12 */
+  line-height: 1.7;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+/* On very small phones give it one more nudge */
+@media (max-width: 380px){
+  .vote-btn[data-team="whiteboyfootball"],
+  .vote-btn[data-team="whiteboyfootball"] .btn-label,
+  .vote-btn[data-team="thepeoplestightend"],
+  .vote-btn[data-team="thepeoplestightend"] .btn-label{
+    font-size: 9.5px;
+  }
+}

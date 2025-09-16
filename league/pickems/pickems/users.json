@@ -1,0 +1,16 @@
+{
+  "accounts": [
+    { "name": "Connie",  "teamId": "tequilasunrise",     "pin": "482" },
+    { "name": "Evan",    "teamId": "whiteboyfootball",   "pin": "105" },
+    { "name": "Luke",    "teamId": "theglizzys",         "pin": "739" },
+    { "name": "Charlie", "teamId": "moneygod",           "pin": "263" },
+    { "name": "Andrew",  "teamId": "bodix",              "pin": "517" },
+    { "name": "Chris",   "teamId": "kylerthecreator",    "pin": "984" },
+    { "name": "Joey",    "teamId": "gooners",            "pin": "440" },
+    { "name": "Mason",   "teamId": "rizzlers",           "pin": "311" },
+    { "name": "Isaac",   "teamId": "childofgod",         "pin": "772" },
+    { "name": "Sean",    "teamId": "thefamilyguy",       "pin": "639" },
+    { "name": "Kyle",    "teamId": "gingerninger",       "pin": "208" },
+    { "name": "Connor",  "teamId": "thepeoplestightend", "pin": "555" }
+  ]
+}
