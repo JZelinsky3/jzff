@@ -40,6 +40,112 @@ const state = {
 initAuthUI();
 boot().catch(console.error);
 
+/* ---- Voting Records leaderboard ---- */
+const recordsState = {
+  // per weekId  Map of docId to vote data
+  weekVotes: {},   // { w01: { "w01_Name": {...} }, ... }
+};
+
+function initRecords(){
+  // Weeks that count are those with winners filled in
+  const weeksWithWinners = state.weeks
+    .map(w => w.data)
+    .filter(w => w.winners && Object.values(w.winners).some(x => !!x));
+
+  // listen for each counted week
+  weeksWithWinners.forEach(w => {
+    const qRef = query(collection(db, "pickems_votes"), where("weekId", "==", w.id));
+    onSnapshot(qRef, snap => {
+      const bucket = recordsState.weekVotes[w.id] = {};
+      snap.forEach(ds => { bucket[ds.id] = ds.data(); });
+      renderRecords(weeksWithWinners);
+    });
+  });
+
+  // render once if no listeners yet but winners exist
+  if(weeksWithWinners.length === 0){
+    renderRecords([]);
+  }
+}
+
+/* Modal helpers */
+function showRecords(){ 
+  const m = document.getElementById("recordsModal");
+  if(!m) return;
+  m.hidden = false;
+  // focus the close for quick escape
+  const c = document.getElementById("recordsClose");
+  if(c) c.focus();
+}
+function hideRecords(){ 
+  const m = document.getElementById("recordsModal");
+  if(m) m.hidden = true;
+}
+
+/* wire up modal controls once DOM is ready */
+document.addEventListener("click", e=>{
+  const t = e.target;
+  if(t.id === "recordsBtn"){ showRecords(); }
+  if(t.id === "recordsClose" || t.dataset.close === "1"){ hideRecords(); }
+});
+document.addEventListener("keydown", e=>{
+  if(e.key === "Escape") hideRecords();
+});
+
+function renderRecords(weeks){
+  // Map name to { right, wrong }
+  const byUser = new Map();
+  // start everyone at 0 0 so list always shows full roster
+  for(const a of state.accounts){
+    byUser.set(a.name, { right:0, wrong:0, teamId:a.teamId });
+  }
+
+  for(const w of weeks){
+    const winners = w.winners || {};
+    const ownSetByTeam = new Map();
+    // build a quick set of each team own matchups for this week
+    for(const m of w.matchups){
+      ownSetByTeam.set(m.home, (ownSetByTeam.get(m.home)||new Set()).add(m.id));
+      ownSetByTeam.set(m.away, (ownSetByTeam.get(m.away)||new Set()).add(m.id));
+    }
+
+    const votes = recordsState.weekVotes[w.id] || {};
+    for(const data of Object.values(votes)){
+      const person = data.user;
+      const teamId = data.teamId;
+      const picks = data.picks || {};
+      const userRow = byUser.get(person) || { right:0, wrong:0, teamId };
+      for(const [mid, pickTid] of Object.entries(picks)){
+        const winTid = winners[mid];
+        if(!winTid) continue;                         // only score decided games
+        // skip own matchup for fairness
+        const ownMids = ownSetByTeam.get(teamId) || new Set();
+        if(ownMids.has(mid)) continue;
+
+        if(pickTid === winTid) userRow.right += 1;
+        else userRow.wrong += 1;
+      }
+      byUser.set(person, userRow);
+    }
+  }
+
+  // turn into array and sort by most right then fewest wrong then name
+  const rows = [...byUser.entries()].map(([name, rw]) => ({ name, ...rw }));
+  rows.sort((a,b)=>{
+    if(b.right !== a.right) return b.right - a.right;
+    if(a.wrong !== b.wrong) return a.wrong - b.wrong;
+    return a.name.localeCompare(b.name);
+  });
+
+  // paint
+  const list = document.getElementById("recordsList");
+  if(!list) return;
+  list.innerHTML = rows.map(r => {
+    const teamName = state.teams[r.teamId]?.name || r.teamId || "";
+    return `<li><span class="name" title="${teamName}">${r.name}</span><span class="rw">${r.right}-${r.wrong}</span></li>`;
+  }).join("");
+}
+
 /* -------------------- Auth (name and PIN) -------------------- */
 function initAuthUI(){
   const saved = localStorage.getItem("jzff_user");
@@ -146,6 +252,9 @@ async function boot(){
   for(const w of state.weeks){
     await hydrateWeek(w.data);
   }
+
+  // now build the records board
+  initRecords();
 }
 
 /* -------------------- View builders -------------------- */

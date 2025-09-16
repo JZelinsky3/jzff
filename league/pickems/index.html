@@ -19,7 +19,11 @@
       <a href="../league.html" class="back-link">← Back to Hub</a>
     </div>
     <h1 class="league-title">Weekly Pick’ems</h1>
-    <div class="nav-right"><!-- empty spacer --></div>
+    <div class="nav-right">
+      <button id="recordsBtn" class="records-btn" type="button" aria-haspopup="dialog" aria-controls="recordsModal">
+        Voting Records
+      </button>
+    </div>
   </div>
 </header>
 
@@ -103,5 +107,18 @@
   </script>
 
   <script type="module" src="./pickems.js"></script>
+
+  <!-- Voting Records modal -->
+<div id="recordsModal" class="records-modal" role="dialog" aria-modal="true" aria-labelledby="recordsTitle" hidden>
+  <div class="records-modal-backdrop" data-close="1"></div>
+  <div class="records-modal-content" role="document">
+    <div class="records-modal-header">
+      <h2 id="recordsTitle">Voting Records</h2>
+      <button id="recordsClose" class="records-close" aria-label="Close">×</button>
+    </div>
+    <ol id="recordsList" class="records-list"></ol>
+  </div>
+</div>
+
 </body>
 </html>
