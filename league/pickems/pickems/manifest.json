@@ -1,8 +1,0 @@
-{
-  "season": 2025,
-  "weeks": [
-    { "id": "w01", "label": "Week 1", "data": "weeks/week-01.json" },
-    { "id": "w02", "label": "Week 2", "data": "weeks/week-02.json" },
-    { "id": "w03", "label": "Week 3", "data": "weeks/week-03.json" }
-  ]
-}
