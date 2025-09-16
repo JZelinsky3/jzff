@@ -566,16 +566,18 @@ function winnerHighlight(w, m){
   const win = w.winners && w.winners[m.id];
   if(!win) return "";
   requestAnimationFrame(()=>{
-    const matchEl = document.querySelector(`.match[data-mid="${m.id}"]`);
+    const weekEl = document.querySelector(`.week[data-week="${w.id}"]`);
+    if(!weekEl) return;
+
+    const matchEl = weekEl.querySelector(`.match[data-mid="${m.id}"]`);
     if(!matchEl) return;
+
     matchEl.dataset.winner = win;
 
-    // mark team block whose data-team equals winning team id
     matchEl.querySelectorAll(`.team[data-team]`).forEach(t=>{
       if(t.dataset.team === win) t.classList.add("win");
     });
 
-    // mark winning vote button
     matchEl.querySelectorAll(`.vote-btn[data-team="${win}"]`).forEach(btn=>{
       btn.dataset.winner = "true";
     });
