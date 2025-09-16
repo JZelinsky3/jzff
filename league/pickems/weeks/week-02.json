@@ -32,15 +32,15 @@
     "tequilasunrise","whiteboyfootball","theglizzys","moneygod","bodix","kylerthecreator","gooners","rizzlers","childofgod","thefamilyguy","gingerninger","thepeoplestightend"
   ],
   "winners": {
-    "m1": "",
-    "m2": "",
-    "m3": "",
-    "m4": "",
-    "m5": "",
-    "m6": ""
+    "m1": "tequilasunrise",
+    "m2": "moneygod",
+    "m3": "bodix",
+    "m4": "childofgod",
+    "m5": "gingerninger",
+    "m6": "thefamilyguy"
   },
   "hlWinners": {
-    "highest": [""],
-    "lowest":  [""]
+    "highest": ["childofgod"],
+    "lowest":  ["theglizzys"]
   }
 }
