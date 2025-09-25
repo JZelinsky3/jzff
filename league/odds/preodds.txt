@@ -1,0 +1,229 @@
+{
+  "updated": "2025-08-12",
+  "title_odds": [
+    {
+      "manager": "Sean",
+      "prob": 10.41
+    },
+    {
+      "manager": "Mason",
+      "prob": 9.44
+    },
+    {
+      "manager": "Joey",
+      "prob": 9.38
+    },
+    {
+      "manager": "Chris",
+      "prob": 9.18
+    },
+    {
+      "manager": "Isaac",
+      "prob": 8.62
+    },
+    {
+      "manager": "Luke",
+      "prob": 8.14
+    },
+    {
+      "manager": "Connie",
+      "prob": 7.86
+    },
+    {
+      "manager": "Andrew",
+      "prob": 7.8
+    },
+    {
+      "manager": "Charlie",
+      "prob": 7.75
+    },
+    {
+      "manager": "Kyle",
+      "prob": 7.6
+    },
+    {
+      "manager": "Evan",
+      "prob": 6.92
+    },
+    {
+      "manager": "Connor",
+      "prob": 6.89
+    }
+  ],
+  "division_odds": [
+    {
+      "division": "Skim",
+      "teams": [
+        {
+          "manager": "Chris",
+          "win_prob": 18.48
+        },
+        {
+          "manager": "Luke",
+          "win_prob": 16.96
+        },
+        {
+          "manager": "Connie",
+          "win_prob": 16.55
+        },
+        {
+          "manager": "Andrew",
+          "win_prob": 16.46
+        },
+        {
+          "manager": "Charlie",
+          "win_prob": 16.39
+        },
+        {
+          "manager": "Evan",
+          "win_prob": 15.16
+        }
+      ]
+    },
+    {
+      "division": "Whole",
+      "teams": [
+        {
+          "manager": "Sean",
+          "win_prob": 18.92
+        },
+        {
+          "manager": "Mason",
+          "win_prob": 17.62
+        },
+        {
+          "manager": "Joey",
+          "win_prob": 17.55
+        },
+        {
+          "manager": "Isaac",
+          "win_prob": 16.53
+        },
+        {
+          "manager": "Kyle",
+          "win_prob": 15.17
+        },
+        {
+          "manager": "Connor",
+          "win_prob": 14.21
+        }
+      ]
+    }
+  ],
+  "record_projections": [
+    {
+      "manager": "Sean",
+      "wins": 9,
+      "losses": 5,
+      "playoff_prob": 62.98,
+      "bye_prob": 31.49,
+      "miss_prob": 37.02
+    },
+    {
+      "manager": "Mason",
+      "wins": 8,
+      "losses": 6,
+      "playoff_prob": 57.1,
+      "bye_prob": 28.55,
+      "miss_prob": 42.9
+    },
+    {
+      "manager": "Joey",
+      "wins": 8,
+      "losses": 6,
+      "playoff_prob": 56.76,
+      "bye_prob": 28.38,
+      "miss_prob": 43.24
+    },
+    {
+      "manager": "Chris",
+      "wins": 8,
+      "losses": 6,
+      "playoff_prob": 55.54,
+      "bye_prob": 27.77,
+      "miss_prob": 44.46
+    },
+    {
+      "manager": "Isaac",
+      "wins": 7,
+      "losses": 7,
+      "playoff_prob": 52.17,
+      "bye_prob": 26.09,
+      "miss_prob": 47.83
+    },
+    {
+      "manager": "Luke",
+      "wins": 7,
+      "losses": 7,
+      "playoff_prob": 49.28,
+      "bye_prob": 24.64,
+      "miss_prob": 50.72
+    },
+    {
+      "manager": "Connie",
+      "wins": 7,
+      "losses": 7,
+      "playoff_prob": 47.56,
+      "bye_prob": 23.78,
+      "miss_prob": 52.44
+    },
+    {
+      "manager": "Andrew",
+      "wins": 7,
+      "losses": 7,
+      "playoff_prob": 47.22,
+      "bye_prob": 23.61,
+      "miss_prob": 52.78
+    },
+    {
+      "manager": "Charlie",
+      "wins": 7,
+      "losses": 7,
+      "playoff_prob": 46.9,
+      "bye_prob": 23.45,
+      "miss_prob": 53.1
+    },
+    {
+      "manager": "Kyle",
+      "wins": 6,
+      "losses": 8,
+      "playoff_prob": 46.0,
+      "bye_prob": 23.0,
+      "miss_prob": 54.0
+    },
+    {
+      "manager": "Evan",
+      "wins": 6,
+      "losses": 8,
+      "playoff_prob": 41.86,
+      "bye_prob": 20.93,
+      "miss_prob": 58.14
+    },
+    {
+      "manager": "Connor",
+      "wins": 6,
+      "losses": 8,
+      "playoff_prob": 41.68,
+      "bye_prob": 20.84,
+      "miss_prob": 58.32
+    }
+  ],
+  "extra_markets": [
+    {
+      "market": "Make Playoffs Favorite",
+      "value": "Sean 62.98%"
+    },
+    {
+      "market": "Most Points Favorite",
+      "value": "Sean"
+    },
+    {
+      "market": "Fewest Points Risk",
+      "value": "Connor"
+    },
+    {
+      "market": "Best Regular Season Record Favorite",
+      "value": "Sean"
+    }
+  ]
+}
