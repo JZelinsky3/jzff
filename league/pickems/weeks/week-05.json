@@ -1,0 +1,46 @@
+{
+  "id": "w05",
+  "label": "Week 5",
+  "openAt": "2025-10-01T07:00:00-04:00",
+  "revealAt": "2025-10-02T12:00:00-04:00",
+  "lockAt": "2025-10-02T20:00:00-04:00",
+  "projections": "projections/week-05.json",
+  "gameOfWeek": "m4",
+  "records": {
+    "tequilasunrise": "2-2",
+    "whiteboyfootball": "2-2",
+    "theglizzys": "2-2",
+    "moneygod": "2-2",
+    "bodix": "4-0",
+    "kylerthecreator": "0-4",
+    "gooners": "0-4",
+    "rizzlers": "2-2",
+    "childofgod": "3-1",
+    "thefamilyguy": "3-1",
+    "gingerninger": "2-2",
+    "thepeoplestightend": "2-2"
+  },
+  "matchups": [
+    { "id": "m1", "home": "tequilasunrise", "away": "moneygod" },
+    { "id": "m2", "home": "whiteboyfootball", "away": "kylerthecreator" },
+    { "id": "m3", "home": "theglizzys", "away": "bodix" },
+    { "id": "m4", "home": "rizzlers", "away": "thepeoplestightend" },
+    { "id": "m5", "home": "childofgod", "away": "gingerninger" },
+    { "id": "m6", "home": "gooners", "away": "thefamilyguy" }
+  ],
+  "highestLowestOptions": [
+    "tequilasunrise","whiteboyfootball","theglizzys","moneygod","bodix","kylerthecreator","gooners","rizzlers","childofgod","thefamilyguy","gingerninger","thepeoplestightend"
+  ],
+  "winners": {
+    "m1": "",
+    "m2": "",
+    "m3": "",
+    "m4": "",
+    "m5": "",
+    "m6": ""
+  },
+  "hlWinners": {
+    "highest": [""],
+    "lowest":  [""]
+  }
+}
