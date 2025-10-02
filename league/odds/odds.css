@@ -233,3 +233,36 @@ footer{ text-align:center; padding:20px; color:#a3b1c6; border-top:1px solid var
 .arrow.up { color: #22c55e; }   /* green */
 .arrow.down { color: #ef4444; } /* red */
 .arrow.same { color: #9ca3af; } /* muted gray */
+
+/* === fix equal panel heights and stop the gap === */
+.grid { align-items: stretch; } /* ensure grid children stretch to same row height */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  /* keep same visual look but allow inner content to stretch */
+}
+
+.panel-h { flex: 0 0 auto; }    /* header stays natural height */
+.panel > *:not(.panel-h) { flex: 1 1 auto; } /* main panel content fills remaining height */
+
+.rank-list {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;      /* allow the list to expand to the panel bottom */
+  overflow: auto;      /* if content overflows, allow internal scrolling */
+}
+
+/* make each list item stable in height so layout is consistent */
+.rank-list li { display: block; }
+.rank-list .row { align-items: center; min-height: 48px; }
+
+/* ensure the bar does not introduce extra bottom spacing */
+.bar { margin: 0; }
+
+/* optional visual tweak to make the championship list feel denser (if needed) */
+.rank-list .name { font-size: 15px; }  /* bump text if you want it to fill more visually */
+.rank { width: 34px; height: 34px; }
