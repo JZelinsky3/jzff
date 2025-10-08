@@ -5,6 +5,7 @@
     { "id": "w02", "label": "Week 2", "data": "weeks/week-02.json" },
     { "id": "w03", "label": "Week 3", "data": "weeks/week-03.json" },
     { "id": "w04", "label": "Week 4", "data": "weeks/week-04.json" },
-    { "id": "w05", "label": "Week 5", "data": "weeks/week-05.json" }
+    { "id": "w05", "label": "Week 5", "data": "weeks/week-05.json" },
+    { "id": "w06", "label": "Week 6", "data": "weeks/week-06.json" }
   ]
 }
