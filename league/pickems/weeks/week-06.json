@@ -2,8 +2,8 @@
   "id": "w06",
   "label": "Week 6",
   "openAt": "2025-10-08T00:00:00-04:00",
-  "revealAt": "2025-10-10T12:00:00-04:00",
-  "lockAt": "2025-10-10T20:00:00-04:00",
+  "revealAt": "2025-10-09T12:00:00-04:00",
+  "lockAt": "2025-10-09T20:00:00-04:00",
   "projections": "projections/week-06.json",
   "gameOfWeek": "m3",
   "records": {
