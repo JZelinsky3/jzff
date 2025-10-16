@@ -4,110 +4,110 @@
     {
       "manager": "Andrew",
       "wins": 5,
-      "losses": 0,
-      "pf": 642.30,
-      "pa": 493.46,
-      "streak": "W5",
-      "last5": "5-0"
+      "losses": 1,
+      "pf": 748.16,
+      "pa": 629.90,
+      "streak": "L1",
+      "last5": "4-1"
     },
     {
       "manager": "Charlie",
-      "wins": 3,
+      "wins": 4,
       "losses": 2,
-      "pf": 589.88,
-      "pa": 561.84,
-      "streak": "W1",
-      "last5": "3-2"
+      "pf": 709.00,
+      "pa": 678.24,
+      "streak": "W2",
+      "last5": "4-1"
     },
     {
       "manager": "Evan",
       "wins": 2,
-      "losses": 3,
-      "pf": 524.58,
-      "pa": 561.26,
-      "streak": "L1",
-      "last5": "2-3"
+      "losses": 4,
+      "pf": 636.48,
+      "pa": 696.78,
+      "streak": "L2",
+      "last5": "1-4"
     },
     {
       "manager": "Connie",
       "wins": 2,
-      "losses": 3,
-      "pf": 520.08,
-      "pa": 608.78,
-      "streak": "L1",
-      "last5": "2-3"
+      "losses": 4,
+      "pf": 623.02,
+      "pa": 756.22,
+      "streak": "L2",
+      "last5": "1-4"
     },
     {
       "manager": "Luke",
       "wins": 2,
-      "losses": 3,
-      "pf": 468.92,
-      "pa": 537.32,
-      "streak": "L2",
-      "last5": "2-3"
+      "losses": 4,
+      "pf": 564.58,
+      "pa": 678.86,
+      "streak": "L3",
+      "last5": "1-4"
     },
     {
       "manager": "Chris",
       "wins": 1,
-      "losses": 4,
-      "pf": 631.38,
-      "pa": 614.48,
-      "streak": "W1",
+      "losses": 5,
+      "pf": 757.94,
+      "pa": 764.96,
+      "streak": "L1",
       "last5": "1-4"
     },
     {
-      "manager": "Sean",
-      "wins": 3,
-      "losses": 2,
-      "pf": 680.48,
-      "pa": 625.62,
-      "streak": "L1",
-      "last5": "3-2"
-    },
-    {
       "manager": "Kyle",
-      "wins": 3,
+      "wins": 4,
       "losses": 2,
-      "pf": 663.12,
-      "pa": 667.04,
-      "streak": "W1",
-      "last5": "3-2"
-    },
-    {
-      "manager": "Isaac",
-      "wins": 3,
-      "losses": 2,
-      "pf": 746.72,
-      "pa": 690.38,
-      "streak": "L2",
-      "last5": "3-2"
-    },
-    {
-      "manager": "Mason",
-      "wins": 3,
-      "losses": 2,
-      "pf": 651.26,
-      "pa": 622.14,
+      "pf": 799.56,
+      "pa": 772.90,
       "streak": "W2",
       "last5": "3-2"
     },
     {
-      "manager": "Connor",
-      "wins": 2,
+      "manager": "Mason",
+      "wins": 4,
+      "losses": 2,
+      "pf": 786.78,
+      "pa": 734.04,
+      "streak": "W3",
+      "last5": "4-1"
+    },
+    {
+      "manager": "Isaac",
+      "wins": 4,
+      "losses": 2,
+      "pf": 888.26,
+      "pa": 786.04,
+      "streak": "W1",
+      "last5": "3-2"
+    },
+    {
+      "manager": "Sean",
+      "wins": 3,
       "losses": 3,
-      "pf": 658.48,
-      "pa": 701.36,
-      "streak": "L1",
+      "pf": 796.88,
+      "pa": 744.74,
+      "streak": "L2",
       "last5": "2-3"
     },
     {
-      "manager": "Joey",
-      "wins": 1,
-      "losses": 4,
-      "pf": 579.66,
-      "pa": 673.18,
+      "manager": "Connor",
+      "wins": 3,
+      "losses": 3,
+      "pf": 808.96,
+      "pa": 827.92,
       "streak": "W1",
-      "last5": "1-4"
+      "last5": "3-2"
+    },
+    {
+      "manager": "Joey",
+      "wins": 2,
+      "losses": 4,
+      "pf": 727.10,
+      "pa": 776.12,
+      "streak": "W2",
+      "last5": "2-3"
     }
   ]
 }
