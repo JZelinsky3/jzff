@@ -1,19 +1,19 @@
 [
   { "manager": "andrew", "wins": 44 },
   { "manager": "ari", "wins": 8 },
-  { "manager": "charlie", "wins": 42 },
+  { "manager": "charlie", "wins": 43 },
   { "manager": "chris", "wins": 46 },
   { "manager": "CJ", "wins": 23 },
   { "manager": "connie", "wins": 41 },
-  { "manager": "connor", "wins": 37 },
+  { "manager": "connor", "wins": 38 },
   { "manager": "costigan", "wins": 6 },
   { "manager": "evan**", "wins": 14 },
-  { "manager": "isaac*", "wins": 39 },
-  { "manager": "joey", "wins": 47 },
+  { "manager": "isaac*", "wins": 40 },
+  { "manager": "joey", "wins": 48 },
   { "manager": "john", "wins": 2 },
   { "manager": "krish", "wins": 7 },
-  { "manager": "kyle", "wins": 41 },
+  { "manager": "kyle", "wins": 42 },
   { "manager": "luke*", "wins": 36 },
   { "manager": "sean", "wins": 53},
-  { "manager": "mason", "wins": 49}
+  { "manager": "mason", "wins": 50}
 ]
