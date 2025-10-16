@@ -135,6 +135,11 @@ header {
   padding: 0;
 }
 
+/* Only affect bars within the division odds section */
+.div-card .bar > span {
+  min-width: 30px;
+}
+
 /* Force smaller font size inside conference odds bars */
 .div-grid .bar > span > em {
   font-size: 10px !important; /* strong override */

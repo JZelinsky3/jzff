@@ -6,11 +6,11 @@
   <link rel="stylesheet" href="odds.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 </head>
 <body>
   <header>
     <div class="navbar">
-      
       <div class="logo">
         <a href="../league.html" class="back-link">← Back to Hub</a>
       </div>
@@ -59,9 +59,9 @@
       </article>
 
       <!-- Record projections -->
-       <article class="panel span-3">
+      <article class="panel span-3">
         <header class="panel-h">
-          <h3>Post Week 5 Record Predictions</h3>
+          <h3>Post Week 6 Record Predictions</h3>
         </header>
         <table class="tbl" id="recordTbl" aria-label="Record predictions">
           <thead>
@@ -76,7 +76,7 @@
           <tbody></tbody>
         </table>
       </article>
-      
+
       <article class="panel span-3">
         <header class="panel-h">
           <h3>Pre-Season Record Predictions</h3>
@@ -91,7 +91,7 @@
               <th>Miss%</th>
             </tr>
           </thead>
-        <tbody></tbody>
+          <tbody></tbody>
         </table>
       </article>
 
@@ -116,7 +116,9 @@
   </footer>
 
   <script>
-    // nav
+    // -------------------------
+    // NAV
+    // -------------------------
     const btn = document.getElementById('menuToggle');
     const menu = document.getElementById('navMenu');
     function toggleMenu() {
@@ -131,133 +133,151 @@
       }
     });
 
-    // helpers
+    // -------------------------
+    // HELPERS
+    // -------------------------
     const pct = n => `${(Number(n) || 0).toFixed(1)}%`;
     const wl = o => `${o.wins}-${o.losses}`;
-    const bar = (p) => {
-  const v = Math.max(0, Math.min(100, Number(p) || 0));
-  return `
-    <div class="bar">
-      <span style="width:${v}%"><em>${v.toFixed(1)}%</em></span>
-    </div>
-  `;
-};
 
+    // Slight visual boost for division-only; raw displayed percent stays accurate
+    // This keeps your original multipliers but only applies them when isDivision === true
+    const bar = (p, isDivision = false) => {
+      let raw = Number(p);
+      if (!Number.isFinite(raw)) raw = 0;
+      if (raw > 0 && raw <= 1) raw = raw * 100;
+      raw = Math.max(0, Math.min(100, raw));
+
+      let v = raw;
+      if (isDivision) {
+        if (v >= 45) v = v * 1.30;
+        else if (v >= 30) v = v * 1.45;
+        else if (v >= 18) v = v * 1.45;
+        else if (v >= 9) v = v * 2.25;
+        else if (v >= 8) v = v * 3.15;
+        else if (v >= 7) v = v * 2.95;
+        else if (v >= 6) v = v * 2.95;
+        else if (v >= 5) v = v * 2.95;
+        else if (v >= 4) v = v * 2.55;
+        if (v > 100) v = 100;
+        v = Math.round(v * 10) / 10;
+      } else {
+        v = Math.round(v * 10) / 10;
+      }
+
+      // return HTML for a single bar. we keep data-prob for debugging if needed.
+      return `
+        <div class="bar" data-prob="${raw}">
+          <span style="width:${v}%"><em>${raw.toFixed(1)}%</em></span>
+        </div>
+      `;
+    };
+
+    // -------------------------
+    // MAIN: fetch and render odds.json
+    // -------------------------
     async function loadOdds(){
       const res = await fetch('odds.json', { cache: 'no-store' });
       if (!res.ok) { console.error('Failed to load odds.json'); return; }
       const data = await res.json();
 
       // stamp
-      document.getElementById('lastUpdated').textContent = data.updated || '—';
+      const stamp = document.getElementById('lastUpdated');
+      if (stamp) stamp.textContent = data.updated || '—';
 
-      // title odds ordered
+      // --- title odds (leave exact widths; no boost) ---
       const list = document.getElementById('titleOdds');
-      list.innerHTML = '';
-      (data.title_odds || []).sort((a,b)=> b.prob - a.prob).forEach((row, i) => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-          <div class="row">
-            <span class="rank">${i+1}</span>
-            <span class="name">${row.manager}</span>
-            ${bar(row.prob)}
-          </div>
-        `;
-        const arrow = row.delta > 0
-  ? `<span class="arrow up">▲ ${row.delta}</span>`
-  : row.delta < 0
-    ? `<span class="arrow down">▼ ${Math.abs(row.delta)}</span>`
-    : `<span class="arrow same">–</span>`;
+      if (list) {
+        list.innerHTML = '';
+        (data.title_odds || []).sort((a,b)=> b.prob - a.prob).forEach((row, i) => {
+          const arrow = row.delta > 0
+            ? `<span class="arrow up">▲ ${row.delta}</span>`
+            : row.delta < 0
+              ? `<span class="arrow down">▼ ${Math.abs(row.delta)}</span>`
+              : `<span class="arrow same">–</span>`;
 
-li.innerHTML = `
-  <div class="row">
-    <span class="rank">${i+1}</span>
-    <span class="name">${row.manager} ${arrow}</span>
-    ${bar(row.prob)}
-  </div>
-`;
-
-        list.appendChild(li);
-      });
-
-      // division odds grouped
-      const divBox = document.getElementById('divisionOdds');
-      divBox.innerHTML = '';
-      (data.division_odds || []).forEach(div => {
-        const card = document.createElement('div');
-        card.className = 'div-card';
-        card.innerHTML = `
-          <h4>${div.division}</h4>
-          ${div.teams.map(t => `
-            <div class="div-row">
-              <span class="name">${t.manager}</span>
-              ${bar(t.win_prob)}
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <div class="row">
+              <span class="rank">${i+1}</span>
+              <span class="name">${row.manager} ${arrow}</span>
+              ${bar(row.prob)} <!-- title bars: no division boost -->
             </div>
-          `).join('')}
-        `;
-        const arrowFor = d => d > 0
-  ? `<span class="arrow up">▲ ${d}</span>`
-  : d < 0
-    ? `<span class="arrow down">▼ ${Math.abs(d)}</span>`
-    : `<span class="arrow same">•</span>`;
+          `;
+          list.appendChild(li);
+        });
+      }
 
-card.innerHTML = `
-  <h4>${div.division}</h4>
-  ${div.teams.map(t => `
-    <div class="div-row">
-      <span class="name">${t.manager} ${arrowFor(t.delta || 0)}</span>
-      ${bar(t.win_prob)}
-    </div>
-  `).join('')}
-`;
-        divBox.appendChild(card);
-      });
+      // --- division odds (apply boost only here) ---
+      const divBox = document.getElementById('divisionOdds');
+      if (divBox) {
+        divBox.innerHTML = '';
+        (data.division_odds || []).forEach(div => {
+          const arrowFor = d => d > 0
+            ? `<span class="arrow up">▲ ${d}</span>`
+            : d < 0
+              ? `<span class="arrow down">▼ ${Math.abs(d)}</span>`
+              : `<span class="arrow same">•</span>`;
 
-      // helper stays the same
-const pct = n => `${(Number(n) || 0).toFixed(1)}%`;
-const wl  = o => `${o.wins}-${o.losses}`;
+          const card = document.createElement('div');
+          card.className = 'div-card';
+          // IMPORTANT: single assignment here (no overwrite later)
+          card.innerHTML = `
+            <h4>${div.division}</h4>
+            ${div.teams.map(t => `
+              <div class="div-row">
+                <span class="name">${t.manager} ${arrowFor(t.delta || 0)}</span>
+                ${bar(t.win_prob, true)}  <!-- division bars: pass true -->
+              </div>
+            `).join('')}
+          `;
+          divBox.appendChild(card);
+        });
+      }
 
-// generic renderer for any record table by id
-function renderRecordTable(tblId, rows){
-  const tbody = document.querySelector(`#${tblId} tbody`);
-  if (!tbody || !Array.isArray(rows)) return;
-  tbody.innerHTML = '';
-  rows.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${r.manager}</td>
-      <td>${wl(r)}</td>
-      <td>${pct(r.playoff_prob)}</td>
-      <td>${pct(r.bye_prob)}</td>
-      <td>${pct(r.miss_prob)}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
+      // record tables
+      function renderRecordTable(tblId, rows){
+        const tbody = document.querySelector(`#${tblId} tbody`);
+        if (!tbody || !Array.isArray(rows)) return;
+        tbody.innerHTML = '';
+        rows.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${r.manager}</td>
+            <td>${wl(r)}</td>
+            <td>${pct(r.playoff_prob)}</td>
+            <td>${pct(r.bye_prob)}</td>
+            <td>${pct(r.miss_prob)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
 
-// inside loadOdds after you fetch data:
-renderRecordTable('recordTbl', data.record_projections);
-renderRecordTable('preseasonRecordTbl', data.preseason_record_projections);
-
+      renderRecordTable('recordTbl', data.record_projections);
+      renderRecordTable('preseasonRecordTbl', data.preseason_record_projections);
 
       // extra markets
       const preseason_extra = document.getElementById('preseason_extraMarkets');
-      preseason_extra.innerHTML = '';
-      (data.preseason_extra_markets || []).forEach(m => {
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${m.market}:</strong> ${m.value}`;
-        preseason_extra.appendChild(li);
-      });
+      if (preseason_extra) {
+        preseason_extra.innerHTML = '';
+        (data.preseason_extra_markets || []).forEach(m => {
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${m.market}:</strong> ${m.value}`;
+          preseason_extra.appendChild(li);
+        });
+      }
 
       const extra = document.getElementById('extraMarkets');
-      extra.innerHTML = '';
-      (data.extra_markets || []).forEach(m => {
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${m.market}:</strong> ${m.value}`;
-        extra.appendChild(li);
-      });
+      if (extra) {
+        extra.innerHTML = '';
+        (data.extra_markets || []).forEach(m => {
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${m.market}:</strong> ${m.value}`;
+          extra.appendChild(li);
+        });
+      }
     }
 
+    // kick it off
     loadOdds().catch(console.error);
   </script>
 </body>
