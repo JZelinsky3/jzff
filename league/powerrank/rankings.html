@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Power Rankings — Submit</title>
+  <link rel="stylesheet" href="/league.css">
+  <style>
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;margin:0;background:#f6f7fb;color:#0b1220}
+    .container{max-width:800px;margin:36px auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(11,18,32,.06)}
+    h1{margin:0 0 6px;font-size:24px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .login{display:flex;gap:8px;align-items:center}
+    .btn{background:#0b63ff;color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+    .btn.ghost{background:transparent;color:#0b1220;border:1px solid #e6e9f2}
+
+    /* vertical list */
+    .list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    .list-row{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;border:1px solid #eef1fa;background:#fbfcff}
+    .list-row img{width:48px;height:48px;border-radius:8px;object-fit:cover}
+    .position{width:56px;font-weight:700;text-align:center}
+    .team-info{display:flex;flex-direction:column}
+    .team-name{font-weight:700}
+    .team-id{font-size:12px;color:#5b6b8a}
+
+    /* podium styles for top 3 on the preview panel */
+    .preview{margin-top:18px}
+    .podium{display:flex;align-items:flex-end;gap:12px;justify-content:center}
+    .podium .slot{display:flex;flex-direction:column;align-items:center;border-radius:10px;padding:8px}
+    .podium .first{background:linear-gradient(180deg,#ffd966,#ffb700);color:#111;padding:18px}
+    .podium .second{background:linear-gradient(180deg,#dfe8f8,#9fb7ff);color:#07204a;padding:12px;transform:scale(0.9)}
+    .podium .third{background:linear-gradient(180deg,#f2e6d5,#e1b78a);color:#3b2a06;padding:14px}
+
+    .submit-row{display:flex;justify-content:flex-end;margin-top:18px;gap:8px}
+    .note{font-size:13px;color:#5b6b8a}
+
+    @media(max-width:560px){.podium{flex-direction:column;align-items:center}.podium .slot{width:160px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div>
+        <h1>Week 8 Power Rankings</h1>
+        <div class="note">Drag to reorder Best Team to Worst. Power Rankings only have to do with this week and the future, nothing with the past.</div>
+      </div>
+      <div class="login">
+        <input id="nameInput" placeholder="Enter your name" style="padding:8px;border-radius:8px;border:1px solid #e6e9f2">
+        <input id="pinInput" placeholder="PIN" style="padding:8px;border-radius:8px;border:1px solid #e6e9f2;width:80px">
+        <button id="loginBtn" class="btn">Login</button>
+        <button id="logoutBtn" class="btn ghost" style="display:none">Logout</button>
+      </div>
+    </div>
+
+    <div id="mainContent">
+      <div class="preview">
+        <h3>Top 3 Preview</h3>
+        <div class="podium" id="podiumPreview">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div id="dragContainer" class="list" aria-label="Rank teams from 1 to 12"></div>
+
+      <div class="submit-row">
+        <button id="submitRankings" class="btn">Submit Rankings</button>
+      </div>
+    </div>
+
+    <div id="message" style="margin-top:12px"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAUk7lfFezJ-pL_-MaDSIoL5RzogPnJw4c",
+      authDomain: "ffootball-1ffa4.firebaseapp.com",
+      projectId: "ffootball-1ffa4",
+      storageBucket: "ffootball-1ffa4.appspot.com",
+      messagingSenderId: "214820317243",
+      appId: "1:214820317243:web:00907255d3ee230f21541e",
+      measurementId: "G-H9LQY4GWSN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // State
+    let users = [];
+    let teams = [];
+    let currentUser = null; // { teamId, name }
+
+    const $ = id => document.getElementById(id);
+    const dragContainer = $('dragContainer');
+    const podium = $('podiumPreview');
+
+    async function loadData(){
+      try{
+        const [uRes, tRes] = await Promise.all([fetch('../pickems/users.json'), fetch('teams_w08.json')]);
+        users = (await uRes.json()).accounts || (await uRes.json());
+        const tjson = await tRes.json();
+        teams = tjson.teams || [];
+      }catch(e){
+        console.warn('Could not load users.json/teams.json — falling back');
+        users = [{name:'Andrew', teamId:'bodix', pin:'1234'}];
+        teams = users.map(u=>({id:u.teamId,name:u.name,logo:'/league/assets/logos/default.png'}));
+      }
+
+      buildDraggableList();
+      renderPodium();
+    }
+
+    function buildDraggableList(){
+      dragContainer.innerHTML = '';
+      // ensure teams are ordered by a stable list (teams.json order) - if missing fill with ids
+      const master = teams.slice();
+      master.forEach((t, idx)=>{
+        const row = document.createElement('div');
+        row.className = 'list-row';
+        row.draggable = true;
+        row.dataset.teamId = t.id;
+        row.innerHTML = `
+          <div class="position">${idx+1}</div>
+          <img src="${t.logo || '/league/assets/logos/default.png'}" onerror="this.src='/league/assets/logos/default.png'">
+          <div class="team-info">
+            <div class="team-name">${escapeHtml(t.name)}</div>
+            <div class="team-id">
+              ${ escapeHtml(t.manager || t.managerName || t.owner || t.contact || t.id) }
+              ${ t.record ? `<span style="margin-left:8px;color:#5b6b8a">• ${escapeHtml(t.record)}</span>` : '' }
+            </div>
+          </div>
+        `;
+        addDragHandlers(row);
+        dragContainer.appendChild(row);
+      });
+    }
+
+    function addDragHandlers(node){
+      node.addEventListener('dragstart', (e)=>{ e.dataTransfer.setData('text/plain', node.dataset.teamId); node.classList.add('dragging'); });
+      node.addEventListener('dragend', ()=>{ node.classList.remove('dragging'); updatePositions(); });
+
+      node.addEventListener('dragover', (e)=>{
+        e.preventDefault();
+        const target = e.currentTarget;
+        const dragging = document.querySelector('.dragging');
+        if(!dragging || dragging===target) return;
+        const rect = target.getBoundingClientRect();
+        const halfway = rect.top + rect.height/2;
+        if(e.clientY < halfway) target.parentNode.insertBefore(dragging, target);
+        else target.parentNode.insertBefore(dragging, target.nextSibling);
+      });
+
+      node.addEventListener('drop', (e)=>{ e.preventDefault(); renderPodium(); updatePositions(); });
+    }
+
+    function updatePositions(){
+      Array.from(dragContainer.children).forEach((ch, i)=>{
+        const pos = ch.querySelector('.position'); if(pos) pos.textContent = i+1;
+      });
+    }
+
+    function getCurrentOrder(){
+      return Array.from(dragContainer.children).map(ch=>ch.dataset.teamId);
+    }
+
+    function renderPodium(){
+      const order = getCurrentOrder();
+      const first = order[0], second = order[1], third = order[2];
+      const firstLogo = findTeamLogo(first);
+      const secondLogo = findTeamLogo(second);
+      const thirdLogo = findTeamLogo(third);
+      podium.innerHTML = `
+        <div class="slot second"><img src="${secondLogo}" onerror="this.src='/league/assets/logos/default.png'" style="width:56px;height:56px;border-radius:8px"><div style="margin-top:8px">2nd<br>${escapeHtml(findTeamName(second)||'—')}</div></div>
+        <div class="slot first"><img src="${firstLogo}" onerror="this.src='/league/assets/logos/default.png'" style="width:84px;height:84px;border-radius:12px"><div style="margin-top:8px">1st<br>${escapeHtml(findTeamName(first)||'—')}</div></div>
+        <div class="slot third"><img src="${thirdLogo}" onerror="this.src='/league/assets/logos/default.png'" style="width:56px;height:56px;border-radius:8px"><div style="margin-top:8px">3rd<br>${escapeHtml(findTeamName(third)||'—')}</div></div>
+      `;
+    }
+
+    function findTeamName(id){ const t = teams.find(x=>x.id===id); return t ? t.name : id; }
+    function findTeamLogo(id){ const t = teams.find(x=>x.id===id); return t && t.logo ? t.logo : '/league/assets/logos/default.png'; }
+    function escapeHtml(s){return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
+
+    // LOGIN: user types name and pin (validate against ../pickems/users.json)
+    $('loginBtn').addEventListener('click', async ()=>{
+      const name = $('nameInput').value.trim();
+      const pin = $('pinInput').value.trim();
+      if(!name || !pin) return alert('Enter name and PIN');
+      // find user by name (case-insensitive) in users array
+      const u = users.find(x => (x.name||'').toLowerCase() === name.toLowerCase());
+      if(!u) return alert('Name not found');
+      if((u.pin||'').toString() !== pin.toString()) return alert('PIN incorrect');
+      // success
+      currentUser = { teamId: u.teamId || u.team, name: u.name };
+      $('logoutBtn').style.display = 'inline-block';
+      $('nameInput').disabled = true; $('pinInput').disabled = true; $('loginBtn').disabled = true;
+      showMessage('Logged in as ' + currentUser.name, 'success');
+      // load existing ranking if exists
+      try{ const snap = await getDoc(doc(db,'powerRankings', currentUser.teamId)); if(snap.exists()){ const d=snap.data(); if(Array.isArray(d.rankings) && d.rankings.length){ reorderToExisting(d.rankings); } } }catch(e){console.error(e)}
+    });
+
+    // logout
+    $('logoutBtn').addEventListener('click', ()=>{
+      currentUser=null; $('logoutBtn').style.display='none'; $('nameInput').disabled=false; $('pinInput').disabled=false; $('loginBtn').disabled=false; $('nameInput').value=''; $('pinInput').value=''; showMessage('Logged out', '');
+    });
+
+    function reorderToExisting(ranking){
+      // ranking is array of teamIds in order; rebuild DOM accordingly
+      const idToTeam = teams.reduce((acc,t)=>{ acc[t.id]=t; return acc; },{});
+      const ordered = ranking.map(id => idToTeam[id] ? idToTeam[id] : { id, name: id, logo: '/league/assets/logos/default.png' });
+      teams = ordered.slice();
+      // append any missing teams from original master
+      const master = (window._masterTeams && window._masterTeams.map(t=>t.id)) || [];
+      master.forEach(mid => { if(!teams.find(x=>x.id===mid)) teams.push((window._masterTeams||[]).find(x=>x.id===mid)); });
+      buildDraggableList(); updatePositions(); renderPodium();
+    }
+
+    // submit handler
+    $('submitRankings').addEventListener('click', async ()=>{
+      if(!currentUser) return alert('You must login with your name and PIN before submitting.');
+      const ordering = getCurrentOrder();
+      if(ordering.length !== teams.length) return alert('Something went wrong: team count mismatch');
+      try{
+        await setDoc(doc(db,'powerRankings', currentUser.teamId), {
+          teamId: currentUser.teamId,
+          name: currentUser.name,
+          rankings: ordering,
+          submitted: true,
+          createdAt: serverTimestamp()
+        });
+        showMessage('Rankings submitted — thanks!', 'success');
+      }catch(err){console.error(err); showMessage('Error submitting — check console','error')}
+    });
+
+    function showMessage(msg, type){ const el = $('message'); el.textContent = msg; el.style.color = type==='error'?'#b00020':'#0b8a3e'; setTimeout(()=>el.textContent='',4000); }
+
+    // initial load
+    loadData();
+  </script>
+</body>
+</html>
