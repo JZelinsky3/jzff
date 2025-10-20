@@ -65,7 +65,7 @@
     refreshBtn.addEventListener('click', loadConsensus);
 
     async function loadTeams(){
-      try{ const resp = await fetch('teams.json'); const json = await resp.json(); return json.teams || []; }
+      try{ const resp = await fetch('teams_w08.json'); const json = await resp.json(); return json.teams || []; }
       catch(e){ console.warn('teams.json missing'); return []; }
     }
 

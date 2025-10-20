@@ -7,9 +7,10 @@
   <link rel="stylesheet" href="/league.css">
   <style>
     body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;margin:0;background:#f6f7fb;color:#0b1220}
-    .container{max-width:800px;margin:36px auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(11,18,32,.06)}
-    h1{margin:0 0 6px;font-size:24px}
-    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .container{max-width:800px;margin:24px auto;padding:18px;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(11,18,32,.06)}
+    h1{margin:0 0 6px;font-size:22px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px}
+    .topbar .titleWrap{flex:1}
     .login{display:flex;gap:8px;align-items:center}
     .btn{background:#0b63ff;color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
     .btn.ghost{background:transparent;color:#0b1220;border:1px solid #e6e9f2}
@@ -34,16 +35,42 @@
     .submit-row{display:flex;justify-content:flex-end;margin-top:18px;gap:8px}
     .note{font-size:13px;color:#5b6b8a}
 
-    @media(max-width:560px){.podium{flex-direction:column;align-items:center}.podium .slot{width:160px}}
+    /* MOBILE ADJUSTMENTS */
+    @media(max-width:720px){
+      /* move login under title by stacking topbar */
+      .topbar{flex-direction:column;align-items:flex-start}
+      .login{order:2;margin-top:8px}
+      .topbar .titleWrap{order:1}
+
+      /* make podium smaller and force single-row across */
+      .podium{flex-wrap:nowrap;justify-content:space-between}
+      .podium .slot{flex:1;min-width:0;padding:8px}
+      .podium .first img{width:72px;height:72px}
+      .podium .second img,.podium .third img{width:56px;height:56px}
+      .podium .first{padding:12px}
+      .podium .second{padding:10px;transform:scale(0.9)}
+      .podium .third{padding:10px}
+
+      /* shrink list row spacing on very small screens */
+      .list-row{padding:8px}
+      .team-name{font-size:15px}
+    }
+
+    @media(max-width:420px){
+      .podium .first img{width:60px;height:60px}
+      .podium .second img,.podium .third img{width:48px;height:48px}
+      .position{width:44px;font-size:13px}
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="topbar">
-      <div>
-        <h1>Week 8 Power Rankings</h1>
+      <div class="titleWrap">
+        <h1>Week 8 — Power Rankings</h1>
         <div class="note">Drag to reorder Best Team to Worst. Power Rankings only have to do with this week and the future, nothing with the past.</div>
       </div>
+
       <div class="login">
         <input id="nameInput" placeholder="Enter your name" style="padding:8px;border-radius:8px;border:1px solid #e6e9f2">
         <input id="pinInput" placeholder="PIN" style="padding:8px;border-radius:8px;border:1px solid #e6e9f2;width:80px">
@@ -114,7 +141,7 @@
 
     function buildDraggableList(){
       dragContainer.innerHTML = '';
-      // ensure teams are ordered by a stable list (teams.json order) - if missing fill with ids
+      // ensure teams are ordered by teams.json order
       const master = teams.slice();
       master.forEach((t, idx)=>{
         const row = document.createElement('div');
@@ -124,13 +151,7 @@
         row.innerHTML = `
           <div class="position">${idx+1}</div>
           <img src="${t.logo || '/league/assets/logos/default.png'}" onerror="this.src='/league/assets/logos/default.png'">
-          <div class="team-info">
-            <div class="team-name">${escapeHtml(t.name)}</div>
-            <div class="team-id">
-              ${ escapeHtml(t.manager || t.managerName || t.owner || t.contact || t.id) }
-              ${ t.record ? `<span style="margin-left:8px;color:#5b6b8a">• ${escapeHtml(t.record)}</span>` : '' }
-            </div>
-          </div>
+          <div class="team-info"><div class="team-name">${escapeHtml(t.name)}</div><div class="team-id">${escapeHtml(t.manager || t.managerName || t.owner || t.contact || t.id)}</div></div>
         `;
         addDragHandlers(row);
         dragContainer.appendChild(row);
