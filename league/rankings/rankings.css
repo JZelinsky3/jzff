@@ -1,0 +1,193 @@
+/* ===== rankings.css =====
+   Full stylesheet for the Power Rankings Reveal.
+   Replace the inline <style> in rankings.html with:
+   <link rel="stylesheet" href="./rankings.css" />
+*/
+
+/* ===== Theme variables and base ===== */
+:root{
+  --accent:#16a34a; --accent-2:#22c55e; --bg:#07120a;
+  --panel:#0d1220; --panel-2:#0f1426; --text:#eef6ff; --muted:#b8d4c2;
+  --glass: rgba(255,255,255,0.04);
+  --border: rgba(34,197,94,.25);
+  --shadow: 0 10px 28px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,var(--bg),#05120a);color:var(--text);-webkit-font-smoothing:antialiased}
+
+/* ===== Animated ambient background (subtle) ===== */
+.ambient {
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background: radial-gradient(circle at 10% 20%, rgba(34,197,94,0.04), transparent 8%),
+              radial-gradient(circle at 90% 80%, rgba(34,197,94,0.03), transparent 8%);
+  mix-blend-mode:overlay;opacity:0.95;filter:blur(4px);
+}
+
+/* ===== Reveal container ===== */
+.reveal-wrap{
+  position:relative;z-index:10;
+  width:100%;max-width:1100px;margin-inline:auto;
+  background:linear-gradient(180deg, rgba(13,18,32,0.96), rgba(8,12,20,0.995));
+  border-radius:16px;padding:18px;border:1px solid rgba(34,197,94,0.08);
+  display:flex;flex-direction:column;height:calc(100vh - 40px);min-height:560px;box-shadow:var(--shadow);
+  overflow:hidden;
+}
+
+/* header */
+.reveal-header{display:flex;align-items:center;gap:12px;padding-bottom:8px;z-index:2}
+.reveal-title{font-size:18px;font-weight:900;color:var(--accent-2)}
+.reveal-sub{color:var(--muted);font-size:12px}
+
+/* slide area */
+main#slides{flex:1;display:block;position:relative;overflow:hidden}
+.slide{
+  position:absolute;
+  inset:60px 18px 92px 18px;
+  display:flex;align-items:center;justify-content:center;padding:18px;
+  overflow:auto;border-radius:12px;opacity:0;transform:translateY(8px) scale(.995);
+  transition:opacity .36s ease,transform .36s ease;backdrop-filter:blur(6px);
+  z-index:1;
+}
+.slide.active{opacity:1;transform:none;z-index:10}
+.slide .content{width:100%;max-width:980px}
+
+/* Intro */
+.intro{flex-direction:column;text-align:center;color:var(--text)}
+.intro .hero{width:100%;max-width:760px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.04);box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.intro .hero img{width:100%;height:340px;object-fit:cover;display:block}
+.intro h1{font-size:34px;margin:14px 0 6px}
+.intro p{max-width:760px;color:var(--muted);margin-bottom:12px}
+.start-btn{display:inline-block;padding:12px 20px;border-radius:10px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#062210;font-weight:900;border:1px solid rgba(255,255,255,.06);cursor:pointer}
+.small-btn{background:transparent;border:1px solid var(--border);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+
+/* podium */
+.podium-wrap{display:flex;gap:18px;align-items:end;justify-content:center}
+.pod{width:220px;text-align:center;padding:12px;border-radius:12px;color:#07120a;background:linear-gradient(180deg,#ffd966,#f5c000)}
+.pod .medal{font-size:44px}
+.pod.first{transform:translateY(-18px)}
+.pod.second{background:linear-gradient(180deg,#c0cbd8,#9fb0c8)}
+.pod.third{background:linear-gradient(180deg,#d1b9a6,#b38a6f)}
+
+/* ranking card layout (desktop default) */
+.rank-card{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:center;width:100%}
+.rank-photo{width:300px;height:360px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#0b1a10,#061008)}
+.rank-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
+.rank-body{background:linear-gradient(180deg,var(--panel),var(--panel-2));padding:20px;border-radius:12px;border:1px solid var(--border);min-height:320px;display:flex;flex-direction:column}
+.rank-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.team-name{font-size:26px;font-weight:900}
+.manager{font-size:13px;color:var(--muted);margin-top:6px}
+.rank-badge{font-size:36px;font-weight:900;color:var(--accent-2);background:rgba(0,0,0,.12);padding:8px 14px;border-radius:12px}
+.meta-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.meta{background:rgba(255,255,255,.03);padding:8px 10px;border-radius:10px;font-weight:800;font-size:13px}
+.summary{margin-top:14px;color:#d6efe0;line-height:1.45;flex:1}
+.projected{margin-top:12px;font-weight:800;margin-right:3px}
+
+/* controls bar */
+.controls{display:flex;align-items:center;gap:12px;padding:12px 6px;border-top:1px dashed rgba(255,255,255,.02);z-index:12}
+.progress{height:8px;background:rgba(255,255,255,.04);border-radius:999px;overflow:hidden;flex:1;margin:0 10px}
+.progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%}
+
+/* small helpers */
+.logo-cell img{width:36px;height:36px;border-radius:6px;object-fit:cover}
+
+/* ===== MOBILE-ONLY: compact slide, icon logos right of name, smaller text, no vertical scrolling =====
+   Targets screens <= 880px (only mobile changes)
+*/
+@media (max-width:880px){
+
+  /* make whole reveal smaller so content fits without scrolling up/down */
+  .reveal-wrap{
+    padding:10px;border-radius:8px;height:calc(100vh - 20px);min-height:0;max-width:980px;
+  }
+
+  /* shrink slide inset to use more vertical space and remove inner scroll */
+  .slide{inset:36px 10px 80px 10px;padding:10px;border-radius:10px;overflow:hidden}
+  .slide .content{max-width:100%;width:100%}
+
+  /* make the rank card more compact and single-row friendly */
+  .rank-card{display:flex;flex-direction:column;gap:10px}
+  .rank-top{display:flex;align-items:center;gap:8px}
+
+  /* NEW: header layout — left: rank badge, center: team name + manager, right: small logo icon */
+  .rank-header{
+    display:flex;align-items:center;gap:10px;width:100%;
+  }
+  .rank-badge{font-size:26px;padding:6px 10px}
+  .rank-header .title-wrap{flex:1;min-width:0}
+  .title-wrap .team-name{font-size:16px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .title-wrap .manager{font-size:11px;margin-top:4px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* icon at right of name */
+  .team-logo-icon{width:42px;height:42px;flex:0 0 42px;border-radius:10px;overflow:hidden;display:inline-block;border:1px solid rgba(255,255,255,.04)}
+  .team-logo-icon img{width:100%;height:100%;object-fit:cover;display:block}
+
+  /* make images icon-sized (not dominating) */
+  .rank-photo{width:56px;height:56px;min-width:56px;border-radius:8px;overflow:hidden;background:linear-gradient(180deg,#08110a,#061008)}
+  .rank-photo img{width:56px;height:56px;object-fit:cover;object-position:50% 20%}
+
+  /* enlarge text boxes slightly so multi-line text fits — no clipping */
+  .rank-body{padding:12px;border-radius:10px;min-height:0}
+  .summary{font-size:12px;max-height:88px;overflow:hidden;line-height:1.35}
+  .projected{font-size:12px}
+
+  /* meta chips smaller */
+  .meta{font-size:11px;padding:6px 8px}
+
+  /* keep stats row on single line where possible */
+  .meta-row{gap:8px;flex-wrap:nowrap;overflow:hidden}
+  .meta-row .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* controls smaller and pinned */
+  .controls{padding:8px 6px;gap:8px}
+  .small-btn{padding:8px 10px;font-size:13px}
+  .start-btn{padding:10px 16px;font-size:14px}
+
+  /* podium shrink */
+  .pod{width:120px;padding:8px}
+  .pod .medal{font-size:34px}
+
+  /* progress smaller */
+  .progress{height:6px}
+
+  /* ensure no accidental horizontal overflow */
+  img,svg{max-width:100%;height:auto}
+
+  /* micro animation to add energy */
+  .pod .medal{transition:transform .28s ease}
+  .pod:hover .medal{transform:translateY(-6px) scale(1.06)}
+  .start-btn{transition:transform .16s ease, box-shadow .18s ease}
+  .start-btn:active{transform:translateY(1px)}
+}
+
+/* ===== Very small phones — squeeze more text ===== */
+@media (max-width:420px){
+  .title-wrap .team-name{font-size:14px}
+  .title-wrap .manager{font-size:10px}
+  .summary{font-size:11.5px;max-height:64px}
+  .pod .medal{font-size:30px}
+  .team-logo-icon{width:36px;height:36px}
+}
+
+/* ===== Fancy little finishing touches (desktop) ===== */
+.slide .content{position:relative;z-index:2}
+.reveal-wrap::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+
+/* ===== Locked countdown mode (mobile + desktop) ===== */
+/* Applied by JS: add class "locked" to .reveal-wrap while countdown active */
+.reveal-wrap.locked .reveal-header,
+.reveal-wrap.locked .controls,
+.reveal-wrap.locked .slide:not(.countdown) {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Make the countdown slide fill the available area nicely */
+.reveal-wrap.locked .slide.countdown {
+  display: flex !important;
+  opacity: 1 !important;
+  transform: none !important;
+  z-index: 30 !important;
+  inset: 0 0 0 0 !important;
+  padding: 0 !important;
+}
