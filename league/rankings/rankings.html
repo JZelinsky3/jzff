@@ -113,9 +113,10 @@ const db = getFirestore(app);
 const TARGET_YEAR = 2025;
 const TARGET_MONTH = 10; // 1-12
 const TARGET_DAY = 22;   // day of month
-const TARGET_HOUR24 = 23; // +5 hours
-const TARGET_MINUTE = 30; // minute (30 = :30)
+const TARGET_HOUR24 = 24; // +5 hours
+const TARGET_MINUTE = 10; // minute (30 = :30)
 
+/* ---------- robust teams.json loader (unchanged) ---------- */
 /* ---------- robust teams.json loader (unchanged) ---------- */
 async function loadTeams(){
   const tries = ['teams.json','./teams.json','../rankings/teams.json','/rankings/teams.json','/League/rankings/teams.json'];
@@ -138,6 +139,11 @@ async function loadTeams(){
     const teamName = t.team ?? t.name ?? '';
     const wins = t.wins ?? t.w ?? null;
     const losses = t.losses ?? t.l ?? null;
+
+    // robust pf/pa detection with common variations
+    const pf = (t.pf ?? t.PF ?? t.pointsFor ?? t.points_for ?? t.pointsfor ?? t.pts_for) ?? null;
+    const pa = (t.pa ?? t.PA ?? t.pointsAgainst ?? t.points_against ?? t.pointsagainst ?? t.pts_against) ?? null;
+
     return {
       rank: Number(t.rank ?? t.position ?? (i+1)) || (i+1),
       team: teamName,
@@ -147,6 +153,8 @@ async function loadTeams(){
       streak: t.streak ?? '',
       projected: t.projected ?? t.projected_record ?? t.projectedRecord ?? '',
       playoff: t.playoff ?? t.playoff_chance ?? t.playoffPct ?? 0,
+      pf,               // points for
+      pa,               // points against
       image: t.image ?? `/assets/logos/${slugify(teamName)}.png`,
       summary: t.summary ?? (t.note ?? '')
     };
@@ -216,8 +224,6 @@ async function createRankingSlides(){
                   <div class="meta" style="font-weight:800">Record: ${t.record}</div>
                   <div class="meta">PF: ${t.pf ?? '-'}</div>
                   <div class="meta">PA: ${t.pa ?? '-'}</div>
-                  <div class="meta">Projected: ${t.projected ?? '-'}</div>
-                  <div class="meta">Playoff: ${t.playoff ?? 0}%</div>
                 </div>
               </div>
 
