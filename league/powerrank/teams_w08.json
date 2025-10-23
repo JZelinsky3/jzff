@@ -1,7 +1,7 @@
 {
   "season": 2025,
   "teams": [
-    { "id": "tequilasunrise", "name": "Tequila Sunrise", "manager": "Connie (? 2-4) L1", "logo": "/league/assets/logos/tequilasunrise.png" },
+    { "id": "tequilasunrise", "name": "Tequila Sunrise", "manager": "Connie (2-5) L1", "logo": "/league/assets/logos/tequilasunrise.png" },
     { "id": "moneygod", "name": "Money God", "manager": "Charlie (4-3) L1", "logo": "/league/assets/logos/moneygod2.png" },
     { "id": "kylerthecreator", "name": "Kyler the Creator", "manager": "Chris (2-5) W1", "logo": "/league/assets/logos/kylerthecreator.png" },
     { "id": "thepeoplestightend", "name": "The People's TightEnd", "manager": "Connor (4-3) W2", "logo": "/league/assets/logos/thepeoplestightend2.png" },
@@ -11,7 +11,7 @@
     { "id": "gingerninger", "name": "Ginger Ninger", "manager": "Kyle (4-3) L1", "logo": "/league/assets/logos/gingerninger2.png" },
     { "id": "theglizzys", "name": "The GLIZZYS", "manager": "Luke (2-5) L4", "logo": "/league/assets/logos/theglizzys2.png" },
     { "id": "rizzlers", "name": "Rizzlers", "manager": "Mason (5-2) W4", "logo": "/league/assets/logos/rizzlers2.png" },
-    { "id": "thefamilyguy", "name": "The Family Guy", "manager": "Sean (? 3-3) L2", "logo": "/league/assets/logos/thefamilyguy2.png" },
+    { "id": "thefamilyguy", "name": "The Family Guy", "manager": "Sean (4-3) L2", "logo": "/league/assets/logos/thefamilyguy2.png" },
     { "id": "bodix", "name": "Bo Dix", "manager": "Andrew (5-2) L2", "logo": "/league/assets/logos/bodix2.png" }
   ]
 }
