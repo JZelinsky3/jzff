@@ -234,8 +234,8 @@ async function createRankingSlides(){
   <div class="meta-grid">
     <div class="meta">Record: ${t.record}</div>
     <div class="meta">PF: ${t.pf ?? '-'}</div>
-    <div class="meta">SOS Rank: ${t.sos_rank ?? '-'}</div>
-    <div class="meta">All-Play: ${t.all_play_rank ?? '-'}</div>
+    <div class="meta">RoS SoS Rank: ${t.sos_rank ?? '-'}</div>
+    <div class="meta">All-Play Record: ${t.all_play_rank ?? '-'}</div>
   </div>
 
   <div class="summary">${t.summary ?? ''}</div>
@@ -276,7 +276,7 @@ const rows = teams
 totalSlide.innerHTML = `
   <div class="content" style="width:100%;padding:8px;color:var(--text)">
     <h2 style="margin:0 0 8px;font-size:16px">Total Power Rankings — Summary</h2>
-    <p style="color:var(--muted);margin:0 0 10px;font-size:13px">Snapshot — compact view for mobile.</p>
+    <p style="color:var(--muted);margin:0 0 10px;font-size:13px"></p>
     <div style="overflow:hidden">
       <table class="total-table" style="width:100%;font-size:13px;table-layout:fixed">
         <thead>
@@ -284,7 +284,7 @@ totalSlide.innerHTML = `
             <th style="width:44px"></th>
             <th>Team / Record</th>
             <th style="width:80px">Projected</th>
-            <th style="width:80px">SOS Rank</th>
+            <th style="width:80px">Remaining SoS Rank</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>

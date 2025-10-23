@@ -798,3 +798,39 @@ main#slides{flex:1;display:block;position:relative;overflow:hidden}
   border-color: var(--accent) !important;
   color: var(--accent-2) !important;
 }
+
+/* === Make Final / Total page more compact === */
+.slide.final .content,
+.slide[data-index="total"] .content {
+  transform: scale(0.9);          /* slight zoom-out */
+  transform-origin: top center;   /* anchor from top */
+}
+
+.slide.final,
+.slide[data-index="total"] {
+  font-size: 0.9rem !important;   /* shrink all text a bit */
+}
+
+.slide.final table,
+.slide[data-index="total"] table {
+  font-size: 11px !important;     /* smaller table text */
+}
+
+.slide.final h2,
+.slide[data-index="total"] h2 {
+  font-size: 14px !important;
+  margin-bottom: 4px !important;
+}
+
+.slide.final p,
+.slide[data-index="total"] p {
+  font-size: 12px !important;
+  margin-bottom: 6px !important;
+}
+
+.slide.final button,
+.slide[data-index="total"] button {
+  transform: scale(0.9);
+  font-size: 12px !important;
+  padding: 6px 10px !important;
+}
