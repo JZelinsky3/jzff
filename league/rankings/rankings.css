@@ -55,7 +55,7 @@ main#slides{flex:1;display:block;position:relative;overflow:hidden}
 /* Intro */
 .intro{flex-direction:column;text-align:center;color:var(--text)}
 .intro .hero{width:100%;max-width:760px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.04);box-shadow:0 8px 28px rgba(0,0,0,.4)}
-.intro .hero img{width:100%;height:340px;object-fit:cover;display:block}
+.intro .hero img{width:100%;height:195px;object-fit:cover;display:block}
 .intro h1{font-size:34px;margin:14px 0 6px}
 .intro p{max-width:760px;color:var(--muted);margin-bottom:12px}
 .start-btn{display:inline-block;padding:12px 20px;border-radius:10px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#062210;font-weight:900;border:1px solid rgba(255,255,255,.06);cursor:pointer}
