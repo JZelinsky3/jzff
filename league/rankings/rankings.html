@@ -35,13 +35,12 @@
       <section class="slide intro" data-index="intro" id="introSlide" aria-label="Intro: Midseason Reveal">
         <div class="content intro">
           <div class="hero">
-            <img src="/league/pics/league-banner.jpg" alt="League banner" onerror="this.src='/league/pics/group.jpg'">
+            <img src="/league/pics/league-banner.jpg" alt="League banner" onerror="this.src='/league/pics/group2.jpeg'">
           </div>
           <h1>Power Rankings — Midseason Reveal</h1>
           <p>Welcome to the 2025 midseason power rankings reveal. We'll count down from 12 to 1 with a page for each manager: team info, record, PF/PA, projected record, and a mid-season deep dive.</p>
           <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
             <button class="start-btn" id="introStartBtn" disabled>Start Reveal</button>
-            <button class="small-btn" id="skipIntro">Skip Intro</button>
           </div>
         </div>
       </section>
@@ -223,8 +222,6 @@ async function createRankingSlides(){
           <div class="team-logo-icon" aria-hidden="true"><img src="${imagePath}" alt="${t.team}" onerror="this.src='/league/pics/players.png'"></div>
         </div>
 
-        ${medal ? `<div style="margin-top:12px"><div class="podium-wrap" style="justify-content:flex-start"><div class="pod ${medalClass}" style="display:inline-block;margin-left:0"><div class="medal">${medal}</div><div style="font-weight:900;margin-top:6px">${t.team}</div><div style="font-size:13px;color:#07120a;opacity:.9">#${idx}</div></div></div></div>` : ''}
-
         <div style="display:grid;grid-template-columns:56px 1fr;gap:12px;margin-top:12px;align-items:start">
           <div class="rank-photo"><img src="${imagePath}" alt="${t.team}" onerror="this.src='/league/pics/players.png'"></div>
 
@@ -256,31 +253,50 @@ async function createRankingSlides(){
     container.insertBefore(slide, final);
   });
 
-  // total slide (compact)
-  const totalSlide = document.createElement('section');
-  totalSlide.className = 'slide';
-  totalSlide.dataset.index = 'total';
-  const rows = teams.slice().sort((a,b)=>a.rank-b.rank).map(r=>{
+// --- TOTAL / SUMMARY SLIDE (replace existing totalSlide block) ---
+const totalSlide = document.createElement('section');
+totalSlide.className = 'slide';
+totalSlide.dataset.index = 'total';
+
+const rows = teams
+  .slice()
+  .sort((a,b)=>a.rank - b.rank)
+  .map(r => {
     const logo = r.image || `/assets/logos/${slugify(r.team)}.png`;
-    return `<tr><td class="logo-cell"><img src="${logo}" onerror="this.src='/league/pics/players.png'"></td><td style="min-width:140px"><strong>#${r.rank} ${r.team}</strong><div style="color:var(--muted);font-size:12px">${r.record}</div></td><td>${r.projected}</td><td>${r.playoff}%</td></tr>`;
+    // use sos_rank from normalized data; fallback to '-' if missing
+    const sos = (r.sos_rank !== null && r.sos_rank !== undefined) ? r.sos_rank : '-';
+    return `<tr>
+      <td class="logo-cell"><img src="${logo}" onerror="this.src='/league/pics/players.png'"></td>
+      <td style="min-width:140px"><strong>#${r.rank} ${r.team}</strong><div style="color:var(--muted);font-size:12px">${r.record}</div></td>
+      <td>${r.projected ?? '-'}</td>
+      <td style="text-align:center">${sos}</td>
+    </tr>`;
   }).join('');
-  totalSlide.innerHTML = `
-    <div class="content" style="width:100%;padding:8px;color:var(--text)">
-      <h2 style="margin:0 0 8px;font-size:16px">Total Power Rankings — Summary</h2>
-      <p style="color:var(--muted);margin:0 0 10px;font-size:13px">Snapshot — compact view for mobile.</p>
-      <div style="overflow:hidden">
-        <table class="total-table" style="width:100%;font-size:13px;table-layout:fixed">
-          <thead><tr><th style="width:44px"></th><th>Team / Record</th><th style="width:80px">Projected</th><th style="width:80px">Playoff</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div style="margin-top:8px;display:flex;gap:8px;justify-content:center">
-        <button class="small-btn" id="exportCSV">Export CSV</button>
-        <button class="small-btn" id="backToStart">Back to Intro</button>
-      </div>
+
+totalSlide.innerHTML = `
+  <div class="content" style="width:100%;padding:8px;color:var(--text)">
+    <h2 style="margin:0 0 8px;font-size:16px">Total Power Rankings — Summary</h2>
+    <p style="color:var(--muted);margin:0 0 10px;font-size:13px">Snapshot — compact view for mobile.</p>
+    <div style="overflow:hidden">
+      <table class="total-table" style="width:100%;font-size:13px;table-layout:fixed">
+        <thead>
+          <tr>
+            <th style="width:44px"></th>
+            <th>Team / Record</th>
+            <th style="width:80px">Projected</th>
+            <th style="width:80px">SOS Rank</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>
-  `;
-  container.insertBefore(totalSlide, final);
+    <div style="margin-top:8px;display:flex;gap:8px;justify-content:center">
+      <button class="small-btn" id="exportCSV">Export CSV</button>
+      <button class="small-btn" id="backToStart">Back to Intro</button>
+    </div>
+  </div>
+`;
+container.insertBefore(totalSlide, final);
 
   initVotesDisplays();
 }
@@ -323,7 +339,7 @@ function updateSlides(){
   if(current < 0) current = 0; if(current > slides.length-1) current = slides.length-1;
   const active = slides[current];
   if(active){ active.classList.add('active'); active.style.zIndex=20; }
-  const label = active.classList.contains('countdown') ? 'Countdown' : (active.classList.contains('intro') ? 'Intro' : (active.classList.contains('final') ? 'Final' : (active.dataset.index==='total' ? 'Total Rankings' : `Rank ${active.dataset.index}`)));
+  const label = active.classList.contains('countdown') ? 'Countdown' : (active.classList.contains('intro') ? '' : (active.classList.contains('final') ? 'Final' : (active.dataset.index==='total' ? '' : `Rank ${active.dataset.index}`)));
   const slideLabelEl = document.getElementById('slideLabel');
   if(slideLabelEl) slideLabelEl.textContent = label;
   const progressBar = document.getElementById('progressBar');
@@ -383,8 +399,8 @@ document.addEventListener('click',(e)=>{
   if(e.target.id==='exportCSV'){
     (async ()=>{
       const teams = await loadTeams();
-      const rows = teams.slice().sort((a,b)=>a.rank-b.rank).map(r=>`${r.rank},"${r.team}",${r.record},${r.projected},${r.playoff}`);
-      const csv = 'Rank,Team,Record,Projected,Playoff\n' + rows.join('\n');
+      const rows = teams.slice().sort((a,b)=>a.rank-b.rank).map(r=>`${r.rank},"${r.team}",${r.record},${r.projected},${r.sos_rank}`);
+      const csv = 'Rank,Team,Record,Projected,SoS_Rank\n' + rows.join('\n');
       const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'power_rankings.csv'; a.click(); URL.revokeObjectURL(url);
     })();
   }
