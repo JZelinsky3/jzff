@@ -515,3 +515,286 @@ main#slides{flex:1;display:block;position:relative;overflow:hidden}
   font-weight: 700;
   font-size: 13px;
 }
+
+/* ===== Layout: vertical meta stack on right, room for summary, taller container =====
+   Paste this near the end of rankings.css (after existing rules) ===== */
+
+/* Make the whole reveal a little taller on desktop/tablet so content breathes */
+.reveal-wrap {
+  height: calc(100vh - 20px) !important; /* a bit taller than before */
+  min-height: 720px !important;          /* forces taller minimum */
+}
+
+/* Ensure rank-body can anchor an absolutely positioned meta column */
+.rank-body {
+  position: relative;               /* anchor for the meta column */
+  padding-right: 160px !important;  /* reserve space on right for stacked meta chips */
+  transition: padding .18s ease;
+  min-height: 380px !important;     /* make the card taller */
+}
+
+/* Vertical meta column: stack chips down the right side */
+.rank-body .meta-row {
+  position: absolute !important;
+  right: 16px !important;           /* distance from right edge of card */
+  top: 56px !important;             /* vertical offset — tweak if header height changes */
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  align-items: flex-end !important; /* chips align to right for neat column */
+  width: 120px !important;          /* fixed column width to control wrapping */
+  max-width: 120px !important;
+  box-sizing: border-box !important;
+  margin-top: 0 !important;         /* remove earlier margin */
+  transform: translateZ(0);
+}
+
+/* Make each meta chip full-width inside the right column and smaller */
+.rank-body .meta-row .meta {
+  display: block !important;
+  width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 11px !important;
+  padding: 6px 8px !important;
+  border-radius: 8px !important;
+  text-align: right !important;     /* right-align the chip contents inside the column */
+  box-sizing: border-box !important;
+}
+
+/* Move the summary text inward (avoid collision with meta column) */
+.rank-body .summary {
+  margin-right: 140px !important;   /* leaves room for the stacked meta column */
+  transition: margin .18s ease;
+}
+
+/* Also nudge the vote-row to avoid running under the meta column */
+.rank-body .vote-row { 
+  margin-right: 140px !important;
+}
+
+/* Make podium / top content unaffected visually (if present) */
+.podium-wrap { z-index: 2; }
+
+/* Mobile / small screens: revert to previous inline layout so nothing overlaps */
+@media (max-width: 880px) {
+  .rank-body {
+    padding-right: 12px !important;
+    min-height: 0 !important;
+  }
+  .rank-body .meta-row {
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    margin-top: 8px !important;
+  }
+  .rank-body .meta-row .meta {
+    text-align: left !important;
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+    min-width: 0 !important;
+  }
+  .rank-body .summary { margin-right: 0 !important; max-height: 120px !important; }
+  .rank-body .vote-row { margin-right: 0 !important; }
+  /* revert container height for small devices so it doesn't blow past the viewport */
+  .reveal-wrap { height: calc(var(--vh,1vh) * 100 - 120px) !important; min-height: 0 !important; }
+}
+
+/* Tiny tweak for very narrow phones */
+@media (max-width: 420px) {
+  .rank-body .meta-row .meta { font-size: 10px !important; padding: 4px 6px !important; }
+  .reveal-wrap { min-height: 0 !important; }
+}
+
+/* ===== MOBILE CARD STACK (TALLER & CLEANER) ===== */
+@media (max-width:880px) {
+
+  .rank-body {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    padding: 16px 14px !important;
+    border-radius: 12px !important;
+    background: linear-gradient(180deg,var(--panel),var(--panel-2));
+    min-height: 340px !important;  /* taller container */
+  }
+
+  .rank-header-mini {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .rank-header-mini h3.rank-subtitle {
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--accent-2);
+    margin-bottom: 4px;
+  }
+  .rank-header-mini .projected {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin: 12px 0;
+  }
+  .meta-grid .meta {
+    background: rgba(255,255,255,.04);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  .summary {
+    flex: 1;
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-y: auto;
+    max-height: 140px; /* allows scroll if long */
+  }
+}
+
+/* === MOBILE: lift cards higher, avoid clipping, controls above Safari toolbar === */
+@media (max-width: 880px) {
+
+  /* make the outer container use the safe viewport */
+  .reveal-wrap {
+    height: calc(var(--vh, 1vh) * 100) !important;
+    min-height: 100vh !important;
+    padding: 0 8px 0 8px !important; /* remove top padding that caused gap */
+    margin: 0 !important;
+  }
+
+  /* Slide: remove top gap so cards start near top; keep bottom padding so controls don't overlap content */
+  .slide {
+    inset: -60px 0 0 0 !important;
+    margin: 0 !important;
+    padding: 0 8px 110px 8px !important; /* 0 top padding => cards start higher; big bottom pad keeps controls clear */
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: calc(var(--vh, 1vh) * 100 - 30px) !important; /* keep enough room for controls */
+  }
+
+  /* tiny top cushion for content so text doesn't touch the border */
+  .slide .content {
+    padding-top: 6px !important;
+  }
+
+  /* flexible card body, no inner clipping */
+  .rank-body {
+    min-height: unset !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 12px 12px 18px !important;
+    border: 1px solid rgba(255,255,255,.06) !important;
+  }
+
+  /* summary: allow natural flow */
+  .summary {
+    max-height: none !important;
+    overflow: visible !important;
+    margin-top: 8px !important;
+  }
+
+  /* keep vote buttons visible and not clipped by controls */
+  .vote-row {
+    position: relative !important;
+    bottom: auto !important;
+    padding-bottom: 12px !important;
+    margin-top: 10px !important;
+  }
+
+  /* small bump to image so top edge never clips */
+  .rank-photo img,
+  .team-logo-icon img {
+    margin-top: 2px !important;
+  }
+
+  /* Controls: fixed and raised above the bottom OS toolbar */
+  .controls {
+    position: fixed !important;
+    bottom: 0px !important;  /* default: sits above iOS toolbar */
+    left: 8px !important;
+    right: 8px !important;
+    width: calc(100% - 16px) !important;
+    padding: 8px 10px !important;
+    justify-content: space-between !important;
+    background: rgba(0,0,0,0.28) !important;
+    backdrop-filter: blur(6px) !important;
+    border-top: 1px solid rgba(255,255,255,0.05) !important;
+    border-radius: 12px !important;
+    z-index: 999 !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35) !important;
+  }
+
+  .controls .small-btn {
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+    min-height: 42px !important;
+  }
+
+  /* hide the progress bar on small mobile to save vertical space */
+  .progress { display: none !important; }
+
+  /* Slide label: sit just above controls */
+  #slideLabel {
+    position: fixed !important;
+    bottom: calc(78px + 42px) !important; /* controls bottom + approx height */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    font-size: 12px !important;
+    color: var(--muted) !important;
+    z-index: 1000 !important;
+    background: rgba(0,0,0,0.18) !important;
+    padding: 4px 8px !important;
+    border-radius: 8px !important;
+  }
+}
+
+/* === Rank-based text color theme (no podium blocks) === */
+.slide[data-index="1"] {
+  --accent: #ffd966 !important;   /* gold */
+  --accent-2: #f5c000 !important;
+}
+
+.slide[data-index="2"] {
+  --accent: #c0cbd8 !important;   /* silver */
+  --accent-2: #9fb0c8 !important;
+}
+
+.slide[data-index="3"] {
+  --accent: #d1b9a6 !important;   /* bronze */
+  --accent-2: #b38a6f !important;
+}
+
+/* apply those accent colors to the key text areas */
+.slide[data-index="1"] .team-name,
+.slide[data-index="2"] .team-name,
+.slide[data-index="3"] .team-name {
+  color: var(--accent-2) !important;
+}
+
+.slide[data-index="1"] .rank-badge,
+.slide[data-index="2"] .rank-badge,
+.slide[data-index="3"] .rank-badge {
+  color: var(--accent-2) !important;
+}
+
+.slide[data-index="1"] .meta,
+.slide[data-index="2"] .meta,
+.slide[data-index="3"] .meta {
+  border-color: var(--accent) !important;
+  color: var(--accent-2) !important;
+}
