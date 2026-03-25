@@ -1,0 +1,22 @@
+{
+  "Mason 🏆": {
+    "logo": "../assets/logos/rizzlers2.png",
+    "win": ".701",
+    "record": "89-43",
+    "last": "1st",
+    "chips": 2,
+    "podiums": 5,
+    "playoffs": 7,
+    "streak": 8
+  },
+  "Joey 🏆": {
+    "logo": "../assets/logos/gooners.png",
+    "win": ".642",
+    "record": "80-50",
+    "last": "3rd",
+    "chips": 1,
+    "podiums": 3,
+    "playoffs": 6,
+    "streak": 5
+  }
+}
