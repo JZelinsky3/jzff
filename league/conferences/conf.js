@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+/* PLAYER DATA */
 const players = {
   "Joey 🏆": {logo: "../assets/logos/gooners.png", score: 61.19, win: ".642", record: "80-50", last: "3rd", chips: 1, podiums: 3, playoffs: 6, streak: 5},
   "Mason 🏆": {logo: "../assets/logos/rizzlers2.png", score: 57.05, win: ".701", record: "89-43", last: "1st", chips: 2, podiums: 5, playoffs: 7, streak: 8},
@@ -15,19 +16,38 @@ const players = {
   "Evan": {logo: "../assets/logos/whiteboyfootball2.png", score: 5.54, win: ".430", record: "55-75", last: "10th", chips: 0, podiums: 0, playoffs: 2, streak: 1}
 };
 
+/* CONFERENCES */
 const whole = ["Joey 🏆","Connie 🏆","Sean","Connor","Kyle","Evan"];
 const skim = ["Mason 🏆","Chris 🏆","Andrew 🏆","Isaac 🏆","Luke 🏆","Charlie"];
-const order = [];
 
+/* ORDER */
+const order = [];
 for (let i = 0; i < whole.length; i++) {
   order.push({ name: whole[i], conf: "whole" });
   order.push({ name: skim[i], conf: "skim" });
 }
 
-let index = 0;
-let showing = false;
+/* RANDOM BOARD */
+const grid = document.getElementById("boardGrid");
+[...whole, ...skim]
+  .sort(() => Math.random() - 0.5)
+  .forEach(name => {
+    const cell = document.createElement("div");
+    cell.className = "board-cell";
+    cell.innerText = name;
+    cell.id = "row-" + name;
+    grid.appendChild(cell);
+  });
 
-/* intro */
+/* STATE */
+let index = 0;
+let phase = 0; 
+// 0 = black card
+// 1 = stats only
+// 2 = full reveal
+// 3 = fly to conference
+
+/* INTRO */
 setTimeout(() => {
   document.getElementById("introScreen").style.opacity = 0;
   setTimeout(() => {
@@ -36,16 +56,7 @@ setTimeout(() => {
   }, 1000);
 }, 1500);
 
-/* board */
-const grid = document.getElementById("boardGrid");
-[...whole, ...skim].forEach(name => {
-  const cell = document.createElement("div");
-  cell.classList.add("board-cell");
-  cell.innerText = name;
-  cell.id = "row-" + name;
-  grid.appendChild(cell);
-});
-
+/* BUTTON */
 const btn = document.getElementById("revealBtn");
 
 btn.addEventListener("click", () => {
@@ -55,77 +66,122 @@ btn.addEventListener("click", () => {
     return;
   }
 
-  if (!showing) {
-    showCard(order[index]);
-    showing = true;
-  } else {
-    flyToConference(order[index]);
-    showing = false;
+  const pick = order[index];
+  highlight(pick.conf);
+
+  if (phase === 0) {
+    showBlackCard(pick);
+    phase = 1;
+  } 
+  else if (phase === 1) {
+    showStatsOnly(pick);   // NEW STEP
+    phase = 2;
+  } 
+  else if (phase === 2) {
+    revealPlayer(pick);
+    phase = 3;
+  } 
+  else if (phase === 3) {
+    fly(pick);
+    phase = 0;
     index++;
   }
 
 });
 
-/* show card */
-function showCard(pick) {
-  const data = players[pick.name];
+function showStatsOnly(pick) {
   const card = document.getElementById("global-card");
+  const d = players[pick.name];
 
   card.innerHTML = `
-    <img class="card-logo" src="${data.logo}">
-    <div class="card-name">${pick.name}</div>
+    <img class="card-logo hidden-reveal" src="${d.logo}">
+    <div class="card-name name-hidden">${pick.name}</div>
 
     <div class="card-top">
-      <div>${data.record}<br><span>All-Time</span></div>
-      <div>${data.last}<br><span>2025</span></div>
+      <div>${d.record}<br><span>All-Time</span></div>
+      <div>${d.last}<br><span>2025</span></div>
     </div>
 
     <div class="card-stats">
-      <div class="stat-box">🏆 ${data.chips}<br>Champs</div>
-      <div class="stat-box">🥇 ${data.podiums}<br>Podiums</div>
-      <div class="stat-box">🎯 ${data.playoffs}<br>Playoffs</div>
-      <div class="stat-box">🔥 ${data.streak}<br>Streak</div>
+      <div class="stat-box">🏆 ${d.chips}<br><span>Champs</span></div>
+      <div class="stat-box">🥇 ${d.podiums}<br><span>Podiums</span></div>
+      <div class="stat-box">🎯 ${d.playoffs}<br><span>Playoffs</span></div>
+      <div class="stat-box">🔥 ${d.streak}<br><span>Streak</span></div>
+    </div>
+  `;
+}
+
+/* HIGHLIGHT ACTIVE CONF */
+function highlight(conf) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active-conf"));
+  document.querySelector("." + conf).classList.add("active-conf");
+}
+
+/* BLACK CARD */
+function showBlackCard(pick) {
+  const card = document.getElementById("global-card");
+
+  const confName = pick.conf === "whole" ? "Whole" : "Skim";
+
+  card.innerHTML = `
+    <div class="card-reveal">
+      NEXT UP: <u>${confName.toUpperCase()}</u>
     </div>
   `;
 
   card.classList.add("show");
 }
 
-/* fly */
-function flyToConference(pick) {
+function revealPlayer(pick) {
+  const card = document.getElementById("global-card");
+
+  const logo = card.querySelector(".card-logo");
+  const name = card.querySelector(".card-name");
+
+  logo.classList.remove("hidden-reveal");
+  logo.classList.add("fade-in");
+
+  name.classList.remove("name-hidden");
+  name.classList.add("fade-in");
+
+}
+
+/* FLY TO CONF */
+function fly(pick) {
   const card = document.getElementById("global-card");
   const target = document.getElementById(pick.conf);
 
-  const data = players[pick.name];
+  const d = players[pick.name];
 
   const div = document.createElement("div");
-  div.classList.add("player");
+  div.className = "player";
 
   div.innerHTML = `
     <div class="left">
-      <img class="logo" src="${data.logo}">
+      <img class="logo" src="${d.logo}">
       <span class="name-text">${pick.name}</span>
     </div>
-    <span class="stat">${data.win}</span>
+    <span class="stat">${d.win}</span>
   `;
 
   target.appendChild(div);
 
-  const cardRect = card.getBoundingClientRect();
-  const targetRect = div.getBoundingClientRect();
+  const c = card.getBoundingClientRect();
+  const t = div.getBoundingClientRect();
 
-  const dx = targetRect.left - cardRect.left;
-  const dy = targetRect.top - cardRect.top;
+  const dx = t.left - c.left;
+  const dy = t.top - c.top;
 
   card.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(0.3)`;
   card.style.opacity = 0;
 
   setTimeout(() => {
-  card.classList.remove("show");
+    card.classList.remove("show");
+    card.style.transform = "translate(-50%, -50%) scale(0.9)";
+    card.style.opacity = "";
 
-  // 🔥 reset ALL inline styles so next card works
-  card.style.transform = "translate(-50%, -50%) scale(0.9)";
-  card.style.opacity = "";
+    document.querySelectorAll(".player").forEach(p => p.classList.remove("latest"));
+    div.classList.add("latest");
 
     div.classList.add("show");
 
@@ -133,21 +189,15 @@ function flyToConference(pick) {
   }, 600);
 }
 
-/* final scores */
+/* FINAL SCORES */
 function revealScores() {
-  const all = document.querySelectorAll(".player");
-
-  all.forEach((playerDiv, i) => {
-    const name = playerDiv.querySelector(".name-text").innerText;
-    const stat = playerDiv.querySelector(".stat");
+  document.querySelectorAll(".player").forEach((p, i) => {
+    const name = p.querySelector(".name-text").innerText;
+    const stat = p.querySelector(".stat");
 
     setTimeout(() => {
-      stat.style.opacity = 0;
-      setTimeout(() => {
-        stat.innerText = players[name].score;
-        stat.style.opacity = 1;
-      }, 200);
-    }, i * 120);
+      stat.innerText = players[name].score;
+    }, i * 100);
   });
 }
 
