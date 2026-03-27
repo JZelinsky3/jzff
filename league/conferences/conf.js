@@ -2,34 +2,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* PLAYER DATA */
 const players = {
-  "Joey 🏆": {logo: "../assets/logos/gooners.png", score: 61.19, win: ".642", record: "80-50", last: "3rd", chips: 1, podiums: 3, playoffs: 6, streak: 5},
-  "Mason 🏆": {logo: "../assets/logos/rizzlers2.png", score: 57.05, win: ".701", record: "89-43", last: "1st", chips: 2, podiums: 5, playoffs: 7, streak: 8},
-  "Chris 🏆": {logo: "../assets/logos/kylerthecreator.png", score: 51.32, win: ".655", record: "82-48", last: "2nd", chips: 1, podiums: 4, playoffs: 6, streak: 6},
-  "Connie 🏆": {logo: "../assets/logos/tequilasunrise.png", score: 49.89, win: ".612", record: "78-52", last: "4th", chips: 1, podiums: 3, playoffs: 5, streak: 4},
-  "Sean": {logo: "../assets/logos/thefamilyguy2.png", score: 47.89, win: ".588", record: "75-55", last: "6th", chips: 0, podiums: 1, playoffs: 4, streak: 3},
-  "Andrew 🏆": {logo: "../assets/logos/bodix2.png", score: 41.24, win: ".601", record: "77-53", last: "5th", chips: 1, podiums: 2, playoffs: 5, streak: 5},
-  "Isaac 🏆": {logo: "../assets/logos/childofgod2.png", score: 32.89, win: ".677", record: "85-45", last: "2nd", chips: 1, podiums: 4, playoffs: 6, streak: 7},
-  "Connor": {logo: "../assets/logos/thepeoplestightend2.png", score: 32.22, win: ".523", record: "68-62", last: "7th", chips: 0, podiums: 1, playoffs: 3, streak: 2},
-  "Kyle": {logo: "../assets/logos/gingerninger2.png", score: 20.06, win: ".498", record: "65-65", last: "8th", chips: 0, podiums: 0, playoffs: 2, streak: 2},
-  "Luke 🏆": {logo: "../assets/logos/theglizzys2.png", score: 13.32, win: ".455", record: "60-70", last: "12th", chips: 1, podiums: 1, playoffs: 3, streak: 3},
-  "Charlie": {logo: "../assets/logos/moneygod2.png", score: 7.27, win: ".472", record: "62-68", last: "9th", chips: 0, podiums: 1, playoffs: 3, streak: 2},
-  "Evan": {logo: "../assets/logos/whiteboyfootball2.png", score: 5.54, win: ".430", record: "55-75", last: "10th", chips: 0, podiums: 0, playoffs: 2, streak: 1}
+  "Joey 🏆": {logo: "../assets/logos/gooners.png", score: 61.19, win: ".552", record: "53-43", last: "8th", chips: 1, podiums: 4, playoffs: 4, avg_finish: 5.29},
+  "Mason 🏆": {logo: "../assets/logos/rizzlers2.png", score: 57.05, win: ".583", record: "56-40", last: "1st", chips: 1, podiums: 2, playoffs: 3, avg_finish: 6.43},
+  "Chris 🏆": {logo: "../assets/logos/kylerthecreator.png", score: 51.32, win: ".531", record: "51-45", last: "9th", chips: 1, podiums: 2, playoffs: 4, avg_finish: 5.71},
+  "Connie 🏆": {logo: "../assets/logos/tequilasunrise.png", score: 49.89, win: ".479", record: "46-50", last: "2nd", chips: 1, podiums: 3, playoffs: 4, avg_finish: 5.57},
+  "Sean": {logo: "../assets/logos/thefamilyguy2.png", score: 47.89, win: ".583", record: "56-40", last: "10", chips: 0, podiums: 2, playoffs: 4, avg_finish: 6.29},
+  "Andrew 🏆": {logo: "../assets/logos/bodix2.png", score: 41.24, win: ".479", record: "46-50", last: "3rd", chips: 1, podiums: 3, playoffs: 5, avg_finish: 5.43},
+  "Isaac 🏆": {logo: "../assets/logos/childofgod2.png", score: 32.89, win: ".554", record: "46-37", last: "5th", chips: 1, podiums: 2, playoffs: 4, avg_finish: 6},
+  "Connor": {logo: "../assets/logos/thepeoplestightend2.png", score: 32.22, win: ".438", record: "42-54", last: "7th", chips: 0, podiums: 1, playoffs: 2, avg_finish: 7.71},
+  "Kyle": {logo: "../assets/logos/gingerninger2.png", score: 20.06, win: ".479", record: "46-50", last: "4th", chips: 0, podiums: 0, playoffs: 4, avg_finish: 7.14},
+  "Luke 🏆": {logo: "../assets/logos/theglizzys2.png", score: 13.32, win: ".458", record: "38-45", last: "12th", chips: 1, podiums: 1, playoffs: 3, avg_finish: 7.5},
+  "Charlie": {logo: "../assets/logos/moneygod2.png", score: 7.27, win: ".479", record: "46-50", last: "6th", chips: 0, podiums: 0, playoffs: 2, avg_finish: 7.86},
+  "Evan": {logo: "../assets/logos/whiteboyfootball2.png", score: 5.54, win: ".405", record: "17-25", last: "11th", chips: 0, podiums: 0, playoffs: 1, avg_finish: 8.67}
 };
 
 /* CONFERENCES */
-const whole = ["Joey 🏆","Connie 🏆","Sean","Connor","Kyle","Evan"];
-const skim = ["Mason 🏆","Chris 🏆","Andrew 🏆","Isaac 🏆","Luke 🏆","Charlie"];
+const skim = ["Mason 🏆","Luke 🏆","Charlie","Andrew 🏆","Chris 🏆","Isaac 🏆"];
+const whole = ["Sean","Evan","Connie 🏆","Joey 🏆","Connor","Kyle"];
 
 /* ORDER */
 const order = [];
 for (let i = 0; i < whole.length; i++) {
-  order.push({ name: whole[i], conf: "whole" });
   order.push({ name: skim[i], conf: "skim" });
+  order.push({ name: whole[i], conf: "whole" });
 }
 
 /* RANDOM BOARD */
 const grid = document.getElementById("boardGrid");
-[...whole, ...skim]
+[...skim, ...whole]
   .sort(() => Math.random() - 0.5)
   .forEach(name => {
     const cell = document.createElement("div");
@@ -49,11 +49,32 @@ let phase = 0;
 
 /* INTRO */
 setTimeout(() => {
-  document.getElementById("introScreen").style.opacity = 0;
+  const intro1 = document.getElementById("intro1");
+  const intro2 = document.getElementById("intro2");
+
+  // Fade out first text
+  intro1.style.opacity = 0;
+
   setTimeout(() => {
-    document.getElementById("introScreen").style.display = "none";
-    document.getElementById("main").style.opacity = 1;
+    intro1.style.display = "none";
+
+    // Show second title
+    intro2.classList.remove("hidden");
+    intro2.style.opacity = 1;
+
+    setTimeout(() => {
+      // Fade everything out
+      document.getElementById("introScreen").style.opacity = 0;
+
+      setTimeout(() => {
+        document.getElementById("introScreen").style.display = "none";
+        document.getElementById("main").style.opacity = 1;
+      }, 1000);
+
+    }, 2000); // how long title stays on screen
+
   }, 1000);
+
 }, 1500);
 
 /* BUTTON */
@@ -106,7 +127,7 @@ function showStatsOnly(pick) {
       <div class="stat-box">🏆 ${d.chips}<br><span>Champs</span></div>
       <div class="stat-box">🥇 ${d.podiums}<br><span>Podiums</span></div>
       <div class="stat-box">🎯 ${d.playoffs}<br><span>Playoffs</span></div>
-      <div class="stat-box">🔥 ${d.streak}<br><span>Streak</span></div>
+      <div class="stat-box">🔥 ${d.avg_finish}<br><span>Avg Finish</span></div>
     </div>
   `;
 }
@@ -121,13 +142,28 @@ function highlight(conf) {
 function showBlackCard(pick) {
   const card = document.getElementById("global-card");
 
-  const confName = pick.conf === "whole" ? "Whole" : "Skim";
+  const confLogo = pick.conf === "whole"
+    ? "../assets/logos/whole.png"
+    : "../assets/logos/skim.jpg";
+
+  const textOptions = {
+    whole: "Next Up:",
+    skim: "Next Up:"
+  };
 
   card.innerHTML = `
     <div class="card-reveal">
-      NEXT UP: <u>${confName.toUpperCase()}</u>
+      <div class="reveal-text">${textOptions[pick.conf]}</div>
+
+      <div class="reveal-spacer"></div>
+
+      <img src="${confLogo}" class="reveal-logo">
     </div>
   `;
+
+  card.style.boxShadow = pick.conf === "whole"
+  ? "0 0 50px rgba(62,207,255,0.25)"
+  : "0 0 50px rgba(255,159,67,0.25)";
 
   card.classList.add("show");
 }

@@ -12,12 +12,41 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
+
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.8rem; /* bigger */
+  letter-spacing: 1.5px;
+
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+
+  position: relative;
+}
+
+.whole .title::after {
+  background: linear-gradient(90deg, transparent, #3ecfff, transparent);
+  box-shadow: 0 0 8px rgba(62,207,255,0.7);
+}
+
+.skim .title::after {
+  background: linear-gradient(90deg, transparent, #ff9f43, transparent);
+  box-shadow: 0 0 8px rgba(255,159,67,0.7);
+}
+
+.title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  border-radius: 2px;
 }
 
 .conf-logo {
-  width: 26px;
-  height: 26px;
+  width: 38px;
+  height: 38px;
   object-fit: contain;
 }
 
@@ -73,6 +102,16 @@ h1 {
   letter-spacing: 3px;
 }
 
+.hidden {
+  opacity: 0;
+}
+
+#introScreen .intro-text {
+  position: absolute;
+  transition: opacity 1s;
+  text-align: center;
+}
+
 /* main content */
 #main {
   opacity: 0;
@@ -125,8 +164,8 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 10px 0;
-  padding: 10px;
+  margin: 8px 0;
+  padding: 8px;
   border-radius: 10px;
   background: rgba(255,255,255,0.05);
   border: 1px solid transparent;
@@ -245,7 +284,7 @@ h1 {
 .ticker {
   white-space: nowrap;
   padding-left: 100%;
-  animation: scroll 25s linear infinite;
+  animation: scroll 60s linear infinite;
 }
 @keyframes scroll {
   to { transform: translateX(-100%); }
@@ -286,6 +325,7 @@ h1 {
   height: 100%;
 
   display: flex;
+  flex-direction: column;
   align-items: center;       /* vertical center */
   justify-content: center;   /* horizontal center */
   text-align: center;
@@ -295,7 +335,7 @@ h1 {
   letter-spacing: 2px;
   text-transform: uppercase;
 
-  background: black;
+  background: linear-gradient(145deg, rgba(20,25,40,0.95), rgba(10,15,30,0.95));
   color: white;
 
   z-index: 20;
@@ -361,4 +401,20 @@ h1 {
   transform: translateX(-50%);
   color: #aaa;
   letter-spacing: 3px;
+}
+
+.reveal-text {
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+}
+
+.reveal-spacer {
+  height: 20px;
+}
+
+.reveal-logo {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.4));
 }
