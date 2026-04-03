@@ -194,12 +194,39 @@ function showStatsOnly(pick) {
   const d = players[pick.name];
   const isChamp = pick.name === "Mason 🏆";
 
+  // Define rivals (add more if needed)
+  const rivals = {
+    "Joey 🏆": "Chris 6-5",
+    "Chris 🏆": "Joey 5-6",
+    "Connie 🏆": "Mason 4-4",
+    "Mason 🏆": "Connie 4-4",
+    "Andrew 🏆": "Evan 2-2",
+    "Sean": "Kyle 6-2",
+    "Kyle": "Sean 2-6",
+    "Isaac 🏆": "Cat 5-5",      // assuming "Cat" is the name; change if it's "Isaac" vs someone else
+    "Evan": "Ricci 2-2",
+    "Luke 🏆": "Charlie 4-6",
+    "Charlie": "Luke 6-4",
+    "Connor": "Isaac 5-5"
+    // Add any missing pairs here (e.g. if "Cat" or "Ricci" appear as full names)
+  };
+
+  const rivalName = rivals[pick.name] || null;
+
   card.style.boxShadow = isChamp
     ? "0 0 60px rgba(255,215,0,0.35)"
     : "0 0 50px rgba(62,207,255,0.25)";
 
+  let badgeHTML = '';
+  if (isChamp) {
+    badgeHTML += '<div class="champ-badge">2025 CHAMP</div>';
+  }
+  if (rivalName) {
+    badgeHTML += `<div class="rival-badge">Rival: ${rivalName}</div>`;
+  }
+
   card.innerHTML = `
-    ${isChamp ? '<div class="champ-badge">2025 CHAMP</div>' : ""}
+    ${badgeHTML}
     <img class="card-logo hidden-reveal" src="${d.logo}">
     <div class="card-name name-hidden">${pick.name}</div>
 
@@ -298,11 +325,26 @@ function fly(pick) {
 
 function revealScores() {
   document.querySelectorAll(".player").forEach((p, i) => {
-    const name = p.querySelector(".name-text").innerText;
+    const nameText = p.querySelector(".name-text");
+    
+    // Clean the name: remove the mini-champ-badge text and trim whitespace
+    let cleanName = nameText.innerText.trim();
+    
+    // Remove anything after the first newline or the champ badge text
+    if (cleanName.includes("\n")) {
+      cleanName = cleanName.split("\n")[0].trim();
+    }
+    // Also remove "2025 Champ" if it appears inline
+    cleanName = cleanName.replace(/2025 Champ/i, "").trim();
+
     const stat = p.querySelector(".stat");
 
     setTimeout(() => {
-      stat.innerText = players[name].score;
+      if (players[cleanName]) {
+        stat.innerText = players[cleanName].score;
+      } else {
+        console.warn("Could not find player:", cleanName); // for debugging
+      }
     }, i * 100);
   });
 }

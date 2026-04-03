@@ -549,3 +549,23 @@ h1 {
   color: black;
   font-weight: 700;
 }
+
+.rival-badge {
+  position: absolute;
+  top: 48px;           /* below the champ badge */
+  right: 12px;
+  padding: 5px 9px;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #ff3b3b, #c8102e);
+  color: white;
+  font-weight: 600;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(255, 59, 59, 0.7);
+  text-transform: uppercase;
+  z-index: 10;
+}
+
+.champ-badge + .rival-badge {
+  top: 48px;   /* keeps spacing if both are present */
+}
