@@ -1,6 +1,117 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-/* PLAYER DATA */
+/* ================= SOUND ================= */
+const sounds = {
+  introSound: new Audio("../assets/sounds/yeatintro.mp3"),
+};
+
+sounds.introSound.volume = 0.5;
+sounds.introSound.load();
+
+let introSoundPlaying = false;
+
+// toggle music function
+function toggleIntroSound() {
+  const sound = sounds.introSound;
+  if (introSoundPlaying) {
+    sound.pause();
+    introSoundPlaying = false;
+  } else {
+    sound.play().catch(() => {});
+    introSoundPlaying = true;
+  }
+}
+
+/* ================= INTRO SCREENS ================= */
+let introTimeouts = [];
+
+function runIntroScreens() {
+  const intro0 = document.getElementById("intro0");
+  const intro1 = document.getElementById("intro1");
+  const intro2 = document.getElementById("intro2");
+  const intro3 = document.getElementById("intro3");
+
+  // show intro0 (black) instantly
+  intro0.classList.remove("hidden");
+  intro0.style.opacity = 1;
+  intro1.classList.add("show-underline");
+
+  // START MUSIC ONCE
+  if (!introSoundPlaying) {
+    sounds.introSound.currentTime = 0;
+    sounds.introSound.play().catch(() => {});
+    introSoundPlaying = true;
+  }
+
+  // fade into intro1
+  introTimeouts.push(setTimeout(() => {
+    intro0.style.opacity = 0;
+
+    setTimeout(() => {
+      intro0.classList.add("hidden");
+
+      // show intro1
+      intro1.classList.remove("hidden");
+      intro1.style.opacity = 1;
+
+      // fade out intro1 after 2.5s
+      setTimeout(() => {
+        intro1.style.opacity = 0;
+
+        setTimeout(() => {
+          intro1.classList.add("hidden");
+
+          // show intro2 (brown)
+          intro2.classList.remove("hidden");
+          intro2.style.opacity = 1;
+
+          setTimeout(() => {
+            intro2.style.opacity = 0;
+
+            setTimeout(() => {
+              intro2.classList.add("hidden");
+
+              // show intro3 (gold)
+              intro3.classList.remove("hidden");
+              intro3.style.opacity = 1;
+
+              setTimeout(() => {
+                endIntroScreens();
+              }, 4000);
+
+            }, 1000);
+
+          }, 2500);
+
+        }, 1000);
+
+      }, 2500);
+
+    }, 1000);
+
+  }, 1500));
+}
+
+function endIntroScreens() {
+  document.getElementById("introScreen").style.opacity = 0;
+
+  setTimeout(() => {
+    document.getElementById("introScreen").style.display = "none";
+    document.getElementById("main").style.opacity = 1;
+  }, 1000);
+}
+
+/* ================= MUSIC TOGGLE BUTTON ================= */
+document.getElementById("musicToggleBtn").addEventListener("click", () => {
+  toggleIntroSound();
+});
+
+/* ================= START INTRO ================= */
+window.addEventListener("DOMContentLoaded", () => {
+  runIntroScreens();
+});
+
+/* ================= PLAYER DATA ================= */
 const players = {
   "Joey 🏆": {logo: "../assets/logos/gooners.png", score: 61.19, win: ".552", record: "53-43", last: "8th", chips: 1, podiums: 4, playoffs: 4, avg_finish: 5.29},
   "Mason 🏆": {logo: "../assets/logos/rizzlers2.png", score: 57.05, win: ".583", record: "56-40", last: "1st", chips: 1, podiums: 2, playoffs: 3, avg_finish: 6.43},
@@ -16,18 +127,18 @@ const players = {
   "Evan": {logo: "../assets/logos/whiteboyfootball2.png", score: 5.54, win: ".405", record: "17-25", last: "11th", chips: 0, podiums: 0, playoffs: 1, avg_finish: 8.67}
 };
 
-/* CONFERENCES */
+/* ================= CONFERENCES ================= */
 const skim = ["Mason 🏆","Luke 🏆","Charlie","Andrew 🏆","Chris 🏆","Isaac 🏆"];
 const whole = ["Sean","Evan","Connie 🏆","Joey 🏆","Connor","Kyle"];
 
-/* ORDER */
+/* ================= ORDER ================= */
 const order = [];
 for (let i = 0; i < whole.length; i++) {
   order.push({ name: skim[i], conf: "skim" });
   order.push({ name: whole[i], conf: "whole" });
 }
 
-/* RANDOM BOARD */
+/* ================= BOARD ================= */
 const grid = document.getElementById("boardGrid");
 [...skim, ...whole]
   .sort(() => Math.random() - 0.5)
@@ -39,45 +150,11 @@ const grid = document.getElementById("boardGrid");
     grid.appendChild(cell);
   });
 
-/* STATE */
+/* ================= STATE ================= */
 let index = 0;
-let phase = 0; 
-// 0 = black card
-// 1 = stats only
-// 2 = full reveal
-// 3 = fly to conference
+let phase = 0;
 
-/* INTRO */
-setTimeout(() => {
-  const intro1 = document.getElementById("intro1");
-  const intro2 = document.getElementById("intro2");
-
-  // Fade out first text
-  intro1.style.opacity = 0;
-
-  setTimeout(() => {
-    intro1.style.display = "none";
-
-    // Show second title
-    intro2.classList.remove("hidden");
-    intro2.style.opacity = 1;
-
-    setTimeout(() => {
-      // Fade everything out
-      document.getElementById("introScreen").style.opacity = 0;
-
-      setTimeout(() => {
-        document.getElementById("introScreen").style.display = "none";
-        document.getElementById("main").style.opacity = 1;
-      }, 1000);
-
-    }, 2000); // how long title stays on screen
-
-  }, 1000);
-
-}, 1500);
-
-/* BUTTON */
+/* ================= BUTTON ================= */
 const btn = document.getElementById("revealBtn");
 
 btn.addEventListener("click", () => {
@@ -95,14 +172,14 @@ btn.addEventListener("click", () => {
     phase = 1;
   } 
   else if (phase === 1) {
-    showStatsOnly(pick);   // NEW STEP
+    showStatsOnly(pick);
     phase = 2;
   } 
   else if (phase === 2) {
     revealPlayer(pick);
     phase = 3;
   } 
-  else if (phase === 3) {
+  else {
     fly(pick);
     phase = 0;
     index++;
@@ -110,17 +187,25 @@ btn.addEventListener("click", () => {
 
 });
 
+/* ================= FUNCTIONS ================= */
+
 function showStatsOnly(pick) {
   const card = document.getElementById("global-card");
   const d = players[pick.name];
+  const isChamp = pick.name === "Mason 🏆";
+
+  card.style.boxShadow = isChamp
+    ? "0 0 60px rgba(255,215,0,0.35)"
+    : "0 0 50px rgba(62,207,255,0.25)";
 
   card.innerHTML = `
+    ${isChamp ? '<div class="champ-badge">2025 CHAMP</div>' : ""}
     <img class="card-logo hidden-reveal" src="${d.logo}">
     <div class="card-name name-hidden">${pick.name}</div>
 
     <div class="card-top">
       <div>${d.record}<br><span>All-Time</span></div>
-      <div>${d.last}<br><span>2025</span></div>
+      <div>${d.last}<br><span>Last Year</span></div>
     </div>
 
     <div class="card-stats">
@@ -132,13 +217,11 @@ function showStatsOnly(pick) {
   `;
 }
 
-/* HIGHLIGHT ACTIVE CONF */
 function highlight(conf) {
   document.querySelectorAll(".panel").forEach(p => p.classList.remove("active-conf"));
   document.querySelector("." + conf).classList.add("active-conf");
 }
 
-/* BLACK CARD */
 function showBlackCard(pick) {
   const card = document.getElementById("global-card");
 
@@ -146,24 +229,12 @@ function showBlackCard(pick) {
     ? "../assets/logos/whole.png"
     : "../assets/logos/skim.jpg";
 
-  const textOptions = {
-    whole: "Next Up:",
-    skim: "Next Up:"
-  };
-
   card.innerHTML = `
     <div class="card-reveal">
-      <div class="reveal-text">${textOptions[pick.conf]}</div>
-
-      <div class="reveal-spacer"></div>
-
+      <div class="reveal-text">Next Up:</div>
       <img src="${confLogo}" class="reveal-logo">
     </div>
   `;
-
-  card.style.boxShadow = pick.conf === "whole"
-  ? "0 0 50px rgba(62,207,255,0.25)"
-  : "0 0 50px rgba(255,159,67,0.25)";
 
   card.classList.add("show");
 }
@@ -175,27 +246,29 @@ function revealPlayer(pick) {
   const name = card.querySelector(".card-name");
 
   logo.classList.remove("hidden-reveal");
-  logo.classList.add("fade-in");
-
   name.classList.remove("name-hidden");
-  name.classList.add("fade-in");
 
+  logo.classList.add("fade-in");
+  name.classList.add("fade-in");
 }
 
-/* FLY TO CONF */
 function fly(pick) {
   const card = document.getElementById("global-card");
   const target = document.getElementById(pick.conf);
-
   const d = players[pick.name];
 
   const div = document.createElement("div");
   div.className = "player";
 
+  const isChamp = pick.name === "Mason 🏆";
+
   div.innerHTML = `
     <div class="left">
       <img class="logo" src="${d.logo}">
-      <span class="name-text">${pick.name}</span>
+      <span class="name-text">
+        ${pick.name}
+        ${isChamp ? '<span class="mini-champ-badge">2025 Champ</span>' : ""}
+      </span>
     </div>
     <span class="stat">${d.win}</span>
   `;
@@ -217,15 +290,12 @@ function fly(pick) {
     card.style.opacity = "";
 
     document.querySelectorAll(".player").forEach(p => p.classList.remove("latest"));
-    div.classList.add("latest");
-
-    div.classList.add("show");
+    div.classList.add("latest", "show");
 
     document.getElementById("row-" + pick.name)?.classList.add("taken");
   }, 600);
 }
 
-/* FINAL SCORES */
 function revealScores() {
   document.querySelectorAll(".player").forEach((p, i) => {
     const name = p.querySelector(".name-text").innerText;

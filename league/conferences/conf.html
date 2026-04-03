@@ -11,14 +11,23 @@
 <div id="bgGlow"></div>
 
 <div id="introScreen">
-  <div class="intro-text" id="intro1">JZFF PRESENTS</div>
+  <div class="intro-text hidden" id="intro0"></div> <!-- black screen -->
 
-  <div class="intro-text hidden" id="intro2">
-    <div>PA Milk Society</div>
-    <div style="font-size: 1.8rem; margin-top: 10px;">
+  <div class="intro-text hidden intro1" id="intro1">JZFF PRESENTS</div>
+
+  <div class="intro-text hidden intro2" id="intro2">
+    <img src="../assets/logos/mavchamp.jpg" class="champ-intro-img">
+    <div style="margin-top: 20px;">2025 Champion</div>
+    <div style="font-size: 1.8rem; margin-top: 8px;">Mason (12–4)</div>
+  </div>
+
+  <div class="intro-text hidden intro3" id="intro3">
+    <img src="../assets/logos/conflogoblack.png" class="intro-logo">
+    <div style="font-size: 3.8rem; margin-top: 370px;">
       2026 Conference Reveal
     </div>
   </div>
+
 </div>
 
 <div id="main">
@@ -34,7 +43,7 @@
       </div>
       <div id="skim"></div>
     </div>
-    
+
     <div class="panel whole">
       <div class="title">
         <img src="../assets/logos/whole.png" class="conf-logo">
@@ -58,6 +67,19 @@
 </div>
 
 </div>
+
+<!-- Top-right music toggle button -->
+<button id="musicToggleBtn" style="
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 8px 8px;
+    font-size: 8px;
+    opacity: 0.2;
+    cursor: pointer;
+    z-index: 9999;
+    border-radius: 10px;
+"></button>
 
 <!-- ESPN BottomLine -->
 <div id="bottomline">

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rivals Reveal</title>
+
+<!-- More professional font -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:'Inter',sans-serif;overflow:hidden}
+
+body::before{
+  content:'';
+  position:absolute;
+  width:100%;height:100%;
+  background:radial-gradient(circle, rgba(255,0,0,0.15), transparent);
+  animation:pulse 6s infinite alternate;
+  z-index:-1;
+}
+@keyframes pulse{from{opacity:.3}to{opacity:.6}}
+
+.container{height:100vh;display:flex;flex-direction:column;justify-content:space-between;padding:20px}
+
+.header{text-align:center}
+
+.header h1{
+  font-family:'Playfair Display';
+  font-size:1.4rem;
+  letter-spacing:2px;
+  padding:8px 20px;
+  border-radius:12px;
+  text-shadow:none; /* remove heavy glow */
+  opacity:1;
+  transform:none;
+  transition:.8s;
+}
+
+.header.show h1{
+  opacity:1;
+  transform:translateY(0);
+}
+
+.stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative}
+
+.vs-text{
+  position:absolute;
+  font-size:7rem;
+  color:rgba(255,0,0,0.05);
+  font-family:'Playfair Display';
+}
+
+/* MATCHUP */
+.matchup{
+  width:75%;
+  padding:50px 40px;
+  border-radius:25px;
+  border:1px solid rgba(255,0,0,0.5);
+  background:linear-gradient(145deg, rgba(255,0,0,0.1), rgba(0,0,0,0.9));
+  box-shadow:0 0 70px rgba(255,0,0,0.5);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:relative;
+  opacity:0;
+  transform:scale(.95);
+  transition:.8s;
+}
+
+.matchup.show{opacity:1;transform:scale(1)}
+
+.rival-title{
+  position:absolute;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  font-family:'Playfair Display';
+  font-size:1.8rem;
+  color:#facc15;
+  letter-spacing:2px;
+}
+
+.side{width:30%;text-align:center}
+
+.logo{
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  object-fit:cover;
+  box-shadow:0 0 25px gold;
+  margin-bottom:15px;
+}
+
+.name{
+  font-size:2.3rem;
+  font-weight:700;
+}
+
+.record{
+  font-size:2.4rem;
+  color:#facc15;
+  margin-top:10px;
+}
+
+.center{
+  width:40%;
+  text-align:center;
+}
+
+.stat{
+  font-size:1.3rem;
+  margin:12px 0;
+  opacity:0;
+  transform:translateY(10px);
+  transition:.5s;
+}
+.stat.show{opacity:1;transform:translateY(0)}
+
+.edge{
+  margin-top:10px;
+  font-size:1.2rem;
+  color:#facc15;
+}
+
+.logo-intro{
+  position:absolute;
+  display:flex;
+  gap:50px;
+  opacity:0;
+  transform:scale(.8);
+  transition:.6s;
+}
+.logo-intro.show{opacity:1;transform:scale(1)}
+.logo-intro img{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  object-fit:cover;
+  box-shadow:0 0 30px red;
+}
+
+#introScreen{
+  position:absolute;
+  width:100%;height:100%;
+  background:black;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  z-index:10;
+}
+
+.intro-title{
+  font-size:3.2rem;
+  color:#facc15;
+  font-family:'Playfair Display';
+  opacity:0;
+  transform:translateY(30px);
+  transition:.6s;
+}
+
+.intro-desc{
+  font-size:1.4rem;
+  color:#ddd;
+  margin-top:10px;
+  opacity:0;
+  transform:translateY(30px);
+  transition:.6s;
+}
+
+.intro-record{
+  font-size:1.2rem;
+  color:#facc15;
+  font-family:'Playfair Display';
+  margin-top:9px;
+  opacity:0;
+  transform:translateY(30px);
+  transition:.6s;
+}
+
+.show{opacity:1;transform:translateY(0)}
+.fade-out{opacity:0;transition:.8s}
+
+.footer{text-align:center}
+button{
+  padding:12px 30px;
+  background:red;
+  color:white;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  box-shadow:0 0 15px red;
+}
+
+.progress{margin-top:8px;color:#aaa}
+
+.label{
+  font-size:.75rem;
+  letter-spacing:1.5px;
+  color:#aaa;
+}
+
+.subtext{
+  margin-top:8px;
+}
+
+.label{
+  font-size:.7rem;
+  letter-spacing:1.5px;
+  color:#888;
+}
+
+.avg{
+  font-size:1.2rem;
+  font-weight:600;
+}
+
+.winner{
+  color:#facc15;
+  text-shadow:0 0 10px #facc15;
+}
+
+.stage.list-mode{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:20px 13px; /* row gap / column gap */
+  justify-items:center;
+  align-content:start;
+  overflow-y:auto;
+  padding:20px;
+}
+
+/* smaller card style for final list */
+.stage.list-mode .matchup{
+  width:40%;
+  max-width:400px;
+  padding:13px 20px;
+  flex-direction:column;
+  gap:8px;
+  transform:translateY(20px) scale(.95);
+}
+
+.stage.list-mode .matchup.show{
+  transform:translateY(0) scale(1);
+}
+
+/* row holding both teams + record */
+.list-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* team blocks */
+.team{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+}
+
+.team-name{
+  font-size:.9rem;
+  font-weight:600;
+  margin-top:2px;
+}
+
+/* smaller logos */
+.logo.small{
+  width:55px;
+  height:55px;
+  box-shadow:0 0 15px gold;
+}
+
+/* avg stacked nicely */
+.stage.list-mode .avg{
+  font-size:.95rem;
+  text-align:center;
+  margin-top:2px;
+}
+
+/* make label smaller for cleaner look */
+.stage.list-mode .label{
+  font-size:.6rem;
+  letter-spacing:1px;
+  color:#888;
+}
+
+.stage.list-mode .rival-title{
+  position:static;        /* remove absolute positioning */
+  transform:none;
+  text-align:center;
+  margin-bottom:8px;
+  font-size:1.2rem;       /* slightly smaller for list */
+}
+
+/* record centered */
+.middle-record{
+  font-size:1.4rem;
+  font-weight:700;
+  color:#facc15;
+  text-align:center;
+  min-width:80px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="introScreen"></div>
+
+<div class="container" id="main" style="opacity:0">
+
+<div class="header"><h1>PA MILK SOCIETY RIVALRY REVEAL</h1></div>
+
+<div class="stage">
+  <div class="vs-text">VS</div>
+
+  <div class="logo-intro" id="logoIntro"></div>
+
+  <div class="matchup" id="matchup">
+
+    <div class="rival-title" id="rivalTitle"></div>
+
+    <div class="side" id="leftSide"></div>
+
+    <div class="center" id="centerStats"></div>
+
+    <div class="side" id="rightSide"></div>
+
+  </div>
+
+</div>
+
+<div class="footer">
+  <button onclick="nextRival()">Next Reveal</button>
+  <div class="progress" id="progress"></div>
+</div>
+
+</div>
+
+<script>
+const players={
+"Joey":{logo:"../assets/logos/gooners.png"},
+"Mason":{logo:"../assets/logos/rizzlers2.png"},
+"Chris":{logo:"../assets/logos/kylerthecreator.png"},
+"Connie":{logo:"../assets/logos/tequilasunrise.png"},
+"Sean":{logo:"../assets/logos/thefamilyguy2.png"},
+"Isaac":{logo:"../assets/logos/childofgod2.png"},
+"Kyle":{logo:"../assets/logos/gingerninger2.png"},
+"Luke":{logo:"../assets/logos/theglizzys2.png"},
+"Charlie":{logo:"../assets/logos/moneygod2.png"},
+"Evan":{logo:"../assets/logos/whiteboyfootball2.png"},
+"Ricci":{logo:"../assets/logos/bodix2.png"},
+"Cat":{logo:"../assets/logos/thepeoplestightend2.png"}
+};
+
+const rivalries=[
+{title:"THE BLACKOUT BOWL",desc:"Power vs chaos.",record:"4-4",points:"942.04 - 1,008.48",last:"Connie 121.46 - 118.70",last3:"Mason 2-1",avgA:"117.76",avgB:"126.06",teamA:"Connie",teamB:"Mason"},
+{title:"THE LEPRECHAUN vs GOLIATH",desc:"History repeats.",record:"2-6",points:"863.3 - 999.7",last:"Sean 155.98 - 146.66",last3:"Sean 2-1",avgA:"107.91",avgB:"124.96",teamA:"Kyle",teamB:"Sean"},
+{title:"THE CLASH of ROSTER REMORSE",desc:"Swap, regret, repeat, fantasy agony.",record:"5-5",points:"1,234.88 - 1,314.92",last:"CAT 169.64 - 115.16",last3:"Isaac 2-1",avgA:"123.49",avgB:"131.49",teamA:"Isaac",teamB:"Cat"},
+{title:"THE BACKYARD SCRAP",desc:"Childhood beef, adult stakes.",record:"6-5",points:"1,328.94 - 1,372.74",last:"Joey 105.12 - 100.04",last3:"Joey 2-1",avgA:"120.81",avgB:"124.79",teamA:"Joey",teamB:"Chris"},
+{title:"THE MID-OFF",desc:"Your grandma could care less.",record:"4-6",points:"1,147.74 - 1,241.90",last:"Charlie 115.06 - 100.26",last3:"Charlie 2-1",avgA:"114.77",avgB:"124.19",teamA:"Luke",teamB:"Charlie"},
+{title:"THE HEARTBURN STRUGGLE",desc:"Calories and conflict.",record:"2-2",points:"471.22 - 452.36",last:"Evan 127.78 - 119.54",last3:"Ricci 2-1",avgA:"117.81",avgB:"113.09",teamA:"Ricci",teamB:"Evan"}
+];
+
+let index=0;
+
+function getLogo(name){return players[name]?.logo || ''}
+
+function runIntro(r){
+  const intro=document.getElementById('introScreen');
+  intro.innerHTML='';
+
+  const t=document.createElement('div'); t.className='intro-title'; t.innerText=r.title;
+  const d=document.createElement('div'); d.className='intro-desc'; d.innerText=r.desc;
+  const rec=document.createElement('div'); rec.className='intro-record'; rec.innerText=r.record;
+
+  intro.append(t,d,rec);
+  intro.style.display='flex';
+
+  setTimeout(()=>t.classList.add('show'),200);
+  setTimeout(()=>d.classList.add('show'),1200);
+  setTimeout(()=>rec.classList.add('show'),2200);
+
+  setTimeout(()=>{
+    intro.classList.add('fade-out');
+    setTimeout(()=>{
+      intro.style.display='none';
+      intro.classList.remove('fade-out');
+      setTimeout(()=>{document.getElementById('main').style.opacity=1; reveal(r)},300);
+    },800);
+  },4200);
+}
+
+function reveal(r){
+  const matchup = document.getElementById('matchup');
+  const left = document.getElementById('leftSide');
+  const right = document.getElementById('rightSide');
+  const center = document.getElementById('centerStats');
+  const logos = document.getElementById('logoIntro');
+
+  // Hide previous matchup instantly
+  matchup.classList.remove('show');
+
+  document.getElementById('rivalTitle').innerText = r.title;
+
+  // Show logos briefly
+  logos.innerHTML = `<img src="${getLogo(r.teamA)}"><img src="${getLogo(r.teamB)}">`;
+  logos.classList.add('show');
+  setTimeout(() => logos.classList.remove('show'), 1000);
+
+  left.innerHTML = `
+    <img src="${getLogo(r.teamA)}" class="logo">
+    <div class="name">${r.teamA}</div>
+    <div class="subtext">
+      <span class="label">AVG PPG</span><br>
+      <span class="avg ${r.avgA > r.avgB ? 'winner' : ''}">${r.avgA}</span>
+    </div>
+  `;
+
+  right.innerHTML = `
+    <img src="${getLogo(r.teamB)}" class="logo">
+    <div class="name">${r.teamB}</div>
+    <div class="subtext">
+      <span class="label">AVG PPG</span><br>
+      <span class="avg ${r.avgB > r.avgA ? 'winner' : ''}">${r.avgB}</span>
+    </div>
+  `;
+
+  center.innerHTML = `
+    <div class="stat"><span class="label">TOTAL POINTS</span><br>${r.points}</div>
+    <div class="stat"><span class="label">RECORD</span><br>${r.record}</div>
+    <div class="stat"><span class="label">LAST MATCH</span><br>${r.last}</div>
+    <div class="stat"><span class="label">LAST 3</span><br>${r.last3 || "N/A"}</div>
+  `;
+
+  setTimeout(() => {
+    document.querySelectorAll('.stat').forEach((el,i) => {
+      setTimeout(() => el.classList.add('show'), i*300);
+    });
+  }, 1200);
+
+  setTimeout(() => matchup.classList.add('show'), 1400);
+
+  document.getElementById('progress').innerText = `Rivalry ${index+1} / ${rivalries.length}`;
+}
+
+function nextRival(){
+  const main = document.getElementById('main');
+  const matchup = document.getElementById('matchup');
+  const logos = document.getElementById('logoIntro');
+
+  // cleanly hide current view
+  matchup.classList.remove('show');
+  logos.classList.remove('show');
+  main.style.opacity = 0;
+
+  index++;
+
+  if(index >= rivalries.length){
+    showAllRivalriesAnimated();
+    index = 0; // reset for replay
+  } else {
+    runIntro(rivalries[index]);
+  }
+}
+
+runIntro(rivalries[0]);
+
+function showAllRivalriesAnimated(){
+  const main = document.getElementById('main');
+  const stage = document.querySelector('.stage');
+  const vsText = document.querySelector('.vs-text');
+
+  // clear everything from single view
+  stage.innerHTML = '';
+  stage.classList.add('list-mode');
+  vsText.style.display = 'none';
+
+  main.style.opacity = 1;
+
+  rivalries.forEach((r, i) => {
+    setTimeout(() => {
+
+      const card = document.createElement('div');
+      card.className = 'matchup'; // start hidden
+      card.style.width = '80%';
+      card.style.margin = '15px 0';
+
+      card.innerHTML = `
+  <div class="rival-title">${r.title}</div>
+
+  <div class="list-row">
+    <div class="team">
+      <img src="${getLogo(r.teamA)}" class="logo small">
+      <div class="team-name">${r.teamA}</div>
+      <div class="avg ${r.avgA>r.avgB?'winner':''}">
+        <span class="label">AVG</span><br>${r.avgA}
+      </div>
+    </div>
+
+    <div class="middle-record">
+      ${r.record}
+    </div>
+
+    <div class="team">
+      <img src="${getLogo(r.teamB)}" class="logo small">
+      <div class="team-name">${r.teamB}</div>
+      <div class="avg ${r.avgB>r.avgA?'winner':''}">
+        <span class="label">AVG</span><br>${r.avgB}
+      </div>
+    </div>
+  </div>
+`;
+
+      stage.appendChild(card);
+
+      // trigger animation
+      setTimeout(() => card.classList.add('show'), 50);
+
+    }, i * 900); // delay between each card
+  });
+
+  document.getElementById('progress').innerText = 'All Rivalries';
+}
+
+</script>
+
+</body>
+</html>
