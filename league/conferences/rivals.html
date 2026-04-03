@@ -236,9 +236,9 @@ button{
 .stage.list-mode .matchup{
   width:40%;
   max-width:400px;
-  padding:13px 20px;
+  padding:13px 2px;
   flex-direction:column;
-  gap:8px;
+  gap:7px;
   transform:translateY(20px) scale(.95);
 }
 
@@ -303,6 +303,59 @@ button{
   color:#facc15;
   text-align:center;
   min-width:80px;
+}
+
+/* Mobile / small screens */
+@media (max-width: 480px) {
+  .stage.list-mode {
+    grid-template-columns: 1fr; /* single column */
+    gap: 15px 0; /* smaller row gap, no column gap */
+    padding: 10px;
+  }
+
+  .stage.list-mode .matchup {
+    width: 90%; /* nearly full width for mobile */
+    max-width: 320px;
+    padding: 10px 15px;
+    gap: 6px;
+  }
+
+  .list-row {
+    flex-direction: column; /* stack teams vertically */
+    align-items: center;
+    gap: 8px;
+  }
+
+  .team {
+    gap: 4px;
+  }
+
+  .logo.small {
+    width: 45px;
+    height: 45px;
+  }
+
+  .team-name {
+    font-size: 0.85rem;
+  }
+
+  .avg {
+    font-size: 0.85rem;
+  }
+
+  .label {
+    font-size: 0.55rem;
+  }
+
+  .rival-title {
+    font-size: 1rem;
+    margin-bottom: 5px;
+  }
+
+  .middle-record {
+    font-size: 1.2rem;
+    min-width: 60px;
+  }
 }
 
 </style>
