@@ -12,6 +12,10 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;color:#fff;font-family:'Inter',sans-serif;overflow:hidden}
 
+body {
+  overflow-y: auto; /* allow scroll on mobile */
+}
+
 body::before{
   content:'';
   position:absolute;
@@ -305,56 +309,35 @@ button{
   min-width:80px;
 }
 
-/* Mobile / small screens */
+/* Mobile adjustments for iPhone/small screens */
 @media (max-width: 480px) {
-  .stage.list-mode {
-    grid-template-columns: 1fr; /* single column */
-    gap: 15px 0; /* smaller row gap, no column gap */
-    padding: 10px;
+  .matchup {
+    width: 90%;         /* shrink card width */
+    padding: 15px 10px; /* shrink padding */
+    gap: 5px;           /* reduce spacing inside */
+    flex-direction: column;
+    transform: translateY(10px) scale(0.9);
   }
 
-  .stage.list-mode .matchup {
-    width: 90%; /* nearly full width for mobile */
-    max-width: 320px;
-    padding: 10px 15px;
-    gap: 6px;
+  .logo {
+    width: 60px;        /* shrink logos */
+    height: 60px;
   }
 
-  .list-row {
-    flex-direction: column; /* stack teams vertically */
-    align-items: center;
-    gap: 8px;
+  .name {
+    font-size: 1.5rem;  /* shrink team names */
   }
 
-  .team {
-    gap: 4px;
+  .record {
+    font-size: 1.4rem;
   }
 
-  .logo.small {
-    width: 45px;
-    height: 45px;
-  }
-
-  .team-name {
-    font-size: 0.85rem;
-  }
-
-  .avg {
-    font-size: 0.85rem;
-  }
-
-  .label {
-    font-size: 0.55rem;
+  .stat {
+    font-size: 1rem;
   }
 
   .rival-title {
-    font-size: 1rem;
-    margin-bottom: 5px;
-  }
-
-  .middle-record {
     font-size: 1.2rem;
-    min-width: 60px;
   }
 }
 
@@ -412,7 +395,7 @@ const players={
 };
 
 const rivalries=[
-{title:"THE BLACKOUT BOWL",desc:"Power vs chaos.",record:"4-4",points:"942.04 - 1,008.48",last:"Connie 121.46 - 118.70",last3:"Mason 2-1",avgA:"117.76",avgB:"126.06",teamA:"Connie",teamB:"Mason"},
+{title:"THE BLACKOUT BOWL",desc:"The fight for the last Pink Whitney Bottle.",record:"4-4",points:"942.04 - 1,008.48",last:"Connie 121.46 - 118.70",last3:"Mason 2-1",avgA:"117.76",avgB:"126.06",teamA:"Connie",teamB:"Mason"},
 {title:"THE LEPRECHAUN vs GOLIATH",desc:"History repeats.",record:"2-6",points:"863.3 - 999.7",last:"Sean 155.98 - 146.66",last3:"Sean 2-1",avgA:"107.91",avgB:"124.96",teamA:"Kyle",teamB:"Sean"},
 {title:"THE CLASH of ROSTER REMORSE",desc:"Swap, regret, repeat, fantasy agony.",record:"5-5",points:"1,234.88 - 1,314.92",last:"CAT 169.64 - 115.16",last3:"Isaac 2-1",avgA:"123.49",avgB:"131.49",teamA:"Isaac",teamB:"Cat"},
 {title:"THE BACKYARD SCRAP",desc:"Childhood beef, adult stakes.",record:"6-5",points:"1,328.94 - 1,372.74",last:"Joey 105.12 - 100.04",last3:"Joey 2-1",avgA:"120.81",avgB:"124.79",teamA:"Joey",teamB:"Chris"},
