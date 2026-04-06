@@ -1,0 +1,429 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+#app{min-height:700px;background:#050a06;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 2rem;position:relative;overflow:hidden;font-family:var(--font-sans);}
+.bg-layer{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.bg-layer svg{width:100%;height:100%;}
+.screen{width:100%;max-width:760px;position:relative;z-index:2;}
+.hidden{display:none!important;}
+
+.corner-nav{position:absolute;top:1rem;z-index:10;}
+.corner-nav.left{left:1rem;}
+.corner-nav.right{right:1rem;}
+.cnav-btn{background:rgba(24,121,78,0.15);color:#4ade9a;border:0.5px solid rgba(24,121,78,0.6);padding:0.5rem 1.1rem;border-radius:999px;font-size:14px;cursor:pointer;font-family:var(--font-sans);transition:background 0.15s,color 0.15s;white-space:nowrap;letter-spacing:0.03em;}
+.cnav-btn:hover{background:#18794e;color:#fff;}
+
+.league-badge{display:inline-block;border:0.5px solid rgba(24,121,78,0.5);border-radius:999px;padding:0.4rem 1.5rem;font-size:13px;color:#4ade9a;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:1.75rem;background:rgba(24,121,78,0.12);}
+.main-title{font-size:clamp(36px,8vw,66px);font-weight:500;color:#fff;line-height:1.05;margin-bottom:0.5rem;}
+.main-title span{color:#18794e;}
+.subtitle{font-size:16px;color:#3a4a3e;margin-bottom:3rem;letter-spacing:0.05em;}
+.intro-stats{display:flex;gap:2rem;justify-content:center;margin-bottom:3rem;}
+.istat{text-align:center;}
+.istat-n{font-size:38px;font-weight:500;color:#4ade9a;}
+.istat-l{font-size:13px;color:#3a5040;text-transform:uppercase;letter-spacing:0.12em;margin-top:5px;}
+.vdiv{width:1px;background:rgba(24,121,78,0.25);height:56px;align-self:center;}
+
+.btn-g{background:#18794e;color:#fff;border:0.5px solid #18794e;padding:0.8rem 2.3rem;border-radius:999px;font-size:17px;cursor:pointer;font-family:var(--font-sans);letter-spacing:0.04em;transition:background 0.15s,transform 0.1s,border-color 0.15s;}
+.btn-g:hover{background:#1e9960;border-color:#1e9960;}
+.btn-g:active{transform:scale(0.97);}
+.btn-o{background:transparent;color:#4ade9a;border:0.5px solid #18794e;padding:0.7rem 2.0rem;border-radius:999px;font-size:16px;cursor:pointer;font-family:var(--font-sans);transition:background 0.15s,color 0.15s;}
+.btn-o:hover{background:#18794e;color:#fff;}
+
+.meet-title{font-size:clamp(26px,5vw,40px);font-weight:500;color:#fff;text-align:left;margin-bottom:1.5rem;}
+.members-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;margin-bottom:2rem;}
+.member-card{display:flex;flex-direction:column;align-items:center;gap:7px;}
+.m-av{width:90px;height:90px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:rgba(255,255,255,0.8);border:0.5px solid rgba(255,255,255,0.07);overflow:hidden;}
+.m-av img{width:100%;height:160%;object-fit:cover;object-position:20% 0%;}
+.m-name{font-size:13px;color:#ccc;font-weight:500;text-align:center;}
+.m-tag{font-size:10px;color:#3a5040;text-align:center;line-height:1.3;}
+
+.progress-bar{display:flex;gap:5px;justify-content:center;margin-bottom:2.5rem;}
+.pdot{width:8px;height:8px;border-radius:50%;background:#0d1a10;transition:background 0.3s;}
+.pdot.done{background:#18794e;}
+.pdot.current{background:#4ade9a;}
+.cat-label{font-size:14px;letter-spacing:0.2em;color:#4ade9a;text-transform:uppercase;margin-bottom:0.6rem;text-align:center;}
+.cat-num{font-size:14px;color:#2a3a2e;margin-bottom:0.6rem;text-align:center;}
+.cat-name{font-size:clamp(32px,7vw,58px);font-weight:500;color:#fff;line-height:1.1;margin-bottom:3.5rem;opacity:0;transform:translateY(18px);transition:opacity 0.5s,transform 0.5s;text-align:center;}
+.cat-name.vis{opacity:1;transform:translateY(0);}
+.reveal-btn{opacity:0;transition:opacity 0.4s 0.65s,background 0.15s,color 0.15s;background:transparent;color:#4ade9a;border:0.5px solid #18794e;padding:0.8rem 2.5rem;border-radius:999px;font-size:17px;cursor:pointer;font-family:var(--font-sans);display:block;margin:0 auto;}
+.reveal-btn.vis{opacity:1;}
+.reveal-btn:hover{background:#18794e;color:#fff;}
+
+.vote-header{text-align:center;margin-bottom:1.5rem;}
+.vote-cat-name{font-size:40px;font-weight:500;color:#4ade9a;}
+.vote-cards{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:2rem;}
+.vote-card{background:#0a140d;border:0.5px solid #1a3025;border-radius:12px;padding:0.9rem 1.2rem;text-align:center;opacity:0;transform:scale(0.82) translateY(8px);transition:opacity 0.35s,transform 0.35s;min-width:95px;}
+.vote-card.vis{opacity:1;transform:scale(1) translateY(0);}
+.vc-name{font-size:17px;color:#ddd;font-weight:500;}
+.vc-votes{font-size:13px;color:#2a4030;margin-top:4px;}
+
+.podium-btn{display:block;margin:0 auto;margin-top:4.0rem;background:#18794e;color:#fff;border:0.5px solid #18794e;padding:0.85rem 2.5rem;border-radius:999px;font-size:17px;cursor:pointer;font-family:var(--font-sans);opacity:0;transition:opacity 0.4s,background 0.15s;}
+.podium-btn.vis{opacity:1;}
+.podium-btn:hover{background:#1e9960;}
+
+.podium-cat{font-size:45px;color:#4ade9a;text-align:center;margin-bottom:3.5rem;letter-spacing:0.08em;text-transform:uppercase;}
+.podium-stage{display:flex;align-items:flex-end;justify-content:center;gap:16px;margin:0 auto 1rem;max-width:560px;}
+.podium-col{display:flex;flex-direction:column;align-items:center;}
+.podium-person{text-align:center;margin-bottom:10px;opacity:0;transform:translateY(-10px);transition:opacity 0.5s,transform 0.5s;}
+.podium-person.vis{opacity:1;transform:translateY(0);}
+.pp-name{font-size:15px;color:#fff;font-weight:500;}
+.pp-name.mystery{color:transparent;background:#111;border-radius:4px;user-select:none;}
+.pp-votes{font-size:13px;color:#2a4030;margin-top:3px;}
+.pp-votes.mystery{color:transparent;}
+.podium-block{width:100%;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;font-size:35px;font-weight:900;color:rgba(255,255,255,0.2);transform:scaleY(0);transform-origin:bottom;transition:transform 1.1s cubic-bezier(0.34,1.3,0.64,1);}
+.podium-block.vis{transform:scaleY(1);}
+.place-1{background:#18794e;}
+.place-2{background:#0f4a30;}
+.place-3{background:#0a2a1c;}
+.place-label{font-size:13px;color:rgba(255,255,255,0.25);padding:8px 0;}
+.crown-btn{display:block;margin:0 auto;margin-top:4.0rem;background:#18794e;color:#fff;border:0.5px solid #18794e;padding:0.85rem 2.5rem;border-radius:999px;font-size:17px;cursor:pointer;font-family:var(--font-sans);opacity:0;transition:opacity 0.5s,background 0.15s;}
+.crown-btn.vis{opacity:1;}
+.crown-btn:hover{background:#1e9960;}
+.rest-votes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:1rem;opacity:0;transition:opacity 0.5s;}
+.rest-votes.vis{opacity:1;}
+.rv-chip{background:#0a140d;border:0.5px solid #1a3025;border-radius:20px;padding:5px 13px;font-size:14px;display:flex;align-items:center;gap:6px;}
+.rv-chip .rv-name{color:#7ab895;}
+.rv-chip .rv-v{color:#2a4030;}
+
+.summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:2rem;}
+.sum-card{background:#080f09;border:0.5px solid #1a3025;border-radius:12px;padding:0.9rem 1.1rem;display:flex;align-items:center;gap:10px;}
+.sum-num{width:28px;height:28px;border-radius:50%;background:#0f3020;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4ade9a;flex-shrink:0;font-weight:500;}
+.sum-cat{font-size:12px;color:#3a5040;}
+.sum-winner{font-size:16px;color:#fff;font-weight:500;}
+.nav-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+/* Mobile styles */
+@media (max-width: 480px) {
+  /* Meet the League images */
+  .members-grid {
+    grid-template-columns: repeat(4, 1fr); /* fewer columns for smaller screens */
+    gap: 10px; /* slightly smaller gap */
+  }
+  .m-av {
+    width: 90%;    /* already done */
+    height: 140%;  /* already done */
+  }
+  .m-av img {
+    object-fit: cover;
+    object-position: 20% 0%;
+  }
+
+  /* Redo / Next Category buttons */
+  .nav-btns .btn-o,
+  .nav-btns .btn-g {
+    padding: 0.65rem 1.4rem !important; /* smaller padding */
+    font-size: 12px !important;         /* smaller font */
+  }
+}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<div id="app">
+  <div class="bg-layer">
+    <svg viewBox="0 0 700 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <rect width="700" height="600" fill="#050a06"/>
+      <line x1="-100" y1="520" x2="800" y2="80" stroke="#18794e" stroke-width="18" opacity="0.035"/>
+      <line x1="-100" y1="580" x2="800" y2="140" stroke="#18794e" stroke-width="6" opacity="0.04"/>
+      <line x1="-100" y1="440" x2="800" y2="0" stroke="#18794e" stroke-width="3" opacity="0.03"/>
+      <radialGradient id="cg" cx="50%" cy="50%" r="55%">
+        <stop offset="0%" stop-color="#18794e" stop-opacity="0.09"/>
+        <stop offset="100%" stop-color="#18794e" stop-opacity="0"/>
+      </radialGradient>
+      <rect width="700" height="600" fill="url(#cg)"/>
+      <rect x="0" y="0" width="700" height="2.5" fill="#18794e" opacity="0.5"/>
+      <rect x="0" y="597.5" width="700" height="2.5" fill="#18794e" opacity="0.3"/>
+    </svg>
+  </div>
+
+  <div class="corner-nav left">
+    <button class="cnav-btn" onclick="show('intro-screen')">&#8592; Home</button>
+  </div>
+  <div class="corner-nav right">
+    <button class="cnav-btn" onclick="jumpToResults()">Results &#8594;</button>
+  </div>
+
+  <div class="screen" id="intro-screen">
+    <div style="text-align:center;">
+      <div class="league-badge">2026 Season</div>
+      <h1 class="main-title">PA Milk Society<br><span>Superlatives</span></h1>
+      <p class="subtitle">The votes are in. The receipts are ready.</p>
+      <div class="intro-stats">
+        <div class="istat"><div class="istat-n">14</div><div class="istat-l">Categories</div></div>
+        <div class="vdiv"></div>
+        <div class="istat"><div class="istat-n">12</div><div class="istat-l">Members</div></div>
+        <div class="vdiv"></div>
+        <div class="istat"><div class="istat-n">9</div><div class="istat-l">Voted</div></div>
+      </div>
+      <button class="btn-g" onclick="goMeet()">Meet the League &rarr;</button>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="meet-screen">
+    <h2 class="meet-title">Meet the League</h2>
+    <div class="members-grid" id="members-grid"></div>
+    <div style="text-align:center;"><button class="btn-g" onclick="startShow()">Begin the Reveal &rarr;</button></div>
+  </div>
+
+  <div class="screen hidden" id="cat-screen">
+    <div class="progress-bar" id="progress-bar"></div>
+    <p class="cat-label">Category</p>
+    <p class="cat-num" id="cat-num"></p>
+    <h2 class="cat-name" id="cat-name"></h2>
+    <button class="reveal-btn" id="reveal-btn" onclick="showVoteCards()">Show the nominees</button>
+  </div>
+
+  <div class="screen hidden" id="vote-screen">
+    <div class="vote-header"><div class="vote-cat-name" id="vote-cat-name"></div></div>
+    <div class="vote-cards" id="vote-cards"></div>
+    <button class="podium-btn" id="podium-btn" onclick="showPodium()">Build the podium</button>
+  </div>
+
+  <div class="screen hidden" id="podium-screen">
+    <p class="podium-cat" id="podium-cat-name"></p>
+    <div class="podium-stage" id="podium-stage"></div>
+    <div id="rest-votes-area" class="rest-votes"></div>
+    <div style="text-align:center;margin-top:1.25rem;">
+      <button class="crown-btn" id="crown-btn" onclick="crownChampion()">Crown the champion</button>
+    </div>
+    <div class="nav-btns" id="podium-nav" style="margin-top:1.25rem;display:none;">
+      <button class="btn-o" onclick="restartCat()">&#8592; Redo</button>
+      <button class="btn-g" id="next-btn" onclick="nextCategory()">Next Category &rarr;</button>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="summary-screen">
+    <p class="cat-label" style="margin-bottom:1.25rem;">2026 Season Results</p>
+    <div class="summary-grid" id="summary-grid"></div>
+    <div style="text-align:center;"><button class="btn-o" onclick="show('intro-screen')">Back to start</button></div>
+  </div>
+</div>
+
+<script>
+const CATS=["Best Drafter","Most Delusional","Best Trader","Most Annoying to Trade With","Favorite Person to Play Against","Biggest Cry Baby","Comeback Player of the Year","Most Likely First to Quit","Worst Drafter","Most Trade Happy","Most Overrated Team","Luckiest Person","Unluckiest Person","Sleeper to Win Next Year"];
+const PLAYERS={
+  "Joey":{tag:"2019 Champ",color:"#0f2a40",initials:"JO",logo:"../assets/logos/gooners.png"},
+  "Mason":{tag:"2025 Champ",color:"#2a0f10",initials:"MA",logo:"../assets/logos/rizzlers2.png"},
+  "Chris":{tag:"2021 Champ",color:"#0f2a1a",initials:"CH",logo:"../assets/logos/kylerthecreator.png"},
+  "Connie":{tag:"2023 Champ",color:"#2a1a0f",initials:"CO",logo:"../assets/logos/tequilasunrise.png"},
+  "Sean":{tag:"'21 n '23 3rd Place",color:"#1a0f2a",initials:"SE",logo:"../assets/logos/thefamilyguy2.png"},
+  "Isaac":{tag:"2022 Champ",color:"#0f1a2a",initials:"IS",logo:"../assets/logos/childofgod2.png"},
+  "Kyle":{tag:"3x 4th Place",color:"#2a0f1a",initials:"KY",logo:"../assets/logos/gingerninger2.png"},
+  "Luke":{tag:"2024 Champ",color:"#0f2a20",initials:"LU",logo:"../assets/logos/theglizzys2.png"},
+  "Charlie":{tag:"2 PA",color:"#1a2a0f",initials:"CH",logo:"../assets/logos/moneygod2.png"},
+  "Evan":{tag:"1 PA",color:"#2a2a0f",initials:"EV",logo:"../assets/logos/whiteboyfootball2.png"},
+  "Ricci":{tag:"2020 Champ",color:"#2a100f",initials:"RI",logo:"../assets/logos/bodix2.png"},
+  "Connor":{tag:"2024 3rd Place",color:"#0f0f2a",initials:"CA",logo:"../assets/logos/thepeoplestightend2.png"}
+};
+
+const MEMBERS=Object.keys(PLAYERS);
+let currentCat=0,currentVotes=[],crowned=false,allWinners=[];
+
+const RESULTS={
+  "Best Drafter":[{name:"Sean",votes:3},{name:"Chris",votes:3},{name:"Isaac",votes:2},{name:"Mason",votes:1}],
+  "Most Delusional":[{name:"Kyle",votes:5},{name:"Evan",votes:1},{name:"Joey",votes:1},{name:"Ricci",votes:1},{name:"Connor",votes:1}],
+  "Best Trader":[{name:"Isaac",votes:2},{name:"Sean",votes:2},{name:"Connor",votes:2},{name:"Evan",votes:1},{name:"Mason",votes:1},{name:"Luke",votes:1}],
+  "Most Annoying to Trade With":[{name:"Sean",votes:2},{name:"Chris",votes:2},{name:"Kyle",votes:2},{name:"Isaac",votes:2},{name:"Joey",votes:1}],
+  "Favorite Person to Play Against":[{name:"Kyle",votes:3},{name:"Connor",votes:2},{name:"Joey",votes:2},{name:"Charlie",votes:1},{name:"Mason",votes:1}],
+  "Biggest Cry Baby":[{name:"Kyle",votes:6},{name:"Connor",votes:1},{name:"Isaac",votes:1},{name:"Ricci",votes:1}],
+  "Comeback Player of the Year":[{name:"Mason",votes:8},{name:"Charlie",votes:1}],
+  "Most Likely First to Quit":[{name:"Charlie",votes:3},{name:"Luke",votes:3},{name:"Isaac",votes:1},{name:"Chris",votes:1},{name:"Evan",votes:1}],
+  "Worst Drafter":[{name:"Luke",votes:3},{name:"Connie",votes:3},{name:"Charlie",votes:2},{name:"Kyle",votes:1}],
+  "Most Trade Happy":[{name:"Isaac",votes:8},{name:"Connor",votes:1}],
+  "Most Overrated Team":[{name:"Connie",votes:3},{name:"Joey",votes:2},{name:"Ricci",votes:1},{name:"Charlie",votes:1},{name:"Evan",votes:1},{name:"Kyle",votes:1}],
+  "Luckiest Person":[{name:"Connie",votes:4},{name:"Ricci",votes:2},{name:"Kyle",votes:1},{name:"Isaac",votes:1},{name:"Connor",votes:1}],
+  "Unluckiest Person":[{name:"Chris",votes:2},{name:"Sean",votes:2},{name:"Joey",votes:2},{name:"Connor",votes:1},{name:"Evan",votes:1},{name:"Kyle",votes:1}],
+  "Sleeper to Win Next Year":[{name:"Sean",votes:4},{name:"Connor",votes:1},{name:"Charlie",votes:1},{name:"Chris",votes:1},{name:"Evan",votes:1},{name:"Luke",votes:1}]
+};
+
+function avEl(name,sz,rx,blacked){
+  const p=PLAYERS[name];
+  const d=document.createElement('div');
+  d.style.cssText=`width:${sz}px;height:${sz}px;border-radius:${rx}px;background:${blacked?'#000':p.color};display:flex;align-items:center;justify-content:center;border:0.5px solid rgba(255,255,255,0.07);overflow:hidden;flex-shrink:0;`;
+  if(p.logo){
+    const img=document.createElement('img');
+    img.src=p.logo;
+    img.style.cssText=`width:100%;height:120%;object-fit:cover;object-position:20% 0%;opacity:${blacked?'0':'1'};transition:opacity 0.5s;`;
+    d.appendChild(img);
+    d.dataset.hasLogo="true";
+  } else {
+    d.style.color=blacked?'transparent':'rgba(255,255,255,0.7)';
+    d.style.fontSize=Math.round(sz*0.29)+'px';
+    d.textContent=p.initials;
+  }
+  return d;
+}
+
+function buildMeetGrid(){
+  const g=document.getElementById('members-grid');g.innerHTML='';
+  MEMBERS.forEach(name=>{
+    const p=PLAYERS[name];
+    const c=document.createElement('div');c.className='member-card';
+    const av=document.createElement('div');av.className='m-av';av.style.background=p.color;
+    if(p.logo){
+      const img=document.createElement('img');
+      img.src=p.logo;
+      img.style.cssText='width:100%;height:125%;object-fit:cover;object-position:20% 0%;';
+      av.appendChild(img);
+    } else { av.textContent=p.initials; }
+    const nm=document.createElement('div');nm.className='m-name';nm.textContent=name==='Cat'?'Connor':name;
+    const tg=document.createElement('div');tg.className='m-tag';tg.textContent=p.tag;
+    c.appendChild(av);c.appendChild(nm);c.appendChild(tg);g.appendChild(c);
+  });
+}
+
+function goMeet(){buildMeetGrid();show('meet-screen');}
+
+function resolveTies(votes){
+  votes.sort((a,b)=>b.votes-a.votes);
+  const out=[];let i=0;
+  while(i<votes.length){
+    let j=i+1;
+    while(j<votes.length&&votes[j].votes===votes[i].votes)j++;
+    votes.slice(i,j).sort(()=>Math.random()-0.5).forEach(p=>out.push(p));
+    i=j;
+  }
+  return out;
+}
+
+function buildProgress(){
+  const pb=document.getElementById('progress-bar');pb.innerHTML='';
+  CATS.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='pdot'+(i<currentCat?' done':i===currentCat?' current':'');
+    pb.appendChild(d);
+  });
+}
+
+function show(id){
+  ['intro-screen','meet-screen','cat-screen','vote-screen','podium-screen','summary-screen'].forEach(s=>{
+    document.getElementById(s).classList.toggle('hidden',s!==id);
+  });
+}
+
+function startShow(){currentCat=0;allWinners=[];showCategory();}
+
+function showCategory(){
+  show('cat-screen');buildProgress();crowned=false;
+  const nameEl=document.getElementById('cat-name');
+  const btn=document.getElementById('reveal-btn');
+  document.getElementById('cat-num').textContent=`${currentCat+1} of ${CATS.length}`;
+  nameEl.classList.remove('vis');btn.classList.remove('vis');
+  setTimeout(()=>{nameEl.textContent=CATS[currentCat];nameEl.classList.add('vis');},100);
+  setTimeout(()=>btn.classList.add('vis'),720);
+  currentVotes=resolveTies([...RESULTS[CATS[currentCat]]].sort((a,b)=>b.votes-a.votes));
+}
+
+function showVoteCards(){
+  show('vote-screen');
+  document.getElementById('vote-cat-name').textContent=CATS[currentCat];
+  const container=document.getElementById('vote-cards');container.innerHTML='';
+  const podBtn=document.getElementById('podium-btn');podBtn.classList.remove('vis');
+  currentVotes.forEach((v,i)=>{
+    const card=document.createElement('div');card.className='vote-card';
+    const nm=document.createElement('div');nm.className='vc-name';nm.textContent=v.name;
+    const vt=document.createElement('div');vt.className='vc-votes';vt.textContent='received votes';
+    card.appendChild(nm);card.appendChild(vt);container.appendChild(card);
+    setTimeout(()=>card.classList.add('vis'),130*i+100);
+  });
+  setTimeout(()=>podBtn.classList.add('vis'),130*currentVotes.length+450);
+}
+
+function showPodium(){
+  show('podium-screen');
+  document.getElementById('podium-cat-name').textContent=CATS[currentCat];
+  document.getElementById('rest-votes-area').classList.remove('vis');
+  document.getElementById('rest-votes-area').innerHTML='';
+  const crownBtn=document.getElementById('crown-btn');
+  crownBtn.classList.remove('vis');crownBtn.style.display='block';
+  document.getElementById('podium-nav').style.display='none';
+  const stage=document.getElementById('podium-stage');stage.innerHTML='';
+  const top3=currentVotes.slice(0,3);
+  const PX_PER_VOTE=22;const MIN_H=44;
+
+  function buildCol(person,place){
+    const col=document.createElement('div');col.className='podium-col';
+    const w=place===1?134:place===2?116:102;col.style.width=w+'px';
+    const personDiv=document.createElement('div');personDiv.className='podium-person';personDiv.id=`pp-${place}`;
+    const av=avEl(person.name,54,12,place===1);av.id=`pav-${place}`;
+    const nm=document.createElement('div');nm.className='pp-name'+(place===1?' mystery':'');nm.id=`pname-${place}`;nm.textContent=person.name;
+    const vt=document.createElement('div');vt.className='pp-votes'+(place===1?' mystery':'');vt.id=`pvotes-${place}`;
+    vt.textContent=place===1?'???':`${person.votes} vote${person.votes!==1?'s':''}`;
+    personDiv.appendChild(av);personDiv.appendChild(nm);personDiv.appendChild(vt);
+    const blockH=Math.max(MIN_H,Math.round(person.votes*PX_PER_VOTE));
+    const block=document.createElement('div');block.className=`podium-block place-${place}`;block.id=`pb-${place}`;
+    block.style.height=blockH+'px';
+    const lbl=document.createElement('div');lbl.className='place-label';
+    lbl.textContent=place===1?'1st':place===2?'2nd':'3rd';
+    block.appendChild(lbl);col.appendChild(personDiv);col.appendChild(block);
+    return col;
+  }
+
+  function animatePlace(place,delayMs){
+    setTimeout(()=>{
+      const bl=document.getElementById(`pb-${place}`);
+      const pe=document.getElementById(`pp-${place}`);
+      if(bl)bl.classList.add('vis');
+      if(pe)setTimeout(()=>pe.classList.add('vis'),400);
+    },delayMs);
+  }
+
+  if(top3.length===1){stage.appendChild(buildCol(top3[0],1));animatePlace(1,500);setTimeout(()=>crownBtn.classList.add('vis'),1800);}
+  else if(top3.length===2){stage.appendChild(buildCol(top3[1],2));stage.appendChild(buildCol(top3[0],1));animatePlace(2,500);animatePlace(1,1600);setTimeout(()=>crownBtn.classList.add('vis'),3000);}
+  else{stage.appendChild(buildCol(top3[1],2));stage.appendChild(buildCol(top3[0],1));stage.appendChild(buildCol(top3[2],3));animatePlace(3,500);animatePlace(2,1400);animatePlace(1,2500);setTimeout(()=>crownBtn.classList.add('vis'),3900);}
+}
+
+function crownChampion(){
+  if(crowned)return;crowned=true;
+  const winner=currentVotes[0];
+  allWinners.push({cat:CATS[currentCat],winner:winner.name});
+  document.getElementById('crown-btn').style.display='none';
+  const av=document.getElementById('pav-1');
+  if(av){
+    if(av.dataset.hasLogo){const img=av.querySelector('img');if(img)img.style.opacity='1';}
+    av.style.background=PLAYERS[winner.name].color;
+    if(!av.dataset.hasLogo){av.style.color='rgba(255,255,255,0.7)';}
+  }
+  const nm=document.getElementById('pname-1');
+  const vt=document.getElementById('pvotes-1');
+  if(nm)nm.classList.remove('mystery');
+  if(vt){vt.classList.remove('mystery');vt.textContent=`${winner.votes} vote${winner.votes!==1?'s':''}`;}
+  const pp1=document.getElementById('pp-1');
+  if(pp1){pp1.style.transition='transform 0.4s cubic-bezier(0.34,1.56,0.64,1)';pp1.style.transform='scale(1.1)';setTimeout(()=>pp1.style.transform='scale(1)',600);}
+  const restArea=document.getElementById('rest-votes-area');restArea.innerHTML='';
+  currentVotes.slice(3).forEach(v=>{
+    const chip=document.createElement('div');chip.className='rv-chip';
+    const n=document.createElement('span');n.className='rv-name';n.textContent=v.name;
+    const vs=document.createElement('span');vs.className='rv-v';vs.textContent=`(${v.votes})`;
+    chip.appendChild(n);chip.appendChild(vs);restArea.appendChild(chip);
+  });
+  setTimeout(()=>{
+    restArea.classList.add('vis');
+    document.getElementById('podium-nav').style.display='flex';
+    document.getElementById('next-btn').textContent=currentCat<CATS.length-1?'Next Category \u2192':'See the Results \u2192';
+  },700);
+}
+
+function nextCategory(){if(currentCat<CATS.length-1){currentCat++;showCategory();}else showSummary();}
+function restartCat(){showCategory();}
+
+function jumpToResults(){
+  // Pre-populate all winners from RESULTS data so it always shows something
+  allWinners=CATS.map(cat=>{
+    const sorted=resolveTies([...RESULTS[cat]]);
+    return {cat,winner:sorted[0].name};
+  });
+  showSummary();
+}
+
+function showSummary(){
+  show('summary-screen');
+  const grid=document.getElementById('summary-grid');grid.innerHTML='';
+  allWinners.forEach((w,i)=>{
+    const card=document.createElement('div');card.className='sum-card';
+    const num=document.createElement('div');num.className='sum-num';num.textContent=i+1;
+    const info=document.createElement('div');
+    const cat=document.createElement('div');cat.className='sum-cat';cat.textContent=w.cat;
+    const win=document.createElement('div');win.className='sum-winner';win.textContent=w.winner;
+    info.appendChild(cat);info.appendChild(win);card.appendChild(num);card.appendChild(info);grid.appendChild(card);
+  });
+}
+</script>
