@@ -788,12 +788,23 @@ body::before {
   color: var(--pk-champagne);
 }
 .hl-card select {
-  background: var(--pk-bg-soft);
+  /* Reset Safari/Chrome's native control so our box/border/font apply */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-color: var(--pk-bg-soft);
+  /* Custom chevron-down arrow (since we removed the native one) */
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' width='10' height='6' fill='none' stroke='%23cdb9d6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='1 1 5 5 9 1'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .7rem center;
+  background-size: 10px 6px;
+
   border: 1px solid var(--pk-line);
   color: var(--pk-chalk);
   font-family: var(--sans);
   font-size: .85rem;
-  padding: .5rem .6rem;
+  padding: .5rem 1.9rem .5rem .6rem; /* extra right padding leaves room for the arrow */
   border-radius: 2px;
   cursor: pointer;
   transition: border-color .15s, box-shadow .15s;
