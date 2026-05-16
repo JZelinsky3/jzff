@@ -52,9 +52,13 @@
     // Determine how many levels deep the current page is relative to the site root.
     // On GitHub Pages the URL starts with /repo-name/ which is not part of the
     // site's own directory structure, so skip that first segment.
+    // Also: this demo lives as a sub-section inside another site (jzff/demo/),
+    // so when its pages are served the real site root is one level deeper.
+    // Skip a leading "demo" segment when it's there.
     function getRoot() {
         var parts = window.location.pathname.split('/').filter(function (p) { return p.length > 0; });
         var skip  = window.location.hostname.endsWith('.github.io') ? 1 : 0;
+        if (parts[skip] === 'demo') skip += 1;
         var fileParts = parts.slice(skip);
         var depth = fileParts.length > 1 ? fileParts.length - 1 : 0;
         var prefix = '';
