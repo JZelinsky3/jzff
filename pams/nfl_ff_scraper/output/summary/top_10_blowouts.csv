@@ -1,0 +1,11 @@
+season,week,team_id,team_name,owner,user_id,team_score,opp_team_id,opp_team_name,opp_owner,opp_user_id,opp_score,result,margin,record_through_week,rank_through_week,streak_through_week,is_playoff
+2019,5,8,Prestige Worldwide,Chris,21680417,66.88,6,Man tit,Krish,21680267,192.44,L,-125.56,2-3-0,11,L3,False
+2025,16,5,Ginger Ninger,Kyle,21680087,75.82,3,Rizzlers,Mason,21679447,192.8,L,-116.98,8-6-0,3,L1,True
+2022,12,5,Wyle Wiverd,Kyle,21680087,170.92,10,the people's tight end,Cat,21239480,71.76,W,99.16,9-3-0,2,W2,False
+2025,12,10,The people's TightEnd,Cat,21239480,187.72,5,Ginger Ninger,Kyle,21680087,90.08,W,97.64,6-6-0,5,W1,False
+2021,2,3,Show me your TDs,Mason,21679447,179.9,14,Dude Lipas,sean,21688760,82.58,W,97.32,1-1-0,7,W1,False
+2019,12,11,Wheyman,Sean,21687512,57.64,3,Mdog346,Mason,21679447,153.9,L,-96.26,5-7-0,11,L5,False
+2022,16,2,Short Bus Express,Connor,21679454,53.3,7,Roofie My Kupp,CJ,21680276,148.86,L,-95.56,7-7-0,7,L1,True
+2024,14,11,Naz Reid,Chris,21680417,161.1,7,WHITEBOY FOOTBALL,Evan,30533399,73.1,W,88.0,9-5-0,4,W1,False
+2024,10,14,3-Star REECHIE,sean,21688760,169.82,7,WHITEBOY FOOTBALL,Evan,30533399,83.54,W,86.28,7-3-0,2,W2,False
+2019,5,9,Huntingforkickers,Ricci,21680682,151.22,5,Fuk Joey,Kyle,21680087,65.88,W,85.34,1-4-0,13,W1,False

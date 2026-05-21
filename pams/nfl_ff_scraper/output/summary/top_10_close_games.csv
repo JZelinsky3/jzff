@@ -1,0 +1,11 @@
+season,week,team_id,team_name,owner,user_id,team_score,opp_team_id,opp_team_name,opp_owner,opp_user_id,opp_score,result,margin,record_through_week,rank_through_week,streak_through_week,is_playoff
+2019,13,8,Prestige Worldwide,Chris,21680417,121.32,9,Huntingforkickers,Ricci,21680682,121.3,W,0.02,7-6-0,8,W1,False
+2023,11,10,CR North Indians,Cat,21239480,125.7,14,BIG BALLER BRAND,sean,21688760,125.58,W,0.12,6-5-0,7,W2,False
+2024,10,8,The GLIZZYS,Luke,25036608,96.64,3,Rizzlers,Mason,21679447,96.5,W,0.14,5-5-0,7,W2,False
+2023,1,4,Nathanael Bartholomew,Isaac,25033943,87.44,11,Mao Zelinskdong,Chris,21680417,87.28,W,0.16,1-0-0,6,W1,False
+2023,12,2,Milk Man,Connor,21679454,134.94,4,Nathanael Bartholomew,Isaac,25033943,135.28,L,-0.34,6-6-0,9,L1,False
+2024,6,8,The GLIZZYS,Luke,25036608,101.16,5,Devin Singularity,Kyle,21680087,100.78,W,0.38,2-4-0,10,W1,False
+2019,3,6,Man tit,Krish,21680267,123.44,3,Mdog346,Mason,21679447,123.94,L,-0.5,1-2-0,10,L2,False
+2020,4,2,THICCCCFILA,Connor,21679454,152.02,5,Ginger Ninger,Kyle,21680087,152.68,L,-0.66,2-2-0,6,L2,False
+2025,5,8,The GLIZZYS,Luke,25036608,104.94,9,Bo Dix,Ricci,21680682,105.6,L,-0.66,2-3-0,10,L2,False
+2025,14,1,Building Rome,Joey,21679440,101.14,5,Ginger Ninger,Kyle,21680087,100.48,W,0.66,7-7-0,6,W2,False

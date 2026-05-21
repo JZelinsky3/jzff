@@ -1,0 +1,604 @@
+[
+  {
+    "season": 2019,
+    "team_id": 1,
+    "team_name": "My Team",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 2,
+    "team_name": "THICCCCFILA",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 3,
+    "team_name": "Mdog346",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 5,
+    "team_name": "Fuk Joey",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 6,
+    "team_name": "Man tit",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 7,
+    "team_name": "instant kamara",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 8,
+    "team_name": "Prestige Worldwide",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 9,
+    "team_name": "Huntingforkickers",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 10,
+    "team_name": "Tight end 1",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 11,
+    "team_name": "Wheyman",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 12,
+    "team_name": "i wish i actually drafted",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 13,
+    "team_name": "MiamiDolphins",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 14,
+    "team_name": "dumb thots",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2019,
+    "team_id": 15,
+    "team_name": "PurpleCobras",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 1,
+    "team_name": "My Team",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 2,
+    "team_name": "THICCCCFILA",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 3,
+    "team_name": "Show Me your TDs",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 4,
+    "team_name": "The I Sack Shake",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 5,
+    "team_name": "Ginger Ninger",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 7,
+    "team_name": "Tatum is linebacker",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 8,
+    "team_name": "The GLIZZYS",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 9,
+    "team_name": "Huntingforkickers",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 10,
+    "team_name": "bolsh",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 11,
+    "team_name": "C-Money",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 14,
+    "team_name": "Meatzzas",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2020,
+    "team_id": 15,
+    "team_name": "Sarcastaball",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 1,
+    "team_name": "My Team",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 2,
+    "team_name": "4th Quarter Hurts",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 3,
+    "team_name": "Show me your TDs",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 4,
+    "team_name": "Adam Rank",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 5,
+    "team_name": "Ginger Ninger",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 7,
+    "team_name": "Saquon I STFG",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 8,
+    "team_name": "The GLIZZYS",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 9,
+    "team_name": "McKittle",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 10,
+    "team_name": "Gage is gay",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 11,
+    "team_name": "Stafford University",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 14,
+    "team_name": "Dude Lipas",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2021,
+    "team_id": 15,
+    "team_name": "Sarcastaball",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 1,
+    "team_name": "My Team",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 2,
+    "team_name": "Short Bus Express",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 3,
+    "team_name": "Show me your TDs",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 4,
+    "team_name": "Pat Bateman",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 5,
+    "team_name": "Wyle Wiverd",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 7,
+    "team_name": "Roofie My Kupp",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 8,
+    "team_name": "The GLIZZYS",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 9,
+    "team_name": "HAPPY MAV",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 10,
+    "team_name": "the people's tight end",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 11,
+    "team_name": "kamaravirus",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 14,
+    "team_name": "Dude Lipas",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2022,
+    "team_id": 15,
+    "team_name": "The Peak",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 1,
+    "team_name": "My Team",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 2,
+    "team_name": "Milk Man",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 3,
+    "team_name": "Luh TD lickr",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 4,
+    "team_name": "Nathanael Bartholomew",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 5,
+    "team_name": "Ginger Ninger",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 7,
+    "team_name": "Thanksgiving",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 8,
+    "team_name": "The GLIZZYS",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 9,
+    "team_name": "KIM JOE UN",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 10,
+    "team_name": "CR North Indians",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 11,
+    "team_name": "Mao Zelinskdong",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 14,
+    "team_name": "BIG BALLER BRAND",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2023,
+    "team_id": 15,
+    "team_name": "Gang",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 1,
+    "team_name": "My Team",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 2,
+    "team_name": "RIP Rashee",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 3,
+    "team_name": "Rizzlers",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 4,
+    "team_name": "Sean Costigan",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 5,
+    "team_name": "Devin Singularity",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 7,
+    "team_name": "WHITEBOY FOOTBALL",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 8,
+    "team_name": "The GLIZZYS",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 9,
+    "team_name": "OG CARHARTT",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 10,
+    "team_name": "CR North Indians",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 11,
+    "team_name": "Naz Reid",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 14,
+    "team_name": "3-Star REECHIE",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2024,
+    "team_id": 15,
+    "team_name": "Sex God",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 1,
+    "team_name": "My Team",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 2,
+    "team_name": "Tequila Sunrise",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 3,
+    "team_name": "Rizzlers",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 4,
+    "team_name": "CHILD OF GOD",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 5,
+    "team_name": "Ginger Ninger",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 7,
+    "team_name": "WHITEBOY FOOTBALL",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 8,
+    "team_name": "The GLIZZYS",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 9,
+    "team_name": "Bo Dix",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 10,
+    "team_name": "The people's TightEnd",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 11,
+    "team_name": "Kyler the Creator",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 14,
+    "team_name": "The Family Guy",
+    "owner": "",
+    "user_id": null
+  },
+  {
+    "season": 2025,
+    "team_id": 15,
+    "team_name": "Money God",
+    "owner": "",
+    "user_id": null
+  }
+]
