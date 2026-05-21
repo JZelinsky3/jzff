@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.95, viewport-fit=cover" />
+  <title>Pick'ems · PA Milk Society</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="./pickems.css" />
+</head>
+<body>
+  <!-- ── MASTHEAD NAV ── -->
+  <nav class="pe-nav">
+    <div class="pe-nav-inner">
+      <button class="pe-nav-back" onclick="history.back()" aria-label="Go back"><svg viewBox="0 0 8 14" width="9" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 1 1 7 7 13"/></svg></button>
+      <div class="pe-nav-center">
+        <a href="../index.html" class="pe-nav-title">Weekly <em>Pick'ems.</em></a>
+        <div class="pe-nav-kicker">PA MILK SOCIETY · 2026</div>
+      </div>
+      <button id="recordsBtn" class="pe-nav-records" type="button">Records</button>
+    </div>
+  </nav>
+
+  <div class="pe-app">
+
+    <!-- ── AUTH ── -->
+    <div class="pe-auth" id="authBox">
+      <form id="loginForm" class="pe-login" novalidate>
+        <input type="text" id="username" placeholder="Name" required autocomplete="username" />
+        <input type="password" id="password" placeholder="PIN"
+               inputmode="numeric" pattern="[0-9]{3}" minlength="3" maxlength="3"
+               required autocomplete="one-time-code" />
+        <button class="pe-btn" type="submit">Login</button>
+      </form>
+      <div id="whoami" class="pe-pill" hidden></div>
+      <button id="logoutBtn" class="pe-btn pe-btn-ghost" hidden>Logout</button>
+    </div>
+
+    <!-- ── WEEK TABS ── -->
+    <div class="pe-tabs" id="weekTabs"></div>
+
+    <!-- ── WEEK VIEWS ── -->
+    <main class="pe-weeks" id="weekViews"></main>
+
+    <!-- ── SUBMIT BAR ── -->
+    <div class="pe-submitbar" id="submitBar">
+      <button id="submitPicks" class="pe-btn" disabled>Submit Picks</button>
+      <span class="pe-submit-hint" id="submitHint">Login to vote</span>
+    </div>
+
+    <footer class="pe-footer">
+      PA Milk Society · auto-updated from Sleeper every Tuesday
+    </footer>
+  </div>
+
+  <!-- ── RECORDS MODAL ── -->
+  <div id="recordsModal" class="records-modal" role="dialog" aria-modal="true"
+       aria-labelledby="recordsTitle" hidden>
+    <div class="records-modal-backdrop" data-close="1"></div>
+    <div class="records-modal-content" role="document">
+      <div class="records-modal-header">
+        <h2 id="recordsTitle">Voting Records</h2>
+        <button id="recordsClose" class="records-close" aria-label="Close">×</button>
+      </div>
+      <ol id="recordsList" class="records-list"></ol>
+    </div>
+  </div>
+
+  <script type="module" src="./pickems.js"></script>
+</body>
+</html>
