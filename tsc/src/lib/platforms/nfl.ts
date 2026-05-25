@@ -1,0 +1,338 @@
+// NFL Fantasy (fantasy.nfl.com) platform adapter.
+//
+// NFL Fantasy doesn't expose a public JSON API for league data, but every
+// page we need is server-rendered HTML and viewable without authentication
+// for public leagues. This module fetches and parses those pages.
+//
+// Pages used per season:
+//   /league/<id>/history/<year>/owners            — team list + owner names
+//   /league/<id>/history/<year>/standings         — champion / runner-up / 3rd
+//   /league/<id>/history/<year>/schedule?...      — per-week matchups + scores
+//   /league/<id>/history/<year>/draftresults      — draft picks
+
+import * as cheerio from 'cheerio'
+import type { AnyNode } from 'domhandler'
+
+const BASE = 'https://fantasy.nfl.com'
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+
+export type NflOwner = {
+  team_id: number       // numeric, scoped to (league, season)
+  team_name: string
+  team_image_url: string | null
+  owner_name: string    // display name shown on the site
+  user_id: string       // NFL.com user id (stable across seasons)
+  is_league_owner: boolean
+}
+
+export type NflMatchup = {
+  week: number
+  a_team_id: number
+  a_score: number | null   // null = game not yet played (future/unplayed week)
+  a_record: string         // e.g. "1-0-0"
+  b_team_id: number
+  b_score: number | null
+  b_record: string
+}
+
+export type NflStandingsRow = {
+  final_rank: number
+  team_id: number
+  team_name: string
+  // Top-3 also have records + PF visible; the rest only show team name on standings.
+  owner_name: string | null
+  record: string | null   // "8-6-0"
+  points_for: number | null
+}
+
+export type NflDraftPick = {
+  overall_pick: number
+  round: number
+  round_pick: number
+  team_id: number
+  player_name: string
+  player_position: string | null
+  player_nfl_team: string | null
+}
+
+// ─── HTTP ─────────────────────────────────────────────────────────────────
+
+async function fetchHtml(url: string): Promise<string> {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml' },
+    // Each league/season is essentially static once the season ends; let
+    // upstream caches deduplicate fetches but don't hold stale data forever.
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error(`NFL ${url} → HTTP ${res.status}`)
+  return res.text()
+}
+
+// ─── Public probe: confirm league exists + grab basic metadata ─────────────
+
+export type NflLeagueProbe = {
+  ok: true
+  name: string
+  // NFL pages always say "{leagueName} – League Home | NFL Fantasy" or similar.
+  // We don't get founded year cheaply; the user supplies the season range.
+} | { ok: false; error: string }
+
+export async function probeLeague(leagueId: string, season: number): Promise<NflLeagueProbe> {
+  try {
+    const html = await fetchHtml(`${BASE}/league/${leagueId}/history/${season}/owners`)
+    const $ = cheerio.load(html)
+    const title = $('title').text() || ''
+    // "League Manager - Managers | NFL Fantasy" — not useful for the actual
+    // league name. Grab the breadcrumb or page heading instead.
+    const heading = $('.leagueNav .first a, h1, .leagueName').first().text().trim()
+    const name = heading || title.split(' | ')[0] || `NFL League ${leagueId}`
+    return { ok: true, name }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Probe failed' }
+  }
+}
+
+// ─── Owners page → roster of (team_id, owner) for a season ────────────────
+
+export async function fetchOwners(leagueId: string, season: number): Promise<NflOwner[]> {
+  const html = await fetchHtml(`${BASE}/league/${leagueId}/history/${season}/owners`)
+  const $ = cheerio.load(html)
+  const out: NflOwner[] = []
+
+  // Each team is a <tr class="team-N ..."> in the managers table.
+  $('table.tableType-team tbody tr').each((_, tr) => {
+    const row = $(tr)
+    // teamImg has class "teamId-<n>" — extract that.
+    const teamLink = row.find('a.teamImg').first()
+    const cls = teamLink.attr('class') || ''
+    const idMatch = cls.match(/teamId-(\d+)/)
+    if (!idMatch) return
+    const team_id = Number(idMatch[1])
+
+    const team_name = row.find('a.teamName').first().text().trim()
+    const team_image_url = teamLink.find('img').attr('src') || null
+
+    // Owner cell: <span class="userName userId-<id>">DisplayName</span>
+    const ownerSpan = row.find('td.teamOwnerName .userName').first()
+    const ownerCls = ownerSpan.attr('class') || ''
+    const userMatch = ownerCls.match(/userId-(\d+)/)
+    const user_id = userMatch ? userMatch[1] : ''
+    const owner_name = ownerSpan.text().trim() || ''
+
+    // League owner (commissioner) badge is on the <li> wrapper.
+    const is_league_owner = row.find('td.teamOwnerName li.leagueOwner').length > 0
+
+    if (team_id && user_id) {
+      out.push({ team_id, team_name, team_image_url, owner_name, user_id, is_league_owner })
+    }
+  })
+
+  return out
+}
+
+// ─── Schedule page → matchups for a single week ───────────────────────────
+
+export async function fetchWeekSchedule(
+  leagueId: string,
+  season: number,
+  week: number
+): Promise<NflMatchup[]> {
+  const url = `${BASE}/league/${leagueId}/history/${season}/schedule?gameSeason=${season}&leagueId=${leagueId}&scheduleDetail=${week}&scheduleType=week&standingsTab=schedule`
+  const html = await fetchHtml(url)
+  const $ = cheerio.load(html)
+  const out: NflMatchup[] = []
+
+  // Each <li class="matchup ..."> contains two <div class="teamWrap teamWrap-N">.
+  $('ul.scheduleContent li.matchups li.matchup').each((_, li) => {
+    const wrappers = $(li).find('div.teamWrap')
+    if (wrappers.length !== 2) return
+    const parsed = wrappers.toArray().map((w) => parseTeamWrap($, $(w)))
+    if (parsed[0] && parsed[1]) {
+      out.push({
+        week,
+        a_team_id: parsed[0].team_id, a_score: parsed[0].score, a_record: parsed[0].record,
+        b_team_id: parsed[1].team_id, b_score: parsed[1].score, b_record: parsed[1].record,
+      })
+    }
+  })
+
+  return out
+}
+
+function parseTeamWrap($: cheerio.CheerioAPI, wrap: cheerio.Cheerio<AnyNode>): { team_id: number; score: number | null; record: string } | null {
+  const teamName = wrap.find('a.teamName').first()
+  const cls = teamName.attr('class') || ''
+  const idMatch = cls.match(/teamId-(\d+)/)
+  if (!idMatch) return null
+  const team_id = Number(idMatch[1])
+
+  // An unplayed/future game has a blank .teamTotal. Keep the matchup with a
+  // null score rather than dropping it — pick'ems needs upcoming weeks.
+  const totalText = wrap.find('.teamTotal').first().text().trim()
+  const parsed = parseFloat(totalText.replace(/,/g, ''))
+  const score = Number.isFinite(parsed) ? parsed : null
+
+  const record = wrap.find('.teamRecord').first().text().trim() || '0-0-0'
+  return { team_id, score, record }
+}
+
+// ─── Standings page → champion / runner-up / third place ─────────────────
+
+export async function fetchStandings(leagueId: string, season: number): Promise<NflStandingsRow[]> {
+  const html = await fetchHtml(`${BASE}/league/${leagueId}/history/${season}/standings`)
+  const $ = cheerio.load(html)
+  const out: NflStandingsRow[] = []
+
+  // NFL Fantasy renders the final standings as a podium ("place-1" / "place-2"
+  // / "place-3" elements with bigger styling) plus a remaining list. The exact
+  // wrapper varies by year/template. We scan all elements whose class names
+  // contain "place-N", looking for a teamName link inside.
+  $('[class*="place-"]').each((_, el) => {
+    const item = $(el)
+    const placeCls = (item.attr('class') || '').match(/(?:^|\s)place-(\d+)(?:\s|$)/)
+    if (!placeCls) return
+    const final_rank = Number(placeCls[1])
+    const teamLink = item.find('a.teamName, a[class*="teamId-"]').first()
+    const cls = teamLink.attr('class') || ''
+    const idMatch = cls.match(/teamId-(\d+)/)
+    if (!idMatch) return
+    const team_id = Number(idMatch[1])
+    const team_name = teamLink.text().trim()
+
+    // Owner + record + PF are inside <em> tags on the top-3 podium slots.
+    let owner_name: string | null = null
+    let record: string | null = null
+    let points_for: number | null = null
+    const ems = item.find('em')
+    if (ems.length >= 1) owner_name = ems.eq(0).text().trim() || null
+    if (ems.length >= 2) {
+      const detail = ems.eq(1).text().trim()
+      const m = detail.match(/Reg\.\s*Season:\s*(\d+-\d+-\d+),\s*([\d,.]+)\s*Points/i)
+      if (m) {
+        record = m[1]!
+        points_for = parseFloat(m[2]!.replace(/,/g, ''))
+      }
+    }
+    // De-dupe in case the team appears in multiple matched containers.
+    if (out.find((r) => r.final_rank === final_rank && r.team_id === team_id)) return
+    out.push({ final_rank, team_id, team_name, owner_name, record, points_for })
+  })
+
+  // Fallback: some seasons render the rest of the field as a flat ranked list
+  // outside any place-N container. If we have fewer than 4 rows, scan any
+  // <ol>/<ul> with team links and infer rank from list order.
+  if (out.length < 4) {
+    $('ol li a.teamName, ul.standings li a.teamName, table.tableType-standings tbody tr').each((idx, el) => {
+      const item = $(el)
+      const teamLink = item.is('a') ? item : item.find('a.teamName').first()
+      const cls = teamLink.attr('class') || ''
+      const idMatch = cls.match(/teamId-(\d+)/)
+      if (!idMatch) return
+      const team_id = Number(idMatch[1])
+      if (out.find((r) => r.team_id === team_id)) return
+      out.push({
+        final_rank: out.length + 1, // fall back to order encountered
+        team_id,
+        team_name: teamLink.text().trim(),
+        owner_name: null,
+        record: null,
+        points_for: null,
+      })
+      void idx
+    })
+  }
+
+  return out
+}
+
+// ─── Draft results page → ordered list of picks ───────────────────────────
+
+export async function fetchDraft(leagueId: string, season: number): Promise<NflDraftPick[]> {
+  // The default /draftresults page only shows one round at a time. Append
+  // ?draftResultsDetail=0 to get every round inline.
+  const url = `${BASE}/league/${leagueId}/history/${season}/draftresults?draftResultsDetail=0&draftResultsTab=round&draftResultsType=results`
+  const html = await fetchHtml(url)
+  const $ = cheerio.load(html)
+  const out: NflDraftPick[] = []
+
+  // Markup: <h4>Round N</h4><ul><li><span class="count">P.</span> ... </li>...</ul>
+  // Picks don't carry a round attribute themselves — track it via the most
+  // recent <h4> heading we walked past in document order.
+  let currentRound: number | null = null
+  $('h4, li').each((_, el) => {
+    const node = $(el)
+    if ((el as { tagName?: string }).tagName === 'h4') {
+      const m = node.text().trim().match(/^Round\s+(\d+)/i)
+      if (m) currentRound = Number(m[1])
+      return
+    }
+    // <li> — must contain a .count and a player link to be a pick row.
+    const countEl = node.find('> .count').first()
+    if (countEl.length === 0) return
+    const countText = countEl.text().trim().replace(/\.$/, '')
+    const round_pick = parseInt(countText, 10)
+    if (!Number.isFinite(round_pick) || currentRound == null) return
+
+    // Team id from <a class="teamId-N">.
+    const teamLink = node.find('a[class*="teamId-"]').first()
+    const teamCls = teamLink.attr('class') || ''
+    const teamMatch = teamCls.match(/teamId-(\d+)/)
+    if (!teamMatch) return
+    const team_id = Number(teamMatch[1])
+
+    // Player name from <a class="playerName"> (skip the headshot image link).
+    const playerLink = node.find('a.playerName').first()
+    const player_name = playerLink.text().trim()
+    if (!player_name) return
+
+    // Position + NFL team from the trailing <em>.
+    let player_position: string | null = null
+    let player_nfl_team: string | null = null
+    const meta = node.find('em').first().text().trim()
+    // Examples: "RB - SF", "WR - DET", "QB - BUF", "K - BAL"
+    const metaMatch = meta.match(/([A-Z]{1,4})\s*[-–]\s*([A-Z]{2,4})/)
+    if (metaMatch) {
+      player_position = metaMatch[1]!
+      player_nfl_team = metaMatch[2]!
+    } else if (/^(DEF|DST|D\/ST)$/i.test(meta)) {
+      // Defenses are rendered as just <em>DEF</em> with no team (the team is the player).
+      player_position = 'DEF'
+      player_nfl_team = null
+    }
+
+    out.push({
+      overall_pick: 0, // filled below
+      round: currentRound,
+      round_pick,
+      team_id,
+      player_name,
+      player_position,
+      player_nfl_team,
+    })
+  })
+
+  // Sort by round then round_pick. The page already lists picks in draft
+  // order accounting for snake direction, so overall = index + 1.
+  out.sort((a, b) => a.round - b.round || a.round_pick - b.round_pick)
+  out.forEach((p, i) => { p.overall_pick = i + 1 })
+  return out
+}
+
+// ─── Concurrency helper (mirrors sleeper.ts parallelLimit) ───────────────
+
+export async function parallelLimit<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  let i = 0
+  async function run() {
+    while (i < items.length) {
+      const idx = i++
+      results[idx] = await worker(items[idx])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, run))
+  return results
+}

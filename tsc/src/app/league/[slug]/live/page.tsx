@@ -1,0 +1,157 @@
+import { notFound } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { SiteFooter } from '@/components/SiteFooter'
+import { resolveCurrentWeek } from '@/lib/liveSeason'
+import { LiveSeasonForm, type SeasonRow } from './live-form'
+import { SourcePicker, type SourceRow } from './source-picker'
+import { GotwPicker, type GotwMatchup } from './gotw-picker'
+
+export default async function LiveSeasonPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const supabase = await createClient()
+
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('id, name, slug')
+    .eq('slug', slug)
+    .maybeSingle()
+  if (!league) notFound()
+
+  const [{ data: seasons }, { data: sources }] = await Promise.all([
+    supabase
+      .from('seasons')
+      .select('id, year, is_live, settings')
+      .eq('league_id', league.id)
+      .order('year', { ascending: false }),
+    supabase
+      .from('league_sources')
+      .select('id, platform, external_id, label, is_live')
+      .eq('league_id', league.id)
+      .order('created_at', { ascending: true }),
+  ])
+
+  const rows: SeasonRow[] = (seasons ?? []).map((s) => ({
+    id: s.id,
+    year: s.year,
+    is_live: !!s.is_live,
+  }))
+  const liveSeason = rows.find((r) => r.is_live) ?? null
+  const liveRaw = (seasons ?? []).find((s) => s.is_live)
+  const liveSettings = (liveRaw?.settings ?? {}) as Record<string, unknown>
+  const weekOverride = typeof liveSettings.current_week === 'number' ? (liveSettings.current_week as number) : null
+  const seasonStartDate =
+    typeof liveSettings.season_start_date === 'string' ? (liveSettings.season_start_date as string) : null
+  const currentWeek = resolveCurrentWeek(liveSettings)
+
+  const sourceRows: SourceRow[] = (sources ?? []).map((s) => ({
+    id: s.id,
+    platform: s.platform,
+    external_id: s.external_id,
+    label: s.label ?? null,
+    is_live: !!s.is_live,
+  }))
+
+  // Load the current week's matchups so the commish can star a Game of the Week.
+  let gotwMatchups: GotwMatchup[] = []
+  let currentGotwId: string | null = null
+  if (liveRaw && currentWeek != null) {
+    const gotwMap = (liveSettings.gotw ?? {}) as Record<string, string>
+    currentGotwId = gotwMap[String(currentWeek)] ?? null
+
+    const { data: matchupRows } = await supabase
+      .from('matchups')
+      .select('id, manager_a_id, manager_b_id')
+      .eq('season_id', liveRaw.id)
+      .eq('week', currentWeek)
+    if (matchupRows && matchupRows.length > 0) {
+      const [{ data: managers }, { data: profiles }] = await Promise.all([
+        supabase.from('managers').select('id, display_name, profile_id').eq('league_id', league.id),
+        supabase.from('manager_profiles').select('id, canonical_name').eq('league_id', league.id),
+      ])
+      const profileName = new Map<string, string>()
+      for (const p of profiles ?? []) profileName.set(p.id, p.canonical_name)
+      const nameOf = (mid: string) => {
+        const m = (managers ?? []).find((x) => x.id === mid)
+        if (!m) return 'Unknown'
+        return (m.profile_id && profileName.get(m.profile_id)) || m.display_name
+      }
+      gotwMatchups = matchupRows.map((r) => ({
+        id: r.id,
+        label: `${nameOf(r.manager_a_id)} vs ${nameOf(r.manager_b_id)}`,
+      }))
+    }
+  }
+
+  return (
+    <main>
+      <section className="hero">
+        <div className="hero-sup">★ Live Season ★</div>
+        <h1 className="hero-title">
+          Live <em>season.</em>
+        </h1>
+        <p className="hero-sub">
+          Mark which season is currently in-progress. Pick&apos;ems, power rankings, and the weekly cron all use this.
+          Only one season can be live at a time.
+        </p>
+        <div className="hero-meta">
+          {liveSeason
+            ? `Currently live: ${liveSeason.year}${currentWeek != null ? ` · Week ${currentWeek}` : ''}`
+            : 'No live season — off-season'}
+        </div>
+      </section>
+
+      <div className="section">
+        <div className="section-header">
+          <span className="section-num">§ 01 · Active</span>
+          <span className="section-title">Which year is on?</span>
+          <span className="section-meta">{rows.length} season{rows.length === 1 ? '' : 's'} on file</span>
+        </div>
+        <LiveSeasonForm
+          leagueId={league.id}
+          seasons={rows}
+          weekOverride={weekOverride}
+          seasonStartDate={seasonStartDate}
+          resolvedWeek={currentWeek}
+        />
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <span className="section-num">§ 02 · Live source</span>
+          <span className="section-title">Which source updates weekly?</span>
+          <span className="section-meta">{sourceRows.length} source{sourceRows.length === 1 ? '' : 's'}</span>
+        </div>
+        <SourcePicker leagueId={league.id} sources={sourceRows} />
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <span className="section-num">§ 03 · Game of the Week</span>
+          <span className="section-title">Star one matchup —</span>
+          <span className="section-meta">
+            {liveSeason && currentWeek != null ? `Week ${currentWeek}` : 'Set a live week first'}
+          </span>
+        </div>
+        {liveRaw && currentWeek != null ? (
+          <GotwPicker
+            leagueId={league.id}
+            seasonId={liveRaw.id}
+            week={currentWeek}
+            matchups={gotwMatchups}
+            currentGotwId={currentGotwId}
+          />
+        ) : (
+          <div className="dc-empty">
+            <div className="dc-empty-text">Pick a live season and current week above to choose a Game of the Week.</div>
+          </div>
+        )}
+      </div>
+
+      <SiteFooter />
+    </main>
+  )
+}

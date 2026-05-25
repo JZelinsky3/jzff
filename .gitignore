@@ -1,0 +1,11 @@
+# Local IDE / agent state
+.claude/
+.DS_Store
+
+# Vercel
+.vercel
+
+# Env files (the app's own .env.local lives in tsc/ — gitignored separately)
+.env*
+
+# Anything inside tsc/ is governed by tsc/.gitignore
