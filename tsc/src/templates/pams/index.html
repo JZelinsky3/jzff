@@ -177,15 +177,23 @@ body {
     cursor: default; user-select: none;
     transition: color .15s;
 }
-.nav-drop-group:hover .nav-drop-group-lbl { color: var(--gold); }
+.nav-drop-group.open .nav-drop-group-lbl { color: var(--gold); }
 .nav-group-arr { display: inline-block; font-size: .75rem; transition: transform .15s; }
-.nav-drop-group:hover .nav-group-arr { transform: rotate(90deg); }
+.nav-drop-group.open .nav-group-arr { transform: rotate(90deg); }
 .nav-drop-sub {
     max-height: 0; overflow: hidden;
     background: rgba(0,0,0,.12);
     transition: max-height .18s ease;
 }
-.nav-drop-group:hover .nav-drop-sub { max-height: 200px; border-bottom: 1px solid var(--ink-line-soft); }
+.nav-drop-group.open .nav-drop-sub { max-height: 200px; border-bottom: 1px solid var(--ink-line-soft); }
+/* Hover preview ONLY for real pointers — without this gate, touch
+   devices register hover on first tap and the group sticks open even
+   after JS removes the .open class, making it impossible to close. */
+@media (hover: hover) and (pointer: fine) {
+    .nav-drop-group:hover .nav-drop-group-lbl { color: var(--gold); }
+    .nav-drop-group:hover .nav-group-arr { transform: rotate(90deg); }
+    .nav-drop-group:hover .nav-drop-sub { max-height: 200px; border-bottom: 1px solid var(--ink-line-soft); }
+}
 .nav-drop-sub a {
     display: block; padding: .65rem 1.1rem .65rem 1.65rem;
     font-family: var(--mono); font-size: .68rem;
