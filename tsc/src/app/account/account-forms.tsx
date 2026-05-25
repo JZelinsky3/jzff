@@ -7,7 +7,7 @@ import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail } 
 type Result = { ok: false; error: string } | { ok: true; message?: string } | null
 
 type SubscriptionSummary = {
-  tier: 'tier1' | 'tier2'
+  tier: 'tier1' | 'tier2' | 'tier3'
   tierLabel: string
   billingPeriod: 'monthly' | 'yearly'
   status: string

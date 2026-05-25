@@ -139,7 +139,7 @@ export function PricingCards({
               )}
               <div>
                 <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', opacity: 0.6 }}>
-                  {t.tier === 'tier1' ? 'Tier 1' : 'Tier 2'}
+                  {t.tier === 'tier1' ? 'Tier 1' : t.tier === 'tier2' ? 'Tier 2' : 'Tier 3'}
                 </div>
                 <div style={{ fontFamily: 'var(--serif)', fontSize: '1.6rem', marginTop: '.3rem' }}>
                   {t.name}

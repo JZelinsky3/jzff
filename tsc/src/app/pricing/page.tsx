@@ -100,11 +100,24 @@ export default async function PricingPage() {
             yearly: TIER_PRICES.tier2.yearly,
             features: [
               'Archive up to 5 leagues',
-              'Everything in Solo Commissioner',
+              'Everything in Rookie',
               'Run multiple leagues from one account',
               'Priority on platform integrations',
             ],
             highlight: true,
+          },
+          {
+            tier: 'tier3',
+            name: TIER_LABELS.tier3.name,
+            tagline: TIER_LABELS.tier3.tagline,
+            limit: TIER_LIMITS.tier3,
+            monthly: TIER_PRICES.tier3.monthly,
+            yearly: TIER_PRICES.tier3.yearly,
+            features: [
+              'Unlimited leagues',
+              'Everything in Veteran',
+              'First in line for new platform integrations',
+            ],
           },
         ]}
       />

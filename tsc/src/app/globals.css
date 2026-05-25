@@ -470,11 +470,26 @@ main {
     width: 100%;
     background: var(--ink-soft);
     border: 1px solid var(--ink-line);
+    border-radius: 0;
     color: var(--cream);
     padding: .8rem 1rem;
     font-family: var(--sans);
     font-size: .92rem;
     transition: border-color .2s;
+    /* Safari adds rounded corners + a system-blue gradient by default. Reset
+       the native appearance so the dark-ink/gold theme is consistent across
+       Chrome/Firefox/Safari (iOS + macOS). */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+/* Selects need a custom chevron since appearance:none strips the native one.
+   Inline SVG keeps it themable without an extra asset request. */
+.dc-select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none' stroke='%23e8c889' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='1 1 5 5 9 1'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.4rem;
 }
 .dc-input.mono { font-family: var(--mono); font-size: .85rem; }
 .dc-input:focus, .dc-select:focus, .dc-textarea:focus {

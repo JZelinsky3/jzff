@@ -2,6 +2,12 @@ import Link from 'next/link'
 import { OnboardingChecklist, type OnboardingStep } from '@/components/OnboardingChecklist'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import {
+  getUserSubscription,
+  isLifetimeUser,
+  isSubscriptionActive,
+  TIER_LABELS,
+} from '@/lib/stripe'
 import { LeagueCardMenu } from './league-card-menu'
 
 export default async function DashboardPage() {
@@ -11,6 +17,16 @@ export default async function DashboardPage() {
     .from('leagues')
     .select('id, name, slug, platform, last_synced_at, published_at, created_at')
     .order('created_at', { ascending: false })
+
+  // Subscription summary card: shows tier + renewal/end date so commish
+  // doesn't have to hop to /account just to check. Lifetime users get a
+  // simple comp badge instead.
+  const subUserId = user?.id ?? null
+  const comp = subUserId ? isLifetimeUser(subUserId) : false
+  const sub = !comp && subUserId ? await getUserSubscription(subUserId) : null
+  const subActive = isSubscriptionActive(sub)
+  const subEndsLabel = formatSubEndsLabel(sub)
+  const subTierName = sub ? TIER_LABELS[sub.tier]?.name ?? sub.tier : null
 
   // Demo card hides permanently once the user has created their first league
   // (flag set in /dashboard/new/actions.ts after a successful insert). Stays
@@ -65,6 +81,33 @@ export default async function DashboardPage() {
         <div style={{ marginTop: '1.75rem' }}>
           <Link href="/dashboard/new" className="dc-btn">+ New archive →</Link>
         </div>
+        {(comp || subActive) && (
+          <Link
+            href="/account"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '.5rem',
+              marginTop: '1.25rem',
+              padding: '.5rem .9rem',
+              fontFamily: 'var(--mono)', fontSize: '.65rem',
+              letterSpacing: '.2em', textTransform: 'uppercase',
+              color: 'var(--cream-soft)', textDecoration: 'none',
+              border: '1px solid var(--ink-line)', borderRadius: '2px',
+            }}
+            title="Manage subscription"
+          >
+            {comp ? (
+              <>
+                <span style={{ color: 'var(--gold)' }}>★ Comp</span>
+                <span style={{ opacity: 0.6 }}>· Unlimited access</span>
+              </>
+            ) : (
+              <>
+                <span style={{ color: 'var(--gold)' }}>{subTierName}</span>
+                {subEndsLabel && <span style={{ opacity: 0.7 }}>· {subEndsLabel}</span>}
+              </>
+            )}
+          </Link>
+        )}
       </section>
 
       <OnboardingChecklist
@@ -157,6 +200,22 @@ function DemoCard() {
       </div>
     </a>
   )
+}
+
+function formatSubEndsLabel(sub: { status: string; cancel_at_period_end: boolean; current_period_end: string | null; trial_ends_at: string | null } | null): string | null {
+  if (!sub) return null
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  if (sub.status === 'trialing' && sub.trial_ends_at) {
+    return `Trial ends ${fmt(sub.trial_ends_at)}`
+  }
+  if (sub.cancel_at_period_end && sub.current_period_end) {
+    return `Ends ${fmt(sub.current_period_end)} · cancel pending`
+  }
+  if (sub.status === 'active' && sub.current_period_end) {
+    return `Renews ${fmt(sub.current_period_end)}`
+  }
+  return sub.status
 }
 
 function splitName(name: string): { head: string; tail: string } {
