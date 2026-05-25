@@ -169,7 +169,7 @@ export default async function DashboardPage() {
           </div>
           <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.35rem' }}>
             Pick&apos;ems and power rankings are paid-tier features and stay locked during testing. After the window closes, free leagues enter a 3-month grace period before deletion unless you subscribe.{' '}
-            Email <a href="mailto:zelinskyjoey18@gmail.com" style={{ color: 'var(--gold)' }}>zelinskyjoey18@gmail.com</a> with bugs or suggestions.
+            Email <a href="mailto:jzffgames@gmail.com" style={{ color: 'var(--gold)' }}>jzffgames@gmail.com</a> with bugs or suggestions.
           </div>
         </div>
       )}
