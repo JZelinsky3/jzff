@@ -7,7 +7,7 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing']
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request
 // using STRIPE_WEBHOOK_SECRET. Other /api/stripe/* routes (checkout, portal)
 // still require an authenticated user and stay middleware-gated.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/api/cron/', '/api/stripe/webhook']
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/api/cron/', '/api/stripe/webhook']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
