@@ -28,9 +28,71 @@ const mono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const DESCRIPTION =
+  "Turn your fantasy football league's full history into a polished public almanac. Walks Sleeper, ESPN, or NFL.com league IDs back through every season — champions, drafts, rivalries, head-to-head records, weekly pick'ems. Built for commissioners.";
+
 export const metadata: Metadata = {
-  title: "The Sunday Chronicle — Built for the history of the league.",
-  description: "Built for the history of the league. An almanac of every season, draft, and rivalry, kept for as long as you play.",
+  metadataBase: new URL("https://jzff.online"),
+  title: {
+    default: "The Sunday Chronicle — Fantasy football league archive for commissioners",
+    template: "%s · The Sunday Chronicle",
+  },
+  description: DESCRIPTION,
+  keywords: [
+    "fantasy football",
+    "fantasy football league history",
+    "fantasy football archive",
+    "fantasy football commissioner",
+    "sleeper league history",
+    "espn fantasy league history",
+    "dynasty league archive",
+    "fantasy football record book",
+    "fantasy football rivalries",
+  ],
+  authors: [{ name: "JZFF", url: "https://jzff.online" }],
+  creator: "JZFF",
+  openGraph: {
+    type: "website",
+    url: "https://jzff.online/",
+    title: "The Sunday Chronicle — Fantasy football league archive for commissioners",
+    description: DESCRIPTION,
+    siteName: "The Sunday Chronicle",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The Sunday Chronicle — Fantasy football league archive",
+    description: DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large" },
+  },
+  alternates: { canonical: "https://jzff.online/" },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "The Sunday Chronicle",
+  applicationCategory: "BusinessApplication",
+  applicationSubCategory: "Fantasy Football League Archive",
+  operatingSystem: "Web",
+  url: "https://jzff.online/",
+  description: DESCRIPTION,
+  offers: [
+    { "@type": "Offer", name: "Rookie", price: "5",  priceCurrency: "USD", description: "1 league, monthly" },
+    { "@type": "Offer", name: "Veteran", price: "15", priceCurrency: "USD", description: "Up to 5 leagues, monthly" },
+    { "@type": "Offer", name: "Legend", price: "25", priceCurrency: "USD", description: "Unlimited leagues, monthly" },
+  ],
+  featureList: [
+    "Walks back through every season of a fantasy football league's history",
+    "Imports from Sleeper, ESPN, and NFL.com league IDs",
+    "Public almanac with standings, season archives, record book, draft history, manager profiles, and rivalries",
+    "Weekly pick'ems and power rankings during the active season",
+    "Auto-syncs in-season",
+  ],
 };
 
 export default function RootLayout({
@@ -44,6 +106,10 @@ export default function RootLayout({
       className={`${serif.variable} ${sans.variable} ${mono.variable}`}
     >
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <div className="site-glow"></div>
         <div className="site-grain"></div>
         {children}

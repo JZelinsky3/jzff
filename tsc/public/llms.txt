@@ -1,0 +1,47 @@
+# The Sunday Chronicle
+
+> The Sunday Chronicle is a multi-tenant SaaS that turns any fantasy football league's full history into a polished, public-facing almanac. Commissioners paste their Sleeper, ESPN, or NFL.com league ID; the platform walks back through every season the league has existed and produces a single canonical website covering champions, drafts, head-to-head records, rivalries, weekly pick'ems, and power rankings.
+
+## What it does
+
+- Imports complete league history (every season, every matchup, every draft pick) from Sleeper, ESPN, or NFL.com using just a league ID
+- Renders an editorial-style public almanac at jzff.online/leagues/<slug>/ with chapters for standings, season archives, the record book, draft history, manager dossiers, and rivalries
+- Auto-syncs in-season with a weekly cron so the public almanac stays current
+- Live pick'ems and power rankings during the active season
+- Commissioner admin UI for merging cross-platform manager identities, curating rivalries, and configuring divisions
+
+## Who it's for
+
+- Fantasy football commissioners running long-standing dynasty or redraft leagues who want a permanent, shareable record of their league's history
+- Leagues that have moved between platforms over the years and want a single unified archive
+- Anyone tired of league history living scattered across screenshots, group chats, and platform UIs that change every year
+
+## Platforms supported
+
+- **Sleeper**: full historical + live season support
+- **ESPN**: full historical + live season support (private leagues via cookie pasting)
+- **NFL.com**: historical seasons only (NFL.com hasn't reopened live leagues this cycle)
+- **Yahoo**: coming soon (blocked on Yahoo developer portal)
+
+## Pricing
+
+- **Rookie**: $5/mo or $30/yr — 1 league
+- **Veteran**: $15/mo or $75/yr — up to 5 leagues
+- **Legend**: $25/mo or $100/yr — unlimited leagues
+- 10-day free trial on every plan, one trial per user lifetime
+
+## Live demo
+
+[jzff.online/demo/](https://jzff.online/demo/) — a real fantasy league's seven-year history, fully populated, no signup required
+
+## Key URLs
+
+- Home: https://jzff.online/
+- Pricing: https://jzff.online/pricing
+- Sign up: https://jzff.online/login?mode=signup
+- Demo almanac: https://jzff.online/demo/
+- Example live league: https://jzff.online/leagues/pa-milk-society/
+
+## Tech
+
+Next.js 16 + Supabase + Stripe. Single-developer indie product. Built by JZFF (jzffgames@gmail.com).

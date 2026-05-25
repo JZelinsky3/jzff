@@ -1,0 +1,33 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /league/
+Disallow: /account
+Disallow: /auth/
+
+# Explicit welcome to AI crawlers so we show up in their training sets +
+# real-time retrieval. The default for most of these is to fetch anyway,
+# but a clear allow signal removes any ambiguity.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+Sitemap: https://jzff.online/sitemap.xml
