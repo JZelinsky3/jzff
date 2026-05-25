@@ -164,11 +164,16 @@ function injectDcConfig(
 // the same way regardless of whether the request URL has a trailing slash.
 // Absolute paths (/pams-template/...) are unaffected.
 function injectBaseTag(html: string, meta: LeagueMeta): string {
-  const tag = `<base href="/leagues/${meta.slug}/">`
+  // <base> pins relative hrefs to /leagues/<slug>/; favicon link points at
+  // the absolute /icon.svg the Next.js root layout serves (templates don't
+  // inherit from the layout so they don't get the favicon automatically).
+  const tags =
+    `<base href="/leagues/${meta.slug}/">` +
+    `\n<link rel="icon" href="/icon.svg" type="image/svg+xml">`
   if (/<head[^>]*>/i.test(html)) {
-    return html.replace(/<head[^>]*>/i, (m) => `${m}\n${tag}`)
+    return html.replace(/<head[^>]*>/i, (m) => `${m}\n${tags}`)
   }
-  return tag + html
+  return tags + html
 }
 
 function escapeHtml(s: string): string {
