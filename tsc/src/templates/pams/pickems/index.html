@@ -44,6 +44,12 @@
 
   <div class="pe-app">
 
+    <!-- SEO: visually-hidden H1 for crawlers (the visible Weekly Pick'ems
+         lockup above is a link, not a heading, by design). -->
+    <h1 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">
+      Weekly Pick'ems · {{LEAGUE_NAME}} fantasy football league
+    </h1>
+
     <!-- ── IDENTITY (no login — profile dropdown) ── -->
     <div class="pe-auth" id="authBox">
       <div class="pe-login">

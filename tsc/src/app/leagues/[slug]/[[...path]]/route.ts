@@ -167,9 +167,14 @@ function injectBaseTag(html: string, meta: LeagueMeta): string {
   // <base> pins relative hrefs to /leagues/<slug>/; favicon link points at
   // the absolute /icon.svg the Next.js root layout serves (templates don't
   // inherit from the layout so they don't get the favicon automatically).
+  // Meta description is injected for crawlers — without it Bing flags
+  // every almanac page as missing one.
+  const safeName = escapeHtml(meta.name)
+  const description = `Public almanac for ${safeName} — full fantasy football league history, season archives, draft results, head-to-head records, rivalries, and weekly pick'ems.`
   const tags =
     `<base href="/leagues/${meta.slug}/">` +
-    `\n<link rel="icon" href="/icon.svg" type="image/svg+xml">`
+    `\n<link rel="icon" href="/icon.svg" type="image/svg+xml">` +
+    `\n<meta name="description" content="${description}">`
   if (/<head[^>]*>/i.test(html)) {
     return html.replace(/<head[^>]*>/i, (m) => `${m}\n${tags}`)
   }

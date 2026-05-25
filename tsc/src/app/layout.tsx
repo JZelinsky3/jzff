@@ -34,7 +34,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL("https://jzff.online"),
   title: {
-    default: "The Sunday Chronicle — Fantasy football league archive for commissioners",
+    default: "The Sunday Chronicle — Fantasy football league archive",
     template: "%s · The Sunday Chronicle",
   },
   description: DESCRIPTION,

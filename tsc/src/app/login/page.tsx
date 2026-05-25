@@ -1,8 +1,15 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { LoginForm } from './login-form'
+
+export const metadata: Metadata = {
+  title: 'Sign in',
+  description:
+    "Sign in to The Sunday Chronicle to manage your fantasy football league's public almanac, sync history, and curate rivalries.",
+}
 
 export default async function LoginPage({
   searchParams,
