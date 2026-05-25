@@ -98,11 +98,14 @@ export function PricingCards({
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        // Always 3 columns on desktop so Rookie/Veteran/Legend share one row.
+        // Drops to 1 column on narrow screens (mobile) via the media query in
+        // globals.css — see .pricing-grid-3 there.
+        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
         gap: '1.5rem',
-        maxWidth: '880px',
+        maxWidth: '1140px',
         margin: '0 auto',
-      }}>
+      }} className="pricing-grid-3">
         {tiers.map((t) => {
           const price = period === 'monthly' ? t.monthly : t.yearly
           const isCurrent = currentTier === t.tier && currentPeriod === period
