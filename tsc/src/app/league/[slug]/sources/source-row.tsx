@@ -40,7 +40,8 @@ export function SourceRow({
   leagueId,
   slug,
   hasCookies = false,
-}: { source: Source; leagueId: string; slug: string; hasCookies?: boolean }) {
+  syncedRange = null,
+}: { source: Source; leagueId: string; slug: string; hasCookies?: boolean; syncedRange?: string | null }) {
   void slug
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -133,7 +134,9 @@ export function SourceRow({
           <div className="text-mono text-cream-mute" style={{ fontSize: '.6rem', letterSpacing: '.18em', textTransform: 'uppercase', marginTop: '.4rem' }}>
             {source.platform === 'nfl' || source.platform === 'espn'
               ? (describeRange(source) ?? 'No range set')
-              : (source.walk_history ? 'Walks history' : 'Single season')}
+              : (source.walk_history
+                  ? (syncedRange ?? 'Walks history')
+                  : 'Single season')}
             {describePlayoff(source) && (
               <>{' · '}{describePlayoff(source)}</>
             )}

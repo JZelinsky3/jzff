@@ -15,8 +15,11 @@ export default async function DashboardPage() {
   // Demo card hides permanently once the user has created their first league
   // (flag set in /dashboard/new/actions.ts after a successful insert). Stays
   // hidden even if they later delete every league — they're past the
-  // "what does this product look like?" stage.
-  const showDemoCard = !user?.user_metadata?.has_created_league
+  // "what does this product look like?" stage. Fallback: existing users who
+  // created leagues before the flag was introduced still get the card hidden
+  // as long as at least one league is on file.
+  const showDemoCard =
+    !user?.user_metadata?.has_created_league && (leagues?.length ?? 0) === 0
 
   const hasLeague = (leagues?.length ?? 0) > 0
   const hasSynced = !!leagues?.some((l) => l.last_synced_at)

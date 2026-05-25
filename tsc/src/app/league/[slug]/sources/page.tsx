@@ -24,6 +24,23 @@ export default async function SourcesPage({
     .eq('league_id', league.id)
     .order('created_at')
 
+  // Pull the league's actual synced year range so we can show a hint like
+  // "Pulled 2019–2025" on Sleeper sources (which don't have an explicit
+  // season_start/_end in settings). Showing it on every row would be
+  // misleading when multiple sources contribute — but for the common case
+  // of one Sleeper source per league it's a useful at-a-glance signal.
+  const { data: seasonRows } = await supabase
+    .from('seasons')
+    .select('year')
+    .eq('league_id', league.id)
+  const years = (seasonRows ?? []).map((r) => r.year as number).sort((a, b) => a - b)
+  const syncedRange =
+    years.length === 0
+      ? null
+      : years[0] === years[years.length - 1]
+      ? `Pulled ${years[0]}`
+      : `Pulled ${years[0]}–${years[years.length - 1]}`
+
   // Scrub credentials out of `settings` before this object crosses into the
   // Client Component. ESPN private leagues store SWID + espn_s2 here, and we
   // don't want either landing in the page's HTML stream. We surface a boolean
@@ -69,7 +86,7 @@ export default async function SourcesPage({
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))', gap: '.6rem' }}>
             {sources.map((s) => (
-              <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} />
+              <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
             ))}
           </div>
         )}

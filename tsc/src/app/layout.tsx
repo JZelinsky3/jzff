@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 // Order matters: globals.css imports tailwindcss; main.css is loaded second
 // so its custom design tokens (--ink, --cream, --gold, body bg) override the
 // Tailwind preflight resets. Bundling both via JS imports lets Next.js stream
@@ -45,6 +47,8 @@ export default function RootLayout({
         <div className="site-glow"></div>
         <div className="site-grain"></div>
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

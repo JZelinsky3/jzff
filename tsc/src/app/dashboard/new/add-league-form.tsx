@@ -16,10 +16,10 @@ export function AddLeagueForm() {
   const [previewMsg, setPreviewMsg] = useState<{ tone: 'ok' | 'err'; text: string } | null>(null)
   const [isPreviewing, startPreview] = useTransition()
 
-  // NFL- + ESPN-shared fields
-  const thisYear = new Date().getFullYear()
-  const [seasonStart, setSeasonStart] = useState(String(thisYear - 4))
-  const [seasonEnd, setSeasonEnd] = useState(String(thisYear))
+  // NFL- + ESPN-shared fields. Default range ends one year back so we don't
+  // try to read an in-progress season that may not have public data yet.
+  const [seasonStart, setSeasonStart] = useState('2023')
+  const [seasonEnd, setSeasonEnd] = useState('2025')
   const [playoffWeekStart, setPlayoffWeekStart] = useState('15')
   const [playoffTeamCount, setPlayoffTeamCount] = useState('6')
   // ESPN-only private-league cookies
