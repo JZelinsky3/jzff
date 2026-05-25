@@ -109,9 +109,13 @@ body {
     border: none !important;
     box-shadow: none !important;
     cursor: pointer; outline: none;
-    /* Generous padding so the tap target hits ~44px on phones. */
-    padding: .65rem .85rem;
-    margin: -.4rem -.6rem;
+    /* Generous padding so the tap target hits ~44px on phones.
+       Negative margin pulls the button so the SVG visually aligns at the
+       nav's left padding edge (no shift in apparent layout); positive
+       horizontal padding makes the inset hit area extend rightward, which
+       is easier to thumb-tap on mobile than the very left edge. */
+    padding: .65rem 1.1rem;
+    margin: -.4rem -.4rem;
     display: inline-flex; align-items: center; justify-content: center;
     /* Buttons default to a 3D system look with inset borders + bg on
        Safari/iOS. Reset everything so the bare gold SVG sits on the dark
@@ -525,7 +529,21 @@ table.data tbody tr.highlight {
     font-size: .65rem; letter-spacing: .25em; text-transform: uppercase;
     color: var(--cream-mute);
 }
-.site-footer em { color: var(--gold); font-style: italic; font-family: var(--serif); }
+.site-footer em {
+    color: var(--gold); font-style: italic; font-family: var(--serif);
+    /* Bump the em so "jzFF" optically matches the surrounding mono text —
+       serif italic has smaller x-height at the same computed size. */
+    font-size: 1.15em;
+    letter-spacing: 0;
+    vertical-align: -.05em;
+}
+@media (max-width: 640px) {
+    .site-footer {
+        padding: 1.25rem 1rem;
+        font-size: .55rem; letter-spacing: .2em;
+        margin-top: 3rem;
+    }
+}
 
 /* ============================================================
    UTILITIES

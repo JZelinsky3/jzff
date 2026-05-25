@@ -579,7 +579,11 @@ function asManagerGame(m: MatchupRow, self: string): ManagerGame | null {
 // ============================================================
 
 function buildLeagueJson(s: Snapshot): unknown {
+  // `years` keeps every season for founding-year + ticker date range, but
+  // `completedYears` excludes the in-progress live season so counts like
+  // total_seasons / "X seasons played" only reflect finished years.
   const years = s.seasons.map((r) => r.year)
+  const completedYears = s.seasons.filter((r) => !r.is_live).map((r) => r.year)
   const currentSeason = years[years.length - 1] ?? 0
   const currentSeasonRow = latestSeasonWithData(s) ?? null
   // Count only games that actually count toward the record: every regular-season
@@ -633,7 +637,7 @@ function buildLeagueJson(s: Snapshot): unknown {
     founded: years[0] ?? currentSeason,
     current_season: currentSeason,
     total_matchups: totalMatchups,
-    total_seasons: years.length,
+    total_seasons: completedYears.length,
     current_members_count: currentMembers,
     former_members_count: formerMembers,
     all_seasons: years,
@@ -860,11 +864,22 @@ type ManagerAggregate = {
 }
 
 function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
+  // Exclude any season currently flagged is_live — career standings and
+  // "seasons played" counts should only reflect COMPLETED seasons. Partial
+  // 2026 wins/losses skew everything if included before the season ends.
+  const liveSeasonIds = new Set(
+    s.seasons.filter((sn) => sn.is_live).map((sn) => sn.id)
+  )
+
   // Union manager_seasons across all platform identities in this profile.
   const mss: ManagerSeasonRow[] = []
   for (const mid of g.managerIds) {
     const rows = s.managerSeasonsByManager.get(mid)
-    if (rows) mss.push(...rows)
+    if (rows) {
+      for (const r of rows) {
+        if (!liveSeasonIds.has(r.season_id)) mss.push(r)
+      }
+    }
   }
   // Union matchups too. A single matchup row might be in multiple managerIds'
   // entries (impossible per current schema since each manager is one side),
@@ -874,6 +889,7 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
   for (const mid of g.managerIds) {
     const matchups = s.matchupsByManager.get(mid) ?? []
     for (const m of matchups) {
+      if (liveSeasonIds.has(m.season_id)) continue
       const key = `${m.season_id}|${m.week}|${m.manager_a_id}|${m.manager_b_id}`
       if (seenMatchup.has(key)) continue
       seenMatchup.add(key)
