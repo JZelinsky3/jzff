@@ -62,6 +62,8 @@
             slug: dc.slug || '',
             name: dc.name || '',
             isCommish: !!dc.isCommish,
+            isSignedIn: !!dc.isSignedIn,
+            isBookmarked: !!dc.isBookmarked,
             managePath: dc.slug ? '/league/' + dc.slug : null,
             libraryPath: '/dashboard',
         };
@@ -123,13 +125,26 @@
                 '<a href="' + ctx.libraryPath + '">Library</a>';
         }
 
-        // Visitor CTA group: visible on every almanac page. League-mates can
-        // land on the site home or start their own archive.
-        var visitorCta =
-            '<div class="nav-drop-divider"></div>' +
-            '<span class="nav-drop-label">Join Today</span>' +
-            '<a href="/">Home</a>' +
-            '<a href="/login?mode=signup">Sign Up</a>';
+        // Visitor CTA group: shown on every almanac page EXCEPT to the
+        // commissioner who owns this league — they're already signed in and
+        // running their own archive, so "Start your own" is noise for them.
+        // Also includes a bookmark toggle for signed-in non-commish viewers.
+        var visitorCta = '';
+        if (!ctx.isCommish) {
+            var bookmarkRow = '';
+            if (ctx.isSignedIn && ctx.slug) {
+                var bmLabel = ctx.isBookmarked ? '★ Bookmarked' : '☆ Bookmark league';
+                bookmarkRow =
+                    '<a href="#" id="dc-bookmark-toggle" data-slug="' + ctx.slug + '" data-on="' + (ctx.isBookmarked ? '1' : '0') + '">' +
+                    bmLabel + '</a>';
+            }
+            visitorCta =
+                '<div class="nav-drop-divider"></div>' +
+                '<span class="nav-drop-label">Join Today</span>' +
+                bookmarkRow +
+                '<a href="/">Home</a>' +
+                (ctx.isSignedIn ? '' : '<a href="/login?mode=signup">Sign Up</a>');
+        }
 
         var dropMenu = '<div class="nav-drop nav-drop-right" id="nav-drop" style="justify-self:end;margin-left:auto;">'
             + '<button class="nav-drop-btn" onclick="toggleDrop()" aria-label="Navigate"><svg class="nav-icon" viewBox="0 0 20 14" width="20" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="0" y1="1" x2="20" y2="1"/><line x1="0" y1="7" x2="20" y2="7"/><line x1="0" y1="13" x2="20" y2="13"/></svg></button>'
@@ -252,9 +267,34 @@
         });
     }
 
+    function wireBookmarkToggle() {
+        document.addEventListener('click', function (e) {
+            var a = e.target && e.target.closest && e.target.closest('#dc-bookmark-toggle');
+            if (!a) return;
+            e.preventDefault();
+            var slug = a.getAttribute('data-slug');
+            var on = a.getAttribute('data-on') === '1';
+            var action = on ? 'remove' : 'add';
+            a.textContent = '…';
+            fetch('/api/bookmarks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug: slug, action: action }),
+            }).then(function (r) {
+                if (!r.ok) throw new Error('bookmark failed');
+                var nowOn = !on;
+                a.setAttribute('data-on', nowOn ? '1' : '0');
+                a.textContent = nowOn ? '★ Bookmarked' : '☆ Bookmark league';
+            }).catch(function () {
+                a.textContent = on ? '★ Bookmarked' : '☆ Bookmark league';
+            });
+        });
+    }
+
     function init() {
         buildNav();
         enhanceSignupLinks();
+        wireBookmarkToggle();
     }
 
     if (document.readyState === 'loading') {

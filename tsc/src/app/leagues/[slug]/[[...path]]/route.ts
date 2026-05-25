@@ -138,11 +138,19 @@ function applyTokens(html: string, meta: LeagueMeta): string {
 
 // Inject a small config script with the current league's context so nav.js
 // can wire absolute links to the Dynasty Codex dashboard and management view.
-function injectDcConfig(html: string, meta: LeagueMeta, isCommish: boolean): string {
+function injectDcConfig(
+  html: string,
+  meta: LeagueMeta,
+  isCommish: boolean,
+  isSignedIn: boolean,
+  isBookmarked: boolean,
+): string {
   const config = `<script>window.__DC=${JSON.stringify({
     slug: meta.slug,
     name: meta.name,
     isCommish,
+    isSignedIn,
+    isBookmarked,
     isTestingLeague: meta.created_during_testing,
   })};</script>`
   if (/<body[^>]*>/.test(html)) {
@@ -295,7 +303,24 @@ export async function GET(
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     const isCommish = !!user && !!meta.owner_id && user.id === meta.owner_id
-    const html = injectDcConfig(injectBaseTag(applyTokens(raw, meta), meta), meta, isCommish)
+    const isSignedIn = !!user
+    let isBookmarked = false
+    if (isSignedIn && !isCommish) {
+      const { data: bm } = await supabase
+        .from('league_bookmarks')
+        .select('league_id')
+        .eq('user_id', user.id)
+        .eq('league_id', meta.id)
+        .maybeSingle()
+      isBookmarked = !!bm
+    }
+    const html = injectDcConfig(
+      injectBaseTag(applyTokens(raw, meta), meta),
+      meta,
+      isCommish,
+      isSignedIn,
+      isBookmarked,
+    )
     return new NextResponse(html, {
       status: 200,
       headers: {

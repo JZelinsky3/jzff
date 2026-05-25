@@ -20,6 +20,21 @@ export default async function DashboardPage() {
     .select('id, name, slug, platform, last_synced_at, published_at, created_at, grace_period_ends_at')
     .order('created_at', { ascending: false })
 
+  // Bookmarked leagues this user is following (but doesn't own). Join via
+  // league_bookmarks so we get the league details in one query. Order by
+  // most-recently-bookmarked.
+  const { data: bookmarkRows } = user
+    ? await supabase
+        .from('league_bookmarks')
+        .select('created_at, league:leagues!inner(id, name, slug, platform, published_at)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+    : { data: null }
+  type BookmarkRow = { created_at: string; league: { id: string; name: string; slug: string; platform: string; published_at: string | null } }
+  const bookmarks = ((bookmarkRows ?? []) as unknown as BookmarkRow[])
+    .map((r) => r.league)
+    .filter((l) => l && l.published_at)
+
   const leaguesWithGrace = (leagues ?? []).filter((l) => l.grace_period_ends_at)
   const earliestGrace = leaguesWithGrace
     .map((l) => new Date(l.grace_period_ends_at as string))
@@ -236,10 +251,40 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      {bookmarks.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <span className="section-num">§ 02 · Bookmarked</span>
+            <span className="section-title">Leagues you follow —</span>
+            <span className="section-meta">{bookmarks.length} on the shelf</span>
+          </div>
+          <div className="card-grid dc-dashboard-grid">
+            {bookmarks.map((l) => (
+              <a
+                key={l.id}
+                href={`/leagues/${l.slug}/`}
+                className="card"
+                style={{ display: 'block' }}
+              >
+                <div className="card-corner">★ {l.platform}</div>
+                <div className="card-roman">{l.name.charAt(0).toUpperCase()}</div>
+                <div className="card-title">
+                  {splitName(l.name).head} <em>{splitName(l.name).tail}.</em>
+                </div>
+                <div className="card-desc">Bookmarked almanac — open to view.</div>
+                <div className="card-cta">
+                  Open the almanac <span className="card-arrow">→</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {showDemoCard && (
         <div className="section">
           <div className="section-header">
-            <span className="section-num">§ 02 · See it live</span>
+            <span className="section-num">§ {bookmarks.length > 0 ? '03' : '02'} · See it live</span>
             <span className="section-title">Tour a finished almanac —</span>
             <span className="section-meta">a real league&apos;s seven-year history</span>
           </div>
