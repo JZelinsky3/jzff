@@ -28,7 +28,8 @@ export default async function DashboardLayout({
         {/* Left slot: invisible on /dashboard, back arrow on sub-pages like /new. */}
         <DashboardNavBackSlot />
         <div className="nav-center">
-          <div className="nav-title" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', letterSpacing: '.04em' }}>
+          <div className="nav-kicker">Vol. II · The Library</div>
+          <div className="nav-title" style={{ letterSpacing: '.04em' }}>
             TS<em>C.</em>
           </div>
         </div>

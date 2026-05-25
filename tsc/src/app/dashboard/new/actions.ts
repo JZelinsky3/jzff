@@ -201,6 +201,14 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     settings: sourceSettings,
   })
 
+  // Stamp the user as having created at least one league. The dashboard
+  // uses this to hide the demo card once the user is past the onboarding
+  // stage — even if they later delete every league, the demo card stays
+  // hidden (no need to re-pitch the product to an active user).
+  await supabase.auth.updateUser({
+    data: { has_created_league: true },
+  })
+
   revalidatePath('/dashboard')
   redirect(`/league/${inserted.slug}`)
 }

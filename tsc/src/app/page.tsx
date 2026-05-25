@@ -61,12 +61,12 @@ export default async function Home() {
           <span className="section-meta">filled in with your data</span>
         </div>
         <div className="card-grid">
-          <Feature corner="i"   roman="I"    title={['Season', 'archives']} desc="Walks back through every year your league has existed. Final standings, every matchup, every playoff run." href="/demo/seasons/" />
-          <Feature corner="ii"  roman="II"   title={['Champion', 'rolls']}  desc="Trophy lifters, runner-ups, regular-season kings who never quite got there." href="/demo/records.html" />
-          <Feature corner="iii" roman="III"  title={['Draft', 'boards']}    desc="Round by round — who they took, what slot, who got robbed late." href="/demo/draft/" />
-          <Feature corner="iv"  roman="IV"   title={['Manager', 'dossiers']}desc="Career records, championships, head-to-head against every rival." href="/demo/managers/" />
-          <Feature corner="v"   roman="V"    title={['The', 'rivalries']}   desc="Hand-picked feuds with running scoreboards and all-time meeting logs." href="/demo/rivalries/" />
-          <Feature corner="vi"  roman="VI"   title={['One-click', 'refresh']} desc="Pull this year as it happens. We keep the chronicle current." />
+          <Feature corner="i"   roman="I"    title={['Season', 'Archives']} desc="Walks back through every year your league has existed. Final standings, every matchup, every playoff run." href="/demo/seasons/" />
+          <Feature corner="ii"  roman="II"   title={['Champion', 'Rolls']}  desc="Trophy lifters, runner-ups, regular-season kings who never quite got there." href="/demo/records.html" />
+          <Feature corner="iii" roman="III"  title={['Draft', 'Boards']}    desc="Round by round — who they took, what slot, who got robbed late." href="/demo/draft/" />
+          <Feature corner="iv"  roman="IV"   title={['Manager', 'Dossiers']}desc="Career records, championships, head-to-head against every rival." href="/demo/managers/" />
+          <Feature corner="v"   roman="V"    title={['The', 'Rivalries']}   desc="Hand-picked feuds with running scoreboards and all-time meeting logs." href="/demo/rivalries/" />
+          <Feature corner="vi"  roman="VI"   title={['One-click', 'Refresh']} desc="Pull this year as it happens. We keep the chronicle current." />
         </div>
       </div>
 

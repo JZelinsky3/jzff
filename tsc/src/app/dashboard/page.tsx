@@ -6,10 +6,17 @@ import { LeagueCardMenu } from './league-card-menu'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const { data: leagues } = await supabase
     .from('leagues')
     .select('id, name, slug, platform, last_synced_at, published_at, created_at')
     .order('created_at', { ascending: false })
+
+  // Demo card hides permanently once the user has created their first league
+  // (flag set in /dashboard/new/actions.ts after a successful insert). Stays
+  // hidden even if they later delete every league — they're past the
+  // "what does this product look like?" stage.
+  const showDemoCard = !user?.user_metadata?.has_created_league
 
   const hasLeague = (leagues?.length ?? 0) > 0
   const hasSynced = !!leagues?.some((l) => l.last_synced_at)
@@ -74,18 +81,13 @@ export default async function DashboardPage() {
         </div>
 
         {(!leagues || leagues.length === 0) ? (
-          <>
-            <div className="dc-empty">
-              <div className="dc-empty-title">No archives yet.</div>
-              <div className="dc-empty-text">
-                Pick a platform, paste your league ID, and watch the chronicle fill itself in.
-              </div>
-              <Link href="/dashboard/new" className="dc-btn">Start your first archive →</Link>
+          <div className="dc-empty">
+            <div className="dc-empty-title">No archives yet.</div>
+            <div className="dc-empty-text">
+              Pick a platform, paste your league ID, and watch the chronicle fill itself in.
             </div>
-            <div className="card-grid dc-dashboard-grid" style={{ marginTop: '2rem' }}>
-              <DemoCard />
-            </div>
-          </>
+            <Link href="/dashboard/new" className="dc-btn">Start your first archive →</Link>
+          </div>
         ) : (
           <div className="card-grid dc-dashboard-grid">
             {leagues.map((l) => (
@@ -108,10 +110,22 @@ export default async function DashboardPage() {
                 </Link>
               </div>
             ))}
-            <DemoCard />
           </div>
         )}
       </div>
+
+      {showDemoCard && (
+        <div className="section">
+          <div className="section-header">
+            <span className="section-num">§ 02 · See it live</span>
+            <span className="section-title">Tour a finished almanac —</span>
+            <span className="section-meta">a real league&apos;s seven-year history</span>
+          </div>
+          <div className="card-grid dc-dashboard-grid">
+            <DemoCard />
+          </div>
+        </div>
+      )}
 
       <SiteFooter />
     </main>
