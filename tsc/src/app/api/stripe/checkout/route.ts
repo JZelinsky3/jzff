@@ -15,7 +15,7 @@ import { getStripe, priceIdFor, getUserSubscription, isLifetimeUser } from '@/li
 const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '10')
 
 const Body = z.object({
-  tier: z.enum(['tier1', 'tier2']),
+  tier: z.enum(['tier1', 'tier2', 'tier3']),
   period: z.enum(['monthly', 'yearly']),
 })
 
@@ -60,6 +60,14 @@ export async function POST(req: Request) {
       ? { customer: existing.stripe_customer_id }
       : { customer_email: user.email }
 
+    // One trial per user, ever. If we have any prior subscription record
+    // (active, canceled, or trialing on a different tier/period), they've
+    // already used their free trial — bill them immediately. Otherwise grant
+    // the configured trial length. This prevents the loophole where a user
+    // could claim a 10-day trial on Rookie monthly, cancel, then claim
+    // another on Veteran yearly, etc.
+    const trialEligible = !existing
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
@@ -68,7 +76,7 @@ export async function POST(req: Request) {
       // round-trip.
       client_reference_id: user.id,
       subscription_data: {
-        trial_period_days: TRIAL_DAYS,
+        ...(trialEligible ? { trial_period_days: TRIAL_DAYS } : {}),
         metadata: { user_id: user.id },
       },
       // Allow promo codes — easy win, costs nothing if you never create one.
