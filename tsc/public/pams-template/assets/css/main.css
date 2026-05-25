@@ -101,9 +101,14 @@ body {
     font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
     transition: color .2s;
 }
-.nav-back {
+.nav-back, button.nav-back {
     justify-self: start;
-    background: none; border: none; cursor: pointer; outline: none;
+    background-color: transparent !important;
+    background-image: none !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    cursor: pointer; outline: none;
     /* Generous padding so the tap target hits ~44px on phones. */
     padding: .65rem .85rem;
     margin: -.4rem -.6rem;
@@ -111,10 +116,16 @@ body {
     /* Buttons default to a 3D system look with inset borders + bg on
        Safari/iOS. Reset everything so the bare gold SVG sits on the dark
        nav with no chrome. */
-    -webkit-appearance: none;
-    appearance: none;
+    -webkit-appearance: none !important;
+    appearance: none !important;
     -webkit-tap-highlight-color: transparent;
     color: var(--gold);
+    font: inherit;
+}
+.nav-back:focus, .nav-back:focus-visible, .nav-back:active, button.nav-back:focus {
+    background: transparent !important;
+    outline: none;
+    box-shadow: none !important;
 }
 /* Let clicks pass through the SVG to the parent button — fill="none"
    on the star outline otherwise leaves a dead zone in the middle where

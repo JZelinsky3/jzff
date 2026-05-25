@@ -125,12 +125,13 @@
                 '<a href="' + ctx.libraryPath + '">Library</a>';
         }
 
-        // Visitor CTA group: shown on every almanac page EXCEPT to the
-        // commissioner who owns this league — they're already signed in and
-        // running their own archive, so "Start your own" is noise for them.
-        // Also includes a bookmark toggle for signed-in non-commish viewers.
+        // Visitor / signed-in CTA group. Hidden for the commissioner of this
+        // league. For non-signed-in visitors → "Join Today" with Home + Sign
+        // Up. For signed-in non-commish viewers → "Your account" with
+        // bookmark + Library (their dashboard) + Profile.
         var visitorCta = '';
         if (!ctx.isCommish) {
+            var groupLabel = ctx.isSignedIn ? 'Your account' : 'Join Today';
             var bookmarkRow = '';
             if (ctx.isSignedIn && ctx.slug) {
                 var bmLabel = ctx.isBookmarked ? '★ Bookmarked' : '☆ Bookmark';
@@ -138,12 +139,14 @@
                     '<a href="#" id="dc-bookmark-toggle" data-slug="' + ctx.slug + '" data-on="' + (ctx.isBookmarked ? '1' : '0') + '">' +
                     bmLabel + '</a>';
             }
+            var navLinks = ctx.isSignedIn
+                ? '<a href="/dashboard">Library</a><a href="/account">Profile</a>'
+                : '<a href="/">Home</a><a href="/login?mode=signup">Sign Up</a>';
             visitorCta =
                 '<div class="nav-drop-divider"></div>' +
-                '<span class="nav-drop-label">Join Today</span>' +
+                '<span class="nav-drop-label">' + groupLabel + '</span>' +
                 bookmarkRow +
-                '<a href="/">Home</a>' +
-                (ctx.isSignedIn ? '' : '<a href="/login?mode=signup">Sign Up</a>');
+                navLinks;
         }
 
         var dropMenu = '<div class="nav-drop nav-drop-right" id="nav-drop" style="justify-self:end;margin-left:auto;">'
