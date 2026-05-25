@@ -1,7 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing']
+// Exact-match public paths (the parent landing/auth pages + standalone
+// public sections). Trailing slashes are stripped by the normalization
+// step below before comparison, so list them without trailing slash.
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/demo', '/old']
 // /api/cron/ is reached by Vercel's cron infra (no Supabase session); the
 // route handler itself enforces auth via the CRON_SECRET bearer header.
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request
@@ -37,7 +40,11 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const path = request.nextUrl.pathname
+  // Normalize: trailingSlash:true in next.config means most paths have a
+  // trailing slash. Strip it (except for root) so PUBLIC_PATHS comparisons
+  // like `/login` still match a request to `/login/`.
+  const raw = request.nextUrl.pathname
+  const path = raw.length > 1 ? raw.replace(/\/$/, '') : raw
   const isPublic =
     PUBLIC_PATHS.some((p) => path === p || path.startsWith('/auth/')) ||
     PUBLIC_PREFIXES.some((p) => path.startsWith(p))

@@ -69,7 +69,7 @@ export default async function AccountPage({
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
         <div className="hero-sup">★ Account &amp; subscription ★</div>
         <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
-          The <em>signed-in.</em>
+          The <em>chronicler.</em>
         </h1>
         <p className="hero-sub">
           Change your email, reset your password, manage what we send you,
