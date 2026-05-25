@@ -20,20 +20,33 @@ export default async function DashboardPage() {
     .select('id, name, slug, platform, last_synced_at, published_at, created_at, grace_period_ends_at')
     .order('created_at', { ascending: false })
 
-  // Bookmarked leagues this user is following (but doesn't own). Join via
-  // league_bookmarks so we get the league details in one query. Order by
-  // most-recently-bookmarked.
-  const { data: bookmarkRows } = user
-    ? await supabase
-        .from('league_bookmarks')
-        .select('created_at, league:leagues!inner(id, name, slug, platform, published_at)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-    : { data: null }
-  type BookmarkRow = { created_at: string; league: { id: string; name: string; slug: string; platform: string; published_at: string | null } }
-  const bookmarks = ((bookmarkRows ?? []) as unknown as BookmarkRow[])
-    .map((r) => r.league)
-    .filter((l) => l && l.published_at)
+  // Bookmarked leagues this user is following (but doesn't own). Two-step
+  // query because leagues RLS doesn't let the user SELECT leagues they
+  // don't own — we'd get an empty join. So: pull bookmark league_ids
+  // via the user's own RLS-allowed bookmarks table (own user_id), then
+  // resolve league details via the admin client. Safe because we already
+  // own-scope the bookmark id list before querying leagues.
+  type BookmarkedLeague = { id: string; name: string; slug: string; platform: string; published_at: string | null }
+  let bookmarks: BookmarkedLeague[] = []
+  if (user) {
+    const { data: bookmarkRows } = await supabase
+      .from('league_bookmarks')
+      .select('league_id, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    const ids = (bookmarkRows ?? []).map((r) => r.league_id as string)
+    if (ids.length > 0) {
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const admin = createAdminClient()
+      const { data: leagueRows } = await admin
+        .from('leagues')
+        .select('id, name, slug, platform, published_at')
+        .in('id', ids)
+        .not('published_at', 'is', null)
+      const byId = new Map((leagueRows ?? []).map((l) => [l.id as string, l as BookmarkedLeague]))
+      bookmarks = ids.map((id) => byId.get(id)).filter((l): l is BookmarkedLeague => !!l)
+    }
+  }
 
   const leaguesWithGrace = (leagues ?? []).filter((l) => l.grace_period_ends_at)
   const earliestGrace = leaguesWithGrace

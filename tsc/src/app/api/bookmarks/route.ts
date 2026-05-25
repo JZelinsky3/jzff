@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const Body = z.object({
   slug: z.string().min(1).max(120),
@@ -13,6 +14,7 @@ const Body = z.object({
 })
 
 export async function POST(req: Request) {
+  // Auth-gate with the regular client so we get the cookie-derived user id.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 })
@@ -21,7 +23,13 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: 'Bad request.' }, { status: 400 })
   const { slug, action } = parsed.data
 
-  const { data: league } = await supabase
+  // Leagues RLS only allows SELECT for the owner or league members. Bookmarks
+  // are explicitly for non-owners (people who DON'T have league access), so
+  // the regular client can't find the league. Use the admin client to look
+  // up the league row — safe because we still gate on the authenticated
+  // user_id for the bookmark write below.
+  const admin = createAdminClient()
+  const { data: league } = await admin
     .from('leagues')
     .select('id, owner_id')
     .eq('slug', slug)
@@ -31,6 +39,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'You own this league.' }, { status: 400 })
   }
 
+  // Bookmark writes go through the regular client so the RLS policies on
+  // league_bookmarks (auth.uid() = user_id) enforce ownership of the row.
   if (action === 'add') {
     const { error } = await supabase
       .from('league_bookmarks')
