@@ -70,6 +70,14 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large" },
   },
   alternates: { canonical: "https://jzff.online/" },
+  // Search engine site verifications. Google uses the HTML file at
+  // /public/google2963fe74b5dcc516.html; Bing uses the meta tag injected
+  // here. Both can coexist; both improve indexing → AI tool retrieval.
+  verification: {
+    other: {
+      "msvalidate.01": "61FE2490BE5D1908387539654B1C10C9",
+    },
+  },
 };
 
 const jsonLd = {
