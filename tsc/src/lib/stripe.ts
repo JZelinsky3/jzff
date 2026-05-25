@@ -228,6 +228,40 @@ export async function upsertSubscriptionFromStripe(
     { onConflict: 'user_id' },
   )
   if (error) throw new Error(`upsertSubscriptionFromStripe: ${error.message}`)
+
+  // Grace-period management: when a subscription transitions to a non-active
+  // state, mark all the user's leagues for deletion 6 months out so they
+  // have time to come back. When it transitions back to active/trialing,
+  // clear the grace flag. Idempotent — re-running on the same state is safe.
+  await syncLeagueGracePeriodForUser(userId, sub.status)
+}
+
+const SUBSCRIPTION_GRACE_MONTHS = 6
+
+async function syncLeagueGracePeriodForUser(userId: string, status: string): Promise<void> {
+  const db = createAdminClient()
+  const active = status === 'active' || status === 'trialing'
+  if (active) {
+    // Subscription healthy — clear any pending grace periods on this user's
+    // leagues (no-op if there were none).
+    await db
+      .from('leagues')
+      .update({ grace_period_ends_at: null })
+      .eq('owner_id', userId)
+      .not('grace_period_ends_at', 'is', null)
+    return
+  }
+  // Subscription unhealthy (canceled, past_due, unpaid, incomplete_expired,
+  // etc). Set grace period on leagues that don't already have one. Don't
+  // overwrite existing grace dates so we don't keep pushing the deletion
+  // out every time a subscription event fires.
+  const ends = new Date()
+  ends.setMonth(ends.getMonth() + SUBSCRIPTION_GRACE_MONTHS)
+  await db
+    .from('leagues')
+    .update({ grace_period_ends_at: ends.toISOString() })
+    .eq('owner_id', userId)
+    .is('grace_period_ends_at', null)
 }
 
 // On `customer.subscription.deleted`, Stripe still sends the subscription

@@ -15,8 +15,13 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: leagues } = await supabase
     .from('leagues')
-    .select('id, name, slug, platform, last_synced_at, published_at, created_at')
+    .select('id, name, slug, platform, last_synced_at, published_at, created_at, grace_period_ends_at')
     .order('created_at', { ascending: false })
+
+  const leaguesWithGrace = (leagues ?? []).filter((l) => l.grace_period_ends_at)
+  const earliestGrace = leaguesWithGrace
+    .map((l) => new Date(l.grace_period_ends_at as string))
+    .sort((a, b) => a.getTime() - b.getTime())[0]
 
   // Subscription summary card: shows tier + renewal/end date so commish
   // doesn't have to hop to /account just to check. Lifetime users get a
@@ -110,6 +115,36 @@ export default async function DashboardPage() {
         )}
       </section>
 
+      {leaguesWithGrace.length > 0 && earliestGrace && (
+        <div
+          style={{
+            maxWidth: '880px', margin: '1rem auto 0',
+            padding: '1rem 1.25rem',
+            background: 'rgba(160,72,48,.08)',
+            border: '1px solid rgba(160,72,48,.4)',
+            borderRadius: '2px',
+            display: 'flex', gap: '1rem', flexWrap: 'wrap',
+            alignItems: 'center', justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--rust, #a04830)', marginBottom: '.25rem' }}>
+              ★ Subscription lapsed
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
+              {leaguesWithGrace.length === 1 ? 'Your league will be' : `Your ${leaguesWithGrace.length} leagues will be`} deleted on{' '}
+              <strong style={{ color: 'var(--gold)' }}>
+                {earliestGrace.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+              </strong>.
+            </div>
+            <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.25rem' }}>
+              Resubscribe before then to keep everything — or export anything you want to save.
+            </div>
+          </div>
+          <Link href="/pricing" className="dc-btn">Resubscribe</Link>
+        </div>
+      )}
+
       <OnboardingChecklist
         storageKey="tsc_onb_dashboard"
         kicker="Welcome ★ Get started"
@@ -150,6 +185,16 @@ export default async function DashboardPage() {
                       ? `Last synced ${new Date(l.last_synced_at).toLocaleDateString()}`
                       : 'Not synced yet — open the archive to begin.'}
                   </div>
+                  {l.grace_period_ends_at && (
+                    <div style={{
+                      fontFamily: 'var(--mono)', fontSize: '.6rem',
+                      letterSpacing: '.18em', textTransform: 'uppercase',
+                      color: 'var(--rust, #a04830)',
+                      marginTop: '.5rem',
+                    }}>
+                      Auto-deletes {new Date(l.grace_period_ends_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                  )}
                   <div className="card-cta">
                     Open the archive <span className="card-arrow">→</span>
                   </div>
