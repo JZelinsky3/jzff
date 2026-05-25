@@ -1410,7 +1410,12 @@ function buildManagerHighs(s: Snapshot): unknown {
         if (seen.has(key)) continue
         seen.add(key)
         const game = asManagerGame(mt, mid)
-        if (game) games.push(game)
+        if (!game) continue
+        // Skip consolation / placement games — playoff weeks where neither
+        // participant finished top-4. A week-15 score from someone who
+        // finished 8th doesn't belong in their top-5 highs.
+        if (game.is_playoff && !isChampionshipBracketGame(s, game)) continue
+        games.push(game)
       }
     }
     games.sort((a, b) => b.self_score - a.self_score)
@@ -1468,6 +1473,8 @@ function buildRecordBook(s: Snapshot): unknown {
     for (const g of games) {
       const season = s.seasons.find((sn) => sn.id === g.season_id)
       if (!season) continue
+      // Skip consolation / placement games — same rule as buildManagerHighs.
+      if (g.is_playoff && !isChampionshipBracketGame(s, g)) continue
       const opp = s.managers.get(g.opp_id)
       const ms = (s.managerSeasonsBySeason.get(g.season_id) ?? []).find((r) => r.manager_id === m.id)
       flat.push({
