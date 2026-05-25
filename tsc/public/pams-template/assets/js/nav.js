@@ -133,7 +133,7 @@
         if (!ctx.isCommish) {
             var bookmarkRow = '';
             if (ctx.isSignedIn && ctx.slug) {
-                var bmLabel = ctx.isBookmarked ? '★ Bookmarked' : '☆ Bookmark league';
+                var bmLabel = ctx.isBookmarked ? '★ Bookmarked' : '☆ Bookmark';
                 bookmarkRow =
                     '<a href="#" id="dc-bookmark-toggle" data-slug="' + ctx.slug + '" data-on="' + (ctx.isBookmarked ? '1' : '0') + '">' +
                     bmLabel + '</a>';
@@ -284,9 +284,9 @@
                 if (!r.ok) throw new Error('bookmark failed');
                 var nowOn = !on;
                 a.setAttribute('data-on', nowOn ? '1' : '0');
-                a.textContent = nowOn ? '★ Bookmarked' : '☆ Bookmark league';
+                a.textContent = nowOn ? '★ Bookmarked' : '☆ Bookmark';
             }).catch(function () {
-                a.textContent = on ? '★ Bookmarked' : '☆ Bookmark league';
+                a.textContent = on ? '★ Bookmarked' : '☆ Bookmark';
             });
         });
     }
