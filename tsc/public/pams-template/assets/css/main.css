@@ -101,7 +101,16 @@ body {
     font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
     transition: color .2s;
 }
-.nav-back { justify-self: start; background: none; border: none; padding: 0; cursor: pointer; outline: none; }
+.nav-back {
+    justify-self: start;
+    background: none; border: none; cursor: pointer; outline: none;
+    /* Generous padding so the tap target hits ~44px on phones — the bare
+       9x14 SVG was nearly unhittable on mobile. Visual size is unchanged;
+       only the hit area grows. */
+    padding: .65rem .85rem;
+    margin: -.4rem -.6rem;
+    display: inline-flex; align-items: center; justify-content: center;
+}
 .nav-link { justify-self: end; }
 .nav-back:hover, .nav-link:hover { color: var(--gold-bright); }
 

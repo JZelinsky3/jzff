@@ -155,30 +155,58 @@
             + visitorCta
             + '</div></div>';
 
-        // ── Left slot: back arrow ─────────────────────────────────────────
-        // Resolution order:
-        //   1. data-back-href on <nav id="site-nav"> (set per page) — slug-rooted
-        //   2. hub page → /league/<slug> (management)
-        //   3. anything else → 'index.html' (the public hub)
-        var backHref, backLabel;
+        // ── Left slot: back arrow OR bookmark star ───────────────────────
+        // On the league's hub page, signed-in viewers who don't own this
+        // league get a bookmark toggle in the left slot (instead of a back
+        // arrow that doesn't really go anywhere useful for them). The
+        // commissioner gets a "Manage this league" arrow that jumps to the
+        // admin UI. Non-signed-in visitors and sub-pages keep the normal
+        // back-arrow behavior, falling through to history.back() when there
+        // was a same-origin referrer.
+        var leftSlot = '';
         var dataBackHref = nav.dataset.backHref;
         var dataBackLabel = nav.dataset.backLabel;
-        if (dataBackHref) {
-            backHref = dataBackHref;
-            backLabel = dataBackLabel || 'Back';
-        } else if (currentPage === 'hub') {
-            backHref = ctx.managePath || ctx.libraryPath;
-            backLabel = ctx.managePath ? 'Manage this league' : 'Back to library';
+        var showBookmark =
+            currentPage === 'hub' && ctx.isSignedIn && !ctx.isCommish && ctx.slug && !dataBackHref;
+
+        if (showBookmark) {
+            var isOn = ctx.isBookmarked;
+            leftSlot =
+                '<button type="button" class="nav-back" id="nav-bookmark-btn"' +
+                ' data-slug="' + ctx.slug + '" data-on="' + (isOn ? '1' : '0') + '"' +
+                ' aria-label="' + (isOn ? 'Remove bookmark' : 'Bookmark this league') + '"' +
+                ' title="' + (isOn ? 'Remove bookmark' : 'Bookmark this league') + '">' +
+                  '<svg id="nav-bookmark-svg" viewBox="0 0 24 24" width="22" height="22"' +
+                  ' fill="' + (isOn ? 'currentColor' : 'none') + '"' +
+                  ' stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">' +
+                    '<polygon points="12 2 14.9 8.5 22 9.3 16.7 14 18.2 21 12 17.5 5.8 21 7.3 14 2 9.3 9.1 8.5"/>' +
+                  '</svg>' +
+                '</button>';
         } else {
-            backHref = 'index.html';
-            backLabel = 'Back to hub';
+            var backHref, backLabel;
+            if (dataBackHref) {
+                backHref = dataBackHref;
+                backLabel = dataBackLabel || 'Back';
+            } else if (currentPage === 'hub' && ctx.isCommish) {
+                backHref = ctx.managePath;
+                backLabel = 'Manage this league';
+            } else if (currentPage === 'hub') {
+                // Visitor on hub — no useful destination by default. The
+                // click handler below upgrades to history.back() when there's
+                // a same-origin referrer; href falls back to site home.
+                backHref = '/';
+                backLabel = 'Back';
+            } else {
+                backHref = 'index.html';
+                backLabel = 'Back to hub';
+            }
+            leftSlot =
+                '<a class="nav-back" id="nav-back-link" href="' + backHref + '" aria-label="' + backLabel + '">' +
+                  '<svg viewBox="0 0 8 14" width="9" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                    '<polyline points="7 1 1 7 7 13"/>' +
+                  '</svg>' +
+                '</a>';
         }
-        var leftSlot =
-            '<a class="nav-back" id="nav-back-link" href="' + backHref + '" aria-label="' + backLabel + '">'
-              + '<svg viewBox="0 0 8 14" width="9" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
-                + '<polyline points="7 1 1 7 7 13"/>'
-              + '</svg>'
-            + '</a>';
 
         nav.className = 'nav';
         nav.innerHTML =
@@ -269,13 +297,17 @@
 
     function wireBookmarkToggle() {
         document.addEventListener('click', function (e) {
-            var a = e.target && e.target.closest && e.target.closest('#dc-bookmark-toggle');
-            if (!a) return;
+            if (!e.target || !e.target.closest) return;
+            var dropLink = e.target.closest('#dc-bookmark-toggle');
+            var navBtn = e.target.closest('#nav-bookmark-btn');
+            var el = dropLink || navBtn;
+            if (!el) return;
             e.preventDefault();
-            var slug = a.getAttribute('data-slug');
-            var on = a.getAttribute('data-on') === '1';
+            var slug = el.getAttribute('data-slug');
+            var on = el.getAttribute('data-on') === '1';
             var action = on ? 'remove' : 'add';
-            a.textContent = '…';
+            var origDropText = dropLink ? dropLink.textContent : null;
+            if (dropLink) dropLink.textContent = '…';
             fetch('/api/bookmarks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -283,10 +315,23 @@
             }).then(function (r) {
                 if (!r.ok) throw new Error('bookmark failed');
                 var nowOn = !on;
-                a.setAttribute('data-on', nowOn ? '1' : '0');
-                a.textContent = nowOn ? '★ Bookmarked' : '☆ Bookmark';
+                // Update BOTH controls (dropdown link + left-slot button) so they
+                // stay in sync regardless of which one was clicked.
+                var dropMate = document.getElementById('dc-bookmark-toggle');
+                if (dropMate) {
+                    dropMate.setAttribute('data-on', nowOn ? '1' : '0');
+                    dropMate.textContent = nowOn ? '★ Bookmarked' : '☆ Bookmark';
+                }
+                var navMate = document.getElementById('nav-bookmark-btn');
+                if (navMate) {
+                    navMate.setAttribute('data-on', nowOn ? '1' : '0');
+                    navMate.setAttribute('aria-label', nowOn ? 'Remove bookmark' : 'Bookmark this league');
+                    navMate.setAttribute('title', nowOn ? 'Remove bookmark' : 'Bookmark this league');
+                    var svg = document.getElementById('nav-bookmark-svg');
+                    if (svg) svg.setAttribute('fill', nowOn ? 'currentColor' : 'none');
+                }
             }).catch(function () {
-                a.textContent = on ? '★ Bookmarked' : '☆ Bookmark';
+                if (dropLink && origDropText) dropLink.textContent = origDropText;
             });
         });
     }
