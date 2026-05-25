@@ -6,6 +6,8 @@ import {
   getUserSubscription,
   isLifetimeUser,
   isSubscriptionActive,
+  isTestingModeActive,
+  testingModeEndsAt,
   TIER_LABELS,
 } from '@/lib/stripe'
 import { LeagueCardMenu } from './league-card-menu'
@@ -22,6 +24,9 @@ export default async function DashboardPage() {
   const earliestGrace = leaguesWithGrace
     .map((l) => new Date(l.grace_period_ends_at as string))
     .sort((a, b) => a.getTime() - b.getTime())[0]
+
+  const testingActive = isTestingModeActive()
+  const testingEnds = testingModeEndsAt()
 
   // Subscription summary card: shows tier + renewal/end date so commish
   // doesn't have to hop to /account just to check. Lifetime users get a
@@ -114,6 +119,32 @@ export default async function DashboardPage() {
           </Link>
         )}
       </section>
+
+      {testingActive && testingEnds && (
+        <div
+          style={{
+            maxWidth: '880px', margin: '1rem auto 0',
+            padding: '1rem 1.25rem',
+            background: 'rgba(232,200,137,.06)',
+            border: '1px solid var(--gold-deep)',
+            borderRadius: '2px',
+          }}
+        >
+          <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
+            ★ Free testing window
+          </div>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
+            One free league per account until{' '}
+            <strong style={{ color: 'var(--gold)' }}>
+              {testingEnds.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+            </strong>.
+          </div>
+          <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.35rem' }}>
+            Pick&apos;ems and power rankings are paid-tier features and stay locked during testing. After the window closes, free leagues enter a 3-month grace period before deletion unless you subscribe.{' '}
+            Email <a href="mailto:zelinskyjoey18@gmail.com" style={{ color: 'var(--gold)' }}>zelinskyjoey18@gmail.com</a> with bugs or suggestions.
+          </div>
+        </div>
+      )}
 
       {leaguesWithGrace.length > 0 && earliestGrace && (
         <div

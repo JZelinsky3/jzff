@@ -5,6 +5,12 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/slugify'
+import {
+  getUserSubscription,
+  isLifetimeUser,
+  isSubscriptionActive,
+  isTestingModeActive,
+} from '@/lib/stripe'
 import { sleeper, parseDivisionInfo } from '@/lib/platforms/sleeper'
 import { probeLeague as probeEspn } from '@/lib/platforms/espn'
 import { canCreateLeague } from '@/lib/stripe'
@@ -150,6 +156,14 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     settings.playoff_team_count = playoffTeamCount
   }
 
+  // Stamp the league as testing-mode-created if (a) the testing window is
+  // currently open AND (b) the user has no Stripe subscription. Paid users
+  // creating leagues during the testing window still get full features.
+  const testingNow = isTestingModeActive()
+  const existingSub = testingNow ? await getUserSubscription(user.id) : null
+  const subActive = isSubscriptionActive(existingSub)
+  const createdDuringTesting = testingNow && !subActive && !isLifetimeUser(user.id)
+
   const { data: inserted, error: insertError } = await supabase
     .from('leagues')
     .insert({
@@ -163,6 +177,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
       division_term: divisionTerm,
       division_names: finalDivisionNames,
       settings,
+      created_during_testing: createdDuringTesting,
     })
     .select('id, slug')
     .single()

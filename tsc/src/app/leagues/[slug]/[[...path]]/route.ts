@@ -30,6 +30,7 @@ type LeagueMeta = {
   founded: number | null
   published_at: string | null
   owner_id: string | null
+  created_during_testing: boolean
 }
 
 async function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
@@ -42,10 +43,11 @@ async function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
     abbreviation?: string | null
     published_at?: string | null
     owner_id?: string | null
+    created_during_testing?: boolean | null
   } | null = null
   const full = await db
     .from('leagues')
-    .select('id, name, slug, abbreviation, published_at, owner_id')
+    .select('id, name, slug, abbreviation, published_at, owner_id, created_during_testing')
     .eq('slug', slug)
     .maybeSingle()
   if (full.data) {
@@ -83,6 +85,7 @@ async function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
     founded: firstSeason?.year ?? null,
     published_at: row.published_at ?? null,
     owner_id: row.owner_id ?? null,
+    created_during_testing: !!row.created_during_testing,
   }
 }
 
@@ -136,7 +139,12 @@ function applyTokens(html: string, meta: LeagueMeta): string {
 // Inject a small config script with the current league's context so nav.js
 // can wire absolute links to the Dynasty Codex dashboard and management view.
 function injectDcConfig(html: string, meta: LeagueMeta, isCommish: boolean): string {
-  const config = `<script>window.__DC=${JSON.stringify({ slug: meta.slug, name: meta.name, isCommish })};</script>`
+  const config = `<script>window.__DC=${JSON.stringify({
+    slug: meta.slug,
+    name: meta.name,
+    isCommish,
+    isTestingLeague: meta.created_during_testing,
+  })};</script>`
   if (/<body[^>]*>/.test(html)) {
     return html.replace(/<body[^>]*>/, (m) => `${m}\n${config}`)
   }

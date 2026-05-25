@@ -75,10 +75,14 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
 
   const { data: league } = await db
     .from('leagues')
-    .select('id')
+    .select('id, created_during_testing')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) return null
+  // Pick'ems is a paid-tier feature — blocked for leagues created during
+  // the free testing window so prospects can't accidentally launch a
+  // weekly pick'ems competition on a league that's going to be deleted.
+  if (league.created_during_testing) return null
 
   const { data: liveSeason } = await db
     .from('seasons')

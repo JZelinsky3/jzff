@@ -975,7 +975,7 @@ table.data tbody tr.highlight {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="pickems/index.html" class="toc-row">
+        <a href="pickems/index.html" class="toc-row" data-paid-feature>
             <div class="toc-chapter">Ch. V</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">Weekly <em>Pick'ems.</em></div>
@@ -985,7 +985,7 @@ table.data tbody tr.highlight {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="powerrank/index.html" class="toc-row">
+        <a href="powerrank/index.html" class="toc-row" data-paid-feature>
             <div class="toc-chapter">Ch. VI</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">Power <em>Rankings.</em></div>
@@ -994,6 +994,20 @@ table.data tbody tr.highlight {
             <span class="toc-badge violet">Formula</span>
             <div class="toc-arrow">→</div>
         </a>
+
+        <script>
+          // Free testing-mode leagues don't get pickems / power rankings — those
+          // are paid-tier features. Hide their chapter cards client-side so the
+          // toc reads cleanly. window.__DC.isTestingLeague is injected by the
+          // route handler at /leagues/<slug>/[[...path]]/route.ts.
+          (function () {
+            if (window.__DC && window.__DC.isTestingLeague) {
+              document.querySelectorAll('[data-paid-feature]').forEach(function (el) {
+                el.style.display = 'none';
+              });
+            }
+          })();
+        </script>
 
         <a href="draft/index.html" class="toc-row">
             <div class="toc-chapter">Ch. VII</div>
