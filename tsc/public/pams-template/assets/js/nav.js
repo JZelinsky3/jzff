@@ -174,17 +174,22 @@
 
         if (showBookmark) {
             var isOn = ctx.isBookmarked;
+            // Use <a> instead of <button> — even with appearance:none, Safari
+            // and some Android browsers leak default button chrome (white
+            // bg, focus rings, system gradients). An anchor has none of that.
+            // Explicit hex stroke/fill (not currentColor) so it can't pick
+            // up an inherited color anywhere up the tree.
             leftSlot =
-                '<button type="button" class="nav-back" id="nav-bookmark-btn"' +
+                '<a href="#" class="nav-back" id="nav-bookmark-btn" role="button"' +
                 ' data-slug="' + ctx.slug + '" data-on="' + (isOn ? '1' : '0') + '"' +
                 ' aria-label="' + (isOn ? 'Remove bookmark' : 'Bookmark this league') + '"' +
                 ' title="' + (isOn ? 'Remove bookmark' : 'Bookmark this league') + '">' +
                   '<svg id="nav-bookmark-svg" viewBox="0 0 24 24" width="22" height="22"' +
-                  ' fill="' + (isOn ? 'currentColor' : 'none') + '"' +
-                  ' stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">' +
+                  ' fill="' + (isOn ? '#e8c889' : 'none') + '"' +
+                  ' stroke="#e8c889" stroke-width="1.8" stroke-linejoin="round">' +
                     '<polygon points="12 2 14.9 8.5 22 9.3 16.7 14 18.2 21 12 17.5 5.8 21 7.3 14 2 9.3 9.1 8.5"/>' +
                   '</svg>' +
-                '</button>';
+                '</a>';
         } else {
             var backHref, backLabel;
             if (dataBackHref) {
@@ -331,7 +336,7 @@
                     navMate.setAttribute('aria-label', nowOn ? 'Remove bookmark' : 'Bookmark this league');
                     navMate.setAttribute('title', nowOn ? 'Remove bookmark' : 'Bookmark this league');
                     var svg = document.getElementById('nav-bookmark-svg');
-                    if (svg) svg.setAttribute('fill', nowOn ? 'currentColor' : 'none');
+                    if (svg) svg.setAttribute('fill', nowOn ? '#e8c889' : 'none');
                 }
             }).catch(function () {
                 if (dropLink && origDropText) dropLink.textContent = origDropText;
