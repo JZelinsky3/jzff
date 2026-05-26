@@ -3,6 +3,11 @@ import type { BlockOption, BlockOptionValues, Theme } from './types'
 import type { LeaguePresentationData } from './leagueData'
 import {
   avatarForManager,
+  biggestBlowout,
+  closestGame,
+  highestScoringWeek,
+  longestWinStreak,
+  lowestScoringWeek,
   nameForManager,
   profileTotals,
 } from './leagueData'
@@ -465,6 +470,210 @@ const playoffApsBlock: BlockDef = {
   },
 }
 
+// ─── Highlight slides (single big stat with context) ───────────────────────
+
+function HighlightSlide({
+  eyebrow,
+  title,
+  metric,
+  metricLabel,
+  primary,
+  secondary,
+  footnote,
+}: {
+  eyebrow: string
+  title: string
+  metric: string
+  metricLabel: string
+  primary: { name: string; avatarUrl: string | null }
+  secondary?: { name: string; avatarUrl: string | null; label?: string } | null
+  footnote: string
+}) {
+  return (
+    <div className="present-slide present-slide--highlight">
+      <div className="present-eyebrow">{eyebrow}</div>
+      <h2 className="present-highlight-title">{title}</h2>
+      <div className="present-highlight-metric">
+        <div className="present-highlight-number">{metric}</div>
+        <div className="present-highlight-metric-label">{metricLabel}</div>
+      </div>
+      <div className="present-highlight-actors">
+        <div className="present-highlight-actor">
+          <Avatar url={primary.avatarUrl} name={primary.name} size={72} />
+          <div className="present-highlight-actor-name">{primary.name}</div>
+        </div>
+        {secondary ? (
+          <>
+            <div className="present-highlight-vs">{secondary.label ?? 'vs.'}</div>
+            <div className="present-highlight-actor present-highlight-actor--muted">
+              <Avatar url={secondary.avatarUrl} name={secondary.name} size={56} />
+              <div className="present-highlight-actor-name">{secondary.name}</div>
+            </div>
+          </>
+        ) : null}
+      </div>
+      <div className="present-footnote">{footnote}</div>
+    </div>
+  )
+}
+
+function gameContextSuffix(g: { isChampionship: boolean; isPlayoff: boolean }) {
+  if (g.isChampionship) return ' (championship)'
+  if (g.isPlayoff) return ' (playoffs)'
+  return ''
+}
+
+const highestScoreBlock: BlockDef = {
+  id: 'highest-score',
+  label: 'Highest-scoring week',
+  category: 'highlights',
+  description: 'Single team-week with the most points in league history.',
+  options: {
+    title: { kind: 'text', label: 'Title', placeholder: 'Highest single week', default: '' },
+  },
+  defaults: () => ({ title: 'Highest single week' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const hit = highestScoringWeek(data)
+    if (!hit) return <MissingData reason="No scored matchups recorded yet." />
+    return (
+      <HighlightSlide
+        eyebrow="Single-week record"
+        title={values.title || 'Highest single week'}
+        metric={hit.score.toFixed(1)}
+        metricLabel="points"
+        primary={{ name: nameForManager(data, hit.managerId), avatarUrl: avatarForManager(data, hit.managerId) }}
+        secondary={{
+          name: nameForManager(data, hit.opponentId),
+          avatarUrl: avatarForManager(data, hit.opponentId),
+          label: `vs. ${hit.opponentScore.toFixed(1)}`,
+        }}
+        footnote={`Week ${hit.week}, ${hit.year}${gameContextSuffix(hit)}`}
+      />
+    )
+  },
+}
+
+const lowestScoreBlock: BlockDef = {
+  id: 'lowest-score',
+  label: 'Lowest-scoring week',
+  category: 'highlights',
+  description: 'The cellar — smallest single team-week on file.',
+  options: {
+    title: { kind: 'text', label: 'Title', placeholder: 'Lowest single week', default: '' },
+  },
+  defaults: () => ({ title: 'Lowest single week' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const hit = lowestScoringWeek(data)
+    if (!hit) return <MissingData reason="No scored matchups recorded yet." />
+    return (
+      <HighlightSlide
+        eyebrow="Single-week low"
+        title={values.title || 'Lowest single week'}
+        metric={hit.score.toFixed(1)}
+        metricLabel="points"
+        primary={{ name: nameForManager(data, hit.managerId), avatarUrl: avatarForManager(data, hit.managerId) }}
+        secondary={{
+          name: nameForManager(data, hit.opponentId),
+          avatarUrl: avatarForManager(data, hit.opponentId),
+          label: `vs. ${hit.opponentScore.toFixed(1)}`,
+        }}
+        footnote={`Week ${hit.week}, ${hit.year}${gameContextSuffix(hit)}`}
+      />
+    )
+  },
+}
+
+const biggestBlowoutBlock: BlockDef = {
+  id: 'biggest-blowout',
+  label: 'Biggest blowout',
+  category: 'highlights',
+  description: 'Largest margin of victory ever recorded.',
+  options: {
+    title: { kind: 'text', label: 'Title', placeholder: 'Biggest blowout', default: '' },
+  },
+  defaults: () => ({ title: 'Biggest blowout' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const hit = biggestBlowout(data)
+    if (!hit) return <MissingData reason="No completed matchups recorded yet." />
+    return (
+      <HighlightSlide
+        eyebrow="Margin of victory"
+        title={values.title || 'Biggest blowout'}
+        metric={hit.margin.toFixed(1)}
+        metricLabel="point margin"
+        primary={{ name: nameForManager(data, hit.winnerId), avatarUrl: avatarForManager(data, hit.winnerId) }}
+        secondary={{
+          name: nameForManager(data, hit.loserId),
+          avatarUrl: avatarForManager(data, hit.loserId),
+          label: `def. ${hit.winnerScore.toFixed(1)}–${hit.loserScore.toFixed(1)}`,
+        }}
+        footnote={`Week ${hit.week}, ${hit.year}${gameContextSuffix(hit)}`}
+      />
+    )
+  },
+}
+
+const closestGameBlock: BlockDef = {
+  id: 'closest-game',
+  label: 'Closest game',
+  category: 'highlights',
+  description: 'Smallest non-tie margin ever recorded.',
+  options: {
+    title: { kind: 'text', label: 'Title', placeholder: 'Closest finish', default: '' },
+  },
+  defaults: () => ({ title: 'Closest finish' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const hit = closestGame(data)
+    if (!hit) return <MissingData reason="No completed matchups recorded yet." />
+    return (
+      <HighlightSlide
+        eyebrow="Heart attack"
+        title={values.title || 'Closest finish'}
+        metric={hit.margin.toFixed(2)}
+        metricLabel="point margin"
+        primary={{ name: nameForManager(data, hit.winnerId), avatarUrl: avatarForManager(data, hit.winnerId) }}
+        secondary={{
+          name: nameForManager(data, hit.loserId),
+          avatarUrl: avatarForManager(data, hit.loserId),
+          label: `def. ${hit.winnerScore.toFixed(1)}–${hit.loserScore.toFixed(1)}`,
+        }}
+        footnote={`Week ${hit.week}, ${hit.year}${gameContextSuffix(hit)}`}
+      />
+    )
+  },
+}
+
+const longestStreakBlock: BlockDef = {
+  id: 'longest-streak',
+  label: 'Longest win streak',
+  category: 'highlights',
+  description: 'Longest consecutive regular-season wins, all-time.',
+  options: {
+    title: { kind: 'text', label: 'Title', placeholder: 'Longest win streak', default: '' },
+  },
+  defaults: () => ({ title: 'Longest win streak' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const hit = longestWinStreak(data)
+    if (!hit) return <MissingData reason="Not enough regular-season games yet." />
+    const span = hit.startYear === hit.endYear ? `${hit.startYear}` : `${hit.startYear}–${hit.endYear}`
+    return (
+      <HighlightSlide
+        eyebrow="Regular season"
+        title={values.title || 'Longest win streak'}
+        metric={String(hit.length)}
+        metricLabel="straight wins"
+        primary={{ name: hit.canonicalName, avatarUrl: hit.avatarUrl }}
+        footnote={`${span}`}
+      />
+    )
+  },
+}
+
 export const BLOCKS: BlockDef[] = [
   titleBlock,
   sectionBlock,
@@ -474,6 +683,11 @@ export const BLOCKS: BlockDef[] = [
   allTimePointsBlock,
   championRollBlock,
   playoffApsBlock,
+  highestScoreBlock,
+  lowestScoreBlock,
+  biggestBlowoutBlock,
+  closestGameBlock,
+  longestStreakBlock,
   customCalloutBlock,
   customTextBlock,
   customImageBlock,

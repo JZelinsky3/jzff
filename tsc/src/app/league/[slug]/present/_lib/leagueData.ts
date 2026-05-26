@@ -278,3 +278,188 @@ export function profileTotals(data: LeaguePresentationData): ProfileTotals[] {
   const hidden = new Set(data.profiles.filter((p) => p.isHidden).map((p) => p.id))
   return [...acc.values()].filter((r) => !hidden.has(r.profileId))
 }
+
+// ─── Highlight helpers ──────────────────────────────────────────────────────
+
+export type WeekHighlight = {
+  managerId: string         // who did it
+  opponentId: string
+  score: number
+  opponentScore: number
+  week: number
+  year: number
+  isPlayoff: boolean
+  isChampionship: boolean
+}
+
+// Pulls every individual team-week score with its surrounding context.
+// Used by highest/lowest score helpers below. Skips matchups where the
+// score is null (incomplete sync) or zero (almost always a sync artifact
+// for unplayed bye weeks rather than a real zero performance).
+function weekScores(data: LeaguePresentationData): WeekHighlight[] {
+  const yearById = new Map(data.seasons.map((s) => [s.id, s.year]))
+  const out: WeekHighlight[] = []
+  for (const m of data.matchups) {
+    const year = yearById.get(m.seasonId)
+    if (year == null) continue
+    if (m.scoreA != null && m.scoreA > 0) {
+      out.push({
+        managerId: m.managerAId,
+        opponentId: m.managerBId,
+        score: m.scoreA,
+        opponentScore: m.scoreB ?? 0,
+        week: m.week,
+        year,
+        isPlayoff: m.isPlayoff,
+        isChampionship: m.isChampionship,
+      })
+    }
+    if (m.scoreB != null && m.scoreB > 0) {
+      out.push({
+        managerId: m.managerBId,
+        opponentId: m.managerAId,
+        score: m.scoreB,
+        opponentScore: m.scoreA ?? 0,
+        week: m.week,
+        year,
+        isPlayoff: m.isPlayoff,
+        isChampionship: m.isChampionship,
+      })
+    }
+  }
+  return out
+}
+
+export function highestScoringWeek(data: LeaguePresentationData): WeekHighlight | null {
+  const all = weekScores(data)
+  if (all.length === 0) return null
+  return all.reduce((best, x) => (x.score > best.score ? x : best))
+}
+
+export function lowestScoringWeek(data: LeaguePresentationData): WeekHighlight | null {
+  const all = weekScores(data)
+  if (all.length === 0) return null
+  return all.reduce((best, x) => (x.score < best.score ? x : best))
+}
+
+export type MarginHighlight = {
+  winnerId: string
+  loserId: string
+  winnerScore: number
+  loserScore: number
+  margin: number
+  week: number
+  year: number
+  isPlayoff: boolean
+  isChampionship: boolean
+}
+
+function marginGames(data: LeaguePresentationData): MarginHighlight[] {
+  const yearById = new Map(data.seasons.map((s) => [s.id, s.year]))
+  const out: MarginHighlight[] = []
+  for (const m of data.matchups) {
+    if (m.scoreA == null || m.scoreB == null) continue
+    if (m.scoreA === 0 && m.scoreB === 0) continue
+    const year = yearById.get(m.seasonId)
+    if (year == null) continue
+    const aWins = m.scoreA > m.scoreB
+    out.push({
+      winnerId: aWins ? m.managerAId : m.managerBId,
+      loserId:  aWins ? m.managerBId : m.managerAId,
+      winnerScore: aWins ? m.scoreA : m.scoreB,
+      loserScore:  aWins ? m.scoreB : m.scoreA,
+      margin: Math.abs(m.scoreA - m.scoreB),
+      week: m.week,
+      year,
+      isPlayoff: m.isPlayoff,
+      isChampionship: m.isChampionship,
+    })
+  }
+  return out
+}
+
+export function biggestBlowout(data: LeaguePresentationData): MarginHighlight | null {
+  const all = marginGames(data)
+  if (all.length === 0) return null
+  return all.reduce((best, x) => (x.margin > best.margin ? x : best))
+}
+
+export function closestGame(data: LeaguePresentationData): MarginHighlight | null {
+  // Filter out ties (margin = 0) — "closest game" tradition means closest
+  // finish that still had a winner.
+  const all = marginGames(data).filter((g) => g.margin > 0)
+  if (all.length === 0) return null
+  return all.reduce((best, x) => (x.margin < best.margin ? x : best))
+}
+
+export type StreakResult = {
+  profileId: string
+  canonicalName: string
+  avatarUrl: string | null
+  length: number
+  startYear: number
+  endYear: number
+}
+
+// Longest consecutive regular-season win streak per profile (playoff games
+// excluded so a single championship run doesn't dominate). Walks results
+// chronologically — (year asc, week asc) — and tracks the longest run.
+export function longestWinStreak(data: LeaguePresentationData): StreakResult | null {
+  const yearById = new Map(data.seasons.map((s) => [s.id, s.year]))
+  const managerToProfile = new Map(data.managers.map((m) => [m.id, m.profileId]))
+
+  type Game = { profileId: string; year: number; week: number; won: boolean }
+  const games: Game[] = []
+  for (const m of data.matchups) {
+    if (m.isPlayoff) continue
+    if (m.scoreA == null || m.scoreB == null) continue
+    if (m.scoreA === m.scoreB) continue
+    const year = yearById.get(m.seasonId)
+    if (year == null) continue
+    const aWins = m.scoreA > m.scoreB
+    const pidA = managerToProfile.get(m.managerAId)
+    const pidB = managerToProfile.get(m.managerBId)
+    if (pidA) games.push({ profileId: pidA, year, week: m.week, won: aWins })
+    if (pidB) games.push({ profileId: pidB, year, week: m.week, won: !aWins })
+  }
+  games.sort((a, b) => a.year - b.year || a.week - b.week)
+
+  const byProfile = new Map<string, Game[]>()
+  for (const g of games) {
+    let arr = byProfile.get(g.profileId)
+    if (!arr) { arr = []; byProfile.set(g.profileId, arr) }
+    arr.push(g)
+  }
+
+  let best: StreakResult | null = null
+  for (const [pid, list] of byProfile) {
+    let runLen = 0, runStart: Game | null = null
+    let bestLen = 0, bestStart: Game | null = null, bestEnd: Game | null = null
+    for (const g of list) {
+      if (g.won) {
+        if (runLen === 0) runStart = g
+        runLen++
+        if (runLen > bestLen) {
+          bestLen = runLen
+          bestStart = runStart
+          bestEnd = g
+        }
+      } else {
+        runLen = 0
+        runStart = null
+      }
+    }
+    if (bestLen > 0 && (!best || bestLen > best.length)) {
+      const p = data.profiles.find((x) => x.id === pid)
+      best = {
+        profileId: pid,
+        canonicalName: p?.canonicalName ?? '—',
+        avatarUrl: p?.avatarUrl ?? null,
+        length: bestLen,
+        startYear: bestStart?.year ?? 0,
+        endYear: bestEnd?.year ?? 0,
+      }
+    }
+  }
+  return best
+}

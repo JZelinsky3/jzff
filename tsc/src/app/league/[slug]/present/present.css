@@ -522,6 +522,63 @@
     letter-spacing: .05em;
 }
 
+/* Highlight slides — big metric, primary actor, optional secondary */
+.present-slide--highlight {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    text-align: center;
+}
+.present-highlight-title {
+    font-family: var(--p-display-font);
+    font-size: clamp(2.25rem, 6vw, 4.5rem);
+    line-height: 1.05;
+    margin: 0;
+}
+.present-highlight-metric { display: flex; flex-direction: column; align-items: center; gap: .25rem; }
+.present-highlight-number {
+    font-family: var(--p-display-font);
+    font-size: clamp(4rem, 13vw, 11rem);
+    line-height: .95;
+    color: var(--p-accent);
+}
+.present-highlight-metric-label {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.7rem, 1.1vw, 1rem);
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+}
+.present-highlight-actors {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.present-highlight-actor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .55rem;
+}
+.present-highlight-actor--muted { opacity: .7; }
+.present-highlight-actor-name {
+    font-family: var(--p-display-font);
+    font-size: clamp(1.25rem, 2.4vw, 2rem);
+    line-height: 1.1;
+    color: var(--p-fg);
+}
+.present-highlight-vs {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.7rem, 1.1vw, .95rem);
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+    padding: 0 .25rem;
+}
+
 /* Champion roll call — two-column rows, larger avatars */
 .present-champ-list {
     display: grid;
