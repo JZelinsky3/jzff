@@ -26,6 +26,7 @@ export function AddLeagueForm() {
   const [swid, setSwid] = useState('')
   const [espnS2, setEspnS2] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
+  const [draftScoringProfile, setDraftScoringProfile] = useState<'ppr_6pt' | 'half_4pt'>('ppr_6pt')
 
   function handlePreview() {
     setPreviewMsg(null)
@@ -138,6 +139,24 @@ export function AddLeagueForm() {
           placeholder="Auto-filled from your platform"
           className="dc-input"
         />
+      </div>
+
+      <div className="dc-field">
+        <label htmlFor="draftScoringProfile" className="dc-label">Draft scoring profile</label>
+        <select
+          id="draftScoringProfile"
+          name="draftScoringProfile"
+          value={draftScoringProfile}
+          onChange={(e) => setDraftScoringProfile(e.target.value as typeof draftScoringProfile)}
+          className="dc-select"
+        >
+          <option value="ppr_6pt">Full PPR · 6pt passing TDs</option>
+          <option value="half_4pt">Half PPR · 4pt passing TDs</option>
+        </select>
+        <span className="dc-checkbox-hint">
+          Used to grade past drafts (Steal of the Year, Bust of the Year, Heartbreakers).
+          End-of-season FantasyPros totals are evaluated under this scoring. Change anytime in League Settings.
+        </span>
       </div>
 
       <div className="dc-field">

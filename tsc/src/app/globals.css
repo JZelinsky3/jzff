@@ -4367,4 +4367,15 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .onb-step-cta { width: 100%; text-align: center; margin-top: .25rem; }
 }
 
+/* Inset full-width dashboard banners (testing-window notice, grace-period
+   notice) on mobile so they don't go edge-to-edge while every other block on
+   the page sits inside `.section`'s 1.25rem inset. The component sets its own
+   maxWidth + auto-margin inline, so we override the margin with !important. */
+@media (max-width: 640px) {
+    .dc-banner {
+        margin-left: 1.25rem !important;
+        margin-right: 1.25rem !important;
+    }
+}
+
 

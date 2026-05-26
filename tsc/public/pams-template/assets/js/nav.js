@@ -139,9 +139,19 @@
                     '<a href="#" id="dc-bookmark-toggle" data-slug="' + ctx.slug + '" data-on="' + (ctx.isBookmarked ? '1' : '0') + '">' +
                     bmLabel + '</a>';
             }
+            // Visitors get two distinct affordances instead of one each labeled
+            // Sign In / Sign Up:
+            //   • Sign in            → /login?next=&from=<here>. After auth they
+            //                          land back on the league they were on.
+            //   • Start an archive   → /login?mode=signup&from=<here>. No
+            //                          `next`, so after auth they land on
+            //                          /dashboard to build their own.
+            // enhanceAuthLinks() below stamps the params on at runtime.
             var navLinks = ctx.isSignedIn
                 ? '<a href="/dashboard">Library</a><a href="/account">Profile</a>'
-                : '<a href="/">Home</a><a href="/login">Sign In</a><a href="/login?mode=signup">Sign Up</a>';
+                : '<a href="/">Home</a>'
+                + '<a href="/login" data-dc-signin>Sign in</a>'
+                + '<a href="/login?mode=signup">Start an archive</a>';
             visitorCta =
                 '<div class="nav-drop-divider"></div>' +
                 '<span class="nav-drop-label">' + groupLabel + '</span>' +
@@ -289,17 +299,31 @@
         '.nav-drop-menu .nav-drop-label:not(:first-child) { margin-top: .15rem; }';
     document.head.appendChild(style);
 
-    // Enhance any signup link (in the dropdown's "Join Today" group + the
-    // footer CTA on every almanac page) to carry a `from` query param. The
-    // /login page reads `from` and uses it for the back arrow, so visitors
-    // who arrive from /leagues/<slug>/whatever get sent back to that page
-    // instead of /.
-    function enhanceSignupLinks() {
+    // Stamp the current league URL onto auth links so visitors land somewhere
+    // sensible. Two distinct behaviors:
+    //   • [data-dc-signin]              → next + from = current page. Returns
+    //                                      them to the league they were reading
+    //                                      after signing in, AND the /login
+    //                                      back-arrow points there too.
+    //   • a[href^="/login?mode=signup"] → from only. Sign-up flow always lands
+    //                                      on /dashboard after auth (no
+    //                                      `next`), but the back-arrow still
+    //                                      returns to the league they were on.
+    function enhanceAuthLinks() {
         var here = window.location.pathname + window.location.search;
         var encoded = encodeURIComponent(here);
-        document.querySelectorAll('a[href="/login?mode=signup"], a[href="/login"]').forEach(function (a) {
-            var sep = a.getAttribute('href').indexOf('?') === -1 ? '?' : '&';
-            a.href = a.getAttribute('href') + sep + 'from=' + encoded;
+
+        document.querySelectorAll('a[data-dc-signin]').forEach(function (a) {
+            var base = a.getAttribute('href') || '/login';
+            var sep = base.indexOf('?') === -1 ? '?' : '&';
+            a.href = base + sep + 'next=' + encoded + '&from=' + encoded;
+        });
+
+        document.querySelectorAll('a[href^="/login?mode=signup"]').forEach(function (a) {
+            var base = a.getAttribute('href');
+            // Idempotent: don't double-stamp if init runs twice.
+            if (base.indexOf('from=') !== -1) return;
+            a.href = base + '&from=' + encoded;
         });
     }
 
@@ -346,7 +370,7 @@
 
     function init() {
         buildNav();
-        enhanceSignupLinks();
+        enhanceAuthLinks();
         wireBookmarkToggle();
     }
 

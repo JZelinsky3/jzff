@@ -32,6 +32,9 @@ const Schema = z.object({
   // ESPN-only private-league cookies. Both must be present together or both blank.
   swid: z.string().trim().optional(),
   espnS2: z.string().trim().optional(),
+  // Scoring profile used to evaluate draft picks on the draft history page.
+  // Maps to public/data/fantasy_ranks/<profile>/<year>.json.
+  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt']).default('ppr_6pt'),
 })
 
 type ActionResult = { ok: false; error: string } | { ok: true }
@@ -58,6 +61,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     playoffTeamCount: formData.get('playoffTeamCount') || undefined,
     swid: formData.get('swid') || undefined,
     espnS2: formData.get('espnS2') || undefined,
+    draftScoringProfile: formData.get('draftScoringProfile') || undefined,
   })
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
@@ -176,6 +180,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
       division_count: divisionCount,
       division_term: divisionTerm,
       division_names: finalDivisionNames,
+      draft_scoring_profile: parsed.data.draftScoringProfile,
       settings,
       created_during_testing: createdDuringTesting,
     })

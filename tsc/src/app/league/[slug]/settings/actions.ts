@@ -12,6 +12,7 @@ const Schema = z.object({
   abbreviation: z.string().trim().max(16).optional(),
   slug: z.string().trim().max(60).optional(),
   prizePool: z.string().trim().max(60).optional(),
+  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt']).optional(),
 })
 
 type Result = { ok: true } | { ok: false; error: string }
@@ -23,6 +24,7 @@ export async function updateLeagueSettings(_prev: Result | null, formData: FormD
     abbreviation: formData.get('abbreviation') || undefined,
     slug: formData.get('slug') || undefined,
     prizePool: formData.get('prizePool') ?? undefined,
+    draftScoringProfile: formData.get('draftScoringProfile') || undefined,
   })
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
 
@@ -61,6 +63,9 @@ export async function updateLeagueSettings(_prev: Result | null, formData: FormD
   // prizePool: '' means clear; undefined means don't touch
   if (parsed.data.prizePool !== undefined) {
     updatePayload.prize_pool = parsed.data.prizePool || null
+  }
+  if (parsed.data.draftScoringProfile) {
+    updatePayload.draft_scoring_profile = parsed.data.draftScoringProfile
   }
   const { error } = await supabase
     .from('leagues')

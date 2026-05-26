@@ -321,7 +321,8 @@ body { background: var(--dg-bg); }
 /* ── First round pivot table ── */
 .r1-pivot-wrap { overflow-x: auto; border: 1px solid var(--dg-line); }
 .r1-pivot {
-    border-collapse: collapse; min-width: 100%; width: max-content;
+    border-collapse: collapse; width: 100%; min-width: 100%;
+    table-layout: fixed;
 }
 .r1-pivot th {
     font-family: var(--mono); font-weight: 700;
@@ -333,12 +334,16 @@ body { background: var(--dg-bg); }
     color: var(--dg-accent); text-align: center;
     white-space: nowrap;
 }
-.r1-pivot th:first-child { text-align: left; min-width: 90px; }
+/* Manager column gets a fixed width so it can't dominate the row when there
+   are only 1–2 year columns. Year columns each get an equal share of the
+   remaining width via table-layout: fixed. */
+.r1-pivot th:first-child { text-align: left; width: 11rem; min-width: 11rem; }
 .r1-pivot td {
     padding: .6rem .75rem;
     border-right: 1px solid var(--dg-line-soft);
     border-bottom: 1px solid var(--dg-line-soft);
-    vertical-align: top; min-width: 110px;
+    vertical-align: top;
+    overflow: hidden;
 }
 .r1-pivot tbody tr:last-child td { border-bottom: none; }
 .r1-pivot tbody tr:nth-child(odd) td  { background: var(--dg-card); }
@@ -349,6 +354,7 @@ body { background: var(--dg-bg); }
     font-size: .82rem; color: var(--cream);
     border-right: 2px solid var(--dg-line) !important;
     white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
     position: sticky; left: 0; z-index: 1;
 }
 .r1-year-cell { text-align: center; }
@@ -882,7 +888,7 @@ body { background: var(--dg-bg); }
             <div id="bestWorstContainer">
                 <div class="value-unavail">
                     <p>Rankings data not yet available</p>
-                    <p>Run <code>08_scrape_fantasy_ranks.py</code> to unlock steal &amp; bust of the year</p>
+                    <p>Final-season rankings haven&rsquo;t been published yet for these years.</p>
                 </div>
             </div>
         </section>
@@ -922,7 +928,7 @@ body { background: var(--dg-bg); }
             <div id="valueContainer">
                 <div class="value-unavail">
                     <p>Rankings data not yet available</p>
-                    <p>Run <code>08_scrape_fantasy_ranks.py</code> to unlock steals, busts &amp; heartbreakers</p>
+                    <p>Final-season rankings haven&rsquo;t been published yet for these years.</p>
                 </div>
             </div>
         </section>
@@ -947,6 +953,7 @@ var POS_COLORS = {
 };
 var POS_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
+var SCORING_PROFILE = 'ppr_6pt';
 var yearData      = {};
 var rankData      = {};
 var draftPosRanks = {};
@@ -979,6 +986,10 @@ Promise.all([
     var league = results[2];
     YEARS = dir ? (dir.drafts || []).map(function (d) { return d.year; }).sort(function (a, b) { return a - b; }) : [];
     RETIRED = mgrs ? (mgrs.managers || []).filter(function (m) { return !m.is_current; }).map(function (m) { return m.name; }) : [];
+
+    if (league && league.draft_scoring_profile) {
+        SCORING_PROFILE = league.draft_scoring_profile;
+    }
 
     // Populate hero — driven by league.json + managers count
     if (league) {
@@ -1076,7 +1087,7 @@ function loadAllRankings(cb) {
     var remaining = YEARS.length;
     var anyLoaded = false;
     YEARS.forEach(function (y) {
-        fetch('data/fantasy_ranks/' + y + '.json')
+        fetch('/data/fantasy_ranks/' + SCORING_PROFILE + '/' + y + '.json')
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 var players = d.players || [];

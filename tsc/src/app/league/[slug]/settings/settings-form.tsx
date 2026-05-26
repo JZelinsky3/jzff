@@ -23,6 +23,7 @@ export function SettingsForm({
   currentSlug,
   currentAbbreviation,
   currentPrizePool,
+  currentDraftScoringProfile,
   savedJustNow,
 }: {
   leagueId: string
@@ -30,6 +31,7 @@ export function SettingsForm({
   currentSlug: string
   currentAbbreviation: string | null
   currentPrizePool: string | null
+  currentDraftScoringProfile: 'ppr_6pt' | 'half_4pt'
   savedJustNow: boolean
 }) {
   const [state, formAction, isPending] = useActionState(updateLeagueSettings, null)
@@ -37,6 +39,7 @@ export function SettingsForm({
   const [abbr, setAbbr] = useState(currentAbbreviation ?? '')
   const [slug, setSlug] = useState(currentSlug)
   const [prizePool, setPrizePool] = useState(currentPrizePool ?? '')
+  const [draftScoringProfile, setDraftScoringProfile] = useState<'ppr_6pt' | 'half_4pt'>(currentDraftScoringProfile)
   // Mini calculator (members × buy-in × years). User can apply it OR ignore — the
   // final number stays free-form so they can hand-enter totals that include
   // variable buy-ins across years.
@@ -171,6 +174,24 @@ export function SettingsForm({
             Doesn&apos;t auto-fill if buy-ins varied across years — paste your own total in that case.
           </span>
         </details>
+      </div>
+
+      <div className="dc-field">
+        <label htmlFor="draftScoringProfile" className="dc-label">Draft scoring profile</label>
+        <select
+          id="draftScoringProfile"
+          name="draftScoringProfile"
+          value={draftScoringProfile}
+          onChange={(e) => setDraftScoringProfile(e.target.value as typeof draftScoringProfile)}
+          className="dc-select"
+        >
+          <option value="ppr_6pt">Full PPR · 6pt passing TDs</option>
+          <option value="half_4pt">Half PPR · 4pt passing TDs</option>
+        </select>
+        <span className="dc-checkbox-hint">
+          Used to grade past drafts on the History tab (Steal of the Year, Bust of the Year, Heartbreakers).
+          End-of-season FantasyPros totals are evaluated under this scoring.
+        </span>
       </div>
 
       <button type="submit" disabled={isPending} className="dc-btn dc-btn-block">

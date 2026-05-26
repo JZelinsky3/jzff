@@ -21,6 +21,7 @@ type LeagueRow = {
   division_term: 'division' | 'conference'
   division_names: string[]
   last_synced_at: string | null
+  draft_scoring_profile: 'ppr_6pt' | 'half_4pt'
 }
 
 type SeasonRow = {
@@ -125,39 +126,40 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
   // the pre-migration shape so the exporter works against either schema.
   let leagueRaw: Partial<LeagueRow> | null = null
   {
-    // Try with the richest column set; fall back per missing-column error.
-    // Try with prize_pool (migration 0007); fall back to without it.
-    const richestPlus = await db
-      .from('leagues')
-      .select('id, name, platform, external_id, abbreviation, prize_pool, division_count, division_term, division_names, last_synced_at')
-      .eq('id', leagueId)
-      .single()
-    if (richestPlus.data) {
-      leagueRaw = richestPlus.data as Partial<LeagueRow>
-    } else {
-      const richest = await db
-        .from('leagues')
+    // Try with the richest column set; fall back per missing-column error so
+    // the exporter still works against pre-migration databases.
+    const queries: Array<() => Promise<{ data: unknown }>> = [
+      // migration 0017 (draft_scoring_profile)
+      () => db.from('leagues')
+        .select('id, name, platform, external_id, abbreviation, prize_pool, division_count, division_term, division_names, last_synced_at, draft_scoring_profile')
+        .eq('id', leagueId)
+        .single() as unknown as Promise<{ data: unknown }>,
+      // migration 0007 (prize_pool)
+      () => db.from('leagues')
+        .select('id, name, platform, external_id, abbreviation, prize_pool, division_count, division_term, division_names, last_synced_at')
+        .eq('id', leagueId)
+        .single() as unknown as Promise<{ data: unknown }>,
+      // migration 0004 (abbreviation)
+      () => db.from('leagues')
         .select('id, name, platform, external_id, abbreviation, division_count, division_term, division_names, last_synced_at')
         .eq('id', leagueId)
-        .single()
-      if (richest.data) {
-        leagueRaw = richest.data as Partial<LeagueRow>
-      } else {
-        const noAbbr = await db
-          .from('leagues')
-          .select('id, name, platform, external_id, division_count, division_term, division_names, last_synced_at')
-          .eq('id', leagueId)
-          .single()
-        if (noAbbr.data) {
-          leagueRaw = noAbbr.data as Partial<LeagueRow>
-        } else {
-          const bare = await db
-            .from('leagues')
-            .select('id, name, platform, external_id, last_synced_at')
-            .eq('id', leagueId)
-            .single()
-          leagueRaw = bare.data as Partial<LeagueRow> | null
-        }
+        .single() as unknown as Promise<{ data: unknown }>,
+      // migration 0003 (divisions)
+      () => db.from('leagues')
+        .select('id, name, platform, external_id, division_count, division_term, division_names, last_synced_at')
+        .eq('id', leagueId)
+        .single() as unknown as Promise<{ data: unknown }>,
+      // pre-migration baseline
+      () => db.from('leagues')
+        .select('id, name, platform, external_id, last_synced_at')
+        .eq('id', leagueId)
+        .single() as unknown as Promise<{ data: unknown }>,
+    ]
+    for (const q of queries) {
+      const r = await q()
+      if (r.data) {
+        leagueRaw = r.data as Partial<LeagueRow>
+        break
       }
     }
   }
@@ -173,6 +175,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     division_term: leagueRaw.division_term ?? 'division',
     division_names: leagueRaw.division_names ?? [],
     last_synced_at: leagueRaw.last_synced_at ?? null,
+    draft_scoring_profile: leagueRaw.draft_scoring_profile ?? 'ppr_6pt',
   }
 
   // First batch: queries that have a direct league_id filter. These are
@@ -642,6 +645,7 @@ function buildLeagueJson(s: Snapshot): unknown {
     former_members_count: formerMembers,
     all_seasons: years,
     defending_champion: defendingChampion,
+    draft_scoring_profile: s.league.draft_scoring_profile,
   }
 }
 
@@ -811,11 +815,18 @@ function buildDraftFile(s: Snapshot, season: SeasonRow): unknown | null {
   for (const r of ms) teamNameByManager.set(r.manager_id, r.team_name)
   const rounds = draft.rounds ?? Math.ceil(picks.length / Math.max(1, ms.length))
 
+  // Resolve each pick's manager through its profile group so a renamed profile
+  // (manager_profiles.canonical_name) propagates to draft history without a
+  // re-sync. Without this, the old platform display_name sticks around.
+  const managerToGroup = buildManagerToGroup(buildProfileGroups(s))
+
   const sorted = [...picks].sort((a, b) => a.pick - b.pick)
   return {
     year: season.year,
     picks: sorted.map((p) => {
       const mgr = p.manager_id ? s.managers.get(p.manager_id) : null
+      const group = mgr ? managerToGroup.get(mgr.id) : undefined
+      const canonicalName = group ? groupDisplayName(group) : (mgr?.display_name ?? null)
       const teamsPerRound = Math.max(1, ms.length)
       const round_pick = ((p.pick - 1) % teamsPerRound) + 1
       return {
@@ -826,9 +837,9 @@ function buildDraftFile(s: Snapshot, season: SeasonRow): unknown | null {
         player_name: p.player_name,
         position: p.position,
         nfl_team: p.nfl_team,
-        team_name: mgr ? teamNameByManager.get(mgr.id) ?? mgr.team_name ?? mgr.display_name : null,
-        manager_name: mgr?.display_name ?? null,
-        user_id: userId(mgr ?? undefined),
+        team_name: mgr ? teamNameByManager.get(mgr.id) ?? mgr.team_name ?? canonicalName : null,
+        manager_name: canonicalName,
+        user_id: userId(group?.primary ?? mgr ?? undefined),
       }
     }),
     _rounds: rounds, // unused by pams but handy when debugging shape diffs
@@ -1480,6 +1491,16 @@ type WeeklyExtreme = {
 }
 
 function buildRecordBook(s: Snapshot): unknown {
+  // Resolve every manager.id → its profile group's canonical name so renaming
+  // a profile (manager_profiles.canonical_name) propagates to every line of the
+  // record book without re-sync.
+  const managerToGroup = buildManagerToGroup(buildProfileGroups(s))
+  const ownerName = (mgr: ManagerRow | undefined): string => {
+    if (!mgr) return ''
+    const g = managerToGroup.get(mgr.id)
+    return g ? groupDisplayName(g) : mgr.display_name
+  }
+
   // Flatten every (manager, week) result, then sort/slice for each category.
   const flat: WeeklyExtreme[] = []
   for (const m of s.managers.values()) {
@@ -1493,16 +1514,17 @@ function buildRecordBook(s: Snapshot): unknown {
       if (g.is_playoff && !isChampionshipBracketGame(s, g)) continue
       const opp = s.managers.get(g.opp_id)
       const ms = (s.managerSeasonsBySeason.get(g.season_id) ?? []).find((r) => r.manager_id === m.id)
+      const selfName = ownerName(m)
       flat.push({
         season: season.year,
         week: g.week,
         is_playoff: g.is_playoff,
         user_id: userId(m),
-        owner: m.display_name,
-        team_name: ms?.team_name ?? m.team_name ?? m.display_name,
+        owner: selfName,
+        team_name: ms?.team_name ?? m.team_name ?? selfName,
         score: round2(g.self_score),
         opp_user_id: userId(opp ?? undefined),
-        opp_owner: opp?.display_name ?? '',
+        opp_owner: ownerName(opp),
         opp_score: round2(g.opp_score),
         result: g.result,
         margin: g.margin,
@@ -1560,8 +1582,9 @@ function buildRecordBook(s: Snapshot): unknown {
       for (const g of games) {
         total_pf += g.self_score
         const opp = s.managers.get(g.opp_id)
-        if (g.self_score > high) { high = g.self_score; highWeek = g.week; highOpp = opp?.display_name ?? '' }
-        if (g.self_score < low) { low = g.self_score; lowWeek = g.week; lowOpp = opp?.display_name ?? '' }
+        const oppName = ownerName(opp)
+        if (g.self_score > high) { high = g.self_score; highWeek = g.week; highOpp = oppName }
+        if (g.self_score < low) { low = g.self_score; lowWeek = g.week; lowOpp = oppName }
         if (g.is_playoff) {
           pl_games++; pl_pf += g.self_score
           if (g.result === 'W') pl_w++
@@ -1570,11 +1593,12 @@ function buildRecordBook(s: Snapshot): unknown {
         }
       }
       const totalReg = ms.wins + ms.losses + ms.ties
+      const selfName = ownerName(m)
       seasonRows.push({
         season: season.year,
         user_id: userId(m),
-        owner: m.display_name,
-        team_name: ms.team_name ?? m.team_name ?? m.display_name,
+        owner: selfName,
+        team_name: ms.team_name ?? m.team_name ?? selfName,
         final_rank: ms.final_rank ?? null,
         reg_season_rank: ms.regular_rank ?? null,
         reg_record: recordStr(ms.wins, ms.losses, ms.ties),
@@ -1651,7 +1675,7 @@ function buildRecordBook(s: Snapshot): unknown {
         total_pf: round2(pf),
         total_pa: round2(pa),
         user_id: userId(m),
-        owner: m.display_name,
+        owner: ownerName(m),
       }
       if (result === 'W') winStreaks.push(streak)
       else lossStreaks.push(streak)
@@ -1709,12 +1733,12 @@ function buildRecordBook(s: Snapshot): unknown {
       if (games > 0 && r.losses === 0 && r.ties === 0) perfectYears.push(season.year)
       if (games > 0 && r.wins === 0 && r.ties === 0) winlessYears.push(season.year)
     }
-    // Streaks tracked by primary's display_name in the streak arrays. For a merged profile,
-    // each platform identity contributed its own streaks under its own display_name — pull all
-    // matching names, then pick the longest.
-    const names = new Set(g.managers.map((m) => m.display_name))
-    const myWin = winStreaks.filter((str) => names.has(str.owner)).sort((a, b) => b.length - a.length)[0]
-    const myLoss = lossStreaks.filter((str) => names.has(str.owner)).sort((a, b) => b.length - a.length)[0]
+    // buildRecordBook now stamps each streak's `owner` with the profile group's
+    // canonical name, so every identity in a merged group already shares one
+    // owner string — match on it directly. Renames flow through without re-sync.
+    const canonical = groupDisplayName(g)
+    const myWin = winStreaks.filter((str) => str.owner === canonical).sort((a, b) => b.length - a.length)[0]
+    const myLoss = lossStreaks.filter((str) => str.owner === canonical).sort((a, b) => b.length - a.length)[0]
     return {
       user_id: userId(g.primary),
       owner: groupDisplayName(g),

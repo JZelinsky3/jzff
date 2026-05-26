@@ -14,22 +14,39 @@ export default async function SettingsPage({
   const sp = await searchParams
   const supabase = await createClient()
 
-  let league: { id: string; name: string; slug: string; abbreviation: string | null; prize_pool: string | null } | null = null
-  const full = await supabase
+  type LeagueRow = {
+    id: string
+    name: string
+    slug: string
+    abbreviation: string | null
+    prize_pool: string | null
+    draft_scoring_profile: 'ppr_6pt' | 'half_4pt'
+  }
+  let league: LeagueRow | null = null
+  const withScoring = await supabase
     .from('leagues')
-    .select('id, name, slug, abbreviation, prize_pool')
+    .select('id, name, slug, abbreviation, prize_pool, draft_scoring_profile')
     .eq('slug', slug)
-    .maybeSingle()
-  if (full.data) {
-    league = full.data
+    .maybeSingle<LeagueRow>()
+  if (withScoring.data) {
+    league = withScoring.data
   } else {
-    // Pre-migration fallback
-    const fallback = await supabase
+    const withPrize = await supabase
       .from('leagues')
-      .select('id, name, slug, abbreviation')
+      .select('id, name, slug, abbreviation, prize_pool')
       .eq('slug', slug)
       .maybeSingle()
-    if (fallback.data) league = { ...fallback.data, prize_pool: null }
+    if (withPrize.data) {
+      league = { ...withPrize.data, draft_scoring_profile: 'ppr_6pt' }
+    } else {
+      // Pre-migration fallback (pre-prize-pool).
+      const bare = await supabase
+        .from('leagues')
+        .select('id, name, slug, abbreviation')
+        .eq('slug', slug)
+        .maybeSingle()
+      if (bare.data) league = { ...bare.data, prize_pool: null, draft_scoring_profile: 'ppr_6pt' }
+    }
   }
   if (!league) notFound()
 
@@ -50,6 +67,7 @@ export default async function SettingsPage({
           currentSlug={league.slug}
           currentAbbreviation={league.abbreviation}
           currentPrizePool={league.prize_pool}
+          currentDraftScoringProfile={league.draft_scoring_profile}
           savedJustNow={sp.saved === '1'}
         />
       </div>

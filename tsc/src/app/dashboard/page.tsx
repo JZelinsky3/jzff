@@ -150,6 +150,7 @@ export default async function DashboardPage() {
 
       {testingActive && testingEnds && (
         <div
+          className="dc-banner"
           style={{
             maxWidth: '880px', margin: '1rem auto 0',
             padding: '1rem 1.25rem',
@@ -176,6 +177,7 @@ export default async function DashboardPage() {
 
       {leaguesWithGrace.length > 0 && earliestGrace && (
         <div
+          className="dc-banner"
           style={{
             maxWidth: '880px', margin: '1rem auto 0',
             padding: '1rem 1.25rem',
