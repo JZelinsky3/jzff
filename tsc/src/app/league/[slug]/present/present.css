@@ -686,6 +686,53 @@
     color: var(--p-fg-mute);
 }
 
+/* Draft board grid (Round 1) */
+.present-draft-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: .65rem;
+}
+.present-draft-card {
+    display: flex;
+    align-items: stretch;
+    background: var(--p-card);
+    border: 1px solid var(--p-line);
+    padding: .55rem .75rem;
+    gap: .8rem;
+}
+.present-draft-pick {
+    font-family: var(--p-mono-font);
+    color: var(--p-accent);
+    font-size: clamp(1.4rem, 2.6vw, 2rem);
+    line-height: 1;
+    min-width: 2rem;
+    align-self: center;
+}
+.present-draft-body { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.present-draft-player {
+    font-family: var(--p-display-font);
+    font-size: clamp(1rem, 1.8vw, 1.35rem);
+    line-height: 1.15;
+    color: var(--p-fg);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.present-draft-meta {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.6rem, .9vw, .75rem);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+}
+.present-draft-team {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    font-family: var(--p-mono-font);
+    font-size: clamp(.7rem, 1vw, .85rem);
+    color: var(--p-fg-soft);
+    margin-top: .25rem;
+}
+
 /* Manager of the year (curated MVP) */
 .present-slide--mvp {
     display: flex;

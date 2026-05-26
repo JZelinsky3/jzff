@@ -921,6 +921,146 @@ const managerOfYearBlock: BlockDef = {
   },
 }
 
+// ─── Draft ─────────────────────────────────────────────────────────────────
+
+const firstRoundBlock: BlockDef = {
+  id: 'first-round-board',
+  label: 'Round 1 board',
+  category: 'draft',
+  description: 'First-round picks for a chosen draft year.',
+  options: {
+    season: { kind: 'pick', label: 'Season', source: 'season' },
+    title: { kind: 'text', label: 'Title', placeholder: 'Round 1', default: '' },
+  },
+  defaults: () => ({ season: '', title: 'Round 1' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const season = data.seasons.find((s) => s.id === values.season)
+    if (!season) return <MissingData reason="Pick a season in the inspector." />
+    const draft = data.drafts.find((d) => d.seasonId === season.id)
+    if (!draft) return <MissingData reason={`No draft on file for ${season.year}.`} />
+    const picks = data.draftPicks
+      .filter((p) => p.draftId === draft.id && p.round === 1)
+      .slice()
+      .sort((a, b) => a.pick - b.pick)
+    if (picks.length === 0) return <MissingData reason={`Draft picks for ${season.year} haven't synced.`} />
+    return (
+      <div className="present-slide present-slide--table">
+        <div className="present-eyebrow">{season.year} draft · Round 1</div>
+        <h2 className="present-table-title">{values.title || 'Round 1'}</h2>
+        <div className="present-draft-grid">
+          {picks.map((p) => {
+            const name = nameForManager(data, p.managerId)
+            const avatar = avatarForManager(data, p.managerId)
+            return (
+              <div key={p.pick} className="present-draft-card">
+                <div className="present-draft-pick">{p.pick}</div>
+                <div className="present-draft-body">
+                  <div className="present-draft-player">{p.playerName || '—'}</div>
+                  <div className="present-draft-meta">
+                    {[p.position, p.nflTeam].filter(Boolean).join(' · ') || '—'}
+                  </div>
+                  <div className="present-draft-team">
+                    <Avatar url={avatar} name={name} size={22} />
+                    <span>{name}</span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  },
+}
+
+const firstOverallHistoryBlock: BlockDef = {
+  id: 'first-overall-history',
+  label: 'First-overall history',
+  category: 'draft',
+  description: 'Every season’s 1.01 pick, year by year.',
+  options: {
+    title: { kind: 'text', label: 'Title', placeholder: 'First overall', default: '' },
+  },
+  defaults: () => ({ title: 'First overall' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const seasonsById = new Map(data.seasons.map((s) => [s.id, s.year]))
+    const draftsByYear = data.drafts
+      .map((d) => ({ d, year: seasonsById.get(d.seasonId) }))
+      .filter((x): x is { d: typeof x.d; year: number } => x.year != null)
+      .sort((a, b) => b.year - a.year)
+    type Row = { year: number; player: string; manager: string; avatar: string | null }
+    const rows: Row[] = []
+    for (const { d, year } of draftsByYear) {
+      const first = data.draftPicks.find((p) => p.draftId === d.id && p.pick === 1)
+      if (!first) continue
+      rows.push({
+        year,
+        player: first.playerName || '—',
+        manager: nameForManager(data, first.managerId),
+        avatar: avatarForManager(data, first.managerId),
+      })
+    }
+    if (rows.length === 0) return <MissingData reason="No draft picks synced yet." />
+    return (
+      <div className="present-slide present-slide--table">
+        <div className="present-eyebrow">Draft history</div>
+        <h2 className="present-table-title">{values.title || 'First overall'}</h2>
+        <div className="present-champ-list">
+          {rows.map((r) => (
+            <div key={r.year} className="present-champ-row">
+              <div className="present-champ-year">{r.year}</div>
+              <div className="present-champ-manager" style={{ flex: 1 }}>
+                <Avatar url={r.avatar} name={r.manager} size={36} />
+                <span>
+                  <span style={{ display: 'block' }}>{r.player}</span>
+                  <span style={{ color: 'var(--p-fg-mute)', fontFamily: 'var(--p-mono-font)', fontSize: '.7em', letterSpacing: '.12em', textTransform: 'uppercase' }}>{r.manager}</span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  },
+}
+
+const curatedPickBlock: BlockDef = {
+  id: 'curated-pick',
+  label: 'Standout pick',
+  category: 'draft',
+  description: 'Owner-curated draft pick slide — name your steal or your bust.',
+  options: {
+    label: { kind: 'text', label: 'Label', placeholder: 'Steal of the draft', default: '' },
+    player: { kind: 'text', label: 'Player', placeholder: 'Player name', default: '' },
+    detail: { kind: 'text', label: 'Pick detail', placeholder: 'Round 7, pick 84', default: '' },
+    profile: { kind: 'pick', label: 'Drafted by', source: 'manager' },
+    caption: { kind: 'text', label: 'Why it stands out', placeholder: 'optional', default: '' },
+  },
+  defaults: () => ({ label: 'Steal of the draft', player: '', detail: '', profile: '', caption: '' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const profile = profileById(data, values.profile)
+    return (
+      <div className="present-slide present-slide--mvp">
+        {values.label ? <div className="present-eyebrow">{values.label}</div> : null}
+        <div className="present-card-title" style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)' }}>
+          {values.player || '—'}
+        </div>
+        {values.detail ? <div className="present-sub">{values.detail}</div> : null}
+        {profile ? (
+          <div className="present-highlight-actor" style={{ marginTop: '1rem' }}>
+            <Avatar url={profile.avatarUrl} name={profile.canonicalName} size={80} />
+            <div className="present-highlight-actor-name">{profile.canonicalName}</div>
+          </div>
+        ) : null}
+        {values.caption ? <div className="present-footnote">{values.caption}</div> : null}
+      </div>
+    )
+  },
+}
+
 export const BLOCKS: BlockDef[] = [
   titleBlock,
   sectionBlock,
@@ -940,6 +1080,9 @@ export const BLOCKS: BlockDef[] = [
   headToHeadBlock,
   featuredRivalryBlock,
   mostLopsidedRivalryBlock,
+  firstRoundBlock,
+  firstOverallHistoryBlock,
+  curatedPickBlock,
   customCalloutBlock,
   customTextBlock,
   customImageBlock,

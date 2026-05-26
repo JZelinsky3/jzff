@@ -61,6 +61,22 @@ export type RivalryLite = {
   managerBId: string
 }
 
+export type DraftLite = {
+  id: string
+  seasonId: string
+  rounds: number | null
+}
+
+export type DraftPickLite = {
+  draftId: string
+  round: number
+  pick: number
+  managerId: string | null
+  playerName: string | null
+  position: string | null
+  nflTeam: string | null
+}
+
 export type LeaguePresentationData = {
   leagueId: string
   leagueName: string
@@ -70,6 +86,8 @@ export type LeaguePresentationData = {
   standings: StandingRow[]
   matchups: MatchupLite[]
   rivalries: RivalryLite[]
+  drafts: DraftLite[]
+  draftPicks: DraftPickLite[]
 }
 
 export async function getLeaguePresentationData(leagueId: string, leagueName: string): Promise<LeaguePresentationData> {
@@ -100,14 +118,29 @@ export async function getLeaguePresentationData(leagueId: string, leagueName: st
   // Empty-IN crashes the postgrest builder; substitute a never-matches uuid.
   const inIds = seasonIds.length > 0 ? seasonIds : ['00000000-0000-0000-0000-000000000000']
 
-  const [{ data: standingsRaw }, { data: matchupsRaw }] = await Promise.all([
+  const [
+    { data: standingsRaw },
+    { data: matchupsRaw },
+    { data: draftsRaw },
+  ] = await Promise.all([
     db.from('manager_seasons')
       .select('season_id, manager_id, wins, losses, ties, points_for, points_against, final_rank')
       .in('season_id', inIds),
     db.from('matchups')
       .select('season_id, week, manager_a_id, manager_b_id, score_a, score_b, is_playoff, is_championship')
       .in('season_id', inIds),
+    db.from('drafts')
+      .select('id, season_id, rounds')
+      .in('season_id', inIds),
   ])
+
+  const draftIds = (draftsRaw ?? []).map((d) => d.id)
+  const inDraftIds = draftIds.length > 0 ? draftIds : ['00000000-0000-0000-0000-000000000000']
+  const { data: draftPicksRaw } = await db
+    .from('draft_picks')
+    .select('draft_id, round, pick, manager_id, player_name, position, nfl_team')
+    .in('draft_id', inDraftIds)
+    .order('pick', { ascending: true })
 
   const managers: ManagerLite[] = (managersRaw ?? []).map((m) => ({
     id: m.id,
@@ -174,6 +207,22 @@ export async function getLeaguePresentationData(leagueId: string, leagueName: st
     managerBId: r.manager_b_id,
   }))
 
+  const drafts: DraftLite[] = (draftsRaw ?? []).map((d) => ({
+    id: d.id,
+    seasonId: d.season_id,
+    rounds: d.rounds ?? null,
+  }))
+
+  const draftPicks: DraftPickLite[] = (draftPicksRaw ?? []).map((p) => ({
+    draftId: p.draft_id,
+    round: p.round,
+    pick: p.pick,
+    managerId: p.manager_id ?? null,
+    playerName: p.player_name ?? null,
+    position: p.position ?? null,
+    nflTeam: p.nfl_team ?? null,
+  }))
+
   return {
     leagueId,
     leagueName,
@@ -183,6 +232,8 @@ export async function getLeaguePresentationData(leagueId: string, leagueName: st
     standings,
     matchups,
     rivalries,
+    drafts,
+    draftPicks,
   }
 }
 
