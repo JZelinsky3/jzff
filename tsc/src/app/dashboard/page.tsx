@@ -16,10 +16,17 @@ import { LeagueCardMenu } from './league-card-menu'
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: leagues } = await supabase
-    .from('leagues')
-    .select('id, name, slug, platform, last_synced_at, published_at, created_at, grace_period_ends_at')
-    .order('created_at', { ascending: false })
+  // Explicit owner filter: site admins have RLS access to every league
+  // (so they can view setups via /league/<slug>), but the dashboard library
+  // should only show leagues this user actually owns. /admin is the
+  // all-leagues view.
+  const { data: leagues } = user
+    ? await supabase
+        .from('leagues')
+        .select('id, name, slug, platform, last_synced_at, published_at, created_at, grace_period_ends_at')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false })
+    : { data: [] as never[] }
 
   // Bookmarked leagues this user is following (but doesn't own). Two-step
   // query because leagues RLS doesn't let the user SELECT leagues they
