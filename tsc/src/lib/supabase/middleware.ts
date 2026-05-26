@@ -10,7 +10,12 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/demo', '/ol
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request
 // using STRIPE_WEBHOOK_SECRET. Other /api/stripe/* routes (checkout, portal)
 // still require an authenticated user and stay middleware-gated.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/api/cron/', '/api/stripe/webhook']
+// `/data/` holds the shared static JSON used by every public almanac (e.g.
+// `public/data/fantasy_ranks/<profile>/<year>.json`). It MUST be reachable
+// without auth — visitors to /leagues/<slug>/draft fetch from here, and the
+// gate would otherwise 302 them to /login and break the Steal/Bust panels
+// for anyone not signed in.
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/api/cron/', '/api/stripe/webhook']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
