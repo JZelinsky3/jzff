@@ -7,7 +7,7 @@ import {
   TIER_PRICES,
   getUserSubscription,
   isSubscriptionActive,
-  isLifetimeUser,
+  isCompUser,
 } from '@/lib/stripe'
 import { PricingCards } from './pricing-cards'
 
@@ -21,7 +21,7 @@ export default async function PricingPage() {
   // tier highlighted as "Current plan" and the other(s) as "Switch to".
   const sub = user ? await getUserSubscription(user.id) : null
   const hasActive = isSubscriptionActive(sub)
-  const lifetime = !!user && isLifetimeUser(user.id)
+  const lifetime = !!user && (await isCompUser(user.id))
 
   return (
     <main>

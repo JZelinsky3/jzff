@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
-import { getUserSubscription, isLifetimeUser, TIER_LABELS } from '@/lib/stripe'
+import { getUserSubscription, isCompUser, TIER_LABELS } from '@/lib/stripe'
 import { AccountForms } from './account-forms'
 
 export default async function AccountPage({
@@ -49,7 +49,7 @@ export default async function AccountPage({
   // Provide tier label for the subscription card render; lib export is the
   // source of truth so we don't re-derive it in the client component.
   const tierLabel = sub ? TIER_LABELS[sub.tier].name : null
-  const lifetime = isLifetimeUser(user.id)
+  const lifetime = await isCompUser(user.id)
 
   return (
     <main>

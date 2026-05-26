@@ -1,4 +1,6 @@
 import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
+import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { DashboardNavBackSlot } from './nav-back-slot'
 
 export default async function DashboardLayout({
@@ -6,6 +8,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const admin = await isSiteAdmin(user?.id)
+
   const groups: DropGroup[] = [
     {
       label: 'Library',
@@ -20,6 +26,12 @@ export default async function DashboardLayout({
         { type: 'link', href: '/account', label: 'Profile & subscription' },
       ],
     },
+    ...(admin
+      ? [{
+          label: 'Site admin',
+          entries: [{ type: 'link' as const, href: '/admin', label: 'Admin console' }],
+        }]
+      : []),
   ]
 
   return (

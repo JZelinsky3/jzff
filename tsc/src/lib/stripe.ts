@@ -6,6 +6,7 @@
 
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hasCompGrant } from '@/lib/siteAdmin'
 
 // ─── SDK singleton ────────────────────────────────────────────────────────
 
@@ -111,6 +112,14 @@ export function isLifetimeUser(userId: string): boolean {
   return raw.split(',').map((s) => s.trim()).includes(userId)
 }
 
+// Combined comp check: env-allowlisted OR site-admin-granted via DB.
+// Use this instead of isLifetimeUser at any callsite that gates paid
+// features — comp grants from the /admin dashboard need to flow through here.
+export async function isCompUser(userId: string): Promise<boolean> {
+  if (isLifetimeUser(userId)) return true
+  return hasCompGrant(userId)
+}
+
 // ─── Testing mode ─────────────────────────────────────────────────────────
 // Time-limited free preview window. Set TESTING_MODE_UNTIL to an ISO date
 // (e.g. "2026-07-01T23:59:59Z"). While now() < that, any signed-in user can
@@ -178,7 +187,7 @@ export type EnforcementResult =
 // matching upgrade prompt without re-deriving the reason.
 export async function canCreateLeague(userId: string): Promise<EnforcementResult> {
   // Lifetime / comp accounts skip every other check.
-  if (isLifetimeUser(userId)) return { ok: true }
+  if (await isCompUser(userId)) return { ok: true }
 
   // Testing-mode free path: during the open window, any signed-in user can
   // create exactly one league without paying. Counts ALL their leagues

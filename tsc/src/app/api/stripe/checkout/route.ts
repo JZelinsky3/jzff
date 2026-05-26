@@ -10,7 +10,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { getStripe, priceIdFor, getUserSubscription, isLifetimeUser } from '@/lib/stripe'
+import { getStripe, priceIdFor, getUserSubscription, isCompUser } from '@/lib/stripe'
 
 const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '10')
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   }
   // Lifetime / comp users shouldn't ever land in a Stripe checkout — the
   // UI hides the cards but guard the API too in case they bypass it.
-  if (isLifetimeUser(user.id)) {
+  if (await isCompUser(user.id)) {
     return NextResponse.json(
       { error: 'You have lifetime access — nothing to subscribe to.' },
       { status: 400 }

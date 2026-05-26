@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/slugify'
 import {
   getUserSubscription,
-  isLifetimeUser,
+  isCompUser,
   isSubscriptionActive,
   isTestingModeActive,
 } from '@/lib/stripe'
@@ -166,7 +166,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
   const testingNow = isTestingModeActive()
   const existingSub = testingNow ? await getUserSubscription(user.id) : null
   const subActive = isSubscriptionActive(existingSub)
-  const createdDuringTesting = testingNow && !subActive && !isLifetimeUser(user.id)
+  const createdDuringTesting = testingNow && !subActive && !(await isCompUser(user.id))
 
   const { data: inserted, error: insertError } = await supabase
     .from('leagues')

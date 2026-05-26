@@ -4,12 +4,13 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import {
   getUserSubscription,
-  isLifetimeUser,
+  isCompUser,
   isSubscriptionActive,
   isTestingModeActive,
   testingModeEndsAt,
   TIER_LABELS,
 } from '@/lib/stripe'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { LeagueCardMenu } from './league-card-menu'
 
 export default async function DashboardPage() {
@@ -60,7 +61,8 @@ export default async function DashboardPage() {
   // doesn't have to hop to /account just to check. Lifetime users get a
   // simple comp badge instead.
   const subUserId = user?.id ?? null
-  const comp = subUserId ? isLifetimeUser(subUserId) : false
+  const comp = subUserId ? await isCompUser(subUserId) : false
+  const siteAdmin = subUserId ? await isSiteAdmin(subUserId) : false
   const sub = !comp && subUserId ? await getUserSubscription(subUserId) : null
   const subActive = isSubscriptionActive(sub)
   const subEndsLabel = formatSubEndsLabel(sub)
