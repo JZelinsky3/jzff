@@ -401,7 +401,12 @@ body { background: var(--dg-bg); }
 .r1-year-cell.p-te .r1-pick-name { color: #c4a3e8; }
 
 /* ── Draft order history ── */
-.do-table { border-collapse: collapse; min-width: 100%; }
+/* Same fixed-column treatment as the R1 pivot: name column pinned, year
+   columns each a consistent pixel width regardless of season count. Avg
+   sits at the end with two new sibling summary cells (Best / Worst) to
+   fill the right side without inventing fake placeholder years (which
+   would mess with the Avg calculation if not filtered out). */
+.do-table { border-collapse: collapse; width: max-content; }
 .do-table th {
     font-family: var(--mono); font-weight: 700;
     font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
@@ -412,7 +417,19 @@ body { background: var(--dg-bg); }
     color: var(--dg-accent); text-align: center;
     white-space: nowrap;
 }
-.do-table th:first-child { text-align: left; padding-left: 1rem; min-width: 90px; }
+.do-table th:first-child,
+.do-table td:first-child {
+    text-align: left; padding-left: 1rem;
+    width: 11rem; min-width: 11rem; max-width: 11rem;
+}
+.do-table th:not(:first-child),
+.do-table td:not(:first-child) {
+    width: 130px; min-width: 130px;
+}
+.do-table th.do-summary,
+.do-table td.do-summary {
+    width: 84px; min-width: 84px;
+}
 .do-table td {
     padding: .55rem .6rem;
     border-right: 1px solid var(--dg-line-soft);
@@ -423,9 +440,11 @@ body { background: var(--dg-bg); }
 .do-table tbody tr:nth-child(odd) td  { background: var(--dg-card); }
 .do-table tbody tr:nth-child(even) td { background: var(--dg-soft); }
 .do-table tbody tr:hover td { background: var(--dg-card-hover) !important; }
-.do-mgr { font-family: var(--sans); font-weight: 700; font-size: .82rem; color: var(--cream); text-align: left !important; padding-left: 1rem !important; border-right: 2px solid var(--dg-line) !important; white-space: nowrap; }
+.do-mgr { font-family: var(--sans); font-weight: 700; font-size: .82rem; color: var(--cream); text-align: left !important; padding-left: 1rem !important; border-right: 2px solid var(--dg-line) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .do-slot { font-family: var(--mono); font-weight: 700; font-size: .82rem; }
-.do-avg  { font-family: var(--mono); font-size: .72rem; color: var(--cream-mute); border-left: 1px solid var(--dg-line) !important; }
+.do-avg  { font-family: var(--mono); font-size: .8rem; color: var(--cream); border-left: 1px solid var(--dg-line) !important; }
+.do-best { font-family: var(--mono); font-size: .8rem; color: var(--gold); border-left: 1px solid var(--dg-line) !important; }
+.do-worst { font-family: var(--mono); font-size: .8rem; color: var(--cream-mute); }
 
 /* ── Manager DNA ── */
 .mgr-dna-grid {
@@ -601,9 +620,9 @@ body { background: var(--dg-bg); }
 /* Slot # column and Common-pos column: pin to a small explicit width so they
    don't soak up leftover container width when the league has few seasons. */
 .slot-table th:first-child,
-.slot-table td:first-child { text-align: center; width: 56px; min-width: 56px; max-width: 56px; }
+.slot-table td:first-child { text-align: center; width: 76px; min-width: 76px; max-width: 76px; }
 .slot-table th:nth-child(2),
-.slot-table td:nth-child(2) { width: 64px; min-width: 64px; max-width: 64px; text-align: center; }
+.slot-table td:nth-child(2) { width: 76px; min-width: 76px; max-width: 76px; text-align: center; }
 .slot-table td {
     padding: .5rem .7rem;
     border-right: 1px solid var(--dg-line-soft);
@@ -616,10 +635,10 @@ body { background: var(--dg-bg); }
 .slot-table tbody tr:hover td { background: var(--dg-card-hover) !important; }
 .slot-num { font-family: var(--mono); font-weight: 700; font-size: .85rem; text-align: center; }
 .slot-pos { font-family: var(--mono); font-weight: 700; font-size: .72rem; text-align: center; }
-.slot-cell { min-width: 108px; width: 108px; }
-.slot-player { font-size: .72rem; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; display: block; }
+.slot-cell { min-width: 140px; width: 140px; }
+.slot-player { font-size: .72rem; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; display: block; }
 .slot-mgr { font-family: var(--mono); font-size: .55rem; color: var(--cream-mute); display: block; margin-top: .15rem; }
-.slot-table th:not(:first-child):not(:nth-child(2)) { min-width: 108px; width: 108px; }
+.slot-table th:not(:first-child):not(:nth-child(2)) { min-width: 140px; width: 140px; }
 /* Greyed-out future-season placeholders for short leagues. */
 .slot-table th.slot-placeholder,
 .slot-table td.slot-placeholder {
@@ -632,7 +651,7 @@ body { background: var(--dg-bg); }
     font-family: var(--mono); font-size: .55rem;
     letter-spacing: .15em; text-transform: uppercase;
     text-align: center;
-    min-width: 108px; width: 108px;
+    min-width: 140px; width: 140px;
 }
 
 /* ── Draft value analysis ── */
@@ -1402,13 +1421,18 @@ function renderDraftOrderHistory() {
 
     var html = '<table class="do-table"><thead><tr><th>Manager</th>';
     YEARS.forEach(function(y){ html += '<th>' + y + '</th>'; });
-    html += '<th>Avg</th></tr></thead><tbody>';
+    html += '<th class="do-summary">Best</th>';
+    html += '<th class="do-summary">Avg</th>';
+    html += '<th class="do-summary">Worst</th>';
+    html += '</tr></thead><tbody>';
+
+    var totalCols = YEARS.length + 1 + 3;
 
     var sep = false;
     allMgrs.forEach(function(mgr) {
         if (!sep && isRetired(mgr)) {
             sep = true;
-            html += '<tr class="alumni-divider"><td colspan="' + (YEARS.length + 2) + '">— Alumni —</td></tr>';
+            html += '<tr class="alumni-divider"><td colspan="' + totalCols + '">— Alumni —</td></tr>';
         }
         html += '<tr' + (isRetired(mgr) ? ' class="alumni-row"' : '') + '>';
         html += '<td class="do-mgr">' + esc(mgr) + '</td>';
@@ -1426,8 +1450,18 @@ function renderDraftOrderHistory() {
                 html += '<td class="r1-empty-cell">—</td>';
             }
         });
-        var avg = vals.length ? (vals.reduce(function(s,v){return s+v;},0)/vals.length).toFixed(1) : '—';
-        html += '<td class="do-avg">' + avg + '</td>';
+        if (vals.length) {
+            var best = Math.min.apply(null, vals);
+            var worst = Math.max.apply(null, vals);
+            var avg = (vals.reduce(function(s,v){return s+v;},0) / vals.length).toFixed(1);
+            html += '<td class="do-summary do-best">' + ordinal(best) + '</td>';
+            html += '<td class="do-summary do-avg">' + avg + '</td>';
+            html += '<td class="do-summary do-worst">' + ordinal(worst) + '</td>';
+        } else {
+            html += '<td class="do-summary do-best">—</td>';
+            html += '<td class="do-summary do-avg">—</td>';
+            html += '<td class="do-summary do-worst">—</td>';
+        }
         html += '</tr>';
     });
 
@@ -1681,7 +1715,7 @@ function renderPickSlotHistory() {
 
     // Same placeholder treatment as the R1 pivot — pad short leagues out so
     // year columns stay a consistent width regardless of how many seasons.
-    var MIN_COLS_SLOT = 6;
+    var MIN_COLS_SLOT = 8;
     var placeholderCountSlot = Math.max(0, MIN_COLS_SLOT - YEARS.length);
     var nextYearSlot = (YEARS.length ? Math.max.apply(null, YEARS) : new Date().getFullYear()) + 1;
 
