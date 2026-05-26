@@ -11,6 +11,7 @@ import {
   type BlockCategory,
 } from './_lib/blocks'
 import { STORAGE_KEY, type Deck, type SlideInstance, type Theme } from './_lib/types'
+import type { LeaguePresentationData } from './_lib/leagueData'
 
 function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -39,7 +40,15 @@ function loadDeck(slug: string, leagueName: string): Deck {
   return blankDeck(slug, leagueName)
 }
 
-export function Builder({ slug, leagueName }: { slug: string; leagueName: string }) {
+export function Builder({
+  slug,
+  leagueName,
+  data,
+}: {
+  slug: string
+  leagueName: string
+  data: LeaguePresentationData
+}) {
   const router = useRouter()
   const [deck, setDeck] = useState<Deck>(() => blankDeck(slug, leagueName))
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -174,8 +183,7 @@ export function Builder({ slug, leagueName }: { slug: string; leagueName: string
             )
           })}
           <div className="present-catalog-footnote">
-            More categories (standings, highlights, managers, rivalries, draft) light up as data
-            blocks are added.
+            Highlights, manager spotlights, rivalries, and draft blocks land in upcoming releases.
           </div>
         </aside>
 
@@ -238,6 +246,50 @@ export function Builder({ slug, leagueName }: { slug: string; leagueName: string
                       <span>{opt.label}</span>
                       <textarea
                         rows={opt.rows ?? 4}
+                        placeholder={opt.placeholder}
+                        value={value}
+                        onChange={(e) => updateValue(selected.id, key, e.target.value)}
+                      />
+                    </label>
+                  )
+                }
+                if (opt.kind === 'pick') {
+                  const choices =
+                    opt.source === 'season'
+                      ? data.seasons
+                          .slice()
+                          .sort((a, b) => b.year - a.year)
+                          .map((s) => ({ value: s.id, label: String(s.year) }))
+                      : // 'manager' source: prefer profile-level (canonical names),
+                        // skip hidden alumni, alpha by name.
+                        data.profiles
+                          .filter((p) => !p.isHidden)
+                          .slice()
+                          .sort((a, b) => a.canonicalName.localeCompare(b.canonicalName))
+                          .map((p) => ({ value: p.id, label: p.canonicalName }))
+                  return (
+                    <label key={key} className="present-field">
+                      <span>{opt.label}</span>
+                      <select
+                        value={value}
+                        onChange={(e) => updateValue(selected.id, key, e.target.value)}
+                      >
+                        <option value="">— pick —</option>
+                        {choices.map((c) => (
+                          <option key={c.value} value={c.value}>{c.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )
+                }
+                if (opt.kind === 'number') {
+                  return (
+                    <label key={key} className="present-field">
+                      <span>{opt.label}</span>
+                      <input
+                        type="number"
+                        min={opt.min}
+                        max={opt.max}
                         placeholder={opt.placeholder}
                         value={value}
                         onChange={(e) => updateValue(selected.id, key, e.target.value)}

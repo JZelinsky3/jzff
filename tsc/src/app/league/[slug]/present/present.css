@@ -277,7 +277,8 @@
     color: var(--cream-mute);
 }
 .present-field input,
-.present-field textarea {
+.present-field textarea,
+.present-field select {
     background: var(--ink-soft);
     border: 1px solid var(--ink-line);
     color: var(--cream);
@@ -288,7 +289,8 @@
     resize: vertical;
 }
 .present-field input:focus,
-.present-field textarea:focus {
+.present-field textarea:focus,
+.present-field select:focus {
     outline: none;
     border-color: var(--gold);
 }
@@ -447,6 +449,106 @@
     font-size: clamp(.8rem, 1.2vw, 1rem);
     letter-spacing: .15em;
     color: var(--p-fg-mute);
+}
+
+/* Data-driven table slides (standings, leaderboards, champion roll, etc.) */
+.present-slide--table {
+    text-align: left;
+    width: min(94vw, 1100px);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.present-slide--table .present-eyebrow { text-align: left; }
+.present-table-title {
+    font-family: var(--p-display-font);
+    font-size: clamp(2.25rem, 6vw, 4.25rem);
+    line-height: 1.05;
+    margin: 0 0 .5rem;
+    color: var(--p-fg);
+}
+.present-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--p-body-font);
+    font-size: clamp(1.05rem, 1.8vw, 1.5rem);
+}
+.present-table th {
+    font-family: var(--p-mono-font);
+    font-size: .72em;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+    text-align: left;
+    padding: .55rem .75rem;
+    border-bottom: 1px solid var(--p-line);
+    font-weight: 600;
+}
+.present-table td {
+    padding: .65rem .75rem;
+    border-bottom: 1px solid var(--p-line);
+    color: var(--p-fg);
+    vertical-align: middle;
+}
+.present-table tbody tr.is-champion td,
+.present-table tbody tr.is-leader td {
+    background: var(--p-card);
+}
+.present-table tbody tr.is-leader td { color: var(--p-accent); }
+.present-table tbody tr.is-leader td.present-table-rank { color: var(--p-accent); }
+.present-table-rank {
+    font-family: var(--p-mono-font);
+    color: var(--p-fg-mute);
+    font-size: .9em;
+}
+.present-table-manager {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
+}
+
+.present-avatar {
+    display: inline-block;
+    border-radius: 999px;
+    object-fit: cover;
+    background: var(--p-card);
+    border: 1px solid var(--p-line);
+}
+.present-avatar--initials {
+    text-align: center;
+    color: var(--p-fg);
+    font-family: var(--p-mono-font);
+    font-weight: 600;
+    letter-spacing: .05em;
+}
+
+/* Champion roll call — two-column rows, larger avatars */
+.present-champ-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: .65rem 1.5rem;
+}
+.present-champ-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .5rem .25rem;
+    border-bottom: 1px solid var(--p-line);
+}
+.present-champ-year {
+    font-family: var(--p-mono-font);
+    font-size: clamp(1.1rem, 2.2vw, 1.8rem);
+    color: var(--p-accent);
+    letter-spacing: .05em;
+    width: 4.5rem;
+    flex: 0 0 auto;
+}
+.present-champ-manager {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    font-family: var(--p-display-font);
+    font-size: clamp(1.2rem, 2.4vw, 2rem);
 }
 
 .present-slide--image { display: flex; flex-direction: column; align-items: center; gap: 1rem; }

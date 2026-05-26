@@ -13,6 +13,10 @@ export type BlockOption =
   | { kind: 'text'; label: string; placeholder?: string; default?: string }
   | { kind: 'textarea'; label: string; placeholder?: string; default?: string; rows?: number }
   | { kind: 'imageUrl'; label: string; placeholder?: string; default?: string }
+  // Resolved at builder time using league data (e.g. season list, manager list).
+  // The option's `source` says what to populate from; the stored value is the id.
+  | { kind: 'pick'; label: string; source: 'season' | 'manager'; default?: string; allowAny?: boolean }
+  | { kind: 'number'; label: string; placeholder?: string; default?: string; min?: number; max?: number }
 
 export type BlockOptionValues = Record<string, string>
 

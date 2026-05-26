@@ -4,13 +4,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { BLOCK_INDEX } from '../_lib/blocks'
 import { STORAGE_KEY, type Deck } from '../_lib/types'
+import type { LeaguePresentationData } from '../_lib/leagueData'
 
 type LoadState =
   | { kind: 'loading' }
   | { kind: 'empty' }
   | { kind: 'ready'; deck: Deck }
 
-export function Presenter({ slug, leagueName }: { slug: string; leagueName: string }) {
+export function Presenter({
+  slug,
+  leagueName,
+  data,
+}: {
+  slug: string
+  leagueName: string
+  data: LeaguePresentationData
+}) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [index, setIndex] = useState(0)
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -106,7 +115,7 @@ export function Presenter({ slug, leagueName }: { slug: string; leagueName: stri
   return (
     <div ref={rootRef} className={`present-run present-theme-${deck.theme}`} data-slide-id={slide.id}>
       <div className="present-run-stage">
-        {def ? def.render({ values: slide.values, theme: deck.theme, leagueName: deck.leagueName }) : (
+        {def ? def.render({ values: slide.values, theme: deck.theme, leagueName: deck.leagueName, data }) : (
           <div className="present-slide">
             <p>Unknown block: {slide.blockId}</p>
           </div>
