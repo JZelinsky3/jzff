@@ -20,7 +20,7 @@ export default async function SettingsPage({
     slug: string
     abbreviation: string | null
     prize_pool: string | null
-    draft_scoring_profile: 'ppr_6pt' | 'half_4pt'
+    draft_scoring_profile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
   }
   let league: LeagueRow | null = null
   const withScoring = await supabase

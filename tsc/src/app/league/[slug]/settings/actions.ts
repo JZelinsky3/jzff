@@ -12,7 +12,7 @@ const Schema = z.object({
   abbreviation: z.string().trim().max(16).optional(),
   slug: z.string().trim().max(60).optional(),
   prizePool: z.string().trim().max(60).optional(),
-  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt']).optional(),
+  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt', 'ppr_4pt', 'half_6pt']).optional(),
 })
 
 type Result = { ok: true } | { ok: false; error: string }

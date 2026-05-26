@@ -21,7 +21,7 @@ type LeagueRow = {
   division_term: 'division' | 'conference'
   division_names: string[]
   last_synced_at: string | null
-  draft_scoring_profile: 'ppr_6pt' | 'half_4pt'
+  draft_scoring_profile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
 }
 
 type SeasonRow = {

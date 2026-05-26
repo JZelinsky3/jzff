@@ -42,7 +42,9 @@ export function AddLeagueForm() {
   const [swid, setSwid] = useState('')
   const [espnS2, setEspnS2] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
-  const [draftScoringProfile, setDraftScoringProfile] = useState<'ppr_6pt' | 'half_4pt'>('ppr_6pt')
+  const [pprMode, setPprMode] = useState<'ppr' | 'half'>('ppr')
+  const [passTdPts, setPassTdPts] = useState<'4' | '6'>('6')
+  const draftScoringProfile = `${pprMode}_${passTdPts}pt` as 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
 
   function handlePreview(idOverride?: string) {
     const id = idOverride ?? externalId
@@ -336,17 +338,32 @@ export function AddLeagueForm() {
       </div>
 
       <div className="dc-field">
-        <label htmlFor="draftScoringProfile" className="dc-label">Draft scoring profile</label>
-        <select
-          id="draftScoringProfile"
-          name="draftScoringProfile"
-          value={draftScoringProfile}
-          onChange={(e) => setDraftScoringProfile(e.target.value as typeof draftScoringProfile)}
-          className="dc-select"
-        >
-          <option value="ppr_6pt">Full PPR · 6pt passing TDs</option>
-          <option value="half_4pt">Half PPR · 4pt passing TDs</option>
-        </select>
+        <label className="dc-label">Draft scoring profile</label>
+        <input type="hidden" name="draftScoringProfile" value={draftScoringProfile} />
+        <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.25rem', flex: '1 1 12rem' }}>
+            <span className="dc-checkbox-hint" style={{ margin: 0 }}>Reception scoring</span>
+            <select
+              value={pprMode}
+              onChange={(e) => setPprMode(e.target.value as typeof pprMode)}
+              className="dc-select"
+            >
+              <option value="ppr">Full PPR (1 pt/catch)</option>
+              <option value="half">Half PPR (0.5 pt/catch)</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.25rem', flex: '1 1 12rem' }}>
+            <span className="dc-checkbox-hint" style={{ margin: 0 }}>Passing TDs</span>
+            <select
+              value={passTdPts}
+              onChange={(e) => setPassTdPts(e.target.value as typeof passTdPts)}
+              className="dc-select"
+            >
+              <option value="6">6 points</option>
+              <option value="4">4 points</option>
+            </select>
+          </div>
+        </div>
         <span className="dc-checkbox-hint">
           Used to grade past drafts (Steal of the Year, Bust of the Year, Heartbreakers).
           End-of-season FantasyPros totals are evaluated under this scoring. Change anytime in League Settings.

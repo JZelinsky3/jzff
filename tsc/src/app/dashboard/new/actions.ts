@@ -34,7 +34,7 @@ const Schema = z.object({
   espnS2: z.string().trim().optional(),
   // Scoring profile used to evaluate draft picks on the draft history page.
   // Maps to public/data/fantasy_ranks/<profile>/<year>.json.
-  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt']).default('ppr_6pt'),
+  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt', 'ppr_4pt', 'half_6pt']).default('ppr_6pt'),
 })
 
 type ActionResult = { ok: false; error: string } | { ok: true }
