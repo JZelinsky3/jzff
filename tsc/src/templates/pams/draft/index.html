@@ -430,6 +430,19 @@ body { background: var(--dg-bg); }
 .do-table td.do-summary {
     width: 84px; min-width: 84px;
 }
+.do-table th.do-traj,
+.do-table td.do-traj {
+    width: 220px; min-width: 220px;
+    padding: .35rem .8rem;
+    border-left: 1px solid var(--dg-line) !important;
+}
+.do-traj svg { display: block; width: 100%; }
+.do-traj-hint {
+    display: block; text-align: center;
+    font-family: var(--mono); font-size: .5rem;
+    letter-spacing: .15em; text-transform: uppercase;
+    color: var(--cream-mute); margin-top: .15rem;
+}
 .do-table td {
     padding: .55rem .6rem;
     border-right: 1px solid var(--dg-line-soft);
@@ -1419,14 +1432,51 @@ function renderDraftOrderHistory() {
     var retiredMgrs = allMgrs.filter(function(m){ return  isRetired(m); }).sort(sortFn);
     allMgrs = activeMgrs.concat(retiredMgrs);
 
+    // Find the max slot in the data so the trajectory axis matches league size
+    // (10-team, 12-team, 14-team leagues all render their own scale).
+    var maxSlotAny = 12;
+    YEARS.forEach(function(y) {
+        Object.keys(pivot).forEach(function(m) {
+            var s = pivot[m][y];
+            if (typeof s === 'number' && s > maxSlotAny) maxSlotAny = s;
+        });
+    });
+
+    function trajectorySVG(mgr) {
+        var W = 200, H = 22, PAD = 6;
+        var range = Math.max(maxSlotAny - 1, 1);
+        var yearsHere = YEARS.filter(function(y){ return pivot[mgr] && pivot[mgr][y] != null; });
+        if (!yearsHere.length) return '';
+        var path = '';
+        var dots = '';
+        yearsHere.forEach(function(y, i) {
+            var slot = pivot[mgr][y];
+            var x = PAD + ((slot - 1) / range) * (W - 2 * PAD);
+            var cy = H / 2;
+            path += (i === 0 ? 'M ' : 'L ') + x.toFixed(1) + ' ' + cy.toFixed(1) + ' ';
+            // Older years muted, newest year full gold + slightly larger.
+            var t = yearsHere.length === 1 ? 1 : (i / (yearsHere.length - 1));
+            var opacity = (0.3 + 0.7 * t).toFixed(2);
+            var r = i === yearsHere.length - 1 ? 4 : 3;
+            dots += '<circle cx="' + x.toFixed(1) + '" cy="' + cy + '" r="' + r + '" '
+                  + 'fill="var(--gold)" fill-opacity="' + opacity + '"><title>' + y + ' · slot ' + slot + '</title></circle>';
+        });
+        return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-label="Slot trajectory">'
+             + '<line x1="' + PAD + '" y1="' + (H/2) + '" x2="' + (W - PAD) + '" y2="' + (H/2)
+             + '" stroke="var(--dg-line)" stroke-width="1"/>'
+             + '<path d="' + path + '" stroke="var(--gold-deep)" stroke-width="1.2" fill="none" stroke-opacity="0.55"/>'
+             + dots
+             + '</svg>'
+             + '<span class="do-traj-hint">early ◂ slot ▸ late</span>';
+    }
+
     var html = '<table class="do-table"><thead><tr><th>Manager</th>';
     YEARS.forEach(function(y){ html += '<th>' + y + '</th>'; });
-    html += '<th class="do-summary">Best</th>';
+    html += '<th class="do-traj">Trajectory</th>';
     html += '<th class="do-summary">Avg</th>';
-    html += '<th class="do-summary">Worst</th>';
     html += '</tr></thead><tbody>';
 
-    var totalCols = YEARS.length + 1 + 3;
+    var totalCols = YEARS.length + 1 + 2;
 
     var sep = false;
     allMgrs.forEach(function(mgr) {
@@ -1450,18 +1500,9 @@ function renderDraftOrderHistory() {
                 html += '<td class="r1-empty-cell">—</td>';
             }
         });
-        if (vals.length) {
-            var best = Math.min.apply(null, vals);
-            var worst = Math.max.apply(null, vals);
-            var avg = (vals.reduce(function(s,v){return s+v;},0) / vals.length).toFixed(1);
-            html += '<td class="do-summary do-best">' + ordinal(best) + '</td>';
-            html += '<td class="do-summary do-avg">' + avg + '</td>';
-            html += '<td class="do-summary do-worst">' + ordinal(worst) + '</td>';
-        } else {
-            html += '<td class="do-summary do-best">—</td>';
-            html += '<td class="do-summary do-avg">—</td>';
-            html += '<td class="do-summary do-worst">—</td>';
-        }
+        html += '<td class="do-traj">' + trajectorySVG(mgr) + '</td>';
+        var avg = vals.length ? (vals.reduce(function(s,v){return s+v;},0) / vals.length).toFixed(1) : '—';
+        html += '<td class="do-summary do-avg">' + avg + '</td>';
         html += '</tr>';
     });
 
