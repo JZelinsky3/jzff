@@ -6,6 +6,6 @@
         font-size="248"
         text-anchor="middle"
         letter-spacing="-12">
-    <tspan fill="#f4ebd8">TS</tspan><tspan font-style="italic" fill="#e8c889">C<tspan dx="-12">.</tspan></tspan>
+    <tspan fill="#f4ebd8">TS</tspan><tspan dx="6" font-style="italic" fill="#e8c889">C<tspan dx="-12">.</tspan></tspan>
   </text>
 </svg>
