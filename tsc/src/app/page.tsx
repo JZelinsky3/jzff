@@ -35,14 +35,14 @@ export default async function Home() {
       <nav className="nav">
         <span className="nav-back" style={{ visibility: 'hidden' }}>—</span>
         <div className="nav-center">
-          <div className="nav-kicker">Vol. I · The League Almanac</div>
+          <div className="nav-kicker">Vol. II · The League Almanac</div>
           <div className="nav-title" style={{ letterSpacing: '.04em' }}>TS<em>C.</em></div>
         </div>
         <Link href="/login" className="nav-link">Sign in</Link>
       </nav>
 
       <section className="hero">
-        <div className="hero-sup">★ Est. 2026 · The Sunday Chronicle. ★</div>
+        <div className="hero-sup">★ JZFF · The Sunday Chronicle · Est. 2026 ★</div>
         <h1 className="hero-title">
           Your league.<br />
           <em>Bound forever.</em>

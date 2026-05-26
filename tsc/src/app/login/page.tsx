@@ -16,17 +16,26 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string; mode?: string; from?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect('/dashboard')
-
   const { next, mode, from } = await searchParams
   const initialMode = mode === 'signup' ? 'signup' : 'signin'
 
   // Back-arrow target: prefer the explicit `from` param (set by nav.js when
   // a visitor clicks a signup link on the public almanac), fall back to /.
   // Only allow same-origin paths to avoid open-redirect.
-  const backHref = from && from.startsWith('/') && !from.startsWith('//') ? from : '/'
+  const safeFrom = from && from.startsWith('/') && !from.startsWith('//') ? from : null
+  const backHref = safeFrom ?? '/'
+
+  // Post-auth destination: explicit `next` takes priority, then `from` (so a
+  // visitor who came from /leagues/jake/ and signed in lands back there), then
+  // /dashboard. The LoginForm uses this string verbatim on success.
+  const postAuthNext = next || safeFrom || undefined
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  // Already signed in? Honor the requested post-auth destination too — this
+  // covers the case where a user clicks Sign In on an almanac, lands on
+  // /login, but is already authenticated from a previous tab/session.
+  if (user) redirect(postAuthNext ?? '/dashboard')
 
   return (
     <main>
@@ -55,7 +64,7 @@ export default async function LoginPage({
 
       <div className="section" style={{ maxWidth: '460px' }}>
         <div className="dc-card-static">
-          <LoginForm next={next} initialMode={initialMode} />
+          <LoginForm next={postAuthNext} initialMode={initialMode} />
         </div>
       </div>
 

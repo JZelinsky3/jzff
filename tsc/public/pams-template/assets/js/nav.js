@@ -141,7 +141,7 @@
             }
             var navLinks = ctx.isSignedIn
                 ? '<a href="/dashboard">Library</a><a href="/account">Profile</a>'
-                : '<a href="/">Home</a><a href="/login?mode=signup">Sign Up</a>';
+                : '<a href="/">Home</a><a href="/login">Sign In</a><a href="/login?mode=signup">Sign Up</a>';
             visitorCta =
                 '<div class="nav-drop-divider"></div>' +
                 '<span class="nav-drop-label">' + groupLabel + '</span>' +
