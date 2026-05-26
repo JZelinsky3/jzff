@@ -583,7 +583,11 @@ body { background: var(--dg-bg); }
 
 /* ── Pick slot value ── */
 .slot-wrap { overflow-x: auto; border: 1px solid var(--dg-line); }
-.slot-table { border-collapse: collapse; min-width: 100%; width: max-content; }
+/* Drop `min-width: 100%` on purpose: with explicit `width` on every cell the
+   table should hold its natural width (slot+common+years×108px). Forcing it
+   to fill the container made the Common column balloon to absorb extra space
+   when the league has few seasons. */
+.slot-table { border-collapse: collapse; width: max-content; }
 .slot-table th {
     font-family: var(--mono); font-weight: 700;
     font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
@@ -594,8 +598,12 @@ body { background: var(--dg-bg); }
     color: var(--dg-accent); text-align: center;
     white-space: nowrap;
 }
-.slot-table th:first-child { text-align: center; min-width: 52px; }
-.slot-table th:nth-child(2) { min-width: 52px; }
+/* Slot # column and Common-pos column: pin to a small explicit width so they
+   don't soak up leftover container width when the league has few seasons. */
+.slot-table th:first-child,
+.slot-table td:first-child { text-align: center; width: 56px; min-width: 56px; max-width: 56px; }
+.slot-table th:nth-child(2),
+.slot-table td:nth-child(2) { width: 64px; min-width: 64px; max-width: 64px; text-align: center; }
 .slot-table td {
     padding: .5rem .7rem;
     border-right: 1px solid var(--dg-line-soft);
