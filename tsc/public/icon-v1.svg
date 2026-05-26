@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="6" fill="#0e1620"/>
+  <rect x="2" y="2" width="60" height="60" rx="5" fill="none" stroke="#a88a4a" stroke-width="1"/>
+  <text x="32" y="48" font-family="'DM Serif Display', 'Times New Roman', Georgia, serif" font-style="italic" font-size="46" fill="#e8c889" text-anchor="middle" letter-spacing="-2">C<tspan dx="-2">.</tspan></text>
+</svg>
