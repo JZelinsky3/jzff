@@ -227,9 +227,12 @@ body { background: var(--dg-bg); }
     position: sticky; left: 0; z-index: 1;
     padding: .55rem 1rem;
     border-right: 2px solid var(--dg-line);
+    border-bottom: 1px solid var(--dg-line-soft);
     min-width: 120px;
     white-space: nowrap;
 }
+.board-table tbody tr:last-child .board-mgr-td,
+.board-table tbody tr:last-child .board-cell { border-bottom: none; }
 .board-mgr-name {
     display: block;
     font-family: var(--sans); font-weight: 600;
@@ -245,6 +248,7 @@ body { background: var(--dg-bg); }
 .board-cell {
     padding: .45rem .55rem;
     border-right: 1px solid var(--dg-line-soft);
+    border-bottom: 1px solid var(--dg-line-soft);
     vertical-align: top;
     min-width: 90px; max-width: 110px;
     cursor: default;
@@ -351,7 +355,9 @@ body { background: var(--dg-bg); }
     overflow: hidden;
 }
 .r1-pivot td.r1-mgr-cell { width: 11rem; min-width: 11rem; max-width: 11rem; }
-/* Greyed-out future-season placeholder columns. */
+/* Greyed-out future-season placeholder columns. Borders here use the dimmer
+   pre-brighten color so the placeholders recede instead of looking like real
+   data columns. */
 .r1-pivot th.r1-placeholder,
 .r1-pivot td.r1-placeholder {
     background: repeating-linear-gradient(
@@ -363,6 +369,8 @@ body { background: var(--dg-bg); }
     font-family: var(--mono); font-size: .55rem;
     letter-spacing: .15em; text-transform: uppercase;
     text-align: center;
+    border-right-color: #1f1f1f !important;
+    border-bottom-color: #1f1f1f !important;
 }
 .r1-pivot tbody tr:last-child td { border-bottom: none; }
 .r1-pivot tbody tr:nth-child(odd) td  { background: var(--dg-card); }
@@ -654,7 +662,8 @@ body { background: var(--dg-bg); }
 .slot-player { font-size: .85rem; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; display: block; }
 .slot-mgr { font-family: var(--mono); font-size: .62rem; color: var(--cream-mute); display: block; margin-top: .2rem; }
 .slot-table th:not(:first-child):not(:nth-child(2)) { min-width: 170px; width: 170px; font-size: .62rem; }
-/* Greyed-out future-season placeholders for short leagues. */
+/* Greyed-out future-season placeholders for short leagues. Borders use the
+   dimmer pre-brighten color so placeholders recede behind real data cells. */
 .slot-table th.slot-placeholder,
 .slot-table td.slot-placeholder {
     background: repeating-linear-gradient(
@@ -667,6 +676,8 @@ body { background: var(--dg-bg); }
     letter-spacing: .15em; text-transform: uppercase;
     text-align: center;
     min-width: 170px; width: 170px;
+    border-right-color: #1f1f1f !important;
+    border-bottom-color: #1f1f1f !important;
 }
 
 /* ── Draft value analysis ── */
