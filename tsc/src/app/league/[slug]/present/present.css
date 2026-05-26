@@ -317,11 +317,13 @@
 }
 .present-builder-back:hover { color: var(--gold); }
 
+
 /* ============================================================
+   ============================================================
    PRESENTER (the big show)
-   The .present-run overlay is position:fixed inset:0 so it sits
-   on top of the parent league layout's nav. Themes set --p-*
-   tokens that the slide components read.
+   Two themes, two distinct design languages. Shared CSS vars
+   declared per theme; slide components only read --p-* tokens.
+   ============================================================
    ============================================================ */
 
 .present-run {
@@ -333,248 +335,678 @@
     background: var(--p-bg);
     color: var(--p-fg);
     font-family: var(--p-body-font);
-}
-.present-theme-cinematic {
-    --p-bg: #07090d;
-    --p-bg-soft: #0e1218;
-    --p-fg: #f4ebd8;
-    --p-fg-soft: rgba(244,235,216,.7);
-    --p-fg-mute: rgba(244,235,216,.45);
-    --p-accent: #e8c889;
-    --p-card: rgba(244,235,216,.04);
-    --p-line: rgba(244,235,216,.12);
-    --p-display-font: var(--serif);
-    --p-body-font: var(--serif);
-    --p-mono-font: var(--mono);
-}
-.present-theme-broadcast {
-    --p-bg: #102338;
-    --p-bg-soft: #15304d;
-    --p-fg: #fffaf0;
-    --p-fg-soft: rgba(255,250,240,.78);
-    --p-fg-mute: rgba(255,250,240,.5);
-    --p-accent: #ffcc66;
-    --p-card: rgba(255,255,255,.06);
-    --p-line: rgba(255,255,255,.15);
-    --p-display-font: var(--serif);
-    --p-body-font: var(--serif);
-    --p-mono-font: var(--mono);
+    overflow: hidden;
 }
 
+/* ---------------------------------------------------------
+   THEME: CINEMATIC  (editorial dark, gold leaf, generous)
+   --------------------------------------------------------- */
+.present-theme-cinematic {
+    --p-bg: #06080d;
+    --p-bg-soft: #0c1119;
+    --p-fg: #f5ecd6;
+    --p-fg-soft: rgba(245,236,214,.78);
+    --p-fg-mute: rgba(245,236,214,.45);
+    --p-accent: #e8c889;
+    --p-accent-bright: #f6dba2;
+    --p-accent-deep: #a88a4a;
+    --p-accent-soft: rgba(232,200,137,.16);
+    --p-card: rgba(245,236,214,.04);
+    --p-card-hi: rgba(245,236,214,.08);
+    --p-line: rgba(245,236,214,.14);
+    --p-line-strong: rgba(232,200,137,.4);
+    --p-display-font: var(--serif);
+    --p-body-font: var(--serif);
+    --p-mono-font: var(--mono);
+    --p-frame-radius: 0;
+    --p-shadow: 0 30px 80px -20px rgba(0,0,0,.6), 0 6px 30px -8px rgba(0,0,0,.55);
+}
+/* Cinematic background: deep radial vignette with a faint vertical wash.
+   Two layered images give it a sense of depth without being noisy. */
+.present-theme-cinematic.present-run {
+    background:
+        radial-gradient(ellipse 90% 60% at 50% 35%, rgba(232,200,137,.05) 0%, rgba(0,0,0,0) 60%),
+        radial-gradient(ellipse 80% 80% at 50% 110%, rgba(168,138,74,.08) 0%, rgba(0,0,0,0) 50%),
+        linear-gradient(180deg, #06080d 0%, #0a0d14 100%);
+}
+.present-theme-cinematic .present-run-stage {
+    /* Faint horizontal hairlines top + bottom of the stage area */
+    background:
+        linear-gradient(180deg, rgba(232,200,137,.18), rgba(232,200,137,0)) top / 100% 1px no-repeat,
+        linear-gradient(0deg,   rgba(232,200,137,.18), rgba(232,200,137,0)) bottom / 100% 1px no-repeat;
+}
+
+/* ---------------------------------------------------------
+   THEME: BROADCAST  (stadium graphics, bold, kinetic)
+   --------------------------------------------------------- */
+.present-theme-broadcast {
+    --p-bg: #0b1d33;
+    --p-bg-soft: #0f2747;
+    --p-fg: #ffffff;
+    --p-fg-soft: rgba(255,255,255,.85);
+    --p-fg-mute: rgba(255,255,255,.55);
+    --p-accent: #ffcb47;
+    --p-accent-bright: #ffe082;
+    --p-accent-deep: #b88a18;
+    --p-accent-soft: rgba(255,203,71,.16);
+    --p-secondary: #e23b3b;
+    --p-secondary-soft: rgba(226,59,59,.18);
+    --p-card: rgba(255,255,255,.06);
+    --p-card-hi: rgba(255,255,255,.12);
+    --p-line: rgba(255,255,255,.18);
+    --p-line-strong: rgba(255,203,71,.55);
+    --p-display-font: var(--serif);
+    --p-body-font: var(--serif);
+    --p-mono-font: var(--mono);
+    --p-frame-radius: 4px;
+    --p-shadow: 0 25px 60px -15px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04);
+}
+/* Broadcast: angled gradient + a big subtle diagonal accent band running
+   under the stage. Conveys energy without overwhelming the content. */
+.present-theme-broadcast.present-run {
+    background:
+        linear-gradient(135deg, #0b1d33 0%, #0f2747 55%, #0a1830 100%);
+}
+.present-theme-broadcast.present-run::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255,203,71,.07) 35%, rgba(255,203,71,.07) 38%, transparent 38%, transparent 60%, rgba(226,59,59,.08) 60%, rgba(226,59,59,.08) 63%, transparent 63%);
+    pointer-events: none;
+    z-index: 0;
+}
+.present-theme-broadcast .present-run-stage {
+    position: relative;
+    z-index: 1;
+}
+
+/* ---------------------------------------------------------
+   STAGE + SHARED FRAME
+   --------------------------------------------------------- */
 .present-run-stage {
     flex: 1;
     display: grid;
     place-items: center;
     overflow: hidden;
-    padding: 3rem;
+    padding: clamp(2rem, 4vw, 4.5rem) clamp(2rem, 5vw, 5.5rem);
+    position: relative;
 }
-.present-stage-inner { width: 100%; display: grid; place-items: center; }
+.present-stage-inner {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+}
 
-/* Broadcast theme uses a sharper slide-in instead of the cinematic fade. */
+/* Every slide gets framed corner ornaments. Cinematic = thin gold L-brackets,
+   Broadcast = bold colored corner blocks. The brackets sit in the corners of
+   the stage, not the slide content, so they read as a magazine frame. */
+.present-run-stage::before,
+.present-run-stage::after,
+.present-stage-inner::before,
+.present-stage-inner::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    width: clamp(1.75rem, 3.5vw, 3rem);
+    height: clamp(1.75rem, 3.5vw, 3rem);
+    border-color: var(--p-accent);
+}
+.present-theme-cinematic .present-run-stage::before { top: 1.5rem; left: 1.5rem;
+    border-top: 1px solid var(--p-accent); border-left: 1px solid var(--p-accent); }
+.present-theme-cinematic .present-run-stage::after  { top: 1.5rem; right: 1.5rem;
+    border-top: 1px solid var(--p-accent); border-right: 1px solid var(--p-accent); }
+.present-theme-cinematic .present-stage-inner::before { bottom: 1.5rem; left: 1.5rem;
+    border-bottom: 1px solid var(--p-accent); border-left: 1px solid var(--p-accent); }
+.present-theme-cinematic .present-stage-inner::after  { bottom: 1.5rem; right: 1.5rem;
+    border-bottom: 1px solid var(--p-accent); border-right: 1px solid var(--p-accent); }
+
+/* Broadcast — short bold accent bars in the corners, no full bracket */
+.present-theme-broadcast .present-run-stage::before {
+    top: 1.5rem; left: 1.5rem; width: clamp(4rem, 6vw, 6rem); height: 4px;
+    background: var(--p-accent); border: none;
+}
+.present-theme-broadcast .present-run-stage::after {
+    top: 1.5rem; right: 1.5rem; width: 4px; height: clamp(2rem, 4vw, 3.25rem);
+    background: var(--p-secondary); border: none;
+}
+.present-theme-broadcast .present-stage-inner::before {
+    bottom: 1.5rem; left: 1.5rem; width: 4px; height: clamp(2rem, 4vw, 3.25rem);
+    background: var(--p-secondary); border: none;
+}
+.present-theme-broadcast .present-stage-inner::after {
+    bottom: 1.5rem; right: 1.5rem; width: clamp(4rem, 6vw, 6rem); height: 4px;
+    background: var(--p-accent); border: none;
+}
+
+/* ---------------------------------------------------------
+   SLIDE BASE + ANIMATIONS
+   --------------------------------------------------------- */
+.present-slide {
+    width: 100%;
+    max-width: min(94vw, 1180px);
+    max-height: 100%;
+    text-align: center;
+    animation: present-fade-up .5s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes present-fade-up {
+    from { opacity: 0; transform: translateY(1rem); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 .present-theme-broadcast .present-slide {
     animation: present-slide-in .4s cubic-bezier(.2, .8, .2, 1);
 }
 @keyframes present-slide-in {
-    from { opacity: 0; transform: translateX(2rem); }
+    from { opacity: 0; transform: translateX(2.5rem); }
     to   { opacity: 1; transform: translateX(0); }
 }
 
-.present-slide {
-    width: 100%;
-    max-width: 1100px;
-    text-align: center;
-    animation: present-fade .35s ease;
-}
-@keyframes present-fade {
-    from { opacity: 0; transform: translateY(.5rem); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.present-kicker {
+/* ---------------------------------------------------------
+   TYPOGRAPHY PRIMITIVES (eyebrow, display, sub, footnote)
+   --------------------------------------------------------- */
+.present-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
     font-family: var(--p-mono-font);
-    font-size: clamp(.75rem, 1.2vw, 1rem);
-    letter-spacing: .28em;
+    font-size: clamp(.7rem, 1.15vw, .95rem);
+    letter-spacing: .3em;
     text-transform: uppercase;
     color: var(--p-accent);
-    margin-bottom: 1.5rem;
+    padding: 0;
+    margin: 0 0 1.25rem;
 }
+.present-eyebrow::before,
+.present-eyebrow::after {
+    content: '';
+    display: inline-block;
+    width: clamp(1.5rem, 2.5vw, 2.5rem);
+    height: 1px;
+    background: var(--p-accent);
+    opacity: .65;
+}
+.present-theme-broadcast .present-eyebrow {
+    color: var(--p-accent);
+    background: var(--p-accent-soft);
+    padding: .35rem .8rem;
+    letter-spacing: .25em;
+}
+.present-theme-broadcast .present-eyebrow::before,
+.present-theme-broadcast .present-eyebrow::after { display: none; }
+
 .present-display {
     font-family: var(--p-display-font);
-    font-size: clamp(3rem, 9vw, 8rem);
-    line-height: 1.05;
+    font-size: clamp(3rem, 9.5vw, 9rem);
+    line-height: 1.02;
     margin: 0;
     color: var(--p-fg);
+    letter-spacing: -0.01em;
 }
-.present-sub {
-    font-family: var(--p-body-font);
-    font-size: clamp(1.05rem, 2vw, 1.65rem);
-    color: var(--p-fg-soft);
-    margin: 1.25rem 0 0;
+.present-theme-cinematic .present-display {
+    background: linear-gradient(180deg, var(--p-fg) 0%, var(--p-accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 1px 0 rgba(0,0,0,.4);
+}
+.present-theme-broadcast .present-display {
+    text-shadow: 4px 4px 0 var(--p-secondary-soft);
 }
 
-.present-slide--section { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+.present-sub {
+    font-family: var(--p-body-font);
+    font-size: clamp(1.05rem, 2vw, 1.7rem);
+    color: var(--p-fg-soft);
+    margin: 1.25rem auto 0;
+    max-width: 50rem;
+    line-height: 1.4;
+    font-style: italic;
+}
+.present-theme-broadcast .present-sub { font-style: normal; }
+
+.present-footnote {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.7rem, 1vw, .9rem);
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+    margin-top: 1.5rem;
+}
+
+/* ---------------------------------------------------------
+   COVER / TITLE / SECTION / CLOSING
+   --------------------------------------------------------- */
+.present-slide--cover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: clamp(1rem, 3vw, 3rem) 0;
+}
+.present-slide--cover .present-kicker {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.75rem, 1.3vw, 1rem);
+    letter-spacing: .42em;
+    text-transform: uppercase;
+    color: var(--p-accent);
+    margin-bottom: 2rem;
+    position: relative;
+    padding: .5rem 2.5rem;
+}
+.present-slide--cover .present-kicker::before,
+.present-slide--cover .present-kicker::after {
+    content: '◆';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: .55em;
+    color: var(--p-accent);
+    opacity: .65;
+}
+.present-slide--cover .present-kicker::before { left: 0; }
+.present-slide--cover .present-kicker::after  { right: 0; }
+.present-theme-broadcast .present-slide--cover .present-kicker {
+    background: var(--p-accent);
+    color: var(--p-bg);
+    padding: .5rem 1.5rem;
+    letter-spacing: .32em;
+}
+.present-theme-broadcast .present-slide--cover .present-kicker::before,
+.present-theme-broadcast .present-slide--cover .present-kicker::after { display: none; }
+
+.present-slide--section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
 .present-section-label {
     font-family: var(--p-display-font);
-    font-size: clamp(2.5rem, 8vw, 7rem);
+    font-size: clamp(3rem, 11vw, 10rem);
     letter-spacing: .04em;
     text-transform: uppercase;
     color: var(--p-accent);
     margin: 0;
+    line-height: 1;
+}
+.present-theme-cinematic .present-section-label {
+    background: linear-gradient(180deg, var(--p-accent-bright) 0%, var(--p-accent-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.present-theme-broadcast .present-section-label {
+    text-shadow: 5px 5px 0 var(--p-secondary);
 }
 .present-section-rule {
-    width: min(60vw, 32rem);
+    width: min(50vw, 28rem);
     height: 1px;
-    background: var(--p-line);
+    background: linear-gradient(90deg, transparent, var(--p-accent), transparent);
+}
+.present-theme-broadcast .present-section-rule {
+    height: 4px;
+    background: var(--p-accent);
+    width: min(35vw, 18rem);
 }
 
-.present-slide--callout { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
-.present-eyebrow {
-    font-family: var(--p-mono-font);
-    font-size: clamp(.7rem, 1.1vw, .95rem);
-    letter-spacing: .28em;
-    text-transform: uppercase;
-    color: var(--p-accent);
+/* ---------------------------------------------------------
+   CALLOUT / TEXT / IMAGE  (custom blocks)
+   --------------------------------------------------------- */
+.present-slide--callout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .75rem;
 }
 .present-bignum {
     font-family: var(--p-display-font);
-    font-size: clamp(5rem, 16vw, 14rem);
-    line-height: .95;
+    font-size: clamp(6rem, 18vw, 16rem);
+    line-height: .9;
     color: var(--p-fg);
+    letter-spacing: -0.03em;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+.present-theme-cinematic .present-bignum {
+    background: linear-gradient(180deg, var(--p-accent-bright) 0%, var(--p-accent-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,.4));
+}
+.present-theme-broadcast .present-bignum {
+    color: var(--p-accent);
+    text-shadow: 6px 6px 0 var(--p-secondary-soft);
 }
 .present-caption {
     font-family: var(--p-body-font);
-    font-size: clamp(1.1rem, 2vw, 1.8rem);
+    font-size: clamp(1.1rem, 2.2vw, 1.9rem);
     color: var(--p-fg-soft);
-    max-width: 36rem;
+    max-width: 40rem;
+    line-height: 1.4;
+    font-style: italic;
 }
-.present-footnote {
-    font-family: var(--p-mono-font);
-    font-size: clamp(.7rem, 1vw, .85rem);
-    letter-spacing: .15em;
-    text-transform: uppercase;
-    color: var(--p-fg-mute);
-    margin-top: 1.25rem;
-}
+.present-theme-broadcast .present-caption { font-style: normal; }
 
-.present-slide--text { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; }
+.present-slide--text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
 .present-body {
     font-family: var(--p-display-font);
-    font-size: clamp(1.5rem, 3vw, 2.75rem);
+    font-size: clamp(1.6rem, 3.2vw, 3rem);
     line-height: 1.3;
     color: var(--p-fg);
     white-space: pre-wrap;
-    max-width: 50rem;
+    max-width: 55rem;
+    font-style: italic;
+    position: relative;
+}
+.present-body::before {
+    content: '“';
+    position: absolute;
+    top: -1.5rem;
+    left: -2.5rem;
+    font-size: 6em;
+    color: var(--p-accent);
+    opacity: .25;
+    line-height: 1;
+    font-family: var(--p-display-font);
 }
 .present-attrib {
     font-family: var(--p-mono-font);
-    font-size: clamp(.8rem, 1.2vw, 1rem);
-    letter-spacing: .15em;
-    color: var(--p-fg-mute);
-}
-
-/* Data-driven table slides (standings, leaderboards, champion roll, etc.) */
-.present-slide--table {
-    text-align: left;
-    width: min(94vw, 1100px);
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-.present-slide--table .present-eyebrow { text-align: left; }
-.present-table-title {
-    font-family: var(--p-display-font);
-    font-size: clamp(2.25rem, 6vw, 4.25rem);
-    line-height: 1.05;
-    margin: 0 0 .5rem;
-    color: var(--p-fg);
-}
-.present-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: var(--p-body-font);
-    font-size: clamp(1.05rem, 1.8vw, 1.5rem);
-}
-.present-table th {
-    font-family: var(--p-mono-font);
-    font-size: .72em;
-    letter-spacing: .18em;
+    font-size: clamp(.85rem, 1.3vw, 1.1rem);
+    letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--p-fg-mute);
-    text-align: left;
-    padding: .55rem .75rem;
-    border-bottom: 1px solid var(--p-line);
-    font-weight: 600;
-}
-.present-table td {
-    padding: .65rem .75rem;
-    border-bottom: 1px solid var(--p-line);
-    color: var(--p-fg);
-    vertical-align: middle;
-}
-.present-table tbody tr.is-champion td,
-.present-table tbody tr.is-leader td {
-    background: var(--p-card);
-}
-.present-table tbody tr.is-leader td { color: var(--p-accent); }
-.present-table tbody tr.is-leader td.present-table-rank { color: var(--p-accent); }
-.present-table-rank {
-    font-family: var(--p-mono-font);
-    color: var(--p-fg-mute);
-    font-size: .9em;
-}
-.present-table-manager {
-    display: inline-flex;
-    align-items: center;
-    gap: .65rem;
 }
 
+.present-slide--image { display: flex; flex-direction: column; align-items: center; gap: 1.2rem; }
+.present-image {
+    max-width: min(80vw, 1180px);
+    max-height: 70vh;
+    object-fit: contain;
+    border: 1px solid var(--p-line-strong);
+    box-shadow: var(--p-shadow);
+}
+.present-image-empty {
+    color: var(--p-fg-mute);
+    border: 1px dashed var(--p-line);
+    padding: 4rem 2rem;
+    font-family: var(--p-mono-font);
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    font-size: .8rem;
+}
+
+/* ---------------------------------------------------------
+   AVATARS — multi-layer ring, drop shadow, theme accents
+   --------------------------------------------------------- */
 .present-avatar {
     display: inline-block;
     border-radius: 999px;
     object-fit: cover;
-    background: var(--p-card);
-    border: 1px solid var(--p-line);
+    background: var(--p-card-hi);
+    border: 2px solid var(--p-accent);
+    box-shadow:
+        0 0 0 1px rgba(0,0,0,.4),
+        0 0 0 4px var(--p-bg),
+        0 0 0 5px var(--p-accent-soft),
+        0 8px 24px -6px rgba(0,0,0,.5);
 }
 .present-avatar--initials {
     text-align: center;
-    color: var(--p-fg);
+    color: var(--p-accent);
     font-family: var(--p-mono-font);
     font-weight: 600;
     letter-spacing: .05em;
+    background: var(--p-card-hi);
+}
+.present-theme-broadcast .present-avatar {
+    border-radius: var(--p-frame-radius);
+    border: 3px solid var(--p-accent);
+    box-shadow:
+        0 0 0 1px rgba(0,0,0,.4),
+        4px 4px 0 var(--p-secondary),
+        0 8px 24px -6px rgba(0,0,0,.5);
 }
 
-/* Highlight slides — big metric, primary actor, optional secondary */
+/* ---------------------------------------------------------
+   TABLE SLIDES — standings, leaderboards, champion roll
+   --------------------------------------------------------- */
+.present-slide--table {
+    text-align: left;
+    width: min(96vw, 1180px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-height: 100%;
+}
+.present-slide--table .present-eyebrow {
+    align-self: flex-start;
+    margin-bottom: .5rem;
+}
+.present-table-title {
+    font-family: var(--p-display-font);
+    font-size: clamp(2.5rem, 6.5vw, 4.75rem);
+    line-height: 1;
+    margin: 0 0 .75rem;
+    color: var(--p-fg);
+    letter-spacing: -0.01em;
+}
+.present-theme-cinematic .present-table-title {
+    background: linear-gradient(180deg, var(--p-fg) 0%, var(--p-accent) 130%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.present-theme-broadcast .present-table-title {
+    text-shadow: 4px 4px 0 var(--p-secondary-soft);
+}
+
+.present-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: var(--p-body-font);
+    font-size: clamp(1rem, 1.8vw, 1.4rem);
+    font-variant-numeric: lining-nums tabular-nums;
+    background: linear-gradient(180deg, var(--p-card) 0%, transparent 100%);
+    border: 1px solid var(--p-line);
+    box-shadow: var(--p-shadow);
+}
+.present-table th {
+    font-family: var(--p-mono-font);
+    font-size: .7em;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+    text-align: left;
+    padding: .8rem 1rem;
+    border-bottom: 1px solid var(--p-line-strong);
+    font-weight: 600;
+    background: var(--p-card);
+}
+.present-table td {
+    padding: .65rem 1rem;
+    border-bottom: 1px solid var(--p-line);
+    color: var(--p-fg);
+    vertical-align: middle;
+}
+.present-table tbody tr:last-child td { border-bottom: none; }
+.present-table tbody tr.is-champion td,
+.present-table tbody tr.is-leader td {
+    background: var(--p-accent-soft);
+    position: relative;
+}
+.present-table tbody tr.is-champion td:first-child,
+.present-table tbody tr.is-leader td:first-child {
+    box-shadow: inset 4px 0 0 var(--p-accent);
+}
+.present-table tbody tr.is-leader td { color: var(--p-accent-bright); }
+.present-table tbody tr.is-leader td.present-table-rank { color: var(--p-accent); }
+.present-theme-broadcast .present-table tbody tr.is-leader td { color: var(--p-accent); }
+
+.present-table-rank {
+    font-family: var(--p-mono-font);
+    color: var(--p-fg-mute);
+    font-size: .95em;
+    width: 3rem;
+    font-weight: 600;
+}
+.present-table-manager {
+    display: inline-flex;
+    align-items: center;
+    gap: .85rem;
+    font-family: var(--p-display-font);
+}
+.present-table-manager .present-avatar { box-shadow: 0 0 0 1px var(--p-bg), 0 0 0 2px var(--p-accent-soft); }
+
+/* Compact table mode — kicks in when a deck has many standings rows so all
+   of them fit on one slide without scrolling. The block JSX adds `.is-dense`
+   for tables with more than 10 rows. */
+.present-table.is-dense { font-size: clamp(.85rem, 1.3vw, 1.05rem); }
+.present-table.is-dense th { padding: .55rem .75rem; }
+.present-table.is-dense td { padding: .45rem .75rem; }
+.present-table.is-dense .present-avatar { width: 28px !important; height: 28px !important; }
+.present-table.is-very-dense { font-size: clamp(.75rem, 1.15vw, .95rem); }
+.present-table.is-very-dense th { padding: .4rem .65rem; letter-spacing: .15em; }
+.present-table.is-very-dense td { padding: .35rem .65rem; }
+.present-table.is-very-dense .present-avatar { width: 24px !important; height: 24px !important; }
+
+/* Champion roll — magazine-style stacked rows, golden year column */
+.present-champ-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: 0 2rem;
+    background: linear-gradient(180deg, var(--p-card) 0%, transparent 100%);
+    border: 1px solid var(--p-line);
+    padding: .75rem 1.25rem;
+    box-shadow: var(--p-shadow);
+}
+.present-champ-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: .7rem .25rem;
+    border-bottom: 1px solid var(--p-line);
+}
+.present-champ-row:last-child { border-bottom: none; }
+.present-champ-year {
+    font-family: var(--p-display-font);
+    font-size: clamp(1.4rem, 2.6vw, 2.2rem);
+    color: var(--p-accent);
+    letter-spacing: .03em;
+    width: 5rem;
+    flex: 0 0 auto;
+    font-variant-numeric: lining-nums tabular-nums;
+    line-height: 1;
+}
+.present-theme-broadcast .present-champ-year {
+    background: var(--p-accent);
+    color: var(--p-bg);
+    width: 4.5rem;
+    text-align: center;
+    padding: .25rem .5rem;
+    font-size: clamp(1.1rem, 2vw, 1.6rem);
+}
+.present-champ-manager {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: var(--p-display-font);
+    font-size: clamp(1.3rem, 2.4vw, 2rem);
+    line-height: 1.1;
+    flex: 1;
+    min-width: 0;
+}
+.present-champ-manager span:not(.present-avatar) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------
+   HIGHLIGHT SLIDES — big metric, primary + optional secondary
+   --------------------------------------------------------- */
 .present-slide--highlight {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1.5rem;
     text-align: center;
 }
 .present-highlight-title {
     font-family: var(--p-display-font);
-    font-size: clamp(2.25rem, 6vw, 4.5rem);
-    line-height: 1.05;
+    font-size: clamp(2.5rem, 6.5vw, 5rem);
+    line-height: 1.02;
     margin: 0;
+    letter-spacing: -0.01em;
 }
-.present-highlight-metric { display: flex; flex-direction: column; align-items: center; gap: .25rem; }
+.present-theme-cinematic .present-highlight-title {
+    background: linear-gradient(180deg, var(--p-fg) 0%, var(--p-accent) 140%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.present-theme-broadcast .present-highlight-title {
+    text-shadow: 4px 4px 0 var(--p-secondary-soft);
+}
+.present-highlight-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .35rem;
+    position: relative;
+    padding: 1.5rem 3rem;
+}
+.present-highlight-metric::before,
+.present-highlight-metric::after {
+    content: '';
+    position: absolute;
+    width: clamp(2rem, 4vw, 3.5rem);
+    height: 1px;
+    background: var(--p-accent);
+    top: 50%;
+}
+.present-highlight-metric::before { left: 0; }
+.present-highlight-metric::after  { right: 0; }
+.present-theme-broadcast .present-highlight-metric::before,
+.present-theme-broadcast .present-highlight-metric::after {
+    height: 3px;
+    background: var(--p-accent);
+}
 .present-highlight-number {
     font-family: var(--p-display-font);
-    font-size: clamp(4rem, 13vw, 11rem);
-    line-height: .95;
+    font-size: clamp(5rem, 15vw, 13rem);
+    line-height: .9;
     color: var(--p-accent);
+    letter-spacing: -0.03em;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+.present-theme-cinematic .present-highlight-number {
+    background: linear-gradient(180deg, var(--p-accent-bright) 0%, var(--p-accent-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,.4));
+}
+.present-theme-broadcast .present-highlight-number {
+    text-shadow: 6px 6px 0 var(--p-secondary);
 }
 .present-highlight-metric-label {
     font-family: var(--p-mono-font);
-    font-size: clamp(.7rem, 1.1vw, 1rem);
-    letter-spacing: .25em;
+    font-size: clamp(.75rem, 1.2vw, 1rem);
+    letter-spacing: .28em;
     text-transform: uppercase;
     color: var(--p-fg-mute);
 }
 .present-highlight-actors {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    gap: 2rem;
     flex-wrap: wrap;
     justify-content: center;
 }
@@ -582,205 +1014,289 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .55rem;
+    gap: .85rem;
 }
-.present-highlight-actor--muted { opacity: .7; }
+.present-highlight-actor--muted { opacity: .58; }
 .present-highlight-actor-name {
     font-family: var(--p-display-font);
-    font-size: clamp(1.25rem, 2.4vw, 2rem);
+    font-size: clamp(1.3rem, 2.6vw, 2.2rem);
     line-height: 1.1;
     color: var(--p-fg);
+    letter-spacing: -0.005em;
 }
 .present-highlight-vs {
     font-family: var(--p-mono-font);
     font-size: clamp(.7rem, 1.1vw, .95rem);
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--p-fg-mute);
-    padding: 0 .25rem;
-}
-
-/* Champion roll call — two-column rows, larger avatars */
-.present-champ-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
-    gap: .65rem 1.5rem;
-}
-.present-champ-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: .5rem .25rem;
-    border-bottom: 1px solid var(--p-line);
-}
-.present-champ-year {
-    font-family: var(--p-mono-font);
-    font-size: clamp(1.1rem, 2.2vw, 1.8rem);
-    color: var(--p-accent);
-    letter-spacing: .05em;
-    width: 4.5rem;
-    flex: 0 0 auto;
-}
-.present-champ-manager {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    font-family: var(--p-display-font);
-    font-size: clamp(1.2rem, 2.4vw, 2rem);
-}
-
-/* Career stat card */
-.present-slide--card { display: flex; flex-direction: column; gap: 1.5rem; width: min(94vw, 1100px); text-align: left; }
-.present-slide--card .present-eyebrow { text-align: left; }
-.present-card-head { display: flex; align-items: center; gap: 1.5rem; }
-.present-card-head-text { display: flex; flex-direction: column; gap: .25rem; }
-.present-card-title {
-    font-family: var(--p-display-font);
-    font-size: clamp(2.5rem, 7vw, 5rem);
-    line-height: 1.05;
-    margin: 0;
-    color: var(--p-fg);
-}
-.present-card-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-    gap: 1rem;
-    border-top: 1px solid var(--p-line);
-    padding-top: 1.25rem;
-}
-.present-card-stat { display: flex; flex-direction: column; gap: .15rem; }
-.present-card-stat-num {
-    font-family: var(--p-display-font);
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    line-height: 1;
-    color: var(--p-accent);
-}
-.present-card-stat-label {
-    font-family: var(--p-mono-font);
-    font-size: clamp(.65rem, 1vw, .85rem);
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: var(--p-fg-mute);
-}
-
-/* Head-to-head / rivalry slides */
-.present-slide--versus {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.25rem;
-    text-align: center;
-}
-.present-versus { display: flex; align-items: center; gap: 2rem; flex-wrap: wrap; justify-content: center; }
-.present-versus-side {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .55rem;
-    min-width: 8rem;
-}
-.present-versus-side.is-loser { opacity: .55; }
-.present-versus-name {
-    font-family: var(--p-display-font);
-    font-size: clamp(1.3rem, 2.6vw, 2.2rem);
-    line-height: 1.1;
-}
-.present-versus-wins {
-    font-family: var(--p-display-font);
-    font-size: clamp(3.5rem, 10vw, 7rem);
-    line-height: 1;
-    color: var(--p-accent);
-}
-.present-versus-divider {
-    font-family: var(--p-mono-font);
-    font-size: clamp(.9rem, 1.6vw, 1.4rem);
     letter-spacing: .25em;
     text-transform: uppercase;
     color: var(--p-fg-mute);
     padding: 0 .5rem;
 }
-.present-versus-line {
+
+/* ---------------------------------------------------------
+   CAREER STAT CARD — left avatar + right grid of big stats
+   --------------------------------------------------------- */
+.present-slide--card {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    width: min(94vw, 1180px);
+    text-align: left;
+}
+.present-slide--card .present-eyebrow { align-self: flex-start; margin-bottom: 0; }
+.present-card-head {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--p-line-strong);
+    border-bottom: 1px solid var(--p-line-strong);
+}
+.present-card-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    flex: 1;
+    min-width: 0;
+}
+.present-card-title {
+    font-family: var(--p-display-font);
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    line-height: 1;
+    margin: 0;
+    color: var(--p-fg);
+    letter-spacing: -0.015em;
+}
+.present-theme-cinematic .present-card-title {
+    background: linear-gradient(180deg, var(--p-fg) 0%, var(--p-accent) 140%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.present-theme-broadcast .present-card-title {
+    text-shadow: 4px 4px 0 var(--p-secondary-soft);
+}
+.present-card-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 1.5rem;
+}
+.present-card-stat {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    padding: 1rem .25rem;
+    border-left: 2px solid var(--p-accent);
+    padding-left: 1.25rem;
+}
+.present-theme-broadcast .present-card-stat {
+    border-left: 4px solid var(--p-accent);
+    background: var(--p-card);
+    padding: 1rem 1.25rem;
+}
+.present-card-stat-num {
+    font-family: var(--p-display-font);
+    font-size: clamp(2.5rem, 5.5vw, 4rem);
+    line-height: .95;
+    color: var(--p-accent);
+    font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: -0.02em;
+}
+.present-theme-cinematic .present-card-stat-num {
+    background: linear-gradient(180deg, var(--p-accent-bright) 0%, var(--p-accent-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.present-card-stat-label {
     font-family: var(--p-mono-font);
-    font-size: clamp(.75rem, 1.2vw, 1rem);
-    letter-spacing: .15em;
+    font-size: clamp(.65rem, 1vw, .85rem);
+    letter-spacing: .22em;
     text-transform: uppercase;
     color: var(--p-fg-mute);
 }
 
-/* Draft board grid (Round 1) */
+/* ---------------------------------------------------------
+   VERSUS SLIDES — head-to-head + rivalries (giant numbers)
+   --------------------------------------------------------- */
+.present-slide--versus {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
+}
+.present-versus {
+    display: flex;
+    align-items: center;
+    gap: clamp(1.5rem, 4vw, 4rem);
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 1rem 0;
+}
+.present-versus-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .75rem;
+    min-width: 10rem;
+    position: relative;
+}
+.present-versus-side.is-loser { opacity: .5; }
+.present-versus-name {
+    font-family: var(--p-display-font);
+    font-size: clamp(1.3rem, 2.8vw, 2.4rem);
+    line-height: 1.1;
+    letter-spacing: -0.005em;
+}
+.present-versus-wins {
+    font-family: var(--p-display-font);
+    font-size: clamp(4.5rem, 13vw, 9rem);
+    line-height: 1;
+    color: var(--p-accent);
+    font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: -0.04em;
+}
+.present-theme-cinematic .present-versus-wins {
+    background: linear-gradient(180deg, var(--p-accent-bright) 0%, var(--p-accent-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 5px 14px rgba(0,0,0,.4));
+}
+.present-theme-broadcast .present-versus-wins {
+    text-shadow: 6px 6px 0 var(--p-secondary);
+}
+/* Vertical lightning column between the two sides — cinematic */
+.present-versus-divider {
+    font-family: var(--p-mono-font);
+    font-size: clamp(1rem, 1.8vw, 1.5rem);
+    letter-spacing: .35em;
+    text-transform: uppercase;
+    color: var(--p-accent);
+    padding: 0 .75rem;
+    position: relative;
+}
+.present-theme-cinematic .present-versus-divider::before,
+.present-theme-cinematic .present-versus-divider::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: clamp(2rem, 4vw, 3.5rem);
+    background: linear-gradient(180deg, transparent, var(--p-accent), transparent);
+}
+.present-theme-cinematic .present-versus-divider::before { top: -110%; }
+.present-theme-cinematic .present-versus-divider::after  { bottom: -110%; }
+.present-theme-broadcast .present-versus-divider {
+    background: var(--p-secondary);
+    color: var(--p-fg);
+    padding: .5rem 1rem;
+    font-weight: 700;
+}
+.present-versus-line {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.75rem, 1.2vw, 1rem);
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+    border-top: 1px solid var(--p-line);
+    padding-top: 1.25rem;
+    margin-top: .5rem;
+}
+
+/* ---------------------------------------------------------
+   DRAFT BOARD GRID + MVP SLIDE
+   --------------------------------------------------------- */
 .present-draft-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
-    gap: .65rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: .75rem;
+    width: 100%;
 }
 .present-draft-card {
     display: flex;
     align-items: stretch;
     background: var(--p-card);
     border: 1px solid var(--p-line);
-    padding: .55rem .75rem;
-    gap: .8rem;
+    padding: .65rem .85rem;
+    gap: .9rem;
+    position: relative;
+    overflow: hidden;
+}
+.present-draft-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--p-accent);
+    opacity: .8;
+}
+.present-theme-broadcast .present-draft-card::before {
+    background: var(--p-secondary);
+    width: 4px;
 }
 .present-draft-pick {
-    font-family: var(--p-mono-font);
+    font-family: var(--p-display-font);
     color: var(--p-accent);
-    font-size: clamp(1.4rem, 2.6vw, 2rem);
+    font-size: clamp(1.6rem, 2.8vw, 2.2rem);
     line-height: 1;
     min-width: 2rem;
     align-self: center;
+    font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: -0.02em;
 }
-.present-draft-body { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.present-draft-body { display: flex; flex-direction: column; gap: .2rem; min-width: 0; flex: 1; }
 .present-draft-player {
     font-family: var(--p-display-font);
-    font-size: clamp(1rem, 1.8vw, 1.35rem);
+    font-size: clamp(1.05rem, 1.85vw, 1.4rem);
     line-height: 1.15;
     color: var(--p-fg);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .present-draft-meta {
     font-family: var(--p-mono-font);
-    font-size: clamp(.6rem, .9vw, .75rem);
-    letter-spacing: .12em;
+    font-size: clamp(.6rem, .92vw, .78rem);
+    letter-spacing: .15em;
     text-transform: uppercase;
     color: var(--p-fg-mute);
 }
 .present-draft-team {
     display: inline-flex;
     align-items: center;
-    gap: .45rem;
+    gap: .5rem;
     font-family: var(--p-mono-font);
-    font-size: clamp(.7rem, 1vw, .85rem);
+    font-size: clamp(.7rem, 1.05vw, .88rem);
     color: var(--p-fg-soft);
-    margin-top: .25rem;
+    margin-top: .3rem;
+    letter-spacing: .05em;
+}
+.present-draft-team .present-avatar {
+    box-shadow: 0 0 0 1px var(--p-bg), 0 0 0 2px var(--p-accent-soft);
+    border-width: 1px;
 }
 
-/* Manager of the year (curated MVP) */
 .present-slide--mvp {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1.5rem;
     text-align: center;
 }
-
-.present-slide--image { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-.present-image {
-    max-width: min(80vw, 1100px);
-    max-height: 70vh;
-    object-fit: contain;
-    border: 1px solid var(--p-line);
-}
-.present-image-empty {
-    color: var(--p-fg-mute);
-    border: 1px dashed var(--p-line);
-    padding: 4rem 2rem;
-    font-family: var(--p-mono-font);
-    letter-spacing: .15em;
-    text-transform: uppercase;
-    font-size: .75rem;
+.present-slide--mvp .present-avatar { box-shadow:
+    0 0 0 2px rgba(0,0,0,.4),
+    0 0 0 6px var(--p-bg),
+    0 0 0 8px var(--p-accent),
+    0 0 0 9px var(--p-accent-soft),
+    0 15px 40px -10px rgba(0,0,0,.6);
 }
 
-/* Chrome (progress, controls, hint) */
+/* ---------------------------------------------------------
+   CHROME — progress + controls + keyboard hint
+   --------------------------------------------------------- */
 .present-run-chrome {
     flex: 0 0 auto;
     display: flex;
@@ -791,12 +1307,15 @@
     background: var(--p-bg-soft);
     gap: 1rem;
     flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
 }
 .present-run-progress {
     font-family: var(--p-mono-font);
-    font-size: .8rem;
-    letter-spacing: .18em;
+    font-size: .85rem;
+    letter-spacing: .2em;
     color: var(--p-fg-mute);
+    font-variant-numeric: lining-nums tabular-nums;
 }
 .present-run-controls { display: flex; gap: .4rem; align-items: center; }
 .present-run-controls button,
@@ -804,30 +1323,34 @@
     background: var(--p-card);
     border: 1px solid var(--p-line);
     color: var(--p-fg);
-    padding: .45rem .85rem;
+    padding: .5rem .95rem;
     font-family: var(--p-mono-font);
     font-size: .8rem;
-    letter-spacing: .12em;
+    letter-spacing: .14em;
     text-transform: uppercase;
     cursor: pointer;
     text-decoration: none;
     transition: background .15s, color .15s, border-color .15s;
 }
 .present-run-controls button:hover,
-.present-run-exit:hover { background: var(--p-accent); color: var(--p-bg); border-color: var(--p-accent); }
-.present-run-controls button:disabled { opacity: .35; cursor: not-allowed; }
+.present-run-exit:hover {
+    background: var(--p-accent);
+    color: var(--p-bg);
+    border-color: var(--p-accent);
+}
+.present-run-controls button:disabled { opacity: .3; cursor: not-allowed; }
 .present-run-hint {
     font-family: var(--p-mono-font);
     font-size: .65rem;
-    letter-spacing: .15em;
+    letter-spacing: .18em;
     color: var(--p-fg-mute);
     text-transform: uppercase;
 }
-@media (max-width: 760px) {
-    .present-run-hint { display: none; }
-}
+@media (max-width: 760px) { .present-run-hint { display: none; } }
 
-/* Empty-state landing when the presenter route is opened without a deck. */
+/* ---------------------------------------------------------
+   EMPTY STATE / LOADING
+   --------------------------------------------------------- */
 .present-run-empty,
 .present-run-loading {
     position: fixed;
@@ -840,26 +1363,28 @@
     padding: 2rem;
 }
 .present-run-empty-card {
-    max-width: 28rem;
+    max-width: 30rem;
     text-align: center;
     background: var(--ink-card);
-    border: 1px solid var(--ink-line);
-    padding: 2rem;
+    border: 1px solid var(--gold-deep);
+    padding: 2.5rem 2rem;
+    box-shadow: 0 25px 60px -15px rgba(0,0,0,.55);
 }
 .present-run-empty-card h1 {
     font-family: var(--serif);
-    font-size: 2rem;
-    margin: .5rem 0 .75rem;
+    font-size: 2.25rem;
+    margin: .75rem 0 .75rem;
 }
 .present-run-empty-card p {
     color: var(--cream-soft);
-    font-size: .95rem;
-    margin: 0 0 1.5rem;
+    font-size: .98rem;
+    margin: 0 0 1.75rem;
+    line-height: 1.5;
 }
 .present-run-empty-kicker {
     font-family: var(--mono);
     font-size: .7rem;
-    letter-spacing: .22em;
+    letter-spacing: .25em;
     text-transform: uppercase;
     color: var(--gold);
 }
