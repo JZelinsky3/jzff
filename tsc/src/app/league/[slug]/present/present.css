@@ -295,6 +295,17 @@
     border-color: var(--gold);
 }
 
+.present-no-data-banner {
+    border: 1px solid var(--gold-deep);
+    background: rgba(232, 200, 137, .07);
+    color: var(--cream);
+    padding: .85rem 1rem;
+    font-size: .9rem;
+    line-height: 1.45;
+}
+.present-no-data-banner strong { color: var(--gold); }
+.present-no-data-banner a { color: var(--gold); text-decoration: underline; }
+
 .present-builder-footer { padding-top: 1.5rem; }
 .present-builder-back {
     color: var(--cream-mute);
@@ -356,6 +367,16 @@
     place-items: center;
     overflow: hidden;
     padding: 3rem;
+}
+.present-stage-inner { width: 100%; display: grid; place-items: center; }
+
+/* Broadcast theme uses a sharper slide-in instead of the cinematic fade. */
+.present-theme-broadcast .present-slide {
+    animation: present-slide-in .4s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes present-slide-in {
+    from { opacity: 0; transform: translateX(2rem); }
+    to   { opacity: 1; transform: translateX(0); }
 }
 
 .present-slide {

@@ -159,6 +159,15 @@ export function Builder({
         </div>
       </header>
 
+      {data.seasons.length === 0 ? (
+        <div className="present-no-data-banner">
+          <strong>No synced data yet.</strong> The catalog still works for custom + cover blocks,
+          but standings, leaderboards, and highlight blocks need at least one synced season.
+          {' '}
+          <Link href={`/league/${slug}/sources`}>Add a source →</Link>
+        </div>
+      ) : null}
+
       <div className="present-builder-body">
         <aside className="present-catalog">
           <div className="present-catalog-title">Block catalog</div>
@@ -183,7 +192,8 @@ export function Builder({
             )
           })}
           <div className="present-catalog-footnote">
-            Highlights, manager spotlights, rivalries, and draft blocks land in upcoming releases.
+            Use the custom blocks (callout, quote, image) as escape hatches for anything the
+            catalog doesn&apos;t cover.
           </div>
         </aside>
 

@@ -115,11 +115,16 @@ export function Presenter({
   return (
     <div ref={rootRef} className={`present-run present-theme-${deck.theme}`} data-slide-id={slide.id}>
       <div className="present-run-stage">
-        {def ? def.render({ values: slide.values, theme: deck.theme, leagueName: deck.leagueName, data }) : (
-          <div className="present-slide">
-            <p>Unknown block: {slide.blockId}</p>
-          </div>
-        )}
+        {/* Keyed wrapper forces React to remount on slide change so the
+            CSS keyframes restart even if two consecutive slides share the
+            same block type. */}
+        <div key={`${slide.id}-${index}`} className="present-stage-inner">
+          {def ? def.render({ values: slide.values, theme: deck.theme, leagueName: deck.leagueName, data }) : (
+            <div className="present-slide">
+              <p>Unknown block: {slide.blockId}</p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="present-run-chrome">

@@ -16,10 +16,13 @@ export default async function LeagueOverviewPage({
 
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, last_synced_at, published_at')
+    .select('id, name, last_synced_at, published_at, owner_id')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) notFound()
+
+  const { data: { user: viewer } } = await supabase.auth.getUser()
+  const isOwner = !!viewer && league.owner_id === viewer.id
 
   const [
     { count: seasonCount },
@@ -244,6 +247,29 @@ export default async function LeagueOverviewPage({
           </div>
         </div>
       </div>
+
+      {isOwner ? (
+        <div className="section">
+          <div className="section-header">
+            <span className="section-num">§ 05 · Showcase</span>
+            <span className="section-title">Show off the league —</span>
+            <span className="section-meta">Owner only</span>
+          </div>
+          <Link href={`/league/${slug}/present`} className="toc-row">
+            <div className="toc-chapter">Ch. V</div>
+            <div className="toc-title-wrap">
+              <div className="toc-title">Presentation <em>mode.</em></div>
+              <div className="toc-desc">
+                Build a slide deck from your league&apos;s data — standings, all-time leaders,
+                rivalries, biggest blowouts — then present full-screen at a draft party or
+                end-of-year banquet. Decks live in the browser tab; nothing saves.
+              </div>
+            </div>
+            <span className="toc-badge ember">New</span>
+            <div className="toc-arrow">→</div>
+          </Link>
+        </div>
+      ) : null}
 
       <SiteFooter />
     </main>
