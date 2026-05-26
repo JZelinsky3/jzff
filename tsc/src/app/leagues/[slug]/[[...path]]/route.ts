@@ -347,9 +347,16 @@ export async function GET(
     return new NextResponse('Data not found', { status: 404 })
   }
   return NextResponse.json(value, {
-    // Data files: browser 5 min, CDN 10 min, stale-while-revalidate 1h. The
-    // server-side bundle cache is tag-busted on sync; clients may briefly see
-    // stale data right after a sync but it self-heals within max-age.
-    headers: { 'Cache-Control': 'public, max-age=300, s-maxage=600, stale-while-revalidate=3600' },
+    // Data files: browser caches briefly so a single page load can fetch many
+    // JSONs without repeating work, but we keep Vercel's CDN OUT of the loop
+    // because `revalidateTag('league-<id>')` only busts the in-memory
+    // `unstable_cache` entry — it does NOT purge an edge-cached response.
+    // Without that purge, settings changes / syncs took up to s-maxage to
+    // show up on the public almanac even after the server bundle rebuilt.
+    headers: {
+      'Cache-Control': 'public, max-age=60, must-revalidate',
+      'CDN-Cache-Control': 'no-store',
+      'Vercel-CDN-Cache-Control': 'no-store',
+    },
   })
 }
