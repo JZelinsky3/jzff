@@ -17,10 +17,12 @@ export default async function LeagueLayout({
 
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, platform')
+    .select('id, name, platform, owner_id')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) notFound()
+
+  const isOwner = league.owner_id === user.id
 
   const words = league.name.trim().split(/\s+/)
   const head = words.slice(0, -1).join(' ')
@@ -36,7 +38,7 @@ export default async function LeagueLayout({
             {head} {tail && <em>{tail}.</em>}
           </div>
         </div>
-        <AdminNavMenu slug={slug} />
+        <AdminNavMenu slug={slug} isOwner={isOwner} />
       </nav>
       {children}
     </>

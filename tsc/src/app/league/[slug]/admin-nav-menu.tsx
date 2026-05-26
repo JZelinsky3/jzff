@@ -8,7 +8,7 @@ import { NavDropdown, type DropGroup, type SubItem } from '@/components/NavDropd
 // league hub, the dashboard, and the public almanac. Built on top of the
 // shared NavDropdown so styles + click-outside / Escape behavior match the
 // rest of the site.
-export function AdminNavMenu({ slug }: { slug: string }) {
+export function AdminNavMenu({ slug, isOwner = false }: { slug: string; isOwner?: boolean }) {
   const pathname = usePathname() ?? ''
   const hub = `/league/${slug}`
   const onHub = pathname === hub || pathname === `${hub}/`
@@ -36,6 +36,12 @@ export function AdminNavMenu({ slug }: { slug: string }) {
     groups.push({
       label: 'Admin',
       entries: adminPages.map((p) => ({ type: 'link', href: p.href, label: p.label })),
+    })
+  }
+  if (isOwner && !pathname.startsWith(`${hub}/present`)) {
+    groups.push({
+      label: 'Showcase',
+      entries: [{ type: 'link', href: `${hub}/present`, label: 'Presentation mode' }],
     })
   }
   groups.push({
