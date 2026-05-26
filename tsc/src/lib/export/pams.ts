@@ -820,6 +820,22 @@ function buildDraftFile(s: Snapshot, season: SeasonRow): unknown | null {
   // re-sync. Without this, the old platform display_name sticks around.
   const managerToGroup = buildManagerToGroup(buildProfileGroups(s))
 
+  // Build a final-rank map keyed by canonical manager_name so the draft
+  // history page can pair "where I drafted" with "where I finished" without
+  // a second fetch. Null for in-progress seasons / unranked teams.
+  const finishesByName: Record<string, number | null> = {}
+  for (const r of ms) {
+    const mgr = s.managers.get(r.manager_id)
+    if (!mgr) continue
+    const group = managerToGroup.get(mgr.id)
+    const key = group ? groupDisplayName(group) : mgr.display_name
+    if (!key) continue
+    // If two platform identities map to the same canonical group, prefer the
+    // one that actually has a rank set rather than overwriting with a null.
+    if (finishesByName[key] != null && r.final_rank == null) continue
+    finishesByName[key] = r.final_rank ?? null
+  }
+
   const sorted = [...picks].sort((a, b) => a.pick - b.pick)
   return {
     year: season.year,
@@ -842,6 +858,8 @@ function buildDraftFile(s: Snapshot, season: SeasonRow): unknown | null {
         user_id: userId(group?.primary ?? mgr ?? undefined),
       }
     }),
+    finishes: finishesByName,
+    team_count: ms.length,
     _rounds: rounds, // unused by pams but handy when debugging shape diffs
   }
 }

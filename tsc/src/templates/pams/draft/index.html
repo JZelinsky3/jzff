@@ -428,21 +428,23 @@ body { background: var(--dg-bg); }
 }
 .do-table th.do-summary,
 .do-table td.do-summary {
-    width: 84px; min-width: 84px;
+    width: 88px; min-width: 88px;
 }
-.do-table th.do-traj,
-.do-table td.do-traj {
-    width: 220px; min-width: 220px;
-    padding: .35rem .8rem;
-    border-left: 1px solid var(--dg-line) !important;
+/* Each year cell stacks pick slot on top, finish position underneath. */
+.do-table td .do-slot {
+    display: block; font-family: var(--mono); font-weight: 700;
+    font-size: .9rem; line-height: 1.05;
 }
-.do-traj svg { display: block; width: 100%; }
-.do-traj-hint {
-    display: block; text-align: center;
-    font-family: var(--mono); font-size: .5rem;
-    letter-spacing: .15em; text-transform: uppercase;
-    color: var(--cream-mute); margin-top: .15rem;
+.do-finish {
+    display: block; margin-top: .2rem;
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .12em; color: var(--cream-mute);
 }
+.do-finish .do-finish-arrow { opacity: .55; margin: 0 .15em; }
+.do-finish .do-finish-rank { color: var(--cream-soft); font-weight: 700; }
+.do-finish.do-finish-champ .do-finish-rank { color: var(--gold); }
+.do-finish.do-finish-podium .do-finish-rank { color: var(--gold-bright, var(--gold)); }
+.do-finish.do-finish-pending .do-finish-rank { color: var(--dg-line); }
 .do-table td {
     padding: .55rem .6rem;
     border-right: 1px solid var(--dg-line-soft);
@@ -1029,6 +1031,8 @@ var POS_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
 var SCORING_PROFILE = 'ppr_6pt';
 var yearData      = {};
+var yearFinishes  = {};
+var yearTeamCount = {};
 var rankData      = {};
 var draftPosRanks = {};
 var allPicks      = [];
@@ -1129,6 +1133,8 @@ function loadYear(year, cb) {
         .then(function (r) { return r.json(); })
         .then(function (d) {
             yearData[year] = d.picks;
+            yearFinishes[year] = d.finishes || {};
+            yearTeamCount[year] = d.team_count || 0;
             if (cb) cb();
         })
         .catch(function (e) {
@@ -1145,6 +1151,8 @@ function loadAllYears() {
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 yearData[y] = d.picks;
+                yearFinishes[y] = d.finishes || {};
+                yearTeamCount[y] = d.team_count || 0;
                 d.picks.forEach(function (p) { allPicks.push(Object.assign({year: y}, p)); });
                 remaining--;
                 if (remaining === 0) onAllLoaded();
@@ -1432,48 +1440,18 @@ function renderDraftOrderHistory() {
     var retiredMgrs = allMgrs.filter(function(m){ return  isRetired(m); }).sort(sortFn);
     allMgrs = activeMgrs.concat(retiredMgrs);
 
-    // Find the max slot in the data so the trajectory axis matches league size
-    // (10-team, 12-team, 14-team leagues all render their own scale).
-    var maxSlotAny = 12;
-    YEARS.forEach(function(y) {
-        Object.keys(pivot).forEach(function(m) {
-            var s = pivot[m][y];
-            if (typeof s === 'number' && s > maxSlotAny) maxSlotAny = s;
-        });
-    });
-
-    function trajectorySVG(mgr) {
-        var W = 200, H = 22, PAD = 6;
-        var range = Math.max(maxSlotAny - 1, 1);
-        var yearsHere = YEARS.filter(function(y){ return pivot[mgr] && pivot[mgr][y] != null; });
-        if (!yearsHere.length) return '';
-        var path = '';
-        var dots = '';
-        yearsHere.forEach(function(y, i) {
-            var slot = pivot[mgr][y];
-            var x = PAD + ((slot - 1) / range) * (W - 2 * PAD);
-            var cy = H / 2;
-            path += (i === 0 ? 'M ' : 'L ') + x.toFixed(1) + ' ' + cy.toFixed(1) + ' ';
-            // Older years muted, newest year full gold + slightly larger.
-            var t = yearsHere.length === 1 ? 1 : (i / (yearsHere.length - 1));
-            var opacity = (0.3 + 0.7 * t).toFixed(2);
-            var r = i === yearsHere.length - 1 ? 4 : 3;
-            dots += '<circle cx="' + x.toFixed(1) + '" cy="' + cy + '" r="' + r + '" '
-                  + 'fill="var(--gold)" fill-opacity="' + opacity + '"><title>' + y + ' · slot ' + slot + '</title></circle>';
-        });
-        return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-label="Slot trajectory">'
-             + '<line x1="' + PAD + '" y1="' + (H/2) + '" x2="' + (W - PAD) + '" y2="' + (H/2)
-             + '" stroke="var(--dg-line)" stroke-width="1"/>'
-             + '<path d="' + path + '" stroke="var(--gold-deep)" stroke-width="1.2" fill="none" stroke-opacity="0.55"/>'
-             + dots
-             + '</svg>'
-             + '<span class="do-traj-hint">early ◂ slot ▸ late</span>';
+    function finishClass(rank, teams) {
+        if (rank == null) return 'do-finish-pending';
+        if (rank === 1) return 'do-finish-champ';
+        if (rank <= 3) return 'do-finish-podium';
+        if (teams && rank >= teams - 1) return 'do-finish-bottom';
+        return '';
     }
 
     var html = '<table class="do-table"><thead><tr><th>Manager</th>';
     YEARS.forEach(function(y){ html += '<th>' + y + '</th>'; });
-    html += '<th class="do-traj">Trajectory</th>';
-    html += '<th class="do-summary">Avg</th>';
+    html += '<th class="do-summary">Avg Pick</th>';
+    html += '<th class="do-summary">Avg Finish</th>';
     html += '</tr></thead><tbody>';
 
     var totalCols = YEARS.length + 1 + 2;
@@ -1486,23 +1464,46 @@ function renderDraftOrderHistory() {
         }
         html += '<tr' + (isRetired(mgr) ? ' class="alumni-row"' : '') + '>';
         html += '<td class="do-mgr">' + esc(mgr) + '</td>';
-        var vals = [];
+        var pickVals = [];
+        var finishVals = [];
         YEARS.forEach(function(y) {
             var slot = pivot[mgr] && pivot[mgr][y];
+            var finishes = yearFinishes[y] || {};
+            var finish = finishes[mgr];
+            var teams = yearTeamCount[y] || 0;
             if (slot != null) {
-                vals.push(slot);
+                pickVals.push(slot);
                 var col = slot <= 4  ? 'var(--gold)'
                         : slot <= 8  ? 'var(--dg-accent)'
                         : slot <= 11 ? 'var(--cream-soft)'
                         : 'var(--cream-mute)';
-                html += '<td><span class="do-slot" style="color:' + col + '">' + ordinal(slot) + '</span></td>';
+                var finishHtml;
+                if (finish != null) {
+                    finishVals.push(finish);
+                    finishHtml = '<span class="do-finish ' + finishClass(finish, teams) + '">'
+                               + '<span class="do-finish-arrow">→</span>'
+                               + 'finished <span class="do-finish-rank">' + ordinal(finish) + '</span>'
+                               + '</span>';
+                } else {
+                    finishHtml = '<span class="do-finish do-finish-pending">'
+                               + '<span class="do-finish-arrow">→</span>in progress</span>';
+                }
+                html += '<td>'
+                      + '<span class="do-slot" style="color:' + col + '">' + ordinal(slot) + ' pick</span>'
+                      + finishHtml
+                      + '</td>';
             } else {
                 html += '<td class="r1-empty-cell">—</td>';
             }
         });
-        html += '<td class="do-traj">' + trajectorySVG(mgr) + '</td>';
-        var avg = vals.length ? (vals.reduce(function(s,v){return s+v;},0) / vals.length).toFixed(1) : '—';
-        html += '<td class="do-summary do-avg">' + avg + '</td>';
+        var avgPick = pickVals.length
+            ? (pickVals.reduce(function(s,v){return s+v;},0) / pickVals.length).toFixed(1)
+            : '—';
+        var avgFinish = finishVals.length
+            ? (finishVals.reduce(function(s,v){return s+v;},0) / finishVals.length).toFixed(1)
+            : '—';
+        html += '<td class="do-summary do-avg">' + avgPick + '</td>';
+        html += '<td class="do-summary do-avg">' + avgFinish + '</td>';
         html += '</tr>';
     });
 
