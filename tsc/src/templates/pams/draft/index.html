@@ -320,9 +320,12 @@ body { background: var(--dg-bg); }
 
 /* ── First round pivot table ── */
 .r1-pivot-wrap { overflow-x: auto; border: 1px solid var(--dg-line); }
+/* Natural width — every year column is a fixed pixel width regardless of how
+   many seasons the league has. Short leagues get blank placeholder columns
+   appended in JS so the layout doesn't collapse the manager column inwards;
+   long leagues just scroll horizontally inside `.r1-pivot-wrap`. */
 .r1-pivot {
-    border-collapse: collapse; width: 100%; min-width: 100%;
-    table-layout: fixed;
+    border-collapse: collapse; width: max-content; min-width: 100%;
 }
 .r1-pivot th {
     font-family: var(--mono); font-weight: 700;
@@ -334,16 +337,32 @@ body { background: var(--dg-bg); }
     color: var(--dg-accent); text-align: center;
     white-space: nowrap;
 }
-/* Manager column gets a fixed width so it can't dominate the row when there
-   are only 1–2 year columns. Year columns each get an equal share of the
-   remaining width via table-layout: fixed. */
-.r1-pivot th:first-child { text-align: left; width: 11rem; min-width: 11rem; }
+.r1-pivot th:first-child {
+    text-align: left;
+    width: 11rem; min-width: 11rem; max-width: 11rem;
+}
+.r1-pivot th:not(:first-child) { width: 130px; min-width: 130px; }
 .r1-pivot td {
     padding: .6rem .75rem;
     border-right: 1px solid var(--dg-line-soft);
     border-bottom: 1px solid var(--dg-line-soft);
     vertical-align: top;
+    width: 130px; min-width: 130px;
     overflow: hidden;
+}
+.r1-pivot td.r1-mgr-cell { width: 11rem; min-width: 11rem; max-width: 11rem; }
+/* Greyed-out future-season placeholder columns. */
+.r1-pivot th.r1-placeholder,
+.r1-pivot td.r1-placeholder {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent 0 6px,
+        rgba(232,200,137,0.025) 6px 12px
+    ) !important;
+    color: var(--dg-line);
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .15em; text-transform: uppercase;
+    text-align: center;
 }
 .r1-pivot tbody tr:last-child td { border-bottom: none; }
 .r1-pivot tbody tr:nth-child(odd) td  { background: var(--dg-card); }
@@ -589,9 +608,24 @@ body { background: var(--dg-bg); }
 .slot-table tbody tr:hover td { background: var(--dg-card-hover) !important; }
 .slot-num { font-family: var(--mono); font-weight: 700; font-size: .85rem; text-align: center; }
 .slot-pos { font-family: var(--mono); font-weight: 700; font-size: .72rem; text-align: center; }
-.slot-cell { min-width: 108px; }
+.slot-cell { min-width: 108px; width: 108px; }
 .slot-player { font-size: .72rem; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; display: block; }
 .slot-mgr { font-family: var(--mono); font-size: .55rem; color: var(--cream-mute); display: block; margin-top: .15rem; }
+.slot-table th:not(:first-child):not(:nth-child(2)) { min-width: 108px; width: 108px; }
+/* Greyed-out future-season placeholders for short leagues. */
+.slot-table th.slot-placeholder,
+.slot-table td.slot-placeholder {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent 0 6px,
+        rgba(232,200,137,0.025) 6px 12px
+    ) !important;
+    color: var(--dg-line);
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .15em; text-transform: uppercase;
+    text-align: center;
+    min-width: 108px; width: 108px;
+}
 
 /* ── Draft value analysis ── */
 .value-unavail {
@@ -1282,16 +1316,28 @@ function renderR1Table() {
     var retiredMgrs = allMgrs.filter(function(m){ return  isRetired(m); }).sort(sortFn);
     allMgrs = activeMgrs.concat(retiredMgrs);
 
+    // Pad short leagues out with greyed "future season" placeholder columns so
+    // 3-year leagues don't get a deformed table. Targets MIN_COLS year columns
+    // total (placeholders + real years). Leagues with ≥ MIN_COLS years just
+    // render naturally and overflow into a horizontal scroll.
+    var MIN_COLS = 6;
+    var placeholderCount = Math.max(0, MIN_COLS - YEARS.length);
+    var nextYear = (YEARS.length ? Math.max.apply(null, YEARS) : new Date().getFullYear()) + 1;
+    var totalCols = YEARS.length + placeholderCount + 1;
+
     var html = '<div class="r1-pivot-wrap"><table class="r1-pivot"><thead><tr>'
              + '<th>Manager</th>';
     YEARS.forEach(function(y){ html += '<th>' + y + '</th>'; });
+    for (var ph = 0; ph < placeholderCount; ph++) {
+        html += '<th class="r1-placeholder">' + (nextYear + ph) + '</th>';
+    }
     html += '</tr></thead><tbody>';
 
     var sep = false;
     allMgrs.forEach(function(mgr) {
         if (!sep && isRetired(mgr)) {
             sep = true;
-            html += '<tr class="alumni-divider"><td colspan="' + (YEARS.length + 1) + '">— Alumni —</td></tr>';
+            html += '<tr class="alumni-divider"><td colspan="' + totalCols + '">— Alumni —</td></tr>';
         }
         html += '<tr' + (isRetired(mgr) ? ' class="alumni-row"' : '') + '>';
         html += '<td class="r1-mgr-cell">' + esc(mgr) + '</td>';
@@ -1312,6 +1358,9 @@ function renderR1Table() {
                 html += '<td class="r1-year-cell r1-empty-cell">—</td>';
             }
         });
+        for (var ph2 = 0; ph2 < placeholderCount; ph2++) {
+            html += '<td class="r1-placeholder">·</td>';
+        }
         html += '</tr>';
     });
     html += '</tbody></table></div>';
@@ -1622,9 +1671,18 @@ function renderPickSlotHistory() {
                    .forEach(function(p){ if (p.round_pick > maxSlot) maxSlot = p.round_pick; });
     });
 
+    // Same placeholder treatment as the R1 pivot — pad short leagues out so
+    // year columns stay a consistent width regardless of how many seasons.
+    var MIN_COLS_SLOT = 6;
+    var placeholderCountSlot = Math.max(0, MIN_COLS_SLOT - YEARS.length);
+    var nextYearSlot = (YEARS.length ? Math.max.apply(null, YEARS) : new Date().getFullYear()) + 1;
+
     var html = '<table class="slot-table"><thead><tr>';
     html += '<th>Slot</th><th>Common</th>';
     YEARS.forEach(function(y){ html += '<th>' + y + '</th>'; });
+    for (var phs = 0; phs < placeholderCountSlot; phs++) {
+        html += '<th class="slot-placeholder">' + (nextYearSlot + phs) + '</th>';
+    }
     html += '</tr></thead><tbody>';
 
     for (var slot = 1; slot <= maxSlot; slot++) {
@@ -1649,6 +1707,9 @@ function renderPickSlotHistory() {
                 html += '<td style="text-align:center;color:var(--dg-line)">—</td>';
             }
         });
+        for (var phs2 = 0; phs2 < placeholderCountSlot; phs2++) {
+            html += '<td class="slot-placeholder">·</td>';
+        }
         html += '</tr>';
     }
 
