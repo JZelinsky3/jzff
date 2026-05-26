@@ -762,10 +762,20 @@ body { background: var(--dg-bg); }
 .hb-card2-label {
     font-family: var(--mono); font-size: .52rem;
     letter-spacing: .18em; text-transform: uppercase;
-    color: var(--cream-mute); margin-bottom: .2rem;
+    color: var(--cream-mute); margin-bottom: .25rem;
+    display: flex; align-items: center; gap: .35rem; flex-wrap: wrap;
 }
-.hb-card2-player { font-weight: 700; font-size: .9rem; line-height: 1.2; }
-.hb-card2-info { font-family: var(--mono); font-size: .6rem; color: var(--cream-mute); margin-top: .15rem; }
+.hb-card2-label .hb-mgr { color: var(--cream); font-weight: 700; letter-spacing: .12em; }
+.hb-card2-label .hb-verb { color: var(--cream-mute); }
+.hb-card2-player { font-weight: 700; font-size: .9rem; line-height: 1.2; display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.hb-card2-player .hb-pos-pill {
+    display: inline-block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .08em;
+    padding: .1rem .3rem; border-radius: 2px;
+    vertical-align: middle;
+}
+.hb-card2-info { font-family: var(--mono); font-size: .6rem; color: var(--cream-mute); margin-top: .2rem; }
 .hb-card2-arrow { color: var(--dg-line); font-size: 1rem; padding: 1.2rem .35rem 0; flex-shrink: 0; }
 
 /* ── Alumni / Retired separator ── */
@@ -1929,18 +1939,34 @@ function renderValuePos() {
                   + '<span class="hb-card2-gap">+' + h.gap + ' spots</span>'
                   + '</div>';
             html += '<div class="hb-card2-versus">';
+            // Left side: <manager> took → <player> [POS] → Finished #X
             html += '<div>'
-                  + '<div class="hb-card2-label">Took · <span style="color:' + pcA.text + '">' + posA + '</span></div>'
-                  + '<div class="hb-card2-player">' + esc(h.taken.player_name) + '</div>'
-                  + '<div class="hb-card2-info">' + esc(h.taken.manager_name)
-                  + ' · ' + (takenFinal ? 'Finished #' + takenFinal.rank : 'No data') + '</div>'
+                  + '<div class="hb-card2-label">'
+                    + '<span class="hb-mgr">' + esc(h.taken.manager_name) + '</span>'
+                    + '<span class="hb-verb">took</span>'
+                  + '</div>'
+                  + '<div class="hb-card2-player">'
+                    + '<span>' + esc(h.taken.player_name) + '</span>'
+                    + '<span class="hb-pos-pill" style="background:' + pcA.bg + ';color:' + pcA.text + '">' + posA + '</span>'
+                  + '</div>'
+                  + '<div class="hb-card2-info">'
+                    + (takenFinal ? 'Finished #' + takenFinal.rank : 'No data')
+                  + '</div>'
                   + '</div>';
             html += '<div class="hb-card2-arrow">→</div>';
+            // Right side: same shape, missed instead of took, player name tinted red.
             html += '<div>'
-                  + '<div class="hb-card2-label">Missed · <span style="color:' + pcB.text + '">' + posB + '</span></div>'
-                  + '<div class="hb-card2-player" style="color:#c87060">' + esc(h.missed.player_name) + '</div>'
-                  + '<div class="hb-card2-info">' + esc(h.missed.manager_name)
-                  + ' · Finished #' + missedFinal.rank + '</div>'
+                  + '<div class="hb-card2-label">'
+                    + '<span class="hb-mgr">' + esc(h.taken.manager_name) + '</span>'
+                    + '<span class="hb-verb">missed</span>'
+                  + '</div>'
+                  + '<div class="hb-card2-player" style="color:#c87060">'
+                    + '<span>' + esc(h.missed.player_name) + '</span>'
+                    + '<span class="hb-pos-pill" style="background:' + pcB.bg + ';color:' + pcB.text + '">' + posB + '</span>'
+                  + '</div>'
+                  + '<div class="hb-card2-info">'
+                    + 'Finished #' + missedFinal.rank
+                  + '</div>'
                   + '</div>';
             html += '</div></div>';
         });
