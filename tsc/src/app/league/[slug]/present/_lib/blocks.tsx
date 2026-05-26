@@ -5,10 +5,12 @@ import {
   avatarForManager,
   biggestBlowout,
   closestGame,
+  headToHead,
   highestScoringWeek,
   longestWinStreak,
   lowestScoringWeek,
   nameForManager,
+  profileById,
   profileTotals,
 } from './leagueData'
 
@@ -674,6 +676,251 @@ const longestStreakBlock: BlockDef = {
   },
 }
 
+// ─── Manager spotlights ────────────────────────────────────────────────────
+
+const careerCardBlock: BlockDef = {
+  id: 'career-card',
+  label: 'Career stat card',
+  category: 'managers',
+  description: 'Pick a manager — show their career W-L, points, seasons, and titles.',
+  options: {
+    profile: { kind: 'pick', label: 'Manager', source: 'manager' },
+    title: { kind: 'text', label: 'Title override', placeholder: '(uses manager name)', default: '' },
+  },
+  defaults: () => ({ profile: '', title: '' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const totals = profileTotals(data).find((t) => t.profileId === values.profile)
+    if (!totals) return <MissingData reason="Pick a manager in the inspector to populate this slide." />
+    const games = totals.wins + totals.losses + totals.ties
+    const winPct = games > 0 ? totals.wins / games : 0
+    return (
+      <div className="present-slide present-slide--card">
+        <div className="present-card-head">
+          <Avatar url={totals.avatarUrl} name={totals.canonicalName} size={108} />
+          <div className="present-card-head-text">
+            <div className="present-eyebrow">Career</div>
+            <h2 className="present-card-title">{values.title || totals.canonicalName}</h2>
+          </div>
+        </div>
+        <div className="present-card-stats">
+          <div className="present-card-stat">
+            <div className="present-card-stat-num">{totals.wins}-{totals.losses}{totals.ties ? `-${totals.ties}` : ''}</div>
+            <div className="present-card-stat-label">Record</div>
+          </div>
+          <div className="present-card-stat">
+            <div className="present-card-stat-num">{(winPct * 100).toFixed(1)}%</div>
+            <div className="present-card-stat-label">Win rate</div>
+          </div>
+          <div className="present-card-stat">
+            <div className="present-card-stat-num">{totals.pointsFor.toFixed(0)}</div>
+            <div className="present-card-stat-label">Total PF</div>
+          </div>
+          <div className="present-card-stat">
+            <div className="present-card-stat-num">{totals.seasons}</div>
+            <div className="present-card-stat-label">Seasons</div>
+          </div>
+          <div className="present-card-stat">
+            <div className="present-card-stat-num">{totals.championships}</div>
+            <div className="present-card-stat-label">Titles</div>
+          </div>
+        </div>
+      </div>
+    )
+  },
+}
+
+const headToHeadBlock: BlockDef = {
+  id: 'head-to-head',
+  label: 'Head-to-head',
+  category: 'managers',
+  description: 'Pick two managers — show their all-time record against each other.',
+  options: {
+    profileA: { kind: 'pick', label: 'Manager A', source: 'manager' },
+    profileB: { kind: 'pick', label: 'Manager B', source: 'manager' },
+    title: { kind: 'text', label: 'Title', placeholder: 'Head to head', default: '' },
+  },
+  defaults: () => ({ profileA: '', profileB: '', title: 'Head to head' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    if (!values.profileA || !values.profileB) {
+      return <MissingData reason="Pick two managers in the inspector." />
+    }
+    if (values.profileA === values.profileB) {
+      return <MissingData reason="Pick two different managers." />
+    }
+    const h2h = headToHead(data, values.profileA, values.profileB)
+    if (!h2h) return <MissingData reason="These two have never met." />
+    return (
+      <div className="present-slide present-slide--versus">
+        <div className="present-eyebrow">{values.title || 'Head to head'}</div>
+        <div className="present-versus">
+          <div className="present-versus-side">
+            <Avatar url={h2h.avatarA} name={h2h.nameA} size={120} />
+            <div className="present-versus-name">{h2h.nameA}</div>
+            <div className="present-versus-wins">{h2h.winsA}</div>
+          </div>
+          <div className="present-versus-divider">vs</div>
+          <div className="present-versus-side">
+            <Avatar url={h2h.avatarB} name={h2h.nameB} size={120} />
+            <div className="present-versus-name">{h2h.nameB}</div>
+            <div className="present-versus-wins">{h2h.winsB}</div>
+          </div>
+        </div>
+        <div className="present-versus-line">
+          {h2h.matchupCount} meetings · {h2h.pointsForA.toFixed(0)}–{h2h.pointsForB.toFixed(0)} points
+          {h2h.ties ? ` · ${h2h.ties} tie${h2h.ties === 1 ? '' : 's'}` : ''}
+        </div>
+        {h2h.biggestMargin ? (
+          <div className="present-footnote">
+            Biggest swing: {h2h.biggestMargin.winnerId === h2h.profileAId ? h2h.nameA : h2h.nameB}
+            {' '}by {h2h.biggestMargin.margin.toFixed(1)} (W{h2h.biggestMargin.week}, {h2h.biggestMargin.year})
+          </div>
+        ) : null}
+      </div>
+    )
+  },
+}
+
+// ─── Rivalry slides ────────────────────────────────────────────────────────
+
+function rivalryRecord(data: LeaguePresentationData, managerAId: string, managerBId: string) {
+  // Rivalries are stored against manager rows (per-platform). Translate to
+  // profiles so the record sweeps across both Sleeper + NFL identities.
+  const profileOf = new Map(data.managers.map((m) => [m.id, m.profileId]))
+  const pidA = profileOf.get(managerAId)
+  const pidB = profileOf.get(managerBId)
+  if (!pidA || !pidB) return null
+  return headToHead(data, pidA, pidB)
+}
+
+const featuredRivalryBlock: BlockDef = {
+  id: 'featured-rivalry',
+  label: 'Featured rivalry',
+  category: 'rivalry',
+  description: 'Pick a curated rivalry — show its title and the all-time record.',
+  options: {
+    rivalry: { kind: 'pick', label: 'Rivalry', source: 'rivalry' },
+  },
+  defaults: () => ({ rivalry: '' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    if (data.rivalries.length === 0) {
+      return <MissingData reason="No rivalries curated yet — add some on the Rivalries page." />
+    }
+    const r = data.rivalries.find((x) => x.id === values.rivalry)
+    if (!r) return <MissingData reason="Pick a rivalry in the inspector." />
+    const h2h = rivalryRecord(data, r.managerAId, r.managerBId)
+    if (!h2h) return <MissingData reason="These two have never met." />
+    return (
+      <div className="present-slide present-slide--versus">
+        <div className="present-eyebrow">Rivalry</div>
+        <h2 className="present-card-title" style={{ marginBottom: '.5rem' }}>{r.name}</h2>
+        <div className="present-versus">
+          <div className="present-versus-side">
+            <Avatar url={h2h.avatarA} name={h2h.nameA} size={120} />
+            <div className="present-versus-name">{h2h.nameA}</div>
+            <div className="present-versus-wins">{h2h.winsA}</div>
+          </div>
+          <div className="present-versus-divider">vs</div>
+          <div className="present-versus-side">
+            <Avatar url={h2h.avatarB} name={h2h.nameB} size={120} />
+            <div className="present-versus-name">{h2h.nameB}</div>
+            <div className="present-versus-wins">{h2h.winsB}</div>
+          </div>
+        </div>
+        <div className="present-versus-line">
+          {h2h.matchupCount} meetings
+          {h2h.lastMeetingYear ? ` · last met ${h2h.lastMeetingYear}` : ''}
+        </div>
+      </div>
+    )
+  },
+}
+
+const mostLopsidedRivalryBlock: BlockDef = {
+  id: 'most-lopsided-rivalry',
+  label: 'Most lopsided rivalry',
+  category: 'rivalry',
+  description: 'Of the curated rivalries, the one with the biggest record gap.',
+  options: {
+    title: { kind: 'text', label: 'Title', placeholder: 'Most one-sided', default: '' },
+  },
+  defaults: () => ({ title: 'Most one-sided' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    if (data.rivalries.length === 0) {
+      return <MissingData reason="No rivalries curated yet — add some on the Rivalries page." />
+    }
+    let bestGap = -1
+    let bestRivalry: { name: string; h2h: NonNullable<ReturnType<typeof rivalryRecord>> } | null = null
+    for (const r of data.rivalries) {
+      const h2h = rivalryRecord(data, r.managerAId, r.managerBId)
+      if (!h2h) continue
+      const gap = Math.abs(h2h.winsA - h2h.winsB)
+      if (gap > bestGap) {
+        bestGap = gap
+        bestRivalry = { name: r.name, h2h }
+      }
+    }
+    if (!bestRivalry) return <MissingData reason="None of your rivalries have any meetings yet." />
+    const { name, h2h } = bestRivalry
+    const aLeads = h2h.winsA >= h2h.winsB
+    return (
+      <div className="present-slide present-slide--versus">
+        <div className="present-eyebrow">{values.title || 'Most one-sided'}</div>
+        <h2 className="present-card-title" style={{ marginBottom: '.5rem' }}>{name}</h2>
+        <div className="present-versus">
+          <div className={`present-versus-side ${aLeads ? '' : 'is-loser'}`}>
+            <Avatar url={h2h.avatarA} name={h2h.nameA} size={120} />
+            <div className="present-versus-name">{h2h.nameA}</div>
+            <div className="present-versus-wins">{h2h.winsA}</div>
+          </div>
+          <div className="present-versus-divider">vs</div>
+          <div className={`present-versus-side ${aLeads ? 'is-loser' : ''}`}>
+            <Avatar url={h2h.avatarB} name={h2h.nameB} size={120} />
+            <div className="present-versus-name">{h2h.nameB}</div>
+            <div className="present-versus-wins">{h2h.winsB}</div>
+          </div>
+        </div>
+        <div className="present-versus-line">
+          {(aLeads ? h2h.nameA : h2h.nameB)} leads by {Math.abs(h2h.winsA - h2h.winsB)} across {h2h.matchupCount} meetings.
+        </div>
+      </div>
+    )
+  },
+}
+
+// Manager-of-the-year is purely owner-curated: pick a season + manager + caption.
+const managerOfYearBlock: BlockDef = {
+  id: 'manager-of-year',
+  label: 'Manager of the year',
+  category: 'managers',
+  description: 'Owner-curated MVP slide — pick a season, pick a manager, write your case.',
+  options: {
+    season: { kind: 'pick', label: 'Season', source: 'season' },
+    profile: { kind: 'pick', label: 'Manager', source: 'manager' },
+    caption: { kind: 'text', label: 'One-line case', placeholder: 'Why they earned it', default: '' },
+  },
+  defaults: () => ({ season: '', profile: '', caption: '' }),
+  render: ({ values, data }) => {
+    if (!data) return <MissingData reason="Sync your league first." />
+    const season = data.seasons.find((s) => s.id === values.season)
+    const profile = profileById(data, values.profile)
+    if (!season || !profile) {
+      return <MissingData reason="Pick a season and a manager in the inspector." />
+    }
+    return (
+      <div className="present-slide present-slide--mvp">
+        <div className="present-eyebrow">Manager of the year · {season.year}</div>
+        <Avatar url={profile.avatarUrl} name={profile.canonicalName} size={160} />
+        <div className="present-card-title" style={{ fontSize: 'clamp(3rem, 8vw, 6rem)' }}>{profile.canonicalName}</div>
+        {values.caption ? <div className="present-sub">{values.caption}</div> : null}
+      </div>
+    )
+  },
+}
+
 export const BLOCKS: BlockDef[] = [
   titleBlock,
   sectionBlock,
@@ -688,6 +935,11 @@ export const BLOCKS: BlockDef[] = [
   biggestBlowoutBlock,
   closestGameBlock,
   longestStreakBlock,
+  careerCardBlock,
+  managerOfYearBlock,
+  headToHeadBlock,
+  featuredRivalryBlock,
+  mostLopsidedRivalryBlock,
   customCalloutBlock,
   customTextBlock,
   customImageBlock,

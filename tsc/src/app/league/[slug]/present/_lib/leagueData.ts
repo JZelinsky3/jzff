@@ -205,6 +205,11 @@ export function nameForManager(data: LeaguePresentationData, id: string | null |
   return m.displayName || '—'
 }
 
+export function profileById(data: LeaguePresentationData, id: string | null | undefined): ProfileLite | null {
+  if (!id) return null
+  return data.profiles.find((p) => p.id === id) ?? null
+}
+
 export function avatarForManager(data: LeaguePresentationData, id: string | null | undefined): string | null {
   const m = managerById(data, id)
   if (!m) return null
@@ -399,6 +404,93 @@ export type StreakResult = {
   length: number
   startYear: number
   endYear: number
+}
+
+export type HeadToHead = {
+  profileAId: string
+  profileBId: string
+  nameA: string
+  nameB: string
+  avatarA: string | null
+  avatarB: string | null
+  winsA: number
+  winsB: number
+  ties: number
+  pointsForA: number
+  pointsForB: number
+  matchupCount: number
+  lastMeetingYear: number | null
+  biggestMargin: { winnerId: string; margin: number; year: number; week: number } | null
+}
+
+// Head-to-head record between two profiles, summing across every season
+// where either of their per-platform managers met. Hidden profiles are
+// allowed here — caller controls whether to expose hidden alumni.
+export function headToHead(
+  data: LeaguePresentationData,
+  profileAId: string,
+  profileBId: string,
+): HeadToHead | null {
+  if (!profileAId || !profileBId || profileAId === profileBId) return null
+  const profileOf = new Map(data.managers.map((m) => [m.id, m.profileId]))
+  const yearById = new Map(data.seasons.map((s) => [s.id, s.year]))
+  const a = data.profiles.find((p) => p.id === profileAId)
+  const b = data.profiles.find((p) => p.id === profileBId)
+  if (!a || !b) return null
+
+  let winsA = 0, winsB = 0, ties = 0
+  let pointsForA = 0, pointsForB = 0
+  let matchupCount = 0
+  let lastMeetingYear: number | null = null
+  let biggestMargin: HeadToHead['biggestMargin'] = null
+
+  for (const m of data.matchups) {
+    if (m.scoreA == null || m.scoreB == null) continue
+    const pidA = profileOf.get(m.managerAId)
+    const pidB = profileOf.get(m.managerBId)
+    if (!pidA || !pidB) continue
+    // Order-agnostic: A vs B means our matchup's A-side could be either profile.
+    let isAFirst: boolean
+    if (pidA === profileAId && pidB === profileBId) isAFirst = true
+    else if (pidA === profileBId && pidB === profileAId) isAFirst = false
+    else continue
+
+    matchupCount++
+    const year = yearById.get(m.seasonId) ?? null
+    if (year != null && (lastMeetingYear == null || year > lastMeetingYear)) lastMeetingYear = year
+
+    const scoreOurA = isAFirst ? m.scoreA : m.scoreB
+    const scoreOurB = isAFirst ? m.scoreB : m.scoreA
+    pointsForA += scoreOurA
+    pointsForB += scoreOurB
+
+    if (scoreOurA === scoreOurB) {
+      ties++
+    } else {
+      const margin = Math.abs(scoreOurA - scoreOurB)
+      if (!biggestMargin || margin > biggestMargin.margin) {
+        biggestMargin = {
+          winnerId: scoreOurA > scoreOurB ? profileAId : profileBId,
+          margin,
+          year: year ?? 0,
+          week: m.week,
+        }
+      }
+      if (scoreOurA > scoreOurB) winsA++; else winsB++
+    }
+  }
+
+  if (matchupCount === 0) return null
+
+  return {
+    profileAId, profileBId,
+    nameA: a.canonicalName,
+    nameB: b.canonicalName,
+    avatarA: a.avatarUrl,
+    avatarB: b.avatarUrl,
+    winsA, winsB, ties, pointsForA, pointsForB,
+    matchupCount, lastMeetingYear, biggestMargin,
+  }
 }
 
 // Longest consecutive regular-season win streak per profile (playoff games

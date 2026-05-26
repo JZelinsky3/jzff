@@ -260,13 +260,18 @@ export function Builder({
                           .slice()
                           .sort((a, b) => b.year - a.year)
                           .map((s) => ({ value: s.id, label: String(s.year) }))
-                      : // 'manager' source: prefer profile-level (canonical names),
+                      : opt.source === 'rivalry'
+                        ? data.rivalries
+                            .slice()
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((r) => ({ value: r.id, label: r.name }))
+                        // 'manager' source: prefer profile-level (canonical names),
                         // skip hidden alumni, alpha by name.
-                        data.profiles
-                          .filter((p) => !p.isHidden)
-                          .slice()
-                          .sort((a, b) => a.canonicalName.localeCompare(b.canonicalName))
-                          .map((p) => ({ value: p.id, label: p.canonicalName }))
+                        : data.profiles
+                            .filter((p) => !p.isHidden)
+                            .slice()
+                            .sort((a, b) => a.canonicalName.localeCompare(b.canonicalName))
+                            .map((p) => ({ value: p.id, label: p.canonicalName }))
                   return (
                     <label key={key} className="present-field">
                       <span>{opt.label}</span>

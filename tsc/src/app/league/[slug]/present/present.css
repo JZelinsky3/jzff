@@ -608,6 +608,93 @@
     font-size: clamp(1.2rem, 2.4vw, 2rem);
 }
 
+/* Career stat card */
+.present-slide--card { display: flex; flex-direction: column; gap: 1.5rem; width: min(94vw, 1100px); text-align: left; }
+.present-slide--card .present-eyebrow { text-align: left; }
+.present-card-head { display: flex; align-items: center; gap: 1.5rem; }
+.present-card-head-text { display: flex; flex-direction: column; gap: .25rem; }
+.present-card-title {
+    font-family: var(--p-display-font);
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    line-height: 1.05;
+    margin: 0;
+    color: var(--p-fg);
+}
+.present-card-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: 1rem;
+    border-top: 1px solid var(--p-line);
+    padding-top: 1.25rem;
+}
+.present-card-stat { display: flex; flex-direction: column; gap: .15rem; }
+.present-card-stat-num {
+    font-family: var(--p-display-font);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    line-height: 1;
+    color: var(--p-accent);
+}
+.present-card-stat-label {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.65rem, 1vw, .85rem);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+}
+
+/* Head-to-head / rivalry slides */
+.present-slide--versus {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    text-align: center;
+}
+.present-versus { display: flex; align-items: center; gap: 2rem; flex-wrap: wrap; justify-content: center; }
+.present-versus-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .55rem;
+    min-width: 8rem;
+}
+.present-versus-side.is-loser { opacity: .55; }
+.present-versus-name {
+    font-family: var(--p-display-font);
+    font-size: clamp(1.3rem, 2.6vw, 2.2rem);
+    line-height: 1.1;
+}
+.present-versus-wins {
+    font-family: var(--p-display-font);
+    font-size: clamp(3.5rem, 10vw, 7rem);
+    line-height: 1;
+    color: var(--p-accent);
+}
+.present-versus-divider {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.9rem, 1.6vw, 1.4rem);
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+    padding: 0 .5rem;
+}
+.present-versus-line {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.75rem, 1.2vw, 1rem);
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+}
+
+/* Manager of the year (curated MVP) */
+.present-slide--mvp {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    text-align: center;
+}
+
 .present-slide--image { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
 .present-image {
     max-width: min(80vw, 1100px);
