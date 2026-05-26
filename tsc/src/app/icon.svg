@@ -7,5 +7,5 @@
         font-size="40"
         fill="#e8c889"
         text-anchor="middle"
-        letter-spacing="-1">C<tspan dx="1">.</tspan></text>
+        letter-spacing="-1">C<tspan dx="-1">.</tspan></text>
 </svg>
