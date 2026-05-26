@@ -58,11 +58,20 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     siteName: "The Sunday Chronicle",
     locale: "en_US",
+    images: [
+      {
+        url: "/tsc-logo-1200.png",
+        width: 1200,
+        height: 1200,
+        alt: "The Sunday Chronicle — TSC.",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "The Sunday Chronicle — Fantasy football league archive",
     description: DESCRIPTION,
+    images: ["/tsc-logo-1200.png"],
   },
   robots: {
     index: true,
