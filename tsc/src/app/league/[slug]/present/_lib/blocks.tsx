@@ -184,6 +184,14 @@ function MissingData({ reason }: { reason: string }) {
   )
 }
 
+// Picks a density class based on row count. Tables with 9+ rows get tighter
+// padding so a 12-14 team standings table fits on one slide without scrolling.
+function tableDensityClass(rowCount: number): string {
+  if (rowCount >= 14) return 'is-very-dense'
+  if (rowCount >= 9) return 'is-dense'
+  return ''
+}
+
 function Avatar({ url, name, size = 44 }: { url: string | null; name: string; size?: number }) {
   if (url) {
     return (
@@ -244,7 +252,7 @@ const finalStandingsBlock: BlockDef = {
       <div className="present-slide present-slide--table">
         <div className="present-eyebrow">{season.year} season</div>
         <h2 className="present-table-title">{values.title || 'Final standings'}</h2>
-        <table className="present-table">
+        <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
               <th style={{ width: '3rem' }}>#</th>
@@ -300,7 +308,7 @@ const allTimeWinsBlock: BlockDef = {
       <div className="present-slide present-slide--table">
         <div className="present-eyebrow">All time</div>
         <h2 className="present-table-title">{values.title || 'All-time wins'}</h2>
-        <table className="present-table">
+        <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
               <th style={{ width: '3rem' }}>#</th>
@@ -351,7 +359,7 @@ const allTimePointsBlock: BlockDef = {
       <div className="present-slide present-slide--table">
         <div className="present-eyebrow">All time</div>
         <h2 className="present-table-title">{values.title || 'All-time points-for'}</h2>
-        <table className="present-table">
+        <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
               <th style={{ width: '3rem' }}>#</th>
@@ -442,7 +450,7 @@ const playoffApsBlock: BlockDef = {
       <div className="present-slide present-slide--table">
         <div className="present-eyebrow">All time</div>
         <h2 className="present-table-title">{values.title || 'Most championships'}</h2>
-        <table className="present-table">
+        <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
               <th style={{ width: '3rem' }}>#</th>
