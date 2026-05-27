@@ -21,7 +21,7 @@ function newId(): string {
 }
 
 function blankDeck(slug: string, leagueName: string): Deck {
-  return { version: 1, leagueSlug: slug, leagueName, theme: 'cinematic', slides: [] }
+  return { version: 1, leagueSlug: slug, leagueName, theme: 'cinematic', scope: '', slides: [] }
 }
 
 function loadDeck(slug: string, leagueName: string): Deck {
@@ -32,7 +32,8 @@ function loadDeck(slug: string, leagueName: string): Deck {
     const parsed = JSON.parse(raw) as Deck
     if (parsed?.version === 1 && parsed.leagueSlug === slug) {
       // Always reflect the latest league name; the rest is user-authored.
-      return { ...parsed, leagueName }
+      // `scope` was added later — default to all-time if missing on disk.
+      return { ...parsed, leagueName, scope: parsed.scope ?? '' }
     }
   } catch {
     // Malformed storage — fall through to blank.
@@ -135,6 +136,23 @@ export function Builder({
           </p>
         </div>
         <div className="present-builder-actions">
+          <label className="present-theme-toggle">
+            <span>Scope</span>
+            <select
+              value={deck.scope}
+              onChange={(e) => setDeck((d) => ({ ...d, scope: e.target.value }))}
+            >
+              <option value="">All-time</option>
+              {data.seasons
+                .slice()
+                .sort((a, b) => b.year - a.year)
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.year}{s.isFinished ? '' : ' (in progress)'}
+                  </option>
+                ))}
+            </select>
+          </label>
           <label className="present-theme-toggle">
             <span>Theme</span>
             <select
@@ -269,8 +287,14 @@ export function Builder({
                       ? data.seasons
                           .slice()
                           .sort((a, b) => b.year - a.year)
-                          .map((s) => ({ value: s.id, label: String(s.year) }))
-                      : opt.source === 'rivalry'
+                          .map((s) => ({ value: s.id, label: `${s.year}${s.isFinished ? '' : ' (in progress)'}` }))
+                      : opt.source === 'finishedSeason'
+                        ? data.seasons
+                            .filter((s) => s.isFinished)
+                            .slice()
+                            .sort((a, b) => b.year - a.year)
+                            .map((s) => ({ value: s.id, label: String(s.year) }))
+                        : opt.source === 'rivalry'
                         ? data.rivalries
                             .slice()
                             .sort((a, b) => a.name.localeCompare(b.name))

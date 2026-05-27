@@ -30,6 +30,11 @@ export type SeasonLite = {
   championManagerId: string | null
   runnerUpManagerId: string | null
   regularSeasonWinnerId: string | null
+  // True once the season has a recorded champion. Anything still in progress
+  // (or imported but not yet decided) is excluded from leaderboards and from
+  // the final-standings picker by default — owners can still scope a deck to
+  // a live season explicitly if they want a mid-year recap.
+  isFinished: boolean
 }
 
 export type StandingRow = {
@@ -176,6 +181,7 @@ export async function getLeaguePresentationData(leagueId: string, leagueName: st
     championManagerId: s.champion_manager_id ?? null,
     runnerUpManagerId: s.runner_up_manager_id ?? null,
     regularSeasonWinnerId: s.regular_season_winner_id ?? null,
+    isFinished: !!s.champion_manager_id,
   }))
 
   const standings: StandingRow[] = (standingsRaw ?? []).map((r) => ({
@@ -234,6 +240,36 @@ export async function getLeaguePresentationData(leagueId: string, leagueName: st
     rivalries,
     drafts,
     draftPicks,
+  }
+}
+
+// ─── Scope + consolation handling ──────────────────────────────────────────
+
+// True for matchups that should count toward "real" league history. Excludes
+// consolation games (which Sleeper marks `is_playoff=true` alongside true
+// playoff games — so we can't distinguish a semifinal from a 5th-place
+// consolation in the data). To stay conservative we count only regular
+// season + championship games. This means semifinal matchups are also
+// dropped, which we accept in exchange for never including consolation.
+export function isRealMatchup(m: { isPlayoff: boolean; isChampionship: boolean }): boolean {
+  return !m.isPlayoff || m.isChampionship
+}
+
+// Filter the bundle to a single season (used when the owner scopes a deck
+// to one year, e.g. "2025 only"). Returns a new bundle with matchups,
+// standings, drafts, and draftPicks narrowed; seasons + managers + profiles
+// are kept full because most blocks still need them for lookups.
+export function scopeDataToSeason(
+  data: LeaguePresentationData,
+  seasonId: string,
+): LeaguePresentationData {
+  const draftIds = new Set(data.drafts.filter((d) => d.seasonId === seasonId).map((d) => d.id))
+  return {
+    ...data,
+    matchups: data.matchups.filter((m) => m.seasonId === seasonId),
+    standings: data.standings.filter((s) => s.seasonId === seasonId),
+    drafts: data.drafts.filter((d) => d.seasonId === seasonId),
+    draftPicks: data.draftPicks.filter((p) => draftIds.has(p.draftId)),
   }
 }
 
@@ -309,7 +345,15 @@ export function profileTotals(data: LeaguePresentationData): ProfileTotals[] {
     return row
   }
 
+  // Only roll up rows from finished seasons (champion decided). Mid-season
+  // standings would inflate everyone's W-L with partial-year numbers and
+  // make career totals nonsensical.
+  const finishedSeasonIds = new Set(
+    data.seasons.filter((s) => s.isFinished).map((s) => s.id),
+  )
+
   for (const s of data.standings) {
+    if (!finishedSeasonIds.has(s.seasonId)) continue
     const pid = managerToProfile.get(s.managerId)
     if (!pid) continue
     const r = ensure(pid)
@@ -319,11 +363,10 @@ export function profileTotals(data: LeaguePresentationData): ProfileTotals[] {
     r.pointsFor += s.pointsFor
     r.pointsAgainst += s.pointsAgainst
     r.seasons += 1
-    // Playoff appearance heuristic: final_rank in top half (works for any league size).
-    // For a stricter signal, we'd need playoff_team_count from settings — out of scope here.
   }
 
   for (const season of data.seasons) {
+    if (!season.isFinished) continue
     if (!season.championManagerId) continue
     const pid = managerToProfile.get(season.championManagerId)
     if (!pid) continue
@@ -356,6 +399,7 @@ function weekScores(data: LeaguePresentationData): WeekHighlight[] {
   const yearById = new Map(data.seasons.map((s) => [s.id, s.year]))
   const out: WeekHighlight[] = []
   for (const m of data.matchups) {
+    if (!isRealMatchup(m)) continue
     const year = yearById.get(m.seasonId)
     if (year == null) continue
     if (m.scoreA != null && m.scoreA > 0) {
@@ -414,6 +458,7 @@ function marginGames(data: LeaguePresentationData): MarginHighlight[] {
   const yearById = new Map(data.seasons.map((s) => [s.id, s.year]))
   const out: MarginHighlight[] = []
   for (const m of data.matchups) {
+    if (!isRealMatchup(m)) continue
     if (m.scoreA == null || m.scoreB == null) continue
     if (m.scoreA === 0 && m.scoreB === 0) continue
     const year = yearById.get(m.seasonId)
@@ -496,6 +541,7 @@ export function headToHead(
   let biggestMargin: HeadToHead['biggestMargin'] = null
 
   for (const m of data.matchups) {
+    if (!isRealMatchup(m)) continue
     if (m.scoreA == null || m.scoreB == null) continue
     const pidA = profileOf.get(m.managerAId)
     const pidB = profileOf.get(m.managerBId)

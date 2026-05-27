@@ -1,10 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { BLOCK_INDEX } from '../_lib/blocks'
 import { STORAGE_KEY, type Deck } from '../_lib/types'
-import type { LeaguePresentationData } from '../_lib/leagueData'
+import { scopeDataToSeason, type LeaguePresentationData } from '../_lib/leagueData'
 
 type LoadState =
   | { kind: 'loading' }
@@ -42,6 +42,20 @@ export function Presenter({
   }, [slug, leagueName])
 
   const total = state.kind === 'ready' ? state.deck.slides.length : 0
+
+  // Pre-filter data once when the deck scope changes — every slide reads from
+  // the same scoped bundle so the scope is applied consistently across blocks.
+  const scopedData = useMemo(() => {
+    if (state.kind !== 'ready') return data
+    if (!state.deck.scope) return data
+    return scopeDataToSeason(data, state.deck.scope)
+  }, [state, data])
+
+  const scopeLabel = useMemo(() => {
+    if (state.kind !== 'ready' || !state.deck.scope) return ''
+    const s = data.seasons.find((x) => x.id === state.deck.scope)
+    return s ? `${s.year} only` : ''
+  }, [state, data])
 
   const go = useCallback((delta: number) => {
     setIndex((i) => {
@@ -119,7 +133,7 @@ export function Presenter({
             CSS keyframes restart even if two consecutive slides share the
             same block type. */}
         <div key={`${slide.id}-${index}`} className="present-stage-inner">
-          {def ? def.render({ values: slide.values, theme: deck.theme, leagueName: deck.leagueName, data }) : (
+          {def ? def.render({ values: slide.values, theme: deck.theme, leagueName: deck.leagueName, data: scopedData, scopeLabel }) : (
             <div className="present-slide">
               <p>Unknown block: {slide.blockId}</p>
             </div>

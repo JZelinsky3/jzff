@@ -38,6 +38,9 @@ export type SlideRenderContext = {
   theme: Theme
   leagueName: string
   data: LeaguePresentationData | null
+  // The deck's currently-applied scope, if any. Used by blocks to adapt
+  // their labels (e.g. "All-time" → "2025 only"). Empty string = full history.
+  scopeLabel: string
 }
 
 export type BlockDef = {
@@ -226,18 +229,23 @@ const finalStandingsBlock: BlockDef = {
   category: 'standings',
   description: 'Final standings table for a chosen season — wins, losses, points-for.',
   options: {
-    season: { kind: 'pick', label: 'Season', source: 'season' },
+    season: { kind: 'pick', label: 'Season', source: 'finishedSeason' },
     title: { kind: 'text', label: 'Title', placeholder: 'Final standings', default: '' },
+    limit: { kind: 'number', label: 'Show top N (0 = all)', placeholder: '0', default: '0', min: 0, max: 30 },
   },
-  defaults: () => ({ season: '', title: 'Final standings' }),
+  defaults: () => ({ season: '', title: 'Final standings', limit: '0' }),
   render: ({ values, data }) => {
     if (!data) return <MissingData reason="Sync your league first to populate standings." />
     const seasonId = values.season
     const season = data.seasons.find((s) => s.id === seasonId)
     if (!season) {
-      return <MissingData reason="Pick a season in the inspector to populate this slide." />
+      return <MissingData reason="Pick a finished season in the inspector to populate this slide." />
     }
-    const rows = data.standings
+    if (!season.isFinished) {
+      return <MissingData reason={`${season.year} is still in progress — final standings will appear once the season is decided.`} />
+    }
+    const limit = Math.max(0, Math.min(30, parseInt(values.limit || '0', 10) || 0))
+    const allRows = data.standings
       .filter((r) => r.seasonId === season.id)
       .slice()
       .sort((a, b) => {
@@ -245,6 +253,7 @@ const finalStandingsBlock: BlockDef = {
         if (b.wins !== a.wins) return b.wins - a.wins
         return b.pointsFor - a.pointsFor
       })
+    const rows = limit > 0 ? allRows.slice(0, limit) : allRows
     if (rows.length === 0) {
       return <MissingData reason={`No standings recorded for ${season.year}.`} />
     }
@@ -299,14 +308,14 @@ const allTimeWinsBlock: BlockDef = {
     limit: { kind: 'number', label: 'Show top N', placeholder: '10', default: '10', min: 3, max: 30 },
   },
   defaults: () => ({ title: 'All-time wins', limit: '10' }),
-  render: ({ values, data }) => {
+  render: ({ values, data, scopeLabel }) => {
     if (!data) return <MissingData reason="Sync your league first." />
     const limit = Math.max(3, Math.min(30, parseInt(values.limit || '10', 10) || 10))
     const rows = profileTotals(data).sort((a, b) => b.wins - a.wins).slice(0, limit)
     if (rows.length === 0) return <MissingData reason="No standings rows in this league yet." />
     return (
       <div className="present-slide present-slide--table">
-        <div className="present-eyebrow">All time</div>
+        <div className="present-eyebrow">{scopeLabel || 'All time'}</div>
         <h2 className="present-table-title">{values.title || 'All-time wins'}</h2>
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
@@ -350,14 +359,14 @@ const allTimePointsBlock: BlockDef = {
     limit: { kind: 'number', label: 'Show top N', placeholder: '10', default: '10', min: 3, max: 30 },
   },
   defaults: () => ({ title: 'All-time points-for', limit: '10' }),
-  render: ({ values, data }) => {
+  render: ({ values, data, scopeLabel }) => {
     if (!data) return <MissingData reason="Sync your league first." />
     const limit = Math.max(3, Math.min(30, parseInt(values.limit || '10', 10) || 10))
     const rows = profileTotals(data).sort((a, b) => b.pointsFor - a.pointsFor).slice(0, limit)
     if (rows.length === 0) return <MissingData reason="No standings rows in this league yet." />
     return (
       <div className="present-slide present-slide--table">
-        <div className="present-eyebrow">All time</div>
+        <div className="present-eyebrow">{scopeLabel || 'All time'}</div>
         <h2 className="present-table-title">{values.title || 'All-time points-for'}</h2>
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
@@ -438,7 +447,7 @@ const playoffApsBlock: BlockDef = {
     limit: { kind: 'number', label: 'Show top N', placeholder: '10', default: '10', min: 3, max: 30 },
   },
   defaults: () => ({ title: 'Most championships', limit: '10' }),
-  render: ({ values, data }) => {
+  render: ({ values, data, scopeLabel }) => {
     if (!data) return <MissingData reason="Sync your league first." />
     const limit = Math.max(3, Math.min(30, parseInt(values.limit || '10', 10) || 10))
     const rows = profileTotals(data)
@@ -448,7 +457,7 @@ const playoffApsBlock: BlockDef = {
     if (rows.length === 0) return <MissingData reason="No champions on file yet." />
     return (
       <div className="present-slide present-slide--table">
-        <div className="present-eyebrow">All time</div>
+        <div className="present-eyebrow">{scopeLabel || 'All time'}</div>
         <h2 className="present-table-title">{values.title || 'Most championships'}</h2>
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
