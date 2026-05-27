@@ -66,13 +66,52 @@ const titleBlock: BlockDef = {
     subtitle: { kind: 'text', label: 'Subtitle', placeholder: 'Season recap, awards, etc.', default: '' },
   },
   defaults: () => ({ kicker: '★ A Presentation ★', headline: '', subtitle: '' }),
-  render: ({ values, leagueName }) => (
-    <div className="present-slide present-slide--cover">
-      {values.kicker ? <div className="present-kicker">{values.kicker}</div> : null}
-      <h1 className="present-display">{values.headline || leagueName}</h1>
-      {values.subtitle ? <p className="present-sub">{values.subtitle}</p> : null}
-    </div>
-  ),
+  render: ({ values, leagueName, data }) => {
+    const finished = data?.seasons.filter((s) => s.isFinished) ?? []
+    const sortedByYear = finished.slice().sort((a, b) => a.year - b.year)
+    const yearRange = sortedByYear.length === 0
+      ? null
+      : sortedByYear.length === 1
+        ? String(sortedByYear[0].year)
+        : `${sortedByYear[0].year}–${sortedByYear[sortedByYear.length - 1].year}`
+    const managerCount = data?.profiles.filter((p) => !p.isHidden).length ?? 0
+    const championships = finished.length
+    const showStats = !!data && (yearRange || managerCount > 0 || championships > 0)
+    return (
+      <div className="present-slide present-slide--cover">
+        <div className="present-title-frame" aria-hidden>
+          <span className="present-title-flourish" />
+          <span className="present-title-mark">◆</span>
+          <span className="present-title-flourish" />
+        </div>
+        {values.kicker ? <div className="present-kicker">{values.kicker}</div> : null}
+        <h1 className="present-display">{values.headline || leagueName}</h1>
+        {values.subtitle ? <p className="present-sub">{values.subtitle}</p> : null}
+        {showStats ? (
+          <div className="present-title-stats">
+            {yearRange ? (
+              <div className="present-title-stat">
+                <div className="present-title-stat-num">{yearRange}</div>
+                <div className="present-title-stat-label">Years on record</div>
+              </div>
+            ) : null}
+            {managerCount > 0 ? (
+              <div className="present-title-stat">
+                <div className="present-title-stat-num"><CountUp value={managerCount} /></div>
+                <div className="present-title-stat-label">Managers</div>
+              </div>
+            ) : null}
+            {championships > 0 ? (
+              <div className="present-title-stat">
+                <div className="present-title-stat-num"><CountUp value={championships} /></div>
+                <div className="present-title-stat-label">Seasons</div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    )
+  },
 }
 
 const sectionBlock: BlockDef = {
@@ -87,10 +126,18 @@ const sectionBlock: BlockDef = {
   defaults: () => ({ label: 'Awards', sub: '' }),
   render: ({ values }) => (
     <div className="present-slide present-slide--section">
-      <div className="present-section-rule" aria-hidden />
+      <div className="present-section-ornament" aria-hidden>
+        <span className="present-section-rule" />
+        <span className="present-section-glyph">✦</span>
+        <span className="present-section-rule" />
+      </div>
       <h2 className="present-section-label">{values.label || 'Section'}</h2>
       {values.sub ? <p className="present-sub">{values.sub}</p> : null}
-      <div className="present-section-rule" aria-hidden />
+      <div className="present-section-ornament" aria-hidden>
+        <span className="present-section-rule" />
+        <span className="present-section-glyph">✦</span>
+        <span className="present-section-rule" />
+      </div>
     </div>
   ),
 }
@@ -248,6 +295,55 @@ function MaybeCountUp({ text }: { text: string }) {
   return <CountUp value={value} decimals={decimals} suffix={rest} />
 }
 
+// Hero spotlight card for the #1 entry on a leaderboard. Sits above the
+// table so a single dominant figure (career wins leader, all-time scorer,
+// reigning champion) reads as the headline, with the rest of the field
+// shown more compactly in the table below.
+function LeaderSpotlight({
+  name,
+  avatarUrl,
+  value,
+  valueLabel,
+  meta,
+  badge = '🥇',
+  badgeLabel = 'Leader',
+}: {
+  name: string
+  avatarUrl: string | null
+  value: ReactNode
+  valueLabel: string
+  meta?: string
+  badge?: string
+  badgeLabel?: string
+}) {
+  return (
+    <div className="present-leader-spotlight">
+      <div className="present-leader-spotlight-tag">
+        <span className="present-leader-spotlight-badge">{badge}</span>
+        <span className="present-leader-spotlight-tag-label">{badgeLabel}</span>
+      </div>
+      <Avatar url={avatarUrl} name={name} size={96} />
+      <div className="present-leader-spotlight-body">
+        <div className="present-leader-spotlight-name">{name}</div>
+        <div className="present-leader-spotlight-stat">
+          <span className="present-leader-spotlight-num">{value}</span>
+          <span className="present-leader-spotlight-label">{valueLabel}</span>
+        </div>
+        {meta ? <div className="present-leader-spotlight-meta">{meta}</div> : null}
+      </div>
+    </div>
+  )
+}
+
+// Medal icon for top-3 ranks; otherwise the raw rank number. Used across
+// every leaderboard + standings table for a consistent feel.
+function rankDisplay(rank: number): ReactNode {
+  if (rank === 1) return <span className="present-medal present-medal--gold">🥇</span>
+  if (rank === 2) return <span className="present-medal present-medal--silver">🥈</span>
+  if (rank === 3) return <span className="present-medal present-medal--bronze">🥉</span>
+  return rank
+}
+
 // Picks a density class based on row count. Tables with 9+ rows get tighter
 // padding so a 12-14 team standings table fits on one slide without scrolling.
 function tableDensityClass(rowCount: number): string {
@@ -318,10 +414,22 @@ const finalStandingsBlock: BlockDef = {
     if (rows.length === 0) {
       return <MissingData reason={`No standings recorded for ${season.year}.`} />
     }
+    const champion = allRows.find((r) => season.championManagerId === r.managerId) ?? null
     return (
       <div className="present-slide present-slide--table">
         <div className="present-eyebrow">{season.year} season</div>
         <h2 className="present-table-title">{values.title || 'Final standings'}</h2>
+        {champion ? (
+          <LeaderSpotlight
+            name={nameForManager(data, champion.managerId)}
+            avatarUrl={avatarForManager(data, champion.managerId)}
+            value={`${champion.wins}-${champion.losses}${champion.ties ? `-${champion.ties}` : ''}`}
+            valueLabel={`${champion.pointsFor.toFixed(1)} points`}
+            meta={`${season.year} champion`}
+            badge="🏆"
+            badgeLabel="Champion"
+          />
+        ) : null}
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
@@ -339,7 +447,7 @@ const finalStandingsBlock: BlockDef = {
               const isChamp = season.championManagerId === r.managerId
               return (
                 <tr key={r.managerId} className={isChamp ? 'is-champion' : ''}>
-                  <td className="present-table-rank">{r.finalRank ?? i + 1}</td>
+                  <td className="present-table-rank">{rankDisplay(r.finalRank ?? i + 1)}</td>
                   <td>
                     <span className="present-table-manager">
                       <Avatar url={avatar} name={name} size={32} />
@@ -374,10 +482,19 @@ const allTimeWinsBlock: BlockDef = {
     const limit = Math.max(3, Math.min(30, parseInt(values.limit || '10', 10) || 10))
     const rows = profileTotals(data).sort((a, b) => b.wins - a.wins).slice(0, limit)
     if (rows.length === 0) return <MissingData reason="No standings rows in this league yet." />
+    const leader = rows[0]
     return (
       <div className="present-slide present-slide--table">
         <div className="present-eyebrow">{scopeLabel || 'All time'}</div>
         <h2 className="present-table-title">{values.title || 'All-time wins'}</h2>
+        <LeaderSpotlight
+          name={leader.canonicalName}
+          avatarUrl={leader.avatarUrl}
+          value={<CountUp value={leader.wins} />}
+          valueLabel={leader.wins === 1 ? 'career win' : 'career wins'}
+          meta={`across ${leader.seasons} season${leader.seasons === 1 ? '' : 's'}`}
+          badgeLabel="Leader"
+        />
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
@@ -391,7 +508,7 @@ const allTimeWinsBlock: BlockDef = {
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.profileId} className={i === 0 ? 'is-leader' : ''}>
-                <td className="present-table-rank">{i + 1}</td>
+                <td className="present-table-rank">{rankDisplay(i + 1)}</td>
                 <td>
                   <span className="present-table-manager">
                     <Avatar url={r.avatarUrl} name={r.canonicalName} size={32} />
@@ -429,6 +546,14 @@ const allTimePointsBlock: BlockDef = {
       <div className="present-slide present-slide--table">
         <div className="present-eyebrow">{scopeLabel || 'All time'}</div>
         <h2 className="present-table-title">{values.title || 'All-time points-for'}</h2>
+        <LeaderSpotlight
+          name={rows[0].canonicalName}
+          avatarUrl={rows[0].avatarUrl}
+          value={<CountUp value={rows[0].pointsFor} decimals={1} />}
+          valueLabel="career points"
+          meta={rows[0].seasons > 0 ? `${(rows[0].pointsFor / rows[0].seasons).toFixed(1)} avg per season` : undefined}
+          badgeLabel="Top scorer"
+        />
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
@@ -442,7 +567,7 @@ const allTimePointsBlock: BlockDef = {
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.profileId} className={i === 0 ? 'is-leader' : ''}>
-                <td className="present-table-rank">{i + 1}</td>
+                <td className="present-table-rank">{rankDisplay(i + 1)}</td>
                 <td>
                   <span className="present-table-manager">
                     <Avatar url={r.avatarUrl} name={r.canonicalName} size={32} />
@@ -520,6 +645,15 @@ const playoffApsBlock: BlockDef = {
       <div className="present-slide present-slide--table">
         <div className="present-eyebrow">{scopeLabel || 'All time'}</div>
         <h2 className="present-table-title">{values.title || 'Most championships'}</h2>
+        <LeaderSpotlight
+          name={rows[0].canonicalName}
+          avatarUrl={rows[0].avatarUrl}
+          value={<CountUp value={rows[0].championships} />}
+          valueLabel={rows[0].championships === 1 ? 'title' : 'titles'}
+          meta={`across ${rows[0].seasons} season${rows[0].seasons === 1 ? '' : 's'}`}
+          badge="🏆"
+          badgeLabel="Most rings"
+        />
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
@@ -532,7 +666,7 @@ const playoffApsBlock: BlockDef = {
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.profileId} className={i === 0 ? 'is-leader' : ''}>
-                <td className="present-table-rank">{i + 1}</td>
+                <td className="present-table-rank">{rankDisplay(i + 1)}</td>
                 <td>
                   <span className="present-table-manager">
                     <Avatar url={r.avatarUrl} name={r.canonicalName} size={32} />

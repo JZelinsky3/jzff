@@ -369,6 +369,30 @@
         radial-gradient(ellipse 80% 80% at 50% 110%, rgba(168,138,74,.08) 0%, rgba(0,0,0,0) 50%),
         linear-gradient(180deg, #06080d 0%, #0a0d14 100%);
 }
+/* Cinematic ambient: a very slow drift on a second radial wash so the bg
+   doesn't feel static during long slides. Position oscillates over 30s. */
+.present-theme-cinematic.present-run::before {
+    content: '';
+    position: absolute;
+    inset: -10%;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse 40% 30% at 30% 30%, rgba(232,200,137,.045) 0%, transparent 70%),
+        radial-gradient(ellipse 35% 25% at 70% 70%, rgba(168,138,74,.06) 0%, transparent 70%);
+    animation: present-ambient-drift 28s ease-in-out infinite alternate;
+}
+@keyframes present-ambient-drift {
+    0%   { transform: translate(-2%, -1%); opacity: 1; }
+    50%  { transform: translate(2%, 1%); opacity: .85; }
+    100% { transform: translate(-1%, 2%); opacity: 1; }
+}
+.present-theme-cinematic .present-run-stage,
+.present-theme-cinematic .present-run-progressbar,
+.present-theme-cinematic .present-run-chrome {
+    position: relative;
+    z-index: 1;
+}
 .present-theme-cinematic .present-run-stage {
     /* Faint horizontal hairlines top + bottom of the stage area */
     background:
@@ -410,11 +434,16 @@
 .present-theme-broadcast.present-run::before {
     content: '';
     position: absolute;
-    inset: 0;
+    inset: -10%;
     background:
         linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255,203,71,.07) 35%, rgba(255,203,71,.07) 38%, transparent 38%, transparent 60%, rgba(226,59,59,.08) 60%, rgba(226,59,59,.08) 63%, transparent 63%);
     pointer-events: none;
     z-index: 0;
+    animation: present-broadcast-drift 24s ease-in-out infinite alternate;
+}
+@keyframes present-broadcast-drift {
+    0%   { transform: translateX(-3%); }
+    100% { transform: translateX(3%); }
 }
 .present-theme-broadcast .present-run-stage {
     position: relative;
@@ -575,18 +604,41 @@
 .present-slide .present-versus-line,
 .present-slide .present-highlight-metric,
 .present-slide .present-highlight-actors,
-.present-slide .present-section-rule {
+.present-slide .present-section-rule,
+.present-slide .present-section-ornament,
+.present-slide .present-title-frame,
+.present-slide .present-title-stats,
+.present-slide .present-leader-spotlight {
     animation: present-rise .55s cubic-bezier(.2, .8, .2, 1) both;
 }
-/* Big-number elements get the pop animation instead of a plain rise */
+/* Big-number elements get the pop animation instead of a plain rise.
+   After settling, a soft glow pulses on the cinematic theme so the
+   number doesn't feel inert during a long slide. */
 .present-slide .present-bignum,
 .present-slide .present-highlight-number,
-.present-slide .present-section-label {
-    animation: present-pop .65s cubic-bezier(.2, .8, .2, 1) both;
+.present-slide .present-section-label,
+.present-slide .present-versus-wins {
+    animation:
+        present-pop .65s cubic-bezier(.2, .8, .2, 1) both,
+        present-number-glow 4.5s ease-in-out 1.2s infinite;
+}
+@keyframes present-number-glow {
+    0%, 100% { filter: drop-shadow(0 4px 12px rgba(0,0,0,.35)); }
+    50%      { filter: drop-shadow(0 4px 16px var(--p-accent-soft)) drop-shadow(0 0 24px var(--p-accent-soft)); }
+}
+.present-theme-broadcast .present-slide .present-bignum,
+.present-theme-broadcast .present-slide .present-highlight-number,
+.present-theme-broadcast .present-slide .present-versus-wins,
+.present-theme-broadcast .present-slide .present-section-label {
+    animation: present-pop .55s cubic-bezier(.2, .8, .2, 1) both;
 }
 /* Delay rhythm — each successive element comes in ~120ms after the previous */
+.present-slide .present-title-frame,
+.present-slide .present-section-ornament:first-child { animation-delay: 0s; }
 .present-slide .present-eyebrow,
 .present-slide .present-kicker { animation-delay: .05s; }
+.present-slide .present-title-stats { animation-delay: .8s; }
+.present-slide .present-section-ornament:last-child { animation-delay: .6s; }
 .present-slide .present-display,
 .present-slide .present-section-label,
 .present-slide .present-table-title,
@@ -600,11 +652,12 @@
 .present-slide .present-caption,
 .present-slide .present-body,
 .present-slide .present-section-rule { animation-delay: .35s; }
+.present-slide .present-leader-spotlight { animation-delay: .35s; }
 .present-slide .present-table,
 .present-slide .present-champ-list,
 .present-slide .present-draft-grid,
 .present-slide .present-card-stats,
-.present-slide .present-highlight-actors { animation-delay: .45s; }
+.present-slide .present-highlight-actors { animation-delay: .55s; }
 .present-slide .present-attrib,
 .present-slide .present-footnote,
 .present-slide .present-versus-line { animation-delay: .6s; }
@@ -727,6 +780,74 @@
     gap: 0;
     padding: clamp(1rem, 3vw, 3rem) 0;
 }
+
+/* Title-frame ornament — a tiny gold diamond between two hairlines, sits
+   above the kicker so the title slide reads as a published cover page. */
+.present-title-frame {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+.present-title-flourish {
+    display: inline-block;
+    width: clamp(3rem, 6vw, 5.5rem);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--p-accent));
+}
+.present-title-frame .present-title-flourish:last-child {
+    background: linear-gradient(90deg, var(--p-accent), transparent);
+}
+.present-title-mark {
+    color: var(--p-accent);
+    font-size: .75rem;
+    text-shadow: 0 0 12px var(--p-accent);
+}
+.present-theme-broadcast .present-title-frame { gap: .65rem; }
+.present-theme-broadcast .present-title-flourish {
+    background: var(--p-accent);
+    height: 3px;
+}
+.present-theme-broadcast .present-title-frame .present-title-flourish:last-child {
+    background: var(--p-secondary);
+}
+
+/* Bottom info bar on the title slide — a row of small stats (year range,
+   manager count, season count) that fills the slide and grounds it. */
+.present-title-stats {
+    display: flex;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--p-line);
+    align-items: flex-start;
+}
+.present-title-stat {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    align-items: center;
+}
+.present-title-stat-num {
+    font-family: var(--p-display-font);
+    font-size: clamp(1.5rem, 3.2vw, 2.5rem);
+    line-height: 1;
+    color: var(--p-accent);
+    font-variant-numeric: lining-nums tabular-nums;
+}
+.present-theme-cinematic .present-title-stat-num {
+    background: linear-gradient(180deg, var(--p-accent-bright) 0%, var(--p-accent-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.present-title-stat-label {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.6rem, .95vw, .8rem);
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+}
 .present-slide--cover .present-kicker {
     font-family: var(--p-mono-font);
     font-size: clamp(.75rem, 1.3vw, 1rem);
@@ -762,7 +883,31 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.75rem;
+}
+.present-section-ornament {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    width: min(70vw, 36rem);
+}
+.present-section-glyph {
+    color: var(--p-accent);
+    font-size: clamp(.9rem, 1.6vw, 1.4rem);
+    text-shadow: 0 0 16px var(--p-accent);
+    animation: present-glyph-pulse 3.5s ease-in-out infinite;
+}
+@keyframes present-glyph-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .6; transform: scale(.92); }
+}
+.present-theme-broadcast .present-section-glyph {
+    text-shadow: none;
+    background: var(--p-secondary);
+    color: var(--p-fg);
+    padding: .25rem .55rem;
+    font-size: clamp(.7rem, 1.2vw, .95rem);
+    animation: none;
 }
 .present-section-label {
     font-family: var(--p-display-font);
@@ -949,6 +1094,91 @@
     text-shadow: 4px 4px 0 var(--p-secondary-soft);
 }
 
+/* Leader spotlight — hero card above leaderboards. Big avatar on the left,
+   leader's name + headline stat on the right, with a medal-style tag in
+   the corner. Animates in with the rest of the slide content. */
+.present-leader-spotlight {
+    display: flex;
+    align-items: center;
+    gap: clamp(1.25rem, 2.5vw, 2rem);
+    padding: clamp(1rem, 2vw, 1.5rem) clamp(1.25rem, 2.5vw, 2rem);
+    background: linear-gradient(135deg, var(--p-accent-soft) 0%, transparent 70%);
+    border: 1px solid var(--p-line-strong);
+    border-left: 4px solid var(--p-accent);
+    position: relative;
+    box-shadow: var(--p-shadow);
+}
+.present-theme-broadcast .present-leader-spotlight {
+    background: linear-gradient(135deg, var(--p-accent-soft) 0%, var(--p-card) 100%);
+    border-left: 6px solid var(--p-accent);
+}
+.present-leader-spotlight .present-avatar {
+    width: clamp(72px, 11vw, 110px) !important;
+    height: clamp(72px, 11vw, 110px) !important;
+    flex: 0 0 auto;
+}
+.present-leader-spotlight-tag {
+    position: absolute;
+    top: -.85rem;
+    right: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: var(--p-bg);
+    border: 1px solid var(--p-accent);
+    padding: .35rem .75rem;
+    font-family: var(--p-mono-font);
+    font-size: .65rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--p-accent);
+}
+.present-leader-spotlight-badge { font-size: 1.1rem; line-height: 1; }
+.present-leader-spotlight-body { display: flex; flex-direction: column; gap: .35rem; min-width: 0; flex: 1; }
+.present-leader-spotlight-name {
+    font-family: var(--p-display-font);
+    font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+    line-height: 1.05;
+    color: var(--p-fg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.present-leader-spotlight-stat {
+    display: flex;
+    align-items: baseline;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+.present-leader-spotlight-num {
+    font-family: var(--p-display-font);
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    line-height: 1;
+    color: var(--p-accent);
+    font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: -0.02em;
+}
+.present-theme-cinematic .present-leader-spotlight-num {
+    background: linear-gradient(180deg, var(--p-accent-bright) 0%, var(--p-accent-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.present-leader-spotlight-label {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.7rem, 1.1vw, .9rem);
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--p-fg-mute);
+}
+.present-leader-spotlight-meta {
+    font-family: var(--p-mono-font);
+    font-size: clamp(.65rem, 1vw, .8rem);
+    letter-spacing: .15em;
+    color: var(--p-fg-mute);
+    text-transform: uppercase;
+}
+
 .present-table {
     width: 100%;
     border-collapse: separate;
@@ -998,7 +1228,21 @@
     font-size: .95em;
     width: 3rem;
     font-weight: 600;
+    text-align: center;
 }
+.present-medal {
+    font-size: 1.4em;
+    line-height: 1;
+    display: inline-block;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.4));
+}
+.present-medal--gold   { animation: present-medal-shine 3.5s ease-in-out infinite; }
+@keyframes present-medal-shine {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+}
+.present-table.is-dense .present-medal,
+.present-table.is-very-dense .present-medal { font-size: 1.15em; }
 .present-table-manager {
     display: inline-flex;
     align-items: center;
