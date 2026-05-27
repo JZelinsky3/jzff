@@ -128,6 +128,18 @@ export function Presenter({
 
   return (
     <div ref={rootRef} className={`present-run present-theme-${deck.theme}`} data-slide-id={slide.id}>
+      <div className="present-run-progressbar" role="presentation">
+        {deck.slides.map((s, i) => (
+          <span
+            key={s.id}
+            className={
+              'present-run-progressbar-segment ' +
+              (i < index ? 'is-past ' : '') +
+              (i === index ? 'is-current ' : '')
+            }
+          />
+        ))}
+      </div>
       <div className="present-run-stage">
         {/* Keyed wrapper forces React to remount on slide change so the
             CSS keyframes restart even if two consecutive slides share the

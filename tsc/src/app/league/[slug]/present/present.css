@@ -424,6 +424,43 @@
 /* ---------------------------------------------------------
    STAGE + SHARED FRAME
    --------------------------------------------------------- */
+/* Slim segmented progress strip at the very top — one segment per slide,
+   filled for past + current. Reads as a deck position indicator without
+   competing with content. */
+.present-run-progressbar {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 3px;
+    padding: .65rem 1.25rem .5rem;
+    position: relative;
+    z-index: 3;
+}
+.present-run-progressbar-segment {
+    flex: 1;
+    height: 3px;
+    background: var(--p-line);
+    position: relative;
+    overflow: hidden;
+}
+.present-run-progressbar-segment.is-past {
+    background: var(--p-accent);
+}
+.present-run-progressbar-segment.is-current {
+    background: var(--p-accent);
+    box-shadow: 0 0 12px var(--p-accent);
+}
+.present-run-progressbar-segment.is-current::after {
+    content: '';
+    position: absolute;
+    inset: 0 50% 0 0;
+    background: var(--p-accent-bright, var(--p-accent));
+    animation: present-progress-fill .5s ease-out forwards;
+}
+@keyframes present-progress-fill {
+    from { right: 100%; }
+    to   { right: 0; }
+}
+
 .present-run-stage {
     flex: 1;
     display: grid;
@@ -453,14 +490,13 @@
     height: clamp(1.75rem, 3.5vw, 3rem);
     border-color: var(--p-accent);
 }
-.present-theme-cinematic .present-run-stage::before { top: 1.5rem; left: 1.5rem;
-    border-top: 1px solid var(--p-accent); border-left: 1px solid var(--p-accent); }
-.present-theme-cinematic .present-run-stage::after  { top: 1.5rem; right: 1.5rem;
-    border-top: 1px solid var(--p-accent); border-right: 1px solid var(--p-accent); }
-.present-theme-cinematic .present-stage-inner::before { bottom: 1.5rem; left: 1.5rem;
-    border-bottom: 1px solid var(--p-accent); border-left: 1px solid var(--p-accent); }
-.present-theme-cinematic .present-stage-inner::after  { bottom: 1.5rem; right: 1.5rem;
-    border-bottom: 1px solid var(--p-accent); border-right: 1px solid var(--p-accent); }
+/* Cinematic theme has no corner brackets — pseudo-elements are only used
+   for the broadcast theme below. Hiding them explicitly so changes to the
+   shared placement rules above don't accidentally turn them back on. */
+.present-theme-cinematic .present-run-stage::before,
+.present-theme-cinematic .present-run-stage::after,
+.present-theme-cinematic .present-stage-inner::before,
+.present-theme-cinematic .present-stage-inner::after { display: none; }
 
 /* Broadcast — short bold accent bars in the corners, no full bracket */
 .present-theme-broadcast .present-run-stage::before {
@@ -488,18 +524,125 @@
     max-width: min(94vw, 1180px);
     max-height: 100%;
     text-align: center;
-    animation: present-fade-up .5s cubic-bezier(.2, .8, .2, 1);
+    animation: present-fade-up .55s cubic-bezier(.2, .8, .2, 1);
 }
 @keyframes present-fade-up {
-    from { opacity: 0; transform: translateY(1rem); }
+    from { opacity: 0; transform: translateY(1.25rem); }
     to   { opacity: 1; transform: translateY(0); }
 }
 .present-theme-broadcast .present-slide {
-    animation: present-slide-in .4s cubic-bezier(.2, .8, .2, 1);
+    animation: present-slide-in .45s cubic-bezier(.2, .8, .2, 1);
 }
 @keyframes present-slide-in {
     from { opacity: 0; transform: translateX(2.5rem); }
     to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Staggered entrance for inner pieces — eyebrow first, then big text, then
+   supporting elements. Each top-level element gets an animation-delay based
+   on its position so a slide feels composed instead of all-at-once. The
+   selectors target known content blocks; anything not listed just appears
+   in place with the slide's own fade. */
+@keyframes present-rise {
+    from { opacity: 0; transform: translateY(.85rem); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes present-pop {
+    0%   { opacity: 0; transform: scale(.86); filter: blur(2px); }
+    60%  { opacity: 1; filter: blur(0); }
+    100% { opacity: 1; transform: scale(1); }
+}
+.present-slide .present-eyebrow,
+.present-slide .present-kicker,
+.present-slide .present-display,
+.present-slide .present-section-label,
+.present-slide .present-table-title,
+.present-slide .present-card-title,
+.present-slide .present-highlight-title,
+.present-slide .present-bignum,
+.present-slide .present-highlight-number,
+.present-slide .present-versus,
+.present-slide .present-sub,
+.present-slide .present-caption,
+.present-slide .present-body,
+.present-slide .present-attrib,
+.present-slide .present-footnote,
+.present-slide .present-table,
+.present-slide .present-champ-list,
+.present-slide .present-card-head,
+.present-slide .present-card-stats,
+.present-slide .present-draft-grid,
+.present-slide .present-versus-line,
+.present-slide .present-highlight-metric,
+.present-slide .present-highlight-actors,
+.present-slide .present-section-rule {
+    animation: present-rise .55s cubic-bezier(.2, .8, .2, 1) both;
+}
+/* Big-number elements get the pop animation instead of a plain rise */
+.present-slide .present-bignum,
+.present-slide .present-highlight-number,
+.present-slide .present-section-label {
+    animation: present-pop .65s cubic-bezier(.2, .8, .2, 1) both;
+}
+/* Delay rhythm — each successive element comes in ~120ms after the previous */
+.present-slide .present-eyebrow,
+.present-slide .present-kicker { animation-delay: .05s; }
+.present-slide .present-display,
+.present-slide .present-section-label,
+.present-slide .present-table-title,
+.present-slide .present-card-title,
+.present-slide .present-highlight-title { animation-delay: .2s; }
+.present-slide .present-highlight-metric,
+.present-slide .present-bignum { animation-delay: .35s; }
+.present-slide .present-versus,
+.present-slide .present-card-head { animation-delay: .3s; }
+.present-slide .present-sub,
+.present-slide .present-caption,
+.present-slide .present-body,
+.present-slide .present-section-rule { animation-delay: .35s; }
+.present-slide .present-table,
+.present-slide .present-champ-list,
+.present-slide .present-draft-grid,
+.present-slide .present-card-stats,
+.present-slide .present-highlight-actors { animation-delay: .45s; }
+.present-slide .present-attrib,
+.present-slide .present-footnote,
+.present-slide .present-versus-line { animation-delay: .6s; }
+
+/* Table rows + champion-list rows + draft cards: cascade each item with a
+   shorter stagger so big tables feel like they're being dealt out. */
+.present-slide .present-table tbody tr,
+.present-slide .present-champ-row,
+.present-slide .present-draft-card {
+    animation: present-rise .45s cubic-bezier(.2, .8, .2, 1) both;
+}
+.present-slide .present-table tbody tr:nth-child(1)  { animation-delay: .5s; }
+.present-slide .present-table tbody tr:nth-child(2)  { animation-delay: .55s; }
+.present-slide .present-table tbody tr:nth-child(3)  { animation-delay: .6s; }
+.present-slide .present-table tbody tr:nth-child(4)  { animation-delay: .65s; }
+.present-slide .present-table tbody tr:nth-child(5)  { animation-delay: .7s; }
+.present-slide .present-table tbody tr:nth-child(6)  { animation-delay: .75s; }
+.present-slide .present-table tbody tr:nth-child(7)  { animation-delay: .8s; }
+.present-slide .present-table tbody tr:nth-child(8)  { animation-delay: .85s; }
+.present-slide .present-table tbody tr:nth-child(9)  { animation-delay: .9s; }
+.present-slide .present-table tbody tr:nth-child(10) { animation-delay: .95s; }
+.present-slide .present-table tbody tr:nth-child(11) { animation-delay: 1s; }
+.present-slide .present-table tbody tr:nth-child(12) { animation-delay: 1.05s; }
+.present-slide .present-table tbody tr:nth-child(n+13) { animation-delay: 1.1s; }
+.present-slide .present-champ-row:nth-child(1)  { animation-delay: .5s; }
+.present-slide .present-champ-row:nth-child(2)  { animation-delay: .58s; }
+.present-slide .present-champ-row:nth-child(3)  { animation-delay: .66s; }
+.present-slide .present-champ-row:nth-child(4)  { animation-delay: .74s; }
+.present-slide .present-champ-row:nth-child(5)  { animation-delay: .82s; }
+.present-slide .present-champ-row:nth-child(6)  { animation-delay: .9s; }
+.present-slide .present-champ-row:nth-child(n+7) { animation-delay: 1s; }
+.present-slide .present-draft-card:nth-child(odd)  { animation-delay: .5s; }
+.present-slide .present-draft-card:nth-child(even) { animation-delay: .6s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .present-slide,
+    .present-slide *,
+    .present-stage-inner { animation: none !important; }
 }
 
 /* ---------------------------------------------------------

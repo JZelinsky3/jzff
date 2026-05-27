@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react'
+'use client'
+
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { BlockOption, BlockOptionValues, Theme } from './types'
 import type { LeaguePresentationData } from './leagueData'
 import {
@@ -126,7 +128,7 @@ const customCalloutBlock: BlockDef = {
   render: ({ values }) => (
     <div className="present-slide present-slide--callout">
       {values.eyebrow ? <div className="present-eyebrow">{values.eyebrow}</div> : null}
-      <div className="present-bignum">{values.number || '—'}</div>
+      <div className="present-bignum"><MaybeCountUp text={values.number || ''} /></div>
       {values.caption ? <div className="present-caption">{values.caption}</div> : null}
       {values.footnote ? <div className="present-footnote">{values.footnote}</div> : null}
     </div>
@@ -185,6 +187,65 @@ function MissingData({ reason }: { reason: string }) {
       <div className="present-body" style={{ fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}>{reason}</div>
     </div>
   )
+}
+
+// Animates a numeric value from 0 → target on mount using an ease-out curve.
+// Used on the giant metric numbers so each slide entrance has a beat of
+// motion instead of just popping in. Falls back to the final value if the
+// user prefers reduced motion (respected at the CSS level too).
+function CountUp({
+  value,
+  decimals = 0,
+  duration = 950,
+  suffix = '',
+  prefix = '',
+}: {
+  value: number
+  decimals?: number
+  duration?: number
+  suffix?: string
+  prefix?: string
+}) {
+  const [display, setDisplay] = useState(value)
+  const startedAt = useRef<number | null>(null)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setDisplay(value)
+      return
+    }
+    setDisplay(0)
+    startedAt.current = null
+    let raf = 0
+    const tick = (t: number) => {
+      if (startedAt.current == null) startedAt.current = t
+      const p = Math.min(1, (t - startedAt.current) / duration)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setDisplay(value * eased)
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value, duration])
+  const formatted = Number.isFinite(display) ? display.toFixed(decimals) : '—'
+  return <>{prefix}{formatted}{suffix}</>
+}
+
+// Wraps a numeric string for CountUp when possible. If the value can't be
+// parsed as a number, just renders the original string verbatim — so custom
+// blocks where the owner typed "12-2" or "187K" still display correctly.
+function MaybeCountUp({ text }: { text: string }) {
+  const trimmed = (text ?? '').trim()
+  if (!trimmed) return <>—</>
+  // Strip leading non-digit characters (so things like "$1,234" still work,
+  // but stop before parsing weird mixed strings).
+  const numericMatch = trimmed.match(/^(-?\d+(?:\.\d+)?)(.*)$/)
+  if (!numericMatch) return <>{trimmed}</>
+  const [, numPart, rest] = numericMatch
+  const value = parseFloat(numPart)
+  if (!Number.isFinite(value)) return <>{trimmed}</>
+  const decimals = numPart.includes('.') ? (numPart.split('.')[1]?.length ?? 0) : 0
+  return <CountUp value={value} decimals={decimals} suffix={rest} />
 }
 
 // Picks a density class based on row count. Tables with 9+ rows get tighter
@@ -513,7 +574,7 @@ function HighlightSlide({
       <div className="present-eyebrow">{eyebrow}</div>
       <h2 className="present-highlight-title">{title}</h2>
       <div className="present-highlight-metric">
-        <div className="present-highlight-number">{metric}</div>
+        <div className="present-highlight-number"><MaybeCountUp text={metric} /></div>
         <div className="present-highlight-metric-label">{metricLabel}</div>
       </div>
       <div className="present-highlight-actors">
@@ -722,23 +783,23 @@ const careerCardBlock: BlockDef = {
         </div>
         <div className="present-card-stats">
           <div className="present-card-stat">
-            <div className="present-card-stat-num">{totals.wins}-{totals.losses}{totals.ties ? `-${totals.ties}` : ''}</div>
+            <div className="present-card-stat-num">{totals.wins}-{totals.losses}{totals.ties ? `-${totals.ties}` : ''}</div>{/* record is a composite — no count-up */}
             <div className="present-card-stat-label">Record</div>
           </div>
           <div className="present-card-stat">
-            <div className="present-card-stat-num">{(winPct * 100).toFixed(1)}%</div>
+            <div className="present-card-stat-num"><CountUp value={winPct * 100} decimals={1} suffix="%" /></div>
             <div className="present-card-stat-label">Win rate</div>
           </div>
           <div className="present-card-stat">
-            <div className="present-card-stat-num">{totals.pointsFor.toFixed(0)}</div>
+            <div className="present-card-stat-num"><CountUp value={totals.pointsFor} decimals={0} /></div>
             <div className="present-card-stat-label">Total PF</div>
           </div>
           <div className="present-card-stat">
-            <div className="present-card-stat-num">{totals.seasons}</div>
+            <div className="present-card-stat-num"><CountUp value={totals.seasons} /></div>
             <div className="present-card-stat-label">Seasons</div>
           </div>
           <div className="present-card-stat">
-            <div className="present-card-stat-num">{totals.championships}</div>
+            <div className="present-card-stat-num"><CountUp value={totals.championships} /></div>
             <div className="present-card-stat-label">Titles</div>
           </div>
         </div>
@@ -775,13 +836,13 @@ const headToHeadBlock: BlockDef = {
           <div className="present-versus-side">
             <Avatar url={h2h.avatarA} name={h2h.nameA} size={120} />
             <div className="present-versus-name">{h2h.nameA}</div>
-            <div className="present-versus-wins">{h2h.winsA}</div>
+            <div className="present-versus-wins"><CountUp value={h2h.winsA} /></div>
           </div>
           <div className="present-versus-divider">vs</div>
           <div className="present-versus-side">
             <Avatar url={h2h.avatarB} name={h2h.nameB} size={120} />
             <div className="present-versus-name">{h2h.nameB}</div>
-            <div className="present-versus-wins">{h2h.winsB}</div>
+            <div className="present-versus-wins"><CountUp value={h2h.winsB} /></div>
           </div>
         </div>
         <div className="present-versus-line">
@@ -837,13 +898,13 @@ const featuredRivalryBlock: BlockDef = {
           <div className="present-versus-side">
             <Avatar url={h2h.avatarA} name={h2h.nameA} size={120} />
             <div className="present-versus-name">{h2h.nameA}</div>
-            <div className="present-versus-wins">{h2h.winsA}</div>
+            <div className="present-versus-wins"><CountUp value={h2h.winsA} /></div>
           </div>
           <div className="present-versus-divider">vs</div>
           <div className="present-versus-side">
             <Avatar url={h2h.avatarB} name={h2h.nameB} size={120} />
             <div className="present-versus-name">{h2h.nameB}</div>
-            <div className="present-versus-wins">{h2h.winsB}</div>
+            <div className="present-versus-wins"><CountUp value={h2h.winsB} /></div>
           </div>
         </div>
         <div className="present-versus-line">
@@ -891,13 +952,13 @@ const mostLopsidedRivalryBlock: BlockDef = {
           <div className={`present-versus-side ${aLeads ? '' : 'is-loser'}`}>
             <Avatar url={h2h.avatarA} name={h2h.nameA} size={120} />
             <div className="present-versus-name">{h2h.nameA}</div>
-            <div className="present-versus-wins">{h2h.winsA}</div>
+            <div className="present-versus-wins"><CountUp value={h2h.winsA} /></div>
           </div>
           <div className="present-versus-divider">vs</div>
           <div className={`present-versus-side ${aLeads ? 'is-loser' : ''}`}>
             <Avatar url={h2h.avatarB} name={h2h.nameB} size={120} />
             <div className="present-versus-name">{h2h.nameB}</div>
-            <div className="present-versus-wins">{h2h.winsB}</div>
+            <div className="present-versus-wins"><CountUp value={h2h.winsB} /></div>
           </div>
         </div>
         <div className="present-versus-line">
