@@ -16,6 +16,13 @@ type TierCard = {
   highlight?: boolean
 }
 
+const TIER_ORDINAL: Record<Tier, string> = {
+  tier1: 'Tier 1',
+  tier2: 'Tier 2',
+  tier3: 'Tier 3',
+  tier4: 'Tier 4',
+}
+
 export function PricingCards({
   tiers,
   signedIn,
@@ -33,6 +40,8 @@ export function PricingCards({
   const router = useRouter()
   const [busy, setBusy] = useState<Tier | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const [promoCode, setPromoCode] = useState('')
+  const [showPromo, setShowPromo] = useState(false)
 
   async function startCheckout(tier: Tier) {
     if (!signedIn) {
@@ -42,19 +51,22 @@ export function PricingCards({
       return
     }
     setBusy(tier); setErr(null)
+    const body: Record<string, string> = { tier, period }
+    if (promoCode.trim()) body.promoCode = promoCode.trim()
+
     const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ tier, period }),
+      body: JSON.stringify(body),
     })
-    const body = await res.json()
-    if (!res.ok || !body?.url) {
+    const json = await res.json()
+    if (!res.ok || !json?.url) {
       setBusy(null)
-      setErr(body?.error ?? 'Could not start checkout — try again in a moment.')
+      setErr(json?.error ?? 'Could not start checkout — try again in a moment.')
       return
     }
     // Hand the browser off to Stripe's hosted checkout.
-    window.location.assign(body.url)
+    window.location.assign(json.url)
   }
 
   return (
@@ -90,22 +102,97 @@ export function PricingCards({
                 transition: 'background .15s, color .15s',
               }}
             >
-              {p === 'monthly' ? 'Monthly' : 'Yearly · save 50%'}
+              {p === 'monthly' ? 'Monthly' : 'Yearly · save 50%+'}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Promo code input */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+        {!showPromo ? (
+          <button
+            type="button"
+            onClick={() => setShowPromo(true)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--cream-mute)',
+              fontFamily: 'var(--mono)',
+              fontSize: '.65rem',
+              letterSpacing: '.12em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              opacity: 0.6,
+            }}
+          >
+            Have a promo code?
+          </button>
+        ) : (
+          <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="ENTER CODE"
+              autoFocus
+              style={{
+                background: 'rgba(0,0,0,.3)',
+                border: '1px solid var(--ink-line)',
+                borderRadius: '3px',
+                color: 'var(--cream)',
+                fontFamily: 'var(--mono)',
+                fontSize: '.78rem',
+                letterSpacing: '.15em',
+                padding: '.45rem .75rem',
+                width: '160px',
+                textTransform: 'uppercase',
+              }}
+            />
+            {promoCode && (
+              <button
+                type="button"
+                onClick={() => { setPromoCode(''); setShowPromo(false) }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--cream-mute)',
+                  fontFamily: 'var(--mono)',
+                  fontSize: '.65rem',
+                  cursor: 'pointer',
+                  opacity: 0.6,
+                }}
+              >
+                ✕ clear
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {promoCode.trim() && (
+        <p style={{
+          textAlign: 'center',
+          fontFamily: 'var(--mono)',
+          fontSize: '.65rem',
+          letterSpacing: '.1em',
+          opacity: 0.6,
+          marginBottom: '1.25rem',
+          marginTop: '-.75rem',
+        }}>
+          Promo code applied — free trial won&apos;t stack with your discount.
+        </p>
+      )}
+
       <div style={{
         display: 'grid',
-        // Always 3 columns on desktop so Rookie/Veteran/Legend share one row.
-        // Drops to 1 column on narrow screens (mobile) via the media query in
-        // globals.css — see .pricing-grid-3 there.
-        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+        // 4 columns on wide screens; 2 columns on medium; 1 column on mobile.
+        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
         gap: '1.5rem',
-        maxWidth: '1140px',
+        maxWidth: '1400px',
         margin: '0 auto',
-      }} className="pricing-grid-3">
+      }} className="pricing-grid-4">
         {tiers.map((t) => {
           const price = period === 'monthly' ? t.monthly : t.yearly
           const isCurrent = currentTier === t.tier && currentPeriod === period
@@ -142,7 +229,7 @@ export function PricingCards({
               )}
               <div>
                 <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', opacity: 0.6 }}>
-                  {t.tier === 'tier1' ? 'Tier 1' : t.tier === 'tier2' ? 'Tier 2' : 'Tier 3'}
+                  {TIER_ORDINAL[t.tier]}
                 </div>
                 <div style={{ fontFamily: 'var(--serif)', fontSize: '1.6rem', marginTop: '.3rem' }}>
                   {t.name}
@@ -195,9 +282,11 @@ export function PricingCards({
                     ? `Switch to ${period} →`
                     : busy === t.tier
                       ? 'Opening Stripe…'
-                      : signedIn
-                        ? `Start ${trialDays}-day free trial →`
-                        : 'Sign in to subscribe →'}
+                      : promoCode.trim()
+                        ? 'Apply code & subscribe →'
+                        : signedIn
+                          ? `Start ${trialDays}-day free trial →`
+                          : 'Sign in to subscribe →'}
               </button>
             </div>
           )

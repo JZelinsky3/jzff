@@ -44,8 +44,7 @@ export default async function PricingPage() {
           Built to <em>last.</em>
         </h1>
         <p className="hero-sub">
-          {TRIAL_DAYS}-day free trial on every plan. Cancel anytime. Yearly saves you six months
-          compared to paying monthly.
+          {TRIAL_DAYS}-day free trial on every plan. Cancel anytime. Yearly saves 50%+ vs paying monthly.
         </p>
         {lifetime ? (
           <div className="hero-meta">
@@ -99,12 +98,10 @@ export default async function PricingPage() {
             monthly: TIER_PRICES.tier2.monthly,
             yearly: TIER_PRICES.tier2.yearly,
             features: [
-              'Archive up to 5 leagues',
+              'Archive up to 3 leagues',
               'Everything in Rookie',
               'Run multiple leagues from one account',
-              'Priority on platform integrations',
             ],
-            highlight: true,
           },
           {
             tier: 'tier3',
@@ -114,8 +111,22 @@ export default async function PricingPage() {
             monthly: TIER_PRICES.tier3.monthly,
             yearly: TIER_PRICES.tier3.yearly,
             features: [
-              'Unlimited leagues',
+              'Archive up to 7 leagues',
               'Everything in Veteran',
+              'Priority on platform integrations',
+            ],
+            highlight: true,
+          },
+          {
+            tier: 'tier4',
+            name: TIER_LABELS.tier4.name,
+            tagline: TIER_LABELS.tier4.tagline,
+            limit: TIER_LIMITS.tier4,
+            monthly: TIER_PRICES.tier4.monthly,
+            yearly: TIER_PRICES.tier4.yearly,
+            features: [
+              'Archive up to 15 leagues',
+              'Everything in All-Pro',
               'First in line for new platform integrations',
             ],
           },

@@ -26,36 +26,41 @@ export function getStripe(): Stripe {
 
 // ─── Tier configuration ───────────────────────────────────────────────────
 
-export type Tier = 'tier1' | 'tier2' | 'tier3'
+export type Tier = 'tier1' | 'tier2' | 'tier3' | 'tier4'
 export type BillingPeriod = 'monthly' | 'yearly'
 
 // How many leagues each paid tier allows. A user with no subscription gets 0.
-// Number.POSITIVE_INFINITY for tier3 → current >= limit is always false.
 export const TIER_LIMITS: Record<Tier, number> = {
-  tier1: 1,
-  tier2: 5,
-  tier3: Number.POSITIVE_INFINITY,
+  tier1:  1,
+  tier2:  3,
+  tier3:  7,
+  tier4: 15,
 }
 
 // Human-friendly labels used on the pricing page + account UI.
 export const TIER_LABELS: Record<Tier, { name: string; tagline: string }> = {
-  tier1: { name: 'Rookie',  tagline: 'Archive one league.' },
-  tier2: { name: 'Veteran', tagline: 'Archive up to five leagues.' },
-  tier3: { name: 'Legend',  tagline: 'Archive unlimited leagues.' },
+  tier1: { name: 'Rookie',   tagline: 'Archive one league.' },
+  tier2: { name: 'Veteran',  tagline: 'Archive up to 3 leagues.' },
+  tier3: { name: 'All-Pro',  tagline: 'Archive up to 7 leagues.' },
+  tier4: { name: 'HOF',      tagline: 'Archive up to 15 leagues.' },
 }
 
 // Display prices in USD cents — these match what was configured in Stripe.
 // Keep them here too so the pricing page can render without an API round-trip.
 export const TIER_PRICES: Record<Tier, Record<BillingPeriod, { amountCents: number; perLabel: string }>> = {
   tier1: {
-    monthly: { amountCents: 500,  perLabel: '/mo' },
-    yearly:  { amountCents: 3000, perLabel: '/yr' },
+    monthly: { amountCents:  300, perLabel: '/mo' },
+    yearly:  { amountCents: 1500, perLabel: '/yr' },
   },
   tier2: {
-    monthly: { amountCents: 1500, perLabel: '/mo' },
-    yearly:  { amountCents: 7500, perLabel: '/yr' },
+    monthly: { amountCents:  500, perLabel: '/mo' },
+    yearly:  { amountCents: 2500, perLabel: '/yr' },
   },
   tier3: {
+    monthly: { amountCents: 1200, perLabel: '/mo' },
+    yearly:  { amountCents: 5000, perLabel: '/yr' },
+  },
+  tier4: {
     monthly: { amountCents: 2500,  perLabel: '/mo' },
     yearly:  { amountCents: 10000, perLabel: '/yr' },
   },
@@ -76,6 +81,10 @@ export function priceIdFor(tier: Tier, period: BillingPeriod): string {
       monthly: process.env.STRIPE_TIER3_MONTHLY,
       yearly:  process.env.STRIPE_TIER3_YEARLY,
     },
+    tier4: {
+      monthly: process.env.STRIPE_TIER4_MONTHLY,
+      yearly:  process.env.STRIPE_TIER4_YEARLY,
+    },
   }
   const id = map[tier][period]
   if (!id) throw new Error(`STRIPE_${tier.toUpperCase()}_${period.toUpperCase()} env var is not set`)
@@ -85,7 +94,7 @@ export function priceIdFor(tier: Tier, period: BillingPeriod): string {
 // Reverse lookup — Stripe webhook payloads carry a price ID, we need to know
 // which tier+period that maps to so we can write the correct row to our DB.
 // Returns null for unknown price IDs (e.g. legacy products, or a price the
-// commissioner created outside our 6-tier scheme).
+// commissioner created outside our 8-tier scheme).
 export function tierFromPriceId(priceId: string): { tier: Tier; period: BillingPeriod } | null {
   const pairs: { id: string | undefined; tier: Tier; period: BillingPeriod }[] = [
     { id: process.env.STRIPE_TIER1_MONTHLY, tier: 'tier1', period: 'monthly' },
@@ -94,6 +103,8 @@ export function tierFromPriceId(priceId: string): { tier: Tier; period: BillingP
     { id: process.env.STRIPE_TIER2_YEARLY,  tier: 'tier2', period: 'yearly'  },
     { id: process.env.STRIPE_TIER3_MONTHLY, tier: 'tier3', period: 'monthly' },
     { id: process.env.STRIPE_TIER3_YEARLY,  tier: 'tier3', period: 'yearly'  },
+    { id: process.env.STRIPE_TIER4_MONTHLY, tier: 'tier4', period: 'monthly' },
+    { id: process.env.STRIPE_TIER4_YEARLY,  tier: 'tier4', period: 'yearly'  },
   ]
   const hit = pairs.find((p) => p.id === priceId)
   return hit ? { tier: hit.tier, period: hit.period } : null

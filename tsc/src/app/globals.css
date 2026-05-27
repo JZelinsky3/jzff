@@ -498,11 +498,15 @@ main {
 }
 .dc-input::placeholder { color: var(--cream-mute); }
 
-/* Pricing page: 3 tier cards on one desktop row, stacking on mobile. The
-   inline grid-template-columns sets the desktop layout; this override kicks
-   in below 820px so cards aren't squished to unreadable widths on phones. */
-@media (max-width: 820px) {
-    .pricing-grid-3 { grid-template-columns: 1fr !important; }
+/* Pricing page: 4 tier cards on one desktop row, 2-column grid on medium
+   screens, stacking to 1 column on mobile. The inline grid-template-columns
+   sets the 4-column desktop layout; these overrides kick in at narrower
+   breakpoints so cards don't get squished to unreadable widths. */
+@media (max-width: 1100px) {
+    .pricing-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 600px) {
+    .pricing-grid-4 { grid-template-columns: 1fr !important; }
 }
 .dc-checkbox-row {
     display: flex;

@@ -81,7 +81,7 @@ export default function Page() {
 
       <H2>FAQ</H2>
       <P><strong>Do I have to be the commissioner?</strong> Yes — you sign up as the league&apos;s owner. League members can view the published almanac freely; only the commissioner manages it.</P>
-      <P><strong>Can I archive multiple leagues from one account?</strong> Yes — the Veteran tier covers up to 5 leagues; Legend covers unlimited.</P>
+      <P><strong>Can I archive multiple leagues from one account?</strong> Yes — Veteran covers up to 3 leagues, All-Pro up to 7, and HOF up to 15.</P>
       <P><strong>What if my league moved from Yahoo or ESPN to Sleeper?</strong> See our <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link> — you can stitch multiple sources into a single archive.</P>
       <P><strong>What does it cost?</strong> Rookie tier starts at $5/month or $30/year for one league. <Link href="/pricing" style={{ color: "var(--gold)" }}>See pricing</Link>.</P>
     </GuideShell>
