@@ -2,66 +2,54 @@
 
 import { useEffect, useState } from 'react'
 
-// Cycles through mocked-up "front-page clippings" so the hero has something
-// alive in the first 3 seconds — instead of a static block of marketing copy.
-// Content is hand-picked to demonstrate what a real almanac page looks like.
+// Almanac-plaque style — a stack of "pages" from a bound almanac that
+// rotate through different chapters (champions / records / standings).
+// Cream paper, gold rules and ornaments, navy ink. Deliberately less
+// "newspaper clipping" and more "page from a record book."
 
-type Clipping = {
-  edition: string
-  dateline: string
-  kicker: string
-  headline: [string, string]
-  byline: string
-  body: string
-  stamp: string
-  stats: { label: string; value: string }[]
+type Page = {
+  chapter: string          // small uppercase top label
+  pageNum: string          // page number, top-right
+  title: [string, string]  // first word, italic word
+  lead: string             // single italic lede sentence
+  body: string             // body paragraph
+  feature: {               // single feature line — replaces the boxed stat strip
+    label: string
+    value: string
+  }
+  seal: string             // gold seal text in the corner
 }
 
-const CLIPPINGS: Clipping[] = [
+const PAGES: Page[] = [
   {
-    edition: 'No. CXLII',
-    dateline: 'Sunday · Wk. 17',
-    kicker: 'Championship Edition',
-    headline: ['The Slingers,', 'undone at last.'],
-    byline: 'A four-year reign ends in a blizzard of points.',
+    chapter: 'Ch. II · Champion Rolls',
+    pageNum: 'p. 47',
+    title: ['Champion,', 'MMXXIV.'],
+    lead: 'Tendency, at last — by a half-point and a Monday-night kicker.',
     body:
-      'After a regular season spent untouched at the top of the standings, the PAM Slingers fell in the title game to Tight End Tendency by a single half-point — settled, fittingly, by a Monday-night kicker.',
-    stamp: 'Vol. VII',
-    stats: [
-      { label: 'Final', value: '142.6 · 142.1' },
-      { label: 'Margin', value: '0.5 pts' },
-      { label: 'Title No.', value: 'I' },
-    ],
+      'The PAM Slingers entered Sunday undefeated for the year; they left the season as runners-up. Tight End Tendency held the lead for ninety minutes of football and surrendered it for ninety seconds, then took it back to stay. The book records the result and not the heartbreak.',
+    feature: { label: 'Final', value: 'Tendency 142.6 · Slingers 142.1' },
+    seal: 'Vol. VII',
   },
   {
-    edition: 'No. CXLIII',
-    dateline: 'Tuesday · Trade Wire',
-    kicker: 'Bourse · The Trade Wire',
-    headline: ['A draft pick', 'changes hands.'],
-    byline: 'Three-team deal reshuffles the dynasty board.',
+    chapter: 'Ch. III · Record Book',
+    pageNum: 'p. 112',
+    title: ['Single-Week', 'High.'],
+    lead: 'The largest one-week score in league history, since MMXVIII.',
     body:
-      "Dad Bod Dynasty surrendered next year's first to Tendency in exchange for a veteran tight end and a late-season flier — a quiet, considered move that the standings will spend the next eighteen months interpreting.",
-    stamp: 'Grade B',
-    stats: [
-      { label: 'Pieces', value: '3 + 1.04' },
-      { label: 'Grade', value: 'B+' },
-      { label: 'Era', value: 'MMXXVI' },
-    ],
+      "Dad Bod Dynasty's Week 9 outing in 2022 still stands as the league's high-water mark — a 198.4 from a roster with no obvious stars and a kicker who outscored two opposing wide receivers. The chronicle keeps the box score so the argument can rest.",
+    feature: { label: 'Mark', value: '198.4 · Dad Bod Dynasty · Wk. 9 MMXXII' },
+    seal: 'Record',
   },
   {
-    edition: 'No. CXLIV',
-    dateline: 'Records · All-Time',
-    kicker: 'The Long Memory',
-    headline: ['Eight seasons,', 'one rivalry.'],
-    byline: 'The book on Slingers ↔ Dad Bod, kept faithfully.',
+    chapter: 'Ch. V · Rivalries',
+    pageNum: 'p. 184',
+    title: ['Slingers', '↔ Dad Bod.'],
+    lead: 'Sixteen meetings. Eight to seven. One tie. The book is honest about it.',
     body:
-      "Sixteen meetings. Eight to seven, with one tie. They have met four times in the playoffs and split them evenly. The chronicle keeps every column, every point, every Sunday — so the argument can rest.",
-    stamp: 'Hand-picked',
-    stats: [
-      { label: 'Meetings', value: '16' },
-      { label: 'Record', value: '8–7–1' },
-      { label: 'Playoffs', value: '2–2' },
-    ],
+      'Four playoff meetings split evenly. Three different decades of football — well, three different commissioners, anyway. The longest game went to a Monday-night fumble at the goal line, and neither manager has spoken of it since.',
+    feature: { label: 'All-time', value: '8 — 7 — 1 · 4 playoff meetings' },
+    seal: 'Rivalry',
   },
 ]
 
@@ -70,50 +58,54 @@ export function HeroClipping() {
 
   useEffect(() => {
     const t = setInterval(() => {
-      setIdx((i) => (i + 1) % CLIPPINGS.length)
-    }, 6500)
+      setIdx((i) => (i + 1) % PAGES.length)
+    }, 7000)
     return () => clearInterval(t)
   }, [])
 
   return (
-    <div className="hc-stack" aria-label="A live clipping from a finished almanac">
-      {CLIPPINGS.map((c, i) => {
+    <div className="hc-stack" aria-label="A page from a finished almanac">
+      {PAGES.map((p, i) => {
         const active = i === idx
-        // Offsets fan the inactive cards out behind the active one — like a
-        // small stack of clippings on the desk.
-        const offset = (i - idx + CLIPPINGS.length) % CLIPPINGS.length
+        const offset = (i - idx + PAGES.length) % PAGES.length
         return (
           <article
             key={i}
-            className={`hc-card${active ? ' is-active' : ''}`}
+            className={`hc-page${active ? ' is-active' : ''}`}
             data-offset={offset}
             aria-hidden={!active}
           >
-            <header className="hc-card-head">
-              <span className="hc-edition">{c.edition}</span>
-              <span className="hc-dateline">{c.dateline}</span>
+            <header className="hc-page-head">
+              <span className="hc-chapter">{p.chapter}</span>
+              <span className="hc-pagenum">{p.pageNum}</span>
             </header>
-            <div className="hc-kicker">★ {c.kicker} ★</div>
-            <h3 className="hc-headline">
-              {c.headline[0]} <em>{c.headline[1]}</em>
-            </h3>
-            <div className="hc-byline">{c.byline}</div>
-            <div className="hc-rule" />
-            <p className="hc-body">{c.body}</p>
-            <div className="hc-stats">
-              {c.stats.map((s) => (
-                <div key={s.label} className="hc-stat">
-                  <span className="hc-stat-label">{s.label}</span>
-                  <span className="hc-stat-value">{s.value}</span>
-                </div>
-              ))}
+
+            <div className="hc-ornament" aria-hidden="true">
+              <span className="hc-rule" />
+              <span className="hc-ornament-mark">✦</span>
+              <span className="hc-rule" />
             </div>
-            <div className="hc-stamp">{c.stamp}</div>
+
+            <h3 className="hc-title">
+              {p.title[0]} <em>{p.title[1]}</em>
+            </h3>
+            <p className="hc-lead">{p.lead}</p>
+
+            <p className="hc-body">{p.body}</p>
+
+            <div className="hc-feature">
+              <span className="hc-feature-label">{p.feature.label}</span>
+              <span className="hc-feature-value">{p.feature.value}</span>
+            </div>
+
+            <div className="hc-seal" aria-hidden="true">
+              <span className="hc-seal-inner">{p.seal}</span>
+            </div>
           </article>
         )
       })}
-      <div className="hc-dots" role="tablist" aria-label="Clipping selector">
-        {CLIPPINGS.map((_, i) => (
+      <div className="hc-dots" role="tablist" aria-label="Almanac page selector">
+        {PAGES.map((_, i) => (
           <button
             key={i}
             type="button"
@@ -121,7 +113,7 @@ export function HeroClipping() {
             aria-selected={i === idx}
             className={`hc-dot${i === idx ? ' is-active' : ''}`}
             onClick={() => setIdx(i)}
-            aria-label={`Show clipping ${i + 1}`}
+            aria-label={`Show page ${i + 1}`}
           />
         ))}
       </div>

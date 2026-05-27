@@ -3,11 +3,11 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
-// Five "pages" of the chronicle slide horizontally as the visitor scrolls
-// vertically — same gimmick as flipping through an actual almanac. The pin
-// section is N * 100vh tall so progress reads cleanly from the bounding
-// rect. On narrow screens or with prefers-reduced-motion, the CSS drops the
-// pinning and stacks the pages vertically.
+// Five almanac "pages" displayed in a horizontal scroll-snap track. The
+// visitor can pan through them with trackpad/swipe/arrow buttons — but
+// vertical scrolling is not hijacked. Earlier version pinned the section
+// and drove the scroll from window-scroll, which felt aggressive on first
+// landing.
 
 type Page = {
   numeral: string
@@ -194,84 +194,127 @@ const PAGES: Page[] = [
 ]
 
 export function ChroniclePages() {
-  const sectionRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
 
+  // Update the active page indicator as the user scrolls the track
+  // horizontally. Snap points already keep pages aligned; we just read
+  // which one is closest to the start.
   useEffect(() => {
-    const section = sectionRef.current
     const track = trackRef.current
-    if (!section || !track) return
-
-    // If the visitor prefers reduced motion or the viewport is narrow, we
-    // don't pin — the CSS handles the fallback layout, so do nothing here.
-    const mq = window.matchMedia('(max-width: 880px), (prefers-reduced-motion: reduce)')
-    if (mq.matches) return
-
+    if (!track) return
     let rafId = 0
     const onScroll = () => {
       if (rafId) return
       rafId = requestAnimationFrame(() => {
         rafId = 0
-        const rect = section.getBoundingClientRect()
-        const total = section.offsetHeight - window.innerHeight
-        const p = Math.min(1, Math.max(0, -rect.top / total))
-        const maxTx = track.scrollWidth - track.parentElement!.clientWidth
-        track.style.transform = `translate3d(${-(p * maxTx)}px, 0, 0)`
-        // Active page index — used to highlight the page dots.
-        const segment = 1 / PAGES.length
-        const i = Math.min(PAGES.length - 1, Math.floor(p / segment + 0.0001))
-        setActive(i)
+        const pages = track.querySelectorAll<HTMLElement>('.cp-page')
+        if (!pages.length) return
+        const x = track.scrollLeft + 8
+        let best = 0
+        let bestDist = Infinity
+        pages.forEach((p, i) => {
+          const dist = Math.abs(p.offsetLeft - x)
+          if (dist < bestDist) {
+            bestDist = dist
+            best = i
+          }
+        })
+        setActive(best)
       })
     }
     onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
+    track.addEventListener('scroll', onScroll, { passive: true })
     return () => {
-      window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
+      track.removeEventListener('scroll', onScroll)
       if (rafId) cancelAnimationFrame(rafId)
     }
   }, [])
 
+  const goTo = (i: number) => {
+    const track = trackRef.current
+    if (!track) return
+    const pages = track.querySelectorAll<HTMLElement>('.cp-page')
+    const target = pages[i]
+    if (!target) return
+    track.scrollTo({ left: target.offsetLeft, behavior: 'smooth' })
+  }
+
+  const step = (delta: number) => {
+    const next = Math.min(PAGES.length - 1, Math.max(0, active + delta))
+    goTo(next)
+  }
+
   return (
-    <section ref={sectionRef} className="cp-section" aria-label="Pages of the Chronicle">
-      <div className="cp-sticky">
-        <div className="cp-meta">
+    <section className="cp-section" aria-label="Pages of the Chronicle">
+      <div className="cp-meta">
+        <div className="cp-meta-left">
           <span className="cp-meta-num">§ 02 · The Pages</span>
           <span className="cp-meta-title">
             Five pages — <em>scroll the chronicle.</em>
           </span>
-          <div className="cp-dots">
+        </div>
+        <div className="cp-meta-right">
+          <div className="cp-dots" role="tablist" aria-label="Page selector">
             {PAGES.map((p, i) => (
-              <span
+              <button
                 key={i}
-                className={`cp-dot${i === active ? ' is-active' : ''}`}
+                type="button"
+                role="tab"
+                aria-selected={i === active}
                 aria-label={p.chapter}
+                className={`cp-dot${i === active ? ' is-active' : ''}`}
+                onClick={() => goTo(i)}
               />
             ))}
           </div>
-        </div>
-        <div className="cp-track-wrap">
-          <div ref={trackRef} className="cp-track">
-            {PAGES.map((page) => (
-              <article key={page.numeral} className="cp-page">
-                <div className="cp-page-aside">
-                  <div className="cp-page-chap">{page.chapter}</div>
-                  <div className="cp-page-num">{page.numeral}</div>
-                  <h3 className="cp-page-title">
-                    {page.title[0]} <em>{page.title[1]}</em>
-                  </h3>
-                  <p className="cp-page-blurb">{page.blurb}</p>
-                  <Link href={page.href} target="_blank" rel="noopener" className="cp-page-cta">
-                    {page.cta}
-                  </Link>
-                </div>
-                <div className="cp-page-body">{page.body}</div>
-              </article>
-            ))}
+          <div className="cp-arrows" aria-label="Page navigation">
+            <button
+              type="button"
+              className="cp-arrow"
+              aria-label="Previous page"
+              onClick={() => step(-1)}
+              disabled={active === 0}
+            >
+              ‹
+            </button>
+            <span className="cp-counter">
+              {String(active + 1).padStart(2, '0')} <span>/ {String(PAGES.length).padStart(2, '0')}</span>
+            </span>
+            <button
+              type="button"
+              className="cp-arrow"
+              aria-label="Next page"
+              onClick={() => step(1)}
+              disabled={active === PAGES.length - 1}
+            >
+              ›
+            </button>
           </div>
         </div>
+      </div>
+
+      <div ref={trackRef} className="cp-track">
+        {PAGES.map((page) => (
+          <article key={page.numeral} className="cp-page">
+            <div className="cp-page-aside">
+              <div className="cp-page-chap">{page.chapter}</div>
+              <div className="cp-page-num">{page.numeral}</div>
+              <h3 className="cp-page-title">
+                {page.title[0]} <em>{page.title[1]}</em>
+              </h3>
+              <p className="cp-page-blurb">{page.blurb}</p>
+              <Link href={page.href} target="_blank" rel="noopener" className="cp-page-cta">
+                {page.cta}
+              </Link>
+            </div>
+            <div className="cp-page-body">{page.body}</div>
+          </article>
+        ))}
+      </div>
+
+      <div className="cp-hint">
+        <span>Pan, swipe, or use the arrows · scroll past freely</span>
       </div>
     </section>
   )

@@ -82,6 +82,12 @@
         var currentPage = nav.dataset.page      || '';
         var chapter     = nav.dataset.chapter   || 'THE LAKESIDE LEAGUE';
         var backLabel   = nav.dataset.backLabel  || '';
+        // Resolve data-back-href to an absolute path. Using an explicit anchor
+        // for the back arrow (instead of history.back()) keeps the navigation
+        // deterministic — important when the demo is embedded in an iframe
+        // (history.back() pops the parent's session history and escapes the
+        // frame) and also for users who land on a deep page directly.
+        var backHref    = nav.dataset.backHref   ? root + nav.dataset.backHref : root + 'index.html';
         var rightLabel  = nav.dataset.rightLabel || '';
         var rightHref   = nav.dataset.rightHref  ? root + nav.dataset.rightHref : '';
         var titleId     = nav.dataset.titleId    || 'nav-title';
@@ -113,7 +119,7 @@
             + '</div></div>';
 
         var leftSlot  = backLabel
-            ? '<button class="nav-back" onclick="history.back()" aria-label="Go back"><svg viewBox="0 0 8 14" width="9" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 1 1 7 7 13"/></svg></button>'
+            ? '<a class="nav-back" href="' + backHref + '" aria-label="Go back"><svg viewBox="0 0 8 14" width="9" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 1 1 7 7 13"/></svg></a>'
             : dropMenu;
 
         var rightSlot = backLabel
