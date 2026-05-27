@@ -7,9 +7,9 @@
   <link rel="stylesheet" href="/pams-template/assets/css/main.css" />
   <style>
     /* ============================================================
-       TRADES — Phase 1: list of completed trades, no grades yet
-       Uses the shared site nav (nav.js) for consistency with the rest
-       of the almanac pages.
+       TRADES — Phase 2: bucketed list with per-side LLM grades
+       Sections: This Week / The Verdict (revisits) / Earlier
+       Uses the shared site nav (nav.js) for consistency.
        ============================================================ */
     :root {
       --tr-card:       #16202c;
@@ -44,18 +44,68 @@
     }
     .tr-page-title em { color: var(--gold); font-style: italic; }
 
-    .tr-banner {
-      background: var(--tr-card); border: 1px solid var(--tr-line);
-      border-left: 3px solid var(--gold);
-      padding: .9rem 1rem; margin-bottom: 2rem;
-      font-size: .88rem; color: var(--cream-soft);
-      border-radius: 3px;
-    }
-
     .tr-empty {
       text-align: center; padding: 3rem 1rem; color: var(--cream-soft);
     }
     .tr-empty h2 { font-family: var(--serif); font-size: 1.6rem; color: var(--cream); margin-bottom: .6rem; }
+
+    /* ── Tier-locked CTA ── */
+    .tr-lock {
+      text-align: center; padding: 3rem 1rem 4rem;
+      background: var(--tr-card); border: 1px solid var(--tr-line);
+      border-radius: 3px;
+    }
+    .tr-lock-icon {
+      font-size: 2.5rem; color: var(--gold);
+      letter-spacing: .3em; margin-bottom: 1rem;
+    }
+    .tr-lock h2 {
+      font-family: var(--serif); font-size: clamp(1.4rem, 4vw, 2rem);
+      color: var(--cream); margin-bottom: .9rem;
+    }
+    .tr-lock h2 em { color: var(--gold); font-style: italic; }
+    .tr-lock p {
+      max-width: 30rem; margin: 0 auto 1.5rem;
+      color: var(--cream-soft); font-size: .92rem; line-height: 1.5;
+    }
+    .tr-lock-cta {
+      display: inline-block;
+      font-family: var(--mono); font-size: .7rem;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: var(--ink); background: var(--gold);
+      padding: .75rem 1.4rem; border-radius: 2px;
+      text-decoration: none;
+    }
+    .tr-lock-cta:hover { background: var(--gold-bright); }
+
+    /* ── Section header ── */
+    .tr-section { margin-bottom: 2.5rem; }
+    .tr-section-head {
+      display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap;
+      padding-bottom: .8rem; margin-bottom: 1rem;
+      border-bottom: 1px solid var(--tr-line-soft);
+    }
+    .tr-section-num {
+      font-family: var(--mono); font-size: .68rem;
+      letter-spacing: .25em; color: var(--gold);
+      text-transform: uppercase;
+    }
+    .tr-section-title {
+      font-family: var(--serif); font-size: 1.3rem; color: var(--cream);
+    }
+    .tr-section-title em { color: var(--gold); font-style: italic; }
+    .tr-section-meta {
+      margin-left: auto;
+      font-family: var(--mono); font-size: .65rem;
+      letter-spacing: .15em; color: var(--cream-mute);
+      text-transform: uppercase;
+    }
+    .tr-section-empty {
+      padding: 1.5rem 1rem; text-align: center;
+      color: var(--cream-mute); font-size: .85rem;
+      background: var(--tr-card); border: 1px dashed var(--tr-line);
+      border-radius: 3px;
+    }
 
     /* ── Trade cards ── */
     .tr-list { display: flex; flex-direction: column; gap: 1rem; }
@@ -145,12 +195,42 @@
     .tr-asset.kind-pick .tr-asset-pos { color: var(--gold); }
     .tr-asset.kind-faab .tr-asset-pos { color: var(--gold); }
 
-    .tr-grade-placeholder {
-      margin-top: .35rem;
+    /* ── Per-side grade block ── */
+    .tr-grade {
+      margin-top: .55rem; padding-top: .65rem;
+      border-top: 1px solid var(--tr-line-soft);
+      display: flex; flex-direction: column; gap: .4rem;
+    }
+    .tr-grade-letter {
+      font-family: var(--serif); font-size: 1.8rem;
+      line-height: 1; font-weight: 700;
+      color: var(--cream);
+    }
+    .tr-grade-letter.g-a { color: #6dcf8a; }   /* trophy-room green */
+    .tr-grade-letter.g-b { color: #e8c889; }   /* gold */
+    .tr-grade-letter.g-c { color: #c9a878; }   /* dimmer gold */
+    .tr-grade-letter.g-d { color: #a04830; }   /* rust */
+    .tr-grade-blurb {
+      font-size: .82rem; line-height: 1.45;
+      color: var(--cream-soft);
+      margin: 0;
+    }
+    .tr-grade-pending {
+      margin-top: .55rem; padding-top: .55rem;
+      border-top: 1px solid var(--tr-line-soft);
       font-family: var(--mono); font-size: .58rem;
-      letter-spacing: .2em; text-transform: uppercase;
+      letter-spacing: .22em; text-transform: uppercase;
       color: var(--cream-mute);
     }
+    /* Revisit: show the initial grade smaller, then arrow, then new grade big */
+    .tr-grade-row { display: flex; align-items: center; gap: .55rem; }
+    .tr-grade-then {
+      font-size: 1.1rem;
+      opacity: .55;
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+    }
+    .tr-grade-arrow { color: var(--cream-mute); font-size: 1rem; }
 
     .tr-footer {
       margin-top: 3rem; text-align: center;
@@ -174,11 +254,6 @@
       <h1 class="tr-page-title">Trade <em>Grader.</em></h1>
     </header>
 
-    <div class="tr-banner" id="banner">
-      Trades are pulled automatically from your league platform. Grades + 4-week
-      revisits arrive in the next build.
-    </div>
-
     <div id="content">
       <div class="tr-empty">
         <h2>Loading…</h2>
@@ -186,7 +261,7 @@
       </div>
     </div>
 
-    <div class="tr-footer">{{LEAGUE_ABBR}} · Trade Grader · Phase 1</div>
+    <div class="tr-footer">{{LEAGUE_ABBR}} · Trade Grader · Auto-graded by AI</div>
 
   </main>
 
