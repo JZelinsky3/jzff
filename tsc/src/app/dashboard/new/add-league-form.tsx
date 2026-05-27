@@ -3,7 +3,7 @@
 import { useActionState, useState, useTransition } from 'react'
 import { addLeague, previewSleeperLeague } from './actions'
 
-export function AddLeagueForm() {
+export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
   const [state, formAction, isPending] = useActionState(addLeague, null)
 
   const [platform, setPlatform] = useState<'sleeper' | 'nfl' | 'espn' | 'yahoo'>('sleeper')
@@ -158,10 +158,45 @@ export function AddLeagueForm() {
           <option value="sleeper">Sleeper</option>
           <option value="nfl">NFL.com</option>
           <option value="espn">ESPN</option>
-          <option value="yahoo">Yahoo (coming soon)</option>
+          <option value="yahoo">Yahoo (beta — connect required)</option>
         </select>
       </div>
 
+      {platform === 'yahoo' ? (
+        <div className="dc-field">
+          <div style={{ padding: '1rem 1.1rem', background: 'var(--ink-soft)', borderRadius: '4px' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.45rem' }}>
+              ★ Yahoo connection
+            </div>
+            {yahooConnected ? (
+              <>
+                <p style={{ margin: 0, lineHeight: 1.55, color: 'var(--cream)' }}>
+                  Yahoo connected ✓
+                </p>
+                <p style={{ margin: '.5rem 0 0', lineHeight: 1.55, color: 'var(--cream-soft)', fontSize: '.88rem' }}>
+                  League picker is rolling out next. For now your account is linked — we&apos;ll
+                  notify you when you can import your Yahoo league history.
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ margin: 0, lineHeight: 1.55, color: 'var(--cream)' }}>
+                  Yahoo requires you to log in once so we can read your leagues. We only get
+                  read access — no roster moves, no posting.
+                </p>
+                <a
+                  href="/api/yahoo/authorize"
+                  className="dc-btn"
+                  style={{ marginTop: '.85rem', display: 'inline-block' }}
+                >
+                  Connect Yahoo →
+                </a>
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+      <>
       <div className="dc-field">
         <label htmlFor="externalId" className="dc-label">League ID</label>
         <div style={{ display: 'flex', gap: '.5rem' }}>
@@ -595,6 +630,8 @@ export function AddLeagueForm() {
       </button>
 
       {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
+      </>
+      )}
     </form>
   )
 }

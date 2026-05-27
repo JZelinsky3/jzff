@@ -13,7 +13,12 @@ import {
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { LeagueCardMenu } from './league-card-menu'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ yahoo?: string }>
+}) {
+  const sp = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   // Explicit owner filter: site admins have RLS access to every league
@@ -215,6 +220,8 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {sp.yahoo && <YahooStatusBanner status={sp.yahoo} />}
+
       <OnboardingChecklist
         storageKey="tsc_onb_dashboard"
         kicker="Welcome ★ Get started"
@@ -367,4 +374,35 @@ function splitName(name: string): { head: string; tail: string } {
   const parts = name.trim().split(/\s+/)
   if (parts.length === 1) return { head: '', tail: parts[0] }
   return { head: parts.slice(0, -1).join(' '), tail: parts[parts.length - 1] }
+}
+
+
+function YahooStatusBanner({ status }: { status: string }) {
+  const isOk = status === 'connected'
+  const messages: Record<string, string> = {
+    connected: 'Yahoo connected. You can now create archives from your Yahoo leagues.',
+    state_mismatch: 'Yahoo connect failed — security check did not match. Try again.',
+    token_exchange_failed: 'Yahoo connect failed — could not exchange the auth code. Try again.',
+    save_failed: 'Yahoo connect partially succeeded — could not save tokens. Try again.',
+    access_denied: 'You declined to grant access on Yahoo. Try again to connect.',
+  }
+  const msg = messages[status] ?? `Yahoo: ${status}`
+  return (
+    <div
+      style={{
+        maxWidth: '880px', margin: '1rem auto 0',
+        padding: '.85rem 1.1rem',
+        background: isOk ? 'rgba(120,160,90,.08)' : 'rgba(160,72,48,.08)',
+        border: `1px solid ${isOk ? 'var(--gold-deep)' : 'rgba(160,72,48,.4)'}`,
+        borderRadius: '2px',
+        color: 'var(--cream)',
+        fontSize: '.9rem',
+      }}
+    >
+      <span style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: isOk ? 'var(--gold)' : 'var(--rust, #a04830)', marginRight: '.6rem' }}>
+        {isOk ? '★ Yahoo' : '✗ Yahoo'}
+      </span>
+      {msg}
+    </div>
+  )
 }

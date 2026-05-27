@@ -12,6 +12,16 @@ export default async function NewLeaguePage() {
 
   const gate = await canCreateLeague(user.id)
 
+  // Yahoo Fantasy requires per-user OAuth (unlike Sleeper/ESPN/NFL where the
+  // platform is paste-an-ID). Surface the connection state to the form so it
+  // can show a "Connect Yahoo" prompt when that platform is selected.
+  const { data: yahooRow } = await supabase
+    .from('yahoo_tokens')
+    .select('user_id, expires_at')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  const yahooConnected = !!yahooRow
+
   return (
     <main>
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
@@ -28,7 +38,7 @@ export default async function NewLeaguePage() {
       <div className="section" style={{ maxWidth: '560px' }}>
         {gate.ok ? (
           <div className="dc-card-static">
-            <AddLeagueForm />
+            <AddLeagueForm yahooConnected={yahooConnected} />
           </div>
         ) : (
           <UpgradePrompt
