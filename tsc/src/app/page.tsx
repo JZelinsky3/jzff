@@ -123,10 +123,6 @@ export default async function Home() {
             <HeroClipping />
           </div>
         </div>
-        <div className="lp-hero-scroll" aria-hidden="true">
-          <span>Scroll the pages</span>
-          <span className="lp-hero-scroll-line" />
-        </div>
       </section>
 
       {/* ─── §02 · Horizontal-scroll Pages of the Chronicle ───── */}

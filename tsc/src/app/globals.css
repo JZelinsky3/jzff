@@ -4403,7 +4403,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .lp-hero-left { position: relative; }
 .lp-hero-seal {
-    position: absolute; top: -2rem; left: -.5rem;
+    position: absolute; top: -1rem; left: -.5rem;
     width: 78px; height: 78px;
     border: 2px solid var(--gold);
     border-radius: 50%;
@@ -4451,29 +4451,6 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--cream-mute);
 }
 .lp-hero-meta-sep { color: var(--gold-deep); }
-.lp-hero-scroll {
-    margin-top: 3.5rem;
-    display: flex; align-items: center; gap: .8rem;
-    font-family: var(--mono); font-size: .6rem;
-    letter-spacing: .35em; text-transform: uppercase;
-    color: var(--cream-mute);
-}
-.lp-hero-scroll-line {
-    display: inline-block; width: 90px; height: 1px;
-    background: linear-gradient(90deg, var(--cream-mute), transparent);
-    position: relative;
-}
-.lp-hero-scroll-line::after {
-    content: '↓';
-    position: absolute; right: -10px; top: -8px;
-    color: var(--cream-mute); font-size: .8rem;
-    animation: lp-bounce 2.2s ease-in-out infinite;
-}
-@keyframes lp-bounce {
-    0%, 100% { transform: translateY(0); opacity: .65; }
-    50%      { transform: translateY(4px); opacity: 1; }
-}
-
 /* ─── HERO CLIPPING / ALMANAC PAGES ───────────────────────── */
 .lp-hero-right {
     position: relative;
@@ -4613,6 +4590,20 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-size: 1rem;
     color: var(--ink);
     text-align: center;
+    display: inline-flex; align-items: center; flex-wrap: wrap;
+    justify-content: center;
+    gap: .35rem;
+}
+.hc-feature-piece {
+    display: inline-flex; align-items: center; gap: .65rem;
+}
+.hc-feature-sep {
+    color: var(--gold-deep);
+    font-weight: 400;
+    /* nudges the dot up half a hair for true vertical centering against
+       the serif x-height */
+    transform: translateY(-1px);
+    opacity: .85;
 }
 
 /* Gold-bordered hexagonal seal — replaces the angled rust stamp. */
@@ -4878,12 +4869,16 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .cp-roll { display: flex; flex-direction: column; }
 .cp-roll-row {
     display: grid;
-    grid-template-columns: 90px 1fr auto;
-    gap: 1.2rem;
+    /* Year column trimmed and gap tightened so the digit year sits close
+       to the champion's name — the previous 90px+1.2rem was visibly wide. */
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    column-gap: .6rem;
+    row-gap: .15rem;
     align-items: baseline;
     padding: .65rem 0;
     border-bottom: 1px dotted var(--ink-line-soft);
 }
+.cp-roll-row > :last-child { margin-left: .9rem; }
 .cp-roll-row:last-child { border-bottom: none; }
 .cp-roll-yr {
     font-family: var(--mono); font-weight: 700;
@@ -5227,54 +5222,81 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-size: .58rem; letter-spacing: .25em; text-transform: uppercase;
     color: var(--cream-mute);
 }
-.dv-poster-benchmarks {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 1rem;
+/* Library shelf — grid of bound-volume cards, one highlighted as the demo */
+.dv-poster-shelf {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .85rem;
 }
-.dv-poster-hero-stat {
-    background: var(--ink-card);
+.dv-poster-vol {
+    position: relative;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
     border: 1px solid var(--ink-line);
+    border-left: 3px solid var(--gold-deep);
+    padding: .9rem 1.05rem 1rem;
+    display: flex; flex-direction: column; gap: .3rem;
+    overflow: hidden;
+    transition: border-color .25s ease, transform .25s ease;
+}
+.dv-poster-vol.is-featured {
+    border-color: var(--gold);
     border-left: 3px solid var(--gold);
-    padding: 1.1rem 1.2rem;
-    display: flex; flex-direction: column; gap: .35rem;
+    background:
+        radial-gradient(circle at 90% 0%, rgba(232, 200, 137, .12), transparent 65%),
+        linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    box-shadow:
+        0 12px 28px -10px rgba(0, 0, 0, .55),
+        0 0 24px rgba(232, 200, 137, .12);
 }
-.dv-poster-stat-label {
+.dv-poster-vol-tag {
+    position: absolute; top: 0; right: 0;
+    background: var(--gold);
+    color: var(--ink);
     font-family: var(--mono); font-weight: 700;
-    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
-    color: var(--cream-mute);
+    font-size: .52rem; letter-spacing: .2em; text-transform: uppercase;
+    padding: .25rem .55rem;
+    border-bottom-left-radius: 3px;
 }
-.dv-poster-stat-value {
-    font-family: var(--serif);
-    font-size: 2.4rem; line-height: 1; letter-spacing: -.02em;
+.dv-poster-vol-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: .65rem;
+    margin-bottom: .2rem;
+}
+.dv-poster-vol-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .25em; text-transform: uppercase;
     color: var(--gold);
 }
-.dv-poster-stat-detail {
-    font-family: var(--sans);
-    font-size: .82rem; line-height: 1.4;
+.dv-poster-vol-pill {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .18em; text-transform: uppercase;
     color: var(--cream-soft);
-}
-.dv-poster-stat-detail strong { color: var(--cream); font-weight: 600; }
-.dv-poster-stat-grid {
-    display: grid; grid-template-columns: 1fr;
-    gap: .5rem;
-}
-.dv-poster-stat {
+    border: 1px solid var(--ink-line);
+    padding: .15rem .45rem;
+    border-radius: 2px;
     background: rgba(232, 200, 137, .03);
-    border: 1px solid var(--ink-line-soft);
-    padding: .65rem .85rem;
-    display: flex; justify-content: space-between; align-items: baseline;
-    gap: .8rem;
 }
-.dv-poster-stat span {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
+.dv-poster-vol.is-featured .dv-poster-vol-pill {
+    color: var(--gold);
+    border-color: var(--gold-deep);
+    background: rgba(232, 200, 137, .07);
+}
+.dv-poster-vol-name {
+    font-family: var(--serif);
+    font-size: 1.15rem; line-height: 1.1;
+    color: var(--cream);
+}
+.dv-poster-vol-name em { font-style: italic; color: var(--gold); }
+.dv-poster-vol-meta {
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
     color: var(--cream-mute);
 }
-.dv-poster-stat strong {
-    font-family: var(--serif);
-    font-weight: 400;
-    font-size: 1.2rem;
-    color: var(--gold);
+.dv-poster-vol-stats {
+    font-family: var(--serif); font-style: italic;
+    font-size: .78rem;
+    color: var(--cream-soft);
+    margin-top: .1rem;
 }
 .dv-poster-play {
     position: absolute;
@@ -5392,8 +5414,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .hc-seal-inner { font-size: .46rem; }
     .dv-screen { height: 440px; }
     .dv-chrome-url { max-width: 180px; font-size: .58rem; padding: .3rem .5rem; }
-    .dv-poster-benchmarks { grid-template-columns: 1fr; gap: .65rem; }
-    .dv-poster-stat-value { font-size: 1.9rem; }
+    .dv-poster-shelf { grid-template-columns: 1fr; gap: .55rem; }
+    .dv-poster-vol { padding: .75rem .9rem .8rem; }
+    .dv-poster-vol-name { font-size: 1rem; }
+    .dv-poster-vol-stats { display: none; }
     .dv-poster-mast { padding: 1.25rem 1rem 1rem; }
     .dv-poster-section { padding: 1rem 1.25rem 1.25rem; }
     .dv-poster-play { padding: 1rem 1.4rem; }

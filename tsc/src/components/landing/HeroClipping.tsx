@@ -13,10 +13,10 @@ type Page = {
   title: [string, string]  // first word, italic word
   lead: string             // single italic lede sentence
   body: string             // body paragraph
-  feature: {               // single feature line — replaces the boxed stat strip
-    label: string
-    value: string
-  }
+  // Feature line at the bottom: label + multiple pieces joined by a
+  // gold separator. Stored as parts (not a pre-joined string) so the CSS
+  // can space the separator with proper breathing room.
+  feature: { label: string; parts: string[] }
   seal: string             // gold seal text in the corner
 }
 
@@ -24,21 +24,21 @@ const PAGES: Page[] = [
   {
     chapter: 'Ch. II · Champion Rolls',
     pageNum: 'p. 47',
-    title: ['Champion,', 'MMXXIV.'],
+    title: ['Champion,', '2024.'],
     lead: 'Tendency, at last — by a half-point and a Monday-night kicker.',
     body:
       'The PAM Slingers entered Sunday undefeated for the year; they left the season as runners-up. Tight End Tendency held the lead for ninety minutes of football and surrendered it for ninety seconds, then took it back to stay. The book records the result and not the heartbreak.',
-    feature: { label: 'Final', value: 'Tendency 142.6 · Slingers 142.1' },
+    feature: { label: 'Final', parts: ['Tendency 142.6', 'Slingers 142.1'] },
     seal: 'Vol. VII',
   },
   {
     chapter: 'Ch. III · Record Book',
     pageNum: 'p. 112',
     title: ['Single-Week', 'High.'],
-    lead: 'The largest one-week score in league history, since MMXVIII.',
+    lead: 'The largest one-week score in league history, since 2018.',
     body:
       "Dad Bod Dynasty's Week 9 outing in 2022 still stands as the league's high-water mark — a 198.4 from a roster with no obvious stars and a kicker who outscored two opposing wide receivers. The chronicle keeps the box score so the argument can rest.",
-    feature: { label: 'Mark', value: '198.4 · Dad Bod Dynasty · Wk. 9 MMXXII' },
+    feature: { label: 'Mark', parts: ['198.4 pts', 'Dad Bod · Wk. 9, 2022'] },
     seal: 'Record',
   },
   {
@@ -48,7 +48,7 @@ const PAGES: Page[] = [
     lead: 'Sixteen meetings. Nine to seven. The book records every one.',
     body:
       'Four playoff meetings split evenly. Three different decades of football — well, three different commissioners, anyway. The longest game went to a Monday-night fumble at the goal line, and neither manager has spoken of it since.',
-    feature: { label: 'All-time', value: '9 — 7 · 4 playoff meetings' },
+    feature: { label: 'All-time', parts: ['9 — 7', '4 Playoff Meetings'] },
     seal: 'Rivalry',
   },
 ]
@@ -95,7 +95,14 @@ export function HeroClipping() {
 
             <div className="hc-feature">
               <span className="hc-feature-label">{p.feature.label}</span>
-              <span className="hc-feature-value">{p.feature.value}</span>
+              <span className="hc-feature-value">
+                {p.feature.parts.map((part, pi) => (
+                  <span key={pi} className="hc-feature-piece">
+                    {pi > 0 && <span className="hc-feature-sep" aria-hidden="true">·</span>}
+                    {part}
+                  </span>
+                ))}
+              </span>
             </div>
 
             <div className="hc-seal" aria-hidden="true">
