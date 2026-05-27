@@ -12,6 +12,7 @@ import {
 } from './_lib/blocks'
 import { STORAGE_KEY, type Deck, type SlideInstance, type Theme } from './_lib/types'
 import type { LeaguePresentationData } from './_lib/leagueData'
+import { buildStarterDeck } from './_lib/starterDeck'
 
 function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -120,6 +121,16 @@ export function Builder({
     setSelectedId(null)
   }
 
+  function loadStarterDeck() {
+    if (deck.slides.length > 0) {
+      const ok = window.confirm('Replace the current deck with a fresh starter deck?')
+      if (!ok) return
+    }
+    const slides = buildStarterDeck(data, leagueName)
+    setDeck((d) => ({ ...d, slides }))
+    setSelectedId(null)
+  }
+
   function startPresenting() {
     if (deck.slides.length === 0) return
     router.push(`/league/${slug}/present/run`)
@@ -163,6 +174,9 @@ export function Builder({
               <option value="broadcast">Broadcast</option>
             </select>
           </label>
+          <button type="button" className="present-btn present-btn--ghost" onClick={loadStarterDeck}>
+            Starter deck
+          </button>
           <button type="button" className="present-btn present-btn--ghost" onClick={clearDeck}>
             Clear
           </button>
@@ -221,7 +235,15 @@ export function Builder({
           </div>
           {deck.slides.length === 0 ? (
             <div className="present-deck-empty">
-              Click a block from the catalog to start your deck.
+              <div style={{ marginBottom: '1rem' }}>Click a block from the catalog to start your deck —</div>
+              <div style={{ marginBottom: '1rem', color: 'var(--cream-mute)', fontSize: '.78rem' }}>or jump in with a pre-built deck:</div>
+              <button
+                type="button"
+                className="present-btn present-btn--primary"
+                onClick={loadStarterDeck}
+              >
+                Build starter deck ▶
+              </button>
             </div>
           ) : (
             <ol className="present-deck-list">
