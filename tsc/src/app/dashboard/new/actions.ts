@@ -13,6 +13,12 @@ import {
 } from '@/lib/stripe'
 import { sleeper, parseDivisionInfo } from '@/lib/platforms/sleeper'
 import { probeLeague as probeEspn } from '@/lib/platforms/espn'
+import {
+  getValidAccessToken as getYahooAccessToken,
+  listUserNflLeagues,
+  getLeagueDetail as getYahooLeagueDetail,
+  type YahooLeagueSummary,
+} from '@/lib/platforms/yahoo'
 import { canCreateLeague } from '@/lib/stripe'
 
 const Schema = z.object({
@@ -72,7 +78,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     finalDivisionNames.push(`${divisionTerm === 'conference' ? 'Conference' : 'Division'} ${finalDivisionNames.length + 1}`)
   }
 
-  let leagueName: string
+  let leagueName: string = ''
   if (platform === 'sleeper') {
     // Validate the league exists on Sleeper before we save anything.
     try {
@@ -128,8 +134,22 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
       return { ok: false, error: `ESPN: ${probe.error}` }
     }
     leagueName = customName?.trim() || probe.name || `ESPN League ${externalId}`
-  } else {
-    return { ok: false, error: `${platform.toUpperCase()} support is coming soon. Use Sleeper, ESPN, or NFL.com for now.` }
+  } else if (platform === 'yahoo') {
+    // externalId is the Yahoo league_key (e.g. "461.l.123456"), picked by the
+    // user from the connected-account league picker. Validate it via the
+    // Fantasy API using their stored tokens.
+    const yahooSupabase = await createClient()
+    const { data: { user: yahooUser } } = await yahooSupabase.auth.getUser()
+    if (!yahooUser) return { ok: false, error: 'You are not signed in.' }
+    try {
+      const token = await getYahooAccessToken(yahooUser.id, yahooSupabase)
+      const detail = await getYahooLeagueDetail(token, externalId)
+      if (!detail) return { ok: false, error: 'Yahoo returned no league for that key. Reconnect Yahoo and try again.' }
+      leagueName = customName?.trim() || detail.name
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not reach Yahoo.'
+      return { ok: false, error: msg }
+    }
   }
 
   const supabase = await createClient()
@@ -231,6 +251,52 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
 
   revalidatePath('/dashboard')
   redirect(`/league/${inserted.slug}`)
+}
+
+// Returns every NFL league the signed-in user has on their connected Yahoo
+// account, across the last 15 seasons. Used by the new-archive form's league
+// picker when the user selects Yahoo as their platform.
+export async function listYahooLeagues(): Promise<
+  | { ok: true; leagues: YahooLeagueSummary[] }
+  | { ok: false; error: string }
+> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: 'Sign in first.' }
+    const token = await getYahooAccessToken(user.id, supabase)
+    const leagues = await listUserNflLeagues(token)
+    return { ok: true, leagues }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Could not reach Yahoo.' }
+  }
+}
+
+// "Detect" equivalent for a chosen Yahoo league_key — fetches name + division
+// setup so the form can auto-populate them after the user picks.
+export async function previewYahooLeague(leagueKey: string): Promise<
+  | { ok: true; name: string; season: string; divisionCount: number; divisionNames: string[] }
+  | { ok: false; error: string }
+> {
+  const key = leagueKey.trim()
+  if (!key) return { ok: false, error: 'Pick a league first.' }
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: 'Sign in first.' }
+    const token = await getYahooAccessToken(user.id, supabase)
+    const detail = await getYahooLeagueDetail(token, key)
+    if (!detail) return { ok: false, error: 'No league found for that Yahoo key.' }
+    return {
+      ok: true,
+      name: detail.name,
+      season: detail.season,
+      divisionCount: detail.num_divisions ?? 0,
+      divisionNames: detail.division_names ?? [],
+    }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Could not reach Yahoo.' }
+  }
 }
 
 // Used by the form's "Detect from platform" button to auto-fill the
