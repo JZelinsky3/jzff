@@ -245,14 +245,89 @@ export async function getLeaguePresentationData(leagueId: string, leagueName: st
 
 // ─── Scope + consolation handling ──────────────────────────────────────────
 
-// True for matchups that should count toward "real" league history. Excludes
-// consolation games (which Sleeper marks `is_playoff=true` alongside true
-// playoff games — so we can't distinguish a semifinal from a 5th-place
-// consolation in the data). To stay conservative we count only regular
-// season + championship games. This means semifinal matchups are also
-// dropped, which we accept in exchange for never including consolation.
-export function isRealMatchup(m: { isPlayoff: boolean; isChampionship: boolean }): boolean {
-  return !m.isPlayoff || m.isChampionship
+// True for matchups that should count toward "real" league history. Sleeper
+// tags every game in playoff weeks as is_playoff including consolation
+// brackets, so we reconstruct the bracket structure from per-team loss
+// counts to identify which playoff games are legitimate.
+//
+// Rule (per user spec):
+//   - Regular season → always real
+//   - Championship game (is_championship) → always real
+//   - Other playoff games → real iff both participants had 0 prior playoff
+//     losses entering (so it's a winners-bracket game: round 1, semifinal)
+//   - The third-place game also counts → detected as "championship-week
+//     game where both teams have exactly 1 prior playoff loss"
+//
+// This excludes 5th-place / 7th-place / lower placement games (consolation
+// matchups in later rounds between previously-eliminated teams).
+const _realKeyCache = new WeakMap<LeaguePresentationData, Set<string>>()
+
+function matchupKey(m: MatchupLite): string {
+  return `${m.seasonId}|${m.week}|${m.managerAId}|${m.managerBId}`
+}
+
+function buildRealMatchupKeys(data: LeaguePresentationData): Set<string> {
+  const keys = new Set<string>()
+  // Identify each season's championship week from is_championship matchups —
+  // used to detect the third-place game (same-week game with both teams at
+  // 1 prior playoff loss).
+  const champWeekBySeason = new Map<string, number>()
+  for (const m of data.matchups) {
+    if (m.isChampionship) champWeekBySeason.set(m.seasonId, m.week)
+  }
+
+  const bySeason = new Map<string, MatchupLite[]>()
+  for (const m of data.matchups) {
+    const arr = bySeason.get(m.seasonId) ?? []
+    arr.push(m)
+    bySeason.set(m.seasonId, arr)
+  }
+
+  for (const [seasonId, list] of bySeason) {
+    list.sort((a, b) => a.week - b.week)
+    const playoffLosses = new Map<string, number>()
+    const champWeek = champWeekBySeason.get(seasonId)
+    for (const m of list) {
+      if (!m.isPlayoff) {
+        keys.add(matchupKey(m))
+        continue
+      }
+      if (m.isChampionship) {
+        keys.add(matchupKey(m))
+        // Don't update loss counts on the championship — outcome doesn't
+        // matter for downstream classification.
+        continue
+      }
+      const aLosses = playoffLosses.get(m.managerAId) ?? 0
+      const bLosses = playoffLosses.get(m.managerBId) ?? 0
+      const bothInContention = aLosses === 0 && bLosses === 0
+      const isThirdPlaceGame =
+        champWeek != null && m.week === champWeek && aLosses === 1 && bLosses === 1
+      if (bothInContention || isThirdPlaceGame) {
+        keys.add(matchupKey(m))
+      }
+      // Update loss counters for the next game in this season.
+      if (m.scoreA != null && m.scoreB != null && m.scoreA !== m.scoreB) {
+        if (m.scoreA < m.scoreB) playoffLosses.set(m.managerAId, aLosses + 1)
+        else playoffLosses.set(m.managerBId, bLosses + 1)
+      }
+    }
+  }
+  return keys
+}
+
+export function isRealMatchup(
+  m: MatchupLite,
+  data: LeaguePresentationData,
+): boolean {
+  if (!m.isPlayoff) return true
+  if (m.isChampionship) return true
+  let cached = _realKeyCache.get(data)
+  if (!cached) {
+    cached = buildRealMatchupKeys(data)
+    _realKeyCache.set(data, cached)
+  }
+  return cached.has(matchupKey(m))
 }
 
 // Filter the bundle to a single season (used when the owner scopes a deck
@@ -399,7 +474,7 @@ function weekScores(data: LeaguePresentationData): WeekHighlight[] {
   const yearById = new Map(data.seasons.map((s) => [s.id, s.year]))
   const out: WeekHighlight[] = []
   for (const m of data.matchups) {
-    if (!isRealMatchup(m)) continue
+    if (!isRealMatchup(m, data)) continue
     const year = yearById.get(m.seasonId)
     if (year == null) continue
     if (m.scoreA != null && m.scoreA > 0) {
@@ -458,7 +533,7 @@ function marginGames(data: LeaguePresentationData): MarginHighlight[] {
   const yearById = new Map(data.seasons.map((s) => [s.id, s.year]))
   const out: MarginHighlight[] = []
   for (const m of data.matchups) {
-    if (!isRealMatchup(m)) continue
+    if (!isRealMatchup(m, data)) continue
     if (m.scoreA == null || m.scoreB == null) continue
     if (m.scoreA === 0 && m.scoreB === 0) continue
     const year = yearById.get(m.seasonId)
@@ -541,7 +616,7 @@ export function headToHead(
   let biggestMargin: HeadToHead['biggestMargin'] = null
 
   for (const m of data.matchups) {
-    if (!isRealMatchup(m)) continue
+    if (!isRealMatchup(m, data)) continue
     if (m.scoreA == null || m.scoreB == null) continue
     const pidA = profileOf.get(m.managerAId)
     const pidB = profileOf.get(m.managerBId)
