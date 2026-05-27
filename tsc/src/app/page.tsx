@@ -1,12 +1,17 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 import { SiteFooter } from '@/components/SiteFooter'
+import { ChroniclePages } from '@/components/landing/ChroniclePages'
+import { DemoViewer } from '@/components/landing/DemoViewer'
+import { HeroClipping } from '@/components/landing/HeroClipping'
 import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 
 export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect('/dashboard')
+  const signedIn = !!user
+  const admin = signedIn ? await isSiteAdmin(user?.id) : false
 
   const tickerItems = [
     'The Sunday Chronicle · The League Almanac',
@@ -15,18 +20,48 @@ export default async function Home() {
     'Bring your league ID · we walk the history',
   ]
 
+  // Signed-in nav mirrors /dashboard so the page feels continuous if you
+  // happen to land back on the marketing front door after logging in.
+  const groups: DropGroup[] = signedIn
+    ? [
+        {
+          label: 'Library',
+          entries: [
+            { type: 'link', href: '/dashboard', label: 'Your leagues' },
+            { type: 'link', href: '/dashboard/new', label: 'New archive' },
+          ],
+        },
+        {
+          label: 'Account',
+          entries: [{ type: 'link', href: '/account', label: 'Profile & subscription' }],
+        },
+        ...(admin
+          ? [
+              {
+                label: 'Site admin',
+                entries: [{ type: 'link' as const, href: '/admin', label: 'Admin console' }],
+              },
+            ]
+          : []),
+      ]
+    : []
+
   return (
-    <main>
+    <main className="lp-main">
       <div className="ticker">
         <div className="ticker-track">
           <div className="ticker-group">
             {tickerItems.map((t, i) => (
-              <span key={`a-${i}`} className="ticker-item"><span className="ticker-star">★</span> {t}</span>
+              <span key={`a-${i}`} className="ticker-item">
+                <span className="ticker-star">★</span> {t}
+              </span>
             ))}
           </div>
           <div className="ticker-group">
             {tickerItems.map((t, i) => (
-              <span key={`b-${i}`} className="ticker-item"><span className="ticker-star">★</span> {t}</span>
+              <span key={`b-${i}`} className="ticker-item">
+                <span className="ticker-star">★</span> {t}
+              </span>
             ))}
           </div>
         </div>
@@ -38,64 +73,87 @@ export default async function Home() {
           <div className="nav-kicker">Vol. II · The League Almanac</div>
           <div className="nav-title" style={{ letterSpacing: '.04em' }}>TS<em>C.</em></div>
         </div>
-        <Link href="/login" className="nav-link">Sign in</Link>
+        {signedIn ? (
+          <NavDropdown groups={groups} position="right" includeSignOut />
+        ) : (
+          <Link href="/login" className="nav-link">Sign in</Link>
+        )}
       </nav>
 
-      <section className="hero">
-        <div className="hero-sup">★ JZFF · The Sunday Chronicle · Est. 2026 ★</div>
-        <h1 className="hero-title">
-          Your league.<br />
-          <em>Bound forever.</em>
-        </h1>
-        <p className="hero-sub">Built for the history of the league.</p>
-        <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/login?mode=signup" className="dc-btn">Start your archive →</Link>
-          <Link href="/login" className="dc-btn-ghost">Sign in</Link>
+      {/* ─── HERO ─────────────────────────────────────────────── */}
+      <section className="lp-hero">
+        <div className="lp-hero-grid">
+          <div className="lp-hero-left">
+            <div className="lp-hero-seal">
+              <span className="lp-hero-seal-line">Vol. II</span>
+              <span className="lp-hero-seal-line">★</span>
+              <span className="lp-hero-seal-line">MMXXVI</span>
+            </div>
+            <div className="lp-hero-sup">★ JZFF · The Sunday Chronicle · Est. 2026 ★</div>
+            <h1 className="lp-hero-title">
+              Your league.<br />
+              <em>Bound forever.</em>
+            </h1>
+            <p className="lp-hero-sub">
+              An almanac for the history of the league. Bring a league ID — Sleeper, ESPN, NFL.com —
+              and we walk every season back to the beginning.
+            </p>
+            <div className="lp-hero-ctas">
+              {signedIn ? (
+                <>
+                  <Link href="/dashboard" className="dc-btn">Open your library →</Link>
+                  <Link href="/dashboard/new" className="dc-btn-ghost">Add a league</Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/login?mode=signup" className="dc-btn">Start your archive →</Link>
+                  <Link href="/login" className="dc-btn-ghost">Sign in</Link>
+                </>
+              )}
+            </div>
+            <div className="lp-hero-meta">
+              <span>Free until the 2026 season</span>
+              <span className="lp-hero-meta-sep">·</span>
+              <span>No card to start</span>
+              <span className="lp-hero-meta-sep">·</span>
+              <span>Tour the demo below</span>
+            </div>
+          </div>
+          <div className="lp-hero-right">
+            <HeroClipping />
+          </div>
+        </div>
+        <div className="lp-hero-scroll" aria-hidden="true">
+          <span>Scroll the pages</span>
+          <span className="lp-hero-scroll-line" />
         </div>
       </section>
 
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 01 · What gets archived</span>
-          <span className="section-title">Every page already designed —</span>
-          <span className="section-meta">filled in with your data</span>
-        </div>
-        <div className="card-grid">
-          <Feature corner="i"   roman="I"    title={['Season', 'Archives']} desc="Walks back through every year your league has existed. Final standings, every matchup, every playoff run." href="/demo/seasons/" />
-          <Feature corner="ii"  roman="II"   title={['Champion', 'Rolls']}  desc="Trophy lifters, runner-ups, regular-season kings who never quite got there." href="/demo/records.html" />
-          <Feature corner="iii" roman="III"  title={['Draft', 'Boards']}    desc="Round by round — who they took, what slot, who got robbed late." href="/demo/draft/" />
-          <Feature corner="iv"  roman="IV"   title={['Manager', 'Dossiers']}desc="Career records, championships, head-to-head against every rival." href="/demo/managers/" />
-          <Feature corner="v"   roman="V"    title={['The', 'Rivalries']}   desc="Hand-picked feuds with running scoreboards and all-time meeting logs." href="/demo/rivalries/" />
-          <Feature corner="vi"  roman="VI"   title={['One-click', 'Refresh']} desc="Pull this year as it happens. We keep the chronicle current." />
-        </div>
-      </div>
+      {/* ─── §02 · Horizontal-scroll Pages of the Chronicle ───── */}
+      <ChroniclePages />
 
-      <div className="section">
+      {/* ─── §03 · See it live ────────────────────────────────── */}
+      <div className="section lp-demo-section">
         <div className="section-header">
-          <span className="section-num">§ 02 · See it live</span>
+          <span className="section-num">§ 03 · See it live</span>
           <span className="section-title">Tour a finished almanac —</span>
           <span className="section-meta">no signup required</span>
         </div>
-        <div className="dc-card-row">
-          <div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem', color: 'var(--cream)' }}>
-              Just looking around? Take a tour of a <em style={{ color: 'var(--gold)' }}>live</em> almanac before signing up.
-            </div>
-            <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem' }}>
-              Every page, populated with a real league&apos;s seven-year history.
-            </div>
-          </div>
-          <a href="/demo/" className="dc-btn" target="_blank" rel="noopener">View the demo →</a>
-        </div>
+        <p className="lp-demo-lede">
+          Pull the demo below to walk a real league&apos;s seven-year history — every page populated,
+          every link working. It&apos;s the exact almanac you&apos;ll get for your league.
+        </p>
+        <DemoViewer />
       </div>
 
+      {/* ─── §04 · Platforms ──────────────────────────────────── */}
       <div className="section">
         <div className="section-header">
-          <span className="section-num">§ 03 · Platforms</span>
+          <span className="section-num">§ 04 · Platforms</span>
           <span className="section-title">Bring your league from —</span>
           <span className="section-meta">more on the way</span>
         </div>
-        <div className="dc-chapters">
+        <div className="lp-platforms">
           <Platform name="Sleeper"  status="Available"   pill="Live" klass="" />
           <Platform name="ESPN"     status="Available"   pill="Live" klass="" />
           <Platform name="NFL.com"  status="Historical"  pill="Live" klass="" />
@@ -103,28 +161,33 @@ export default async function Home() {
         </div>
       </div>
 
+      {/* ─── §05 · Final CTA ──────────────────────────────────── */}
+      <div className="section lp-final">
+        <div className="lp-final-card">
+          <div className="lp-final-kicker">★ Last call · Free preview ★</div>
+          <h2 className="lp-final-title">
+            Bind <em>your</em> league.
+          </h2>
+          <p className="lp-final-sub">
+            Pull your seasons in under five minutes. Publish a public almanac your league can read,
+            argue with, and remember.
+          </p>
+          <div className="lp-final-ctas">
+            {signedIn ? (
+              <Link href="/dashboard/new" className="dc-btn">Add a league →</Link>
+            ) : (
+              <Link href="/login?mode=signup" className="dc-btn">Start your archive →</Link>
+            )}
+            <Link href="/demo/" target="_blank" rel="noopener" className="dc-btn-ghost">
+              Walk the demo
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <SiteFooter />
     </main>
   )
-}
-
-function Feature({ corner, roman, title, desc, href }: { corner: string; roman: string; title: [string, string]; desc: string; href?: string }) {
-  const inner = (
-    <>
-      <div className="card-corner">Ch. {corner}</div>
-      <div className="card-roman">{roman}</div>
-      <div className="card-title">{title[0]} <em>{title[1]}.</em></div>
-      <div className="card-desc">{desc}</div>
-    </>
-  )
-  if (href) {
-    return (
-      <a href={href} className="card" target="_blank" rel="noopener">
-        {inner}
-      </a>
-    )
-  }
-  return <div className="card">{inner}</div>
 }
 
 function Platform({ name, status, pill, klass }: { name: string; status: string; pill: string; klass: string }) {
