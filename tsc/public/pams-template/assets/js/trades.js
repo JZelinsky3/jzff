@@ -185,42 +185,51 @@
         return showEmpty('No trades yet', 'Once a trade is completed on your platform, it will show up here.');
       }
 
-      var html = '';
+      var thisWeek = data.this_week || [];
+      var verdict  = data.verdict   || [];
+      var earlier  = data.earlier   || [];
 
-      // § 01 · This Week
-      if (data.this_week && data.this_week.length > 0) {
-        html += renderSection({
-          num: '§ 01 · This Week',
-          title: 'Just <em>landed —</em>',
-          meta: data.this_week.length + ' trade' + (data.this_week.length === 1 ? '' : 's'),
-          trades: data.this_week,
-        });
-      }
-
-      // § 02 · The Verdict (revisits)
-      if (data.verdict && data.verdict.length > 0) {
-        html += renderSection({
-          num: '§ 02 · The Verdict',
-          title: 'Four weeks <em>later —</em>',
-          meta: 'How they actually played out',
-          trades: data.verdict,
-          cardOpts: { showRevisit: true },
-        });
-      }
-
-      // § 03 · Earlier (everything else)
-      if (data.earlier && data.earlier.length > 0) {
-        html += renderSection({
-          num: data.this_week && data.this_week.length > 0 ? '§ 03 · Earlier' : '§ 01 · Trades',
-          title: 'The <em>archive —</em>',
-          meta: data.earlier.length + ' trade' + (data.earlier.length === 1 ? '' : 's'),
-          trades: data.earlier,
-        });
-      }
-
-      if (!html) {
+      if (thisWeek.length === 0 && verdict.length === 0 && earlier.length === 0) {
         return showEmpty('No trades yet', 'Once a trade is completed on your platform, it will show up here.');
       }
+
+      // Always render all three sections so the structure is visible even
+      // when one or two buckets are empty.
+      var html = '';
+
+      html += renderSection({
+        num: '§ 01 · This Week',
+        title: 'Just <em>landed —</em>',
+        meta: thisWeek.length > 0
+          ? thisWeek.length + ' trade' + (thisWeek.length === 1 ? '' : 's')
+          : 'Last 7 days',
+        trades: thisWeek,
+        showEmpty: true,
+        emptyText: 'Nothing new this week.',
+      });
+
+      html += renderSection({
+        num: '§ 02 · The Verdict',
+        title: 'Four weeks <em>later —</em>',
+        meta: verdict.length > 0
+          ? 'How they actually played out'
+          : 'Revisits land 4 weeks after each trade',
+        trades: verdict,
+        cardOpts: { showRevisit: true },
+        showEmpty: true,
+        emptyText: 'No revisits this week.',
+      });
+
+      html += renderSection({
+        num: '§ 03 · Earlier',
+        title: 'The <em>archive —</em>',
+        meta: earlier.length > 0
+          ? earlier.length + ' trade' + (earlier.length === 1 ? '' : 's')
+          : '',
+        trades: earlier,
+        showEmpty: true,
+        emptyText: 'Nothing in the archive yet.',
+      });
 
       content.innerHTML = html;
     } catch (e) {

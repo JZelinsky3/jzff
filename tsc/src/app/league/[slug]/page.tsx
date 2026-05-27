@@ -4,6 +4,7 @@ import { OnboardingChecklist, type OnboardingStep } from '@/components/Onboardin
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { SyncButton } from './sync-button'
+import { GradeTradesButton } from './grade-trades-button'
 import { PublishButton } from './setup/publish-button'
 
 export default async function LeagueOverviewPage({
@@ -153,6 +154,17 @@ export default async function LeagueOverviewPage({
             </div>
           </div>
           <SyncButton leagueId={league.id} />
+        </div>
+        <div className="dc-card-row" style={{ marginTop: '.75rem' }}>
+          <div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
+              Grade trades with AI.
+            </div>
+            <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem' }}>
+              Runs Groq on up to 10 ungraded trades at a time. Click again to keep going.
+            </div>
+          </div>
+          <GradeTradesButton leagueId={league.id} />
         </div>
       </div>
 

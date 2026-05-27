@@ -176,26 +176,15 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
   })
 
   // ── Bucket into This Week / Earlier / Verdict ─────────────────────────
-  // "This week" = trades from the most recent NFL week with at least one
-  // trade. A bare date cutoff would mis-categorize trades that happened
-  // late Tuesday vs. early the next Monday — using the league week is more
-  // semantically aligned with what users mean by "this week."
+  // Time-based, not NFL-week-based: Sleeper leaves `week` null on offseason /
+  // draft-pick trades, so an NFL-week filter would dump everything into the
+  // Earlier bucket. A simple "last 7 days" cutoff handles in-season and
+  // offseason equally well.
+  const thisWeekCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
   const verdict = allTrades.filter((t) => tradesWithRecentVerdict.has(t.id))
   const nonVerdict = allTrades.filter((t) => !tradesWithRecentVerdict.has(t.id))
-
-  const currentYear = nonVerdict[0]?.season_year ?? null
-  let thisWeekKey: string | null = null
-  if (currentYear != null) {
-    const currentSeasonTrades = nonVerdict.filter((t) => t.season_year === currentYear && t.week != null)
-    if (currentSeasonTrades.length > 0) {
-      thisWeekKey = `${currentYear}-${currentSeasonTrades[0].week}`
-    }
-  }
-
-  const this_week = thisWeekKey
-    ? nonVerdict.filter((t) => `${t.season_year}-${t.week}` === thisWeekKey)
-    : []
-  const earlier = nonVerdict.filter((t) => `${t.season_year}-${t.week}` !== thisWeekKey)
+  const this_week = nonVerdict.filter((t) => Date.parse(t.executed_at) >= thisWeekCutoff)
+  const earlier = nonVerdict.filter((t) => Date.parse(t.executed_at) < thisWeekCutoff)
 
   return { status: 'ok', league_id: league.id, this_week, earlier, verdict }
 }
