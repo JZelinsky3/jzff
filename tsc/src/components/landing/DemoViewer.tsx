@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 
-// Click-to-load iframe of the public /demo/ site. The poster is styled as
-// a "library catalog" — a TSC masthead over four volume cards, with the
-// demo league highlighted as the one that opens on click. This frames the
-// product the way the dashboard frames it (a shelf of bound chronicles),
-// instead of imitating a single league's home page.
+// Click-to-load iframe of the public /demo/ site. The poster mirrors how
+// the dashboard /dashboard actually renders a user's library — the same
+// card layout (corner platform · big roman initial · serif title ·
+// last-synced line · "Open" CTA) — so visitors see the product they get
+// once signed in. The demo league is highlighted with a gold "▶ Demo"
+// tag and acts as the affordance for the click-to-load.
 
 export function DemoViewer() {
   const [loaded, setLoaded] = useState(false)
@@ -19,7 +20,7 @@ export function DemoViewer() {
         </div>
         <div className="dv-chrome-url">
           <span className="dv-chrome-lock">●</span>
-          jzff.online<span className="dv-chrome-path">/demo</span>
+          jzff.online<span className="dv-chrome-path">/dashboard</span>
         </div>
         <a href="/demo/" target="_blank" rel="noopener" className="dv-chrome-open">
           Open ↗
@@ -51,9 +52,9 @@ export function DemoViewer() {
               </div>
 
               <div className="dv-poster-mast">
-                <div className="dv-poster-mast-kicker">★ TSC · Your Library ★</div>
+                <div className="dv-poster-mast-kicker">★ TSC · Vol. II · Your Library ★</div>
                 <h2 className="dv-poster-mast-title">
-                  The <em>Library.</em>
+                  Your <em>library.</em>
                 </h2>
                 <div className="dv-poster-mast-sub">
                   Every league you&apos;ve archived, kept on one shelf.
@@ -62,46 +63,32 @@ export function DemoViewer() {
 
               <div className="dv-poster-section">
                 <div className="dv-poster-section-head">
-                  <span className="dv-poster-section-num">§ 01 · Your archives</span>
-                  <span className="dv-poster-section-meta">4 leagues · 28 seasons</span>
+                  <span className="dv-poster-section-num">§ 01 · Your leagues</span>
+                  <span className="dv-poster-section-meta">3 on the shelf</span>
                 </div>
-                <div className="dv-poster-shelf">
-                  <div className="dv-poster-vol is-featured">
-                    <div className="dv-poster-vol-tag">▶ Demo league</div>
-                    <div className="dv-poster-vol-head">
-                      <span className="dv-poster-vol-num">Vol. VII</span>
-                      <span className="dv-poster-vol-pill">Sleeper</span>
-                    </div>
-                    <div className="dv-poster-vol-name">
-                      The Lakeside <em>League.</em>
-                    </div>
-                    <div className="dv-poster-vol-meta">2018 — 2025 · 7 seasons</div>
-                    <div className="dv-poster-vol-stats">17 managers · 644 matchups</div>
-                  </div>
-                  <div className="dv-poster-vol">
-                    <div className="dv-poster-vol-head">
-                      <span className="dv-poster-vol-num">Vol. III</span>
-                      <span className="dv-poster-vol-pill">ESPN</span>
-                    </div>
-                    <div className="dv-poster-vol-name">PAM Slingers</div>
-                    <div className="dv-poster-vol-meta">2022 — 2024 · 3 seasons</div>
-                  </div>
-                  <div className="dv-poster-vol">
-                    <div className="dv-poster-vol-head">
-                      <span className="dv-poster-vol-num">Vol. IV</span>
-                      <span className="dv-poster-vol-pill">NFL.com</span>
-                    </div>
-                    <div className="dv-poster-vol-name">Dad Bod Dynasty</div>
-                    <div className="dv-poster-vol-meta">2021 — 2024 · 4 seasons</div>
-                  </div>
-                  <div className="dv-poster-vol">
-                    <div className="dv-poster-vol-head">
-                      <span className="dv-poster-vol-num">Vol. II</span>
-                      <span className="dv-poster-vol-pill">Sleeper</span>
-                    </div>
-                    <div className="dv-poster-vol-name">Sunday Money League</div>
-                    <div className="dv-poster-vol-meta">2023 — 2024 · 2 seasons</div>
-                  </div>
+                <div className="dv-poster-cards">
+                  <LeagueCard
+                    initial="L"
+                    platform="Sleeper"
+                    head="Lakeside"
+                    tail="League"
+                    desc="Last synced Sun, Jan 11"
+                    featured
+                  />
+                  <LeagueCard
+                    initial="P"
+                    platform="ESPN"
+                    head="PAM"
+                    tail="Slingers"
+                    desc="Last synced Tue, Dec 17"
+                  />
+                  <LeagueCard
+                    initial="D"
+                    platform="NFL.com"
+                    head="Dad Bod"
+                    tail="Dynasty"
+                    desc="Last synced Mon, Dec 23"
+                  />
                 </div>
               </div>
             </div>
@@ -109,10 +96,36 @@ export function DemoViewer() {
             <div className="dv-poster-play">
               <span className="dv-poster-play-icon">▶</span>
               <span className="dv-poster-play-label">Open the demo league</span>
-              <span className="dv-poster-play-meta">Vol. VII — The Lakeside League</span>
+              <span className="dv-poster-play-meta">Lakeside League · 7 seasons</span>
             </div>
           </button>
         )}
+      </div>
+    </div>
+  )
+}
+
+function LeagueCard({
+  initial, platform, head, tail, desc, featured,
+}: {
+  initial: string
+  platform: string
+  head: string
+  tail: string
+  desc: string
+  featured?: boolean
+}) {
+  return (
+    <div className={`dv-poster-card${featured ? ' is-featured' : ''}`}>
+      {featured && <div className="dv-poster-card-tag">▶ Demo</div>}
+      <div className="dv-poster-card-corner">{platform}</div>
+      <div className="dv-poster-card-roman">{initial}</div>
+      <div className="dv-poster-card-title">
+        {head} <em>{tail}.</em>
+      </div>
+      <div className="dv-poster-card-desc">{desc}</div>
+      <div className="dv-poster-card-cta">
+        Open the archive <span className="dv-poster-card-arrow">→</span>
       </div>
     </div>
   )

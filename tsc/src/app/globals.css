@@ -4403,7 +4403,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .lp-hero-left { position: relative; }
 .lp-hero-seal {
-    position: absolute; top: -1rem; left: -.5rem;
+    position: absolute; top: -1.5rem; left: -.5rem;
     width: 78px; height: 78px;
     border: 2px solid var(--gold);
     border-radius: 50%;
@@ -4592,10 +4592,11 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     text-align: center;
     display: inline-flex; align-items: center; flex-wrap: wrap;
     justify-content: center;
-    gap: .35rem;
+    /* Matched outer/inner gap → equal whitespace on both sides of the dot. */
+    gap: .55rem;
 }
 .hc-feature-piece {
-    display: inline-flex; align-items: center; gap: .65rem;
+    display: inline-flex; align-items: center; gap: .55rem;
 }
 .hc-feature-sep {
     color: var(--gold-deep);
@@ -4868,17 +4869,25 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 .cp-roll { display: flex; flex-direction: column; }
 .cp-roll-row {
-    display: grid;
-    /* Year column trimmed and gap tightened so the digit year sits close
-       to the champion's name — the previous 90px+1.2rem was visibly wide. */
-    grid-template-columns: 56px minmax(0, 1fr) auto;
-    column-gap: .6rem;
-    row-gap: .15rem;
+    /* Flex packs year/name/matchup left-to-right; matchup ends up snug
+       against the name with a smaller gap than year→name. */
+    display: flex;
     align-items: baseline;
     padding: .65rem 0;
     border-bottom: 1px dotted var(--ink-line-soft);
 }
-.cp-roll-row > :last-child { margin-left: .9rem; }
+.cp-roll-row > .cp-roll-yr {
+    width: 70px;
+    flex-shrink: 0;
+}
+.cp-roll-row > .cp-roll-ch {
+    margin-right: auto;          /* push matchup to the right edge */
+    padding-right: 1rem;         /* min visual gap to matchup */
+}
+.cp-roll-row > .cp-roll-fin {
+    flex-shrink: 0;
+    margin-left: 1rem;           /* gap from name (slightly less than yr→name) */
+}
 .cp-roll-row:last-child { border-bottom: none; }
 .cp-roll-yr {
     font-family: var(--mono); font-weight: 700;
@@ -5222,82 +5231,88 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-size: .58rem; letter-spacing: .25em; text-transform: uppercase;
     color: var(--cream-mute);
 }
-/* Library shelf — grid of bound-volume cards, one highlighted as the demo */
-.dv-poster-shelf {
+/* League card grid — mirrors the dashboard's .card layout: corner platform,
+   big italic gold roman initial, serif title, last-synced line, gold CTA. */
+.dv-poster-cards {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: .85rem;
 }
-.dv-poster-vol {
+.dv-poster-card {
     position: relative;
+    padding: 1.1rem 1.1rem 1rem;
+    display: flex; flex-direction: column; gap: .55rem;
     background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
     border: 1px solid var(--ink-line);
-    border-left: 3px solid var(--gold-deep);
-    padding: .9rem 1.05rem 1rem;
-    display: flex; flex-direction: column; gap: .3rem;
     overflow: hidden;
-    transition: border-color .25s ease, transform .25s ease;
+    transition: border-color .25s ease, box-shadow .25s ease;
 }
-.dv-poster-vol.is-featured {
-    border-color: var(--gold);
-    border-left: 3px solid var(--gold);
+.dv-poster-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--gold-deep);
+}
+.dv-poster-card.is-featured {
+    border-color: rgba(232, 200, 137, .55);
     background:
-        radial-gradient(circle at 90% 0%, rgba(232, 200, 137, .12), transparent 65%),
+        radial-gradient(circle at 100% 0%, rgba(232, 200, 137, .14), transparent 65%),
         linear-gradient(160deg, var(--ink-card), var(--ink-soft));
     box-shadow:
-        0 12px 28px -10px rgba(0, 0, 0, .55),
-        0 0 24px rgba(232, 200, 137, .12);
+        0 14px 30px -12px rgba(0, 0, 0, .6),
+        0 0 24px rgba(232, 200, 137, .14);
 }
-.dv-poster-vol-tag {
+.dv-poster-card.is-featured::before { background: var(--gold); width: 4px; }
+
+.dv-poster-card-tag {
     position: absolute; top: 0; right: 0;
     background: var(--gold);
     color: var(--ink);
     font-family: var(--mono); font-weight: 700;
-    font-size: .52rem; letter-spacing: .2em; text-transform: uppercase;
-    padding: .25rem .55rem;
+    font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
+    padding: .28rem .6rem;
     border-bottom-left-radius: 3px;
+    z-index: 2;
 }
-.dv-poster-vol-head {
-    display: flex; justify-content: space-between; align-items: center;
-    gap: .65rem;
-    margin-bottom: .2rem;
-}
-.dv-poster-vol-num {
+.dv-poster-card-corner {
+    position: absolute; top: .95rem; right: 1rem;
     font-family: var(--mono); font-weight: 700;
-    font-size: .58rem; letter-spacing: .25em; text-transform: uppercase;
+    font-size: .55rem; letter-spacing: .2em; text-transform: uppercase;
     color: var(--gold);
 }
-.dv-poster-vol-pill {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .52rem; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--cream-soft);
-    border: 1px solid var(--ink-line);
-    padding: .15rem .45rem;
-    border-radius: 2px;
-    background: rgba(232, 200, 137, .03);
+.dv-poster-card.is-featured .dv-poster-card-corner {
+    /* Tag occupies the corner, so push the platform label lower. */
+    top: 2.25rem;
 }
-.dv-poster-vol.is-featured .dv-poster-vol-pill {
-    color: var(--gold);
-    border-color: var(--gold-deep);
-    background: rgba(232, 200, 137, .07);
-}
-.dv-poster-vol-name {
-    font-family: var(--serif);
-    font-size: 1.15rem; line-height: 1.1;
-    color: var(--cream);
-}
-.dv-poster-vol-name em { font-style: italic; color: var(--gold); }
-.dv-poster-vol-meta {
-    font-family: var(--mono);
-    font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--cream-mute);
-}
-.dv-poster-vol-stats {
+.dv-poster-card-roman {
     font-family: var(--serif); font-style: italic;
-    font-size: .78rem;
-    color: var(--cream-soft);
-    margin-top: .1rem;
+    font-size: 2.4rem; line-height: 1;
+    color: var(--gold);
+    letter-spacing: -.02em;
 }
+.dv-poster-card-title {
+    font-family: var(--serif);
+    font-size: 1.35rem; line-height: 1;
+    color: var(--cream);
+    letter-spacing: -.015em;
+}
+.dv-poster-card-title em { font-style: italic; color: var(--gold); }
+.dv-poster-card-desc {
+    font-family: var(--sans);
+    font-size: .78rem; line-height: 1.4;
+    color: var(--cream-soft);
+    flex: 1;
+}
+.dv-poster-card-cta {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--gold);
+    margin-top: .25rem;
+    padding-top: .7rem;
+    border-top: 1px solid var(--ink-line);
+}
+.dv-poster-card-arrow { display: inline-block; }
 .dv-poster-play {
     position: absolute;
     left: 50%; top: 50%;
@@ -5399,6 +5414,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .lp-hero-right { height: 440px; }
     .lp-hero-sup { margin-left: 90px; }
     .dv-screen { height: 520px; }
+    .dv-poster-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cp-draft-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 640px) {
@@ -5414,10 +5430,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .hc-seal-inner { font-size: .46rem; }
     .dv-screen { height: 440px; }
     .dv-chrome-url { max-width: 180px; font-size: .58rem; padding: .3rem .5rem; }
-    .dv-poster-shelf { grid-template-columns: 1fr; gap: .55rem; }
-    .dv-poster-vol { padding: .75rem .9rem .8rem; }
-    .dv-poster-vol-name { font-size: 1rem; }
-    .dv-poster-vol-stats { display: none; }
+    .dv-poster-cards { grid-template-columns: 1fr; gap: .55rem; }
+    .dv-poster-card { padding: .85rem 1rem .9rem; gap: .4rem; }
+    .dv-poster-card-roman { font-size: 1.8rem; }
+    .dv-poster-card-title { font-size: 1.15rem; }
     .dv-poster-mast { padding: 1.25rem 1rem 1rem; }
     .dv-poster-section { padding: 1rem 1.25rem 1.25rem; }
     .dv-poster-play { padding: 1rem 1.4rem; }
