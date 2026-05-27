@@ -48,37 +48,83 @@ export class GroqError extends Error {
 // Single chat completion. Throws on non-2xx so callers can catch and decide
 // whether to retry / fall back. Returns the raw text (caller parses JSON if
 // json=true was set).
+//
+// Retries on 429 (rate-limit) using the suggested wait. Groq returns both a
+// `retry-after` header (seconds, may be fractional) and an embedded "try
+// again in X.Xs" string in the JSON body. We honor whichever we can parse,
+// up to MAX_RETRIES total attempts. Token-per-minute limits on the free tier
+// (12000 TPM) hit often when grading more than ~13 trades back-to-back.
+const MAX_RETRIES = 3
+
 export async function groqChat(args: GroqChatArgs): Promise<GroqResult> {
-  const res = await fetch(GROQ_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${args.apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: args.model,
-      messages: args.messages,
-      temperature: args.temperature ?? 0.3,
-      max_tokens: args.maxTokens ?? 1024,
-      ...(args.json ? { response_format: { type: 'json_object' } } : {}),
-    }),
-    // No client-side cache; every call is unique.
-    cache: 'no-store',
-  })
-  if (!res.ok) {
+  let lastErr: GroqError | null = null
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const res = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${args.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: args.model,
+        messages: args.messages,
+        temperature: args.temperature ?? 0.3,
+        max_tokens: args.maxTokens ?? 1024,
+        ...(args.json ? { response_format: { type: 'json_object' } } : {}),
+      }),
+      cache: 'no-store',
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      const text = data?.choices?.[0]?.message?.content
+      if (typeof text !== 'string') {
+        throw new GroqError(200, `unexpected response shape: ${JSON.stringify(data).slice(0, 400)}`)
+      }
+      return {
+        text,
+        model: args.model,
+        usage: (data?.usage as GroqUsage) ?? null,
+      }
+    }
+
     const body = await res.text().catch(() => '')
-    throw new GroqError(res.status, body)
+    lastErr = new GroqError(res.status, body)
+
+    // Only retry rate-limit / server errors. 4xx other than 429 means the
+    // request is wrong and won't get better on retry.
+    if (res.status !== 429 && res.status < 500) throw lastErr
+
+    if (attempt === MAX_RETRIES - 1) throw lastErr
+
+    const waitMs = parseRetryDelayMs(res.headers.get('retry-after'), body)
+    await sleep(waitMs)
   }
-  const data = await res.json()
-  const text = data?.choices?.[0]?.message?.content
-  if (typeof text !== 'string') {
-    throw new GroqError(200, `unexpected response shape: ${JSON.stringify(data).slice(0, 400)}`)
+
+  // Loop exits via return on success or throw on retry exhaustion — this
+  // line is defensive (the throw above is what actually fires).
+  throw lastErr ?? new GroqError(0, 'unknown')
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// Pick a wait time from (in order): the `retry-after` header, the "try again
+// in X.Xs" hint in the body, or a fallback of 4 seconds. Adds a 500ms buffer
+// so we don't fire right as the window opens.
+function parseRetryDelayMs(headerVal: string | null, body: string): number {
+  if (headerVal) {
+    const sec = Number(headerVal)
+    if (Number.isFinite(sec) && sec >= 0) return Math.min(sec * 1000 + 500, 30_000)
   }
-  return {
-    text,
-    model: args.model,
-    usage: (data?.usage as GroqUsage) ?? null,
+  const m = body.match(/try again in\s+([\d.]+)\s*s/i)
+  if (m) {
+    const sec = Number(m[1])
+    if (Number.isFinite(sec) && sec >= 0) return Math.min(sec * 1000 + 500, 30_000)
   }
+  return 4000
 }
 
 // Convenience helper — returns the parsed JSON object. Use when you've set

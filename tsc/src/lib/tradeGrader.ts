@@ -84,7 +84,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     return { trade_id: tradeId, graded_sides: 0, warnings }
   }
 
-  let parsed: { sides: Array<{ side_id: string; grade: string; blurb: string }> }
+  let parsed: { summary: string; sides: Array<{ side_id: string; grade: string }> }
   try {
     const result = await groqChatJson<typeof parsed>({
       apiKey,
@@ -93,11 +93,10 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
         { role: 'system', content: prompt.system },
         { role: 'user', content: prompt.user },
       ],
-      // Slightly cooler temperature than the v1 prompt — calibration is now
-      // explicit, so less creativity is better. maxTokens raised to fit the
-      // longer 2-3 sentence blurbs across all sides.
+      // Calibration is explicit in the prompt — keep temperature on the
+      // cooler side. maxTokens fits a 3-4 sentence summary + per-side grades.
       temperature: 0.35,
-      maxTokens: 1500,
+      maxTokens: 900,
     })
     parsed = result.data
   } catch (e) {
@@ -111,7 +110,26 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     return { trade_id: tradeId, graded_sides: 0, warnings }
   }
 
-  // 4. Upsert grades. Match by side_id; reject grades the model invented.
+  // 4a. Write the trade-level summary first (one row update, not per-side).
+  const summary = (parsed.summary ?? '').toString().trim().slice(0, 1500)
+  if (summary) {
+    const { error: sumErr } = await db
+      .from('trades')
+      .update({
+        ai_summary: summary,
+        ai_summary_model: `groq:${MODEL}`,
+        ai_summary_at: new Date().toISOString(),
+      })
+      .eq('id', tradeId)
+    if (sumErr) warnings.push(`update ai_summary for ${tradeId}: ${sumErr.message}`)
+  } else {
+    warnings.push(`trade ${tradeId}: model returned no summary`)
+  }
+
+  // 4b. Upsert per-side grades. Match by side_id; reject grades the model
+  // invented. blurb column is no longer populated — the trade-level
+  // ai_summary is the prose. Existing rows with old per-side blurbs are
+  // cleared on re-grade so the UI stays consistent.
   const sideIds = new Set(sides.map((s) => s.id as string))
   let graded = 0
   for (const g of parsed.sides) {
@@ -123,15 +141,11 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       warnings.push(`trade ${tradeId}: invalid grade "${g.grade}" for side ${g.side_id}`)
       continue
     }
-    // Cap at a length that comfortably fits 2–3 sentences (500–700 chars
-    // typical) with a little headroom. Used to be 600 — fine for the old
-    // one-sentence blurb; longer blurbs need more room.
-    const blurb = (g.blurb ?? '').toString().trim().slice(0, 1200)
     const { error: upErr } = await db.from('trade_grades').upsert(
       {
         trade_side_id: g.side_id,
         grade: g.grade as Grade,
-        blurb,
+        blurb: null,
         model: `groq:${MODEL}`,
         graded_at: new Date().toISOString(),
       },
@@ -211,10 +225,15 @@ export async function gradeUngradedForLeague(args: {
     }
   }
 
-  // Grade each ungraded trade.
+  // Grade each ungraded trade. Pace at ~5s/call to stay under Groq's free
+  // tier 12k TPM ceiling (each call is ~900 tokens). Skip the delay on the
+  // first call so the user sees fast first feedback. The Groq client also
+  // retries on 429, so the worst case here is slower, not failing.
+  const PER_CALL_DELAY_MS = 5000
   let graded = 0
-  for (const tradeId of ungraded) {
-    const r = await gradeTrade(tradeId)
+  for (let i = 0; i < ungraded.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, PER_CALL_DELAY_MS))
+    const r = await gradeTrade(ungraded[i])
     graded += r.graded_sides > 0 ? 1 : 0
     warnings.push(...r.warnings)
   }
@@ -261,13 +280,15 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• Grades on opposing sides do NOT need to mirror. A trade can be A- / B (one side won clearly, the other still addressed a need fairly). A trade can also be B / B (both sides did fine). Avoid the reflex of pairing every A with an F.',
       '• When a trade is genuinely balanced — both sides addressed a need, value is comparable — give both sides B or B+. That is a correct and useful grade, not a hedge.',
       '',
-      'BLURBS — for each side, write 2 to 3 sentences (roughly 200–400 characters total). The blurb must:',
-      '1. Name the most important player or pick the side received and why it matters for THEM specifically (positional need, scarcity, dynasty youth, etc.).',
-      '2. Name the cost — what they gave up and whether the price was fair.',
-      '3. Optional: one sentence on context that influenced the grade (e.g. "the league is RB-thin", "this side was already deep at WR").',
-      'Avoid generic praise ("solid move"), filler ("great trade for both"), or restating who-got-who without analysis.',
+      'SUMMARY — write ONE recap covering the whole trade (3 to 4 sentences, roughly 350–600 characters total). The summary must:',
+      '1. Open with the headline: who won (or that the deal was even) and the strongest reason.',
+      '2. Identify the key asset each side received and why it matters for THEIR roster context.',
+      '3. Name the cost — what each side gave up and whether the value was fair.',
+      '4. Optional: one closing thought on league context (positional scarcity, dynasty timeline, immediate playoff push, etc.).',
+      'Reference managers by their team name (already in the prompt). Avoid generic filler ("solid move", "great trade for both"). Do not just restate who-got-who — analyze.',
       '',
-      'OUTPUT: strict JSON only — no prose before/after, no markdown fences.',
+      'OUTPUT: strict JSON only — no prose before/after, no markdown fences. Shape:',
+      '{ "summary": "<single combined recap covering the whole trade>", "sides": [{ "side_id": "<uuid>", "grade": "<letter>" }, ...] }',
     ].join('\n')
 
   const sidesText = args.sides
@@ -289,8 +310,9 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       'Return JSON with this exact shape:',
       '{',
+      '  "summary": "<3-4 sentence recap of the whole trade>",',
       '  "sides": [',
-      args.sides.map((s) => `    {"side_id": "${s.side_id}", "grade": "<letter>", "blurb": "<one short sentence>"}`).join(',\n'),
+      args.sides.map((s) => `    {"side_id": "${s.side_id}", "grade": "<letter>"}`).join(',\n'),
       '  ]',
       '}',
     ]

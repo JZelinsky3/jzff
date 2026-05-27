@@ -87,9 +87,8 @@
   }
 
   function renderGradeBadge(s, opts) {
-    // Initial grade: the big letter + blurb.
-    // If `opts.showRevisit` and side has revisit_grade, render BOTH the
-    // original grade (smaller, struck-style) and the new grade (large).
+    // Just the per-side letter grade. The trade's prose recap is rendered
+    // once at the card level (renderTrade), not per side.
     if (opts && opts.showRevisit && s.revisit_grade) {
       return '<div class="tr-grade tr-grade-revisit">' +
         '<div class="tr-grade-row">' +
@@ -97,17 +96,11 @@
           '<span class="tr-grade-arrow">→</span>' +
           '<span class="tr-grade-letter ' + gradeClass(s.revisit_grade) + '">' + escapeHtml(s.revisit_grade) + '</span>' +
         '</div>' +
-        (s.revisit_blurb
-          ? '<p class="tr-grade-blurb">' + escapeHtml(s.revisit_blurb) + '</p>'
-          : '') +
       '</div>';
     }
     if (s.grade) {
       return '<div class="tr-grade">' +
         '<span class="tr-grade-letter ' + gradeClass(s.grade) + '">' + escapeHtml(s.grade) + '</span>' +
-        (s.blurb
-          ? '<p class="tr-grade-blurb">' + escapeHtml(s.blurb) + '</p>'
-          : '') +
       '</div>';
     }
     return '<div class="tr-grade tr-grade-pending">Grade pending</div>';
@@ -142,6 +135,15 @@
     var weekLabel = (t.week != null) ? 'Week ' + t.week : 'Pre-season';
     var sides = (t.sides || []).map(function (s) { return renderSide(s, opts); }).join('');
     var n = (t.sides || []).length;
+
+    // Trade-level recap (one combined 3-4 sentence summary). The verdict
+    // bucket prefers revisit_summary; otherwise both buckets fall back to
+    // the original ai_summary.
+    var summaryText = (opts && opts.showRevisit && t.revisit_summary) || t.ai_summary || '';
+    var summaryHtml = summaryText
+      ? '<div class="tr-summary">' + escapeHtml(summaryText) + '</div>'
+      : '';
+
     return '<div class="tr-card">' +
       '<div class="tr-card-head">' +
         '<span class="tr-date">' + escapeHtml(fmtDate(t.executed_at)) + '</span>' +
@@ -149,6 +151,7 @@
         '<span>' + escapeHtml(t.season_year || '') + '</span>' +
         '<span class="tr-plat">' + escapeHtml(t.platform || '') + '</span>' +
       '</div>' +
+      summaryHtml +
       '<div class="tr-sides" data-count="' + n + '">' + sides + '</div>' +
     '</div>';
   }
