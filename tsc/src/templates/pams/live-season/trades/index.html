@@ -261,13 +261,13 @@
       letter-spacing: .22em; text-transform: uppercase;
       color: var(--cream-mute);
     }
-    /* Revisit: show the initial grade smaller, then arrow, then new grade big */
+    /* Revisit: show the initial grade smaller and dimmed, then arrow, then
+       new grade at full size. No strike-through — the dimming + size shift
+       already reads as "this was the prior grade." */
     .tr-grade-row { display: flex; align-items: center; gap: .55rem; }
     .tr-grade-then {
       font-size: 1.1rem;
       opacity: .55;
-      text-decoration: line-through;
-      text-decoration-thickness: 1.5px;
     }
     .tr-grade-arrow { color: var(--cream-mute); font-size: 1rem; }
 

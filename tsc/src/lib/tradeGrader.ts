@@ -325,9 +325,14 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
   const league = Array.isArray(trade.leagues) ? trade.leagues[0] : trade.leagues
   const season = Array.isArray(trade.seasons) ? trade.seasons[0] : trade.seasons
   const leagueType = (league?.league_type as 'redraft' | 'keeper' | 'dynasty') ?? 'redraft'
-  const sleeperLeagueId = trade.platform === 'sleeper' ? (season?.external_id as string | null) ?? null : null
 
-  // Load player values + roster context (same as gradeTrade).
+  // Load player values for trade-relevant players. Revisits intentionally
+  // skip the roster-context fetch (the original summary already encoded
+  // that picture, and without real performance data the roster shape
+  // doesn't change meaningfully between grade and revisit). This keeps
+  // revisits ~600ms faster per trade, which avoids Vercel function
+  // timeouts on batch runs. Phase 5 plugs in weekly performance stats
+  // and revisits will fetch fresh context again.
   const allPlayerIds: string[] = []
   for (const s of sides) {
     for (const a of (s.assets as Array<Record<string, unknown>>) ?? []) {
@@ -337,35 +342,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
     }
   }
   const values = await getSleeperValuesForPlayerIds(allPlayerIds)
-  let rosterSummaries = new Map<string, string>()
-  if (sleeperLeagueId) {
-    try {
-      const rosters = await sleeper.rosters(sleeperLeagueId)
-      const rosterPlayerIds: string[] = []
-      for (const r of rosters ?? []) {
-        const pl = (r as { players?: string[] | null }).players ?? []
-        rosterPlayerIds.push(...pl)
-      }
-      const missing = rosterPlayerIds.filter((p) => !values.has(p))
-      if (missing.length > 0) {
-        const more = await getSleeperValuesForPlayerIds(missing)
-        for (const [k, v] of more) values.set(k, v)
-      }
-      rosterSummaries = await loadSleeperRosterSummaries({
-        sleeperLeagueId,
-        sides: sides.map((s) => {
-          const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
-          return {
-            manager_id: s.id as string,
-            manager_external_id: (mgr?.external_id as string | null) ?? null,
-          }
-        }),
-        values,
-      })
-    } catch (e) {
-      warnings.push(`roster context: ${(e as Error).message}`)
-    }
-  }
+  const rosterSummaries = new Map<string, string>()
 
   const sidePayload = sides.map((s) => {
     const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
@@ -765,13 +742,23 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       '',
       'WRITING THE RETROSPECTIVE — 3 to 4 sentences. Follow these rules:',
       '',
-      '1. Vary your openings. NEVER start with "The X side\'s grade holds up" or "X won the trade in hindsight" or any verdict-first formula. Lead with the most interesting observation in retrospect: a specific player\'s arc, an aging player\'s decline, an unexpected breakout, a pick that has gained or lost value.',
+      '1. Vary your openings. NEVER start two retrospectives with the same phrase. SPECIFICALLY BANNED openers: "Four weeks after", "Four weeks into the season", "Four weeks later", "In hindsight", "Looking back", "The X side\'s grade holds up", "X won the trade in hindsight", or any verdict-first formula.',
       '',
-      '2. The retrospective must EXPLAIN the (possibly revised) grade. Reference what has changed (or held) about specific players, picks, or roster contexts. Be specific.',
+      '2. Lead with the most interesting observation in retrospect: a specific player\'s arc (breakout, regression, injury), a pick that gained/lost value, a positional context that has changed, a roster decision that aged well or badly. Concrete first, conclusion later.',
+      '',
+      '3. The retrospective must EXPLAIN the (possibly revised) grade. Reference what has changed (or held) about specific players, picks, or roster contexts. Be specific.',
+      '',
+      'Example good openers (vary your voice — do not copy these verbatim):',
+      '• "The Saquon bet has paid off in a way few saw coming..."',
+      '• "Pollard\'s ankle changes the calculus here..."',
+      '• "Pittsburgh\'s offense has cratered and so has this trade for..."',
+      '• "On second look, the Sinkaroos\' draft capital was the real prize..."',
+      '• "What looked like a depth move at the time has become a roster cornerstone..."',
+      '• "The early returns favored A; week-six performance flips that..."',
       '',
       'BANNED PHRASES (same as initial grading): "won this trade", "primarily due to", "added depth", "upgrades the position", "solid move", "fair deal".',
       '',
-      'Reference managers by team name. Use retrospective voice naturally ("looking back", "four weeks in", "with the dust settled") but only sparingly — do not start every retrospective with the same phrase.',
+      'Reference managers by team name. Retrospective voice is optional and should be used sparingly — most sentences should be present-tense analysis.',
       '',
       'OUTPUT: strict JSON only — { "summary": "<retrospective rationale>", "sides": [{ "side_id", "grade" }, ...] }',
     ].join('\n')
