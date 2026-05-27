@@ -4403,7 +4403,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .lp-hero-left { position: relative; }
 .lp-hero-seal {
-    position: absolute; top: -1.5rem; left: -.5rem;
+    position: absolute; top: -1.75rem; left: -.5rem;
     width: 78px; height: 78px;
     border: 2px solid var(--gold);
     border-radius: 50%;
@@ -4869,24 +4869,25 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 .cp-roll { display: flex; flex-direction: column; }
 .cp-roll-row {
-    /* Flex packs year/name/matchup left-to-right; matchup ends up snug
-       against the name with a smaller gap than year→name. */
+    /* Year takes a wider fixed column for a generous year→name gap, then
+       name and matchup sit packed left so the matchup ends up snug under
+       the team name instead of way off at the right edge. */
     display: flex;
     align-items: baseline;
     padding: .65rem 0;
     border-bottom: 1px dotted var(--ink-line-soft);
 }
 .cp-roll-row > .cp-roll-yr {
-    width: 70px;
+    width: 100px;
     flex-shrink: 0;
 }
 .cp-roll-row > .cp-roll-ch {
-    margin-right: auto;          /* push matchup to the right edge */
-    padding-right: 1rem;         /* min visual gap to matchup */
+    flex-shrink: 1;
+    min-width: 0;
 }
 .cp-roll-row > .cp-roll-fin {
     flex-shrink: 0;
-    margin-left: 1rem;           /* gap from name (slightly less than yr→name) */
+    margin-left: .9rem;
 }
 .cp-roll-row:last-child { border-bottom: none; }
 .cp-roll-yr {
@@ -5124,7 +5125,9 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .dv-screen {
     position: relative;
-    height: 680px;
+    /* Tall enough that the play button overlay can sit centered without
+       crowding the league cards above and below it. */
+    height: 820px;
     background: var(--ink);
 }
 .dv-iframe {
@@ -5350,10 +5353,29 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 /* ─── PLATFORMS (lifts the existing dc-chapter styles) ────── */
 .lp-platforms {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     background: linear-gradient(180deg, rgba(26, 37, 50, .4) 0%, rgba(22, 32, 44, .2) 100%);
     border: 1px solid var(--ink-line);
 }
 .lp-platforms .dc-chapter { padding: 1.1rem 1.4rem; }
+/* Internal grid borders: right border on the first item of each row,
+   bottom border on the top row. The .dc-chapter rule already paints a
+   bottom border on every item; suppress it for the last row so the
+   wrapper border carries the bottom edge. */
+.lp-platforms > .dc-chapter:nth-child(odd) {
+    border-right: 1px solid var(--ink-line-soft);
+}
+.lp-platforms > .dc-chapter:nth-last-child(-n+2) {
+    border-bottom: none;
+}
+@media (max-width: 640px) {
+    .lp-platforms { grid-template-columns: 1fr; }
+    .lp-platforms > .dc-chapter:nth-child(odd) { border-right: none; }
+    .lp-platforms > .dc-chapter:nth-last-child(2) {
+        border-bottom: 1px solid var(--ink-line-soft);
+    }
+}
 
 /* ─── FINAL CTA CARD ──────────────────────────────────────── */
 .lp-final { margin-top: 4.5rem; margin-bottom: 4rem; }
@@ -5413,7 +5435,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     }
     .lp-hero-right { height: 440px; }
     .lp-hero-sup { margin-left: 90px; }
-    .dv-screen { height: 520px; }
+    .dv-screen { height: 640px; }
     .dv-poster-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cp-draft-grid { grid-template-columns: repeat(3, 1fr); }
 }
