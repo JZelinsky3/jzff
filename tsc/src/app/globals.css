@@ -4403,7 +4403,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .lp-hero-left { position: relative; }
 .lp-hero-seal {
-    position: absolute; top: -1.85rem; left: -.5rem;
+    position: absolute; top: -1.9rem; left: -.5rem;
     width: 78px; height: 78px;
     border: 2px solid var(--gold);
     border-radius: 50%;
@@ -5243,8 +5243,9 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .dv-poster-card {
     position: relative;
-    padding: 1.1rem 1.1rem 1rem;
-    display: flex; flex-direction: column; gap: .55rem;
+    padding: 1.5rem 1.25rem 1.4rem;
+    min-height: 340px;
+    display: flex; flex-direction: column; gap: .85rem;
     background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
     border: 1px solid var(--ink-line);
     overflow: hidden;
@@ -5289,9 +5290,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .dv-poster-card-roman {
     font-family: var(--serif); font-style: italic;
-    font-size: 2.4rem; line-height: 1;
+    font-size: 3.2rem; line-height: 1;
     color: var(--gold);
     letter-spacing: -.02em;
+    margin-top: .25rem;
 }
 .dv-poster-card-title {
     font-family: var(--serif);

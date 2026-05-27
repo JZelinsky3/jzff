@@ -64,7 +64,7 @@ const PAGES: Page[] = [
       <div className="cp-roll">
         {[
           ['2024', 'Tendency',        '142.6–142.1 · Slingers'],
-          ['2023', 'Dad Bod Dynasty', '138.0–119.4 · Tendency'],
+          ['2023', 'Dad Bod',         '138.0–119.4 · Tendency'],
           ['2022', 'Slingers',        '156.3–122.0 · Bombers'],
           ['2021', 'Slingers',        '130.4–128.1 · Tomlinmen'],
           ['2020', 'Bombers',         '148.8–146.9 · Slingers'],
