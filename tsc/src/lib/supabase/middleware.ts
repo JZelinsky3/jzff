@@ -15,7 +15,7 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/demo', '/ol
 // without auth — visitors to /leagues/<slug>/draft fetch from here, and the
 // gate would otherwise 302 them to /login and break the Steal/Bust panels
 // for anyone not signed in.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/api/cron/', '/api/stripe/webhook']
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/api/cron/', '/api/stripe/webhook']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })

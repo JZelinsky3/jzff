@@ -4381,6 +4381,21 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 
 
+/* Landing-only masthead title — uses the full publication name instead
+   of the TSC monogram. Sized down a hair so it fits the same nav grid
+   without crowding the side slots. */
+.lp-nav-title {
+    font-size: 1.35rem;
+    letter-spacing: .01em;
+    white-space: nowrap;
+}
+@media (max-width: 700px) {
+    .lp-nav-title { font-size: 1.05rem; letter-spacing: 0; }
+}
+@media (max-width: 480px) {
+    .lp-nav-title { font-size: .95rem; }
+}
+
 /* ============================================================
    LANDING PAGE (v2) — vintage almanac, asymmetric editorial
    Hero clipping stack · Pinned horizontal-scroll pages ·
@@ -5463,4 +5478,446 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .dv-poster-play { padding: 1rem 1.4rem; }
     .lp-final-card { padding: 2.5rem 1.25rem; }
     .cp-page-num { font-size: 3.6rem; }
+}
+
+/* ============================================================
+   MENU DESIGN PREVIEW PAGE — /design/menu (internal)
+   Three working masthead demos so we can compare menu styles
+   ============================================================ */
+.mp-page {
+    position: relative; z-index: 10;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+    display: flex; flex-direction: column;
+    gap: 3rem;
+}
+.mp-page-head { text-align: center; }
+.mp-page-back {
+    display: inline-block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+    transition: color .2s;
+}
+.mp-page-back:hover { color: var(--gold-bright); }
+.mp-page-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .35em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .9rem;
+}
+.mp-page-title {
+    font-family: var(--serif);
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    line-height: 1; letter-spacing: -.02em;
+    color: var(--cream);
+    margin-bottom: 1rem;
+}
+.mp-page-title em { font-style: italic; color: var(--gold); }
+.mp-page-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem; line-height: 1.55;
+    color: var(--cream-soft);
+    max-width: 56ch;
+    margin: 0 auto;
+}
+.mp-page-foot {
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px dotted var(--ink-line);
+    font-family: var(--serif); font-style: italic;
+    color: var(--cream-mute);
+    font-size: .95rem;
+}
+
+/* ─── Demo card layout ────────────────────────────────────── */
+.mp-demo {
+    background: linear-gradient(160deg, rgba(26, 37, 50, .55), rgba(22, 32, 44, .35));
+    border: 1px solid var(--ink-line);
+    border-radius: 3px;
+    padding: 1.75rem 1.75rem 1.5rem;
+    display: flex; flex-direction: column; gap: 1.25rem;
+    box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .5);
+}
+.mp-demo-meta {
+    display: flex; align-items: center; gap: 1.1rem;
+}
+.mp-demo-letter {
+    font-family: var(--serif); font-style: italic;
+    font-size: 3rem; line-height: .9;
+    color: var(--gold);
+    width: 56px; text-align: center;
+    flex-shrink: 0;
+}
+.mp-demo-name {
+    font-family: var(--serif);
+    font-size: 1.6rem; line-height: 1; letter-spacing: -.015em;
+    color: var(--cream);
+    display: flex; align-items: baseline; gap: .65rem; flex-wrap: wrap;
+}
+.mp-demo-rec {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--gold-deep);
+    padding: .2rem .55rem;
+    background: rgba(232, 200, 137, .07);
+    border-radius: 2px;
+}
+.mp-demo-effort {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-top: .35rem;
+}
+.mp-demo-notes {
+    font-family: var(--serif); font-style: italic;
+    font-size: .98rem; line-height: 1.55;
+    color: var(--cream-soft);
+    margin: 0;
+}
+
+/* ─── Stage masthead — same shape as the real .nav ───────── */
+.mp-stage {
+    background: rgba(14, 22, 32, .92);
+    border: 1px solid var(--ink-line);
+    border-radius: 2px;
+    overflow: visible;
+}
+.mp-stage-nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.05rem 1.5rem;
+    position: relative;
+}
+.mp-stage-back {
+    justify-self: start;
+    color: var(--cream-mute);
+    font-family: var(--mono);
+    font-size: .7rem;
+    visibility: hidden;
+}
+.mp-stage-center { text-align: center; justify-self: center; }
+.mp-stage-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: .25rem;
+}
+.mp-stage-title {
+    font-family: var(--serif);
+    font-size: 1.3rem; letter-spacing: .01em; color: var(--cream);
+}
+.mp-stage-title em { font-style: italic; color: var(--gold); }
+.mp-stage-slot {
+    justify-self: end;
+    color: var(--gold);
+    position: relative;
+}
+
+/* ─── A · Polished panel ──────────────────────────────────── */
+.mp-panel { position: relative; }
+.mp-panel-trigger {
+    background: transparent;
+    border: none;
+    color: var(--gold);
+    cursor: pointer;
+    padding: 4px;
+    display: flex; align-items: center;
+    transition: color .15s;
+}
+.mp-panel-trigger:hover { color: var(--gold-bright); }
+.mp-panel-menu {
+    position: absolute;
+    top: calc(100% + .7rem); right: 0;
+    width: 280px;
+    background: rgba(14, 22, 32, .97);
+    border: 1px solid var(--gold-deep);
+    border-radius: 3px;
+    padding: 1rem 0 .65rem;
+    box-shadow:
+        0 20px 40px -8px rgba(0, 0, 0, .6),
+        0 0 0 1px rgba(232, 200, 137, .05),
+        0 0 30px rgba(232, 200, 137, .08);
+    backdrop-filter: blur(12px);
+    z-index: 50;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .18s ease, transform .2s cubic-bezier(.2,.8,.2,1);
+}
+.mp-panel.is-open .mp-panel-menu {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.mp-panel-section { padding-bottom: .6rem; }
+.mp-panel-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--gold);
+    padding: 0 1.25rem .4rem;
+    margin: 0 1.25rem .35rem;
+    border-bottom: 1px dotted rgba(232, 200, 137, .25);
+    padding-left: 0; padding-right: 0;
+}
+.mp-panel-link {
+    display: block;
+    padding: .55rem 1.25rem;
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--cream-soft);
+    text-decoration: none;
+    transition: background .15s, color .15s, padding-left .18s;
+}
+.mp-panel-link:hover {
+    background: rgba(232, 200, 137, .06);
+    color: var(--gold);
+    padding-left: 1.55rem;
+}
+.mp-panel-sep {
+    height: 1px;
+    margin: .35rem 1.25rem .35rem;
+    background: var(--ink-line);
+}
+.mp-panel-signout {
+    display: block; width: calc(100% - 2.5rem);
+    margin: 0 1.25rem;
+    padding: .55rem 0;
+    background: transparent;
+    border: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: left;
+    cursor: pointer;
+    transition: color .15s;
+}
+.mp-panel-signout:hover { color: var(--rust); }
+
+/* ─── B · Vintage drawer ──────────────────────────────────── */
+.mp-drawer-trigger {
+    background: transparent;
+    border: none;
+    color: var(--gold);
+    cursor: pointer;
+    padding: 4px;
+    display: flex; align-items: center;
+    transition: color .15s;
+}
+.mp-drawer-trigger:hover { color: var(--gold-bright); }
+.mp-drawer-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(14, 22, 32, .65);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+    z-index: 80;
+}
+.mp-drawer-backdrop.is-open { opacity: 1; pointer-events: auto; }
+.mp-drawer {
+    position: fixed; top: 0; right: 0;
+    width: min(380px, 92vw);
+    height: 100vh;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(232, 200, 137, .07), transparent 60%),
+        var(--ink);
+    border-left: 1px solid var(--gold-deep);
+    padding: 2rem 1.75rem 1.75rem;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .32s cubic-bezier(.2, .8, .2, 1);
+    z-index: 90;
+    overflow-y: auto;
+    box-shadow: -24px 0 60px -20px rgba(0, 0, 0, .7);
+}
+.mp-drawer.is-open { transform: translateX(0); }
+.mp-drawer::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.05 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+    opacity: .4; pointer-events: none;
+}
+.mp-drawer > * { position: relative; z-index: 1; }
+.mp-drawer-head {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+.mp-drawer-close {
+    position: absolute; top: -.25rem; right: -.25rem;
+    background: transparent;
+    border: none;
+    color: var(--cream-mute);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: .25rem .5rem;
+    transition: color .15s;
+}
+.mp-drawer-close:hover { color: var(--gold); }
+.mp-drawer-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: .4rem;
+}
+.mp-drawer-title {
+    font-family: var(--serif);
+    font-size: 2.4rem; line-height: 1; letter-spacing: -.02em;
+    color: var(--cream);
+}
+.mp-drawer-title em { font-style: italic; color: var(--gold); }
+.mp-drawer-rule {
+    display: flex; align-items: center; gap: .75rem;
+    justify-content: center;
+    margin-bottom: 1.75rem;
+}
+.mp-drawer-rule-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-deep) 30%, var(--gold-deep) 70%, transparent);
+    opacity: .8;
+}
+.mp-drawer-rule-mark {
+    font-family: var(--serif);
+    color: var(--gold);
+    font-size: 1rem;
+}
+.mp-drawer-nav {
+    display: flex; flex-direction: column;
+    gap: 1.5rem;
+    flex: 1;
+}
+.mp-drawer-section {}
+.mp-drawer-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--gold);
+    padding-bottom: .55rem;
+    border-bottom: 1px dotted var(--ink-line);
+    margin-bottom: .35rem;
+}
+.mp-drawer-section a {
+    display: block;
+    padding: .5rem 0;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem;
+    color: var(--cream);
+    text-decoration: none;
+    transition: padding-left .2s, color .2s;
+}
+.mp-drawer-section a:hover {
+    padding-left: .55rem;
+    color: var(--gold);
+}
+.mp-drawer-foot {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--ink-line);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.mp-drawer-signout {
+    background: transparent;
+    border: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--cream-mute);
+    cursor: pointer;
+    transition: color .15s;
+    padding: 0;
+}
+.mp-drawer-signout:hover { color: var(--rust); }
+.mp-drawer-mark {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .25em;
+    color: var(--gold);
+}
+
+/* ─── C · Inline horizontal ───────────────────────────────── */
+.mp-inline {
+    display: flex; align-items: center;
+    gap: 1.5rem;
+}
+.mp-inline-group {
+    position: relative;
+    padding: .35rem 0;
+}
+.mp-inline-trigger {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold);
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: 0;
+    transition: color .15s;
+}
+.mp-inline-trigger:hover { color: var(--gold-bright); }
+.mp-inline-arr {
+    font-size: .55rem;
+    opacity: .7;
+    transition: transform .2s;
+}
+.mp-inline-group.is-open .mp-inline-arr { transform: rotate(180deg); }
+.mp-inline-flyout {
+    position: absolute;
+    top: calc(100% + .6rem); right: 0;
+    min-width: 210px;
+    background: rgba(14, 22, 32, .97);
+    border: 1px solid var(--gold-deep);
+    border-radius: 3px;
+    padding: .5rem 0;
+    box-shadow:
+        0 16px 32px -8px rgba(0, 0, 0, .55),
+        0 0 24px rgba(232, 200, 137, .06);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s cubic-bezier(.2,.8,.2,1);
+    z-index: 50;
+}
+.mp-inline-group.is-open .mp-inline-flyout {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.mp-inline-flyout a {
+    display: block;
+    padding: .55rem 1.1rem;
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--cream-soft);
+    text-decoration: none;
+    transition: background .12s, color .12s, padding-left .15s;
+}
+.mp-inline-flyout a:hover {
+    background: rgba(232, 200, 137, .07);
+    color: var(--gold);
+    padding-left: 1.35rem;
+}
+.mp-inline-signout {
+    background: transparent;
+    border: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+    cursor: pointer;
+    padding: 0;
+    transition: color .15s;
+}
+.mp-inline-signout:hover { color: var(--rust); }
+
+@media (max-width: 640px) {
+    .mp-demo { padding: 1.25rem 1.25rem 1.25rem; }
+    .mp-stage-nav { padding: .9rem 1rem; }
+    .mp-stage-title { font-size: 1.05rem; }
+    .mp-demo-letter { font-size: 2.2rem; width: 38px; }
+    .mp-demo-name { font-size: 1.3rem; }
+    .mp-inline { gap: 1rem; }
 }

@@ -71,7 +71,7 @@ export default async function Home() {
         <span className="nav-back" style={{ visibility: 'hidden' }}>—</span>
         <div className="nav-center">
           <div className="nav-kicker">Vol. II · The League Almanac</div>
-          <div className="nav-title" style={{ letterSpacing: '.04em' }}>TS<em>C.</em></div>
+          <div className="nav-title lp-nav-title">The Sunday <em>Chronicle.</em></div>
         </div>
         {signedIn ? (
           <NavDropdown groups={groups} position="right" includeSignOut />
