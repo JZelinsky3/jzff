@@ -96,6 +96,13 @@ export async function groqChat(args: GroqChatArgs): Promise<GroqResult> {
     // request is wrong and won't get better on retry.
     if (res.status !== 429 && res.status < 500) throw lastErr
 
+    // Daily token limit (TPD) — Groq's free tier is 100k/day for
+    // llama-3.3-70b-versatile. The suggested wait can be minutes-to-hours;
+    // there's no point burning Vercel function time pretending we'll retry.
+    // Fail fast so the caller can mark the batch as blocked and the user
+    // sees a clear "out for the day" message.
+    if (res.status === 429 && /tokens per day|\bTPD\b/i.test(body)) throw lastErr
+
     if (attempt === MAX_RETRIES - 1) throw lastErr
 
     const waitMs = parseRetryDelayMs(res.headers.get('retry-after'), body)
