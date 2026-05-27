@@ -1,54 +1,33 @@
-// trades.js — renders the public trades list for a league.
-// Reads JSON from /leagues/<slug>/live-season/trades/data.
+// trades.js — Trade Grader page renderer.
 //
-// Buckets: This Week / Earlier / The Verdict. Each trade card shows per-side
-// grades + blurbs when graded. Sides without a grade render a quiet placeholder.
-// A tier-locked response shows the Veteran upgrade CTA.
+// Tabs: Current / Past / Verdicts.
+//   • Current  — trades from the last 7 days + verdicts that landed this week
+//   • Past     — every trade older than 7 days
+//   • Verdicts — every revisited trade ever, newest revisit first
+// Tier-locked leagues see the Veteran upgrade CTA in place of the data.
 
 (function () {
   'use strict';
 
   var content = document.getElementById('content');
 
+  // ── Helpers ────────────────────────────────────────────────────────────
   function escapeHtml(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
-
-  function showEmpty(title, sub) {
-    content.innerHTML =
-      '<div class="tr-empty">' +
-        '<h2>' + escapeHtml(title) + '</h2>' +
-        '<p>' + escapeHtml(sub) + '</p>' +
-      '</div>';
-  }
-
-  function showTierLocked() {
-    content.innerHTML =
-      '<div class="tr-lock">' +
-        '<div class="tr-lock-icon">★</div>' +
-        '<h2>Trade Grader is a <em>Veteran</em> feature.</h2>' +
-        '<p>Auto-graded trades and 4-week verdicts unlock when this league\'s commissioner is on the Veteran plan.</p>' +
-        '<a class="tr-lock-cta" href="/pricing">See Veteran plan →</a>' +
-      '</div>';
-  }
-
   function fmtDate(iso) {
     if (!iso) return '';
     var d = new Date(iso);
     if (isNaN(d.getTime())) return '';
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
-
   function ordinal(n) {
     var s = ['th', 'st', 'nd', 'rd'];
     var v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
-
-  // ── Grade color classes ─────────────────────────────────────────────────
-  // Map letter grade to a CSS modifier (defined in trades/index.html).
   function gradeClass(g) {
     if (!g) return '';
     var first = g[0];
@@ -59,6 +38,25 @@
     return '';
   }
 
+  // ── Special-state screens ──────────────────────────────────────────────
+  function showEmpty(title, sub) {
+    content.innerHTML =
+      '<div class="tr-empty">' +
+        '<h2>' + escapeHtml(title) + '</h2>' +
+        '<p>' + escapeHtml(sub) + '</p>' +
+      '</div>';
+  }
+  function showTierLocked() {
+    content.innerHTML =
+      '<div class="tr-lock">' +
+        '<div class="tr-lock-icon">★</div>' +
+        '<h2>Trade Grader is a <em>Veteran</em> feature.</h2>' +
+        '<p>Auto-graded trades and 4-week verdicts unlock when this league\'s commissioner is on the Veteran plan.</p>' +
+        '<a class="tr-lock-cta" href="/pricing">See Veteran plan →</a>' +
+      '</div>';
+  }
+
+  // ── Card rendering ─────────────────────────────────────────────────────
   function renderAsset(a) {
     if (a.kind === 'player') {
       var pos = a.position || '—';
@@ -71,10 +69,9 @@
       '</div>';
     }
     if (a.kind === 'pick') {
-      var label = a.season_year + ' ' + ordinal(a.round) + ' rd';
       return '<div class="tr-asset kind-pick">' +
         '<span class="tr-asset-pos">PICK</span>' +
-        '<span class="tr-asset-name">' + escapeHtml(label) + '</span>' +
+        '<span class="tr-asset-name">' + escapeHtml(a.season_year + ' ' + ordinal(a.round) + ' rd') + '</span>' +
       '</div>';
     }
     if (a.kind === 'faab') {
@@ -87,8 +84,6 @@
   }
 
   function renderGradeBadge(s, opts) {
-    // Just the per-side letter grade. The trade's prose recap is rendered
-    // once at the card level (renderTrade), not per side.
     if (opts && opts.showRevisit && s.revisit_grade) {
       return '<div class="tr-grade tr-grade-revisit">' +
         '<div class="tr-grade-row">' +
@@ -135,15 +130,10 @@
     var weekLabel = (t.week != null) ? 'Week ' + t.week : 'Pre-season';
     var sides = (t.sides || []).map(function (s) { return renderSide(s, opts); }).join('');
     var n = (t.sides || []).length;
-
-    // Trade-level recap (one combined 3-4 sentence summary). The verdict
-    // bucket prefers revisit_summary; otherwise both buckets fall back to
-    // the original ai_summary.
     var summaryText = (opts && opts.showRevisit && t.revisit_summary) || t.ai_summary || '';
     var summaryHtml = summaryText
       ? '<div class="tr-summary">' + escapeHtml(summaryText) + '</div>'
       : '';
-
     return '<div class="tr-card">' +
       '<div class="tr-card-head">' +
         '<span class="tr-date">' + escapeHtml(fmtDate(t.executed_at)) + '</span>' +
@@ -158,83 +148,137 @@
 
   function renderSection(opts) {
     var trades = opts.trades || [];
-    if (trades.length === 0 && !opts.showEmpty) return '';
+    if (trades.length === 0 && !opts.alwaysRender) return '';
     var body = trades.length > 0
       ? '<div class="tr-list">' + trades.map(function (t) { return renderTrade(t, opts.cardOpts || {}); }).join('') + '</div>'
       : '<div class="tr-section-empty">' + escapeHtml(opts.emptyText || '') + '</div>';
+    var meta = opts.meta ? '<span class="tr-section-meta">' + escapeHtml(opts.meta) + '</span>' : '';
     return '<section class="tr-section">' +
       '<div class="tr-section-head">' +
         '<span class="tr-section-num">' + escapeHtml(opts.num) + '</span>' +
         '<span class="tr-section-title">' + opts.title + '</span>' +
-        (opts.meta ? '<span class="tr-section-meta">' + escapeHtml(opts.meta) + '</span>' : '') +
+        meta +
       '</div>' +
       body +
     '</section>';
   }
 
+  // ── Tab content ────────────────────────────────────────────────────────
+  function renderCurrentTab(data) {
+    var trades = data.current_trades || [];
+    var verdicts = data.current_verdicts || [];
+    if (trades.length === 0 && verdicts.length === 0) {
+      return '<div class="tr-empty">' +
+        '<h2>Nothing this week</h2>' +
+        '<p>No trades executed or verdicts revisited in the last 7 days. Check the Past tab for the archive.</p>' +
+      '</div>';
+    }
+    return (
+      renderSection({
+        num: '§ 01 · This Week',
+        title: 'Just <em>landed —</em>',
+        meta: trades.length > 0 ? trades.length + ' trade' + (trades.length === 1 ? '' : 's') : 'Last 7 days',
+        trades: trades,
+        alwaysRender: true,
+        emptyText: 'Nothing new this week.',
+      }) +
+      renderSection({
+        num: '§ 02 · The Verdict',
+        title: 'Four weeks <em>later —</em>',
+        meta: verdicts.length > 0 ? 'How they actually played out' : 'Revisits land 4 weeks after each trade',
+        trades: verdicts,
+        cardOpts: { showRevisit: true },
+        alwaysRender: true,
+        emptyText: 'No revisits this week.',
+      })
+    );
+  }
+
+  function renderPastTab(data) {
+    var trades = data.past_trades || [];
+    if (trades.length === 0) {
+      return '<div class="tr-empty">' +
+        '<h2>No archive yet</h2>' +
+        '<p>Past trades will appear here once they\'re more than 7 days old.</p>' +
+      '</div>';
+    }
+    return renderSection({
+      num: '§ 01 · Archive',
+      title: 'Older <em>trades —</em>',
+      meta: trades.length + ' trade' + (trades.length === 1 ? '' : 's'),
+      trades: trades,
+      alwaysRender: true,
+    });
+  }
+
+  function renderVerdictsTab(data) {
+    var verdicts = data.all_verdicts || [];
+    if (verdicts.length === 0) {
+      return '<div class="tr-empty">' +
+        '<h2>No verdicts yet</h2>' +
+        '<p>Verdicts land 4 weeks after each trade. Once we revisit some, they all show up here — newest first.</p>' +
+      '</div>';
+    }
+    return renderSection({
+      num: '§ 01 · Retrospectives',
+      title: 'Every <em>verdict —</em>',
+      meta: verdicts.length + ' revisited',
+      trades: verdicts,
+      cardOpts: { showRevisit: true },
+      alwaysRender: true,
+    });
+  }
+
+  var TABS = [
+    { id: 'current',  label: 'Current',  render: renderCurrentTab },
+    { id: 'past',     label: 'Past',     render: renderPastTab },
+    { id: 'verdicts', label: 'Verdicts', render: renderVerdictsTab },
+  ];
+
+  function setTab(tabId, data) {
+    document.querySelectorAll('.tr-tab').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
+    });
+    var pane = document.getElementById('tab-pane');
+    if (!pane) return;
+    var tab = TABS.find(function (t) { return t.id === tabId; });
+    pane.innerHTML = tab ? tab.render(data) : '';
+  }
+  // Exposed for inline onclick handlers in the tab bar.
+  window.__trTabClick = function (id) {
+    if (window.__trData) setTab(id, window.__trData);
+  };
+
+  function defaultTabFor(data) {
+    if ((data.current_trades && data.current_trades.length) ||
+        (data.current_verdicts && data.current_verdicts.length)) return 'current';
+    if (data.past_trades && data.past_trades.length) return 'past';
+    if (data.all_verdicts && data.all_verdicts.length) return 'verdicts';
+    return 'current';
+  }
+
+  // ── Boot ───────────────────────────────────────────────────────────────
   async function boot() {
     try {
       var res = await fetch('live-season/trades/data', { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var data = await res.json();
 
-      if (data.status === 'no-league') {
-        return showEmpty('League not found', 'Check the URL and try again.');
-      }
-      if (data.status === 'tier-locked') {
-        return showTierLocked();
-      }
-      if (data.status === 'no-trades') {
-        return showEmpty('No trades yet', 'Once a trade is completed on your platform, it will show up here.');
-      }
+      if (data.status === 'no-league')   return showEmpty('League not found', 'Check the URL and try again.');
+      if (data.status === 'tier-locked') return showTierLocked();
+      if (data.status === 'no-trades')   return showEmpty('No trades yet', 'Once a trade is completed on your platform, it will show up here.');
 
-      var thisWeek = data.this_week || [];
-      var verdict  = data.verdict   || [];
-      var earlier  = data.earlier   || [];
+      window.__trData = data;
+      var initialTab = defaultTabFor(data);
 
-      if (thisWeek.length === 0 && verdict.length === 0 && earlier.length === 0) {
-        return showEmpty('No trades yet', 'Once a trade is completed on your platform, it will show up here.');
-      }
+      var tabBar = TABS.map(function (t) {
+        return '<button class="tr-tab' + (t.id === initialTab ? ' active' : '') + '" data-tab="' + t.id + '" onclick="__trTabClick(\'' + t.id + '\')">' + escapeHtml(t.label) + '</button>';
+      }).join('');
 
-      // Always render all three sections so the structure is visible even
-      // when one or two buckets are empty.
-      var html = '';
-
-      html += renderSection({
-        num: '§ 01 · This Week',
-        title: 'Just <em>landed —</em>',
-        meta: thisWeek.length > 0
-          ? thisWeek.length + ' trade' + (thisWeek.length === 1 ? '' : 's')
-          : 'Last 7 days',
-        trades: thisWeek,
-        showEmpty: true,
-        emptyText: 'Nothing new this week.',
-      });
-
-      html += renderSection({
-        num: '§ 02 · The Verdict',
-        title: 'Four weeks <em>later —</em>',
-        meta: verdict.length > 0
-          ? 'How they actually played out'
-          : 'Revisits land 4 weeks after each trade',
-        trades: verdict,
-        cardOpts: { showRevisit: true },
-        showEmpty: true,
-        emptyText: 'No revisits this week.',
-      });
-
-      html += renderSection({
-        num: '§ 03 · Earlier',
-        title: 'The <em>archive —</em>',
-        meta: earlier.length > 0
-          ? earlier.length + ' trade' + (earlier.length === 1 ? '' : 's')
-          : '',
-        trades: earlier,
-        showEmpty: true,
-        emptyText: 'Nothing in the archive yet.',
-      });
-
-      content.innerHTML = html;
+      content.innerHTML =
+        '<nav class="tr-tabs" aria-label="Trade Grader sections">' + tabBar + '</nav>' +
+        '<div id="tab-pane"></div>';
+      setTab(initialTab, data);
     } catch (e) {
       console.error(e);
       showEmpty('Couldn’t load trades', String(e));

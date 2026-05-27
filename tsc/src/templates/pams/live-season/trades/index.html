@@ -78,6 +78,35 @@
     }
     .tr-lock-cta:hover { background: var(--gold-bright); }
 
+    /* ── Top-level tabs ── */
+    .tr-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--tr-line);
+      margin-bottom: 2rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      gap: 0;
+    }
+    .tr-tabs::-webkit-scrollbar { display: none; }
+    .tr-tab {
+      font-family: var(--mono); font-weight: 700;
+      font-size: .65rem; letter-spacing: .25em; text-transform: uppercase;
+      padding: .85rem 1.6rem;
+      border: none; border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--cream-mute);
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+      margin-bottom: -1px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .tr-tab:hover { color: var(--cream); }
+    .tr-tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
     /* ── Section header ── */
     .tr-section { margin-bottom: 2.5rem; }
     .tr-section-head {

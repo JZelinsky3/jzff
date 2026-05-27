@@ -58,9 +58,15 @@ export type TradesState =
   | {
       status: 'ok'
       league_id: string
-      this_week: TradePublic[]
-      earlier: TradePublic[]
-      verdict: TradePublic[]
+      // Current tab — trades executed in the last 7 days.
+      current_trades: TradePublic[]
+      // Current tab — verdicts that landed in the last 7 days (regardless of
+      // when the trade itself happened).
+      current_verdicts: TradePublic[]
+      // Past tab — every trade older than 7 days.
+      past_trades: TradePublic[]
+      // Verdicts tab — every revisited trade ever, newest revisit first.
+      all_verdicts: TradePublic[]
     }
 
 // Veteran-tier (or higher) is required to view this league's trades. The
@@ -180,16 +186,101 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
     }
   })
 
-  // ── Bucket into This Week / Earlier / Verdict ─────────────────────────
-  // Time-based, not NFL-week-based: Sleeper leaves `week` null on offseason /
-  // draft-pick trades, so an NFL-week filter would dump everything into the
-  // Earlier bucket. A simple "last 7 days" cutoff handles in-season and
-  // offseason equally well.
-  const thisWeekCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
-  const verdict = allTrades.filter((t) => tradesWithRecentVerdict.has(t.id))
-  const nonVerdict = allTrades.filter((t) => !tradesWithRecentVerdict.has(t.id))
-  const this_week = nonVerdict.filter((t) => Date.parse(t.executed_at) >= thisWeekCutoff)
-  const earlier = nonVerdict.filter((t) => Date.parse(t.executed_at) < thisWeekCutoff)
+  // ── Bucket for tabs ──────────────────────────────────────────────────
+  // Time-based ("last 7 days") so it works equally for in-season and
+  // offseason trades. Three tabs, four buckets:
+  //   Current tab → current_trades + current_verdicts
+  //   Past tab    → past_trades
+  //   Verdicts tab → all_verdicts (every revisited trade, all time)
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
 
-  return { status: 'ok', league_id: league.id, this_week, earlier, verdict }
+  const current_trades = allTrades.filter(
+    (t) => Date.parse(t.executed_at) >= sevenDaysAgo,
+  )
+  const current_verdicts = allTrades.filter((t) => tradesWithRecentVerdict.has(t.id))
+  const past_trades = allTrades.filter(
+    (t) => Date.parse(t.executed_at) < sevenDaysAgo,
+  )
+
+  // Need to re-query trades that have a revisit_summary to populate the
+  // all-verdicts tab — the MAX_TRADES limit above could cut off older
+  // revisited trades. Pull them ordered by revisited_at desc, capped at
+  // MAX_TRADES of their own.
+  const { data: verdictRows } = await db
+    .from('trades')
+    .select('id, platform, week, executed_at, ai_summary, revisit_summary, revisited_at, seasons!inner(year)')
+    .eq('league_id', league.id)
+    .eq('status', 'completed')
+    .not('revisit_summary', 'is', null)
+    .order('revisited_at', { ascending: false })
+    .limit(MAX_TRADES)
+
+  // For verdicts, we may have trades not in `tradeRows`. Pull their sides
+  // separately if needed.
+  const haveSidesFor = new Set(tradeRows.map((t) => t.id as string))
+  const missingVerdictIds = (verdictRows ?? [])
+    .map((v) => v.id as string)
+    .filter((id) => !haveSidesFor.has(id))
+
+  if (missingVerdictIds.length > 0) {
+    const { data: extraSides } = await db
+      .from('trade_sides')
+      .select('id, trade_id, assets, manager_id, managers!inner(id, display_name, team_name, avatar_url)')
+      .in('trade_id', missingVerdictIds)
+    const extraSideIds = (extraSides ?? []).map((s) => s.id as string)
+    const { data: extraGrades } = extraSideIds.length > 0
+      ? await db
+          .from('trade_grades')
+          .select('trade_side_id, grade, revisit_grade')
+          .in('trade_side_id', extraSideIds)
+      : { data: [] }
+    for (const g of extraGrades ?? []) {
+      gradeBySide.set(g.trade_side_id, {
+        grade: g.grade ?? null,
+        revisit_grade: g.revisit_grade ?? null,
+      })
+    }
+    for (const s of extraSides ?? []) {
+      const grade = gradeBySide.get(s.id) ?? { grade: null, revisit_grade: null }
+      const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
+      const side: TradeSidePublic = {
+        side_id: s.id,
+        manager: {
+          id: mgr?.id ?? s.manager_id,
+          display_name: mgr?.display_name ?? 'Unknown',
+          team_name: mgr?.team_name ?? null,
+          avatar_url: mgr?.avatar_url ?? null,
+        },
+        assets: (s.assets as TradeAsset[]) ?? [],
+        grade: grade.grade,
+        revisit_grade: grade.revisit_grade,
+      }
+      const list = sidesByTrade.get(s.trade_id) ?? []
+      list.push(side)
+      sidesByTrade.set(s.trade_id, list)
+    }
+  }
+
+  const all_verdicts: TradePublic[] = (verdictRows ?? []).map((t) => {
+    const season = Array.isArray(t.seasons) ? t.seasons[0] : t.seasons
+    return {
+      id: t.id,
+      platform: t.platform,
+      season_year: season?.year ?? 0,
+      week: t.week,
+      executed_at: t.executed_at,
+      ai_summary: (t as { ai_summary?: string | null }).ai_summary ?? null,
+      revisit_summary: (t as { revisit_summary?: string | null }).revisit_summary ?? null,
+      sides: sidesByTrade.get(t.id) ?? [],
+    }
+  })
+
+  return {
+    status: 'ok',
+    league_id: league.id,
+    current_trades,
+    current_verdicts,
+    past_trades,
+    all_verdicts,
+  }
 }

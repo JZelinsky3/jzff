@@ -533,14 +533,15 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• "Joey won the trade because he got a better player. He gave up two picks but added a top RB. The other side gained some picks but lost their best player."',
       '',
       'USING THE VALUE DATA:',
-      '• Each player has a sleeper_rank (overall) and pos_rank (within position). Lower = more valuable. Anchor your grade to actual rank gaps:',
-      '  - Combined-side rank totals within ~15% of each other → B / B+ both sides (or A- / A- if both filled real needs).',
-      '  - 15-35% rank gap → A-/B or A/B-.',
-      '  - 35%+ rank gap → A/C+ or higher swing.',
-      '  - Pos_rank < 24 = startable; < 12 = top-tier at the position; > 48 = depth/handcuff.',
-      '• When BOTH sides got a top-24 positional player they can use, both can earn A-range grades — the trade can be A/A if both sides hit on real needs. Mutual wins are real.',
-      '• Use age + years_exp for dynasty: under-25 with good rank = ascending; over-29 = declining. Age modifies the rank-based grade for dynasty/keeper.',
-      '• Picks have no provided rank — treat 1st rounders as ~top-50 positional value, 2nds as ~top-100, 3rds as ~top-150, 4th+ as depth. Future-year picks (2027+) are worth ~70% of next-year picks.',
+      '• Each player line shows the player\'s positional rank (e.g. "RB3" = the 3rd-best RB), age, and injury status when known. Position rank is your primary anchor — a player with rank "RB12" is a strong starter; "RB48" is depth.',
+      '• Tier reference: pos_rank 1-12 = elite starter at the position; 13-24 = solid starter; 25-48 = bye-week filler / handcuff; 49+ = deep depth / waiver.',
+      '• Calibrate the grade gap to the rank gap:',
+      '  - Both sides got comparable tiers (e.g. RB10 traded for RB14) → roughly even, both B+/B (or A-/A- if both filled real needs).',
+      '  - One tier apart (RB8 vs RB22) → clear winner, A-/B range.',
+      '  - Two+ tiers apart (RB4 vs RB28) → big swing, A/C+ or larger.',
+      '• When BOTH sides acquired top-24 positional starters they can use, BOTH can earn A-range grades. A/A is correct when both teams hit a real need without overpaying. Mutual wins are real.',
+      '• Age matters more for dynasty/keeper than redraft. For dynasty: under-25 = ascending; 29+ = declining. Bump grades accordingly. For redraft: only current-year production matters.',
+      '• Picks have no rank data — treat next-year 1st rounders as ~top-50 positional value, 2nds as ~top-100, 3rds as ~top-150, 4th+ as depth. Future-year picks (2027+) are worth ~70% of next-year picks.',
       '',
       'OUTPUT: strict JSON only — no prose before/after, no markdown fences. Shape:',
       '{ "summary": "<grading rationale, 3-4 sentences>", "sides": [{ "side_id": "<uuid>", "grade": "<letter>" }, ...] }',
@@ -685,10 +686,12 @@ function formatAsset(a: Record<string, unknown>): string {
   return `unknown asset (${kind})`
 }
 
-// Like formatAsset but enriches players with their Sleeper rank, position
-// rank, age, years of experience, and injury status when we have a row in
-// player_values for them. Falls back to the plain format for players we
-// haven't refreshed yet (cron hasn't run, or deep waiver-wire players).
+// Like formatAsset but inlines the player's positional rank, age, and
+// injury status in plain prose so the prompt reads naturally. Overall
+// sleeper_rank is deliberately omitted — positional rank is what matters
+// for value comparisons within a trade. Falls back to the plain format
+// for players we don't have value data on yet (cron hasn't run, or deep
+// waiver-wire players).
 function formatAssetWithValue(
   a: Record<string, unknown>,
   values: Map<string, PlayerValue>,
@@ -701,15 +704,14 @@ function formatAssetWithValue(
   const team = (a.team as string) || '?'
   const pid = (a.player_id as string) ?? ''
   const v = pid ? values.get(pid) : null
-  if (!v) return `${pos} ${name} (${team}) [no value data]`
+  if (!v) return `${name} — ${pos} on ${team} (no rank data)`
 
-  const fragments: string[] = []
-  if (v.overall_rank != null) fragments.push(`sleeper_rank=${v.overall_rank}`)
-  if (v.position_rank != null) fragments.push(`pos_rank=${pos}${v.position_rank}`)
-  if (v.age != null) fragments.push(`age=${v.age}`)
-  if (v.years_exp != null) fragments.push(`yrs=${v.years_exp}`)
-  if (v.injury_status) fragments.push(`status=${v.injury_status}`)
-  return `${pos} ${name} (${team}) [${fragments.join(', ')}]`
+  const traits: string[] = []
+  if (v.position_rank != null) traits.push(`${pos}${v.position_rank}`)
+  if (v.age != null) traits.push(`age ${v.age}`)
+  if (v.injury_status && v.injury_status !== 'Healthy') traits.push(`injury: ${v.injury_status}`)
+  const tail = traits.length ? `, ${traits.join(', ')}` : ''
+  return `${name} — ${pos} on ${team}${tail}`
 }
 
 function ordinal(n: number): string {
