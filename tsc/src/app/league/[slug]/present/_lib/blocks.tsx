@@ -344,11 +344,13 @@ function rankDisplay(rank: number): ReactNode {
   return rank
 }
 
-// Picks a density class based on row count. Tables with 9+ rows get tighter
-// padding so a 12-14 team standings table fits on one slide without scrolling.
+// Picks a density class based on row count. The presenter never scrolls, so
+// the more rows the tighter the layout — these thresholds were tuned so a
+// declared top-N actually shows N rows on a 1080p / 720-tall viewport.
 function tableDensityClass(rowCount: number): string {
-  if (rowCount >= 14) return 'is-very-dense'
-  if (rowCount >= 9) return 'is-dense'
+  if (rowCount >= 13) return 'is-ultra-dense'
+  if (rowCount >= 9) return 'is-very-dense'
+  if (rowCount >= 6) return 'is-dense'
   return ''
 }
 
@@ -415,8 +417,9 @@ const finalStandingsBlock: BlockDef = {
       return <MissingData reason={`No standings recorded for ${season.year}.`} />
     }
     const champion = allRows.find((r) => season.championManagerId === r.managerId) ?? null
+    const tight = rows.length >= 9
     return (
-      <div className="present-slide present-slide--table">
+      <div className={`present-slide present-slide--table ${tight ? 'is-tight' : ''}`}>
         <div className="present-eyebrow">{season.year} season</div>
         <h2 className="present-table-title">{values.title || 'Final standings'}</h2>
         {champion ? (
@@ -483,18 +486,22 @@ const allTimeWinsBlock: BlockDef = {
     const rows = profileTotals(data).sort((a, b) => b.wins - a.wins).slice(0, limit)
     if (rows.length === 0) return <MissingData reason="No standings rows in this league yet." />
     const leader = rows[0]
+    const tiedAtTop = rows.length >= 2 && rows[1].wins === leader.wins
+    const tight = rows.length >= 9
     return (
-      <div className="present-slide present-slide--table">
+      <div className={`present-slide present-slide--table ${tight ? 'is-tight' : ''}`}>
         <div className="present-eyebrow">{scopeLabel || 'All time'}</div>
         <h2 className="present-table-title">{values.title || 'All-time wins'}</h2>
-        <LeaderSpotlight
-          name={leader.canonicalName}
-          avatarUrl={leader.avatarUrl}
-          value={<CountUp value={leader.wins} />}
-          valueLabel={leader.wins === 1 ? 'career win' : 'career wins'}
-          meta={`across ${leader.seasons} season${leader.seasons === 1 ? '' : 's'}`}
-          badgeLabel="Leader"
-        />
+        {tiedAtTop ? null : (
+          <LeaderSpotlight
+            name={leader.canonicalName}
+            avatarUrl={leader.avatarUrl}
+            value={<CountUp value={leader.wins} />}
+            valueLabel={leader.wins === 1 ? 'career win' : 'career wins'}
+            meta={`across ${leader.seasons} season${leader.seasons === 1 ? '' : 's'}`}
+            badgeLabel="Leader"
+          />
+        )}
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
@@ -542,18 +549,22 @@ const allTimePointsBlock: BlockDef = {
     const limit = Math.max(3, Math.min(30, parseInt(values.limit || '10', 10) || 10))
     const rows = profileTotals(data).sort((a, b) => b.pointsFor - a.pointsFor).slice(0, limit)
     if (rows.length === 0) return <MissingData reason="No standings rows in this league yet." />
+    const tiedAtTop = rows.length >= 2 && Math.abs(rows[0].pointsFor - rows[1].pointsFor) < 0.05
+    const tight = rows.length >= 9
     return (
-      <div className="present-slide present-slide--table">
+      <div className={`present-slide present-slide--table ${tight ? 'is-tight' : ''}`}>
         <div className="present-eyebrow">{scopeLabel || 'All time'}</div>
         <h2 className="present-table-title">{values.title || 'All-time points-for'}</h2>
-        <LeaderSpotlight
-          name={rows[0].canonicalName}
-          avatarUrl={rows[0].avatarUrl}
-          value={<CountUp value={rows[0].pointsFor} decimals={1} />}
-          valueLabel="career points"
-          meta={rows[0].seasons > 0 ? `${(rows[0].pointsFor / rows[0].seasons).toFixed(1)} avg per season` : undefined}
-          badgeLabel="Top scorer"
-        />
+        {tiedAtTop ? null : (
+          <LeaderSpotlight
+            name={rows[0].canonicalName}
+            avatarUrl={rows[0].avatarUrl}
+            value={<CountUp value={rows[0].pointsFor} decimals={1} />}
+            valueLabel="career points"
+            meta={rows[0].seasons > 0 ? `${(rows[0].pointsFor / rows[0].seasons).toFixed(1)} avg per season` : undefined}
+            badgeLabel="Top scorer"
+          />
+        )}
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>
@@ -599,8 +610,9 @@ const championRollBlock: BlockDef = {
     if (!data) return <MissingData reason="Sync your league first." />
     const rows = data.seasons.slice().sort((a, b) => b.year - a.year)
     if (rows.length === 0) return <MissingData reason="No seasons recorded yet." />
+    const tight = rows.length >= 9
     return (
-      <div className="present-slide present-slide--table">
+      <div className={`present-slide present-slide--table ${tight ? 'is-tight' : ''}`}>
         <div className="present-eyebrow">Banner room</div>
         <h2 className="present-table-title">{values.title || 'Champions'}</h2>
         <div className="present-champ-list">
@@ -641,19 +653,24 @@ const playoffApsBlock: BlockDef = {
       .sort((a, b) => b.championships - a.championships || b.wins - a.wins)
       .slice(0, limit)
     if (rows.length === 0) return <MissingData reason="No champions on file yet." />
+    const tight = rows.length >= 9
     return (
-      <div className="present-slide present-slide--table">
+      <div className={`present-slide present-slide--table ${tight ? 'is-tight' : ''}`}>
         <div className="present-eyebrow">{scopeLabel || 'All time'}</div>
         <h2 className="present-table-title">{values.title || 'Most championships'}</h2>
-        <LeaderSpotlight
-          name={rows[0].canonicalName}
-          avatarUrl={rows[0].avatarUrl}
-          value={<CountUp value={rows[0].championships} />}
-          valueLabel={rows[0].championships === 1 ? 'title' : 'titles'}
-          meta={`across ${rows[0].seasons} season${rows[0].seasons === 1 ? '' : 's'}`}
-          badge="🏆"
-          badgeLabel="Most rings"
-        />
+        {/* Skip the spotlight when there's a tie at #1 — calling out one
+            person as "Most rings" reads wrong when several share the title. */}
+        {rows.length >= 2 && rows[1].championships === rows[0].championships ? null : (
+          <LeaderSpotlight
+            name={rows[0].canonicalName}
+            avatarUrl={rows[0].avatarUrl}
+            value={<CountUp value={rows[0].championships} />}
+            valueLabel={rows[0].championships === 1 ? 'title' : 'titles'}
+            meta={`across ${rows[0].seasons} season${rows[0].seasons === 1 ? '' : 's'}`}
+            badge="🏆"
+            badgeLabel="Most rings"
+          />
+        )}
         <table className={`present-table ${tableDensityClass(rows.length)}`}>
           <thead>
             <tr>

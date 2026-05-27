@@ -1251,17 +1251,60 @@
 }
 .present-table-manager .present-avatar { box-shadow: 0 0 0 1px var(--p-bg), 0 0 0 2px var(--p-accent-soft); }
 
-/* Compact table mode — kicks in when a deck has many standings rows so all
-   of them fit on one slide without scrolling. The block JSX adds `.is-dense`
-   for tables with more than 10 rows. */
+/* Compact table modes — the presenter never scrolls so the more rows there
+   are, the tighter the layout. Thresholds + sizes are tuned so a declared
+   top-N actually fits N rows on a 1080p viewport. */
 .present-table.is-dense { font-size: clamp(.85rem, 1.3vw, 1.05rem); }
-.present-table.is-dense th { padding: .55rem .75rem; }
-.present-table.is-dense td { padding: .45rem .75rem; }
+.present-table.is-dense th { padding: .45rem .75rem; }
+.present-table.is-dense td { padding: .38rem .75rem; }
 .present-table.is-dense .present-avatar { width: 28px !important; height: 28px !important; }
-.present-table.is-very-dense { font-size: clamp(.75rem, 1.15vw, .95rem); }
-.present-table.is-very-dense th { padding: .4rem .65rem; letter-spacing: .15em; }
-.present-table.is-very-dense td { padding: .35rem .65rem; }
+
+.present-table.is-very-dense { font-size: clamp(.8rem, 1.15vw, .95rem); }
+.present-table.is-very-dense th { padding: .3rem .65rem; letter-spacing: .15em; }
+.present-table.is-very-dense td { padding: .25rem .65rem; }
 .present-table.is-very-dense .present-avatar { width: 24px !important; height: 24px !important; }
+.present-table.is-very-dense .present-medal { font-size: 1em; }
+
+.present-table.is-ultra-dense { font-size: clamp(.72rem, 1vw, .85rem); }
+.present-table.is-ultra-dense th { padding: .2rem .5rem; letter-spacing: .1em; }
+.present-table.is-ultra-dense td { padding: .18rem .55rem; }
+.present-table.is-ultra-dense .present-avatar { width: 20px !important; height: 20px !important; }
+.present-table.is-ultra-dense .present-medal { font-size: .9em; }
+.present-table.is-ultra-dense .present-table-rank { width: 2rem; }
+
+/* `.is-tight` is applied on the whole .present-slide--table when a leader-
+   board has 9+ rows. Shrinks the title + spotlight so the table itself
+   gets the breathing room it needs to actually display all rows. */
+.present-slide--table.is-tight {
+    gap: .85rem;
+}
+.present-slide--table.is-tight .present-table-title {
+    font-size: clamp(1.6rem, 3.8vw, 2.5rem);
+    margin-bottom: .25rem;
+}
+.present-slide--table.is-tight .present-leader-spotlight {
+    padding: .75rem 1.25rem;
+    gap: 1rem;
+}
+.present-slide--table.is-tight .present-leader-spotlight .present-avatar {
+    width: 64px !important;
+    height: 64px !important;
+}
+.present-slide--table.is-tight .present-leader-spotlight-name {
+    font-size: clamp(1.2rem, 2.4vw, 1.75rem);
+}
+.present-slide--table.is-tight .present-leader-spotlight-num {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+.present-slide--table.is-tight .present-leader-spotlight-tag {
+    top: -.65rem;
+    padding: .25rem .55rem;
+    font-size: .58rem;
+}
+.present-slide--table.is-tight .present-leader-spotlight-meta {
+    font-size: .65rem;
+}
+.present-slide--table.is-tight .present-eyebrow { margin-bottom: 0; }
 
 /* Champion roll — magazine-style stacked rows, golden year column */
 .present-champ-list {
