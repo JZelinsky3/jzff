@@ -28,7 +28,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
       const res = await fetch(`/api/leagues/${leagueId}/grade-trades`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 10, force }),
+        body: JSON.stringify({ limit: 5, force }),
       })
       const body = await res.json()
       if (!res.ok) {
@@ -78,7 +78,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
         headers: { 'Content-Type': 'application/json' },
         // eligibleOnly=false → revisit any graded trade regardless of age.
         // Lets you see the Verdict section populate without waiting.
-        body: JSON.stringify({ limit: 10, eligibleOnly: false }),
+        body: JSON.stringify({ limit: 5, eligibleOnly: false }),
       })
       const body = await res.json()
       if (!res.ok) {
@@ -102,13 +102,13 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
     <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.5rem', maxWidth: '100%' }}>
       <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <button onClick={() => grade(false)} disabled={busy} className="dc-btn">
-          {busy && lastAction === 'grade' ? 'Grading…' : 'Grade next 10 →'}
+          {busy && lastAction === 'grade' ? 'Grading…' : 'Grade next 5 →'}
         </button>
         <button onClick={() => grade(true)} disabled={busy} className="dc-btn-ghost" title="Re-grade trades that already have grades (overwrites)">
-          {busy && lastAction === 'regrade' ? 'Re-grading…' : 'Re-grade next 10'}
+          {busy && lastAction === 'regrade' ? 'Re-grading…' : 'Re-grade next 5'}
         </button>
         <button onClick={verdict} disabled={busy} className="dc-btn-ghost" title="Run the 4-week verdict on graded trades (test mode — no waiting)">
-          {busy && lastAction === 'verdict' ? 'Revisiting…' : 'Verdict next 10'}
+          {busy && lastAction === 'verdict' ? 'Revisiting…' : 'Verdict next 5'}
         </button>
         <button onClick={refreshValues} disabled={busy} className="dc-btn-ghost" title="Pull the latest Sleeper player values into the grader. The weekly cron does this automatically — this button is for one-off testing.">
           {busy && lastAction === 'refresh' ? 'Refreshing…' : 'Refresh values'}
