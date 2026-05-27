@@ -45,10 +45,10 @@ const PAGES: Page[] = [
     chapter: 'Ch. V · Rivalries',
     pageNum: 'p. 184',
     title: ['Slingers', '↔ Dad Bod.'],
-    lead: 'Sixteen meetings. Eight to seven. One tie. The book is honest about it.',
+    lead: 'Sixteen meetings. Nine to seven. The book records every one.',
     body:
       'Four playoff meetings split evenly. Three different decades of football — well, three different commissioners, anyway. The longest game went to a Monday-night fumble at the goal line, and neither manager has spoken of it since.',
-    feature: { label: 'All-time', value: '8 — 7 — 1 · 4 playoff meetings' },
+    feature: { label: 'All-time', value: '9 — 7 · 4 playoff meetings' },
     seal: 'Rivalry',
   },
 ]

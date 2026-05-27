@@ -63,12 +63,12 @@ const PAGES: Page[] = [
     body: (
       <div className="cp-roll">
         {[
-          ['MMXXIV', 'Tendency', 'd. Slingers · 142.6–142.1'],
-          ['MMXXIII', 'Dad Bod Dynasty', 'd. Tendency · 138.0–119.4'],
-          ['MMXXII', 'Slingers', 'd. Bombers · 156.3–122.0'],
-          ['MMXXI', 'Slingers', 'd. Tomlinmen · 130.4–128.1'],
-          ['MMXX', 'Bombers', 'd. Slingers · 148.8–146.9'],
-          ['MMXIX', 'Tomlinmen', 'd. Bench Mob · 122.5–117.0'],
+          ['2024', 'Tendency',        '142.6–142.1 · Slingers'],
+          ['2023', 'Dad Bod Dynasty', '138.0–119.4 · Tendency'],
+          ['2022', 'Slingers',        '156.3–122.0 · Bombers'],
+          ['2021', 'Slingers',        '130.4–128.1 · Tomlinmen'],
+          ['2020', 'Bombers',         '148.8–146.9 · Slingers'],
+          ['2019', 'Tomlinmen',       '122.5–117.0 · Bench Mob'],
         ].map(([yr, ch, fin]) => (
           <div key={yr} className="cp-roll-row">
             <span className="cp-roll-yr">{yr}</span>
@@ -132,7 +132,7 @@ const PAGES: Page[] = [
             <div className="cp-dossier-name">
               Jake K. <em>· PAM Slingers</em>
             </div>
-            <div className="cp-dossier-tag">Joined MMXVIII · Seven seasons</div>
+            <div className="cp-dossier-tag">Joined 2018 · Seven seasons</div>
           </div>
         </div>
         <div className="cp-dossier-stats">
@@ -166,7 +166,7 @@ const PAGES: Page[] = [
         <div className="cp-rivalry-vs">
           <div className="cp-rivalry-side">
             <div className="cp-rivalry-name">Slingers</div>
-            <div className="cp-rivalry-rec">8</div>
+            <div className="cp-rivalry-rec">9</div>
           </div>
           <div className="cp-rivalry-dash">—</div>
           <div className="cp-rivalry-side">
@@ -174,13 +174,13 @@ const PAGES: Page[] = [
             <div className="cp-rivalry-name">Dad Bod</div>
           </div>
         </div>
-        <div className="cp-rivalry-meta">16 meetings · 1 tie · since MMXVIII</div>
+        <div className="cp-rivalry-meta">16 meetings · since 2018</div>
         <div className="cp-rivalry-list">
           {[
-            ['MMXXIV · Wk. 14', 'Slingers 132.4 · 128.7'],
-            ['MMXXIV · Wk. 03', 'Dad Bod 110.0 · 108.2'],
-            ['MMXXIII · QF', 'Dad Bod 121.8 · 118.5'],
-            ['MMXXIII · Wk. 11', 'Slingers 144.3 · 99.1'],
+            ['2024 · Wk. 14', 'Slingers 132.4 · 128.7'],
+            ['2024 · Wk. 03', 'Dad Bod 110.0 · 108.2'],
+            ['2023 · QF',     'Dad Bod 121.8 · 118.5'],
+            ['2023 · Wk. 11', 'Slingers 144.3 · 99.1'],
           ].map(([when, score]) => (
             <div key={when} className="cp-rivalry-line">
               <span>{when}</span>
