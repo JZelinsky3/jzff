@@ -25,6 +25,9 @@ export const maxDuration = 300
 const Body = z.object({
   limit: z.number().int().min(1).max(50).optional(),
   seasonYear: z.number().int().min(1900).max(2100).optional(),
+  // force=true re-grades trades that already have grades (overwrites). Used
+  // when the prompt has been tuned and the archive needs to be refreshed.
+  force: z.boolean().optional(),
 })
 
 export async function POST(
@@ -67,6 +70,7 @@ export async function POST(
       leagueId: id,
       limit: body.limit ?? 25,
       seasonYear: body.seasonYear ?? null,
+      force: body.force ?? false,
     })
     revalidateTag(`league-${id}`, 'max')
     devCacheBust(id)

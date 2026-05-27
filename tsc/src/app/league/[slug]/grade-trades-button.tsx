@@ -3,9 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-// Backfill button for the Trade Grader. Calls the admin endpoint in batches
-// of 10 so a single click doesn't blow the Vercel timeout on a long backfill.
-// On success, shows the latest run's scanned/graded counts + any warnings.
+// Two-button cluster for the Trade Grader.
+//   • Grade next 10  → grades ungraded trades only (skips already-graded)
+//   • Re-grade next 10 → force=true, overwrites existing grades (use after
+//                        the prompt has been tuned)
+// Calls the admin endpoint in batches of 10 so a single click doesn't blow
+// the Vercel timeout on a long backfill.
 
 export function GradeTradesButton({ leagueId }: { leagueId: string }) {
   const router = useRouter()
@@ -13,15 +16,17 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
   const [msg, setMsg] = useState<string | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
   const [showWarnings, setShowWarnings] = useState(false)
+  const [lastAction, setLastAction] = useState<'grade' | 'regrade' | null>(null)
 
-  async function grade() {
+  async function grade(force: boolean) {
     setState('grading')
     setMsg(null); setWarnings([])
+    setLastAction(force ? 'regrade' : 'grade')
     try {
       const res = await fetch(`/api/leagues/${leagueId}/grade-trades`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 10 }),
+        body: JSON.stringify({ limit: 10, force }),
       })
       const body = await res.json()
       if (!res.ok) {
@@ -39,11 +44,18 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
     }
   }
 
+  const busy = state === 'grading'
+
   return (
     <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.5rem', maxWidth: '100%' }}>
-      <button onClick={grade} disabled={state === 'grading'} className="dc-btn">
-        {state === 'grading' ? 'Grading…' : state === 'done' ? 'Grade more →' : 'Grade next 10 trades →'}
-      </button>
+      <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <button onClick={() => grade(false)} disabled={busy} className="dc-btn">
+          {busy && lastAction === 'grade' ? 'Grading…' : 'Grade next 10 →'}
+        </button>
+        <button onClick={() => grade(true)} disabled={busy} className="dc-btn-ghost" title="Re-grade trades that already have grades (overwrites)">
+          {busy && lastAction === 'regrade' ? 'Re-grading…' : 'Re-grade next 10'}
+        </button>
+      </div>
       {msg && (
         <p className={state === 'error' ? 'dc-form-error' : 'dc-form-ok'} style={{ margin: 0 }}>
           {msg}

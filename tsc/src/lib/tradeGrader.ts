@@ -93,8 +93,11 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
         { role: 'system', content: prompt.system },
         { role: 'user', content: prompt.user },
       ],
-      temperature: 0.4,
-      maxTokens: 600,
+      // Slightly cooler temperature than the v1 prompt — calibration is now
+      // explicit, so less creativity is better. maxTokens raised to fit the
+      // longer 2-3 sentence blurbs across all sides.
+      temperature: 0.35,
+      maxTokens: 1500,
     })
     parsed = result.data
   } catch (e) {
@@ -120,7 +123,10 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       warnings.push(`trade ${tradeId}: invalid grade "${g.grade}" for side ${g.side_id}`)
       continue
     }
-    const blurb = (g.blurb ?? '').toString().trim().slice(0, 600)
+    // Cap at a length that comfortably fits 2–3 sentences (500–700 chars
+    // typical) with a little headroom. Used to be 600 — fine for the old
+    // one-sentence blurb; longer blurbs need more room.
+    const blurb = (g.blurb ?? '').toString().trim().slice(0, 1200)
     const { error: upErr } = await db.from('trade_grades').upsert(
       {
         trade_side_id: g.side_id,
@@ -144,6 +150,10 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
 // Grade up to `limit` ungraded trades for a league, newest first. Returns
 // aggregate counts + warnings. Caller is responsible for permission checks.
 //
+// `force` re-grades trades that already have grades (overwrites existing rows
+// via upsert). Useful when you've tuned the prompt and want to refresh the
+// archive without wiping the table by hand.
+//
 // We grade serially (not in parallel) for two reasons:
 //   1. Groq's free tier rate-limits per second; bursts cause 429s.
 //   2. The UI shows a single counter, so sequential is easier to reason about.
@@ -151,6 +161,7 @@ export async function gradeUngradedForLeague(args: {
   leagueId: string
   limit: number
   seasonYear?: number | null
+  force?: boolean
 }): Promise<{ scanned: number; graded: number; warnings: string[] }> {
   const db = createAdminClient()
   const warnings: string[] = []
@@ -174,23 +185,30 @@ export async function gradeUngradedForLeague(args: {
     return { scanned: 0, graded: 0, warnings }
   }
 
-  // Filter to trades that have any ungraded sides (i.e. trade_sides without
-  // a matching trade_grades row). One round-trip per candidate keeps the
-  // query simple; could be batched later if needed.
+  // Pick which trades to grade. In force mode, take the first `limit` trades
+  // by recency (re-grade everything). Otherwise filter to trades that have at
+  // least one ungraded side.
   const ungraded: string[] = []
-  for (const t of candidateTrades) {
-    if (ungraded.length >= limit_cap(args.limit)) break
-    const { data: sides } = await db
-      .from('trade_sides')
-      .select('id, trade_grades(trade_side_id)')
-      .eq('trade_id', t.id)
-    if (!sides) continue
-    const anyMissing = sides.some((s) => {
-      const grades = s.trade_grades as unknown
-      const arr = Array.isArray(grades) ? grades : grades ? [grades] : []
-      return arr.length === 0
-    })
-    if (anyMissing) ungraded.push(t.id as string)
+  if (args.force) {
+    for (const t of candidateTrades) {
+      if (ungraded.length >= limit_cap(args.limit)) break
+      ungraded.push(t.id as string)
+    }
+  } else {
+    for (const t of candidateTrades) {
+      if (ungraded.length >= limit_cap(args.limit)) break
+      const { data: sides } = await db
+        .from('trade_sides')
+        .select('id, trade_grades(trade_side_id)')
+        .eq('trade_id', t.id)
+      if (!sides) continue
+      const anyMissing = sides.some((s) => {
+        const grades = s.trade_grades as unknown
+        const arr = Array.isArray(grades) ? grades : grades ? [grades] : []
+        return arr.length === 0
+      })
+      if (anyMissing) ungraded.push(t.id as string)
+    }
   }
 
   // Grade each ungraded trade.
@@ -225,16 +243,32 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       ? 'This is a KEEPER league — players retained from year to year. Weight both rest-of-season production AND keeper value (cheap young talent is more valuable).'
       : 'This is a REDRAFT league — only current-season value matters. Players reset every year. Draft picks (if present) are for next year only.'
 
+  // Calibration matters: without explicit anchors the model tends to grade
+  // every trade as a blowout (A on one side, D/F on the other). Real fantasy
+  // trades cluster in the B range because managers don't make trades they
+  // think are obviously bad. Give the model a target distribution.
   const system =
     [
-      'You are an expert fantasy football trade analyst.',
-      'You will be given a completed trade between two or more managers.',
-      'Grade each side from A+ to F using these grades only: A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F.',
-      'For each side, write a single concise blurb (under 220 characters) explaining the grade. Focus on the strongest reason for the grade — do not summarize the entire trade.',
+      'You are an experienced fantasy football trade analyst writing for a league archive.',
       typeNote,
-      'Be willing to give strong grades when warranted. Avoid hedging with mid-range B/C grades for everything. Most trades have a clear winner.',
-      'Output STRICT JSON only — no prose before or after, no markdown fences.',
-    ].join(' ')
+      '',
+      'GRADING SCALE (use only these grades): A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F.',
+      '',
+      'GRADE CALIBRATION — read carefully:',
+      '• Most trades belong in the B range (B-, B, B+). Managers rarely accept obviously bad deals; both sides usually have a real reason for trading.',
+      '• Use A- / A / A+ ONLY when one side clearly stole significant value — e.g. acquiring a top-12 player at their position for a backup, getting a 1st-round dynasty pick for an aging player, or robbing on positional scarcity.',
+      '• Use D / D- / F ONLY when one side dramatically overpaid or got pennies on the dollar relative to player tiers.',
+      '• Grades on opposing sides do NOT need to mirror. A trade can be A- / B (one side won clearly, the other still addressed a need fairly). A trade can also be B / B (both sides did fine). Avoid the reflex of pairing every A with an F.',
+      '• When a trade is genuinely balanced — both sides addressed a need, value is comparable — give both sides B or B+. That is a correct and useful grade, not a hedge.',
+      '',
+      'BLURBS — for each side, write 2 to 3 sentences (roughly 200–400 characters total). The blurb must:',
+      '1. Name the most important player or pick the side received and why it matters for THEM specifically (positional need, scarcity, dynasty youth, etc.).',
+      '2. Name the cost — what they gave up and whether the price was fair.',
+      '3. Optional: one sentence on context that influenced the grade (e.g. "the league is RB-thin", "this side was already deep at WR").',
+      'Avoid generic praise ("solid move"), filler ("great trade for both"), or restating who-got-who without analysis.',
+      '',
+      'OUTPUT: strict JSON only — no prose before/after, no markdown fences.',
+    ].join('\n')
 
   const sidesText = args.sides
     .map((s, idx) => {
