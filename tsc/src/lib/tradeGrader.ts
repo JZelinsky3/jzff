@@ -17,8 +17,74 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { groqChatJson, GroqError } from '@/lib/groq'
 import { getSleeperValuesForPlayerIds, type PlayerValue } from '@/lib/playerValues'
+import { sleeper } from '@/lib/platforms/sleeper'
 
 const MODEL = 'llama-3.3-70b-versatile'
+
+// Build a one-line positional depth summary for each side's current roster.
+// Live-fetches from Sleeper (no storage) so we don't need a new table; the
+// summary is only valid for the moment of grading. For historical trades
+// it reflects today's roster rather than the at-trade roster — close enough
+// for end-of-season trades, less reliable for mid-season ones. We disclose
+// this caveat in the prompt.
+//
+// Returns a Map<manager_id, summary_string>. Empty map if the league isn't
+// Sleeper or the roster fetch fails.
+async function loadSleeperRosterSummaries(args: {
+  sleeperLeagueId: string | null
+  sides: Array<{ manager_id: string; manager_external_id: string | null }>
+  values: Map<string, PlayerValue>
+}): Promise<Map<string, string>> {
+  const out = new Map<string, string>()
+  if (!args.sleeperLeagueId) return out
+  let rosters
+  try {
+    rosters = await sleeper.rosters(args.sleeperLeagueId)
+  } catch {
+    return out
+  }
+  if (!rosters) return out
+
+  // Positions to surface in the depth summary. K and DEF rarely matter for
+  // trade analysis so we drop them to keep the prompt tight.
+  const POSITIONS = ['QB', 'RB', 'WR', 'TE'] as const
+
+  for (const side of args.sides) {
+    if (!side.manager_external_id) continue
+    const myRoster = rosters.find((r) => r.owner_id === side.manager_external_id)
+    if (!myRoster) continue
+    const players = (myRoster as { players?: string[] | null }).players ?? []
+    if (players.length === 0) continue
+
+    const byPos = new Map<string, Array<{ rank: number; name: string }>>()
+    for (const pid of players) {
+      const v = args.values.get(pid)
+      if (!v || !v.position) continue
+      const arr = byPos.get(v.position) ?? []
+      arr.push({
+        rank: v.position_rank ?? 999,
+        name: v.full_name ?? pid,
+      })
+      byPos.set(v.position, arr)
+    }
+
+    const fragments: string[] = []
+    for (const pos of POSITIONS) {
+      const arr = byPos.get(pos) ?? []
+      arr.sort((a, b) => a.rank - b.rank)
+      if (arr.length === 0) {
+        fragments.push(`${pos}: none`)
+        continue
+      }
+      const top = arr.slice(0, 3).map((p) => `${p.name} (${pos}${p.rank})`)
+      const more = arr.length > 3 ? ` +${arr.length - 3}` : ''
+      fragments.push(`${pos}(${arr.length}): ${top.join(', ')}${more}`)
+    }
+    out.set(side.manager_id, fragments.join(' | '))
+  }
+
+  return out
+}
 
 // Valid letter grades. Used both in the prompt (so the model knows what to
 // return) and at parse time to reject hallucinated grades like "B--".
@@ -38,10 +104,13 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   const db = createAdminClient()
   const warnings: string[] = []
 
-  // 1. Load trade + sides + manager display + league type.
+  // 1. Load trade + sides + manager display + league type. We also pull
+  // seasons.external_id (the platform's league ID for that season) so the
+  // roster-context lookup can hit the right Sleeper league for historical
+  // trades.
   const { data: trade, error: tErr } = await db
     .from('trades')
-    .select('id, league_id, season_id, week, executed_at, platform, leagues!inner(league_type), seasons!inner(year)')
+    .select('id, league_id, season_id, week, executed_at, platform, leagues!inner(league_type), seasons!inner(year, external_id)')
     .eq('id', tradeId)
     .maybeSingle()
   if (tErr || !trade) {
@@ -51,7 +120,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
 
   const { data: sides, error: sErr } = await db
     .from('trade_sides')
-    .select('id, manager_id, assets, managers!inner(display_name, team_name)')
+    .select('id, manager_id, assets, managers!inner(display_name, team_name, external_id)')
     .eq('trade_id', tradeId)
   if (sErr || !sides || sides.length < 2) {
     warnings.push(`load sides for trade ${tradeId}: ${sErr?.message ?? 'fewer than 2 sides'}`)
@@ -62,6 +131,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   const season = Array.isArray(trade.seasons) ? trade.seasons[0] : trade.seasons
   const leagueType = (league?.league_type as 'redraft' | 'keeper' | 'dynasty') ?? 'redraft'
   const seasonYear = season?.year ?? null
+  const sleeperLeagueId = trade.platform === 'sleeper' ? (season?.external_id as string | null) ?? null : null
 
   // 2. Load player values so the prompt can quote actual ranks instead of
   // leaving the model to guess from training data. Skipped if the table is
@@ -75,7 +145,43 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
       }
     }
   }
-  const values = await getSleeperValuesForPlayerIds(allPlayerIds)
+  // Roster context needs a wider pool of player values (the manager's whole
+  // roster, not just the players in the trade). We expand the value lookup
+  // to include every player on every side's current roster.
+  const allValues = new Map<string, PlayerValue>()
+  const tradeValues = await getSleeperValuesForPlayerIds(allPlayerIds)
+  for (const [k, v] of tradeValues) allValues.set(k, v)
+
+  let rosterSummaries = new Map<string, string>()
+  if (sleeperLeagueId) {
+    try {
+      const rosters = await sleeper.rosters(sleeperLeagueId)
+      const rosterPlayerIds: string[] = []
+      for (const r of rosters ?? []) {
+        const pl = (r as { players?: string[] | null }).players ?? []
+        rosterPlayerIds.push(...pl)
+      }
+      // Look up values for the players we don't already have.
+      const missing = rosterPlayerIds.filter((p) => !allValues.has(p))
+      if (missing.length > 0) {
+        const more = await getSleeperValuesForPlayerIds(missing)
+        for (const [k, v] of more) allValues.set(k, v)
+      }
+      rosterSummaries = await loadSleeperRosterSummaries({
+        sleeperLeagueId,
+        sides: sides.map((s) => {
+          const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
+          return {
+            manager_id: s.id as string,
+            manager_external_id: (mgr?.external_id as string | null) ?? null,
+          }
+        }),
+        values: allValues,
+      })
+    } catch (e) {
+      warnings.push(`roster context: ${(e as Error).message}`)
+    }
+  }
 
   // 3. Build the prompt.
   const prompt = buildPrompt({
@@ -88,9 +194,10 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
         side_id: s.id as string,
         manager_name: (mgr?.team_name as string | null) || (mgr?.display_name as string) || 'Manager',
         assets: (s.assets as Array<Record<string, unknown>>) ?? [],
+        roster_summary: rosterSummaries.get(s.id as string) ?? null,
       }
     }),
-    values,
+    values: allValues,
   })
 
   // 3. Call Groq.
@@ -193,7 +300,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
 
   const { data: trade, error: tErr } = await db
     .from('trades')
-    .select('id, league_id, week, ai_summary, leagues!inner(league_type), seasons!inner(year)')
+    .select('id, league_id, week, ai_summary, platform, leagues!inner(league_type), seasons!inner(year, external_id)')
     .eq('id', tradeId)
     .maybeSingle()
   if (tErr || !trade) {
@@ -208,7 +315,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
 
   const { data: sides, error: sErr } = await db
     .from('trade_sides')
-    .select('id, manager_id, assets, managers!inner(display_name, team_name), trade_grades(grade)')
+    .select('id, manager_id, assets, managers!inner(display_name, team_name, external_id), trade_grades(grade)')
     .eq('trade_id', tradeId)
   if (sErr || !sides || sides.length < 2) {
     warnings.push(`load sides for trade ${tradeId}: ${sErr?.message ?? 'fewer than 2 sides'}`)
@@ -218,8 +325,9 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
   const league = Array.isArray(trade.leagues) ? trade.leagues[0] : trade.leagues
   const season = Array.isArray(trade.seasons) ? trade.seasons[0] : trade.seasons
   const leagueType = (league?.league_type as 'redraft' | 'keeper' | 'dynasty') ?? 'redraft'
+  const sleeperLeagueId = trade.platform === 'sleeper' ? (season?.external_id as string | null) ?? null : null
 
-  // Load player values for retrospective context (same as initial grading).
+  // Load player values + roster context (same as gradeTrade).
   const allPlayerIds: string[] = []
   for (const s of sides) {
     for (const a of (s.assets as Array<Record<string, unknown>>) ?? []) {
@@ -229,6 +337,35 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
     }
   }
   const values = await getSleeperValuesForPlayerIds(allPlayerIds)
+  let rosterSummaries = new Map<string, string>()
+  if (sleeperLeagueId) {
+    try {
+      const rosters = await sleeper.rosters(sleeperLeagueId)
+      const rosterPlayerIds: string[] = []
+      for (const r of rosters ?? []) {
+        const pl = (r as { players?: string[] | null }).players ?? []
+        rosterPlayerIds.push(...pl)
+      }
+      const missing = rosterPlayerIds.filter((p) => !values.has(p))
+      if (missing.length > 0) {
+        const more = await getSleeperValuesForPlayerIds(missing)
+        for (const [k, v] of more) values.set(k, v)
+      }
+      rosterSummaries = await loadSleeperRosterSummaries({
+        sleeperLeagueId,
+        sides: sides.map((s) => {
+          const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
+          return {
+            manager_id: s.id as string,
+            manager_external_id: (mgr?.external_id as string | null) ?? null,
+          }
+        }),
+        values,
+      })
+    } catch (e) {
+      warnings.push(`roster context: ${(e as Error).message}`)
+    }
+  }
 
   const sidePayload = sides.map((s) => {
     const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
@@ -239,6 +376,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
       manager_name: (mgr?.team_name as string | null) || (mgr?.display_name as string) || 'Manager',
       assets: (s.assets as Array<Record<string, unknown>>) ?? [],
       original_grade: originalGrade,
+      roster_summary: rosterSummaries.get(s.id as string) ?? null,
     }
   })
 
@@ -469,6 +607,10 @@ type PromptArgs = {
     side_id: string
     manager_name: string
     assets: Array<Record<string, unknown>>
+    // One-line positional depth summary for the side's current roster.
+    // Null for non-Sleeper leagues, missing managers, or when the roster
+    // fetch failed.
+    roster_summary: string | null
   }>
   // Player values keyed by player_id. Undefined → no value table available
   // (cron hasn't run yet); the prompt falls back to "no value data" mode.
@@ -532,8 +674,9 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• "The Sinkaroos won this trade, primarily due to acquiring Christian McCaffrey, who upgrades their RB position. Horsecocks added depth via Jahmyr Gibbs and two picks. Solid move for both teams."',
       '• "Joey won the trade because he got a better player. He gave up two picks but added a top RB. The other side gained some picks but lost their best player."',
       '',
-      'USING THE VALUE DATA:',
+      'USING THE VALUE DATA + ROSTER CONTEXT:',
       '• Each player line shows the player\'s positional rank (e.g. "RB3" = the 3rd-best RB), age, and injury status when known. Position rank is your primary anchor — a player with rank "RB12" is a strong starter; "RB48" is depth.',
+      '• Each side also has a "Current roster" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). Use this to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. NOTE: this is the current roster, which may differ from the at-trade roster for historical trades — when the trade is recent (within a week or two), trust the roster; for older trades, treat it as a rough proxy.',
       '• Tier reference: pos_rank 1-12 = elite starter at the position; 13-24 = solid starter; 25-48 = bye-week filler / handcuff; 49+ = deep depth / waiver.',
       '• Calibrate the grade gap to the rank gap:',
       '  - Both sides got comparable tiers (e.g. RB10 traded for RB14) → roughly even, both B+/B (or A-/A- if both filled real needs).',
@@ -552,7 +695,8 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       const assets = s.assets.length === 0
         ? '  (nothing)'
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.values)}`).join('\n')
-      return `Side ${idx + 1} — ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}`
+      const roster = s.roster_summary ? `\n   Current roster: ${s.roster_summary}` : ''
+      return `Side ${idx + 1} — ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${roster}`
     })
     .join('\n\n')
 
@@ -591,6 +735,7 @@ type RevisitPromptArgs = {
     manager_name: string
     assets: Array<Record<string, unknown>>
     original_grade: string | null
+    roster_summary: string | null
   }>
   values: Map<string, PlayerValue>
 }
@@ -636,8 +781,9 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       const assets = s.assets.length === 0
         ? '  (nothing)'
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.values)}`).join('\n')
+      const rosterLine = s.roster_summary ? `   Current roster: ${s.roster_summary}\n` : ''
       const originalGradeLine = s.original_grade ? `   Original grade: ${s.original_grade}\n` : ''
-      return `Side ${idx + 1} — ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}\n${originalGradeLine}`
+      return `Side ${idx + 1} — ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}\n${rosterLine}${originalGradeLine}`
     })
     .join('\n')
 
