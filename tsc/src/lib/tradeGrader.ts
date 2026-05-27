@@ -93,9 +93,11 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
         { role: 'system', content: prompt.system },
         { role: 'user', content: prompt.user },
       ],
-      // Calibration is explicit in the prompt — keep temperature on the
-      // cooler side. maxTokens fits a 3-4 sentence summary + per-side grades.
-      temperature: 0.35,
+      // Temperature 0.55 — high enough to break out of formulaic openings
+      // and produce varied vocabulary; low enough that grade calibration
+      // stays anchored. Lower values produced "X won this trade because..."
+      // openings every time.
+      temperature: 0.55,
       maxTokens: 900,
     })
     parsed = result.data
@@ -236,7 +238,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
         { role: 'system', content: prompt.system },
         { role: 'user', content: prompt.user },
       ],
-      temperature: 0.35,
+      temperature: 0.55,
       maxTokens: 900,
     })
     parsed = result.data
@@ -454,9 +456,13 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
   // every trade as a blowout (A on one side, D/F on the other). Real fantasy
   // trades cluster in the B range because managers don't make trades they
   // think are obviously bad. Give the model a target distribution.
+  //
+  // Recap quality matters too: without an explicit ban list and worked
+  // examples, the model defaults to "X won this trade because..." every
+  // time. The summary is a grading RATIONALE, not a play-by-play.
   const system =
     [
-      'You are an experienced fantasy football trade analyst writing for a league archive.',
+      'You are an experienced fantasy football trade analyst writing for a league archive. The summary you write is a GRADING RATIONALE — it must explain WHY the grades came out the way they did, not just restate who received what.',
       typeNote,
       '',
       'GRADING SCALE (use only these grades): A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F.',
@@ -468,15 +474,33 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• Grades on opposing sides do NOT need to mirror. A trade can be A- / B (one side won clearly, the other still addressed a need fairly). A trade can also be B / B (both sides did fine). Avoid the reflex of pairing every A with an F.',
       '• When a trade is genuinely balanced — both sides addressed a need, value is comparable — give both sides B or B+. That is a correct and useful grade, not a hedge.',
       '',
-      'SUMMARY — write ONE recap covering the whole trade (3 to 4 sentences, roughly 350–600 characters total). The summary must:',
-      '1. Open with the headline: who won (or that the deal was even) and the strongest reason.',
-      '2. Identify the key asset each side received and why it matters for THEIR roster context.',
-      '3. Name the cost — what each side gave up and whether the value was fair.',
-      '4. Optional: one closing thought on league context (positional scarcity, dynasty timeline, immediate playoff push, etc.).',
-      'Reference managers by their team name (already in the prompt). Avoid generic filler ("solid move", "great trade for both"). Do not just restate who-got-who — analyze.',
+      'WRITING THE RATIONALE — 3 to 4 sentences total. Follow these rules:',
+      '',
+      '1. NEVER start with "The X won this trade", "X won the trade", or any variation of who-won-the-trade as the opening line. Variety in openings is mandatory. Lead with the most interesting observation: a player\'s situation, an age/contention-window mismatch, a positional scarcity, an opportunity cost — anything except a verdict statement.',
+      '',
+      '2. The rationale must EXPLAIN THE GRADE. The reader can already see who received what from the asset list. Your job is to say WHY one side\'s package is worth more (or less, or even). Reference player tiers, age curves, opportunity, role, NFL team context, draft pick value if dynasty/keeper, positional scarcity. Be specific.',
+      '',
+      '3. Vary sentence structure and vocabulary. Do not use the same opening template twice.',
+      '',
+      'BANNED PHRASES — never write any of these:',
+      '• "won this trade" / "won the trade" / "got the better end"',
+      '• "primarily due to" / "primarily because"',
+      '• "added depth" / "upgrades the position" / "addressed a need" as the entire reason',
+      '• "solid move" / "great trade for both" / "win-win" / "fair deal" as the verdict',
+      '• Any sentence whose only purpose is to restate who received whom',
+      '',
+      'EXAMPLES — study these carefully:',
+      '',
+      'GOOD (varied openings, real analysis):',
+      '• "Christian McCaffrey is the bet here: an elite RB1 ceiling if he stays healthy, but the Sinkaroos are paying full freight in 2026 picks for a 29-year-old with a calf history. Horsecocks come away with the cleaner long-term profile via two firsts and Jahmyr Gibbs, who has three years of cost control ahead of him. In a dynasty timeline that values youth and picks, Horsecocks built equity. A win-now manager would defend the McCaffrey side."',
+      '• "Trading down from a top-six pick for two thirds and a depth piece looks fine on paper, but the tier break at pick 6 is real — that\'s where the season-altering RBs go. Joey\'s thirds are lottery tickets, not equivalents. The Sinkaroos give up the most leverage they had at the deadline and walk away with role players."',
+      '',
+      'BAD (formulaic, restates the trade):',
+      '• "The Sinkaroos won this trade, primarily due to acquiring Christian McCaffrey, who upgrades their RB position. Horsecocks added depth via Jahmyr Gibbs and two picks. Solid move for both teams."',
+      '• "Joey won the trade because he got a better player. He gave up two picks but added a top RB. The other side gained some picks but lost their best player."',
       '',
       'OUTPUT: strict JSON only — no prose before/after, no markdown fences. Shape:',
-      '{ "summary": "<single combined recap covering the whole trade>", "sides": [{ "side_id": "<uuid>", "grade": "<letter>" }, ...] }',
+      '{ "summary": "<grading rationale, 3-4 sentences>", "sides": [{ "side_id": "<uuid>", "grade": "<letter>" }, ...] }',
     ].join('\n')
 
   const sidesText = args.sides
@@ -536,7 +560,7 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
 
   const system =
     [
-      'You are an experienced fantasy football trade analyst writing a retrospective on a trade graded 4 weeks ago.',
+      'You are an experienced fantasy football trade analyst writing a retrospective on a trade graded 4 weeks ago. The retrospective you write is a GRADING RATIONALE — it must explain WHY the (possibly revised) grades are what they are, not just restate the trade.',
       typeNote,
       '',
       'You are given the original recap and the original per-side letter grades.',
@@ -549,14 +573,17 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       '• When you do shift, move one or two notches (e.g. B+ → A-, not B+ → F). Dramatic regrades require a clearly different read.',
       '• Most retrospectives will keep the original grade. That is the correct outcome when nothing about the deal looks different now.',
       '',
-      'RETROSPECTIVE SUMMARY — write ONE recap (3 to 4 sentences). Voice is retrospective ("In hindsight...", "Looking back..."). The summary should:',
-      '1. Lead with whether the original verdict still holds, and the strongest reason it does or doesn\'t.',
-      '2. Name the key player/asset and how the read on it has shifted (or held).',
-      '3. Acknowledge the cost the loser of the deal paid — was it worth it?',
-      '4. Optional: a closing line about what this deal looks like now in the broader league context.',
-      'Avoid generic praise / filler. Reference managers by team name.',
+      'WRITING THE RETROSPECTIVE — 3 to 4 sentences. Follow these rules:',
       '',
-      'OUTPUT: strict JSON only — { "summary": "<retrospective>", "sides": [{ "side_id", "grade" }, ...] }',
+      '1. Vary your openings. NEVER start with "The X side\'s grade holds up" or "X won the trade in hindsight" or any verdict-first formula. Lead with the most interesting observation in retrospect: a specific player\'s arc, an aging player\'s decline, an unexpected breakout, a pick that has gained or lost value.',
+      '',
+      '2. The retrospective must EXPLAIN the (possibly revised) grade. Reference what has changed (or held) about specific players, picks, or roster contexts. Be specific.',
+      '',
+      'BANNED PHRASES (same as initial grading): "won this trade", "primarily due to", "added depth", "upgrades the position", "solid move", "fair deal".',
+      '',
+      'Reference managers by team name. Use retrospective voice naturally ("looking back", "four weeks in", "with the dust settled") but only sparingly — do not start every retrospective with the same phrase.',
+      '',
+      'OUTPUT: strict JSON only — { "summary": "<retrospective rationale>", "sides": [{ "side_id", "grade" }, ...] }',
     ].join('\n')
 
   const sidesText = args.sides
