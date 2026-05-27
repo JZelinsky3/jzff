@@ -3,23 +3,25 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-// Two-button cluster for the Trade Grader.
-//   • Grade next 10  → grades ungraded trades only (skips already-graded)
+// Three-button cluster for the Trade Grader.
+//   • Grade next 10    → grades ungraded trades only (skips already-graded)
 //   • Re-grade next 10 → force=true, overwrites existing grades (use after
-//                        the prompt has been tuned)
-// Calls the admin endpoint in batches of 10 so a single click doesn't blow
-// the Vercel timeout on a long backfill.
+//                         the prompt has been tuned)
+//   • Verdict next 10  → runs the 4-week revisit on graded trades. Calls
+//                         /revisit-trades with eligibleOnly=false so you can
+//                         test the verdict section without waiting 4 weeks.
+// Each click grades 10 trades to stay under Vercel's serverless timeout.
 
 export function GradeTradesButton({ leagueId }: { leagueId: string }) {
   const router = useRouter()
-  const [state, setState] = useState<'idle' | 'grading' | 'done' | 'error'>('idle')
+  const [state, setState] = useState<'idle' | 'working' | 'done' | 'error'>('idle')
   const [msg, setMsg] = useState<string | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
   const [showWarnings, setShowWarnings] = useState(false)
-  const [lastAction, setLastAction] = useState<'grade' | 'regrade' | null>(null)
+  const [lastAction, setLastAction] = useState<'grade' | 'regrade' | 'verdict' | null>(null)
 
   async function grade(force: boolean) {
-    setState('grading')
+    setState('working')
     setMsg(null); setWarnings([])
     setLastAction(force ? 'regrade' : 'grade')
     try {
@@ -44,7 +46,35 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
     }
   }
 
-  const busy = state === 'grading'
+  async function verdict() {
+    setState('working')
+    setMsg(null); setWarnings([])
+    setLastAction('verdict')
+    try {
+      const res = await fetch(`/api/leagues/${leagueId}/revisit-trades`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // eligibleOnly=false → revisit any graded trade regardless of age.
+        // Lets you see the Verdict section populate without waiting.
+        body: JSON.stringify({ limit: 10, eligibleOnly: false }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        setState('error')
+        setMsg(body?.error ?? 'Verdict failed')
+        return
+      }
+      setState('done')
+      setMsg(`Scanned ${body.scanned} · revisited ${body.revisited}`)
+      if (Array.isArray(body.warnings)) setWarnings(body.warnings)
+      router.refresh()
+    } catch (e) {
+      setState('error')
+      setMsg((e as Error).message)
+    }
+  }
+
+  const busy = state === 'working'
 
   return (
     <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.5rem', maxWidth: '100%' }}>
@@ -54,6 +84,9 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
         </button>
         <button onClick={() => grade(true)} disabled={busy} className="dc-btn-ghost" title="Re-grade trades that already have grades (overwrites)">
           {busy && lastAction === 'regrade' ? 'Re-grading…' : 'Re-grade next 10'}
+        </button>
+        <button onClick={verdict} disabled={busy} className="dc-btn-ghost" title="Run the 4-week verdict on graded trades (test mode — no waiting)">
+          {busy && lastAction === 'verdict' ? 'Revisiting…' : 'Verdict next 10'}
         </button>
       </div>
       {msg && (

@@ -91,10 +91,11 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
   }
 
   // Pull trades + season year in one query. Order newest first, cap at MAX_TRADES.
-  // ai_summary holds the LLM-written trade-level recap (one per trade).
+  // ai_summary = original recap (after first grade pass).
+  // revisit_summary + revisited_at = 4-week retrospective (verdict pass).
   const { data: tradeRows, error: tradesErr } = await db
     .from('trades')
-    .select('id, platform, week, executed_at, ai_summary, seasons!inner(year)')
+    .select('id, platform, week, executed_at, ai_summary, revisit_summary, revisited_at, seasons!inner(year)')
     .eq('league_id', league.id)
     .eq('status', 'completed')
     .order('executed_at', { ascending: false })
@@ -114,36 +115,27 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
     .in('trade_id', tradeIds)
   if (sidesErr) throw new Error(`trade_sides query: ${sidesErr.message}`)
 
-  // Per-side grade letters + revisit timestamps. The trade-level prose
-  // (ai_summary) lives on `trades` itself; per-side blurbs are no longer
-  // populated by the v3 grader.
+  // Per-side grade letters. Revisit timestamps live on `trades` itself now
+  // (trades.revisited_at), so we don't need to pull them from trade_grades.
   const sideIds = (sideRows ?? []).map((s) => s.id)
   const { data: gradeRows } = sideIds.length > 0
     ? await db
         .from('trade_grades')
-        .select('trade_side_id, grade, revisit_grade, revisited_at')
+        .select('trade_side_id, grade, revisit_grade')
         .in('trade_side_id', sideIds)
     : { data: [] }
 
-  const gradeBySide = new Map<string, { grade: string | null; revisit_grade: string | null; revisited_at: string | null }>()
+  const gradeBySide = new Map<string, { grade: string | null; revisit_grade: string | null }>()
   for (const g of gradeRows ?? []) {
     gradeBySide.set(g.trade_side_id, {
       grade: g.grade ?? null,
       revisit_grade: g.revisit_grade ?? null,
-      revisited_at: g.revisited_at ?? null,
     })
   }
 
   const sidesByTrade = new Map<string, TradeSidePublic[]>()
-  // Track which trades just got their 4-week revisit so we can bucket them.
-  const tradesWithRecentVerdict = new Set<string>()
-  const verdictCutoff = Date.now() - VERDICT_WINDOW_DAYS * 24 * 60 * 60 * 1000
-
   for (const s of sideRows ?? []) {
-    const grade = gradeBySide.get(s.id) ?? { grade: null, revisit_grade: null, revisited_at: null }
-    if (grade.revisited_at && Date.parse(grade.revisited_at) >= verdictCutoff) {
-      tradesWithRecentVerdict.add(s.trade_id)
-    }
+    const grade = gradeBySide.get(s.id) ?? { grade: null, revisit_grade: null }
     // Supabase returns the embedded relation as an object (singular FK) or array
     // depending on the schema's inferred cardinality. Normalize defensively.
     const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
@@ -164,6 +156,16 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
     sidesByTrade.set(s.trade_id, list)
   }
 
+  // Verdict bucket: trades whose revisit landed in the last 7 days.
+  const verdictCutoff = Date.now() - VERDICT_WINDOW_DAYS * 24 * 60 * 60 * 1000
+  const tradesWithRecentVerdict = new Set<string>()
+  for (const t of tradeRows) {
+    const rv = (t as { revisited_at?: string | null }).revisited_at
+    if (rv && Date.parse(rv) >= verdictCutoff) {
+      tradesWithRecentVerdict.add(t.id as string)
+    }
+  }
+
   const allTrades: TradePublic[] = tradeRows.map((t) => {
     const season = Array.isArray(t.seasons) ? t.seasons[0] : t.seasons
     return {
@@ -173,10 +175,7 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
       week: t.week,
       executed_at: t.executed_at,
       ai_summary: (t as { ai_summary?: string | null }).ai_summary ?? null,
-      // Phase 3 will populate this from a trades.revisit_summary column;
-      // until then it stays null and the verdict bucket renders the original
-      // summary alongside the revisit grade.
-      revisit_summary: null,
+      revisit_summary: (t as { revisit_summary?: string | null }).revisit_summary ?? null,
       sides: sidesByTrade.get(t.id) ?? [],
     }
   })
