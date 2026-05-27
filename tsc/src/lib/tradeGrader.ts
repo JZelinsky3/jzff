@@ -16,6 +16,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { groqChatJson, GroqError } from '@/lib/groq'
+import { getSleeperValuesForPlayerIds, type PlayerValue } from '@/lib/playerValues'
 
 const MODEL = 'llama-3.3-70b-versatile'
 
@@ -62,7 +63,21 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
   const leagueType = (league?.league_type as 'redraft' | 'keeper' | 'dynasty') ?? 'redraft'
   const seasonYear = season?.year ?? null
 
-  // 2. Build the prompt.
+  // 2. Load player values so the prompt can quote actual ranks instead of
+  // leaving the model to guess from training data. Skipped if the table is
+  // empty (cron hasn't run yet) — the grader still works, just less
+  // anchored.
+  const allPlayerIds: string[] = []
+  for (const s of sides) {
+    for (const a of (s.assets as Array<Record<string, unknown>>) ?? []) {
+      if (a.kind === 'player' && typeof a.player_id === 'string') {
+        allPlayerIds.push(a.player_id)
+      }
+    }
+  }
+  const values = await getSleeperValuesForPlayerIds(allPlayerIds)
+
+  // 3. Build the prompt.
   const prompt = buildPrompt({
     leagueType,
     seasonYear,
@@ -75,6 +90,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
         assets: (s.assets as Array<Record<string, unknown>>) ?? [],
       }
     }),
+    values,
   })
 
   // 3. Call Groq.
@@ -203,6 +219,17 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
   const season = Array.isArray(trade.seasons) ? trade.seasons[0] : trade.seasons
   const leagueType = (league?.league_type as 'redraft' | 'keeper' | 'dynasty') ?? 'redraft'
 
+  // Load player values for retrospective context (same as initial grading).
+  const allPlayerIds: string[] = []
+  for (const s of sides) {
+    for (const a of (s.assets as Array<Record<string, unknown>>) ?? []) {
+      if (a.kind === 'player' && typeof a.player_id === 'string') {
+        allPlayerIds.push(a.player_id)
+      }
+    }
+  }
+  const values = await getSleeperValuesForPlayerIds(allPlayerIds)
+
   const sidePayload = sides.map((s) => {
     const mgr = Array.isArray(s.managers) ? s.managers[0] : s.managers
     const grades = Array.isArray(s.trade_grades) ? s.trade_grades : s.trade_grades ? [s.trade_grades] : []
@@ -221,6 +248,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
     week: trade.week ?? null,
     originalSummary: trade.ai_summary as string,
     sides: sidePayload,
+    values,
   })
 
   const apiKey = process.env.GROQ_API_KEY_TRADES || process.env.GROQ_API_KEY
@@ -442,6 +470,9 @@ type PromptArgs = {
     manager_name: string
     assets: Array<Record<string, unknown>>
   }>
+  // Player values keyed by player_id. Undefined → no value table available
+  // (cron hasn't run yet); the prompt falls back to "no value data" mode.
+  values: Map<string, PlayerValue>
 }
 
 function buildPrompt(args: PromptArgs): { system: string; user: string } {
@@ -467,12 +498,14 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       'GRADING SCALE (use only these grades): A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F.',
       '',
-      'GRADE CALIBRATION — read carefully:',
-      '• Most trades belong in the B range (B-, B, B+). Managers rarely accept obviously bad deals; both sides usually have a real reason for trading.',
-      '• Use A- / A / A+ ONLY when one side clearly stole significant value — e.g. acquiring a top-12 player at their position for a backup, getting a 1st-round dynasty pick for an aging player, or robbing on positional scarcity.',
-      '• Use D / D- / F ONLY when one side dramatically overpaid or got pennies on the dollar relative to player tiers.',
-      '• Grades on opposing sides do NOT need to mirror. A trade can be A- / B (one side won clearly, the other still addressed a need fairly). A trade can also be B / B (both sides did fine). Avoid the reflex of pairing every A with an F.',
-      '• When a trade is genuinely balanced — both sides addressed a need, value is comparable — give both sides B or B+. That is a correct and useful grade, not a hedge.',
+      'GRADE CALIBRATION — value-anchored:',
+      '• Use the sleeper_rank and pos_rank data below as your primary anchor. Lower rank number = more valuable player.',
+      '• A trade with very small rank gaps between sides is roughly even — both sides earn comparable grades.',
+      '• A trade where one side acquires meaningfully better-ranked players earns a higher grade for that side.',
+      '• When BOTH sides acquired top-24 positional starters they can use, BOTH sides can earn A-range grades. Mutual wins are real — A/A is a correct grade for a trade where both teams hit a real need without losing value.',
+      '• Grades on opposing sides do NOT need to mirror. A trade can be A-/B (clear winner + the other side still got fair value), A/A (both sides won), or A/C (one side significantly stole value).',
+      '• Use D / D- / F ONLY when a side got dramatically worse players (huge rank gap) without addressing positional scarcity.',
+      '• Don\'t default to B+/B for everything just because trades "should be balanced." If the data shows a real gap, grade accordingly.',
       '',
       'WRITING THE RATIONALE — 3 to 4 sentences total. Follow these rules:',
       '',
@@ -499,6 +532,16 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• "The Sinkaroos won this trade, primarily due to acquiring Christian McCaffrey, who upgrades their RB position. Horsecocks added depth via Jahmyr Gibbs and two picks. Solid move for both teams."',
       '• "Joey won the trade because he got a better player. He gave up two picks but added a top RB. The other side gained some picks but lost their best player."',
       '',
+      'USING THE VALUE DATA:',
+      '• Each player has a sleeper_rank (overall) and pos_rank (within position). Lower = more valuable. Anchor your grade to actual rank gaps:',
+      '  - Combined-side rank totals within ~15% of each other → B / B+ both sides (or A- / A- if both filled real needs).',
+      '  - 15-35% rank gap → A-/B or A/B-.',
+      '  - 35%+ rank gap → A/C+ or higher swing.',
+      '  - Pos_rank < 24 = startable; < 12 = top-tier at the position; > 48 = depth/handcuff.',
+      '• When BOTH sides got a top-24 positional player they can use, both can earn A-range grades — the trade can be A/A if both sides hit on real needs. Mutual wins are real.',
+      '• Use age + years_exp for dynasty: under-25 with good rank = ascending; over-29 = declining. Age modifies the rank-based grade for dynasty/keeper.',
+      '• Picks have no provided rank — treat 1st rounders as ~top-50 positional value, 2nds as ~top-100, 3rds as ~top-150, 4th+ as depth. Future-year picks (2027+) are worth ~70% of next-year picks.',
+      '',
       'OUTPUT: strict JSON only — no prose before/after, no markdown fences. Shape:',
       '{ "summary": "<grading rationale, 3-4 sentences>", "sides": [{ "side_id": "<uuid>", "grade": "<letter>" }, ...] }',
     ].join('\n')
@@ -507,7 +550,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
     .map((s, idx) => {
       const assets = s.assets.length === 0
         ? '  (nothing)'
-        : s.assets.map((a) => `  - ${formatAsset(a)}`).join('\n')
+        : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.values)}`).join('\n')
       return `Side ${idx + 1} — ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}`
     })
     .join('\n\n')
@@ -548,6 +591,7 @@ type RevisitPromptArgs = {
     assets: Array<Record<string, unknown>>
     original_grade: string | null
   }>
+  values: Map<string, PlayerValue>
 }
 
 function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: string } {
@@ -590,7 +634,7 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
     .map((s, idx) => {
       const assets = s.assets.length === 0
         ? '  (nothing)'
-        : s.assets.map((a) => `  - ${formatAsset(a)}`).join('\n')
+        : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.values)}`).join('\n')
       const originalGradeLine = s.original_grade ? `   Original grade: ${s.original_grade}\n` : ''
       return `Side ${idx + 1} — ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}\n${originalGradeLine}`
     })
@@ -639,6 +683,33 @@ function formatAsset(a: Record<string, unknown>): string {
     return `$${a.amount} FAAB`
   }
   return `unknown asset (${kind})`
+}
+
+// Like formatAsset but enriches players with their Sleeper rank, position
+// rank, age, years of experience, and injury status when we have a row in
+// player_values for them. Falls back to the plain format for players we
+// haven't refreshed yet (cron hasn't run, or deep waiver-wire players).
+function formatAssetWithValue(
+  a: Record<string, unknown>,
+  values: Map<string, PlayerValue>,
+): string {
+  const kind = a.kind as string
+  if (kind !== 'player') return formatAsset(a)
+
+  const name = (a.name as string) || `Player ${a.player_id}`
+  const pos = (a.position as string) || '—'
+  const team = (a.team as string) || '?'
+  const pid = (a.player_id as string) ?? ''
+  const v = pid ? values.get(pid) : null
+  if (!v) return `${pos} ${name} (${team}) [no value data]`
+
+  const fragments: string[] = []
+  if (v.overall_rank != null) fragments.push(`sleeper_rank=${v.overall_rank}`)
+  if (v.position_rank != null) fragments.push(`pos_rank=${pos}${v.position_rank}`)
+  if (v.age != null) fragments.push(`age=${v.age}`)
+  if (v.years_exp != null) fragments.push(`yrs=${v.years_exp}`)
+  if (v.injury_status) fragments.push(`status=${v.injury_status}`)
+  return `${pos} ${name} (${team}) [${fragments.join(', ')}]`
 }
 
 function ordinal(n: number): string {

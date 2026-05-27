@@ -18,7 +18,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
   const [msg, setMsg] = useState<string | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
   const [showWarnings, setShowWarnings] = useState(false)
-  const [lastAction, setLastAction] = useState<'grade' | 'regrade' | 'verdict' | null>(null)
+  const [lastAction, setLastAction] = useState<'grade' | 'regrade' | 'verdict' | 'refresh' | null>(null)
 
   async function grade(force: boolean) {
     setState('working')
@@ -38,6 +38,28 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
       }
       setState('done')
       setMsg(`Scanned ${body.scanned} · graded ${body.graded}`)
+      if (Array.isArray(body.warnings)) setWarnings(body.warnings)
+      router.refresh()
+    } catch (e) {
+      setState('error')
+      setMsg((e as Error).message)
+    }
+  }
+
+  async function refreshValues() {
+    setState('working')
+    setMsg(null); setWarnings([])
+    setLastAction('refresh')
+    try {
+      const res = await fetch(`/api/admin/refresh-player-values`, { method: 'POST' })
+      const body = await res.json()
+      if (!res.ok) {
+        setState('error')
+        setMsg(body?.error ?? 'Refresh failed')
+        return
+      }
+      setState('done')
+      setMsg(`Fetched ${body.fetched} · upserted ${body.upserted}`)
       if (Array.isArray(body.warnings)) setWarnings(body.warnings)
       router.refresh()
     } catch (e) {
@@ -87,6 +109,9 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
         </button>
         <button onClick={verdict} disabled={busy} className="dc-btn-ghost" title="Run the 4-week verdict on graded trades (test mode — no waiting)">
           {busy && lastAction === 'verdict' ? 'Revisiting…' : 'Verdict next 10'}
+        </button>
+        <button onClick={refreshValues} disabled={busy} className="dc-btn-ghost" title="Pull the latest Sleeper player values into the grader. The weekly cron does this automatically — this button is for one-off testing.">
+          {busy && lastAction === 'refresh' ? 'Refreshing…' : 'Refresh values'}
         </button>
       </div>
       {msg && (
