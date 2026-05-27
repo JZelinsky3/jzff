@@ -1,4 +1,4 @@
-// GET /leagues/<slug>/pickems/data — live pick'ems state for the public page.
+// GET /leagues/<slug>/live-season/pickems/data — live pick'ems state for the public page.
 // Not cached: picks change every submission, and the live week is time-sensitive.
 
 import { NextResponse } from 'next/server'

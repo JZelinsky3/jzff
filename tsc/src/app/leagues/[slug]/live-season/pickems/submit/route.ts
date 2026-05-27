@@ -1,4 +1,4 @@
-// POST /leagues/<slug>/pickems/submit — record one picker's picks + high/low
+// POST /leagues/<slug>/live-season/pickems/submit — record one picker's picks + high/low
 // for the current week. Honor-system identity: the picker just claims a profile.
 //
 // Guards:

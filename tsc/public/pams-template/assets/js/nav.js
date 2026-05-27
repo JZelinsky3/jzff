@@ -25,10 +25,11 @@
         { key: 'hub',       label: 'Hub',         path: 'index.html' },
         { key: 'standings', label: 'Standings',   path: 'standings.html' },
         {
-            isGroup: true, label: 'Season Odds',
+            isGroup: true, label: 'Live Season',
             items: [
-                { key: 'pickems',   label: "Pick'ems",       path: 'pickems/index.html' },
-                { key: 'powerrank', label: 'Power Rankings', path: 'powerrank/index.html' },
+                { key: 'live-season', label: 'Overview',       path: 'live-season/index.html' },
+                { key: 'pickems',     label: "Pick'ems",       path: 'live-season/pickems/index.html' },
+                { key: 'powerrank',   label: 'Power Rankings', path: 'live-season/powerrank/index.html' },
             ]
         },
         {

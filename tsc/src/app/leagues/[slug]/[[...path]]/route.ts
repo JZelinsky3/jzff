@@ -273,10 +273,21 @@ function safeTemplatePath(rel: string): string | null {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string; path?: string[] }> }
 ): Promise<Response> {
   const { slug, path: parts } = await params
+
+  // Legacy URL redirect: pickems/powerrank moved under /live-season/ as part
+  // of the in-season hub IA. Permanent 301 keeps bookmarks, shares, and any
+  // pre-existing back-button history working. Preserves trailing path bits
+  // (e.g. /pickems/data → /live-season/pickems/data) and query string.
+  if (parts && parts.length > 0 && (parts[0] === 'pickems' || parts[0] === 'powerrank')) {
+    const newPath = ['live-season', ...parts].join('/')
+    const target = new URL(`/leagues/${slug}/${newPath}`, req.url)
+    target.search = req.nextUrl.search
+    return NextResponse.redirect(target, 301)
+  }
 
   const resolved = resolveRequest(parts)
   if (!resolved) return new NextResponse('Not found', { status: 404 })

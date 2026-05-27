@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Season · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+/* ============================================================
+   LIVE SEASON HUB — in-season launcher
+   Cards for every "during the season" feature. The almanac is
+   timeless; this is where the noise lives.
+   ============================================================ */
+
+:root {
+    --ls-bg:         #0e1620;
+    --ls-card:       #16202c;
+    --ls-card-hover: #1c2939;
+    --ls-line:       #2a3645;
+    --ls-line-soft:  #1e2937;
+    --ls-mute:       #837b6a;
+    --ls-live:       #a04830;   /* rust = live now */
+    --ls-soon:       #6b8aa8;   /* steel = coming soon */
+    --ls-pro:        #e8c889;   /* gold = paid tier */
+}
+
+body { background: var(--ls-bg); }
+
+.site-glow {
+    background-image:
+        radial-gradient(circle at 15% 20%, rgba(160, 72, 48, .06) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(232, 200, 137, .05) 0%, transparent 50%);
+}
+
+.ls-wrap {
+    position: relative; z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+}
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.ls-hero {
+    text-align: center;
+    padding: 2.5rem 1rem 3rem;
+    border-bottom: 1px solid var(--ls-line-soft);
+    margin-bottom: 3rem;
+}
+.ls-hero-sup {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+}
+.ls-hero-title {
+    font-family: var(--serif);
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    line-height: 1.05;
+    color: var(--cream);
+    margin: 0 0 1rem;
+}
+.ls-hero-title em {
+    font-style: italic;
+    color: var(--gold);
+}
+.ls-hero-sub {
+    max-width: 38rem;
+    margin: 0 auto;
+    color: var(--cream-soft);
+    font-size: 1.02rem;
+    line-height: 1.55;
+}
+
+/* ── Section header ──────────────────────────────────────── */
+.ls-section-header {
+    display: flex;
+    align-items: baseline;
+    gap: .9rem;
+    padding-bottom: .9rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--ls-line-soft);
+    flex-wrap: wrap;
+}
+.ls-section-num {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+.ls-section-title {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    color: var(--cream);
+}
+.ls-section-title em { color: var(--gold); font-style: italic; }
+.ls-section-meta {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+
+/* ── Card grid ───────────────────────────────────────────── */
+.ls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.ls-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.4rem 1.4rem 1.2rem;
+    background: var(--ls-card);
+    border: 1px solid var(--ls-line);
+    border-radius: 3px;
+    color: inherit;
+    text-decoration: none;
+    transition: background .15s, border-color .15s, transform .15s;
+    position: relative;
+    min-height: 175px;
+}
+.ls-card[href]:hover {
+    background: var(--ls-card-hover);
+    border-color: var(--gold-deep);
+    transform: translateY(-1px);
+}
+.ls-card[data-status="soon"],
+.ls-card[data-status="pro-soon"] {
+    cursor: default;
+    opacity: .72;
+}
+.ls-card[data-status="soon"]:hover,
+.ls-card[data-status="pro-soon"]:hover {
+    transform: none;
+    border-color: var(--ls-line);
+    background: var(--ls-card);
+}
+
+.ls-card-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: .9rem;
+}
+.ls-card-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+.ls-card[data-status="live"] .ls-card-status { color: var(--ls-live); }
+.ls-card[data-status="soon"] .ls-card-status { color: var(--ls-soon); }
+.ls-card[data-status="pro-soon"] .ls-card-status { color: var(--ls-pro); }
+.ls-card[data-status="pro-soon"] .ls-card-dot { background: var(--ls-pro); }
+
+.ls-card-title {
+    font-family: var(--serif);
+    font-size: 1.45rem;
+    line-height: 1.15;
+    color: var(--cream);
+    margin: 0 0 .5rem;
+}
+.ls-card-title em { font-style: italic; color: var(--gold); }
+.ls-card-desc {
+    color: var(--cream-soft);
+    font-size: .9rem;
+    line-height: 1.45;
+    flex: 1;
+}
+.ls-card-arrow {
+    position: absolute;
+    right: 1.1rem; bottom: .9rem;
+    color: var(--gold);
+    font-size: 1.1rem;
+    opacity: .6;
+    transition: opacity .15s, transform .15s;
+}
+.ls-card[href]:hover .ls-card-arrow {
+    opacity: 1;
+    transform: translateX(2px);
+}
+.ls-card[data-status="soon"] .ls-card-arrow,
+.ls-card[data-status="pro-soon"] .ls-card-arrow { display: none; }
+
+/* Optional tier ribbon on the top-right of paid cards */
+.ls-card-tier {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ls-pro);
+    border: 1px solid var(--ls-pro);
+    padding: 2px 6px;
+    border-radius: 2px;
+    opacity: .85;
+}
+
+/* Footer note */
+.ls-foot {
+    margin-top: 3rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+
+@media (max-width: 600px) {
+    .ls-wrap { padding: 1.5rem 1rem 3rem; }
+    .ls-hero { padding: 1.5rem .5rem 2rem; margin-bottom: 2rem; }
+}
+</style>
+</head>
+<body>
+<div class="site-glow" aria-hidden="true"></div>
+
+<nav id="site-nav" data-page="live-season" data-chapter="LIVE · IN SEASON"></nav>
+<script src="/pams-template/assets/js/nav.js"></script>
+
+<main class="ls-wrap">
+
+    <header class="ls-hero">
+        <div class="ls-hero-sup">Live Season · {{LEAGUE_FOUNDED}}–Present</div>
+        <h1 class="ls-hero-title">{{LEAGUE_NAME_HEAD}} <em>{{LEAGUE_NAME_TAIL}}.</em></h1>
+        <p class="ls-hero-sub">
+            Everything that happens during the season — picks, rankings, records on the
+            line, trades, and the weekly story of {{LEAGUE_ABBR}}. The almanac is for
+            history. This is for right now.
+        </p>
+    </header>
+
+    <section>
+        <div class="ls-section-header">
+            <span class="ls-section-num">§ 01 · This Week</span>
+            <span class="ls-section-title">In-season <em>features —</em></span>
+            <span class="ls-section-meta">Updated weekly</span>
+        </div>
+
+        <div class="ls-grid">
+
+            <a href="pickems/index.html" class="ls-card" data-status="live">
+                <span class="ls-card-status"><span class="ls-card-dot"></span> Live</span>
+                <h2 class="ls-card-title">Weekly <em>Pick'ems.</em></h2>
+                <p class="ls-card-desc">Pick the winner of every matchup each week. Honor-system identity — claim your name and vote.</p>
+                <span class="ls-card-arrow">→</span>
+            </a>
+
+            <a href="powerrank/index.html" class="ls-card" data-status="live">
+                <span class="ls-card-status"><span class="ls-card-dot"></span> Live</span>
+                <h2 class="ls-card-title">Power <em>Rankings.</em></h2>
+                <p class="ls-card-desc">Auto-calculated each week from record, points for, recent form, and full league history.</p>
+                <span class="ls-card-arrow">→</span>
+            </a>
+
+            <div class="ls-card" data-status="soon">
+                <span class="ls-card-status"><span class="ls-card-dot"></span> Coming Soon</span>
+                <h2 class="ls-card-title">Records <em>Watch.</em></h2>
+                <p class="ls-card-desc">Who's on pace to break a record? Single-season highs, win streaks, and franchise marks — tracked live.</p>
+            </div>
+
+            <div class="ls-card" data-status="pro-soon">
+                <span class="ls-card-tier">Veteran</span>
+                <span class="ls-card-status"><span class="ls-card-dot"></span> Coming Soon</span>
+                <h2 class="ls-card-title">Weekly <em>Recap.</em></h2>
+                <p class="ls-card-desc">An auto-written recap of the week's matchups, blowouts, and grudge games — generated every Tuesday morning.</p>
+            </div>
+
+            <div class="ls-card" data-status="pro-soon">
+                <span class="ls-card-tier">Veteran</span>
+                <span class="ls-card-status"><span class="ls-card-dot"></span> Coming Soon</span>
+                <h2 class="ls-card-title">Trade <em>Grader.</em></h2>
+                <p class="ls-card-desc">Every completed trade gets a grade for each side, plus a 4-week revisit to see how the deal actually played out.</p>
+            </div>
+
+            <div class="ls-card" data-status="soon">
+                <span class="ls-card-status"><span class="ls-card-dot"></span> Coming Soon</span>
+                <h2 class="ls-card-title">Milestone <em>Alerts.</em></h2>
+                <p class="ls-card-desc">Email notifications when a team sets a franchise high, hits a streak, or crosses a career milestone.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <div class="ls-foot">{{LEAGUE_ABBR}} · Live Season · {{LEAGUE_FOUNDED_ROMAN}}</div>
+
+</main>
+
+</body>
+</html>

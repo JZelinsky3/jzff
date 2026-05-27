@@ -1,4 +1,4 @@
-// GET /leagues/<slug>/powerrank/data — power rankings + Monte Carlo projections.
+// GET /leagues/<slug>/live-season/powerrank/data — power rankings + Monte Carlo projections.
 // Not cached: reflects matchup scores that change through the season.
 
 import { NextResponse } from 'next/server'
