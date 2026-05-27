@@ -27,10 +27,10 @@
         {
             isGroup: true, label: 'Live Season',
             items: [
-                { key: 'live-season', label: 'Overview',       path: 'live-season/index.html' },
-                { key: 'pickems',     label: "Pick'ems",       path: 'live-season/pickems/index.html' },
-                { key: 'powerrank',   label: 'Power Rankings', path: 'live-season/powerrank/index.html' },
-                { key: 'trades',      label: 'Trade Grader',   path: 'live-season/trades/index.html' },
+                { key: 'live-season', label: 'Overview',       path: 'live-season/' },
+                { key: 'pickems',     label: "Pick'ems",       path: 'live-season/pickems/' },
+                { key: 'powerrank',   label: 'Power Rankings', path: 'live-season/powerrank/' },
+                { key: 'trades',      label: 'Trade Grader',   path: 'live-season/trades/' },
             ]
         },
         {

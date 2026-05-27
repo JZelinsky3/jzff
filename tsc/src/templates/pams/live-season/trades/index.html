@@ -3,63 +3,46 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Trades · {{LEAGUE_NAME}}</title>
+  <title>Trade Grader · {{LEAGUE_NAME}}</title>
   <link rel="stylesheet" href="/pams-template/assets/css/main.css" />
   <style>
     /* ============================================================
        TRADES — Phase 1: list of completed trades, no grades yet
+       Uses the shared site nav (nav.js) for consistency with the rest
+       of the almanac pages.
        ============================================================ */
     :root {
-      --tr-bg:         #0e1620;
       --tr-card:       #16202c;
       --tr-card-2:     #1c2939;
       --tr-line:       #2a3645;
       --tr-line-soft:  #1e2937;
-      --tr-mute:       #837b6a;
     }
-    body { background: var(--tr-bg); }
 
-    /* ── Page nav (matches pickems/powerrank pattern) ── */
-    .tr-nav {
-      position: sticky; top: 0; z-index: 10;
-      background: rgba(14,22,32,.95);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--tr-line);
+    .tr-wrap { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+
+    /* ── Page header ── */
+    .tr-page-head {
+      text-align: center;
+      padding: 1rem 0 2rem;
+      border-bottom: 1px solid var(--tr-line-soft);
+      margin-bottom: 2rem;
     }
-    .tr-nav-inner {
-      max-width: 1100px; margin: 0 auto;
-      display: grid; grid-template-columns: 44px 1fr 44px;
-      align-items: center;
-      padding: .9rem 1rem;
-      gap: .75rem;
+    .tr-page-sup {
+      font-family: var(--mono); font-size: .68rem;
+      letter-spacing: .25em; color: var(--gold);
+      text-transform: uppercase; margin-bottom: .8rem;
     }
-    .tr-nav-back {
-      background: transparent; border: none; cursor: pointer;
-      color: var(--cream); padding: .4rem;
-      border-radius: 2px;
-    }
-    .tr-nav-back:hover { background: var(--tr-card-2); }
-    .tr-nav-center { text-align: center; }
-    .tr-nav-title {
-      font-family: var(--serif); font-size: 1.5rem; color: var(--cream);
-      text-decoration: none; line-height: 1;
-    }
-    .tr-nav-title em { color: var(--gold); font-style: italic; }
-    .tr-nav-kicker {
-      font-family: var(--mono); font-size: .62rem;
-      letter-spacing: .25em; color: var(--cream-mute);
-      text-transform: uppercase; margin-top: 4px;
-    }
-    .tr-nav-tier {
-      font-family: var(--mono); font-size: .58rem;
-      letter-spacing: .2em; text-transform: uppercase;
+    .tr-page-tier {
+      display: inline-block; margin-left: .5rem;
+      font-size: .58rem; letter-spacing: .2em;
       color: var(--gold); border: 1px solid var(--gold);
-      padding: 2px 6px; border-radius: 2px;
-      justify-self: end;
+      padding: 1px 5px; border-radius: 2px;
     }
-
-    /* ── Wrap ── */
-    .tr-app { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .tr-page-title {
+      font-family: var(--serif); font-size: clamp(2rem, 5vw, 3rem);
+      color: var(--cream); line-height: 1.1; margin: 0;
+    }
+    .tr-page-title em { color: var(--gold); font-style: italic; }
 
     .tr-banner {
       background: var(--tr-card); border: 1px solid var(--tr-line);
@@ -70,9 +53,9 @@
     }
 
     .tr-empty {
-      text-align: center; padding: 4rem 1rem; color: var(--cream-soft);
+      text-align: center; padding: 3rem 1rem; color: var(--cream-soft);
     }
-    .tr-empty h2 { font-family: var(--serif); font-size: 1.8rem; color: var(--cream); margin-bottom: .6rem; }
+    .tr-empty h2 { font-family: var(--serif); font-size: 1.6rem; color: var(--cream); margin-bottom: .6rem; }
 
     /* ── Trade cards ── */
     .tr-list { display: flex; flex-direction: column; gap: 1rem; }
@@ -180,25 +163,16 @@
 <body>
   <div class="site-glow" aria-hidden="true"></div>
 
-  <nav class="tr-nav">
-    <div class="tr-nav-inner">
-      <button class="tr-nav-back" onclick="history.back()" aria-label="Back">
-        <svg viewBox="0 0 8 14" width="9" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 1 1 7 7 13"/></svg>
-      </button>
-      <div class="tr-nav-center">
-        <a href="index.html" class="tr-nav-title">Trade <em>Grader.</em></a>
-        <div class="tr-nav-kicker">{{LEAGUE_NAME_UPPER}}</div>
-      </div>
-      <span class="tr-nav-tier" title="Veteran tier feature">VET</span>
-    </div>
-  </nav>
+  <nav id="site-nav" data-page="trades" data-chapter="LIVE · TRADE GRADER"
+       data-back-href="live-season/" data-back-label="Back to Live Season"></nav>
+  <script src="/pams-template/assets/js/nav.js"></script>
 
-  <main class="tr-app">
+  <main class="tr-wrap">
 
-    <!-- SEO: visually-hidden H1 for crawlers. -->
-    <h1 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">
-      Trades · {{LEAGUE_NAME}} fantasy football league
-    </h1>
+    <header class="tr-page-head">
+      <div class="tr-page-sup">{{LEAGUE_NAME_UPPER}}<span class="tr-page-tier">VET</span></div>
+      <h1 class="tr-page-title">Trade <em>Grader.</em></h1>
+    </header>
 
     <div class="tr-banner" id="banner">
       Trades are pulled automatically from your league platform. Grades + 4-week
