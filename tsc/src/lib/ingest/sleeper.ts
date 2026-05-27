@@ -12,6 +12,8 @@ import {
   parallelLimit,
   type SleeperUser,
   type SleeperMatchup,
+  type SleeperPlayer,
+  type SleeperTransaction,
 } from '@/lib/platforms/sleeper'
 
 export type IngestResult = {
@@ -20,6 +22,7 @@ export type IngestResult = {
   managersIngested: number
   matchupsIngested: number
   draftsIngested: number
+  tradesIngested: number
   warnings: string[]
 }
 
@@ -54,6 +57,7 @@ export async function ingestSleeperLeague(leagueRowId: string): Promise<IngestRe
     managersIngested: 0,
     matchupsIngested: 0,
     draftsIngested: 0,
+    tradesIngested: 0,
     warnings: [],
   }
 
@@ -63,6 +67,7 @@ export async function ingestSleeperLeague(leagueRowId: string): Promise<IngestRe
     aggregate.managersIngested += result.managersIngested
     aggregate.matchupsIngested += result.matchupsIngested
     aggregate.draftsIngested += result.draftsIngested
+    aggregate.tradesIngested += result.tradesIngested
     aggregate.warnings.push(...result.warnings)
     if (src.id) {
       await db
@@ -132,6 +137,23 @@ export async function ingestSleeperSource(
 
   let matchupsIngested = 0
   let draftsIngested = 0
+  let tradesIngested = 0
+
+  // Sleeper's full NFL player dictionary. ~5MB; fetched once per ingest run
+  // and reused across every season's trade enrichment. Failure is non-fatal —
+  // trades still ingest, just without resolved player names.
+  let playersByPid: Map<string, SleeperPlayer> | null = null
+  try {
+    const players = await sleeper.playersNfl()
+    if (players) {
+      playersByPid = new Map()
+      for (const [pid, p] of Object.entries(players)) {
+        playersByPid.set(pid, p)
+      }
+    }
+  } catch (e) {
+    warnings.push(`Sleeper /players/nfl failed: ${e instanceof Error ? e.message : String(e)}. Trades will store player_id without names.`)
+  }
 
   // 4. For each season in history, ingest the per-season data
   for (const lg of history) {
@@ -456,6 +478,125 @@ export async function ingestSleeperSource(
         }
       }
     }
+
+    // 4g. Trades — walk every regular-season week, filter type='trade' &&
+    // status='complete'. Sleeper's transactions endpoint returns an empty
+    // array for weeks with no activity, so a few extra fetches is cheap.
+    // Trades after the trade deadline are rare but still legal in some
+    // leagues, so we go all the way through maxWeek rather than stopping
+    // at a hardcoded deadline.
+    const tradeWeekly = await parallelLimit(weeks, 5, async (w) => {
+      const tx = await sleeper.transactions(lg.league_id, w)
+      return tx ?? []
+    })
+    const seasonTrades: SleeperTransaction[] = []
+    for (const wk of tradeWeekly) {
+      for (const t of wk) {
+        if (t.type === 'trade' && t.status === 'complete') seasonTrades.push(t)
+      }
+    }
+
+    for (const t of seasonTrades) {
+      // Build assets per roster_id participating in this trade.
+      const assetsByRoster = new Map<number, Array<Record<string, unknown>>>()
+      for (const rid of t.roster_ids) assetsByRoster.set(rid, [])
+
+      // Players: `adds` is keyed by player_id -> roster_id (the receiver).
+      // `drops` is symmetric; we use `adds` as the source of truth.
+      if (t.adds) {
+        for (const [pid, rid] of Object.entries(t.adds)) {
+          const player = playersByPid?.get(pid) ?? null
+          const fullName = player
+            ? player.full_name
+              ?? [player.first_name, player.last_name].filter(Boolean).join(' ')
+            : null
+          const arr = assetsByRoster.get(rid) ?? []
+          arr.push({
+            kind: 'player',
+            player_id: pid,
+            name: fullName || null,
+            position: player?.position ?? null,
+            team: player?.team ?? null,
+          })
+          assetsByRoster.set(rid, arr)
+        }
+      }
+
+      // Draft picks: owner_id received the pick from previous_owner_id.
+      // Store the original owner as a manager_id so the UI can render
+      // "Joe's 2026 2nd" cleanly.
+      for (const p of t.draft_picks ?? []) {
+        const originalUid = rosterToUserId.get(p.previous_owner_id) ?? null
+        const arr = assetsByRoster.get(p.owner_id) ?? []
+        arr.push({
+          kind: 'pick',
+          season_year: parseInt(p.season, 10),
+          round: p.round,
+          original_owner_manager_id: userIdToManagerId(originalUid),
+        })
+        assetsByRoster.set(p.owner_id, arr)
+      }
+
+      // FAAB: receiver gets `amount` from sender.
+      for (const w of t.waiver_budget ?? []) {
+        const arr = assetsByRoster.get(w.receiver) ?? []
+        arr.push({ kind: 'faab', amount: w.amount })
+        assetsByRoster.set(w.receiver, arr)
+      }
+
+      // Upsert the trade. status_updated is in milliseconds since epoch.
+      const { data: tradeRow, error: tradeErr } = await db
+        .from('trades')
+        .upsert(
+          {
+            league_id: leagueRow.id,
+            season_id: seasonId,
+            platform: 'sleeper',
+            external_id: t.transaction_id,
+            week: t.week ?? null,
+            executed_at: new Date(t.status_updated).toISOString(),
+            status: 'completed',
+            raw_payload: t,
+          },
+          { onConflict: 'league_id,platform,external_id' }
+        )
+        .select('id')
+        .single()
+      if (tradeErr || !tradeRow) {
+        warnings.push(`Trade ${t.transaction_id}: upsert failed: ${tradeErr?.message ?? 'no row'}`)
+        continue
+      }
+
+      // Replace sides on every sync — assets are derived, never authored.
+      // Cascading FK on trade_grades means an existing grade survives the
+      // delete only if it's bound to a side we re-insert with the same id,
+      // which we don't — but that's fine because grades aren't generated in
+      // Phase 1, so there's nothing to lose yet. When grading lands in
+      // Phase 2 we'll switch this to per-side upsert keyed by (trade_id,
+      // manager_id) to preserve grade history across re-syncs.
+      await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
+
+      let sidesInserted = 0
+      for (const [rid, assets] of assetsByRoster) {
+        const managerId = userIdToManagerId(rosterToUserId.get(rid) ?? null)
+        if (!managerId) {
+          warnings.push(`Trade ${t.transaction_id}: roster ${rid} has no manager mapping; side skipped`)
+          continue
+        }
+        const { error: sideErr } = await db.from('trade_sides').insert({
+          trade_id: tradeRow.id,
+          manager_id: managerId,
+          assets,
+        })
+        if (sideErr) {
+          warnings.push(`Trade ${t.transaction_id} side r${rid}: ${sideErr.message}`)
+          continue
+        }
+        sidesInserted++
+      }
+
+      if (sidesInserted >= 2) tradesIngested++
+    }
   }
 
   return {
@@ -464,6 +605,7 @@ export async function ingestSleeperSource(
     managersIngested: userMap.size,
     matchupsIngested,
     draftsIngested,
+    tradesIngested,
     warnings,
   }
 }

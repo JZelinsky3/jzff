@@ -93,6 +93,42 @@ export type SleeperPick = {
   }
 }
 
+// Sleeper transactions cover trades, waivers, FAAB, commissioner moves.
+// For the trade grader we filter type === 'trade' && status === 'complete'.
+// adds/drops map player_id -> roster_id (receiver/dropper).
+export type SleeperTransaction = {
+  type: 'trade' | 'waiver' | 'free_agent' | 'commissioner'
+  transaction_id: string
+  status: string
+  status_updated: number
+  week: number
+  roster_ids: number[]
+  adds: Record<string, number> | null
+  drops: Record<string, number> | null
+  draft_picks: Array<{
+    season: string
+    round: number
+    roster_id: number          // current owner (after the trade) — same as owner_id for normal trades
+    previous_owner_id: number  // who held the pick before this trade
+    owner_id: number           // who holds it after
+  }>
+  waiver_budget: Array<{ sender: number; receiver: number; amount: number }>
+  consenter_ids: number[] | null
+  created: number
+  leg: number
+}
+
+// Sleeper's full NFL player dictionary (~5MB). Keyed by player_id.
+// We fetch this once per ingest run for trade enrichment.
+export type SleeperPlayer = {
+  player_id: string
+  full_name?: string
+  first_name?: string
+  last_name?: string
+  position?: string
+  team?: string | null
+}
+
 export type SleeperBracketMatch = {
   r: number // round
   m: number // match number
@@ -122,6 +158,10 @@ export const sleeper = {
   draftPicks: (draftId: string) => getJson<SleeperPick[]>(`/draft/${draftId}/picks`),
   winnersBracket: (id: string) =>
     getJson<SleeperBracketMatch[]>(`/league/${id}/winners_bracket`),
+  transactions: (id: string, week: number) =>
+    getJson<SleeperTransaction[]>(`/league/${id}/transactions/${week}`),
+  // Big payload (~5MB). Cache the result; do not call per-trade.
+  playersNfl: () => getJson<Record<string, SleeperPlayer>>('/players/nfl'),
 }
 
 // Walks `previous_league_id` back from the user's submitted league to build
