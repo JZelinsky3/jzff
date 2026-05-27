@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trade Grader · Theme demos</title>
+  <link rel="stylesheet" href="/pams-template/assets/css/main.css" />
+  <style>
+    body { background: #0e1620; color: #f4ebd8; font-family: var(--sans); }
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
+    .sup {
+      font-family: var(--mono); font-size: .7rem;
+      letter-spacing: .25em; color: #e8c889;
+      text-transform: uppercase; text-align: center; margin-bottom: 1rem;
+    }
+    h1 {
+      font-family: var(--serif); font-size: clamp(2.4rem, 6vw, 3.6rem);
+      text-align: center; line-height: 1.05; margin-bottom: 1rem;
+    }
+    h1 em { color: #e8c889; font-style: italic; }
+    .lede {
+      max-width: 36rem; margin: 0 auto 3.5rem;
+      text-align: center; color: #c9c0ad; line-height: 1.55;
+    }
+    .grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
+    }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: #16202c; border: 1px solid #2a3645; border-radius: 4px;
+      padding: 1.6rem 1.4rem; text-decoration: none; color: inherit;
+      display: flex; flex-direction: column; gap: .6rem;
+      transition: background .15s, border-color .15s, transform .15s;
+    }
+    .card:hover { background: #1c2939; border-color: #e8c889; transform: translateY(-1px); }
+    .card-kicker {
+      font-family: var(--mono); font-size: .6rem;
+      letter-spacing: .25em; color: #e8c889;
+      text-transform: uppercase;
+    }
+    .card-title { font-family: var(--serif); font-size: 1.5rem; color: #f4ebd8; line-height: 1.15; }
+    .card-title em { color: #e8c889; font-style: italic; }
+    .card-desc { font-size: .88rem; color: #c9c0ad; line-height: 1.5; }
+    .swatches { display: flex; gap: 4px; margin-top: .6rem; }
+    .sw { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,.1); }
+    .arrow { color: #e8c889; font-size: .9rem; margin-top: .4rem; opacity: .6; transition: opacity .15s, transform .15s; }
+    .card:hover .arrow { opacity: 1; transform: translateX(3px); }
+    .back {
+      display: block; text-align: center; margin-top: 3rem;
+      font-family: var(--mono); font-size: .7rem;
+      letter-spacing: .2em; color: #837b6a; text-transform: uppercase;
+      text-decoration: none;
+    }
+    .back:hover { color: #f4ebd8; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="sup">Trade Grader · Design Demos</div>
+    <h1>Pick a <em>direction.</em></h1>
+    <p class="lede">
+      Four theme variations for the Trade Grader page. Each shows the same
+      sample data — hero, tabs, and two trade cards (one current, one with
+      a verdict). Click any card to view its full page.
+    </p>
+
+    <div class="grid">
+
+      <a href="tribunal.html" class="card">
+        <div class="card-kicker">Option 1</div>
+        <div class="card-title">The <em>Tribunal.</em></div>
+        <div class="card-desc">Mahogany + brass + parchment. Court ruling aesthetic. Grade letters render like wax seals. Most editorial / serious.</div>
+        <div class="swatches">
+          <span class="sw" style="background:#14100d"></span>
+          <span class="sw" style="background:#2a1f1a"></span>
+          <span class="sw" style="background:#c8a464"></span>
+          <span class="sw" style="background:#ede0c4"></span>
+          <span class="sw" style="background:#8a3325"></span>
+        </div>
+        <div class="arrow">→</div>
+      </a>
+
+      <a href="wire.html" class="card">
+        <div class="card-kicker">Option 2</div>
+        <div class="card-title">The <em>Wire.</em></div>
+        <div class="card-desc">1962 sports column. Light off-white paper, black ink, red rubber-stamp grades. The only LIGHT-mode page in the entire site.</div>
+        <div class="swatches">
+          <span class="sw" style="background:#efeae0"></span>
+          <span class="sw" style="background:#1a1612"></span>
+          <span class="sw" style="background:#b03830"></span>
+          <span class="sw" style="background:#8c7d62"></span>
+          <span class="sw" style="background:#d4c9b0"></span>
+        </div>
+        <div class="arrow">→</div>
+      </a>
+
+      <a href="floor.html" class="card">
+        <div class="card-kicker">Option 3</div>
+        <div class="card-title">Trading <em>Floor.</em></div>
+        <div class="card-desc">Bloomberg terminal. Pure black, phosphor green, amber, magenta. Heavy mono. Grades color-coded like P/L. Most "computery."</div>
+        <div class="swatches">
+          <span class="sw" style="background:#050707"></span>
+          <span class="sw" style="background:#00ff9f"></span>
+          <span class="sw" style="background:#ffb000"></span>
+          <span class="sw" style="background:#ff3a3a"></span>
+          <span class="sw" style="background:#ff7ad9"></span>
+        </div>
+        <div class="arrow">→</div>
+      </a>
+
+      <a href="cards.html" class="card">
+        <div class="card-kicker">Option 4</div>
+        <div class="card-title">Card <em>Show.</em></div>
+        <div class="card-desc">Sportscard aesthetic. Kraft brown, ivory, vivid team accent stripes. Each side renders as a vintage trading card. Most playful.</div>
+        <div class="swatches">
+          <span class="sw" style="background:#322217"></span>
+          <span class="sw" style="background:#f5e9c8"></span>
+          <span class="sw" style="background:#c8a464"></span>
+          <span class="sw" style="background:#a04830"></span>
+          <span class="sw" style="background:#3d6e8e"></span>
+        </div>
+        <div class="arrow">→</div>
+      </a>
+
+    </div>
+
+    <a href="/" class="back">← Back to site</a>
+  </main>
+</body>
+</html>

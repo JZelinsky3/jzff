@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trading Floor · Trade Grader demo</title>
+  <link rel="stylesheet" href="/pams-template/assets/css/main.css" />
+  <style>
+    :root {
+      --fl-bg:        #050707;
+      --fl-bg-2:      #0a0c0c;
+      --fl-panel:     #0e1110;
+      --fl-panel-2:   #131817;
+      --fl-line:      #1c2421;
+      --fl-line-2:    #243029;
+      --fl-mute:      #4a564e;
+      --fl-text:      #c5d4cb;
+      --fl-text-soft: #889084;
+      --fl-green:     #00ff9f;
+      --fl-green-dim: #008f5a;
+      --fl-amber:     #ffb000;
+      --fl-red:       #ff3a3a;
+      --fl-magenta:   #ff7ad9;
+    }
+    body {
+      background: var(--fl-bg); color: var(--fl-text);
+      font-family: var(--mono);
+      background-image:
+        repeating-linear-gradient(0deg, rgba(0,255,159,.018) 0px, rgba(0,255,159,.018) 1px, transparent 1px, transparent 3px),
+        radial-gradient(ellipse at 50% 0%, rgba(0,255,159,.05) 0%, transparent 60%);
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+    /* ── Header bar ───────────────────────────────────────────────── */
+    .topbar {
+      display: flex; align-items: center; gap: .9rem;
+      padding: .8rem 1rem;
+      background: var(--fl-bg-2);
+      border: 1px solid var(--fl-line);
+      font-size: .68rem; letter-spacing: .12em;
+      margin-bottom: 1.5rem;
+    }
+    .topbar .live {
+      color: var(--fl-green); font-weight: 700;
+      display: inline-flex; align-items: center; gap: .4rem;
+    }
+    .topbar .live::before {
+      content: ''; display: inline-block;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--fl-green);
+      box-shadow: 0 0 6px var(--fl-green);
+      animation: blink 1.4s infinite;
+    }
+    @keyframes blink { 50% { opacity: .25; } }
+    .topbar .sep { color: var(--fl-mute); }
+    .topbar .tier {
+      margin-left: auto;
+      color: var(--fl-amber); border: 1px solid var(--fl-amber);
+      padding: 1px 8px; letter-spacing: .25em;
+    }
+
+    /* ── Hero ─────────────────────────────────────────────────────── */
+    .hero {
+      border: 1px solid var(--fl-line);
+      padding: 2rem 1.5rem;
+      margin-bottom: 1.5rem;
+      background:
+        repeating-linear-gradient(90deg, transparent 0, transparent 39px, rgba(255,255,255,.015) 39px, rgba(255,255,255,.015) 40px),
+        var(--fl-bg-2);
+    }
+    .hero-prompt {
+      color: var(--fl-green); font-size: .72rem; letter-spacing: .15em;
+      margin-bottom: .4rem;
+    }
+    .hero h1 {
+      font-family: var(--mono); font-weight: 700;
+      font-size: clamp(1.8rem, 4.5vw, 2.6rem);
+      color: var(--fl-text); letter-spacing: -.01em;
+      text-transform: uppercase;
+    }
+    .hero h1 .accent { color: var(--fl-green); }
+    .hero-sub {
+      margin-top: .8rem;
+      font-size: .82rem; line-height: 1.55;
+      color: var(--fl-text-soft);
+    }
+
+    /* ── Tabs ─────────────────────────────────────────────────────── */
+    .tabs {
+      display: flex; gap: 0;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--fl-line-2);
+    }
+    .tab {
+      font-family: var(--mono); font-weight: 700;
+      font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
+      padding: .9rem 1.4rem;
+      background: transparent; border: none; cursor: pointer;
+      color: var(--fl-mute);
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .tab.active { color: var(--fl-green); border-bottom-color: var(--fl-green); }
+    .tab .count { color: var(--fl-text-soft); margin-left: .4rem; font-weight: 400; }
+    .tab.active .count { color: var(--fl-green-dim); }
+
+    /* ── Trade entry ──────────────────────────────────────────────── */
+    .tx {
+      border: 1px solid var(--fl-line);
+      background: var(--fl-panel);
+      margin-bottom: 1rem;
+    }
+    .tx-head {
+      display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+      padding: .65rem 1rem;
+      background: var(--fl-panel-2);
+      border-bottom: 1px solid var(--fl-line);
+      font-size: .66rem; letter-spacing: .15em; text-transform: uppercase;
+    }
+    .tx-id { color: var(--fl-green); font-weight: 700; }
+    .tx-date { color: var(--fl-text); }
+    .tx-meta { color: var(--fl-text-soft); }
+    .tx-status {
+      margin-left: auto;
+      color: var(--fl-green); border: 1px solid var(--fl-green-dim);
+      padding: 1px 8px;
+    }
+    .tx-status.revisit { color: var(--fl-magenta); border-color: var(--fl-magenta); }
+
+    .tx-feed {
+      padding: 1rem 1.1rem;
+      border-bottom: 1px solid var(--fl-line);
+      font-size: .82rem; line-height: 1.55;
+      color: var(--fl-text-soft);
+    }
+    .tx-feed::before {
+      content: '> '; color: var(--fl-green); font-weight: 700;
+    }
+
+    .tx-sides {
+      display: grid; gap: 1px; background: var(--fl-line);
+    }
+    @media (min-width: 720px) { .tx-sides { grid-template-columns: 1fr 1fr; } }
+    .tx-side {
+      padding: 1rem 1.1rem;
+      background: var(--fl-panel);
+    }
+    .tx-side-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: .8rem;
+      padding-bottom: .55rem;
+      border-bottom: 1px dashed var(--fl-line-2);
+    }
+    .tx-side-name {
+      font-size: .82rem; color: var(--fl-text); letter-spacing: .05em;
+      font-weight: 700; text-transform: uppercase;
+    }
+    .tx-side-label {
+      font-size: .58rem; letter-spacing: .25em;
+      color: var(--fl-mute); text-transform: uppercase;
+    }
+
+    .tx-assets {
+      display: flex; flex-direction: column; gap: 4px;
+      font-size: .8rem;
+      padding: 0;
+    }
+    .tx-asset {
+      display: grid; grid-template-columns: 32px 1fr auto;
+      align-items: baseline;
+      padding: 4px 8px;
+      background: var(--fl-bg-2);
+      border-left: 2px solid var(--fl-green-dim);
+    }
+    .tx-asset .pos { color: var(--fl-amber); font-weight: 700; font-size: .68rem; letter-spacing: .1em; }
+    .tx-asset .name { color: var(--fl-text); }
+    .tx-asset .rank { color: var(--fl-text-soft); font-size: .68rem; }
+    .tx-asset.pick { border-left-color: var(--fl-amber); }
+    .tx-asset.pick .pos { color: var(--fl-magenta); }
+
+    /* Grade — terminal P/L style */
+    .tx-grade {
+      margin-top: .9rem;
+      display: flex; align-items: center; gap: .8rem;
+      padding: .55rem .7rem;
+      background: var(--fl-bg-2);
+      border: 1px solid var(--fl-line-2);
+    }
+    .tx-grade .indicator {
+      font-family: var(--mono); font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .tx-grade .letter {
+      font-family: var(--mono); font-weight: 700;
+      font-size: 1.45rem; letter-spacing: -.02em;
+    }
+    .tx-grade .meta {
+      margin-left: auto;
+      font-size: .58rem; letter-spacing: .25em;
+      color: var(--fl-mute); text-transform: uppercase;
+    }
+    .tx-grade.g-a { border-color: var(--fl-green-dim); }
+    .tx-grade.g-a .letter, .tx-grade.g-a .indicator { color: var(--fl-green); }
+    .tx-grade.g-b .letter, .tx-grade.g-b .indicator { color: var(--fl-amber); }
+    .tx-grade.g-c .letter, .tx-grade.g-c .indicator { color: var(--fl-amber); opacity: .8; }
+    .tx-grade.g-d { border-color: var(--fl-red); }
+    .tx-grade.g-d .letter, .tx-grade.g-d .indicator { color: var(--fl-red); }
+
+    .tx-grade-revisit { display: flex; align-items: center; gap: .55rem; }
+    .tx-grade-revisit .prior {
+      font-size: .85rem; color: var(--fl-mute);
+      letter-spacing: -.02em; font-weight: 700;
+    }
+    .tx-grade-revisit .arrow { color: var(--fl-magenta); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+
+    <div class="topbar">
+      <span class="live">LIVE</span>
+      <span>TRADE_GRADER</span>
+      <span class="sep">/</span>
+      <span>PMS</span>
+      <span class="sep">/</span>
+      <span>2025</span>
+      <span class="tier">VET</span>
+    </div>
+
+    <header class="hero">
+      <div class="hero-prompt">user@jzff:~$ ./trade-grader.exe --live</div>
+      <h1>Trade <span class="accent">Grader.</span></h1>
+      <div class="hero-sub">Every deal in the PA Milk Society, graded and tracked. Position rank, roster fit, and ai-anchored verdicts.</div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active">Current<span class="count">[3]</span></button>
+      <button class="tab">Past<span class="count">[97]</span></button>
+      <button class="tab">Verdicts<span class="count">[12]</span></button>
+    </nav>
+
+    <!-- CURRENT -->
+    <article class="tx">
+      <div class="tx-head">
+        <span class="tx-id">TX#042</span>
+        <span class="tx-date">2025-09-09</span>
+        <span class="tx-meta">PRE · PMS · Sleeper</span>
+        <span class="tx-status">EXECUTED</span>
+      </div>
+      <div class="tx-feed">Sinkaroos went all-in on Saquon Barkley, banking on RB3 production through 2026 even at age 28. Horsecocks pivoted into draft capital. The Sinkaroos pay a tier-2 price for tier-1 immediate production.</div>
+      <div class="tx-sides">
+        <div class="tx-side">
+          <div class="tx-side-head">
+            <span class="tx-side-name">SINKAROOS</span>
+            <span class="tx-side-label">ACQ</span>
+          </div>
+          <div class="tx-assets">
+            <div class="tx-asset"><span class="pos">RB</span><span class="name">Saquon Barkley</span><span class="rank">RB3 · 28</span></div>
+          </div>
+          <div class="tx-grade g-a">
+            <span class="indicator">▲</span>
+            <span class="letter">A-</span>
+            <span class="meta">GRADE</span>
+          </div>
+        </div>
+        <div class="tx-side">
+          <div class="tx-side-head">
+            <span class="tx-side-name">HORSECOCKS</span>
+            <span class="tx-side-label">ACQ</span>
+          </div>
+          <div class="tx-assets">
+            <div class="tx-asset"><span class="pos">RB</span><span class="name">Tony Pollard</span><span class="rank">RB42 · 29</span></div>
+            <div class="tx-asset pick"><span class="pos">PICK</span><span class="name">2026 1st</span><span class="rank">—</span></div>
+          </div>
+          <div class="tx-grade g-b">
+            <span class="indicator">●</span>
+            <span class="letter">B</span>
+            <span class="meta">GRADE</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- VERDICT -->
+    <article class="tx">
+      <div class="tx-head">
+        <span class="tx-id">TX#038</span>
+        <span class="tx-date">2025-08-22</span>
+        <span class="tx-meta">WK 0 · revisit 09-20</span>
+        <span class="tx-status revisit">REVISITED</span>
+      </div>
+      <div class="tx-feed">Joey's gamble on Jefferson looks better than it did at the time — week-six target share is up 18%. Mike's haul has aged less gracefully: London's snap share dropped after the Cousins injury. Original B+/B- tilts toward A-/C+ in hindsight.</div>
+      <div class="tx-sides">
+        <div class="tx-side">
+          <div class="tx-side-head">
+            <span class="tx-side-name">JOEY'S JOES</span>
+            <span class="tx-side-label">ACQ</span>
+          </div>
+          <div class="tx-assets">
+            <div class="tx-asset"><span class="pos">WR</span><span class="name">Justin Jefferson</span><span class="rank">WR2 · 26</span></div>
+          </div>
+          <div class="tx-grade g-a">
+            <div class="tx-grade-revisit">
+              <span class="prior">B+</span>
+              <span class="arrow">→</span>
+              <span class="letter">A-</span>
+            </div>
+            <span class="meta">FINAL</span>
+          </div>
+        </div>
+        <div class="tx-side">
+          <div class="tx-side-head">
+            <span class="tx-side-name">MIKE'S MOB</span>
+            <span class="tx-side-label">ACQ</span>
+          </div>
+          <div class="tx-assets">
+            <div class="tx-asset"><span class="pos">WR</span><span class="name">Drake London</span><span class="rank">WR18 · 24</span></div>
+            <div class="tx-asset pick"><span class="pos">PICK</span><span class="name">2026 1st</span><span class="rank">—</span></div>
+            <div class="tx-asset pick"><span class="pos">PICK</span><span class="name">2027 1st</span><span class="rank">—</span></div>
+          </div>
+          <div class="tx-grade g-d">
+            <div class="tx-grade-revisit">
+              <span class="prior">B-</span>
+              <span class="arrow">→</span>
+              <span class="letter">C+</span>
+            </div>
+            <span class="meta">FINAL</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <p style="text-align:center;margin-top:3rem;">
+      <a href="index.html" style="font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;color:var(--fl-mute);text-transform:uppercase;text-decoration:none;">← Pick a different direction</a>
+    </p>
+  </main>
+</body>
+</html>

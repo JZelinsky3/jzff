@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Card Show · Trade Grader demo</title>
+  <link rel="stylesheet" href="/pams-template/assets/css/main.css" />
+  <style>
+    :root {
+      --cs-bg:        #2a1d11;
+      --cs-bg-2:      #322217;
+      --cs-bg-soft:   #3b2a1c;
+      --cs-line:      #4c3922;
+      --cs-line-soft: #3d2b1c;
+      --cs-mute:      #9c8665;
+      --cs-ivory:     #f5e9c8;
+      --cs-ivory-2:   #ddd0aa;
+      --cs-brass:     #c8a464;
+      --cs-rust:      #a04830;
+      --cs-blue:      #3d6e8e;
+      --cs-team-a:    #c43838;
+      --cs-team-b:    #2a6a3c;
+      --cs-team-c:    #4b3a8a;
+      --cs-team-d:    #c66b1b;
+    }
+    body {
+      background: var(--cs-bg); color: var(--cs-ivory);
+      font-family: var(--sans);
+      background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(245,233,200,.04) 0%, transparent 65%),
+        repeating-linear-gradient(45deg, rgba(245,233,200,.012) 0px, rgba(245,233,200,.012) 2px, transparent 2px, transparent 8px);
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+    /* ── Hero ─────────────────────────────────────────────────────── */
+    .hero { text-align: center; padding: 1rem 0 2.5rem; }
+    .hero-pin {
+      display: inline-block;
+      font-family: var(--mono); font-size: .58rem;
+      letter-spacing: .3em; color: var(--cs-brass);
+      text-transform: uppercase;
+      background: var(--cs-bg-2);
+      border: 1px solid var(--cs-brass);
+      padding: .25rem .8rem;
+      border-radius: 999px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-family: var(--serif); font-size: clamp(2.6rem, 7vw, 4.2rem);
+      line-height: 1; color: var(--cs-ivory);
+    }
+    .hero h1 em { color: var(--cs-brass); font-style: italic; }
+    .hero-sub {
+      max-width: 32rem; margin: 1.2rem auto 0;
+      font-size: .95rem; line-height: 1.55;
+      color: var(--cs-ivory-2);
+    }
+
+    /* ── Tabs ─────────────────────────────────────────────────────── */
+    .tabs {
+      display: flex; justify-content: center;
+      gap: .4rem;
+      margin: 2rem 0 2.5rem;
+    }
+    .tab {
+      font-family: var(--mono); font-weight: 700;
+      font-size: .66rem; letter-spacing: .22em; text-transform: uppercase;
+      padding: .6rem 1.2rem;
+      background: var(--cs-bg-2);
+      border: 1px solid var(--cs-line);
+      color: var(--cs-mute);
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .tab.active {
+      background: var(--cs-ivory);
+      color: var(--cs-bg);
+      border-color: var(--cs-ivory);
+    }
+
+    /* ── Trade pair (booklet of two cards) ───────────────────────── */
+    .booklet {
+      background: var(--cs-bg-2);
+      border: 1px solid var(--cs-line);
+      border-radius: 4px;
+      padding: 1.4rem 1.5rem 1.6rem;
+      margin-bottom: 1.8rem;
+    }
+    .booklet-head {
+      display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap;
+      margin-bottom: 1rem;
+      padding-bottom: .85rem;
+      border-bottom: 2px dashed var(--cs-line);
+    }
+    .booklet-no {
+      font-family: var(--serif); font-style: italic;
+      color: var(--cs-brass);
+      font-size: 1.1rem;
+    }
+    .booklet-meta {
+      font-family: var(--mono); font-size: .65rem;
+      letter-spacing: .18em; text-transform: uppercase;
+      color: var(--cs-mute);
+    }
+    .booklet-headline {
+      font-family: var(--serif); font-size: 1.05rem; line-height: 1.55;
+      color: var(--cs-ivory-2); margin-bottom: 1.2rem;
+      font-style: italic;
+    }
+
+    /* ── Player card ──────────────────────────────────────────────── */
+    .pair {
+      display: grid; gap: 1.2rem;
+    }
+    @media (min-width: 720px) { .pair { grid-template-columns: 1fr 1fr; } }
+    .pcard {
+      background: var(--cs-ivory);
+      color: #2a1d11;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 3px 0 rgba(0,0,0,.35), 0 0 0 1px var(--cs-line);
+      position: relative;
+    }
+    .pcard .stripe {
+      height: 28px;
+      background: var(--cs-team-a);
+      display: flex; align-items: center; padding: 0 .9rem;
+      color: white; font-family: var(--mono); font-size: .62rem;
+      letter-spacing: .22em; text-transform: uppercase; font-weight: 700;
+    }
+    .pcard-2 .stripe { background: var(--cs-team-b); }
+    .pcard-blue .stripe { background: var(--cs-blue); }
+    .pcard-rust .stripe { background: var(--cs-rust); }
+
+    .pcard-body {
+      padding: 1rem 1.1rem 1.1rem;
+      display: flex; flex-direction: column; gap: .7rem;
+    }
+    .pcard-mgr {
+      display: flex; align-items: baseline; justify-content: space-between;
+      padding-bottom: .55rem;
+      border-bottom: 1px solid #d4c9a0;
+    }
+    .pcard-mgr .name {
+      font-family: var(--serif); font-size: 1.15rem;
+      color: #2a1d11;
+    }
+    .pcard-mgr .side-label {
+      font-family: var(--mono); font-size: .58rem;
+      letter-spacing: .25em; text-transform: uppercase;
+      color: #7a623e;
+    }
+
+    .pcard-feat {
+      display: grid; grid-template-columns: 56px 1fr; gap: .8rem; align-items: center;
+      padding: .55rem 0;
+    }
+    .pcard-feat .posbubble {
+      width: 56px; height: 56px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-weight: 700;
+      font-size: 1.05rem; color: white;
+      background: var(--cs-team-a);
+      box-shadow: inset 0 -8px 0 rgba(0,0,0,.18);
+    }
+    .pcard-2 .pcard-feat .posbubble { background: var(--cs-team-b); }
+    .pcard-blue .pcard-feat .posbubble { background: var(--cs-blue); }
+    .pcard-rust .pcard-feat .posbubble { background: var(--cs-rust); }
+
+    .pcard-feat .pname {
+      font-family: var(--serif); font-size: 1.2rem;
+      color: #2a1d11; line-height: 1.1;
+    }
+    .pcard-feat .ptag {
+      font-family: var(--mono); font-size: .68rem;
+      letter-spacing: .12em; color: #7a623e;
+      margin-top: .15rem;
+    }
+
+    .pcard-extras {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; flex-direction: column; gap: .25rem;
+      font-size: .82rem;
+    }
+    .pcard-extras li {
+      padding: .25rem .55rem;
+      background: rgba(0,0,0,.04);
+      border-left: 3px solid var(--cs-brass);
+      color: #2a1d11;
+      display: flex; gap: .6rem; align-items: baseline;
+    }
+    .pcard-extras .lbl {
+      font-family: var(--mono); font-size: .58rem;
+      letter-spacing: .18em; text-transform: uppercase;
+      color: #7a623e; min-width: 40px;
+    }
+
+    /* Grade ribbon */
+    .pcard-grade {
+      margin-top: .9rem;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .55rem .9rem;
+      background: var(--cs-bg);
+      color: var(--cs-ivory);
+      border-radius: 3px;
+    }
+    .pcard-grade .label {
+      font-family: var(--mono); font-size: .62rem;
+      letter-spacing: .25em; text-transform: uppercase;
+      color: var(--cs-mute);
+    }
+    .pcard-grade .letter {
+      font-family: var(--serif); font-weight: 700;
+      font-size: 1.6rem; letter-spacing: -.02em;
+      color: var(--cs-brass);
+    }
+    .pcard-grade.g-a .letter { color: #6dcf8a; }
+    .pcard-grade.g-d .letter { color: #ff7a6b; }
+    .pcard-grade .revisit-row {
+      display: flex; align-items: center; gap: .55rem;
+    }
+    .pcard-grade .prior {
+      font-family: var(--serif); font-size: 1rem;
+      color: var(--cs-mute); font-weight: 700;
+    }
+    .pcard-grade .arr {
+      color: var(--cs-brass); font-family: var(--serif);
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+
+    <header class="hero">
+      <span class="hero-pin">★ The Card Show · PMS · 2025</span>
+      <h1>Trade <em>Grader.</em></h1>
+      <p class="hero-sub">Every deal in your league rendered as a pair of trading cards. Position, value, and the grade — front and center.</p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active">Current</button>
+      <button class="tab">Past</button>
+      <button class="tab">Verdicts</button>
+    </nav>
+
+    <!-- CURRENT -->
+    <article class="booklet">
+      <div class="booklet-head">
+        <span class="booklet-no">Trade № 042</span>
+        <span class="booklet-meta">Sept 9, 2025</span>
+        <span class="booklet-meta">Pre-season</span>
+        <span class="booklet-meta" style="margin-left:auto;">via Sleeper</span>
+      </div>
+      <p class="booklet-headline">Sinkaroos all-in on Saquon. Horsecocks bank the picks for the long haul.</p>
+
+      <div class="pair">
+        <div class="pcard">
+          <div class="stripe">Quahog Sinkaroos · acquired</div>
+          <div class="pcard-body">
+            <div class="pcard-mgr">
+              <span class="name">JZelinsky</span>
+              <span class="side-label">Side A</span>
+            </div>
+            <div class="pcard-feat">
+              <div class="posbubble">RB</div>
+              <div>
+                <div class="pname">Saquon Barkley</div>
+                <div class="ptag">RB3 · age 28 · PHI</div>
+              </div>
+            </div>
+            <div class="pcard-grade g-a">
+              <span class="label">Grade</span>
+              <span class="letter">A−</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pcard pcard-2">
+          <div class="stripe">Philadelphia Horsecocks · acquired</div>
+          <div class="pcard-body">
+            <div class="pcard-mgr">
+              <span class="name">Thehorsecock69</span>
+              <span class="side-label">Side B</span>
+            </div>
+            <div class="pcard-feat">
+              <div class="posbubble">RB</div>
+              <div>
+                <div class="pname">Tony Pollard</div>
+                <div class="ptag">RB42 · age 29 · TEN</div>
+              </div>
+            </div>
+            <ul class="pcard-extras">
+              <li><span class="lbl">Pick</span><span>2026 1st round</span></li>
+            </ul>
+            <div class="pcard-grade">
+              <span class="label">Grade</span>
+              <span class="letter">B</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- VERDICT -->
+    <article class="booklet">
+      <div class="booklet-head">
+        <span class="booklet-no">Trade № 038</span>
+        <span class="booklet-meta">Aug 22, 2025</span>
+        <span class="booklet-meta">Week 0 · Verdict 09-20</span>
+        <span class="booklet-meta" style="margin-left:auto;">via Sleeper</span>
+      </div>
+      <p class="booklet-headline">Joey's Jefferson gamble looks even better in hindsight. Mike's haul hasn't aged well.</p>
+
+      <div class="pair">
+        <div class="pcard pcard-blue">
+          <div class="stripe">Joey's Joes · acquired</div>
+          <div class="pcard-body">
+            <div class="pcard-mgr">
+              <span class="name">Joey</span>
+              <span class="side-label">Side A</span>
+            </div>
+            <div class="pcard-feat">
+              <div class="posbubble">WR</div>
+              <div>
+                <div class="pname">Justin Jefferson</div>
+                <div class="ptag">WR2 · age 26 · MIN</div>
+              </div>
+            </div>
+            <div class="pcard-grade g-a">
+              <span class="label">Final</span>
+              <span class="revisit-row">
+                <span class="prior">B+</span>
+                <span class="arr">→</span>
+                <span class="letter">A−</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pcard pcard-rust">
+          <div class="stripe">Mike's Mob · acquired</div>
+          <div class="pcard-body">
+            <div class="pcard-mgr">
+              <span class="name">Mike</span>
+              <span class="side-label">Side B</span>
+            </div>
+            <div class="pcard-feat">
+              <div class="posbubble">WR</div>
+              <div>
+                <div class="pname">Drake London</div>
+                <div class="ptag">WR18 · age 24 · ATL</div>
+              </div>
+            </div>
+            <ul class="pcard-extras">
+              <li><span class="lbl">Pick</span><span>2026 1st round</span></li>
+              <li><span class="lbl">Pick</span><span>2027 1st round</span></li>
+            </ul>
+            <div class="pcard-grade g-d">
+              <span class="label">Final</span>
+              <span class="revisit-row">
+                <span class="prior">B−</span>
+                <span class="arr">→</span>
+                <span class="letter">C+</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <p style="text-align:center;margin-top:3rem;">
+      <a href="index.html" style="font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;color:var(--cs-mute);text-transform:uppercase;text-decoration:none;">← Pick a different direction</a>
+    </p>
+  </main>
+</body>
+</html>
