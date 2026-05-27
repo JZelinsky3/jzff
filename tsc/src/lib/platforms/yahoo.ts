@@ -268,6 +268,369 @@ export async function getLeagueDetail(
   }
 }
 
+// ============================================================
+// Ingest-time API helpers
+// ============================================================
+//
+// Yahoo's `renew` field on a league points back to the prior season as
+// "{prev_game_key}_{prev_league_id}". Convert to league_key form.
+export function renewToLeagueKey(renew: string | undefined | null): string | null {
+  if (!renew || typeof renew !== 'string') return null
+  // Sometimes returns "x.l.y" already; sometimes "x_y".
+  if (renew.includes('.l.')) return renew
+  const [gk, lid] = renew.split('_')
+  if (!gk || !lid) return null
+  return `${gk}.l.${lid}`
+}
+
+export type YahooLeagueMeta = {
+  league_key: string
+  league_id: string
+  game_key: string
+  name: string
+  season: string
+  num_teams: number
+  start_week: number
+  end_week: number
+  current_week?: number
+  renew?: string | null      // raw value: e.g. "423_789012"
+  renewed?: string | null
+}
+
+// GET /league/{key} — basic metadata including renew/renewed for history walking.
+export async function getLeagueMeta(
+  accessToken: string,
+  leagueKey: string
+): Promise<YahooLeagueMeta | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = await yahooFetchJson<any>(accessToken, `/league/${leagueKey}`)
+  const arr = raw?.fantasy_content?.league
+  if (!arr) return null
+  const m = flattenFragments(Array.isArray(arr) ? arr : [arr])
+  return {
+    league_key: String(m.league_key ?? leagueKey),
+    league_id: String(m.league_id ?? ''),
+    game_key: String(m.league_key ?? leagueKey).split('.')[0],
+    name: String(m.name ?? ''),
+    season: String(m.season ?? ''),
+    num_teams: Number(m.num_teams ?? 0),
+    start_week: Number(m.start_week ?? 1),
+    end_week: Number(m.end_week ?? 17),
+    current_week: m.current_week != null ? Number(m.current_week) : undefined,
+    renew: typeof m.renew === 'string' && m.renew.length > 0 ? m.renew : null,
+    renewed: typeof m.renewed === 'string' && m.renewed.length > 0 ? m.renewed : null,
+  }
+}
+
+// Walks the renew chain back from `startLeagueKey` (oldest → newest in the
+// returned array). Guards against cycles + 30-deep chains.
+export async function walkLeagueChain(
+  accessToken: string,
+  startLeagueKey: string
+): Promise<YahooLeagueMeta[]> {
+  const chain: YahooLeagueMeta[] = []
+  const seen = new Set<string>()
+  let cursor: string | null = startLeagueKey
+  let guard = 0
+  while (cursor && guard < 30 && !seen.has(cursor)) {
+    seen.add(cursor)
+    const meta = await getLeagueMeta(accessToken, cursor)
+    if (!meta) break
+    chain.push(meta)
+    cursor = renewToLeagueKey(meta.renew)
+    guard++
+  }
+  return chain.reverse()
+}
+
+export type YahooManagerInfo = {
+  guid: string
+  nickname: string
+  image_url?: string
+  is_commish: boolean
+}
+
+export type YahooTeam = {
+  team_key: string          // e.g. "461.l.123456.t.5"
+  team_id: string           // "5"
+  name: string
+  url?: string
+  logo_url?: string
+  division_id?: string      // Yahoo stores this as a string
+  managers: YahooManagerInfo[]
+  wins: number
+  losses: number
+  ties: number
+  points_for: number
+  points_against: number
+  rank?: number             // team_standings.rank — final rank if season's over, else regular-season rank
+  playoff_seed?: number
+}
+
+// GET /league/{key}/standings — every team with team_standings inline.
+// Yahoo's standings response includes the manager array per team, so this
+// one call gives us teams + managers + records + ranks in one go.
+export async function getLeagueTeamsStandings(
+  accessToken: string,
+  leagueKey: string
+): Promise<YahooTeam[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = await yahooFetchJson<any>(accessToken, `/league/${leagueKey}/standings`)
+  const leagueArr = raw?.fantasy_content?.league
+  if (!leagueArr) return []
+  // /standings shape: leagueArr = [ {...meta...}, { standings: [ { teams: { 0:{team:[...]}, 1:..., count } } ] } ]
+  const standingsBlock = (leagueArr as unknown[]).find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (x: any) => x && typeof x === 'object' && 'standings' in x
+  )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const teamsNode = (standingsBlock as any)?.standings?.[0]?.teams
+  if (!teamsNode) return []
+
+  const out: YahooTeam[] = []
+  for (const tNode of numberedToArray(teamsNode)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const teamFrag = (tNode as any)?.team
+    if (!teamFrag) continue
+    // team is itself an array of fragments — flatten the META portion (the
+    // first inner array) and the trailing team_standings + division/etc.
+    // Yahoo wraps the team metadata in a nested array: team[0] is array of
+    // fragments, the rest of team[] are subresources (team_standings, etc.)
+    const metaFrags = Array.isArray(teamFrag[0]) ? teamFrag[0] : teamFrag
+    const m = flattenFragments(metaFrags)
+    // Subresources live in team[1..N].
+    const subResources: Record<string, unknown> = {}
+    for (let i = 1; i < teamFrag.length; i++) {
+      const part = teamFrag[i]
+      if (part && typeof part === 'object') Object.assign(subResources, part)
+    }
+    const team_standings = (subResources.team_standings ?? {}) as Record<string, unknown>
+    const outcome = (team_standings.outcome_totals ?? {}) as Record<string, unknown>
+
+    // Managers: Yahoo nests these as { managers: [ { manager: {...} }, ... ] } or
+    // a numbered-key map. Tolerate both.
+    const managers: YahooManagerInfo[] = []
+    const mgrNode = m.managers
+    if (Array.isArray(mgrNode)) {
+      for (const mm of mgrNode) {
+        const mgr = (mm as { manager?: Record<string, unknown> })?.manager
+        if (!mgr) continue
+        const guid = String(mgr.guid ?? '')
+        if (!guid) continue
+        managers.push({
+          guid,
+          nickname: String(mgr.nickname ?? '').trim() || guid,
+          image_url: typeof mgr.image_url === 'string' ? mgr.image_url : undefined,
+          is_commish: String(mgr.is_commish ?? '0') === '1',
+        })
+      }
+    } else if (mgrNode && typeof mgrNode === 'object') {
+      for (const mm of numberedToArray(mgrNode)) {
+        const mgr = (mm as { manager?: Record<string, unknown> })?.manager
+        if (!mgr) continue
+        const guid = String(mgr.guid ?? '')
+        if (!guid) continue
+        managers.push({
+          guid,
+          nickname: String(mgr.nickname ?? '').trim() || guid,
+          image_url: typeof mgr.image_url === 'string' ? mgr.image_url : undefined,
+          is_commish: String(mgr.is_commish ?? '0') === '1',
+        })
+      }
+    }
+
+    const team_logos = m.team_logos as unknown
+    let logo_url: string | undefined
+    if (Array.isArray(team_logos) && team_logos.length > 0) {
+      const tl = team_logos[0] as { team_logo?: { url?: string } }
+      logo_url = tl?.team_logo?.url
+    }
+
+    out.push({
+      team_key: String(m.team_key ?? ''),
+      team_id: String(m.team_id ?? ''),
+      name: String(m.name ?? '').trim(),
+      url: typeof m.url === 'string' ? m.url : undefined,
+      logo_url,
+      division_id: m.division_id != null ? String(m.division_id) : undefined,
+      managers,
+      wins: Number(outcome.wins ?? 0),
+      losses: Number(outcome.losses ?? 0),
+      ties: Number(outcome.ties ?? 0),
+      points_for: Number(team_standings.points_for ?? 0),
+      points_against: Number(team_standings.points_against ?? 0),
+      rank: team_standings.rank != null ? Number(team_standings.rank) : undefined,
+      playoff_seed: team_standings.playoff_seed != null ? Number(team_standings.playoff_seed) : undefined,
+    })
+  }
+  return out
+}
+
+export type YahooScoreboardMatchup = {
+  week: number
+  is_playoffs: boolean
+  is_consolation: boolean
+  status: string            // "postevent" | "midevent" | "preevent"
+  team_a_key: string
+  team_b_key: string
+  team_a_points: number | null
+  team_b_points: number | null
+  winner_team_key?: string  // present after game ends
+}
+
+// GET /league/{key}/scoreboard;week=N — returns matchups for that week.
+// Yahoo accepts a comma-separated list (;week=1,2,3) for multi-week, but the
+// shape gets even worse to parse; we fetch per-week for clarity.
+export async function getLeagueScoreboard(
+  accessToken: string,
+  leagueKey: string,
+  week: number
+): Promise<YahooScoreboardMatchup[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = await yahooFetchJson<any>(accessToken, `/league/${leagueKey}/scoreboard;week=${week}`)
+  const leagueArr = raw?.fantasy_content?.league
+  if (!leagueArr) return []
+  const sbBlock = (leagueArr as unknown[]).find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (x: any) => x && typeof x === 'object' && 'scoreboard' in x
+  )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const matchupsNode = (sbBlock as any)?.scoreboard?.['0']?.matchups
+  if (!matchupsNode) return []
+
+  const out: YahooScoreboardMatchup[] = []
+  for (const mNode of numberedToArray(matchupsNode)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const matchupFrag = (mNode as any)?.matchup
+    if (!matchupFrag) continue
+    // matchup is a flat object of metadata + a `teams` numbered map.
+    const meta = flattenFragments(Array.isArray(matchupFrag) ? matchupFrag : [matchupFrag])
+    const teamsNode = (meta.teams ?? matchupFrag.teams) as Record<string, unknown> | undefined
+    if (!teamsNode) continue
+    const teamList = numberedToArray(teamsNode)
+    if (teamList.length !== 2) continue
+    const [tA, tB] = teamList
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const teamA = flattenFragments((tA as any)?.team?.[0] ?? (tA as any)?.team ?? {})
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const teamB = flattenFragments((tB as any)?.team?.[0] ?? (tB as any)?.team ?? {})
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const teamAPoints = (tA as any)?.team?.[1]?.team_points?.total
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const teamBPoints = (tB as any)?.team?.[1]?.team_points?.total
+
+    out.push({
+      week,
+      is_playoffs: String(meta.is_playoffs ?? '0') === '1',
+      is_consolation: String(meta.is_consolation ?? '0') === '1',
+      status: String(meta.status ?? ''),
+      team_a_key: String(teamA.team_key ?? ''),
+      team_b_key: String(teamB.team_key ?? ''),
+      team_a_points: teamAPoints != null && teamAPoints !== '' ? Number(teamAPoints) : null,
+      team_b_points: teamBPoints != null && teamBPoints !== '' ? Number(teamBPoints) : null,
+      winner_team_key: typeof meta.winner_team_key === 'string' ? meta.winner_team_key : undefined,
+    })
+  }
+  return out
+}
+
+export type YahooDraftPick = {
+  pick: number
+  round: number
+  team_key: string
+  player_key: string
+  cost?: number  // auction only
+}
+
+// GET /league/{key}/draftresults
+export async function getLeagueDraft(
+  accessToken: string,
+  leagueKey: string
+): Promise<YahooDraftPick[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = await yahooFetchJson<any>(accessToken, `/league/${leagueKey}/draftresults`)
+  const leagueArr = raw?.fantasy_content?.league
+  if (!leagueArr) return []
+  const block = (leagueArr as unknown[]).find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (x: any) => x && typeof x === 'object' && 'draft_results' in x
+  )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const drNode = (block as any)?.draft_results
+  if (!drNode) return []
+  const out: YahooDraftPick[] = []
+  for (const node of numberedToArray(drNode)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dr = (node as any)?.draft_result
+    if (!dr) continue
+    out.push({
+      pick: Number(dr.pick ?? 0),
+      round: Number(dr.round ?? 0),
+      team_key: String(dr.team_key ?? ''),
+      player_key: String(dr.player_key ?? ''),
+      cost: dr.cost != null ? Number(dr.cost) : undefined,
+    })
+  }
+  return out
+}
+
+export type YahooPlayerInfo = {
+  player_key: string
+  full_name: string
+  position?: string          // primary position
+  editorial_team_abbr?: string  // NFL team
+}
+
+// GET /league/{key}/players;player_keys=k1,k2,...
+// Yahoo caps at 25 player_keys per call; this helper batches.
+export async function getPlayersBatch(
+  accessToken: string,
+  leagueKey: string,
+  playerKeys: string[]
+): Promise<Map<string, YahooPlayerInfo>> {
+  const out = new Map<string, YahooPlayerInfo>()
+  const chunkSize = 25
+  for (let i = 0; i < playerKeys.length; i += chunkSize) {
+    const chunk = playerKeys.slice(i, i + chunkSize).filter(Boolean)
+    if (chunk.length === 0) continue
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = await yahooFetchJson<any>(
+      accessToken,
+      `/league/${leagueKey}/players;player_keys=${chunk.join(',')}`
+    )
+    const leagueArr = raw?.fantasy_content?.league
+    if (!leagueArr) continue
+    const block = (leagueArr as unknown[]).find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (x: any) => x && typeof x === 'object' && 'players' in x
+    )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const playersNode = (block as any)?.players
+    if (!playersNode) continue
+    for (const pNode of numberedToArray(playersNode)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pFrag = (pNode as any)?.player
+      if (!pFrag) continue
+      const metaFrags = Array.isArray(pFrag[0]) ? pFrag[0] : pFrag
+      const m = flattenFragments(metaFrags)
+      const player_key = String(m.player_key ?? '')
+      if (!player_key) continue
+      // name is either { full, first, last, ascii_first, ascii_last } or a string.
+      let full_name = ''
+      const nameObj = m.name as Record<string, unknown> | string | undefined
+      if (typeof nameObj === 'string') full_name = nameObj
+      else if (nameObj && typeof nameObj === 'object') full_name = String(nameObj.full ?? '').trim()
+      out.set(player_key, {
+        player_key,
+        full_name: full_name || player_key,
+        position: m.primary_position != null ? String(m.primary_position) : undefined,
+        editorial_team_abbr: m.editorial_team_abbr != null ? String(m.editorial_team_abbr) : undefined,
+      })
+    }
+  }
+  return out
+}
+
 export async function refreshAccessToken(refreshToken: string): Promise<YahooTokenResponse> {
   const { clientId, clientSecret } = getCredentials()
   const body = new URLSearchParams({

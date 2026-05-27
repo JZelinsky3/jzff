@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ingestSleeperLeague } from '@/lib/ingest/sleeper'
 import { ingestNflLeague } from '@/lib/ingest/nfl'
 import { ingestEspnLeague } from '@/lib/ingest/espn'
+import { ingestYahooLeague } from '@/lib/ingest/yahoo'
 import { devCacheBust } from '@/lib/devCache'
 
 export const maxDuration = 300 // 5 min, plenty of headroom on Vercel Pro
@@ -47,6 +48,8 @@ export async function POST(
       result = await ingestNflLeague(league.id)
     } else if (league.platform === 'espn') {
       result = await ingestEspnLeague(league.id)
+    } else if (league.platform === 'yahoo') {
+      result = await ingestYahooLeague(league.id)
     } else {
       return NextResponse.json(
         { error: `${league.platform} sync not implemented yet` },

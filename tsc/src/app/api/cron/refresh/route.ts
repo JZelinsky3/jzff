@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ingestSleeperSource } from '@/lib/ingest/sleeper'
 import { ingestNflSource } from '@/lib/ingest/nfl'
 import { ingestEspnSource, type EspnSourceSettings } from '@/lib/ingest/espn'
+import { ingestYahooSource } from '@/lib/ingest/yahoo'
+import { getValidAccessToken as getYahooAccessToken } from '@/lib/platforms/yahoo'
 import { devCacheBust } from '@/lib/devCache'
 
 export const maxDuration = 300
@@ -41,6 +43,13 @@ export async function GET(req: Request) {
         await ingestNflSource(src.league_id, src.external_id, (src.settings ?? {}) as Record<string, number>)
       } else if (src.platform === 'espn') {
         await ingestEspnSource(src.league_id, src.external_id, (src.settings ?? {}) as EspnSourceSettings)
+      } else if (src.platform === 'yahoo') {
+        // Yahoo needs a per-user access token — look up the league owner and
+        // resolve a valid (refresh-if-needed) token before calling the source ingest.
+        const { data: lg } = await db.from('leagues').select('owner_id').eq('id', src.league_id).maybeSingle()
+        if (!lg?.owner_id) throw new Error('Yahoo league has no owner; cannot refresh.')
+        const token = await getYahooAccessToken(lg.owner_id, db)
+        await ingestYahooSource(src.league_id, src.external_id, src.walk_history, token)
       } else {
         throw new Error(`${src.platform} sync not implemented`)
       }
