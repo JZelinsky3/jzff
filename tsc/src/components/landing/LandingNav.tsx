@@ -286,22 +286,52 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
             </section>
           ))}
 
-          {/* Featured editorial clipping — fills the right edge of the
-              mega panel with a vintage pull-quote from the demo league.
-              Static content for now; could rotate per-hovered-column. */}
+          {/* Almanac notes — fills the right edge with a two-section
+              changelog: what shipped recently and what's queued up.
+              Static content; update the two lists in this component
+              when a feature lands or moves between New and Soon. */}
           <aside className="ln-mega-aside" aria-hidden="true">
-            <div className="ln-mega-aside-kicker">★ From the chronicle ★</div>
+            <div className="ln-mega-aside-kicker">★ Almanac notes ★</div>
             <div className="ln-mega-aside-rule" />
-            <h3 className="ln-mega-aside-title">
-              The Lakeside <em>League.</em>
-            </h3>
-            <p className="ln-mega-aside-quote">
-              &ldquo;Seven seasons of champions, blowouts, and grudge matches — every record,
-              every Sunday, kept in the books.&rdquo;
-            </p>
-            <div className="ln-mega-aside-byline">— Vol. VII · Demo edition</div>
-            <Link href="/demo/" className="ln-mega-aside-cta" onClick={closeAll}>
-              View the demo →
+
+            <div className="ln-mega-aside-section">
+              <div className="ln-mega-aside-section-label">New</div>
+              <ul>
+                <li>
+                  <span className="ln-mega-aside-item-name">Yahoo support</span>
+                  <span className="ln-mega-aside-item-detail">OAuth import live.</span>
+                </li>
+                <li>
+                  <span className="ln-mega-aside-item-name">NFL.com guide</span>
+                  <span className="ln-mega-aside-item-detail">Publicly readable, no sign-in.</span>
+                </li>
+                <li>
+                  <span className="ln-mega-aside-item-name">Compare plans</span>
+                  <span className="ln-mega-aside-item-detail">All three tiers side-by-side.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="ln-mega-aside-section">
+              <div className="ln-mega-aside-section-label">Coming soon</div>
+              <ul>
+                <li>
+                  <span className="ln-mega-aside-item-name">Weekly recaps</span>
+                  <span className="ln-mega-aside-item-detail">Veteran &amp; All-Pro.</span>
+                </li>
+                <li>
+                  <span className="ln-mega-aside-item-name">Trade recaps</span>
+                  <span className="ln-mega-aside-item-detail">With four-week revisits.</span>
+                </li>
+                <li>
+                  <span className="ln-mega-aside-item-name">Custom domains</span>
+                  <span className="ln-mega-aside-item-detail">Bring your league&apos;s URL.</span>
+                </li>
+              </ul>
+            </div>
+
+            <Link href="/about" className="ln-mega-aside-cta" onClick={closeAll}>
+              About the chronicle →
             </Link>
           </aside>
         </div>

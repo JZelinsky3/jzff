@@ -6629,24 +6629,39 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     margin-bottom: 1rem;
     opacity: .8;
 }
-.ln-mega-aside-title {
-    font-family: var(--serif);
-    font-size: 1.55rem; line-height: 1; letter-spacing: -.015em;
-    color: var(--cream);
-    margin: 0 0 .75rem;
+/* Almanac notes — stacked New + Coming-soon sections inside the aside.
+   Section label is a small gold mono caps header; each item is a serif
+   name (top line) + a small sans detail (bottom line). */
+.ln-mega-aside-section { margin-bottom: 1rem; }
+.ln-mega-aside-section + .ln-mega-aside-section {
+    margin-top: -.1rem;
+    padding-top: .9rem;
+    border-top: 1px dotted var(--ink-line);
 }
-.ln-mega-aside-title em { font-style: italic; color: var(--gold); }
-.ln-mega-aside-quote {
-    font-family: var(--serif); font-style: italic;
-    font-size: .92rem; line-height: 1.5;
-    color: var(--cream-soft);
-    margin: 0 0 .75rem;
-}
-.ln-mega-aside-byline {
+.ln-mega-aside-section-label {
     font-family: var(--mono); font-weight: 700;
-    font-size: .52rem; letter-spacing: .25em; text-transform: uppercase;
+    font-size: .55rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .55rem;
+}
+.ln-mega-aside-section ul {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column;
+    gap: .55rem;
+}
+.ln-mega-aside-section li {
+    display: flex; flex-direction: column;
+}
+.ln-mega-aside-item-name {
+    font-family: var(--serif);
+    font-size: .95rem; line-height: 1.15;
+    color: var(--cream);
+}
+.ln-mega-aside-item-detail {
+    font-family: var(--sans);
+    font-size: .72rem; line-height: 1.35;
     color: var(--cream-mute);
-    margin-bottom: 1.1rem;
+    margin-top: .1rem;
 }
 .ln-mega-aside-cta {
     margin-top: auto;
