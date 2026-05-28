@@ -9,6 +9,10 @@ export type OnboardingStep = {
   done: boolean
   href?: string
   cta?: string
+  // Inline action slot — when set, renders the node instead of the
+  // href/cta Link. Lets the parent drop a real button (e.g. SyncButton)
+  // directly into the step so users don't have to navigate elsewhere.
+  action?: React.ReactNode
 }
 
 type Props = {
@@ -100,10 +104,14 @@ export function OnboardingChecklist({
                 <div className="onb-step-label">{step.label}</div>
                 <div className="onb-step-desc">{step.description}</div>
               </div>
-              {step.href && !step.done && (
-                <Link href={step.href} className="onb-step-cta">
-                  {step.cta ?? 'Go →'}
-                </Link>
+              {!step.done && (
+                step.action ? (
+                  <div className="onb-step-action">{step.action}</div>
+                ) : step.href ? (
+                  <Link href={step.href} className="onb-step-cta">
+                    {step.cta ?? 'Go →'}
+                  </Link>
+                ) : null
               )}
             </li>
           )

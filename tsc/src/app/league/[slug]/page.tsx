@@ -64,6 +64,10 @@ export default async function LeagueOverviewPage({
       label: 'Sync the league',
       description: 'Pulls every season, draft, and matchup your sources can reach.',
       done: hasSynced,
+      // Inline sync trigger — same control as the §02 card below, so the
+      // user can fire the first sync without scrolling. Hidden once
+      // hasSynced flips true (handled by the checklist itself).
+      action: <SyncButton leagueId={league.id} />,
     },
     {
       label: 'Review members',
