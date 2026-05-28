@@ -1,9 +1,9 @@
 import Link from 'next/link'
-import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 import { SiteFooter } from '@/components/SiteFooter'
 import { ChroniclePages } from '@/components/landing/ChroniclePages'
 import { DemoViewer } from '@/components/landing/DemoViewer'
 import { HeroClipping } from '@/components/landing/HeroClipping'
+import { LandingNav, type LandingNavItem } from '@/components/landing/LandingNav'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 
@@ -20,31 +20,39 @@ export default async function Home() {
     'Bring your league ID · we walk the history',
   ]
 
-  // Signed-in nav mirrors /dashboard so the page feels continuous if you
-  // happen to land back on the marketing front door after logging in.
-  const groups: DropGroup[] = signedIn
+  // Pricing is always a direct text trigger on the landing page — it's
+  // the only thing a cold visitor needs in the top-right beyond auth.
+  const navItems: LandingNavItem[] = signedIn
     ? [
+        { kind: 'link', label: 'Pricing', href: '/pricing' },
         {
+          kind: 'group',
           label: 'Library',
-          entries: [
-            { type: 'link', href: '/dashboard', label: 'Your leagues' },
-            { type: 'link', href: '/dashboard/new', label: 'New archive' },
+          items: [
+            { label: 'Your leagues', href: '/dashboard' },
+            { label: 'New archive', href: '/dashboard/new' },
           ],
         },
         {
+          kind: 'group',
           label: 'Account',
-          entries: [{ type: 'link', href: '/account', label: 'Profile & subscription' }],
+          items: [{ label: 'Profile & subscription', href: '/account' }],
         },
         ...(admin
           ? [
               {
-                label: 'Site admin',
-                entries: [{ type: 'link' as const, href: '/admin', label: 'Admin console' }],
+                kind: 'group' as const,
+                label: 'Admin',
+                items: [{ label: 'Site admin console', href: '/admin' }],
               },
             ]
           : []),
+        { kind: 'signout' },
       ]
-    : []
+    : [
+        { kind: 'link', label: 'Pricing', href: '/pricing' },
+        { kind: 'link', label: 'Sign in', href: '/login' },
+      ]
 
   return (
     <main className="lp-main">
@@ -73,11 +81,7 @@ export default async function Home() {
           <div className="nav-kicker">Vol. II · The League Almanac</div>
           <div className="nav-title lp-nav-title">The Sunday <em>Chronicle.</em></div>
         </div>
-        {signedIn ? (
-          <NavDropdown groups={groups} position="right" includeSignOut />
-        ) : (
-          <Link href="/login" className="nav-link">Sign in</Link>
-        )}
+        <LandingNav items={navItems} />
       </nav>
 
       {/* ─── HERO ─────────────────────────────────────────────── */}

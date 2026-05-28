@@ -20,6 +20,8 @@ export function InlineHorizontal() {
 
   return (
     <div ref={ref} className="mp-inline">
+      <a href="#" className="mp-inline-link">Pricing</a>
+
       <div
         className={`mp-inline-group${open === 'library' ? ' is-open' : ''}`}
         onMouseEnter={() => setOpen('library')}
