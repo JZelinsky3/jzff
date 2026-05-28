@@ -94,8 +94,14 @@ export function LandingNav({ items }: { items: LandingNavItem[] }) {
             // Wrap plain links in the same .ln-group/.ln-link shape as
             // grouped triggers so every flex item in .ln-inline has an
             // identical box — guarantees they sit on the same baseline.
+            // Hovering a plain link also closes any open dropdown so the
+            // nav doesn't show two highlighted regions at once.
             return (
-              <div key={`l-${i}`} className="ln-group">
+              <div
+                key={`l-${i}`}
+                className="ln-group"
+                onMouseEnter={() => setOpenGroup(null)}
+              >
                 <Link href={item.href} className="ln-link">{item.label}</Link>
               </div>
             )
