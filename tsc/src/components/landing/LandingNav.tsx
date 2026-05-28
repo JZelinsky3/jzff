@@ -46,6 +46,7 @@ const DISCOVER_ITEMS: ColumnItem[] = [
   { label: 'Commissioner mistakes',  href: '/guides/commissioner-mistakes',  indent: true },
   { label: 'ESPN league history',    href: '/guides/espn-league-history',    indent: true },
   { label: 'Sleeper league history', href: '/guides/sleeper-league-history', indent: true },
+  { label: 'Yahoo league history',   href: '/guides/yahoo-league-history',   indent: true },
   { label: 'Migrate fantasy league', href: '/guides/migrate-fantasy-league', indent: true },
 ]
 

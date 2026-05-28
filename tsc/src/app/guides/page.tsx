@@ -22,6 +22,11 @@ const GUIDES = [
     tagline: "ESPN hides old seasons behind a clunky interface. Here's how to pull every year — including private leagues — into one public almanac.",
   },
   {
+    slug: "yahoo-league-history",
+    title: "How to archive your Yahoo fantasy league history",
+    tagline: "Yahoo needs a one-time OAuth sign-in. After that, every season your league has played comes back as a clean public almanac.",
+  },
+  {
     slug: "migrate-fantasy-league",
     title: "Moving your league between platforms — keeping the history",
     tagline: "Yahoo → ESPN → Sleeper. When commissioners migrate, league history dies. Here's how to preserve it.",
