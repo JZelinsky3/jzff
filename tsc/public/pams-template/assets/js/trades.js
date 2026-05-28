@@ -11,6 +11,62 @@
 
   var content = document.getElementById('content');
 
+  // ── Commissioner-only theme picker ─────────────────────────────────────
+  // Renders only for the league owner (__DC.isCommish). Writes to
+  // /api/leagues/<id>/trades-theme and reloads so the server can re-render
+  // with the new body data-attribute. Theme list mirrors the four demos
+  // at /demo/trade-themes/ and the four blocks in trades.css.
+  var THEMES = [
+    { id: 'cards',    label: 'Card Show' },
+    { id: 'tribunal', label: 'The Tribunal' },
+    { id: 'wire',     label: 'Wire Service' },
+    { id: 'floor',    label: 'Trading Floor' },
+  ];
+
+  function renderThemePicker() {
+    var slot = document.getElementById('theme-picker');
+    if (!slot) return;
+    var dc = window.__DC || {};
+    if (!dc.isCommish || !dc.id) return;
+    var current = dc.tradesTheme || 'cards';
+    var options = THEMES.map(function (t) {
+      return '<option value="' + t.id + '"' + (t.id === current ? ' selected' : '') + '>' + escapeHtml(t.label) + '</option>';
+    }).join('');
+    slot.innerHTML =
+      '<div class="tr-theme-picker">' +
+        '<label for="tr-theme-select">Theme</label>' +
+        '<select id="tr-theme-select">' + options + '</select>' +
+        '<span id="tr-theme-status" style="opacity:.6;margin-left:.5rem;"></span>' +
+      '</div>';
+    var sel = document.getElementById('tr-theme-select');
+    var status = document.getElementById('tr-theme-status');
+    sel.addEventListener('change', async function () {
+      var theme = sel.value;
+      status.textContent = 'Saving…';
+      sel.disabled = true;
+      try {
+        var res = await fetch('/api/leagues/' + dc.id + '/trades-theme', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: theme }),
+        });
+        if (!res.ok) {
+          var body = await res.json().catch(function () { return {}; });
+          status.textContent = body.error || ('Error ' + res.status);
+          sel.disabled = false;
+          return;
+        }
+        // Apply locally for instant feedback while we reload.
+        document.body.setAttribute('data-trades-theme', theme);
+        status.textContent = 'Saved · reloading…';
+        setTimeout(function () { window.location.reload(); }, 400);
+      } catch (e) {
+        status.textContent = (e && e.message) || 'failed';
+        sel.disabled = false;
+      }
+    });
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────
   function escapeHtml(s) {
     return String(s == null ? '' : s)
@@ -259,6 +315,9 @@
 
   // ── Boot ───────────────────────────────────────────────────────────────
   async function boot() {
+    // Render the picker BEFORE the data fetch so commissioners see it even on
+    // a tier-locked / no-trades response.
+    renderThemePicker();
     try {
       var res = await fetch('live-season/trades/data', { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);

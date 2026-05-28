@@ -31,6 +31,14 @@ type LeagueMeta = {
   published_at: string | null
   owner_id: string | null
   created_during_testing: boolean
+  trades_theme: 'tribunal' | 'wire' | 'floor' | 'cards'
+}
+
+const VALID_THEMES = ['tribunal', 'wire', 'floor', 'cards'] as const
+function normalizeTradesTheme(v: unknown): LeagueMeta['trades_theme'] {
+  return typeof v === 'string' && (VALID_THEMES as readonly string[]).includes(v)
+    ? (v as LeagueMeta['trades_theme'])
+    : 'cards'
 }
 
 async function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
@@ -44,10 +52,11 @@ async function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
     published_at?: string | null
     owner_id?: string | null
     created_during_testing?: boolean | null
+    trades_theme?: string | null
   } | null = null
   const full = await db
     .from('leagues')
-    .select('id, name, slug, abbreviation, published_at, owner_id, created_during_testing')
+    .select('id, name, slug, abbreviation, published_at, owner_id, created_during_testing, trades_theme')
     .eq('slug', slug)
     .maybeSingle()
   if (full.data) {
@@ -86,6 +95,7 @@ async function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
     published_at: row.published_at ?? null,
     owner_id: row.owner_id ?? null,
     created_during_testing: !!row.created_during_testing,
+    trades_theme: normalizeTradesTheme(row.trades_theme),
   }
 }
 
@@ -146,15 +156,22 @@ function injectDcConfig(
   isBookmarked: boolean,
 ): string {
   const config = `<script>window.__DC=${JSON.stringify({
+    id: meta.id,
     slug: meta.slug,
     name: meta.name,
     isCommish,
     isSignedIn,
     isBookmarked,
     isTestingLeague: meta.created_during_testing,
+    tradesTheme: meta.trades_theme,
   })};</script>`
+  // Stamp the theme as a body data-attribute so theme CSS applies during the
+  // first paint without waiting for JS. We only do this when the template
+  // actually has a <body> tag (every page does, but defensive).
   if (/<body[^>]*>/.test(html)) {
-    return html.replace(/<body[^>]*>/, (m) => `${m}\n${config}`)
+    return html.replace(/<body(\b[^>]*)?>/, (_m, attrs) =>
+      `<body data-trades-theme="${meta.trades_theme}"${attrs ?? ''}>\n${config}`,
+    )
   }
   return config + html
 }

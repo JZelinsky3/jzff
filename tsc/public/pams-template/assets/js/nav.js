@@ -179,7 +179,7 @@
             var groupLabel = ctx.isSignedIn ? 'Your account' : 'Join Today';
             var bookmarkRow = '';
             if (ctx.isSignedIn && ctx.slug) {
-                var bmLabel = ctx.isBookmarked ? '★ Bookmarked' : '☆ Bookmark';
+                var bmLabel = ctx.isBookmarked ? 'Bookmarked ★' : 'Bookmark ☆';
                 bookmarkRow =
                     '<a href="#" id="dc-bookmark-toggle" data-slug="' + ctx.slug + '" data-on="' + (ctx.isBookmarked ? '1' : '0') + '">' +
                     bmLabel + '</a>';
@@ -471,7 +471,7 @@
                 var dropMate = document.getElementById('dc-bookmark-toggle');
                 if (dropMate) {
                     dropMate.setAttribute('data-on', nowOn ? '1' : '0');
-                    dropMate.textContent = nowOn ? '★ Bookmarked' : '☆ Bookmark';
+                    dropMate.textContent = nowOn ? 'Bookmarked ★' : 'Bookmark ☆';
                 }
                 var navMate = document.getElementById('nav-bookmark-btn');
                 if (navMate) {
