@@ -43,13 +43,14 @@ const DISCOVER_ITEMS: ColumnItem[] = [
   { label: 'Guides', href: '/guides' },
   // Platform-guide labels keep only the platform name now — the
   // 'league history' suffix is redundant once they're listed under
-  // 'Guides'. Commissioner / Migrate guides keep descriptive labels.
+  // 'Guides'. Commissioner / Migrate sit at the top of the indented
+  // list since they apply to every platform.
   { label: 'Commissioner mistakes',  href: '/guides/commissioner-mistakes',  indent: true },
+  { label: 'Migrate fantasy league', href: '/guides/migrate-fantasy-league', indent: true },
   { label: 'Sleeper',                href: '/guides/sleeper-league-history', indent: true },
   { label: 'ESPN',                   href: '/guides/espn-league-history',    indent: true },
   { label: 'Yahoo',                  href: '/guides/yahoo-league-history',   indent: true },
   { label: 'NFL.com',                href: '/guides/nfl-com-league-history', indent: true },
-  { label: 'Migrate fantasy league', href: '/guides/migrate-fantasy-league', indent: true },
 ]
 
 // Demo league chapters — listed as indented sub-pages of the "Demo
@@ -324,8 +325,8 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
                   <span className="ln-mega-aside-item-detail">With four-week revisits.</span>
                 </li>
                 <li>
-                  <span className="ln-mega-aside-item-name">Custom domains</span>
-                  <span className="ln-mega-aside-item-detail">Bring your league&apos;s URL.</span>
+                  <span className="ln-mega-aside-item-name">Annual chronicle</span>
+                  <span className="ln-mega-aside-item-detail">End-of-season printable recap.</span>
                 </li>
               </ul>
             </div>

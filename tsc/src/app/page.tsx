@@ -82,7 +82,7 @@ export default async function Home() {
               <em>Bound forever.</em>
             </h1>
             <p className="lp-hero-sub">
-              An almanac for the history of the league. Bring a league ID — Sleeper, ESPN, NFL.com —
+              An almanac for the history of the league. Bring a league ID
               and we walk every season back to the beginning.
             </p>
             <div className="lp-hero-ctas">

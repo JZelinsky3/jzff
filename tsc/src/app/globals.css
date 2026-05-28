@@ -6025,12 +6025,13 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 /* ─── Desktop · inline horizontal ─────────────────────────── */
 .ln-inline {
     display: flex; align-items: center;
-    /* Trimmed gap so the larger trigger labels sit tighter together
-       instead of feeling spread out across the masthead. */
-    gap: 1.25rem;
+    /* Tighter again — 1.25rem still read as spread out at this font
+       size. .ln-link's own .9rem horizontal padding plus this .35rem
+       gap gives the four triggers a snug rhythm. */
+    gap: .35rem;
     /* Push the first trigger off the masthead title so the words have
        breathing room from "The Sunday Chronicle." at every viewport. */
-    padding-left: 1.5rem;
+    padding-left: 1.25rem;
 }
 .ln-link {
     background: transparent;
@@ -6514,13 +6515,22 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 /* Subtle de-emphasis on non-focused columns so the hovered trigger's
    group reads as the "active" section without hiding the others. */
 .ln-mega-col {
-    transition: opacity .18s ease, transform .2s ease;
-    opacity: .78;
+    transition: opacity .2s ease, transform .25s cubic-bezier(.2, .8, .2, 1);
+    opacity: .55;
+    transform: translateY(0);
 }
-.ln-mega-col.is-focus { opacity: 1; transform: translateY(-2px); }
-/* When nothing is explicitly focused (e.g. hovering a plain link without
-   a column hint) every column reads at full strength. */
-.ln-mega:not(:has(.is-focus)) .ln-mega-col { opacity: 1; }
+/* Focused column reacts more visibly to the hovered trigger — bigger
+   lift, slight scale, and the column num + label brighten. The other
+   columns fade further so the contrast reads cleanly. */
+.ln-mega-col.is-focus {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.015);
+}
+.ln-mega-col.is-focus .ln-mega-num,
+.ln-mega-col.is-focus .ln-mega-label {
+    color: var(--ink);
+}
+.ln-mega:not(:has(.is-focus)) .ln-mega-col { opacity: 1; transform: translateY(0); }
 .ln-mega-num {
     font-family: var(--serif); font-style: italic;
     font-size: 2.4rem; line-height: 1;
