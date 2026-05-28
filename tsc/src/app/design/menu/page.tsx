@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { InlineHorizontal } from '@/components/menu-previews/InlineHorizontal'
-import { PolishedPanel } from '@/components/menu-previews/PolishedPanel'
-import { VintageDrawer } from '@/components/menu-previews/VintageDrawer'
+import { ChapterBar } from '@/components/menu-previews/ChapterBar'
+import { IndexPalette } from '@/components/menu-previews/IndexPalette'
+import { MegaMenu } from '@/components/menu-previews/MegaMenu'
 
 export const metadata: Metadata = {
-  title: 'Menu preview — internal',
+  title: 'Menu preview · v2 — internal',
   robots: { index: false, follow: false },
 }
 
@@ -15,44 +15,45 @@ export default function MenuPreviewPage() {
       <div className="mp-page">
         <div className="mp-page-head">
           <Link href="/" className="mp-page-back">← Back to landing</Link>
-          <div className="mp-page-kicker">Internal · Menu design preview</div>
-          <h1 className="mp-page-title">Three <em>directions.</em></h1>
+          <div className="mp-page-kicker">Internal · Menu design preview · v2</div>
+          <h1 className="mp-page-title">
+            Three fresh <em>directions.</em>
+          </h1>
           <p className="mp-page-sub">
-            Each card below is a working masthead with one of the menu styles wired in.
-            Click around — open, close, hover, esc. Pick the one you like, or mix.
+            The earlier round (A polished dropdown, B vintage drawer, C inline horizontal)
+            are already in use. These three are different patterns — built for sites with
+            many destinations, leaning into &ldquo;designed publication&rdquo; rather than
+            &ldquo;hamburger menu.&rdquo; Each is fully working below.
           </p>
         </div>
 
         <Demo
-          letter="A"
-          name="Polished panel"
-          effort="Low effort"
+          letter="D"
+          name="Chapter section bar"
+          effort="Low–medium effort"
           recommended
-          notes="Same hamburger trigger, but the dropdown becomes a designed panel: wider, gold rules between sections, sub-items always visible (no accordion clicks), smooth slide-down. Same routing as today — nothing else in the codebase changes."
-        >
-          <PolishedPanel />
-        </Demo>
+          notes="A thin sub-row of chapters under the masthead. Newspaper section-bar shape — every destination is visible without a click. Active chapter is underlined in gold. Most 'publication chrome' of the three. Drawback: adds a second row of chrome on every page; overflows horizontally on phones."
+          belowMasthead={<ChapterBar />}
+        />
 
         <Demo
-          letter="B"
-          name="Vintage drawer"
+          letter="E"
+          name="Index palette (⌘K)"
           effort="Medium effort"
-          notes="Hamburger opens a right-side slide drawer with a serif kicker, Roman-numeral section headings, ornament rule, and a sign-out at the foot. Most distinctive to the almanac voice — pulls a heavier UI moment per click."
-        >
-          <VintageDrawer />
-        </Demo>
+          notes="Small 'Index' trigger in the masthead, plus ⌘K from anywhere opens a centered overlay with a search field and grouped destinations. Type to filter, arrow keys to navigate, Enter to go, esc to close. The pattern Linear, Notion, Vercel, GitHub all use. Drawback: keyboard-first feel; some readers won't discover ⌘K."
+          menuSlot={<IndexPalette />}
+        />
 
         <Demo
-          letter="C"
-          name="Inline horizontal"
-          effort="Higher effort"
-          notes="No hamburger on desktop. Top-level groups sit inline as text; hover reveals a small flyout. Most 'professional site' shape, but the chrome gets busier on every page and the layout grid needs to give up real estate on the right side."
-        >
-          <InlineHorizontal />
-        </Demo>
+          letter="F"
+          name="Mega menu overlay"
+          effort="Medium effort"
+          notes="A 'Menu' trigger in the masthead opens a centered overlay with a serif title and three columns of grouped destinations (Library / Chapters / Account). Feels like opening the chronicle's index page. Most deliberate and magazine-like. Drawback: heaviest visual moment per open."
+          menuSlot={<MegaMenu />}
+        />
 
         <div className="mp-page-foot">
-          Tell me which letter — A, B, C, or a combination — and I&apos;ll wire it through the real site.
+          Tell me which letter — D, E, F, or a combination — and I&apos;ll wire it through.
         </div>
       </div>
     </main>
@@ -60,14 +61,16 @@ export default function MenuPreviewPage() {
 }
 
 function Demo({
-  letter, name, effort, recommended, notes, children,
+  letter, name, effort, recommended, notes,
+  menuSlot, belowMasthead,
 }: {
   letter: string
   name: string
   effort: string
   recommended?: boolean
   notes: string
-  children: React.ReactNode
+  menuSlot?: React.ReactNode
+  belowMasthead?: React.ReactNode
 }) {
   return (
     <section className="mp-demo">
@@ -82,7 +85,6 @@ function Demo({
         </div>
       </div>
 
-      {/* Realistic masthead so the menu sits where it would on the real site */}
       <div className="mp-stage">
         <div className="mp-stage-nav">
           <span className="mp-stage-back" aria-hidden="true">—</span>
@@ -90,8 +92,9 @@ function Demo({
             <div className="mp-stage-kicker">Vol. II · The League Almanac</div>
             <div className="mp-stage-title">The Sunday <em>Chronicle.</em></div>
           </div>
-          <div className="mp-stage-slot">{children}</div>
+          <div className="mp-stage-slot">{menuSlot}</div>
         </div>
+        {belowMasthead}
       </div>
 
       <p className="mp-demo-notes">{notes}</p>
