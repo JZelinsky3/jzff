@@ -49,6 +49,47 @@
         },
     ];
 
+    // Chapter section bar — flat sub-nav under the masthead, mirroring the
+    // new public-almanac chapter bar. Live Season sub-pages stay in the
+    // dropdown; the bar shows top-level chapters only.
+    var CHAPBAR_ITEMS = [
+        { key: 'standings', label: 'Standings',  path: 'standings.html' },
+        { key: 'seasons',   label: 'Seasons',    path: 'seasons/index.html' },
+        { key: 'draft',     label: 'Drafts',     path: 'draft/index.html' },
+        { key: 'records',   label: 'Records',    path: 'records.html' },
+        { key: 'managers',  label: 'Managers',   path: 'managers/index.html' },
+        { key: 'rivalries', label: 'Rivalries',  path: 'rivalries/index.html' },
+        { key: 'pickems',   label: "Pick'ems",   path: 'pickems/index.html' },
+        { key: 'powerrank', label: 'Power',      path: 'powerrank/index.html' }
+    ];
+
+    function buildChapBar(currentPage, root) {
+        var existing = document.getElementById('nav-chapbar');
+        if (existing) existing.remove();
+
+        var bar = document.createElement('nav');
+        bar.id = 'nav-chapbar';
+        bar.className = 'nav-chapbar';
+        bar.setAttribute('aria-label', 'Chapters');
+
+        var html = '<div class="nav-chapbar-track">';
+        for (var i = 0; i < CHAPBAR_ITEMS.length; i++) {
+            var item = CHAPBAR_ITEMS[i];
+            var isActive = item.key === currentPage;
+            html += '<a href="' + root + item.path + '"'
+                  + ' class="nav-chapbar-link' + (isActive ? ' is-active' : '') + '"'
+                  + (isActive ? ' aria-current="page"' : '')
+                  + '>' + item.label + '</a>';
+        }
+        html += '</div>';
+        bar.innerHTML = html;
+
+        var nav = document.getElementById('site-nav');
+        if (nav && nav.parentNode) {
+            nav.parentNode.insertBefore(bar, nav.nextSibling);
+        }
+    }
+
     // Determine how many levels deep the current page is relative to the site root.
     // Build an ABSOLUTE site-root prefix (e.g. '/demo/' or '/jzff/demo/').
     // We return an absolute path instead of relative '../../' because relative
@@ -135,6 +176,10 @@
                 : '<a class="nav-title" id="' + titleId + '" href="' + titleHref + '">The Lakeside <em>League.</em></a>')
             + '</div>'
             + rightSlot;
+
+        // Chapter section bar — newspaper sub-nav below the masthead so
+        // every chapter is reachable without opening the dropdown.
+        buildChapBar(currentPage, root);
 
         // Wire up toggle (global so onclick="" can find it)
         function closeAllGroups(drop) {

@@ -5190,6 +5190,9 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     width: 100%; height: 100%;
     border: 0;
     background: var(--ink);
+    /* `transform-origin` defaults to center; setting it top-left lets the
+       mobile media query scale the iframe down without shifting it off-axis. */
+    transform-origin: top left;
 }
 .dv-poster {
     position: absolute; inset: 0;
@@ -5513,7 +5516,16 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
        Hide on small screens; the rest of the page still demonstrates the
        almanac aesthetic. */
     .lp-hero-right { display: none; }
-    .dv-screen { height: 540px; }
+    .dv-screen { height: 540px; overflow: hidden; }
+    /* On phones the embedded /demo/ was rendering too zoomed-in — readers
+       could barely move around. Scale the iframe down to 75% and grow its
+       width/height to compensate so it fills the chrome at the smaller
+       visual scale. Anchored top-left via .dv-iframe's transform-origin. */
+    .dv-iframe {
+        width: 133.34%;
+        height: 133.34%;
+        transform: scale(.75);
+    }
     .dv-chrome-url { max-width: 180px; font-size: .58rem; padding: .3rem .5rem; }
     /* Two cards per row on phones — single column made each card feel
        enormous and the section spanned three viewport heights. The 3rd

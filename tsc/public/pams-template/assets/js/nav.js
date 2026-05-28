@@ -58,6 +58,51 @@
         return '';
     }
 
+    // Chapter section bar — newspaper-style sub-nav rendered below the
+    // masthead. Mirrors the choices in PAGES but FLAT (no sub-groups) and
+    // limited to the top-level chapters readers care about. Live Season
+    // sub-pages (overview, trades) stay in the dropdown.
+    var CHAPBAR_ITEMS = [
+        { key: 'standings', label: 'Standings',  path: 'standings.html' },
+        { key: 'seasons',   label: 'Seasons',    path: 'seasons/index.html' },
+        { key: 'draft',     label: 'Drafts',     path: 'draft/index.html' },
+        { key: 'records',   label: 'Records',    path: 'records.html' },
+        { key: 'managers',  label: 'Managers',   path: 'managers/index.html' },
+        { key: 'rivalries', label: 'Rivalries',  path: 'rivalries/index.html' },
+        { key: 'pickems',   label: "Pick'ems",   path: 'live-season/pickems/' },
+        { key: 'powerrank', label: 'Power',      path: 'live-season/powerrank/' }
+    ];
+
+    function buildChapBar(currentPage, root) {
+        // Remove any prior render so multiple buildNav() calls don't stack bars.
+        var existing = document.getElementById('nav-chapbar');
+        if (existing) existing.remove();
+
+        var bar = document.createElement('nav');
+        bar.id = 'nav-chapbar';
+        bar.className = 'nav-chapbar';
+        bar.setAttribute('aria-label', 'Chapters');
+
+        var html = '<div class="nav-chapbar-track">';
+        for (var i = 0; i < CHAPBAR_ITEMS.length; i++) {
+            var item = CHAPBAR_ITEMS[i];
+            // Mark "Live Season overview" parent active when on any
+            // live-season child page (so the bar always shows where you are).
+            var isActive = item.key === currentPage;
+            html += '<a href="' + root + item.path + '"'
+                  + ' class="nav-chapbar-link' + (isActive ? ' is-active' : '') + '"'
+                  + (isActive ? ' aria-current="page"' : '')
+                  + '>' + item.label + '</a>';
+        }
+        html += '</div>';
+        bar.innerHTML = html;
+
+        var nav = document.getElementById('site-nav');
+        if (nav && nav.parentNode) {
+            nav.parentNode.insertBefore(bar, nav.nextSibling);
+        }
+    }
+
     function dcContext() {
         var dc = window.__DC || {};
         return {
@@ -236,6 +281,11 @@
               + titleHTML
             + '</div>'
             + dropMenu;
+
+        // Render the chapter section bar right below the masthead. Active
+        // chapter gets a gold underline; everything else is one click away
+        // without opening the dropdown.
+        buildChapBar(currentPage, root);
 
         // ── Back arrow: prefer history.back() when we have a same-origin
         // referrer, so the user returns to the page they actually came from.
