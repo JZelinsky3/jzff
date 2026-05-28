@@ -6663,3 +6663,153 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--gold-bright);
     gap: .6rem;
 }
+
+/* ============================================================
+   /pricing/plans — full-feature comparison cards
+   Three side-by-side plans with the same feature list. Features
+   not included on a given plan render greyed-out so the visitor
+   sees the complete picture at a glance.
+   ============================================================ */
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+.plans-card {
+    position: relative;
+    padding: 2rem 1.4rem 1.4rem;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--ink-line);
+    border-radius: 3px;
+    display: flex; flex-direction: column;
+    transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+}
+.plans-card:hover {
+    border-color: rgba(232, 200, 137, .35);
+    box-shadow: 0 16px 32px -12px rgba(0, 0, 0, .55);
+    transform: translateY(-2px);
+}
+.plans-card.is-featured {
+    border-color: var(--gold-deep);
+    box-shadow:
+        0 18px 36px -14px rgba(0, 0, 0, .6),
+        0 0 24px rgba(232, 200, 137, .12);
+}
+.plans-card.is-featured::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--gold);
+}
+.plans-card-flag {
+    position: absolute; top: -.65rem; right: 1rem;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
+    padding: .3rem .65rem;
+    border-radius: 2px;
+}
+.plans-card-num {
+    font-family: var(--serif); font-style: italic;
+    font-size: 3rem; line-height: .9;
+    color: var(--gold);
+    margin-bottom: .25rem;
+}
+.plans-card-name {
+    font-family: var(--serif);
+    font-size: 1.75rem; line-height: 1;
+    color: var(--cream);
+    margin-bottom: .5rem;
+}
+.plans-card-price {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .25rem;
+}
+.plans-card-leagues {
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem;
+    color: var(--cream-soft);
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dotted var(--ink-line);
+}
+.plans-feat-list {
+    list-style: none; padding: 0; margin: 0 0 1.5rem;
+    display: flex; flex-direction: column;
+    gap: .75rem;
+    flex: 1;
+}
+.plans-feat {
+    display: grid;
+    grid-template-columns: 1.5rem 1fr;
+    gap: .65rem;
+    align-items: start;
+}
+.plans-feat-mark {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .95rem;
+    color: var(--gold);
+    line-height: 1;
+    padding-top: .2rem;
+}
+.plans-feat.is-excluded .plans-feat-mark {
+    color: var(--cream-mute);
+}
+.plans-feat-body { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.plans-feat-label {
+    font-family: var(--serif);
+    font-size: 1rem; line-height: 1.2;
+    color: var(--cream);
+}
+.plans-feat-detail {
+    font-family: var(--sans);
+    font-size: .78rem; line-height: 1.45;
+    color: var(--cream-mute);
+}
+.plans-feat.is-excluded .plans-feat-label,
+.plans-feat.is-excluded .plans-feat-detail {
+    color: var(--cream-mute);
+    opacity: .55;
+    text-decoration: line-through;
+    text-decoration-color: rgba(201, 192, 173, .35);
+}
+.plans-feat.is-excluded .plans-feat-detail { text-decoration: none; }
+.plans-card-cta {
+    display: block; text-align: center;
+    padding: .8rem 1rem;
+    background: transparent;
+    border: 1px solid var(--gold-deep);
+    color: var(--gold);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: background .15s ease, color .15s ease;
+}
+.plans-card-cta:hover {
+    background: rgba(232, 200, 137, .08);
+    color: var(--gold-bright);
+}
+.plans-card-cta.is-featured {
+    background: var(--gold);
+    color: var(--ink);
+    border-color: var(--gold);
+}
+.plans-card-cta.is-featured:hover {
+    background: var(--gold-bright);
+    color: var(--ink);
+}
+.plans-foot {
+    text-align: center;
+    margin-top: 2rem;
+    font-family: var(--serif); font-style: italic;
+    color: var(--cream-mute);
+    font-size: .95rem;
+    max-width: 60ch; margin-inline: auto;
+}
+@media (max-width: 860px) {
+    .plans-grid { grid-template-columns: 1fr; }
+}
