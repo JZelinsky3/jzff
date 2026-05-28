@@ -2,45 +2,84 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 
-// Landing-page nav — inline horizontal text triggers on desktop with
-// hover/click flyouts for grouped items; collapses to a hamburger panel
-// under 720px so phones don't try to cram four triggers into a masthead.
-// Items can be direct links ('link'), grouped dropdowns ('group'), or a
-// trailing sign-out form ('signout').
+// Landing-page nav.
+//   Desktop (>=720px): inline horizontal text triggers with hover/click
+//   flyouts. A short close-timer keeps the menu open while the cursor
+//   travels from the trigger down into the flyout.
+//   Mobile (<720px): falls back to the shared NavDropdown — the same
+//   hamburger pattern every other page on the site uses, so the chrome
+//   stays consistent on small screens.
 
 export type LandingNavItem =
   | { kind: 'link'; label: string; href: string }
   | { kind: 'group'; label: string; items: { label: string; href: string }[] }
   | { kind: 'signout' }
 
+// Adapt landing-nav items into the shape NavDropdown expects on mobile.
+// kind:'link'   → standalone link with the link's label as group label
+// kind:'group'  → preserved as DropGroup
+// kind:'signout'→ handled by NavDropdown's includeSignOut flag below
+function toDropGroups(items: LandingNavItem[]): { groups: DropGroup[]; includeSignOut: boolean } {
+  const groups: DropGroup[] = []
+  let includeSignOut = false
+  for (const item of items) {
+    if (item.kind === 'link') {
+      groups.push({ label: item.label, entries: [{ type: 'link', href: item.href, label: item.label }] })
+    } else if (item.kind === 'group') {
+      groups.push({
+        label: item.label,
+        entries: item.items.map((s) => ({ type: 'link' as const, href: s.href, label: s.label })),
+      })
+    } else if (item.kind === 'signout') {
+      includeSignOut = true
+    }
+  }
+  return { groups, includeSignOut }
+}
+
 export function LandingNav({ items }: { items: LandingNavItem[] }) {
   const [openGroup, setOpenGroup] = useState<string | null>(null)
-  const [mobileOpen, setMobileOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  // Brief close delay so cursor can move from trigger → flyout without
+  // the gap between them triggering mouseleave → close.
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Close any open flyout (desktop) or panel (mobile) on outside click / ESC.
+  const cancelClose = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+  }
+  const scheduleClose = () => {
+    cancelClose()
+    closeTimer.current = setTimeout(() => setOpenGroup(null), 140)
+  }
+  const enter = (label: string) => {
+    cancelClose()
+    setOpenGroup(label)
+  }
+
+  // Close on outside click / ESC.
   useEffect(() => {
-    if (!openGroup && !mobileOpen) return
+    if (!openGroup) return
     function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpenGroup(null)
-        setMobileOpen(false)
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpenGroup(null)
     }
     function onEsc(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setOpenGroup(null)
-        setMobileOpen(false)
-      }
+      if (e.key === 'Escape') setOpenGroup(null)
     }
     document.addEventListener('mousedown', onDoc)
     document.addEventListener('keydown', onEsc)
     return () => {
       document.removeEventListener('mousedown', onDoc)
       document.removeEventListener('keydown', onEsc)
+      cancelClose()
     }
-  }, [openGroup, mobileOpen])
+  }, [openGroup])
+
+  const { groups: mobileGroups, includeSignOut } = toDropGroups(items)
 
   return (
     <div ref={ref} className="ln-root">
@@ -66,18 +105,23 @@ export function LandingNav({ items }: { items: LandingNavItem[] }) {
             <div
               key={`g-${i}`}
               className={`ln-group${open ? ' is-open' : ''}`}
-              onMouseEnter={() => setOpenGroup(item.label)}
-              onMouseLeave={() => setOpenGroup(null)}
+              onMouseEnter={() => enter(item.label)}
+              onMouseLeave={scheduleClose}
             >
               <button
                 type="button"
                 className="ln-link ln-trigger"
                 aria-expanded={open}
                 onClick={() => setOpenGroup((g) => (g === item.label ? null : item.label))}
+                onFocus={() => enter(item.label)}
               >
                 {item.label}<span className="ln-arr" aria-hidden="true">▾</span>
               </button>
-              <div className="ln-flyout">
+              <div
+                className="ln-flyout"
+                onMouseEnter={cancelClose}
+                onMouseLeave={scheduleClose}
+              >
                 {item.items.map((sub) => (
                   <Link key={sub.href} href={sub.href} onClick={() => setOpenGroup(null)}>
                     {sub.label}
@@ -89,49 +133,9 @@ export function LandingNav({ items }: { items: LandingNavItem[] }) {
         })}
       </div>
 
-      {/* Mobile · hamburger */}
-      <button
-        type="button"
-        className="ln-burger"
-        aria-label="Open menu"
-        aria-expanded={mobileOpen}
-        onClick={() => setMobileOpen((o) => !o)}
-      >
-        <svg viewBox="0 0 20 14" width="22" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
-          <line x1="0" y1="1" x2="20" y2="1" />
-          <line x1="0" y1="7" x2="20" y2="7" />
-          <line x1="0" y1="13" x2="20" y2="13" />
-        </svg>
-      </button>
-      <div className={`ln-mobile${mobileOpen ? ' is-open' : ''}`}>
-        {items.map((item, i) => {
-          if (item.kind === 'link') {
-            return (
-              <Link key={`ml-${i}`} href={item.href} onClick={() => setMobileOpen(false)} className="ln-mobile-link">
-                {item.label}
-              </Link>
-            )
-          }
-          if (item.kind === 'signout') {
-            return (
-              <form key={`mso-${i}`} action="/auth/signout" method="post">
-                <button type="submit" onClick={() => setMobileOpen(false)} className="ln-mobile-signout">
-                  Sign out →
-                </button>
-              </form>
-            )
-          }
-          return (
-            <div key={`mg-${i}`} className="ln-mobile-section">
-              <div className="ln-mobile-label">★ {item.label}</div>
-              {item.items.map((sub) => (
-                <Link key={sub.href} href={sub.href} onClick={() => setMobileOpen(false)} className="ln-mobile-link">
-                  {sub.label}
-                </Link>
-              ))}
-            </div>
-          )
-        })}
+      {/* Mobile · shared NavDropdown (same 3-line hamburger every other page uses) */}
+      <div className="ln-mobile-wrap">
+        <NavDropdown groups={mobileGroups} position="right" includeSignOut={includeSignOut} />
       </div>
     </div>
   )

@@ -67,6 +67,36 @@ main {
     max-width: calc(100vw - 3rem);
 }
 
+/* Animate the dropdown open: fade + tiny scale-down → up, so it feels
+   intentional instead of popping in. main.css ships a display:none →
+   display:block toggle; we override here to use opacity/transform on
+   the same .open switch. The display swap is left in place for any
+   browser that ignores the override.
+   The 'override-display' trick: when not open, the menu is opacity 0
+   and pointer-events none — but kept display:block so transitions can
+   actually run from a non-display:none state. */
+.nav-drop .nav-drop-menu {
+    display: block;
+    opacity: 0;
+    transform: translateY(-6px) scale(.985);
+    transform-origin: top right;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .22s cubic-bezier(.2, .8, .2, 1);
+}
+.nav-drop.open .nav-drop-menu {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+/* Hamburger trigger rotates lines into an X when the menu is open. */
+.nav-drop-btn .nav-icon line {
+    transition: transform .25s cubic-bezier(.2, .8, .2, 1), opacity .15s ease;
+    transform-origin: center;
+}
+.nav-drop.open .nav-drop-btn .nav-icon line:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.nav-drop.open .nav-drop-btn .nav-icon line:nth-child(2) { opacity: 0; }
+.nav-drop.open .nav-drop-btn .nav-icon line:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
 /* Highlighted sub-group label (e.g. "Navigate" in the admin dropdown). Makes
    it visually obvious that this row expands into a sub-menu on hover. Also
    gets a thicker top border so it reads as a distinct section from anything
@@ -5963,7 +5993,11 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 0;
+    /* Uniform vertical padding so plain links sit on the same baseline
+       as grouped triggers (which previously got extra height from a
+       wrapping .ln-group padding). Both link and button now have the
+       same total height. */
+    padding: .35rem 0;
     font-family: var(--mono); font-weight: 700;
     font-size: .64rem;
     letter-spacing: .2em;
@@ -5983,10 +6017,20 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     margin-top: 1px;
 }
 .ln-group.is-open .ln-arr { transform: rotate(180deg); }
-.ln-group { position: relative; padding: .25rem 0; }
+.ln-group {
+    position: relative;
+    /* No own padding — the .ln-link inside provides the height. Bottom
+       padding-bottom on the flyout's hover-bridge handles the cursor
+       handoff. */
+    padding: 0;
+}
 .ln-flyout {
     position: absolute;
-    top: calc(100% + .55rem); right: 0;
+    /* No visible gap — the flyout sits flush under the trigger so the
+       cursor never crosses dead space. (Box shadow gives the visual
+       separation.) */
+    top: 100%; right: 0;
+    margin-top: .35rem;
     min-width: 210px;
     background: rgba(14, 22, 32, .97);
     border: 1px solid var(--gold-deep);
@@ -5997,10 +6041,20 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
         0 0 24px rgba(232, 200, 137, .06);
     backdrop-filter: blur(10px);
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(-6px);
     pointer-events: none;
-    transition: opacity .15s ease, transform .18s cubic-bezier(.2, .8, .2, 1);
+    transition: opacity .18s ease, transform .2s cubic-bezier(.2, .8, .2, 1);
     z-index: 50;
+}
+/* Invisible bridge above the flyout so the cursor stays "inside" the
+   group while moving from trigger to first menu item. The group's
+   onMouseEnter/Leave handlers see the bridge as a child of the flyout
+   (which is a child of the group), so mouseleave doesn't fire. */
+.ln-flyout::before {
+    content: '';
+    position: absolute;
+    top: -.7rem; left: 0; right: 0;
+    height: .7rem;
 }
 .ln-group.is-open .ln-flyout {
     opacity: 1;
@@ -6026,76 +6080,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .ln-signout { color: var(--cream-mute); }
 .ln-signout:hover { color: var(--rust); }
 
-/* ─── Mobile · hamburger + panel ──────────────────────────── */
-.ln-burger {
-    display: none;
-    background: transparent;
-    border: none;
-    color: var(--gold);
-    cursor: pointer;
-    padding: 4px;
-    align-items: center;
-    transition: color .15s;
-}
-.ln-burger:hover { color: var(--gold-bright); }
-.ln-mobile {
-    display: none;
-    position: absolute;
-    top: calc(100% + .7rem); right: 0;
-    width: 260px;
-    background: rgba(14, 22, 32, .97);
-    border: 1px solid var(--gold-deep);
-    border-radius: 3px;
-    padding: 1rem 0 .65rem;
-    box-shadow:
-        0 20px 40px -8px rgba(0, 0, 0, .6),
-        0 0 0 1px rgba(232, 200, 137, .05),
-        0 0 30px rgba(232, 200, 137, .08);
-    backdrop-filter: blur(12px);
-    z-index: 50;
-}
-.ln-mobile.is-open { display: block; }
-.ln-mobile-section { padding-bottom: .55rem; }
-.ln-mobile-label {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
-    color: var(--gold);
-    margin: 0 1.25rem .35rem;
-    padding-bottom: .4rem;
-    border-bottom: 1px dotted rgba(232, 200, 137, .25);
-}
-.ln-mobile-link,
-.ln-mobile-signout {
-    display: block;
-    width: 100%;
-    padding: .55rem 1.25rem;
-    font-family: var(--serif);
-    font-size: 1rem;
-    color: var(--cream-soft);
-    text-decoration: none;
-    text-align: left;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: background .12s, color .12s, padding-left .15s;
-}
-.ln-mobile-link:hover, .ln-mobile-signout:hover {
-    background: rgba(232, 200, 137, .06);
-    color: var(--gold);
-    padding-left: 1.55rem;
-}
-.ln-mobile-signout {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .68rem; letter-spacing: .25em; text-transform: uppercase;
-    color: var(--cream-mute);
-    border-top: 1px solid var(--ink-line);
-    margin-top: .35rem;
-    padding-top: .65rem;
-}
-.ln-mobile-signout:hover { color: var(--rust); }
+/* ─── Mobile fallback · shared NavDropdown (hidden on desktop) ─ */
+.ln-mobile-wrap { display: none; }
 
-/* ─── Breakpoint swap ─────────────────────────────────────── */
 @media (max-width: 720px) {
     .ln-inline { display: none; }
-    .ln-burger { display: flex; }
+    .ln-mobile-wrap { display: flex; align-items: center; }
 }
