@@ -62,7 +62,7 @@ export function GuideShell({
             See your league&apos;s <em style={{ color: "var(--gold)" }}>full history</em> in 30 seconds.
           </h2>
           <p style={{ marginBottom: "1rem" }}>
-            Paste your Sleeper, ESPN, or NFL.com league ID. We walk back through every season the league has ever existed and produce a public almanac at <code style={{ background: "var(--ink-soft)", padding: ".1rem .35rem", borderRadius: "2px" }}>jzff.online/leagues/your-league/</code>. 10-day free trial, cancel anytime.
+            Paste your Sleeper, ESPN, or NFL.com league ID. We walk back through every season the league has ever existed and produce a public almanac at <code style={{ background: "var(--ink-soft)", padding: ".1rem .35rem", borderRadius: "2px" }}>jzff.online/leagues/your-league/</code>. 7-day free trial, cancel anytime.
           </p>
           <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap" }}>
             <Link href="/login?mode=signup" className="dc-btn">Start your archive →</Link>

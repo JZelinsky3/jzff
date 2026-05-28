@@ -14,10 +14,12 @@ export const metadata: Metadata = {
 // Each row in the comparison table = one feature. `included` says which
 // tiers it's part of; non-included tiers render the same row but greyed
 // out, so the visitor sees the complete picture and can spot the
-// upgrade lines easily.
+// upgrade lines easily. `detail` can be a static string OR a per-tier
+// function so rows like 'Multiple leagues' can show this card's exact
+// count instead of repeating the full ladder.
 type Feature = {
   label: string
-  detail: string
+  detail: string | ((t: Tier) => string)
   included: Record<Tier, boolean>
 }
 
@@ -39,23 +41,34 @@ const FEATURES: Feature[] = [
   },
   {
     label: "Pick'ems & Power Rankings",
-    detail: 'Weekly pick\'em board and power-ranking ballots, scored automatically.',
+    detail: "Weekly pick'em board and power-ranking ballots, scored automatically.",
     included: { tier1: true, tier2: true, tier3: true },
   },
   {
-    label: '10-day free trial',
+    label: '7-day free trial',
     detail: 'Every plan. Cancel anytime before the trial ends — no charge.',
     included: { tier1: true, tier2: true, tier3: true },
   },
   {
-    label: 'AI weekly recaps',
-    detail: 'A short, voice-y recap of each week\'s slate generated from your league\'s data.',
+    label: 'Weekly recaps',
+    detail: "A short written recap of each week's slate, drawn from your league's data.",
+    included: { tier1: false, tier2: true, tier3: true },
+  },
+  {
+    label: 'Trade recaps',
+    detail: 'A recap of every trade when it happens, plus a four-week revisit checking how it actually played out.',
     included: { tier1: false, tier2: true, tier3: true },
   },
   {
     label: 'Multiple leagues',
-    detail: '1 league on Rookie · 3 on Veteran · 10 on All-Pro.',
-    included: { tier1: true, tier2: true, tier3: true },
+    // Rookie's check intentionally false — 'multiple' implies >1. Each
+    // card shows only its own league count, not the whole ladder.
+    detail: (t) => {
+      const n = TIER_LIMITS[t]
+      if (n === 1) return '1 league.'
+      return `Up to ${n} on ${TIER_LABELS[t].name}.`
+    },
+    included: { tier1: false, tier2: true, tier3: true },
   },
 ]
 
@@ -99,10 +112,11 @@ export default function PlansPage() {
         <div className="plans-grid">
           {TIERS.map((t, i) => {
             const featured = t === 'tier2'
+            const numeral = ['I', 'II', 'III'][i]
             return (
               <div key={t} className={`plans-card${featured ? ' is-featured' : ''}`}>
                 {featured && <div className="plans-card-flag">★ Most popular ★</div>}
-                <div className="plans-card-num">{i + 1}</div>
+                <div className="plans-card-num">{numeral}</div>
                 <div className="plans-card-name">{TIER_LABELS[t].name}</div>
                 <div className="plans-card-price">{priceLine(t)}</div>
                 <div className="plans-card-leagues">{leagueLine(t)}</div>
@@ -110,6 +124,7 @@ export default function PlansPage() {
                 <ul className="plans-feat-list">
                   {FEATURES.map((f) => {
                     const inc = f.included[t]
+                    const detail = typeof f.detail === 'function' ? f.detail(t) : f.detail
                     return (
                       <li key={f.label} className={`plans-feat${inc ? '' : ' is-excluded'}`}>
                         <span className="plans-feat-mark" aria-hidden="true">
@@ -117,7 +132,7 @@ export default function PlansPage() {
                         </span>
                         <span className="plans-feat-body">
                           <span className="plans-feat-label">{f.label}</span>
-                          <span className="plans-feat-detail">{f.detail}</span>
+                          <span className="plans-feat-detail">{detail}</span>
                         </span>
                       </li>
                     )

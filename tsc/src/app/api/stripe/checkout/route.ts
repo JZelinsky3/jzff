@@ -2,7 +2,7 @@
 // Body: { tier: 'tier1' | 'tier2', period: 'monthly' | 'yearly' }
 // Returns: { url } — the URL to redirect the user to on Stripe-hosted checkout.
 //
-// Creates a Stripe Checkout Session in subscription mode with a 10-day
+// Creates a Stripe Checkout Session in subscription mode with a 7-day
 // trial. Reuses the user's existing Stripe customer if they have one (from
 // a previous subscription); otherwise lets Stripe create one keyed to their
 // account email.
@@ -12,7 +12,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { getStripe, priceIdFor, getUserSubscription, isCompUser } from '@/lib/stripe'
 
-const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '10')
+const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '7')
 
 const Body = z.object({
   tier: z.enum(['tier1', 'tier2', 'tier3']),
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     // (active, canceled, or trialing on a different tier/period), they've
     // already used their free trial — bill them immediately. Otherwise grant
     // the configured trial length. This prevents the loophole where a user
-    // could claim a 10-day trial on Rookie monthly, cancel, then claim
+    // could claim a 7-day trial on Rookie monthly, cancel, then claim
     // another on Veteran yearly, etc.
     const trialEligible = !existing
 

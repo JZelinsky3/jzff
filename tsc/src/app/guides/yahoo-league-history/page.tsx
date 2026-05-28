@@ -33,7 +33,7 @@ export default function Page() {
     },
     {
       q: "Is there a free trial?",
-      a: "Yes — every plan includes a 10-day free trial. Cancel anytime before the trial ends and you won't be charged.",
+      a: "Yes — every plan includes a 7-day free trial. Cancel anytime before the trial ends and you won't be charged.",
     },
   ])
 
