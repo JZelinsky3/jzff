@@ -29,6 +29,12 @@ body { background: var(--rb-bg); }
 }
 
 .nav { background: rgba(11,26,15,.95); border-bottom-color: var(--rb-line); }
+.nav-chapbar { background: rgba(11,26,15,.92); border-bottom-color: var(--rb-line); }
+.nav-chapbar-link { color: var(--rb-mute); }
+.nav-chapbar-link:hover,
+.nav-chapbar-link.is-active { color: var(--gold); }
+.nav-chapbar-link.is-active::after { background: var(--gold); }
+.nav-chapbar-link + .nav-chapbar-link::before { background: var(--rb-line); }
 
 /* Themed nav dropdown — trophy room green */
 :root {

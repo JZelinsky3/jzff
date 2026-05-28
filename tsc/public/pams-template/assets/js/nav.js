@@ -67,6 +67,7 @@
     // pickems, powerrank, trades) lights up the Live tab as active.
     var LIVE_SEASON_KEYS = ['live-season', 'pickems', 'powerrank', 'trades'];
     var CHAPBAR_ITEMS = [
+        { key: 'hub',         label: 'Home',      path: 'index.html' },
         { key: 'standings',   label: 'Standings', path: 'standings.html' },
         { key: 'seasons',     label: 'Seasons',   path: 'seasons/index.html' },
         { key: 'draft',       label: 'Drafts',    path: 'draft/index.html' },

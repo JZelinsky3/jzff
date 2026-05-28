@@ -282,6 +282,16 @@ table.standings tbody tr.former-row td.name-cell a {
 /* ── Full-page cream override ── */
 body { background: var(--cream); }
 .site-glow, .site-grain { display: none; }
+/* Paper-theme nav + chapter bar — flip to ink text on cream backgrounds */
+.nav { background: rgba(244, 235, 216, .95); border-bottom-color: rgba(168, 138, 74, .3); }
+.nav-back, .nav-link, .nav-drop-btn, .nav-title { color: var(--ink); }
+.nav-title em { color: var(--gold-deep); }
+.nav-chapbar { background: rgba(244, 235, 216, .9); border-bottom-color: rgba(168, 138, 74, .3); }
+.nav-chapbar-link { color: var(--cream-mute); }
+.nav-chapbar-link:hover,
+.nav-chapbar-link.is-active { color: var(--gold-deep); }
+.nav-chapbar-link.is-active::after { background: var(--gold-deep); }
+.nav-chapbar-link + .nav-chapbar-link::before { background: rgba(168, 138, 74, .3); }
 
 .page-kicker { color: var(--gold-deep); }
 .page-title  { color: var(--ink); }
