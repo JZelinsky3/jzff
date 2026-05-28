@@ -68,8 +68,8 @@ export default function GuidesIndex() {
         </p>
       </section>
 
-      <div className="section" style={{ maxWidth: "880px", margin: "0 auto" }}>
-        <div className="toc">
+      <div className="section" style={{ maxWidth: "920px", margin: "0 auto" }}>
+        <div className="toc guides-list">
           <div className="toc-body">
             {GUIDES.map((g, i) => (
               <Link key={g.slug} href={`/guides/${g.slug}/`} className="toc-row">

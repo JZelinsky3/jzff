@@ -9,16 +9,17 @@ import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 //   ANY trigger opens a single shared mega panel below the masthead with
 //   every destination grouped into columns. The triggered group gets a
 //   subtle focus highlight; the rest stay visible but slightly muted.
+//   Sub-pages of a section render as indented children of a parent link.
 //   Mobile (<720px): collapses to the shared NavDropdown hamburger.
 
-type ColumnKey = 'library' | 'pages' | 'demo' | 'account' | 'get-started'
+type ColumnKey = 'library' | 'pages' | 'demo' | 'guides' | 'account' | 'get-started'
 
 type Trigger =
   | { kind: 'link'; label: string; href: string; column: ColumnKey }
   | { kind: 'group'; label: string; column: ColumnKey }
 
 type ColumnItem =
-  | { label: string; href: string }
+  | { label: string; href: string; indent?: boolean }
   | { signout: true; label: string }
 
 type Column = {
@@ -33,31 +34,41 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.']
 const PAGES: ColumnItem[] = [
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
-  { label: 'Guides', href: '/guides' },
 ]
 
-// Every demo league page — gives visitors a one-click jump to any
-// chapter of the sample chronicle without navigating into /demo/ first.
+// Demo league chapters — listed as indented sub-pages of the "View
+// the demo →" parent link so the relationship is visually obvious.
+// Pickems + Power merged into a single Live entry to match leagues.
 const DEMO_CHAPTERS: ColumnItem[] = [
-  { label: 'Demo hub', href: '/demo/' },
-  { label: 'Standings', href: '/demo/standings.html' },
-  { label: 'Seasons', href: '/demo/seasons/' },
-  { label: 'Drafts', href: '/demo/draft/' },
-  { label: 'Records', href: '/demo/records.html' },
-  { label: 'Managers', href: '/demo/managers/' },
-  { label: 'Rivalries', href: '/demo/rivalries/' },
-  { label: "Pick'ems", href: '/demo/pickems/' },
-  { label: 'Power Rankings', href: '/demo/powerrank/' },
+  { label: 'View the demo →', href: '/demo/' },
+  { label: 'Standings',       href: '/demo/standings.html',  indent: true },
+  { label: 'Seasons',         href: '/demo/seasons/',         indent: true },
+  { label: 'Drafts',          href: '/demo/draft/',           indent: true },
+  { label: 'Records',         href: '/demo/records.html',     indent: true },
+  { label: 'Managers',        href: '/demo/managers/',        indent: true },
+  { label: 'Rivalries',       href: '/demo/rivalries/',       indent: true },
+  { label: 'Live',            href: '/demo/pickems/',         indent: true },
+]
+
+// Guides — parent + indented sub-guides.
+const GUIDES: ColumnItem[] = [
+  { label: 'All guides →',              href: '/guides' },
+  { label: 'Commissioner mistakes',     href: '/guides/commissioner-mistakes',     indent: true },
+  { label: 'ESPN league history',       href: '/guides/espn-league-history',       indent: true },
+  { label: 'Migrate fantasy league',    href: '/guides/migrate-fantasy-league',    indent: true },
+  { label: 'Sleeper league history',    href: '/guides/sleeper-league-history',    indent: true },
 ]
 
 function buildSignedIn(admin: boolean): { triggers: Trigger[]; columns: Column[] } {
+  // Signed-in nav: Pricing · Library · Demo · Account
   const triggers: Trigger[] = [
     { kind: 'link', label: 'Pricing', href: '/pricing', column: 'pages' },
     { kind: 'group', label: 'Library', column: 'library' },
+    { kind: 'group', label: 'Demo', column: 'demo' },
     { kind: 'group', label: 'Account', column: 'account' },
   ]
   const accountItems: ColumnItem[] = [
-    { label: 'Profile & subscription', href: '/account' },
+    { label: 'Profile', href: '/account' },
     ...(admin ? [{ label: 'Site admin console', href: '/admin' } as ColumnItem] : []),
     { signout: true, label: 'Sign out' },
   ]
@@ -70,9 +81,10 @@ function buildSignedIn(admin: boolean): { triggers: Trigger[]; columns: Column[]
         { label: 'Demo league', href: '/demo/' },
       ],
     },
-    { key: 'pages', num: ROMAN[1], label: 'Pages', items: PAGES },
-    { key: 'demo', num: ROMAN[2], label: 'Demo chronicle', items: DEMO_CHAPTERS },
-    { key: 'account', num: ROMAN[3], label: admin ? 'Account & Admin' : 'Account', items: accountItems },
+    { key: 'pages', num: ROMAN[1], label: 'Pages',          items: PAGES },
+    { key: 'demo',  num: ROMAN[2], label: 'Demo chronicle', items: DEMO_CHAPTERS },
+    { key: 'guides', num: ROMAN[3], label: 'Guides',        items: GUIDES },
+    { key: 'account', num: ROMAN[4], label: 'Account',      items: accountItems },
   ]
   return { triggers, columns }
 }
@@ -84,10 +96,11 @@ function buildSignedOut(): { triggers: Trigger[]; columns: Column[] } {
     { kind: 'link', label: 'Sign in', href: '/login', column: 'get-started' },
   ]
   const columns: Column[] = [
-    { key: 'pages', num: ROMAN[0], label: 'Pages', items: PAGES },
-    { key: 'demo', num: ROMAN[1], label: 'Demo chronicle', items: DEMO_CHAPTERS },
+    { key: 'pages', num: ROMAN[0], label: 'Pages',          items: PAGES },
+    { key: 'demo',  num: ROMAN[1], label: 'Demo chronicle', items: DEMO_CHAPTERS },
+    { key: 'guides', num: ROMAN[2], label: 'Guides',        items: GUIDES },
     {
-      key: 'get-started', num: ROMAN[2], label: 'Get started',
+      key: 'get-started', num: ROMAN[3], label: 'Get started',
       items: [
         { label: 'Sign in', href: '/login' },
         { label: 'New chronicle', href: '/login?mode=signup' },
@@ -102,7 +115,7 @@ function toDropGroups(columns: Column[]): { groups: DropGroup[]; includeSignOut:
   let includeSignOut = false
   for (const col of columns) {
     const linkEntries = col.items
-      .filter((it): it is { label: string; href: string } => !('signout' in it))
+      .filter((it): it is { label: string; href: string; indent?: boolean } => !('signout' in it))
       .map((it) => ({ type: 'link' as const, href: it.href, label: it.label }))
     groups.push({ label: col.label, entries: linkEntries })
     if (col.items.some((it) => 'signout' in it)) includeSignOut = true
@@ -115,8 +128,6 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
   const [hovered, setHovered] = useState<ColumnKey | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const megaRef = useRef<HTMLDivElement>(null)
-  // Single close-timer shared by root and mega — leaving either schedules
-  // close, entering either cancels.
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { triggers, columns } = signedIn ? buildSignedIn(admin) : buildSignedOut()
@@ -144,9 +155,6 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
     setHovered(null)
   }
 
-  // Anchor the mega to the masthead's bottom edge. Updates on open AND on
-  // scroll, so the panel slides with the sticky masthead instead of
-  // detaching at the page top vs scrolled state.
   useEffect(() => {
     if (!open) return
     const update = () => {
@@ -165,7 +173,6 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
     }
   }, [open])
 
-  // Outside click + ESC close (allow clicks inside root OR mega).
   useEffect(() => {
     if (!open) return
     function onDoc(e: MouseEvent) {
@@ -223,15 +230,11 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
           })}
         </div>
 
-        {/* Mobile fallback */}
         <div className="ln-mobile-wrap">
           <NavDropdown groups={mobileGroups} position="right" includeSignOut={includeSignOut} />
         </div>
       </div>
 
-      {/* Mega panel — sibling of ln-root in DOM so it shares the closeAll
-          listener path, but position:fixed so it spans the full nav width.
-          Top is dynamically set to the masthead's bottom edge. */}
       <div
         ref={megaRef}
         className={`ln-mega${open ? ' is-open' : ''}`}
@@ -239,7 +242,7 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
         onMouseLeave={scheduleClose}
         aria-hidden={!open}
       >
-        <div className="ln-mega-grid">
+        <div className={`ln-mega-grid ln-mega-grid--${columns.length}`}>
           {columns.map((col) => (
             <section
               key={col.key}
@@ -263,7 +266,11 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
                     </li>
                   ) : (
                     <li key={ii}>
-                      <Link href={item.href} onClick={closeAll}>
+                      <Link
+                        href={item.href}
+                        onClick={closeAll}
+                        className={item.indent ? 'is-indent' : undefined}
+                      >
                         {item.label}
                       </Link>
                     </li>
