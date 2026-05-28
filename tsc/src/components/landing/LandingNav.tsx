@@ -37,12 +37,10 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.']
 // all in one place. Tiers indented under Pricing give visitors a peek at
 // what each plan offers without leaving the page.
 const DISCOVER_ITEMS: ColumnItem[] = [
-  { label: 'Pricing',  href: '/pricing' },
-  { label: 'Rookie · $5',  href: '/pricing', indent: true },
-  { label: 'Veteran · $15', href: '/pricing', indent: true },
-  { label: 'Legend · $25',  href: '/pricing', indent: true },
-  { label: 'About',    href: '/about' },
-  { label: 'Guides',   href: '/guides' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'Compare plans', href: '/pricing/plans', indent: true },
+  { label: 'About', href: '/about' },
+  { label: 'Guides', href: '/guides' },
   { label: 'Commissioner mistakes',  href: '/guides/commissioner-mistakes',  indent: true },
   { label: 'ESPN league history',    href: '/guides/espn-league-history',    indent: true },
   { label: 'Sleeper league history', href: '/guides/sleeper-league-history', indent: true },

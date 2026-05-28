@@ -36,7 +36,7 @@ const faqJsonLd = {
       name: "How much does The Sunday Chronicle cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Three tiers. Rookie at $5/month or $30/year for 1 league. Veteran at $15/month or $75/year for up to 5 leagues. Legend at $25/month or $100/year for unlimited leagues. Every plan has a 10-day free trial; one trial per user lifetime.",
+        text: "Three tiers. Rookie at $3/month or $15/year for 1 league. Veteran at $5/month or $25/year for up to 3 leagues. All-Pro at $15/month or $50/year for up to 10 leagues. Every plan has a 10-day free trial; one trial per user lifetime.",
       },
     },
     {
@@ -134,9 +134,9 @@ export default function AboutPage() {
           <span className="section-meta">10-day free trial on every plan</span>
         </div>
         <FaqItem q="How much does it cost?">
-          <strong>Rookie</strong> — $5/mo or $30/yr, archive 1 league.{" "}
-          <strong>Veteran</strong> — $15/mo or $75/yr, archive up to 5 leagues.{" "}
-          <strong>Legend</strong> — $25/mo or $100/yr, archive unlimited leagues. Every
+          <strong>Rookie</strong> — $3/mo or $15/yr, archive 1 league.{" "}
+          <strong>Veteran</strong> — $5/mo or $25/yr, archive up to 3 leagues.{" "}
+          <strong>All-Pro</strong> — $15/mo or $50/yr, archive up to 10 leagues. Every
           plan includes a 10-day free trial; one trial per user lifetime. See{" "}
           <Link href="/pricing" style={{ color: "var(--gold)" }}>pricing</Link>.
         </FaqItem>

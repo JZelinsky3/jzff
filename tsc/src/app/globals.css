@@ -6025,7 +6025,9 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 /* ─── Desktop · inline horizontal ─────────────────────────── */
 .ln-inline {
     display: flex; align-items: center;
-    gap: 1.85rem;
+    /* Trimmed gap so the larger trigger labels sit tighter together
+       instead of feeling spread out across the masthead. */
+    gap: 1.25rem;
     /* Push the first trigger off the masthead title so the words have
        breathing room from "The Sunday Chronicle." at every viewport. */
     padding-left: 1.5rem;
@@ -6038,10 +6040,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
        byte-identical box geometry. Hover-cream highlight uses these
        paddings as its visible area. */
     display: block;
-    padding: .55rem .95rem;
-    font-family: var(--mono); font-weight: 800;
-    /* Bumped from .64rem → .8rem and weight 700 → 800 so the masthead
-       triggers read as real navigation, not tiny utility text. */
+    padding: .55rem .9rem;
+    /* Weight dialed back from 800 → 700 — 800 read as overbold against
+       the serif masthead title. .8rem font size kept for visibility. */
+    font-family: var(--mono); font-weight: 700;
     font-size: .8rem;
     letter-spacing: .18em;
     text-transform: uppercase;

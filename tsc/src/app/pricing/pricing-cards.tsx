@@ -98,7 +98,7 @@ export function PricingCards({
 
       <div style={{
         display: 'grid',
-        // Always 3 columns on desktop so Rookie/Veteran/Legend share one row.
+        // Always 3 columns on desktop so Rookie/Veteran/All-Pro share one row.
         // Drops to 1 column on narrow screens (mobile) via the media query in
         // globals.css — see .pricing-grid-3 there.
         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',

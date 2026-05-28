@@ -30,34 +30,36 @@ export type Tier = 'tier1' | 'tier2' | 'tier3'
 export type BillingPeriod = 'monthly' | 'yearly'
 
 // How many leagues each paid tier allows. A user with no subscription gets 0.
-// Number.POSITIVE_INFINITY for tier3 → current >= limit is always false.
+// All-Pro is now a finite 10-league cap (was Legend / unlimited) — the
+// check downstream stays correct, just bounded.
 export const TIER_LIMITS: Record<Tier, number> = {
   tier1: 1,
-  tier2: 5,
-  tier3: Number.POSITIVE_INFINITY,
+  tier2: 3,
+  tier3: 10,
 }
 
 // Human-friendly labels used on the pricing page + account UI.
 export const TIER_LABELS: Record<Tier, { name: string; tagline: string }> = {
   tier1: { name: 'Rookie',  tagline: 'Archive one league.' },
-  tier2: { name: 'Veteran', tagline: 'Archive up to five leagues.' },
-  tier3: { name: 'Legend',  tagline: 'Archive unlimited leagues.' },
+  tier2: { name: 'Veteran', tagline: 'Archive up to three leagues.' },
+  tier3: { name: 'All-Pro', tagline: 'Archive up to ten leagues.' },
 }
 
 // Display prices in USD cents — these match what was configured in Stripe.
 // Keep them here too so the pricing page can render without an API round-trip.
+// 2026 pricing pass: $3/$5/$15 monthly, $15/$25/$50 yearly.
 export const TIER_PRICES: Record<Tier, Record<BillingPeriod, { amountCents: number; perLabel: string }>> = {
   tier1: {
-    monthly: { amountCents: 500,  perLabel: '/mo' },
-    yearly:  { amountCents: 3000, perLabel: '/yr' },
+    monthly: { amountCents: 300,  perLabel: '/mo' },
+    yearly:  { amountCents: 1500, perLabel: '/yr' },
   },
   tier2: {
-    monthly: { amountCents: 1500, perLabel: '/mo' },
-    yearly:  { amountCents: 7500, perLabel: '/yr' },
+    monthly: { amountCents: 500,  perLabel: '/mo' },
+    yearly:  { amountCents: 2500, perLabel: '/yr' },
   },
   tier3: {
-    monthly: { amountCents: 2500,  perLabel: '/mo' },
-    yearly:  { amountCents: 10000, perLabel: '/yr' },
+    monthly: { amountCents: 1500, perLabel: '/mo' },
+    yearly:  { amountCents: 5000, perLabel: '/yr' },
   },
 }
 

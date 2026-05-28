@@ -99,9 +99,9 @@ const jsonLd = {
   url: "https://jzff.online/",
   description: DESCRIPTION,
   offers: [
-    { "@type": "Offer", name: "Rookie", price: "5",  priceCurrency: "USD", description: "1 league, monthly" },
-    { "@type": "Offer", name: "Veteran", price: "15", priceCurrency: "USD", description: "Up to 5 leagues, monthly" },
-    { "@type": "Offer", name: "Legend", price: "25", priceCurrency: "USD", description: "Unlimited leagues, monthly" },
+    { "@type": "Offer", name: "Rookie",  price: "3",  priceCurrency: "USD", description: "1 league, monthly" },
+    { "@type": "Offer", name: "Veteran", price: "5",  priceCurrency: "USD", description: "Up to 3 leagues, monthly" },
+    { "@type": "Offer", name: "All-Pro", price: "15", priceCurrency: "USD", description: "Up to 10 leagues, monthly" },
   ],
   featureList: [
     "Walks back through every season of a fantasy football league's history",
