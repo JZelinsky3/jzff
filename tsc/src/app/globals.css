@@ -5458,21 +5458,26 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 @media (max-width: 640px) {
     .lp-hero { padding: 2rem 1rem 2.5rem; }
-    .lp-hero-seal { width: 64px; height: 64px; font-size: .5rem; }
-    .lp-hero-sup { margin-left: 76px; font-size: .55rem; letter-spacing: .28em; }
+    /* Seal felt cramped against the headline on phone widths; the hero
+       reads cleaner without it. Hidden, not just shrunk. */
+    .lp-hero-seal { display: none; }
+    .lp-hero-sup { margin-left: 0; font-size: .55rem; letter-spacing: .28em; }
     .lp-hero-meta { font-size: .58rem; }
-    .lp-hero-right { height: 420px; }
-    .hc-page { padding: 1.5rem 1.5rem 1.4rem; }
-    .hc-title { font-size: 1.5rem; }
-    .hc-body { font-size: .82rem; line-height: 1.5; }
-    .hc-seal { width: 48px; height: 48px; right: 14px; }
-    .hc-seal-inner { font-size: .46rem; }
-    .dv-screen { height: 440px; }
+    /* HeroClipping took up a full screen of vertical space on phones — it
+       was reading as its own section instead of supporting the hero copy.
+       Hide on small screens; the rest of the page still demonstrates the
+       almanac aesthetic. */
+    .lp-hero-right { display: none; }
+    .dv-screen { height: 540px; }
     .dv-chrome-url { max-width: 180px; font-size: .58rem; padding: .3rem .5rem; }
-    .dv-poster-cards { grid-template-columns: 1fr; gap: .55rem; }
-    .dv-poster-card { padding: .85rem 1rem .9rem; gap: .4rem; }
-    .dv-poster-card-roman { font-size: 1.8rem; }
-    .dv-poster-card-title { font-size: 1.15rem; }
+    /* Two cards per row on phones — single column made each card feel
+       enormous and the section spanned three viewport heights. */
+    .dv-poster-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+    .dv-poster-card { padding: .9rem .95rem 1rem; gap: .5rem; min-height: 240px; }
+    .dv-poster-card-roman { font-size: 2rem; }
+    .dv-poster-card-title { font-size: 1.05rem; }
+    .dv-poster-card-desc { font-size: .7rem; }
+    .dv-poster-card-cta { font-size: .55rem; }
     .dv-poster-mast { padding: 1.25rem 1rem 1rem; }
     .dv-poster-section { padding: 1rem 1.25rem 1.25rem; }
     .dv-poster-play { padding: 1rem 1.4rem; }
