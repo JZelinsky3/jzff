@@ -29,41 +29,47 @@
     var dc = window.__DC || {};
     if (!dc.isCommish || !dc.id) return;
     var current = dc.tradesTheme || 'cards';
-    var options = THEMES.map(function (t) {
-      return '<option value="' + t.id + '"' + (t.id === current ? ' selected' : '') + '>' + escapeHtml(t.label) + '</option>';
+    var buttons = THEMES.map(function (t) {
+      return '<button type="button" class="tr-theme-btn' + (t.id === current ? ' active' : '') +
+        '" data-theme="' + t.id + '">' + escapeHtml(t.label) + '</button>';
     }).join('');
     slot.innerHTML =
       '<div class="tr-theme-picker">' +
-        '<label for="tr-theme-select">Theme</label>' +
-        '<select id="tr-theme-select">' + options + '</select>' +
-        '<span id="tr-theme-status" style="opacity:.6;margin-left:.5rem;"></span>' +
+        '<span class="tr-theme-label">Theme</span>' +
+        '<div class="tr-theme-options">' + buttons + '</div>' +
+        '<span id="tr-theme-status" class="tr-theme-status"></span>' +
       '</div>';
-    var sel = document.getElementById('tr-theme-select');
     var status = document.getElementById('tr-theme-status');
-    sel.addEventListener('change', async function () {
-      var theme = sel.value;
-      status.textContent = 'Saving…';
-      sel.disabled = true;
-      try {
-        var res = await fetch('/api/leagues/' + dc.id + '/trades-theme', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ theme: theme }),
-        });
-        if (!res.ok) {
-          var body = await res.json().catch(function () { return {}; });
-          status.textContent = body.error || ('Error ' + res.status);
-          sel.disabled = false;
-          return;
-        }
-        // Apply locally for instant feedback while we reload.
+    var btns = slot.querySelectorAll('.tr-theme-btn');
+    btns.forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var theme = btn.getAttribute('data-theme');
+        if (!theme || btn.classList.contains('active')) return;
+        // Optimistic UI: mark this button active and apply theme locally.
+        btns.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
         document.body.setAttribute('data-trades-theme', theme);
-        status.textContent = 'Saved · reloading…';
-        setTimeout(function () { window.location.reload(); }, 400);
-      } catch (e) {
-        status.textContent = (e && e.message) || 'failed';
-        sel.disabled = false;
-      }
+        status.textContent = 'Saving…';
+        btns.forEach(function (b) { b.disabled = true; });
+        try {
+          var res = await fetch('/api/leagues/' + dc.id + '/trades-theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ theme: theme }),
+          });
+          if (!res.ok) {
+            var body = await res.json().catch(function () { return {}; });
+            status.textContent = body.error || ('Error ' + res.status);
+            btns.forEach(function (b) { b.disabled = false; });
+            return;
+          }
+          status.textContent = 'Saved · reloading…';
+          setTimeout(function () { window.location.reload(); }, 350);
+        } catch (e) {
+          status.textContent = (e && e.message) || 'failed';
+          btns.forEach(function (b) { b.disabled = false; });
+        }
+      });
     });
   }
 
