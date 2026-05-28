@@ -18,18 +18,19 @@ export function BackButton({
 }) {
   const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
-    if (typeof document === 'undefined' || !document.referrer) return
-    try {
-      const ref = new URL(document.referrer)
-      if (ref.origin !== window.location.origin) return
-      // Don't loop back to the same page (some browsers leave the
-      // current URL as referrer after a reload).
-      if (ref.pathname === window.location.pathname && ref.search === window.location.search) return
+    if (typeof window === 'undefined') return
+    // history.length > 1 means there's somewhere in the session history
+    // to go back to. Works both for direct loads with a referrer AND for
+    // Next.js App-Router client-side navigation — App Router pushState
+    // extends session history but never updates document.referrer, so a
+    // referrer-only check (the old logic) was bailing and letting the
+    // fallback href win on every internal SPA hop.
+    if (window.history.length > 1) {
       e.preventDefault()
       window.history.back()
-    } catch {
-      // malformed referrer — let the link navigate normally
     }
+    // else fall through to fallbackHref — page was loaded directly with
+    // no prior entry, so 'back' has no useful destination.
   }
   return (
     <Link href={fallbackHref} className="dc-nav-icon" aria-label={ariaLabel} onClick={onClick}>
