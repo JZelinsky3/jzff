@@ -288,6 +288,20 @@
         // without opening the dropdown.
         buildChapBar(currentPage, root);
 
+        // Publish the masthead's actual rendered height as a CSS variable
+        // so the chapter bar's sticky `top` can match it exactly. Without
+        // this, the masthead would overlap the chapter bar by a few pixels
+        // on scroll (we'd guessed 4.5rem ≈ 72px, but the real height is
+        // ~76px and varies by viewport).
+        var publishNavHeight = function () {
+            var h = nav.getBoundingClientRect().height;
+            if (h > 0) {
+                document.documentElement.style.setProperty('--nav-h', h + 'px');
+            }
+        };
+        publishNavHeight();
+        window.addEventListener('resize', publishNavHeight);
+
         // ── Back arrow: prefer history.back() when we have a same-origin
         // referrer, so the user returns to the page they actually came from.
         // Falls through to the declared href on direct loads / external refs,
@@ -353,11 +367,12 @@
         '.nav-drop-divider { height: 1px; margin: .55rem .25rem; background: rgba(232,200,137,.15); }',
         '.nav-drop-menu .nav-drop-label:not(:first-child) { margin-top: .15rem; }',
 
-        // Chapter section bar — sticks below the masthead so the two
-        // travel together when the user scrolls. Centered on desktop;
-        // left-scrolling on phones where labels overflow.
+        // Chapter section bar — sticks at exactly the masthead's bottom
+        // edge so the two read as one continuous header on scroll. The
+        // --nav-h custom property is set by JS to the masthead's real
+        // height (fallback to 4.5rem if the script hasn't run yet).
         '.nav-chapbar {',
-        '  position: sticky; top: 4.5rem; z-index: 29;',
+        '  position: sticky; top: var(--nav-h, 4.5rem); z-index: 29;',
         '  background: rgba(14, 22, 32, .9);',
         '  -webkit-backdrop-filter: blur(12px);',
         '  backdrop-filter: blur(12px);',
