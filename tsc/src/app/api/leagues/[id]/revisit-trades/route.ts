@@ -35,10 +35,14 @@ export async function POST(
 
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, owner_id')
+    .select('id, slug, owner_id')
     .eq('id', id)
     .maybeSingle()
   if (!league) return NextResponse.json({ error: 'not found' }, { status: 404 })
+  // Trade Grader is in private testing — only Jake's league can use it.
+  if (league.slug !== 'jake') {
+    return NextResponse.json({ error: 'trade grader is in private testing' }, { status: 403 })
+  }
   if (league.owner_id !== user.id) {
     const { data: member } = await supabase
       .from('league_members')

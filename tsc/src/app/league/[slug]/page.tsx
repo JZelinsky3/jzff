@@ -17,7 +17,7 @@ export default async function LeagueOverviewPage({
 
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, last_synced_at, published_at, owner_id')
+    .select('id, name, slug, last_synced_at, published_at, owner_id')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) notFound()
@@ -155,17 +155,22 @@ export default async function LeagueOverviewPage({
           </div>
           <SyncButton leagueId={league.id} />
         </div>
-        <div className="dc-card-row" style={{ marginTop: '.75rem' }}>
-          <div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
-              Grade trades with AI.
+        {/* Trade Grader is in private testing — only Jake's league sees the card.
+            The matching gate also lives on the API route so a curious user
+            who hits /api/leagues/<id>/grade-trades directly can't run it. */}
+        {league.slug === 'jake' && (
+          <div className="dc-card-row" style={{ marginTop: '.75rem' }}>
+            <div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
+                Grade trades with AI.
+              </div>
+              <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem' }}>
+                Runs Groq on up to 10 ungraded trades at a time. Click again to keep going.
+              </div>
             </div>
-            <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem' }}>
-              Runs Groq on up to 10 ungraded trades at a time. Click again to keep going.
-            </div>
+            <GradeTradesButton leagueId={league.id} />
           </div>
-          <GradeTradesButton leagueId={league.id} />
-        </div>
+        )}
       </div>
 
       <div className="section">
