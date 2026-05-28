@@ -48,7 +48,8 @@ export default async function Home() {
           label: 'Library',
           items: [
             { label: 'Your leagues', href: '/dashboard' },
-            { label: 'New archive', href: '/dashboard/new' },
+            { label: 'New chronicle', href: '/dashboard/new' },
+            { label: 'Demo league', href: '/demo/' },
           ],
         },
         {
@@ -71,6 +72,7 @@ export default async function Home() {
       ]
     : [
         { kind: 'link', label: 'Pricing', href: '/pricing' },
+        { kind: 'link', label: 'Demo', href: '/demo/' },
         { kind: 'link', label: 'Sign in', href: '/login' },
       ]
 
