@@ -9,10 +9,12 @@ import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 //   ANY trigger opens a single shared mega panel below the masthead with
 //   every destination grouped into columns. The triggered group gets a
 //   subtle focus highlight; the rest stay visible but slightly muted.
-//   Sub-pages of a section render as indented children of a parent link.
+//   Trigger order matches column order so the eye reads left-to-right
+//   between the two rows. Sub-pages of a section render as indented
+//   children of a parent link.
 //   Mobile (<720px): collapses to the shared NavDropdown hamburger.
 
-type ColumnKey = 'library' | 'pages' | 'demo' | 'guides' | 'account' | 'get-started'
+type ColumnKey = 'library' | 'discover' | 'demo' | 'account' | 'get-started'
 
 type Trigger =
   | { kind: 'link'; label: string; href: string; column: ColumnKey }
@@ -31,41 +33,44 @@ type Column = {
 
 const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.']
 
-const PAGES: ColumnItem[] = [
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'About', href: '/about' },
+// Discover column groups pricing, about, and the guides hub + sub-guides
+// all in one place. Tiers indented under Pricing give visitors a peek at
+// what each plan offers without leaving the page.
+const DISCOVER_ITEMS: ColumnItem[] = [
+  { label: 'Pricing',  href: '/pricing' },
+  { label: 'Rookie · $5',  href: '/pricing', indent: true },
+  { label: 'Veteran · $15', href: '/pricing', indent: true },
+  { label: 'Legend · $25',  href: '/pricing', indent: true },
+  { label: 'About',    href: '/about' },
+  { label: 'Guides',   href: '/guides' },
+  { label: 'Commissioner mistakes',  href: '/guides/commissioner-mistakes',  indent: true },
+  { label: 'ESPN league history',    href: '/guides/espn-league-history',    indent: true },
+  { label: 'Sleeper league history', href: '/guides/sleeper-league-history', indent: true },
+  { label: 'Migrate fantasy league', href: '/guides/migrate-fantasy-league', indent: true },
 ]
 
-// Demo league chapters — listed as indented sub-pages of the "View
-// the demo →" parent link so the relationship is visually obvious.
-// Pickems + Power merged into a single Live entry to match leagues.
+// Demo league chapters — listed as indented sub-pages of the "Demo
+// league" parent so the relationship is visually obvious. Pickems +
+// Power merged into a single Live entry to match the leagues nav.
 const DEMO_CHAPTERS: ColumnItem[] = [
-  { label: 'View the demo →', href: '/demo/' },
-  { label: 'Standings',       href: '/demo/standings.html',  indent: true },
-  { label: 'Seasons',         href: '/demo/seasons/',         indent: true },
-  { label: 'Drafts',          href: '/demo/draft/',           indent: true },
-  { label: 'Records',         href: '/demo/records.html',     indent: true },
-  { label: 'Managers',        href: '/demo/managers/',        indent: true },
-  { label: 'Rivalries',       href: '/demo/rivalries/',       indent: true },
-  { label: 'Live',            href: '/demo/pickems/',         indent: true },
-]
-
-// Guides — parent + indented sub-guides.
-const GUIDES: ColumnItem[] = [
-  { label: 'All guides →',              href: '/guides' },
-  { label: 'Commissioner mistakes',     href: '/guides/commissioner-mistakes',     indent: true },
-  { label: 'ESPN league history',       href: '/guides/espn-league-history',       indent: true },
-  { label: 'Migrate fantasy league',    href: '/guides/migrate-fantasy-league',    indent: true },
-  { label: 'Sleeper league history',    href: '/guides/sleeper-league-history',    indent: true },
+  { label: 'Demo league', href: '/demo/' },
+  { label: 'Standings',   href: '/demo/standings.html',  indent: true },
+  { label: 'Seasons',     href: '/demo/seasons/',         indent: true },
+  { label: 'Drafts',      href: '/demo/draft/',           indent: true },
+  { label: 'Records',     href: '/demo/records.html',     indent: true },
+  { label: 'Managers',    href: '/demo/managers/',        indent: true },
+  { label: 'Rivalries',   href: '/demo/rivalries/',       indent: true },
+  { label: 'Live',        href: '/demo/pickems/',         indent: true },
 ]
 
 function buildSignedIn(admin: boolean): { triggers: Trigger[]; columns: Column[] } {
-  // Signed-in nav: Pricing · Library · Demo · Account
+  // Nav trigger order matches column order so the eye reads cleanly
+  // left-to-right between the masthead row and the mega panel below.
   const triggers: Trigger[] = [
-    { kind: 'link', label: 'Pricing', href: '/pricing', column: 'pages' },
-    { kind: 'group', label: 'Library', column: 'library' },
-    { kind: 'group', label: 'Demo', column: 'demo' },
-    { kind: 'group', label: 'Account', column: 'account' },
+    { kind: 'group', label: 'Library',  column: 'library'  },
+    { kind: 'link',  label: 'Pricing',  href: '/pricing', column: 'discover' },
+    { kind: 'group', label: 'Demo',     column: 'demo'     },
+    { kind: 'group', label: 'Account',  column: 'account'  },
   ]
   const accountItems: ColumnItem[] = [
     { label: 'Profile', href: '/account' },
@@ -76,31 +81,29 @@ function buildSignedIn(admin: boolean): { triggers: Trigger[]; columns: Column[]
     {
       key: 'library', num: ROMAN[0], label: 'Library',
       items: [
-        { label: 'Your leagues', href: '/dashboard' },
+        { label: 'Your leagues',  href: '/dashboard' },
         { label: 'New chronicle', href: '/dashboard/new' },
-        { label: 'Demo league', href: '/demo/' },
+        { label: 'Demo league',   href: '/demo/' },
       ],
     },
-    { key: 'pages', num: ROMAN[1], label: 'Pages',          items: PAGES },
-    { key: 'demo',  num: ROMAN[2], label: 'Demo chronicle', items: DEMO_CHAPTERS },
-    { key: 'guides', num: ROMAN[3], label: 'Guides',        items: GUIDES },
-    { key: 'account', num: ROMAN[4], label: 'Account',      items: accountItems },
+    { key: 'discover', num: ROMAN[1], label: 'Discover',       items: DISCOVER_ITEMS },
+    { key: 'demo',     num: ROMAN[2], label: 'Demo chronicle', items: DEMO_CHAPTERS },
+    { key: 'account',  num: ROMAN[3], label: 'Account',        items: accountItems },
   ]
   return { triggers, columns }
 }
 
 function buildSignedOut(): { triggers: Trigger[]; columns: Column[] } {
   const triggers: Trigger[] = [
-    { kind: 'link', label: 'Pricing', href: '/pricing', column: 'pages' },
+    { kind: 'link', label: 'Pricing', href: '/pricing', column: 'discover' },
     { kind: 'group', label: 'Demo', column: 'demo' },
     { kind: 'link', label: 'Sign in', href: '/login', column: 'get-started' },
   ]
   const columns: Column[] = [
-    { key: 'pages', num: ROMAN[0], label: 'Pages',          items: PAGES },
-    { key: 'demo',  num: ROMAN[1], label: 'Demo chronicle', items: DEMO_CHAPTERS },
-    { key: 'guides', num: ROMAN[2], label: 'Guides',        items: GUIDES },
+    { key: 'discover', num: ROMAN[0], label: 'Discover',       items: DISCOVER_ITEMS },
+    { key: 'demo',     num: ROMAN[1], label: 'Demo chronicle', items: DEMO_CHAPTERS },
     {
-      key: 'get-started', num: ROMAN[3], label: 'Get started',
+      key: 'get-started', num: ROMAN[2], label: 'Get started',
       items: [
         { label: 'Sign in', href: '/login' },
         { label: 'New chronicle', href: '/login?mode=signup' },

@@ -6038,10 +6038,12 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
        byte-identical box geometry. Hover-cream highlight uses these
        paddings as its visible area. */
     display: block;
-    padding: .55rem .85rem;
-    font-family: var(--mono); font-weight: 700;
-    font-size: .64rem;
-    letter-spacing: .2em;
+    padding: .55rem .95rem;
+    font-family: var(--mono); font-weight: 800;
+    /* Bumped from .64rem → .8rem and weight 700 → 800 so the masthead
+       triggers read as real navigation, not tiny utility text. */
+    font-size: .8rem;
+    letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--gold);
     text-decoration: none;
