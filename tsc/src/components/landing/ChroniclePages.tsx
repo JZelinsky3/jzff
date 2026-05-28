@@ -210,6 +210,15 @@ export function ChroniclePages() {
         rafId = 0
         const pages = track.querySelectorAll<HTMLElement>('.cp-page')
         if (!pages.length) return
+        // If scrolled to the very right edge, snap the active indicator
+        // to the last page. The closest-offset math otherwise can lag
+        // behind by one when the final page's offsetLeft exceeds the
+        // max scrollLeft (which is bounded by clientWidth).
+        const maxScroll = track.scrollWidth - track.clientWidth
+        if (maxScroll > 0 && track.scrollLeft >= maxScroll - 4) {
+          setActive(pages.length - 1)
+          return
+        }
         const x = track.scrollLeft + 8
         let best = 0
         let bestDist = Infinity
@@ -311,10 +320,6 @@ export function ChroniclePages() {
             <div className="cp-page-body">{page.body}</div>
           </article>
         ))}
-      </div>
-
-      <div className="cp-hint">
-        <span>Pan, swipe, or use the arrows · scroll past freely</span>
       </div>
     </section>
   )
