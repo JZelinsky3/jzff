@@ -7,7 +7,7 @@
    ============================================================ */
 
 /* ── Layout-only basics (theme-agnostic) ─────────────────────── */
-.tr-wrap { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+.tr-wrap { max-width: 1100px; margin: 0 auto; padding: 1.4rem 1rem 4rem; }
 .tr-list { display: flex; flex-direction: column; gap: 1rem; }
 .tr-sides {
   display: grid; grid-template-columns: 1fr; gap: 1px;
@@ -121,7 +121,7 @@ body[data-trades-theme="cards"] {
     radial-gradient(ellipse at 50% 0%, rgba(245,233,200,.04) 0%, transparent 65%),
     repeating-linear-gradient(45deg, rgba(245,233,200,.012) 0px, rgba(245,233,200,.012) 2px, transparent 2px, transparent 8px);
 }
-body[data-trades-theme="cards"] .tr-page-head { text-align: center; padding: 1rem 0 2.5rem; }
+body[data-trades-theme="cards"] .tr-page-head { text-align: center; padding: .25rem 0 1.75rem; }
 body[data-trades-theme="cards"] .tr-page-sup {
   display: inline-block; font-family: var(--mono); font-size: .58rem;
   letter-spacing: .3em; color: #c8a464; text-transform: uppercase;
@@ -287,7 +287,7 @@ body[data-trades-theme="tribunal"] {
     radial-gradient(ellipse at 50% 0%, rgba(200,164,100,.05) 0%, transparent 60%),
     repeating-linear-gradient(0deg, rgba(255,255,255,.008) 0px, rgba(255,255,255,.008) 1px, transparent 1px, transparent 4px);
 }
-body[data-trades-theme="tribunal"] .tr-page-head { text-align: center; padding: 1rem 0 2.5rem; }
+body[data-trades-theme="tribunal"] .tr-page-head { text-align: center; padding: .25rem 0 1.75rem; }
 body[data-trades-theme="tribunal"] .tr-page-sup {
   font-family: var(--mono); font-size: .68rem;
   letter-spacing: .35em; color: #c8a464;
@@ -431,7 +431,7 @@ body[data-trades-theme="wire"] {
     radial-gradient(ellipse at 80% 90%, rgba(106,90,60,.06) 0%, transparent 60%);
 }
 body[data-trades-theme="wire"] .tr-page-head {
-  text-align: center; padding: 3rem 1rem 2.5rem;
+  text-align: center; padding: 1rem 1rem 1.75rem;
   border-bottom: 1px solid #c9bea3;
 }
 body[data-trades-theme="wire"] .tr-page-sup {
@@ -598,7 +598,7 @@ body[data-trades-theme="floor"] {
     radial-gradient(ellipse at 50% 0%, rgba(0,255,159,.05) 0%, transparent 60%);
 }
 body[data-trades-theme="floor"] .tr-page-head {
-  border: 1px solid #1c2421; padding: 2rem 1.5rem;
+  border: 1px solid #1c2421; padding: 1.25rem 1.5rem 1.4rem;
   margin-bottom: 1.5rem;
   background:
     repeating-linear-gradient(90deg, transparent 0, transparent 39px, rgba(255,255,255,.015) 39px, rgba(255,255,255,.015) 40px),
