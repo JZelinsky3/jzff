@@ -41,10 +41,14 @@ const DISCOVER_ITEMS: ColumnItem[] = [
   { label: 'Compare plans', href: '/pricing/plans', indent: true },
   { label: 'About', href: '/about' },
   { label: 'Guides', href: '/guides' },
+  // Platform-guide labels keep only the platform name now — the
+  // 'league history' suffix is redundant once they're listed under
+  // 'Guides'. Commissioner / Migrate guides keep descriptive labels.
   { label: 'Commissioner mistakes',  href: '/guides/commissioner-mistakes',  indent: true },
-  { label: 'ESPN league history',    href: '/guides/espn-league-history',    indent: true },
-  { label: 'Sleeper league history', href: '/guides/sleeper-league-history', indent: true },
-  { label: 'Yahoo league history',   href: '/guides/yahoo-league-history',   indent: true },
+  { label: 'Sleeper',                href: '/guides/sleeper-league-history', indent: true },
+  { label: 'ESPN',                   href: '/guides/espn-league-history',    indent: true },
+  { label: 'Yahoo',                  href: '/guides/yahoo-league-history',   indent: true },
+  { label: 'NFL.com',                href: '/guides/nfl-com-league-history', indent: true },
   { label: 'Migrate fantasy league', href: '/guides/migrate-fantasy-league', indent: true },
 ]
 

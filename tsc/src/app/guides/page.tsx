@@ -27,6 +27,11 @@ const GUIDES = [
     tagline: "Yahoo needs a one-time OAuth sign-in. After that, every season your league has played comes back as a clean public almanac.",
   },
   {
+    slug: "nfl-com-league-history",
+    title: "How to archive your NFL.com fantasy league history",
+    tagline: "NFL.com exposes league data publicly behind the league ID. Paste it, no sign-in needed, every season back to the league's founding.",
+  },
+  {
     slug: "migrate-fantasy-league",
     title: "Moving your league between platforms — keeping the history",
     tagline: "Yahoo → ESPN → Sleeper. When commissioners migrate, league history dies. Here's how to preserve it.",
