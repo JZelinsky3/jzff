@@ -4459,7 +4459,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .lp-hero-left { position: relative; }
 .lp-hero-seal {
-    position: absolute; top: -2.7rem; left: -.5rem;
+    position: absolute; top: -.7rem; left: -.5rem;
     width: 78px; height: 78px;
     border: 2px solid var(--gold);
     border-radius: 50%;
@@ -4794,22 +4794,18 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     scroll-snap-type: x mandatory;
     scroll-padding: 0 2.5rem;
     padding: 1.75rem 2.5rem;
-    /* Hide horizontal scrollbar visually — keyboard/trackpad still work. */
-    scrollbar-width: thin;
-    scrollbar-color: var(--ink-line) transparent;
+    /* Hide horizontal scrollbar entirely — the dots/arrows in the meta
+       row are the visual indicators. Scrolling via trackpad/swipe/arrow
+       keys still works. */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     /* Prevent the track from capturing wheel events vertically: by default
        overflow-x will absorb trackpad-vertical too if scrollLeft has room.
        overscroll-behavior keeps vertical scroll on the page. */
     overscroll-behavior-x: contain;
     overscroll-behavior-y: auto;
 }
-.cp-track::-webkit-scrollbar { height: 6px; }
-.cp-track::-webkit-scrollbar-track { background: transparent; }
-.cp-track::-webkit-scrollbar-thumb {
-    background: var(--ink-line);
-    border-radius: 3px;
-}
-.cp-track::-webkit-scrollbar-thumb:hover { background: var(--gold-deep); }
+.cp-track::-webkit-scrollbar { display: none; }
 
 .cp-page {
     flex: 0 0 min(960px, calc(100vw - 5rem));
@@ -5187,13 +5183,16 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     background: var(--ink);
 }
 .dv-iframe {
-    width: 100%; height: 100%;
+    /* Slight zoom-out at all screen sizes so the embedded almanac fits
+       its chrome comfortably (was rendering too dense at 1×). Mobile
+       gets a stronger scale in the 640px media query below. */
+    width: 111.12%; height: 111.12%;
     border: 0;
     background: var(--ink);
-    /* `transform-origin` defaults to center; setting it top-left lets the
-       mobile media query scale the iframe down without shifting it off-axis. */
+    transform: scale(.9);
     transform-origin: top left;
 }
+.dv-screen { overflow: hidden; }
 .dv-poster {
     position: absolute; inset: 0;
     border: 0;
@@ -6023,65 +6022,53 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     background: transparent;
     border: none;
     cursor: pointer;
-    /* Uniform vertical padding so plain links sit on the same baseline
-       as grouped triggers (which previously got extra height from a
-       wrapping .ln-group padding). Both link and button now have the
-       same total height. */
-    padding: .35rem 0;
+    /* Block layout (instead of inline-flex) so anchor and button have
+       byte-identical box geometry. Hover-cream highlight uses these
+       paddings as its visible area. */
+    display: block;
+    padding: .55rem .85rem;
     font-family: var(--mono); font-weight: 700;
     font-size: .64rem;
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--gold);
     text-decoration: none;
-    transition: color .15s ease;
-    display: inline-flex; align-items: center; gap: .35rem;
     line-height: 1;
     white-space: nowrap;
+    border-radius: 2px 2px 0 0;
+    transition: background .15s ease, color .15s ease;
 }
-/* Lighter shade on hover and while the dropdown is open — cream reads
-   clearly distinct from the resting gold, so the active trigger pops. */
-/* Lighter shade on hover and while the dropdown is open — cream reads
-   clearly distinct from the resting gold, so the active trigger pops. */
-.ln-link:hover, .ln-trigger[aria-expanded="true"] { color: var(--cream); }
-.ln-group {
-    position: relative;
-    /* No own padding — the .ln-link inside provides the height. Bottom
-       padding-bottom on the flyout's hover-bridge handles the cursor
-       handoff. */
-    padding: 0;
+/* Hover and 'open' states: cream highlight behind the text, navy ink
+   for legibility. The trigger then visually flows into the flyout
+   below (matched cream background, no gap). */
+.ln-link:hover,
+.ln-trigger[aria-expanded="true"] {
+    background: var(--cream);
+    color: var(--ink);
 }
+.ln-group { position: relative; padding: 0; }
 .ln-flyout {
     position: absolute;
-    /* No visible gap — the flyout sits flush under the trigger so the
-       cursor never crosses dead space. (Box shadow gives the visual
-       separation.) */
+    /* Flush against the trigger so the cream highlight reads as one
+       continuous block. */
     top: 100%; right: 0;
-    margin-top: .35rem;
-    min-width: 210px;
-    background: rgba(14, 22, 32, .97);
+    margin-top: 0;
+    min-width: 100%;
+    width: max-content;
+    background: var(--cream);
+    color: var(--ink);
     border: 1px solid var(--gold-deep);
-    border-radius: 3px;
-    padding: .5rem 0;
+    border-top: none;
+    border-radius: 0 0 3px 3px;
+    padding: .35rem 0 .5rem;
     box-shadow:
-        0 16px 32px -8px rgba(0, 0, 0, .55),
-        0 0 24px rgba(232, 200, 137, .06);
-    backdrop-filter: blur(10px);
+        0 16px 32px -8px rgba(0, 0, 0, .35),
+        0 0 0 1px rgba(168, 138, 74, .12);
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(-4px);
     pointer-events: none;
-    transition: opacity .18s ease, transform .2s cubic-bezier(.2, .8, .2, 1);
+    transition: opacity .15s ease, transform .18s cubic-bezier(.2, .8, .2, 1);
     z-index: 50;
-}
-/* Invisible bridge above the flyout so the cursor stays "inside" the
-   group while moving from trigger to first menu item. The group's
-   onMouseEnter/Leave handlers see the bridge as a child of the flyout
-   (which is a child of the group), so mouseleave doesn't fire. */
-.ln-flyout::before {
-    content: '';
-    position: absolute;
-    top: -.7rem; left: 0; right: 0;
-    height: .7rem;
 }
 .ln-group.is-open .ln-flyout {
     opacity: 1;
@@ -6093,14 +6080,13 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     padding: .55rem 1.1rem;
     font-family: var(--serif);
     font-size: 1rem;
-    color: var(--cream-soft);
+    color: var(--ink);
     text-decoration: none;
-    transition: background .12s, color .12s, padding-left .15s;
+    transition: background .12s ease, padding-left .15s ease;
     white-space: nowrap;
 }
 .ln-flyout a:hover {
-    background: rgba(232, 200, 137, .07);
-    color: var(--gold);
+    background: rgba(168, 138, 74, .15);
     padding-left: 1.35rem;
 }
 /* Sign-out renders inside the Account flyout instead of as its own
@@ -6113,18 +6099,17 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     padding: .6rem 1.1rem .55rem;
     background: transparent;
     border: none;
-    border-top: 1px solid var(--ink-line);
+    border-top: 1px solid rgba(168, 138, 74, .35);
     margin-top: .35rem;
     font-family: var(--mono); font-weight: 700;
     font-size: .62rem; letter-spacing: .25em; text-transform: uppercase;
-    color: var(--cream-mute);
+    color: var(--rust);
     text-align: left;
     cursor: pointer;
-    transition: background .12s, color .12s, padding-left .15s;
+    transition: background .12s, padding-left .15s;
 }
 .ln-flyout-signout:hover {
-    background: rgba(160, 72, 48, .08);
-    color: var(--rust);
+    background: rgba(160, 72, 48, .12);
     padding-left: 1.35rem;
 }
 
