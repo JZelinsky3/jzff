@@ -6498,18 +6498,17 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     pointer-events: auto;
 }
 .ln-mega-grid {
-    max-width: 1280px;
+    max-width: 1320px;
     margin: 0 auto;
     display: grid;
-    /* Default to 4 columns; modifier classes override for 3 or 5. Keeps
-       the visual rhythm intentional rather than auto-fit dancing as
-       columns change. */
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 2.25rem;
+    /* N data columns + a fixed-width featured-clipping aside on the
+       right. The modifier classes set the column template; the aside
+       is always the last grid item. */
+    grid-template-columns: repeat(4, minmax(0, 1fr)) 270px;
+    gap: 2rem;
 }
-.ln-mega-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.ln-mega-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.ln-mega-grid--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.75rem; }
+.ln-mega-grid--cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) 270px; }
+.ln-mega-grid--cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) 270px; }
 /* Subtle de-emphasis on non-focused columns so the hovered trigger's
    group reads as the "active" section without hiding the others. */
 .ln-mega-col {
@@ -6580,12 +6579,85 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 @media (max-width: 980px) {
     .ln-mega-grid,
-    .ln-mega-grid--3,
-    .ln-mega-grid--4,
-    .ln-mega-grid--5 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem; }
+    .ln-mega-grid--cols-3,
+    .ln-mega-grid--cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem; }
+    /* Aside drops at medium widths — it's the lowest-priority element
+       and would crush the data columns. */
+    .ln-mega-aside { display: none; }
     .ln-mega { padding: 1.75rem 1.5rem 1.5rem; }
 }
 @media (max-width: 720px) {
     /* Mobile uses the hamburger NavDropdown; hide the mega entirely. */
     .ln-mega { display: none; }
+}
+
+/* Featured editorial clipping inside the mega panel (right edge).
+   Dark ink card on the cream mega background — contrasts as a deliberate
+   featured highlight, like a Gap menu's product image lockup. */
+.ln-mega-aside {
+    background:
+        radial-gradient(circle at 50% 0%, rgba(232, 200, 137, .12), transparent 60%),
+        var(--ink);
+    color: var(--cream);
+    padding: 1.4rem 1.4rem 1.2rem;
+    border: 1px solid var(--gold-deep);
+    border-radius: 3px;
+    display: flex; flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 12px 28px -12px rgba(0, 0, 0, .45);
+}
+.ln-mega-aside::before {
+    /* faint paper-grain so it doesn't read as a flat dark block */
+    content: ''; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.04 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+    opacity: .5; pointer-events: none;
+}
+.ln-mega-aside > * { position: relative; z-index: 1; }
+.ln-mega-aside-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: .55rem;
+}
+.ln-mega-aside-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-deep) 30%, var(--gold-deep) 70%, transparent);
+    margin-bottom: 1rem;
+    opacity: .8;
+}
+.ln-mega-aside-title {
+    font-family: var(--serif);
+    font-size: 1.55rem; line-height: 1; letter-spacing: -.015em;
+    color: var(--cream);
+    margin: 0 0 .75rem;
+}
+.ln-mega-aside-title em { font-style: italic; color: var(--gold); }
+.ln-mega-aside-quote {
+    font-family: var(--serif); font-style: italic;
+    font-size: .92rem; line-height: 1.5;
+    color: var(--cream-soft);
+    margin: 0 0 .75rem;
+}
+.ln-mega-aside-byline {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: 1.1rem;
+}
+.ln-mega-aside-cta {
+    margin-top: auto;
+    padding-top: .7rem;
+    border-top: 1px solid var(--ink-line);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: .35rem;
+    transition: color .15s ease, gap .15s ease;
+}
+.ln-mega-aside-cta:hover {
+    color: var(--gold-bright);
+    gap: .6rem;
 }

@@ -246,7 +246,7 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
         onMouseLeave={scheduleClose}
         aria-hidden={!open}
       >
-        <div className={`ln-mega-grid ln-mega-grid--${columns.length}`}>
+        <div className={`ln-mega-grid ln-mega-grid--cols-${columns.length}`}>
           {columns.map((col) => (
             <section
               key={col.key}
@@ -283,6 +283,25 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
               </ul>
             </section>
           ))}
+
+          {/* Featured editorial clipping — fills the right edge of the
+              mega panel with a vintage pull-quote from the demo league.
+              Static content for now; could rotate per-hovered-column. */}
+          <aside className="ln-mega-aside" aria-hidden="true">
+            <div className="ln-mega-aside-kicker">★ From the chronicle ★</div>
+            <div className="ln-mega-aside-rule" />
+            <h3 className="ln-mega-aside-title">
+              The Lakeside <em>League.</em>
+            </h3>
+            <p className="ln-mega-aside-quote">
+              &ldquo;Seven seasons of champions, blowouts, and grudge matches — every record,
+              every Sunday, kept in the books.&rdquo;
+            </p>
+            <div className="ln-mega-aside-byline">— Vol. VII · Demo edition</div>
+            <Link href="/demo/" className="ln-mega-aside-cta" onClick={closeAll}>
+              View the demo →
+            </Link>
+          </aside>
         </div>
       </div>
     </>
