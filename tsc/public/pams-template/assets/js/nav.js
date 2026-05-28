@@ -142,22 +142,15 @@
         }
 
         // ── Dropdown contents ─────────────────────────────────────────────
-        var inArchiveLinks = PAGES.map(function (p) {
-            if (p.isGroup) {
-                var visible = p.items.filter(function (i) { return i.key !== currentPage; });
-                if (visible.length === 0) return '';
-                var sub = visible.map(function (i) {
-                    return '<a href="' + root + i.path + '">' + i.label + '</a>';
-                }).join('');
-                return '<div class="nav-drop-group">'
-                    + '<span class="nav-drop-group-lbl">' + p.label
-                    + ' <span class="nav-group-arr">›</span></span>'
-                    + '<div class="nav-drop-sub">' + sub + '</div>'
-                    + '</div>';
-            }
-            if (p.key === currentPage) return '';
-            return '<a href="' + root + p.path + '">' + p.label + '</a>';
-        }).join('');
+        // In-archive chapter links live in the new chapter section bar
+        // below the masthead, so they're intentionally NOT duplicated in
+        // the dropdown. The dropdown now carries only:
+        //   • the visitor CTA group (Sign in / New chronicle / Home)
+        //   • the signed-in account group (Library / Profile / Bookmark)
+        //   • the commissioner-only Admin group
+        // Empty string preserved so existing concatenation below still
+        // reads — saves restructuring the rest of the function.
+        var inArchiveLinks = '';
 
         // Admin footer group: only rendered for the commissioner who owns this
         // league. The route handler injects __DC.isCommish based on the
@@ -198,7 +191,7 @@
                 ? '<a href="/dashboard">Library</a><a href="/account">Profile</a>'
                 : '<a href="/">Home</a>'
                 + '<a href="/login" data-dc-signin>Sign in</a>'
-                + '<a href="/login?mode=signup">Start an archive</a>';
+                + '<a href="/login?mode=signup">New chronicle</a>';
             visitorCta =
                 '<div class="nav-drop-divider"></div>' +
                 '<span class="nav-drop-label">' + groupLabel + '</span>' +
@@ -209,7 +202,6 @@
         var dropMenu = '<div class="nav-drop nav-drop-right" id="nav-drop" style="justify-self:end;margin-left:auto;">'
             + '<button class="nav-drop-btn" onclick="toggleDrop()" aria-label="Navigate"><svg class="nav-icon" viewBox="0 0 20 14" width="20" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="0" y1="1" x2="20" y2="1"/><line x1="0" y1="7" x2="20" y2="7"/><line x1="0" y1="13" x2="20" y2="13"/></svg></button>'
             + '<div class="nav-drop-menu">'
-            + '<span class="nav-drop-label">Archive</span>'
             + inArchiveLinks
             + dcFooter
             + visitorCta
@@ -352,9 +344,11 @@
         '.nav-drop-divider { height: 1px; margin: .55rem .25rem; background: rgba(232,200,137,.15); }',
         '.nav-drop-menu .nav-drop-label:not(:first-child) { margin-top: .15rem; }',
 
-        // Chapter section bar — newspaper sub-nav under the masthead.
+        // Chapter section bar — scrolls with the masthead (not sticky)
+        // so it never floats above the page content. Centered on desktop;
+        // left-scrolling on phones where labels overflow.
         '.nav-chapbar {',
-        '  position: sticky; top: 0; z-index: 29;',
+        '  position: relative; z-index: 29;',
         '  background: rgba(14, 22, 32, .9);',
         '  -webkit-backdrop-filter: blur(12px);',
         '  backdrop-filter: blur(12px);',
@@ -362,6 +356,7 @@
         '}',
         '.nav-chapbar-track {',
         '  display: flex; align-items: stretch;',
+        '  justify-content: center;',
         '  overflow-x: auto; overscroll-behavior-x: contain;',
         '  scrollbar-width: none;',
         '  max-width: 1370px; margin: 0 auto;',
@@ -374,8 +369,8 @@
         '  text-decoration: none;',
         '  font-family: var(--mono, "JetBrains Mono", monospace);',
         '  font-weight: 700;',
-        '  font-size: .64rem; letter-spacing: .22em; text-transform: uppercase;',
-        '  padding: .8rem 1.05rem .9rem;',
+        '  font-size: .78rem; letter-spacing: .22em; text-transform: uppercase;',
+        '  padding: .95rem 1.2rem 1.05rem;',
         '  transition: color .15s;',
         '  white-space: nowrap;',
         '}',
@@ -383,7 +378,7 @@
         '.nav-chapbar-link.is-active { color: var(--gold, #e8c889); }',
         '.nav-chapbar-link.is-active::after {',
         '  content: ""; position: absolute;',
-        '  left: 1.05rem; right: 1.05rem; bottom: 0;',
+        '  left: 1.2rem; right: 1.2rem; bottom: 0;',
         '  height: 2px; background: var(--gold, #e8c889);',
         '}',
         '.nav-chapbar-link + .nav-chapbar-link::before {',
@@ -392,9 +387,9 @@
         '  background: var(--ink-line, #2a3645);',
         '}',
         '@media (max-width: 640px) {',
-        '  .nav-chapbar-track { padding: 0 .25rem; }',
-        '  .nav-chapbar-link { padding: .65rem .8rem .75rem; font-size: .58rem; letter-spacing: .18em; }',
-        '  .nav-chapbar-link.is-active::after { left: .8rem; right: .8rem; }',
+        '  .nav-chapbar-track { justify-content: flex-start; padding: 0 .25rem; }',
+        '  .nav-chapbar-link { padding: .75rem .9rem .85rem; font-size: .68rem; letter-spacing: .18em; }',
+        '  .nav-chapbar-link.is-active::after { left: .9rem; right: .9rem; }',
         '}'
     ].join('\n');
     document.head.appendChild(style);
