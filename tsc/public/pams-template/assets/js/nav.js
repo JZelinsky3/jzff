@@ -343,12 +343,60 @@
         });
     }
 
-    // Small style addendum so we don't have to touch main.css for the new
-    // footer divider in the dropdown.
+    // Style addendum. Each league template ships its own inline <style>
+    // block (no external main.css link), so any new CSS class we need
+    // gets injected here at runtime. Covers the footer divider in the
+    // dropdown AND the chapter section bar this script renders.
     var style = document.createElement('style');
-    style.textContent =
-        '.nav-drop-divider { height: 1px; margin: .55rem .25rem; background: rgba(232,200,137,.15); }' +
-        '.nav-drop-menu .nav-drop-label:not(:first-child) { margin-top: .15rem; }';
+    style.textContent = [
+        '.nav-drop-divider { height: 1px; margin: .55rem .25rem; background: rgba(232,200,137,.15); }',
+        '.nav-drop-menu .nav-drop-label:not(:first-child) { margin-top: .15rem; }',
+
+        // Chapter section bar — newspaper sub-nav under the masthead.
+        '.nav-chapbar {',
+        '  position: sticky; top: 0; z-index: 29;',
+        '  background: rgba(14, 22, 32, .9);',
+        '  -webkit-backdrop-filter: blur(12px);',
+        '  backdrop-filter: blur(12px);',
+        '  border-bottom: 1px solid var(--ink-line, #2a3645);',
+        '}',
+        '.nav-chapbar-track {',
+        '  display: flex; align-items: stretch;',
+        '  overflow-x: auto; overscroll-behavior-x: contain;',
+        '  scrollbar-width: none;',
+        '  max-width: 1370px; margin: 0 auto;',
+        '  padding: 0 1rem;',
+        '}',
+        '.nav-chapbar-track::-webkit-scrollbar { display: none; }',
+        '.nav-chapbar-link {',
+        '  flex-shrink: 0; position: relative;',
+        '  color: var(--cream-soft, #c9c0ad);',
+        '  text-decoration: none;',
+        '  font-family: var(--mono, "JetBrains Mono", monospace);',
+        '  font-weight: 700;',
+        '  font-size: .64rem; letter-spacing: .22em; text-transform: uppercase;',
+        '  padding: .8rem 1.05rem .9rem;',
+        '  transition: color .15s;',
+        '  white-space: nowrap;',
+        '}',
+        '.nav-chapbar-link:hover { color: var(--gold, #e8c889); }',
+        '.nav-chapbar-link.is-active { color: var(--gold, #e8c889); }',
+        '.nav-chapbar-link.is-active::after {',
+        '  content: ""; position: absolute;',
+        '  left: 1.05rem; right: 1.05rem; bottom: 0;',
+        '  height: 2px; background: var(--gold, #e8c889);',
+        '}',
+        '.nav-chapbar-link + .nav-chapbar-link::before {',
+        '  content: ""; position: absolute; left: 0;',
+        '  top: 35%; bottom: 35%; width: 1px;',
+        '  background: var(--ink-line, #2a3645);',
+        '}',
+        '@media (max-width: 640px) {',
+        '  .nav-chapbar-track { padding: 0 .25rem; }',
+        '  .nav-chapbar-link { padding: .65rem .8rem .75rem; font-size: .58rem; letter-spacing: .18em; }',
+        '  .nav-chapbar-link.is-active::after { left: .8rem; right: .8rem; }',
+        '}'
+    ].join('\n');
     document.head.appendChild(style);
 
     // Stamp the current league URL onto auth links so visitors land somewhere
