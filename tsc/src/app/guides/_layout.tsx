@@ -2,6 +2,7 @@
 // implicitly) — just a reusable component that each guide page composes.
 
 import Link from "next/link"
+import { BackButton } from "@/components/BackButton"
 import { SiteFooter } from "@/components/SiteFooter"
 
 export function GuideShell({
@@ -28,11 +29,7 @@ export function GuideShell({
         />
       )}
       <nav className="nav">
-        <Link href="/guides/" className="dc-nav-icon" aria-label="Back to guides">
-          <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="7 1 1 7 7 13" />
-          </svg>
-        </Link>
+        <BackButton fallbackHref="/guides/" ariaLabel="Back" />
         <div className="nav-center">
           <div className="nav-kicker">Guides · The Sunday Chronicle</div>
           <div className="nav-title">TS<em>C.</em></div>
