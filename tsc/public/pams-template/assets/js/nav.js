@@ -62,15 +62,18 @@
     // masthead. Mirrors the choices in PAGES but FLAT (no sub-groups) and
     // limited to the top-level chapters readers care about. Live Season
     // sub-pages (overview, trades) stay in the dropdown.
+    // Pickems + power rankings now collapse into a single 'Live' link that
+    // points at the live-season hub. Any live-season sub-page (overview,
+    // pickems, powerrank, trades) lights up the Live tab as active.
+    var LIVE_SEASON_KEYS = ['live-season', 'pickems', 'powerrank', 'trades'];
     var CHAPBAR_ITEMS = [
-        { key: 'standings', label: 'Standings',  path: 'standings.html' },
-        { key: 'seasons',   label: 'Seasons',    path: 'seasons/index.html' },
-        { key: 'draft',     label: 'Drafts',     path: 'draft/index.html' },
-        { key: 'records',   label: 'Records',    path: 'records.html' },
-        { key: 'managers',  label: 'Managers',   path: 'managers/index.html' },
-        { key: 'rivalries', label: 'Rivalries',  path: 'rivalries/index.html' },
-        { key: 'pickems',   label: "Pick'ems",   path: 'live-season/pickems/' },
-        { key: 'powerrank', label: 'Power',      path: 'live-season/powerrank/' }
+        { key: 'standings',   label: 'Standings', path: 'standings.html' },
+        { key: 'seasons',     label: 'Seasons',   path: 'seasons/index.html' },
+        { key: 'draft',       label: 'Drafts',    path: 'draft/index.html' },
+        { key: 'records',     label: 'Records',   path: 'records.html' },
+        { key: 'managers',    label: 'Managers',  path: 'managers/index.html' },
+        { key: 'rivalries',   label: 'Rivalries', path: 'rivalries/index.html' },
+        { key: 'live-season', label: 'Live',      path: 'live-season/' }
     ];
 
     function buildChapBar(currentPage, root) {
@@ -86,9 +89,12 @@
         var html = '<div class="nav-chapbar-track">';
         for (var i = 0; i < CHAPBAR_ITEMS.length; i++) {
             var item = CHAPBAR_ITEMS[i];
-            // Mark "Live Season overview" parent active when on any
-            // live-season child page (so the bar always shows where you are).
-            var isActive = item.key === currentPage;
+            // Live tab lights up for the entire live-season subtree
+            // (overview, pickems, powerrank, trades); every other tab
+            // matches its own key exactly.
+            var isActive = item.key === 'live-season'
+                ? LIVE_SEASON_KEYS.indexOf(currentPage) !== -1
+                : item.key === currentPage;
             html += '<a href="' + root + item.path + '"'
                   + ' class="nav-chapbar-link' + (isActive ? ' is-active' : '') + '"'
                   + (isActive ? ' aria-current="page"' : '')
@@ -159,7 +165,6 @@
         var dcFooter = '';
         if (ctx.slug && ctx.isCommish) {
             dcFooter =
-                '<div class="nav-drop-divider"></div>' +
                 '<span class="nav-drop-label">Admin</span>' +
                 '<a href="' + ctx.managePath + '">Manage league</a>' +
                 '<a href="' + ctx.libraryPath + '">Library</a>';
@@ -193,18 +198,22 @@
                 + '<a href="/login" data-dc-signin>Sign in</a>'
                 + '<a href="/login?mode=signup">New chronicle</a>';
             visitorCta =
-                '<div class="nav-drop-divider"></div>' +
                 '<span class="nav-drop-label">' + groupLabel + '</span>' +
                 bookmarkRow +
                 navLinks;
         }
 
+        // Join the section bodies with dividers only BETWEEN them, never
+        // before the first non-empty section. (Previously each section
+        // shipped its own leading divider, which painted a blank gap at
+        // the top of the dropdown whenever the in-archive list was empty.)
+        var sectionBodies = [dcFooter, visitorCta].filter(function (s) { return !!s; });
+        var dropBody = sectionBodies.join('<div class="nav-drop-divider"></div>');
+
         var dropMenu = '<div class="nav-drop nav-drop-right" id="nav-drop" style="justify-self:end;margin-left:auto;">'
             + '<button class="nav-drop-btn" onclick="toggleDrop()" aria-label="Navigate"><svg class="nav-icon" viewBox="0 0 20 14" width="20" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="0" y1="1" x2="20" y2="1"/><line x1="0" y1="7" x2="20" y2="7"/><line x1="0" y1="13" x2="20" y2="13"/></svg></button>'
             + '<div class="nav-drop-menu">'
-            + inArchiveLinks
-            + dcFooter
-            + visitorCta
+            + dropBody
             + '</div></div>';
 
         // ── Left slot: back arrow OR bookmark star ───────────────────────
@@ -344,11 +353,11 @@
         '.nav-drop-divider { height: 1px; margin: .55rem .25rem; background: rgba(232,200,137,.15); }',
         '.nav-drop-menu .nav-drop-label:not(:first-child) { margin-top: .15rem; }',
 
-        // Chapter section bar — scrolls with the masthead (not sticky)
-        // so it never floats above the page content. Centered on desktop;
+        // Chapter section bar — sticks below the masthead so the two
+        // travel together when the user scrolls. Centered on desktop;
         // left-scrolling on phones where labels overflow.
         '.nav-chapbar {',
-        '  position: relative; z-index: 29;',
+        '  position: sticky; top: 4.5rem; z-index: 29;',
         '  background: rgba(14, 22, 32, .9);',
         '  -webkit-backdrop-filter: blur(12px);',
         '  backdrop-filter: blur(12px);',
