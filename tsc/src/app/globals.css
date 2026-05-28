@@ -6039,14 +6039,11 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     line-height: 1;
     white-space: nowrap;
 }
-.ln-link:hover, .ln-trigger[aria-expanded="true"] { color: var(--gold-bright); }
-.ln-arr {
-    font-size: .5rem;
-    opacity: .65;
-    transition: transform .2s ease;
-    margin-top: 1px;
-}
-.ln-group.is-open .ln-arr { transform: rotate(180deg); }
+/* Lighter shade on hover and while the dropdown is open — cream reads
+   clearly distinct from the resting gold, so the active trigger pops. */
+/* Lighter shade on hover and while the dropdown is open — cream reads
+   clearly distinct from the resting gold, so the active trigger pops. */
+.ln-link:hover, .ln-trigger[aria-expanded="true"] { color: var(--cream); }
 .ln-group {
     position: relative;
     /* No own padding — the .ln-link inside provides the height. Bottom

@@ -115,7 +115,7 @@ export function LandingNav({ items }: { items: LandingNavItem[] }) {
                 onClick={() => setOpenGroup((g) => (g === item.label ? null : item.label))}
                 onFocus={() => enter(item.label)}
               >
-                {item.label}<span className="ln-arr" aria-hidden="true">▾</span>
+                {item.label}
               </button>
               <div
                 className="ln-flyout"
