@@ -4,7 +4,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { ChroniclePages } from '@/components/landing/ChroniclePages'
 import { DemoViewer } from '@/components/landing/DemoViewer'
 import { HeroClipping } from '@/components/landing/HeroClipping'
-import { LandingNav, type LandingNavItem } from '@/components/landing/LandingNav'
+import { LandingNav } from '@/components/landing/LandingNav'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 
@@ -33,48 +33,9 @@ export default async function Home() {
     'Bring your league ID · we walk the history',
   ]
 
-  // Pricing is always a direct text trigger on the landing page — it's
-  // the only thing a cold visitor needs in the top-right beyond auth.
-  // Sign-out lives at the bottom of the Account dropdown instead of as
-  // its own trigger (kept the desktop nav from looking lopsided and
-  // gave the misaligned form-wrapped button nowhere to throw off
-  // baseline). The LandingNav renders signout: true entries as a
-  // sign-out form button styled like the other items in the menu.
-  const navItems: LandingNavItem[] = signedIn
-    ? [
-        { kind: 'link', label: 'Pricing', href: '/pricing' },
-        {
-          kind: 'group',
-          label: 'Library',
-          items: [
-            { label: 'Your leagues', href: '/dashboard' },
-            { label: 'New chronicle', href: '/dashboard/new' },
-            { label: 'Demo league', href: '/demo/' },
-          ],
-        },
-        {
-          kind: 'group',
-          label: 'Account',
-          items: [
-            { label: 'Profile & subscription', href: '/account' },
-            { signout: true, label: 'Sign out' },
-          ],
-        },
-        ...(admin
-          ? [
-              {
-                kind: 'group' as const,
-                label: 'Admin',
-                items: [{ label: 'Site admin console', href: '/admin' }],
-              },
-            ]
-          : []),
-      ]
-    : [
-        { kind: 'link', label: 'Pricing', href: '/pricing' },
-        { kind: 'link', label: 'Demo', href: '/demo/' },
-        { kind: 'link', label: 'Sign in', href: '/login' },
-      ]
+  // LandingNav owns its own trigger + mega-menu shape now (Nike-style
+  // shared panel). We just pass auth flags and it composes the right
+  // triggers and columns for signed-in vs signed-out visitors.
 
   return (
     <main className="lp-main">
@@ -103,7 +64,7 @@ export default async function Home() {
           <div className="nav-kicker">Vol. II · The League Almanac</div>
           <div className="nav-title lp-nav-title">The Sunday <em>Chronicle.</em></div>
         </div>
-        <LandingNav items={navItems} />
+        <LandingNav signedIn={signedIn} admin={admin} />
       </nav>
 
       {/* ─── HERO ─────────────────────────────────────────────── */}
