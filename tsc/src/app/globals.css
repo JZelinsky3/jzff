@@ -65,6 +65,26 @@ main {
     left: auto;
     min-width: 220px;
     max-width: calc(100vw - 3rem);
+    /* Cap the dropdown to the visible viewport with a 1rem bottom
+       breathing room, then scroll. The landing nav can carry ~10
+       guides + ~7 demo chapters + account links on mobile when
+       sub-groups are expanded, and on a 667px iPhone 8 viewport
+       that overflows the screen otherwise. */
+    max-height: calc(100vh - 5.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+/* Tighter row padding on small screens so the same items take less
+   vertical real estate, and the menu can fit more of itself on
+   screen at once before scrolling kicks in. */
+@media (max-width: 640px) {
+    .nav-drop.nav-drop-right .nav-drop-menu { top: 3.8rem; right: 1rem; max-height: calc(100vh - 4.5rem); }
+    .nav-drop-menu > div > a,
+    .nav-drop-menu > div > span.nav-drop-label,
+    .nav-drop-menu > div > .nav-drop-group > .nav-drop-group-lbl,
+    .nav-drop-menu > div > .nav-drop-group > .nav-drop-sub > a {
+        padding-top: .5rem; padding-bottom: .5rem;
+    }
 }
 
 /* Animate the dropdown open: fade + tiny scale-down → up, so it feels

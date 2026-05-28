@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
+import { NavDropdown, type DropGroup, type DropEntry, type SubItem } from '@/components/NavDropdown'
 
 // Landing-page nav, mega-menu shape (Nike / Gap style).
 //   Desktop (>=720px): top-row text triggers in the masthead. Hovering
@@ -117,15 +117,47 @@ function buildSignedOut(): { triggers: Trigger[]; columns: Column[] } {
   return { triggers, columns }
 }
 
+// Build mobile dropdown groups from the desktop columns. Collapses each
+// "parent + indented children" run into a single expandable SubGroup so
+// the top-level menu only shows ~4-5 rows per column instead of dumping
+// every guide / chapter into one long scroll.
 function toDropGroups(columns: Column[]): { groups: DropGroup[]; includeSignOut: boolean } {
   const groups: DropGroup[] = []
   let includeSignOut = false
   for (const col of columns) {
-    const linkEntries = col.items
-      .filter((it): it is { label: string; href: string; indent?: boolean } => !('signout' in it))
-      .map((it) => ({ type: 'link' as const, href: it.href, label: it.label }))
-    groups.push({ label: col.label, entries: linkEntries })
-    if (col.items.some((it) => 'signout' in it)) includeSignOut = true
+    const entries: DropEntry[] = []
+    let i = 0
+    while (i < col.items.length) {
+      const it = col.items[i]
+      if ('signout' in it) {
+        includeSignOut = true
+        i++
+        continue
+      }
+      // Collect any indented items that immediately follow as children.
+      const children: SubItem[] = []
+      let j = i + 1
+      while (j < col.items.length) {
+        const next = col.items[j]
+        if ('signout' in next) break
+        if (!next.indent) break
+        children.push({ kind: 'link', href: next.href, label: next.label })
+        j++
+      }
+      if (children.length > 0) {
+        // Parent gets included as the first sub-link so users can still
+        // reach it (it has its own page) without losing the children.
+        entries.push({
+          type: 'sub',
+          label: it.label,
+          items: [{ kind: 'link', href: it.href, label: it.label }, ...children],
+        })
+      } else {
+        entries.push({ type: 'link', href: it.href, label: it.label })
+      }
+      i = j
+    }
+    groups.push({ label: col.label, entries })
   }
   return { groups, includeSignOut }
 }
