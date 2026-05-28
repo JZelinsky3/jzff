@@ -5417,11 +5417,15 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     border-bottom: none;
 }
 @media (max-width: 640px) {
-    .lp-platforms { grid-template-columns: 1fr; }
-    .lp-platforms > .dc-chapter:nth-child(odd) { border-right: none; }
-    .lp-platforms > .dc-chapter:nth-last-child(2) {
-        border-bottom: 1px solid var(--ink-line-soft);
-    }
+    /* Stay 2-col on phones (was collapsing to 1). Tighten the inner
+       padding and title/desc/arrow sizes so the rows fit on a narrow
+       viewport without forcing the pill onto a second line. */
+    .lp-platforms > .dc-chapter { padding: .75rem .85rem; gap: .55rem; }
+    .lp-platforms .dc-chapter-num { font-size: .35rem; }
+    .lp-platforms .dc-chapter-title { font-size: 1.05rem; }
+    .lp-platforms .dc-chapter-desc { font-size: .6rem; letter-spacing: .08em; }
+    .lp-platforms .dc-chapter-arrow { display: none; }
+    .lp-platforms .dc-pill { font-size: .5rem; padding: .15rem .4rem; letter-spacing: .15em; }
 }
 
 /* ─── FINAL CTA CARD ──────────────────────────────────────── */
@@ -5501,8 +5505,11 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .dv-screen { height: 540px; }
     .dv-chrome-url { max-width: 180px; font-size: .58rem; padding: .3rem .5rem; }
     /* Two cards per row on phones — single column made each card feel
-       enormous and the section spanned three viewport heights. */
+       enormous and the section spanned three viewport heights. The 3rd
+       card is hidden so the row stays tidy (no orphan card wrapping to a
+       second row). */
     .dv-poster-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+    .dv-poster-cards > .dv-poster-card:nth-child(n+3) { display: none; }
     .dv-poster-card { padding: .9rem .95rem 1rem; gap: .5rem; min-height: 240px; }
     .dv-poster-card-roman { font-size: 2rem; }
     .dv-poster-card-title { font-size: 1.05rem; }

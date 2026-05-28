@@ -1,3 +1,4 @@
+import type { Viewport } from 'next'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
 import { ChroniclePages } from '@/components/landing/ChroniclePages'
@@ -6,6 +7,18 @@ import { HeroClipping } from '@/components/landing/HeroClipping'
 import { LandingNav, type LandingNavItem } from '@/components/landing/LandingNav'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+
+// Render the landing at 0.85× initial zoom on phones. The site's mobile
+// CSS was tuned at a moment when iOS Safari per-site zoom was nudged to
+// 75–85% — most visitors will land at 100% and see a cramped layout
+// without this. 0.85 is the compromise between the user's preferred 75%
+// and the risk of typography that's too small to read. Users can still
+// pinch to zoom in or out.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 0.85,
+  maximumScale: 5,
+}
 
 export default async function Home() {
   const supabase = await createClient()
