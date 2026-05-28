@@ -6103,9 +6103,30 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--gold);
     padding-left: 1.35rem;
 }
-.ln-signout-form { margin: 0; padding: 0; line-height: 1; }
-.ln-signout { color: var(--cream-mute); }
-.ln-signout:hover { color: var(--rust); }
+/* Sign-out renders inside the Account flyout instead of as its own
+   masthead trigger. Styled as a top-bordered uppercase mono button so it
+   reads as a destructive action below the regular links. */
+.ln-flyout-signout-form { margin: 0; padding: 0; }
+.ln-flyout-signout {
+    display: block;
+    width: 100%;
+    padding: .6rem 1.1rem .55rem;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--ink-line);
+    margin-top: .35rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s, color .12s, padding-left .15s;
+}
+.ln-flyout-signout:hover {
+    background: rgba(160, 72, 48, .08);
+    color: var(--rust);
+    padding-left: 1.35rem;
+}
 
 /* ─── Mobile fallback · shared NavDropdown (hidden on desktop) ─ */
 .ln-mobile-wrap { display: none; }

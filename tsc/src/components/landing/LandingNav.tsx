@@ -6,21 +6,19 @@ import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 
 // Landing-page nav.
 //   Desktop (>=720px): inline horizontal text triggers with hover/click
-//   flyouts. A short close-timer keeps the menu open while the cursor
-//   travels from the trigger down into the flyout.
-//   Mobile (<720px): falls back to the shared NavDropdown — the same
-//   hamburger pattern every other page on the site uses, so the chrome
-//   stays consistent on small screens.
+//   flyouts. Auto-close fires only when the cursor leaves the entire nav
+//   region (.ln-root) — not the individual trigger — so the menu doesn't
+//   evaporate from any tiny pointer twitch while the user is reading.
+//   Mobile (<720px): falls back to the shared NavDropdown.
+
+export type GroupItem =
+  | { signout?: false; label: string; href: string }
+  | { signout: true; label: string }
 
 export type LandingNavItem =
   | { kind: 'link'; label: string; href: string }
-  | { kind: 'group'; label: string; items: { label: string; href: string }[] }
-  | { kind: 'signout' }
+  | { kind: 'group'; label: string; items: GroupItem[] }
 
-// Adapt landing-nav items into the shape NavDropdown expects on mobile.
-// kind:'link'   → standalone link with the link's label as group label
-// kind:'group'  → preserved as DropGroup
-// kind:'signout'→ handled by NavDropdown's includeSignOut flag below
 function toDropGroups(items: LandingNavItem[]): { groups: DropGroup[]; includeSignOut: boolean } {
   const groups: DropGroup[] = []
   let includeSignOut = false
@@ -28,12 +26,14 @@ function toDropGroups(items: LandingNavItem[]): { groups: DropGroup[]; includeSi
     if (item.kind === 'link') {
       groups.push({ label: item.label, entries: [{ type: 'link', href: item.href, label: item.label }] })
     } else if (item.kind === 'group') {
-      groups.push({
-        label: item.label,
-        entries: item.items.map((s) => ({ type: 'link' as const, href: s.href, label: s.label })),
-      })
-    } else if (item.kind === 'signout') {
-      includeSignOut = true
+      // NavDropdown doesn't model inline sign-out as a regular entry, so we
+      // strip it here and set the top-level includeSignOut flag — it gets
+      // appended to the dropdown's bottom by NavDropdown itself.
+      const linkEntries = item.items
+        .filter((s): s is { signout?: false; label: string; href: string } => !s.signout)
+        .map((s) => ({ type: 'link' as const, href: s.href, label: s.label }))
+      groups.push({ label: item.label, entries: linkEntries })
+      if (item.items.some((s) => s.signout)) includeSignOut = true
     }
   }
   return { groups, includeSignOut }
@@ -42,8 +42,9 @@ function toDropGroups(items: LandingNavItem[]): { groups: DropGroup[]; includeSi
 export function LandingNav({ items }: { items: LandingNavItem[] }) {
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
-  // Brief close delay so cursor can move from trigger → flyout without
-  // the gap between them triggering mouseleave → close.
+  // Single close-timer attached to the entire nav root. Set when the
+  // cursor leaves the nav area; cancelled if it returns or enters any
+  // descendant before the timeout fires.
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const cancelClose = () => {
@@ -54,14 +55,10 @@ export function LandingNav({ items }: { items: LandingNavItem[] }) {
   }
   const scheduleClose = () => {
     cancelClose()
-    closeTimer.current = setTimeout(() => setOpenGroup(null), 140)
-  }
-  const enter = (label: string) => {
-    cancelClose()
-    setOpenGroup(label)
+    closeTimer.current = setTimeout(() => setOpenGroup(null), 200)
   }
 
-  // Close on outside click / ESC.
+  // Outside click + ESC close.
   useEffect(() => {
     if (!openGroup) return
     function onDoc(e: MouseEvent) {
@@ -75,29 +72,32 @@ export function LandingNav({ items }: { items: LandingNavItem[] }) {
     return () => {
       document.removeEventListener('mousedown', onDoc)
       document.removeEventListener('keydown', onEsc)
-      cancelClose()
     }
   }, [openGroup])
 
   const { groups: mobileGroups, includeSignOut } = toDropGroups(items)
 
   return (
-    <div ref={ref} className="ln-root">
+    <div
+      ref={ref}
+      className="ln-root"
+      // Mouseleave fires only when the cursor truly leaves the entire
+      // nav (the flyouts are DOM descendants of .ln-root, so moving
+      // between trigger and flyout doesn't count as leaving).
+      onMouseLeave={scheduleClose}
+      onMouseEnter={cancelClose}
+    >
       {/* Desktop · inline horizontal */}
       <div className="ln-inline">
         {items.map((item, i) => {
           if (item.kind === 'link') {
+            // Wrap plain links in the same .ln-group/.ln-link shape as
+            // grouped triggers so every flex item in .ln-inline has an
+            // identical box — guarantees they sit on the same baseline.
             return (
-              <Link key={`l-${i}`} href={item.href} className="ln-link">
-                {item.label}
-              </Link>
-            )
-          }
-          if (item.kind === 'signout') {
-            return (
-              <form key={`so-${i}`} action="/auth/signout" method="post" className="ln-signout-form">
-                <button type="submit" className="ln-link ln-signout">Sign out</button>
-              </form>
+              <div key={`l-${i}`} className="ln-group">
+                <Link href={item.href} className="ln-link">{item.label}</Link>
+              </div>
             )
           }
           const open = openGroup === item.label
@@ -105,35 +105,50 @@ export function LandingNav({ items }: { items: LandingNavItem[] }) {
             <div
               key={`g-${i}`}
               className={`ln-group${open ? ' is-open' : ''}`}
-              onMouseEnter={() => enter(item.label)}
-              onMouseLeave={scheduleClose}
+              onMouseEnter={() => setOpenGroup(item.label)}
             >
               <button
                 type="button"
                 className="ln-link ln-trigger"
                 aria-expanded={open}
                 onClick={() => setOpenGroup((g) => (g === item.label ? null : item.label))}
-                onFocus={() => enter(item.label)}
               >
                 {item.label}
               </button>
-              <div
-                className="ln-flyout"
-                onMouseEnter={cancelClose}
-                onMouseLeave={scheduleClose}
-              >
-                {item.items.map((sub) => (
-                  <Link key={sub.href} href={sub.href} onClick={() => setOpenGroup(null)}>
-                    {sub.label}
-                  </Link>
-                ))}
+              <div className="ln-flyout">
+                {item.items.map((sub, si) =>
+                  sub.signout ? (
+                    <form
+                      key={`so-${si}`}
+                      action="/auth/signout"
+                      method="post"
+                      className="ln-flyout-signout-form"
+                    >
+                      <button
+                        type="submit"
+                        className="ln-flyout-signout"
+                        onClick={() => setOpenGroup(null)}
+                      >
+                        {sub.label} →
+                      </button>
+                    </form>
+                  ) : (
+                    <Link
+                      key={sub.href}
+                      href={sub.href}
+                      onClick={() => setOpenGroup(null)}
+                    >
+                      {sub.label}
+                    </Link>
+                  ),
+                )}
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Mobile · shared NavDropdown (same 3-line hamburger every other page uses) */}
+      {/* Mobile · shared NavDropdown */}
       <div className="ln-mobile-wrap">
         <NavDropdown groups={mobileGroups} position="right" includeSignOut={includeSignOut} />
       </div>

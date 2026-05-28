@@ -35,6 +35,11 @@ export default async function Home() {
 
   // Pricing is always a direct text trigger on the landing page — it's
   // the only thing a cold visitor needs in the top-right beyond auth.
+  // Sign-out lives at the bottom of the Account dropdown instead of as
+  // its own trigger (kept the desktop nav from looking lopsided and
+  // gave the misaligned form-wrapped button nowhere to throw off
+  // baseline). The LandingNav renders signout: true entries as a
+  // sign-out form button styled like the other items in the menu.
   const navItems: LandingNavItem[] = signedIn
     ? [
         { kind: 'link', label: 'Pricing', href: '/pricing' },
@@ -49,7 +54,10 @@ export default async function Home() {
         {
           kind: 'group',
           label: 'Account',
-          items: [{ label: 'Profile & subscription', href: '/account' }],
+          items: [
+            { label: 'Profile & subscription', href: '/account' },
+            { signout: true, label: 'Sign out' },
+          ],
         },
         ...(admin
           ? [
@@ -60,7 +68,6 @@ export default async function Home() {
               },
             ]
           : []),
-        { kind: 'signout' },
       ]
     : [
         { kind: 'link', label: 'Pricing', href: '/pricing' },
