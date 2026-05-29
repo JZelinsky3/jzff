@@ -2171,9 +2171,13 @@ function buildLiveSeasonPreviews(
     chaser_value: string
     chaser_when: string
     gap: string
-    // readout_sub renders as a small grey caption below the unit
-    // line on the LCD-style On-Pace cards — e.g. "pace" or
-    // "crossed W4". Optional; omitted for non-pace records.
+    // realized=true means the record has ACTUALLY been crossed (a
+    // single-week high already happened, an active streak already
+    // exceeds the all-time mark, a Quickest-to-X already crossed in
+    // fewer games). realized=false means the comparison is a
+    // projection — the season isn't over so it hasn't "happened" yet.
+    // Used for bucketing into Broken (§01) vs On Pace (§02).
+    realized?: boolean
     readout_sub?: string
     copy_html?: string
     when?: string
@@ -2202,6 +2206,7 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Season Points-For Pace',
       pct,
+      realized: false,
       flag: flagFor(pct, 'WILL BREAK IT', 'PROJECTING PAST', 'ON PACE', 'TRENDING UP'),
       title_html: `${Math.round(r)} pts <em>· highest reg-season PF</em>`,
       holder: nameOf(bestSeasonPF.mid),
@@ -2227,6 +2232,7 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Season PPG Pace',
       pct,
+      realized: false,
       flag: flagFor(pct, 'PPG RECORD CLIMBING', 'PROJECTING PAST', 'ON PACE', 'STRONG SCORING'),
       title_html: `${r.toFixed(1)} <em>· best regular-season PPG</em>`,
       holder: nameOf(bestSeasonPPG.mid), record_value: `${r.toFixed(1)} PPG`,
@@ -2253,6 +2259,7 @@ function buildLiveSeasonPreviews(
       accumItems.push({
         category: 'Reg-Season Wins Pace',
         pct,
+        realized: false,
         flag: flagFor(pct, 'WILL MATCH OR PASS', 'ON PACE TO TIE', 'BIG W-PACE', 'STRONG START'),
         title_html: `${r} wins <em>· most reg-season wins</em>`,
         holder: nameOf(mostRegWins.mid), record_value: `${r} wins`,
@@ -2279,6 +2286,7 @@ function buildLiveSeasonPreviews(
       accumItems.push({
         category: 'Reg-Season Losses Pace',
         pct,
+        realized: false,
         flag: flagFor(pct, 'WORST SEASON INCOMING', 'TANK PACE', 'STRUGGLING', 'ROUGH RUN'),
         title_html: `${r} losses <em>· most reg-season losses</em>`,
         holder: nameOf(mostRegLoss.mid), record_value: `${r} losses`,
@@ -2302,6 +2310,7 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Longest Win Streak',
       pct,
+      realized: v > r,
       flag: flagFor(pct, 'TIED OR SURPASSED', 'ONE FROM HISTORY', 'ON THE BRINK', 'HEATING UP'),
       title_html: `${r} wins <em>· longest streak ever</em>`,
       holder: nameOf(allWinStreak.mid), record_value: `${r} wins in a row`,
@@ -2323,6 +2332,7 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Longest Losing Skid',
       pct,
+      realized: v > r,
       flag: flagFor(pct, 'NEW SKID HIGH', 'COLD AS ICE', 'STRUGGLING', 'ROUGH PATCH'),
       title_html: `${r} losses <em>· longest skid ever</em>`,
       holder: nameOf(allLossStreak.mid), record_value: `${r} losses in a row`,
@@ -2493,6 +2503,7 @@ function buildLiveSeasonPreviews(
         accumItems.push({
           category: cfg.label(T),
           pct,
+          realized: broke,
           flag: broke
             ? 'NEW QUICKEST'
             : flagFor(pct, 'WILL BREAK IT', 'PROJECTING PAST', 'ON PACE', 'PURSUING'),
@@ -2529,6 +2540,7 @@ function buildLiveSeasonPreviews(
     justMissedItems.push({
       category: 'Single-Week High',
       pct,
+      realized: pct >= 100,
       flag: pct >= 100 ? 'BROKEN' : pct >= 95 ? 'NEARLY' : pct >= 85 ? 'BIG WEEK' : 'NOTABLE',
       title_html: `${r.toFixed(1)} <em>· single-week high</em>`,
       holder: nameOf(allHigh.mid), record_value: `${r.toFixed(1)} pts`,
@@ -2551,6 +2563,7 @@ function buildLiveSeasonPreviews(
     justMissedItems.push({
       category: 'Single-Week Low',
       pct,
+      realized: pct >= 100,
       flag: pct >= 100 ? 'NEW LOW' : pct >= 95 ? 'NEARLY' : pct >= 85 ? 'COLD WEEK' : 'NOTABLE',
       title_html: `${r.toFixed(1)} <em>· single-week low</em>`,
       holder: nameOf(allLow.mid), record_value: `${r.toFixed(1)} pts`,
@@ -2572,6 +2585,7 @@ function buildLiveSeasonPreviews(
     justMissedItems.push({
       category: 'Biggest Blowout',
       pct,
+      realized: pct >= 100,
       flag: pct >= 100 ? 'NEW BLOWOUT' : pct >= 95 ? 'NEARLY' : pct >= 85 ? 'BRUTAL' : 'BIG MARGIN',
       title_html: `+${r.toFixed(1)} <em>· margin record</em>`,
       holder: nameOf(allBlowout.mid), record_value: `+${r.toFixed(1)}`,
@@ -2594,6 +2608,7 @@ function buildLiveSeasonPreviews(
     justMissedItems.push({
       category: 'Highest Combined',
       pct,
+      realized: pct >= 100,
       flag: pct >= 100 ? 'NEW SHOOTOUT' : pct >= 95 ? 'NEARLY' : pct >= 85 ? 'SHOOTOUT' : 'HIGH SCORING',
       title_html: `${r.toFixed(1)} <em>· highest combined game</em>`,
       holder: `${nameOf(allCombined.mid)} v ${allCombined.opp}`,
@@ -2609,32 +2624,53 @@ function buildLiveSeasonPreviews(
     })
   }
 
-  // Bucket accumulators into brink/chase/broken; just-missed stays its own.
-  const brink: WatchItem[] = []
-  const chase: WatchItem[] = []
+  // Bucket items into four sections:
+  //
+  //   broken    — realized crossings (record actually been beaten this
+  //               season: weekly extremes pct>=100, active streak that
+  //               passed the all-time, Quickest-to-X with broke:true).
+  //   on_pace   — projected past the mark but season isn't over yet
+  //               (PF/PPG/wins/losses pace, Quickest-to-X with projected
+  //               game count below record).
+  //   brink     — close but not past (50-99% of the mark) — combines
+  //               the old brink + chase buckets so the page has one
+  //               coherent "pursuit" section instead of two.
+  //   just_missed — week-to-week extremes that came close but didn't
+  //                 break the mark. Anything pct<100.
   const broken: WatchItem[] = []
+  const onPace: WatchItem[] = []
+  const brink:  WatchItem[] = []
+  const justMissed: WatchItem[] = []
+
   for (const it of accumItems) {
-    if (it.pct >= 100) broken.push(it)
-    else if (it.pct >= 85) brink.push(it)
-    else chase.push(it)
+    if (it.pct >= 100 && it.realized) broken.push(it)
+    else if (it.pct >= 100)           onPace.push(it)
+    else if (it.pct >= 50)            brink.push(it)
   }
-  brink.sort((a, b) => b.pct - a.pct)
-  chase.sort((a, b) => b.pct - a.pct)
+  for (const it of justMissedItems) {
+    // Weekly extremes that actually broke the mark belong with the rest
+    // of the realized breaks, not in Just Missed.
+    if (it.realized) broken.push(it)
+    else             justMissed.push(it)
+  }
+
   broken.sort((a, b) => b.pct - a.pct)
-  justMissedItems.sort((a, b) => b.pct - a.pct)
+  onPace.sort((a, b) => b.pct - a.pct)
+  brink.sort((a, b) => b.pct - a.pct)
+  justMissed.sort((a, b) => b.pct - a.pct)
 
   const records_watch = {
     meter: {
-      brink: brink.length,
-      chase: chase.length,
       broken: broken.length,
-      just_missed: justMissedItems.length,
+      on_pace: onPace.length,
+      brink: brink.length,
+      just_missed: justMissed.length,
       through: `W${throughWeek} · ${year}`,
     },
-    brink: brink.slice(0, 6),
-    chase: chase.slice(0, 6),
     broken: broken.slice(0, 6),
-    just_missed: justMissedItems.slice(0, 6),
+    on_pace: onPace.slice(0, 6),
+    brink: brink.slice(0, 6),
+    just_missed: justMissed.slice(0, 6),
   }
 
   // ── MILESTONES (per profile group so merged identities aggregate properly)
@@ -3064,8 +3100,8 @@ function escTxt(s: string): string {
 }
 function emptyRecordsWatch(year: number, throughWeek: number) {
   return {
-    meter: { brink: 0, chase: 0, broken: 0, just_missed: 0, through: `W${throughWeek} · ${year}` },
-    brink: [], chase: [], broken: [], just_missed: [],
+    meter: { broken: 0, on_pace: 0, brink: 0, just_missed: 0, through: `W${throughWeek} · ${year}` },
+    broken: [], on_pace: [], brink: [], just_missed: [],
   }
 }
 function emptyMilestones(year: number, throughWeek: number) {

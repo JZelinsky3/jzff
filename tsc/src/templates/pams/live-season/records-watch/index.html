@@ -529,12 +529,15 @@ body { background: var(--rw-bg); }
     padding: 1.4rem 1.5rem 1.3rem;
     overflow: hidden;
 }
-.rw-broken::before {
-    content: 'NEW MARK'; position: absolute;
+.rw-broken-badge {
+    /* Dynamic badge — its.flag drives the text so realized crossings can
+     * say "NEW QUICKEST" / "BROKEN" while projections say "ON PACE" /
+     * "WILL BREAK IT", etc. */
+    position: absolute;
     top: 0; right: 0;
     background: var(--rw-ember); color: #1a0a0a;
     font-family: var(--mono); font-weight: 700;
-    font-size: .55rem; letter-spacing: .25em;
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
     padding: .35rem .65rem .4rem;
     box-shadow: 0 0 14px var(--rw-ember-soft);
 }
@@ -714,18 +717,18 @@ body { background: var(--rw-bg); }
 
 <div class="rw-meter" id="rw-meter">
     <div class="rw-meter-stat alert">
-        <span class="lbl">On the brink</span>
-        <span class="val" id="m-brink">—</span>
-    </div>
-    <div class="rw-meter-sep"></div>
-    <div class="rw-meter-stat">
-        <span class="lbl">Actively chased</span>
-        <span class="val" id="m-chase">—</span>
+        <span class="lbl">Broken</span>
+        <span class="val" id="m-broken">—</span>
     </div>
     <div class="rw-meter-sep"></div>
     <div class="rw-meter-stat">
         <span class="lbl">On pace</span>
-        <span class="val" id="m-broken">—</span>
+        <span class="val" id="m-onpace">—</span>
+    </div>
+    <div class="rw-meter-sep"></div>
+    <div class="rw-meter-stat">
+        <span class="lbl">On the brink</span>
+        <span class="val" id="m-brink">—</span>
     </div>
     <div class="rw-meter-sep"></div>
     <div class="rw-meter-stat">
@@ -739,71 +742,54 @@ body { background: var(--rw-bg); }
 
     <section class="rw-section">
         <div class="rw-section-head">
-            <span class="rw-section-num">§ 01 · Hot</span>
-            <span class="rw-section-title">On the <em>Brink —</em></span>
-            <span class="rw-section-note">Season pace · projecting past the mark</span>
-        </div>
-        <div id="brink-body">
-            <div class="rw-empty">
-                <div class="glyph">◈</div>
-                <h3>The watch <em>begins Week 1.</em></h3>
-                <p>
-                    Season-accumulator records (points-for pace, wins pace, active streaks) show
-                    up here as soon as someone is projecting past the all-time mark. Biggest
-                    threats up top.
-                </p>
-            </div>
-
-            <div class="rw-how">
-                <div class="rw-how-item">
-                    <div class="step">★ Step 01</div>
-                    <h4>Season pace projected</h4>
-                    <p>Each team's PPG × full regular season → projected total. Same math for wins and losses (W5+).</p>
-                </div>
-                <div class="rw-how-item">
-                    <div class="step">★ Step 02</div>
-                    <h4>Active streaks compared</h4>
-                    <p>Active win + loss runs measured against the longest the league has ever recorded.</p>
-                </div>
-                <div class="rw-how-item">
-                    <div class="step">★ Step 03</div>
-                    <h4>Weekly extremes go to Just Missed</h4>
-                    <p>Single-week highs, blowouts, and shootouts can't really be "on pace" — they live in their own list below.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="rw-section">
-        <div class="rw-section-head">
-            <span class="rw-section-num">§ 02 · Pursuit</span>
-            <span class="rw-section-title">Being <em>Chased —</em></span>
-            <span class="rw-section-note">In striking distance</span>
-        </div>
-        <div id="chase-body">
-            <div class="rw-empty">
-                <h3>Nothing in pursuit <em>yet.</em></h3>
-                <p>
-                    Season-long marks (career wins, points for, longest streaks) appear here as
-                    soon as the leader passes the 50% threshold of the standing record.
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <section class="rw-section">
-        <div class="rw-section-head">
-            <span class="rw-section-num">§ 03 · Pace</span>
-            <span class="rw-section-title">On <em>Pace —</em></span>
-            <span class="rw-section-note">Projecting past the franchise mark</span>
+            <span class="rw-section-num">§ 01 · Claimed</span>
+            <span class="rw-section-title">Records <em>Broken —</em></span>
+            <span class="rw-section-note">Already crossed this season</span>
         </div>
         <div id="broken-body">
             <div class="rw-empty">
+                <div class="glyph">◈</div>
+                <h3>No records <em>broken yet.</em></h3>
+                <p>
+                    A record lands here the moment it's actually surpassed — a new single-week
+                    high, an active streak past the all-time mark, or a Quickest-to-X career
+                    milestone hit in fewer games than the standing record.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="rw-section">
+        <div class="rw-section-head">
+            <span class="rw-section-num">§ 02 · Pace</span>
+            <span class="rw-section-title">On <em>Pace —</em></span>
+            <span class="rw-section-note">Projecting past the mark, not crossed yet</span>
+        </div>
+        <div id="onpace-body">
+            <div class="rw-empty">
                 <h3>Nobody projecting <em>past the mark yet.</em></h3>
                 <p>
-                    Once a manager's season pace would push them past an all-time franchise
-                    record (single-season PF, regular-season wins, quickest-to-X career
-                    marks), the projection lands here.
+                    Season-long accumulators (PF pace, wins pace, Quickest-to-X projections)
+                    land here once a manager's pace would push them past an all-time franchise
+                    record — even though the season isn't done yet.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="rw-section">
+        <div class="rw-section-head">
+            <span class="rw-section-num">§ 03 · Pursuit</span>
+            <span class="rw-section-title">On the <em>Brink —</em></span>
+            <span class="rw-section-note">Within striking distance · 50-99% of the mark</span>
+        </div>
+        <div id="brink-body">
+            <div class="rw-empty">
+                <h3>Nothing in pursuit <em>yet.</em></h3>
+                <p>
+                    Season accumulators (career wins, points for, streaks) appear here as soon
+                    as the leading chaser sits within 50% of the all-time mark. Biggest threats
+                    up top.
                 </p>
             </div>
         </div>
@@ -845,9 +831,9 @@ body { background: var(--rw-bg); }
     .then(function (data) {
       if (!data) return;
       renderMeter(data.meter || {});
+      if (Array.isArray(data.broken)      && data.broken.length)      renderBroken('broken-body', data.broken);
+      if (Array.isArray(data.on_pace)     && data.on_pace.length)     renderBroken('onpace-body', data.on_pace);
       if (Array.isArray(data.brink)       && data.brink.length)       renderBrink(data.brink);
-      if (Array.isArray(data.chase)       && data.chase.length)       renderChase(data.chase);
-      if (Array.isArray(data.broken)      && data.broken.length)      renderBroken(data.broken);
       if (Array.isArray(data.just_missed) && data.just_missed.length) renderMissed(data.just_missed);
     });
 
@@ -863,9 +849,9 @@ body { background: var(--rw-bg); }
   }
 
   function renderMeter(m) {
-    if (m.brink       != null) $('m-brink').textContent  = m.brink;
-    if (m.chase       != null) $('m-chase').textContent  = m.chase;
     if (m.broken      != null) $('m-broken').textContent = m.broken;
+    if (m.on_pace     != null) $('m-onpace').textContent = m.on_pace;
+    if (m.brink       != null) $('m-brink').textContent  = m.brink;
     if (m.just_missed != null) $('m-missed').textContent = m.just_missed;
     if (m.through)             $('m-foot').textContent   = 'Through ' + m.through;
   }
@@ -939,49 +925,11 @@ body { background: var(--rw-bg); }
     $('brink-body').innerHTML = html;
   }
 
-  // Chase reads as a true standings table — columns line up across
-  // every row, mono numerics for the mark + gap, a mini bar inline
-  // for the pace, and the chaser's name in serif italic.
-  function renderChase(items) {
-    var html = '<div class="rw-chase">' +
-      '<div class="rw-chase-head">' +
-        '<span>#</span>' +
-        '<span>Category</span>' +
-        '<span class="col-mark">The mark</span>' +
-        '<span class="col-chaser">Chasing</span>' +
-        '<span class="col-bar">Pace</span>' +
-        '<span style="text-align:right">Gap</span>' +
-      '</div>';
-    items.forEach(function (it, i) {
-      var raw = Math.max(0, Math.min(120, Number(it.pct) || 0));
-      var barFill = (raw / 120) * 100;  // matches Brink scale
-      var hot = raw >= 90;
-      html +=
-        '<div class="rw-chase-row' + (hot ? ' hot' : '') + '">' +
-          '<div class="rw-chase-rank">' + String(i + 1).padStart(2, '0') + '</div>' +
-          '<div class="rw-chase-cat">' + esc(it.category || '') + '</div>' +
-          '<div class="rw-chase-mark">' + esc(it.record_value || '—') +
-            '<span class="holder">' + esc(it.holder || '') + '</span>' +
-          '</div>' +
-          '<div class="rw-chase-chaser">' + esc(it.chaser || '—') +
-            '<span class="at">' + esc(it.chaser_value || '') + '</span>' +
-          '</div>' +
-          '<div class="rw-chase-bar">' +
-            '<div class="rw-chase-bar-fill" style="width:calc(' + barFill.toFixed(2) + '% - 2px)"></div>' +
-          '</div>' +
-          '<div class="rw-chase-gap">' + esc(it.gap || '') +
-            '<span class="pct">' + pct(raw) + '</span>' +
-          '</div>' +
-        '</div>';
-    });
-    html += '</div>';
-    $('chase-body').innerHTML = html;
-  }
-
-  // Broken reads as an LCD scoreboard — recessed panel with a big
-  // mono numeric for the new mark, prior record struck through below
-  // for context.
-  function renderBroken(items) {
+  // Broken / On-Pace cards both use the LCD scoreboard renderer — they
+  // share the same visual treatment but write to different slots.
+  // slot = 'broken-body' for realized crossings, 'onpace-body' for
+  // projections.
+  function renderBroken(slot, items) {
     var html = '<div class="rw-broken-grid">';
     items.forEach(function (it) {
       // Pull the leading numeric out of chaser_value (e.g. "1850 pts"
@@ -1010,6 +958,7 @@ body { background: var(--rw-bg); }
       var compact = /^Quickest to /.test(it.category || '');
       html +=
         '<article class="rw-broken">' +
+          '<span class="rw-broken-badge">' + esc(it.flag || (slot === 'broken-body' ? 'BROKEN' : 'ON PACE')) + '</span>' +
           '<div class="cat">' + esc(it.category || '') + '</div>' +
           '<div class="rw-broken-readout' + (compact ? ' compact' : '') + '">' +
             '<span class="num">' + readNumHtml + '</span>' +
@@ -1024,7 +973,8 @@ body { background: var(--rw-bg); }
         '</article>';
     });
     html += '</div>';
-    $('broken-body').innerHTML = html;
+    var slotEl = $(slot);
+    if (slotEl) slotEl.innerHTML = html;
   }
 
   function renderMissed(items) {
