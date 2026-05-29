@@ -42,6 +42,11 @@ body { background: var(--rw-bg); }
 
 /* ── Nav + chapbar themed to the page ──────────────────────── */
 .nav { background: rgba(21,10,12,.95); border-bottom-color: var(--rw-line); }
+/* Nav masthead text + back arrow: switch from main.css's gold to ember
+   so the whole header reads as one palette. */
+.nav-back, .nav-link { color: var(--rw-ember); }
+.nav-back:hover, .nav-link:hover { color: var(--rw-ember-hi); }
+.nav-title em { color: var(--rw-ember); }
 :root {
     --chapbar-bg:     rgba(21,10,12,.92);
     --chapbar-border: var(--rw-line);
@@ -243,8 +248,8 @@ body { background: var(--rw-bg); }
 }
 .rw-bar-mark {
     position: absolute; top: -4px; bottom: -4px;
-    width: 2px; background: var(--rw-gold);
-    box-shadow: 0 0 6px rgba(232,200,137,.6);
+    width: 2px; background: var(--rw-ember-hi);
+    box-shadow: 0 0 6px var(--rw-ember-glow);
 }
 .rw-bar-foot {
     display: flex; justify-content: space-between;
@@ -293,6 +298,54 @@ body { background: var(--rw-bg); }
     color: var(--rw-mute); margin-top: .25rem;
 }
 
+/* ── Just-missed rows (week-to-week extremes that came close) ── */
+.rw-missed {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+}
+.rw-missed-row {
+    display: grid;
+    grid-template-columns: 9rem 1fr auto;
+    align-items: center; gap: 1.2rem;
+    padding: .95rem 1.2rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+}
+.rw-missed-row:last-child { border-bottom: 0; }
+.rw-missed-flag {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--rw-ember);
+    display: inline-flex; align-items: center; gap: .4rem;
+}
+.rw-missed-flag .pill {
+    display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--rw-ember);
+    box-shadow: 0 0 8px var(--rw-ember-soft);
+}
+.rw-missed-body .cat {
+    font-family: var(--mono); font-size: .54rem;
+    letter-spacing: .24em; text-transform: uppercase;
+    color: var(--rw-mute); margin-bottom: .25rem;
+}
+.rw-missed-body .copy {
+    font-family: var(--serif); font-size: 1.02rem;
+    color: var(--rw-cream); line-height: 1.3;
+}
+.rw-missed-body .copy em { color: var(--rw-ember-hi); font-style: italic; }
+.rw-missed-gap {
+    text-align: right;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .85rem;
+    color: var(--rw-cream); line-height: 1;
+}
+.rw-missed-gap .of {
+    display: block;
+    font-size: .5rem; font-weight: 500;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute); margin-top: .3rem;
+}
+
 /* ── Broken cards (newly-claimed records) ──────────────────── */
 .rw-broken-grid {
     display: grid;
@@ -308,11 +361,13 @@ body { background: var(--rw-bg); }
 .rw-broken::before {
     content: 'NEW'; position: absolute;
     top: -1px; right: 1rem;
-    background: var(--rw-gold); color: var(--rw-bg);
+    background: var(--rw-ember); color: #1a0a0a;
     font-family: var(--mono); font-weight: 700;
     font-size: .55rem; letter-spacing: .25em;
     padding: .3rem .55rem .35rem;
+    box-shadow: 0 0 14px var(--rw-ember-soft);
 }
+.rw-broken .copy em { color: var(--rw-ember-hi); }
 .rw-broken .cat {
     font-family: var(--mono); font-size: .55rem;
     letter-spacing: .25em; text-transform: uppercase;
@@ -323,7 +378,7 @@ body { background: var(--rw-bg); }
     color: var(--rw-cream); line-height: 1.25;
     margin-bottom: .7rem;
 }
-.rw-broken .copy em { color: var(--rw-gold); font-style: italic; }
+.rw-broken .copy em { color: var(--rw-ember-hi); font-style: italic; }
 .rw-broken .meta {
     font-family: var(--mono); font-size: .55rem;
     letter-spacing: .14em; color: var(--rw-mute);
@@ -430,6 +485,11 @@ body { background: var(--rw-bg); }
         <span class="lbl">Broken this season</span>
         <span class="val" id="m-broken">—</span>
     </div>
+    <div class="rw-meter-sep"></div>
+    <div class="rw-meter-stat">
+        <span class="lbl">Just missed</span>
+        <span class="val" id="m-missed">—</span>
+    </div>
     <div class="rw-meter-foot" id="m-foot">Tracking starts Week 1</div>
 </div>
 
@@ -439,33 +499,34 @@ body { background: var(--rw-bg); }
         <div class="rw-section-head">
             <span class="rw-section-num">§ 01 · Hot</span>
             <span class="rw-section-title">On the <em>Brink —</em></span>
-            <span class="rw-section-note">Could fall this week</span>
+            <span class="rw-section-note">Season pace · projecting past the mark</span>
         </div>
         <div id="brink-body">
             <div class="rw-empty">
                 <div class="glyph">◈</div>
                 <h3>The watch <em>begins Week 1.</em></h3>
                 <p>
-                    Once games start counting, every all-time record gets a live pace meter.
-                    Anything within striking distance shows up here first, biggest threats up top.
+                    Season-accumulator records (points-for pace, wins pace, active streaks) show
+                    up here as soon as someone is projecting past the all-time mark. Biggest
+                    threats up top.
                 </p>
             </div>
 
             <div class="rw-how">
                 <div class="rw-how-item">
                     <div class="step">★ Step 01</div>
-                    <h4>We compare pace to mark</h4>
-                    <p>Every active team's season is measured against the franchise record for that category, week by week.</p>
+                    <h4>Season pace projected</h4>
+                    <p>Each team's PPG × full regular season → projected total. Same math for wins and losses (W5+).</p>
                 </div>
                 <div class="rw-how-item">
                     <div class="step">★ Step 02</div>
-                    <h4>Records get a heat score</h4>
-                    <p>Anything inside reach with the games remaining gets flagged. The closer the threat, the higher it climbs.</p>
+                    <h4>Active streaks compared</h4>
+                    <p>Active win + loss runs measured against the longest the league has ever recorded.</p>
                 </div>
                 <div class="rw-how-item">
                     <div class="step">★ Step 03</div>
-                    <h4>You get the alert</h4>
-                    <p>The brink section refreshes every week. When a record actually falls, it moves to "Just Broken" with the date.</p>
+                    <h4>Weekly extremes go to Just Missed</h4>
+                    <p>Single-week highs, blowouts, and shootouts can't really be "on pace" — they live in their own list below.</p>
                 </div>
             </div>
         </div>
@@ -505,6 +566,24 @@ body { background: var(--rw-bg); }
         </div>
     </section>
 
+    <section class="rw-section">
+        <div class="rw-section-head">
+            <span class="rw-section-num">§ 04 · Bolts</span>
+            <span class="rw-section-title">Just <em>Missed —</em></span>
+            <span class="rw-section-note">Week-to-week extremes that came close</span>
+        </div>
+        <div id="missed-body">
+            <div class="rw-empty">
+                <h3>No close calls <em>yet.</em></h3>
+                <p>
+                    Single-week highs and lows, biggest blowouts, and shootouts that don't
+                    accumulate over the season land here when they come within reach of the
+                    all-time mark.
+                </p>
+            </div>
+        </div>
+    </section>
+
     <div class="rw-foot">{{LEAGUE_ABBR}} · Records Watch · {{LEAGUE_FOUNDED_ROMAN}}</div>
 
 </main>
@@ -523,9 +602,10 @@ body { background: var(--rw-bg); }
     .then(function (data) {
       if (!data) return;
       renderMeter(data.meter || {});
-      if (Array.isArray(data.brink)  && data.brink.length)  renderBrink(data.brink);
-      if (Array.isArray(data.chase)  && data.chase.length)  renderChase(data.chase);
-      if (Array.isArray(data.broken) && data.broken.length) renderBroken(data.broken);
+      if (Array.isArray(data.brink)       && data.brink.length)       renderBrink(data.brink);
+      if (Array.isArray(data.chase)       && data.chase.length)       renderChase(data.chase);
+      if (Array.isArray(data.broken)      && data.broken.length)      renderBroken(data.broken);
+      if (Array.isArray(data.just_missed) && data.just_missed.length) renderMissed(data.just_missed);
     });
 
   function $(id) { return document.getElementById(id); }
@@ -540,10 +620,11 @@ body { background: var(--rw-bg); }
   }
 
   function renderMeter(m) {
-    if (m.brink   != null) $('m-brink').textContent   = m.brink;
-    if (m.chase   != null) $('m-chase').textContent   = m.chase;
-    if (m.broken  != null) $('m-broken').textContent  = m.broken;
-    if (m.through)        $('m-foot').textContent    = 'Through ' + m.through;
+    if (m.brink       != null) $('m-brink').textContent  = m.brink;
+    if (m.chase       != null) $('m-chase').textContent  = m.chase;
+    if (m.broken      != null) $('m-broken').textContent = m.broken;
+    if (m.just_missed != null) $('m-missed').textContent = m.just_missed;
+    if (m.through)             $('m-foot').textContent   = 'Through ' + m.through;
   }
 
   function renderBrink(items) {
@@ -607,6 +688,25 @@ body { background: var(--rw-bg); }
     });
     html += '</div>';
     $('broken-body').innerHTML = html;
+  }
+
+  function renderMissed(items) {
+    var html = '<div class="rw-missed">';
+    items.forEach(function (it) {
+      html +=
+        '<div class="rw-missed-row">' +
+          '<div class="rw-missed-flag"><span class="pill"></span>' + esc(it.flag || 'NOTABLE') + '</div>' +
+          '<div class="rw-missed-body">' +
+            '<div class="cat">' + esc(it.category || '') + '</div>' +
+            '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+          '</div>' +
+          '<div class="rw-missed-gap">' + pct(it.pct || 0) +
+            '<span class="of">' + esc(it.gap || '') + '</span>' +
+          '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    $('missed-body').innerHTML = html;
   }
 })();
 </script>

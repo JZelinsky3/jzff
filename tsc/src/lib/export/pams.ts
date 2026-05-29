@@ -2102,7 +2102,41 @@ function buildLiveSeasonPreviews(
     seasonByMgr.push(stats)
   }
 
-  // ── Build records_watch entries
+  // ── Estimate regular-season length from most-recent completed season.
+  // Used to project current-pace records out to full-season totals.
+  const regSeasonLen = estimateRegSeasonLength(s, year)
+
+  // ── ALL-TIME (pre-{year}) best season-level marks from manager_seasons.
+  // manager_seasons.{wins,losses,points_for} are regular-season totals, so
+  // they line up cleanly with current-season pace projections.
+  let bestSeasonPF = { val: 0, mid: '', year: 0 }
+  let mostRegWins  = { val: 0, mid: '', year: 0 }
+  let mostRegLoss  = { val: 0, mid: '', year: 0 }
+  let bestSeasonPPG = { val: 0, mid: '', year: 0 }
+  for (const sn of s.seasons) {
+    if (sn.year >= year) continue
+    const mss = s.managerSeasonsBySeason.get(sn.id) ?? []
+    for (const ms of mss) {
+      const pf = Number(ms.points_for)
+      const games = ms.wins + ms.losses + ms.ties
+      if (pf > bestSeasonPF.val)    bestSeasonPF   = { val: pf, mid: ms.manager_id, year: sn.year }
+      if (ms.wins   > mostRegWins.val) mostRegWins   = { val: ms.wins, mid: ms.manager_id, year: sn.year }
+      if (ms.losses > mostRegLoss.val) mostRegLoss   = { val: ms.losses, mid: ms.manager_id, year: sn.year }
+      const ppg = games > 0 ? pf / games : 0
+      if (ppg > bestSeasonPPG.val)   bestSeasonPPG  = { val: ppg, mid: ms.manager_id, year: sn.year }
+    }
+  }
+
+  // ── Build the two record buckets.
+  //
+  // accumItems → records that build up across the season (PF, wins,
+  // losses, active streaks). These bucket into brink / chase / broken
+  // because the curve is monotone — once you're 85% there, it's real.
+  //
+  // justMissedItems → records that swing wildly week-to-week (single-
+  // week high/low, biggest blowout, highest combined). These don't
+  // belong in "brink" — a 240-pt week doesn't mean the next one will
+  // be 250. We surface the closest 2025 attempts that just missed.
   type WatchItem = {
     category: string
     pct: number
@@ -2119,23 +2153,167 @@ function buildLiveSeasonPreviews(
     when?: string
     previous?: string
   }
-  const items: WatchItem[] = []
+  const accumItems: WatchItem[] = []
+  const justMissedItems: WatchItem[] = []
 
+  // ── Season PF pace (proj = current PF / games × regSeasonLen)
+  const pfPaceTop = seasonByMgr
+    .filter((m) => m.games.length > 0)
+    .map((m) => ({ m, proj: (m.pf / m.games.length) * regSeasonLen }))
+    .sort((a, b) => b.proj - a.proj)[0]
+  if (pfPaceTop && bestSeasonPF.val > 0) {
+    const v = pfPaceTop.proj, r = bestSeasonPF.val, pct = (v / r) * 100
+    const gap = v - r
+    accumItems.push({
+      category: 'Season Points-For Pace',
+      pct,
+      flag: flagFor(pct, 'WILL BREAK IT', 'PROJECTING PAST', 'ON PACE', 'TRENDING UP'),
+      title_html: `${r.toFixed(1)} <em>· highest reg-season PF</em>`,
+      holder: nameOf(bestSeasonPF.mid), record_value: `${r.toFixed(1)} pts`,
+      holder_when: `${bestSeasonPF.year}`,
+      chaser: pfPaceTop.m.name,
+      chaser_value: `${pfPaceTop.m.pf.toFixed(1)} pts (${pfPaceTop.m.games.length}G)`,
+      chaser_when: `pace: ${v.toFixed(0)} pts · W${throughWeek} · ${year}`,
+      gap: gap >= 0 ? `+${gap.toFixed(0)} pts on pace` : `${(-gap).toFixed(0)} pts short on pace`,
+      copy_html: `<em>${escTxt(pfPaceTop.m.name)}</em> · pace ${v.toFixed(0)} pts (${(pfPaceTop.m.pf / pfPaceTop.m.games.length).toFixed(1)} PPG × ${regSeasonLen}W)`,
+      when: `through W${throughWeek} · ${year}`,
+      previous: `${r.toFixed(1)} · ${nameOf(bestSeasonPF.mid)}, ${bestSeasonPF.year}`,
+    })
+  }
+
+  // ── Season PPG pace (projection-free; current avg vs all-time best avg)
+  const ppgTop = seasonByMgr
+    .filter((m) => m.games.length >= 2)
+    .map((m) => ({ m, ppg: m.pf / m.games.length }))
+    .sort((a, b) => b.ppg - a.ppg)[0]
+  if (ppgTop && bestSeasonPPG.val > 0) {
+    const v = ppgTop.ppg, r = bestSeasonPPG.val, pct = (v / r) * 100
+    accumItems.push({
+      category: 'Season PPG Pace',
+      pct,
+      flag: flagFor(pct, 'PPG RECORD CLIMBING', 'PROJECTING PAST', 'ON PACE', 'STRONG SCORING'),
+      title_html: `${r.toFixed(1)} <em>· best regular-season PPG</em>`,
+      holder: nameOf(bestSeasonPPG.mid), record_value: `${r.toFixed(1)} PPG`,
+      holder_when: `${bestSeasonPPG.year}`,
+      chaser: ppgTop.m.name, chaser_value: `${v.toFixed(1)} PPG`,
+      chaser_when: `${ppgTop.m.games.length}G · ${year}`,
+      gap: v >= r ? `+${(v - r).toFixed(1)} above` : `${(r - v).toFixed(1)} below`,
+      copy_html: `<em>${escTxt(ppgTop.m.name)}</em> · ${v.toFixed(1)} PPG through ${ppgTop.m.games.length}G`,
+      when: `through W${throughWeek} · ${year}`,
+      previous: `${r.toFixed(1)} · ${nameOf(bestSeasonPPG.mid)}, ${bestSeasonPPG.year}`,
+    })
+  }
+
+  // ── Regular-season WINS pace (only meaningful past midweek; gate at W5)
+  if (throughWeek >= 5) {
+    const winsPaceTop = seasonByMgr
+      .filter((m) => m.games.length > 0)
+      .map((m) => ({ m, proj: (m.wins / m.games.length) * regSeasonLen }))
+      .sort((a, b) => b.proj - a.proj)[0]
+    if (winsPaceTop && mostRegWins.val > 0) {
+      const v = winsPaceTop.proj, r = mostRegWins.val, pct = (v / r) * 100
+      const projInt = Math.round(v * 10) / 10
+      accumItems.push({
+        category: 'Reg-Season Wins Pace',
+        pct,
+        flag: flagFor(pct, 'WILL MATCH OR PASS', 'ON PACE TO TIE', 'BIG W-PACE', 'STRONG START'),
+        title_html: `${r} <em>· most regular-season wins</em>`,
+        holder: nameOf(mostRegWins.mid), record_value: `${r}W`,
+        holder_when: `${mostRegWins.year}`,
+        chaser: winsPaceTop.m.name,
+        chaser_value: `${winsPaceTop.m.wins}-${winsPaceTop.m.losses} (${winsPaceTop.m.games.length}G)`,
+        chaser_when: `pace: ${projInt}W · ${year}`,
+        gap: v >= r ? `+${(v - r).toFixed(1)}W on pace` : `${(r - v).toFixed(1)}W short on pace`,
+        copy_html: `<em>${escTxt(winsPaceTop.m.name)}</em> · pace ${projInt}W (${winsPaceTop.m.wins}-${winsPaceTop.m.losses})`,
+        when: `through W${throughWeek} · ${year}`,
+        previous: `${r}W · ${nameOf(mostRegWins.mid)}, ${mostRegWins.year}`,
+      })
+    }
+
+    // ── Regular-season LOSSES pace
+    const lossPaceTop = seasonByMgr
+      .filter((m) => m.games.length > 0)
+      .map((m) => ({ m, proj: (m.losses / m.games.length) * regSeasonLen }))
+      .sort((a, b) => b.proj - a.proj)[0]
+    if (lossPaceTop && mostRegLoss.val > 0) {
+      const v = lossPaceTop.proj, r = mostRegLoss.val, pct = (v / r) * 100
+      const projInt = Math.round(v * 10) / 10
+      accumItems.push({
+        category: 'Reg-Season Losses Pace',
+        pct,
+        flag: flagFor(pct, 'WORST SEASON INCOMING', 'TANK PACE', 'STRUGGLING', 'ROUGH RUN'),
+        title_html: `${r} <em>· most regular-season losses</em>`,
+        holder: nameOf(mostRegLoss.mid), record_value: `${r}L`,
+        holder_when: `${mostRegLoss.year}`,
+        chaser: lossPaceTop.m.name,
+        chaser_value: `${lossPaceTop.m.wins}-${lossPaceTop.m.losses} (${lossPaceTop.m.games.length}G)`,
+        chaser_when: `pace: ${projInt}L · ${year}`,
+        gap: v >= r ? `+${(v - r).toFixed(1)}L on pace` : `${(r - v).toFixed(1)}L short on pace`,
+        copy_html: `<em>${escTxt(lossPaceTop.m.name)}</em> · pace ${projInt}L (${lossPaceTop.m.wins}-${lossPaceTop.m.losses})`,
+        when: `through W${throughWeek} · ${year}`,
+        previous: `${r}L · ${nameOf(mostRegLoss.mid)}, ${mostRegLoss.year}`,
+      })
+    }
+  }
+
+  // ── Active win streak vs all-time longest
+  const liveWin = seasonByMgr.filter((m) => m.activeStreak.type === 'W' && m.activeStreak.len > 0)
+    .sort((a, b) => b.activeStreak.len - a.activeStreak.len)[0]
+  if (liveWin && allWinStreak.len > 0) {
+    const v = liveWin.activeStreak.len, r = allWinStreak.len, pct = (v / r) * 100
+    accumItems.push({
+      category: 'Longest Win Streak',
+      pct,
+      flag: flagFor(pct, 'TIED OR SURPASSED', 'ONE FROM HISTORY', 'ON THE BRINK', 'HEATING UP'),
+      title_html: `${r} <em>· consecutive wins</em>`,
+      holder: nameOf(allWinStreak.mid), record_value: `${r}W in a row`,
+      holder_when: 'all-time mark',
+      chaser: liveWin.name, chaser_value: `${v}W active`,
+      chaser_when: `through W${throughWeek} · ${year}`,
+      gap: pct >= 100 ? `+${v - r}W past the line` : `${r - v}W to tie`,
+      copy_html: `<em>${escTxt(liveWin.name)}</em> on a ${v}-game win streak`,
+      when: `through W${throughWeek} · ${year}`,
+      previous: `${r}W · ${nameOf(allWinStreak.mid)}`,
+    })
+  }
+
+  // ── Active loss streak vs all-time longest
+  const liveLoss = seasonByMgr.filter((m) => m.activeStreak.type === 'L' && m.activeStreak.len > 0)
+    .sort((a, b) => b.activeStreak.len - a.activeStreak.len)[0]
+  if (liveLoss && allLossStreak.len > 0) {
+    const v = liveLoss.activeStreak.len, r = allLossStreak.len, pct = (v / r) * 100
+    accumItems.push({
+      category: 'Longest Losing Skid',
+      pct,
+      flag: flagFor(pct, 'NEW SKID HIGH', 'COLD AS ICE', 'STRUGGLING', 'ROUGH PATCH'),
+      title_html: `${r} <em>· straight losses</em>`,
+      holder: nameOf(allLossStreak.mid), record_value: `${r}L in a row`,
+      holder_when: 'all-time skid',
+      chaser: liveLoss.name, chaser_value: `${v}L active`,
+      chaser_when: `through W${throughWeek} · ${year}`,
+      gap: pct >= 100 ? `+${v - r}L past` : `${r - v}L to tie`,
+      copy_html: `<em>${escTxt(liveLoss.name)}</em> has dropped ${v} straight`,
+      when: `through W${throughWeek} · ${year}`,
+      previous: `${r}L · ${nameOf(allLossStreak.mid)}`,
+    })
+  }
+
+  // ── JUST MISSED: week-to-week records that don't build over the season.
   // Single-week high
   const topHigh = seasonByMgr.filter((m) => m.bestWeek)
     .sort((a, b) => b.bestWeek!.self_score - a.bestWeek!.self_score)[0]
   if (topHigh && allHigh.val !== -Infinity) {
     const v = topHigh.bestWeek!.self_score, r = allHigh.val, pct = (v / r) * 100
-    items.push({
+    justMissedItems.push({
       category: 'Single-Week High',
       pct,
-      flag: flagFor(pct, 'BROKE IT', 'COULD FALL ANY WEEK', 'ON THE BRINK', 'IN PURSUIT'),
-      title_html: `${r.toFixed(1)} <em>· single-week scoring high</em>`,
+      flag: pct >= 100 ? 'BROKEN' : pct >= 95 ? 'NEARLY' : pct >= 85 ? 'BIG WEEK' : 'NOTABLE',
+      title_html: `${r.toFixed(1)} <em>· single-week high</em>`,
       holder: nameOf(allHigh.mid), record_value: `${r.toFixed(1)} pts`,
       holder_when: `W${allHigh.week} · ${allHigh.year}`,
       chaser: topHigh.name, chaser_value: `${v.toFixed(1)} pts`,
       chaser_when: `W${topHigh.bestWeek!.week} · ${year} vs ${nameOf(topHigh.bestWeek!.opp_id)}`,
-      gap: pct >= 100 ? `+${(v - r).toFixed(1)} pts past` : `${(r - v).toFixed(1)} pts short`,
+      gap: pct >= 100 ? `+${(v - r).toFixed(1)} past` : `${(r - v).toFixed(1)} short`,
       copy_html: `<em>${escTxt(topHigh.name)}</em> · ${v.toFixed(1)} (W${topHigh.bestWeek!.week} vs ${escTxt(nameOf(topHigh.bestWeek!.opp_id))})`,
       when: `W${topHigh.bestWeek!.week} · ${year}`,
       previous: `${r.toFixed(1)} · ${nameOf(allHigh.mid)}, ${allHigh.year}`,
@@ -2148,61 +2326,19 @@ function buildLiveSeasonPreviews(
   if (topLow && allLow.val !== Infinity) {
     const v = topLow.worstWeek!.self_score, r = allLow.val
     const pct = (r / Math.max(v, 0.1)) * 100
-    items.push({
+    justMissedItems.push({
       category: 'Single-Week Low',
       pct,
-      flag: flagFor(pct, 'NEW LOW SET', 'TROUGH WATCH', 'COLD START', 'STAYING WARM'),
-      title_html: `${r.toFixed(1)} <em>· lowest single-week scoreline</em>`,
+      flag: pct >= 100 ? 'NEW LOW' : pct >= 95 ? 'NEARLY' : pct >= 85 ? 'COLD WEEK' : 'NOTABLE',
+      title_html: `${r.toFixed(1)} <em>· single-week low</em>`,
       holder: nameOf(allLow.mid), record_value: `${r.toFixed(1)} pts`,
       holder_when: `W${allLow.week} · ${allLow.year}`,
       chaser: topLow.name, chaser_value: `${v.toFixed(1)} pts`,
       chaser_when: `W${topLow.worstWeek!.week} · ${year}`,
-      gap: pct >= 100 ? `${(r - v).toFixed(1)} pts under` : `${(v - r).toFixed(1)} pts above`,
+      gap: pct >= 100 ? `${(r - v).toFixed(1)} under` : `${(v - r).toFixed(1)} above`,
       copy_html: `<em>${escTxt(topLow.name)}</em> sank to ${v.toFixed(1)} (W${topLow.worstWeek!.week})`,
       when: `W${topLow.worstWeek!.week} · ${year}`,
       previous: `${r.toFixed(1)} · ${nameOf(allLow.mid)}, ${allLow.year}`,
-    })
-  }
-
-  // Active win streak vs all-time longest
-  const liveWin = seasonByMgr.filter((m) => m.activeStreak.type === 'W' && m.activeStreak.len > 0)
-    .sort((a, b) => b.activeStreak.len - a.activeStreak.len)[0]
-  if (liveWin && allWinStreak.len > 0) {
-    const v = liveWin.activeStreak.len, r = allWinStreak.len, pct = (v / r) * 100
-    items.push({
-      category: 'Longest Win Streak',
-      pct,
-      flag: flagFor(pct, 'TIED OR SURPASSED', 'ONE FROM HISTORY', 'ON THE BRINK', 'HEATING UP'),
-      title_html: `${r} <em>consecutive wins</em>`,
-      holder: nameOf(allWinStreak.mid), record_value: `${r}W in a row`,
-      holder_when: 'all-time mark',
-      chaser: liveWin.name, chaser_value: `${v}W active`,
-      chaser_when: `through W${throughWeek} · ${year}`,
-      gap: pct >= 100 ? `+${v - r}W past the line` : `${r - v}W to tie`,
-      copy_html: `<em>${escTxt(liveWin.name)}</em> on a ${v}-game win streak`,
-      when: `through W${throughWeek} · ${year}`,
-      previous: `${r}W · ${nameOf(allWinStreak.mid)}`,
-    })
-  }
-
-  // Active loss streak vs all-time longest
-  const liveLoss = seasonByMgr.filter((m) => m.activeStreak.type === 'L' && m.activeStreak.len > 0)
-    .sort((a, b) => b.activeStreak.len - a.activeStreak.len)[0]
-  if (liveLoss && allLossStreak.len > 0) {
-    const v = liveLoss.activeStreak.len, r = allLossStreak.len, pct = (v / r) * 100
-    items.push({
-      category: 'Longest Losing Skid',
-      pct,
-      flag: flagFor(pct, 'NEW SKID HIGH', 'COLD AS ICE', 'STRUGGLING', 'ROUGH PATCH'),
-      title_html: `${r} <em>straight losses</em>`,
-      holder: nameOf(allLossStreak.mid), record_value: `${r}L in a row`,
-      holder_when: 'all-time skid',
-      chaser: liveLoss.name, chaser_value: `${v}L active`,
-      chaser_when: `through W${throughWeek} · ${year}`,
-      gap: pct >= 100 ? `+${v - r}L past` : `${r - v}L to tie`,
-      copy_html: `<em>${escTxt(liveLoss.name)}</em> has dropped ${v} straight`,
-      when: `through W${throughWeek} · ${year}`,
-      previous: `${r}L · ${nameOf(allLossStreak.mid)}`,
     })
   }
 
@@ -2211,11 +2347,11 @@ function buildLiveSeasonPreviews(
     .sort((a, b) => b.bestBlowout!.margin - a.bestBlowout!.margin)[0]
   if (topBlow && allBlowout.val !== -Infinity) {
     const v = topBlow.bestBlowout!.margin, r = allBlowout.val, pct = (v / r) * 100
-    items.push({
-      category: 'Biggest Single-Week Blowout',
+    justMissedItems.push({
+      category: 'Biggest Blowout',
       pct,
-      flag: flagFor(pct, 'NEW BLOWOUT', 'BRUTAL WIN', 'BIG MARGIN', 'CLEAN WIN'),
-      title_html: `${r.toFixed(1)}-pt <em>margin</em>`,
+      flag: pct >= 100 ? 'NEW BLOWOUT' : pct >= 95 ? 'NEARLY' : pct >= 85 ? 'BRUTAL' : 'BIG MARGIN',
+      title_html: `+${r.toFixed(1)} <em>· margin record</em>`,
       holder: nameOf(allBlowout.mid), record_value: `+${r.toFixed(1)}`,
       holder_when: `W${allBlowout.week} · ${allBlowout.year}`,
       chaser: topBlow.name, chaser_value: `+${v.toFixed(1)}`,
@@ -2223,7 +2359,7 @@ function buildLiveSeasonPreviews(
       gap: pct >= 100 ? `+${(v - r).toFixed(1)} past` : `${(r - v).toFixed(1)} short`,
       copy_html: `<em>${escTxt(topBlow.name)}</em> won by ${v.toFixed(1)} (W${topBlow.bestBlowout!.week})`,
       when: `W${topBlow.bestBlowout!.week} · ${year}`,
-      previous: `${r.toFixed(1)} · ${nameOf(allBlowout.mid)}, ${allBlowout.year}`,
+      previous: `+${r.toFixed(1)} · ${nameOf(allBlowout.mid)}, ${allBlowout.year}`,
     })
   }
 
@@ -2233,11 +2369,11 @@ function buildLiveSeasonPreviews(
   if (topCombo && allCombined.val !== -Infinity) {
     const v = topCombo.bestCombined!.self_score + topCombo.bestCombined!.opp_score
     const r = allCombined.val, pct = (v / r) * 100
-    items.push({
-      category: 'Highest Combined Game',
+    justMissedItems.push({
+      category: 'Highest Combined',
       pct,
-      flag: flagFor(pct, 'NEW SHOOTOUT', 'SHOOTOUT WATCH', 'HIGH SCORING', 'POINTS FLOWED'),
-      title_html: `${r.toFixed(1)}-pt <em>shootout</em>`,
+      flag: pct >= 100 ? 'NEW SHOOTOUT' : pct >= 95 ? 'NEARLY' : pct >= 85 ? 'SHOOTOUT' : 'HIGH SCORING',
+      title_html: `${r.toFixed(1)} <em>· highest combined game</em>`,
       holder: `${nameOf(allCombined.mid)} v ${allCombined.opp}`,
       record_value: `${r.toFixed(1)} combined`,
       holder_when: `W${allCombined.week} · ${allCombined.year}`,
@@ -2251,10 +2387,11 @@ function buildLiveSeasonPreviews(
     })
   }
 
+  // Bucket accumulators into brink/chase/broken; just-missed stays its own.
   const brink: WatchItem[] = []
   const chase: WatchItem[] = []
   const broken: WatchItem[] = []
-  for (const it of items) {
+  for (const it of accumItems) {
     if (it.pct >= 100) broken.push(it)
     else if (it.pct >= 85) brink.push(it)
     else chase.push(it)
@@ -2262,17 +2399,20 @@ function buildLiveSeasonPreviews(
   brink.sort((a, b) => b.pct - a.pct)
   chase.sort((a, b) => b.pct - a.pct)
   broken.sort((a, b) => b.pct - a.pct)
+  justMissedItems.sort((a, b) => b.pct - a.pct)
 
   const records_watch = {
     meter: {
       brink: brink.length,
       chase: chase.length,
       broken: broken.length,
+      just_missed: justMissedItems.length,
       through: `W${throughWeek} · ${year}`,
     },
     brink: brink.slice(0, 6),
     chase: chase.slice(0, 6),
     broken: broken.slice(0, 6),
+    just_missed: justMissedItems.slice(0, 6),
   }
 
   // ── MILESTONES (per profile group so merged identities aggregate properly)
@@ -2342,11 +2482,43 @@ function buildLiveSeasonPreviews(
   const seasonTiers = [3, 5, 7, 10, 12, 15, 20]
   const streakTiers = [5, 7, 10, 12, 15]
 
-  type Crossed = { glyph: string; tier: string; name: string; achievement_html: string; when: string; context: string; sort: number }
-  type Approach = { glyph: string; name: string; copy_html: string; eta: string; eta_unit: string; sort: number }
+  type Category = 'wins' | 'points' | 'streak' | 'loyalty'
+
+  // stats_html: short factual line shown under the milestone copy. Format
+  // depends on the milestone category so wins items show a record while
+  // points items show career totals + games + PPG.
+  function statsFor(c: Career, cat: Category): string {
+    const record = `<strong>${c.winsAfter}-${c.lossesAfter}</strong>`
+    const pf = Math.round(c.pfAfter).toLocaleString()
+    const ppg = c.gamesAfter > 0 ? (c.pfAfter / c.gamesAfter).toFixed(1) : '—'
+    if (cat === 'wins') {
+      return `Career · ${record} · ${c.gamesAfter}G`
+    }
+    if (cat === 'points') {
+      return `Career · <strong>${pf}</strong> pts · ${c.gamesAfter}G · <strong>${ppg}</strong> PPG`
+    }
+    if (cat === 'streak') {
+      const tag = c.activeStreak.type === 'W' ? `${c.activeStreak.len}W active`
+                : c.activeStreak.type === 'L' ? `${c.activeStreak.len}L active` : 'idle'
+      return `Career · ${record} · ${tag}`
+    }
+    // loyalty
+    return `Career · ${record} · <strong>${c.seasonsThrough}</strong> seasons`
+  }
+
+  type Crossed = {
+    glyph: string; tier: string; category: Category; name: string
+    achievement_html: string; when: string; context: string; stats_html: string
+    sort: number
+  }
+  type Approach = {
+    glyph: string; category: Category; name: string
+    copy_html: string; stats_html: string; eta: string; eta_unit: string
+    sort: number
+  }
   const crossed: Crossed[] = []
-  const imminent: Approach[] = []
-  const horizon:  Approach[] = []
+  const imminent: Record<Category, Approach[]> = { wins: [], points: [], streak: [], loyalty: [] }
+  const horizon:  Record<Category, Approach[]> = { wins: [], points: [], streak: [], loyalty: [] }
 
   for (const c of careers) {
     if (c.gamesAfter === 0) continue
@@ -2364,10 +2536,11 @@ function buildLiveSeasonPreviews(
       }
       const gm = c.seasonGames.find((g) => g.week === crossingWeek)
       crossed.push({
-        glyph: '✦', tier: 'CAREER WINS', name: c.name,
+        glyph: '✦', tier: 'CAREER WINS', category: 'wins', name: c.name,
         achievement_html: `<strong>${ordinal(wTier)}</strong> career win`,
         when: crossingWeek ? `W${crossingWeek} · ${year}` : `${year}`,
         context: gm ? `vs ${escTxt(nameOf(gm.opp_id))} · ${gm.self_score.toFixed(1)} pts` : '',
+        stats_html: statsFor(c, 'wins'),
         sort: (crossingWeek * 100) + wTier,
       })
     }
@@ -2378,10 +2551,11 @@ function buildLiveSeasonPreviews(
       const idx = gTier - c.gamesBefore - 1
       const gm = c.seasonGames[idx]
       crossed.push({
-        glyph: '◈', tier: 'CAREER STARTS', name: c.name,
+        glyph: '◈', tier: 'CAREER STARTS', category: 'wins', name: c.name,
         achievement_html: `<strong>${ordinal(gTier)}</strong> career start`,
         when: gm ? `W${gm.week} · ${year}` : `${year}`,
         context: gm ? `vs ${escTxt(nameOf(gm.opp_id))}` : '',
+        stats_html: statsFor(c, 'wins'),
         sort: (gm?.week ?? 0) * 100 + 1,
       })
     }
@@ -2397,10 +2571,11 @@ function buildLiveSeasonPreviews(
       }
       const gm = c.seasonGames.find((g) => g.week === week)
       crossed.push({
-        glyph: '★', tier: 'CAREER POINTS', name: c.name,
+        glyph: '★', tier: 'CAREER POINTS', category: 'points', name: c.name,
         achievement_html: `crossed <strong>${pTier.toLocaleString()}</strong> lifetime points`,
         when: week ? `W${week} · ${year}` : `${year}`,
         context: gm ? `${gm.self_score.toFixed(1)} pts vs ${escTxt(nameOf(gm.opp_id))}` : '',
+        stats_html: statsFor(c, 'points'),
         sort: (week * 100) + 2,
       })
     }
@@ -2410,10 +2585,11 @@ function buildLiveSeasonPreviews(
       const sTier = streakTiers.find((t) => c.activeStreak.len === t)
       if (sTier != null) {
         crossed.push({
-          glyph: '✺', tier: 'WIN STREAK', name: c.name,
+          glyph: '✺', tier: 'WIN STREAK', category: 'streak', name: c.name,
           achievement_html: `rolled <strong>${sTier}</strong> wins in a row`,
           when: `W${throughWeek} · ${year}`,
           context: 'active streak',
+          stats_html: statsFor(c, 'streak'),
           sort: 99 * 100 + sTier,
         })
       }
@@ -2423,96 +2599,169 @@ function buildLiveSeasonPreviews(
     const aTier = seasonTiers.find((t) => c.seasonsThrough === t)
     if (aTier != null) {
       crossed.push({
-        glyph: '✧', tier: 'LOYALTY', name: c.name,
+        glyph: '✧', tier: 'LOYALTY', category: 'loyalty', name: c.name,
         achievement_html: `<strong>${aTier}</strong> seasons in the league`,
         when: `${year}`,
         context: 'anniversary',
+        stats_html: statsFor(c, 'loyalty'),
         sort: 1000 + aTier,
       })
     }
 
-    // ── Imminent (≤1 win or ≤150 PF away from the next tier)
+    // ── Imminent (≤1 win or ≤150 PF away from the next tier).
+    // Each goes into its own category bucket so the template can render
+    // a columnar layout (Wins | Points | Streaks).
     const winsTo = nextTierAhead(c.winsAfter, winTiers)
     if (winsTo != null && winsTo - c.winsAfter === 1) {
-      imminent.push({
-        glyph: '✦', name: c.name,
-        copy_html: `<em>1</em> win from his <em>${ordinal(winsTo)}</em>`,
+      imminent.wins.push({
+        glyph: '✦', category: 'wins', name: c.name,
+        copy_html: `<em>1</em> win from <em>${ordinal(winsTo)}</em>`,
+        stats_html: statsFor(c, 'wins'),
         eta: '1W', eta_unit: 'to go',
         sort: 1,
       })
     }
     const gamesTo = nextTierAhead(c.gamesAfter, gamesTiers)
     if (gamesTo != null && gamesTo - c.gamesAfter === 1) {
-      imminent.push({
-        glyph: '◈', name: c.name,
-        copy_html: `next start = <em>${ordinal(gamesTo)}</em> career game`,
+      imminent.wins.push({
+        glyph: '◈', category: 'wins', name: c.name,
+        copy_html: `next game = <em>${ordinal(gamesTo)}</em> start`,
+        stats_html: statsFor(c, 'wins'),
         eta: '1G', eta_unit: 'to go',
         sort: 2,
       })
     }
     const pfTo = nextTierAhead(c.pfAfter, pfTiers)
     if (pfTo != null && pfTo - c.pfAfter <= 150) {
-      imminent.push({
-        glyph: '★', name: c.name,
-        copy_html: `<em>${Math.round(pfTo - c.pfAfter)}</em> pts from <em>${pfTo.toLocaleString()}</em> career`,
+      imminent.points.push({
+        glyph: '★', category: 'points', name: c.name,
+        copy_html: `<em>${Math.round(pfTo - c.pfAfter)}</em> pts from <em>${pfTo.toLocaleString()}</em>`,
+        stats_html: statsFor(c, 'points'),
         eta: `${Math.round(pfTo - c.pfAfter)}`, eta_unit: 'pts to go',
         sort: pfTo - c.pfAfter,
       })
     }
     if (c.activeStreak.type === 'W') {
-      const sTier = streakTiers.find((t) => t === c.activeStreak.len + 1)
-      if (sTier != null) {
-        imminent.push({
-          glyph: '✺', name: c.name,
-          copy_html: `one win from a <em>${sTier}-game</em> streak`,
+      const sNext = streakTiers.find((t) => t === c.activeStreak.len + 1)
+      if (sNext != null) {
+        imminent.streak.push({
+          glyph: '✺', category: 'streak', name: c.name,
+          copy_html: `one win from a <em>${sNext}-game</em> streak`,
+          stats_html: statsFor(c, 'streak'),
           eta: '1W', eta_unit: 'to go',
           sort: 3,
         })
       }
     }
+    const sTo = seasonTiers.find((t) => t === c.seasonsThrough + 1)
+    if (sTo != null) {
+      // Anniversary one season away — surface in loyalty column.
+      imminent.loyalty.push({
+        glyph: '✧', category: 'loyalty', name: c.name,
+        copy_html: `next season = <em>${sTo}</em>-year mark`,
+        stats_html: statsFor(c, 'loyalty'),
+        eta: '1y', eta_unit: 'to go',
+        sort: sTo,
+      })
+    }
 
-    // ── Horizon (2-8 wins out, or 150-800 PF out)
+    // ── Horizon (2-8 wins out, 150-800 PF out, 2-3 streak tiers out)
     if (winsTo != null) {
       const gap = winsTo - c.winsAfter
       if (gap >= 2 && gap <= 8) {
-        horizon.push({
-          glyph: '✦', name: c.name,
-          copy_html: `<em>${gap}</em> wins shy of <em>${ordinal(winsTo)}</em>`,
+        horizon.wins.push({
+          glyph: '✦', category: 'wins', name: c.name,
+          copy_html: `<em>${gap}</em> wins from <em>${ordinal(winsTo)}</em>`,
+          stats_html: statsFor(c, 'wins'),
           eta: `${gap}W`, eta_unit: 'remaining',
           sort: gap,
+        })
+      }
+    }
+    if (gamesTo != null) {
+      const gap = gamesTo - c.gamesAfter
+      if (gap >= 2 && gap <= 6) {
+        horizon.wins.push({
+          glyph: '◈', category: 'wins', name: c.name,
+          copy_html: `<em>${gap}</em> starts from <em>${ordinal(gamesTo)}</em> career game`,
+          stats_html: statsFor(c, 'wins'),
+          eta: `${gap}G`, eta_unit: 'remaining',
+          sort: gap + 0.5,
         })
       }
     }
     if (pfTo != null) {
       const gap = Math.round(pfTo - c.pfAfter)
       if (gap > 150 && gap <= 800) {
-        horizon.push({
-          glyph: '★', name: c.name,
-          copy_html: `<em>${gap}</em> pts to <em>${pfTo.toLocaleString()}</em> career`,
+        horizon.points.push({
+          glyph: '★', category: 'points', name: c.name,
+          copy_html: `<em>${gap}</em> pts to <em>${pfTo.toLocaleString()}</em>`,
+          stats_html: statsFor(c, 'points'),
           eta: `${gap}`, eta_unit: 'pts to go',
           sort: gap,
+        })
+      }
+    }
+    if (c.activeStreak.type === 'W' && c.activeStreak.len >= 2) {
+      const sNext = streakTiers.find((t) => t > c.activeStreak.len + 1 && t <= c.activeStreak.len + 4)
+      if (sNext != null) {
+        horizon.streak.push({
+          glyph: '✺', category: 'streak', name: c.name,
+          copy_html: `<em>${sNext - c.activeStreak.len}</em> wins shy of a <em>${sNext}-game</em> streak`,
+          stats_html: statsFor(c, 'streak'),
+          eta: `${sNext - c.activeStreak.len}W`, eta_unit: 'remaining',
+          sort: sNext - c.activeStreak.len,
         })
       }
     }
   }
 
   crossed.sort((a, b) => b.sort - a.sort)
-  imminent.sort((a, b) => a.sort - b.sort)
-  horizon.sort((a, b) => a.sort - b.sort)
+  for (const cat of ['wins','points','streak','loyalty'] as Category[]) {
+    imminent[cat].sort((a, b) => a.sort - b.sort)
+    horizon[cat].sort((a, b) => a.sort - b.sort)
+    imminent[cat] = imminent[cat].slice(0, 5)
+    horizon[cat]  = horizon[cat].slice(0, 5)
+  }
+
+  const imminentCount = imminent.wins.length + imminent.points.length + imminent.streak.length + imminent.loyalty.length
 
   const milestones = {
     meter: {
       week: crossed.filter((c) => c.when === `W${throughWeek} · ${year}`).length,
       season: crossed.length,
-      imminent: imminent.length,
+      imminent: imminentCount,
       through: `W${throughWeek} · ${year}`,
     },
     crossed: crossed.slice(0, 6),
-    imminent: imminent.slice(0, 6),
-    horizon: horizon.slice(0, 6),
+    // New columnar layout: keyed by category. The old flat `imminent`/
+    // `horizon` arrays are dropped — the template renders columns now.
+    imminent_by_category: imminent,
+    horizon_by_category:  horizon,
   }
 
   return { records_watch, milestones }
+}
+
+// Estimate regular-season game count per manager from the most recent
+// completed season (excludes playoff games). Falls back to 14 if there's
+// no prior data — same number Sleeper / ESPN / Yahoo / NFL all default to.
+function estimateRegSeasonLength(s: Snapshot, beforeYear: number): number {
+  let maxGames = 0
+  for (let i = s.seasons.length - 1; i >= 0; i--) {
+    const sn = s.seasons[i]
+    if (sn.year >= beforeYear) continue
+    const matchups = s.matchupsBySeason.get(sn.id) ?? []
+    const regGames = new Map<string, number>()
+    for (const m of matchups) {
+      if (m.is_playoff) continue
+      regGames.set(m.manager_a_id, (regGames.get(m.manager_a_id) ?? 0) + 1)
+      regGames.set(m.manager_b_id, (regGames.get(m.manager_b_id) ?? 0) + 1)
+    }
+    for (const n of regGames.values()) if (n > maxGames) maxGames = n
+    if (maxGames > 0) return maxGames
+  }
+  return 14
 }
 
 function flagFor(pct: number, broke: string, edge: string, brink: string, base: string): string {
@@ -2541,8 +2790,16 @@ function escTxt(s: string): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 function emptyRecordsWatch(year: number, throughWeek: number) {
-  return { meter: { brink: 0, chase: 0, broken: 0, through: `W${throughWeek} · ${year}` }, brink: [], chase: [], broken: [] }
+  return {
+    meter: { brink: 0, chase: 0, broken: 0, just_missed: 0, through: `W${throughWeek} · ${year}` },
+    brink: [], chase: [], broken: [], just_missed: [],
+  }
 }
 function emptyMilestones(year: number, throughWeek: number) {
-  return { meter: { week: 0, season: 0, imminent: 0, through: `W${throughWeek} · ${year}` }, crossed: [], imminent: [], horizon: [] }
+  return {
+    meter: { week: 0, season: 0, imminent: 0, through: `W${throughWeek} · ${year}` },
+    crossed: [],
+    imminent_by_category: { wins: [], points: [], streak: [], loyalty: [] },
+    horizon_by_category:  { wins: [], points: [], streak: [], loyalty: [] },
+  }
 }
