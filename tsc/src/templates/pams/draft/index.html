@@ -283,13 +283,28 @@ body { background: var(--dg-bg); }
     opacity: .55;
 }
 
-/* Cells holding 2+ picks (traded picks) stack vertically with a thin divider. */
-.board-cell-multi { padding: 0; }
-.board-cell-multi .board-cell-pick {
-    padding: .4rem .55rem;
-    border-bottom: 1px dashed var(--dg-line-soft);
+/* Cells holding 2+ picks (traded picks) split horizontally instead of
+   stacking vertically. Row height stays uniform with single-pick cells
+   in the same row; the column with the multi just widens. Player names
+   in multi cells drop to a smaller font so two of them fit side-by-side. */
+.board-cell { vertical-align: middle; }
+.board-cell-multi {
+    padding: 0;
+    display: flex; align-items: stretch;
+    min-width: 184px; max-width: 220px;
 }
-.board-cell-multi .board-cell-pick:last-child { border-bottom: none; }
+.board-cell-multi .board-cell-pick {
+    flex: 1 1 50%;
+    padding: .4rem .5rem;
+    border-right: 1px dashed var(--dg-line-soft);
+    min-width: 0; /* allow text-overflow ellipsis to actually fire */
+}
+.board-cell-multi .board-cell-pick:last-child { border-right: none; }
+.board-cell-multi .board-player { font-size: .62rem; max-width: 86px; }
+.board-cell-multi .board-pos { font-size: .46rem; padding: .08rem .25rem; }
+/* 3+ picks (rare — fall back to 33% slices instead of breaking layout) */
+.board-cell-multi[data-count="3"] .board-cell-pick { flex-basis: 33.33%; }
+.board-cell-multi[data-count="3"] { min-width: 256px; max-width: 320px; }
 
 /* Mobile: shrink the board table aggressively so users can see more
    of the draft at once. Padding, fonts, and column widths all dial
@@ -311,7 +326,14 @@ body { background: var(--dg-bg); }
     .board-player { font-size: .58rem; max-width: 70px; }
     .board-pos { font-size: .42rem; padding: 0 .2rem; margin-top: .15rem; letter-spacing: .04em; }
     .board-empty { font-size: .58rem; }
-    .board-cell-multi .board-cell-pick { padding: .25rem .35rem; }
+    /* Shrink the side-by-side multi-cell on mobile so it doesn't blow
+       the column wider than it needs to be. Each half-cell still has
+       enough room for a truncated player name + tiny position pill. */
+    .board-cell-multi { min-width: 120px; max-width: 160px; }
+    .board-cell-multi[data-count="3"] { min-width: 168px; max-width: 220px; }
+    .board-cell-multi .board-cell-pick { padding: .25rem .3rem; }
+    .board-cell-multi .board-player { font-size: .5rem; max-width: 58px; }
+    .board-cell-multi .board-pos { font-size: .38rem; }
 }
 @media (max-width: 380px) {
     .board-table thead th { font-size: .44rem; padding: .25rem .15rem; }
@@ -321,6 +343,10 @@ body { background: var(--dg-bg); }
     .board-cell { padding: .25rem .25rem; min-width: 46px; max-width: 64px; }
     .board-player { font-size: .52rem; max-width: 58px; }
     .board-pos { font-size: .38rem; }
+    .board-cell-multi { min-width: 102px; max-width: 130px; }
+    .board-cell-multi[data-count="3"] { min-width: 142px; max-width: 178px; }
+    .board-cell-multi .board-player { font-size: .46rem; max-width: 48px; }
+    .board-cell-multi .board-pos { font-size: .34rem; }
 }
 
 .p-rb .board-player { color: #6dc28c; }
@@ -1402,7 +1428,11 @@ function renderBoard(year) {
                          + '<span class="board-pos">' + esc(pp) + '</span>'
                          + '</div>';
                 }).join('');
-                html += '<td class="board-cell board-cell-multi">' + inner + '</td>';
+                // data-count lets CSS swap from 2-up to 3-up slicing without
+                // a JS branch — keeps the renderer simple and the layout
+                // responsive to the actual pick count.
+                html += '<td class="board-cell board-cell-multi" data-count="'
+                      + roundPicks.length + '">' + inner + '</td>';
             }
         }
         html += '</tr>';
