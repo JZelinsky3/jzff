@@ -577,39 +577,36 @@ body { background: var(--ml-bg); }
         grid-template-columns: 1fr 1fr;
         gap: .7rem;
     }
-    /* Card switches from flex column to a 2-row grid: avatar + tier
-       caption sit side-by-side on row 1, then name / achievement /
-       stats / meta stack full-width below. Frees vertical space and
-       gives the tier label a more deliberate home next to the medal. */
+    /* Card uses normal flex-column flow at this width; .who floats
+       to the top-right corner via absolute positioning so the medal
+       can sit alone on the left without the tier caption stealing
+       vertical room. Padding pulled in across the board so the
+       cards read more square-ish instead of tall + skinny. */
     .ml-crossed {
-        display: grid;
-        grid-template-columns: 36px 1fr;
-        column-gap: .55rem;
-        row-gap: .1rem;
-        padding: .8rem .8rem .7rem;
+        position: relative;
+        padding: .6rem .65rem .55rem;
     }
+    .ml-crossed > .achievement { flex: none; }
     .ml-medal {
-        grid-row: 1; grid-column: 1;
-        width: 36px; height: 36px;
-        font-size: .9rem;
-        margin-bottom: 0;
+        width: 32px; height: 32px;
+        font-size: .82rem;
+        margin-bottom: .35rem;
     }
-    .ml-medal img { width: 36px; height: 36px; }
+    .ml-medal img { width: 32px; height: 32px; }
     .ml-crossed .who {
-        grid-row: 1; grid-column: 2;
-        align-self: center;
-        font-size: .44rem; letter-spacing: .2em;
-        margin-bottom: 0;
+        position: absolute;
+        top: .5rem; right: .55rem;
+        max-width: 55%;
+        text-align: right;
+        font-size: .42rem; letter-spacing: .2em;
+        line-height: 1.15;
+        margin: 0;
     }
-    .ml-crossed .name,
-    .ml-crossed .achievement,
-    .ml-crossed .stats,
-    .ml-crossed .meta { grid-column: 1 / -1; }
-    .ml-crossed .name { font-size: .95rem; line-height: 1.1; margin: .3rem 0 .2rem; }
-    .ml-crossed .achievement { font-size: .72rem; line-height: 1.3; margin-bottom: .4rem; }
-    .ml-crossed .stats { font-size: .48rem; padding: .35rem 0; }
-    .ml-crossed .meta { font-size: .42rem; padding-top: .4rem; gap: .2rem; }
-    .ml-crossed .meta .h2h { font-size: .4rem; padding: .05rem .22rem .07rem; }
+    .ml-crossed .name { font-size: .92rem; line-height: 1.1; margin: 0 0 .2rem; }
+    .ml-crossed .achievement { font-size: .68rem; line-height: 1.3; margin-bottom: .3rem; }
+    .ml-crossed .stats { font-size: .46rem; padding: .25rem 0; }
+    .ml-crossed .meta { font-size: .4rem; padding-top: .3rem; gap: .18rem; }
+    .ml-crossed .meta .h2h { font-size: .38rem; padding: .04rem .2rem .06rem; }
     .ml-approach-row { grid-template-columns: 38px 1fr; column-gap: .7rem; padding: .75rem .85rem; }
     .ml-approach-glyph { width: 38px; height: 38px; font-size: .95rem; }
     .ml-approach-glyph img { width: 38px; height: 38px; }
