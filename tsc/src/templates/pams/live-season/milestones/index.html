@@ -197,7 +197,7 @@ body { background: var(--ml-bg); }
 .ml-crossed-grid.dense .name { font-size: 1.25rem; margin-bottom: .45rem; }
 .ml-crossed-grid.dense .achievement { font-size: .95rem; margin-bottom: .7rem; }
 .ml-crossed-grid.dense .stats { font-size: .6rem; padding: .6rem 0; }
-.ml-crossed-grid.dense .meta { font-size: .58rem; padding-top: .65rem; }
+.ml-crossed-grid.dense .meta { font-size: .53rem; padding-top: .65rem; }
 .ml-crossed {
     position: relative; overflow: hidden;
     background: linear-gradient(160deg, var(--ml-card) 0%, var(--ml-soft) 70%);
@@ -272,12 +272,12 @@ body { background: var(--ml-bg); }
     color: var(--ml-cream); font-weight: 700;
 }
 .ml-crossed .meta {
-    /* Flexbox so wins items render as one continuous left-aligned line
-     * while points items split (W{week} ·  on the left, score+opp pushed
-     * to the right). Both layouts let the H2H badge clump on the right. */
+    /* Flexbox so the matchup text + H2H badge sit on one row.
+     * Slightly smaller base font + tighter badge below to keep
+     * H2H from wrapping to a second row on cards with long names. */
     padding-top: .8rem;
     border-top: 1px solid var(--ml-line-soft);
-    font-family: var(--mono); font-size: .6rem;
+    font-family: var(--mono); font-size: .55rem;
     letter-spacing: .08em;
     color: var(--ml-mute);
     z-index: 1; position: relative;
@@ -285,7 +285,7 @@ body { background: var(--ml-bg); }
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: .5rem;
+    gap: .4rem;
 }
 .ml-crossed .meta strong {
     color: var(--ml-cream); font-weight: 700;
@@ -298,11 +298,11 @@ body { background: var(--ml-bg); }
     /* Pushed to the right edge of the row via flex auto-margin so the
      * matchup text stays left-aligned right after the week. */
     margin-left: auto;
-    padding: .12rem .42rem .15rem;
+    padding: .08rem .32rem .1rem;
     background: var(--ml-soft);
     border: 1px solid var(--ml-line-soft);
     border-radius: 2px;
-    font-size: .54rem;
+    font-size: .5rem;
     color: var(--ml-bronze-hi);
     flex-shrink: 0;
 }

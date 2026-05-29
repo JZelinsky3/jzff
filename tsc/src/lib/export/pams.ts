@@ -2601,7 +2601,7 @@ function buildLiveSeasonPreviews(
     function metaPoints(mid: string, week: number, score: number, oppMid: string): string {
       const opp = escTxt(nameOf(oppMid))
       const h2h = h2hThrough(mid, oppMid, year, week)
-      return `<span class="meta-main"><strong>W${week}</strong> · ${score.toFixed(1)} pts vs ${opp}</span>` +
+      return `<span class="meta-main"><strong>W${week}</strong> vs ${opp} · ${score.toFixed(1)} pts</span>` +
              (h2h ? `<span class="h2h">${h2h} H2H</span>` : '')
     }
     function metaWins(mid: string, week: number, oppMid: string): string {
