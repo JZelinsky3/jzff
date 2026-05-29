@@ -1036,6 +1036,77 @@ body { background: var(--rw-bg); }
     letter-spacing: .04em;
 }
 
+/* ── Broken: compact "history" cards ──────────────────────────
+   For records that were broken more than 3 weeks ago, the full
+   LCD readout takes up more real estate than the moment warrants
+   — they downgrade to a tighter rail that lists who, what, when.
+   Stacks at the bottom of §01 below the full LCD grid. */
+.rw-broken-history {
+    margin-top: 1.4rem;
+    border-top: 1px dashed var(--rw-line);
+    padding-top: 1rem;
+}
+.rw-broken-history-head {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-bottom: .8rem;
+}
+.rw-broken-history-list {
+    display: flex; flex-direction: column;
+    gap: .5rem;
+}
+.rw-broken-mini {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 1rem;
+    padding: .7rem 1rem;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line-soft);
+    border-left: 2px solid var(--rw-ember);
+}
+.rw-broken-mini .mini-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .9rem;
+    color: var(--rw-ember-hi);
+    font-variant-numeric: tabular-nums;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-broken-mini .mini-num .num-trail {
+    font-size: .65rem;
+    color: var(--rw-cream);
+    opacity: .6;
+    margin-left: .05em;
+}
+.rw-broken-mini .mini-body {
+    min-width: 0;
+}
+.rw-broken-mini .mini-cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-bottom: .15rem;
+}
+.rw-broken-mini .mini-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1rem; line-height: 1.2;
+    color: var(--rw-cream);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-broken-mini .mini-when {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .12em;
+    color: var(--rw-mute);
+    text-align: right;
+    white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+    .rw-broken-mini { grid-template-columns: 4rem 1fr; }
+    .rw-broken-mini .mini-when { grid-column: 2; text-align: left; opacity: .75; }
+}
+
 /* ── Intro / empty state ───────────────────────────────────── */
 .rw-empty {
     text-align: center;
@@ -1183,14 +1254,14 @@ body { background: var(--rw-bg); }
             <div class="rw-section-head">
                 <span class="rw-section-num">§ 03 · Pursuit</span>
                 <span class="rw-section-title">On the <em>Brink</em></span>
-                <span class="rw-section-note">In striking distance · 70-99% of the mark</span>
+                <span class="rw-section-note">In striking distance · 65-99% of the mark</span>
             </div>
             <div id="brink-body">
                 <div class="rw-empty">
                     <h3>Nothing in pursuit <em>yet.</em></h3>
                     <p>
                         Season accumulators (career wins, points for, streaks) appear here once
-                        a chaser sits at 70% or more of the all-time mark. Biggest threats up top.
+                        a chaser sits at 65% or more of the all-time mark. Biggest threats up top.
                     </p>
                 </div>
             </div>
@@ -1251,11 +1322,15 @@ body { background: var(--rw-bg); }
   // The exporter is built out separately; until it lands, the page renders
   // the empty + "how it works" intro states above. When the JSON shows up,
   // we replace each section in place without a layout shift.
+  // Captured at fetch time so renderBroken can compute weeks-since-break.
+  var records_watch_through = null;
+
   fetch('data/records_watch.json', { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.json() : null; })
     .catch(function () { return null; })
     .then(function (data) {
       if (!data) return;
+      records_watch_through = (data.meter || {}).through || null;
       renderMeter(data.meter || {});
       if (Array.isArray(data.broken)      && data.broken.length)      renderBroken('broken-body', data.broken);
       if (Array.isArray(data.brink)       && data.brink.length)       renderBrink('brink-body', data.brink);
@@ -1378,54 +1453,107 @@ body { background: var(--rw-bg); }
     if (slotEl) slotEl.innerHTML = html;
   }
 
+  // Parse a "W{n}..." string into the week number — or null if it
+  // doesn't lead with a W{n}. Used for computing weeks-since-break.
+  function weekFromWhen(when) {
+    var m = String(when || '').match(/^W(?:eek\s+)?(\d+)\b/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function weekFromMeter() {
+    if (!records_watch_through) return null;
+    return weekFromWhen(records_watch_through);
+  }
+
+  // Builds the big LCD card markup for one broken/on-pace item.
+  function brokenFullCard(slot, it) {
+    var cv = it.chaser_value || it.record_value || '';
+    var m = cv.match(/^(\d[\d.,]*(?:-\d[\d.,]*)*)\s*(.*)$/);
+    var readNum = m ? m[1] : cv;
+    var readUnit = m ? m[2] : '';
+    var readNumHtml;
+    var dashIdx = readNum.indexOf('-');
+    if (dashIdx > 0) {
+      readNumHtml = esc(readNum.slice(0, dashIdx)) +
+        '<span class="num-trail">' + esc(readNum.slice(dashIdx)) + '</span>';
+    } else {
+      readNumHtml = esc(readNum);
+    }
+    var compact = /^Quickest to /.test(it.category || '');
+    // "W7 · 2025" -> "Week 7 · 2025" for the broken card's bottom-left
+    // date stamp. Other when forms (year-only, etc) flow through.
+    var whenDisplay = String(it.when || '').replace(/^W(\d+)\b/, 'Week $1');
+    return '<article class="rw-broken">' +
+        '<span class="rw-broken-badge">' + esc(it.flag || (slot === 'broken-body' ? 'BROKEN' : 'ON PACE')) + '</span>' +
+        '<div class="cat">' + esc(it.category || '') + '</div>' +
+        '<div class="rw-broken-readout' + (compact ? ' compact' : '') + '">' +
+          '<span class="num">' + readNumHtml + '</span>' +
+          (readUnit ? '<span class="unit">' + esc(readUnit) + '</span>' : '') +
+          (it.readout_sub ? '<span class="sub">' + esc(it.readout_sub) + '</span>' : '') +
+          '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+        '</div>' +
+        '<div class="rw-broken-prior">' +
+          '<span>' + esc(whenDisplay) + '</span>' +
+          '<span class="prior-line">prior · ' + esc(it.previous || '—') + '</span>' +
+        '</div>' +
+      '</article>';
+  }
+
+  // Compact "history" rail row used for broken items that landed more
+  // than 3 weeks ago. Strips the prev-record + opponent detail; keeps
+  // who, what, when. Stacks below the full cards.
+  function brokenMiniRow(it) {
+    var cv = it.chaser_value || it.record_value || '';
+    var m = cv.match(/^(\d[\d.,]*(?:-\d[\d.,]*)*)\s*(.*)$/);
+    var readNum = m ? m[1] : cv;
+    var readUnit = m ? ' ' + m[2] : '';
+    var readNumHtml;
+    var dashIdx = readNum.indexOf('-');
+    if (dashIdx > 0) {
+      readNumHtml = esc(readNum.slice(0, dashIdx)) +
+        '<span class="num-trail">' + esc(readNum.slice(dashIdx)) + '</span>';
+    } else {
+      readNumHtml = esc(readNum);
+    }
+    var whenDisplay = String(it.when || '').replace(/^W(\d+)\b/, 'Week $1');
+    return '<div class="rw-broken-mini">' +
+        '<span class="mini-num">' + readNumHtml + esc(readUnit) + '</span>' +
+        '<div class="mini-body">' +
+          '<div class="mini-cat">' + esc(it.category || '') + '</div>' +
+          '<div class="mini-name">' + esc(it.chaser || '—') + '</div>' +
+        '</div>' +
+        '<div class="mini-when">' + esc(whenDisplay) + '</div>' +
+      '</div>';
+  }
+
   // Broken / On-Pace cards both use the LCD scoreboard renderer — they
   // share the same visual treatment but write to different slots.
   // slot = 'broken-body' for realized crossings, 'onpace-body' for
   // projections.
   function renderBroken(slot, items) {
-    var html = '<div class="rw-broken-grid">';
+    var throughWeek = weekFromMeter();
+    // Split into "recent" (full LCD card) vs "history" (compact rail)
+    // for the broken slot. The history rail only applies to actually-
+    // crossed items whose break week is more than 3 weeks behind the
+    // current pulse; on-pace projections always render full.
+    var recent = [], history = [];
     items.forEach(function (it) {
-      // Pull the leading numeric out of chaser_value (e.g. "1850 pts"
-      // or "4-1") so the LCD readout shows just the number; unit drops
-      // underneath. The (?:-[\d.,]+)? captures W-L style suffixes ("4-1",
-      // "12-2-0") so they stay inline as part of the readout number.
-      var cv = it.chaser_value || it.record_value || '';
-      var m = cv.match(/^(\d[\d.,]*(?:-\d[\d.,]*)*)\s*(.*)$/);
-      var readNum = m ? m[1] : cv;
-      var readUnit = m ? m[2] : '';
-      // Format the W-L suffix smaller + dimmed so a record like "4-1"
-      // visually leads with the wins and the losses trail behind.
-      var readNumHtml;
-      var dashIdx = readNum.indexOf('-');
-      if (dashIdx > 0) {
-        var primary = readNum.slice(0, dashIdx);
-        var trailing = readNum.slice(dashIdx);
-        readNumHtml = esc(primary) + '<span class="num-trail">' + esc(trailing) + '</span>';
-      } else {
-        readNumHtml = esc(readNum);
-      }
-      // "Quickest to X" cards use a compact readout where the unit
-      // ("games") sits inline next to the big number; other on-pace cards
-      // keep the unit on its own line so longer suffixes don't crowd the
-      // numeric.
-      var compact = /^Quickest to /.test(it.category || '');
-      html +=
-        '<article class="rw-broken">' +
-          '<span class="rw-broken-badge">' + esc(it.flag || (slot === 'broken-body' ? 'BROKEN' : 'ON PACE')) + '</span>' +
-          '<div class="cat">' + esc(it.category || '') + '</div>' +
-          '<div class="rw-broken-readout' + (compact ? ' compact' : '') + '">' +
-            '<span class="num">' + readNumHtml + '</span>' +
-            (readUnit ? '<span class="unit">' + esc(readUnit) + '</span>' : '') +
-            (it.readout_sub ? '<span class="sub">' + esc(it.readout_sub) + '</span>' : '') +
-            '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
-          '</div>' +
-          '<div class="rw-broken-prior">' +
-            '<span>' + esc(it.when || '') + '</span>' +
-            '<span class="prior-line">prior · ' + esc(it.previous || '—') + '</span>' +
-          '</div>' +
-        '</article>';
+      if (slot !== 'broken-body') { recent.push(it); return; }
+      var w = weekFromWhen(it.when);
+      var weeksAgo = (throughWeek != null && w != null) ? (throughWeek - w) : 0;
+      if (weeksAgo > 3) history.push(it);
+      else recent.push(it);
     });
+
+    var html = '<div class="rw-broken-grid">';
+    recent.forEach(function (it) { html += brokenFullCard(slot, it); });
     html += '</div>';
+    if (history.length) {
+      html += '<div class="rw-broken-history">' +
+        '<div class="rw-broken-history-head">Earlier this season</div>' +
+        '<div class="rw-broken-history-list">';
+      history.forEach(function (it) { html += brokenMiniRow(it); });
+      html += '</div></div>';
+    }
     var slotEl = $(slot);
     if (slotEl) slotEl.innerHTML = html;
   }

@@ -2562,6 +2562,11 @@ function buildLiveSeasonPreviews(
         const projGames = bestChaser.projGames
         const gap = r.games - projGames  // positive = on pace to break (faster)
         const broke = bestChaser.broke
+        // Current-progress display so the brink bar label + on-pace col
+        // can show how many wins / pts the chaser has accumulated toward
+        // the tier (not just the projected games count).
+        const unitWord = cfg.kind === 'wins' ? 'wins' : 'pts'
+        const currentDisplay = `${Math.round(bestChaser.currentVal)} ${unitWord}`
 
         accumItems.push({
           category: cfg.label(T),
@@ -2578,7 +2583,11 @@ function buildLiveSeasonPreviews(
           // chaser_value leads with the bare number + unit so the LCD
           // readout shows "16" big with "games" as the unit caption.
           // The "pace" / "crossed" qualifier rides in readout_sub.
-          chaser_value: `${projGames} games`,
+          // Broken cards lead with the achievement (games-to-tier);
+          // non-broken cards lead with the chaser's current progress
+          // toward the tier (so the brink bar label reads "50 wins" /
+          // "12,500 pts" instead of a projection).
+          chaser_value: broke ? `${projGames} games` : currentDisplay,
           readout_sub: broke ? `crossed ${bestChaser.crossingDesc || ''}` : 'pace',
           chaser_when: broke
             ? bestChaser.crossingDesc || `W${throughWeek} · ${year}`
@@ -2612,7 +2621,7 @@ function buildLiveSeasonPreviews(
       chaser: topHigh.name, chaser_value: `${v.toFixed(1)} pts`,
       chaser_when: `W${topHigh.bestWeek!.week} · ${year} vs ${nameOf(topHigh.bestWeek!.opp_id)}`,
       gap: pct >= 100 ? `+${(v - r).toFixed(1)} past` : `${(r - v).toFixed(1)} short`,
-      copy_html: `<em>${escTxt(topHigh.name)}</em> posted the season high — ${v.toFixed(1)} pts (W${topHigh.bestWeek!.week} vs ${escTxt(nameOf(topHigh.bestWeek!.opp_id))})`,
+      copy_html: `<em>${escTxt(topHigh.name)}</em> posted the all-time single-week high — ${v.toFixed(1)} pts (${v.toFixed(1)} vs ${topHigh.bestWeek!.opp_score.toFixed(1)} ${escTxt(nameOf(topHigh.bestWeek!.opp_id))})`,
       when: `W${topHigh.bestWeek!.week} · ${year}`,
       previous: `${r.toFixed(1)} · ${nameOf(allHigh.mid)}, ${allHigh.year}`,
     })
@@ -2635,7 +2644,7 @@ function buildLiveSeasonPreviews(
       chaser: topLow.name, chaser_value: `${v.toFixed(1)} pts`,
       chaser_when: `W${topLow.worstWeek!.week} · ${year}`,
       gap: pct >= 100 ? `${(r - v).toFixed(1)} under` : `${(v - r).toFixed(1)} above`,
-      copy_html: `<em>${escTxt(topLow.name)}</em> bottomed out at ${v.toFixed(1)} pts — the season's lowest scoreline (W${topLow.worstWeek!.week})`,
+      copy_html: `<em>${escTxt(topLow.name)}</em> bottomed out at ${v.toFixed(1)} pts — the all-time single-week low (${v.toFixed(1)} vs ${topLow.worstWeek!.opp_score.toFixed(1)} ${escTxt(nameOf(topLow.worstWeek!.opp_id))})`,
       when: `W${topLow.worstWeek!.week} · ${year}`,
       previous: `${r.toFixed(1)} · ${nameOf(allLow.mid)}, ${allLow.year}`,
     })
@@ -2657,7 +2666,7 @@ function buildLiveSeasonPreviews(
       chaser: topBlow.name, chaser_value: `+${v.toFixed(1)}`,
       chaser_when: `W${topBlow.bestBlowout!.week} · ${year} vs ${nameOf(topBlow.bestBlowout!.opp_id)}`,
       gap: pct >= 100 ? `+${(v - r).toFixed(1)} past` : `${(r - v).toFixed(1)} short`,
-      copy_html: `<em>${escTxt(topBlow.name)}</em> ran the season's biggest blowout — won by ${v.toFixed(1)} (W${topBlow.bestBlowout!.week})`,
+      copy_html: `<em>${escTxt(topBlow.name)}</em> ran the all-time biggest blowout — won by ${v.toFixed(1)} (${topBlow.bestBlowout!.self_score.toFixed(1)} vs ${topBlow.bestBlowout!.opp_score.toFixed(1)} ${escTxt(nameOf(topBlow.bestBlowout!.opp_id))})`,
       when: `W${topBlow.bestBlowout!.week} · ${year}`,
       previous: `+${r.toFixed(1)} · ${nameOf(allBlowout.mid)}, ${allBlowout.year}`,
     })
@@ -2682,7 +2691,7 @@ function buildLiveSeasonPreviews(
       chaser_value: `${v.toFixed(1)} combined`,
       chaser_when: `W${topCombo.bestCombined!.week} · ${year}`,
       gap: pct >= 100 ? `+${(v - r).toFixed(1)} past` : `${(r - v).toFixed(1)} short`,
-      copy_html: `<em>${escTxt(topCombo.name)}</em> & ${escTxt(nameOf(topCombo.bestCombined!.opp_id))} ran the season's highest-scoring shootout — ${v.toFixed(1)} combined (W${topCombo.bestCombined!.week})`,
+      copy_html: `<em>${escTxt(topCombo.name)}</em> & ${escTxt(nameOf(topCombo.bestCombined!.opp_id))} ran the all-time highest-scoring shootout — ${v.toFixed(1)} combined (${topCombo.bestCombined!.self_score.toFixed(1)} vs ${topCombo.bestCombined!.opp_score.toFixed(1)})`,
       when: `W${topCombo.bestCombined!.week} · ${year}`,
       previous: `${r.toFixed(1)} · ${allCombined.year}`,
     })
@@ -2711,7 +2720,7 @@ function buildLiveSeasonPreviews(
   // On-pace sits in the band just below brink — items that are
   // building toward the record but aren't close enough to warrant the
   // bar-plot treatment yet.
-  const BRINK_THRESHOLD  = 70  // ≥ this with no overshoot → Brink (with meter)
+  const BRINK_THRESHOLD  = 65  // ≥ this with no overshoot → Brink (with meter)
   const ONPACE_THRESHOLD = 40  // ≥ this and < brink → On Pace (stats only)
 
   for (const it of accumItems) {
