@@ -2635,6 +2635,14 @@ function buildLiveSeasonPreviews(
           // chaser_sub for context.
           chaser_value: broke ? `${projGames} games` : gamesDisplay,
           chaser_sub: recordDisplay,
+          // Numeric triple — for Quickest the brink meter switches to a
+          // games-axis so the gold projection line can land BEFORE the
+          // mark (since fewer games is faster). Template treats Quickest
+          // as overshoot when projection_numeric < record_numeric.
+          current_numeric: bestChaser.gamesPlayed,
+          record_numeric: r.games,
+          projection_numeric: projGames,
+          projection_short: `${projGames} Games`,
           readout_sub: broke ? `crossed ${bestChaser.crossingDesc || ''}` : 'pace',
           chaser_when: broke
             ? bestChaser.crossingDesc || `W${throughWeek} · ${year}`

@@ -1457,19 +1457,38 @@ body { background: var(--rw-bg); }
       var rNum = Number(it.record_numeric);
       var cNum = Number(it.current_numeric);
       var pNum = Number(it.projection_numeric);
-      var overshoot = isFinite(rNum) && isFinite(cNum) && isFinite(pNum) && pNum > rNum;
+      var hasNums = isFinite(rNum) && isFinite(cNum) && isFinite(pNum);
+      // Quickest items race on a games-axis (lower = faster), so the
+      // projection sits BEFORE the mark when on pace to beat. Other
+      // pace items race on a value-axis (higher = better), so the
+      // projection extends PAST the mark.
+      var isQuickest = /^Quickest to /.test(it.category || '');
+      var overshoot = hasNums && (isQuickest ? pNum < rNum : pNum > rNum);
 
       var markPosPct, fillPct, scaleEndLabel, scaleEndStyle, projAboveHtml, projLineHtml;
-      if (overshoot) {
+      if (overshoot && isQuickest) {
+        // Bar 0 → record_games. Mark pinned at right edge (record),
+        // gold projection line inward at (projection / record) × 100%.
+        markPosPct = 100;
+        var projInsidePct = Math.max(0, Math.min(100, (pNum / rNum) * 100));
+        fillPct = Math.min(100, (cNum / rNum) * 100);
+        scaleEndLabel = shortRecord(it.record_value);
+        scaleEndStyle = '';  // default s-end (right: 0)
+        var projShortQ = it.projection_short || shortRecord(it.record_value);
+        // Gold label centered on the projection line (which sits
+        // inside the track now).
+        projAboveHtml = '<span class="rw-plot-label-proj" ' +
+          'style="right:auto; left:' + projInsidePct.toFixed(2) + '%; transform:translateX(-50%);">' +
+          esc(projShortQ) + '</span>';
+        projLineHtml  = '<div class="rw-plot-proj-line" ' +
+          'style="right:auto; left:' + projInsidePct.toFixed(2) + '%;"></div>';
+      } else if (overshoot) {
+        // Pace overshoot: track 0 → projection. Mark line slides
+        // inward; gold projection line at right edge.
         markPosPct = (rNum / pNum) * 100;
         fillPct = Math.min(100, (cNum / pNum) * 100);
-        // Bottom scale now ends with the RECORD value at the mark
-        // position (since the right-edge belongs to the projection,
-        // which lives above the bar in gold instead).
         scaleEndLabel = shortRecord(it.record_value);
         scaleEndStyle = 'left:' + markPosPct.toFixed(2) + '%; transform:translateX(-50%); right:auto;';
-        // Gold projection label + matching gold vertical line at the
-        // right edge of the track.
         var projShort = it.projection_short || shortRecord(it.record_value);
         projAboveHtml = '<span class="rw-plot-label-proj">' + esc(projShort) + '</span>';
         projLineHtml  = '<div class="rw-plot-proj-line"></div>';
