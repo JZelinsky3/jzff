@@ -221,9 +221,14 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
       return bundle
     })
   }
+  // Bundle schema version. Bump this when the bundle shape changes in a
+  // way that the templates need to see immediately — adding a new field,
+  // renaming an existing one, etc. Bumping forces unstable_cache to
+  // recompute on the next request instead of waiting out the 1h TTL.
+  const BUNDLE_VERSION = 'v2'
   return unstable_cache(
     async () => exportLeague(leagueId, { slug }),
-    ['pams-bundle', leagueId, slug],
+    ['pams-bundle', BUNDLE_VERSION, leagueId, slug],
     { tags: [`league-${leagueId}`], revalidate: 3600 }
   )()
 }

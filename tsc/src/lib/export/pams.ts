@@ -2804,9 +2804,7 @@ function buildLiveSeasonPreviews(
       week: crossed.filter((c) => c.when === `W${throughWeek}`).length,
       season: crossed.length,
       imminent: imminentCount,
-      // Year intentionally omitted — the season is always implicit on the
-      // live-season page, so "Through W5" reads cleaner than "Through W5 · 2025".
-      through: `W${throughWeek}`,
+      through: `W${throughWeek} · ${year}`,
     },
     // Bumped from 6 → 12 so the template can scale into dense mode when
     // there are more than 6 fresh milestones to surface.
@@ -2872,9 +2870,9 @@ function emptyRecordsWatch(year: number, throughWeek: number) {
     brink: [], chase: [], broken: [], just_missed: [],
   }
 }
-function emptyMilestones(_year: number, throughWeek: number) {
+function emptyMilestones(year: number, throughWeek: number) {
   return {
-    meter: { week: 0, season: 0, imminent: 0, through: `W${throughWeek}` },
+    meter: { week: 0, season: 0, imminent: 0, through: `W${throughWeek} · ${year}` },
     crossed: [],
     imminent_by_category: { wins: [], points: [], streak: [] },
     horizon_by_category:  { wins: [], points: [], streak: [] },
