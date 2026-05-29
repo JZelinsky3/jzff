@@ -3057,11 +3057,14 @@ function buildLiveSeasonPreviews(
     // a columnar layout (Wins | Points | Streaks).
     const winsTo = nextTierAhead(c.winsAfter, winTiers)
     if (winsTo != null && winsTo - c.winsAfter === 1) {
+      // Imminent ETAs use % progress to match the horizon column's
+      // treatment — keeps the right edge from echoing the left copy.
+      const progress = Math.round((c.winsAfter / winsTo) * 100)
       imminent.wins.push({
         glyph: '✦', category: 'wins', name: c.name, avatar: c.avatar,
         copy_html: `<em>1</em> win from <em>${ordinal(winsTo)}</em>`,
         stats_html: statsFor(c, 'wins'),
-        eta: '1 win', eta_unit: 'to go',
+        eta: `${progress}%`, eta_unit: 'there',
         sort: 1,
       })
     }
@@ -3069,22 +3072,24 @@ function buildLiveSeasonPreviews(
     const pfTo = nextTierAhead(c.pfAfter, pfTiers)
     if (pfTo != null && pfTo - c.pfAfter <= 150) {
       const gap = Math.round(pfTo - c.pfAfter)
+      const progress = Math.round((c.pfAfter / pfTo) * 100)
       imminent.points.push({
         glyph: '★', category: 'points', name: c.name, avatar: c.avatar,
         copy_html: `<em>${gap}</em> pts from <em>${pfTo.toLocaleString()}</em>`,
         stats_html: statsFor(c, 'points'),
-        eta: `${gap}`, eta_unit: 'pts to go',
+        eta: `${progress}%`, eta_unit: 'there',
         sort: gap,
       })
     }
     // Streak imminent: one win from beating the manager's own personal best
     if (c.activeStreak.type === 'W' && c.careerLongestWinStreak > 0 && c.activeStreak.len === c.careerLongestWinStreak) {
       const target = c.careerLongestWinStreak + 1
+      const progress = Math.round((c.activeStreak.len / target) * 100)
       imminent.streak.push({
         glyph: '✺', category: 'streak', name: c.name, avatar: c.avatar,
         copy_html: `one win from a new personal-best <em>${target}-game win</em> streak`,
         stats_html: statsFor(c, 'streak'),
-        eta: '1 win', eta_unit: 'to go',
+        eta: `${progress}%`, eta_unit: 'there',
         sort: 1,
       })
     }
@@ -3092,10 +3097,11 @@ function buildLiveSeasonPreviews(
     // ── Horizon (2-8 wins out, 150-800 PF out; streak chases personal best)
     if (winsTo != null) {
       const gap = winsTo - c.winsAfter
-      if (gap >= 2 && gap <= 8) {
-        // Right-edge ETA shows percentage of the target reached so it
-        // doesn't echo the "{gap} wins from {ordinal}" copy on the left.
-        const progress = Math.round((c.winsAfter / winsTo) * 100)
+      const progress = Math.round((c.winsAfter / winsTo) * 100)
+      // Gap caps at 8 wins so deep-season tiers (e.g. 75W) don't
+      // start tracking from 40W. Progress floor at 50% so small
+      // tiers (e.g. 10W) don't surface a chaser at 3 wins (30%).
+      if (gap >= 2 && gap <= 8 && progress >= 50) {
         horizon.wins.push({
           glyph: '✦', category: 'wins', name: c.name, avatar: c.avatar,
           copy_html: `<em>${gap}</em> wins from <em>${ordinal(winsTo)}</em>`,
@@ -3118,13 +3124,15 @@ function buildLiveSeasonPreviews(
         })
       }
     }
-    // Streak horizon: active run is ≥50% of personal best but not yet there.
-    // Target is personal_best + 1 (the next mark they'd be setting).
+    // Streak horizon: active run is ≥50% of the way to the new target
+    // (PB + 1) — measured against the same target the copy + ETA call
+    // out, so a manager whose active streak sits below 50% of that
+    // milestone doesn't surface here.
     if (
       c.activeStreak.type === 'W' &&
       c.careerLongestWinStreak >= 2 &&
-      c.activeStreak.len >= Math.ceil(c.careerLongestWinStreak * 0.5) &&
-      c.activeStreak.len < c.careerLongestWinStreak
+      c.activeStreak.len < c.careerLongestWinStreak &&
+      c.activeStreak.len * 2 >= (c.careerLongestWinStreak + 1)
     ) {
       const target = c.careerLongestWinStreak + 1
       const gap = target - c.activeStreak.len
