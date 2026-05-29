@@ -2221,6 +2221,16 @@ function buildLiveSeasonPreviews(
     // W-L record (e.g. "50-25") so the games-played bar label
     // still has context.
     chaser_sub?: string
+    // Numeric triple for the brink meter "projection past mark"
+    // layout. When projection_numeric > record_numeric, the bar
+    // track represents 0 → projection, the mark line slides inward
+    // to (record / projection) × 100%, and the right-edge label
+    // becomes the projected value. Streaks + Quickest leave these
+    // undefined so they keep the old (mark @ right edge) layout.
+    current_numeric?: number
+    record_numeric?: number
+    projection_numeric?: number
+    projection_short?: string
     copy_html?: string
     when?: string
     previous?: string
@@ -2266,6 +2276,10 @@ function buildLiveSeasonPreviews(
       chaser_value: `${Math.round(pfPaceTop.m.pf)} pts through ${pfPaceTop.m.games.length} Games`,
       chaser_when: `W${throughWeek} · ${year}`,
       chaser_projection: `pace ${projInt} pts · ${chaserPPG.toFixed(1)} PPG`,
+      current_numeric: pfPaceTop.m.pf,
+      record_numeric: r,
+      projection_numeric: pfPaceTop.proj,
+      projection_short: `${projInt} pts`,
       gap: gap >= 0 ? `+${gap} pts on pace` : `${Math.abs(gap)} pts short on pace`,
       copy_html: `<em>${escTxt(pfPaceTop.m.name)}</em> · pace ${projInt} pts (${chaserPPG.toFixed(1)} PPG)`,
       when: `W${throughWeek} · ${year}`,
@@ -2304,6 +2318,10 @@ function buildLiveSeasonPreviews(
         chaser_value: `${winsPaceTop.m.wins}-${winsPaceTop.m.losses} through ${winsPaceTop.m.games.length} Games`,
         chaser_when: `W${throughWeek} · ${year}`,
         chaser_projection: `pace ${projInt} wins`,
+        current_numeric: winsPaceTop.m.wins,
+        record_numeric: r,
+        projection_numeric: winsPaceTop.proj,
+        projection_short: `${projInt} wins`,
         gap: gap >= 0 ? `+${gap} wins on pace` : `${Math.abs(gap)} wins short on pace`,
         copy_html: `<em>${escTxt(winsPaceTop.m.name)}</em> · pace ${projInt} wins (${winsPaceTop.m.wins}-${winsPaceTop.m.losses})`,
         when: `W${throughWeek} · ${year}`,
@@ -2334,6 +2352,10 @@ function buildLiveSeasonPreviews(
         chaser_value: `${lossPaceTop.m.wins}-${lossPaceTop.m.losses} through ${lossPaceTop.m.games.length} Games`,
         chaser_when: `W${throughWeek} · ${year}`,
         chaser_projection: `pace ${projInt} losses`,
+        current_numeric: lossPaceTop.m.losses,
+        record_numeric: r,
+        projection_numeric: lossPaceTop.proj,
+        projection_short: `${projInt} losses`,
         gap: gap >= 0 ? `+${gap} losses on pace` : `${Math.abs(gap)} losses short on pace`,
         copy_html: `<em>${escTxt(lossPaceTop.m.name)}</em> · pace ${projInt} losses (${lossPaceTop.m.wins}-${lossPaceTop.m.losses})`,
         when: `W${throughWeek} · ${year}`,

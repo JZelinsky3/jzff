@@ -599,7 +599,7 @@ body { background: var(--rw-bg); }
 
 .rw-block-body {
     display: grid;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 175px 1fr;
     align-items: stretch;
     z-index: 1; position: relative;
 }
@@ -708,17 +708,30 @@ body { background: var(--rw-bg); }
     opacity: .8;
 }
 .rw-plot-mark-line {
-    /* Pinned to the right edge of the track so the entire bar reads
-     * as the chase region (0% → record). The top "MARK" pseudo-label
-     * was removed since the bottom scale already labels this position
-     * with the actual record value (e.g., "9W"). */
+    /* Positioned by JS — defaults to the right edge (mark.left:100%)
+     * but slides inward when the chaser is on pace past the record,
+     * leaving overshoot space on the right between the line and the
+     * projection label. */
     position: absolute;
     top: -5px; bottom: -5px;
-    right: 0;
     width: 2px;
     background: var(--rw-ember-hi);
     box-shadow: 0 0 8px var(--rw-ember-glow);
     z-index: 2;
+}
+.rw-plot-mark-line .mark-tag {
+    /* Floating label above the line — names the record value when
+     * the line has moved inward (overshoot layout). Hidden in old
+     * layout via JS (not rendered). */
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translate(-50%, -.1rem);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .08em;
+    color: var(--rw-ember-hi);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 .rw-plot-fill {
     position: absolute;
@@ -1395,14 +1408,38 @@ body { background: var(--rw-bg); }
   // bar plot on the right. The plot's track represents 0-120% of the
   // mark, with the MARK line at ~83.3% across so overshoots are visible.
   function renderBrink(slot, items) {
-    // Track represents 0 → 100% of the record. Mark line sits at the
-    // right edge; anything that would exceed it has already flipped to
-    // realized/Broken, so Brink items always fill within [0, 100].
+    // Two layouts depending on whether the item carries a projection
+    // that beats the record:
+    //   • "overshoot" — projection_numeric > record_numeric: the track
+    //     represents 0 → projection. Mark line slides to
+    //     (record / projection) × 100% so the gap between the line
+    //     and the right edge visualizes how much they'd beat by. The
+    //     right-edge scale label becomes the projected value; the mark
+    //     line itself gets a small floating tag with the actual record.
+    //   • "classic" — no projection (streaks, weekly extremes,
+    //     Quickest) OR projection ≤ record: track is 0 → record, mark
+    //     pinned to the right edge, no projection label.
     var html = '<div class="rw-blocks">';
     items.forEach(function (it, idx) {
       var rawPct = Math.max(0, Math.min(100, Number(it.pct) || 0));
-      var fillPct = rawPct;
-      var overMark = false;
+
+      var rNum = Number(it.record_numeric);
+      var cNum = Number(it.current_numeric);
+      var pNum = Number(it.projection_numeric);
+      var overshoot = isFinite(rNum) && isFinite(cNum) && isFinite(pNum) && pNum > rNum;
+
+      var markPosPct, fillPct, rightLabel, markTagHtml;
+      if (overshoot) {
+        markPosPct = (rNum / pNum) * 100;
+        fillPct = Math.min(100, (cNum / pNum) * 100);
+        rightLabel = it.projection_short || shortRecord(it.record_value);
+        markTagHtml = '<span class="mark-tag">' + esc(shortRecord(it.record_value)) + '</span>';
+      } else {
+        markPosPct = 100;
+        fillPct = rawPct;
+        rightLabel = shortRecord(it.record_value);
+        markTagHtml = '';
+      }
 
       // Split record_value into a leading number + unit so the mark panel
       // can showcase the numeric.  "1623 pts · 116.0 PPG" → "1623" + "pts · 116.0 PPG"
@@ -1449,18 +1486,20 @@ body { background: var(--rw-bg); }
                 '<span class="rw-plot-label" style="left:' + fillPct.toFixed(2) + '%">' + esc(barLabel) + '</span>' +
               '</div>' +
               '<div class="rw-plot-track">' +
-                '<div class="rw-plot-tick" style="left:25%"></div>' +
-                '<div class="rw-plot-tick" style="left:50%"></div>' +
-                '<div class="rw-plot-tick" style="left:75%"></div>' +
-                '<div class="rw-plot-mark-line"></div>' +
+                '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.25).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.50).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.75).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-mark-line" style="left:' + markPosPct.toFixed(2) + '%">' +
+                  markTagHtml +
+                '</div>' +
                 '<div class="rw-plot-fill" style="width:calc(' + fillPct.toFixed(2) + '% - 4px)"></div>' +
               '</div>' +
               '<div class="rw-plot-scale">' +
                 '<span class="s-start">0</span>' +
-                '<span style="left:25%">25%</span>' +
-                '<span style="left:50%">50%</span>' +
-                '<span style="left:75%">75%</span>' +
-                '<span class="s-end">' + esc(shortRecord(it.record_value)) + '</span>' +
+                '<span style="left:' + (markPosPct * 0.25).toFixed(2) + '%">25%</span>' +
+                '<span style="left:' + (markPosPct * 0.50).toFixed(2) + '%">50%</span>' +
+                '<span style="left:' + (markPosPct * 0.75).toFixed(2) + '%">75%</span>' +
+                '<span class="s-end">' + esc(rightLabel) + '</span>' +
               '</div>' +
               '<div class="rw-plot-foot">' +
                 '<span>' + esc(it.chaser_when || '') + '</span>' +
