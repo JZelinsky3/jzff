@@ -165,101 +165,195 @@ body { background: var(--rw-bg); }
     color: var(--rw-mute);
 }
 
-/* ── Brink cards (large alert-style) ───────────────────────── */
-.rw-brink-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
-    gap: 1.2rem;
+/* ── Brink blocks (leaderboard / scoreboard layout) ───────────
+   Each accumulator record gets its OWN full-width horizontal
+   block, not a card in a grid. The mark sits in a wide numeric
+   "scoreboard panel" on the left; a dominant tick-marked bar
+   plot anchors the right side, showing pace as a fill that can
+   extend past the all-time line (overshoot = on pace to break).
+   This is the visual identity for the page — read like a stat
+   board, not like a milestone feed. */
+.rw-blocks {
+    display: flex; flex-direction: column;
+    gap: 1.1rem;
 }
-.rw-brink {
+.rw-block {
     position: relative; overflow: hidden;
-    background: linear-gradient(155deg, var(--rw-card) 0%, var(--rw-soft) 100%);
+    background:
+        linear-gradient(160deg, var(--rw-card) 0%, var(--rw-soft) 100%);
     border: 1px solid var(--rw-line);
-    padding: 1.4rem 1.4rem 1.5rem;
-    display: flex; flex-direction: column; gap: 1rem;
+    border-left: 3px solid var(--rw-ember);
 }
-.rw-brink::before {
-    content: ''; position: absolute; inset: 0;
-    pointer-events: none;
-    background: radial-gradient(circle at 100% 0%, var(--rw-ember-soft) 0%, transparent 45%);
+.rw-block::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 100% 0%, var(--rw-ember-soft) 0%, transparent 50%);
 }
-.rw-brink-flag {
-    display: inline-flex; align-items: center; gap: .5rem;
-    align-self: flex-start;
-    background: var(--rw-ember);
-    color: #1a0a0a;
+.rw-block-head {
+    display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+    padding: 1rem 1.4rem .9rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+    z-index: 1; position: relative;
+}
+.rw-block-num {
     font-family: var(--mono); font-weight: 700;
-    font-size: .58rem; letter-spacing: .28em; text-transform: uppercase;
-    padding: .35rem .6rem .38rem;
-    box-shadow: 0 0 18px var(--rw-ember-soft);
-    z-index: 1;
-}
-.rw-brink-flag .glyph { font-size: .7rem; line-height: 1; }
-.rw-brink-cat {
-    font-family: var(--mono); font-size: .58rem;
-    letter-spacing: .28em; text-transform: uppercase;
+    font-size: .58rem; letter-spacing: .3em;
     color: var(--rw-mute);
-    z-index: 1;
 }
-.rw-brink-title {
+.rw-block-cat {
     font-family: var(--serif);
-    font-size: 1.55rem; line-height: 1.15;
+    font-size: 1.15rem; line-height: 1;
     color: var(--rw-cream);
-    z-index: 1;
+    flex: 1; min-width: 0;
 }
-.rw-brink-title em { color: var(--rw-ember); font-style: italic; }
-
-.rw-brink-row {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    padding: .9rem 0 0;
-    border-top: 1px solid var(--rw-line-soft);
-    z-index: 1;
-}
-.rw-brink-col .who {
-    font-family: var(--mono); font-size: .55rem;
-    letter-spacing: .24em; text-transform: uppercase;
-    color: var(--rw-mute); margin-bottom: .35rem;
-}
-.rw-brink-col .name {
-    font-family: var(--serif); font-size: 1.05rem;
-    color: var(--rw-cream); margin-bottom: .15rem;
-}
-.rw-brink-col .name em { color: var(--rw-ember); font-style: italic; }
-.rw-brink-col .val {
-    font-family: var(--mono); font-size: .8rem; font-weight: 700;
-    color: var(--rw-cream);
-}
-.rw-brink-col .when {
-    font-family: var(--mono); font-size: .55rem;
-    letter-spacing: .14em; color: var(--rw-mute);
-    margin-top: .15rem;
+.rw-block-flag {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .25em; text-transform: uppercase;
+    color: #1a0a0a;
+    background: var(--rw-ember);
+    padding: .35rem .65rem .4rem;
+    box-shadow: 0 0 14px var(--rw-ember-soft);
 }
 
-.rw-bar {
+.rw-block-body {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    align-items: stretch;
+    z-index: 1; position: relative;
+}
+/* The "mark panel" — the all-time record's big readout on the left. */
+.rw-block-mark {
+    padding: 1.3rem 1.4rem 1.3rem;
+    border-right: 1px solid var(--rw-line-soft);
+    background: rgba(0,0,0,.18);
+    display: flex; flex-direction: column; justify-content: center;
+    gap: .25rem;
+}
+.rw-mark-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--rw-ember);
+}
+.rw-mark-num {
+    font-family: var(--serif);
+    font-size: 2.5rem; line-height: .95;
+    color: var(--rw-cream);
+    margin: .15rem 0 .25rem;
+    /* Tabular numbers so big numerics align across blocks. */
+    font-variant-numeric: tabular-nums;
+}
+.rw-mark-unit {
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-mark-credit {
+    margin-top: .6rem;
+    padding-top: .55rem;
+    border-top: 1px dashed var(--rw-line-soft);
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .04em;
+    color: var(--rw-mute);
+    line-height: 1.5;
+}
+.rw-mark-credit strong { color: var(--rw-cream); font-weight: 700; }
+
+/* The plot — dominant horizontal bar with tick marks + mark line. */
+.rw-block-plot {
+    padding: 1.3rem 1.6rem 1.2rem 1.4rem;
+    display: flex; flex-direction: column;
+    gap: .6rem;
+    min-width: 0;
+}
+.rw-plot-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: .8rem;
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-plot-head .chaser {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; letter-spacing: 0;
+    text-transform: none;
+    color: var(--rw-cream);
+}
+.rw-plot-head .pace {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem;
+    color: var(--rw-ember-hi);
+    font-variant-numeric: tabular-nums;
+}
+/* Plot track represents 0 → 120% of the mark; mark line sits at
+   ~83.3%. Fills exceeding 100% extend visibly past the mark line. */
+.rw-plot-track {
     position: relative;
-    height: 8px;
+    height: 22px;
     background: var(--rw-soft);
     border: 1px solid var(--rw-line);
-    z-index: 1;
 }
-.rw-bar-fill {
-    position: absolute; inset: 0;
+.rw-plot-tick {
+    position: absolute; top: 0; bottom: 0;
+    width: 1px;
+    background: var(--rw-line);
+    opacity: .8;
+}
+.rw-plot-mark-line {
+    position: absolute;
+    top: -5px; bottom: -5px;
+    width: 2px;
+    background: var(--rw-ember-hi);
+    box-shadow: 0 0 8px var(--rw-ember-glow);
+    z-index: 2;
+}
+.rw-plot-mark-line::after {
+    content: 'MARK';
+    position: absolute;
+    top: -.85rem; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .45rem; letter-spacing: .2em;
+    color: var(--rw-ember-hi);
+    white-space: nowrap;
+}
+.rw-plot-fill {
+    position: absolute;
+    top: 2px; bottom: 2px; left: 2px;
     background: linear-gradient(90deg, var(--rw-ember-deep), var(--rw-ember));
     box-shadow: 0 0 14px var(--rw-ember-soft);
-    transform-origin: left;
-}
-.rw-bar-mark {
-    position: absolute; top: -4px; bottom: -4px;
-    width: 2px; background: var(--rw-ember-hi);
-    box-shadow: 0 0 6px var(--rw-ember-glow);
-}
-.rw-bar-foot {
-    display: flex; justify-content: space-between;
-    font-family: var(--mono); font-size: .55rem;
-    letter-spacing: .18em; text-transform: uppercase;
-    color: var(--rw-mute);
     z-index: 1;
+}
+.rw-plot-fill.over {
+    /* Tighter gradient + sharper glow when fill extends past the mark. */
+    background: linear-gradient(90deg, var(--rw-ember), var(--rw-ember-hi));
+    box-shadow: 0 0 22px var(--rw-ember-glow);
+}
+.rw-plot-scale {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono);
+    font-size: .48rem; letter-spacing: .15em;
+    color: var(--rw-mute);
+}
+.rw-plot-scale span:nth-child(5) {
+    /* The 'MARK' position (~83.3% across) — tinted to match. */
+    color: var(--rw-ember-hi);
+    font-weight: 700;
+}
+.rw-plot-foot {
+    display: flex; flex-wrap: wrap; gap: .8rem; justify-content: space-between;
+    padding-top: .5rem;
+    border-top: 1px dashed var(--rw-line-soft);
+    font-family: var(--mono); font-size: .6rem;
+    letter-spacing: .04em;
+    color: var(--rw-mute);
+}
+.rw-plot-foot strong { color: var(--rw-cream); font-weight: 700; }
+.rw-plot-foot .gap-pos { color: var(--rw-ember-hi); }
+.rw-plot-foot .gap-neg { color: var(--rw-mute); }
+
+@media (max-width: 760px) {
+    .rw-block-body { grid-template-columns: 1fr; }
+    .rw-block-mark { border-right: 0; border-bottom: 1px solid var(--rw-line-soft); }
+    .rw-mark-num { font-size: 2.1rem; }
 }
 
 /* ── Chase list (compact rows) ─────────────────────────────── */
@@ -634,31 +728,69 @@ body { background: var(--rw-bg); }
     if (m.through)             $('m-foot').textContent   = 'Through ' + m.through;
   }
 
+  // Brink renders a stack of full-width "stat blocks" — each one a
+  // mini scoreboard with the all-time mark on the left and a tick-marked
+  // bar plot on the right. The plot's track represents 0-120% of the
+  // mark, with the MARK line at ~83.3% across so overshoots are visible.
   function renderBrink(items) {
-    var html = '<div class="rw-brink-grid">';
-    items.forEach(function (it) {
-      var p = Math.max(0, Math.min(100, Number(it.pct) || 0));
+    // Track represents 0 → MARK_SCALE % of the record. 100% line sits at
+    // 100 / MARK_SCALE of track width.
+    var MARK_SCALE = 120;
+    var markPosPct = (100 / MARK_SCALE) * 100;  // 83.333%
+
+    var html = '<div class="rw-blocks">';
+    items.forEach(function (it, idx) {
+      var rawPct = Math.max(0, Math.min(MARK_SCALE, Number(it.pct) || 0));
+      var fillPct = (rawPct / MARK_SCALE) * 100;
+      var overMark = rawPct >= 100;
+
+      // Split record_value into a leading number + unit so the mark panel
+      // can showcase the numeric.  "1623 pts · 116.0 PPG" → "1623" + "pts · 116.0 PPG"
+      var rv = it.record_value || '';
+      var m = rv.match(/^(\d[\d.,]*)\s*(.*)$/);
+      var markNum = m ? m[1] : rv;
+      var markUnit = m ? m[2] : '';
+
+      var gapClass = overMark ? 'gap-pos' : 'gap-neg';
+
       html +=
-        '<article class="rw-brink">' +
-          '<span class="rw-brink-flag"><span class="glyph">◆</span>' + esc(it.flag || 'On the brink') + '</span>' +
-          '<div class="rw-brink-cat">' + esc(it.category || 'Record') + '</div>' +
-          '<h3 class="rw-brink-title">' + (it.title_html || esc(it.title || '')) + '</h3>' +
-          '<div class="rw-brink-row">' +
-            '<div class="rw-brink-col">' +
-              '<div class="who">Current record</div>' +
-              '<div class="name">' + esc(it.holder || '—') + '</div>' +
-              '<div class="val">' + esc(it.record_value || '') + '</div>' +
-              '<div class="when">' + esc(it.holder_when || '') + '</div>' +
+        '<article class="rw-block">' +
+          '<div class="rw-block-head">' +
+            '<span class="rw-block-num">§ ' + String(idx + 1).padStart(2, '0') + '</span>' +
+            '<span class="rw-block-cat">' + esc(it.category || 'Record') + '</span>' +
+            '<span class="rw-block-flag">' + esc(it.flag || 'On the brink') + '</span>' +
+          '</div>' +
+          '<div class="rw-block-body">' +
+            '<div class="rw-block-mark">' +
+              '<div class="rw-mark-label">The mark</div>' +
+              '<div class="rw-mark-num">' + esc(markNum) + '</div>' +
+              (markUnit ? '<div class="rw-mark-unit">' + esc(markUnit) + '</div>' : '') +
+              '<div class="rw-mark-credit"><strong>' + esc(it.holder || '—') + '</strong>' +
+                (it.holder_when ? ' · ' + esc(it.holder_when) : '') +
+              '</div>' +
             '</div>' +
-            '<div class="rw-brink-col">' +
-              '<div class="who">Chasing</div>' +
-              '<div class="name"><em>' + esc(it.chaser || '—') + '</em></div>' +
-              '<div class="val">' + esc(it.chaser_value || '') + '</div>' +
-              '<div class="when">' + esc(it.chaser_when || '') + '</div>' +
+            '<div class="rw-block-plot">' +
+              '<div class="rw-plot-head">' +
+                '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
+                '<span class="pace">' + esc(it.chaser_value || '') + '</span>' +
+              '</div>' +
+              '<div class="rw-plot-track">' +
+                '<div class="rw-plot-tick" style="left:' + (25/MARK_SCALE*100).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-tick" style="left:' + (50/MARK_SCALE*100).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-tick" style="left:' + (75/MARK_SCALE*100).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-mark-line" style="left:' + markPosPct.toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-fill' + (overMark ? ' over' : '') +
+                  '" style="width:calc(' + fillPct.toFixed(2) + '% - 4px)"></div>' +
+              '</div>' +
+              '<div class="rw-plot-scale">' +
+                '<span>0</span><span>25%</span><span>50%</span><span>75%</span><span>MARK</span><span>past</span>' +
+              '</div>' +
+              '<div class="rw-plot-foot">' +
+                '<span>' + esc(it.chaser_when || '') + '</span>' +
+                '<span class="' + gapClass + '">' + esc(it.gap || '') + '</span>' +
+              '</div>' +
             '</div>' +
           '</div>' +
-          '<div class="rw-bar"><div class="rw-bar-fill" style="transform:scaleX(' + (p/100).toFixed(3) + ')"></div></div>' +
-          '<div class="rw-bar-foot"><span>' + esc(it.gap || '') + '</span><span>' + esc(it.chaser_when || '') + '</span></div>' +
         '</article>';
     });
     html += '</div>';
