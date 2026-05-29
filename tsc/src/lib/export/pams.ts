@@ -2171,6 +2171,10 @@ function buildLiveSeasonPreviews(
     chaser_value: string
     chaser_when: string
     gap: string
+    // readout_sub renders as a small grey caption below the unit
+    // line on the LCD-style On-Pace cards — e.g. "pace" or
+    // "crossed W4". Optional; omitted for non-pace records.
+    readout_sub?: string
     copy_html?: string
     when?: string
     previous?: string
@@ -2198,6 +2202,7 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Season Points-For Pace',
       pct,
+      readout_sub: 'pace',
       flag: flagFor(pct, 'WILL BREAK IT', 'PROJECTING PAST', 'ON PACE', 'TRENDING UP'),
       title_html: `${Math.round(r)} pts <em>· highest reg-season PF</em>`,
       holder: nameOf(bestSeasonPF.mid),
@@ -2223,6 +2228,7 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Season PPG Pace',
       pct,
+      readout_sub: 'pace',
       flag: flagFor(pct, 'PPG RECORD CLIMBING', 'PROJECTING PAST', 'ON PACE', 'STRONG SCORING'),
       title_html: `${r.toFixed(1)} <em>· best regular-season PPG</em>`,
       holder: nameOf(bestSeasonPPG.mid), record_value: `${r.toFixed(1)} PPG`,
@@ -2249,6 +2255,7 @@ function buildLiveSeasonPreviews(
       accumItems.push({
         category: 'Reg-Season Wins Pace',
         pct,
+        readout_sub: 'pace',
         flag: flagFor(pct, 'WILL MATCH OR PASS', 'ON PACE TO TIE', 'BIG W-PACE', 'STRONG START'),
         title_html: `${r} wins <em>· most reg-season wins</em>`,
         holder: nameOf(mostRegWins.mid), record_value: `${r} wins`,
@@ -2275,6 +2282,7 @@ function buildLiveSeasonPreviews(
       accumItems.push({
         category: 'Reg-Season Losses Pace',
         pct,
+        readout_sub: 'pace',
         flag: flagFor(pct, 'WORST SEASON INCOMING', 'TANK PACE', 'STRUGGLING', 'ROUGH RUN'),
         title_html: `${r} losses <em>· most reg-season losses</em>`,
         holder: nameOf(mostRegLoss.mid), record_value: `${r} losses`,
@@ -2298,6 +2306,7 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Longest Win Streak',
       pct,
+      readout_sub: 'active streak',
       flag: flagFor(pct, 'TIED OR SURPASSED', 'ONE FROM HISTORY', 'ON THE BRINK', 'HEATING UP'),
       title_html: `${r} wins <em>· longest streak ever</em>`,
       holder: nameOf(allWinStreak.mid), record_value: `${r} wins in a row`,
@@ -2319,6 +2328,7 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Longest Losing Skid',
       pct,
+      readout_sub: 'active skid',
       flag: flagFor(pct, 'NEW SKID HIGH', 'COLD AS ICE', 'STRUGGLING', 'ROUGH PATCH'),
       title_html: `${r} losses <em>· longest skid ever</em>`,
       holder: nameOf(allLossStreak.mid), record_value: `${r} losses in a row`,
@@ -2497,9 +2507,11 @@ function buildLiveSeasonPreviews(
           record_value: cfg.fmtGames(r.games),
           holder_when: `set ${r.year}`,
           chaser: bestChaser.walk.name,
-          chaser_value: broke
-            ? `${projGames} games (${bestChaser.crossingDesc})`
-            : `pace ${projGames} games`,
+          // chaser_value leads with the bare number + unit so the LCD
+          // readout shows "16" big with "games" as the unit caption.
+          // The "pace" / "crossed" qualifier rides in readout_sub.
+          chaser_value: `${projGames} games`,
+          readout_sub: broke ? `crossed ${bestChaser.crossingDesc || ''}` : 'pace',
           chaser_when: broke
             ? `crossed ${cfg.fmtT(T)} in ${projGames}G`
             : `through W${throughWeek}`,

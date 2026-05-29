@@ -582,6 +582,14 @@ body { background: var(--rw-bg); }
     color: var(--rw-mute);
     margin-top: .45rem;
 }
+.rw-broken-readout .sub {
+    display: block;
+    font-family: var(--mono);
+    font-size: .55rem; letter-spacing: .15em;
+    color: var(--rw-mute);
+    opacity: .75;
+    margin-top: .25rem;
+}
 .rw-broken-readout .copy {
     margin-top: .65rem;
     padding-top: .65rem;
@@ -705,7 +713,7 @@ body { background: var(--rw-bg); }
     </div>
     <div class="rw-meter-sep"></div>
     <div class="rw-meter-stat">
-        <span class="lbl">Broken this season</span>
+        <span class="lbl">On pace</span>
         <span class="val" id="m-broken">—</span>
     </div>
     <div class="rw-meter-sep"></div>
@@ -774,16 +782,17 @@ body { background: var(--rw-bg); }
 
     <section class="rw-section">
         <div class="rw-section-head">
-            <span class="rw-section-num">§ 03 · Claimed</span>
-            <span class="rw-section-title">Just <em>Broken —</em></span>
-            <span class="rw-section-note">New franchise marks</span>
+            <span class="rw-section-num">§ 03 · Pace</span>
+            <span class="rw-section-title">On <em>Pace —</em></span>
+            <span class="rw-section-note">Projecting past the franchise mark</span>
         </div>
         <div id="broken-body">
             <div class="rw-empty">
-                <h3>No new marks <em>this season.</em></h3>
+                <h3>Nobody projecting <em>past the mark yet.</em></h3>
                 <p>
-                    When a record falls, it lands here for the rest of the year — with the week
-                    it broke, the prior holder, and the new line to beat.
+                    Once a manager's season pace would push them past an all-time franchise
+                    record (single-season PF, regular-season wins, quickest-to-X career
+                    marks), the projection lands here.
                 </p>
             </div>
         </div>
@@ -989,6 +998,7 @@ body { background: var(--rw-bg); }
           '<div class="rw-broken-readout">' +
             '<span class="num">' + readNumHtml + '</span>' +
             (readUnit ? '<span class="unit">' + esc(readUnit) + '</span>' : '') +
+            (it.readout_sub ? '<span class="sub">' + esc(it.readout_sub) + '</span>' : '') +
             '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
           '</div>' +
           '<div class="rw-broken-prior">' +
