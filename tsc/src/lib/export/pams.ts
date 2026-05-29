@@ -3093,11 +3093,14 @@ function buildLiveSeasonPreviews(
     if (winsTo != null) {
       const gap = winsTo - c.winsAfter
       if (gap >= 2 && gap <= 8) {
+        // Right-edge ETA shows percentage of the target reached so it
+        // doesn't echo the "{gap} wins from {ordinal}" copy on the left.
+        const progress = Math.round((c.winsAfter / winsTo) * 100)
         horizon.wins.push({
           glyph: '✦', category: 'wins', name: c.name, avatar: c.avatar,
           copy_html: `<em>${gap}</em> wins from <em>${ordinal(winsTo)}</em>`,
           stats_html: statsFor(c, 'wins'),
-          eta: `${gap} wins`, eta_unit: 'remaining',
+          eta: `${progress}%`, eta_unit: 'there',
           sort: gap,
         })
       }
@@ -3125,11 +3128,12 @@ function buildLiveSeasonPreviews(
     ) {
       const target = c.careerLongestWinStreak + 1
       const gap = target - c.activeStreak.len
+      const progress = Math.round((c.activeStreak.len / target) * 100)
       horizon.streak.push({
         glyph: '✺', category: 'streak', name: c.name, avatar: c.avatar,
         copy_html: `<em>${gap}</em> wins shy of a <em>${target}-game win</em> streak`,
         stats_html: statsFor(c, 'streak'),
-        eta: `${gap} wins`, eta_unit: 'remaining',
+        eta: `${progress}%`, eta_unit: 'there',
         sort: gap,
       })
     }
@@ -3145,15 +3149,26 @@ function buildLiveSeasonPreviews(
 
   const imminentCount = imminent.wins.length + imminent.points.length + imminent.streak.length
 
-  // "Just Achieved" only shows milestones from the last 10 days. In NFL
-  // terms that's roughly a week and a half — items hit in the current
-  // week or the one before stay; older crossings drop off so the feed
-  // doesn't carry weeks-old achievements.
-  const recentWeekCutoff = Math.max(1, throughWeek - 1)
-  const crossedRecent = crossed.filter((c) => {
+  // "Just Achieved" shows milestones from this week and last week,
+  // sorted this-week-first so the newest stuff leads. Items get a
+  // week_bucket tag the template uses to insert a "Last week" divider
+  // between the two groups. Older crossings (W{n-2} and earlier) drop
+  // off the feed.
+  type Crossed2 = Crossed & { week_bucket?: 'this' | 'last' }
+  const lastWeek = throughWeek - 1
+  const crossedRecent: Crossed2[] = []
+  for (const c of crossed) {
     const m = String(c.when || '').match(/^W(\d+)/)
-    if (!m) return false  // items without a W{n} stamp (rare) don't qualify
-    return parseInt(m[1], 10) >= recentWeekCutoff
+    if (!m) continue
+    const w = parseInt(m[1], 10)
+    if (w === throughWeek) crossedRecent.push({ ...c, week_bucket: 'this' })
+    else if (w === lastWeek) crossedRecent.push({ ...c, week_bucket: 'last' })
+  }
+  // Within each bucket items keep their existing sort (the higher tier
+  // first), but ensure this-week items come before last-week items.
+  crossedRecent.sort((a, b) => {
+    if (a.week_bucket !== b.week_bucket) return a.week_bucket === 'this' ? -1 : 1
+    return b.sort - a.sort
   })
 
   const milestones = {

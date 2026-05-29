@@ -177,16 +177,38 @@ body { background: var(--ml-bg); }
 /* ── Crossed cards (just-hit milestones) ───────────────────── */
 .ml-crossed-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    /* Default 3-col layout — 1240px container / 3 cols ≈ 393px each, so
+       minmax(360px) snaps to 3 across at the wrap width. */
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
     gap: 1.2rem;
 }
-/* Dense mode: kicks in via JS when there are more than 6 just-achieved
-   items, so the grid scales to fit up to ~12 cards. minmax tuned so 4
-   columns at the 1240px max-width still gives each card decent breathing
-   room (~280px). */
+/* Dense (4-col) mode kicks in via JS when there are 10+ milestones —
+   1240/4 ≈ 285px, so minmax(265px) gives 4 across with breathing room. */
 .ml-crossed-grid.dense {
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
     gap: 1rem;
+}
+
+/* "Last week" divider — spans the full grid row between this-week and
+   last-week tiles so older items read as a separate sub-feed. */
+.ml-crossed-divider {
+    grid-column: 1 / -1;
+    display: flex; align-items: center;
+    gap: 1rem;
+    margin: .5rem 0 .2rem;
+}
+.ml-crossed-divider::before,
+.ml-crossed-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--ml-line) 50%, transparent 100%);
+}
+.ml-crossed-divider span {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--ml-mute);
+    padding: 0 .5rem;
 }
 .ml-crossed-grid.dense .ml-crossed { padding: 1.15rem 1.15rem 1.05rem; }
 .ml-crossed-grid.dense .ml-medal {
@@ -203,6 +225,11 @@ body { background: var(--ml-bg); }
     background: linear-gradient(160deg, var(--ml-card) 0%, var(--ml-soft) 70%);
     border: 1px solid var(--ml-line);
     padding: 1.4rem 1.4rem 1.2rem;
+    /* Flex column so .achievement can stretch and push the stats + meta
+       lines to the bottom — keeps those two rows aligned across cards
+       even when achievement copy length varies. */
+    display: flex;
+    flex-direction: column;
 }
 .ml-crossed::before {
     /* Soft "stage spotlight" glow from upper-left */
@@ -254,6 +281,10 @@ body { background: var(--ml-bg); }
     font-family: var(--serif); font-size: 1.05rem; line-height: 1.35;
     color: #e9ddf5; margin-bottom: .9rem;
     z-index: 1; position: relative;
+    /* Fill remaining vertical space so stats/meta align at the bottom
+       across cards (achievement text length varies, but stats + meta
+       should sit at the same y across the row). */
+    flex: 1;
 }
 .ml-crossed .achievement strong {
     font-weight: 400; font-style: italic;
@@ -745,14 +776,19 @@ body { background: var(--ml-bg); }
   }
 
   function renderCrossed(items) {
-    // Dense mode tightens cards when there are more than 6 fresh milestones,
-    // so the page can fit up to ~12 without scroll-shock.
-    var cls = items.length > 6 ? 'ml-crossed-grid dense' : 'ml-crossed-grid';
+    // Dense (4-col) mode trips at 10+ items. Below that the default
+    // 3-col grid breathes. The previous >6 threshold was kicking in
+    // too early and squeezing 7-9 cards into 4 columns.
+    var cls = items.length >= 10 ? 'ml-crossed-grid dense' : 'ml-crossed-grid';
+    // Emit a "Last week" divider between this-week and last-week
+    // groupings (data is pre-sorted this-week-first).
     var html = '<div class="' + cls + '">';
+    var prevBucket = null;
     items.forEach(function (it) {
-      // meta_html is the single-line bottom row (W{week} · score vs opp · H2H).
-      // Falls back to the older when+context two-span layout if a stale
-      // JSON snapshot doesn't carry the new field yet.
+      if (prevBucket === 'this' && it.week_bucket === 'last') {
+        html += '<div class="ml-crossed-divider"><span>Last week</span></div>';
+      }
+      prevBucket = it.week_bucket || prevBucket;
       var metaContent = it.meta_html
         ? it.meta_html
         : ('<span>' + esc(it.when || '') + '</span><span>' + esc(it.context || '') + '</span>');
