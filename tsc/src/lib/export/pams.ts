@@ -2210,14 +2210,17 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Season Points-For Pace',
       pct,
-      realized: false,
+      // Realized when the chaser's CURRENT PF already eclipses the
+      // all-time record — they broke it mid-season, even though they
+      // could keep adding to it.
+      realized: v >= r,
       flag: flagFor(pct, 'WILL BREAK IT', 'PROJECTING PAST', 'ON PACE', 'TRENDING UP'),
       title_html: `${Math.round(r)} pts <em>· highest reg-season PF</em>`,
       holder: nameOf(bestSeasonPF.mid),
       record_value: holderPPG > 0 ? `${Math.round(r)} pts · ${holderPPG.toFixed(1)} PPG` : `${Math.round(r)} pts`,
       holder_when: `${bestSeasonPF.year}`,
       chaser: pfPaceTop.m.name,
-      chaser_value: `${Math.round(pfPaceTop.m.pf)} pts through ${pfPaceTop.m.games.length}G`,
+      chaser_value: `${Math.round(pfPaceTop.m.pf)} pts through ${pfPaceTop.m.games.length} Games`,
       chaser_when: `pace ${projInt} pts`,
       gap: gap >= 0 ? `+${gap} pts on pace` : `${Math.abs(gap)} pts short on pace`,
       copy_html: `<em>${escTxt(pfPaceTop.m.name)}</em> · pace ${projInt} pts (${(pfPaceTop.m.pf / pfPaceTop.m.games.length).toFixed(1)} PPG)`,
@@ -2236,7 +2239,7 @@ function buildLiveSeasonPreviews(
     accumItems.push({
       category: 'Season PPG Pace',
       pct,
-      realized: false,
+      realized: v >= r,
       flag: flagFor(pct, 'PPG RECORD CLIMBING', 'PROJECTING PAST', 'ON PACE', 'STRONG SCORING'),
       title_html: `${r.toFixed(1)} <em>· best regular-season PPG</em>`,
       holder: nameOf(bestSeasonPPG.mid), record_value: `${r.toFixed(1)} PPG`,
@@ -2244,7 +2247,7 @@ function buildLiveSeasonPreviews(
       chaser: ppgTop.m.name, chaser_value: `${v.toFixed(1)} PPG`,
       chaser_when: `${ppgTop.m.games.length}G · ${year}`,
       gap: v >= r ? `+${(v - r).toFixed(1)} above` : `${(r - v).toFixed(1)} below`,
-      copy_html: `<em>${escTxt(ppgTop.m.name)}</em> · ${v.toFixed(1)} PPG through ${ppgTop.m.games.length}G`,
+      copy_html: `<em>${escTxt(ppgTop.m.name)}</em> · ${v.toFixed(1)} PPG through ${ppgTop.m.games.length} Games`,
       when: `through W${throughWeek} · ${year}`,
       previous: `${r.toFixed(1)} · ${nameOf(bestSeasonPPG.mid)}, ${bestSeasonPPG.year}`,
     })
@@ -2266,13 +2269,13 @@ function buildLiveSeasonPreviews(
       accumItems.push({
         category: 'Reg-Season Wins Pace',
         pct,
-        realized: false,
+        realized: v >= r,
         flag: flagFor(pct, 'WILL MATCH OR PASS', 'ON PACE TO TIE', 'BIG W-PACE', 'STRONG START'),
         title_html: `${r} wins <em>· most reg-season wins</em>`,
         holder: nameOf(mostRegWins.mid), record_value: `${r} wins`,
         holder_when: `${mostRegWins.year}`,
         chaser: winsPaceTop.m.name,
-        chaser_value: `${winsPaceTop.m.wins}-${winsPaceTop.m.losses} through ${winsPaceTop.m.games.length}G`,
+        chaser_value: `${winsPaceTop.m.wins}-${winsPaceTop.m.losses} through ${winsPaceTop.m.games.length} Games`,
         chaser_when: `pace ${projInt} wins`,
         gap: gap >= 0 ? `+${gap} wins on pace` : `${Math.abs(gap)} wins short on pace`,
         copy_html: `<em>${escTxt(winsPaceTop.m.name)}</em> · pace ${projInt} wins (${winsPaceTop.m.wins}-${winsPaceTop.m.losses})`,
@@ -2295,13 +2298,13 @@ function buildLiveSeasonPreviews(
       accumItems.push({
         category: 'Reg-Season Losses Pace',
         pct,
-        realized: false,
+        realized: v >= r,
         flag: flagFor(pct, 'WORST SEASON INCOMING', 'TANK PACE', 'STRUGGLING', 'ROUGH RUN'),
         title_html: `${r} losses <em>· most reg-season losses</em>`,
         holder: nameOf(mostRegLoss.mid), record_value: `${r} losses`,
         holder_when: `${mostRegLoss.year}`,
         chaser: lossPaceTop.m.name,
-        chaser_value: `${lossPaceTop.m.wins}-${lossPaceTop.m.losses} through ${lossPaceTop.m.games.length}G`,
+        chaser_value: `${lossPaceTop.m.wins}-${lossPaceTop.m.losses} through ${lossPaceTop.m.games.length} Games`,
         chaser_when: `pace ${projInt} losses`,
         gap: gap >= 0 ? `+${gap} losses on pace` : `${Math.abs(gap)} losses short on pace`,
         copy_html: `<em>${escTxt(lossPaceTop.m.name)}</em> · pace ${projInt} losses (${lossPaceTop.m.wins}-${lossPaceTop.m.losses})`,
@@ -2473,8 +2476,13 @@ function buildLiveSeasonPreviews(
 
         // Find the best 2025 chaser — either crossed in {year} already
         // (potential broken record) OR projecting to cross in fewer games
-        // than the record.
-        type Chaser = { walk: Walk; projGames: number; broke: boolean; crossingDesc?: string }
+        // than the record. Carries currentVal so the bar can fill based
+        // on actual progress toward the tier.
+        type Chaser = {
+          walk: Walk; projGames: number; broke: boolean;
+          currentVal: number; gamesPlayed: number;
+          crossingDesc?: string
+        }
         let bestChaser: Chaser | null = null
         for (const c of crossings) {
           if (c.walk === r.walk) continue
@@ -2484,6 +2492,8 @@ function buildLiveSeasonPreviews(
               walk: c.walk,
               projGames: c.cross.games,
               broke: c.cross.games < r.games,
+              currentVal: c.currentVal,
+              gamesPlayed: c.gamesPlayed,
               crossingDesc: `W${c.cross.week} · ${year}`,
             }
             if (!bestChaser || cand.projGames < bestChaser.projGames) bestChaser = cand
@@ -2495,16 +2505,22 @@ function buildLiveSeasonPreviews(
             // Only surface if their projection is meaningful relative to the
             // record (within ~30% to bound chase candidates).
             if (proj <= r.games * 1.3) {
-              const cand: Chaser = { walk: c.walk, projGames: proj, broke: false }
+              const cand: Chaser = {
+                walk: c.walk, projGames: proj, broke: false,
+                currentVal: c.currentVal, gamesPlayed: c.gamesPlayed,
+              }
               if (!bestChaser || cand.projGames < bestChaser.projGames) bestChaser = cand
             }
           }
         }
         if (!bestChaser) continue
 
-        // Lower projected games = better. pct flips the ratio so the existing
-        // brink/chase/broken bucketing (pct >= 100 broken, >= 85 brink) works.
-        const pct = (r.games / bestChaser.projGames) * 100
+        // pct = chaser's current progress through the tier T, so the bar
+        // visualizes how close they actually are to crossing the milestone
+        // (matching the current-based pct used by pace items). The
+        // "are they on pace to BEAT the record" info lives in gap +
+        // chaser_when below.
+        const pct = (bestChaser.currentVal / T) * 100
         const projGames = bestChaser.projGames
         const gap = r.games - projGames  // positive = on pace to break (faster)
         const broke = bestChaser.broke

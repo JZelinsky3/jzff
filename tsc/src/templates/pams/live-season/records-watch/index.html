@@ -688,22 +688,17 @@ body { background: var(--rw-bg); }
     opacity: .8;
 }
 .rw-plot-mark-line {
+    /* Pinned to the right edge of the track so the entire bar reads
+     * as the chase region (0% → record). The top "MARK" pseudo-label
+     * was removed since the bottom scale already labels this position
+     * with the actual record value (e.g., "9W"). */
     position: absolute;
     top: -5px; bottom: -5px;
+    right: 0;
     width: 2px;
     background: var(--rw-ember-hi);
     box-shadow: 0 0 8px var(--rw-ember-glow);
     z-index: 2;
-}
-.rw-plot-mark-line::after {
-    content: 'MARK';
-    position: absolute;
-    top: -.85rem; left: 50%;
-    transform: translateX(-50%);
-    font-family: var(--mono); font-weight: 700;
-    font-size: .45rem; letter-spacing: .2em;
-    color: var(--rw-ember-hi);
-    white-space: nowrap;
 }
 .rw-plot-fill {
     position: absolute;
@@ -718,15 +713,33 @@ body { background: var(--rw-bg); }
     box-shadow: 0 0 22px var(--rw-ember-glow);
 }
 .rw-plot-scale {
-    display: flex; justify-content: space-between;
+    /* Absolute-positioned labels so each one sits directly under its
+     * corresponding tick / right-edge mark, instead of distributing
+     * via space-between (which never quite aligned with the actual
+     * tick positions in the track above). */
+    position: relative;
+    height: 1rem;
     font-family: var(--mono);
-    font-size: .48rem; letter-spacing: .15em;
+    font-size: .5rem; letter-spacing: .15em;
     color: var(--rw-mute);
 }
-.rw-plot-scale span:nth-child(5) {
-    /* The 'MARK' position (~83.3% across) — tinted to match. */
+.rw-plot-scale span {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+.rw-plot-scale span.s-start { left: 0; transform: none; }
+.rw-plot-scale span.s-end {
+    /* The record-value label (e.g. "9W", "2500 pts", "15G") — sits
+     * flush to the right edge under the mark line. */
+    left: auto;
+    right: 0;
+    transform: none;
     color: var(--rw-ember-hi);
     font-weight: 700;
+    letter-spacing: .04em;
+    font-size: .58rem;
 }
 .rw-plot-foot {
     display: flex; flex-wrap: wrap; gap: .8rem; justify-content: space-between;
@@ -1256,6 +1269,20 @@ body { background: var(--rw-bg); }
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+  // Shortens record_value strings for the right-edge scale label.
+  // "1623 pts · 116.0 PPG" -> "1623 pts"     (drops anything after ·)
+  // "9 wins"               -> "9W"
+  // "5 losses in a row"    -> "5L"
+  // "22 games"             -> "22G"
+  // anything else stays as-is.
+  function shortRecord(rv) {
+    if (!rv) return '';
+    var primary = String(rv).split('·')[0].trim();
+    primary = primary.replace(/^(\d+)\s+wins?(?:\s+in a row)?$/i, '$1W');
+    primary = primary.replace(/^(\d+)\s+losses(?:\s+in a row)?$/i, '$1L');
+    primary = primary.replace(/^(\d+)\s+games$/i, '$1G');
+    return primary;
+  }
   function pct(n) {
     var v = Math.max(0, Math.min(100, Number(n) || 0));
     return v.toFixed(1).replace(/\.0$/, '') + '%';
@@ -1274,16 +1301,14 @@ body { background: var(--rw-bg); }
   // bar plot on the right. The plot's track represents 0-120% of the
   // mark, with the MARK line at ~83.3% across so overshoots are visible.
   function renderBrink(slot, items) {
-    // Track represents 0 → MARK_SCALE % of the record. 100% line sits at
-    // 100 / MARK_SCALE of track width.
-    var MARK_SCALE = 120;
-    var markPosPct = (100 / MARK_SCALE) * 100;  // 83.333%
-
+    // Track represents 0 → 100% of the record. Mark line sits at the
+    // right edge; anything that would exceed it has already flipped to
+    // realized/Broken, so Brink items always fill within [0, 100].
     var html = '<div class="rw-blocks">';
     items.forEach(function (it, idx) {
-      var rawPct = Math.max(0, Math.min(MARK_SCALE, Number(it.pct) || 0));
-      var fillPct = (rawPct / MARK_SCALE) * 100;
-      var overMark = rawPct >= 100;
+      var rawPct = Math.max(0, Math.min(100, Number(it.pct) || 0));
+      var fillPct = rawPct;
+      var overMark = false;
 
       // Split record_value into a leading number + unit so the mark panel
       // can showcase the numeric.  "1623 pts · 116.0 PPG" → "1623" + "pts · 116.0 PPG"
@@ -1327,15 +1352,18 @@ body { background: var(--rw-bg); }
                 '<span class="rw-plot-label" style="left:' + fillPct.toFixed(2) + '%">' + esc(barLabel) + '</span>' +
               '</div>' +
               '<div class="rw-plot-track">' +
-                '<div class="rw-plot-tick" style="left:' + (25/MARK_SCALE*100).toFixed(2) + '%"></div>' +
-                '<div class="rw-plot-tick" style="left:' + (50/MARK_SCALE*100).toFixed(2) + '%"></div>' +
-                '<div class="rw-plot-tick" style="left:' + (75/MARK_SCALE*100).toFixed(2) + '%"></div>' +
-                '<div class="rw-plot-mark-line" style="left:' + markPosPct.toFixed(2) + '%"></div>' +
-                '<div class="rw-plot-fill' + (overMark ? ' over' : '') +
-                  '" style="width:calc(' + fillPct.toFixed(2) + '% - 4px)"></div>' +
+                '<div class="rw-plot-tick" style="left:25%"></div>' +
+                '<div class="rw-plot-tick" style="left:50%"></div>' +
+                '<div class="rw-plot-tick" style="left:75%"></div>' +
+                '<div class="rw-plot-mark-line"></div>' +
+                '<div class="rw-plot-fill" style="width:calc(' + fillPct.toFixed(2) + '% - 4px)"></div>' +
               '</div>' +
               '<div class="rw-plot-scale">' +
-                '<span>0</span><span>25%</span><span>50%</span><span>75%</span><span>MARK</span><span>NEW RECORD</span>' +
+                '<span class="s-start">0</span>' +
+                '<span style="left:25%">25%</span>' +
+                '<span style="left:50%">50%</span>' +
+                '<span style="left:75%">75%</span>' +
+                '<span class="s-end">' + esc(shortRecord(it.record_value)) + '</span>' +
               '</div>' +
               '<div class="rw-plot-foot">' +
                 '<span>' + esc(it.chaser_when || '') + '</span>' +
