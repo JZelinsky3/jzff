@@ -2192,9 +2192,13 @@ function buildLiveSeasonPreviews(
     .map((m) => ({ m, proj: (m.pf / m.games.length) * regSeasonLen }))
     .sort((a, b) => b.proj - a.proj)[0]
   if (pfPaceTop && bestSeasonPF.val > 0) {
-    const v = pfPaceTop.proj, r = bestSeasonPF.val, pct = (v / r) * 100
-    const gap = Math.round(v - r)
-    const projInt = Math.round(v)
+    // pct reads as CURRENT progress vs the record (so a chaser with
+    // half the record's PF sits at 50%) — not the projection, which
+    // would put any mid-season pace at well above 100%. Projection
+    // info stays in chaser_when + gap below.
+    const v = pfPaceTop.m.pf, r = bestSeasonPF.val, pct = (v / r) * 100
+    const gap = Math.round(pfPaceTop.proj - r)
+    const projInt = Math.round(pfPaceTop.proj)
     // Holder's PPG: find their game count from manager_seasons for that year
     let holderPPG = 0
     const holderMs = (s.managerSeasonsBySeason.get(s.seasons.find((sn) => sn.year === bestSeasonPF.year)?.id ?? '') ?? [])
@@ -2253,9 +2257,12 @@ function buildLiveSeasonPreviews(
       .map((m) => ({ m, proj: (m.wins / m.games.length) * regSeasonLen }))
       .sort((a, b) => b.proj - a.proj)[0]
     if (winsPaceTop && mostRegWins.val > 0) {
-      const v = winsPaceTop.proj, r = mostRegWins.val, pct = (v / r) * 100
-      const projInt = Math.round(v)
-      const gap = Math.round(v - r)
+      // pct = current wins vs record so 4-of-9 reads as 44% (On Pace),
+      // not "on pace for 11" which would read as 122% (Brink). Projection
+      // info still flows through chaser_when + gap.
+      const v = winsPaceTop.m.wins, r = mostRegWins.val, pct = (v / r) * 100
+      const projInt = Math.round(winsPaceTop.proj)
+      const gap = Math.round(winsPaceTop.proj - r)
       accumItems.push({
         category: 'Reg-Season Wins Pace',
         pct,
@@ -2280,9 +2287,11 @@ function buildLiveSeasonPreviews(
       .map((m) => ({ m, proj: (m.losses / m.games.length) * regSeasonLen }))
       .sort((a, b) => b.proj - a.proj)[0]
     if (lossPaceTop && mostRegLoss.val > 0) {
-      const v = lossPaceTop.proj, r = mostRegLoss.val, pct = (v / r) * 100
-      const projInt = Math.round(v)
-      const gap = Math.round(v - r)
+      // Same current-based pct rule as wins pace — projection info
+      // stays in chaser_when + gap.
+      const v = lossPaceTop.m.losses, r = mostRegLoss.val, pct = (v / r) * 100
+      const projInt = Math.round(lossPaceTop.proj)
+      const gap = Math.round(lossPaceTop.proj - r)
       accumItems.push({
         category: 'Reg-Season Losses Pace',
         pct,
