@@ -545,10 +545,28 @@ body { background: var(--rw-bg); }
     color: var(--rw-cream);
 }
 .rw-plot-head .pace {
+    /* legacy — no longer rendered; the chaser's value now floats above
+       the bar at its fill endpoint via .rw-plot-label below. */
+    display: none;
+}
+/* Label strip above the track — anchors the chaser's current value at
+   the point on the bar where their fill ends, so the eye reads
+   "3 wins" directly above where the meter sits. */
+.rw-plot-labels {
+    position: relative;
+    height: 1rem;
+    margin-bottom: -.2rem;
+}
+.rw-plot-label {
+    position: absolute;
+    bottom: 0;
+    transform: translateX(-50%);
     font-family: var(--mono); font-weight: 700;
-    font-size: .72rem;
+    font-size: .68rem; letter-spacing: .04em;
     color: var(--rw-ember-hi);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-shadow: 0 0 8px var(--rw-ember-soft);
 }
 /* Plot track represents 0 → 120% of the mark; mark line sits at
    ~83.3%. Fills exceeding 100% extend visibly past the mark line. */
@@ -1018,8 +1036,9 @@ body { background: var(--rw-bg); }
 
 <main class="rw-wrap">
 
-    <!-- ── Main column: the page's headline data — actual record breaks
-         on top, then the brink bar plots underneath. -->
+    <!-- ── Main column: §01 Broken, §02 Brink, §03 On Pace. The three
+         sections that need the wider canvas — full-width bar plots and
+         LCD scoreboards. -->
     <div class="rw-main">
 
         <section class="rw-section">
@@ -1043,7 +1062,7 @@ body { background: var(--rw-bg); }
 
         <section class="rw-section">
             <div class="rw-section-head">
-                <span class="rw-section-num">§ 03 · Pursuit</span>
+                <span class="rw-section-num">§ 02 · Pursuit</span>
                 <span class="rw-section-title">On the <em>Brink</em></span>
                 <span class="rw-section-note">In striking distance · 50-99% of the mark</span>
             </div>
@@ -1059,28 +1078,29 @@ body { background: var(--rw-bg); }
             </div>
         </section>
 
-    </div>
-
-    <!-- ── Sidebar: secondary tracker tables. Compact tiles, steel-blue
-         accent so they read distinct from the ember main column. -->
-    <aside class="rw-side">
-
         <section class="rw-section">
             <div class="rw-section-head">
-                <span class="rw-section-num">§ 02 · Pace</span>
+                <span class="rw-section-num">§ 03 · Pace</span>
                 <span class="rw-section-title">On <em>Pace</em></span>
-                <span class="rw-section-note">Projection</span>
+                <span class="rw-section-note">Projecting past the mark, not crossed yet</span>
             </div>
             <div id="onpace-body">
-                <div class="rw-side-empty">
-                    <h4>Nobody projecting past yet</h4>
+                <div class="rw-empty">
+                    <h3>Nobody projecting <em>past the mark yet.</em></h3>
                     <p>
-                        Pace projections (PF, wins, Quickest-to-X) appear here once a chaser's
-                        season pace would push them past the all-time mark.
+                        Season-long accumulators (PF pace, wins pace, Quickest-to-X projections)
+                        land here once a manager's pace would push them past an all-time franchise
+                        record — even though the season isn't done yet.
                     </p>
                 </div>
             </div>
         </section>
+
+    </div>
+
+    <!-- ── Sidebar: secondary tracker. Just Missed only — On Pace is
+         now in the main column with the bar-plot layout. -->
+    <aside class="rw-side">
 
         <section class="rw-section">
             <div class="rw-section-head">
@@ -1120,8 +1140,8 @@ body { background: var(--rw-bg); }
       if (!data) return;
       renderMeter(data.meter || {});
       if (Array.isArray(data.broken)      && data.broken.length)      renderBroken('broken-body', data.broken);
-      if (Array.isArray(data.on_pace)     && data.on_pace.length)     renderSideOnPace(data.on_pace);
-      if (Array.isArray(data.brink)       && data.brink.length)       renderBrink(data.brink);
+      if (Array.isArray(data.brink)       && data.brink.length)       renderBrink('brink-body', data.brink);
+      if (Array.isArray(data.on_pace)     && data.on_pace.length)     renderBrink('onpace-body', data.on_pace);
       if (Array.isArray(data.just_missed) && data.just_missed.length) renderMissed(data.just_missed);
     });
 
@@ -1148,7 +1168,7 @@ body { background: var(--rw-bg); }
   // mini scoreboard with the all-time mark on the left and a tick-marked
   // bar plot on the right. The plot's track represents 0-120% of the
   // mark, with the MARK line at ~83.3% across so overshoots are visible.
-  function renderBrink(items) {
+  function renderBrink(slot, items) {
     // Track represents 0 → MARK_SCALE % of the record. 100% line sits at
     // 100 / MARK_SCALE of track width.
     var MARK_SCALE = 120;
@@ -1166,6 +1186,15 @@ body { background: var(--rw-bg); }
       var m = rv.match(/^(\d[\d.,]*)\s*(.*)$/);
       var markNum = m ? m[1] : rv;
       var markUnit = m ? m[2] : '';
+
+      // Bar label — short version of chaser_value with trailing context
+      // ("active", "through 5G", "in a row", etc.) stripped so the label
+      // floating above the bar reads "3 wins" instead of "3 wins active".
+      var rawLabel = String(it.chaser_value || '');
+      var barLabel = rawLabel
+        .replace(/\s+(active|active streak|in a row|in a row.*)$/i, '')
+        .replace(/\s+through\s+.*/i, '')
+        .trim();
 
       var gapClass = overMark ? 'gap-pos' : 'gap-neg';
 
@@ -1188,7 +1217,9 @@ body { background: var(--rw-bg); }
             '<div class="rw-block-plot">' +
               '<div class="rw-plot-head">' +
                 '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
-                '<span class="pace">' + esc(it.chaser_value || '') + '</span>' +
+              '</div>' +
+              '<div class="rw-plot-labels">' +
+                '<span class="rw-plot-label" style="left:' + fillPct.toFixed(2) + '%">' + esc(barLabel) + '</span>' +
               '</div>' +
               '<div class="rw-plot-track">' +
                 '<div class="rw-plot-tick" style="left:' + (25/MARK_SCALE*100).toFixed(2) + '%"></div>' +
@@ -1199,7 +1230,7 @@ body { background: var(--rw-bg); }
                   '" style="width:calc(' + fillPct.toFixed(2) + '% - 4px)"></div>' +
               '</div>' +
               '<div class="rw-plot-scale">' +
-                '<span>0</span><span>25%</span><span>50%</span><span>75%</span><span>MARK</span><span>past</span>' +
+                '<span>0</span><span>25%</span><span>50%</span><span>75%</span><span>MARK</span><span>NEW RECORD</span>' +
               '</div>' +
               '<div class="rw-plot-foot">' +
                 '<span>' + esc(it.chaser_when || '') + '</span>' +
@@ -1210,7 +1241,8 @@ body { background: var(--rw-bg); }
         '</article>';
     });
     html += '</div>';
-    $('brink-body').innerHTML = html;
+    var slotEl = $(slot);
+    if (slotEl) slotEl.innerHTML = html;
   }
 
   // Broken / On-Pace cards both use the LCD scoreboard renderer — they
