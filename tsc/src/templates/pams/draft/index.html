@@ -283,67 +283,13 @@ body { background: var(--dg-bg); }
     opacity: .55;
 }
 
-/* Multi-pick cells use CSS grid so each pick (slice) stretches to fill
-   the cell — important when a sibling cell in the same row is taller
-   (a 4-pick 2x2). Defaults: 2 picks side-by-side, 3 picks side-by-side,
-   4 picks 2x2. Pick content keeps the same top-left alignment as
-   single-pick cells; no auto-centering. */
-.board-cell { vertical-align: middle; }
-.board-cell-multi {
-    padding: 0;
-    display: grid;
-    align-items: stretch;
-    min-width: 150px; max-width: 184px;
-}
-.board-cell-multi[data-count="2"] { grid-template-columns: 1fr 1fr; }
-.board-cell-multi[data-count="3"] { grid-template-columns: 1fr 1fr 1fr; min-width: 200px; max-width: 248px; }
-.board-cell-multi[data-count="4"] {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows:    1fr 1fr;
-}
+/* Cells holding 2+ picks (traded picks) stack vertically with a thin divider. */
+.board-cell-multi { padding: 0; }
 .board-cell-multi .board-cell-pick {
-    padding: .4rem .5rem;
-    min-width: 0; /* allow ellipsis on overflow */
-    /* No flex centering — keep content top-left to match single-pick cells. */
-}
-.board-cell-multi[data-count="2"] .board-cell-pick:first-child { border-right: 1px dashed var(--dg-line-soft); }
-.board-cell-multi[data-count="3"] .board-cell-pick:nth-child(1),
-.board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2) { border-right: 1px dashed var(--dg-line-soft); }
-.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(odd) { border-right: 1px dashed var(--dg-line-soft); }
-.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(1),
-.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(2) { border-bottom: 1px dashed var(--dg-line-soft); }
-
-.board-cell-multi .board-player { font-size: .62rem; max-width: 86px; }
-.board-cell-multi .board-pos { font-size: .46rem; padding: .08rem .25rem; }
-
-/* When a row has a 4-pick cell (the row gets stretched tall by the 2x2
-   grid), 2- and 3-pick cells in the same row switch to a column-major
-   layout so they fill the stretched height. The JS in renderBoard
-   stamps `tr.board-row-tall` on these rows for browsers without :has()
-   support; the :has() selector below covers everything else. */
-tr.board-row-tall .board-cell-multi[data-count="2"],
-tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="2"] {
-    grid-template-columns: 1fr;
-    grid-template-rows:    1fr 1fr;
-    min-width: 90px; max-width: 110px;
-}
-tr.board-row-tall .board-cell-multi[data-count="2"] .board-cell-pick:first-child,
-tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="2"] .board-cell-pick:first-child {
-    border-right: none;
+    padding: .4rem .55rem;
     border-bottom: 1px dashed var(--dg-line-soft);
 }
-tr.board-row-tall .board-cell-multi[data-count="3"],
-tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows:    1fr 1fr;
-    min-width: 140px; max-width: 184px;
-}
-tr.board-row-tall .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2),
-tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2) { border-right: none; }
-tr.board-row-tall .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(1),
-tr.board-row-tall .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2),
-tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(1),
-tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2) { border-bottom: 1px dashed var(--dg-line-soft); }
+.board-cell-multi .board-cell-pick:last-child { border-bottom: none; }
 
 /* Mobile: shrink the board table aggressively so users can see more
    of the draft at once. Padding, fonts, and column widths all dial
@@ -365,14 +311,7 @@ tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .boa
     .board-player { font-size: .58rem; max-width: 70px; }
     .board-pos { font-size: .42rem; padding: 0 .2rem; margin-top: .15rem; letter-spacing: .04em; }
     .board-empty { font-size: .58rem; }
-    /* Shrink the side-by-side multi-cell on mobile so it doesn't blow
-       the column wider than it needs to be. Each half-cell still has
-       enough room for a truncated player name + tiny position pill. */
-    .board-cell-multi { min-width: 120px; max-width: 160px; }
-    .board-cell-multi[data-count="3"] { min-width: 168px; max-width: 220px; }
-    .board-cell-multi .board-cell-pick { padding: .25rem .3rem; }
-    .board-cell-multi .board-player { font-size: .5rem; max-width: 58px; }
-    .board-cell-multi .board-pos { font-size: .38rem; }
+    .board-cell-multi .board-cell-pick { padding: .25rem .35rem; }
 }
 @media (max-width: 380px) {
     .board-table thead th { font-size: .44rem; padding: .25rem .15rem; }
@@ -382,10 +321,6 @@ tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .boa
     .board-cell { padding: .25rem .25rem; min-width: 46px; max-width: 64px; }
     .board-player { font-size: .52rem; max-width: 58px; }
     .board-pos { font-size: .38rem; }
-    .board-cell-multi { min-width: 102px; max-width: 130px; }
-    .board-cell-multi[data-count="3"] { min-width: 142px; max-width: 178px; }
-    .board-cell-multi .board-player { font-size: .46rem; max-width: 48px; }
-    .board-cell-multi .board-pos { font-size: .34rem; }
 }
 
 .p-rb .board-player { color: #6dc28c; }
@@ -1439,17 +1374,7 @@ function renderBoard(year) {
     html += '</tr></thead><tbody>';
 
     managerOrder.forEach(function(mgr) {
-        // Pre-scan this manager's rounds to detect the tallest cell.
-        // A 4+ pick cell uses a 2x2 grid (taller); rows containing one
-        // get a `board-row-tall` class so 2- and 3-pick cells in the same
-        // row can switch to column-major via CSS. Belt + suspenders for
-        // browsers without :has() support.
-        var hasTallCell = false;
-        for (var rr = 1; rr <= maxRound; rr++) {
-            var pp = (grid[mgr] && grid[mgr][rr]) || [];
-            if (pp.length >= 4) { hasTallCell = true; break; }
-        }
-        html += '<tr' + (hasTallCell ? ' class="board-row-tall"' : '') + '>';
+        html += '<tr>';
         var team = teamNames[mgr] || '';
         html += '<td class="board-mgr-td">'
               + '<span class="board-mgr-name">' + esc(mgr) + '</span>'
@@ -1477,11 +1402,7 @@ function renderBoard(year) {
                          + '<span class="board-pos">' + esc(pp) + '</span>'
                          + '</div>';
                 }).join('');
-                // data-count lets CSS swap from 2-up to 3-up slicing without
-                // a JS branch — keeps the renderer simple and the layout
-                // responsive to the actual pick count.
-                html += '<td class="board-cell board-cell-multi" data-count="'
-                      + roundPicks.length + '">' + inner + '</td>';
+                html += '<td class="board-cell board-cell-multi">' + inner + '</td>';
             }
         }
         html += '</tr>';
