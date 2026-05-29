@@ -47,10 +47,12 @@ body { background: var(--ml-bg); }
 /* ── Nav + chapbar themed to the page ──────────────────────── */
 .nav { background: rgba(17,10,24,.95); border-bottom-color: var(--ml-line); }
 /* Nav masthead text + back arrow: switch from main.css's gold to violet
-   so the whole header reads as one palette. */
+   so the whole header reads as one palette. The kicker above the league
+   name (the data-chapter text) also gets re-tinted off cream-mute. */
 .nav-back, .nav-link { color: var(--ml-violet); }
 .nav-back:hover, .nav-link:hover { color: var(--ml-violet-hi); }
 .nav-title em { color: var(--ml-violet); }
+.nav-kicker { color: #8c7aac; }
 :root {
     --chapbar-bg:     rgba(17,10,24,.92);
     --chapbar-border: var(--ml-line);
@@ -78,7 +80,7 @@ body { background: var(--ml-bg); }
 .page-kicker {
     font-family: var(--mono); font-weight: 700;
     font-size: .65rem; letter-spacing: .4em; text-transform: uppercase;
-    color: var(--ml-bronze); margin-bottom: 1.4rem;
+    color: var(--ml-violet); margin-bottom: 1.4rem;
     display: inline-flex; align-items: center; gap: .65rem;
 }
 .page-kicker .star {
@@ -169,6 +171,22 @@ body { background: var(--ml-bg); }
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.2rem;
 }
+/* Dense mode: kicks in via JS when there are more than 6 just-achieved
+   items, so the grid scales to fit up to ~12 cards without scroll. */
+.ml-crossed-grid.dense {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: .9rem;
+}
+.ml-crossed-grid.dense .ml-crossed { padding: 1.1rem 1.1rem 1rem; }
+.ml-crossed-grid.dense .ml-medal {
+    width: 42px; height: 42px;
+    font-size: 1.1rem; margin-bottom: .7rem;
+}
+.ml-crossed-grid.dense .ml-medal img { width: 42px; height: 42px; }
+.ml-crossed-grid.dense .name { font-size: 1.2rem; margin-bottom: .4rem; }
+.ml-crossed-grid.dense .achievement { font-size: .92rem; margin-bottom: .65rem; }
+.ml-crossed-grid.dense .stats { font-size: .58rem; padding: .55rem 0; }
+.ml-crossed-grid.dense .meta { font-size: .5rem; padding-top: .6rem; }
 .ml-crossed {
     position: relative; overflow: hidden;
     background: linear-gradient(160deg, var(--ml-card) 0%, var(--ml-soft) 70%);
@@ -202,6 +220,12 @@ body { background: var(--ml-bg); }
         0 0 0 5px var(--ml-line),
         0 0 18px var(--ml-violet-soft);
     z-index: 1;
+    overflow: hidden;
+}
+.ml-medal img {
+    width: 52px; height: 52px;
+    object-fit: cover;
+    display: block;
 }
 .ml-crossed .who {
     font-family: var(--mono); font-size: .55rem;
@@ -281,45 +305,66 @@ body { background: var(--ml-bg); }
     flex: 1;
     display: flex; flex-direction: column;
 }
+/* Two-column grid: avatar/glyph at left (spans all rows) + content block
+   on the right. The content block uses flexbox for the head (name + eta
+   side-by-side) so name stays tight against the avatar instead of being
+   pushed across a wide 1fr cell. Copy + stats stack underneath. */
 .ml-approach-row {
     display: grid;
-    grid-template-columns: 2.4rem 1fr 4rem;
-    column-gap: .9rem; row-gap: .35rem;
-    padding: .9rem 1.1rem;
+    grid-template-columns: 42px 1fr;
+    column-gap: .8rem;
+    row-gap: .2rem;
+    padding: .85rem 1rem;
     border-bottom: 1px solid var(--ml-line-soft);
-    align-items: center;
+    align-items: start;
 }
 .ml-approach-row:last-child { border-bottom: 0; }
 .ml-approach-row.imminent {
     background: linear-gradient(90deg, var(--ml-violet-soft) 0%, transparent 60%);
 }
 .ml-approach-glyph {
-    grid-row: span 2;
-    width: 34px; height: 34px;
+    grid-row: 1 / span 3;
+    align-self: center;
+    width: 42px; height: 42px;
     display: inline-flex; align-items: center; justify-content: center;
     font-family: var(--serif); font-style: italic;
-    font-size: 1rem;
+    font-size: 1.05rem;
     color: var(--ml-violet);
     background: var(--ml-soft);
     border: 1px solid var(--ml-line);
+    overflow: hidden;
+}
+.ml-approach-glyph img {
+    width: 42px; height: 42px; object-fit: cover; display: block;
 }
 .ml-approach-row.imminent .ml-approach-glyph {
     color: var(--ml-bronze);
     border-color: var(--ml-bronze);
     box-shadow: 0 0 12px var(--ml-violet-soft);
 }
+.ml-approach-head {
+    grid-column: 2;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .8rem;
+}
 .ml-approach-name {
     /* Prominent: the manager name leads the row. */
-    font-family: var(--serif); font-size: 1.2rem; line-height: 1.05;
+    font-family: var(--serif); font-size: 1.3rem; line-height: 1.05;
     color: var(--ml-cream);
     letter-spacing: -.005em;
+    min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1;
 }
 .ml-approach-eta {
-    grid-row: 1;
+    flex-shrink: 0;
     text-align: right;
     font-family: var(--mono); font-weight: 700;
-    font-size: .85rem;
+    font-size: .8rem;
     color: var(--ml-cream); line-height: 1.05;
+    white-space: nowrap;
 }
 .ml-approach-eta .of {
     display: block;
@@ -329,13 +374,13 @@ body { background: var(--ml-bg); }
 }
 .ml-approach-row.imminent .ml-approach-eta { color: var(--ml-bronze); }
 .ml-approach-copy {
-    grid-column: 2 / span 2;
+    grid-column: 2;
     font-family: var(--serif); font-size: .94rem; line-height: 1.3;
     color: var(--ml-mute);
 }
 .ml-approach-copy em { color: var(--ml-bronze-hi); font-style: italic; }
 .ml-approach-stats {
-    grid-column: 2 / span 2;
+    grid-column: 2;
     font-family: var(--mono); font-size: .58rem;
     letter-spacing: .06em;
     color: var(--ml-mute);
@@ -445,8 +490,10 @@ body { background: var(--ml-bg); }
     .ml-meter { padding: .85rem 1rem; gap: 1rem; }
     .ml-meter-sep { display: none; }
     .ml-ladder { grid-template-columns: 1fr 1fr; }
-    .ml-approach-row { grid-template-columns: 2.2rem 1fr 3.6rem; column-gap: .7rem; padding: .8rem .85rem; }
-    .ml-approach-name { font-size: 1.1rem; }
+    .ml-approach-row { grid-template-columns: 38px 1fr; column-gap: .7rem; padding: .75rem .85rem; }
+    .ml-approach-glyph { width: 38px; height: 38px; font-size: .95rem; }
+    .ml-approach-glyph img { width: 38px; height: 38px; }
+    .ml-approach-name { font-size: 1.15rem; }
 }
 @media (max-width: 580px) {
     .ml-approach-cols { grid-template-columns: 1fr; }
@@ -606,14 +653,14 @@ body { background: var(--ml-bg); }
   // up, the page renders the intro/preview state above. When the JSON shows
   // up, each section replaces its empty state in place.
   // Column layout: imminent_by_category + horizon_by_category each carry a
-  // keyed object { wins, points, streak, loyalty } → Approach[]. The
-  // template renders one column per non-empty category.
+  // keyed object { wins, points, streak } → Approach[]. The template renders
+  // one column per non-empty category.
   var COL_LABELS = {
     wins:    'Wins · Games',
     points:  'Points',
-    streak:  'Streaks',
-    loyalty: 'Loyalty'
+    streak:  'Streaks'
   };
+  var COL_KEYS = ['wins', 'points', 'streak'];
 
   fetch('data/milestones.json', { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.json() : null; })
@@ -648,12 +695,27 @@ body { background: var(--ml-bg); }
     if (m.through)          $('m-foot').textContent    = 'Through ' + m.through;
   }
 
+  // Render the avatar slot for a milestone item. Prefers the manager's
+  // avatar_url (pulled from manager_seasons / managers); falls back to the
+  // serif glyph in the circular frame if no avatar is configured. If the
+  // avatar URL 404s we just fade the broken img — the framed cell still
+  // reads correctly next to the manager name.
+  function avatarMarkup(it) {
+    if (it.avatar) {
+      return '<img src="' + esc(it.avatar) + '" alt="" onerror="this.style.opacity=0" />';
+    }
+    return esc(it.glyph || '✦');
+  }
+
   function renderCrossed(items) {
-    var html = '<div class="ml-crossed-grid">';
+    // Dense mode tightens cards when there are more than 6 fresh milestones,
+    // so the page can fit up to ~12 without scroll-shock.
+    var cls = items.length > 6 ? 'ml-crossed-grid dense' : 'ml-crossed-grid';
+    var html = '<div class="' + cls + '">';
     items.forEach(function (it) {
       html +=
         '<article class="ml-crossed">' +
-          '<div class="ml-medal">' + esc(it.glyph || '✦') + '</div>' +
+          '<div class="ml-medal">' + avatarMarkup(it) + '</div>' +
           '<div class="who">' + esc(it.tier || 'Milestone') + '</div>' +
           '<div class="name">' + (it.name_html || esc(it.name || '—')) + '</div>' +
           '<div class="achievement">' + (it.achievement_html || esc(it.achievement || '')) + '</div>' +
@@ -668,7 +730,7 @@ body { background: var(--ml-bg); }
   function renderApproachCols(slot, byCat, imminent) {
     // Render only non-empty categories; column order is fixed to match
     // the COL_LABELS keys so the layout stays predictable.
-    var keys = ['wins', 'points', 'streak', 'loyalty'].filter(function (k) {
+    var keys = COL_KEYS.filter(function (k) {
       return Array.isArray(byCat[k]) && byCat[k].length;
     });
     if (!keys.length) return;
@@ -686,10 +748,12 @@ body { background: var(--ml-bg); }
       items.forEach(function (it) {
         html +=
           '<div class="ml-approach-row' + (imminent ? ' imminent' : '') + '">' +
-            '<div class="ml-approach-glyph">' + esc(it.glyph || '✦') + '</div>' +
-            '<div class="ml-approach-name">' + esc(it.name || '—') + '</div>' +
-            '<div class="ml-approach-eta">' + esc(it.eta || '') +
-              '<span class="of">' + esc(it.eta_unit || 'to go') + '</span>' +
+            '<div class="ml-approach-glyph">' + avatarMarkup(it) + '</div>' +
+            '<div class="ml-approach-head">' +
+              '<div class="ml-approach-name">' + esc(it.name || '—') + '</div>' +
+              '<div class="ml-approach-eta">' + esc(it.eta || '') +
+                '<span class="of">' + esc(it.eta_unit || 'to go') + '</span>' +
+              '</div>' +
             '</div>' +
             '<div class="ml-approach-copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
             (it.stats_html ? '<div class="ml-approach-stats">' + it.stats_html + '</div>' : '') +

@@ -2418,22 +2418,45 @@ function buildLiveSeasonPreviews(
   // ── MILESTONES (per profile group so merged identities aggregate properly)
   type Career = {
     name: string
+    avatar: string  // most-recent avatar_url across the group's identities
     winsBefore: number; lossesBefore: number; gamesBefore: number; pfBefore: number
     winsAfter:  number; lossesAfter:  number; gamesAfter:  number; pfAfter:  number
     seasonGames: TaggedGame[]
     seasonsThrough: number
     activeStreak: { type: 'W' | 'L' | 'T'; len: number }
+    // Career-longest win streak BEFORE this season's active run starts.
+    // Used as the personal-best the active 2025 streak chases against —
+    // shared league-wide tiers (5/7/10W) don't reflect individual histories
+    // in a league where everyone started together.
+    careerLongestWinStreak: number
   }
+
+  // Most-recent avatar_url across all of a profile group's identities, walking
+  // newest season → oldest. Falls back to managers.avatar_url then empty.
+  function avatarFor(g: ProfileGroup): string {
+    for (let i = s.seasons.length - 1; i >= 0; i--) {
+      const sn = s.seasons[i]
+      const mss = s.managerSeasonsBySeason.get(sn.id) ?? []
+      for (const ms of mss) {
+        if (g.managerIds.has(ms.manager_id) && ms.avatar_url) return ms.avatar_url
+      }
+    }
+    for (const m of g.managers) if (m.avatar_url) return m.avatar_url
+    return ''
+  }
+
   const careers: Career[] = []
   for (const g of groups) {
     if (isGroupHidden(g)) continue
     const career: Career = {
       name: groupDisplayName(g),
+      avatar: avatarFor(g),
       winsBefore: 0, lossesBefore: 0, gamesBefore: 0, pfBefore: 0,
       winsAfter:  0, lossesAfter:  0, gamesAfter:  0, pfAfter:  0,
       seasonGames: [],
       seasonsThrough: 0,
       activeStreak: { type: 'T', len: 0 },
+      careerLongestWinStreak: 0,
     }
     const seenSeasons = new Set<number>()
     const allMyGames: TaggedGame[] = []
@@ -2472,17 +2495,32 @@ function buildLiveSeasonPreviews(
       }
       career.activeStreak = { type: last.result, len }
     }
+    // Personal-best win streak BEFORE the active 2025 run started.
+    // We find the longest pure-W run in pre-{year} games. If the active 2025
+    // streak began at the very tail of {year-1}, its pre-year portion is
+    // already counted into this number — that's intentional, because the
+    // personal best should reflect the longest historical run regardless of
+    // calendar boundary.
+    {
+      let bestRun = 0, curRun = 0
+      for (const gm of allMyGames) {
+        if (gm.year >= year) break
+        if (gm.result === 'W') { curRun++; if (curRun > bestRun) bestRun = curRun }
+        else curRun = 0
+      }
+      career.careerLongestWinStreak = bestRun
+    }
     careers.push(career)
   }
 
   // Tier ladders. Wider gaps for younger leagues; medium density for jake.
+  // Loyalty/seasons-in-league removed — most jake managers started together so
+  // they'd all hit the same anniversary at once, which isn't useful signal.
   const winTiers    = [10, 25, 50, 75, 100, 125, 150, 175, 200, 250, 300]
   const gamesTiers  = [25, 50, 75, 100, 125, 150, 200, 250]
   const pfTiers     = [2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000, 25000, 30000]
-  const seasonTiers = [3, 5, 7, 10, 12, 15, 20]
-  const streakTiers = [5, 7, 10, 12, 15]
 
-  type Category = 'wins' | 'points' | 'streak' | 'loyalty'
+  type Category = 'wins' | 'points' | 'streak'
 
   // stats_html: short factual line shown under the milestone copy. Format
   // depends on the milestone category so wins items show a record while
@@ -2497,28 +2535,26 @@ function buildLiveSeasonPreviews(
     if (cat === 'points') {
       return `Career · <strong>${pf}</strong> pts · ${c.gamesAfter}G · <strong>${ppg}</strong> PPG`
     }
-    if (cat === 'streak') {
-      const tag = c.activeStreak.type === 'W' ? `${c.activeStreak.len}W active`
-                : c.activeStreak.type === 'L' ? `${c.activeStreak.len}L active` : 'idle'
-      return `Career · ${record} · ${tag}`
-    }
-    // loyalty
-    return `Career · ${record} · <strong>${c.seasonsThrough}</strong> seasons`
+    // streak
+    const tag = c.activeStreak.type === 'W' ? `${c.activeStreak.len}W active`
+              : c.activeStreak.type === 'L' ? `${c.activeStreak.len}L active` : 'idle'
+    const pb = c.careerLongestWinStreak > 0 ? ` · PB ${c.careerLongestWinStreak}W` : ''
+    return `Career · ${record} · ${tag}${pb}`
   }
 
   type Crossed = {
-    glyph: string; tier: string; category: Category; name: string
+    glyph: string; tier: string; category: Category; name: string; avatar: string
     achievement_html: string; when: string; context: string; stats_html: string
     sort: number
   }
   type Approach = {
-    glyph: string; category: Category; name: string
+    glyph: string; category: Category; name: string; avatar: string
     copy_html: string; stats_html: string; eta: string; eta_unit: string
     sort: number
   }
   const crossed: Crossed[] = []
-  const imminent: Record<Category, Approach[]> = { wins: [], points: [], streak: [], loyalty: [] }
-  const horizon:  Record<Category, Approach[]> = { wins: [], points: [], streak: [], loyalty: [] }
+  const imminent: Record<Category, Approach[]> = { wins: [], points: [], streak: [] }
+  const horizon:  Record<Category, Approach[]> = { wins: [], points: [], streak: [] }
 
   for (const c of careers) {
     if (c.gamesAfter === 0) continue
@@ -2536,7 +2572,7 @@ function buildLiveSeasonPreviews(
       }
       const gm = c.seasonGames.find((g) => g.week === crossingWeek)
       crossed.push({
-        glyph: '✦', tier: 'CAREER WINS', category: 'wins', name: c.name,
+        glyph: '✦', tier: 'CAREER WINS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(wTier)}</strong> career win`,
         when: crossingWeek ? `W${crossingWeek} · ${year}` : `${year}`,
         context: gm ? `vs ${escTxt(nameOf(gm.opp_id))} · ${gm.self_score.toFixed(1)} pts` : '',
@@ -2551,7 +2587,7 @@ function buildLiveSeasonPreviews(
       const idx = gTier - c.gamesBefore - 1
       const gm = c.seasonGames[idx]
       crossed.push({
-        glyph: '◈', tier: 'CAREER STARTS', category: 'wins', name: c.name,
+        glyph: '◈', tier: 'CAREER STARTS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(gTier)}</strong> career start`,
         when: gm ? `W${gm.week} · ${year}` : `${year}`,
         context: gm ? `vs ${escTxt(nameOf(gm.opp_id))}` : '',
@@ -2571,7 +2607,7 @@ function buildLiveSeasonPreviews(
       }
       const gm = c.seasonGames.find((g) => g.week === week)
       crossed.push({
-        glyph: '★', tier: 'CAREER POINTS', category: 'points', name: c.name,
+        glyph: '★', tier: 'CAREER POINTS', category: 'points', name: c.name, avatar: c.avatar,
         achievement_html: `crossed <strong>${pTier.toLocaleString()}</strong> lifetime points`,
         when: week ? `W${week} · ${year}` : `${year}`,
         context: gm ? `${gm.self_score.toFixed(1)} pts vs ${escTxt(nameOf(gm.opp_id))}` : '',
@@ -2580,31 +2616,15 @@ function buildLiveSeasonPreviews(
       })
     }
 
-    // ── Crossed: active streak hit a streak-tier this year
-    if (c.activeStreak.type === 'W') {
-      const sTier = streakTiers.find((t) => c.activeStreak.len === t)
-      if (sTier != null) {
-        crossed.push({
-          glyph: '✺', tier: 'WIN STREAK', category: 'streak', name: c.name,
-          achievement_html: `rolled <strong>${sTier}</strong> wins in a row`,
-          when: `W${throughWeek} · ${year}`,
-          context: 'active streak',
-          stats_html: statsFor(c, 'streak'),
-          sort: 99 * 100 + sTier,
-        })
-      }
-    }
-
-    // ── Loyalty / anniversary
-    const aTier = seasonTiers.find((t) => c.seasonsThrough === t)
-    if (aTier != null) {
+    // ── Crossed: active win streak broke the manager's career personal best
+    if (c.activeStreak.type === 'W' && c.careerLongestWinStreak > 0 && c.activeStreak.len > c.careerLongestWinStreak) {
       crossed.push({
-        glyph: '✧', tier: 'LOYALTY', category: 'loyalty', name: c.name,
-        achievement_html: `<strong>${aTier}</strong> seasons in the league`,
-        when: `${year}`,
-        context: 'anniversary',
-        stats_html: statsFor(c, 'loyalty'),
-        sort: 1000 + aTier,
+        glyph: '✺', tier: 'WIN STREAK', category: 'streak', name: c.name, avatar: c.avatar,
+        achievement_html: `new personal-best <strong>${c.activeStreak.len}-game win</strong> streak`,
+        when: `W${throughWeek} · ${year}`,
+        context: `prior best ${c.careerLongestWinStreak}`,
+        stats_html: statsFor(c, 'streak'),
+        sort: 99 * 100 + c.activeStreak.len,
       })
     }
 
@@ -2614,66 +2634,55 @@ function buildLiveSeasonPreviews(
     const winsTo = nextTierAhead(c.winsAfter, winTiers)
     if (winsTo != null && winsTo - c.winsAfter === 1) {
       imminent.wins.push({
-        glyph: '✦', category: 'wins', name: c.name,
+        glyph: '✦', category: 'wins', name: c.name, avatar: c.avatar,
         copy_html: `<em>1</em> win from <em>${ordinal(winsTo)}</em>`,
         stats_html: statsFor(c, 'wins'),
-        eta: '1W', eta_unit: 'to go',
+        eta: '1 win', eta_unit: 'to go',
         sort: 1,
       })
     }
     const gamesTo = nextTierAhead(c.gamesAfter, gamesTiers)
     if (gamesTo != null && gamesTo - c.gamesAfter === 1) {
       imminent.wins.push({
-        glyph: '◈', category: 'wins', name: c.name,
+        glyph: '◈', category: 'wins', name: c.name, avatar: c.avatar,
         copy_html: `next game = <em>${ordinal(gamesTo)}</em> start`,
         stats_html: statsFor(c, 'wins'),
-        eta: '1G', eta_unit: 'to go',
+        eta: '1 game', eta_unit: 'to go',
         sort: 2,
       })
     }
     const pfTo = nextTierAhead(c.pfAfter, pfTiers)
     if (pfTo != null && pfTo - c.pfAfter <= 150) {
+      const gap = Math.round(pfTo - c.pfAfter)
       imminent.points.push({
-        glyph: '★', category: 'points', name: c.name,
-        copy_html: `<em>${Math.round(pfTo - c.pfAfter)}</em> pts from <em>${pfTo.toLocaleString()}</em>`,
+        glyph: '★', category: 'points', name: c.name, avatar: c.avatar,
+        copy_html: `<em>${gap}</em> pts from <em>${pfTo.toLocaleString()}</em>`,
         stats_html: statsFor(c, 'points'),
-        eta: `${Math.round(pfTo - c.pfAfter)}`, eta_unit: 'pts to go',
-        sort: pfTo - c.pfAfter,
+        eta: `${gap}`, eta_unit: 'pts to go',
+        sort: gap,
       })
     }
-    if (c.activeStreak.type === 'W') {
-      const sNext = streakTiers.find((t) => t === c.activeStreak.len + 1)
-      if (sNext != null) {
-        imminent.streak.push({
-          glyph: '✺', category: 'streak', name: c.name,
-          copy_html: `one win from a <em>${sNext}-game</em> streak`,
-          stats_html: statsFor(c, 'streak'),
-          eta: '1W', eta_unit: 'to go',
-          sort: 3,
-        })
-      }
-    }
-    const sTo = seasonTiers.find((t) => t === c.seasonsThrough + 1)
-    if (sTo != null) {
-      // Anniversary one season away — surface in loyalty column.
-      imminent.loyalty.push({
-        glyph: '✧', category: 'loyalty', name: c.name,
-        copy_html: `next season = <em>${sTo}</em>-year mark`,
-        stats_html: statsFor(c, 'loyalty'),
-        eta: '1y', eta_unit: 'to go',
-        sort: sTo,
+    // Streak imminent: one win from beating the manager's own personal best
+    if (c.activeStreak.type === 'W' && c.careerLongestWinStreak > 0 && c.activeStreak.len === c.careerLongestWinStreak) {
+      const target = c.careerLongestWinStreak + 1
+      imminent.streak.push({
+        glyph: '✺', category: 'streak', name: c.name, avatar: c.avatar,
+        copy_html: `one win from a new personal-best <em>${target}-game win</em> streak`,
+        stats_html: statsFor(c, 'streak'),
+        eta: '1 win', eta_unit: 'to go',
+        sort: 1,
       })
     }
 
-    // ── Horizon (2-8 wins out, 150-800 PF out, 2-3 streak tiers out)
+    // ── Horizon (2-8 wins out, 150-800 PF out; streak chases personal best)
     if (winsTo != null) {
       const gap = winsTo - c.winsAfter
       if (gap >= 2 && gap <= 8) {
         horizon.wins.push({
-          glyph: '✦', category: 'wins', name: c.name,
+          glyph: '✦', category: 'wins', name: c.name, avatar: c.avatar,
           copy_html: `<em>${gap}</em> wins from <em>${ordinal(winsTo)}</em>`,
           stats_html: statsFor(c, 'wins'),
-          eta: `${gap}W`, eta_unit: 'remaining',
+          eta: `${gap} wins`, eta_unit: 'remaining',
           sort: gap,
         })
       }
@@ -2682,10 +2691,10 @@ function buildLiveSeasonPreviews(
       const gap = gamesTo - c.gamesAfter
       if (gap >= 2 && gap <= 6) {
         horizon.wins.push({
-          glyph: '◈', category: 'wins', name: c.name,
+          glyph: '◈', category: 'wins', name: c.name, avatar: c.avatar,
           copy_html: `<em>${gap}</em> starts from <em>${ordinal(gamesTo)}</em> career game`,
           stats_html: statsFor(c, 'wins'),
-          eta: `${gap}G`, eta_unit: 'remaining',
+          eta: `${gap} games`, eta_unit: 'remaining',
           sort: gap + 0.5,
         })
       }
@@ -2694,7 +2703,7 @@ function buildLiveSeasonPreviews(
       const gap = Math.round(pfTo - c.pfAfter)
       if (gap > 150 && gap <= 800) {
         horizon.points.push({
-          glyph: '★', category: 'points', name: c.name,
+          glyph: '★', category: 'points', name: c.name, avatar: c.avatar,
           copy_html: `<em>${gap}</em> pts to <em>${pfTo.toLocaleString()}</em>`,
           stats_html: statsFor(c, 'points'),
           eta: `${gap}`, eta_unit: 'pts to go',
@@ -2702,29 +2711,35 @@ function buildLiveSeasonPreviews(
         })
       }
     }
-    if (c.activeStreak.type === 'W' && c.activeStreak.len >= 2) {
-      const sNext = streakTiers.find((t) => t > c.activeStreak.len + 1 && t <= c.activeStreak.len + 4)
-      if (sNext != null) {
-        horizon.streak.push({
-          glyph: '✺', category: 'streak', name: c.name,
-          copy_html: `<em>${sNext - c.activeStreak.len}</em> wins shy of a <em>${sNext}-game</em> streak`,
-          stats_html: statsFor(c, 'streak'),
-          eta: `${sNext - c.activeStreak.len}W`, eta_unit: 'remaining',
-          sort: sNext - c.activeStreak.len,
-        })
-      }
+    // Streak horizon: active run is ≥50% of personal best but not yet there.
+    // Target is personal_best + 1 (the next mark they'd be setting).
+    if (
+      c.activeStreak.type === 'W' &&
+      c.careerLongestWinStreak >= 2 &&
+      c.activeStreak.len >= Math.ceil(c.careerLongestWinStreak * 0.5) &&
+      c.activeStreak.len < c.careerLongestWinStreak
+    ) {
+      const target = c.careerLongestWinStreak + 1
+      const gap = target - c.activeStreak.len
+      horizon.streak.push({
+        glyph: '✺', category: 'streak', name: c.name, avatar: c.avatar,
+        copy_html: `<em>${gap}</em> wins shy of a <em>${target}-game win</em> streak`,
+        stats_html: statsFor(c, 'streak'),
+        eta: `${gap} wins`, eta_unit: 'remaining',
+        sort: gap,
+      })
     }
   }
 
   crossed.sort((a, b) => b.sort - a.sort)
-  for (const cat of ['wins','points','streak','loyalty'] as Category[]) {
+  for (const cat of ['wins','points','streak'] as Category[]) {
     imminent[cat].sort((a, b) => a.sort - b.sort)
     horizon[cat].sort((a, b) => a.sort - b.sort)
-    imminent[cat] = imminent[cat].slice(0, 5)
-    horizon[cat]  = horizon[cat].slice(0, 5)
+    imminent[cat] = imminent[cat].slice(0, 6)
+    horizon[cat]  = horizon[cat].slice(0, 6)
   }
 
-  const imminentCount = imminent.wins.length + imminent.points.length + imminent.streak.length + imminent.loyalty.length
+  const imminentCount = imminent.wins.length + imminent.points.length + imminent.streak.length
 
   const milestones = {
     meter: {
@@ -2733,9 +2748,11 @@ function buildLiveSeasonPreviews(
       imminent: imminentCount,
       through: `W${throughWeek} · ${year}`,
     },
-    crossed: crossed.slice(0, 6),
-    // New columnar layout: keyed by category. The old flat `imminent`/
-    // `horizon` arrays are dropped — the template renders columns now.
+    // Bumped from 6 → 12 so the template can scale into dense mode when
+    // there are more than 6 fresh milestones to surface.
+    crossed: crossed.slice(0, 12),
+    // Columnar layout: keyed by category. Loyalty was dropped (most managers
+    // started together so the anniversary signal isn't useful).
     imminent_by_category: imminent,
     horizon_by_category:  horizon,
   }
@@ -2799,7 +2816,7 @@ function emptyMilestones(year: number, throughWeek: number) {
   return {
     meter: { week: 0, season: 0, imminent: 0, through: `W${throughWeek} · ${year}` },
     crossed: [],
-    imminent_by_category: { wins: [], points: [], streak: [], loyalty: [] },
-    horizon_by_category:  { wins: [], points: [], streak: [], loyalty: [] },
+    imminent_by_category: { wins: [], points: [], streak: [] },
+    horizon_by_category:  { wins: [], points: [], streak: [] },
   }
 }
