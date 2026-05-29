@@ -417,13 +417,13 @@
         '}',
         '@media (max-width: 640px) {',
         '  .nav-chapbar-track { justify-content: flex-start; padding: 0 .15rem; }',
-        '  .nav-chapbar-link { padding: .5rem .65rem; font-size: .54rem; letter-spacing: .14em; }',
-        '  .nav-chapbar-link.is-active::after { left: .65rem; right: .65rem; }',
+        '  .nav-chapbar-link { padding: .55rem .75rem; font-size: .58rem; letter-spacing: .15em; }',
+        '  .nav-chapbar-link.is-active::after { left: .75rem; right: .75rem; }',
         '  .nav-chapbar-link + .nav-chapbar-link::before { top: 28%; bottom: 28%; }',
         '}',
         '@media (max-width: 380px) {',
-        '  .nav-chapbar-link { padding: .35rem .4rem .45rem; font-size: .44rem; letter-spacing: .1em; }',
-        '  .nav-chapbar-link.is-active::after { left: .4rem; right: .4rem; }',
+        '  .nav-chapbar-link { padding: .4rem .45rem .5rem; font-size: .48rem; letter-spacing: .11em; }',
+        '  .nav-chapbar-link.is-active::after { left: .45rem; right: .45rem; }',
         '}'
     ].join('\n');
     document.head.appendChild(style);

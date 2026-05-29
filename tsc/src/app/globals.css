@@ -4992,15 +4992,17 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
    squeezed into each other. Also drops the matchup down onto its own
    line under the team name when even the squeeze isn't enough. */
 @media (max-width: 640px) {
-    .cp-roll-row { flex-wrap: wrap; padding: .55rem 0; }
+    .cp-roll-row { flex-wrap: wrap; padding: .65rem 0; }
     .cp-roll-row > .cp-roll-yr { width: 56px; }
     .cp-roll-yr { font-size: .68rem; letter-spacing: .1em; }
-    .cp-roll-ch { font-size: 1rem; }
+    /* Match the season-archive .champ-team minimum so champion names
+       carry the same visual weight across the two surfaces. */
+    .cp-roll-ch { font-size: 1.5rem; }
     .cp-roll-row > .cp-roll-fin {
         flex-basis: 100%;
         margin-left: 56px;
-        margin-top: .15rem;
-        font-size: .62rem;
+        margin-top: .25rem;
+        font-size: .65rem;
     }
 }
 
