@@ -111,8 +111,11 @@ body { background: var(--ml-bg); }
 }
 
 /* ── Status strip ──────────────────────────────────────────── */
+/* Lives inside .ml-wrap, so width is naturally constrained to the
+   wrap's content area — its border lines stay flush with where the
+   section content starts and ends. */
 .ml-meter {
-    max-width: 1240px; margin: 0 auto 2.5rem;
+    margin: 0 0 2.5rem;
     padding: 1rem 1.4rem;
     display: flex; flex-wrap: wrap; align-items: center; gap: 1.6rem;
     background: var(--ml-soft);
@@ -546,25 +549,25 @@ body { background: var(--ml-bg); }
     </p>
 </header>
 
-<div class="ml-meter" id="ml-meter">
-    <div class="ml-meter-stat glow">
-        <span class="lbl">This week</span>
-        <span class="val" id="m-week">—</span>
-    </div>
-    <div class="ml-meter-sep"></div>
-    <div class="ml-meter-stat">
-        <span class="lbl">This season</span>
-        <span class="val" id="m-season">—</span>
-    </div>
-    <div class="ml-meter-sep"></div>
-    <div class="ml-meter-stat">
-        <span class="lbl">One game away</span>
-        <span class="val" id="m-imminent">—</span>
-    </div>
-    <div class="ml-meter-foot" id="m-foot">Tracking starts Week 1</div>
-</div>
-
 <main class="ml-wrap">
+
+    <div class="ml-meter" id="ml-meter">
+        <div class="ml-meter-stat glow">
+            <span class="lbl">This week</span>
+            <span class="val" id="m-week">—</span>
+        </div>
+        <div class="ml-meter-sep"></div>
+        <div class="ml-meter-stat">
+            <span class="lbl">This season</span>
+            <span class="val" id="m-season">—</span>
+        </div>
+        <div class="ml-meter-sep"></div>
+        <div class="ml-meter-stat">
+            <span class="lbl">One game away</span>
+            <span class="val" id="m-imminent">—</span>
+        </div>
+        <div class="ml-meter-foot" id="m-foot">Tracking starts Week 1</div>
+    </div>
 
     <section class="ml-section">
         <div class="ml-section-head">

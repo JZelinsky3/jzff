@@ -2626,8 +2626,8 @@ function buildLiveSeasonPreviews(
         glyph: '✦', tier: 'CAREER WINS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(wTier)}</strong> career win`,
         stats_html: statsFor(c, 'wins'),
-        meta_html: gm ? metaWinsLike(seedMid, gm.week, gm.self_score, gm.opp_id) : `${year}`,
-        when: crossingWeek ? `W${crossingWeek} · ${year}` : `${year}`,
+        meta_html: gm ? metaWinsLike(seedMid, gm.week, gm.self_score, gm.opp_id) : '',
+        when: crossingWeek ? `W${crossingWeek}` : '',
         sort: (crossingWeek * 100) + wTier,
       })
     }
@@ -2641,8 +2641,8 @@ function buildLiveSeasonPreviews(
         glyph: '◈', tier: 'CAREER STARTS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(gTier)}</strong> career start`,
         stats_html: statsFor(c, 'wins'),
-        meta_html: gm ? metaGamesLike(seedMid, gm.week, gm.opp_id) : `${year}`,
-        when: gm ? `W${gm.week} · ${year}` : `${year}`,
+        meta_html: gm ? metaGamesLike(seedMid, gm.week, gm.opp_id) : '',
+        when: gm ? `W${gm.week}` : '',
         sort: (gm?.week ?? 0) * 100 + 1,
       })
     }
@@ -2661,8 +2661,8 @@ function buildLiveSeasonPreviews(
         glyph: '★', tier: 'CAREER POINTS', category: 'points', name: c.name, avatar: c.avatar,
         achievement_html: `crossed <strong>${pTier.toLocaleString()}</strong> lifetime points`,
         stats_html: statsFor(c, 'points'),
-        meta_html: gm ? metaWinsLike(seedMid, gm.week, gm.self_score, gm.opp_id) : `${year}`,
-        when: week ? `W${week} · ${year}` : `${year}`,
+        meta_html: gm ? metaWinsLike(seedMid, gm.week, gm.self_score, gm.opp_id) : '',
+        when: week ? `W${week}` : '',
         sort: (week * 100) + 2,
       })
     }
@@ -2674,7 +2674,7 @@ function buildLiveSeasonPreviews(
         achievement_html: `new personal-best <strong>${c.activeStreak.len}-game win</strong> streak`,
         stats_html: statsFor(c, 'streak'),
         meta_html: `<strong>W${throughWeek}</strong> · prior best ${c.careerLongestWinStreak}W`,
-        when: `W${throughWeek} · ${year}`,
+        when: `W${throughWeek}`,
         sort: 99 * 100 + c.activeStreak.len,
       })
     }
@@ -2794,7 +2794,7 @@ function buildLiveSeasonPreviews(
 
   const milestones = {
     meter: {
-      week: crossed.filter((c) => c.when === `W${throughWeek} · ${year}`).length,
+      week: crossed.filter((c) => c.when === `W${throughWeek}`).length,
       season: crossed.length,
       imminent: imminentCount,
       through: `W${throughWeek} · ${year}`,
