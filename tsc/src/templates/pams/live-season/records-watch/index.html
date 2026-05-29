@@ -356,43 +356,109 @@ body { background: var(--rw-bg); }
     .rw-mark-num { font-size: 2.1rem; }
 }
 
-/* ── Chase list (compact rows) ─────────────────────────────── */
+/* ── Chase: standings-style leaderboard with inline mini-bars ─
+   Reads like an NBA standings table — fixed columns, mono numerics,
+   tiny pace bars inline. Less ornate than Brink but reinforces the
+   scoreboard identity (no more milestone-card vibes). */
 .rw-chase {
     background: var(--rw-card);
     border: 1px solid var(--rw-line);
+    overflow: hidden;
+}
+.rw-chase-head, .rw-chase-row {
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) 110px 5.5rem;
+    gap: 1rem;
+    align-items: center;
+    padding: .65rem 1.2rem;
+}
+.rw-chase-head {
+    background: var(--rw-soft);
+    border-bottom: 1px solid var(--rw-line);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--rw-mute);
 }
 .rw-chase-row {
-    display: grid; grid-template-columns: 2.5rem 1fr auto;
-    align-items: center; gap: 1rem;
-    padding: .9rem 1.2rem;
     border-bottom: 1px solid var(--rw-line-soft);
+    padding: .8rem 1.2rem;
 }
 .rw-chase-row:last-child { border-bottom: 0; }
+.rw-chase-row.hot { background: rgba(255,107,61,.06); }
 .rw-chase-rank {
     font-family: var(--mono); font-weight: 700;
     font-size: .85rem; color: var(--rw-mute);
+    font-variant-numeric: tabular-nums;
 }
-.rw-chase-rank.hot { color: var(--rw-ember); }
-.rw-chase-body .cat {
-    font-family: var(--mono); font-size: .54rem;
-    letter-spacing: .24em; text-transform: uppercase;
-    color: var(--rw-mute); margin-bottom: .2rem;
-}
-.rw-chase-body .copy {
-    font-family: var(--serif); font-size: 1.02rem;
-    color: var(--rw-cream); line-height: 1.3;
-}
-.rw-chase-body .copy em { color: var(--rw-ember); font-style: italic; }
-.rw-chase-pct {
+.rw-chase-row.hot .rw-chase-rank { color: var(--rw-ember); }
+.rw-chase-cat {
     font-family: var(--mono); font-weight: 700;
-    font-size: 1.1rem; color: var(--rw-cream);
-    text-align: right; line-height: 1;
+    font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--rw-cream);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.rw-chase-pct .of {
+.rw-chase-mark {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .8rem; color: var(--rw-cream);
+    font-variant-numeric: tabular-nums;
+}
+.rw-chase-mark .holder {
     display: block;
-    font-size: .5rem; font-weight: 500;
-    letter-spacing: .22em; text-transform: uppercase;
-    color: var(--rw-mute); margin-top: .25rem;
+    font-weight: 500;
+    font-size: .5rem; letter-spacing: .14em;
+    color: var(--rw-mute);
+    margin-top: .2rem;
+}
+.rw-chase-chaser {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem;
+    color: var(--rw-cream);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-chase-chaser .at {
+    display: block;
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .14em;
+    color: var(--rw-mute);
+    margin-top: .2rem;
+}
+.rw-chase-bar {
+    position: relative;
+    height: 8px;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line);
+}
+.rw-chase-bar-fill {
+    position: absolute;
+    top: 1px; bottom: 1px; left: 1px;
+    background: linear-gradient(90deg, var(--rw-ember-deep), var(--rw-ember));
+    box-shadow: 0 0 10px var(--rw-ember-soft);
+}
+.rw-chase-gap {
+    text-align: right;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; color: var(--rw-cream);
+    font-variant-numeric: tabular-nums;
+}
+.rw-chase-gap .pct {
+    display: block;
+    font-size: .5rem; font-weight: 500; letter-spacing: .14em;
+    color: var(--rw-mute);
+    margin-top: .2rem;
+}
+
+@media (max-width: 760px) {
+    .rw-chase-head, .rw-chase-row {
+        grid-template-columns: 2rem 1fr 5rem;
+        column-gap: .6rem;
+        row-gap: .35rem;
+    }
+    .rw-chase-head .col-mark, .rw-chase-head .col-chaser, .rw-chase-head .col-bar,
+    .rw-chase-mark, .rw-chase-bar { display: none; }
+    .rw-chase-row { padding: .85rem 1rem; }
+    .rw-chase-cat { font-size: .6rem; }
+    .rw-chase-chaser { font-size: 1rem; }
 }
 
 /* ── Just-missed rows (week-to-week extremes that came close) ── */
@@ -443,49 +509,96 @@ body { background: var(--rw-bg); }
     color: var(--rw-mute); margin-top: .3rem;
 }
 
-/* ── Broken cards (newly-claimed records) ──────────────────── */
+/* ── Just Broken: LCD-style scoreboard cards ──────────────────
+   Reads like a digital sports-bar readout: big mono numerics
+   for the new mark, the prior record struck through underneath
+   in dimmed type. Wider than the old card grid so each broken
+   record gets a moment.  */
 .rw-broken-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
     gap: 1.2rem;
 }
 .rw-broken {
-    background: var(--rw-card);
-    border: 1px solid var(--rw-line);
-    padding: 1.6rem 1.5rem 1.4rem;
     position: relative;
-    min-height: 160px;
-    display: flex;
-    flex-direction: column;
+    background:
+        radial-gradient(circle at 30% 0%, rgba(255,107,61,.10) 0%, transparent 55%),
+        linear-gradient(180deg, var(--rw-card) 0%, var(--rw-soft) 100%);
+    border: 1px solid var(--rw-line);
+    border-top: 3px solid var(--rw-ember);
+    padding: 1.4rem 1.5rem 1.3rem;
+    overflow: hidden;
 }
-.rw-broken .copy { flex: 1; font-size: 1.25rem; }
 .rw-broken::before {
-    content: 'NEW'; position: absolute;
-    top: -1px; right: 1rem;
+    content: 'NEW MARK'; position: absolute;
+    top: 0; right: 0;
     background: var(--rw-ember); color: #1a0a0a;
     font-family: var(--mono); font-weight: 700;
     font-size: .55rem; letter-spacing: .25em;
-    padding: .3rem .55rem .35rem;
+    padding: .35rem .65rem .4rem;
     box-shadow: 0 0 14px var(--rw-ember-soft);
 }
-.rw-broken .copy em { color: var(--rw-ember-hi); }
 .rw-broken .cat {
-    font-family: var(--mono); font-size: .55rem;
-    letter-spacing: .25em; text-transform: uppercase;
-    color: var(--rw-mute); margin-bottom: .5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--rw-ember);
+    margin-bottom: .9rem;
 }
-.rw-broken .copy {
-    font-family: var(--serif); font-size: 1.15rem;
-    color: var(--rw-cream); line-height: 1.25;
-    margin-bottom: .7rem;
+.rw-broken-readout {
+    /* The LCD readout — large monospace numeric in a recessed panel. */
+    background: rgba(0,0,0,.32);
+    border: 1px solid var(--rw-line);
+    padding: .8rem 1rem .9rem;
+    margin-bottom: .9rem;
+    text-align: center;
+    position: relative;
+    /* faint scanline texture for the digital look */
+    background-image:
+        linear-gradient(rgba(255,255,255,.025) 50%, transparent 50%),
+        linear-gradient(180deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,.45) 100%);
+    background-size: 100% 4px, 100% 100%;
 }
-.rw-broken .copy em { color: var(--rw-ember-hi); font-style: italic; }
-.rw-broken .meta {
-    font-family: var(--mono); font-size: .55rem;
-    letter-spacing: .14em; color: var(--rw-mute);
-    padding-top: .7rem;
+.rw-broken-readout .num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 2.6rem; line-height: 1;
+    color: var(--rw-ember-hi);
+    text-shadow: 0 0 14px var(--rw-ember-glow);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em;
+}
+.rw-broken-readout .unit {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-top: .45rem;
+}
+.rw-broken-readout .copy {
+    margin-top: .65rem;
+    padding-top: .65rem;
+    border-top: 1px dashed var(--rw-line);
+    font-family: var(--serif); font-size: .95rem; line-height: 1.4;
+    color: var(--rw-cream);
+    text-align: left;
+}
+.rw-broken-readout .copy em { color: var(--rw-ember-hi); font-style: italic; }
+.rw-broken-prior {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-top: .65rem;
     border-top: 1px solid var(--rw-line-soft);
-    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .12em;
+    color: var(--rw-mute);
+    text-transform: uppercase;
+}
+.rw-broken-prior .prior-line {
+    text-decoration: line-through;
+    text-decoration-color: var(--rw-ember-deep);
+    color: var(--rw-cream);
+    opacity: .55;
+    text-transform: none;
+    font-weight: 700;
+    letter-spacing: .04em;
 }
 
 /* ── Intro / empty state ───────────────────────────────────── */
@@ -797,32 +910,69 @@ body { background: var(--rw-bg); }
     $('brink-body').innerHTML = html;
   }
 
+  // Chase reads as a true standings table — columns line up across
+  // every row, mono numerics for the mark + gap, a mini bar inline
+  // for the pace, and the chaser's name in serif italic.
   function renderChase(items) {
-    var html = '<div class="rw-chase">';
+    var html = '<div class="rw-chase">' +
+      '<div class="rw-chase-head">' +
+        '<span>#</span>' +
+        '<span>Category</span>' +
+        '<span class="col-mark">The mark</span>' +
+        '<span class="col-chaser">Chasing</span>' +
+        '<span class="col-bar">Pace</span>' +
+        '<span style="text-align:right">Gap</span>' +
+      '</div>';
     items.forEach(function (it, i) {
-      var hot = (Number(it.pct) || 0) >= 90;
+      var raw = Math.max(0, Math.min(120, Number(it.pct) || 0));
+      var barFill = (raw / 120) * 100;  // matches Brink scale
+      var hot = raw >= 90;
       html +=
-        '<div class="rw-chase-row">' +
-          '<div class="rw-chase-rank' + (hot ? ' hot' : '') + '">' + String(i + 1).padStart(2, '0') + '</div>' +
-          '<div class="rw-chase-body">' +
-            '<div class="cat">' + esc(it.category || '') + '</div>' +
-            '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+        '<div class="rw-chase-row' + (hot ? ' hot' : '') + '">' +
+          '<div class="rw-chase-rank">' + String(i + 1).padStart(2, '0') + '</div>' +
+          '<div class="rw-chase-cat">' + esc(it.category || '') + '</div>' +
+          '<div class="rw-chase-mark">' + esc(it.record_value || '—') +
+            '<span class="holder">' + esc(it.holder || '') + '</span>' +
           '</div>' +
-          '<div class="rw-chase-pct">' + pct(it.pct || 0) + '<span class="of">of record</span></div>' +
+          '<div class="rw-chase-chaser">' + esc(it.chaser || '—') +
+            '<span class="at">' + esc(it.chaser_value || '') + '</span>' +
+          '</div>' +
+          '<div class="rw-chase-bar">' +
+            '<div class="rw-chase-bar-fill" style="width:calc(' + barFill.toFixed(2) + '% - 2px)"></div>' +
+          '</div>' +
+          '<div class="rw-chase-gap">' + esc(it.gap || '') +
+            '<span class="pct">' + pct(raw) + '</span>' +
+          '</div>' +
         '</div>';
     });
     html += '</div>';
     $('chase-body').innerHTML = html;
   }
 
+  // Broken reads as an LCD scoreboard — recessed panel with a big
+  // mono numeric for the new mark, prior record struck through below
+  // for context.
   function renderBroken(items) {
     var html = '<div class="rw-broken-grid">';
     items.forEach(function (it) {
+      // Pull the leading numeric out of chaser_value (e.g. "1850 pts")
+      // so the LCD readout shows just the number; unit drops underneath.
+      var cv = it.chaser_value || it.record_value || '';
+      var m = cv.match(/^(\d[\d.,]*)\s*(.*)$/);
+      var readNum = m ? m[1] : cv;
+      var readUnit = m ? m[2] : '';
       html +=
         '<article class="rw-broken">' +
           '<div class="cat">' + esc(it.category || '') + '</div>' +
-          '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
-          '<div class="meta"><span>' + esc(it.when || '') + '</span><span>prev ' + esc(it.previous || '—') + '</span></div>' +
+          '<div class="rw-broken-readout">' +
+            '<span class="num">' + esc(readNum) + '</span>' +
+            (readUnit ? '<span class="unit">' + esc(readUnit) + '</span>' : '') +
+            '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+          '</div>' +
+          '<div class="rw-broken-prior">' +
+            '<span>' + esc(it.when || '') + '</span>' +
+            '<span class="prior-line">prior · ' + esc(it.previous || '—') + '</span>' +
+          '</div>' +
         '</article>';
     });
     html += '</div>';
