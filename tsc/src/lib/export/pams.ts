@@ -2592,22 +2592,23 @@ function buildLiveSeasonPreviews(
 
     // Helper: build the meta line for a crossed milestone.
     //
-    // Points milestones: "W{week} · {score} pts vs Opp" — one continuous
-    // line, score follows the dot.
-    // Wins / games milestones: "W{week} vs Opp" — no dot, no score.
+    // Wins / games milestones: "W{week} vs Opp · {score} pts" — vs+opp
+    // sits right after the week, score trails behind the dot.
+    // Points milestones: "W{week} · {score} pts vs Opp" — score leads
+    // (it's the milestone-defining metric), opp trails after vs.
     // Streak milestones: "W{week} · prior best NW".
     //
     // H2H badge floats right when there's a career record vs that opp.
-    function metaPoints(mid: string, week: number, score: number, oppMid: string): string {
+    function metaWins(mid: string, week: number, score: number, oppMid: string): string {
       const opp = escTxt(nameOf(oppMid))
       const h2h = h2hThrough(mid, oppMid, year, week)
       return `<span class="meta-main"><strong>W${week}</strong> vs ${opp} · ${score.toFixed(1)} pts</span>` +
              (h2h ? `<span class="h2h">${h2h} H2H</span>` : '')
     }
-    function metaWins(mid: string, week: number, oppMid: string): string {
+    function metaPoints(mid: string, week: number, score: number, oppMid: string): string {
       const opp = escTxt(nameOf(oppMid))
       const h2h = h2hThrough(mid, oppMid, year, week)
-      return `<span class="meta-main"><strong>W${week}</strong> vs ${opp}</span>` +
+      return `<span class="meta-main"><strong>W${week}</strong> · ${score.toFixed(1)} pts vs ${opp}</span>` +
              (h2h ? `<span class="h2h">${h2h} H2H</span>` : '')
     }
     // Any id from the group works since h2hThrough resolves back via the
@@ -2630,7 +2631,7 @@ function buildLiveSeasonPreviews(
         glyph: '✦', tier: 'CAREER WINS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(wTier)}</strong> career win`,
         stats_html: statsFor(c, 'wins'),
-        meta_html: gm ? metaWins(seedMid, gm.week, gm.opp_id) : '',
+        meta_html: gm ? metaWins(seedMid, gm.week, gm.self_score, gm.opp_id) : '',
         when: crossingWeek ? `W${crossingWeek}` : '',
         sort: (crossingWeek * 100) + wTier,
       })
@@ -2645,7 +2646,7 @@ function buildLiveSeasonPreviews(
         glyph: '◈', tier: 'CAREER STARTS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(gTier)}</strong> career start`,
         stats_html: statsFor(c, 'wins'),
-        meta_html: gm ? metaWins(seedMid, gm.week, gm.opp_id) : '',
+        meta_html: gm ? metaWins(seedMid, gm.week, gm.self_score, gm.opp_id) : '',
         when: gm ? `W${gm.week}` : '',
         sort: (gm?.week ?? 0) * 100 + 1,
       })
