@@ -283,13 +283,12 @@ body { background: var(--dg-bg); }
     opacity: .55;
 }
 
-/* Multi-pick cells use CSS grid so layout can react to neighbouring
-   cells in the same row via :has(). By default 2 picks split
-   horizontally, 3 picks into 3 columns, 4 picks into a 2x2 grid. When a
-   row contains a 4-pick cell (which stretches the row vertically), 2-
-   and 3-pick cells switch to a column-major layout so they fill the
-   stretched row instead of leaving a dead bottom half. */
-.board-cell { vertical-align: middle; text-align: center; }
+/* Multi-pick cells use CSS grid so each pick (slice) stretches to fill
+   the cell — important when a sibling cell in the same row is taller
+   (a 4-pick 2x2). Defaults: 2 picks side-by-side, 3 picks side-by-side,
+   4 picks 2x2. Pick content keeps the same top-left alignment as
+   single-pick cells; no auto-centering. */
+.board-cell { vertical-align: middle; }
 .board-cell-multi {
     padding: 0;
     display: grid;
@@ -303,44 +302,46 @@ body { background: var(--dg-bg); }
     grid-template-rows:    1fr 1fr;
 }
 .board-cell-multi .board-cell-pick {
-    padding: .35rem .4rem;
-    border-right: 1px dashed var(--dg-line-soft);
-    border-bottom: 1px dashed var(--dg-line-soft);
+    padding: .4rem .5rem;
     min-width: 0; /* allow ellipsis on overflow */
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
+    /* No flex centering — keep content top-left to match single-pick cells. */
 }
-/* Drop trailing dividers on the row + col edges (single divider per
-   slice instead of a borderbox around each). */
-.board-cell-multi[data-count="2"] .board-cell-pick:nth-child(2) { border-right: none; }
-.board-cell-multi[data-count="3"] .board-cell-pick:nth-child(3) { border-right: none; }
-.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(2),
-.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(4) { border-right: none; }
-.board-cell-multi .board-cell-pick { border-bottom: none; }
+.board-cell-multi[data-count="2"] .board-cell-pick:first-child { border-right: 1px dashed var(--dg-line-soft); }
+.board-cell-multi[data-count="3"] .board-cell-pick:nth-child(1),
+.board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2) { border-right: 1px dashed var(--dg-line-soft); }
+.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(odd) { border-right: 1px dashed var(--dg-line-soft); }
 .board-cell-multi[data-count="4"] .board-cell-pick:nth-child(1),
 .board-cell-multi[data-count="4"] .board-cell-pick:nth-child(2) { border-bottom: 1px dashed var(--dg-line-soft); }
 
 .board-cell-multi .board-player { font-size: .62rem; max-width: 86px; }
 .board-cell-multi .board-pos { font-size: .46rem; padding: .08rem .25rem; }
 
-/* :has() reactivity: when this row has ANY 4-pick cell (which forces
-   the row taller), 2- and 3-pick cells in the same row switch to
-   column-major so they don't waste the stretched height. */
+/* When a row has a 4-pick cell (the row gets stretched tall by the 2x2
+   grid), 2- and 3-pick cells in the same row switch to a column-major
+   layout so they fill the stretched height. The JS in renderBoard
+   stamps `tr.board-row-tall` on these rows for browsers without :has()
+   support; the :has() selector below covers everything else. */
+tr.board-row-tall .board-cell-multi[data-count="2"],
 tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="2"] {
     grid-template-columns: 1fr;
     grid-template-rows:    1fr 1fr;
-    min-width: 86px; max-width: 110px;
+    min-width: 90px; max-width: 110px;
 }
-tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="2"] .board-cell-pick:nth-child(1) {
+tr.board-row-tall .board-cell-multi[data-count="2"] .board-cell-pick:first-child,
+tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="2"] .board-cell-pick:first-child {
     border-right: none;
     border-bottom: 1px dashed var(--dg-line-soft);
 }
+tr.board-row-tall .board-cell-multi[data-count="3"],
 tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] {
     grid-template-columns: 1fr 1fr;
     grid-template-rows:    1fr 1fr;
     min-width: 140px; max-width: 184px;
 }
+tr.board-row-tall .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2),
 tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2) { border-right: none; }
+tr.board-row-tall .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(1),
+tr.board-row-tall .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2),
 tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(1),
 tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2) { border-bottom: 1px dashed var(--dg-line-soft); }
 
@@ -1438,7 +1439,17 @@ function renderBoard(year) {
     html += '</tr></thead><tbody>';
 
     managerOrder.forEach(function(mgr) {
-        html += '<tr>';
+        // Pre-scan this manager's rounds to detect the tallest cell.
+        // A 4+ pick cell uses a 2x2 grid (taller); rows containing one
+        // get a `board-row-tall` class so 2- and 3-pick cells in the same
+        // row can switch to column-major via CSS. Belt + suspenders for
+        // browsers without :has() support.
+        var hasTallCell = false;
+        for (var rr = 1; rr <= maxRound; rr++) {
+            var pp = (grid[mgr] && grid[mgr][rr]) || [];
+            if (pp.length >= 4) { hasTallCell = true; break; }
+        }
+        html += '<tr' + (hasTallCell ? ' class="board-row-tall"' : '') + '>';
         var team = teamNames[mgr] || '';
         html += '<td class="board-mgr-td">'
               + '<span class="board-mgr-name">' + esc(mgr) + '</span>'
