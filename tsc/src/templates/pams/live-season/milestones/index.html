@@ -555,16 +555,54 @@ body { background: var(--ml-bg); }
 }
 @media (max-width: 760px) {
     .page-header { padding: 2.5rem 1rem 1.5rem; }
-    .ml-meter { padding: .85rem 1rem; gap: 1rem; }
+    /* Meter shrink: tighter padding + gap, smaller label + val so the
+       four stats fit on the strip without the wrap+overflow they had
+       at phone widths. */
+    .ml-meter { padding: .55rem .75rem; gap: .55rem; }
     .ml-meter-sep { display: none; }
-    .ml-ladder { grid-template-columns: 1fr 1fr; }
+    .ml-meter-stat { gap: .15rem; }
+    .ml-meter-stat .lbl { font-size: .48rem; letter-spacing: .18em; }
+    .ml-meter-stat .val { font-size: 1.05rem; }
+    .ml-meter-foot { font-size: .48rem; letter-spacing: .15em; }
+    /* Section number caps run a bit smaller on phones — desktop sizing
+       was overweight on a narrow header row. */
+    .ml-section-num { font-size: .48rem; letter-spacing: .22em; }
+    .ml-section-title { font-size: 1.35rem; }
+    .ml-section-note { font-size: .48rem; letter-spacing: .18em; }
+    /* Just Achieved: force 2 columns on phones so the cards stack 2x
+       down instead of going single-column. Card chrome scales down to
+       match. */
+    .ml-crossed-grid,
+    .ml-crossed-grid.dense {
+        grid-template-columns: 1fr 1fr;
+        gap: .7rem;
+    }
+    .ml-crossed { padding: .95rem .95rem .85rem; }
+    .ml-medal { width: 38px; height: 38px; font-size: .95rem; margin-bottom: .6rem; }
+    .ml-medal img { width: 38px; height: 38px; }
+    .ml-crossed .who { font-size: .48rem; letter-spacing: .2em; margin-bottom: .2rem; }
+    .ml-crossed .name { font-size: 1.05rem; margin-bottom: .35rem; }
+    .ml-crossed .achievement { font-size: .82rem; line-height: 1.3; margin-bottom: .55rem; }
+    .ml-crossed .stats { font-size: .52rem; padding: .45rem 0; }
+    .ml-crossed .meta { font-size: .48rem; padding-top: .5rem; gap: .25rem; }
+    .ml-crossed .meta .h2h { font-size: .44rem; padding: .06rem .26rem .08rem; }
     .ml-approach-row { grid-template-columns: 38px 1fr; column-gap: .7rem; padding: .75rem .85rem; }
     .ml-approach-glyph { width: 38px; height: 38px; font-size: .95rem; }
     .ml-approach-glyph img { width: 38px; height: 38px; }
     .ml-approach-name { font-size: 1.15rem; }
+    .ml-ladder { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 580px) {
     .ml-approach-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 400px) {
+    /* On the smallest phones the 2-col Just Achieved cards get a
+       touch tighter so the text inside doesn't wrap painfully. */
+    .ml-crossed-grid,
+    .ml-crossed-grid.dense { gap: .55rem; }
+    .ml-crossed { padding: .8rem .75rem .75rem; }
+    .ml-crossed .name { font-size: .98rem; }
+    .ml-crossed .achievement { font-size: .78rem; }
 }
 @media (max-width: 440px) {
     .ml-ladder { grid-template-columns: 1fr; }
