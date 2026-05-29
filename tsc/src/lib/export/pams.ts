@@ -2060,17 +2060,50 @@ function buildLiveSeasonPreviews(
     }
   }
 
-  // ── ALL-TIME (pre-{year}) longest streak + its holder.
-  let allWinStreak = { len: 0, mid: '' }
-  let allLossStreak = { len: 0, mid: '' }
+  // ── ALL-TIME (pre-{year}) longest streak + its holder, now with the
+  // start + end games so the brink card can stamp the date range.
+  type StreakInfo = {
+    len: number; mid: string;
+    startYear: number; startWeek: number;
+    endYear:   number; endWeek:   number;
+  }
+  let allWinStreak: StreakInfo = { len: 0, mid: '', startYear: 0, startWeek: 0, endYear: 0, endWeek: 0 }
+  let allLossStreak: StreakInfo = { len: 0, mid: '', startYear: 0, startWeek: 0, endYear: 0, endWeek: 0 }
   for (const [mid, games] of gamesByManager) {
-    let runW = 0, runL = 0
+    let runLen = 0
+    let runStart: TaggedGame | null = null
+    let runType: 'W' | 'L' | null = null
     for (const g of games) {
       if (g.year >= year) break
-      if (g.result === 'W') { runW++; runL = 0; if (runW > allWinStreak.len) allWinStreak = { len: runW, mid } }
-      else if (g.result === 'L') { runL++; runW = 0; if (runL > allLossStreak.len) allLossStreak = { len: runL, mid } }
-      else { runW = 0; runL = 0 }
+      if (g.result === 'W' || g.result === 'L') {
+        if (g.result === runType) {
+          runLen++
+        } else {
+          runType = g.result
+          runStart = g
+          runLen = 1
+        }
+        if (runType === 'W' && runLen > allWinStreak.len) {
+          allWinStreak = { len: runLen, mid,
+            startYear: runStart!.year, startWeek: runStart!.week,
+            endYear: g.year, endWeek: g.week,
+          }
+        }
+        if (runType === 'L' && runLen > allLossStreak.len) {
+          allLossStreak = { len: runLen, mid,
+            startYear: runStart!.year, startWeek: runStart!.week,
+            endYear: g.year, endWeek: g.week,
+          }
+        }
+      } else {
+        runType = null; runStart = null; runLen = 0
+      }
     }
+  }
+  // Helper to format a streak's date range as the holder_when string.
+  function streakSpan(s: StreakInfo): string {
+    if (s.startYear === s.endYear) return `W${s.startWeek} – W${s.endWeek} · ${s.startYear}`
+    return `W${s.startWeek} '${String(s.startYear).slice(-2)} – W${s.endWeek} '${String(s.endYear).slice(-2)}`
   }
 
   // ── PER-MANAGER {year}-through-W{throughWeek} stats.
@@ -2316,7 +2349,7 @@ function buildLiveSeasonPreviews(
       flag: flagFor(pct, 'TIED OR SURPASSED', 'ONE FROM HISTORY', 'ON THE BRINK', 'HEATING UP'),
       title_html: `${r} wins <em>· longest streak ever</em>`,
       holder: nameOf(allWinStreak.mid), record_value: `${r} wins in a row`,
-      holder_when: 'all-time mark',
+      holder_when: streakSpan(allWinStreak),
       chaser: liveWin.name, chaser_value: `${v} wins active`,
       chaser_when: `W${throughWeek} · ${year}`,
       gap: pct >= 100 ? `+${v - r} wins past the line` : `${r - v} wins to tie`,
@@ -2338,7 +2371,7 @@ function buildLiveSeasonPreviews(
       flag: flagFor(pct, 'NEW SKID HIGH', 'COLD AS ICE', 'STRUGGLING', 'ROUGH PATCH'),
       title_html: `${r} losses <em>· longest skid ever</em>`,
       holder: nameOf(allLossStreak.mid), record_value: `${r} losses in a row`,
-      holder_when: 'all-time skid',
+      holder_when: streakSpan(allLossStreak),
       chaser: liveLoss.name, chaser_value: `${v} losses active`,
       chaser_when: `W${throughWeek} · ${year}`,
       gap: pct >= 100 ? `+${v - r} losses past` : `${r - v} losses to tie`,
@@ -2540,7 +2573,7 @@ function buildLiveSeasonPreviews(
           title_html: `${r.games} games <em>· quickest to ${cfg.fmtT(T)}</em>`,
           holder: r.walk.name,
           record_value: cfg.fmtGames(r.games),
-          holder_when: `set ${r.year}`,
+          holder_when: `${r.year}`,
           chaser: bestChaser.walk.name,
           // chaser_value leads with the bare number + unit so the LCD
           // readout shows "16" big with "games" as the unit caption.
@@ -2678,7 +2711,7 @@ function buildLiveSeasonPreviews(
   // On-pace sits in the band just below brink — items that are
   // building toward the record but aren't close enough to warrant the
   // bar-plot treatment yet.
-  const BRINK_THRESHOLD  = 50  // ≥ this with no overshoot → Brink (with meter)
+  const BRINK_THRESHOLD  = 70  // ≥ this with no overshoot → Brink (with meter)
   const ONPACE_THRESHOLD = 40  // ≥ this and < brink → On Pace (stats only)
 
   for (const it of accumItems) {
