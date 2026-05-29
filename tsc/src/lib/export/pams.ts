@@ -1965,7 +1965,7 @@ export async function exportLeague(
   // end-of-W5-2025 so the live-season templates can be reviewed with real
   // names + numbers before the live data pipeline ships league-wide.
   if (opts.slug === 'jake') {
-    const previews = buildLiveSeasonPreviews(s, 2025, 5)
+    const previews = buildLiveSeasonPreviews(s, 2025, 10)
     out['records_watch.json'] = previews.records_watch
     out['milestones.json'] = previews.milestones
   }
