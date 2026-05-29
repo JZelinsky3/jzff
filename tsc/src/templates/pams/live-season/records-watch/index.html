@@ -640,9 +640,12 @@ body { background: var(--rw-bg); }
 }
 .rw-mark-credit strong { color: var(--rw-cream); font-weight: 700; }
 
-/* The plot — dominant horizontal bar with tick marks + mark line. */
+/* The plot — dominant horizontal bar with tick marks + mark line.
+   Extra right padding restores the original track length even though
+   the mark panel shrunk, so the bar reads the same width as before
+   the panel was tightened. */
 .rw-block-plot {
-    padding: 1.3rem 1.6rem 1.2rem 1.4rem;
+    padding: 1.3rem 4.1rem 1.2rem 1.4rem;
     display: flex; flex-direction: column;
     gap: .6rem;
     min-width: 0;
@@ -718,6 +721,32 @@ body { background: var(--rw-bg); }
     background: var(--rw-ember-hi);
     box-shadow: 0 0 8px var(--rw-ember-glow);
     z-index: 2;
+}
+.rw-plot-proj-line {
+    /* Gold vertical line at the right edge of the track for overshoot
+     * layout — marks the chaser's projected end value. Pairs with the
+     * gold .rw-plot-label-proj above the bar. */
+    position: absolute;
+    top: -5px; bottom: -5px;
+    right: 0;
+    width: 2px;
+    background: var(--gold);
+    box-shadow: 0 0 8px rgba(232,200,137,.55);
+    z-index: 2;
+}
+.rw-plot-label-proj {
+    /* Gold "12 wins" label sitting above the bar at the projection
+     * line (right edge), so the chaser's projected end reads cleanly
+     * above the meter to match the gold line below it. */
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .04em;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-shadow: 0 0 10px rgba(232,200,137,.35);
 }
 .rw-plot-mark-line .mark-tag {
     /* Floating label above the line — names the record value when
@@ -1231,13 +1260,13 @@ body { background: var(--rw-bg); }
                 <span class="lbl">Broken</span>
                 <span class="val" id="m-broken">—</span>
             </div>
-            <div class="rw-mast-stat">
-                <span class="lbl">On pace</span>
-                <span class="val" id="m-onpace">—</span>
-            </div>
             <div class="rw-mast-stat steel">
                 <span class="lbl">Brink</span>
                 <span class="val" id="m-brink">—</span>
+            </div>
+            <div class="rw-mast-stat">
+                <span class="lbl">On pace</span>
+                <span class="val" id="m-onpace">—</span>
             </div>
             <div class="rw-mast-stat steel">
                 <span class="lbl">Missed</span>
@@ -1428,17 +1457,27 @@ body { background: var(--rw-bg); }
       var pNum = Number(it.projection_numeric);
       var overshoot = isFinite(rNum) && isFinite(cNum) && isFinite(pNum) && pNum > rNum;
 
-      var markPosPct, fillPct, rightLabel, markTagHtml;
+      var markPosPct, fillPct, scaleEndLabel, scaleEndStyle, projAboveHtml, projLineHtml;
       if (overshoot) {
         markPosPct = (rNum / pNum) * 100;
         fillPct = Math.min(100, (cNum / pNum) * 100);
-        rightLabel = it.projection_short || shortRecord(it.record_value);
-        markTagHtml = '<span class="mark-tag">' + esc(shortRecord(it.record_value)) + '</span>';
+        // Bottom scale now ends with the RECORD value at the mark
+        // position (since the right-edge belongs to the projection,
+        // which lives above the bar in gold instead).
+        scaleEndLabel = shortRecord(it.record_value);
+        scaleEndStyle = 'left:' + markPosPct.toFixed(2) + '%; transform:translateX(-50%); right:auto;';
+        // Gold projection label + matching gold vertical line at the
+        // right edge of the track.
+        var projShort = it.projection_short || shortRecord(it.record_value);
+        projAboveHtml = '<span class="rw-plot-label-proj">' + esc(projShort) + '</span>';
+        projLineHtml  = '<div class="rw-plot-proj-line"></div>';
       } else {
         markPosPct = 100;
         fillPct = rawPct;
-        rightLabel = shortRecord(it.record_value);
-        markTagHtml = '';
+        scaleEndLabel = shortRecord(it.record_value);
+        scaleEndStyle = '';  // default s-end (right: 0)
+        projAboveHtml = '';
+        projLineHtml  = '';
       }
 
       // Split record_value into a leading number + unit so the mark panel
@@ -1474,9 +1513,17 @@ body { background: var(--rw-bg); }
               '<div class="rw-mark-label">The mark</div>' +
               '<div class="rw-mark-num">' + esc(markNum) + '</div>' +
               (markUnit ? '<div class="rw-mark-unit">' + esc(markUnit) + '</div>' : '') +
-              '<div class="rw-mark-credit"><strong>' + esc(it.holder || '—') + '</strong>' +
-                (it.holder_when ? ' · ' + esc(it.holder_when) : '') +
-              '</div>' +
+              // Stack the holder name + when on two lines when the when
+              // string is a streak date range ("W1 – W6 · 2024") — half-
+              // line wraps look bad. For short whens ("2024"), inline.
+              (function () {
+                var hw = String(it.holder_when || '');
+                var stack = hw.indexOf('–') !== -1;
+                return '<div class="rw-mark-credit' + (stack ? ' stack' : '') + '">' +
+                  '<strong>' + esc(it.holder || '—') + '</strong>' +
+                  (hw ? (stack ? '<br>' : ' · ') + esc(hw) : '') +
+                  '</div>';
+              })() +
             '</div>' +
             '<div class="rw-block-plot">' +
               '<div class="rw-plot-head">' +
@@ -1487,14 +1534,14 @@ body { background: var(--rw-bg); }
               '</div>' +
               '<div class="rw-plot-labels">' +
                 '<span class="rw-plot-label" style="left:' + fillPct.toFixed(2) + '%">' + esc(barLabel) + '</span>' +
+                projAboveHtml +
               '</div>' +
               '<div class="rw-plot-track">' +
                 '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.25).toFixed(2) + '%"></div>' +
                 '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.50).toFixed(2) + '%"></div>' +
                 '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.75).toFixed(2) + '%"></div>' +
-                '<div class="rw-plot-mark-line" style="left:' + markPosPct.toFixed(2) + '%">' +
-                  markTagHtml +
-                '</div>' +
+                '<div class="rw-plot-mark-line" style="left:' + markPosPct.toFixed(2) + '%"></div>' +
+                projLineHtml +
                 '<div class="rw-plot-fill" style="width:calc(' + fillPct.toFixed(2) + '% - 4px)"></div>' +
               '</div>' +
               '<div class="rw-plot-scale">' +
@@ -1502,7 +1549,7 @@ body { background: var(--rw-bg); }
                 '<span style="left:' + (markPosPct * 0.25).toFixed(2) + '%">25%</span>' +
                 '<span style="left:' + (markPosPct * 0.50).toFixed(2) + '%">50%</span>' +
                 '<span style="left:' + (markPosPct * 0.75).toFixed(2) + '%">75%</span>' +
-                '<span class="s-end">' + esc(rightLabel) + '</span>' +
+                '<span class="s-end"' + (scaleEndStyle ? ' style="' + scaleEndStyle + '"' : '') + '>' + esc(scaleEndLabel) + '</span>' +
               '</div>' +
               '<div class="rw-plot-foot">' +
                 '<span>' + esc(it.chaser_when || '') + '</span>' +
