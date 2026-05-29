@@ -20,7 +20,12 @@
 .tr-side { padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .65rem; }
 .tr-side-head { display: flex; align-items: center; gap: .65rem; }
 .tr-side-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; object-fit: cover; }
-.tr-assets { display: flex; flex-direction: column; gap: .35rem; }
+/* flex-grow:1 so .tr-assets expands to fill whatever vertical space is
+   available in its .tr-side flex column. With grid stretch on the row,
+   sides have equal height, so the grade block at the bottom of each
+   side lines up across the trade — a 2-for-1 no longer has the smaller
+   side's grade floating above the larger side's. */
+.tr-assets { display: flex; flex-direction: column; gap: .35rem; flex-grow: 1; }
 .tr-asset { display: flex; align-items: baseline; gap: .5rem; padding: .35rem .55rem; font-size: .9rem; border-radius: 2px; }
 .tr-asset-pos { font-family: var(--mono); font-size: .62rem; letter-spacing: .12em; flex-shrink: 0; min-width: 30px; }
 .tr-asset-name { flex: 1; }
