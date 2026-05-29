@@ -2913,7 +2913,7 @@ function buildLiveSeasonPreviews(
   // Loyalty/seasons-in-league removed — most jake managers started together so
   // they'd all hit the same anniversary at once, which isn't useful signal.
   const winTiers    = [10, 25, 50, 75, 100, 125, 150, 175, 200, 250, 300]
-  const gamesTiers  = [25, 50, 75, 100, 125, 150, 200, 250]
+  // gamesTiers dropped — see CAREER STARTS comment in the per-career loop below.
   const pfTiers     = [2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000, 25000, 30000]
 
   type Category = 'wins' | 'points' | 'streak'
@@ -3007,20 +3007,10 @@ function buildLiveSeasonPreviews(
       })
     }
 
-    // ── Crossed: career games started
-    const gTier = nextTierCrossed(c.gamesBefore, c.gamesAfter, gamesTiers)
-    if (gTier != null) {
-      const idx = gTier - c.gamesBefore - 1
-      const gm = c.seasonGames[idx]
-      crossed.push({
-        glyph: '◈', tier: 'CAREER STARTS', category: 'wins', name: c.name, avatar: c.avatar,
-        achievement_html: `<strong>${ordinal(gTier)}</strong> career start`,
-        stats_html: statsFor(c, 'wins'),
-        meta_html: gm ? metaWins(seedMid, gm.week, gm.self_score, gm.opp_id) : '',
-        when: gm ? `W${gm.week}` : '',
-        sort: (gm?.week ?? 0) * 100 + 1,
-      })
-    }
+    // Career-starts milestones (50th / 100th / etc. career game) were
+    // dropped — in a league where most members joined together, every
+    // manager hits the same starts milestone the same week, which just
+    // crowded the Just Achieved feed with low-signal entries.
 
     // ── Crossed: career PF
     const pTier = nextTierCrossed(c.pfBefore, c.pfAfter, pfTiers)
@@ -3067,16 +3057,7 @@ function buildLiveSeasonPreviews(
         sort: 1,
       })
     }
-    const gamesTo = nextTierAhead(c.gamesAfter, gamesTiers)
-    if (gamesTo != null && gamesTo - c.gamesAfter === 1) {
-      imminent.wins.push({
-        glyph: '◈', category: 'wins', name: c.name, avatar: c.avatar,
-        copy_html: `next game = <em>${ordinal(gamesTo)}</em> start`,
-        stats_html: statsFor(c, 'wins'),
-        eta: '1 game', eta_unit: 'to go',
-        sort: 2,
-      })
-    }
+    // Career-starts imminent dropped — see CAREER STARTS comment above.
     const pfTo = nextTierAhead(c.pfAfter, pfTiers)
     if (pfTo != null && pfTo - c.pfAfter <= 150) {
       const gap = Math.round(pfTo - c.pfAfter)
@@ -3113,18 +3094,7 @@ function buildLiveSeasonPreviews(
         })
       }
     }
-    if (gamesTo != null) {
-      const gap = gamesTo - c.gamesAfter
-      if (gap >= 2 && gap <= 6) {
-        horizon.wins.push({
-          glyph: '◈', category: 'wins', name: c.name, avatar: c.avatar,
-          copy_html: `<em>${gap}</em> starts from <em>${ordinal(gamesTo)}</em> career game`,
-          stats_html: statsFor(c, 'wins'),
-          eta: `${gap} games`, eta_unit: 'remaining',
-          sort: gap + 0.5,
-        })
-      }
-    }
+    // Career-starts horizon dropped — see CAREER STARTS comment above.
     if (pfTo != null) {
       const gap = Math.round(pfTo - c.pfAfter)
       if (gap > 150 && gap <= 800) {
