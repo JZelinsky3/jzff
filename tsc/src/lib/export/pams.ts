@@ -3145,6 +3145,17 @@ function buildLiveSeasonPreviews(
 
   const imminentCount = imminent.wins.length + imminent.points.length + imminent.streak.length
 
+  // "Just Achieved" only shows milestones from the last 10 days. In NFL
+  // terms that's roughly a week and a half — items hit in the current
+  // week or the one before stay; older crossings drop off so the feed
+  // doesn't carry weeks-old achievements.
+  const recentWeekCutoff = Math.max(1, throughWeek - 1)
+  const crossedRecent = crossed.filter((c) => {
+    const m = String(c.when || '').match(/^W(\d+)/)
+    if (!m) return false  // items without a W{n} stamp (rare) don't qualify
+    return parseInt(m[1], 10) >= recentWeekCutoff
+  })
+
   const milestones = {
     meter: {
       week: crossed.filter((c) => c.when === `W${throughWeek}`).length,
@@ -3152,9 +3163,9 @@ function buildLiveSeasonPreviews(
       imminent: imminentCount,
       through: `W${throughWeek} · ${year}`,
     },
-    // Bumped from 6 → 12 so the template can scale into dense mode when
-    // there are more than 6 fresh milestones to surface.
-    crossed: crossed.slice(0, 12),
+    // Filtered + capped at 12 so the dense Just-Achieved grid stays
+    // within scroll-friendly density.
+    crossed: crossedRecent.slice(0, 12),
     // Columnar layout: keyed by category. Loyalty was dropped (most managers
     // started together so the anniversary signal isn't useful).
     imminent_by_category: imminent,
