@@ -399,7 +399,7 @@
         '  font-family: var(--mono, "JetBrains Mono", monospace);',
         '  font-weight: 700;',
         '  font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;',
-        '  padding: .55rem 1.3rem .65rem;',
+        '  padding: .65rem 1.3rem .75rem;',
         '  transition: color .15s;',
         '  white-space: nowrap;',
         '}',
@@ -417,13 +417,13 @@
         '}',
         '@media (max-width: 640px) {',
         '  .nav-chapbar-track { justify-content: flex-start; padding: 0 .15rem; }',
-        '  .nav-chapbar-link { padding: .45rem .55rem; font-size: .5rem; letter-spacing: .13em; }',
-        '  .nav-chapbar-link.is-active::after { left: .55rem; right: .55rem; }',
+        '  .nav-chapbar-link { padding: .5rem .65rem; font-size: .54rem; letter-spacing: .14em; }',
+        '  .nav-chapbar-link.is-active::after { left: .65rem; right: .65rem; }',
         '  .nav-chapbar-link + .nav-chapbar-link::before { top: 28%; bottom: 28%; }',
         '}',
         '@media (max-width: 380px) {',
-        '  .nav-chapbar-link { padding: .3rem .35rem .4rem; font-size: .42rem; letter-spacing: .09em; }',
-        '  .nav-chapbar-link.is-active::after { left: .35rem; right: .35rem; }',
+        '  .nav-chapbar-link { padding: .35rem .4rem .45rem; font-size: .44rem; letter-spacing: .1em; }',
+        '  .nav-chapbar-link.is-active::after { left: .4rem; right: .4rem; }',
         '}'
     ].join('\n');
     document.head.appendChild(style);
