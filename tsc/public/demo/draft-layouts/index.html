@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Draft board layouts · demo</title>
+  <link rel="stylesheet" href="/pams-template/assets/css/main.css" />
+  <style>
+    :root {
+      --dg-bg:         #0d0d0d;
+      --dg-soft:       #131313;
+      --dg-card:       #181818;
+      --dg-card-hover: #1f1f1f;
+      --dg-line:       #232323;
+      --dg-line-soft:  #1c1c1c;
+      --dg-accent:     #e8c889;
+    }
+    body { background: var(--dg-bg); color: var(--cream); font-family: var(--sans); }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+
+    .hero { text-align: center; margin-bottom: 3rem; }
+    .hero-sup {
+      font-family: var(--mono); font-size: .68rem;
+      letter-spacing: .3em; color: var(--gold); text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-family: var(--serif); font-size: clamp(2.4rem, 6vw, 3.6rem);
+      line-height: 1.05; margin-bottom: .75rem;
+    }
+    .hero h1 em { color: var(--gold); font-style: italic; }
+    .hero p {
+      max-width: 36rem; margin: 0 auto;
+      color: var(--cream-soft); font-size: .95rem; line-height: 1.55;
+    }
+
+    .scenario {
+      margin: 0 auto 3rem; max-width: 700px;
+      padding: 1.1rem 1.4rem;
+      background: var(--dg-card); border: 1px solid var(--dg-line);
+      border-left: 3px solid var(--gold); border-radius: 3px;
+      font-size: .9rem; line-height: 1.55; color: var(--cream-soft);
+    }
+    .scenario strong { color: var(--cream); }
+
+    .opt {
+      margin-bottom: 3.5rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px dashed var(--dg-line);
+    }
+    .opt:last-child { border-bottom: none; }
+    .opt-head { margin-bottom: 1.25rem; }
+    .opt-num {
+      font-family: var(--mono); font-size: .68rem;
+      letter-spacing: .25em; color: var(--gold);
+      text-transform: uppercase; margin-bottom: .5rem;
+    }
+    .opt-title {
+      font-family: var(--serif); font-size: 1.8rem;
+      line-height: 1.15; margin-bottom: .55rem;
+    }
+    .opt-title em { color: var(--gold); font-style: italic; }
+    .opt-desc {
+      color: var(--cream-soft); font-size: .92rem; line-height: 1.55;
+      max-width: 50rem;
+    }
+
+    /* ── Shared base table styling (cribbed from real draft template) ── */
+    .board-wrap {
+      margin-top: 1.4rem;
+      overflow-x: auto;
+      border: 1px solid var(--dg-line);
+      border-radius: 2px;
+    }
+    .board-table {
+      width: 100%; border-collapse: collapse;
+      font-family: var(--sans); color: var(--cream);
+    }
+    .board-table thead th {
+      background: rgba(232, 200, 137, .04);
+      border-bottom: 1px solid var(--dg-line);
+      color: var(--gold);
+      font-family: var(--mono); font-weight: 700;
+      font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
+      padding: .55rem .55rem;
+      text-align: left;
+    }
+    .board-table thead th:first-child { padding-left: 1rem; }
+    .board-table tbody tr:nth-child(odd)  td { background: var(--dg-card); }
+    .board-table tbody tr:nth-child(even) td { background: var(--dg-soft); }
+    .board-mgr-td {
+      padding: .55rem 1rem .55rem 1rem;
+      border-right: 1px solid var(--dg-line-soft);
+      border-bottom: 1px solid var(--dg-line-soft);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .board-mgr-name { display: block; font-weight: 600; font-size: .8rem; }
+    .board-team-name { display: block; font-family: var(--mono); font-size: .55rem; color: var(--cream-mute); letter-spacing: .05em; margin-top: .1rem; }
+    .board-cell {
+      padding: .45rem .55rem;
+      border-right: 1px solid var(--dg-line-soft);
+      border-bottom: 1px solid var(--dg-line-soft);
+      min-width: 96px; max-width: 110px;
+    }
+    .board-player {
+      display: block;
+      font-size: .72rem; line-height: 1.2; color: var(--cream);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 100px;
+    }
+    .board-pos {
+      display: inline-block; font-family: var(--mono); font-weight: 700;
+      font-size: .52rem; letter-spacing: .08em;
+      padding: .1rem .3rem; margin-top: .25rem;
+      border-radius: 2px;
+    }
+    .board-empty {
+      color: var(--cream-mute); text-align: center;
+      font-family: var(--serif); font-style: italic;
+      font-size: .78rem; opacity: .55;
+      vertical-align: middle;
+    }
+    .p-rb .board-player { color: #6dc28c; } .p-rb .board-pos { background: rgba(74,154,106,.2); color: #6dc28c; }
+    .p-wr .board-player { color: var(--gold-bright); } .p-wr .board-pos { background: rgba(232,200,137,.15); color: var(--gold); }
+    .p-qb .board-player { color: #8aaccc; } .p-qb .board-pos { background: rgba(107,138,168,.2); color: #8aaccc; }
+    .p-te .board-player { color: #c4a3e8; } .p-te .board-pos { background: rgba(155,123,184,.2); color: #b89fd8; }
+
+    /* ── Option-specific styles ── */
+    /* A. CURRENT (vertical stack, top-align) */
+    .a .board-cell { vertical-align: top; }
+    .a .board-cell-multi { padding: 0; }
+    .a .board-cell-multi .pick {
+      padding: .4rem .55rem;
+      border-bottom: 1px dashed var(--dg-line-soft);
+    }
+    .a .board-cell-multi .pick:last-child { border-bottom: none; }
+
+    /* B. Side-by-side picks (horizontal split, no row stretch) */
+    .b .board-cell { vertical-align: middle; }
+    .b .board-cell-multi {
+      padding: 0;
+      display: flex;
+      max-width: 220px;
+    }
+    .b .board-cell { max-width: 110px; }
+    .b .board-cell-multi { max-width: 220px; min-width: 192px; }
+    .b .board-cell-multi .pick {
+      flex: 1 1 50%;
+      padding: .4rem .45rem;
+      border-right: 1px dashed var(--dg-line-soft);
+      min-width: 0;
+    }
+    .b .board-cell-multi .pick:last-child { border-right: none; }
+    .b .board-cell-multi .board-player { font-size: .62rem; max-width: 84px; }
+    .b .board-cell-multi .board-pos { font-size: .46rem; }
+
+    /* C. Stack + center single picks (current behavior + vertical-align: middle) */
+    .c .board-cell { vertical-align: middle; }
+    .c .board-cell-multi { padding: 0; vertical-align: middle; }
+    .c .board-cell-multi .pick {
+      padding: .4rem .55rem;
+      border-bottom: 1px dashed var(--dg-line-soft);
+    }
+    .c .board-cell-multi .pick:last-child { border-bottom: none; }
+
+    /* D. Compact stack — second pick smaller/footnote-style */
+    .d .board-cell { vertical-align: middle; }
+    .d .board-cell-multi { padding: 0; vertical-align: middle; }
+    .d .board-cell-multi .pick { padding: .35rem .55rem; }
+    .d .board-cell-multi .pick.secondary {
+      padding-top: .15rem; padding-bottom: .3rem;
+      border-top: 1px dashed var(--dg-line-soft);
+      opacity: .82;
+    }
+    .d .board-cell-multi .pick.secondary .board-player {
+      font-size: .6rem; color: var(--cream-soft);
+    }
+    .d .board-cell-multi .pick.secondary .board-pos {
+      font-size: .44rem; padding: 0 .2rem;
+    }
+
+    /* E. Inline badge for 2nd pick — first pick normal, second pick shown
+       as a +N badge in the corner that expands on hover. */
+    .e .board-cell { vertical-align: middle; position: relative; }
+    .e .board-cell-multi { position: relative; }
+    .e .board-cell-multi .pick.primary { padding: 0; }
+    .e .board-cell-multi .pick.secondary {
+      position: absolute; top: 3px; right: 3px;
+      padding: .08rem .35rem;
+      border-radius: 999px;
+      background: var(--dg-card-hover); border: 1px solid var(--dg-accent);
+      font-family: var(--mono); font-size: .48rem; letter-spacing: .04em;
+      color: var(--dg-accent);
+      cursor: help;
+    }
+    .e .board-cell-multi .pick.secondary .label-full { display: none; }
+    .e .board-cell-multi .pick.secondary:hover {
+      padding: .25rem .5rem;
+      z-index: 2;
+    }
+    .e .board-cell-multi .pick.secondary:hover .label-short { display: none; }
+    .e .board-cell-multi .pick.secondary:hover .label-full {
+      display: inline;
+      color: var(--cream); font-family: var(--sans);
+    }
+
+    .footer-back {
+      margin-top: 3rem; text-align: center;
+      font-family: var(--mono); font-size: .7rem; letter-spacing: .22em;
+      color: var(--cream-mute); text-transform: uppercase;
+    }
+    .footer-back a { color: var(--cream-mute); text-decoration: none; }
+    .footer-back a:hover { color: var(--cream); }
+
+    /* Suppress hover row highlights in the demo — keep the static look
+       so screenshots and side-by-side comparisons are clean. */
+    .board-table tbody tr:hover td { background: inherit !important; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+
+    <header class="hero">
+      <div class="hero-sup">Draft Board · Layout Demos</div>
+      <h1>Pick a <em>layout.</em></h1>
+      <p>The same sample data rendered five different ways. The scenario below is intentionally rigged so two managers have multi-pick rounds, which is when the row-stretching shows up.</p>
+    </header>
+
+    <div class="scenario">
+      <strong>Scenario:</strong> 4 managers, 4 rounds. <strong>Joey</strong> traded for an extra round-2 pick (so his row has 2 in R2). <strong>Mike</strong> traded for an extra round-3 pick. <strong>Sarah</strong> shipped her round-2 pick away (so she's "traded" in R2). Otherwise everyone has one normal pick per round.
+    </div>
+
+    <!-- A · CURRENT -->
+    <section class="opt a">
+      <div class="opt-head">
+        <div class="opt-num">Option A — Current</div>
+        <div class="opt-title">Stack + top-<em>align.</em></div>
+        <p class="opt-desc">What's live today. Multi-pick cells stack vertically with a dashed separator. Single-pick cells in the same row cling to the top, leaving empty space below.</p>
+      </div>
+      <div class="board-wrap">
+        <table class="board-table">
+          <thead><tr><th>Manager</th><th>Rd 1</th><th>Rd 2</th><th>Rd 3</th><th>Rd 4</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Joey</span><span class="board-team-name">Sinkaroos</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Saquon Barkley</span><span class="board-pos">RB</span></td>
+              <td class="board-cell board-cell-multi">
+                <div class="pick p-wr"><span class="board-player">Justin Jefferson</span><span class="board-pos">WR</span></div>
+                <div class="pick p-rb"><span class="board-player">Bijan Robinson</span><span class="board-pos">RB</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Josh Allen</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-te"><span class="board-player">Sam LaPorta</span><span class="board-pos">TE</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Mike</span><span class="board-team-name">Mob</span></td>
+              <td class="board-cell p-rb"><span class="board-player">CMC</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Tyreek Hill</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-cell-multi">
+                <div class="pick p-wr"><span class="board-player">Drake London</span><span class="board-pos">WR</span></div>
+                <div class="pick p-rb"><span class="board-player">Tony Pollard</span><span class="board-pos">RB</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Jalen Hurts</span><span class="board-pos">QB</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Sarah</span><span class="board-team-name">Bench Mob</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Ja'Marr Chase</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-empty">traded</td>
+              <td class="board-cell p-rb"><span class="board-player">Jonathan Taylor</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Davante Adams</span><span class="board-pos">WR</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Dave</span><span class="board-team-name">Tomlinmen</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Jahmyr Gibbs</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">CeeDee Lamb</span><span class="board-pos">WR</span></td>
+              <td class="board-cell p-qb"><span class="board-player">Lamar Jackson</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-rb"><span class="board-player">De'Von Achane</span><span class="board-pos">RB</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- B · Side-by-side -->
+    <section class="opt b">
+      <div class="opt-head">
+        <div class="opt-num">Option B</div>
+        <div class="opt-title">Side-by-<em>side.</em></div>
+        <p class="opt-desc">Multi-pick cells split horizontally into two halves instead of stacking. Cell heights stay uniform across the row. Player names truncate harder inside the split cells (smaller font). Best when "row-height stretch" is the thing that bugs you.</p>
+      </div>
+      <div class="board-wrap">
+        <table class="board-table">
+          <thead><tr><th>Manager</th><th>Rd 1</th><th>Rd 2</th><th>Rd 3</th><th>Rd 4</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Joey</span><span class="board-team-name">Sinkaroos</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Saquon Barkley</span><span class="board-pos">RB</span></td>
+              <td class="board-cell board-cell-multi">
+                <div class="pick p-wr"><span class="board-player">Jefferson</span><span class="board-pos">WR</span></div>
+                <div class="pick p-rb"><span class="board-player">Bijan</span><span class="board-pos">RB</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Josh Allen</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-te"><span class="board-player">Sam LaPorta</span><span class="board-pos">TE</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Mike</span><span class="board-team-name">Mob</span></td>
+              <td class="board-cell p-rb"><span class="board-player">CMC</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Tyreek Hill</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-cell-multi">
+                <div class="pick p-wr"><span class="board-player">London</span><span class="board-pos">WR</span></div>
+                <div class="pick p-rb"><span class="board-player">Pollard</span><span class="board-pos">RB</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Jalen Hurts</span><span class="board-pos">QB</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Sarah</span><span class="board-team-name">Bench Mob</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Ja'Marr Chase</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-empty">traded</td>
+              <td class="board-cell p-rb"><span class="board-player">Jonathan Taylor</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Davante Adams</span><span class="board-pos">WR</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Dave</span><span class="board-team-name">Tomlinmen</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Jahmyr Gibbs</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">CeeDee Lamb</span><span class="board-pos">WR</span></td>
+              <td class="board-cell p-qb"><span class="board-player">Lamar Jackson</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-rb"><span class="board-player">De'Von Achane</span><span class="board-pos">RB</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- C · Stack + center -->
+    <section class="opt c">
+      <div class="opt-head">
+        <div class="opt-num">Option C</div>
+        <div class="opt-title">Stack + <em>center.</em></div>
+        <p class="opt-desc">Multi-pick cells still stack vertically (current behavior). Single-pick cells in the same row vertically center their content so they don't look "empty up top." Minimal change to current layout — just removes the dead space feeling.</p>
+      </div>
+      <div class="board-wrap">
+        <table class="board-table">
+          <thead><tr><th>Manager</th><th>Rd 1</th><th>Rd 2</th><th>Rd 3</th><th>Rd 4</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Joey</span><span class="board-team-name">Sinkaroos</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Saquon Barkley</span><span class="board-pos">RB</span></td>
+              <td class="board-cell board-cell-multi">
+                <div class="pick p-wr"><span class="board-player">Justin Jefferson</span><span class="board-pos">WR</span></div>
+                <div class="pick p-rb"><span class="board-player">Bijan Robinson</span><span class="board-pos">RB</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Josh Allen</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-te"><span class="board-player">Sam LaPorta</span><span class="board-pos">TE</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Mike</span><span class="board-team-name">Mob</span></td>
+              <td class="board-cell p-rb"><span class="board-player">CMC</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Tyreek Hill</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-cell-multi">
+                <div class="pick p-wr"><span class="board-player">Drake London</span><span class="board-pos">WR</span></div>
+                <div class="pick p-rb"><span class="board-player">Tony Pollard</span><span class="board-pos">RB</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Jalen Hurts</span><span class="board-pos">QB</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Sarah</span><span class="board-team-name">Bench Mob</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Ja'Marr Chase</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-empty">traded</td>
+              <td class="board-cell p-rb"><span class="board-player">Jonathan Taylor</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Davante Adams</span><span class="board-pos">WR</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Dave</span><span class="board-team-name">Tomlinmen</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Jahmyr Gibbs</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">CeeDee Lamb</span><span class="board-pos">WR</span></td>
+              <td class="board-cell p-qb"><span class="board-player">Lamar Jackson</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-rb"><span class="board-player">De'Von Achane</span><span class="board-pos">RB</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- D · Compact stack -->
+    <section class="opt d">
+      <div class="opt-head">
+        <div class="opt-num">Option D</div>
+        <div class="opt-title">Compact <em>stack.</em></div>
+        <p class="opt-desc">Multi-pick cells stack vertically but the second pick renders smaller/dimmer — like a footnote on the cell. Cell ends up ~1.3× tall instead of ~2× tall. Single picks vertical-center to fill the slack. Visually signals "extra acquired pick" without dominating the row.</p>
+      </div>
+      <div class="board-wrap">
+        <table class="board-table">
+          <thead><tr><th>Manager</th><th>Rd 1</th><th>Rd 2</th><th>Rd 3</th><th>Rd 4</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Joey</span><span class="board-team-name">Sinkaroos</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Saquon Barkley</span><span class="board-pos">RB</span></td>
+              <td class="board-cell board-cell-multi">
+                <div class="pick p-wr"><span class="board-player">Justin Jefferson</span><span class="board-pos">WR</span></div>
+                <div class="pick p-rb secondary"><span class="board-player">Bijan Robinson</span><span class="board-pos">RB</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Josh Allen</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-te"><span class="board-player">Sam LaPorta</span><span class="board-pos">TE</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Mike</span><span class="board-team-name">Mob</span></td>
+              <td class="board-cell p-rb"><span class="board-player">CMC</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Tyreek Hill</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-cell-multi">
+                <div class="pick p-wr"><span class="board-player">Drake London</span><span class="board-pos">WR</span></div>
+                <div class="pick p-rb secondary"><span class="board-player">Tony Pollard</span><span class="board-pos">RB</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Jalen Hurts</span><span class="board-pos">QB</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Sarah</span><span class="board-team-name">Bench Mob</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Ja'Marr Chase</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-empty">traded</td>
+              <td class="board-cell p-rb"><span class="board-player">Jonathan Taylor</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Davante Adams</span><span class="board-pos">WR</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Dave</span><span class="board-team-name">Tomlinmen</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Jahmyr Gibbs</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">CeeDee Lamb</span><span class="board-pos">WR</span></td>
+              <td class="board-cell p-qb"><span class="board-player">Lamar Jackson</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-rb"><span class="board-player">De'Von Achane</span><span class="board-pos">RB</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- E · Badge -->
+    <section class="opt e">
+      <div class="opt-head">
+        <div class="opt-num">Option E</div>
+        <div class="opt-title">Corner <em>badge.</em></div>
+        <p class="opt-desc">First pick renders normally. Second pick collapses into a small <code>+1</code> badge in the cell corner that expands on hover/tap. Zero row stretching — the densest layout. Trade-off: second pick is hidden until you interact. Best when traded picks are rare.</p>
+      </div>
+      <div class="board-wrap">
+        <table class="board-table">
+          <thead><tr><th>Manager</th><th>Rd 1</th><th>Rd 2</th><th>Rd 3</th><th>Rd 4</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Joey</span><span class="board-team-name">Sinkaroos</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Saquon Barkley</span><span class="board-pos">RB</span></td>
+              <td class="board-cell board-cell-multi p-wr">
+                <div class="pick primary"><span class="board-player">Justin Jefferson</span><span class="board-pos">WR</span></div>
+                <div class="pick secondary" title="Bijan Robinson (RB) — traded-in pick"><span class="label-short">+1 RB</span><span class="label-full">Bijan</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Josh Allen</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-te"><span class="board-player">Sam LaPorta</span><span class="board-pos">TE</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Mike</span><span class="board-team-name">Mob</span></td>
+              <td class="board-cell p-rb"><span class="board-player">CMC</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Tyreek Hill</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-cell-multi p-wr">
+                <div class="pick primary"><span class="board-player">Drake London</span><span class="board-pos">WR</span></div>
+                <div class="pick secondary" title="Tony Pollard (RB) — traded-in pick"><span class="label-short">+1 RB</span><span class="label-full">Pollard</span></div>
+              </td>
+              <td class="board-cell p-qb"><span class="board-player">Jalen Hurts</span><span class="board-pos">QB</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Sarah</span><span class="board-team-name">Bench Mob</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Ja'Marr Chase</span><span class="board-pos">WR</span></td>
+              <td class="board-cell board-empty">traded</td>
+              <td class="board-cell p-rb"><span class="board-player">Jonathan Taylor</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">Davante Adams</span><span class="board-pos">WR</span></td>
+            </tr>
+            <tr>
+              <td class="board-mgr-td"><span class="board-mgr-name">Dave</span><span class="board-team-name">Tomlinmen</span></td>
+              <td class="board-cell p-rb"><span class="board-player">Jahmyr Gibbs</span><span class="board-pos">RB</span></td>
+              <td class="board-cell p-wr"><span class="board-player">CeeDee Lamb</span><span class="board-pos">WR</span></td>
+              <td class="board-cell p-qb"><span class="board-player">Lamar Jackson</span><span class="board-pos">QB</span></td>
+              <td class="board-cell p-rb"><span class="board-player">De'Von Achane</span><span class="board-pos">RB</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="footer-back"><a href="/">← Back to site</a></p>
+
+  </main>
+</body>
+</html>
