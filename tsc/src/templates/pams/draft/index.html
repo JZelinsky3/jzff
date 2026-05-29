@@ -283,28 +283,66 @@ body { background: var(--dg-bg); }
     opacity: .55;
 }
 
-/* Cells holding 2+ picks (traded picks) split horizontally instead of
-   stacking vertically. Row height stays uniform with single-pick cells
-   in the same row; the column with the multi just widens. Player names
-   in multi cells drop to a smaller font so two of them fit side-by-side. */
-.board-cell { vertical-align: middle; }
+/* Multi-pick cells use CSS grid so layout can react to neighbouring
+   cells in the same row via :has(). By default 2 picks split
+   horizontally, 3 picks into 3 columns, 4 picks into a 2x2 grid. When a
+   row contains a 4-pick cell (which stretches the row vertically), 2-
+   and 3-pick cells switch to a column-major layout so they fill the
+   stretched row instead of leaving a dead bottom half. */
+.board-cell { vertical-align: middle; text-align: center; }
 .board-cell-multi {
     padding: 0;
-    display: flex; align-items: stretch;
-    min-width: 184px; max-width: 220px;
+    display: grid;
+    align-items: stretch;
+    min-width: 150px; max-width: 184px;
+}
+.board-cell-multi[data-count="2"] { grid-template-columns: 1fr 1fr; }
+.board-cell-multi[data-count="3"] { grid-template-columns: 1fr 1fr 1fr; min-width: 200px; max-width: 248px; }
+.board-cell-multi[data-count="4"] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows:    1fr 1fr;
 }
 .board-cell-multi .board-cell-pick {
-    flex: 1 1 50%;
-    padding: .4rem .5rem;
+    padding: .35rem .4rem;
     border-right: 1px dashed var(--dg-line-soft);
-    min-width: 0; /* allow text-overflow ellipsis to actually fire */
+    border-bottom: 1px dashed var(--dg-line-soft);
+    min-width: 0; /* allow ellipsis on overflow */
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
 }
-.board-cell-multi .board-cell-pick:last-child { border-right: none; }
+/* Drop trailing dividers on the row + col edges (single divider per
+   slice instead of a borderbox around each). */
+.board-cell-multi[data-count="2"] .board-cell-pick:nth-child(2) { border-right: none; }
+.board-cell-multi[data-count="3"] .board-cell-pick:nth-child(3) { border-right: none; }
+.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(2),
+.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(4) { border-right: none; }
+.board-cell-multi .board-cell-pick { border-bottom: none; }
+.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(1),
+.board-cell-multi[data-count="4"] .board-cell-pick:nth-child(2) { border-bottom: 1px dashed var(--dg-line-soft); }
+
 .board-cell-multi .board-player { font-size: .62rem; max-width: 86px; }
 .board-cell-multi .board-pos { font-size: .46rem; padding: .08rem .25rem; }
-/* 3+ picks (rare — fall back to 33% slices instead of breaking layout) */
-.board-cell-multi[data-count="3"] .board-cell-pick { flex-basis: 33.33%; }
-.board-cell-multi[data-count="3"] { min-width: 256px; max-width: 320px; }
+
+/* :has() reactivity: when this row has ANY 4-pick cell (which forces
+   the row taller), 2- and 3-pick cells in the same row switch to
+   column-major so they don't waste the stretched height. */
+tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="2"] {
+    grid-template-columns: 1fr;
+    grid-template-rows:    1fr 1fr;
+    min-width: 86px; max-width: 110px;
+}
+tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="2"] .board-cell-pick:nth-child(1) {
+    border-right: none;
+    border-bottom: 1px dashed var(--dg-line-soft);
+}
+tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows:    1fr 1fr;
+    min-width: 140px; max-width: 184px;
+}
+tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2) { border-right: none; }
+tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(1),
+tr:has(.board-cell-multi[data-count="4"]) .board-cell-multi[data-count="3"] .board-cell-pick:nth-child(2) { border-bottom: 1px dashed var(--dg-line-soft); }
 
 /* Mobile: shrink the board table aggressively so users can see more
    of the draft at once. Padding, fonts, and column widths all dial
