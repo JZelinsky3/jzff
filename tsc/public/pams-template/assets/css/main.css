@@ -96,66 +96,10 @@ body {
     border-bottom: 1px solid var(--ink-line);
 }
 
-/* Chapter section bar — newspaper sub-nav under the masthead. Every
-   in-archive chapter is one click away without opening the dropdown.
-   Active chapter has a gold underline. Horizontally scrollable on
-   narrow viewports. */
-.nav-chapbar {
-    position: sticky; top: 0; z-index: 29;
-    background: rgba(14, 22, 32, .9);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--ink-line);
-}
-.nav-chapbar-track {
-    display: flex;
-    align-items: stretch;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    max-width: 1370px;
-    margin: 0 auto;
-    padding: 0 1rem;
-}
-.nav-chapbar-track::-webkit-scrollbar { display: none; }
-.nav-chapbar-link {
-    flex-shrink: 0;
-    position: relative;
-    color: var(--cream-soft);
-    text-decoration: none;
-    font-family: var(--mono); font-weight: 700;
-    font-size: .48rem; letter-spacing: .18em; text-transform: uppercase;
-    padding: .45rem .55rem .55rem;
-    transition: color .15s;
-    white-space: nowrap;
-}
-.nav-chapbar-link:hover { color: var(--gold); }
-.nav-chapbar-link.is-active { color: var(--gold); }
-.nav-chapbar-link.is-active::after {
-    content: '';
-    position: absolute;
-    left: .55rem; right: .55rem; bottom: 0;
-    height: 2px;
-    background: var(--gold);
-}
-/* Hairline divider between chapter labels. */
-.nav-chapbar-link + .nav-chapbar-link::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 35%; bottom: 35%;
-    width: 1px;
-    background: var(--ink-line);
-}
-@media (max-width: 640px) {
-    .nav-chapbar-track { padding: 0 .15rem; }
-    .nav-chapbar-link { padding: .35rem .5rem .45rem; font-size: .46rem; letter-spacing: .13em; }
-    .nav-chapbar-link.is-active::after { left: .5rem; right: .5rem; }
-    .nav-chapbar-link + .nav-chapbar-link::before { top: 28%; bottom: 28%; }
-}
-@media (max-width: 380px) {
-    .nav-chapbar-link { padding: .3rem .35rem .4rem; font-size: .42rem; letter-spacing: .09em; }
-    .nav-chapbar-link.is-active::after { left: .35rem; right: .35rem; }
-}
+/* Chapter section bar styles live in nav.js as an inline <style> block —
+   it's injected at runtime so the league hub template (which has no
+   external main.css link) still gets them. Edit those styles in
+   public/pams-template/assets/js/nav.js (lines ~366-420). */
 .nav-back, .nav-link {
     color: var(--gold); text-decoration: none;
     font-family: var(--mono); font-weight: 700;

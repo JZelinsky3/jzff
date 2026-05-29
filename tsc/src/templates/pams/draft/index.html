@@ -31,12 +31,14 @@ body { background: var(--dg-bg); }
 }
 
 .nav { background: rgba(13, 13, 13, .94); border-bottom-color: var(--dg-line); }
-.nav-chapbar { background: rgba(13, 13, 13, .92); border-bottom-color: var(--dg-line); }
-.nav-chapbar-link { color: var(--cream-soft); }
-.nav-chapbar-link:hover,
-.nav-chapbar-link.is-active { color: var(--dg-accent, var(--gold)); }
-.nav-chapbar-link.is-active::after { background: var(--dg-accent, var(--gold)); }
-.nav-chapbar-link + .nav-chapbar-link::before { background: var(--dg-line); }
+/* Chapbar theme overrides — nav.js reads these vars. */
+:root {
+    --chapbar-bg:     rgba(13, 13, 13, .92);
+    --chapbar-border: var(--dg-line);
+    --chapbar-text:   var(--cream-soft);
+    --chapbar-active: var(--dg-accent, var(--gold));
+    --chapbar-line:   var(--dg-line);
+}
 
 /* Themed nav dropdown — draft history dark */
 :root {

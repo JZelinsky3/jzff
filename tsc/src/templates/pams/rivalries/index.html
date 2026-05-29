@@ -430,12 +430,14 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   background: rgba(14, 3, 3, 0.94) !important;
   border-bottom-color: rgba(220, 38, 38, 0.18) !important;
 }
-.nav-chapbar { background: rgba(14, 3, 3, 0.92); border-bottom-color: rgba(220, 38, 38, 0.18); }
-.nav-chapbar-link { color: var(--rv-grey-mid); }
-.nav-chapbar-link:hover,
-.nav-chapbar-link.is-active { color: var(--rv-red); }
-.nav-chapbar-link.is-active::after { background: var(--rv-red); }
-.nav-chapbar-link + .nav-chapbar-link::before { background: rgba(220, 38, 38, 0.18); }
+/* Chapbar theme overrides — nav.js reads these vars. */
+:root {
+    --chapbar-bg:     rgba(14, 3, 3, 0.92);
+    --chapbar-border: rgba(220, 38, 38, 0.18);
+    --chapbar-text:   var(--rv-grey-mid);
+    --chapbar-active: var(--rv-red);
+    --chapbar-line:   rgba(220, 38, 38, 0.18);
+}
 :root {
   --nav-drop-bg:           rgba(12,3,3,.97);
   --nav-drop-border:       rgba(220,38,38,.15);
