@@ -269,6 +269,111 @@ body { background: var(--rw-bg); }
     color: var(--rw-mute);
 }
 
+/* ── On Pace stats cards (no meter) ──────────────────────────
+   The section below Brink, for chasers in the 40-50% range
+   who are building toward the record but aren't close enough
+   to warrant the bar-plot treatment. Two-column compare card
+   instead — chaser stats on the left, holder mark on the right,
+   gap line across the bottom. */
+.rw-onpace-stack {
+    display: flex; flex-direction: column;
+    gap: 1rem;
+}
+.rw-onpace-card {
+    background:
+        linear-gradient(170deg, var(--rw-card) 0%, var(--rw-soft) 100%);
+    border: 1px solid var(--rw-line);
+    border-left: 3px solid var(--rw-ember);
+    padding: 1.2rem 1.4rem 1.1rem;
+    position: relative; overflow: hidden;
+}
+.rw-onpace-head {
+    display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+    padding-bottom: .8rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+}
+.rw-onpace-head .num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em;
+    color: var(--rw-mute);
+}
+.rw-onpace-head .cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .9rem; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--rw-cream);
+    flex: 1; min-width: 0;
+}
+.rw-onpace-head .pct {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .04em;
+    color: var(--rw-ember-hi);
+    font-variant-numeric: tabular-nums;
+}
+.rw-onpace-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.4rem;
+    align-items: stretch;
+}
+.rw-onpace-col { min-width: 0; }
+.rw-onpace-col .col-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-bottom: .5rem;
+}
+.rw-onpace-col .col-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; line-height: 1;
+    color: var(--rw-cream);
+    margin-bottom: .55rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-onpace-col .col-val {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 1.05rem; line-height: 1.2;
+    color: var(--rw-cream);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: .25rem;
+}
+.rw-onpace-col .col-sub {
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .04em;
+    color: var(--rw-ember-hi);
+    line-height: 1.4;
+}
+.rw-onpace-col.mark {
+    border-left: 1px solid var(--rw-line-soft);
+    padding-left: 1.4rem;
+}
+.rw-onpace-col.mark .col-sub {
+    color: var(--rw-mute);
+}
+.rw-onpace-foot {
+    padding-top: .9rem;
+    margin-top: 1rem;
+    border-top: 1px dashed var(--rw-line-soft);
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: .8rem; flex-wrap: wrap;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .06em;
+    color: var(--rw-mute);
+}
+.rw-onpace-foot .gap {
+    color: var(--rw-ember-hi);
+}
+
+@media (max-width: 760px) {
+    .rw-onpace-grid { grid-template-columns: 1fr; gap: .8rem; }
+    .rw-onpace-col.mark {
+        border-left: 0;
+        border-top: 1px solid var(--rw-line-soft);
+        padding-left: 0;
+        padding-top: .8rem;
+    }
+}
+
 /* ── Sidebar compact panels ──────────────────────────────────
    These are visually distinct from the main column: steel-blue
    accent instead of ember, denser typography, small tile rows
@@ -1141,7 +1246,7 @@ body { background: var(--rw-bg); }
       renderMeter(data.meter || {});
       if (Array.isArray(data.broken)      && data.broken.length)      renderBroken('broken-body', data.broken);
       if (Array.isArray(data.brink)       && data.brink.length)       renderBrink('brink-body', data.brink);
-      if (Array.isArray(data.on_pace)     && data.on_pace.length)     renderBrink('onpace-body', data.on_pace);
+      if (Array.isArray(data.on_pace)     && data.on_pace.length)     renderOnPace('onpace-body', data.on_pace);
       if (Array.isArray(data.just_missed) && data.just_missed.length) renderMissed(data.just_missed);
     });
 
@@ -1297,9 +1402,56 @@ body { background: var(--rw-bg); }
     if (slotEl) slotEl.innerHTML = html;
   }
 
-  // Sidebar On Pace: compact stacked tiles with steel-blue accent. Each
-  // tile shows category + chaser + projection + a mini bar + the gap
-  // against the holder. Lives in the right sidebar, not the main column.
+  // On Pace stats card — chaser column + holder column + gap foot. No
+  // bar plot, no meter; that visualization is reserved for Brink. Used
+  // for items in the 40-50% range (early pursuit) that are building
+  // toward the record but aren't close enough to warrant the chart.
+  function renderOnPace(slot, items) {
+    var html = '<div class="rw-onpace-stack">';
+    items.forEach(function (it, idx) {
+      var rawPct = Math.max(0, Math.min(100, Number(it.pct) || 0));
+      // Strip the same trailing context as the brink label so the
+      // chaser's current value reads as a clean numeric ("1614 pts"
+      // instead of "1614 pts through 5G").
+      var cv = String(it.chaser_value || '');
+      var paceLine = String(it.chaser_when || '');
+      // For most pace items chaser_when carries "pace XXX YYY" — surface
+      // that as the projection line. If it doesn't, fall back to gap.
+      var projLine = /^pace\b/i.test(paceLine) ? paceLine : (it.gap || '');
+      html +=
+        '<article class="rw-onpace-card">' +
+          '<div class="rw-onpace-head">' +
+            '<span class="num">§ ' + String(idx + 1).padStart(2, '0') + '</span>' +
+            '<span class="cat">' + esc(it.category || 'Record') + '</span>' +
+            '<span class="pct">' + pct(rawPct) + '</span>' +
+          '</div>' +
+          '<div class="rw-onpace-grid">' +
+            '<div class="rw-onpace-col chasing">' +
+              '<div class="col-lbl">Chasing</div>' +
+              '<div class="col-name">' + esc(it.chaser || '—') + '</div>' +
+              '<div class="col-val">' + esc(cv) + '</div>' +
+              '<div class="col-sub">' + esc(projLine) + '</div>' +
+            '</div>' +
+            '<div class="rw-onpace-col mark">' +
+              '<div class="col-lbl">The mark</div>' +
+              '<div class="col-name">' + esc(it.holder || '—') + '</div>' +
+              '<div class="col-val">' + esc(it.record_value || '') + '</div>' +
+              '<div class="col-sub">' + esc(it.holder_when || '') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="rw-onpace-foot">' +
+            '<span>' + esc(it.flag || 'BUILDING') + '</span>' +
+            '<span class="gap">' + esc(it.gap || '') + '</span>' +
+          '</div>' +
+        '</article>';
+    });
+    html += '</div>';
+    var slotEl = $(slot);
+    if (slotEl) slotEl.innerHTML = html;
+  }
+
+  // (Legacy) Sidebar On Pace tile renderer — no longer wired up after
+  // §03 moved to the main column. Kept here in case we need it back.
   function renderSideOnPace(items) {
     var html = '<div class="rw-side-panel">';
     items.forEach(function (it, i) {

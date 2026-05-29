@@ -2642,10 +2642,18 @@ function buildLiveSeasonPreviews(
   const brink:  WatchItem[] = []
   const justMissed: WatchItem[] = []
 
+  // Threshold sliders. For jake testing we drop brink to 50% so the
+  // page has data to show; for real deployment lift to 65-75%.
+  // On-pace sits in the band just below brink — items that are
+  // building toward the record but aren't close enough to warrant the
+  // bar-plot treatment yet.
+  const BRINK_THRESHOLD  = 50  // ≥ this with no overshoot → Brink (with meter)
+  const ONPACE_THRESHOLD = 40  // ≥ this and < brink → On Pace (stats only)
+
   for (const it of accumItems) {
     if (it.pct >= 100 && it.realized) broken.push(it)
-    else if (it.pct >= 100)           onPace.push(it)
-    else if (it.pct >= 50)            brink.push(it)
+    else if (it.pct >= BRINK_THRESHOLD) brink.push(it)
+    else if (it.pct >= ONPACE_THRESHOLD) onPace.push(it)
   }
   for (const it of justMissedItems) {
     // Weekly extremes that actually broke the mark belong with the rest
