@@ -47,6 +47,9 @@ body { background: var(--rw-bg); }
 .nav-back, .nav-link { color: var(--rw-ember); }
 .nav-back:hover, .nav-link:hover { color: var(--rw-ember-hi); }
 .nav-title em { color: var(--rw-ember); }
+.nav-kicker { color: #c08272; }
+.nav-drop-btn { color: var(--rw-ember); }
+.nav-drop-btn:hover { color: var(--rw-ember-hi); }
 :root {
     --chapbar-bg:     rgba(21,10,12,.92);
     --chapbar-border: var(--rw-line);
@@ -349,15 +352,19 @@ body { background: var(--rw-bg); }
 /* ── Broken cards (newly-claimed records) ──────────────────── */
 .rw-broken-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.2rem;
 }
 .rw-broken {
     background: var(--rw-card);
     border: 1px solid var(--rw-line);
-    padding: 1.1rem 1.2rem;
+    padding: 1.6rem 1.5rem 1.4rem;
     position: relative;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
 }
+.rw-broken .copy { flex: 1; font-size: 1.25rem; }
 .rw-broken::before {
     content: 'NEW'; position: absolute;
     top: -1px; right: 1rem;
@@ -651,7 +658,7 @@ body { background: var(--rw-bg); }
             '</div>' +
           '</div>' +
           '<div class="rw-bar"><div class="rw-bar-fill" style="transform:scaleX(' + (p/100).toFixed(3) + ')"></div></div>' +
-          '<div class="rw-bar-foot"><span>' + pct(p) + ' of record</span><span>' + esc(it.gap || '') + '</span></div>' +
+          '<div class="rw-bar-foot"><span>' + esc(it.gap || '') + '</span><span>' + esc(it.chaser_when || '') + '</span></div>' +
         '</article>';
     });
     html += '</div>';
@@ -700,8 +707,8 @@ body { background: var(--rw-bg); }
             '<div class="cat">' + esc(it.category || '') + '</div>' +
             '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
           '</div>' +
-          '<div class="rw-missed-gap">' + pct(it.pct || 0) +
-            '<span class="of">' + esc(it.gap || '') + '</span>' +
+          '<div class="rw-missed-gap">' + esc(it.gap || '') +
+            '<span class="of">of all-time</span>' +
           '</div>' +
         '</div>';
     });

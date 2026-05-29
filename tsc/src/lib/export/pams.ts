@@ -2185,21 +2185,31 @@ function buildLiveSeasonPreviews(
     .sort((a, b) => b.proj - a.proj)[0]
   if (pfPaceTop && bestSeasonPF.val > 0) {
     const v = pfPaceTop.proj, r = bestSeasonPF.val, pct = (v / r) * 100
-    const gap = v - r
+    const gap = Math.round(v - r)
+    const projInt = Math.round(v)
+    // Holder's PPG: find their game count from manager_seasons for that year
+    let holderPPG = 0
+    const holderMs = (s.managerSeasonsBySeason.get(s.seasons.find((sn) => sn.year === bestSeasonPF.year)?.id ?? '') ?? [])
+      .find((ms) => ms.manager_id === bestSeasonPF.mid)
+    if (holderMs) {
+      const holderGames = holderMs.wins + holderMs.losses + holderMs.ties
+      if (holderGames > 0) holderPPG = bestSeasonPF.val / holderGames
+    }
     accumItems.push({
       category: 'Season Points-For Pace',
       pct,
       flag: flagFor(pct, 'WILL BREAK IT', 'PROJECTING PAST', 'ON PACE', 'TRENDING UP'),
-      title_html: `${r.toFixed(1)} <em>· highest reg-season PF</em>`,
-      holder: nameOf(bestSeasonPF.mid), record_value: `${r.toFixed(1)} pts`,
+      title_html: `${Math.round(r)} pts <em>· highest reg-season PF</em>`,
+      holder: nameOf(bestSeasonPF.mid),
+      record_value: holderPPG > 0 ? `${Math.round(r)} pts · ${holderPPG.toFixed(1)} PPG` : `${Math.round(r)} pts`,
       holder_when: `${bestSeasonPF.year}`,
       chaser: pfPaceTop.m.name,
-      chaser_value: `${pfPaceTop.m.pf.toFixed(1)} pts (${pfPaceTop.m.games.length}G)`,
-      chaser_when: `pace: ${v.toFixed(0)} pts · W${throughWeek} · ${year}`,
-      gap: gap >= 0 ? `+${gap.toFixed(0)} pts on pace` : `${(-gap).toFixed(0)} pts short on pace`,
-      copy_html: `<em>${escTxt(pfPaceTop.m.name)}</em> · pace ${v.toFixed(0)} pts (${(pfPaceTop.m.pf / pfPaceTop.m.games.length).toFixed(1)} PPG × ${regSeasonLen}W)`,
-      when: `through W${throughWeek} · ${year}`,
-      previous: `${r.toFixed(1)} · ${nameOf(bestSeasonPF.mid)}, ${bestSeasonPF.year}`,
+      chaser_value: `${Math.round(pfPaceTop.m.pf)} pts through ${pfPaceTop.m.games.length}G`,
+      chaser_when: `pace ${projInt} pts`,
+      gap: gap >= 0 ? `+${gap} pts on pace` : `${Math.abs(gap)} pts short on pace`,
+      copy_html: `<em>${escTxt(pfPaceTop.m.name)}</em> · pace ${projInt} pts (${(pfPaceTop.m.pf / pfPaceTop.m.games.length).toFixed(1)} PPG)`,
+      when: `through W${throughWeek}`,
+      previous: `${Math.round(r)} pts · ${nameOf(bestSeasonPF.mid)}, ${bestSeasonPF.year}`,
     })
   }
 
@@ -2234,21 +2244,22 @@ function buildLiveSeasonPreviews(
       .sort((a, b) => b.proj - a.proj)[0]
     if (winsPaceTop && mostRegWins.val > 0) {
       const v = winsPaceTop.proj, r = mostRegWins.val, pct = (v / r) * 100
-      const projInt = Math.round(v * 10) / 10
+      const projInt = Math.round(v)
+      const gap = Math.round(v - r)
       accumItems.push({
         category: 'Reg-Season Wins Pace',
         pct,
         flag: flagFor(pct, 'WILL MATCH OR PASS', 'ON PACE TO TIE', 'BIG W-PACE', 'STRONG START'),
-        title_html: `${r} <em>· most regular-season wins</em>`,
-        holder: nameOf(mostRegWins.mid), record_value: `${r}W`,
+        title_html: `${r} wins <em>· most reg-season wins</em>`,
+        holder: nameOf(mostRegWins.mid), record_value: `${r} wins`,
         holder_when: `${mostRegWins.year}`,
         chaser: winsPaceTop.m.name,
-        chaser_value: `${winsPaceTop.m.wins}-${winsPaceTop.m.losses} (${winsPaceTop.m.games.length}G)`,
-        chaser_when: `pace: ${projInt}W · ${year}`,
-        gap: v >= r ? `+${(v - r).toFixed(1)}W on pace` : `${(r - v).toFixed(1)}W short on pace`,
-        copy_html: `<em>${escTxt(winsPaceTop.m.name)}</em> · pace ${projInt}W (${winsPaceTop.m.wins}-${winsPaceTop.m.losses})`,
-        when: `through W${throughWeek} · ${year}`,
-        previous: `${r}W · ${nameOf(mostRegWins.mid)}, ${mostRegWins.year}`,
+        chaser_value: `${winsPaceTop.m.wins}-${winsPaceTop.m.losses} through ${winsPaceTop.m.games.length}G`,
+        chaser_when: `pace ${projInt} wins`,
+        gap: gap >= 0 ? `+${gap} wins on pace` : `${Math.abs(gap)} wins short on pace`,
+        copy_html: `<em>${escTxt(winsPaceTop.m.name)}</em> · pace ${projInt} wins (${winsPaceTop.m.wins}-${winsPaceTop.m.losses})`,
+        when: `through W${throughWeek}`,
+        previous: `${r} wins · ${nameOf(mostRegWins.mid)}, ${mostRegWins.year}`,
       })
     }
 
@@ -2259,21 +2270,22 @@ function buildLiveSeasonPreviews(
       .sort((a, b) => b.proj - a.proj)[0]
     if (lossPaceTop && mostRegLoss.val > 0) {
       const v = lossPaceTop.proj, r = mostRegLoss.val, pct = (v / r) * 100
-      const projInt = Math.round(v * 10) / 10
+      const projInt = Math.round(v)
+      const gap = Math.round(v - r)
       accumItems.push({
         category: 'Reg-Season Losses Pace',
         pct,
         flag: flagFor(pct, 'WORST SEASON INCOMING', 'TANK PACE', 'STRUGGLING', 'ROUGH RUN'),
-        title_html: `${r} <em>· most regular-season losses</em>`,
-        holder: nameOf(mostRegLoss.mid), record_value: `${r}L`,
+        title_html: `${r} losses <em>· most reg-season losses</em>`,
+        holder: nameOf(mostRegLoss.mid), record_value: `${r} losses`,
         holder_when: `${mostRegLoss.year}`,
         chaser: lossPaceTop.m.name,
-        chaser_value: `${lossPaceTop.m.wins}-${lossPaceTop.m.losses} (${lossPaceTop.m.games.length}G)`,
-        chaser_when: `pace: ${projInt}L · ${year}`,
-        gap: v >= r ? `+${(v - r).toFixed(1)}L on pace` : `${(r - v).toFixed(1)}L short on pace`,
-        copy_html: `<em>${escTxt(lossPaceTop.m.name)}</em> · pace ${projInt}L (${lossPaceTop.m.wins}-${lossPaceTop.m.losses})`,
-        when: `through W${throughWeek} · ${year}`,
-        previous: `${r}L · ${nameOf(mostRegLoss.mid)}, ${mostRegLoss.year}`,
+        chaser_value: `${lossPaceTop.m.wins}-${lossPaceTop.m.losses} through ${lossPaceTop.m.games.length}G`,
+        chaser_when: `pace ${projInt} losses`,
+        gap: gap >= 0 ? `+${gap} losses on pace` : `${Math.abs(gap)} losses short on pace`,
+        copy_html: `<em>${escTxt(lossPaceTop.m.name)}</em> · pace ${projInt} losses (${lossPaceTop.m.wins}-${lossPaceTop.m.losses})`,
+        when: `through W${throughWeek}`,
+        previous: `${r} losses · ${nameOf(mostRegLoss.mid)}, ${mostRegLoss.year}`,
       })
     }
   }
@@ -2287,15 +2299,15 @@ function buildLiveSeasonPreviews(
       category: 'Longest Win Streak',
       pct,
       flag: flagFor(pct, 'TIED OR SURPASSED', 'ONE FROM HISTORY', 'ON THE BRINK', 'HEATING UP'),
-      title_html: `${r} <em>· consecutive wins</em>`,
-      holder: nameOf(allWinStreak.mid), record_value: `${r}W in a row`,
+      title_html: `${r} wins <em>· longest streak ever</em>`,
+      holder: nameOf(allWinStreak.mid), record_value: `${r} wins in a row`,
       holder_when: 'all-time mark',
-      chaser: liveWin.name, chaser_value: `${v}W active`,
-      chaser_when: `through W${throughWeek} · ${year}`,
-      gap: pct >= 100 ? `+${v - r}W past the line` : `${r - v}W to tie`,
+      chaser: liveWin.name, chaser_value: `${v} wins active`,
+      chaser_when: `through W${throughWeek}`,
+      gap: pct >= 100 ? `+${v - r} wins past the line` : `${r - v} wins to tie`,
       copy_html: `<em>${escTxt(liveWin.name)}</em> on a ${v}-game win streak`,
-      when: `through W${throughWeek} · ${year}`,
-      previous: `${r}W · ${nameOf(allWinStreak.mid)}`,
+      when: `through W${throughWeek}`,
+      previous: `${r} wins · ${nameOf(allWinStreak.mid)}`,
     })
   }
 
@@ -2308,15 +2320,15 @@ function buildLiveSeasonPreviews(
       category: 'Longest Losing Skid',
       pct,
       flag: flagFor(pct, 'NEW SKID HIGH', 'COLD AS ICE', 'STRUGGLING', 'ROUGH PATCH'),
-      title_html: `${r} <em>· straight losses</em>`,
-      holder: nameOf(allLossStreak.mid), record_value: `${r}L in a row`,
+      title_html: `${r} losses <em>· longest skid ever</em>`,
+      holder: nameOf(allLossStreak.mid), record_value: `${r} losses in a row`,
       holder_when: 'all-time skid',
-      chaser: liveLoss.name, chaser_value: `${v}L active`,
-      chaser_when: `through W${throughWeek} · ${year}`,
-      gap: pct >= 100 ? `+${v - r}L past` : `${r - v}L to tie`,
+      chaser: liveLoss.name, chaser_value: `${v} losses active`,
+      chaser_when: `through W${throughWeek}`,
+      gap: pct >= 100 ? `+${v - r} losses past` : `${r - v} losses to tie`,
       copy_html: `<em>${escTxt(liveLoss.name)}</em> has dropped ${v} straight`,
-      when: `through W${throughWeek} · ${year}`,
-      previous: `${r}L · ${nameOf(allLossStreak.mid)}`,
+      when: `through W${throughWeek}`,
+      previous: `${r} losses · ${nameOf(allLossStreak.mid)}`,
     })
   }
 
@@ -2336,7 +2348,7 @@ function buildLiveSeasonPreviews(
       chaser: topHigh.name, chaser_value: `${v.toFixed(1)} pts`,
       chaser_when: `W${topHigh.bestWeek!.week} · ${year} vs ${nameOf(topHigh.bestWeek!.opp_id)}`,
       gap: pct >= 100 ? `+${(v - r).toFixed(1)} past` : `${(r - v).toFixed(1)} short`,
-      copy_html: `<em>${escTxt(topHigh.name)}</em> · ${v.toFixed(1)} (W${topHigh.bestWeek!.week} vs ${escTxt(nameOf(topHigh.bestWeek!.opp_id))})`,
+      copy_html: `<em>${escTxt(topHigh.name)}</em> posted the season high — ${v.toFixed(1)} pts (W${topHigh.bestWeek!.week} vs ${escTxt(nameOf(topHigh.bestWeek!.opp_id))})`,
       when: `W${topHigh.bestWeek!.week} · ${year}`,
       previous: `${r.toFixed(1)} · ${nameOf(allHigh.mid)}, ${allHigh.year}`,
     })
@@ -2358,7 +2370,7 @@ function buildLiveSeasonPreviews(
       chaser: topLow.name, chaser_value: `${v.toFixed(1)} pts`,
       chaser_when: `W${topLow.worstWeek!.week} · ${year}`,
       gap: pct >= 100 ? `${(r - v).toFixed(1)} under` : `${(v - r).toFixed(1)} above`,
-      copy_html: `<em>${escTxt(topLow.name)}</em> sank to ${v.toFixed(1)} (W${topLow.worstWeek!.week})`,
+      copy_html: `<em>${escTxt(topLow.name)}</em> bottomed out at ${v.toFixed(1)} pts — the season's lowest scoreline (W${topLow.worstWeek!.week})`,
       when: `W${topLow.worstWeek!.week} · ${year}`,
       previous: `${r.toFixed(1)} · ${nameOf(allLow.mid)}, ${allLow.year}`,
     })
@@ -2379,7 +2391,7 @@ function buildLiveSeasonPreviews(
       chaser: topBlow.name, chaser_value: `+${v.toFixed(1)}`,
       chaser_when: `W${topBlow.bestBlowout!.week} · ${year} vs ${nameOf(topBlow.bestBlowout!.opp_id)}`,
       gap: pct >= 100 ? `+${(v - r).toFixed(1)} past` : `${(r - v).toFixed(1)} short`,
-      copy_html: `<em>${escTxt(topBlow.name)}</em> won by ${v.toFixed(1)} (W${topBlow.bestBlowout!.week})`,
+      copy_html: `<em>${escTxt(topBlow.name)}</em> ran the season's biggest blowout — won by ${v.toFixed(1)} (W${topBlow.bestBlowout!.week})`,
       when: `W${topBlow.bestBlowout!.week} · ${year}`,
       previous: `+${r.toFixed(1)} · ${nameOf(allBlowout.mid)}, ${allBlowout.year}`,
     })
@@ -2403,7 +2415,7 @@ function buildLiveSeasonPreviews(
       chaser_value: `${v.toFixed(1)} combined`,
       chaser_when: `W${topCombo.bestCombined!.week} · ${year}`,
       gap: pct >= 100 ? `+${(v - r).toFixed(1)} past` : `${(r - v).toFixed(1)} short`,
-      copy_html: `<em>${escTxt(topCombo.name)}</em> & ${escTxt(nameOf(topCombo.bestCombined!.opp_id))} combined for ${v.toFixed(1)} (W${topCombo.bestCombined!.week})`,
+      copy_html: `<em>${escTxt(topCombo.name)}</em> & ${escTxt(nameOf(topCombo.bestCombined!.opp_id))} ran the season's highest-scoring shootout — ${v.toFixed(1)} combined (W${topCombo.bestCombined!.week})`,
       when: `W${topCombo.bestCombined!.week} · ${year}`,
       previous: `${r.toFixed(1)} · ${allCombined.year}`,
     })
