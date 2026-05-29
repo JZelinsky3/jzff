@@ -398,7 +398,7 @@
         '  text-decoration: none;',
         '  font-family: var(--mono, "JetBrains Mono", monospace);',
         '  font-weight: 700;',
-        '  font-size: .56rem; letter-spacing: .2em; text-transform: uppercase;',
+        '  font-size: .66rem; letter-spacing: .2em; text-transform: uppercase;',
         '  padding: .5rem .9rem .6rem;',
         '  transition: color .15s;',
         '  white-space: nowrap;',
