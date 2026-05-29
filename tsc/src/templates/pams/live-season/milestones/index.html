@@ -294,17 +294,9 @@ body { background: var(--ml-bg); }
     /* Sits at the natural flex flow — left edge of the row. */
     min-width: 0;
 }
-.ml-crossed .meta .meta-right {
-    /* Pushes itself to the right edge of the row, leaving a gap between
-     * the leading W{week} and this trailing score+opp text. */
-    margin-left: auto;
-    text-align: right;
-    min-width: 0;
-}
 .ml-crossed .meta .h2h {
-    /* margin-left:auto also; when paired with .meta-right both clump on
-     * the right side with the gap appearing between meta-main and the
-     * right cluster. */
+    /* Pushed to the right edge of the row via flex auto-margin so the
+     * matchup text stays left-aligned right after the week. */
     margin-left: auto;
     padding: .12rem .42rem .15rem;
     background: var(--ml-soft);

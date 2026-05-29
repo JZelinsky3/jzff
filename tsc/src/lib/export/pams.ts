@@ -2592,19 +2592,16 @@ function buildLiveSeasonPreviews(
 
     // Helper: build the meta line for a crossed milestone.
     //
-    // Points milestones use a split layout — W{week} on the left and the
-    // score+opp on the right (rendered via flex space-between in the
-    // template). The "·" stays between them.
-    //
-    // Wins / games milestones are one continuous line: "W{week} vs Opp",
-    // no dot, no score. Streak milestones get the prior personal-best.
+    // Points milestones: "W{week} · {score} pts vs Opp" — one continuous
+    // line, score follows the dot.
+    // Wins / games milestones: "W{week} vs Opp" — no dot, no score.
+    // Streak milestones: "W{week} · prior best NW".
     //
     // H2H badge floats right when there's a career record vs that opp.
     function metaPoints(mid: string, week: number, score: number, oppMid: string): string {
       const opp = escTxt(nameOf(oppMid))
       const h2h = h2hThrough(mid, oppMid, year, week)
-      return `<span class="meta-main"><strong>W${week}</strong> ·</span>` +
-             `<span class="meta-right">${score.toFixed(1)} pts vs ${opp}</span>` +
+      return `<span class="meta-main"><strong>W${week}</strong> · ${score.toFixed(1)} pts vs ${opp}</span>` +
              (h2h ? `<span class="h2h">${h2h} H2H</span>` : '')
     }
     function metaWins(mid: string, week: number, oppMid: string): string {
