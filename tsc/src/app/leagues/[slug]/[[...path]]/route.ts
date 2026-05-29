@@ -207,18 +207,23 @@ function escapeHtml(s: string): string {
 // Dev: in-memory cache (30s TTL, see @/lib/devCache) so a page with multiple
 // data fetches (e.g. draft year tabs) doesn't re-run the full export per file.
 // Dev cache is also busted explicitly by the sync route after each ingest.
-function getBundle(leagueId: string): Promise<ExportBundle> {
+function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
+  // Slug is included alongside leagueId because the jake-only live-season
+  // previews (records_watch.json, milestones.json) are computed inside
+  // exportLeague when slug === 'jake'. Cache key is (leagueId, slug) so a
+  // future slug rename rebuilds the bundle without waiting for revalidation.
   if (process.env.NODE_ENV !== 'production') {
-    const cached = devCacheGet(leagueId)
+    const cacheKey = `${leagueId}|${slug}`
+    const cached = devCacheGet(cacheKey)
     if (cached) return Promise.resolve(cached)
-    return exportLeague(leagueId).then((bundle) => {
-      devCacheSet(leagueId, bundle)
+    return exportLeague(leagueId, { slug }).then((bundle) => {
+      devCacheSet(cacheKey, bundle)
       return bundle
     })
   }
   return unstable_cache(
-    async () => exportLeague(leagueId),
-    ['pams-bundle', leagueId],
+    async () => exportLeague(leagueId, { slug }),
+    ['pams-bundle', leagueId, slug],
     { tags: [`league-${leagueId}`], revalidate: 3600 }
   )()
 }
@@ -369,7 +374,7 @@ export async function GET(
   }
 
   // data/<file> — serve from the export bundle
-  const bundle = await getBundle(meta.id)
+  const bundle = await getBundle(meta.id, meta.slug)
   const value = bundle[resolved.file]
   if (value === undefined) {
     return new NextResponse('Data not found', { status: 404 })
