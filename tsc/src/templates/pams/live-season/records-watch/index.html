@@ -576,16 +576,22 @@ body { background: var(--rw-bg); }
     text-shadow: none;
 }
 .rw-broken-readout .unit {
-    /* Inline suffix sitting next to the big number ("16 games") so only
-     * the qualifier (.sub) drops to a new line below. */
-    display: inline-block;
+    display: block;
     font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-top: .45rem;
+}
+/* Quickest-to-X cards: the unit ("games") reads better inline next to
+ * the big number so "16 games" leads and only "pace" drops below. */
+.rw-broken-readout.compact .unit {
+    display: inline-block;
     font-size: .9rem;
     letter-spacing: .08em;
-    color: var(--rw-mute);
+    text-transform: lowercase;
+    margin-top: 0;
     margin-left: .35rem;
     vertical-align: baseline;
-    text-transform: lowercase;
 }
 .rw-broken-readout .sub {
     display: block;
@@ -997,10 +1003,15 @@ body { background: var(--rw-bg); }
       } else {
         readNumHtml = esc(readNum);
       }
+      // "Quickest to X" cards use a compact readout where the unit
+      // ("games") sits inline next to the big number; other on-pace cards
+      // keep the unit on its own line so longer suffixes don't crowd the
+      // numeric.
+      var compact = /^Quickest to /.test(it.category || '');
       html +=
         '<article class="rw-broken">' +
           '<div class="cat">' + esc(it.category || '') + '</div>' +
-          '<div class="rw-broken-readout">' +
+          '<div class="rw-broken-readout' + (compact ? ' compact' : '') + '">' +
             '<span class="num">' + readNumHtml + '</span>' +
             (readUnit ? '<span class="unit">' + esc(readUnit) + '</span>' : '') +
             (it.readout_sub ? '<span class="sub">' + esc(it.readout_sub) + '</span>' : '') +
