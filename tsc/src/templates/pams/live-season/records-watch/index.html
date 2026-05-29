@@ -24,14 +24,17 @@
     --rw-mute:       #c6a89e;
     --rw-cream:      #f4ebd8;
 
-    --rw-ember:      #ff6b3d;
-    --rw-ember-hi:   #ff8a5d;
-    --rw-ember-deep: #b54426;
-    --rw-ember-soft: rgba(255,107,61,.16);
-    --rw-ember-glow: rgba(255,107,61,.55);
+    /* Primary accent — blue tracker tone. Variable names still read
+       "ember" so the existing rules don't need touching; the values
+       just swap from alarm-orange to the cool tracker blue. */
+    --rw-ember:      #7fa8bd;
+    --rw-ember-hi:   #a4c4d6;
+    --rw-ember-deep: #4a7d96;
+    --rw-ember-soft: rgba(127,168,189,.16);
+    --rw-ember-glow: rgba(127,168,189,.55);
 
-    /* Cool-tone secondary for the sidebar / tracker data so it reads
-       distinct from the alarm-orange ember primary. */
+    /* Sidebar accent — kept on the same blue family but slightly
+       softer so the secondary tracker data still reads distinct. */
     --rw-steel:      #7fa8bd;
     --rw-steel-hi:   #a4c4d6;
     --rw-steel-soft: rgba(127,168,189,.14);
@@ -44,9 +47,9 @@ body { background: var(--rw-bg); }
 
 .site-glow {
     background-image:
-        radial-gradient(circle at 18% 22%, rgba(255,107,61,.10) 0%, transparent 50%),
+        radial-gradient(circle at 18% 22%, rgba(127,168,189,.10) 0%, transparent 50%),
         radial-gradient(circle at 82% 78%, rgba(232,200,137,.05) 0%, transparent 50%),
-        radial-gradient(circle at 50% 110%, rgba(181,68,38,.12) 0%, transparent 55%);
+        radial-gradient(circle at 50% 110%, rgba(74,125,150,.12) 0%, transparent 55%);
 }
 
 /* ── Nav + chapbar themed to the page ──────────────────────── */
@@ -71,9 +74,9 @@ body { background: var(--rw-bg); }
     --nav-drop-text:         #efd6cb;
     --nav-drop-text-mute:    var(--rw-mute);
     --nav-drop-accent:       var(--rw-ember);
-    --nav-drop-hover-bg:     rgba(255,107,61,.10);
+    --nav-drop-hover-bg:     rgba(127,168,189,.10);
     --nav-drop-sub-bg:       rgba(0,0,0,.20);
-    --nav-drop-accent-line:  rgba(255,107,61,.30);
+    --nav-drop-accent-line:  rgba(127,168,189,.30);
 }
 
 /* ── Masthead (newsroom + tracker hybrid) ────────────────────
@@ -88,9 +91,9 @@ body { background: var(--rw-bg); }
         repeating-linear-gradient(
             180deg,
             transparent 0 22px,
-            rgba(255,107,61,.025) 22px 23px
+            rgba(127,168,189,.025) 22px 23px
         ),
-        linear-gradient(180deg, rgba(255,107,61,.05) 0%, transparent 100%),
+        linear-gradient(180deg, rgba(127,168,189,.05) 0%, transparent 100%),
         var(--rw-soft);
     border-bottom: 1px solid var(--rw-line);
     margin-bottom: 2.5rem;
@@ -123,18 +126,18 @@ body { background: var(--rw-bg); }
     50%     { opacity: .45; transform: scale(.78); }
 }
 .rw-mast-title {
-    font-family: var(--mono); font-weight: 700;
-    font-size: clamp(2rem, 5vw, 3.4rem);
-    letter-spacing: -.01em;
+    /* Back to the serif treatment used by every other page title on
+       the site — only the eyebrow + sub stay mono. */
+    font-family: var(--serif);
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    letter-spacing: -.02em;
     color: var(--rw-cream);
     line-height: 1;
     margin-bottom: .55rem;
-    text-transform: uppercase;
 }
 .rw-mast-title em {
-    font-style: normal;
+    font-style: italic;
     color: var(--rw-ember);
-    font-weight: 700;
 }
 .rw-mast-sub {
     font-family: var(--mono);
@@ -648,7 +651,7 @@ body { background: var(--rw-bg); }
     padding: .8rem 1.2rem;
 }
 .rw-chase-row:last-child { border-bottom: 0; }
-.rw-chase-row.hot { background: rgba(255,107,61,.06); }
+.rw-chase-row.hot { background: rgba(127,168,189,.06); }
 .rw-chase-rank {
     font-family: var(--mono); font-weight: 700;
     font-size: .85rem; color: var(--rw-mute);
@@ -786,7 +789,7 @@ body { background: var(--rw-bg); }
 .rw-broken {
     position: relative;
     background:
-        radial-gradient(circle at 30% 0%, rgba(255,107,61,.10) 0%, transparent 55%),
+        radial-gradient(circle at 30% 0%, rgba(127,168,189,.10) 0%, transparent 55%),
         linear-gradient(180deg, var(--rw-card) 0%, var(--rw-soft) 100%);
     border: 1px solid var(--rw-line);
     border-top: 3px solid var(--rw-ember);
