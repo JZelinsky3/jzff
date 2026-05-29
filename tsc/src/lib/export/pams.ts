@@ -2003,6 +2003,28 @@ function buildLiveSeasonPreviews(
     return g ? groupDisplayName(g) : m.display_name
   }
 
+  // Career H2H between two profile groups, as of (asOfYear, asOfWeek).
+  // Returns "W-L" string (e.g. "3-2"). Inclusive of the as-of game so the
+  // milestone game itself is counted in the running total. Returns '' if
+  // either id has no profile group (orphans without games).
+  function h2hThrough(myMid: string, oppMid: string, asOfYear: number, asOfWeek: number): string {
+    const myG = managerToGroup.get(myMid)
+    const oppG = managerToGroup.get(oppMid)
+    if (!myG || !oppG) return ''
+    let w = 0, l = 0
+    for (const mid of myG.managerIds) {
+      const games = gamesByManager.get(mid)
+      if (!games) continue
+      for (const gm of games) {
+        if (!oppG.managerIds.has(gm.opp_id)) continue
+        if (gm.year > asOfYear || (gm.year === asOfYear && gm.week > asOfWeek)) continue
+        if (gm.result === 'W') w++
+        else if (gm.result === 'L') l++
+      }
+    }
+    return `${w}-${l}`
+  }
+
   type TaggedGame = ManagerGame & { year: number }
   const yearOfSeason = new Map<string, number>()
   for (const sn of s.seasons) yearOfSeason.set(sn.id, sn.year)
@@ -2418,6 +2440,9 @@ function buildLiveSeasonPreviews(
   // ── MILESTONES (per profile group so merged identities aggregate properly)
   type Career = {
     name: string
+    // Primary manager id (group.primary.id) — used to seed h2hThrough(),
+    // which then resolves back to the full profile group internally.
+    primaryMid: string
     avatar: string  // most-recent avatar_url across the group's identities
     winsBefore: number; lossesBefore: number; gamesBefore: number; pfBefore: number
     winsAfter:  number; lossesAfter:  number; gamesAfter:  number; pfAfter:  number
@@ -2450,6 +2475,7 @@ function buildLiveSeasonPreviews(
     if (isGroupHidden(g)) continue
     const career: Career = {
       name: groupDisplayName(g),
+      primaryMid: g.primary.id,
       avatar: avatarFor(g),
       winsBefore: 0, lossesBefore: 0, gamesBefore: 0, pfBefore: 0,
       winsAfter:  0, lossesAfter:  0, gamesAfter:  0, pfAfter:  0,
@@ -2544,7 +2570,12 @@ function buildLiveSeasonPreviews(
 
   type Crossed = {
     glyph: string; tier: string; category: Category; name: string; avatar: string
-    achievement_html: string; when: string; context: string; stats_html: string
+    achievement_html: string; stats_html: string
+    // Single-line bottom-of-card meta. Replaces the old when+context split
+    // (which used space-between and wrapped awkwardly on long opponent
+    // names). Format varies by category but always leads with W{week}.
+    meta_html: string
+    when: string  // kept for the meter "this week" filter
     sort: number
   }
   type Approach = {
@@ -2558,6 +2589,26 @@ function buildLiveSeasonPreviews(
 
   for (const c of careers) {
     if (c.gamesAfter === 0) continue
+
+    // Helper: build the meta line for a crossed milestone. wins/points
+    // milestones lead with W{week}, then the score + opponent (+ H2H if
+    // there's history). games milestones omit the score. streak milestones
+    // show the prior personal-best for context.
+    function metaWinsLike(mid: string, week: number, score: number, oppMid: string): string {
+      const opp = escTxt(nameOf(oppMid))
+      const h2h = h2hThrough(mid, oppMid, year, week)
+      return `<strong>W${week}</strong> · ${score.toFixed(1)} pts vs ${opp}` +
+             (h2h ? `<span class="h2h">${h2h} H2H</span>` : '')
+    }
+    function metaGamesLike(mid: string, week: number, oppMid: string): string {
+      const opp = escTxt(nameOf(oppMid))
+      const h2h = h2hThrough(mid, oppMid, year, week)
+      return `<strong>W${week}</strong> vs ${opp}` +
+             (h2h ? `<span class="h2h">${h2h} H2H</span>` : '')
+    }
+    // Any id from the group works since h2hThrough resolves back via the
+    // profile group internally.
+    const seedMid = c.primaryMid
 
     // ── Crossed: career wins
     const wTier = nextTierCrossed(c.winsBefore, c.winsAfter, winTiers)
@@ -2574,9 +2625,9 @@ function buildLiveSeasonPreviews(
       crossed.push({
         glyph: '✦', tier: 'CAREER WINS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(wTier)}</strong> career win`,
-        when: crossingWeek ? `W${crossingWeek} · ${year}` : `${year}`,
-        context: gm ? `vs ${escTxt(nameOf(gm.opp_id))} · ${gm.self_score.toFixed(1)} pts` : '',
         stats_html: statsFor(c, 'wins'),
+        meta_html: gm ? metaWinsLike(seedMid, gm.week, gm.self_score, gm.opp_id) : `${year}`,
+        when: crossingWeek ? `W${crossingWeek} · ${year}` : `${year}`,
         sort: (crossingWeek * 100) + wTier,
       })
     }
@@ -2589,9 +2640,9 @@ function buildLiveSeasonPreviews(
       crossed.push({
         glyph: '◈', tier: 'CAREER STARTS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(gTier)}</strong> career start`,
-        when: gm ? `W${gm.week} · ${year}` : `${year}`,
-        context: gm ? `vs ${escTxt(nameOf(gm.opp_id))}` : '',
         stats_html: statsFor(c, 'wins'),
+        meta_html: gm ? metaGamesLike(seedMid, gm.week, gm.opp_id) : `${year}`,
+        when: gm ? `W${gm.week} · ${year}` : `${year}`,
         sort: (gm?.week ?? 0) * 100 + 1,
       })
     }
@@ -2609,9 +2660,9 @@ function buildLiveSeasonPreviews(
       crossed.push({
         glyph: '★', tier: 'CAREER POINTS', category: 'points', name: c.name, avatar: c.avatar,
         achievement_html: `crossed <strong>${pTier.toLocaleString()}</strong> lifetime points`,
-        when: week ? `W${week} · ${year}` : `${year}`,
-        context: gm ? `${gm.self_score.toFixed(1)} pts vs ${escTxt(nameOf(gm.opp_id))}` : '',
         stats_html: statsFor(c, 'points'),
+        meta_html: gm ? metaWinsLike(seedMid, gm.week, gm.self_score, gm.opp_id) : `${year}`,
+        when: week ? `W${week} · ${year}` : `${year}`,
         sort: (week * 100) + 2,
       })
     }
@@ -2621,9 +2672,9 @@ function buildLiveSeasonPreviews(
       crossed.push({
         glyph: '✺', tier: 'WIN STREAK', category: 'streak', name: c.name, avatar: c.avatar,
         achievement_html: `new personal-best <strong>${c.activeStreak.len}-game win</strong> streak`,
-        when: `W${throughWeek} · ${year}`,
-        context: `prior best ${c.careerLongestWinStreak}`,
         stats_html: statsFor(c, 'streak'),
+        meta_html: `<strong>W${throughWeek}</strong> · prior best ${c.careerLongestWinStreak}W`,
+        when: `W${throughWeek} · ${year}`,
         sort: 99 * 100 + c.activeStreak.len,
       })
     }

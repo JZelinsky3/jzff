@@ -48,11 +48,14 @@ body { background: var(--ml-bg); }
 .nav { background: rgba(17,10,24,.95); border-bottom-color: var(--ml-line); }
 /* Nav masthead text + back arrow: switch from main.css's gold to violet
    so the whole header reads as one palette. The kicker above the league
-   name (the data-chapter text) also gets re-tinted off cream-mute. */
+   name (the data-chapter text) also gets re-tinted off cream-mute, and
+   the hamburger dropdown button drops its default gold tint. */
 .nav-back, .nav-link { color: var(--ml-violet); }
 .nav-back:hover, .nav-link:hover { color: var(--ml-violet-hi); }
 .nav-title em { color: var(--ml-violet); }
 .nav-kicker { color: #8c7aac; }
+.nav-drop-btn { color: var(--ml-violet); }
+.nav-drop-btn:hover { color: var(--ml-violet-hi); }
 :root {
     --chapbar-bg:     rgba(17,10,24,.92);
     --chapbar-border: var(--ml-line);
@@ -109,14 +112,17 @@ body { background: var(--ml-bg); }
 
 /* ── Status strip ──────────────────────────────────────────── */
 .ml-meter {
-    max-width: 1100px; margin: 0 auto 2.5rem;
+    max-width: 1240px; margin: 0 auto 2.5rem;
     padding: 1rem 1.4rem;
     display: flex; flex-wrap: wrap; align-items: center; gap: 1.6rem;
     background: var(--ml-soft);
     border-top: 1px solid var(--ml-line);
     border-bottom: 1px solid var(--ml-line);
 }
-.ml-meter-stat { display: flex; flex-direction: column; gap: .2rem; }
+/* Equal-width stats so the 3 columns balance visually, instead of each
+   shrinking to fit its label/value content (which left "This week" tiny
+   and "One game away" wide). */
+.ml-meter-stat { display: flex; flex-direction: column; gap: .2rem; flex: 1; min-width: 0; }
 .ml-meter-stat .lbl {
     font-family: var(--mono); font-size: .58rem;
     letter-spacing: .25em; text-transform: uppercase;
@@ -137,7 +143,7 @@ body { background: var(--ml-bg); }
 
 /* ── Wrap + sections ───────────────────────────────────────── */
 .ml-wrap {
-    max-width: 1100px; margin: 0 auto;
+    max-width: 1240px; margin: 0 auto;
     padding: 0 1.5rem 5rem;
     position: relative; z-index: 1;
 }
@@ -172,21 +178,23 @@ body { background: var(--ml-bg); }
     gap: 1.2rem;
 }
 /* Dense mode: kicks in via JS when there are more than 6 just-achieved
-   items, so the grid scales to fit up to ~12 cards without scroll. */
+   items, so the grid scales to fit up to ~12 cards. minmax tuned so 4
+   columns at the 1240px max-width still gives each card decent breathing
+   room (~280px). */
 .ml-crossed-grid.dense {
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: .9rem;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 1rem;
 }
-.ml-crossed-grid.dense .ml-crossed { padding: 1.1rem 1.1rem 1rem; }
+.ml-crossed-grid.dense .ml-crossed { padding: 1.15rem 1.15rem 1.05rem; }
 .ml-crossed-grid.dense .ml-medal {
-    width: 42px; height: 42px;
-    font-size: 1.1rem; margin-bottom: .7rem;
+    width: 44px; height: 44px;
+    font-size: 1.15rem; margin-bottom: .75rem;
 }
-.ml-crossed-grid.dense .ml-medal img { width: 42px; height: 42px; }
-.ml-crossed-grid.dense .name { font-size: 1.2rem; margin-bottom: .4rem; }
-.ml-crossed-grid.dense .achievement { font-size: .92rem; margin-bottom: .65rem; }
-.ml-crossed-grid.dense .stats { font-size: .58rem; padding: .55rem 0; }
-.ml-crossed-grid.dense .meta { font-size: .5rem; padding-top: .6rem; }
+.ml-crossed-grid.dense .ml-medal img { width: 44px; height: 44px; }
+.ml-crossed-grid.dense .name { font-size: 1.25rem; margin-bottom: .45rem; }
+.ml-crossed-grid.dense .achievement { font-size: .95rem; margin-bottom: .7rem; }
+.ml-crossed-grid.dense .stats { font-size: .6rem; padding: .6rem 0; }
+.ml-crossed-grid.dense .meta { font-size: .58rem; padding-top: .65rem; }
 .ml-crossed {
     position: relative; overflow: hidden;
     background: linear-gradient(160deg, var(--ml-card) 0%, var(--ml-soft) 70%);
@@ -261,13 +269,29 @@ body { background: var(--ml-bg); }
     color: var(--ml-cream); font-weight: 700;
 }
 .ml-crossed .meta {
-    display: flex; justify-content: space-between;
+    /* Single continuous line so long opponent names don't break across
+     * weird gaps. The H2H badge floats to the right edge of the line
+     * via float (or wraps to a new line if there isn't room). */
     padding-top: .8rem;
     border-top: 1px solid var(--ml-line-soft);
-    font-family: var(--mono); font-size: .55rem;
-    letter-spacing: .16em; text-transform: uppercase;
+    font-family: var(--mono); font-size: .6rem;
+    letter-spacing: .08em;
     color: var(--ml-mute);
     z-index: 1; position: relative;
+    line-height: 1.5;
+}
+.ml-crossed .meta strong {
+    color: var(--ml-cream); font-weight: 700;
+}
+.ml-crossed .meta .h2h {
+    float: right;
+    margin-left: .6rem;
+    padding: .12rem .42rem .15rem;
+    background: var(--ml-soft);
+    border: 1px solid var(--ml-line-soft);
+    border-radius: 2px;
+    font-size: .54rem;
+    color: var(--ml-bronze-hi);
 }
 
 /* ── Approaching columns (one-game-away + horizon) ─────────────
@@ -713,6 +737,12 @@ body { background: var(--ml-bg); }
     var cls = items.length > 6 ? 'ml-crossed-grid dense' : 'ml-crossed-grid';
     var html = '<div class="' + cls + '">';
     items.forEach(function (it) {
+      // meta_html is the single-line bottom row (W{week} · score vs opp · H2H).
+      // Falls back to the older when+context two-span layout if a stale
+      // JSON snapshot doesn't carry the new field yet.
+      var metaContent = it.meta_html
+        ? it.meta_html
+        : ('<span>' + esc(it.when || '') + '</span><span>' + esc(it.context || '') + '</span>');
       html +=
         '<article class="ml-crossed">' +
           '<div class="ml-medal">' + avatarMarkup(it) + '</div>' +
@@ -720,7 +750,7 @@ body { background: var(--ml-bg); }
           '<div class="name">' + (it.name_html || esc(it.name || '—')) + '</div>' +
           '<div class="achievement">' + (it.achievement_html || esc(it.achievement || '')) + '</div>' +
           (it.stats_html ? '<div class="stats">' + it.stats_html + '</div>' : '') +
-          '<div class="meta"><span>' + esc(it.when || '') + '</span><span>' + esc(it.context || '') + '</span></div>' +
+          '<div class="meta">' + metaContent + '</div>' +
         '</article>';
     });
     html += '</div>';
