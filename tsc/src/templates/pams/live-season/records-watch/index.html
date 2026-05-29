@@ -330,6 +330,16 @@ body { background: var(--rw-bg); }
     margin-bottom: .55rem;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.rw-onpace-col .col-name .col-sub-tag {
+    /* W-L record tucked beside the name (Quickest-to-X items). */
+    font-family: var(--mono); font-weight: 700;
+    font-style: normal;
+    font-size: .58rem; letter-spacing: .08em;
+    color: var(--rw-mute);
+    margin-left: .35rem;
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+}
 .rw-onpace-col .col-val {
     font-family: var(--mono); font-weight: 700;
     font-size: 1.05rem; line-height: 1.2;
@@ -649,6 +659,15 @@ body { background: var(--rw-bg); }
     font-size: 1.15rem; letter-spacing: 0;
     text-transform: none;
     color: var(--rw-cream);
+}
+.rw-plot-head .chaser-sub {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .08em;
+    color: var(--rw-mute);
+    margin-top: .2rem;
+    text-transform: none;
+    font-variant-numeric: tabular-nums;
 }
 .rw-plot-head .pace {
     /* legacy — no longer rendered; the chaser's value now floats above
@@ -1421,7 +1440,10 @@ body { background: var(--rw-bg); }
             '</div>' +
             '<div class="rw-block-plot">' +
               '<div class="rw-plot-head">' +
-                '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
+                '<div>' +
+                  '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
+                  (it.chaser_sub ? '<span class="chaser-sub">' + esc(it.chaser_sub) + '</span>' : '') +
+                '</div>' +
               '</div>' +
               '<div class="rw-plot-labels">' +
                 '<span class="rw-plot-label" style="left:' + fillPct.toFixed(2) + '%">' + esc(barLabel) + '</span>' +
@@ -1582,7 +1604,9 @@ body { background: var(--rw-bg); }
           '<div class="rw-onpace-grid">' +
             '<div class="rw-onpace-col chasing">' +
               '<div class="col-lbl">Chasing</div>' +
-              '<div class="col-name">' + esc(it.chaser || '—') + '</div>' +
+              '<div class="col-name">' + esc(it.chaser || '—') +
+                (it.chaser_sub ? ' <span class="col-sub-tag">' + esc(it.chaser_sub) + '</span>' : '') +
+              '</div>' +
               '<div class="col-val">' + esc(cv) + '</div>' +
               '<div class="col-sub">' + esc(projLine) + '</div>' +
             '</div>' +

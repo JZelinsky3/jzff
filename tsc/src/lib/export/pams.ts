@@ -2216,6 +2216,11 @@ function buildLiveSeasonPreviews(
     // Keeps the projected end-of-season value separate from
     // chaser_when (which now carries just the as-of date).
     chaser_projection?: string
+    // Optional sub-line under the chaser name on Brink + On-Pace
+    // cards. Used by Quickest-to-X to show the chaser's career
+    // W-L record (e.g. "50-25") so the games-played bar label
+    // still has context.
+    chaser_sub?: string
     copy_html?: string
     when?: string
     previous?: string
@@ -2464,15 +2469,23 @@ function buildLiveSeasonPreviews(
         // among walks that already crossed T before {year}.
         let recordHolder: { walk: Walk; games: number; year: number } | null = null
         // Track each walk's crossing if any; reused for chase detection below.
-        const crossings: Array<{ walk: Walk; cross: Crossing | null; currentVal: number; gamesPlayed: number; perGame: number }> = []
+        const crossings: Array<{
+          walk: Walk; cross: Crossing | null;
+          currentVal: number; gamesPlayed: number;
+          cumWins: number; cumLosses: number;
+          perGame: number;
+        }> = []
         for (const w of walks) {
           const cross = cfg.kind === 'wins' ? crossingForWins(w, T) : crossingForPF(w, T);
           let currentVal = 0
+          let cumWins = 0
+          let cumLosses = 0
           let gamesPlayed = w.games.length
-          if (cfg.kind === 'wins') {
-            for (const g of w.games) if (g.result === 'W') currentVal++
-          } else {
-            for (const g of w.games) currentVal += g.self_score
+          for (const g of w.games) {
+            if (g.result === 'W') cumWins++
+            else if (g.result === 'L') cumLosses++
+            if (cfg.kind === 'wins' && g.result === 'W') currentVal++
+            if (cfg.kind === 'points') currentVal += g.self_score
           }
           // Per-game rate, using only {year} games so the projection
           // reflects current-season form, not lifetime average.
@@ -2485,7 +2498,7 @@ function buildLiveSeasonPreviews(
             }
           }
           const perGame = seasonGames > 0 ? seasonVal / seasonGames : 0
-          crossings.push({ walk: w, cross, currentVal, gamesPlayed, perGame })
+          crossings.push({ walk: w, cross, currentVal, gamesPlayed, cumWins, cumLosses, perGame })
 
           if (cross && cross.year < year) {
             // crossed pre-{year} → eligible to set the record
@@ -2504,6 +2517,7 @@ function buildLiveSeasonPreviews(
         type Chaser = {
           walk: Walk; projGames: number; broke: boolean;
           currentVal: number; gamesPlayed: number;
+          cumWins: number; cumLosses: number;
           crossingDesc?: string
         }
         let bestChaser: Chaser | null = null
@@ -2520,6 +2534,8 @@ function buildLiveSeasonPreviews(
               broke: true,
               currentVal: c.currentVal,
               gamesPlayed: c.gamesPlayed,
+              cumWins: c.cumWins,
+              cumLosses: c.cumLosses,
               crossingDesc: `W${c.cross.week} · ${year}`,
             }
             if (!bestChaser || cand.projGames < bestChaser.projGames) bestChaser = cand
@@ -2546,6 +2562,7 @@ function buildLiveSeasonPreviews(
               const cand: Chaser = {
                 walk: c.walk, projGames: proj, broke: false,
                 currentVal: c.currentVal, gamesPlayed: c.gamesPlayed,
+                cumWins: c.cumWins, cumLosses: c.cumLosses,
               }
               if (!bestChaser || cand.projGames < bestChaser.projGames) bestChaser = cand
             }
@@ -2562,11 +2579,17 @@ function buildLiveSeasonPreviews(
         const projGames = bestChaser.projGames
         const gap = r.games - projGames  // positive = on pace to break (faster)
         const broke = bestChaser.broke
-        // Current-progress display so the brink bar label + on-pace col
-        // can show how many wins / pts the chaser has accumulated toward
-        // the tier (not just the projected games count).
-        const unitWord = cfg.kind === 'wins' ? 'wins' : 'pts'
-        const currentDisplay = `${Math.round(bestChaser.currentVal)} ${unitWord}`
+        // Display strings:
+        //   gamesDisplay — chaser's current games played, used as the
+        //     bar label so the eye reads "X Games" right above the fill.
+        //     Quickest-to-X is fundamentally a games-count race; the bar
+        //     shows progress toward the tier (cum / T), the label shows
+        //     how many games it took to get there.
+        //   recordDisplay — chaser's career W-L through current games.
+        //     Rides on chaser_sub so the brink/on-pace cards print it
+        //     just below the manager name.
+        const gamesDisplay = `${bestChaser.gamesPlayed} Games`
+        const recordDisplay = `${bestChaser.cumWins}-${bestChaser.cumLosses}`
 
         accumItems.push({
           category: cfg.label(T),
@@ -2583,11 +2606,13 @@ function buildLiveSeasonPreviews(
           // chaser_value leads with the bare number + unit so the LCD
           // readout shows "16" big with "games" as the unit caption.
           // The "pace" / "crossed" qualifier rides in readout_sub.
-          // Broken cards lead with the achievement (games-to-tier);
-          // non-broken cards lead with the chaser's current progress
-          // toward the tier (so the brink bar label reads "50 wins" /
-          // "12,500 pts" instead of a projection).
-          chaser_value: broke ? `${projGames} games` : currentDisplay,
+          // Broken cards lead with the achievement (games-to-tier).
+          // Non-broken cards also lead with games — the metric being
+          // chased is "fewest games to T" so games is the operative
+          // unit. The chaser's current W-L record rides on
+          // chaser_sub for context.
+          chaser_value: broke ? `${projGames} games` : gamesDisplay,
+          chaser_sub: recordDisplay,
           readout_sub: broke ? `crossed ${bestChaser.crossingDesc || ''}` : 'pace',
           chaser_when: broke
             ? bestChaser.crossingDesc || `W${throughWeek} · ${year}`
@@ -2621,7 +2646,7 @@ function buildLiveSeasonPreviews(
       chaser: topHigh.name, chaser_value: `${v.toFixed(1)} pts`,
       chaser_when: `W${topHigh.bestWeek!.week} · ${year} vs ${nameOf(topHigh.bestWeek!.opp_id)}`,
       gap: pct >= 100 ? `+${(v - r).toFixed(1)} past` : `${(r - v).toFixed(1)} short`,
-      copy_html: `<em>${escTxt(topHigh.name)}</em> posted the all-time single-week high — ${v.toFixed(1)} pts (${v.toFixed(1)} vs ${topHigh.bestWeek!.opp_score.toFixed(1)} ${escTxt(nameOf(topHigh.bestWeek!.opp_id))})`,
+      copy_html: `<em>${escTxt(topHigh.name)}</em> posted the all-time single-week high — ${v.toFixed(1)} pts (vs ${escTxt(nameOf(topHigh.bestWeek!.opp_id))})`,
       when: `W${topHigh.bestWeek!.week} · ${year}`,
       previous: `${r.toFixed(1)} · ${nameOf(allHigh.mid)}, ${allHigh.year}`,
     })
