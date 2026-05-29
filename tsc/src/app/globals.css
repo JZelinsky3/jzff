@@ -4988,6 +4988,21 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-family: var(--mono); font-size: .72rem;
     letter-spacing: .1em; color: var(--cream-mute);
 }
+/* Mobile: shrink the year column so the team name + matchup don't get
+   squeezed into each other. Also drops the matchup down onto its own
+   line under the team name when even the squeeze isn't enough. */
+@media (max-width: 640px) {
+    .cp-roll-row { flex-wrap: wrap; padding: .55rem 0; }
+    .cp-roll-row > .cp-roll-yr { width: 56px; }
+    .cp-roll-yr { font-size: .68rem; letter-spacing: .1em; }
+    .cp-roll-ch { font-size: 1rem; }
+    .cp-roll-row > .cp-roll-fin {
+        flex-basis: 100%;
+        margin-left: 56px;
+        margin-top: .15rem;
+        font-size: .62rem;
+    }
+}
 
 .cp-draft { display: flex; flex-direction: column; gap: .8rem; }
 .cp-draft-head {
