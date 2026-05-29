@@ -272,9 +272,9 @@ body { background: var(--ml-bg); }
     color: var(--ml-cream); font-weight: 700;
 }
 .ml-crossed .meta {
-    /* Single continuous line so long opponent names don't break across
-     * weird gaps. The H2H badge floats to the right edge of the line
-     * via float (or wraps to a new line if there isn't room). */
+    /* Flexbox so wins items render as one continuous left-aligned line
+     * while points items split (W{week} ·  on the left, score+opp pushed
+     * to the right). Both layouts let the H2H badge clump on the right. */
     padding-top: .8rem;
     border-top: 1px solid var(--ml-line-soft);
     font-family: var(--mono); font-size: .6rem;
@@ -282,19 +282,37 @@ body { background: var(--ml-bg); }
     color: var(--ml-mute);
     z-index: 1; position: relative;
     line-height: 1.5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .5rem;
 }
 .ml-crossed .meta strong {
     color: var(--ml-cream); font-weight: 700;
 }
+.ml-crossed .meta .meta-main {
+    /* Sits at the natural flex flow — left edge of the row. */
+    min-width: 0;
+}
+.ml-crossed .meta .meta-right {
+    /* Pushes itself to the right edge of the row, leaving a gap between
+     * the leading W{week} and this trailing score+opp text. */
+    margin-left: auto;
+    text-align: right;
+    min-width: 0;
+}
 .ml-crossed .meta .h2h {
-    float: right;
-    margin-left: .6rem;
+    /* margin-left:auto also; when paired with .meta-right both clump on
+     * the right side with the gap appearing between meta-main and the
+     * right cluster. */
+    margin-left: auto;
     padding: .12rem .42rem .15rem;
     background: var(--ml-soft);
     border: 1px solid var(--ml-line-soft);
     border-radius: 2px;
     font-size: .54rem;
     color: var(--ml-bronze-hi);
+    flex-shrink: 0;
 }
 
 /* ── Approaching columns (one-game-away + horizon) ─────────────

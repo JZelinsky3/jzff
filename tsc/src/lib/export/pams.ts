@@ -2590,20 +2590,27 @@ function buildLiveSeasonPreviews(
   for (const c of careers) {
     if (c.gamesAfter === 0) continue
 
-    // Helper: build the meta line for a crossed milestone. wins/points
-    // milestones lead with W{week}, then the score + opponent (+ H2H if
-    // there's history). games milestones omit the score. streak milestones
-    // show the prior personal-best for context.
-    function metaWinsLike(mid: string, week: number, score: number, oppMid: string): string {
+    // Helper: build the meta line for a crossed milestone.
+    //
+    // Points milestones use a split layout — W{week} on the left and the
+    // score+opp on the right (rendered via flex space-between in the
+    // template). The "·" stays between them.
+    //
+    // Wins / games milestones are one continuous line: "W{week} vs Opp",
+    // no dot, no score. Streak milestones get the prior personal-best.
+    //
+    // H2H badge floats right when there's a career record vs that opp.
+    function metaPoints(mid: string, week: number, score: number, oppMid: string): string {
       const opp = escTxt(nameOf(oppMid))
       const h2h = h2hThrough(mid, oppMid, year, week)
-      return `<strong>W${week}</strong> · ${score.toFixed(1)} pts vs ${opp}` +
+      return `<span class="meta-main"><strong>W${week}</strong> ·</span>` +
+             `<span class="meta-right">${score.toFixed(1)} pts vs ${opp}</span>` +
              (h2h ? `<span class="h2h">${h2h} H2H</span>` : '')
     }
-    function metaGamesLike(mid: string, week: number, oppMid: string): string {
+    function metaWins(mid: string, week: number, oppMid: string): string {
       const opp = escTxt(nameOf(oppMid))
       const h2h = h2hThrough(mid, oppMid, year, week)
-      return `<strong>W${week}</strong> vs ${opp}` +
+      return `<span class="meta-main"><strong>W${week}</strong> vs ${opp}</span>` +
              (h2h ? `<span class="h2h">${h2h} H2H</span>` : '')
     }
     // Any id from the group works since h2hThrough resolves back via the
@@ -2626,7 +2633,7 @@ function buildLiveSeasonPreviews(
         glyph: '✦', tier: 'CAREER WINS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(wTier)}</strong> career win`,
         stats_html: statsFor(c, 'wins'),
-        meta_html: gm ? metaWinsLike(seedMid, gm.week, gm.self_score, gm.opp_id) : '',
+        meta_html: gm ? metaWins(seedMid, gm.week, gm.opp_id) : '',
         when: crossingWeek ? `W${crossingWeek}` : '',
         sort: (crossingWeek * 100) + wTier,
       })
@@ -2641,7 +2648,7 @@ function buildLiveSeasonPreviews(
         glyph: '◈', tier: 'CAREER STARTS', category: 'wins', name: c.name, avatar: c.avatar,
         achievement_html: `<strong>${ordinal(gTier)}</strong> career start`,
         stats_html: statsFor(c, 'wins'),
-        meta_html: gm ? metaGamesLike(seedMid, gm.week, gm.opp_id) : '',
+        meta_html: gm ? metaWins(seedMid, gm.week, gm.opp_id) : '',
         when: gm ? `W${gm.week}` : '',
         sort: (gm?.week ?? 0) * 100 + 1,
       })
@@ -2661,7 +2668,7 @@ function buildLiveSeasonPreviews(
         glyph: '★', tier: 'CAREER POINTS', category: 'points', name: c.name, avatar: c.avatar,
         achievement_html: `crossed <strong>${pTier.toLocaleString()}</strong> lifetime points`,
         stats_html: statsFor(c, 'points'),
-        meta_html: gm ? metaWinsLike(seedMid, gm.week, gm.self_score, gm.opp_id) : '',
+        meta_html: gm ? metaPoints(seedMid, gm.week, gm.self_score, gm.opp_id) : '',
         when: week ? `W${week}` : '',
         sort: (week * 100) + 2,
       })
@@ -2673,7 +2680,7 @@ function buildLiveSeasonPreviews(
         glyph: '✺', tier: 'WIN STREAK', category: 'streak', name: c.name, avatar: c.avatar,
         achievement_html: `new personal-best <strong>${c.activeStreak.len}-game win</strong> streak`,
         stats_html: statsFor(c, 'streak'),
-        meta_html: `<strong>W${throughWeek}</strong> · prior best ${c.careerLongestWinStreak}W`,
+        meta_html: `<span class="meta-main"><strong>W${throughWeek}</strong> · prior best ${c.careerLongestWinStreak}W</span>`,
         when: `W${throughWeek}`,
         sort: 99 * 100 + c.activeStreak.len,
       })
@@ -2797,7 +2804,9 @@ function buildLiveSeasonPreviews(
       week: crossed.filter((c) => c.when === `W${throughWeek}`).length,
       season: crossed.length,
       imminent: imminentCount,
-      through: `W${throughWeek} · ${year}`,
+      // Year intentionally omitted — the season is always implicit on the
+      // live-season page, so "Through W5" reads cleaner than "Through W5 · 2025".
+      through: `W${throughWeek}`,
     },
     // Bumped from 6 → 12 so the template can scale into dense mode when
     // there are more than 6 fresh milestones to surface.
@@ -2863,9 +2872,9 @@ function emptyRecordsWatch(year: number, throughWeek: number) {
     brink: [], chase: [], broken: [], just_missed: [],
   }
 }
-function emptyMilestones(year: number, throughWeek: number) {
+function emptyMilestones(_year: number, throughWeek: number) {
   return {
-    meter: { week: 0, season: 0, imminent: 0, through: `W${throughWeek} · ${year}` },
+    meter: { week: 0, season: 0, imminent: 0, through: `W${throughWeek}` },
     crossed: [],
     imminent_by_category: { wins: [], points: [], streak: [] },
     horizon_by_category:  { wins: [], points: [], streak: [] },
