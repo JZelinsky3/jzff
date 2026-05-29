@@ -686,9 +686,12 @@ body { background: var(--rw-bg); }
     margin-bottom: -.2rem;
 }
 .rw-plot-label {
+    /* Right-aligned to the fill endpoint — the label's right edge sits
+     * directly above where the bar stops, so the text trails the fill
+     * instead of straddling it. */
     position: absolute;
     bottom: 0;
-    transform: translateX(-50%);
+    transform: translateX(-100%);
     font-family: var(--mono); font-weight: 700;
     font-size: .68rem; letter-spacing: .04em;
     color: var(--rw-ember-hi);
@@ -795,11 +798,12 @@ body { background: var(--rw-bg); }
 }
 .rw-plot-scale span.s-start { left: 0; transform: none; }
 .rw-plot-scale span.s-end {
-    /* The record-value label (e.g. "9W", "2500 pts", "15G") — sits
-     * flush to the right edge under the mark line. */
+    /* The record-value label (e.g. "9W", "2500 pts", "15G") — centered
+     * on the mark line at the right edge so half the text extends past
+     * the track, matching the gold projection label treatment. */
     left: auto;
     right: 0;
-    transform: none;
+    transform: translateX(50%);
     color: var(--rw-ember-hi);
     font-weight: 700;
     letter-spacing: .04em;
