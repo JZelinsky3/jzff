@@ -2179,6 +2179,10 @@ function buildLiveSeasonPreviews(
     // Used for bucketing into Broken (§01) vs On Pace (§02).
     realized?: boolean
     readout_sub?: string
+    // Projection text rendered as the sub-line on On-Pace cards.
+    // Keeps the projected end-of-season value separate from
+    // chaser_when (which now carries just the as-of date).
+    chaser_projection?: string
     copy_html?: string
     when?: string
     previous?: string
@@ -2207,13 +2211,14 @@ function buildLiveSeasonPreviews(
       const holderGames = holderMs.wins + holderMs.losses + holderMs.ties
       if (holderGames > 0) holderPPG = bestSeasonPF.val / holderGames
     }
+    const chaserPPG = pfPaceTop.m.pf / pfPaceTop.m.games.length
     accumItems.push({
       category: 'Season Points-For Pace',
       pct,
-      // Realized when the chaser's CURRENT PF already eclipses the
-      // all-time record — they broke it mid-season, even though they
-      // could keep adding to it.
-      realized: v >= r,
+      // Strict > so a tie sits in Brink (visual: bar fills to 100%
+      // right at the mark line). Once they actually go past, realized
+      // flips true and they move to Broken.
+      realized: v > r,
       flag: flagFor(pct, 'WILL BREAK IT', 'PROJECTING PAST', 'ON PACE', 'TRENDING UP'),
       title_html: `${Math.round(r)} pts <em>· highest reg-season PF</em>`,
       holder: nameOf(bestSeasonPF.mid),
@@ -2221,37 +2226,20 @@ function buildLiveSeasonPreviews(
       holder_when: `${bestSeasonPF.year}`,
       chaser: pfPaceTop.m.name,
       chaser_value: `${Math.round(pfPaceTop.m.pf)} pts through ${pfPaceTop.m.games.length} Games`,
-      chaser_when: `pace ${projInt} pts`,
+      chaser_when: `W${throughWeek} · ${year}`,
+      chaser_projection: `pace ${projInt} pts · ${chaserPPG.toFixed(1)} PPG`,
       gap: gap >= 0 ? `+${gap} pts on pace` : `${Math.abs(gap)} pts short on pace`,
-      copy_html: `<em>${escTxt(pfPaceTop.m.name)}</em> · pace ${projInt} pts (${(pfPaceTop.m.pf / pfPaceTop.m.games.length).toFixed(1)} PPG)`,
-      when: `through W${throughWeek}`,
+      copy_html: `<em>${escTxt(pfPaceTop.m.name)}</em> · pace ${projInt} pts (${chaserPPG.toFixed(1)} PPG)`,
+      when: `W${throughWeek} · ${year}`,
       previous: `${Math.round(r)} pts · ${nameOf(bestSeasonPF.mid)}, ${bestSeasonPF.year}`,
     })
   }
 
-  // ── Season PPG pace (projection-free; current avg vs all-time best avg)
-  const ppgTop = seasonByMgr
-    .filter((m) => m.games.length >= 2)
-    .map((m) => ({ m, ppg: m.pf / m.games.length }))
-    .sort((a, b) => b.ppg - a.ppg)[0]
-  if (ppgTop && bestSeasonPPG.val > 0) {
-    const v = ppgTop.ppg, r = bestSeasonPPG.val, pct = (v / r) * 100
-    accumItems.push({
-      category: 'Season PPG Pace',
-      pct,
-      realized: v >= r,
-      flag: flagFor(pct, 'PPG RECORD CLIMBING', 'PROJECTING PAST', 'ON PACE', 'STRONG SCORING'),
-      title_html: `${r.toFixed(1)} <em>· best regular-season PPG</em>`,
-      holder: nameOf(bestSeasonPPG.mid), record_value: `${r.toFixed(1)} PPG`,
-      holder_when: `${bestSeasonPPG.year}`,
-      chaser: ppgTop.m.name, chaser_value: `${v.toFixed(1)} PPG`,
-      chaser_when: `${ppgTop.m.games.length}G · ${year}`,
-      gap: v >= r ? `+${(v - r).toFixed(1)} above` : `${(r - v).toFixed(1)} below`,
-      copy_html: `<em>${escTxt(ppgTop.m.name)}</em> · ${v.toFixed(1)} PPG through ${ppgTop.m.games.length} Games`,
-      when: `through W${throughWeek} · ${year}`,
-      previous: `${r.toFixed(1)} · ${nameOf(bestSeasonPPG.mid)}, ${bestSeasonPPG.year}`,
-    })
-  }
+  // PPG pace dropped — that record can only be settled at end of season
+  // and would otherwise leak into Broken mid-season. The PF pace card
+  // already shows the holder's PPG as a sub on record_value, and the
+  // chaser's PPG rides on chaser_projection below, so PPG is still in
+  // view without a dedicated section.
 
   // ── Regular-season WINS pace (only meaningful past midweek; gate at W5)
   if (throughWeek >= 5) {
@@ -2269,17 +2257,18 @@ function buildLiveSeasonPreviews(
       accumItems.push({
         category: 'Reg-Season Wins Pace',
         pct,
-        realized: v >= r,
+        realized: v > r,
         flag: flagFor(pct, 'WILL MATCH OR PASS', 'ON PACE TO TIE', 'BIG W-PACE', 'STRONG START'),
         title_html: `${r} wins <em>· most reg-season wins</em>`,
         holder: nameOf(mostRegWins.mid), record_value: `${r} wins`,
         holder_when: `${mostRegWins.year}`,
         chaser: winsPaceTop.m.name,
         chaser_value: `${winsPaceTop.m.wins}-${winsPaceTop.m.losses} through ${winsPaceTop.m.games.length} Games`,
-        chaser_when: `pace ${projInt} wins`,
+        chaser_when: `W${throughWeek} · ${year}`,
+        chaser_projection: `pace ${projInt} wins`,
         gap: gap >= 0 ? `+${gap} wins on pace` : `${Math.abs(gap)} wins short on pace`,
         copy_html: `<em>${escTxt(winsPaceTop.m.name)}</em> · pace ${projInt} wins (${winsPaceTop.m.wins}-${winsPaceTop.m.losses})`,
-        when: `through W${throughWeek}`,
+        when: `W${throughWeek} · ${year}`,
         previous: `${r} wins · ${nameOf(mostRegWins.mid)}, ${mostRegWins.year}`,
       })
     }
@@ -2298,17 +2287,18 @@ function buildLiveSeasonPreviews(
       accumItems.push({
         category: 'Reg-Season Losses Pace',
         pct,
-        realized: v >= r,
+        realized: v > r,
         flag: flagFor(pct, 'WORST SEASON INCOMING', 'TANK PACE', 'STRUGGLING', 'ROUGH RUN'),
         title_html: `${r} losses <em>· most reg-season losses</em>`,
         holder: nameOf(mostRegLoss.mid), record_value: `${r} losses`,
         holder_when: `${mostRegLoss.year}`,
         chaser: lossPaceTop.m.name,
         chaser_value: `${lossPaceTop.m.wins}-${lossPaceTop.m.losses} through ${lossPaceTop.m.games.length} Games`,
-        chaser_when: `pace ${projInt} losses`,
+        chaser_when: `W${throughWeek} · ${year}`,
+        chaser_projection: `pace ${projInt} losses`,
         gap: gap >= 0 ? `+${gap} losses on pace` : `${Math.abs(gap)} losses short on pace`,
         copy_html: `<em>${escTxt(lossPaceTop.m.name)}</em> · pace ${projInt} losses (${lossPaceTop.m.wins}-${lossPaceTop.m.losses})`,
-        when: `through W${throughWeek}`,
+        when: `W${throughWeek} · ${year}`,
         previous: `${r} losses · ${nameOf(mostRegLoss.mid)}, ${mostRegLoss.year}`,
       })
     }
@@ -2328,10 +2318,10 @@ function buildLiveSeasonPreviews(
       holder: nameOf(allWinStreak.mid), record_value: `${r} wins in a row`,
       holder_when: 'all-time mark',
       chaser: liveWin.name, chaser_value: `${v} wins active`,
-      chaser_when: `through W${throughWeek}`,
+      chaser_when: `W${throughWeek} · ${year}`,
       gap: pct >= 100 ? `+${v - r} wins past the line` : `${r - v} wins to tie`,
       copy_html: `<em>${escTxt(liveWin.name)}</em> on a ${v}-game win streak`,
-      when: `through W${throughWeek}`,
+      when: `W${throughWeek} · ${year}`,
       previous: `${r} wins · ${nameOf(allWinStreak.mid)}`,
     })
   }
@@ -2350,10 +2340,10 @@ function buildLiveSeasonPreviews(
       holder: nameOf(allLossStreak.mid), record_value: `${r} losses in a row`,
       holder_when: 'all-time skid',
       chaser: liveLoss.name, chaser_value: `${v} losses active`,
-      chaser_when: `through W${throughWeek}`,
+      chaser_when: `W${throughWeek} · ${year}`,
       gap: pct >= 100 ? `+${v - r} losses past` : `${r - v} losses to tie`,
       copy_html: `<em>${escTxt(liveLoss.name)}</em> has dropped ${v} straight`,
-      when: `through W${throughWeek}`,
+      when: `W${throughWeek} · ${year}`,
       previous: `${r} losses · ${nameOf(allLossStreak.mid)}`,
     })
   }
@@ -2487,11 +2477,14 @@ function buildLiveSeasonPreviews(
         for (const c of crossings) {
           if (c.walk === r.walk) continue
           if (c.cross && c.cross.year === year) {
-            // crossed during {year}
+            // Crossed during {year}. Only surface if they actually beat
+            // the record holder's games-count — ties don't matter for an
+            // alerting page.
+            if (c.cross.games >= r.games) continue
             const cand: Chaser = {
               walk: c.walk,
               projGames: c.cross.games,
-              broke: c.cross.games < r.games,
+              broke: true,
               currentVal: c.currentVal,
               gamesPlayed: c.gamesPlayed,
               crossingDesc: `W${c.cross.week} · ${year}`,
@@ -2502,6 +2495,18 @@ function buildLiveSeasonPreviews(
             const needed = T - c.currentVal
             const moreGames = needed / c.perGame
             const proj = Math.round(c.gamesPlayed + moreGames)
+
+            // For wins-bounded tiers (max 1 win per game), check the
+            // absolute-best-case minimum games-to-T. If the chaser can
+            // only TIE the record at best (minGames === r.games) or be
+            // slower (>), drop them — they can no longer break it no
+            // matter how the rest of the season plays out. Points are
+            // unbounded per game so this check doesn't apply there.
+            if (cfg.kind === 'wins') {
+              const minGames = c.gamesPlayed + (T - c.currentVal)
+              if (minGames >= r.games) continue
+            }
+
             // Only surface if their projection is meaningful relative to the
             // record (within ~30% to bound chase candidates).
             if (proj <= r.games * 1.3) {
@@ -2543,13 +2548,14 @@ function buildLiveSeasonPreviews(
           chaser_value: `${projGames} games`,
           readout_sub: broke ? `crossed ${bestChaser.crossingDesc || ''}` : 'pace',
           chaser_when: broke
-            ? `crossed ${cfg.fmtT(T)} in ${projGames}G`
-            : `through W${throughWeek}`,
+            ? bestChaser.crossingDesc || `W${throughWeek} · ${year}`
+            : `W${throughWeek} · ${year}`,
+          chaser_projection: broke ? undefined : `pace ${projGames} Games to ${cfg.fmtT(T)}`,
           gap: gap > 0
             ? `${gap} games faster on pace`
             : gap < 0 ? `${Math.abs(gap)} games slower on pace` : 'matching pace',
           copy_html: `<em>${escTxt(bestChaser.walk.name)}</em> · ${broke ? 'crossed' : 'pace'} ${projGames} games to ${cfg.fmtT(T)}`,
-          when: `through W${throughWeek}`,
+          when: `W${throughWeek} · ${year}`,
           previous: `${cfg.fmtGames(r.games)} · ${r.walk.name}, ${r.year}`,
         })
       }
@@ -2681,10 +2687,16 @@ function buildLiveSeasonPreviews(
     else if (it.pct >= ONPACE_THRESHOLD) onPace.push(it)
   }
   for (const it of justMissedItems) {
-    // Weekly extremes that actually broke the mark belong with the rest
-    // of the realized breaks, not in Just Missed.
-    if (it.realized) broken.push(it)
-    else             justMissed.push(it)
+    if (it.realized) {
+      // Weekly extremes that actually broke the mark belong with the
+      // rest of the realized breaks, not in Just Missed.
+      broken.push(it)
+    } else if (it.pct >= 90) {
+      // Within 10% of the all-time mark — surface in Just Missed.
+      // Anything further out is just a "notable week," not a near-miss,
+      // so we drop it so the section reads as actually-close calls.
+      justMissed.push(it)
+    }
   }
 
   broken.sort((a, b) => b.pct - a.pct)

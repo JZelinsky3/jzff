@@ -468,15 +468,16 @@ body { background: var(--rw-bg); }
 }
 .rw-side-tile-foot .gap.over { color: var(--rw-ember-hi); }
 
-/* Just Missed sidebar rows — even more compact. */
+/* Just Missed sidebar rows — give each row more breathing room so
+   they don't feel cramped vertically. Width stays the same. */
 .rw-side-miss {
-    padding: .8rem 1rem .85rem;
+    padding: 1.4rem 1.2rem 1.45rem;
     border-bottom: 1px solid var(--rw-line-soft);
 }
 .rw-side-miss:last-child { border-bottom: 0; }
 .rw-side-miss-head {
     display: flex; align-items: baseline; gap: .5rem;
-    margin-bottom: .4rem;
+    margin-bottom: .75rem;
 }
 .rw-side-miss-head .rank {
     font-family: var(--mono); font-weight: 700;
@@ -498,9 +499,9 @@ body { background: var(--rw-bg); }
 }
 .rw-side-miss-copy {
     font-family: var(--mono);
-    font-size: .62rem; line-height: 1.5;
+    font-size: .62rem; line-height: 1.6;
     color: var(--rw-cream);
-    margin-bottom: .35rem;
+    margin-bottom: .7rem;
 }
 .rw-side-miss-copy em {
     font-style: normal;
@@ -1438,14 +1439,12 @@ body { background: var(--rw-bg); }
     var html = '<div class="rw-onpace-stack">';
     items.forEach(function (it, idx) {
       var rawPct = Math.max(0, Math.min(100, Number(it.pct) || 0));
-      // Strip the same trailing context as the brink label so the
-      // chaser's current value reads as a clean numeric ("1614 pts"
-      // instead of "1614 pts through 5G").
+      // chaser_value holds the chaser's current state ("1614 pts through
+      // 5 Games"); chaser_projection holds the projected end-of-season
+      // value if any ("pace 1850 pts · 138.5 PPG"). Fall back to gap so
+      // streak items (which don't project) still show something.
       var cv = String(it.chaser_value || '');
-      var paceLine = String(it.chaser_when || '');
-      // For most pace items chaser_when carries "pace XXX YYY" — surface
-      // that as the projection line. If it doesn't, fall back to gap.
-      var projLine = /^pace\b/i.test(paceLine) ? paceLine : (it.gap || '');
+      var projLine = String(it.chaser_projection || it.gap || '');
       html +=
         '<article class="rw-onpace-card">' +
           '<div class="rw-onpace-head">' +
