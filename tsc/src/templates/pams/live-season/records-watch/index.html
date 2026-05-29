@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Records Watch · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+/* ============================================================
+   RECORDS WATCH — Ember palette
+   Records under threat. Wine base, ember alert accents.
+   ============================================================ */
+
+:root {
+    --rw-bg:         #150a0c;
+    --rw-soft:       #1a0d10;
+    --rw-card:       #21131a;
+    --rw-card-hi:    #2a1820;
+    --rw-line:       #3a1f25;
+    --rw-line-soft:  #2a181d;
+    --rw-mute:       #c6a89e;
+    --rw-cream:      #f4ebd8;
+
+    --rw-ember:      #ff6b3d;
+    --rw-ember-hi:   #ff8a5d;
+    --rw-ember-deep: #b54426;
+    --rw-ember-soft: rgba(255,107,61,.16);
+    --rw-ember-glow: rgba(255,107,61,.55);
+
+    --rw-gold:       var(--gold);
+    --rw-gold-bright:var(--gold-bright);
+}
+
+body { background: var(--rw-bg); }
+
+.site-glow {
+    background-image:
+        radial-gradient(circle at 18% 22%, rgba(255,107,61,.10) 0%, transparent 50%),
+        radial-gradient(circle at 82% 78%, rgba(232,200,137,.05) 0%, transparent 50%),
+        radial-gradient(circle at 50% 110%, rgba(181,68,38,.12) 0%, transparent 55%);
+}
+
+/* ── Nav + chapbar themed to the page ──────────────────────── */
+.nav { background: rgba(21,10,12,.95); border-bottom-color: var(--rw-line); }
+:root {
+    --chapbar-bg:     rgba(21,10,12,.92);
+    --chapbar-border: var(--rw-line);
+    --chapbar-text:   var(--rw-mute);
+    --chapbar-active: var(--rw-ember);
+    --chapbar-line:   var(--rw-line);
+
+    --nav-drop-bg:           rgba(21,10,12,.97);
+    --nav-drop-border:       var(--rw-line);
+    --nav-drop-text:         #efd6cb;
+    --nav-drop-text-mute:    var(--rw-mute);
+    --nav-drop-accent:       var(--rw-ember);
+    --nav-drop-hover-bg:     rgba(255,107,61,.10);
+    --nav-drop-sub-bg:       rgba(0,0,0,.20);
+    --nav-drop-accent-line:  rgba(255,107,61,.30);
+}
+
+/* ── Page header ───────────────────────────────────────────── */
+.page-header {
+    text-align: center;
+    padding: 3.5rem 1.5rem 2rem;
+    max-width: 900px; margin: 0 auto;
+    position: relative; z-index: 10;
+}
+.page-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .4em; text-transform: uppercase;
+    color: var(--rw-ember); margin-bottom: 1.4rem;
+    display: inline-flex; align-items: center; gap: .65rem;
+}
+.page-kicker .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--rw-ember);
+    box-shadow: 0 0 10px var(--rw-ember-glow);
+    animation: rw-pulse 1.8s ease-in-out infinite;
+}
+@keyframes rw-pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%     { opacity: .45; transform: scale(.78); }
+}
+.page-title {
+    font-family: var(--serif);
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: .95; letter-spacing: -.025em;
+    color: var(--rw-cream); margin-bottom: 1rem;
+}
+.page-title em { font-style: italic; color: var(--rw-ember); }
+.page-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.2rem; line-height: 1.5;
+    color: #e0c9c2; max-width: 560px; margin: 0 auto;
+}
+
+/* ── Status meter strip ────────────────────────────────────── */
+.rw-meter {
+    max-width: 1100px; margin: 0 auto 2.5rem;
+    padding: 1rem 1.4rem;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1.6rem;
+    background: var(--rw-soft);
+    border-top: 1px solid var(--rw-line);
+    border-bottom: 1px solid var(--rw-line);
+}
+.rw-meter-stat { display: flex; flex-direction: column; gap: .2rem; }
+.rw-meter-stat .lbl {
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .25em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-meter-stat .val {
+    font-family: var(--serif); font-size: 1.4rem;
+    color: var(--rw-cream); line-height: 1;
+}
+.rw-meter-stat .val em { color: var(--rw-ember); font-style: italic; }
+.rw-meter-stat.alert .val { color: var(--rw-ember); }
+.rw-meter-sep {
+    width: 1px; align-self: stretch;
+    background: var(--rw-line);
+}
+.rw-meter-foot {
+    margin-left: auto;
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+
+/* ── Wrap + sections ───────────────────────────────────────── */
+.rw-wrap {
+    max-width: 1100px; margin: 0 auto;
+    padding: 0 1.5rem 5rem;
+    position: relative; z-index: 1;
+}
+.rw-section { margin-bottom: 4rem; }
+.rw-section-head {
+    display: flex; align-items: baseline; gap: 1.3rem; flex-wrap: wrap;
+    padding-bottom: 1rem; margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--rw-line);
+}
+.rw-section-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--rw-ember); flex-shrink: 0;
+}
+.rw-section-title {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.7rem; letter-spacing: -.02em;
+    color: var(--rw-cream);
+}
+.rw-section-title em { color: var(--rw-ember); }
+.rw-section-note {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+
+/* ── Brink cards (large alert-style) ───────────────────────── */
+.rw-brink-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+    gap: 1.2rem;
+}
+.rw-brink {
+    position: relative; overflow: hidden;
+    background: linear-gradient(155deg, var(--rw-card) 0%, var(--rw-soft) 100%);
+    border: 1px solid var(--rw-line);
+    padding: 1.4rem 1.4rem 1.5rem;
+    display: flex; flex-direction: column; gap: 1rem;
+}
+.rw-brink::before {
+    content: ''; position: absolute; inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 100% 0%, var(--rw-ember-soft) 0%, transparent 45%);
+}
+.rw-brink-flag {
+    display: inline-flex; align-items: center; gap: .5rem;
+    align-self: flex-start;
+    background: var(--rw-ember);
+    color: #1a0a0a;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .28em; text-transform: uppercase;
+    padding: .35rem .6rem .38rem;
+    box-shadow: 0 0 18px var(--rw-ember-soft);
+    z-index: 1;
+}
+.rw-brink-flag .glyph { font-size: .7rem; line-height: 1; }
+.rw-brink-cat {
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .28em; text-transform: uppercase;
+    color: var(--rw-mute);
+    z-index: 1;
+}
+.rw-brink-title {
+    font-family: var(--serif);
+    font-size: 1.55rem; line-height: 1.15;
+    color: var(--rw-cream);
+    z-index: 1;
+}
+.rw-brink-title em { color: var(--rw-ember); font-style: italic; }
+
+.rw-brink-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: .9rem 0 0;
+    border-top: 1px solid var(--rw-line-soft);
+    z-index: 1;
+}
+.rw-brink-col .who {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .24em; text-transform: uppercase;
+    color: var(--rw-mute); margin-bottom: .35rem;
+}
+.rw-brink-col .name {
+    font-family: var(--serif); font-size: 1.05rem;
+    color: var(--rw-cream); margin-bottom: .15rem;
+}
+.rw-brink-col .name em { color: var(--rw-ember); font-style: italic; }
+.rw-brink-col .val {
+    font-family: var(--mono); font-size: .8rem; font-weight: 700;
+    color: var(--rw-cream);
+}
+.rw-brink-col .when {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .14em; color: var(--rw-mute);
+    margin-top: .15rem;
+}
+
+.rw-bar {
+    position: relative;
+    height: 8px;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line);
+    z-index: 1;
+}
+.rw-bar-fill {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--rw-ember-deep), var(--rw-ember));
+    box-shadow: 0 0 14px var(--rw-ember-soft);
+    transform-origin: left;
+}
+.rw-bar-mark {
+    position: absolute; top: -4px; bottom: -4px;
+    width: 2px; background: var(--rw-gold);
+    box-shadow: 0 0 6px rgba(232,200,137,.6);
+}
+.rw-bar-foot {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--rw-mute);
+    z-index: 1;
+}
+
+/* ── Chase list (compact rows) ─────────────────────────────── */
+.rw-chase {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+}
+.rw-chase-row {
+    display: grid; grid-template-columns: 2.5rem 1fr auto;
+    align-items: center; gap: 1rem;
+    padding: .9rem 1.2rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+}
+.rw-chase-row:last-child { border-bottom: 0; }
+.rw-chase-rank {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .85rem; color: var(--rw-mute);
+}
+.rw-chase-rank.hot { color: var(--rw-ember); }
+.rw-chase-body .cat {
+    font-family: var(--mono); font-size: .54rem;
+    letter-spacing: .24em; text-transform: uppercase;
+    color: var(--rw-mute); margin-bottom: .2rem;
+}
+.rw-chase-body .copy {
+    font-family: var(--serif); font-size: 1.02rem;
+    color: var(--rw-cream); line-height: 1.3;
+}
+.rw-chase-body .copy em { color: var(--rw-ember); font-style: italic; }
+.rw-chase-pct {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 1.1rem; color: var(--rw-cream);
+    text-align: right; line-height: 1;
+}
+.rw-chase-pct .of {
+    display: block;
+    font-size: .5rem; font-weight: 500;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute); margin-top: .25rem;
+}
+
+/* ── Broken cards (newly-claimed records) ──────────────────── */
+.rw-broken-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+.rw-broken {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+    padding: 1.1rem 1.2rem;
+    position: relative;
+}
+.rw-broken::before {
+    content: 'NEW'; position: absolute;
+    top: -1px; right: 1rem;
+    background: var(--rw-gold); color: var(--rw-bg);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .25em;
+    padding: .3rem .55rem .35rem;
+}
+.rw-broken .cat {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .25em; text-transform: uppercase;
+    color: var(--rw-mute); margin-bottom: .5rem;
+}
+.rw-broken .copy {
+    font-family: var(--serif); font-size: 1.15rem;
+    color: var(--rw-cream); line-height: 1.25;
+    margin-bottom: .7rem;
+}
+.rw-broken .copy em { color: var(--rw-gold); font-style: italic; }
+.rw-broken .meta {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .14em; color: var(--rw-mute);
+    padding-top: .7rem;
+    border-top: 1px solid var(--rw-line-soft);
+    display: flex; justify-content: space-between;
+}
+
+/* ── Intro / empty state ───────────────────────────────────── */
+.rw-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--rw-card);
+    border: 1px dashed var(--rw-line);
+}
+.rw-empty .glyph {
+    font-size: 2.1rem; color: var(--rw-ember);
+    text-shadow: 0 0 22px var(--rw-ember-glow);
+    margin-bottom: .8rem;
+}
+.rw-empty h3 {
+    font-family: var(--serif); font-size: 1.5rem;
+    color: var(--rw-cream); margin-bottom: .55rem;
+}
+.rw-empty h3 em { color: var(--rw-ember); font-style: italic; }
+.rw-empty p {
+    color: var(--rw-mute); max-width: 480px; margin: 0 auto;
+    font-size: .95rem;
+}
+
+/* ── How it works strip ────────────────────────────────────── */
+.rw-how {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+    margin-top: 1.5rem;
+}
+.rw-how-item {
+    padding: 1rem 1.1rem;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line-soft);
+}
+.rw-how-item .step {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .28em; text-transform: uppercase;
+    color: var(--rw-ember); margin-bottom: .55rem;
+}
+.rw-how-item h4 {
+    font-family: var(--serif); font-size: 1.1rem;
+    color: var(--rw-cream); margin-bottom: .35rem;
+}
+.rw-how-item p {
+    color: var(--rw-mute); font-size: .85rem; line-height: 1.45;
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.rw-foot {
+    margin-top: 4rem; text-align: center;
+    font-family: var(--mono); font-size: .6rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute); opacity: .65;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 760px) {
+    .page-header { padding: 2.5rem 1rem 1.5rem; }
+    .rw-meter { padding: .85rem 1rem; gap: 1rem; }
+    .rw-meter-sep { display: none; }
+    .rw-brink-grid { grid-template-columns: 1fr; }
+    .rw-how { grid-template-columns: 1fr; }
+    .rw-section-head { gap: .8rem; }
+}
+</style>
+</head>
+<body>
+<div class="site-glow" aria-hidden="true"></div>
+
+<nav id="site-nav"
+     data-page="records-watch"
+     data-chapter="LIVE · RECORDS WATCH"
+     data-back-href="live-season/"
+     data-back-label="Back to Live Season"></nav>
+<script src="/pams-template/assets/js/nav.js"></script>
+
+<header class="page-header">
+    <div class="page-kicker"><span class="dot"></span>Live · {{LEAGUE_ABBR}} · On the Line</div>
+    <h1 class="page-title">Records <em>Watch.</em></h1>
+    <p class="page-sub">
+        Every all-time mark, ranked by how close someone is to taking it down. The
+        spotlight stays on until the record falls or the season ends.
+    </p>
+</header>
+
+<div class="rw-meter" id="rw-meter">
+    <div class="rw-meter-stat alert">
+        <span class="lbl">On the brink</span>
+        <span class="val" id="m-brink">—</span>
+    </div>
+    <div class="rw-meter-sep"></div>
+    <div class="rw-meter-stat">
+        <span class="lbl">Actively chased</span>
+        <span class="val" id="m-chase">—</span>
+    </div>
+    <div class="rw-meter-sep"></div>
+    <div class="rw-meter-stat">
+        <span class="lbl">Broken this season</span>
+        <span class="val" id="m-broken">—</span>
+    </div>
+    <div class="rw-meter-foot" id="m-foot">Tracking starts Week 1</div>
+</div>
+
+<main class="rw-wrap">
+
+    <section class="rw-section">
+        <div class="rw-section-head">
+            <span class="rw-section-num">§ 01 · Hot</span>
+            <span class="rw-section-title">On the <em>Brink —</em></span>
+            <span class="rw-section-note">Could fall this week</span>
+        </div>
+        <div id="brink-body">
+            <div class="rw-empty">
+                <div class="glyph">◈</div>
+                <h3>The watch <em>begins Week 1.</em></h3>
+                <p>
+                    Once games start counting, every all-time record gets a live pace meter.
+                    Anything within striking distance shows up here first, biggest threats up top.
+                </p>
+            </div>
+
+            <div class="rw-how">
+                <div class="rw-how-item">
+                    <div class="step">★ Step 01</div>
+                    <h4>We compare pace to mark</h4>
+                    <p>Every active team's season is measured against the franchise record for that category, week by week.</p>
+                </div>
+                <div class="rw-how-item">
+                    <div class="step">★ Step 02</div>
+                    <h4>Records get a heat score</h4>
+                    <p>Anything inside reach with the games remaining gets flagged. The closer the threat, the higher it climbs.</p>
+                </div>
+                <div class="rw-how-item">
+                    <div class="step">★ Step 03</div>
+                    <h4>You get the alert</h4>
+                    <p>The brink section refreshes every week. When a record actually falls, it moves to "Just Broken" with the date.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="rw-section">
+        <div class="rw-section-head">
+            <span class="rw-section-num">§ 02 · Pursuit</span>
+            <span class="rw-section-title">Being <em>Chased —</em></span>
+            <span class="rw-section-note">In striking distance</span>
+        </div>
+        <div id="chase-body">
+            <div class="rw-empty">
+                <h3>Nothing in pursuit <em>yet.</em></h3>
+                <p>
+                    Season-long marks (career wins, points for, longest streaks) appear here as
+                    soon as the leader passes the 50% threshold of the standing record.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="rw-section">
+        <div class="rw-section-head">
+            <span class="rw-section-num">§ 03 · Claimed</span>
+            <span class="rw-section-title">Just <em>Broken —</em></span>
+            <span class="rw-section-note">New franchise marks</span>
+        </div>
+        <div id="broken-body">
+            <div class="rw-empty">
+                <h3>No new marks <em>this season.</em></h3>
+                <p>
+                    When a record falls, it lands here for the rest of the year — with the week
+                    it broke, the prior holder, and the new line to beat.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <div class="rw-foot">{{LEAGUE_ABBR}} · Records Watch · {{LEAGUE_FOUNDED_ROMAN}}</div>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // Records Watch reads its weekly snapshot from /data/records_watch.json.
+  // The exporter is built out separately; until it lands, the page renders
+  // the empty + "how it works" intro states above. When the JSON shows up,
+  // we replace each section in place without a layout shift.
+  fetch('data/records_watch.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (data) {
+      if (!data) return;
+      renderMeter(data.meter || {});
+      if (Array.isArray(data.brink)  && data.brink.length)  renderBrink(data.brink);
+      if (Array.isArray(data.chase)  && data.chase.length)  renderChase(data.chase);
+      if (Array.isArray(data.broken) && data.broken.length) renderBroken(data.broken);
+    });
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function pct(n) {
+    var v = Math.max(0, Math.min(100, Number(n) || 0));
+    return v.toFixed(1).replace(/\.0$/, '') + '%';
+  }
+
+  function renderMeter(m) {
+    if (m.brink   != null) $('m-brink').textContent   = m.brink;
+    if (m.chase   != null) $('m-chase').textContent   = m.chase;
+    if (m.broken  != null) $('m-broken').textContent  = m.broken;
+    if (m.through)        $('m-foot').textContent    = 'Through ' + m.through;
+  }
+
+  function renderBrink(items) {
+    var html = '<div class="rw-brink-grid">';
+    items.forEach(function (it) {
+      var p = Math.max(0, Math.min(100, Number(it.pct) || 0));
+      html +=
+        '<article class="rw-brink">' +
+          '<span class="rw-brink-flag"><span class="glyph">◆</span>' + esc(it.flag || 'On the brink') + '</span>' +
+          '<div class="rw-brink-cat">' + esc(it.category || 'Record') + '</div>' +
+          '<h3 class="rw-brink-title">' + (it.title_html || esc(it.title || '')) + '</h3>' +
+          '<div class="rw-brink-row">' +
+            '<div class="rw-brink-col">' +
+              '<div class="who">Current record</div>' +
+              '<div class="name">' + esc(it.holder || '—') + '</div>' +
+              '<div class="val">' + esc(it.record_value || '') + '</div>' +
+              '<div class="when">' + esc(it.holder_when || '') + '</div>' +
+            '</div>' +
+            '<div class="rw-brink-col">' +
+              '<div class="who">Chasing</div>' +
+              '<div class="name"><em>' + esc(it.chaser || '—') + '</em></div>' +
+              '<div class="val">' + esc(it.chaser_value || '') + '</div>' +
+              '<div class="when">' + esc(it.chaser_when || '') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="rw-bar"><div class="rw-bar-fill" style="transform:scaleX(' + (p/100).toFixed(3) + ')"></div></div>' +
+          '<div class="rw-bar-foot"><span>' + pct(p) + ' of record</span><span>' + esc(it.gap || '') + '</span></div>' +
+        '</article>';
+    });
+    html += '</div>';
+    $('brink-body').innerHTML = html;
+  }
+
+  function renderChase(items) {
+    var html = '<div class="rw-chase">';
+    items.forEach(function (it, i) {
+      var hot = (Number(it.pct) || 0) >= 90;
+      html +=
+        '<div class="rw-chase-row">' +
+          '<div class="rw-chase-rank' + (hot ? ' hot' : '') + '">' + String(i + 1).padStart(2, '0') + '</div>' +
+          '<div class="rw-chase-body">' +
+            '<div class="cat">' + esc(it.category || '') + '</div>' +
+            '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+          '</div>' +
+          '<div class="rw-chase-pct">' + pct(it.pct || 0) + '<span class="of">of record</span></div>' +
+        '</div>';
+    });
+    html += '</div>';
+    $('chase-body').innerHTML = html;
+  }
+
+  function renderBroken(items) {
+    var html = '<div class="rw-broken-grid">';
+    items.forEach(function (it) {
+      html +=
+        '<article class="rw-broken">' +
+          '<div class="cat">' + esc(it.category || '') + '</div>' +
+          '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+          '<div class="meta"><span>' + esc(it.when || '') + '</span><span>prev ' + esc(it.previous || '—') + '</span></div>' +
+        '</article>';
+    });
+    html += '</div>';
+    $('broken-body').innerHTML = html;
+  }
+})();
+</script>
+
+</body>
+</html>

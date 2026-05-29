@@ -27,10 +27,12 @@
         {
             isGroup: true, label: 'Live Season',
             items: [
-                { key: 'live-season', label: 'Overview',       path: 'live-season/' },
-                { key: 'pickems',     label: "Pick'ems",       path: 'live-season/pickems/' },
-                { key: 'powerrank',   label: 'Power Rankings', path: 'live-season/powerrank/' },
-                { key: 'trades',      label: 'Trade Grader',   path: 'live-season/trades/' },
+                { key: 'live-season',   label: 'Overview',        path: 'live-season/' },
+                { key: 'pickems',       label: "Pick'ems",        path: 'live-season/pickems/' },
+                { key: 'powerrank',     label: 'Power Rankings',  path: 'live-season/powerrank/' },
+                { key: 'records-watch', label: 'Records Watch',   path: 'live-season/records-watch/' },
+                { key: 'milestones',    label: 'Milestone Alerts',path: 'live-season/milestones/' },
+                { key: 'trades',        label: 'Trade Grader',    path: 'live-season/trades/' },
             ]
         },
         {
@@ -65,7 +67,7 @@
     // Pickems + power rankings now collapse into a single 'Live' link that
     // points at the live-season hub. Any live-season sub-page (overview,
     // pickems, powerrank, trades) lights up the Live tab as active.
-    var LIVE_SEASON_KEYS = ['live-season', 'pickems', 'powerrank', 'trades'];
+    var LIVE_SEASON_KEYS = ['live-season', 'pickems', 'powerrank', 'records-watch', 'milestones', 'trades'];
     var CHAPBAR_ITEMS = [
         { key: 'hub',         label: 'Home',      path: 'index.html' },
         { key: 'standings',   label: 'Standings', path: 'standings.html' },
