@@ -1457,7 +1457,10 @@ body { background: var(--rw-bg); }
         .replace(/\s+through\s+.*/i, '')
         .trim();
 
-      var gapClass = overMark ? 'gap-pos' : 'gap-neg';
+      // Gap reads "positive" when the chaser is projecting past the
+       // mark — i.e. when we're in the overshoot layout. Otherwise the
+       // gap text is the deficit, which renders muted.
+      var gapClass = overshoot ? 'gap-pos' : 'gap-neg';
 
       html +=
         '<article class="rw-block">' +
