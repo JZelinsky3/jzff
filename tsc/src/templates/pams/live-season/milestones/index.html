@@ -563,7 +563,7 @@ body { background: var(--ml-bg); }
     .ml-meter-stat { gap: .15rem; }
     .ml-meter-stat .lbl { font-size: .48rem; letter-spacing: .18em; }
     .ml-meter-stat .val { font-size: 1.05rem; }
-    .ml-meter-foot { font-size: .48rem; letter-spacing: .15em; }
+    .ml-meter-foot { font-size: .42rem; letter-spacing: .14em; }
     /* Section number caps run a bit smaller on phones — desktop sizing
        was overweight on a narrow header row. */
     .ml-section-num { font-size: .48rem; letter-spacing: .22em; }
@@ -577,15 +577,39 @@ body { background: var(--ml-bg); }
         grid-template-columns: 1fr 1fr;
         gap: .7rem;
     }
-    .ml-crossed { padding: .95rem .95rem .85rem; }
-    .ml-medal { width: 38px; height: 38px; font-size: .95rem; margin-bottom: .6rem; }
-    .ml-medal img { width: 38px; height: 38px; }
-    .ml-crossed .who { font-size: .48rem; letter-spacing: .2em; margin-bottom: .2rem; }
-    .ml-crossed .name { font-size: 1.05rem; margin-bottom: .35rem; }
-    .ml-crossed .achievement { font-size: .82rem; line-height: 1.3; margin-bottom: .55rem; }
-    .ml-crossed .stats { font-size: .52rem; padding: .45rem 0; }
-    .ml-crossed .meta { font-size: .48rem; padding-top: .5rem; gap: .25rem; }
-    .ml-crossed .meta .h2h { font-size: .44rem; padding: .06rem .26rem .08rem; }
+    /* Card switches from flex column to a 2-row grid: avatar + tier
+       caption sit side-by-side on row 1, then name / achievement /
+       stats / meta stack full-width below. Frees vertical space and
+       gives the tier label a more deliberate home next to the medal. */
+    .ml-crossed {
+        display: grid;
+        grid-template-columns: 36px 1fr;
+        column-gap: .55rem;
+        row-gap: .1rem;
+        padding: .8rem .8rem .7rem;
+    }
+    .ml-medal {
+        grid-row: 1; grid-column: 1;
+        width: 36px; height: 36px;
+        font-size: .9rem;
+        margin-bottom: 0;
+    }
+    .ml-medal img { width: 36px; height: 36px; }
+    .ml-crossed .who {
+        grid-row: 1; grid-column: 2;
+        align-self: center;
+        font-size: .44rem; letter-spacing: .2em;
+        margin-bottom: 0;
+    }
+    .ml-crossed .name,
+    .ml-crossed .achievement,
+    .ml-crossed .stats,
+    .ml-crossed .meta { grid-column: 1 / -1; }
+    .ml-crossed .name { font-size: .95rem; line-height: 1.1; margin: .3rem 0 .2rem; }
+    .ml-crossed .achievement { font-size: .72rem; line-height: 1.3; margin-bottom: .4rem; }
+    .ml-crossed .stats { font-size: .48rem; padding: .35rem 0; }
+    .ml-crossed .meta { font-size: .42rem; padding-top: .4rem; gap: .2rem; }
+    .ml-crossed .meta .h2h { font-size: .4rem; padding: .05rem .22rem .07rem; }
     .ml-approach-row { grid-template-columns: 38px 1fr; column-gap: .7rem; padding: .75rem .85rem; }
     .ml-approach-glyph { width: 38px; height: 38px; font-size: .95rem; }
     .ml-approach-glyph img { width: 38px; height: 38px; }
