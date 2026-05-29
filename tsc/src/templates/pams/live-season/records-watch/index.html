@@ -736,11 +736,13 @@ body { background: var(--rw-bg); }
 }
 .rw-plot-label-proj {
     /* Gold "12 wins" label sitting above the bar at the projection
-     * line (right edge), so the chaser's projected end reads cleanly
-     * above the meter to match the gold line below it. */
+     * line (right edge), centered ON the line so half the label
+     * extends past the track's right edge — visually pinning the
+     * label to the gold marker below. */
     position: absolute;
     bottom: 0;
     right: 0;
+    transform: translateX(50%);
     font-family: var(--mono); font-weight: 700;
     font-size: .68rem; letter-spacing: .04em;
     color: var(--gold);
