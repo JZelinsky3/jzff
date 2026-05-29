@@ -291,6 +291,38 @@ body { background: var(--dg-bg); }
 }
 .board-cell-multi .board-cell-pick:last-child { border-bottom: none; }
 
+/* Mobile: shrink the board table aggressively so users can see more
+   of the draft at once. Padding, fonts, and column widths all dial
+   down. Single-pick cells get vertical-align: middle so they don't
+   show dead space below their content when a row gets stretched by
+   a multi-pick cell elsewhere in the same row. */
+@media (max-width: 640px) {
+    .board-table { font-size: .62rem; }
+    .board-table thead th { font-size: .5rem; letter-spacing: .12em; padding: .35rem .25rem; }
+    .board-table thead th:first-child { padding-left: .4rem; }
+    .board-mgr-td { padding: .45rem .35rem; min-width: 70px; max-width: 90px; }
+    .board-mgr-name { font-size: .62rem; }
+    .board-team-name { font-size: .46rem; max-width: 80px; }
+    .board-cell {
+        padding: .3rem .35rem;
+        min-width: 56px; max-width: 76px;
+        vertical-align: middle;
+    }
+    .board-player { font-size: .58rem; max-width: 70px; }
+    .board-pos { font-size: .42rem; padding: 0 .2rem; margin-top: .15rem; letter-spacing: .04em; }
+    .board-empty { font-size: .58rem; }
+    .board-cell-multi .board-cell-pick { padding: .25rem .35rem; }
+}
+@media (max-width: 380px) {
+    .board-table thead th { font-size: .44rem; padding: .25rem .15rem; }
+    .board-mgr-td { padding: .35rem .25rem; min-width: 58px; max-width: 76px; }
+    .board-mgr-name { font-size: .54rem; }
+    .board-team-name { font-size: .4rem; max-width: 68px; }
+    .board-cell { padding: .25rem .25rem; min-width: 46px; max-width: 64px; }
+    .board-player { font-size: .52rem; max-width: 58px; }
+    .board-pos { font-size: .38rem; }
+}
+
 .p-rb .board-player { color: #6dc28c; }
 .p-rb .board-pos  { background: rgba(74,154,106,.2); color: #6dc28c; }
 .p-wr .board-player { color: var(--gold-bright); }
