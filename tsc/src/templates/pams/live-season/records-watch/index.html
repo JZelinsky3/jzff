@@ -620,10 +620,10 @@ body { background: var(--rw-bg); }
     text-transform: uppercase;
 }
 .rw-broken-prior .prior-line {
-    text-decoration: line-through;
-    text-decoration-color: var(--rw-ember-deep);
+    /* No strikethrough — the "prior" prefix makes the demotion clear
+     * without a line cutting through the holder name. */
     color: var(--rw-cream);
-    opacity: .55;
+    opacity: .75;
     text-transform: none;
     font-weight: 700;
     letter-spacing: .04em;
