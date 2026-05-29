@@ -1305,7 +1305,18 @@ function renderBoard(year) {
     }
     var r1 = picks.filter(function(p){ return p.round === 1; })
                   .sort(function(a,b){ return a.round_pick - b.round_pick; });
-    var managerOrder = r1.map(function(p){ return p.manager_name; });
+    // Dedupe — when a manager traded for a second round-1 pick, their
+    // name would otherwise appear twice in managerOrder and render two
+    // identical board rows. Keep the first round-1 appearance to preserve
+    // draft slot order.
+    var managerOrder = [];
+    var seenManager = {};
+    r1.forEach(function(p) {
+        if (p.manager_name && !seenManager[p.manager_name]) {
+            seenManager[p.manager_name] = true;
+            managerOrder.push(p.manager_name);
+        }
+    });
     var grid = {};
     picks.forEach(function(p) {
         if (!p.manager_name) return;
