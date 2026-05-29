@@ -565,6 +565,15 @@ body { background: var(--rw-bg); }
     text-shadow: 0 0 14px var(--rw-ember-glow);
     font-variant-numeric: tabular-nums;
     letter-spacing: .02em;
+    /* keep W-L style suffix inline with the leading number */
+    white-space: nowrap;
+}
+.rw-broken-readout .num .num-trail {
+    font-size: 1.7rem;
+    color: var(--rw-cream);
+    opacity: .6;
+    margin-left: .05em;
+    text-shadow: none;
 }
 .rw-broken-readout .unit {
     display: block;
@@ -955,17 +964,30 @@ body { background: var(--rw-bg); }
   function renderBroken(items) {
     var html = '<div class="rw-broken-grid">';
     items.forEach(function (it) {
-      // Pull the leading numeric out of chaser_value (e.g. "1850 pts")
-      // so the LCD readout shows just the number; unit drops underneath.
+      // Pull the leading numeric out of chaser_value (e.g. "1850 pts"
+      // or "4-1") so the LCD readout shows just the number; unit drops
+      // underneath. The (?:-[\d.,]+)? captures W-L style suffixes ("4-1",
+      // "12-2-0") so they stay inline as part of the readout number.
       var cv = it.chaser_value || it.record_value || '';
-      var m = cv.match(/^(\d[\d.,]*)\s*(.*)$/);
+      var m = cv.match(/^(\d[\d.,]*(?:-\d[\d.,]*)*)\s*(.*)$/);
       var readNum = m ? m[1] : cv;
       var readUnit = m ? m[2] : '';
+      // Format the W-L suffix smaller + dimmed so a record like "4-1"
+      // visually leads with the wins and the losses trail behind.
+      var readNumHtml;
+      var dashIdx = readNum.indexOf('-');
+      if (dashIdx > 0) {
+        var primary = readNum.slice(0, dashIdx);
+        var trailing = readNum.slice(dashIdx);
+        readNumHtml = esc(primary) + '<span class="num-trail">' + esc(trailing) + '</span>';
+      } else {
+        readNumHtml = esc(readNum);
+      }
       html +=
         '<article class="rw-broken">' +
           '<div class="cat">' + esc(it.category || '') + '</div>' +
           '<div class="rw-broken-readout">' +
-            '<span class="num">' + esc(readNum) + '</span>' +
+            '<span class="num">' + readNumHtml + '</span>' +
             (readUnit ? '<span class="unit">' + esc(readUnit) + '</span>' : '') +
             '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
           '</div>' +

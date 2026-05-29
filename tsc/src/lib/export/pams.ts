@@ -2332,6 +2332,188 @@ function buildLiveSeasonPreviews(
     })
   }
 
+  // ── QUICKEST TO X: career milestone-crossing speed records.
+  //
+  // For each tier T (win count or PF total), the record holder is the
+  // manager who reached T in the FEWEST career games. Active chasers in
+  // {year} who haven't crossed T yet get projected forward — if their
+  // pace would put them at T in fewer games than the current record,
+  // they're brink/broken-bound. Same WatchItem shape as everything else
+  // so the existing template renders them.
+  {
+    // Build per-group career walks: chronological game order, with
+    // running totals. We need this for crossing-detection.
+    type Walk = {
+      mid: string         // group primary id
+      name: string
+      games: TaggedGame[] // all-time games (pre-{year} + {year} W1..throughWeek)
+    }
+    const walks: Walk[] = []
+    for (const g of groups) {
+      if (isGroupHidden(g)) continue
+      const acc: TaggedGame[] = []
+      for (const mid of g.managerIds) {
+        const arr = gamesByManager.get(mid) ?? []
+        for (const gm of arr) {
+          if (gm.year < year) acc.push(gm)
+          else if (gm.year === year && gm.week <= throughWeek) acc.push(gm)
+        }
+      }
+      acc.sort((a, b) => a.year - b.year || a.week - b.week)
+      walks.push({ mid: g.primary.id, name: groupDisplayName(g), games: acc })
+    }
+
+    // Detect tier crossings. For wins: cumulative wins crossing T. For PF:
+    // cumulative PF crossing T. Returns { gamesToTier, year, week } at the
+    // crossing game, or null if not yet crossed.
+    type Crossing = { games: number; year: number; week: number }
+    function crossingForWins(w: Walk, T: number): Crossing | null {
+      let cumW = 0
+      for (let i = 0; i < w.games.length; i++) {
+        const g = w.games[i]
+        if (g.result === 'W') cumW++
+        if (cumW >= T) return { games: i + 1, year: g.year, week: g.week }
+      }
+      return null
+    }
+    function crossingForPF(w: Walk, T: number): Crossing | null {
+      let cumPF = 0
+      for (let i = 0; i < w.games.length; i++) {
+        cumPF += w.games[i].self_score
+        if (cumPF >= T) return { games: i + 1, year: w.games[i].year, week: w.games[i].week }
+      }
+      return null
+    }
+
+    type TierCfg = {
+      kind: 'wins' | 'points'
+      values: number[]
+      label: (t: number) => string
+      fmtT: (t: number) => string
+      fmtGames: (n: number) => string
+    }
+    const tierCfgs: TierCfg[] = [
+      {
+        kind: 'wins',
+        values: [10, 25, 50, 75, 100, 125, 150],
+        label: (t) => `Quickest to ${t} Wins`,
+        fmtT: (t) => `${t} wins`,
+        fmtGames: (n) => `${n} games`,
+      },
+      {
+        kind: 'points',
+        values: [2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000],
+        label: (t) => `Quickest to ${t.toLocaleString()} Pts`,
+        fmtT: (t) => `${t.toLocaleString()} pts`,
+        fmtGames: (n) => `${n} games`,
+      },
+    ]
+
+    for (const cfg of tierCfgs) {
+      for (const T of cfg.values) {
+        // Find the all-time record (pre-{year}-or-earlier) — fastest games-to-T
+        // among walks that already crossed T before {year}.
+        let recordHolder: { walk: Walk; games: number; year: number } | null = null
+        // Track each walk's crossing if any; reused for chase detection below.
+        const crossings: Array<{ walk: Walk; cross: Crossing | null; currentVal: number; gamesPlayed: number; perGame: number }> = []
+        for (const w of walks) {
+          const cross = cfg.kind === 'wins' ? crossingForWins(w, T) : crossingForPF(w, T);
+          let currentVal = 0
+          let gamesPlayed = w.games.length
+          if (cfg.kind === 'wins') {
+            for (const g of w.games) if (g.result === 'W') currentVal++
+          } else {
+            for (const g of w.games) currentVal += g.self_score
+          }
+          // Per-game rate, using only {year} games so the projection
+          // reflects current-season form, not lifetime average.
+          let seasonVal = 0, seasonGames = 0
+          for (const g of w.games) {
+            if (g.year === year && g.week <= throughWeek) {
+              seasonGames++
+              if (cfg.kind === 'wins' && g.result === 'W') seasonVal++
+              if (cfg.kind === 'points') seasonVal += g.self_score
+            }
+          }
+          const perGame = seasonGames > 0 ? seasonVal / seasonGames : 0
+          crossings.push({ walk: w, cross, currentVal, gamesPlayed, perGame })
+
+          if (cross && cross.year < year) {
+            // crossed pre-{year} → eligible to set the record
+            if (!recordHolder || cross.games < recordHolder.games) {
+              recordHolder = { walk: w, games: cross.games, year: cross.year }
+            }
+          }
+        }
+        if (!recordHolder) continue
+        const r = recordHolder
+
+        // Find the best 2025 chaser — either crossed in {year} already
+        // (potential broken record) OR projecting to cross in fewer games
+        // than the record.
+        type Chaser = { walk: Walk; projGames: number; broke: boolean; crossingDesc?: string }
+        let bestChaser: Chaser | null = null
+        for (const c of crossings) {
+          if (c.walk === r.walk) continue
+          if (c.cross && c.cross.year === year) {
+            // crossed during {year}
+            const cand: Chaser = {
+              walk: c.walk,
+              projGames: c.cross.games,
+              broke: c.cross.games < r.games,
+              crossingDesc: `W${c.cross.week} · ${year}`,
+            }
+            if (!bestChaser || cand.projGames < bestChaser.projGames) bestChaser = cand
+          } else if (!c.cross && c.currentVal > 0 && c.perGame > 0 && c.currentVal < T) {
+            // Hasn't crossed; project at {year}-pace.
+            const needed = T - c.currentVal
+            const moreGames = needed / c.perGame
+            const proj = Math.round(c.gamesPlayed + moreGames)
+            // Only surface if their projection is meaningful relative to the
+            // record (within ~30% to bound chase candidates).
+            if (proj <= r.games * 1.3) {
+              const cand: Chaser = { walk: c.walk, projGames: proj, broke: false }
+              if (!bestChaser || cand.projGames < bestChaser.projGames) bestChaser = cand
+            }
+          }
+        }
+        if (!bestChaser) continue
+
+        // Lower projected games = better. pct flips the ratio so the existing
+        // brink/chase/broken bucketing (pct >= 100 broken, >= 85 brink) works.
+        const pct = (r.games / bestChaser.projGames) * 100
+        const projGames = bestChaser.projGames
+        const gap = r.games - projGames  // positive = on pace to break (faster)
+        const broke = bestChaser.broke
+
+        accumItems.push({
+          category: cfg.label(T),
+          pct,
+          flag: broke
+            ? 'NEW QUICKEST'
+            : flagFor(pct, 'WILL BREAK IT', 'PROJECTING PAST', 'ON PACE', 'PURSUING'),
+          title_html: `${r.games} games <em>· quickest to ${cfg.fmtT(T)}</em>`,
+          holder: r.walk.name,
+          record_value: cfg.fmtGames(r.games),
+          holder_when: `set ${r.year}`,
+          chaser: bestChaser.walk.name,
+          chaser_value: broke
+            ? `${projGames} games (${bestChaser.crossingDesc})`
+            : `pace ${projGames} games`,
+          chaser_when: broke
+            ? `crossed ${cfg.fmtT(T)} in ${projGames}G`
+            : `through W${throughWeek}`,
+          gap: gap > 0
+            ? `${gap} games faster on pace`
+            : gap < 0 ? `${Math.abs(gap)} games slower on pace` : 'matching pace',
+          copy_html: `<em>${escTxt(bestChaser.walk.name)}</em> · ${broke ? 'crossed' : 'pace'} ${projGames} games to ${cfg.fmtT(T)}`,
+          when: `through W${throughWeek}`,
+          previous: `${cfg.fmtGames(r.games)} · ${r.walk.name}, ${r.year}`,
+        })
+      }
+    }
+  }
+
   // ── JUST MISSED: week-to-week records that don't build over the season.
   // Single-week high
   const topHigh = seasonByMgr.filter((m) => m.bestWeek)
