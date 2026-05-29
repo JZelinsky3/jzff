@@ -417,7 +417,7 @@
         '}',
         '@media (max-width: 640px) {',
         '  .nav-chapbar-track { justify-content: flex-start; padding: 0 .15rem; }',
-        '  .nav-chapbar-link { padding: .45rem .55rem; font-size: .48rem; letter-spacing: .13em; }',
+        '  .nav-chapbar-link { padding: .45rem .55rem; font-size: .5rem; letter-spacing: .13em; }',
         '  .nav-chapbar-link.is-active::after { left: .55rem; right: .55rem; }',
         '  .nav-chapbar-link + .nav-chapbar-link::before { top: 28%; bottom: 28%; }',
         '}',
