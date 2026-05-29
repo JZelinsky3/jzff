@@ -208,6 +208,59 @@ body { background: var(--ls-bg); }
     opacity: .85;
 }
 
+/* ── Latest-milestone alert strip ─────────────────────────────
+   Slim violet-tinted banner that surfaces the most recent
+   milestone hit. Hidden by default; ls-alert.js shows it when
+   data/milestones.json returns a crossed entry. */
+.ls-alert {
+    display: flex; align-items: center; gap: 1rem;
+    padding: .85rem 1.2rem;
+    margin: 0 0 1.75rem;
+    background: linear-gradient(90deg, rgba(181,140,255,.13) 0%, rgba(22,32,44,.6) 70%);
+    border: 1px solid rgba(181,140,255,.3);
+    border-left: 3px solid #b58cff;
+    color: var(--cream);
+    text-decoration: none;
+    transition: background .2s, border-color .2s;
+}
+.ls-alert:hover {
+    background: linear-gradient(90deg, rgba(181,140,255,.2) 0%, rgba(22,32,44,.7) 70%);
+    border-color: rgba(181,140,255,.5);
+}
+.ls-alert-badge {
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .25em; text-transform: uppercase;
+    color: #1a1325;
+    background: #d4a574;
+    padding: .35rem .6rem .4rem;
+}
+.ls-alert-badge .star { color: #b58cff; font-size: .8rem; line-height: 1; }
+.ls-alert-body {
+    flex: 1; min-width: 0;
+    font-family: var(--serif); font-size: 1.02rem;
+    color: var(--cream); line-height: 1.3;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ls-alert-body em { font-style: italic; color: #cdb1ff; }
+.ls-alert-meta {
+    flex-shrink: 0;
+    font-family: var(--mono); font-size: .56rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--ls-mute);
+}
+.ls-alert-arrow {
+    flex-shrink: 0;
+    font-family: var(--mono); font-size: 1rem;
+    color: #b58cff;
+}
+@media (max-width: 640px) {
+    .ls-alert { flex-wrap: wrap; gap: .65rem; padding: .75rem .9rem; }
+    .ls-alert-body { white-space: normal; width: 100%; font-size: .95rem; }
+    .ls-alert-meta { font-size: .5rem; }
+}
+
 /* Footer note */
 .ls-foot {
     margin-top: 3rem;
@@ -243,6 +296,13 @@ body { background: var(--ls-bg); }
         </p>
     </header>
 
+    <a id="ls-alert" class="ls-alert" href="live-season/milestones/" hidden>
+        <span class="ls-alert-badge"><span class="star">✦</span>New milestone</span>
+        <span class="ls-alert-body" id="ls-alert-body"></span>
+        <span class="ls-alert-meta" id="ls-alert-meta"></span>
+        <span class="ls-alert-arrow">→</span>
+    </a>
+
     <section>
         <div class="ls-section-header">
             <span class="ls-section-num">§ 01 · This Week</span>
@@ -266,11 +326,12 @@ body { background: var(--ls-bg); }
                 <span class="ls-card-arrow">→</span>
             </a>
 
-            <div class="ls-card" data-status="soon">
-                <span class="ls-card-status"><span class="ls-card-dot"></span> Coming Soon</span>
+            <a href="live-season/records-watch/" class="ls-card" data-status="live">
+                <span class="ls-card-status"><span class="ls-card-dot"></span> Live · Phase 1</span>
                 <h2 class="ls-card-title">Records <em>Watch.</em></h2>
                 <p class="ls-card-desc">Who's on pace to break a record? Single-season highs, win streaks, and franchise marks — tracked live.</p>
-            </div>
+                <span class="ls-card-arrow">→</span>
+            </a>
 
             <div class="ls-card" data-status="pro-soon">
                 <span class="ls-card-tier">Veteran</span>
@@ -287,11 +348,12 @@ body { background: var(--ls-bg); }
                 <span class="ls-card-arrow">→</span>
             </a>
 
-            <div class="ls-card" data-status="soon">
-                <span class="ls-card-status"><span class="ls-card-dot"></span> Coming Soon</span>
+            <a href="live-season/milestones/" class="ls-card" data-status="live">
+                <span class="ls-card-status"><span class="ls-card-dot"></span> Live · Phase 1</span>
                 <h2 class="ls-card-title">Milestone <em>Alerts.</em></h2>
-                <p class="ls-card-desc">Email notifications when a team sets a franchise high, hits a streak, or crosses a career milestone.</p>
-            </div>
+                <p class="ls-card-desc">An honors-roll feed for every career milestone, streak, and franchise high the moment it happens — right on the page.</p>
+                <span class="ls-card-arrow">→</span>
+            </a>
 
         </div>
     </section>
@@ -299,6 +361,37 @@ body { background: var(--ls-bg); }
     <div class="ls-foot">{{LEAGUE_ABBR}} · Live Season · {{LEAGUE_FOUNDED_ROMAN}}</div>
 
 </main>
+
+<script>
+// Latest-milestone alert strip — reveals the top item from
+// data/milestones.json (the "crossed" list). Silent no-op if the feed
+// isn't published yet, so the hub stays clean during build-out.
+(function () {
+  fetch('data/milestones.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (data) {
+      if (!data || !Array.isArray(data.crossed) || !data.crossed.length) return;
+      var top = data.crossed[0];
+      var name = top.name || '';
+      var copy = top.achievement || top.copy || '';
+      if (!name || !copy) return;
+      var body = document.getElementById('ls-alert-body');
+      var meta = document.getElementById('ls-alert-meta');
+      var alert = document.getElementById('ls-alert');
+      if (!body || !alert) return;
+      body.innerHTML = '<em>' + escapeHtml(name) + '</em> · ' + escapeHtml(copy);
+      if (meta && top.when) meta.textContent = top.when;
+      alert.hidden = false;
+    });
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+})();
+</script>
 
 </body>
 </html>
