@@ -345,6 +345,9 @@ body { background: var(--rb-bg); }
    losses read rust. Keeps the two flavors readable at a glance. */
 .clutch-good em { color: var(--gold); }
 .clutch-bad  em { color: var(--rust); }
+.clutch-zero { background: rgba(0,0,0,.12); }
+.clutch-zero .milestone-name { color: var(--rb-mute); }
+.clutch-zero-count em { color: var(--rb-mute); }
 
 /* Top-5 rank chip — replaces the tier label in tier panels. */
 .milestone-rank {
@@ -1167,17 +1170,41 @@ function buildClutchRows(rows, tone) {
         return `<div class="milestone-empty">No qualifying games yet.</div>`;
     }
     const word = tone === 'good' ? 'wins' : 'losses';
-    return rows.map((r, i) => `
-        <div class="milestone-row">
-            <span class="milestone-rank${i === 0 ? ' gold' : ''}">${i + 1}</span>
-            <div class="milestone-name-col">
-                <div class="milestone-name">
-                    <a href="managers/manager.html?id=${r.user_id}" style="color:inherit;text-decoration:none;">${r.name}</a>
+    const gooseHead = tone === 'good' ? 'Yet to land one' : 'Yet to suffer one';
+    let firstZeroEmitted = false;
+    let runningRank = 0;
+    return rows.map(r => {
+        if (r.count === 0) {
+            // Insert a single panel-head ahead of the first 0-count row,
+            // separating the "haven't done it yet" tail from the leaderboard.
+            const head = !firstZeroEmitted
+                ? `<div class="milestone-panel-head">${gooseHead}</div>`
+                : '';
+            firstZeroEmitted = true;
+            return `${head}
+                <div class="milestone-row clutch-zero">
+                    <span class="milestone-rank">—</span>
+                    <div class="milestone-name-col">
+                        <div class="milestone-name">
+                            <a href="managers/manager.html?id=${r.user_id}" style="color:inherit;text-decoration:none;">${r.name}</a>
+                        </div>
+                    </div>
+                    <span class="milestone-games clutch-zero-count"><em>0</em>${word}</span>
+                </div>`;
+        }
+        runningRank++;
+        return `
+            <div class="milestone-row">
+                <span class="milestone-rank${runningRank === 1 ? ' gold' : ''}">${runningRank}</span>
+                <div class="milestone-name-col">
+                    <div class="milestone-name">
+                        <a href="managers/manager.html?id=${r.user_id}" style="color:inherit;text-decoration:none;">${r.name}</a>
+                    </div>
+                    <div class="milestone-when">Last: W${r.last_week} · ${r.last_year} vs ${r.last_opp_name} (${r.last_margin})</div>
                 </div>
-                <div class="milestone-when">Last: W${r.last_week} · ${r.last_year} vs ${r.last_opp_name} (${r.last_margin})</div>
-            </div>
-            <span class="milestone-games clutch-${tone}"><em>${r.count}</em>${word}</span>
-        </div>`).join('');
+                <span class="milestone-games clutch-${tone}"><em>${r.count}</em>${word}</span>
+            </div>`;
+    }).join('');
 }
 
 window.switchMilestoneTab = function(btn) {

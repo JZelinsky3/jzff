@@ -1648,42 +1648,41 @@ type GauntletManager = {
 }
 const GAUNTLET_MAX_TIER = 5
 function buildGauntletBook(s: Snapshot): { managers: GauntletManager[] } {
-  const { groupGames, groupName, groupUserId } = buildGroupCareerGames(s)
-  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  // Iterate ALL profile groups (including hidden) so a member who's been
+  // privacy-hidden but is still on the league roster still counts as an
+  // opponent AND appears in the list. The page's "active managers" view
+  // includes hidden-current members; gauntlet should match it.
+  const groups = buildProfileGroups(s)
   const currentIds = currentManagerIdSet(s)
-
-  // The "active set" is every profile group that includes at least one
-  // currently-active manager id. Beating people who've left the league
-  // doesn't move the gauntlet bar, matching how the page is framed.
-  const activeKeys = new Set<string>()
   const keyOf = (g: ProfileGroup) => g.profile?.id ?? g.primary.id
-  for (const g of groups) {
-    if (isGroupCurrent(g, currentIds)) activeKeys.add(keyOf(g))
-  }
 
-  // Quickly map any manager id → its profile group key, so we can look up
-  // opponents when walking through a player's chronological games.
+  // The "active set" is every profile group that's currently on the
+  // league roster. Beating people who've left the league doesn't move
+  // the gauntlet bar, matching how the page is framed.
+  const activeKeys = new Set<string>()
+  const groupName = new Map<string, string>()
+  const groupUserId = new Map<string, string | null>()
   const managerKeyById = new Map<string, string>()
   for (const g of groups) {
     const k = keyOf(g)
+    groupName.set(k, groupDisplayName(g))
+    groupUserId.set(k, userId(g.primary))
     for (const mid of g.managerIds) managerKeyById.set(mid, k)
+    if (isGroupCurrent(g, currentIds)) activeKeys.add(k)
   }
+
+  const yearOfSeason = new Map<string, number>()
+  for (const sn of s.seasons) yearOfSeason.set(sn.id, sn.year)
 
   const result: GauntletManager[] = []
   for (const g of groups) {
     if (!isGroupCurrent(g, currentIds)) continue
     const myKey = keyOf(g)
-    const games = groupGames.get(myKey) ?? []
 
     // Opponents are every OTHER currently-active group.
     const opponentKeys = [...activeKeys].filter((k) => k !== myKey)
     const totalOpps = opponentKeys.length
 
-    // For each game, we need to know which opponent group the game was
-    // against. groupGames omits opp_id (to keep the snapshot tight), so
-    // re-walk the raw matchups in chronological order alongside it.
-    const yearOfSeason = new Map<string, number>()
-    for (const sn of s.seasons) yearOfSeason.set(sn.id, sn.year)
     type GauntletGame = { year: number; week: number; oppKey: string | null; result: 'W' | 'L' | 'T' }
     const seenKey = new Set<string>()
     const myGames: GauntletGame[] = []
@@ -1764,16 +1763,18 @@ function buildGauntletBook(s: Snapshot): { managers: GauntletManager[] } {
 
 // "Clutch Index" — career counts of one-score wins and losses per
 // profile group. Two thresholds (≤ 5 pts and ≤ 1 pt) × two flavors
-// (W = clutch, L = unclutch). Each leaderboard is top-10 with the
-// most-recent qualifying game tucked in for color.
+// (W = clutch, L = unclutch). Active managers always appear (count 0
+// if they've never had a qualifying game); former managers only show
+// when they have at least one.
 type ClutchEntry = {
   user_id: string | null
   name: string
+  is_current: boolean
   count: number
-  last_year: number
-  last_week: number
-  last_margin: number
-  last_opp_name: string
+  last_year: number | null
+  last_week: number | null
+  last_margin: number | null
+  last_opp_name: string | null
 }
 function buildClutchBook(s: Snapshot): {
   clutch_5pt: ClutchEntry[]
@@ -1781,8 +1782,11 @@ function buildClutchBook(s: Snapshot): {
   clutch_1pt: ClutchEntry[]
   unclutch_1pt: ClutchEntry[]
 } {
-  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  // Include hidden groups so a privacy-hidden active member still appears
+  // in the leaderboards, matching the gauntlet treatment.
+  const groups = buildProfileGroups(s)
   const managerToGroup = buildManagerToGroup(groups)
+  const currentIds = currentManagerIdSet(s)
   const yearOfSeason = new Map<string, number>()
   for (const sn of s.seasons) yearOfSeason.set(sn.id, sn.year)
   const oppNameOf = (mid: string): string => {
@@ -1791,7 +1795,7 @@ function buildClutchBook(s: Snapshot): {
   }
 
   type Game = { year: number; week: number; result: 'W' | 'L' | 'T'; margin: number; oppName: string }
-  type Row = { user_id: string | null; name: string; games: Game[] }
+  type Row = { user_id: string | null; name: string; is_current: boolean; games: Game[] }
   const rows: Row[] = []
   for (const g of groups) {
     const seenKey = new Set<string>()
@@ -1816,28 +1820,35 @@ function buildClutchBook(s: Snapshot): {
       }
     }
     games.sort((a, b) => a.year - b.year || a.week - b.week)
-    rows.push({ user_id: userId(g.primary), name: groupDisplayName(g), games })
+    rows.push({
+      user_id: userId(g.primary),
+      name: groupDisplayName(g),
+      is_current: isGroupCurrent(g, currentIds),
+      games,
+    })
   }
 
   function topFor(predicate: (g: Game) => boolean): ClutchEntry[] {
     const out: ClutchEntry[] = []
     for (const r of rows) {
       const matching = r.games.filter(predicate)
-      if (matching.length === 0) continue
-      const last = matching[matching.length - 1]
+      // Active managers ALWAYS show (with count 0 if needed) so the
+      // leaderboard is the full league roster. Former managers only
+      // surface when they actually have a qualifying game.
+      if (matching.length === 0 && !r.is_current) continue
+      const last = matching.length > 0 ? matching[matching.length - 1] : null
       out.push({
         user_id: r.user_id,
         name: r.name,
+        is_current: r.is_current,
         count: matching.length,
-        last_year: last.year,
-        last_week: last.week,
-        last_margin: round2(last.margin),
-        last_opp_name: last.oppName,
+        last_year: last ? last.year : null,
+        last_week: last ? last.week : null,
+        last_margin: last ? round2(last.margin) : null,
+        last_opp_name: last ? last.oppName : null,
       })
     }
-    return out
-      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-      .slice(0, 10)
+    return out.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
   }
 
   return {
