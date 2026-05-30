@@ -239,9 +239,9 @@ body { background: var(--rb-bg); }
 }
 .milestone-row {
     display: grid;
-    grid-template-columns: 7.5rem minmax(0, 1fr) auto;
+    grid-template-columns: 8.5rem minmax(0, 1fr) auto;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1rem;
     padding: .8rem 1.25rem;
     border-bottom: 1px solid var(--rb-line-soft);
     transition: background .15s;
@@ -253,6 +253,13 @@ body { background: var(--rb-bg); }
     font-size: 1.35rem; line-height: 1; letter-spacing: -.02em;
     color: var(--gold);
     white-space: nowrap;
+}
+.milestone-unit {
+    margin-left: .35rem;
+    font-family: var(--mono); font-style: normal; font-weight: 700;
+    font-size: .55rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--rb-mute);
+    vertical-align: middle;
 }
 .milestone-name-col { min-width: 0; }
 .milestone-name {
@@ -490,10 +497,11 @@ table.career-table tbody tr:hover { background: rgba(46,120,58,.06); }
     .milestone-col-title { font-size: .48rem; letter-spacing: .14em; }
     .milestone-row {
         padding: .55rem .6rem;
-        grid-template-columns: 5rem minmax(0, 1fr) auto;
-        gap: .7rem;
+        grid-template-columns: 6rem minmax(0, 1fr) auto;
+        gap: .55rem;
     }
     .milestone-tier { font-size: .95rem; }
+    .milestone-unit { margin-left: .25rem; font-size: .45rem; letter-spacing: .15em; }
     .milestone-name { font-size: .82rem; line-height: 1.05; }
     .milestone-when { font-size: .45rem; letter-spacing: .06em; margin-top: .15rem; }
     .milestone-games { font-size: .55rem; letter-spacing: .08em; }
@@ -903,11 +911,12 @@ function buildMilestonesSection(milestones) {
         </div>`;
 }
 
-// Records ladder: column header already says "Wins"/"Points", so the
-// tier label is just the number. Tier panels still get the full
-// "10,000 Pts" label via milestone-panel-head.
-function fmtWinTier(t)   { return `${t}`; }
-function fmtPointTier(t) { return t.toLocaleString(); }
+// Records ladder: show the number with a small unit suffix so each row
+// reads as "200 Wins" / "100,000 Pts". The unit is a separate inline
+// element so it can be styled smaller / muted without growing the
+// italic number itself.
+function fmtWinTier(t)   { return `${t}<span class="milestone-unit">Wins</span>`; }
+function fmtPointTier(t) { return `${t.toLocaleString()}<span class="milestone-unit">Pts</span>`; }
 function fmtTierFull(t, unit) {
     return unit === 'pts' ? `${t.toLocaleString()} Pts` : `${t} Wins`;
 }
