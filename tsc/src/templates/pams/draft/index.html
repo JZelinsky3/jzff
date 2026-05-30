@@ -577,6 +577,105 @@ body { background: var(--dg-bg); }
 .tend-mgr { font-family: var(--sans) !important; font-weight: 700; font-size: .82rem !important; color: var(--cream); text-align: left !important; padding-left: 1rem !important; border-right: 2px solid var(--dg-line) !important; white-space: nowrap; }
 .tend-note { font-family: var(--mono); font-size: .6rem; color: var(--cream-mute); margin-top: 1rem; letter-spacing: .05em; }
 
+/* ── Loyalty: favorite player table ── */
+.loyal-wrap { overflow-x: auto; border: 1px solid var(--dg-line); }
+.loyal-table { border-collapse: collapse; min-width: 100%; }
+.loyal-table th {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .6rem .8rem;
+    background: var(--dg-soft);
+    border-bottom: 2px solid var(--dg-line);
+    border-right: 1px solid var(--dg-line);
+    color: var(--dg-accent); text-align: left;
+    white-space: nowrap;
+}
+.loyal-table td {
+    padding: .6rem .8rem;
+    border-right: 1px solid var(--dg-line-soft);
+    border-bottom: 1px solid var(--dg-line-soft);
+    font-family: var(--mono); font-size: .78rem;
+    vertical-align: top;
+}
+.loyal-table tbody tr:last-child td { border-bottom: none; }
+.loyal-table tbody tr td { background: var(--dg-card); }
+.loyal-table tbody tr.loyal-row-first td { border-top: 2px solid var(--dg-line); }
+.loyal-table tbody tr.loyal-row-first:first-child td { border-top: none; }
+.loyal-table tbody tr:hover td { background: var(--dg-card-hover) !important; }
+.loyal-mgr { font-family: var(--sans) !important; font-weight: 700; font-size: .82rem !important; color: var(--cream); border-right: 2px solid var(--dg-line) !important; white-space: nowrap; }
+.loyal-player-name { font-family: var(--sans); font-weight: 600; font-size: .82rem; color: var(--cream); }
+.loyal-player-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .3rem; }
+.loyal-player-row:last-child { margin-bottom: 0; }
+.loyal-pos {
+    display: inline-block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .1em;
+    padding: .1rem .35rem; border-radius: 2px;
+}
+.loyal-count {
+    font-family: var(--mono); font-size: .62rem;
+    color: var(--cream-mute); letter-spacing: .05em;
+}
+.loyal-years { font-family: var(--mono); font-size: .58rem; color: var(--cream-mute); letter-spacing: .05em; }
+
+/* ── Loyalty: NFL team affinity cards ── */
+.affinity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1px;
+    background: var(--dg-line);
+    border: 1px solid var(--dg-line);
+}
+.affinity-card { background: var(--dg-card); padding: 1rem 1.15rem; }
+.affinity-mgr {
+    font-family: var(--sans); font-weight: 700;
+    font-size: 1rem; color: var(--cream);
+    margin-bottom: .15rem;
+}
+.affinity-team-sub {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .1em; color: var(--cream-mute);
+    margin-bottom: .8rem;
+    padding-bottom: .6rem; border-bottom: 1px solid var(--dg-line-soft);
+}
+.affinity-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .85rem;
+}
+.affinity-col-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--dg-accent); margin-bottom: .5rem;
+}
+.affinity-col-label.bot { color: var(--cream-mute); }
+.affinity-list { list-style: none; padding: 0; margin: 0; }
+.affinity-list li {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: .68rem;
+    color: var(--cream-soft);
+    padding: .18rem 0;
+    border-bottom: 1px dotted var(--dg-line-soft);
+}
+.affinity-list li:last-child { border-bottom: none; }
+.affinity-team { letter-spacing: .08em; }
+.affinity-n { color: var(--gold); font-weight: 700; }
+.affinity-list.bot .affinity-n { color: var(--cream-mute); font-weight: 600; }
+
+@media (max-width: 640px) {
+    .loyal-table th { font-size: .5rem; letter-spacing: .12em; padding: .4rem .5rem; }
+    .loyal-table td { font-size: .62rem; padding: .45rem .5rem; }
+    .loyal-player-name { font-size: .68rem; }
+    .loyal-mgr { font-size: .7rem !important; }
+    .loyal-pos { font-size: .46rem; padding: .08rem .3rem; }
+
+    .affinity-grid { grid-template-columns: 1fr; }
+    .affinity-card { padding: .75rem .85rem; }
+    .affinity-mgr { font-size: .8rem; }
+    .affinity-list li { font-size: .58rem; padding: .15rem 0; }
+    .affinity-col-label { font-size: .44rem; letter-spacing: .15em; }
+}
+
 /* ── Most coveted ── */
 .coveted-grid {
     display: grid;
@@ -628,7 +727,7 @@ body { background: var(--dg-bg); }
     /* Top-level page tabs — equally spaced to fill full width */
     .draft-tabs {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 0;
         margin-bottom: 2rem;
         overflow-x: visible;
@@ -910,6 +1009,7 @@ body { background: var(--dg-bg); }
         <button class="draft-tab" onclick="setTab('history')">History</button>
         <button class="draft-tab" onclick="setTab('tendencies')">Tendencies</button>
         <button class="draft-tab" onclick="setTab('players')">Players</button>
+        <button class="draft-tab" onclick="setTab('loyalty')">Loyalty</button>
         <button class="draft-tab" onclick="setTab('value')">Value</button>
     </nav>
 
@@ -1033,6 +1133,38 @@ body { background: var(--dg-bg); }
     </div>
 
     <!-- ══════════════════════════════════════════════════════
+         LOYALTY TAB
+    ═══════════════════════════════════════════════════════ -->
+    <div class="draft-panel" id="panel-loyalty">
+
+        <!-- Favorite Player by Manager -->
+        <section class="draft-section" id="sec-favplayer">
+            <div class="section-header">
+                <span class="section-num">§ VIII</span>
+                <h2 class="section-title">Favorite Player</h2>
+                <span class="section-note">Most-drafted · ties broken by avg pick</span>
+            </div>
+            <div class="loyal-wrap" id="favPlayerContainer">
+                <div class="board-loading">Loading…</div>
+            </div>
+        </section>
+
+        <!-- NFL Team Affinity by Manager -->
+        <section class="draft-section" id="sec-teamaffinity">
+            <div class="section-header">
+                <span class="section-num">§ IX</span>
+                <h2 class="section-title">NFL Team Affinity</h2>
+                <span class="section-note">Top 5 most / least drafted from</span>
+            </div>
+            <div class="affinity-grid" id="teamAffinityContainer">
+                <div class="board-loading">Loading…</div>
+            </div>
+            <p class="tend-note">NFL team captured at time of pick — players may have moved since.</p>
+        </section>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
          VALUE TAB
     ═══════════════════════════════════════════════════════ -->
     <div class="draft-panel" id="panel-value">
@@ -1040,7 +1172,7 @@ body { background: var(--dg-bg); }
         <!-- Pick Slot History -->
         <section class="draft-section" id="sec-slots">
             <div class="section-header">
-                <span class="section-num">§ VIII</span>
+                <span class="section-num">§ X</span>
                 <h2 class="section-title">Pick Slot History</h2>
                 <span class="section-note">Round 1 · each slot across all years</span>
             </div>
@@ -1052,7 +1184,7 @@ body { background: var(--dg-bg); }
         <!-- Draft Value (steals / busts / heartbreakers) -->
         <section class="draft-section" id="sec-value">
             <div class="section-header">
-                <span class="section-num">§ IX</span>
+                <span class="section-num">§ XI</span>
                 <h2 class="section-title">Draft Value</h2>
                 <span class="section-note" id="valueNote">Loading rankings…</span>
             </div>
@@ -1306,6 +1438,7 @@ function onAllLoaded() {
     renderDNA();
     renderMgrTendencies();
     renderCoveted();
+    renderLoyalty();
     renderPickSlotHistory();
     selectYear(YEARS[YEARS.length - 1]);
 
@@ -1734,6 +1867,141 @@ function renderCoveted() {
         html += '</div></div>';
     });
     document.getElementById('covetedGrid').innerHTML = html;
+}
+
+// ── Loyalty: favorite player + NFL team affinity (current managers only) ──
+function renderLoyalty() {
+    // Group picks by current manager
+    var byMgr = {};
+    allPicks.forEach(function(p) {
+        var m = p.manager_name;
+        if (!m || isRetired(m)) return;
+        if (!byMgr[m]) byMgr[m] = [];
+        byMgr[m].push(p);
+    });
+
+    var managers = Object.keys(byMgr).sort();
+
+    // ── Section 1: favorite player table ─────────────────────────────────
+    // Most-drafted player per manager. If 3+ players tie for the top count,
+    // narrow to the 2 with the earliest avg overall pick. 1 or 2 tied → show all.
+    var rows = managers.map(function(m) {
+        var picks = byMgr[m];
+        var byPlayer = {};
+        picks.forEach(function(p) {
+            var n = p.player_name;
+            if (!n || p.overall_pick == null) return;
+            if (!byPlayer[n]) byPlayer[n] = { picks: [], pos: (p.position || '?').toUpperCase() };
+            byPlayer[n].picks.push(p);
+        });
+        var ranked = Object.keys(byPlayer).map(function(n) {
+            var arr = byPlayer[n].picks;
+            var sum = arr.reduce(function(s, p) { return s + p.overall_pick; }, 0);
+            return {
+                name:  n,
+                pos:   byPlayer[n].pos,
+                avg:   sum / arr.length,
+                count: arr.length,
+                picks: arr.slice().sort(function(a, b) { return a.year - b.year; }),
+            };
+        });
+        if (!ranked.length) return { mgr: m, top: [] };
+        var max = ranked.reduce(function(mx, r) { return r.count > mx ? r.count : mx; }, 0);
+        var tied = ranked.filter(function(r) { return r.count === max; });
+        var display;
+        if (tied.length <= 2) {
+            display = tied.slice().sort(function(a, b) { return a.avg - b.avg; });
+        } else {
+            display = tied.slice().sort(function(a, b) {
+                if (a.avg !== b.avg) return a.avg - b.avg;
+                return a.name.localeCompare(b.name);
+            }).slice(0, 2);
+        }
+        return { mgr: m, top: display };
+    });
+
+    var html = '<table class="loyal-table"><thead><tr>'
+             + '<th>Manager</th><th>Player</th><th>×</th><th>Avg Pick</th><th>Drafted</th>'
+             + '</tr></thead><tbody>';
+    rows.forEach(function(r) {
+        if (!r.top.length) return;
+        r.top.forEach(function(p, idx) {
+            var pc = POS_COLORS[p.pos] || POS_COLORS['K'];
+            var avgStr = (p.avg % 1 === 0) ? String(p.avg) : p.avg.toFixed(1);
+            var detail = p.picks.map(function(pp) {
+                var rp = pp.round_pick != null ? String(pp.round_pick).padStart(2, '0') : '?';
+                return pp.year + ' · R' + pp.round + '.' + rp;
+            }).join(' · ');
+            html += '<tr class="loyal-row' + (idx === 0 ? ' loyal-row-first' : '') + '">'
+                  + '<td class="loyal-mgr">' + (idx === 0 ? esc(r.mgr) : '') + '</td>'
+                  + '<td>'
+                  +   '<div class="loyal-player-row">'
+                  +     '<span class="loyal-player-name">' + esc(p.name) + '</span>'
+                  +     '<span class="loyal-pos" style="background:' + pc.bg + ';color:' + pc.text + '">' + esc(p.pos) + '</span>'
+                  +   '</div>'
+                  + '</td>'
+                  + '<td><span class="loyal-count">' + p.count + '</span></td>'
+                  + '<td><span class="loyal-count">#' + avgStr + '</span></td>'
+                  + '<td><span class="loyal-years">' + detail + '</span></td>'
+                  + '</tr>';
+        });
+    });
+    html += '</tbody></table>';
+    document.getElementById('favPlayerContainer').innerHTML = html;
+
+    // ── Section 2: NFL team affinity cards ──
+    var cardHtml = '';
+    managers.forEach(function(m) {
+        var picks = byMgr[m];
+        var teamCounts = {};
+        picks.forEach(function(p) {
+            var t = (p.nfl_team || '').toUpperCase();
+            if (!t) return;
+            teamCounts[t] = (teamCounts[t] || 0) + 1;
+        });
+        var teams = Object.keys(teamCounts).sort(function(a, b) {
+            return teamCounts[b] - teamCounts[a] || a.localeCompare(b);
+        });
+        var top5 = teams.slice(0, 5);
+        var bot5;
+        if (teams.length <= 5) {
+            bot5 = [];
+        } else if (teams.length <= 10) {
+            bot5 = teams.slice(5);
+        } else {
+            bot5 = teams.slice(-5);
+        }
+        // Reverse bot5 so least-drafted appears first
+        bot5 = bot5.slice().reverse();
+
+        var totalPicks = picks.length;
+        var distinctTeams = teams.length;
+
+        var topList = top5.map(function(t) {
+            return '<li><span class="affinity-team">' + esc(t) + '</span>'
+                 + '<span class="affinity-n">' + teamCounts[t] + '</span></li>';
+        }).join('');
+        var botList = bot5.map(function(t) {
+            return '<li><span class="affinity-team">' + esc(t) + '</span>'
+                 + '<span class="affinity-n">' + teamCounts[t] + '</span></li>';
+        }).join('');
+
+        cardHtml += '<div class="affinity-card">'
+                  + '<div class="affinity-mgr">' + esc(m) + '</div>'
+                  + '<div class="affinity-team-sub">' + totalPicks + ' picks · ' + distinctTeams + ' NFL teams</div>'
+                  + '<div class="affinity-cols">'
+                  +   '<div>'
+                  +     '<div class="affinity-col-label">Most Drafted</div>'
+                  +     '<ul class="affinity-list">' + topList + '</ul>'
+                  +   '</div>'
+                  +   '<div>'
+                  +     '<div class="affinity-col-label bot">Least Drafted</div>'
+                  +     '<ul class="affinity-list bot">' + (botList || '<li style="opacity:.5">—</li>') + '</ul>'
+                  +   '</div>'
+                  + '</div>'
+                  + '</div>';
+    });
+    document.getElementById('teamAffinityContainer').innerHTML = cardHtml;
 }
 
 // ── Best & Worst pick by year (requires rank data) ────────────────────────
