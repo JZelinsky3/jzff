@@ -239,7 +239,7 @@ body { background: var(--rb-bg); }
 }
 .milestone-row {
     display: grid;
-    grid-template-columns: 7.25rem 1fr auto;
+    grid-template-columns: 5.5rem 1fr auto;
     align-items: center;
     gap: .85rem;
     padding: .8rem 1.25rem;
@@ -492,10 +492,10 @@ table.career-table tbody tr:hover { background: rgba(46,120,58,.06); }
     .milestone-col-title { font-size: .48rem; letter-spacing: .14em; }
     .milestone-row {
         padding: .55rem .6rem;
-        grid-template-columns: 5rem 1fr auto;
+        grid-template-columns: 3.75rem 1fr auto;
         gap: .4rem;
     }
-    .milestone-tier { font-size: .9rem; }
+    .milestone-tier { font-size: .95rem; }
     .milestone-name { font-size: .82rem; line-height: 1.05; }
     .milestone-when { font-size: .45rem; letter-spacing: .06em; margin-top: .15rem; }
     .milestone-games { font-size: .55rem; letter-spacing: .08em; }
@@ -900,13 +900,19 @@ function buildMilestonesSection(milestones) {
     const pts  = milestones?.quickest_to_points || [];
     return `
         <div class="milestone-cols">
-            ${buildMilestoneCol('mw', '🏆', 'Wins',   wins, fmtWinTier,   fmtWinTab)}
-            ${buildMilestoneCol('mp', '📈', 'Points', pts,  fmtPointTier, fmtPointTab)}
+            ${buildMilestoneCol('mw', '🏆', 'Wins',   wins, fmtWinTier,   fmtWinTab,   'wins')}
+            ${buildMilestoneCol('mp', '📈', 'Points', pts,  fmtPointTier, fmtPointTab, 'pts')}
         </div>`;
 }
 
-function fmtWinTier(t)   { return `${t} Wins`; }
-function fmtPointTier(t) { return `${t.toLocaleString()} Pts`; }
+// Records ladder: column header already says "Wins"/"Points", so the
+// tier label is just the number. Tier panels still get the full
+// "10,000 Pts" label via milestone-panel-head.
+function fmtWinTier(t)   { return `${t}`; }
+function fmtPointTier(t) { return t.toLocaleString(); }
+function fmtTierFull(t, unit) {
+    return unit === 'pts' ? `${t.toLocaleString()} Pts` : `${t} Wins`;
+}
 function fmtWinTab(t)    { return `${t}`; }
 function fmtPointTab(t) {
     if (t >= 1000) {
@@ -919,7 +925,7 @@ function fmtPointTab(t) {
 // One column: header + tab strip + panels. First panel is the
 // record-holder ladder (one row per tier). Each tier gets its own
 // panel showing the top-5 fastest to reach it.
-function buildMilestoneCol(slug, icon, title, items, tierLabel, tabLabel) {
+function buildMilestoneCol(slug, icon, title, items, tierLabel, tabLabel, unit) {
     if (!items.length) {
         return `
             <div class="milestone-col">
@@ -969,7 +975,7 @@ function buildMilestoneCol(slug, icon, title, items, tierLabel, tabLabel) {
                 <span class="milestone-games"><em>${l.games}</em>games</span>
             </div>`).join('');
         return `<div class="milestone-panel" id="${pid}">
-            <div class="milestone-panel-head">${tierLabel(m.tier)}</div>
+            <div class="milestone-panel-head">${fmtTierFull(m.tier, unit)}</div>
             ${rows}
         </div>`;
     }).join('');
