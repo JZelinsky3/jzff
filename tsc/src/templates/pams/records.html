@@ -254,6 +254,12 @@ body { background: var(--rb-bg); }
     border-bottom: 1px solid var(--rb-line-soft);
     transition: background .15s;
 }
+/* Wins tier labels max out at "200 WINS" — far shorter than the
+   points column's "100,000 PTS" — so the wins side gets a tighter
+   tier slot and the manager name slides closer. */
+.milestone-col-mw .milestone-row {
+    grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+}
 .milestone-row:last-child { border-bottom: none; }
 .milestone-row:hover { background: rgba(46,120,58,.07); }
 .milestone-tier {
@@ -531,6 +537,9 @@ table.career-table tbody tr:hover { background: rgba(46,120,58,.06); }
         padding: .55rem .6rem;
         grid-template-columns: 6rem minmax(0, 1fr) auto;
         gap: .55rem;
+    }
+    .milestone-col-mw .milestone-row {
+        grid-template-columns: 2.5rem minmax(0, 1fr) auto;
     }
     .milestone-tier { font-size: .95rem; }
     .milestone-unit { margin-left: .25rem; font-size: .45rem; letter-spacing: .15em; }
@@ -1032,7 +1041,7 @@ function buildMilestoneCol(slug, icon, title, items, tierLabel, tabLabel, unit) 
     }).join('');
 
     return `
-        <div class="milestone-col">
+        <div class="milestone-col milestone-col-${slug}">
             <div class="milestone-col-header">
                 <span class="milestone-col-icon">${icon}</span>
                 <span class="milestone-col-title">${title}</span>
@@ -1154,11 +1163,16 @@ function buildClutchSection(clutch) {
     const tabBtns = tabs.map((t, i) =>
         `<button class="milestone-tab${i === 0 ? ' active' : ''}" data-target="${t.id}" onclick="switchMilestoneTab(this)">${t.label}</button>`
     ).join('');
-    const panels = tabs.map((t, i) =>
-        `<div class="milestone-panel tier${i === 0 ? ' active' : ''}" id="${t.id}">
+    const panels = tabs.map((t, i) => {
+        const head = (t.id === 'clutch-w5') ? 'Wins by ≤ 5 pts'
+                   : (t.id === 'clutch-w1') ? 'Wins by ≤ 1 pt'
+                   : (t.id === 'clutch-l5') ? 'Losses by ≤ 5 pts'
+                                            : 'Losses by ≤ 1 pt';
+        return `<div class="milestone-panel tier${i === 0 ? ' active' : ''}" id="${t.id}">
+            <div class="milestone-panel-head">${head}</div>
             ${buildClutchRows(t.data, t.tone)}
-        </div>`
-    ).join('');
+        </div>`;
+    }).join('');
     return `
         <div class="milestone-col">
             <div class="milestone-col-header">
