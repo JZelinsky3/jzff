@@ -661,6 +661,15 @@ body { background: var(--dg-bg); }
 .affinity-team { letter-spacing: .08em; }
 .affinity-n { color: var(--gold); font-weight: 700; }
 .affinity-list.bot .affinity-n { color: var(--cream-mute); font-weight: 600; }
+.affinity-list .affinity-zero .affinity-team { color: var(--cream-mute); opacity: .65; }
+.affinity-list .affinity-zero .affinity-n { color: var(--cream-mute); opacity: .55; }
+.affinity-list .affinity-multi .affinity-team,
+.affinity-list .affinity-summary .affinity-team {
+    letter-spacing: .04em; line-height: 1.35;
+    word-spacing: .05em;
+}
+.affinity-list .affinity-multi { align-items: flex-start; gap: .5rem; }
+.affinity-list .affinity-summary .affinity-team { font-style: italic; }
 
 @media (max-width: 640px) {
     .loyal-table th { font-size: .5rem; letter-spacing: .12em; padding: .4rem .5rem; }
@@ -1954,41 +1963,78 @@ function renderLoyalty() {
     managers.forEach(function(m) {
         var picks = byMgr[m];
         var teamCounts = {};
+        NFL_TEAMS.forEach(function(t) { teamCounts[t] = 0; });
+        var unmatched = 0;
         picks.forEach(function(p) {
-            var t = (p.nfl_team || '').toUpperCase();
-            if (!t) return;
+            var t = normNflTeam(p);
+            if (!t) { unmatched++; return; }
             teamCounts[t] = (teamCounts[t] || 0) + 1;
         });
-        var teams = Object.keys(teamCounts).sort(function(a, b) {
+
+        var drafted = NFL_TEAMS.filter(function(t) { return teamCounts[t] > 0; });
+        var teamsSortedDesc = NFL_TEAMS.slice().sort(function(a, b) {
             return teamCounts[b] - teamCounts[a] || a.localeCompare(b);
         });
-        var top5 = teams.slice(0, 5);
-        var bot5;
-        if (teams.length <= 5) {
-            bot5 = [];
-        } else if (teams.length <= 10) {
-            bot5 = teams.slice(5);
-        } else {
-            bot5 = teams.slice(-5);
-        }
-        // Reverse bot5 so least-drafted appears first
-        bot5 = bot5.slice().reverse();
+        var teamsSortedAsc = NFL_TEAMS.slice().sort(function(a, b) {
+            return teamCounts[a] - teamCounts[b] || a.localeCompare(b);
+        });
+        var top5 = teamsSortedDesc.slice(0, 5);
 
-        var totalPicks = picks.length;
-        var distinctTeams = teams.length;
+        // Bottom list — collapse 0-count teams when there are several:
+        //   0 zeros  → 5 lowest non-zero rows
+        //   1 zero   → that team + 4 lowest non-zero
+        //   2–4 zeros→ single combined row listing all + 4 lowest non-zero
+        //   5+ zeros → "N teams never drafted" summary + 4 lowest non-zero
+        var nonZeroAsc = teamsSortedAsc.filter(function(t) { return teamCounts[t] > 0; });
+        var zeroTeams  = teamsSortedAsc.filter(function(t) { return teamCounts[t] === 0; });
+        var botItems = [];
+        if (zeroTeams.length === 0) {
+            botItems = nonZeroAsc.slice(0, 5).map(function(t) {
+                return { kind: 'team', code: t, n: teamCounts[t] };
+            });
+        } else if (zeroTeams.length === 1) {
+            botItems.push({ kind: 'team', code: zeroTeams[0], n: 0 });
+            nonZeroAsc.slice(0, 4).forEach(function(t) {
+                botItems.push({ kind: 'team', code: t, n: teamCounts[t] });
+            });
+        } else if (zeroTeams.length <= 4) {
+            botItems.push({ kind: 'zero-multi', codes: zeroTeams });
+            nonZeroAsc.slice(0, 4).forEach(function(t) {
+                botItems.push({ kind: 'team', code: t, n: teamCounts[t] });
+            });
+        } else {
+            botItems.push({ kind: 'zero-summary', count: zeroTeams.length });
+            nonZeroAsc.slice(0, 4).forEach(function(t) {
+                botItems.push({ kind: 'team', code: t, n: teamCounts[t] });
+            });
+        }
+
+        var totalPicks = picks.length - unmatched;
 
         var topList = top5.map(function(t) {
             return '<li><span class="affinity-team">' + esc(t) + '</span>'
                  + '<span class="affinity-n">' + teamCounts[t] + '</span></li>';
         }).join('');
-        var botList = bot5.map(function(t) {
-            return '<li><span class="affinity-team">' + esc(t) + '</span>'
-                 + '<span class="affinity-n">' + teamCounts[t] + '</span></li>';
+        var botList = botItems.map(function(it) {
+            if (it.kind === 'team') {
+                var cls = it.n === 0 ? ' affinity-zero' : '';
+                return '<li class="' + cls + '"><span class="affinity-team">' + esc(it.code) + '</span>'
+                     + '<span class="affinity-n">' + it.n + '</span></li>';
+            }
+            if (it.kind === 'zero-multi') {
+                return '<li class="affinity-zero affinity-multi"><span class="affinity-team">'
+                     + it.codes.map(esc).join(' · ') + '</span>'
+                     + '<span class="affinity-n">0</span></li>';
+            }
+            // zero-summary
+            return '<li class="affinity-zero affinity-summary"><span class="affinity-team">'
+                 + it.count + ' teams never drafted</span>'
+                 + '<span class="affinity-n">0</span></li>';
         }).join('');
 
         cardHtml += '<div class="affinity-card">'
                   + '<div class="affinity-mgr">' + esc(m) + '</div>'
-                  + '<div class="affinity-team-sub">' + totalPicks + ' picks · ' + distinctTeams + ' NFL teams</div>'
+                  + '<div class="affinity-team-sub">' + totalPicks + ' picks · ' + drafted.length + ' of 32 NFL teams</div>'
                   + '<div class="affinity-cols">'
                   +   '<div>'
                   +     '<div class="affinity-col-label">Most Drafted</div>'
@@ -1996,12 +2042,52 @@ function renderLoyalty() {
                   +   '</div>'
                   +   '<div>'
                   +     '<div class="affinity-col-label bot">Least Drafted</div>'
-                  +     '<ul class="affinity-list bot">' + (botList || '<li style="opacity:.5">—</li>') + '</ul>'
+                  +     '<ul class="affinity-list bot">' + botList + '</ul>'
                   +   '</div>'
                   + '</div>'
                   + '</div>';
     });
     document.getElementById('teamAffinityContainer').innerHTML = cardHtml;
+}
+
+// Canonical NFL team codes used for affinity counting.
+var NFL_TEAMS = [
+    'ARI','ATL','BAL','BUF','CAR','CHI','CIN','CLE','DAL','DEN',
+    'DET','GB','HOU','IND','JAX','KC','LAC','LAR','LV','MIA',
+    'MIN','NE','NO','NYG','NYJ','PHI','PIT','SEA','SF','TB',
+    'TEN','WAS',
+];
+// Normalize legacy codes (e.g. Rams switched LA→LAR mid-history).
+var NFL_TEAM_ALIAS = { LA: 'LAR', OAK: 'LV', SD: 'LAC', STL: 'LAR', WSH: 'WAS', JAC: 'JAX' };
+// Map DEF player_name → team code (DEF picks often have empty nfl_team).
+var DEF_NAME_TO_TEAM = {
+    'arizona cardinals': 'ARI', 'atlanta falcons': 'ATL', 'baltimore ravens': 'BAL',
+    'buffalo bills': 'BUF', 'carolina panthers': 'CAR', 'chicago bears': 'CHI',
+    'cincinnati bengals': 'CIN', 'cleveland browns': 'CLE', 'dallas cowboys': 'DAL',
+    'denver broncos': 'DEN', 'detroit lions': 'DET', 'green bay packers': 'GB',
+    'houston texans': 'HOU', 'indianapolis colts': 'IND', 'jacksonville jaguars': 'JAX',
+    'kansas city chiefs': 'KC', 'las vegas raiders': 'LV', 'oakland raiders': 'LV',
+    'los angeles chargers': 'LAC', 'san diego chargers': 'LAC',
+    'los angeles rams': 'LAR', 'st. louis rams': 'LAR',
+    'miami dolphins': 'MIA', 'minnesota vikings': 'MIN', 'new england patriots': 'NE',
+    'new orleans saints': 'NO', 'new york giants': 'NYG', 'new york jets': 'NYJ',
+    'philadelphia eagles': 'PHI', 'pittsburgh steelers': 'PIT',
+    'san francisco 49ers': 'SF', 'seattle seahawks': 'SEA',
+    'tampa bay buccaneers': 'TB', 'tennessee titans': 'TEN',
+    'washington commanders': 'WAS', 'washington football team': 'WAS', 'washington redskins': 'WAS',
+};
+function normNflTeam(p) {
+    var raw = (p.nfl_team || '').trim().toUpperCase();
+    if (raw) {
+        if (NFL_TEAM_ALIAS[raw]) return NFL_TEAM_ALIAS[raw];
+        return NFL_TEAMS.indexOf(raw) >= 0 ? raw : null;
+    }
+    // Fallback for DEF picks where nfl_team is blank but the team name is the player.
+    if ((p.position || '').toUpperCase() === 'DEF') {
+        var key = (p.player_name || '').trim().toLowerCase();
+        if (DEF_NAME_TO_TEAM[key]) return DEF_NAME_TO_TEAM[key];
+    }
+    return null;
 }
 
 // ── Best & Worst pick by year (requires rank data) ────────────────────────
