@@ -336,12 +336,15 @@ body { background: var(--rb-bg); }
     border-bottom: 1px solid var(--rb-line-soft);
 }
 
-/* Gauntlet section is a single full-width card (Fastest To uses two
-   side-by-side; Gauntlet's rows have more text so they get the room). */
 .gauntlet-col .milestone-col-title { color: var(--cream); }
 .gauntlet-progress { background: rgba(0,0,0,.12); }
 .gauntlet-progress .milestone-games em { color: var(--rb-mute); }
 .gauntlet-progress .milestone-when { color: var(--cream-soft); }
+
+/* Clutch column: tint the count by tone so wins read green-gold and
+   losses read rust. Keeps the two flavors readable at a glance. */
+.clutch-good em { color: var(--gold); }
+.clutch-bad  em { color: var(--rust); }
 
 /* Top-5 rank chip — replaces the tier label in tier panels. */
 .milestone-rank {
@@ -873,14 +876,17 @@ function render(managers, recordBook, managerHighs) {
             ${buildMilestonesSection(recordBook?.full_book?.milestones)}
         </div>
 
-        <!-- § 04 GAUNTLET -->
+        <!-- § 04 GAUNTLET + CLUTCH -->
         <div class="rec-section">
             <div class="rec-section-header">
                 <span class="rec-section-num">§ 04</span>
-                <span class="rec-section-title">The Gauntlet</span>
-                <span class="rec-section-note">Beat every active manager · 1 → 5 times over</span>
+                <span class="rec-section-title">Gauntlet &amp; Clutch</span>
+                <span class="rec-section-note">Cross-league dominance · one-score outcomes</span>
             </div>
-            ${buildGauntletSection(recordBook?.full_book?.gauntlet)}
+            <div class="milestone-cols">
+                ${buildGauntletSection(recordBook?.full_book?.gauntlet)}
+                ${buildClutchSection(recordBook?.full_book?.clutch)}
+            </div>
         </div>
 
         <!-- § 05 CAREER -->
@@ -1047,7 +1053,7 @@ function buildGauntletSection(gauntlet) {
         <div class="milestone-col gauntlet-col">
             <div class="milestone-col-header">
                 <span class="milestone-col-icon">⚔️</span>
-                <span class="milestone-col-title">Tier — beat every active manager</span>
+                <span class="milestone-col-title">Gauntlet</span>
             </div>
             <div class="milestone-tabs">${tabs}</div>
             ${panels}
@@ -1116,6 +1122,62 @@ function buildGauntletTier(managers, tier) {
         ? `<div class="milestone-panel-head">Completed</div>`
         : '';
     return `${completersHead}${completerRows}${progressHead}${progressRows}`;
+}
+
+// Clutch Index: career one-score W/L counts per manager. Four tabs —
+// "Clutch" (wins ≤ 5 pts), "Unclutch" (losses ≤ 5 pts), "Walk-offs"
+// (wins ≤ 1 pt), "Heartbreaks" (losses ≤ 1 pt). Each panel shows a
+// top-10 ranked by count with the most-recent qualifying game.
+function buildClutchSection(clutch) {
+    if (!clutch) {
+        return `<div class="milestone-col"><div class="milestone-empty">No data yet.</div></div>`;
+    }
+    const tabs = [
+        { id: 'clutch-w5',   label: 'Clutch',      data: clutch.clutch_5pt,   tone: 'good' },
+        { id: 'clutch-l5',   label: 'Unclutch',    data: clutch.unclutch_5pt, tone: 'bad'  },
+        { id: 'clutch-w1',   label: 'Walk-offs',   data: clutch.clutch_1pt,   tone: 'good' },
+        { id: 'clutch-l1',   label: 'Heartbreaks', data: clutch.unclutch_1pt, tone: 'bad'  },
+    ];
+    const tabBtns = tabs.map((t, i) =>
+        `<button class="milestone-tab${i === 0 ? ' active' : ''}" data-target="${t.id}" onclick="switchMilestoneTab(this)">${t.label}</button>`
+    ).join('');
+    const panels = tabs.map((t, i) => {
+        const head = (t.id === 'clutch-w5') ? '≤ 5 pt margin · W'
+                   : (t.id === 'clutch-l5') ? '≤ 5 pt margin · L'
+                   : (t.id === 'clutch-w1') ? '≤ 1 pt margin · W'
+                                            : '≤ 1 pt margin · L';
+        return `<div class="milestone-panel tier${i === 0 ? ' active' : ''}" id="${t.id}">
+            <div class="milestone-panel-head">${head}</div>
+            ${buildClutchRows(t.data, t.tone)}
+        </div>`;
+    }).join('');
+    return `
+        <div class="milestone-col">
+            <div class="milestone-col-header">
+                <span class="milestone-col-icon">🎯</span>
+                <span class="milestone-col-title">Clutch</span>
+            </div>
+            <div class="milestone-tabs">${tabBtns}</div>
+            ${panels}
+        </div>`;
+}
+
+function buildClutchRows(rows, tone) {
+    if (!rows || !rows.length) {
+        return `<div class="milestone-empty">No qualifying games yet.</div>`;
+    }
+    const word = tone === 'good' ? 'wins' : 'losses';
+    return rows.map((r, i) => `
+        <div class="milestone-row">
+            <span class="milestone-rank${i === 0 ? ' gold' : ''}">${i + 1}</span>
+            <div class="milestone-name-col">
+                <div class="milestone-name">
+                    <a href="managers/manager.html?id=${r.user_id}" style="color:inherit;text-decoration:none;">${r.name}</a>
+                </div>
+                <div class="milestone-when">Last: W${r.last_week} · ${r.last_year} vs ${r.last_opp_name} (${r.last_margin})</div>
+            </div>
+            <span class="milestone-games clutch-${tone}"><em>${r.count}</em>${word}</span>
+        </div>`).join('');
 }
 
 window.switchMilestoneTab = function(btn) {

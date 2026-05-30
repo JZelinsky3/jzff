@@ -1762,6 +1762,92 @@ function buildGauntletBook(s: Snapshot): { managers: GauntletManager[] } {
   return { managers: result }
 }
 
+// "Clutch Index" — career counts of one-score wins and losses per
+// profile group. Two thresholds (≤ 5 pts and ≤ 1 pt) × two flavors
+// (W = clutch, L = unclutch). Each leaderboard is top-10 with the
+// most-recent qualifying game tucked in for color.
+type ClutchEntry = {
+  user_id: string | null
+  name: string
+  count: number
+  last_year: number
+  last_week: number
+  last_margin: number
+  last_opp_name: string
+}
+function buildClutchBook(s: Snapshot): {
+  clutch_5pt: ClutchEntry[]
+  unclutch_5pt: ClutchEntry[]
+  clutch_1pt: ClutchEntry[]
+  unclutch_1pt: ClutchEntry[]
+} {
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  const managerToGroup = buildManagerToGroup(groups)
+  const yearOfSeason = new Map<string, number>()
+  for (const sn of s.seasons) yearOfSeason.set(sn.id, sn.year)
+  const oppNameOf = (mid: string): string => {
+    const g = managerToGroup.get(mid)
+    return g ? groupDisplayName(g) : ''
+  }
+
+  type Game = { year: number; week: number; result: 'W' | 'L' | 'T'; margin: number; oppName: string }
+  type Row = { user_id: string | null; name: string; games: Game[] }
+  const rows: Row[] = []
+  for (const g of groups) {
+    const seenKey = new Set<string>()
+    const games: Game[] = []
+    for (const mid of g.managerIds) {
+      for (const mt of s.matchupsByManager.get(mid) ?? []) {
+        const k = `${mt.season_id}|${mt.week}|${mt.manager_a_id}|${mt.manager_b_id}`
+        if (seenKey.has(k)) continue
+        seenKey.add(k)
+        const gm = asManagerGame(mt, mid)
+        if (!gm) continue
+        if (gm.is_playoff && !isChampionshipBracketGame(s, gm)) continue
+        const m = Math.abs(gm.margin)
+        if (m === 0) continue
+        games.push({
+          year: yearOfSeason.get(gm.season_id) ?? 0,
+          week: gm.week,
+          result: gm.result,
+          margin: m,
+          oppName: oppNameOf(gm.opp_id),
+        })
+      }
+    }
+    games.sort((a, b) => a.year - b.year || a.week - b.week)
+    rows.push({ user_id: userId(g.primary), name: groupDisplayName(g), games })
+  }
+
+  function topFor(predicate: (g: Game) => boolean): ClutchEntry[] {
+    const out: ClutchEntry[] = []
+    for (const r of rows) {
+      const matching = r.games.filter(predicate)
+      if (matching.length === 0) continue
+      const last = matching[matching.length - 1]
+      out.push({
+        user_id: r.user_id,
+        name: r.name,
+        count: matching.length,
+        last_year: last.year,
+        last_week: last.week,
+        last_margin: round2(last.margin),
+        last_opp_name: last.oppName,
+      })
+    }
+    return out
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+      .slice(0, 10)
+  }
+
+  return {
+    clutch_5pt:   topFor((g) => g.result === 'W' && g.margin <= 5),
+    unclutch_5pt: topFor((g) => g.result === 'L' && g.margin <= 5),
+    clutch_1pt:   topFor((g) => g.result === 'W' && g.margin <= 1),
+    unclutch_1pt: topFor((g) => g.result === 'L' && g.margin <= 1),
+  }
+}
+
 function buildRecordBook(s: Snapshot): unknown {
   // Resolve every manager.id → its profile group's canonical name so renaming
   // a profile (manager_profiles.canonical_name) propagates to every line of the
@@ -2071,6 +2157,7 @@ function buildRecordBook(s: Snapshot): unknown {
       },
       milestones: buildMilestonesBook(s),
       gauntlet: buildGauntletBook(s),
+      clutch: buildClutchBook(s),
     },
   }
 }
