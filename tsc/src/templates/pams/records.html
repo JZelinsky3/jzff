@@ -229,6 +229,9 @@ body { background: var(--rb-bg); }
 .milestone-col {
     background: var(--rb-card);
     border: 1px solid var(--rb-line);
+    /* Belt + suspenders with .milestone-cols { align-items: start }
+       so a shorter card never gets stretched to match a taller one. */
+    align-self: start;
 }
 .milestone-col-header {
     display: flex; align-items: center; gap: .75rem;
