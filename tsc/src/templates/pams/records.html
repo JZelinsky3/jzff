@@ -239,9 +239,9 @@ body { background: var(--rb-bg); }
 }
 .milestone-row {
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr) auto;
+    grid-template-columns: 7.5rem minmax(0, 1fr) auto;
     align-items: center;
-    gap: .85rem;
+    gap: 1.25rem;
     padding: .8rem 1.25rem;
     border-bottom: 1px solid var(--rb-line-soft);
     transition: background .15s;
@@ -253,9 +253,6 @@ body { background: var(--rb-bg); }
     font-size: 1.35rem; line-height: 1; letter-spacing: -.02em;
     color: var(--gold);
     white-space: nowrap;
-    /* Italic glyphs lean past their measured box; pad right so the
-       slant doesn't kiss the manager name in the next cell. */
-    padding-right: .5rem;
 }
 .milestone-name-col { min-width: 0; }
 .milestone-name {
@@ -493,8 +490,8 @@ table.career-table tbody tr:hover { background: rgba(46,120,58,.06); }
     .milestone-col-title { font-size: .48rem; letter-spacing: .14em; }
     .milestone-row {
         padding: .55rem .6rem;
-        grid-template-columns: max-content minmax(0, 1fr) auto;
-        gap: .4rem;
+        grid-template-columns: 5rem minmax(0, 1fr) auto;
+        gap: .7rem;
     }
     .milestone-tier { font-size: .95rem; }
     .milestone-name { font-size: .82rem; line-height: 1.05; }
