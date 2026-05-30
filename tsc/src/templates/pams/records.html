@@ -253,6 +253,9 @@ body { background: var(--rb-bg); }
     font-size: 1.35rem; line-height: 1; letter-spacing: -.02em;
     color: var(--gold);
     white-space: nowrap;
+    /* Italic glyphs lean past their measured box; pad right so the
+       slant doesn't kiss the manager name in the next cell. */
+    padding-right: .5rem;
 }
 .milestone-name-col { min-width: 0; }
 .milestone-name {
