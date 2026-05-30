@@ -1628,6 +1628,140 @@ function buildMilestonesBook(s: Snapshot): {
   return { quickest_to_wins, quickest_to_points }
 }
 
+// "The Gauntlet" — for each currently-active manager, find the moment they
+// beat every other current-active manager at least N times (for N = 1..5).
+// Output includes per-tier crossing games + current progress against the
+// next tier so in-progress players can be shown alongside completers.
+type GauntletCompletion = { tier: number; games: number; year: number; week: number }
+type GauntletProgress = {
+  tier: number          // tier they're currently working toward
+  achieved: number      // opponents at >= tier wins
+  total: number         // opponents in the active set (excluding self)
+  remaining: string[]   // names of opponents still needing a win at `tier`
+  career_games: number  // total career games played so far
+}
+type GauntletManager = {
+  user_id: string | null
+  name: string
+  completed: GauntletCompletion[]   // tiers cleared, ascending order
+  progress: GauntletProgress | null // null only if all 5 tiers are complete
+}
+const GAUNTLET_MAX_TIER = 5
+function buildGauntletBook(s: Snapshot): { managers: GauntletManager[] } {
+  const { groupGames, groupName, groupUserId } = buildGroupCareerGames(s)
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  const currentIds = currentManagerIdSet(s)
+
+  // The "active set" is every profile group that includes at least one
+  // currently-active manager id. Beating people who've left the league
+  // doesn't move the gauntlet bar, matching how the page is framed.
+  const activeKeys = new Set<string>()
+  const keyOf = (g: ProfileGroup) => g.profile?.id ?? g.primary.id
+  for (const g of groups) {
+    if (isGroupCurrent(g, currentIds)) activeKeys.add(keyOf(g))
+  }
+
+  // Quickly map any manager id → its profile group key, so we can look up
+  // opponents when walking through a player's chronological games.
+  const managerKeyById = new Map<string, string>()
+  for (const g of groups) {
+    const k = keyOf(g)
+    for (const mid of g.managerIds) managerKeyById.set(mid, k)
+  }
+
+  const result: GauntletManager[] = []
+  for (const g of groups) {
+    if (!isGroupCurrent(g, currentIds)) continue
+    const myKey = keyOf(g)
+    const games = groupGames.get(myKey) ?? []
+
+    // Opponents are every OTHER currently-active group.
+    const opponentKeys = [...activeKeys].filter((k) => k !== myKey)
+    const totalOpps = opponentKeys.length
+
+    // For each game, we need to know which opponent group the game was
+    // against. groupGames omits opp_id (to keep the snapshot tight), so
+    // re-walk the raw matchups in chronological order alongside it.
+    const yearOfSeason = new Map<string, number>()
+    for (const sn of s.seasons) yearOfSeason.set(sn.id, sn.year)
+    type GauntletGame = { year: number; week: number; oppKey: string | null; result: 'W' | 'L' | 'T' }
+    const seenKey = new Set<string>()
+    const myGames: GauntletGame[] = []
+    for (const mid of g.managerIds) {
+      for (const mt of s.matchupsByManager.get(mid) ?? []) {
+        const k = `${mt.season_id}|${mt.week}|${mt.manager_a_id}|${mt.manager_b_id}`
+        if (seenKey.has(k)) continue
+        seenKey.add(k)
+        const gm = asManagerGame(mt, mid)
+        if (!gm) continue
+        if (gm.is_playoff && !isChampionshipBracketGame(s, gm)) continue
+        myGames.push({
+          year: yearOfSeason.get(gm.season_id) ?? 0,
+          week: gm.week,
+          oppKey: managerKeyById.get(gm.opp_id) ?? null,
+          result: gm.result,
+        })
+      }
+    }
+    myGames.sort((a, b) => a.year - b.year || a.week - b.week)
+
+    const winsByOpp = new Map<string, number>()
+    for (const k of opponentKeys) winsByOpp.set(k, 0)
+    const completed: GauntletCompletion[] = []
+    let nextTier = 1
+    for (let i = 0; i < myGames.length; i++) {
+      const gm = myGames[i]
+      if (gm.result === 'W' && gm.oppKey && winsByOpp.has(gm.oppKey)) {
+        winsByOpp.set(gm.oppKey, (winsByOpp.get(gm.oppKey) ?? 0) + 1)
+      }
+      // After each game, record any tier crossings the min just hit.
+      while (nextTier <= GAUNTLET_MAX_TIER) {
+        let minWins = Infinity
+        for (const k of opponentKeys) {
+          const w = winsByOpp.get(k) ?? 0
+          if (w < minWins) minWins = w
+        }
+        if (minWins >= nextTier) {
+          completed.push({ tier: nextTier, games: i + 1, year: gm.year, week: gm.week })
+          nextTier++
+        } else {
+          break
+        }
+      }
+    }
+
+    // Snapshot of in-progress state at the player's most-recent game.
+    let progress: GauntletProgress | null = null
+    if (nextTier <= GAUNTLET_MAX_TIER) {
+      const remaining: string[] = []
+      let achieved = 0
+      for (const k of opponentKeys) {
+        const w = winsByOpp.get(k) ?? 0
+        if (w >= nextTier) achieved++
+        else remaining.push(groupName.get(k) ?? '')
+      }
+      progress = {
+        tier: nextTier,
+        achieved,
+        total: totalOpps,
+        remaining: remaining.sort((a, b) => a.localeCompare(b)),
+        career_games: myGames.length,
+      }
+    }
+
+    result.push({
+      user_id: groupUserId.get(myKey) ?? null,
+      name: groupName.get(myKey) ?? '',
+      completed,
+      progress,
+    })
+  }
+  // Stable order: alphabetical so tabs read deterministically; the page
+  // re-sorts per-tab anyway (completers by games asc, then in-progress).
+  result.sort((a, b) => a.name.localeCompare(b.name))
+  return { managers: result }
+}
+
 function buildRecordBook(s: Snapshot): unknown {
   // Resolve every manager.id → its profile group's canonical name so renaming
   // a profile (manager_profiles.canonical_name) propagates to every line of the
@@ -1936,6 +2070,7 @@ function buildRecordBook(s: Snapshot): unknown {
         most_championship_appearances,
       },
       milestones: buildMilestonesBook(s),
+      gauntlet: buildGauntletBook(s),
     },
   }
 }
