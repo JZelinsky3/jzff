@@ -220,6 +220,11 @@ body { background: var(--rb-bg); }
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
+    /* Each card only stretches to its own content. Without this, the
+       shorter card (e.g. Clutch when Gauntlet shows Completed + In
+       Progress sub-heads) gets padded at the bottom to match the tall
+       one. */
+    align-items: start;
 }
 .milestone-col {
     background: var(--rb-card);
@@ -1135,25 +1140,22 @@ function buildClutchSection(clutch) {
     if (!clutch) {
         return `<div class="milestone-col"><div class="milestone-empty">No data yet.</div></div>`;
     }
+    // Tab order: positive flavor first within each margin bucket, then
+    // the flip-side. CLUTCH → WALK-OFFS → UNCLUTCH → HEARTBREAKS.
     const tabs = [
         { id: 'clutch-w5',   label: 'Clutch',      data: clutch.clutch_5pt,   tone: 'good' },
-        { id: 'clutch-l5',   label: 'Unclutch',    data: clutch.unclutch_5pt, tone: 'bad'  },
         { id: 'clutch-w1',   label: 'Walk-offs',   data: clutch.clutch_1pt,   tone: 'good' },
+        { id: 'clutch-l5',   label: 'Unclutch',    data: clutch.unclutch_5pt, tone: 'bad'  },
         { id: 'clutch-l1',   label: 'Heartbreaks', data: clutch.unclutch_1pt, tone: 'bad'  },
     ];
     const tabBtns = tabs.map((t, i) =>
         `<button class="milestone-tab${i === 0 ? ' active' : ''}" data-target="${t.id}" onclick="switchMilestoneTab(this)">${t.label}</button>`
     ).join('');
-    const panels = tabs.map((t, i) => {
-        const head = (t.id === 'clutch-w5') ? '≤ 5 pt margin · W'
-                   : (t.id === 'clutch-l5') ? '≤ 5 pt margin · L'
-                   : (t.id === 'clutch-w1') ? '≤ 1 pt margin · W'
-                                            : '≤ 1 pt margin · L';
-        return `<div class="milestone-panel tier${i === 0 ? ' active' : ''}" id="${t.id}">
-            <div class="milestone-panel-head">${head}</div>
+    const panels = tabs.map((t, i) =>
+        `<div class="milestone-panel tier${i === 0 ? ' active' : ''}" id="${t.id}">
             ${buildClutchRows(t.data, t.tone)}
-        </div>`;
-    }).join('');
+        </div>`
+    ).join('');
     return `
         <div class="milestone-col">
             <div class="milestone-col-header">
