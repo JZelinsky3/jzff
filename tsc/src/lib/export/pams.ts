@@ -1508,6 +1508,124 @@ type WeeklyExtreme = {
   combined_score?: number
 }
 
+// Per-profile-group chronological career games (regular + championship-bracket
+// only — same scope as the rest of buildRecordBook). Used by the milestone
+// "Quickest to X" tiers in the record book.
+type GroupGameLite = { year: number; week: number; result: 'W' | 'L' | 'T'; self_score: number }
+function buildGroupCareerGames(s: Snapshot): {
+  groupGames: Map<string, GroupGameLite[]>
+  groupName: Map<string, string>
+  groupUserId: Map<string, string | null>
+} {
+  const yearOfSeason = new Map<string, number>()
+  for (const sn of s.seasons) yearOfSeason.set(sn.id, sn.year)
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  const groupGames = new Map<string, GroupGameLite[]>()
+  const groupName = new Map<string, string>()
+  const groupUserId = new Map<string, string | null>()
+  for (const g of groups) {
+    const seenKey = new Set<string>()
+    const acc: GroupGameLite[] = []
+    for (const mid of g.managerIds) {
+      for (const mt of s.matchupsByManager.get(mid) ?? []) {
+        const k = `${mt.season_id}|${mt.week}|${mt.manager_a_id}|${mt.manager_b_id}`
+        if (seenKey.has(k)) continue
+        seenKey.add(k)
+        const gm = asManagerGame(mt, mid)
+        if (!gm) continue
+        if (gm.is_playoff && !isChampionshipBracketGame(s, gm)) continue
+        acc.push({
+          year: yearOfSeason.get(gm.season_id) ?? 0,
+          week: gm.week,
+          result: gm.result,
+          self_score: gm.self_score,
+        })
+      }
+    }
+    acc.sort((a, b) => a.year - b.year || a.week - b.week)
+    const key = g.profile?.id ?? g.primary.id
+    groupGames.set(key, acc)
+    groupName.set(key, groupDisplayName(g))
+    groupUserId.set(key, userId(g.primary))
+  }
+  return { groupGames, groupName, groupUserId }
+}
+
+// "Quickest to X" milestones — for each tier T, find the profile group that
+// reached T in the fewest career games (one win per game; PF accumulates).
+// Only tiers actually crossed by at least one group are emitted, so the
+// records page can render exactly what's been achieved with no empties.
+type Milestone = {
+  tier: number
+  holder: string
+  user_id: string | null
+  games: number
+  year: number
+  week: number
+}
+function buildMilestonesBook(s: Snapshot): {
+  quickest_to_wins: Milestone[]
+  quickest_to_points: Milestone[]
+} {
+  const { groupGames, groupName, groupUserId } = buildGroupCareerGames(s)
+
+  // Tier ladders scale up: tighter at the low end, wider at the high end.
+  // Capped at 200 wins / 100k pts — beyond that, untouchable for now.
+  const winTiers = [10, 25, 50, 75, 100, 125, 150, 175, 200]
+  const pointTiers = [
+    2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000,
+    25000, 30000, 40000, 50000, 60000, 75000, 100000,
+  ]
+
+  type Crossing = { gid: string; games: number; year: number; week: number }
+  function quickestWins(T: number): Crossing | null {
+    let best: Crossing | null = null
+    for (const [gid, games] of groupGames) {
+      let cum = 0
+      for (let i = 0; i < games.length; i++) {
+        if (games[i].result === 'W') cum++
+        if (cum >= T) {
+          const c = { gid, games: i + 1, year: games[i].year, week: games[i].week }
+          if (!best || c.games < best.games) best = c
+          break
+        }
+      }
+    }
+    return best
+  }
+  function quickestPoints(T: number): Crossing | null {
+    let best: Crossing | null = null
+    for (const [gid, games] of groupGames) {
+      let cum = 0
+      for (let i = 0; i < games.length; i++) {
+        cum += games[i].self_score
+        if (cum >= T) {
+          const c = { gid, games: i + 1, year: games[i].year, week: games[i].week }
+          if (!best || c.games < best.games) best = c
+          break
+        }
+      }
+    }
+    return best
+  }
+
+  const toMilestone = (T: number, c: Crossing | null): Milestone | null => {
+    if (!c) return null
+    return {
+      tier: T,
+      holder: groupName.get(c.gid) ?? '',
+      user_id: groupUserId.get(c.gid) ?? null,
+      games: c.games,
+      year: c.year,
+      week: c.week,
+    }
+  }
+
+  const quickest_to_wins   = winTiers.map((t) => toMilestone(t, quickestWins(t))).filter((m): m is Milestone => m != null)
+  const quickest_to_points = pointTiers.map((t) => toMilestone(t, quickestPoints(t))).filter((m): m is Milestone => m != null)
+  return { quickest_to_wins, quickest_to_points }
+}
+
 function buildRecordBook(s: Snapshot): unknown {
   // Resolve every manager.id → its profile group's canonical name so renaming
   // a profile (manager_profiles.canonical_name) propagates to every line of the
@@ -1815,6 +1933,7 @@ function buildRecordBook(s: Snapshot): unknown {
         most_playoff_appearances,
         most_championship_appearances,
       },
+      milestones: buildMilestonesBook(s),
     },
   }
 }
