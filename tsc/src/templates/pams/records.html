@@ -846,13 +846,14 @@ function render(managers, recordBook, managerHighs) {
         });
     });
 
-    // § 01 Streaks
+    // § 07 Streaks — every active manager's longest run, sorted by
+    // length. Alumni-only streaks live in Career Records.
     const winStreaks  = managers
-        .filter(m => m.longest_win_streak?.length > 0)
+        .filter(m => m.is_current && m.longest_win_streak?.length > 0)
         .map(m => ({ name: m.name, user_id: m.user_id, ...m.longest_win_streak }))
         .sort((a, b) => b.length - a.length);
     const lossStreaks = managers
-        .filter(m => m.longest_loss_streak?.length > 0)
+        .filter(m => m.is_current && m.longest_loss_streak?.length > 0)
         .map(m => ({ name: m.name, user_id: m.user_id, ...m.longest_loss_streak }))
         .sort((a, b) => b.length - a.length);
 
@@ -1059,8 +1060,10 @@ window.setRecTab = function(name) {
 };
 
 function buildStreakBoard(type, icon, title, streaks) {
-    const top = streaks.slice(0, 8);
-    const rows = top.map((s, i) => `
+    // Show every active manager's longest streak — no slice. The
+    // Streaks tab is its own panel now, so vertical room isn't a
+    // constraint and the league can read top-to-bottom.
+    const rows = streaks.map((s, i) => `
         <div class="streak-row">
             <span class="streak-rank${i === 0 ? ' gold' : ''}">${i + 1}</span>
             <div class="streak-name-col">
