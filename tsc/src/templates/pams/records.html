@@ -220,18 +220,25 @@ body { background: var(--rb-bg); }
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
-    /* Each card only stretches to its own content. Without this, the
-       shorter card (e.g. Clutch when Gauntlet shows Completed + In
-       Progress sub-heads) gets padded at the bottom to match the tall
-       one. */
-    align-items: start;
+    /* Cards stretch to match heights (default grid behavior). The
+       shorter card uses its footer's margin-top:auto to fill the gap
+       so dead space anchors a small context note at the bottom. */
 }
 .milestone-col {
     background: var(--rb-card);
     border: 1px solid var(--rb-line);
-    /* Belt + suspenders with .milestone-cols { align-items: start }
-       so a shorter card never gets stretched to match a taller one. */
-    align-self: start;
+    display: flex;
+    flex-direction: column;
+}
+.milestone-col-footer {
+    margin-top: auto;
+    padding: .65rem 1.25rem;
+    border-top: 1px dotted var(--rb-line);
+    background: var(--rb-soft);
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--rb-mute);
+    text-align: center;
 }
 .milestone-col-header {
     display: flex; align-items: center; gap: .75rem;
@@ -258,7 +265,7 @@ body { background: var(--rb-bg); }
    points column's "100,000 PTS" — so the wins side gets a tighter
    tier slot and the manager name slides closer. */
 .milestone-col-mw .milestone-row {
-    grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+    grid-template-columns: 4rem minmax(0, 1fr) auto;
 }
 .milestone-row:last-child { border-bottom: none; }
 .milestone-row:hover { background: rgba(46,120,58,.07); }
@@ -537,9 +544,6 @@ table.career-table tbody tr:hover { background: rgba(46,120,58,.06); }
         padding: .55rem .6rem;
         grid-template-columns: 6rem minmax(0, 1fr) auto;
         gap: .55rem;
-    }
-    .milestone-col-mw .milestone-row {
-        grid-template-columns: 2.5rem minmax(0, 1fr) auto;
     }
     .milestone-tier { font-size: .95rem; }
     .milestone-unit { margin-left: .25rem; font-size: .45rem; letter-spacing: .15em; }
@@ -1040,6 +1044,9 @@ function buildMilestoneCol(slug, icon, title, items, tierLabel, tabLabel, unit) 
         </div>`;
     }).join('');
 
+    const footerText = unit === 'pts'
+        ? 'Career PF · Reg + Playoffs'
+        : 'Career Wins · Reg + Playoffs';
     return `
         <div class="milestone-col milestone-col-${slug}">
             <div class="milestone-col-header">
@@ -1049,6 +1056,7 @@ function buildMilestoneCol(slug, icon, title, items, tierLabel, tabLabel, unit) 
             <div class="milestone-tabs">${tabs}</div>
             <div class="milestone-panel active" id="${ladderId}">${ladderRows}</div>
             ${tierPanels}
+            <div class="milestone-col-footer">${footerText}</div>
         </div>`;
 }
 
@@ -1077,6 +1085,7 @@ function buildGauntletSection(gauntlet) {
             </div>
             <div class="milestone-tabs">${tabs}</div>
             ${panels}
+            <div class="milestone-col-footer">Reg + Playoffs · vs Active Opponents</div>
         </div>`;
 }
 
@@ -1181,6 +1190,7 @@ function buildClutchSection(clutch) {
             </div>
             <div class="milestone-tabs">${tabBtns}</div>
             ${panels}
+            <div class="milestone-col-footer">Active Managers · Reg + Playoffs</div>
         </div>`;
 }
 
