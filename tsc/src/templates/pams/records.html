@@ -887,6 +887,16 @@ function render(managers, recordBook, managerHighs) {
         .filter(s => s.final_rank === 1)
         .sort((a, b) => b.year - a.year);
 
+    // All-time leaders for the cells grid in Honors. These echo the
+    // big leaderboards in Career Records but in glanceable cell form
+    // alongside Single Season + Championship Roll.
+    const atWins   = [...managers].sort((a, b) => (b.wins||0) - (a.wins||0))[0];
+    const atPF     = [...managers].sort((a, b) => (b.total_pf||0) - (a.total_pf||0))[0];
+    const atHigh   = (recordBook?.full_book?.weekly?.highest_single_week_score || [])[0];
+    const atLow    = (recordBook?.full_book?.weekly?.lowest_single_week_score  || [])[0];
+    const atChips  = [...managers].sort((a, b) => (b.championships||0) - (a.championships||0))[0];
+    const atPlayoff = [...managers].sort((a, b) => (b.playoff_appearances||0) - (a.playoff_appearances||0))[0];
+
     document.getElementById('page-body').innerHTML = `
     <div class="section">
 
@@ -894,10 +904,11 @@ function render(managers, recordBook, managerHighs) {
             <button class="rec-tab active" onclick="setRecTab('honors')">Honors</button>
             <button class="rec-tab" onclick="setRecTab('marks')">Marks</button>
             <button class="rec-tab" onclick="setRecTab('heat')">Heat</button>
+            <button class="rec-tab" onclick="setRecTab('streaks')">Streaks</button>
             <button class="rec-tab" onclick="setRecTab('career')">Career</button>
         </nav>
 
-        <!-- HONORS · Champ roll + Streaks -->
+        <!-- HONORS · Champ roll + Single Season + All-Time -->
         <div class="rec-panel active" id="panel-honors">
 
             <!-- § 01 CHAMPIONSHIP ROLL -->
@@ -909,28 +920,10 @@ function render(managers, recordBook, managerHighs) {
                 ${buildChampRoll(champByYear, managers)}
             </div>
 
-            <!-- § 02 STREAKS -->
+            <!-- § 02 SINGLE SEASON -->
             <div class="rec-section">
                 <div class="rec-section-header">
                     <span class="rec-section-num">§ 02</span>
-                    <span class="rec-section-title">Win &amp; Loss Streaks</span>
-                    <span class="rec-section-note">Reg season + playoffs</span>
-                </div>
-                <div class="streak-grid">
-                    ${buildStreakBoard('wins', '🔥', 'Longest Win Streaks', winStreaks)}
-                    ${buildStreakBoard('losses', '🩸', 'Longest Loss Streaks', lossStreaks)}
-                </div>
-            </div>
-
-        </div>
-
-        <!-- MARKS · Single season + Fastest To -->
-        <div class="rec-panel" id="panel-marks">
-
-            <!-- § 03 SINGLE SEASON -->
-            <div class="rec-section">
-                <div class="rec-section-header">
-                    <span class="rec-section-num">§ 03</span>
                     <span class="rec-section-title">Single Season Records</span>
                     <span class="rec-section-note">Regular season only</span>
                 </div>
@@ -950,6 +943,34 @@ function render(managers, recordBook, managerHighs) {
                 </div>
             </div>
 
+            <!-- § 03 ALL-TIME RECORDS -->
+            <div class="rec-section">
+                <div class="rec-section-header">
+                    <span class="rec-section-num">§ 03</span>
+                    <span class="rec-section-title">All-Time Records</span>
+                    <span class="rec-section-note">Career bests · every season</span>
+                </div>
+                <div class="rec-cells">
+                    ${buildCell('Most Career Wins', atWins?.wins ?? '—', atWins?.name,
+                        `${atWins?.wins||0}–${atWins?.losses||0}`, atWins?.user_id)}
+                    ${buildCell('Most Career Points', fmtPts(atPF?.total_pf || 0), atPF?.name,
+                        `Across ${atPF?.seasons_played || '—'} seasons`, atPF?.user_id)}
+                    ${buildCell('Highest Game Ever', (atHigh?.score || 0).toFixed(2), atHigh?.owner,
+                        `${atHigh?.season} · W${atHigh?.week} · vs ${atHigh?.opp_owner}`, atHigh?.user_id)}
+                    ${buildCell('Lowest Game Ever', (atLow?.score || 0).toFixed(2), atLow?.owner,
+                        `${atLow?.season} · W${atLow?.week} · vs ${atLow?.opp_owner}`, atLow?.user_id)}
+                    ${buildCell('Most Championships', atChips?.championships ?? '—', atChips?.name,
+                        atChips?.championship_seasons?.join(', ') || '—', atChips?.user_id)}
+                    ${buildCell('Most Playoff Apps', atPlayoff?.playoff_appearances ?? '—', atPlayoff?.name,
+                        `${atPlayoff?.seasons_played || '—'} seasons`, atPlayoff?.user_id)}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- MARKS · Fastest To + Boom or Bust -->
+        <div class="rec-panel" id="panel-marks">
+
             <!-- § 04 FASTEST TO -->
             <div class="rec-section">
                 <div class="rec-section-header">
@@ -960,15 +981,25 @@ function render(managers, recordBook, managerHighs) {
                 ${buildMilestonesSection(recordBook?.full_book?.milestones)}
             </div>
 
+            <!-- § 05 BOOM OR BUST -->
+            <div class="rec-section">
+                <div class="rec-section-header">
+                    <span class="rec-section-num">§ 05</span>
+                    <span class="rec-section-title">Boom or Bust</span>
+                    <span class="rec-section-note">Career single-week explosions + duds</span>
+                </div>
+                ${buildBoomBustSection(recordBook?.full_book?.boom_bust)}
+            </div>
+
         </div>
 
         <!-- HEAT · Gauntlet + Clutch -->
         <div class="rec-panel" id="panel-heat">
 
-            <!-- § 05 GAUNTLET + CLUTCH -->
+            <!-- § 06 GAUNTLET + CLUTCH -->
             <div class="rec-section">
                 <div class="rec-section-header">
-                    <span class="rec-section-num">§ 05</span>
+                    <span class="rec-section-num">§ 06</span>
                     <span class="rec-section-title">Gauntlet &amp; Clutch</span>
                     <span class="rec-section-note">Cross-league dominance · one-score outcomes</span>
                 </div>
@@ -980,13 +1011,31 @@ function render(managers, recordBook, managerHighs) {
 
         </div>
 
+        <!-- STREAKS · Win/Loss streaks -->
+        <div class="rec-panel" id="panel-streaks">
+
+            <!-- § 07 STREAKS -->
+            <div class="rec-section">
+                <div class="rec-section-header">
+                    <span class="rec-section-num">§ 07</span>
+                    <span class="rec-section-title">Win &amp; Loss Streaks</span>
+                    <span class="rec-section-note">Reg season + playoffs</span>
+                </div>
+                <div class="streak-grid">
+                    ${buildStreakBoard('wins', '🔥', 'Longest Win Streaks', winStreaks)}
+                    ${buildStreakBoard('losses', '🩸', 'Longest Loss Streaks', lossStreaks)}
+                </div>
+            </div>
+
+        </div>
+
         <!-- CAREER · all-time leaderboards -->
         <div class="rec-panel" id="panel-career">
 
-            <!-- § 06 CAREER -->
+            <!-- § 08 CAREER -->
             <div class="rec-section">
                 <div class="rec-section-header">
-                    <span class="rec-section-num">§ 06</span>
+                    <span class="rec-section-num">§ 08</span>
                     <span class="rec-section-title">Career Records</span>
                     <span class="rec-section-note">Active managers · all-time</span>
                 </div>
@@ -1304,6 +1353,92 @@ function buildClutchRows(rows, tone) {
                         <a href="managers/manager.html?id=${r.user_id}" style="color:inherit;text-decoration:none;">${r.name}</a>
                     </div>
                     <div class="milestone-when">Last: W${r.last_week} · ${r.last_year} vs ${r.last_opp_name} (${r.last_margin})</div>
+                </div>
+                <span class="milestone-games clutch-${tone}"><em>${r.count}</em>${word}</span>
+            </div>`;
+    }).join('');
+}
+
+// Boom or Bust: career counts of explosive (≥ threshold) and dud
+// (≤ threshold) single-week scores per active manager. Two cards
+// matching Fastest To Reach / Clutch — three tabs per side.
+function buildBoomBustSection(book) {
+    if (!book) {
+        return `<div class="milestone-col"><div class="milestone-empty">No data yet.</div></div>`;
+    }
+    const boomTabs = [
+        { id: 'bb-boom-150', label: '150+', data: book.boom_150, tone: 'good', word: 'weeks', headSuffix: 'pts (boom)' },
+        { id: 'bb-boom-175', label: '175+', data: book.boom_175, tone: 'good', word: 'weeks', headSuffix: 'pts (boom)' },
+        { id: 'bb-boom-200', label: '200+', data: book.boom_200, tone: 'good', word: 'weeks', headSuffix: 'pts (boom)' },
+    ];
+    const bustTabs = [
+        { id: 'bb-bust-80',  label: '≤ 80', data: book.bust_80, tone: 'bad', word: 'weeks', headSuffix: 'pts (bust)' },
+        { id: 'bb-bust-70',  label: '≤ 70', data: book.bust_70, tone: 'bad', word: 'weeks', headSuffix: 'pts (bust)' },
+        { id: 'bb-bust-60',  label: '≤ 60', data: book.bust_60, tone: 'bad', word: 'weeks', headSuffix: 'pts (bust)' },
+    ];
+    return `
+        <div class="milestone-cols">
+            ${buildBoomCol('bb-boom', '💥', 'Boom',  boomTabs, 'Career Booms · Single Game')}
+            ${buildBoomCol('bb-bust', '🪨', 'Bust',  bustTabs, 'Career Busts · Single Game')}
+        </div>`;
+}
+
+function buildBoomCol(slug, icon, title, tabs, footer) {
+    const tabBtns = tabs.map((t, i) =>
+        `<button class="milestone-tab${i === 0 ? ' active' : ''}" data-target="${t.id}" onclick="switchMilestoneTab(this)">${t.label}</button>`
+    ).join('');
+    const panels = tabs.map((t, i) => {
+        const head = `${t.label.replace('+', '').replace('≤ ', '≤ ').trim()} ${t.headSuffix}`;
+        return `<div class="milestone-panel tier${i === 0 ? ' active' : ''}" id="${t.id}">
+            <div class="milestone-panel-head">${head}</div>
+            ${buildBoomRows(t.data, t.tone, t.word)}
+        </div>`;
+    }).join('');
+    return `
+        <div class="milestone-col">
+            <div class="milestone-col-header">
+                <span class="milestone-col-icon">${icon}</span>
+                <span class="milestone-col-title">${title}</span>
+            </div>
+            <div class="milestone-tabs">${tabBtns}</div>
+            ${panels}
+            <div class="milestone-col-footer">${footer}</div>
+        </div>`;
+}
+
+function buildBoomRows(rows, tone, word) {
+    if (!rows || !rows.length) {
+        return `<div class="milestone-empty">No qualifying games yet.</div>`;
+    }
+    const gooseHead = tone === 'good' ? 'Yet to detonate one' : 'Yet to lay an egg';
+    let firstZeroEmitted = false;
+    let runningRank = 0;
+    return rows.map(r => {
+        if (r.count === 0) {
+            const head = !firstZeroEmitted
+                ? `<div class="milestone-panel-head">${gooseHead}</div>`
+                : '';
+            firstZeroEmitted = true;
+            return `${head}
+                <div class="milestone-row clutch-zero">
+                    <span class="milestone-rank">—</span>
+                    <div class="milestone-name-col">
+                        <div class="milestone-name">
+                            <a href="managers/manager.html?id=${r.user_id}" style="color:inherit;text-decoration:none;">${r.name}</a>
+                        </div>
+                    </div>
+                    <span class="milestone-games clutch-zero-count"><em>0</em>${word}</span>
+                </div>`;
+        }
+        runningRank++;
+        return `
+            <div class="milestone-row">
+                <span class="milestone-rank${runningRank === 1 ? ' gold' : ''}">${runningRank}</span>
+                <div class="milestone-name-col">
+                    <div class="milestone-name">
+                        <a href="managers/manager.html?id=${r.user_id}" style="color:inherit;text-decoration:none;">${r.name}</a>
+                    </div>
+                    <div class="milestone-when">Last: W${r.last_week} · ${r.last_year} vs ${r.last_opp_name} (${r.last_score})</div>
                 </div>
                 <span class="milestone-games clutch-${tone}"><em>${r.count}</em>${word}</span>
             </div>`;

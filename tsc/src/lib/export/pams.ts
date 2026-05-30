@@ -1858,6 +1858,95 @@ function buildClutchBook(s: Snapshot): {
   }
 }
 
+// "Boom or Bust" — career counts of explosive weeks (≥ threshold) and
+// dud weeks (≤ threshold) per active manager. Same shape as Clutch:
+// every active manager appears even with count 0 so the leaderboard
+// is the full roster; alumni are excluded. Three tiers per side.
+type BoomEntry = {
+  user_id: string | null
+  name: string
+  is_current: boolean
+  count: number
+  last_year: number | null
+  last_week: number | null
+  last_score: number | null
+  last_opp_name: string | null
+}
+function buildBoomBustBook(s: Snapshot): {
+  boom_150: BoomEntry[]; boom_175: BoomEntry[]; boom_200: BoomEntry[]
+  bust_80:  BoomEntry[]; bust_70:  BoomEntry[]; bust_60:  BoomEntry[]
+} {
+  const groups = buildProfileGroups(s)
+  const managerToGroup = buildManagerToGroup(groups)
+  const currentIds = currentManagerIdSet(s)
+  const yearOfSeason = new Map<string, number>()
+  for (const sn of s.seasons) yearOfSeason.set(sn.id, sn.year)
+  const oppNameOf = (mid: string): string => {
+    const g = managerToGroup.get(mid)
+    return g ? groupDisplayName(g) : ''
+  }
+
+  type Game = { year: number; week: number; score: number; oppName: string }
+  type Row = { user_id: string | null; name: string; is_current: boolean; games: Game[] }
+  const rows: Row[] = []
+  for (const g of groups) {
+    const seenKey = new Set<string>()
+    const games: Game[] = []
+    for (const mid of g.managerIds) {
+      for (const mt of s.matchupsByManager.get(mid) ?? []) {
+        const k = `${mt.season_id}|${mt.week}|${mt.manager_a_id}|${mt.manager_b_id}`
+        if (seenKey.has(k)) continue
+        seenKey.add(k)
+        const gm = asManagerGame(mt, mid)
+        if (!gm) continue
+        if (gm.is_playoff && !isChampionshipBracketGame(s, gm)) continue
+        games.push({
+          year: yearOfSeason.get(gm.season_id) ?? 0,
+          week: gm.week,
+          score: gm.self_score,
+          oppName: oppNameOf(gm.opp_id),
+        })
+      }
+    }
+    games.sort((a, b) => a.year - b.year || a.week - b.week)
+    rows.push({
+      user_id: userId(g.primary),
+      name: groupDisplayName(g),
+      is_current: isGroupCurrent(g, currentIds),
+      games,
+    })
+  }
+
+  function topFor(predicate: (g: Game) => boolean): BoomEntry[] {
+    const out: BoomEntry[] = []
+    for (const r of rows) {
+      if (!r.is_current) continue
+      const matching = r.games.filter(predicate)
+      const last = matching.length > 0 ? matching[matching.length - 1] : null
+      out.push({
+        user_id: r.user_id,
+        name: r.name,
+        is_current: r.is_current,
+        count: matching.length,
+        last_year: last ? last.year : null,
+        last_week: last ? last.week : null,
+        last_score: last ? round2(last.score) : null,
+        last_opp_name: last ? last.oppName : null,
+      })
+    }
+    return out.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  }
+
+  return {
+    boom_150: topFor((g) => g.score >= 150),
+    boom_175: topFor((g) => g.score >= 175),
+    boom_200: topFor((g) => g.score >= 200),
+    bust_80:  topFor((g) => g.score <= 80),
+    bust_70:  topFor((g) => g.score <= 70),
+    bust_60:  topFor((g) => g.score <= 60),
+  }
+}
+
 function buildRecordBook(s: Snapshot): unknown {
   // Resolve every manager.id → its profile group's canonical name so renaming
   // a profile (manager_profiles.canonical_name) propagates to every line of the
@@ -2168,6 +2257,7 @@ function buildRecordBook(s: Snapshot): unknown {
       milestones: buildMilestonesBook(s),
       gauntlet: buildGauntletBook(s),
       clutch: buildClutchBook(s),
+      boom_bust: buildBoomBustBook(s),
     },
   }
 }
