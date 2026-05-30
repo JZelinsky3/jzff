@@ -1551,21 +1551,24 @@ function buildGroupCareerGames(s: Snapshot): {
   return { groupGames, groupName, groupUserId }
 }
 
-// "Quickest to X" milestones — for each tier T, find the profile group that
-// reached T in the fewest career games (one win per game; PF accumulates).
-// Only tiers actually crossed by at least one group are emitted, so the
-// records page can render exactly what's been achieved with no empties.
-type Milestone = {
-  tier: number
+// "Fastest to X" milestones — for each tier T, list the top-5 profile groups
+// by fewest career games to first cross T (one win per game; PF accumulates).
+// Tiers nobody has crossed are dropped so the records page never renders
+// empty tabs or rows.
+type MilestoneLeader = {
   holder: string
   user_id: string | null
   games: number
   year: number
   week: number
 }
+type TierMilestone = {
+  tier: number
+  leaders: MilestoneLeader[]
+}
 function buildMilestonesBook(s: Snapshot): {
-  quickest_to_wins: Milestone[]
-  quickest_to_points: Milestone[]
+  quickest_to_wins: TierMilestone[]
+  quickest_to_points: TierMilestone[]
 } {
   const { groupGames, groupName, groupUserId } = buildGroupCareerGames(s)
 
@@ -1573,56 +1576,55 @@ function buildMilestonesBook(s: Snapshot): {
   // Capped at 200 wins / 100k pts — beyond that, untouchable for now.
   const winTiers = [10, 25, 50, 75, 100, 125, 150, 175, 200]
   const pointTiers = [
-    2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000,
-    25000, 30000, 40000, 50000, 60000, 75000, 100000,
+    2500, 5000, 10000, 15000, 20000, 25000, 30000,
+    40000, 50000, 60000, 75000, 100000,
   ]
+  const TOP_N = 5
 
   type Crossing = { gid: string; games: number; year: number; week: number }
-  function quickestWins(T: number): Crossing | null {
-    let best: Crossing | null = null
+  function leadersForWins(T: number): Crossing[] {
+    const out: Crossing[] = []
     for (const [gid, games] of groupGames) {
       let cum = 0
       for (let i = 0; i < games.length; i++) {
         if (games[i].result === 'W') cum++
         if (cum >= T) {
-          const c = { gid, games: i + 1, year: games[i].year, week: games[i].week }
-          if (!best || c.games < best.games) best = c
+          out.push({ gid, games: i + 1, year: games[i].year, week: games[i].week })
           break
         }
       }
     }
-    return best
+    return out.sort((a, b) => a.games - b.games || a.year - b.year || a.week - b.week).slice(0, TOP_N)
   }
-  function quickestPoints(T: number): Crossing | null {
-    let best: Crossing | null = null
+  function leadersForPoints(T: number): Crossing[] {
+    const out: Crossing[] = []
     for (const [gid, games] of groupGames) {
       let cum = 0
       for (let i = 0; i < games.length; i++) {
         cum += games[i].self_score
         if (cum >= T) {
-          const c = { gid, games: i + 1, year: games[i].year, week: games[i].week }
-          if (!best || c.games < best.games) best = c
+          out.push({ gid, games: i + 1, year: games[i].year, week: games[i].week })
           break
         }
       }
     }
-    return best
+    return out.sort((a, b) => a.games - b.games || a.year - b.year || a.week - b.week).slice(0, TOP_N)
   }
 
-  const toMilestone = (T: number, c: Crossing | null): Milestone | null => {
-    if (!c) return null
-    return {
-      tier: T,
-      holder: groupName.get(c.gid) ?? '',
-      user_id: groupUserId.get(c.gid) ?? null,
-      games: c.games,
-      year: c.year,
-      week: c.week,
-    }
-  }
+  const toLeader = (c: Crossing): MilestoneLeader => ({
+    holder: groupName.get(c.gid) ?? '',
+    user_id: groupUserId.get(c.gid) ?? null,
+    games: c.games,
+    year: c.year,
+    week: c.week,
+  })
 
-  const quickest_to_wins   = winTiers.map((t) => toMilestone(t, quickestWins(t))).filter((m): m is Milestone => m != null)
-  const quickest_to_points = pointTiers.map((t) => toMilestone(t, quickestPoints(t))).filter((m): m is Milestone => m != null)
+  const quickest_to_wins   = winTiers
+    .map((t) => ({ tier: t, leaders: leadersForWins(t).map(toLeader) }))
+    .filter((m) => m.leaders.length > 0)
+  const quickest_to_points = pointTiers
+    .map((t) => ({ tier: t, leaders: leadersForPoints(t).map(toLeader) }))
+    .filter((m) => m.leaders.length > 0)
   return { quickest_to_wins, quickest_to_points }
 }
 
