@@ -1831,11 +1831,10 @@ function buildClutchBook(s: Snapshot): {
   function topFor(predicate: (g: Game) => boolean): ClutchEntry[] {
     const out: ClutchEntry[] = []
     for (const r of rows) {
+      // Active-only leaderboard. Alumni don't appear at all (this
+      // section is framed around the current roster's clutch reps).
+      if (!r.is_current) continue
       const matching = r.games.filter(predicate)
-      // Active managers ALWAYS show (with count 0 if needed) so the
-      // leaderboard is the full league roster. Former managers only
-      // surface when they actually have a qualifying game.
-      if (matching.length === 0 && !r.is_current) continue
       const last = matching.length > 0 ? matching[matching.length - 1] : null
       out.push({
         user_id: r.user_id,
