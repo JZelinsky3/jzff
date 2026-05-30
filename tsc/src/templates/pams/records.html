@@ -239,7 +239,7 @@ body { background: var(--rb-bg); }
 }
 .milestone-row {
     display: grid;
-    grid-template-columns: 5.5rem 1fr auto;
+    grid-template-columns: max-content minmax(0, 1fr) auto;
     align-items: center;
     gap: .85rem;
     padding: .8rem 1.25rem;
@@ -253,8 +253,6 @@ body { background: var(--rb-bg); }
     font-size: 1.35rem; line-height: 1; letter-spacing: -.02em;
     color: var(--gold);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 .milestone-name-col { min-width: 0; }
 .milestone-name {
@@ -329,7 +327,7 @@ body { background: var(--rb-bg); }
 }
 .milestone-rank.gold { color: var(--gold); }
 .milestone-panel .milestone-row {
-    grid-template-columns: 1.8rem 1fr auto;
+    grid-template-columns: 1.8rem minmax(0, 1fr) auto;
 }
 
 /* ─── Career ranked table ─── */
@@ -492,7 +490,7 @@ table.career-table tbody tr:hover { background: rgba(46,120,58,.06); }
     .milestone-col-title { font-size: .48rem; letter-spacing: .14em; }
     .milestone-row {
         padding: .55rem .6rem;
-        grid-template-columns: 3.75rem 1fr auto;
+        grid-template-columns: max-content minmax(0, 1fr) auto;
         gap: .4rem;
     }
     .milestone-tier { font-size: .95rem; }
@@ -510,7 +508,7 @@ table.career-table tbody tr:hover { background: rgba(46,120,58,.06); }
         font-size: .48rem; letter-spacing: .14em;
     }
     .milestone-rank { font-size: .55rem; }
-    .milestone-panel .milestone-row { grid-template-columns: 1.1rem 1fr auto; }
+    .milestone-panel .milestone-row { grid-template-columns: 1.1rem minmax(0, 1fr) auto; }
 
     /* Streak boards stay side-by-side on mobile — scale everything down */
     .streak-grid { gap: .55rem; }
