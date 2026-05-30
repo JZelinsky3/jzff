@@ -578,31 +578,40 @@ body { background: var(--dg-bg); }
 .tend-note { font-family: var(--mono); font-size: .6rem; color: var(--cream-mute); margin-top: 1rem; letter-spacing: .05em; }
 
 /* ── Loyalty: favorite player table ── */
-.loyal-wrap { overflow-x: auto; border: 1px solid var(--dg-line); }
+.loyal-wrap { overflow-x: auto; border: 1px solid #6e6e6e; }
 .loyal-table { border-collapse: collapse; min-width: 100%; }
 .loyal-table th {
     font-family: var(--mono); font-weight: 700;
     font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
     padding: .6rem .8rem;
     background: var(--dg-soft);
-    border-bottom: 2px solid var(--dg-line);
-    border-right: 1px solid var(--dg-line);
+    border-bottom: 2px solid #6e6e6e;
+    border-right: 1px solid #6e6e6e;
     color: var(--dg-accent); text-align: left;
     white-space: nowrap;
 }
 .loyal-table td {
     padding: .6rem .8rem;
-    border-right: 1px solid var(--dg-line-soft);
+    border-right: 1px solid #6e6e6e;
     border-bottom: 1px solid var(--dg-line-soft);
     font-family: var(--mono); font-size: .78rem;
     vertical-align: top;
 }
 .loyal-table tbody tr:last-child td { border-bottom: none; }
-.loyal-table tbody tr td { background: var(--dg-card); }
-.loyal-table tbody tr.loyal-row-first td { border-top: 2px solid var(--dg-line); }
-.loyal-table tbody tr.loyal-row-first:first-child td { border-top: none; }
+.loyal-table tbody tr.loyal-group-a td { background: var(--dg-card); }
+.loyal-table tbody tr.loyal-group-b td { background: var(--dg-soft); }
+.loyal-table tbody tr.loyal-row-last td,
+.loyal-table tbody td.loyal-mgr { border-bottom: 2px solid #6e6e6e; }
+.loyal-table tbody tr.loyal-row-last:last-child td,
+.loyal-table tbody td.loyal-mgr.loyal-mgr-end { border-bottom: none; }
 .loyal-table tbody tr:hover td { background: var(--dg-card-hover) !important; }
-.loyal-mgr { font-family: var(--sans) !important; font-weight: 700; font-size: .82rem !important; color: var(--cream); border-right: 2px solid var(--dg-line) !important; white-space: nowrap; }
+.loyal-mgr {
+    font-family: var(--sans) !important; font-weight: 700;
+    font-size: .82rem !important; color: var(--cream);
+    border-right: 2px solid #6e6e6e !important;
+    vertical-align: middle !important;
+    white-space: nowrap;
+}
 .loyal-player-name { font-family: var(--sans); font-weight: 600; font-size: .82rem; color: var(--cream); }
 .loyal-player-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .3rem; }
 .loyal-player-row:last-child { margin-bottom: 0; }
@@ -616,7 +625,17 @@ body { background: var(--dg-bg); }
     font-family: var(--mono); font-size: .62rem;
     color: var(--cream-mute); letter-spacing: .05em;
 }
+.loyal-times {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .82rem; color: var(--cream); letter-spacing: .04em;
+}
 .loyal-years { font-family: var(--mono); font-size: .58rem; color: var(--cream-mute); letter-spacing: .05em; }
+.loyal-year {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .74rem; color: var(--cream); letter-spacing: .04em;
+}
+.loyal-rp { font-size: .58rem; color: var(--cream-mute); }
+.loyal-sep { color: var(--cream-mute); opacity: .5; }
 
 /* ── Loyalty: NFL team affinity cards ── */
 .affinity-grid {
@@ -677,6 +696,9 @@ body { background: var(--dg-bg); }
     .loyal-player-name { font-size: .68rem; }
     .loyal-mgr { font-size: .7rem !important; }
     .loyal-pos { font-size: .46rem; padding: .08rem .3rem; }
+    .loyal-times { font-size: .7rem; }
+    .loyal-year { font-size: .62rem; }
+    .loyal-rp { font-size: .48rem; }
 
     .affinity-grid { grid-template-columns: 1fr; }
     .affinity-card { padding: .75rem .85rem; }
@@ -1934,22 +1956,26 @@ function renderLoyalty() {
              + '</tr></thead><tbody>';
     rows.forEach(function(r) {
         if (!r.top.length) return;
+        var rIdx = rows.indexOf(r);
+        var groupCls = ' loyal-group-' + (rIdx % 2 === 0 ? 'a' : 'b');
+        var isLastGroup = rIdx === rows.length - 1;
         r.top.forEach(function(p, idx) {
             var pc = POS_COLORS[p.pos] || POS_COLORS['K'];
             var avgStr = (p.avg % 1 === 0) ? String(p.avg) : p.avg.toFixed(1);
             var detail = p.picks.map(function(pp) {
                 var rp = pp.round_pick != null ? String(pp.round_pick).padStart(2, '0') : '?';
-                return pp.year + ' · R' + pp.round + '.' + rp;
-            }).join(' · ');
-            html += '<tr class="loyal-row' + (idx === 0 ? ' loyal-row-first' : '') + '">'
-                  + '<td class="loyal-mgr">' + (idx === 0 ? esc(r.mgr) : '') + '</td>'
+                return '<span class="loyal-year">' + pp.year + '</span>'
+                     + '<span class="loyal-rp"> · R' + pp.round + '.' + rp + '</span>';
+            }).join('<span class="loyal-sep"> &nbsp;·&nbsp; </span>');
+            html += '<tr class="loyal-row' + groupCls + (idx === 0 ? ' loyal-row-first' : '') + (idx === r.top.length - 1 ? ' loyal-row-last' : '') + '">'
+                  + (idx === 0 ? '<td class="loyal-mgr' + (isLastGroup ? ' loyal-mgr-end' : '') + '" rowspan="' + r.top.length + '">' + esc(r.mgr) + '</td>' : '')
                   + '<td>'
                   +   '<div class="loyal-player-row">'
                   +     '<span class="loyal-player-name">' + esc(p.name) + '</span>'
                   +     '<span class="loyal-pos" style="background:' + pc.bg + ';color:' + pc.text + '">' + esc(p.pos) + '</span>'
                   +   '</div>'
                   + '</td>'
-                  + '<td><span class="loyal-count">' + p.count + '</span></td>'
+                  + '<td><span class="loyal-times">' + p.count + '</span></td>'
                   + '<td><span class="loyal-count">#' + avgStr + '</span></td>'
                   + '<td><span class="loyal-years">' + detail + '</span></td>'
                   + '</tr>';
@@ -2028,7 +2054,7 @@ function renderLoyalty() {
             }
             // zero-summary
             return '<li class="affinity-zero affinity-summary"><span class="affinity-team">'
-                 + it.count + ' teams never drafted</span>'
+                 + it.count + ' teams</span>'
                  + '<span class="affinity-n">0</span></li>';
         }).join('');
 
