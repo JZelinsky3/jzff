@@ -241,7 +241,7 @@ body { background: var(--rb-bg); }
     display: grid;
     grid-template-columns: 8.5rem minmax(0, 1fr) auto;
     align-items: center;
-    gap: 1rem;
+    gap: .55rem;
     padding: .8rem 1.25rem;
     border-bottom: 1px solid var(--rb-line-soft);
     transition: background .15s;
@@ -300,12 +300,23 @@ body { background: var(--rb-bg); }
     border-bottom: 1px solid var(--rb-line);
     overflow-x: auto; scrollbar-width: none; gap: 0;
     background: var(--rb-soft);
+    /* Edge-fade hint so it's obvious the strip scrolls horizontally
+       when more tier tabs exist than the column can fit. */
+    background-image:
+        linear-gradient(to right, var(--rb-soft), var(--rb-soft)),
+        linear-gradient(to right, var(--rb-soft), var(--rb-soft)),
+        linear-gradient(to right, rgba(0,0,0,.45), rgba(0,0,0,0)),
+        linear-gradient(to left,  rgba(0,0,0,.45), rgba(0,0,0,0));
+    background-position: left center, right center, left center, right center;
+    background-repeat: no-repeat;
+    background-size: 12px 100%, 12px 100%, 10px 100%, 10px 100%;
+    background-attachment: local, local, scroll, scroll;
 }
 .milestone-tabs::-webkit-scrollbar { display: none; }
 .milestone-tab {
     font-family: var(--mono); font-weight: 700;
-    font-size: .55rem; letter-spacing: .18em; text-transform: uppercase;
-    padding: .6rem .85rem;
+    font-size: .55rem; letter-spacing: .14em; text-transform: uppercase;
+    padding: .55rem .55rem;
     border: none; border-bottom: 2px solid transparent;
     background: transparent; color: var(--rb-mute);
     cursor: pointer; transition: color .15s, border-color .15s;
