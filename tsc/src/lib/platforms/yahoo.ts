@@ -398,13 +398,26 @@ export async function getLeagueTeamsStandings(
     // fragments, the rest of team[] are subresources (team_standings, etc.)
     const metaFrags = Array.isArray(teamFrag[0]) ? teamFrag[0] : teamFrag
     const m = flattenFragments(metaFrags)
-    // Subresources live in team[1..N].
+    // Subresources live in team[1..N]. Each part is usually `{ key: value }`
+    // but Yahoo sometimes wraps it as a single-element array — unwrap that so
+    // the lookup below ("subResources.team_standings") still works.
     const subResources: Record<string, unknown> = {}
     for (let i = 1; i < teamFrag.length; i++) {
-      const part = teamFrag[i]
-      if (part && typeof part === 'object') Object.assign(subResources, part)
+      let part = teamFrag[i]
+      if (Array.isArray(part)) part = part[0]
+      if (part && typeof part === 'object' && !Array.isArray(part)) {
+        Object.assign(subResources, part)
+      }
     }
-    const team_standings = (subResources.team_standings ?? {}) as Record<string, unknown>
+    // team_standings can live either as a separate subresource (team[1+]) OR
+    // be inlined in the meta fragments depending on Yahoo's game version. Try
+    // both before falling back to an empty object (which would zero out the
+    // record + points-for/against and produce a team-name-only row).
+    const team_standings = (
+      subResources.team_standings ??
+      m.team_standings ??
+      {}
+    ) as Record<string, unknown>
     const outcome = (team_standings.outcome_totals ?? {}) as Record<string, unknown>
 
     // Managers: Yahoo nests these as { managers: [ { manager: {...} }, ... ] } or
