@@ -57,15 +57,44 @@ export async function POST(
     }
     if (platforms.size === 0) platforms.add(league.platform as string)
 
-    const results: Record<string, unknown> = {}
+    // Aggregate counts across every platform's ingest. Keeping the same
+    // top-level shape (seasonsIngested / managersIngested / matchupsIngested /
+    // draftsIngested / warnings) the sync button has always rendered means
+    // the UI keeps working unchanged for single-platform leagues; mixed-
+    // platform leagues just see summed totals plus per-platform warnings.
+    type IngestResult = {
+      seasonsIngested?: number
+      managersIngested?: number
+      matchupsIngested?: number
+      draftsIngested?: number
+      tradesIngested?: number
+      warnings?: string[]
+    }
+    const totals = {
+      seasonsIngested: 0,
+      managersIngested: 0,
+      matchupsIngested: 0,
+      draftsIngested: 0,
+      tradesIngested: 0,
+      warnings: [] as string[],
+    }
     const errors: Array<{ platform: string; error: string }> = []
     for (const p of platforms) {
       try {
-        if (p === 'sleeper') results[p] = await ingestSleeperLeague(league.id)
-        else if (p === 'nfl') results[p] = await ingestNflLeague(league.id)
-        else if (p === 'espn') results[p] = await ingestEspnLeague(league.id)
-        else if (p === 'yahoo') results[p] = await ingestYahooLeague(league.id)
-        else errors.push({ platform: p, error: `${p} sync not implemented yet` })
+        let r: IngestResult | undefined
+        if (p === 'sleeper') r = await ingestSleeperLeague(league.id)
+        else if (p === 'nfl') r = await ingestNflLeague(league.id)
+        else if (p === 'espn') r = await ingestEspnLeague(league.id)
+        else if (p === 'yahoo') r = await ingestYahooLeague(league.id)
+        else { errors.push({ platform: p, error: `${p} sync not implemented yet` }); continue }
+        totals.seasonsIngested += r?.seasonsIngested ?? 0
+        totals.managersIngested += r?.managersIngested ?? 0
+        totals.matchupsIngested += r?.matchupsIngested ?? 0
+        totals.draftsIngested += r?.draftsIngested ?? 0
+        totals.tradesIngested += r?.tradesIngested ?? 0
+        if (Array.isArray(r?.warnings)) {
+          for (const w of r!.warnings!) totals.warnings.push(`[${p}] ${w}`)
+        }
       } catch (err) {
         errors.push({ platform: p, error: err instanceof Error ? err.message : 'sync failed' })
       }
@@ -80,7 +109,10 @@ export async function POST(
     if (errors.length === platforms.size && platforms.size > 0) {
       return NextResponse.json({ error: errors.map((e) => `${e.platform}: ${e.error}`).join('; ') }, { status: 500 })
     }
-    return NextResponse.json({ results, errors: errors.length ? errors : undefined })
+    if (errors.length > 0) {
+      for (const e of errors) totals.warnings.push(`[${e.platform}] sync failed: ${e.error}`)
+    }
+    return NextResponse.json(totals)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'sync failed'
     return NextResponse.json({ error: msg }, { status: 500 })
