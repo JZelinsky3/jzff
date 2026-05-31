@@ -12,6 +12,15 @@ export default async function NewManagerLeaguePage() {
 
   const gate = await canAddCareerLink(user.id)
 
+  // Yahoo needs per-user OAuth — surface connection state so the form can show
+  // a "Connect Yahoo" prompt instead of an empty picker.
+  const { data: yahooRow } = await supabase
+    .from('yahoo_tokens')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  const yahooConnected = !!yahooRow
+
   // Where "back" should go — to the chronicle if one exists, else the dashboard.
   const { data: chron } = await supabase
     .from('career_chronicles')
@@ -28,15 +37,15 @@ export default async function NewManagerLeaguePage() {
           Add yourself to <em>the book.</em>
         </h1>
         <p className="hero-sub">
-          Paste a league ID, pick which member is you, and we&apos;ll thread that league&apos;s
-          history into your career chronicle. Sleeper first — ESPN, Yahoo &amp; NFL.com soon.
+          Pick your platform, paste a league ID, choose which member is you, and we&apos;ll thread
+          that league&apos;s history into your career chronicle. Sleeper, ESPN, NFL.com &amp; Yahoo.
         </p>
       </section>
 
       <div className="section" style={{ maxWidth: '620px' }}>
         {gate.ok ? (
           <div className="dc-card-static">
-            <AddToHubForm />
+            <AddToHubForm yahooConnected={yahooConnected} />
           </div>
         ) : (
           <UpgradePrompt reason={gate.reason} current={gate.current} limit={gate.limit} message={gate.message} />
