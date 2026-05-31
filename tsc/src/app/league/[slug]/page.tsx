@@ -129,11 +129,16 @@ export default async function LeagueOverviewPage({
           rel="noopener"
           className="almanac-billboard"
         >
+          <span
+            className={`almanac-billboard-status ${league.published_at ? 'live' : 'setup'}`}
+          >
+            {league.published_at ? 'LIVE' : 'SETUP'}
+          </span>
           <div className="almanac-billboard-rule" aria-hidden />
           <div className="almanac-billboard-inner">
             <div className="almanac-billboard-left">
               <div className="almanac-billboard-kicker">
-                {league.published_at ? '★ Live · Click to open ★' : '★ Setup mode ★'}
+                {league.published_at ? '★ Click to open ★' : '★ Not yet published ★'}
               </div>
               <div className="almanac-billboard-title">
                 Public <em>Almanac.</em>
@@ -144,9 +149,6 @@ export default async function LeagueOverviewPage({
               </div>
             </div>
             <div className="almanac-billboard-right">
-              <span className={`almanac-billboard-status ${league.published_at ? 'live' : 'setup'}`}>
-                {league.published_at ? 'LIVE' : 'SETUP'}
-              </span>
               <span className="almanac-billboard-cta">View site ↗</span>
             </div>
           </div>

@@ -40,7 +40,12 @@ export function OnboardingChecklist({
   // scrolls off, we surface the Stripe-style FAB at bottom-right so the
   // user can keep tabs on remaining steps without losing context.
   const [mainVisible, setMainVisible] = useState(true)
-  const [fabOpen, setFabOpen] = useState(false)
+  // FAB starts expanded so the first scroll-off reveals the full checklist.
+  // Minimize collapses it to a pill the user can click to reopen.
+  const [fabOpen, setFabOpen] = useState(true)
+  // Session-only close for the FAB. Doesn't write localStorage, so the
+  // main card stays visible and the FAB returns on the next page load.
+  const [fabClosed, setFabClosed] = useState(false)
   const cardRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -144,7 +149,7 @@ export function OnboardingChecklist({
 
       {/* Floating fallback — appears once the main card scrolls off-screen
           so the user keeps a path back to remaining steps. Stripe-style. */}
-      {!mainVisible && !allDone && (
+      {!mainVisible && !allDone && !fabClosed && (
         <div className={`onb-fab ${fabOpen ? 'open' : ''}`} role="region" aria-label="Setup checklist">
           {fabOpen ? (
             <div className="onb-fab-panel">
@@ -168,9 +173,9 @@ export function OnboardingChecklist({
                   <button
                     type="button"
                     className="onb-fab-iconbtn"
-                    onClick={handleDismiss}
-                    aria-label="Dismiss"
-                    title="Dismiss"
+                    onClick={() => setFabClosed(true)}
+                    aria-label="Close"
+                    title="Close (main checklist stays visible)"
                   >
                     ×
                   </button>
