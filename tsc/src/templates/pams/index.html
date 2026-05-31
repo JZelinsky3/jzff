@@ -649,6 +649,19 @@ body {
     font-family: var(--serif); font-style: italic;
     color: var(--cream-mute);
 }
+/* Placeholder pennants — used to fill out the 2-row strip when a league
+   has fewer than 4 champions so the section doesn't look half-empty. */
+.pennant.pennant-empty {
+    opacity: .35;
+    background: linear-gradient(180deg, rgba(26,37,50,.6) 0%, rgba(22,32,44,.4) 100%);
+    border-style: dashed;
+    border-color: var(--ink-line);
+    pointer-events: none;
+}
+.pennant.pennant-empty .pennant-year,
+.pennant.pennant-empty .pennant-team em { color: var(--cream-mute); }
+.pennant.pennant-empty .pennant-team,
+.pennant.pennant-empty .pennant-owner { color: var(--cream-mute); }
 @media (max-width: 520px) {
     .hall-scroller { padding: .25rem 1.25rem 1rem 2.25rem; gap: .75rem; grid-auto-columns: 142px; }
     .pennant { width: 142px; padding: 1rem .9rem .9rem; }
@@ -2104,14 +2117,16 @@ body {
 
 
 <!-- § 04 — HALL OF CHAMPIONS (main) + EDITOR'S NOTE (sidebar, no header) -->
+<!-- Section header sits ABOVE the composite so the editor's note can be
+     vertically centered with just the hall card, not the section text. -->
 <div class="section" id="dc-hall-row">
-    <div class="composite">
+    <div class="section-header" id="dc-hall-header" hidden>
+        <span class="section-num">§ 03 · Hall of Champions</span>
+        <span class="section-title">The winners —</span>
+        <span class="section-meta" id="dc-hall-meta"></span>
+    </div>
+    <div class="composite composite-center">
         <div class="composite-main" id="dc-hall-block" hidden>
-            <div class="section-header">
-                <span class="section-num">§ 03 · Hall of Champions</span>
-                <span class="section-title">The winners —</span>
-                <span class="section-meta" id="dc-hall-meta"></span>
-            </div>
             <div class="hall">
                 <div class="hall-scroller" id="dc-hall-scroller">
                     <!-- populated by JS -->
@@ -2236,15 +2251,15 @@ body {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="managers/" class="toc-row">
+        <a href="seasons/" class="toc-row">
             <div class="toc-chapter">Ch. II</div>
-            <div class="toc-title">The <em>Society.</em></div>
+            <div class="toc-title">Season <em>Archives.</em></div>
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="seasons/" class="toc-row">
+        <a href="draft/" class="toc-row">
             <div class="toc-chapter">Ch. III</div>
-            <div class="toc-title">Season <em>Archives.</em></div>
+            <div class="toc-title">Draft <em>History.</em></div>
             <div class="toc-arrow">→</div>
         </a>
 
@@ -2254,8 +2269,20 @@ body {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="live-season/" class="toc-row" data-paid-feature>
+        <a href="managers/" class="toc-row">
             <div class="toc-chapter">Ch. V</div>
+            <div class="toc-title">The <em>Society.</em></div>
+            <div class="toc-arrow">→</div>
+        </a>
+
+        <a href="rivalries/" class="toc-row">
+            <div class="toc-chapter">Ch. VI</div>
+            <div class="toc-title">The <em>Rivalries.</em></div>
+            <div class="toc-arrow">→</div>
+        </a>
+
+        <a href="live-season/" class="toc-row" data-paid-feature>
+            <div class="toc-chapter">Ch. VII</div>
             <div class="toc-title">Live <em>Season.</em></div>
             <div class="toc-arrow">→</div>
         </a>
@@ -2270,18 +2297,6 @@ body {
             }
           })();
         </script>
-
-        <a href="draft/" class="toc-row">
-            <div class="toc-chapter">Ch. VI</div>
-            <div class="toc-title">Draft <em>History.</em></div>
-            <div class="toc-arrow">→</div>
-        </a>
-
-        <a href="rivalries/" class="toc-row">
-            <div class="toc-chapter">Ch. VII</div>
-            <div class="toc-title">The <em>Rivalries.</em></div>
-            <div class="toc-arrow">→</div>
-        </a>
 
         </div>
     </div>
@@ -2575,7 +2590,10 @@ body {
     // -- HALL OF CHAMPIONS --
     // The composite row (dc-hall-row) always renders because the Editor's
     // Note sidebar always populates. Only the main column block toggles.
+    // For young leagues we pad the strip with greyed-out future-year
+    // placeholders so the 2-row hall doesn't look half-empty.
     var hallBlock = el('dc-hall-block');
+    var hallHeader = el('dc-hall-header');
     var hallScroller = el('dc-hall-scroller');
     var hallMeta = el('dc-hall-meta');
     if (hallBlock && hallScroller && seasons.length) {
@@ -2585,8 +2603,21 @@ body {
         .sort(function (a, b) { return b.year - a.year; });
       if (champRows.length) {
         hallBlock.removeAttribute('hidden');
+        if (hallHeader) hallHeader.removeAttribute('hidden');
         if (hallMeta) hallMeta.textContent = champRows.length + ' year' + (champRows.length === 1 ? '' : 's') + ' on file';
-        hallScroller.innerHTML = champRows.map(function (s) {
+
+        // Pad to at least 4 entries (2 rows × 2 columns minimum) with
+        // greyed-out future years. Latest real champion year + 1, +2, …
+        var MIN_PENNANTS = 4;
+        var placeholders = [];
+        if (champRows.length < MIN_PENNANTS) {
+          var latestYear = champRows[0].year;
+          for (var i = 1; champRows.length + placeholders.length < MIN_PENNANTS; i++) {
+            placeholders.push({ year: latestYear + i, placeholder: true });
+          }
+        }
+
+        var realHtml = champRows.map(function (s) {
           var team = s.champion_team_name || '';
           var teamSplit = team.trim().split(/\s+/);
           var teamHead = teamSplit.length > 1 ? teamSplit.slice(0, -1).join(' ') : '';
@@ -2601,6 +2632,15 @@ body {
                    '<div class="pennant-owner">' + escapeAttr(s.champion_name || '') + '</div>' +
                  '</a>';
         }).join('');
+        var placeholderHtml = placeholders.map(function (p) {
+          return '<div class="pennant pennant-empty" aria-hidden="true">' +
+                   '<div class="pennant-year">' + seasonRoman(p.year) + '</div>' +
+                   '<div class="pennant-year-arabic">' + p.year + ' · To be written</div>' +
+                   '<div class="pennant-team"><em>—</em></div>' +
+                   '<div class="pennant-owner">Open seat</div>' +
+                 '</div>';
+        }).join('');
+        hallScroller.innerHTML = realHtml + placeholderHtml;
       }
     }
 
