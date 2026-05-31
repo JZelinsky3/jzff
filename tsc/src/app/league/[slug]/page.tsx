@@ -178,7 +178,7 @@ export default async function LeagueOverviewPage({
         >
           <div
             className="dc-card-row"
-            style={{ alignItems: 'stretch', height: '100%' }}
+            style={{ alignItems: 'stretch', height: '100%', marginTop: 0 }}
           >
             <div style={{ flex: '1 1 240px', minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
@@ -217,7 +217,7 @@ export default async function LeagueOverviewPage({
 
           <div
             className="dc-card-row"
-            style={{ alignItems: 'stretch', height: '100%' }}
+            style={{ alignItems: 'stretch', height: '100%', marginTop: 0 }}
           >
             <div style={{ flex: '1 1 240px', minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
