@@ -447,8 +447,14 @@ function correctedFinalRank(season) {
 
 function computeAvgFinalFinish(ledger) {
     if (!ledger || ledger.length === 0) return null;
-    const total = ledger.reduce((sum, s) => sum + correctedFinalRank(s), 0);
-    return total / ledger.length;
+    // Skip seasons with no rank yet (unplayed / live season pre-week-1).
+    // Otherwise JS coerces null → 0 in the sum and the avg gets dragged toward
+    // zero — e.g. one real 5th + one empty 2026 row → (5+0)/2 = 2.5.
+    const ranked = ledger
+        .map(correctedFinalRank)
+        .filter((r) => typeof r === 'number' && r > 0);
+    if (ranked.length === 0) return null;
+    return ranked.reduce((sum, r) => sum + r, 0) / ranked.length;
 }
 
 let leagueMeta = null;
