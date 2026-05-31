@@ -21,6 +21,25 @@ type YahooPickerLeague = {
   logo_url?: string
 }
 
+type SleeperUserLeagueRow = {
+  league_id: string
+  name: string
+  total_rosters: number
+  seasons: string[]
+  avatar: string | null
+}
+
+// Raw row from Sleeper's user-leagues endpoint; previous_league_id chains
+// seasons of the same league so we can collapse them to one head row.
+type RawSleeperUserLeague = {
+  league_id: string
+  name: string
+  season: string
+  total_rosters: number
+  avatar: string | null
+  previous_league_id: string | null
+}
+
 export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
   const [state, formAction, isPending] = useActionState(addLeagueToHub, null)
 
@@ -31,6 +50,16 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
   const [lookupError, setLookupError] = useState<string | null>(null)
   const [picked, setPicked] = useState<HubMember | null>(null)
   const [isLooking, startLook] = useTransition()
+
+  // Sleeper username flow. Searching your own handle resolves your user_id —
+  // which is exactly the manager_external_id — so once you pick a league we
+  // already know which member is you. No manual pick needed (but it's offered
+  // as a fallback). `self` holds the identity resolved from the username.
+  const [sleeperMode, setSleeperMode] = useState<'username' | 'leagueId'>('username')
+  const [sleeperUsername, setSleeperUsername] = useState('')
+  const [sleeperUserLeagues, setSleeperUserLeagues] = useState<SleeperUserLeagueRow[] | null>(null)
+  const [self, setSelf] = useState<HubMember | null>(null)
+  const [isSearching, startSearch] = useTransition()
 
   // ESPN / NFL shared season range; NFL playoff config; ESPN private cookies.
   const [seasonStart, setSeasonStart] = useState('2023')
@@ -57,6 +86,86 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
     setLeagueName('')
     setLookupError(null)
     setPickedYahooKey(null)
+    setSleeperUserLeagues(null)
+    setSelf(null)
+  }
+
+  // Resolve a Sleeper username → the user's identity + their leagues (2020→now),
+  // deduped by history chain. Mirrors the archive SleeperLeaguePicker, but also
+  // keeps the resolved user_id/display_name as `self`.
+  function searchSleeperUsername() {
+    const u = sleeperUsername.trim()
+    if (!u) return
+    setLookupError(null)
+    setSleeperUserLeagues(null)
+    setSelf(null)
+    setPicked(null)
+    setMembers(null)
+    startSearch(async () => {
+      const userRes = await fetch(`https://api.sleeper.app/v1/user/${encodeURIComponent(u)}`)
+      if (!userRes.ok) {
+        setLookupError(userRes.status === 404 ? `No Sleeper user "${u}".` : `Sleeper lookup failed (${userRes.status}).`)
+        return
+      }
+      const user = (await userRes.json()) as { user_id?: string; display_name?: string; avatar?: string | null } | null
+      if (!user?.user_id) {
+        setLookupError(`No Sleeper user "${u}".`)
+        return
+      }
+      setSelf({
+        externalId: user.user_id,
+        displayName: user.display_name || u,
+        teamName: null,
+        avatarUrl: user.avatar ? `https://sleepercdn.com/avatars/${user.avatar}` : null,
+      })
+
+      const currentYear = new Date().getFullYear()
+      const years: string[] = []
+      for (let y = 2020; y <= currentYear; y++) years.push(String(y))
+      const all = await Promise.all(
+        years.map(async (s) => {
+          const r = await fetch(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${s}`)
+          if (!r.ok) return [] as RawSleeperUserLeague[]
+          return (await r.json()) as RawSleeperUserLeague[]
+        }),
+      )
+      const byId = new Map<string, RawSleeperUserLeague>()
+      for (const list of all) for (const lg of list ?? []) if (!byId.has(lg.league_id)) byId.set(lg.league_id, lg)
+      const isAncestor = new Set<string>()
+      for (const lg of byId.values()) if (lg.previous_league_id && lg.previous_league_id !== '0') isAncestor.add(lg.previous_league_id)
+
+      const merged: SleeperUserLeagueRow[] = []
+      for (const head of byId.values()) {
+        if (isAncestor.has(head.league_id)) continue
+        const seasons: string[] = []
+        let cursor: RawSleeperUserLeague | undefined = head
+        const guard = new Set<string>()
+        while (cursor && !guard.has(cursor.league_id)) {
+          guard.add(cursor.league_id)
+          if (cursor.season) seasons.push(cursor.season)
+          const prevId: string | null = cursor.previous_league_id
+          cursor = prevId && prevId !== '0' ? byId.get(prevId) : undefined
+        }
+        merged.push({ league_id: head.league_id, name: head.name, total_rosters: head.total_rosters, seasons: seasons.sort(), avatar: head.avatar ?? null })
+      }
+      merged.sort((a, b) => (b.seasons.at(-1) ?? '').localeCompare(a.seasons.at(-1) ?? ''))
+      if (merged.length === 0) {
+        setLookupError(`No leagues found for "${u}" in 2020–${currentYear}.`)
+        return
+      }
+      setSleeperUserLeagues(merged)
+    })
+  }
+
+  // Pick a league found via username search. We already know it's you, so set
+  // the selection straight away — no member grid required.
+  function pickSleeperLeague(lg: SleeperUserLeagueRow) {
+    setLeagueId(lg.league_id)
+    setLeagueName(lg.name)
+    setMembers(null)
+    setLookupError(null)
+    setPicked(self) // self resolved during the username search
+    setSleeperUserLeagues(null)
   }
 
   // Lazy-load Yahoo leagues on first visit to that tab.
@@ -170,34 +279,102 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
         )
       ) : (
         <>
-          {/* ── Sleeper / ESPN / NFL: league ID ──────────────────────────── */}
-          <div className="dc-field">
-            <label htmlFor="leagueId" className="dc-label">League ID</label>
-            <div style={{ display: 'flex', gap: '.5rem' }}>
-              <input
-                id="leagueId"
-                value={leagueId}
-                onChange={(e) => setLeagueId(e.target.value)}
-                placeholder={idPlaceholder}
-                className="dc-input mono"
-                style={{ flex: 1 }}
-              />
-              <button type="button" onClick={runLookup} disabled={isLooking || !leagueId.trim()} className="dc-btn" style={{ flex: '0 0 auto' }}>
-                {isLooking ? 'Finding…' : 'Find members'}
-              </button>
+          {/* ── Sleeper: username search (default) or league ID ──────────── */}
+          {platform === 'sleeper' ? (
+            sleeperMode === 'username' ? (
+              <div className="dc-field">
+                <label htmlFor="sleeperUsername" className="dc-label">Your Sleeper username</label>
+                <div style={{ display: 'flex', gap: '.5rem' }}>
+                  <input
+                    id="sleeperUsername"
+                    value={sleeperUsername}
+                    onChange={(e) => setSleeperUsername(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); searchSleeperUsername() } }}
+                    placeholder="your_sleeper_handle"
+                    className="dc-input mono"
+                    style={{ flex: 1 }}
+                  />
+                  <button type="button" onClick={searchSleeperUsername} disabled={isSearching || !sleeperUsername.trim()} className="dc-btn" style={{ flex: '0 0 auto' }}>
+                    {isSearching ? 'Searching…' : 'Find my leagues'}
+                  </button>
+                </div>
+                <span className="dc-checkbox-hint">
+                  We list every Sleeper league you&apos;ve been in since 2020 — and because it&apos;s
+                  your handle, we already know which manager is you.
+                </span>
+                {sleeperUserLeagues && sleeperUserLeagues.length > 0 && (
+                  <div style={{ marginTop: '.75rem', display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
+                    {sleeperUserLeagues.map((lg) => {
+                      const yrs = lg.seasons.length === 1 ? lg.seasons[0] : `${lg.seasons[0]}–${lg.seasons.at(-1)}`
+                      return (
+                        <button key={lg.league_id} type="button" onClick={() => pickSleeperLeague(lg)} style={pickRowStyle(leagueId === lg.league_id)}>
+                          {lg.avatar && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={`https://sleepercdn.com/avatars/thumbs/${lg.avatar}`} alt="" width={28} height={28} style={{ borderRadius: '3px', flex: '0 0 28px' }} />
+                          )}
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: 'block', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lg.name}</span>
+                            <span style={{ display: 'block', fontFamily: 'var(--mono)', fontSize: '.7rem', opacity: 0.6 }}>{yrs} · {lg.total_rosters} teams</span>
+                          </span>
+                          <span style={{ color: 'var(--gold)', fontFamily: 'var(--mono)', fontSize: '.7rem' }}>→</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                {self && leagueId && (
+                  <p className="dc-form-ok" style={{ margin: '.6rem 0 0' }}>
+                    You: <strong>{self.displayName}</strong> in {leagueName}.{' '}
+                    <button type="button" onClick={runLookup} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--gold)', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}>
+                      Not you?
+                    </button>
+                  </p>
+                )}
+                <button type="button" onClick={() => { setSleeperMode('leagueId'); setSleeperUserLeagues(null) }} style={toggleLinkStyle}>
+                  Use League ID →
+                </button>
+              </div>
+            ) : (
+              <div className="dc-field">
+                <label htmlFor="leagueId" className="dc-label">Sleeper league ID</label>
+                <div style={{ display: 'flex', gap: '.5rem' }}>
+                  <input id="leagueId" value={leagueId} onChange={(e) => setLeagueId(e.target.value)} placeholder="1234567890123456789" className="dc-input mono" style={{ flex: 1 }} />
+                  <button type="button" onClick={runLookup} disabled={isLooking || !leagueId.trim()} className="dc-btn" style={{ flex: '0 0 auto' }}>
+                    {isLooking ? 'Finding…' : 'Find members'}
+                  </button>
+                </div>
+                <span className="dc-checkbox-hint">sleeper.com/leagues/<strong>1234567890123456789</strong>/team</span>
+                <button type="button" onClick={() => setSleeperMode('username')} style={toggleLinkStyle}>← Use username</button>
+              </div>
+            )
+          ) : (
+            <div className="dc-field">
+              <label htmlFor="leagueId" className="dc-label">League ID</label>
+              <div style={{ display: 'flex', gap: '.5rem' }}>
+                <input
+                  id="leagueId"
+                  value={leagueId}
+                  onChange={(e) => setLeagueId(e.target.value)}
+                  placeholder={idPlaceholder}
+                  className="dc-input mono"
+                  style={{ flex: 1 }}
+                />
+                <button type="button" onClick={runLookup} disabled={isLooking || !leagueId.trim()} className="dc-btn" style={{ flex: '0 0 auto' }}>
+                  {isLooking ? 'Finding…' : 'Find members'}
+                </button>
+              </div>
+              {platform === 'nfl' && <span className="dc-checkbox-hint">fantasy.nfl.com/league/<strong>7528632</strong> — league must be public.</span>}
+              {platform === 'espn' && <span className="dc-checkbox-hint">fantasy.espn.com/football/league?leagueId=<strong>47847</strong></span>}
             </div>
-            {platform === 'nfl' && <span className="dc-checkbox-hint">fantasy.nfl.com/league/<strong>7528632</strong> — league must be public.</span>}
-            {platform === 'espn' && <span className="dc-checkbox-hint">fantasy.espn.com/football/league?leagueId=<strong>47847</strong></span>}
-            {platform === 'sleeper' && <span className="dc-checkbox-hint">sleeper.com/leagues/<strong>1234567890123456789</strong>/team</span>}
-          </div>
+          )}
 
           {(platform === 'espn' || platform === 'nfl') && (
             <div className="dc-field">
               <label className="dc-label">Season range</label>
               <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center' }}>
-                <input name="seasonStart" type="number" min={2000} max={2100} value={seasonStart} onChange={(e) => setSeasonStart(e.target.value)} className="dc-input mono" style={{ flex: '0 0 6.5rem', textAlign: 'center' }} />
+                <input type="number" min={2000} max={2100} value={seasonStart} onChange={(e) => setSeasonStart(e.target.value)} className="dc-input mono" style={{ flex: '0 0 6.5rem', textAlign: 'center' }} />
                 <span style={{ opacity: 0.6 }}>through</span>
-                <input name="seasonEnd" type="number" min={2000} max={2100} value={seasonEnd} onChange={(e) => setSeasonEnd(e.target.value)} className="dc-input mono" style={{ flex: '0 0 6.5rem', textAlign: 'center' }} />
+                <input type="number" min={2000} max={2100} value={seasonEnd} onChange={(e) => setSeasonEnd(e.target.value)} className="dc-input mono" style={{ flex: '0 0 6.5rem', textAlign: 'center' }} />
               </div>
               <span className="dc-checkbox-hint">We read the member list from the latest year, and ingest the whole range on sync.</span>
             </div>
@@ -207,12 +384,12 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
             <div className="dc-field">
               <label className="dc-label">Playoffs</label>
               <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
-                <select name="playoffWeekStart" value={playoffWeekStart} onChange={(e) => setPlayoffWeekStart(e.target.value)} className="dc-select" style={{ flex: '0 0 9rem' }}>
+                <select value={playoffWeekStart} onChange={(e) => setPlayoffWeekStart(e.target.value)} className="dc-select" style={{ flex: '0 0 9rem' }}>
                   <option value="14">Week 14</option>
                   <option value="15">Week 15</option>
                   <option value="16">Week 16</option>
                 </select>
-                <select name="playoffTeamCount" value={playoffTeamCount} onChange={(e) => setPlayoffTeamCount(e.target.value)} className="dc-select" style={{ flex: '0 0 9rem' }}>
+                <select value={playoffTeamCount} onChange={(e) => setPlayoffTeamCount(e.target.value)} className="dc-select" style={{ flex: '0 0 9rem' }}>
                   <option value="4">4 teams</option>
                   <option value="6">6 teams</option>
                   <option value="8">8 teams</option>
@@ -317,6 +494,23 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
       {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
     </form>
   )
+}
+
+const toggleLinkStyle: React.CSSProperties = {
+  marginTop: '.6rem',
+  alignSelf: 'flex-start',
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  color: 'var(--gold)',
+  fontFamily: 'var(--mono)',
+  fontSize: '.7rem',
+  letterSpacing: '.18em',
+  textTransform: 'uppercase',
+  textAlign: 'left',
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  display: 'block',
 }
 
 function pickRowStyle(selected: boolean): React.CSSProperties {
