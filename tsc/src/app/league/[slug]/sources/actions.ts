@@ -7,8 +7,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ingestSleeperSource } from '@/lib/ingest/sleeper'
 import { ingestNflSource } from '@/lib/ingest/nfl'
 import { ingestEspnSource, type EspnSourceSettings } from '@/lib/ingest/espn'
+import { ingestYahooSource } from '@/lib/ingest/yahoo'
 import { sleeper } from '@/lib/platforms/sleeper'
 import { probeLeague as probeEspn } from '@/lib/platforms/espn'
+import { getValidAccessToken as getYahooAccessToken, getLeagueDetail as getYahooLeagueDetail, listUserNflLeagues as listYahooNflLeagues, type YahooLeagueSummary } from '@/lib/platforms/yahoo'
 import { devCacheBust } from '@/lib/devCache'
 
 const AddSchema = z.object({
@@ -74,10 +76,6 @@ export async function addSource(_prev: ActionResult, formData: FormData): Promis
   const access = await assertWriteAccess(leagueId)
   if (!access.ok) return access
 
-  if (platform === 'yahoo') {
-    return { ok: false, error: `${platform.toUpperCase()} support is coming soon.` }
-  }
-
   let resolvedLabel: string | null = label || null
   // `settings` JSONB is heterogeneous across platforms — numbers (year ranges,
   // playoff config) plus strings (ESPN cookies). Type as `unknown` so we don't
@@ -114,6 +112,22 @@ export async function addSource(_prev: ActionResult, formData: FormData): Promis
       return { ok: false, error: `ESPN probe failed: ${probe.error}` }
     }
     if (!resolvedLabel) resolvedLabel = `${probe.name} (${seasonStart}–${seasonEnd})`
+  } else if (platform === 'yahoo') {
+    // Yahoo external_id is a league_key (e.g. "461.l.123456"). Confirm the
+    // signed-in user has a Yahoo token AND the key resolves to a real league
+    // they have access to.
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: 'You are not signed in.' }
+    try {
+      const token = await getYahooAccessToken(user.id, supabase)
+      const detail = await getYahooLeagueDetail(token, externalId)
+      if (!detail) return { ok: false, error: 'Yahoo returned no league for that key. Reconnect Yahoo and try again.' }
+      if (!resolvedLabel) resolvedLabel = `${detail.name} (${detail.season})`
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not reach Yahoo.'
+      return { ok: false, error: msg }
+    }
   } else {
     // NFL: require per-source season range + playoff config (used at sync time).
     const { seasonStart, seasonEnd, playoffWeekStart, playoffTeamCount } = parsed.data
@@ -184,6 +198,18 @@ export async function syncSource(sourceId: string, leagueId: string) {
       await ingestNflSource(leagueId, src.external_id, (src.settings ?? {}) as Record<string, number>)
     } else if (src.platform === 'espn') {
       await ingestEspnSource(leagueId, src.external_id, (src.settings ?? {}) as EspnSourceSettings)
+    } else if (src.platform === 'yahoo') {
+      // Yahoo per-source ingest needs the league owner's OAuth token (admin
+      // client bypasses the yahoo_tokens RLS that would otherwise block the
+      // signed-in editor from reading the owner's token).
+      const { data: leagueRow } = await db
+        .from('leagues')
+        .select('owner_id')
+        .eq('id', leagueId)
+        .maybeSingle()
+      if (!leagueRow?.owner_id) return { ok: false as const, error: 'League has no owner; cannot fetch Yahoo tokens.' }
+      const token = await getYahooAccessToken(leagueRow.owner_id, db)
+      await ingestYahooSource(leagueId, src.external_id, !!src.walk_history, token)
     } else {
       return { ok: false as const, error: `${src.platform} sync not implemented yet.` }
     }
@@ -318,4 +344,22 @@ export async function deleteSource(sourceId: string, leagueId: string) {
   await db.from('league_sources').delete().eq('id', sourceId).eq('league_id', leagueId)
   revalidatePath(`/league/${access.slug}/sources`)
   return { ok: true as const }
+}
+
+// Lists every NFL league on the signed-in user's connected Yahoo account
+// for the Yahoo source picker on this page.
+export async function listYahooLeaguesForSources(): Promise<
+  | { ok: true; leagues: YahooLeagueSummary[] }
+  | { ok: false; error: string }
+> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: 'Sign in first.' }
+    const token = await getYahooAccessToken(user.id, supabase)
+    const leagues = await listYahooNflLeagues(token)
+    return { ok: true, leagues }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Could not reach Yahoo.' }
+  }
 }

@@ -582,11 +582,77 @@ body {
     grid-auto-flow: column;
     grid-auto-columns: 168px;
     gap: 1rem;
-    padding: .25rem 2rem 1rem 3.25rem;
+    padding: .25rem 2rem 1rem 1.7rem;
     overflow-x: auto;
+    /* Pins the strip height to a normal 2-row layout even when there are
+       only 1–2 pennants — otherwise auto-sized 1fr rows collapse to the
+       single pennant's height. Tall-mode pennants span both rows and
+       fill this. */
+    min-height: 21rem;
     scroll-snap-type: x mandatory;
+    /* Match scroll-snap "start" to the visible left padding so the first
+       pennant snaps with breathing room on load — otherwise the browser
+       pulls the leftmost pennant flush to the scrollport edge as soon as
+       the strip overflows. */
+    scroll-padding-inline-start: 1.7rem;
     scrollbar-width: thin;
     scrollbar-color: var(--gold-deep) transparent;
+}
+/* Young leagues (<4 champs): keep the 2-row container height but make
+   each pennant span both rows so the strip looks intentional rather
+   than half-empty. Pairs with the JS that skips placeholders. */
+.hall-scroller.hall-scroller--tall {
+    grid-auto-columns: 220px;
+}
+.hall-scroller.hall-scroller--tall .pennant {
+    width: 220px;
+    grid-row: 1 / -1;
+}
+/* Tall pennants get a compact record · PF line right under the team
+   name, plus a centered flourish that fills the empty middle. Both
+   hide in normal mode and auto-vanish once a 4th champion enters. */
+.pennant-stats { display: none; }
+.hall-scroller--tall .pennant-stats {
+    display: flex;
+    align-items: baseline;
+    gap: .4rem;
+    margin-top: -.15rem;
+    font-family: var(--mono);
+    font-size: .65rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.hall-scroller--tall .pennant-stats-sep { color: var(--gold-deep); opacity: .65; }
+/* Tall pennants get a centered flourish that fills the empty middle.
+   Hidden on the normal 168px pennants (no room) — auto-vanishes once
+   a 4th champion enters the hall and the strip flips out of tall mode. */
+.pennant-flourish { display: none; }
+.hall-scroller--tall .pennant-flourish {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .65rem;
+    margin: auto 0;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--gold-deep);
+    opacity: .8;
+}
+.hall-scroller--tall .pennant-flourish::before,
+.hall-scroller--tall .pennant-flourish::after {
+    content: '';
+    flex: 0 0 3.9rem;
+    height: 1px;
+    background: var(--gold-deep);
+    opacity: .55;
+}
+.hall-scroller--tall .pennant-flourish-star {
+    font-size: 1.5rem; line-height: 1; color: var(--gold);
+}
+.hall-scroller--tall .pennant-owner { margin-top: 0; }
+@media (max-width: 520px) {
+    .hall-scroller.hall-scroller--tall .pennant { width: 180px; }
 }
 .hall-scroller::-webkit-scrollbar { height: 6px; }
 .hall-scroller::-webkit-scrollbar-thumb { background: var(--gold-deep); border-radius: 3px; }
@@ -649,21 +715,9 @@ body {
     font-family: var(--serif); font-style: italic;
     color: var(--cream-mute);
 }
-/* Placeholder pennants — used to fill out the 2-row strip when a league
-   has fewer than 4 champions so the section doesn't look half-empty. */
-.pennant.pennant-empty {
-    opacity: .35;
-    background: linear-gradient(180deg, rgba(26,37,50,.6) 0%, rgba(22,32,44,.4) 100%);
-    border-style: dashed;
-    border-color: var(--ink-line);
-    pointer-events: none;
-}
-.pennant.pennant-empty .pennant-year,
-.pennant.pennant-empty .pennant-team em { color: var(--cream-mute); }
-.pennant.pennant-empty .pennant-team,
-.pennant.pennant-empty .pennant-owner { color: var(--cream-mute); }
 @media (max-width: 520px) {
-    .hall-scroller { padding: .25rem 1.25rem 1rem 2.25rem; gap: .75rem; grid-auto-columns: 142px; }
+    .hall-scroller { padding: .25rem 1.25rem 1rem 1.2rem; gap: .75rem; grid-auto-columns: 142px; scroll-padding-inline-start: 1.2rem; min-height: 17rem; }
+    .hall-scroller.hall-scroller--tall { grid-auto-columns: 180px; }
     .pennant { width: 142px; padding: 1rem .9rem .9rem; }
     .pennant-year { font-size: 1.6rem; }
     .pennant-team { font-size: .9rem; }
@@ -2442,7 +2496,13 @@ body {
     if (byline) byline.innerHTML = '— ' + dateStr + ' &nbsp;·&nbsp; ' + (firstYear ? 'Vol. since ' + firstYear : 'The press room') + ' —';
     if (body) {
       // Compose a short editorial from current state
-      var seasonOrdinal = league.total_seasons ? league.total_seasons + 'th' : null;
+      function ordSuffixEd(n) {
+        var v = n % 100;
+        if (v >= 11 && v <= 13) return n + 'th';
+        var d = n % 10;
+        return n + (d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th');
+      }
+      var seasonOrdinal = league.total_seasons ? ordSuffixEd(league.total_seasons) : null;
       var champ = league.defending_champion;
       var sentences = [];
       if (seasonOrdinal && firstYear) {
@@ -2544,7 +2604,7 @@ body {
       // SUMMARY paragraph (right column) — seed/PPG · title game · ring context.
       var summarySentences = [];
       var seedPart = '', ppgPart = '';
-      if (champ.regular_rank != null) seedPart = 'Entered the playoffs as the ' + ordSuffix(Number(champ.regular_rank)) + ' seed';
+      if (champ.regular_rank != null) seedPart = 'Entered the playoffs as the ' + Number(champ.regular_rank) + ' seed';
       if (champ.ppg != null) ppgPart = 'averaging ' + Number(champ.ppg).toFixed(1) + ' PPG';
       if (seedPart && ppgPart) summarySentences.push(seedPart + ' and ' + ppgPart + ' on the way in.');
       else if (seedPart) summarySentences.push(seedPart + '.');
@@ -2590,8 +2650,10 @@ body {
     // -- HALL OF CHAMPIONS --
     // The composite row (dc-hall-row) always renders because the Editor's
     // Note sidebar always populates. Only the main column block toggles.
-    // For young leagues we pad the strip with greyed-out future-year
-    // placeholders so the 2-row hall doesn't look half-empty.
+    // Young leagues (<4 champs) collapse to a single full-height row via
+    // the `hall-scroller--tall` modifier instead of padding with fake
+    // future years, which read as wrong-direction time on a newest-left
+    // strip.
     var hallBlock = el('dc-hall-block');
     var hallHeader = el('dc-hall-header');
     var hallScroller = el('dc-hall-scroller');
@@ -2606,18 +2668,13 @@ body {
         if (hallHeader) hallHeader.removeAttribute('hidden');
         if (hallMeta) hallMeta.textContent = champRows.length + ' year' + (champRows.length === 1 ? '' : 's') + ' on file';
 
-        // Pad to at least 4 entries (2 rows × 2 columns minimum) with
-        // greyed-out future years. Latest real champion year + 1, +2, …
-        var MIN_PENNANTS = 4;
-        var placeholders = [];
-        if (champRows.length < MIN_PENNANTS) {
-          var latestYear = champRows[0].year;
-          for (var i = 1; champRows.length + placeholders.length < MIN_PENNANTS; i++) {
-            placeholders.push({ year: latestYear + i, placeholder: true });
-          }
+        if (champRows.length < 4) {
+          hallScroller.classList.add('hall-scroller--tall');
+        } else {
+          hallScroller.classList.remove('hall-scroller--tall');
         }
 
-        var realHtml = champRows.map(function (s) {
+        hallScroller.innerHTML = champRows.map(function (s) {
           var team = s.champion_team_name || '';
           var teamSplit = team.trim().split(/\s+/);
           var teamHead = teamSplit.length > 1 ? teamSplit.slice(0, -1).join(' ') : '';
@@ -2625,22 +2682,21 @@ body {
           var teamHtml = team
             ? (teamHead ? escapeAttr(teamHead) + ' <em>' + escapeAttr(teamTail) + '</em>' : '<em>' + escapeAttr(teamTail) + '</em>')
             : '<em>—</em>';
+          var statsBits = [];
+          if (s.champion_record) statsBits.push(escapeAttr(s.champion_record));
+          if (s.champion_points_for != null) statsBits.push(fmt(Math.round(s.champion_points_for)) + ' PF');
+          var statsHtml = statsBits.length
+            ? '<div class="pennant-stats">' + statsBits.join('<span class="pennant-stats-sep">·</span>') + '</div>'
+            : '';
           return '<a class="pennant" href="seasons/season.html?year=' + s.year + '">' +
                    '<div class="pennant-year">' + seasonRoman(s.year) + '</div>' +
                    '<div class="pennant-year-arabic">' + s.year + ' · Champion</div>' +
                    '<div class="pennant-team">' + teamHtml + '</div>' +
+                   statsHtml +
+                   '<div class="pennant-flourish" aria-hidden="true"><span class="pennant-flourish-star">★</span></div>' +
                    '<div class="pennant-owner">' + escapeAttr(s.champion_name || '') + '</div>' +
                  '</a>';
         }).join('');
-        var placeholderHtml = placeholders.map(function (p) {
-          return '<div class="pennant pennant-empty" aria-hidden="true">' +
-                   '<div class="pennant-year">' + seasonRoman(p.year) + '</div>' +
-                   '<div class="pennant-year-arabic">' + p.year + ' · To be written</div>' +
-                   '<div class="pennant-team"><em>—</em></div>' +
-                   '<div class="pennant-owner">Open seat</div>' +
-                 '</div>';
-        }).join('');
-        hallScroller.innerHTML = realHtml + placeholderHtml;
       }
     }
 

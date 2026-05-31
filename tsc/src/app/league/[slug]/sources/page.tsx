@@ -18,6 +18,20 @@ export default async function SourcesPage({
     .maybeSingle()
   if (!league) notFound()
 
+  // Yahoo sources require a per-user OAuth token. Tell the form whether the
+  // signed-in viewer already connected so it can render the right CTA
+  // (Connect Yahoo → vs. league picker).
+  const { data: { user } } = await supabase.auth.getUser()
+  let yahooConnected = false
+  if (user) {
+    const { data: tok } = await supabase
+      .from('yahoo_tokens')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    yahooConnected = !!tok
+  }
+
   const { data: sourcesRaw } = await supabase
     .from('league_sources')
     .select('id, platform, external_id, label, walk_history, settings, last_synced_at, created_at')
@@ -104,7 +118,7 @@ export default async function SourcesPage({
           chain back from this ID. Off means only that one season is imported.
         </p>
         <div className="card" style={{ paddingBottom: '2rem' }}>
-          <AddSourceForm leagueId={league.id} />
+          <AddSourceForm leagueId={league.id} slug={slug} yahooConnected={yahooConnected} />
         </div>
       </div>
 

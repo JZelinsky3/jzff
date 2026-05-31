@@ -1,12 +1,28 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState, useTransition } from 'react'
 import { SleeperLeaguePicker } from '@/components/SleeperLeaguePicker'
-import { addSource } from './actions'
+import { addSource, listYahooLeaguesForSources } from './actions'
 
 type Result = { ok: false; error: string } | { ok: true } | null
 
-export function AddSourceForm({ leagueId }: { leagueId: string }) {
+type YahooPickerLeague = {
+  league_key: string
+  name: string
+  season: string
+  num_teams: number
+  logo_url?: string
+}
+
+export function AddSourceForm({
+  leagueId,
+  slug,
+  yahooConnected,
+}: {
+  leagueId: string
+  slug: string
+  yahooConnected: boolean
+}) {
   const [state, action, isPending] = useActionState<Result, FormData>(
     addSource as (prev: Result, fd: FormData) => Promise<Result>,
     null
@@ -23,6 +39,33 @@ export function AddSourceForm({ leagueId }: { leagueId: string }) {
   const [isPrivate, setIsPrivate] = useState(false)
   const [sleeperExternalId, setSleeperExternalId] = useState('')
 
+  // Yahoo league picker — fetched on demand from the connected user's account.
+  const [yahooLeagues, setYahooLeagues] = useState<YahooPickerLeague[] | null>(null)
+  const [yahooLeaguesError, setYahooLeaguesError] = useState<string | null>(null)
+  const [isLoadingYahooLeagues, startYahooLoad] = useTransition()
+  const [pickedYahooKey, setPickedYahooKey] = useState<string | null>(null)
+  const [pickedYahooName, setPickedYahooName] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (platform !== 'yahoo' || !yahooConnected) return
+    if (yahooLeagues !== null || isLoadingYahooLeagues) return
+    setYahooLeaguesError(null)
+    startYahooLoad(async () => {
+      const res = await listYahooLeaguesForSources()
+      if (!res.ok) {
+        setYahooLeaguesError(res.error)
+        setYahooLeagues([])
+        return
+      }
+      setYahooLeagues(res.leagues)
+    })
+  }, [platform, yahooConnected, yahooLeagues, isLoadingYahooLeagues])
+
+  function selectYahooLeague(lg: YahooPickerLeague) {
+    setPickedYahooKey(lg.league_key)
+    setPickedYahooName(`${lg.name} (${lg.season})`)
+  }
+
   return (
     <form action={action} className="dc-form">
       <input type="hidden" name="leagueId" value={leagueId} />
@@ -38,7 +81,7 @@ export function AddSourceForm({ leagueId }: { leagueId: string }) {
           <option value="sleeper">Sleeper</option>
           <option value="nfl">NFL.com</option>
           <option value="espn">ESPN</option>
-          <option value="yahoo">Yahoo (coming soon)</option>
+          <option value="yahoo">Yahoo (beta — connect required)</option>
         </select>
         {platform === 'nfl' && (
           <span className="dc-checkbox-hint">
@@ -53,6 +96,13 @@ export function AddSourceForm({ leagueId }: { leagueId: string }) {
             Playoff config is read from ESPN automatically.
           </span>
         )}
+        {platform === 'yahoo' && (
+          <span className="dc-checkbox-hint">
+            Yahoo requires a one-time OAuth connect (read-only). Once linked, pick a league
+            from the list — Yahoo gives us the rest. Turn on walk-history below to follow
+            the renew chain back through prior seasons.
+          </span>
+        )}
       </div>
 
       {platform === 'sleeper' ? (
@@ -60,6 +110,92 @@ export function AddSourceForm({ leagueId }: { leagueId: string }) {
           externalId={sleeperExternalId}
           setExternalId={setSleeperExternalId}
         />
+      ) : platform === 'yahoo' ? (
+        !yahooConnected ? (
+          <div className="dc-field">
+            <div style={{ padding: '1rem 1.1rem', background: 'var(--ink-soft)', borderRadius: '4px' }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.45rem' }}>
+                ★ Yahoo connection
+              </div>
+              <p style={{ margin: 0, lineHeight: 1.55, color: 'var(--cream)' }}>
+                Yahoo requires you to log in once so we can read your leagues. Read-only access —
+                no roster moves, no posting on your behalf.
+              </p>
+              <a
+                href={`/api/yahoo/authorize?from=${encodeURIComponent(`/league/${slug}/sources`)}`}
+                className="dc-btn"
+                style={{ marginTop: '.85rem', display: 'inline-block' }}
+              >
+                Connect Yahoo →
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="dc-field">
+            <label className="dc-label">Pick your Yahoo league</label>
+            <input type="hidden" name="externalId" value={pickedYahooKey ?? ''} />
+            {isLoadingYahooLeagues && (
+              <p className="dc-checkbox-hint">Loading your Yahoo leagues…</p>
+            )}
+            {yahooLeaguesError && (
+              <p className="dc-form-error" style={{ margin: '.4rem 0 0' }}>{yahooLeaguesError}</p>
+            )}
+            {yahooLeagues && yahooLeagues.length === 0 && !isLoadingYahooLeagues && !yahooLeaguesError && (
+              <p className="dc-checkbox-hint">
+                No NFL leagues found on your Yahoo account for the last 15 seasons. If you&apos;re
+                expecting some, make sure you connected the right Yahoo account.
+              </p>
+            )}
+            {yahooLeagues && yahooLeagues.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem', marginTop: '.35rem' }}>
+                {yahooLeagues.map((lg) => {
+                  const picked = lg.league_key === pickedYahooKey
+                  return (
+                    <button
+                      key={lg.league_key}
+                      type="button"
+                      onClick={() => selectYahooLeague(lg)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '.65rem',
+                        padding: '.55rem .7rem',
+                        background: picked ? 'rgba(232,200,137,.1)' : 'var(--ink)',
+                        border: `1px solid ${picked ? 'var(--gold)' : 'var(--gold-soft, rgba(200,160,80,.25))'}`,
+                        borderRadius: '3px',
+                        color: 'var(--cream)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontSize: '.9rem',
+                      }}
+                    >
+                      {lg.logo_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={lg.logo_url} alt="" width={28} height={28} style={{ borderRadius: '3px', flex: '0 0 28px' }} />
+                      )}
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {lg.name}
+                        </span>
+                        <span style={{ display: 'block', fontFamily: 'var(--mono)', fontSize: '.7rem', opacity: 0.6, letterSpacing: '.05em' }}>
+                          {lg.season} · {lg.num_teams} teams
+                        </span>
+                      </span>
+                      <span style={{ color: 'var(--gold)', fontFamily: 'var(--mono)', fontSize: '.7rem' }}>
+                        {picked ? '✓' : '→'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            {pickedYahooName && (
+              <p className="dc-form-ok" style={{ margin: '.5rem 0 0' }}>
+                Selected: {pickedYahooName}
+              </p>
+            )}
+          </div>
+        )
       ) : (
         <div className="dc-field">
           <label className="dc-label">League ID</label>
@@ -236,8 +372,36 @@ export function AddSourceForm({ leagueId }: { leagueId: string }) {
         </label>
       )}
 
-      <button type="submit" disabled={isPending} className="dc-btn dc-btn-block">
-        {isPending ? 'Validating…' : 'Add source →'}
+      {platform === 'yahoo' && yahooConnected && (
+        <label className="dc-checkbox-row">
+          <input
+            type="checkbox"
+            name="walkHistory"
+            checked={walk}
+            onChange={(e) => setWalk(e.target.checked)}
+            value="true"
+          />
+          <span>
+            Walk Yahoo&apos;s <code style={{ fontFamily: 'var(--mono)', fontSize: '.85em' }}>renew</code> chain
+            <span className="dc-checkbox-hint">
+              On: pull every prior season Yahoo links back to from this one. Off: just this season.
+            </span>
+          </span>
+        </label>
+      )}
+
+      <button
+        type="submit"
+        disabled={isPending || (platform === 'yahoo' && (!yahooConnected || !pickedYahooKey))}
+        className="dc-btn dc-btn-block"
+      >
+        {isPending
+          ? 'Validating…'
+          : platform === 'yahoo' && !yahooConnected
+          ? 'Connect Yahoo first'
+          : platform === 'yahoo' && !pickedYahooKey
+          ? 'Pick a Yahoo league first'
+          : 'Add source →'}
       </button>
 
       {state && 'ok' in state && !state.ok && <p className="dc-form-error">{state.error}</p>}

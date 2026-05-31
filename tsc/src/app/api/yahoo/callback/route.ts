@@ -12,6 +12,21 @@ import { exchangeCodeForTokens } from '@/lib/platforms/yahoo'
 export const dynamic = 'force-dynamic'
 
 const STATE_COOKIE = 'yahoo_oauth_state'
+const RETURN_COOKIE = 'yahoo_oauth_return'
+
+// Same-origin path only — anything else gets ignored. Prevents an attacker
+// from setting the cookie to a phishing URL via a crafted authorize link.
+function safeReturnPath(p: string | undefined): string | null {
+  if (!p) return null
+  if (!p.startsWith('/') || p.startsWith('//')) return null
+  return p
+}
+
+function redirectWithStatus(req: Request, returnPath: string | null, status: string) {
+  const target = returnPath ?? '/dashboard'
+  const sep = target.includes('?') ? '&' : '?'
+  return NextResponse.redirect(new URL(`${target}${sep}yahoo=${encodeURIComponent(status)}`, req.url))
+}
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -19,17 +34,20 @@ export async function GET(req: Request) {
   const state = url.searchParams.get('state')
   const yahooError = url.searchParams.get('error')
 
+  const jar = await cookies()
+  const returnPath = safeReturnPath(jar.get(RETURN_COOKIE)?.value)
+  jar.delete(RETURN_COOKIE)
+
   // Yahoo bounces back with ?error=access_denied if the user declines.
   if (yahooError) {
-    return NextResponse.redirect(new URL(`/dashboard?yahoo=${encodeURIComponent(yahooError)}`, req.url))
+    return redirectWithStatus(req, returnPath, yahooError)
   }
 
-  const jar = await cookies()
   const expectedState = jar.get(STATE_COOKIE)?.value
   jar.delete(STATE_COOKIE)
 
   if (!code || !state || !expectedState || state !== expectedState) {
-    return NextResponse.redirect(new URL('/dashboard?yahoo=state_mismatch', req.url))
+    return redirectWithStatus(req, returnPath, 'state_mismatch')
   }
 
   const supabase = await createClient()
@@ -45,7 +63,7 @@ export async function GET(req: Request) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'token_exchange_failed'
     console.error('[yahoo/callback]', msg)
-    return NextResponse.redirect(new URL('/dashboard?yahoo=token_exchange_failed', req.url))
+    return redirectWithStatus(req, returnPath, 'token_exchange_failed')
   }
 
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
@@ -60,8 +78,8 @@ export async function GET(req: Request) {
   })
   if (error) {
     console.error('[yahoo/callback] upsert', error)
-    return NextResponse.redirect(new URL('/dashboard?yahoo=save_failed', req.url))
+    return redirectWithStatus(req, returnPath, 'save_failed')
   }
 
-  return NextResponse.redirect(new URL('/dashboard?yahoo=connected', req.url))
+  return redirectWithStatus(req, returnPath, 'connected')
 }

@@ -12,6 +12,7 @@ import { buildAuthUrl } from '@/lib/platforms/yahoo'
 export const dynamic = 'force-dynamic'
 
 const STATE_COOKIE = 'yahoo_oauth_state'
+const RETURN_COOKIE = 'yahoo_oauth_return'
 const STATE_TTL_SECONDS = 600 // 10 minutes — plenty for the login round-trip
 
 export async function GET(req: Request) {
@@ -21,8 +22,15 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL('/login?next=/dashboard', req.url))
   }
 
-  const origin = req.headers.get('origin') ?? new URL(req.url).origin
+  const url = new URL(req.url)
+  const origin = req.headers.get('origin') ?? url.origin
   const state = crypto.randomUUID()
+
+  // Optional return target — same-origin path only. Lets sub-pages (e.g.
+  // the league sources page) keep the user on their flow after the OAuth
+  // round-trip instead of bouncing back to /dashboard.
+  const rawReturn = url.searchParams.get('from') || ''
+  const safeReturn = rawReturn.startsWith('/') && !rawReturn.startsWith('//') ? rawReturn : ''
 
   const jar = await cookies()
   jar.set(STATE_COOKIE, state, {
@@ -32,6 +40,17 @@ export async function GET(req: Request) {
     path: '/',
     maxAge: STATE_TTL_SECONDS,
   })
+  if (safeReturn) {
+    jar.set(RETURN_COOKIE, safeReturn, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: STATE_TTL_SECONDS,
+    })
+  } else {
+    jar.delete(RETURN_COOKIE)
+  }
 
   return NextResponse.redirect(buildAuthUrl({ origin, state }))
 }

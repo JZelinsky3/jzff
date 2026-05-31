@@ -750,11 +750,17 @@ function buildSeasonsDirectory(s: Snapshot): unknown {
         : null
       const standings = s.managerSeasonsBySeason.get(season.id) ?? []
       const champHidden = champGroup ? isGroupHidden(champGroup) : false
+      const champRecord = champMs && !champHidden
+        ? `${champMs.wins}-${champMs.losses}${champMs.ties ? `-${champMs.ties}` : ''}`
+        : null
+      const champPF = champMs && !champHidden ? round2(Number(champMs.points_for)) : null
       return {
         year: season.year,
         champion_name: champHidden ? null : (champGroup ? groupDisplayName(champGroup) : champ?.display_name ?? null),
         champion_team_name: champHidden ? null : (champMs?.team_name ?? champ?.team_name ?? null),
         champion_user_id: champHidden ? null : userId(champGroup?.primary ?? champ ?? undefined),
+        champion_record: champRecord,
+        champion_points_for: champPF,
         total_teams: standings.length,
         has_complete_data: standings.length > 0,
       }

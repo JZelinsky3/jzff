@@ -71,10 +71,10 @@
     var CHAPBAR_ITEMS = [
         { key: 'hub',         label: 'Home',      path: './' },
         { key: 'standings',   label: 'Standings', path: 'standings.html' },
+        { key: 'managers',    label: 'Managers',  path: 'managers/' },
         { key: 'seasons',     label: 'Seasons',   path: 'seasons/' },
         { key: 'draft',       label: 'Drafts',    path: 'draft/' },
         { key: 'records',     label: 'Records',   path: 'records.html' },
-        { key: 'managers',    label: 'Managers',  path: 'managers/' },
         { key: 'rivalries',   label: 'Rivalries', path: 'rivalries/' },
         { key: 'live-season', label: 'Live',      path: 'live-season/' }
     ];
