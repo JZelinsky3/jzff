@@ -192,12 +192,16 @@ export async function syncSource(sourceId: string, leagueId: string) {
   if (!src) return { ok: false as const, error: 'Source not found.' }
 
   try {
+    let warnings: string[] = []
     if (src.platform === 'sleeper') {
-      await ingestSleeperSource(leagueId, src.external_id, src.walk_history)
+      const r = await ingestSleeperSource(leagueId, src.external_id, src.walk_history)
+      warnings = r.warnings ?? []
     } else if (src.platform === 'nfl') {
-      await ingestNflSource(leagueId, src.external_id, (src.settings ?? {}) as Record<string, number>)
+      const r = await ingestNflSource(leagueId, src.external_id, (src.settings ?? {}) as Record<string, number>)
+      warnings = r.warnings ?? []
     } else if (src.platform === 'espn') {
-      await ingestEspnSource(leagueId, src.external_id, (src.settings ?? {}) as EspnSourceSettings)
+      const r = await ingestEspnSource(leagueId, src.external_id, (src.settings ?? {}) as EspnSourceSettings)
+      warnings = r.warnings ?? []
     } else if (src.platform === 'yahoo') {
       // Yahoo per-source ingest needs the league owner's OAuth token (admin
       // client bypasses the yahoo_tokens RLS that would otherwise block the
@@ -209,7 +213,8 @@ export async function syncSource(sourceId: string, leagueId: string) {
         .maybeSingle()
       if (!leagueRow?.owner_id) return { ok: false as const, error: 'League has no owner; cannot fetch Yahoo tokens.' }
       const token = await getYahooAccessToken(leagueRow.owner_id, db)
-      await ingestYahooSource(leagueId, src.external_id, !!src.walk_history, token)
+      const r = await ingestYahooSource(leagueId, src.external_id, !!src.walk_history, token)
+      warnings = r.warnings ?? []
     } else {
       return { ok: false as const, error: `${src.platform} sync not implemented yet.` }
     }
@@ -222,7 +227,7 @@ export async function syncSource(sourceId: string, leagueId: string) {
     devCacheBust(leagueId)
     revalidatePath(`/league/${access.slug}/sources`)
     revalidatePath(`/league/${access.slug}`)
-    return { ok: true as const }
+    return { ok: true as const, warnings }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'sync failed'
     return { ok: false as const, error: msg }

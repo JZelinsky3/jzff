@@ -116,7 +116,7 @@ export async function ingestYahooSource(
   // We also need a per-season (team_key → guid) map for the matchups + draft passes.
   const teamsBySeason = new Map<string, YahooTeam[]>()  // leagueKey -> teams[]
   for (const lg of history) {
-    const teams = await getLeagueTeamsStandings(accessToken, lg.league_key)
+    const teams = await getLeagueTeamsStandings(accessToken, lg.league_key, warnings)
     teamsBySeason.set(lg.league_key, teams)
     for (const t of teams) {
       // Take the first non-co-manager — Yahoo lists co-owners as additional

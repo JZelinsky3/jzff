@@ -68,8 +68,19 @@ export function SourceRow({
     setMsg(null)
     const result = await syncSource(source.id, leagueId)
     setBusy(null)
-    if (!result.ok) setMsg(result.error)
-    else router.refresh()
+    if (!result.ok) {
+      setMsg(result.error)
+    } else {
+      // Surface any ingest warnings so the user can see diagnostics (e.g. the
+      // Yahoo standings-shape report) without digging through server logs.
+      const warns = (result as { warnings?: string[] }).warnings ?? []
+      if (warns.length) {
+        const preview = warns.slice(0, 6).join('\n')
+        const more = warns.length > 6 ? `\n…and ${warns.length - 6} more` : ''
+        setMsg(`Synced with warnings:\n${preview}${more}`)
+      }
+      router.refresh()
+    }
   }
 
   function onDelete() {
@@ -322,7 +333,14 @@ export function SourceRow({
         </div>
       )}
 
-      {msg && <p className={msg.startsWith('Saved') ? 'dc-form-ok' : 'dc-form-error'} style={{ marginTop: '.85rem' }}>{msg}</p>}
+      {msg && (
+        <p
+          className={msg.startsWith('Saved') || msg.startsWith('Synced') ? 'dc-form-ok' : 'dc-form-error'}
+          style={{ marginTop: '.85rem', whiteSpace: 'pre-wrap', fontFamily: msg.startsWith('Synced') ? 'var(--mono)' : undefined, fontSize: msg.startsWith('Synced') ? '.75rem' : undefined }}
+        >
+          {msg}
+        </p>
+      )}
     </div>
   )
 }

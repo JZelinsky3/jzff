@@ -370,24 +370,43 @@ export type YahooTeam = {
 // GET /league/{key}/standings — every team with team_standings inline.
 // Yahoo's standings response includes the manager array per team, so this
 // one call gives us teams + managers + records + ranks in one go.
+//
+// `diagOut`: optional sink for diagnostic messages. When the parser ends up
+// with every team at 0-0 / 0 PF (the symptom of a structural mismatch we
+// haven't accounted for) we push a one-line shape report so the caller can
+// surface it as a warning instead of silently writing zeroes.
 export async function getLeagueTeamsStandings(
   accessToken: string,
-  leagueKey: string
+  leagueKey: string,
+  diagOut?: string[]
 ): Promise<YahooTeam[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const raw = await yahooFetchJson<any>(accessToken, `/league/${leagueKey}/standings`)
   const leagueArr = raw?.fantasy_content?.league
-  if (!leagueArr) return []
+  if (!leagueArr) {
+    diagOut?.push(`standings(${leagueKey}): fantasy_content.league missing — top keys: ${Object.keys(raw?.fantasy_content ?? {}).join(',') || '(none)'}`)
+    return []
+  }
   // /standings shape: leagueArr = [ {...meta...}, { standings: [ { teams: { 0:{team:[...]}, 1:..., count } } ] } ]
   const standingsBlock = (leagueArr as unknown[]).find(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (x: any) => x && typeof x === 'object' && 'standings' in x
   )
+  // standings can be either an array `[{teams: ...}]` or a bare object
+  // `{teams: ...}` depending on Yahoo's response variant. Tolerate both.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const teamsNode = (standingsBlock as any)?.standings?.[0]?.teams
-  if (!teamsNode) return []
+  const standingsNode = (standingsBlock as any)?.standings
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const teamsNode = Array.isArray(standingsNode)
+    ? (standingsNode[0] as any)?.teams
+    : (standingsNode as any)?.teams
+  if (!teamsNode) {
+    diagOut?.push(`standings(${leagueKey}): teams node missing — standingsBlock keys: ${Object.keys((standingsBlock ?? {}) as object).join(',') || '(none)'}`)
+    return []
+  }
 
   const out: YahooTeam[] = []
+  let firstTeamShapeLogged = false
   for (const tNode of numberedToArray(teamsNode)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const teamFrag = (tNode as any)?.team
@@ -419,6 +438,20 @@ export async function getLeagueTeamsStandings(
       {}
     ) as Record<string, unknown>
     const outcome = (team_standings.outcome_totals ?? {}) as Record<string, unknown>
+
+    if (!firstTeamShapeLogged && diagOut) {
+      firstTeamShapeLogged = true
+      const ts_keys = Object.keys(team_standings).join(',') || '(empty)'
+      const ot_keys = Object.keys(outcome).join(',') || '(empty)'
+      const sub_keys = Object.keys(subResources).join(',') || '(empty)'
+      const meta_keys = Object.keys(m).join(',') || '(empty)'
+      const teamFragShape = Array.isArray(teamFrag)
+        ? `array(len=${teamFrag.length}, [0]=${Array.isArray(teamFrag[0]) ? 'array' : typeof teamFrag[0]})`
+        : typeof teamFrag
+      diagOut.push(
+        `standings(${leagueKey}) shape: teamFrag=${teamFragShape} · meta_keys=[${meta_keys}] · sub_keys=[${sub_keys}] · ts_keys=[${ts_keys}] · ot_keys=[${ot_keys}]`
+      )
+    }
 
     // Managers: Yahoo nests these as { managers: [ { manager: {...} }, ... ] } or
     // a numbered-key map. Tolerate both.
@@ -475,6 +508,14 @@ export async function getLeagueTeamsStandings(
       rank: team_standings.rank != null ? Number(team_standings.rank) : undefined,
       playoff_seed: team_standings.playoff_seed != null ? Number(team_standings.playoff_seed) : undefined,
     })
+  }
+  if (diagOut && out.length > 0) {
+    const allZero = out.every((t) => t.wins === 0 && t.losses === 0 && t.points_for === 0)
+    if (allZero) {
+      diagOut.push(
+        `standings(${leagueKey}): all ${out.length} teams parsed with 0-0 record and 0 PF — team_standings structure not where the parser is looking. See the shape line above.`
+      )
+    }
   }
   return out
 }
