@@ -447,10 +447,13 @@ function correctedFinalRank(season) {
 
 function computeAvgFinalFinish(ledger) {
     if (!ledger || ledger.length === 0) return null;
-    // Skip seasons with no rank yet (unplayed / live season pre-week-1).
-    // Otherwise JS coerces null → 0 in the sum and the avg gets dragged toward
-    // zero — e.g. one real 5th + one empty 2026 row → (5+0)/2 = 2.5.
-    const ranked = ledger
+    // Only count seasons that are fully finalized. final_rank is null until
+    // the championship is decided, so an in-progress live season (or an
+    // unplayed future season) is skipped entirely — a mid-season reg-rank
+    // shouldn't pretend to be a final finish.
+    const finalized = ledger.filter((s) => typeof s.final_rank === 'number' && s.final_rank > 0);
+    if (finalized.length === 0) return null;
+    const ranked = finalized
         .map(correctedFinalRank)
         .filter((r) => typeof r === 'number' && r > 0);
     if (ranked.length === 0) return null;
