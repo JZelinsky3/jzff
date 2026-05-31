@@ -97,6 +97,7 @@ export function SleeperLeaguePicker({
 
   const toggleLinkStyle: React.CSSProperties = {
     marginTop: '.6rem',
+    alignSelf: 'flex-start',
     background: 'none',
     border: 'none',
     padding: 0,
@@ -105,6 +106,7 @@ export function SleeperLeaguePicker({
     fontSize: '.7rem',
     letterSpacing: '.18em',
     textTransform: 'uppercase',
+    textAlign: 'left',
     cursor: 'pointer',
     textDecoration: 'underline',
   }
@@ -194,7 +196,7 @@ export function SleeperLeaguePicker({
           </div>
         )}
         <button type="button" onClick={() => setMode('leagueId')} style={toggleLinkStyle}>
-          Have your Sleeper league ID? Enter it directly →
+          Use League ID →
         </button>
       </div>
     )
@@ -226,7 +228,7 @@ export function SleeperLeaguePicker({
         )}
       </div>
       <button type="button" onClick={() => setMode('username')} style={toggleLinkStyle}>
-        ← Look up by Sleeper username instead
+        ← Use Username
       </button>
     </div>
   )
