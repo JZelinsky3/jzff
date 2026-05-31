@@ -244,11 +244,22 @@ export async function ingestYahooSource(
 
     // Determine if we should treat team_standings.rank as FINAL rank or just
     // regular-season rank. Yahoo updates `rank` to reflect final placement
-    // once the season ends. Heuristic: if any team has wins+losses+ties > 0
-    // AND we're past the last playoff week (current_week > end_week OR
-    // current_week is unset for past seasons), treat rank as final.
+    // once the season ends.
+    //
+    // Three signals, any of which is sufficient:
+    //   1. The season year is in the past (most reliable — once we're in a
+    //      later calendar year, the league is definitively done).
+    //   2. current_week is unset (older Yahoo responses for finished leagues).
+    //   3. current_week >= end_week (Yahoo caps current_week at end_week for
+    //      finished seasons rather than letting it exceed). The previous `>`
+    //      check missed every finished league because Yahoo always returned
+    //      current_week === end_week.
     const seasonHasGames = teams.some((t) => t.wins > 0 || t.losses > 0 || t.points_for > 0)
-    const seasonOver = lg.current_week == null || lg.current_week > lg.end_week
+    const seasonInPast = year < new Date().getFullYear()
+    const seasonOver =
+      seasonInPast ||
+      lg.current_week == null ||
+      lg.current_week >= lg.end_week
     const treatRankAsFinal = seasonHasGames && seasonOver
 
     // Compute regular-season rank from wins (tiebreaker: points-for) so we
@@ -418,11 +429,13 @@ export async function ingestYahooSource(
         seasonInserted++
       }
     }
+    const ranksKnown = [...teamKeyToFinalRank.values()].filter((r) => r > 0).length
     warnings.push(
       `Season ${year} matchups: ${seasonInserted} inserted ` +
       `(bye/single-side=${seasonByeOrSingleSide}, unresolved manager=${seasonUnresolvedManager}, same manager=${seasonSameManager}, ` +
       `consolation-excluded=${seasonConsolationFiltered}, 5th+placement-excluded=${seasonPlacementFiltered}) ` +
-      `· playoffStart=week ${playoffStart}, endWeek=${lg.end_week}`
+      `· playoffStart=week ${playoffStart}, endWeek=${lg.end_week} ` +
+      `· treatRankAsFinal=${treatRankAsFinal} (currentWeek=${lg.current_week ?? 'unset'}, ranksKnown=${ranksKnown}/${teams.length})`
     )
 
     // Drafts
