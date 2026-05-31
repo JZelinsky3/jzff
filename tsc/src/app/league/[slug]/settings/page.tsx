@@ -55,7 +55,7 @@ export default async function SettingsPage({
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '2rem' }}>
         <div className="hero-sup">★ Settings ★</div>
         <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
-          The <em>knobs.</em>
+          The <em>Knobs.</em>
         </h1>
         <p className="hero-sub">Tweak how your league appears on the public almanac.</p>
       </section>

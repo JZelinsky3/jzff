@@ -79,7 +79,7 @@ export default async function SourcesPage({
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
         <div className="hero-sup">★ Chapter V · Setup ★</div>
         <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
-          Source <em>ledger.</em>
+          Source <em>Ledger.</em>
         </h1>
         <p className="hero-sub">
           One archive can pull from many league IDs. Useful if your league moved between leagues

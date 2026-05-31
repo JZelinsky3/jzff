@@ -41,7 +41,7 @@ export default async function RivalriesPage({
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '2rem' }}>
         <div className="hero-sup">★ Rivalries ★</div>
         <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
-          The <em>feuds.</em>
+          The <em>Feuds.</em>
         </h1>
         <p className="hero-sub">
           Hand-curated. Pick two managers, name the grudge, and it appears on your public almanac.

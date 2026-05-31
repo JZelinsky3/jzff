@@ -94,7 +94,7 @@ export default async function SetupPage({
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
         <div className="hero-sup">★ Chapter VI · League Members ★</div>
         <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
-          The <em>members.</em>
+          The <em>Members.</em>
         </h1>
         <p className="hero-sub">
           Every person who&apos;s ever been in the league. Merge cross-platform identities
