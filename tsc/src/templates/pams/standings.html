@@ -42,8 +42,8 @@
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 1.5rem;
     padding: 1.25rem 0;
     margin-bottom: 2rem;
-    border-top: 1px solid var(--ink-line);
-    border-bottom: 1px solid var(--ink-line);
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
 }
 .sort-bar-label {
     font-family: var(--mono); font-weight: 700;
@@ -280,10 +280,13 @@ table.standings tbody tr.former-row td.name-cell a {
 }
 
 /* ── Full-page cream override ── */
-/* Nav + chapbar keep the home page's navy/gold defaults (no overrides);
-   only the page body itself is cream. */
 body { background: var(--cream); }
 .site-glow, .site-grain { display: none; }
+/* Nav + chapbar use the home page's navy/gold palette. Force solid --ink
+   (no alpha) so the cream body underneath doesn't bleed through and wash
+   them out — the default rgba(14,22,32,.9) reads light-grey on cream. */
+.nav { background: var(--ink); }
+:root { --chapbar-bg: var(--ink); }
 
 .page-kicker { color: var(--gold-deep); }
 .page-title  { color: var(--ink); }
