@@ -853,7 +853,11 @@ body { background: var(--ml-bg); }
     if (m.week     != null) $('m-week').textContent     = m.week;
     if (m.season   != null) $('m-season').textContent   = m.season;
     if (m.imminent != null) $('m-imminent').textContent = m.imminent;
-    if (m.through)          $('m-foot').textContent    = 'Through ' + m.through;
+    if (m.through) {
+      // Preseason mode: builder emits "Preseason · {year}" (no week stamp).
+      // Drop the "Through" prefix since "Through Preseason" reads wrong.
+      $('m-foot').textContent = (/^Preseason/i.test(m.through) ? '' : 'Through ') + m.through;
+    }
   }
 
   // Render the avatar slot for a milestone item. Prefers the manager's

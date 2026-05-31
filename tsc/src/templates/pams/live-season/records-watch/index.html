@@ -1435,7 +1435,11 @@ body { background: var(--rw-bg); }
     if (m.on_pace     != null) $('m-onpace').textContent = m.on_pace;
     if (m.brink       != null) $('m-brink').textContent  = m.brink;
     if (m.just_missed != null) $('m-missed').textContent = m.just_missed;
-    if (m.through)             $('m-foot').textContent   = 'Through ' + m.through;
+    if (m.through) {
+      // Preseason mode: builder emits "Preseason · {year}". Drop the
+      // "Through" prefix since "Through Preseason" reads wrong.
+      $('m-foot').textContent = (/^Preseason/i.test(m.through) ? '' : 'Through ') + m.through;
+    }
   }
 
   // Brink renders a stack of full-width "stat blocks" — each one a

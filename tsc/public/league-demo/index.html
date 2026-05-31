@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>League Home — Feature Showcase</title>
+<style>
+/* ============================================================
+   Demo page for vintage-almanac data widgets.
+   Self-contained: pulls the same fonts and palette as the league
+   template but ships its own copy here so it can be opened
+   standalone without a synced league.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --ink:           #0e1620;
+    --ink-soft:      #16202c;
+    --ink-card:      #1a2532;
+    --ink-line:      #2a3645;
+    --ink-line-soft: #1e2937;
+
+    --cream:         #f4ebd8;
+    --cream-soft:    #c9c0ad;
+    --cream-mute:    #837b6a;
+
+    --gold:          #e8c889;
+    --gold-bright:   #f4d9a4;
+    --gold-deep:     #a88a4a;
+
+    --rust:          #a04830;
+    --steel:         #6b8aa8;
+    --sage:          #6a9a6e;
+
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans:  'Inter', system-ui, sans-serif;
+    --mono:  'JetBrains Mono', 'SF Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body {
+    font-family: var(--sans);
+    background: var(--ink);
+    color: var(--cream);
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding-left: 56px; /* room for the fixed spine */
+}
+.site-glow {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+        radial-gradient(circle at 15% 20%, rgba(232,200,137,.07) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(160,72,48,.04) 0%, transparent 50%);
+}
+.site-grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.04 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+}
+
+/* ============================================================
+   DEMO SHELL
+   ============================================================ */
+.demo-shell {
+    position: relative; z-index: 10;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem 6rem;
+}
+.demo-hero {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding-bottom: 3rem;
+    border-bottom: 3px double var(--ink-line);
+}
+.demo-hero-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .4em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1.25rem;
+}
+.demo-hero-title {
+    font-family: var(--serif);
+    font-size: clamp(2.4rem, 6vw, 4.5rem);
+    line-height: .95; letter-spacing: -.025em;
+    color: var(--cream); margin-bottom: 1.25rem;
+}
+.demo-hero-title em { font-style: italic; color: var(--gold); }
+.demo-hero-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; color: var(--cream-soft);
+    max-width: 56ch; margin: 0 auto;
+}
+.demo-card {
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--ink-line);
+    padding: 2rem 2rem 2.25rem;
+    margin-bottom: 2.5rem;
+    position: relative;
+}
+.demo-card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+    background: var(--gold);
+}
+.demo-meta {
+    display: flex; align-items: baseline; gap: 1rem;
+    padding-bottom: .9rem; margin-bottom: 1rem;
+    border-bottom: 1px dotted var(--ink-line);
+}
+.demo-num {
+    font-family: var(--serif); font-style: italic;
+    font-size: 2rem; line-height: 1; color: var(--gold);
+}
+.demo-name {
+    font-family: var(--serif);
+    font-size: 1.6rem; line-height: 1.1; color: var(--cream);
+}
+.demo-name em { font-style: italic; color: var(--gold); }
+.demo-desc {
+    font-family: var(--serif); font-style: italic;
+    color: var(--cream-soft); font-size: 1rem;
+    margin-bottom: 1.5rem; max-width: 68ch;
+}
+.demo-desc code {
+    font-family: var(--mono); font-style: normal;
+    font-size: .85em; color: var(--gold);
+    background: rgba(232,200,137,.08);
+    padding: 1px 6px; border-radius: 2px;
+    letter-spacing: .04em;
+}
+.demo-desc strong {
+    font-style: normal; font-family: var(--sans);
+    font-weight: 600; color: var(--cream);
+}
+.demo-body {
+    padding: 1.5rem;
+    background: rgba(0,0,0,.18);
+    border: 1px dashed var(--ink-line);
+    position: relative;
+}
+
+/* ============================================================
+   01 — THE SPINE — fixed vertical book-spine rail (home-only)
+   ============================================================ */
+.spine {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 44px;
+    z-index: 80;
+    background:
+        repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 2px, rgba(255,255,255,.015) 2px 3px),
+        linear-gradient(90deg, #0a1119 0%, var(--ink-soft) 35%, #1d2a3a 65%, #0a1119 100%);
+    border-right: 1px solid #2a3645;
+    box-shadow: 4px 0 10px rgba(0,0,0,.4);
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 1.25rem 0;
+}
+.spine::before, .spine::after {
+    content: ''; position: absolute;
+    left: 5px; right: 5px; height: 4px;
+    background: repeating-linear-gradient(90deg, var(--gold-deep) 0 5px, transparent 5px 10px);
+    opacity: .55;
+}
+.spine::before { top: 14px; }
+.spine::after  { bottom: 14px; }
+.spine-title {
+    font-family: var(--serif); font-style: italic;
+    color: var(--gold);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: .82rem; letter-spacing: .25em;
+    margin-top: 1.6rem;
+    text-shadow: 0 1px 0 rgba(0,0,0,.5);
+}
+.spine-vol {
+    font-family: var(--mono); font-weight: 700;
+    color: var(--cream-mute);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: .56rem; letter-spacing: .35em;
+    margin-top: 1rem; text-transform: uppercase;
+}
+.spine-dots {
+    display: flex; flex-direction: column; gap: .5rem;
+    margin-top: auto; margin-bottom: 2rem;
+}
+.spine-dot {
+    width: 8px; height: 8px;
+    border: 1px solid var(--gold-deep);
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer; padding: 0;
+    transition: background .2s, transform .2s;
+    position: relative;
+}
+.spine-dot:hover { background: var(--gold-deep); transform: scale(1.15); }
+.spine-dot.active {
+    background: var(--gold);
+    box-shadow: 0 0 8px rgba(232,200,137,.5);
+}
+.spine-dot::after {
+    content: attr(data-label);
+    position: absolute;
+    left: 100%; top: 50%; transform: translateY(-50%);
+    margin-left: 12px;
+    padding: .3rem .6rem;
+    background: rgba(14,22,32,.95);
+    border: 1px solid var(--ink-line);
+    color: var(--cream);
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .18em; text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0; pointer-events: none;
+    transition: opacity .15s;
+}
+.spine-dot:hover::after { opacity: 1; }
+@media (max-width: 600px) {
+    body { padding-left: 36px; }
+    .spine { width: 28px; padding: 1rem 0; }
+    .spine-title { font-size: .65rem; letter-spacing: .18em; }
+    .spine-vol { font-size: .5rem; }
+    .spine-dot { width: 6px; height: 6px; }
+}
+
+/* ============================================================
+   02 — BOOKMARK RIBBON — cream silk, top right
+   ============================================================ */
+.ribbon {
+    position: fixed;
+    top: 0; right: 38px;
+    width: 32px; height: 112px;
+    background:
+        linear-gradient(180deg, #f4ebd8 0%, #d8cdb2 70%, #aaa088 100%);
+    box-shadow:
+        2px 0 4px rgba(0,0,0,.4),
+        inset 1px 0 0 rgba(255,255,255,.5),
+        inset -1px 0 0 rgba(0,0,0,.15);
+    cursor: pointer; z-index: 70; border: none;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+    /* Distinct easing per state: snappy retract, bouncy extend.
+       The bookmarked state uses a longer transform and a stronger
+       cubic-bezier so the action feels weighty. */
+    transition: height .3s ease, filter .25s, box-shadow .25s;
+    padding: 0;
+}
+.ribbon::before {
+    /* horizontal weave shadow at the top edge */
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 8px;
+    background: linear-gradient(180deg, rgba(0,0,0,.18), transparent);
+}
+.ribbon::after {
+    content: '✦';
+    position: absolute;
+    top: 12px; left: 50%; transform: translateX(-50%);
+    color: var(--gold);
+    font-size: 1.4rem;
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    transition: font-size .25s, color .25s;
+}
+.ribbon:hover { height: 122px; }
+/* "Bookmarked" state: noticeably longer drop, gold halo, brighter star.
+   Bouncy easing so the extend feels like a real ribbon being pulled. */
+.ribbon.is-bookmarked {
+    height: 156px;
+    filter: drop-shadow(0 0 10px rgba(232, 200, 137, .35));
+    transition: height .45s cubic-bezier(.34, 1.45, .54, 1), filter .25s, box-shadow .25s;
+}
+.ribbon.is-bookmarked::after {
+    color: var(--gold);
+    font-size: 1.6rem;
+}
+.ribbon.is-bookmarked:hover { height: 168px; }
+@media (max-width: 600px) { .ribbon { right: 18px; width: 26px; } }
+
+/* ============================================================
+   03 — THE FORM SHEET — F1-style standings tower
+   ============================================================ */
+.form-sheet {
+    background:
+        repeating-linear-gradient(180deg, transparent 0 41px, rgba(232,200,137,.02) 41px 42px),
+        linear-gradient(180deg, var(--ink-soft), var(--ink));
+    border: 1px solid var(--ink-line);
+    font-family: var(--mono);
+    overflow: hidden;
+}
+.form-mast {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: .85rem 1.25rem;
+    background: var(--ink);
+    border-bottom: 1px solid var(--gold-deep);
+    font-size: .6rem; letter-spacing: .28em; text-transform: uppercase;
+}
+.form-mast-title { color: var(--gold); font-weight: 700; }
+.form-mast-meta { color: var(--cream-mute); }
+.form-mast-meta .live-dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--rust); border-radius: 50%;
+    margin-right: .4rem;
+    box-shadow: 0 0 6px var(--rust);
+    animation: livePulse 1.6s ease-in-out infinite;
+}
+@keyframes livePulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .45; transform: scale(.85); }
+}
+.form-head, .form-row {
+    display: grid;
+    grid-template-columns: 60px 1.4fr 1fr 90px 70px 60px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 1.25rem;
+}
+.form-head {
+    height: 30px;
+    background: rgba(0,0,0,.25);
+    border-bottom: 1px solid var(--ink-line);
+    font-weight: 700;
+    font-size: .56rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.form-row {
+    height: 42px;
+    border-bottom: 1px solid var(--ink-line-soft);
+    font-size: .82rem;
+    color: var(--cream);
+    transition: background .15s;
+}
+.form-row:last-child { border-bottom: none; }
+.form-row:hover { background: rgba(232,200,137,.04); }
+.form-row.leader { background: rgba(232,200,137,.06); }
+
+.form-pos {
+    display: flex; align-items: baseline; gap: .45rem;
+}
+.form-pos-num {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.55rem; line-height: 1;
+    color: var(--gold);
+}
+.form-row.leader .form-pos-num { color: var(--gold-bright); }
+.form-pos-chg {
+    font-size: .58rem; font-weight: 700;
+    letter-spacing: .04em;
+}
+.form-pos-chg.up   { color: var(--sage); }
+.form-pos-chg.down { color: var(--rust); }
+.form-pos-chg.same { color: var(--cream-mute); }
+
+.form-name {
+    color: var(--cream);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: .82rem;
+}
+.form-name em {
+    font-family: var(--serif); font-style: italic;
+    color: var(--cream-mute); font-size: .9em;
+    letter-spacing: 0;
+}
+
+.form-form {
+    display: flex; gap: 3px;
+}
+.form-form i {
+    display: flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: 0;
+    font-style: normal;
+}
+.form-form i.w { background: var(--gold); color: var(--ink); }
+.form-form i.l { background: transparent; color: var(--rust); border: 1px solid var(--rust); }
+.form-form i.t { background: var(--steel); color: var(--ink); }
+
+.form-pts {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--gold);
+    font-weight: 700;
+    font-size: .82rem;
+}
+.form-gap {
+    color: var(--cream-mute);
+    font-size: .68rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.form-chg {
+    font-size: .72rem; font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.form-chg.up   { color: var(--sage); }
+.form-chg.down { color: var(--rust); }
+.form-chg.same { color: var(--cream-mute); }
+
+@media (max-width: 720px) {
+    .form-head, .form-row {
+        grid-template-columns: 44px 1fr 90px 70px;
+        gap: .6rem; padding: 0 .85rem;
+    }
+    .form-head span:nth-child(3),
+    .form-head span:nth-child(5),
+    .form-row .form-form,
+    .form-row .form-gap { display: none; }
+}
+
+/* ============================================================
+   04 — THE MILEAGE MATRIX — vintage triangular H2H grid
+   ============================================================ */
+.matrix-wrap {
+    overflow-x: auto;
+    background: var(--cream);
+    color: var(--ink);
+    padding: 1.5rem;
+    border: 1px solid var(--ink);
+    box-shadow:
+        4px 4px 0 rgba(0,0,0,.15),
+        inset 0 0 0 4px var(--cream),
+        inset 0 0 0 5px var(--rust);
+    position: relative;
+}
+.matrix-wrap::before {
+    /* old-atlas brown border ornament */
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(160,72,48,.4);
+    pointer-events: none;
+}
+.matrix-title {
+    text-align: center;
+    font-family: var(--serif); font-style: italic;
+    color: var(--rust);
+    font-size: 1.05rem;
+    margin-bottom: 1rem;
+    padding-bottom: .65rem;
+    border-bottom: 1px solid rgba(160,72,48,.5);
+    letter-spacing: .02em;
+}
+.matrix-title-sub {
+    display: block;
+    font-family: var(--mono); font-style: normal;
+    font-size: .55rem; letter-spacing: .25em;
+    color: rgba(0,0,0,.55); margin-top: .25rem;
+    text-transform: uppercase;
+}
+.matrix {
+    display: grid;
+    grid-template-columns: 80px repeat(6, 56px);
+    gap: 0;
+    font-family: var(--mono);
+    font-size: .68rem;
+    color: var(--ink);
+}
+.matrix-cell {
+    border-right: 1px solid rgba(160,72,48,.25);
+    border-bottom: 1px solid rgba(160,72,48,.25);
+    padding: .55rem .35rem;
+    text-align: center;
+    line-height: 1.1;
+    height: 44px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.matrix-cell.row-label,
+.matrix-cell.col-label {
+    background: rgba(160,72,48,.06);
+    font-weight: 700;
+    letter-spacing: .15em;
+    color: var(--rust);
+    font-size: .58rem;
+    text-transform: uppercase;
+}
+.matrix-cell.col-label {
+    border-bottom: 2px solid var(--rust);
+}
+.matrix-cell.row-label {
+    border-right: 2px solid var(--rust);
+    text-align: left;
+    padding-left: .85rem;
+    align-items: flex-start;
+}
+.matrix-cell.corner {
+    background: transparent;
+    border-right: 2px solid var(--rust);
+    border-bottom: 2px solid var(--rust);
+}
+.matrix-cell.diag {
+    background: rgba(0,0,0,.05);
+    color: rgba(0,0,0,.35);
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.1rem;
+}
+.matrix-cell.empty { background: rgba(160,72,48,.03); }
+.matrix-cell.h2h {
+    color: #1a0e08;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.matrix-cell.h2h .matrix-pf {
+    font-family: var(--mono); font-weight: 400;
+    font-size: .52rem; color: rgba(0,0,0,.5);
+    margin-top: 2px; letter-spacing: .08em;
+}
+.matrix-cell.h2h.dom { background: rgba(106,154,110,.18); }
+.matrix-cell.h2h.lose { background: rgba(160,72,48,.10); }
+
+.matrix-legend {
+    margin-top: 1rem;
+    display: flex; gap: 1.25rem; justify-content: center;
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: rgba(0,0,0,.55);
+}
+.matrix-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.matrix-legend i {
+    width: 10px; height: 10px; display: inline-block;
+}
+.matrix-legend i.dom { background: rgba(106,154,110,.55); }
+.matrix-legend i.lose { background: rgba(160,72,48,.40); }
+.matrix-legend i.neut { background: rgba(0,0,0,.08); border: 1px solid rgba(0,0,0,.2); }
+
+/* ============================================================
+   05 — THE TIMETABLE — vintage railway departures
+   ============================================================ */
+.timetable {
+    background: var(--ink);
+    border: 2px solid var(--gold-deep);
+    font-family: var(--mono);
+    overflow: hidden;
+    position: relative;
+}
+.timetable::before {
+    /* mock split-flap decorative bar */
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 4px;
+    background: repeating-linear-gradient(90deg, var(--gold) 0 10px, transparent 10px 20px);
+    opacity: .35;
+}
+.tt-mast {
+    background: var(--ink-soft);
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--gold-deep);
+    text-align: center;
+}
+.tt-mast-title {
+    font-family: var(--serif); font-style: italic;
+    color: var(--gold); font-size: 1.4rem;
+    letter-spacing: .02em;
+}
+.tt-mast-sub {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    color: var(--cream-mute);
+    font-size: .58rem; letter-spacing: .28em;
+    text-transform: uppercase;
+    margin-top: .3rem;
+}
+.tt-head, .tt-row {
+    display: grid;
+    grid-template-columns: 70px 100px 1fr 70px 100px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 1.25rem;
+    height: 38px;
+}
+.tt-head {
+    background: rgba(0,0,0,.4);
+    border-bottom: 1px solid var(--ink-line);
+    font-size: .56rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.tt-row {
+    border-bottom: 1px solid var(--ink-line-soft);
+    color: var(--cream);
+    font-size: .8rem;
+}
+.tt-row:last-child { border-bottom: none; }
+.tt-row.boarding { background: rgba(232,200,137,.05); }
+
+.tt-train {
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: .05em;
+    font-variant-numeric: tabular-nums;
+}
+.tt-time {
+    color: var(--cream);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+.tt-service {
+    display: flex; align-items: center; gap: .65rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .76rem; letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--cream);
+    overflow: hidden; white-space: nowrap;
+    min-width: 0;
+}
+.tt-arrow {
+    color: var(--gold);
+    font-family: var(--mono);
+    letter-spacing: 0;
+}
+.tt-platform {
+    font-family: var(--serif); font-style: italic;
+    color: var(--gold); font-size: 1.25rem;
+    text-align: center; line-height: 1;
+}
+.tt-status {
+    font-size: .56rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+    text-align: right;
+}
+.tt-status.on-time { color: var(--sage); }
+.tt-status.boarding { color: var(--gold); }
+.tt-status.delayed { color: var(--rust); }
+.tt-status .dot {
+    display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    margin-right: .35rem; vertical-align: middle;
+}
+.tt-status.on-time .dot { background: var(--sage); }
+.tt-status.boarding .dot {
+    background: var(--gold);
+    animation: livePulse 1.4s ease-in-out infinite;
+}
+.tt-status.delayed .dot { background: var(--rust); }
+
+@media (max-width: 720px) {
+    .tt-head, .tt-row {
+        grid-template-columns: 60px 1fr 80px;
+        gap: .65rem; padding: 0 .85rem;
+    }
+    .tt-head span:nth-child(2),
+    .tt-head span:nth-child(4),
+    .tt-row .tt-time,
+    .tt-row .tt-platform { display: none; }
+    .tt-service { font-size: .68rem; letter-spacing: .08em; }
+}
+
+/* ============================================================
+   06 — THE DAY BOOK — handwritten ledger of recent activity
+   ============================================================ */
+.daybook {
+    background:
+        repeating-linear-gradient(180deg, transparent 0 31px, rgba(160,72,48,.16) 31px 32px),
+        linear-gradient(180deg, #f4ebd8 0%, #eddfc5 100%);
+    color: var(--ink);
+    padding: 1.6rem 1.6rem 1.4rem;
+    border: 1px solid #b09f80;
+    box-shadow: 4px 5px 0 rgba(0,0,0,.18), 0 1px 12px rgba(0,0,0,.3);
+    position: relative;
+    font-family: var(--serif);
+}
+.daybook::before {
+    /* margin rule, like a real ledger */
+    content: '';
+    position: absolute;
+    left: 64px; top: 0; bottom: 0;
+    width: 1px;
+    background: rgba(160,72,48,.45);
+}
+.db-mast {
+    text-align: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: .85rem;
+    border-bottom: 1.5px solid var(--rust);
+}
+.db-mast-title {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.35rem;
+    color: var(--ink);
+    letter-spacing: .01em;
+}
+.db-mast-sub {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .25em;
+    color: var(--rust);
+    margin-top: .35rem;
+    text-transform: uppercase;
+}
+.db-rows {
+    display: flex; flex-direction: column;
+}
+.db-row {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    align-items: baseline;
+    gap: .8rem;
+    height: 32px;
+    padding-right: .25rem;
+}
+.db-date {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .15em;
+    color: var(--rust);
+    text-transform: uppercase;
+}
+.db-entry {
+    font-family: var(--serif); font-style: italic;
+    font-size: .96rem;
+    color: var(--ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    line-height: 32px;
+}
+.db-entry strong {
+    font-family: var(--sans); font-weight: 700; font-style: normal;
+    color: var(--rust); letter-spacing: .01em;
+}
+.db-entry em.score {
+    font-style: normal; font-family: var(--mono);
+    color: var(--ink); font-size: .9em;
+    letter-spacing: .04em;
+}
+.db-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem;
+    border: 1.5px solid;
+    background: transparent;
+    line-height: 1;
+}
+.db-mark.w { color: var(--sage); border-color: var(--sage); }
+.db-mark.l { color: var(--rust); border-color: var(--rust); }
+.db-mark.t { color: rgba(0,0,0,.5); border-color: rgba(0,0,0,.5); }
+.db-mark.note { color: var(--rust); border: none; font-size: 1rem; }
+
+.db-foot {
+    margin-top: 1.1rem;
+    padding-top: .85rem;
+    border-top: 1px dotted rgba(160,72,48,.4);
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .22em;
+    color: rgba(0,0,0,.55);
+    text-transform: uppercase;
+}
+.db-foot em {
+    font-style: italic; font-family: var(--serif);
+    text-transform: none; letter-spacing: .02em;
+    color: var(--rust); font-weight: 400;
+}
+
+/* ============================================================
+   07 — THE ALMANAC CALENDAR — real month grid with day markers
+   ============================================================ */
+.cal {
+    background: var(--cream);
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    box-shadow: 4px 5px 0 var(--gold-deep), 0 1px 12px rgba(0,0,0,.3);
+    padding: 0;
+    font-family: var(--serif);
+}
+.cal-mast {
+    background: var(--rust);
+    color: var(--cream);
+    padding: .95rem 1.2rem;
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--ink);
+}
+.cal-mast-month {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.65rem;
+    color: var(--cream);
+    letter-spacing: .03em;
+}
+.cal-mast-meta {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .25em;
+    text-transform: uppercase;
+    color: rgba(244,235,216,.7);
+}
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--ink);
+    gap: 1px;
+}
+.cal-dow {
+    background: var(--cream);
+    color: var(--rust);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
+    text-align: center;
+    padding: .5rem .25rem;
+    border-bottom: 1px solid var(--ink);
+}
+.cal-day {
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 64px;
+    padding: .35rem .4rem;
+    display: flex; flex-direction: column;
+    gap: .15rem;
+    position: relative;
+}
+.cal-day.dim { background: rgba(244,235,216,.6); color: rgba(0,0,0,.35); }
+.cal-day.today {
+    background: rgba(232,200,137,.4);
+    box-shadow: inset 0 0 0 2px var(--rust);
+}
+.cal-day.today .cal-num { color: var(--rust); }
+
+.cal-num {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.1rem; line-height: 1;
+    color: var(--ink);
+}
+.cal-mark {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 1px 4px;
+    border: 1px solid;
+    align-self: flex-start;
+    line-height: 1.2;
+}
+.cal-mark.game { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+.cal-mark.milestone { background: var(--rust); color: var(--cream); border-color: var(--rust); }
+.cal-mark.tx { background: transparent; color: var(--steel); border-color: var(--steel); }
+.cal-mark.holiday { background: rgba(106,154,110,.2); color: #2a5c2e; border-color: #2a5c2e; }
+
+.cal-legend {
+    background: var(--cream);
+    padding: .8rem 1.2rem;
+    border-top: 1px solid var(--ink);
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+    font-family: var(--mono); font-size: .54rem;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: rgba(0,0,0,.65);
+    justify-content: center;
+}
+.cal-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.cal-legend i {
+    width: 8px; height: 8px; display: inline-block;
+}
+.cal-legend i.game      { background: var(--ink); }
+.cal-legend i.milestone { background: var(--rust); }
+.cal-legend i.tx        { background: transparent; border: 1px solid var(--steel); }
+.cal-legend i.holiday   { background: rgba(106,154,110,.45); }
+
+@media (max-width: 600px) {
+    .cal-day { min-height: 52px; padding: .25rem .25rem; }
+    .cal-num { font-size: .95rem; }
+    .cal-mark { font-size: .42rem; letter-spacing: .08em; padding: 1px 3px; }
+}
+
+/* ============================================================
+   08 — THE TRACKBOARD — narrow vertical multi-tab tracker
+   Built for a home-page sidebar slot. Tabbed views over a
+   compact F1-style row layout.
+   ============================================================ */
+.trackboard {
+    width: 296px;
+    max-width: 100%;
+    margin: 0 auto;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--ink-line);
+    position: relative;
+    font-family: var(--mono);
+    /* overflow not hidden — we let the collapse tab protrude on the left edge. */
+    transition: box-shadow .25s ease, transform .3s ease;
+}
+.trackboard::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--gold);
+}
+.tb-mast {
+    padding: .85rem 1.1rem;
+    background: var(--ink);
+    border-bottom: 1px solid var(--gold-deep);
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: .56rem; letter-spacing: .26em; text-transform: uppercase;
+    font-weight: 700;
+}
+.tb-mast-title { color: var(--gold); }
+.tb-mast-meta { color: var(--cream-mute); }
+.tb-mast-meta .live-dot {
+    display: inline-block; width: 5px; height: 5px;
+    background: var(--rust); border-radius: 50%;
+    margin-right: .35rem; vertical-align: middle;
+    box-shadow: 0 0 5px var(--rust);
+    animation: livePulse 1.6s ease-in-out infinite;
+}
+
+.tb-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: rgba(0,0,0,.32);
+    border-bottom: 1px solid var(--ink-line);
+}
+.tb-tab {
+    background: none; border: none;
+    padding: .7rem .25rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s, background .15s;
+}
+.tb-tab:hover { color: var(--cream); background: rgba(232,200,137,.04); }
+.tb-tab.is-active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(232,200,137,.06);
+}
+
+.tb-panel { padding: .25rem 0; }
+.tb-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 86px;
+    align-items: center;
+    gap: 1rem;
+    padding: .75rem 1.25rem;
+    border-bottom: 1px dotted var(--ink-line-soft);
+}
+.tb-row:last-child { border-bottom: none; }
+.tb-row:hover { background: rgba(232,200,137,.03); }
+
+.tb-rank {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; line-height: 1;
+    color: var(--gold);
+    text-align: center;
+}
+.tb-name {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--cream);
+    overflow: hidden;
+}
+.tb-name-sub {
+    display: block;
+    font-family: var(--mono); font-weight: 400;
+    font-size: .52rem; letter-spacing: .15em;
+    color: var(--cream-mute);
+    margin-top: 2px;
+    text-transform: uppercase;
+}
+
+.tb-val {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; letter-spacing: .04em;
+    color: var(--cream);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+}
+.tb-val.hot   { color: var(--gold); }
+.tb-val.cold  { color: var(--rust); }
+.tb-val.up    { color: var(--sage); }
+.tb-val.down  { color: var(--rust); }
+.tb-val small {
+    display: block;
+    font-size: .5rem; font-weight: 400; letter-spacing: .15em;
+    color: var(--cream-mute);
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+/* WATCH tab: 2-row layout with a progress bar.
+   Tightened vertical density so it doesn't tower over the other panels. */
+.tb-watch-row {
+    display: flex; flex-direction: column;
+    gap: .28rem;
+    padding: .55rem 1.25rem .6rem;
+    border-bottom: 1px dotted var(--ink-line-soft);
+}
+.tb-watch-row:last-child { border-bottom: none; }
+.tb-watch-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: .5rem;
+}
+.tb-watch-name {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .64rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--cream);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tb-watch-pct {
+    font-family: var(--serif); font-style: italic;
+    font-size: .92rem;
+    color: var(--gold);
+    line-height: 1;
+}
+.tb-watch-bar {
+    height: 3px;
+    background: var(--ink);
+    border: 1px solid var(--ink-line);
+    overflow: hidden;
+    position: relative;
+}
+.tb-watch-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+    transition: width .3s ease;
+}
+.tb-watch-desc {
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+    line-height: 1.3;
+}
+.tb-watch-desc em {
+    font-style: normal; color: var(--gold); font-weight: 700;
+}
+
+.tb-foot {
+    padding: .65rem 1.25rem;
+    background: rgba(0,0,0,.22);
+    border-top: 1px solid var(--ink-line);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: center;
+}
+
+/* ─── "Pin to right edge" preview mode ─────────────────────────
+   Body class flipped via the toggle button inside the trackboard
+   feature card. Pins the trackboard to the right side of the
+   viewport so visitors can judge whether it should live as a
+   fixed sidebar on the real home page. */
+body.tb-pinned .trackboard.is-pinned {
+    position: fixed;
+    top: 50%;
+    right: 1.5rem;
+    transform: translateY(-50%);
+    z-index: 90;
+    box-shadow: -4px 6px 24px rgba(0,0,0,.5), 0 0 0 1px var(--gold-deep);
+    margin: 0;
+}
+body.tb-pinned .trackboard.is-pinned::after {
+    content: '★ Pinned preview ★';
+    position: absolute;
+    top: -22px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--gold); white-space: nowrap;
+}
+
+/* ─── Collapse tab — sticks out to the LEFT of the pinned trackboard.
+       Hidden in the inline (un-pinned) state. */
+.tb-collapse-btn {
+    display: none;
+    position: absolute;
+    left: -28px; top: 50%;
+    transform: translateY(-50%);
+    width: 28px; height: 60px;
+    background: linear-gradient(180deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--gold-deep);
+    border-right: none;
+    color: var(--gold);
+    cursor: pointer;
+    z-index: 2;
+    align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: .95rem;
+    font-weight: 700;
+    padding: 0;
+    transition: background .15s, color .15s;
+    box-shadow: -3px 3px 8px rgba(0,0,0,.35);
+}
+body.tb-pinned .trackboard.is-pinned .tb-collapse-btn { display: flex; }
+.tb-collapse-btn:hover {
+    background: linear-gradient(180deg, rgba(232,200,137,.08), var(--ink-card));
+    color: var(--gold-bright);
+}
+.tb-collapse-btn::after {
+    content: '›'; /* expanded → arrow points "out" (close) */
+    line-height: 1;
+}
+body.tb-pinned .trackboard.is-pinned.is-collapsed .tb-collapse-btn::after {
+    content: '‹'; /* collapsed → arrow points "back in" (open) */
+}
+
+/* Collapsed state: slide the trackboard right so its leftmost 40px
+   stays in the viewport AND sits flush with the right edge of the
+   screen — the `+ 1.5rem` shifts it past the normal pinned-right
+   offset so the rail kisses the edge, taking less screen footprint
+   than the open state. Matches the rail's 40px width exactly so
+   nothing else from the trackboard peeks behind it. */
+body.tb-pinned .trackboard.is-pinned.is-collapsed {
+    transform: translate(calc(100% - 40px + 1.5rem), -50%);
+}
+body.tb-pinned .trackboard.is-pinned.is-collapsed::after {
+    content: '';  /* drop the "Pinned preview" label when collapsed */
+}
+/* Collapse tab stays visible in BOTH states — it sticks out to the
+   left of the trackboard when open, and to the left of the rail when
+   collapsed. The arrow flips based on state. The rail is still
+   clickable too as a larger hit target. */
+/* When collapsed, push the tab further left so it sits a bit out from
+   the rail. Bump this number to push it further; lower toward -28px
+   to nest it tight against the rail. */
+body.tb-pinned .trackboard.is-pinned.is-collapsed .tb-collapse-btn {
+    left: -30px;
+}
+
+/* ─── Collapsed rail — vertical labels visible in the 44px strip ── */
+.tb-rail {
+    display: none;
+    position: absolute;
+    left: 0; top: 0;
+    width: 40px; height: 100%;
+    background: linear-gradient(180deg, var(--ink-card) 0%, var(--ink-soft) 100%);
+    border: none;
+    border-right: 1px solid var(--gold-deep);
+    /* The 3px gold ::before strip on the trackboard sits left of this rail */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    padding: 1.5rem 0;
+    cursor: pointer;
+    z-index: 1;
+    /* Inset shadow handles the hover tint so the background stays fully
+       opaque — earlier I used an rgba gradient which made the top of the
+       rail see-through on hover. */
+    transition: box-shadow .2s, border-right-color .2s;
+    color: inherit;
+    font: inherit;
+    appearance: none;
+}
+.tb-rail-tabs {
+    display: flex;
+}
+body.tb-pinned .trackboard.is-pinned.is-collapsed .tb-rail {
+    display: flex;
+}
+.tb-rail:hover {
+    box-shadow: inset 0 0 0 999px rgba(232,200,137,.05);
+    border-right-color: var(--gold);
+}
+.tb-rail:hover .tb-rail-arrow { color: var(--gold-bright); }
+
+.tb-rail-arrow {
+    color: var(--gold);
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    line-height: 1;
+    margin-top: -.25rem;
+    transition: color .15s;
+}
+.tb-rail-title {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--serif); font-style: italic;
+    color: var(--gold);
+    font-size: .95rem;
+    letter-spacing: .22em;
+    text-shadow: 0 1px 0 rgba(0,0,0,.4);
+    line-height: 1;
+}
+.tb-rail-divider {
+    width: 14px; height: 1px;
+    background: var(--gold-deep);
+    opacity: .7;
+}
+.tb-rail-tabs {
+    display: flex; flex-direction: column;
+    gap: .85rem;
+    align-items: center;
+}
+.tb-rail-tab {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    line-height: 1;
+    transition: color .15s;
+}
+.tb-rail-tab.active { color: var(--gold); }
+.tb-rail:hover .tb-rail-tab { color: var(--cream-soft); }
+.tb-rail:hover .tb-rail-tab.active { color: var(--gold-bright); }
+.tb-pin-toggle {
+    margin: 1rem auto 0;
+    display: block;
+    background: var(--ink-card);
+    border: 1px solid var(--gold-deep);
+    color: var(--gold);
+    padding: .55rem 1rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+.tb-pin-toggle:hover {
+    background: rgba(232,200,137,.08);
+    color: var(--gold-bright);
+}
+body.tb-pinned .tb-pin-toggle::after { content: ' · unpin'; }
+@media (max-width: 720px) {
+    body.tb-pinned .trackboard.is-pinned {
+        position: fixed; top: auto; bottom: 1rem;
+        right: 1rem; left: 1rem; width: auto; max-width: 360px;
+        margin: 0 auto; transform: none;
+    }
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.demo-footer {
+    margin-top: 4rem; padding: 2rem 0 1rem;
+    text-align: center;
+    font-family: var(--mono); font-size: .62rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.demo-footer a { color: var(--gold); text-decoration: none; }
+.demo-footer a:hover { color: var(--gold-bright); }
+</style>
+</head>
+<body>
+
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<!-- 01 · SPINE (fixed) -->
+<nav class="spine" aria-label="Section navigation">
+    <span class="spine-title">PA Milk Society</span>
+    <span class="spine-vol">VOL · II</span>
+    <div class="spine-dots" id="spine-dots">
+        <button class="spine-dot active" data-target="feature-01" data-label="Spine"></button>
+        <button class="spine-dot" data-target="feature-02" data-label="Ribbon"></button>
+        <button class="spine-dot" data-target="feature-03" data-label="Form Sheet"></button>
+        <button class="spine-dot" data-target="feature-04" data-label="Mileage Matrix"></button>
+        <button class="spine-dot" data-target="feature-05" data-label="Timetable"></button>
+        <button class="spine-dot" data-target="feature-06" data-label="Day Book"></button>
+        <button class="spine-dot" data-target="feature-07" data-label="Calendar"></button>
+        <button class="spine-dot" data-target="feature-08" data-label="Trackboard"></button>
+    </div>
+</nav>
+
+<!-- 02 · BOOKMARK RIBBON (fixed) -->
+<button type="button" class="ribbon" id="ribbon" aria-label="Back to top"></button>
+
+<main class="demo-shell">
+
+    <header class="demo-hero">
+        <div class="demo-hero-kicker">★ Feature Showcase · v2 ★</div>
+        <h1 class="demo-hero-title">Vintage idioms <em>for data.</em></h1>
+        <p class="demo-hero-sub">
+            Five new ways to display the league's actual numbers — borrowed from old almanacs,
+            racing forms, ledgers, and timetables — plus the spine and ribbon from the first round.
+        </p>
+    </header>
+
+    <!-- ─────────── 01 · SPINE ─────────── -->
+    <section class="demo-card" id="feature-01">
+        <div class="demo-meta">
+            <span class="demo-num">№ I</span>
+            <span class="demo-name">The <em>Spine.</em></span>
+        </div>
+        <p class="demo-desc">
+            Sticky vertical book-spine rail to your left, with the league name printed sideways and
+            scroll-tracked dots. You flagged this as cool but heavy for every page — the recommendation
+            would be <strong>home page only</strong>, and have sub-pages (Standings, Managers, Seasons,
+            etc.) drop back to the normal masthead. The spine becomes a signature element of the
+            "entrance" rather than something visitors have to tolerate everywhere.
+        </p>
+        <div class="demo-body" style="text-align: center; font-family: var(--mono); color: var(--cream-mute); font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;">
+            ← Always visible on this demo. Scroll and watch the dots track.
+        </div>
+    </section>
+
+    <!-- ─────────── 02 · BOOKMARK RIBBON (CREAM) ─────────── -->
+    <section class="demo-card" id="feature-02">
+        <div class="demo-meta">
+            <span class="demo-num">№ II</span>
+            <span class="demo-name">Bookmark <em>Ribbon.</em></span>
+        </div>
+        <p class="demo-desc">
+            Cream silk with a deep-gold ✦ at the head — closer to a real silk page-marker than a flag.
+            Sticky top-right. Click to <strong>bookmark</strong> the page (and snap to the top);
+            click again to release. The bookmarked state is visually distinct — the ribbon extends
+            noticeably longer with a soft gold halo and the ✦ swells slightly, all with a bouncy
+            easing so it feels like a ribbon being pulled into place. Try clicking it.
+        </p>
+        <div class="demo-body" style="text-align: center; font-family: var(--mono); color: var(--cream-mute); font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;">
+            ↗ Top right of the viewport. Click to return.
+        </div>
+    </section>
+
+    <!-- ─────────── 03 · THE FORM SHEET ─────────── -->
+    <section class="demo-card" id="feature-03">
+        <div class="demo-meta">
+            <span class="demo-num">№ III</span>
+            <span class="demo-name">The <em>Form Sheet.</em></span>
+        </div>
+        <p class="demo-desc">
+            Standings rendered as an <strong>F1 timing tower</strong> — positions on the left with
+            up/down arrows from last week, then manager, then a five-game form string (W/L pills),
+            points, gap from leader, and the week's swing.
+            <br><br>
+            <em>On previous-season data:</em> we'd render it from the
+            <strong>current season only</strong>. Early in the year the form string would have empty
+            slots (Week 1 = four empty + one pill, Week 2 = three empty + two, etc.) until five games
+            are on file. Cleaner than mixing seasons, and the empty-pill effect itself reads as
+            "season just begun."
+        </p>
+        <div class="demo-body" style="padding: 0;">
+            <div class="form-sheet">
+                <div class="form-mast">
+                    <span class="form-mast-title">★ Standings · Week XII ★</span>
+                    <span class="form-mast-meta"><span class="live-dot"></span>Live timing</span>
+                </div>
+                <div class="form-head">
+                    <span>POS</span>
+                    <span>MANAGER</span>
+                    <span>FORM</span>
+                    <span>PTS</span>
+                    <span>GAP</span>
+                    <span>CHG</span>
+                </div>
+                <div class="form-row leader">
+                    <span class="form-pos">
+                        <span class="form-pos-num">1</span>
+                        <span class="form-pos-chg up">▲2</span>
+                    </span>
+                    <span class="form-name">PA Slingers <em>· Jake K.</em></span>
+                    <span class="form-form">
+                        <i class="w">W</i><i class="w">W</i><i class="l">L</i><i class="w">W</i><i class="w">W</i>
+                    </span>
+                    <span class="form-pts">1,842.1</span>
+                    <span class="form-gap">leader</span>
+                    <span class="form-chg up">+38.4</span>
+                </div>
+                <div class="form-row">
+                    <span class="form-pos">
+                        <span class="form-pos-num">2</span>
+                        <span class="form-pos-chg down">▼1</span>
+                    </span>
+                    <span class="form-name">Tight End Tendency <em>· Drew M.</em></span>
+                    <span class="form-form">
+                        <i class="w">W</i><i class="l">L</i><i class="w">W</i><i class="w">W</i><i class="l">L</i>
+                    </span>
+                    <span class="form-pts">1,803.7</span>
+                    <span class="form-gap">-38.4</span>
+                    <span class="form-chg down">-12.1</span>
+                </div>
+                <div class="form-row">
+                    <span class="form-pos">
+                        <span class="form-pos-num">3</span>
+                        <span class="form-pos-chg up">▲1</span>
+                    </span>
+                    <span class="form-name">Dad Bod Dynasty <em>· Mike R.</em></span>
+                    <span class="form-form">
+                        <i class="w">W</i><i class="w">W</i><i class="w">W</i><i class="l">L</i><i class="w">W</i>
+                    </span>
+                    <span class="form-pts">1,755.4</span>
+                    <span class="form-gap">-86.7</span>
+                    <span class="form-chg up">+22.0</span>
+                </div>
+                <div class="form-row">
+                    <span class="form-pos">
+                        <span class="form-pos-num">4</span>
+                        <span class="form-pos-chg same">—</span>
+                    </span>
+                    <span class="form-name">Pittsburgh Tomlinmen <em>· Sam W.</em></span>
+                    <span class="form-form">
+                        <i class="l">L</i><i class="w">W</i><i class="w">W</i><i class="l">L</i><i class="w">W</i>
+                    </span>
+                    <span class="form-pts">1,712.0</span>
+                    <span class="form-gap">-130.1</span>
+                    <span class="form-chg same">+0.4</span>
+                </div>
+                <div class="form-row">
+                    <span class="form-pos">
+                        <span class="form-pos-num">5</span>
+                        <span class="form-pos-chg down">▼2</span>
+                    </span>
+                    <span class="form-name">Iron Sheik Bombers <em>· Tom L.</em></span>
+                    <span class="form-form">
+                        <i class="l">L</i><i class="l">L</i><i class="w">W</i><i class="l">L</i><i class="w">W</i>
+                    </span>
+                    <span class="form-pts">1,688.3</span>
+                    <span class="form-gap">-153.8</span>
+                    <span class="form-chg down">-18.6</span>
+                </div>
+                <div class="form-row">
+                    <span class="form-pos">
+                        <span class="form-pos-num">6</span>
+                        <span class="form-pos-chg same">—</span>
+                    </span>
+                    <span class="form-name">Bench Mob <em>· Joey Z.</em></span>
+                    <span class="form-form">
+                        <i class="w">W</i><i class="l">L</i><i class="l">L</i><i class="w">W</i><i class="l">L</i>
+                    </span>
+                    <span class="form-pts">1,640.9</span>
+                    <span class="form-gap">-201.2</span>
+                    <span class="form-chg same">+1.8</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─────────── 04 · THE MILEAGE MATRIX ─────────── -->
+    <section class="demo-card" id="feature-04">
+        <div class="demo-meta">
+            <span class="demo-num">№ IV</span>
+            <span class="demo-name">The <em>Mileage Matrix.</em></span>
+        </div>
+        <p class="demo-desc">
+            A vintage road atlas's <strong>distance-between-cities</strong> grid, but the cells hold
+            <strong>head-to-head records</strong> between every pair of managers. Lower triangle
+            only (the matrix is symmetric); diagonal cells get a hyphen. Green tint = dominant matchup,
+            rust tint = losing matchup, neutral = even-ish. Renders on cream paper like a real atlas.
+            <br><br>
+            <strong>→ Live Season page candidate.</strong> Too wide and dense for the home page —
+            but it'd be a strong addition to the live-season hub alongside Pick'ems, Power Rankings,
+            etc., where readers come to dig.
+        </p>
+        <div class="demo-body">
+            <div class="matrix-wrap">
+                <div class="matrix-title">
+                    All-Time Head to Head
+                    <span class="matrix-title-sub">PA Milk Society · Vol. II</span>
+                </div>
+                <div class="matrix">
+                    <!-- header row -->
+                    <div class="matrix-cell corner">&nbsp;</div>
+                    <div class="matrix-cell col-label">Sli</div>
+                    <div class="matrix-cell col-label">Tnd</div>
+                    <div class="matrix-cell col-label">Bod</div>
+                    <div class="matrix-cell col-label">Tom</div>
+                    <div class="matrix-cell col-label">Bmb</div>
+                    <div class="matrix-cell col-label">Mob</div>
+
+                    <!-- row Sli -->
+                    <div class="matrix-cell row-label">Slingers</div>
+                    <div class="matrix-cell diag">—</div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+
+                    <!-- row Tnd -->
+                    <div class="matrix-cell row-label">Tendency</div>
+                    <div class="matrix-cell h2h lose">5–8<span class="matrix-pf">1,624 PF</span></div>
+                    <div class="matrix-cell diag">—</div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+
+                    <!-- row Bod -->
+                    <div class="matrix-cell row-label">Dad Bod</div>
+                    <div class="matrix-cell h2h">6–6<span class="matrix-pf">1,498 PF</span></div>
+                    <div class="matrix-cell h2h dom">9–4<span class="matrix-pf">1,712 PF</span></div>
+                    <div class="matrix-cell diag">—</div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+
+                    <!-- row Tom -->
+                    <div class="matrix-cell row-label">Tomlinmen</div>
+                    <div class="matrix-cell h2h lose">4–9<span class="matrix-pf">1,402 PF</span></div>
+                    <div class="matrix-cell h2h">7–6<span class="matrix-pf">1,581 PF</span></div>
+                    <div class="matrix-cell h2h">5–7<span class="matrix-pf">1,488 PF</span></div>
+                    <div class="matrix-cell diag">—</div>
+                    <div class="matrix-cell empty"></div>
+                    <div class="matrix-cell empty"></div>
+
+                    <!-- row Bmb -->
+                    <div class="matrix-cell row-label">Bombers</div>
+                    <div class="matrix-cell h2h">6–7<span class="matrix-pf">1,512 PF</span></div>
+                    <div class="matrix-cell h2h dom">10–3<span class="matrix-pf">1,805 PF</span></div>
+                    <div class="matrix-cell h2h">5–7<span class="matrix-pf">1,489 PF</span></div>
+                    <div class="matrix-cell h2h">7–6<span class="matrix-pf">1,612 PF</span></div>
+                    <div class="matrix-cell diag">—</div>
+                    <div class="matrix-cell empty"></div>
+
+                    <!-- row Mob -->
+                    <div class="matrix-cell row-label">Bench Mob</div>
+                    <div class="matrix-cell h2h lose">3–10<span class="matrix-pf">1,388 PF</span></div>
+                    <div class="matrix-cell h2h">5–8<span class="matrix-pf">1,476 PF</span></div>
+                    <div class="matrix-cell h2h lose">4–9<span class="matrix-pf">1,402 PF</span></div>
+                    <div class="matrix-cell h2h dom">8–5<span class="matrix-pf">1,664 PF</span></div>
+                    <div class="matrix-cell h2h">6–7<span class="matrix-pf">1,533 PF</span></div>
+                    <div class="matrix-cell diag">—</div>
+                </div>
+                <div class="matrix-legend">
+                    <span><i class="dom"></i> Dominant ≥ +3</span>
+                    <span><i class="neut"></i> Even ±2</span>
+                    <span><i class="lose"></i> Losing ≥ −3</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─────────── 05 · THE TIMETABLE ─────────── -->
+    <section class="demo-card" id="feature-05">
+        <div class="demo-meta">
+            <span class="demo-num">№ V</span>
+            <span class="demo-name">The <em>Timetable.</em></span>
+        </div>
+        <p class="demo-desc">
+            Upcoming matchups rendered as a <strong>railway departures board</strong> — train number,
+            departure time (game kickoff), service ("Slingers ─→─ Bench Mob"), platform (matchup
+            number in Roman), and live status with a pulsing dot for BOARDING. Reads at a glance.
+            <br><br>
+            <strong>→ Live Season page candidate.</strong> Belongs on the live-season hub where the
+            week's schedule actually matters — sits well next to Pick'ems and the power-rank widgets.
+            Too wide for the home page's tight rhythm.
+        </p>
+        <div class="demo-body" style="padding: 0;">
+            <div class="timetable">
+                <div class="tt-mast">
+                    <span class="tt-mast-title">Departures.</span>
+                    <span class="tt-mast-sub">Week XIII · Nov 27, MMXXV · Updated 06:00</span>
+                </div>
+                <div class="tt-head">
+                    <span>TRAIN</span><span>TIME</span><span>SERVICE</span><span>PLAT</span><span>STATUS</span>
+                </div>
+                <div class="tt-row boarding">
+                    <span class="tt-train">13.01</span>
+                    <span class="tt-time">1:00 PM</span>
+                    <span class="tt-service">Slingers <span class="tt-arrow">─→─</span> Bench Mob</span>
+                    <span class="tt-platform">I</span>
+                    <span class="tt-status boarding"><span class="dot"></span>Boarding</span>
+                </div>
+                <div class="tt-row">
+                    <span class="tt-train">13.02</span>
+                    <span class="tt-time">1:00 PM</span>
+                    <span class="tt-service">Tendency <span class="tt-arrow">─→─</span> Dad Bod</span>
+                    <span class="tt-platform">II</span>
+                    <span class="tt-status on-time"><span class="dot"></span>On Time</span>
+                </div>
+                <div class="tt-row">
+                    <span class="tt-train">13.03</span>
+                    <span class="tt-time">4:25 PM</span>
+                    <span class="tt-service">Bombers <span class="tt-arrow">─→─</span> Tomlinmen</span>
+                    <span class="tt-platform">III</span>
+                    <span class="tt-status on-time"><span class="dot"></span>On Time</span>
+                </div>
+                <div class="tt-row">
+                    <span class="tt-train">13.04</span>
+                    <span class="tt-time">8:20 PM</span>
+                    <span class="tt-service">Sheik <span class="tt-arrow">─→─</span> Carriers</span>
+                    <span class="tt-platform">IV</span>
+                    <span class="tt-status delayed"><span class="dot"></span>Delayed</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─────────── 06 · THE DAY BOOK ─────────── -->
+    <section class="demo-card" id="feature-06">
+        <div class="demo-meta">
+            <span class="demo-num">№ VI</span>
+            <span class="demo-name">The <em>Day Book.</em></span>
+        </div>
+        <p class="demo-desc">
+            A vintage ledger / day book of recent league activity. Lined paper, mono dates running
+            down the rule margin, italic serif prose for each entry, single-letter W/L mark on the
+            right in a small square. Could show the latest 6–10 events: results, milestones, trades,
+            roster moves. Reads like a Victorian shopkeeper's account book.
+        </p>
+        <div class="demo-body">
+            <div class="daybook">
+                <div class="db-mast">
+                    <div class="db-mast-title">Day Book of the PA Milk Society</div>
+                    <span class="db-mast-sub">Kept by the editor · Week ending Nov 24, MMXXV</span>
+                </div>
+                <div class="db-rows">
+                    <div class="db-row">
+                        <span class="db-date">Nov 24</span>
+                        <span class="db-entry"><strong>Slingers</strong> defeated <strong>Bench Mob</strong>, <em class="score">142.6 — 128.7</em>. The week's high.</span>
+                        <span class="db-mark w">W</span>
+                    </div>
+                    <div class="db-row">
+                        <span class="db-date">Nov 24</span>
+                        <span class="db-entry"><strong>Dad Bod</strong> upset <strong>Tendency</strong>, <em class="score">138.0 — 119.4</em>. Tendency falls to 2nd.</span>
+                        <span class="db-mark w">W</span>
+                    </div>
+                    <div class="db-row">
+                        <span class="db-date">Nov 24</span>
+                        <span class="db-entry"><strong>Bombers</strong> held <strong>Tomlinmen</strong> to under 100. First time this year.</span>
+                        <span class="db-mark w">W</span>
+                    </div>
+                    <div class="db-row">
+                        <span class="db-date">Nov 22</span>
+                        <span class="db-entry"><em>Note:</em> Slingers crossed 5,000 career points. Fourth manager to do it.</span>
+                        <span class="db-mark note">✦</span>
+                    </div>
+                    <div class="db-row">
+                        <span class="db-date">Nov 21</span>
+                        <span class="db-entry">Trade filed: <strong>Dad Bod</strong> sends <em>Achane</em> to <strong>Mob</strong> for <em>Pacheco + 3rd.</em></span>
+                        <span class="db-mark note">⇄</span>
+                    </div>
+                    <div class="db-row">
+                        <span class="db-date">Nov 17</span>
+                        <span class="db-entry"><strong>Mob</strong> dropped to <strong>Tomlinmen</strong>, <em class="score">98.0 — 117.3</em>. Sixth in a row.</span>
+                        <span class="db-mark l">L</span>
+                    </div>
+                    <div class="db-row">
+                        <span class="db-date">Nov 17</span>
+                        <span class="db-entry"><strong>Tendency</strong> over <strong>Sheik</strong>, <em class="score">144.3 — 99.1</em>. Tendency reclaims first.</span>
+                        <span class="db-mark w">W</span>
+                    </div>
+                </div>
+                <div class="db-foot">
+                    <span>Vol. II · Ledger № 12</span>
+                    <em>kept honest since MMXVIII</em>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─────────── 07 · THE ALMANAC CALENDAR ─────────── -->
+    <section class="demo-card" id="feature-07">
+        <div class="demo-meta">
+            <span class="demo-num">№ VII</span>
+            <span class="demo-name">The <em>Almanac Calendar.</em></span>
+        </div>
+        <p class="demo-desc">
+            A real month-grid calendar in the almanac's cream-and-rust palette, with each day flagged
+            for what happened or what's coming: <strong>GAME</strong> cells, <strong>MILESTONE</strong>
+            cells, <strong>TX</strong> (trades) cells. Today gets a thick rust border so you can find it.
+            Could be a fixed widget on the home page, advancing month by month.
+        </p>
+        <div class="demo-body">
+            <div class="cal">
+                <div class="cal-mast">
+                    <span class="cal-mast-month">November.</span>
+                    <span class="cal-mast-meta">MMXXV · Vol. II</span>
+                </div>
+                <div class="cal-grid">
+                    <div class="cal-dow">Sun</div>
+                    <div class="cal-dow">Mon</div>
+                    <div class="cal-dow">Tue</div>
+                    <div class="cal-dow">Wed</div>
+                    <div class="cal-dow">Thu</div>
+                    <div class="cal-dow">Fri</div>
+                    <div class="cal-dow">Sat</div>
+
+                    <!-- Week of Nov 30 (last week of Oct, dim) -->
+                    <div class="cal-day dim"><span class="cal-num">26</span></div>
+                    <div class="cal-day dim"><span class="cal-num">27</span></div>
+                    <div class="cal-day dim"><span class="cal-num">28</span></div>
+                    <div class="cal-day dim"><span class="cal-num">29</span></div>
+                    <div class="cal-day dim"><span class="cal-num">30</span></div>
+                    <div class="cal-day dim"><span class="cal-num">31</span></div>
+                    <div class="cal-day"><span class="cal-num">1</span></div>
+
+                    <!-- Week of Nov 2 -->
+                    <div class="cal-day">
+                        <span class="cal-num">2</span>
+                        <span class="cal-mark game">Wk IX</span>
+                    </div>
+                    <div class="cal-day"><span class="cal-num">3</span></div>
+                    <div class="cal-day"><span class="cal-num">4</span></div>
+                    <div class="cal-day">
+                        <span class="cal-num">5</span>
+                        <span class="cal-mark tx">Trade</span>
+                    </div>
+                    <div class="cal-day"><span class="cal-num">6</span></div>
+                    <div class="cal-day"><span class="cal-num">7</span></div>
+                    <div class="cal-day"><span class="cal-num">8</span></div>
+
+                    <!-- Week of Nov 9 -->
+                    <div class="cal-day">
+                        <span class="cal-num">9</span>
+                        <span class="cal-mark game">Wk X</span>
+                    </div>
+                    <div class="cal-day">
+                        <span class="cal-num">10</span>
+                        <span class="cal-mark milestone">5K · Sli</span>
+                    </div>
+                    <div class="cal-day"><span class="cal-num">11</span></div>
+                    <div class="cal-day"><span class="cal-num">12</span></div>
+                    <div class="cal-day"><span class="cal-num">13</span></div>
+                    <div class="cal-day"><span class="cal-num">14</span></div>
+                    <div class="cal-day"><span class="cal-num">15</span></div>
+
+                    <!-- Week of Nov 16 -->
+                    <div class="cal-day">
+                        <span class="cal-num">16</span>
+                        <span class="cal-mark game">Wk XI</span>
+                    </div>
+                    <div class="cal-day"><span class="cal-num">17</span></div>
+                    <div class="cal-day"><span class="cal-num">18</span></div>
+                    <div class="cal-day"><span class="cal-num">19</span></div>
+                    <div class="cal-day"><span class="cal-num">20</span></div>
+                    <div class="cal-day">
+                        <span class="cal-num">21</span>
+                        <span class="cal-mark tx">Trade</span>
+                    </div>
+                    <div class="cal-day"><span class="cal-num">22</span></div>
+
+                    <!-- Week of Nov 23 -->
+                    <div class="cal-day">
+                        <span class="cal-num">23</span>
+                        <span class="cal-mark game">Wk XII</span>
+                    </div>
+                    <div class="cal-day"><span class="cal-num">24</span></div>
+                    <div class="cal-day"><span class="cal-num">25</span></div>
+                    <div class="cal-day"><span class="cal-num">26</span></div>
+                    <div class="cal-day today">
+                        <span class="cal-num">27</span>
+                        <span class="cal-mark milestone">Today</span>
+                    </div>
+                    <div class="cal-day"><span class="cal-num">28</span></div>
+                    <div class="cal-day"><span class="cal-num">29</span></div>
+
+                    <!-- Week of Nov 30 -->
+                    <div class="cal-day">
+                        <span class="cal-num">30</span>
+                        <span class="cal-mark game">Wk XIII</span>
+                    </div>
+                    <div class="cal-day dim"><span class="cal-num">1</span></div>
+                    <div class="cal-day dim"><span class="cal-num">2</span></div>
+                    <div class="cal-day dim"><span class="cal-num">3</span></div>
+                    <div class="cal-day dim"><span class="cal-num">4</span></div>
+                    <div class="cal-day dim"><span class="cal-num">5</span></div>
+                    <div class="cal-day dim"><span class="cal-num">6</span></div>
+                </div>
+                <div class="cal-legend">
+                    <span><i class="game"></i> Game Day</span>
+                    <span><i class="milestone"></i> Milestone</span>
+                    <span><i class="tx"></i> Trade Filed</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─────────── 08 · THE TRACKBOARD ─────────── -->
+    <section class="demo-card" id="feature-08">
+        <div class="demo-meta">
+            <span class="demo-num">№ VIII</span>
+            <span class="demo-name">The <em>Trackboard.</em></span>
+        </div>
+        <p class="demo-desc">
+            For the home page: a <strong>narrow vertical tracker</strong> with a tabbed view across
+            the top — Hot, Cold, Top PF, Watch. Same monospace clean look as the Form Sheet,
+            sized around 360px so it slots into a sidebar (or stacks beside the Editor's Note).
+            Each tab swaps to a different lens on what's happening this season — try clicking them.
+            The <strong>Watch</strong> tab uses a different row format with a progress bar showing
+            how close a manager is to setting/breaking a record.
+            <br><br>
+            <strong>Want to see it sticky on the right?</strong> Hit
+            <code>Preview pinned-right</code> below — it'll detach and follow you as you scroll, so
+            you can judge whether that's the right placement. Click again to release.
+        </p>
+        <div class="demo-body" style="display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem;">
+            <div class="trackboard is-pinned" id="tb-demo">
+                <button type="button" class="tb-collapse-btn" id="tb-collapse-btn" aria-label="Collapse trackboard"></button>
+                <!-- Custom collapsed rail: shows when .is-collapsed.
+                     Click anywhere on the rail to re-expand. The "active"
+                     tab name mirrors the currently-selected panel. -->
+                <button type="button" class="tb-rail" id="tb-rail" aria-label="Expand trackboard">
+                    <span class="tb-rail-title">Trackboard.</span>
+                    <span class="tb-rail-divider"></span>
+                    <span class="tb-rail-tabs">
+                        <span class="tb-rail-tab active" data-rail="hot">Hot</span>
+                        <span class="tb-rail-tab" data-rail="cold">Cold</span>
+                        <span class="tb-rail-tab" data-rail="pf">Top PF</span>
+                        <span class="tb-rail-tab" data-rail="watch">Watch</span>
+                    </span>
+                </button>
+                <div class="tb-mast">
+                    <span class="tb-mast-title">★ Trackboard ★</span>
+                    <span class="tb-mast-meta"><span class="live-dot"></span>Wk XII</span>
+                </div>
+                <div class="tb-tabs" role="tablist">
+                    <button class="tb-tab is-active" data-tab="hot" role="tab" aria-selected="true">Hot</button>
+                    <button class="tb-tab" data-tab="cold" role="tab" aria-selected="false">Cold</button>
+                    <button class="tb-tab" data-tab="pf" role="tab" aria-selected="false">Top PF</button>
+                    <button class="tb-tab" data-tab="watch" role="tab" aria-selected="false">Watch</button>
+                </div>
+
+                <!-- HOT panel — recent W streaks / form -->
+                <div class="tb-panel" data-panel="hot">
+                    <div class="tb-row">
+                        <span class="tb-rank">1</span>
+                        <span class="tb-name">PA Slingers<span class="tb-name-sub">Jake K.</span></span>
+                        <span class="tb-val hot">W4 ✦<small>+38.4</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">2</span>
+                        <span class="tb-name">Dad Bod<span class="tb-name-sub">Mike R.</span></span>
+                        <span class="tb-val hot">W3<small>+22.0</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">3</span>
+                        <span class="tb-name">Tomlinmen<span class="tb-name-sub">Sam W.</span></span>
+                        <span class="tb-val hot">W2<small>+11.3</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">4</span>
+                        <span class="tb-name">Carriers<span class="tb-name-sub">Will P.</span></span>
+                        <span class="tb-val hot">W2<small>+8.1</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">5</span>
+                        <span class="tb-name">Tendency<span class="tb-name-sub">Drew M.</span></span>
+                        <span class="tb-val hot">W1<small>+2.4</small></span>
+                    </div>
+                </div>
+
+                <!-- COLD panel -->
+                <div class="tb-panel" data-panel="cold" hidden>
+                    <div class="tb-row">
+                        <span class="tb-rank">1</span>
+                        <span class="tb-name">Bench Mob<span class="tb-name-sub">Joey Z.</span></span>
+                        <span class="tb-val cold">L6<small>−42.7</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">2</span>
+                        <span class="tb-name">Sheik<span class="tb-name-sub">Tom L.</span></span>
+                        <span class="tb-val cold">L3<small>−28.1</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">3</span>
+                        <span class="tb-name">Iron Bombers<span class="tb-name-sub">Pete B.</span></span>
+                        <span class="tb-val cold">L2<small>−18.6</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">4</span>
+                        <span class="tb-name">Last Mile<span class="tb-name-sub">Ben S.</span></span>
+                        <span class="tb-val cold">L2<small>−14.0</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">5</span>
+                        <span class="tb-name">Cabbage<span class="tb-name-sub">Nick D.</span></span>
+                        <span class="tb-val cold">L1<small>−4.8</small></span>
+                    </div>
+                </div>
+
+                <!-- TOP PF panel — season scoring leaders -->
+                <div class="tb-panel" data-panel="pf" hidden>
+                    <div class="tb-row">
+                        <span class="tb-rank">1</span>
+                        <span class="tb-name">PA Slingers<span class="tb-name-sub">12 GP · 153.5 avg</span></span>
+                        <span class="tb-val">1,842.1<small>Total PF</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">2</span>
+                        <span class="tb-name">Tendency<span class="tb-name-sub">12 GP · 150.3 avg</span></span>
+                        <span class="tb-val">1,803.7<small>Total PF</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">3</span>
+                        <span class="tb-name">Dad Bod<span class="tb-name-sub">12 GP · 146.3 avg</span></span>
+                        <span class="tb-val">1,755.4<small>Total PF</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">4</span>
+                        <span class="tb-name">Tomlinmen<span class="tb-name-sub">12 GP · 142.7 avg</span></span>
+                        <span class="tb-val">1,712.0<small>Total PF</small></span>
+                    </div>
+                    <div class="tb-row">
+                        <span class="tb-rank">5</span>
+                        <span class="tb-name">Bombers<span class="tb-name-sub">12 GP · 140.7 avg</span></span>
+                        <span class="tb-val">1,688.3<small>Total PF</small></span>
+                    </div>
+                </div>
+
+                <!-- WATCH panel — records being chased -->
+                <div class="tb-panel" data-panel="watch" hidden>
+                    <div class="tb-watch-row">
+                        <div class="tb-watch-head">
+                            <span class="tb-watch-name">PA Slingers</span>
+                            <span class="tb-watch-pct">94%</span>
+                        </div>
+                        <div class="tb-watch-bar"><div class="tb-watch-bar-fill" style="width: 94%;"></div></div>
+                        <div class="tb-watch-desc">Chasing single-season PF record · <em>112.4</em> from break</div>
+                    </div>
+                    <div class="tb-watch-row">
+                        <div class="tb-watch-head">
+                            <span class="tb-watch-name">Tendency</span>
+                            <span class="tb-watch-pct">71%</span>
+                        </div>
+                        <div class="tb-watch-bar"><div class="tb-watch-bar-fill" style="width: 71%;"></div></div>
+                        <div class="tb-watch-desc">Career wins · needs <em>4 more</em> for all-time mark</div>
+                    </div>
+                    <div class="tb-watch-row">
+                        <div class="tb-watch-head">
+                            <span class="tb-watch-name">Dad Bod</span>
+                            <span class="tb-watch-pct">55%</span>
+                        </div>
+                        <div class="tb-watch-bar"><div class="tb-watch-bar-fill" style="width: 55%;"></div></div>
+                        <div class="tb-watch-desc">Reg-season W% record · 8-1 needed to tie</div>
+                    </div>
+                    <div class="tb-watch-row">
+                        <div class="tb-watch-head">
+                            <span class="tb-watch-name">Mob</span>
+                            <span class="tb-watch-pct">21%</span>
+                        </div>
+                        <div class="tb-watch-bar"><div class="tb-watch-bar-fill" style="width: 21%;"></div></div>
+                        <div class="tb-watch-desc">Longest losing streak · <em>6 of 11</em> to tie</div>
+                    </div>
+                </div>
+
+                <div class="tb-foot">Updated 2 hrs ago · Wk XII</div>
+            </div>
+            <button type="button" class="tb-pin-toggle" id="tb-pin-toggle">Preview pinned-right</button>
+        </div>
+    </section>
+
+
+    <footer class="demo-footer">
+        <p>End of showcase — <a href="/">return to the chronicle home</a></p>
+    </footer>
+
+</main>
+
+<script>
+// 01 · SPINE — scroll spy + click-to-jump
+(function () {
+    var dots = document.querySelectorAll('.spine-dot');
+    var sections = Array.from(dots).map(function (d) {
+        return document.getElementById(d.dataset.target);
+    });
+    function activeIndex() {
+        var y = window.scrollY + window.innerHeight * 0.3;
+        var best = 0;
+        for (var i = 0; i < sections.length; i++) {
+            if (!sections[i]) continue;
+            if (sections[i].offsetTop <= y) best = i;
+        }
+        return best;
+    }
+    function updateDots() {
+        var ai = activeIndex();
+        dots.forEach(function (d, i) { d.classList.toggle('active', i === ai); });
+    }
+    dots.forEach(function (d) {
+        d.addEventListener('click', function () {
+            var target = document.getElementById(d.dataset.target);
+            if (target) window.scrollTo({ top: target.offsetTop - 20, behavior: 'smooth' });
+        });
+    });
+    var raf = 0;
+    window.addEventListener('scroll', function () {
+        if (raf) return;
+        raf = requestAnimationFrame(function () { raf = 0; updateDots(); });
+    }, { passive: true });
+    updateDots();
+})();
+
+// 02 · RIBBON — toggle bookmarked + scroll-to-top on the bookmarking click
+(function () {
+    var ribbon = document.getElementById('ribbon');
+    if (!ribbon) return;
+    ribbon.addEventListener('click', function () {
+        var nowBookmarked = ribbon.classList.toggle('is-bookmarked');
+        ribbon.setAttribute('aria-pressed', nowBookmarked ? 'true' : 'false');
+        ribbon.setAttribute(
+            'aria-label',
+            nowBookmarked ? 'Remove bookmark' : 'Bookmark this page'
+        );
+        // Scroll to top when bookmarking (a productive action). Don't
+        // scroll on un-bookmarking — the visitor is already where they
+        // want to be and just wants to dismiss the bookmark.
+        if (nowBookmarked) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+})();
+
+// 08 · TRACKBOARD — tab switching + sync to collapsed rail
+document.querySelectorAll('.trackboard').forEach(function (board) {
+    var tabs = board.querySelectorAll('.tb-tab');
+    var panels = board.querySelectorAll('.tb-panel');
+    var railTabs = board.querySelectorAll('.tb-rail-tab');
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            var name = tab.dataset.tab;
+            tabs.forEach(function (t) {
+                var active = t === tab;
+                t.classList.toggle('is-active', active);
+                t.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            panels.forEach(function (p) {
+                p.hidden = p.dataset.panel !== name;
+            });
+            // Mirror selection on the collapsed rail so when the visitor
+            // re-collapses, the active tab name shows up highlighted.
+            railTabs.forEach(function (rt) {
+                rt.classList.toggle('active', rt.dataset.rail === name);
+            });
+        });
+    });
+});
+
+// 08b · TRACKBOARD — pin-to-right + collapse/expand
+var pinBtn = document.getElementById('tb-pin-toggle');
+var collapseBtn = document.getElementById('tb-collapse-btn');
+var tbDemo = document.getElementById('tb-demo');
+
+if (pinBtn) {
+    pinBtn.addEventListener('click', function () {
+        document.body.classList.toggle('tb-pinned');
+        var pinned = document.body.classList.contains('tb-pinned');
+        // Leaving pinned mode also expands the trackboard so the next pin
+        // starts in the open state.
+        if (!pinned && tbDemo) tbDemo.classList.remove('is-collapsed');
+        pinBtn.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+    });
+}
+
+if (collapseBtn && tbDemo) {
+    collapseBtn.addEventListener('click', function () {
+        // Same tab toggles in both directions now — the arrow on it
+        // already flips via the .is-collapsed class.
+        var collapsed = tbDemo.classList.toggle('is-collapsed');
+        collapseBtn.setAttribute(
+            'aria-label',
+            collapsed ? 'Expand trackboard' : 'Collapse trackboard'
+        );
+    });
+}
+
+// Clicking the collapsed rail re-expands the trackboard.
+var rail = document.getElementById('tb-rail');
+if (rail && tbDemo) {
+    rail.addEventListener('click', function () {
+        tbDemo.classList.remove('is-collapsed');
+    });
+}
+</script>
+
+</body>
+</html>

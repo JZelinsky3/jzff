@@ -225,7 +225,7 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   // way that the templates need to see immediately — adding a new field,
   // renaming an existing one, etc. Bumping forces unstable_cache to
   // recompute on the next request instead of waiting out the 1h TTL.
-  const BUNDLE_VERSION = 'v37'
+  const BUNDLE_VERSION = 'v45'
   return unstable_cache(
     async () => exportLeague(leagueId, { slug }),
     ['pams-bundle', BUNDLE_VERSION, leagueId, slug],

@@ -22,7 +22,7 @@
 
     // ── In-archive page registry (relative paths within /leagues/<slug>/) ──
     var PAGES = [
-        { key: 'hub',       label: 'Hub',         path: 'index.html' },
+        { key: 'hub',       label: 'Hub',         path: './' },
         { key: 'standings', label: 'Standings',   path: 'standings.html' },
         {
             isGroup: true, label: 'Live Season',
@@ -38,23 +38,23 @@
         {
             isGroup: true, label: 'The Society',
             items: [
-                { key: 'managers',  label: 'Managers',  path: 'managers/index.html' },
-                { key: 'rivalries', label: 'Rivalries', path: 'rivalries/index.html' },
+                { key: 'managers',  label: 'Managers',  path: 'managers/' },
+                { key: 'rivalries', label: 'Rivalries', path: 'rivalries/' },
             ]
         },
         {
             isGroup: true, label: 'League History',
             items: [
-                { key: 'seasons', label: 'Season Archives', path: 'seasons/index.html' },
+                { key: 'seasons', label: 'Season Archives', path: 'seasons/' },
                 { key: 'records', label: 'Record Book',     path: 'records.html' },
-                { key: 'draft',   label: 'Draft History',   path: 'draft/index.html' },
+                { key: 'draft',   label: 'Draft History',   path: 'draft/' },
             ]
         },
     ];
 
     // All in-archive paths are slug-rooted because the route handler injects
     // <base href="/leagues/<slug>/">. Returning '' here keeps links simple:
-    // "standings.html", "managers/index.html", etc. all resolve correctly
+    // "standings.html", "managers/", etc. all resolve correctly
     // regardless of which subdirectory the user is currently viewing.
     function archiveRoot() {
         return '';
@@ -69,13 +69,13 @@
     // pickems, powerrank, trades) lights up the Live tab as active.
     var LIVE_SEASON_KEYS = ['live-season', 'pickems', 'powerrank', 'records-watch', 'milestones', 'trades'];
     var CHAPBAR_ITEMS = [
-        { key: 'hub',         label: 'Home',      path: 'index.html' },
+        { key: 'hub',         label: 'Home',      path: './' },
         { key: 'standings',   label: 'Standings', path: 'standings.html' },
-        { key: 'seasons',     label: 'Seasons',   path: 'seasons/index.html' },
-        { key: 'draft',       label: 'Drafts',    path: 'draft/index.html' },
+        { key: 'seasons',     label: 'Seasons',   path: 'seasons/' },
+        { key: 'draft',       label: 'Drafts',    path: 'draft/' },
         { key: 'records',     label: 'Records',   path: 'records.html' },
-        { key: 'managers',    label: 'Managers',  path: 'managers/index.html' },
-        { key: 'rivalries',   label: 'Rivalries', path: 'rivalries/index.html' },
+        { key: 'managers',    label: 'Managers',  path: 'managers/' },
+        { key: 'rivalries',   label: 'Rivalries', path: 'rivalries/' },
         { key: 'live-season', label: 'Live',      path: 'live-season/' }
     ];
 
@@ -147,7 +147,7 @@
             var nameHTML = (head ? head + ' ' : '') + '<em>' + tail + '.</em>';
             titleHTML = currentPage === 'hub'
                 ? '<div class="nav-title" id="' + titleId + '">' + nameHTML + '</div>'
-                : '<a class="nav-title" id="' + titleId + '" href="' + root + 'index.html">' + nameHTML + '</a>';
+                : '<a class="nav-title" id="' + titleId + '" href="' + root + '">' + nameHTML + '</a>';
         }
 
         // ── Dropdown contents ─────────────────────────────────────────────
@@ -266,7 +266,7 @@
                 backHref = '/';
                 backLabel = 'Back';
             } else {
-                backHref = 'index.html';
+                backHref = './';
                 backLabel = 'Back to hub';
             }
             leftSlot =
