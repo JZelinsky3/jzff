@@ -445,6 +445,16 @@ async function loadProfile() {
         }
     } catch (_) { /* non-fatal */ }
 
+    // Anything that throws below leaves the page stuck on the loading state
+    // (the old failure mode for managers with empty stats). Surface it instead.
+    try {
+        renderProfile(m, top5);
+    } catch (err) {
+        showError(`Couldn't render profile (${err.message}). Please report this.`);
+    }
+}
+
+function renderProfile(m, top5) {
     document.getElementById('nav-name').innerHTML = `${m.name} <em>·</em>`;
     document.title = `${m.name} · {{LEAGUE_NAME}}`;
 
@@ -611,13 +621,13 @@ async function loadProfile() {
                 </div>
                 <div class="strip-item">
                     <div class="strip-label">Longest Win Streak</div>
-                    <div class="strip-value">${m.longest_win_streak.length}</div>
-                    <div class="strip-detail">${m.longest_win_streak.when || '—'}</div>
+                    <div class="strip-value">${m.longest_win_streak?.length ?? 0}</div>
+                    <div class="strip-detail">${m.longest_win_streak?.when || '—'}</div>
                 </div>
                 <div class="strip-item">
                     <div class="strip-label">Longest Loss Streak</div>
-                    <div class="strip-value">${m.longest_loss_streak.length}</div>
-                    <div class="strip-detail">${m.longest_loss_streak.when || '—'}</div>
+                    <div class="strip-value">${m.longest_loss_streak?.length ?? 0}</div>
+                    <div class="strip-detail">${m.longest_loss_streak?.when || '—'}</div>
                 </div>
             </div>
         </div>
