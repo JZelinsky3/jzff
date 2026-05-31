@@ -735,12 +735,14 @@ function abbreviate(name: string): string {
 
 function buildSeasonsDirectory(s: Snapshot): unknown {
   const managerToGroup = buildManagerToGroup(buildProfileGroups(s))
-  // Hide in-progress seasons (marked is_live) from the public season archive —
-  // they have no champion / final standings yet, so listing them just shows
-  // a "Reigning Champion: —" row that's misleading. The commish still sees
-  // them in admin and on the live-season page.
+  // Hide in-progress seasons from the public season archive. Two cases:
+  //   • explicitly flagged is_live (set by the commish during the season)
+  //   • no champion_manager_id yet (the year exists on Sleeper/ESPN because
+  //     the league shell is created pre-draft, but no title's been won) —
+  //     without this guard, the archive page badges that year as "Reigning
+  //     Champion" since it picks the latest year present.
   return {
-    seasons: s.seasons.filter((season) => !season.is_live).map((season) => {
+    seasons: s.seasons.filter((season) => !season.is_live && season.champion_manager_id != null).map((season) => {
       const champ = season.champion_manager_id ? s.managers.get(season.champion_manager_id) : null
       const champGroup = season.champion_manager_id ? managerToGroup.get(season.champion_manager_id) : undefined
       const champMs = champ
