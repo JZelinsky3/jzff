@@ -4471,33 +4471,28 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     box-shadow: 0 0 12px rgba(232,200,137,.35);
 }
 .almanac-billboard-inner {
-    display: flex; justify-content: space-between; align-items: center;
-    gap: 2rem;
-    padding: 1.5rem 2rem;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+    gap: .6rem;
+    padding: 1.75rem 2rem;
 }
-.almanac-billboard-left { flex: 1 1 auto; min-width: 0; }
 .almanac-billboard-kicker {
     font-family: var(--mono); font-weight: 700;
     font-size: .65rem; letter-spacing: .35em; text-transform: uppercase;
     color: var(--gold);
-    margin-bottom: .45rem;
 }
 .almanac-billboard-title {
     font-family: var(--serif);
     font-size: clamp(1.6rem, 3.2vw, 2.4rem);
     line-height: 1.05;
     color: var(--cream);
-    margin-bottom: .35rem;
 }
 .almanac-billboard-title em { font-style: italic; color: var(--gold); }
 .almanac-billboard-desc {
     font-family: var(--serif); font-style: italic;
     font-size: .95rem; color: var(--cream-soft);
-    max-width: 56ch; line-height: 1.5;
-}
-.almanac-billboard-right {
-    display: flex; flex-direction: column; align-items: flex-end; gap: .9rem;
-    flex-shrink: 0;
+    max-width: 60ch; line-height: 1.5;
+    margin: 0 auto;
 }
 /* Status chip sits at the top-right corner of the billboard like a stamp
    on a broadside — separated from the CTA so the CTA is the obvious click
@@ -4522,9 +4517,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-family: var(--mono); font-weight: 700;
     font-size: .75rem; letter-spacing: .22em; text-transform: uppercase;
     color: var(--gold);
-    padding: .55rem 1rem;
+    padding: .55rem 1.25rem;
     border: 1px solid var(--gold-deep);
     transition: background .2s, color .2s;
+    margin-top: .5rem;
 }
 .almanac-billboard:hover .almanac-billboard-cta {
     background: var(--gold);
@@ -4533,12 +4529,11 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 @media (max-width: 780px) {
     .almanac-billboard-status { right: 1.25rem; }
     .almanac-billboard-inner {
-        flex-direction: column; align-items: flex-start;
-        gap: 1rem; padding: 1.25rem 1.25rem 1.25rem;
+        gap: .5rem;
+        padding: 1.25rem 1.25rem;
         /* Make room above for the absolutely-positioned status stamp. */
         padding-top: 2.75rem;
     }
-    .almanac-billboard-right { align-items: flex-start; }
 }
 
 /* Floating setup checklist — Stripe-style FAB that appears once the main

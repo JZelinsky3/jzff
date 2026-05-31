@@ -136,21 +136,17 @@ export default async function LeagueOverviewPage({
           </span>
           <div className="almanac-billboard-rule" aria-hidden />
           <div className="almanac-billboard-inner">
-            <div className="almanac-billboard-left">
-              <div className="almanac-billboard-kicker">
-                {league.published_at ? '★ Click to open ★' : '★ Not yet published ★'}
-              </div>
-              <div className="almanac-billboard-title">
-                Public <em>Almanac.</em>
-              </div>
-              <div className="almanac-billboard-desc">
-                Standings, season archives, the record book, drafts, manager profiles,
-                rivalries — the whole thing. Opens in a new tab.
-              </div>
+            <div className="almanac-billboard-kicker">
+              {league.published_at ? '★ Click to open ★' : '★ Not yet published ★'}
             </div>
-            <div className="almanac-billboard-right">
-              <span className="almanac-billboard-cta">View site ↗</span>
+            <div className="almanac-billboard-title">
+              Public <em>Almanac.</em>
             </div>
+            <div className="almanac-billboard-desc">
+              Standings, season archives, the record book, drafts, manager profiles,
+              rivalries — the whole thing. Opens in a new tab.
+            </div>
+            <span className="almanac-billboard-cta">View site ↗</span>
           </div>
           <div className="almanac-billboard-rule" aria-hidden />
         </a>
@@ -169,125 +165,142 @@ export default async function LeagueOverviewPage({
           </span>
         </div>
 
+        {/* Row 1 — Sync (left) + Publish (right), equal height via the grid's
+            stretch. Each card stretches via .dc-card-row alignItems:stretch,
+            keeping text top-aligned but vertically centering the button. */}
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
             gap: '1.25rem',
-            alignItems: 'start',
+            alignItems: 'stretch',
           }}
         >
-          {/* Left column — Sync, then Grade Trades stacked below for Jake. */}
-          <div>
-            <div className="dc-card-row" style={{ alignItems: 'flex-start' }}>
-              <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
-                  Sync from sources.
-                </div>
+          <div
+            className="dc-card-row"
+            style={{ alignItems: 'stretch', height: '100%' }}
+          >
+            <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
+                Sync from sources.
+              </div>
+              <div
+                style={{
+                  opacity: 0.7,
+                  fontSize: '.85rem',
+                  marginTop: '.35rem',
+                  lineHeight: 1.5,
+                }}
+              >
+                Walks every season your sources can reach — standings, drafts, matchups.{' '}
+                <strong style={{ color: 'var(--gold)' }}>Stay on this page</strong> until
+                it finishes; closing the tab cancels the run. Typically{' '}
+                <strong>20-90 seconds</strong> depending on history depth.
+              </div>
+              {league.last_synced_at && (
                 <div
                   style={{
-                    opacity: 0.7,
-                    fontSize: '.85rem',
-                    marginTop: '.35rem',
-                    lineHeight: 1.5,
+                    opacity: 0.55,
+                    fontSize: '.7rem',
+                    marginTop: '.4rem',
+                    fontFamily: 'var(--mono)',
                   }}
                 >
-                  Walks every season your sources can reach — standings, drafts, matchups.{' '}
-                  <strong style={{ color: 'var(--gold)' }}>Stay on this page</strong> until
-                  it finishes; closing the tab cancels the run. Typically{' '}
-                  <strong>20-90 seconds</strong> depending on history depth.
+                  Last: {new Date(league.last_synced_at).toLocaleString()}
                 </div>
-                {league.last_synced_at && (
-                  <div
-                    style={{
-                      opacity: 0.55,
-                      fontSize: '.7rem',
-                      marginTop: '.4rem',
-                      fontFamily: 'var(--mono)',
-                    }}
-                  >
-                    Last: {new Date(league.last_synced_at).toLocaleString()}
-                  </div>
-                )}
-              </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
               <SyncButton leagueId={league.id} />
             </div>
-
-            {/* Trade Grader — private beta, only Jake's league sees it. Stacks
-                below Sync so the left column carries two cards while the
-                right keeps just Publish. The route also gates server-side. */}
-            {league.slug === 'jake' && (
-              <div
-                className="dc-card-row"
-                style={{ alignItems: 'flex-start', marginTop: '.6rem' }}
-              >
-                <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
-                    Grade trades with AI.{' '}
-                    <span
-                      style={{
-                        fontFamily: 'var(--mono)',
-                        fontSize: '.55rem',
-                        letterSpacing: '.2em',
-                        color: 'var(--gold)',
-                        marginLeft: '.4rem',
-                      }}
-                    >
-                      BETA
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      opacity: 0.7,
-                      fontSize: '.82rem',
-                      marginTop: '.3rem',
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    Runs Groq on up to 10 ungraded trades at a time. Click again to keep going.
-                  </div>
-                </div>
-                <GradeTradesButton leagueId={league.id} />
-              </div>
-            )}
           </div>
 
-          {/* Right column — Publish. */}
-          <div>
-            <div className="dc-card-row" style={{ alignItems: 'flex-start' }}>
-              <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
-                  {league.published_at ? 'Almanac is live.' : 'Almanac is hidden.'}
-                </div>
+          <div
+            className="dc-card-row"
+            style={{ alignItems: 'stretch', height: '100%' }}
+          >
+            <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
+                {league.published_at ? 'Almanac is live.' : 'Almanac is hidden.'}
+              </div>
+              <div
+                style={{
+                  opacity: 0.7,
+                  fontSize: '.85rem',
+                  marginTop: '.35rem',
+                  lineHeight: 1.5,
+                }}
+              >
+                {league.published_at
+                  ? 'Visitors can read the public archive at any time. Unpublish to take it offline again — synced data stays put.'
+                  : `Visitors to /leagues/${slug}/ see a placeholder until you flip this. Publishing is instant and reversible.`}
+              </div>
+              {league.published_at && (
                 <div
                   style={{
-                    opacity: 0.7,
-                    fontSize: '.85rem',
-                    marginTop: '.35rem',
-                    lineHeight: 1.5,
+                    opacity: 0.55,
+                    fontSize: '.7rem',
+                    marginTop: '.4rem',
+                    fontFamily: 'var(--mono)',
                   }}
                 >
-                  {league.published_at
-                    ? 'Visitors can read the public archive at any time. Unpublish to take it offline again — synced data stays put.'
-                    : `Visitors to /leagues/${slug}/ see a placeholder until you flip this. Publishing is instant and reversible.`}
+                  Published {new Date(league.published_at).toLocaleString()}
                 </div>
-                {league.published_at && (
-                  <div
-                    style={{
-                      opacity: 0.55,
-                      fontSize: '.7rem',
-                      marginTop: '.4rem',
-                      fontFamily: 'var(--mono)',
-                    }}
-                  >
-                    Published {new Date(league.published_at).toLocaleString()}
-                  </div>
-                )}
-              </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
               <PublishButton leagueId={league.id} isPublished={!!league.published_at} />
             </div>
           </div>
         </div>
+
+        {/* Row 2 — Trade Grader, private beta. Lives in a second 2-col grid
+            so the card aligns under Sync at the same width; empty right
+            slot keeps the grid layout consistent. Server route gates this
+            too, so it stays Jake-only end-to-end. */}
+        {league.slug === 'jake' && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gap: '1.25rem',
+              marginTop: '.6rem',
+            }}
+          >
+            <div className="dc-card-row" style={{ alignItems: 'flex-start' }}>
+              <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
+                  Grade trades with AI.{' '}
+                  <span
+                    style={{
+                      fontFamily: 'var(--mono)',
+                      fontSize: '.55rem',
+                      letterSpacing: '.2em',
+                      color: 'var(--gold)',
+                      marginLeft: '.4rem',
+                    }}
+                  >
+                    BETA
+                  </span>
+                </div>
+                <div
+                  style={{
+                    opacity: 0.7,
+                    fontSize: '.82rem',
+                    marginTop: '.3rem',
+                    lineHeight: 1.45,
+                  }}
+                >
+                  Runs Groq on up to 10 ungraded trades at a time. Click again to keep going.
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <GradeTradesButton leagueId={league.id} />
+              </div>
+            </div>
+            <div />
+          </div>
+        )}
       </div>
 
       {/* § 03 — Configuration TOC. Two-column ledger (default density). */}
