@@ -38,6 +38,17 @@ export const TIER_LIMITS: Record<Tier, number> = {
   tier3: 10,
 }
 
+// How many leagues a user can link into their Manager Hub career chronicle.
+// Deliberately more generous than TIER_LIMITS (archives): a linked league is
+// read-heavier/lighter than a full commissioner-owned archive — the user is
+// only tracking their own thread through it — so the caps are higher. The
+// asymmetry is intentional (e.g. Rookie archives 1 but can chronicle 5).
+export const MANAGER_LINK_LIMITS: Record<Tier, number> = {
+  tier1: 5,
+  tier2: 10,
+  tier3: 20,
+}
+
 // Human-friendly labels used on the pricing page + account UI.
 export const TIER_LABELS: Record<Tier, { name: string; tagline: string }> = {
   tier1: { name: 'Rookie',  tagline: 'Archive one league.' },
@@ -229,6 +240,54 @@ export async function canCreateLeague(userId: string): Promise<EnforcementResult
       limit,
       current,
       message: `Your ${TIER_LABELS[sub.tier].name} plan covers ${limit} ${limit === 1 ? 'league' : 'leagues'}. You currently have ${current}. Upgrade to add more.`,
+    }
+  }
+
+  return { ok: true }
+}
+
+// Can this user link another league into their Manager Hub chronicle? Mirrors
+// canCreateLeague but counts career_links against MANAGER_LINK_LIMITS. Comp
+// users skip the cap. Unlike archives there is no testing-mode free path —
+// the hub is a paid feature end to end, so no active sub means no links.
+export async function canAddCareerLink(userId: string): Promise<EnforcementResult> {
+  if (await isCompUser(userId)) return { ok: true }
+
+  const sub = await getUserSubscription(userId)
+  if (!isSubscriptionActive(sub) || !sub) {
+    return {
+      ok: false,
+      reason: 'no_subscription',
+      message: 'Subscribe to start building your Manager Hub.',
+    }
+  }
+
+  const db = createAdminClient()
+  // Count links across the user's chronicle(s). One chronicle per user today,
+  // but counting by owner keeps the gate correct if that ever changes.
+  const { data: chronicles } = await db
+    .from('career_chronicles')
+    .select('id')
+    .eq('owner_id', userId)
+  const ids = (chronicles ?? []).map((c) => c.id as string)
+  let current = 0
+  if (ids.length > 0) {
+    const { count } = await db
+      .from('career_links')
+      .select('id', { count: 'exact', head: true })
+      .in('chronicle_id', ids)
+    current = count ?? 0
+  }
+  const limit = MANAGER_LINK_LIMITS[sub.tier]
+
+  if (current >= limit) {
+    return {
+      ok: false,
+      reason: 'tier_limit',
+      tier: sub.tier,
+      limit,
+      current,
+      message: `Your ${TIER_LABELS[sub.tier].name} plan covers ${limit} linked leagues in your Manager Hub. You currently have ${current}. Upgrade to track more.`,
     }
   }
 

@@ -30,8 +30,30 @@ export default async function DashboardPage({
         .from('leagues')
         .select('id, name, slug, platform, last_synced_at, published_at, created_at, grace_period_ends_at')
         .eq('owner_id', user.id)
+        // Hide hub-only leagues (auto-ingested to feed a career chronicle) from
+        // the commissioner-facing archive shelf. They live under /manager.
+        .eq('manager_view', false)
         .order('created_at', { ascending: false })
     : { data: [] as never[] }
+
+  // The user's Manager Hub chronicle, if they've started one. Drives the
+  // second mode card below the hero.
+  type ChronicleSummary = { slug: string; display_name: string; linkCount: number }
+  let chronicle: ChronicleSummary | null = null
+  if (user) {
+    const { data: chronRow } = await supabase
+      .from('career_chronicles')
+      .select('id, slug, display_name')
+      .eq('owner_id', user.id)
+      .maybeSingle()
+    if (chronRow) {
+      const { count } = await supabase
+        .from('career_links')
+        .select('id', { count: 'exact', head: true })
+        .eq('chronicle_id', chronRow.id)
+      chronicle = { slug: chronRow.slug, display_name: chronRow.display_name, linkCount: count ?? 0 }
+    }
+  }
 
   // Bookmarked leagues this user is following (but doesn't own). Two-step
   // query because leagues RLS doesn't let the user SELECT leagues they
@@ -161,6 +183,35 @@ export default async function DashboardPage({
           </Link>
         )}
       </section>
+
+      <div className="section" style={{ paddingTop: '1rem' }}>
+        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: '880px', margin: '0 auto' }}>
+          <Link href="/dashboard/new" className="card" style={{ display: 'block' }}>
+            <div className="card-corner">Mode I</div>
+            <div className="card-roman">§</div>
+            <div className="card-title">League <em>Archive.</em></div>
+            <div className="card-desc">
+              Chronicle an entire league&apos;s history — drafts, matchups, champions —
+              into a public almanac you own as commissioner.
+            </div>
+            <div className="card-cta">Build an archive <span className="card-arrow">→</span></div>
+          </Link>
+
+          <Link href={chronicle ? `/manager/${chronicle.slug}` : '/manager/new'} className="card" style={{ display: 'block' }}>
+            <div className="card-corner">★ Mode II</div>
+            <div className="card-roman">✦</div>
+            <div className="card-title">Manager <em>Hub.</em></div>
+            <div className="card-desc">
+              {chronicle
+                ? `Your career chronicle — ${chronicle.linkCount} ${chronicle.linkCount === 1 ? 'league' : 'leagues'} linked. Open the book.`
+                : 'Track yourself across every league you play in. One book of your whole career.'}
+            </div>
+            <div className="card-cta">
+              {chronicle ? 'Open your chronicle' : 'Start your hub'} <span className="card-arrow">→</span>
+            </div>
+          </Link>
+        </div>
+      </div>
 
       {testingActive && testingEnds && (
         <div
