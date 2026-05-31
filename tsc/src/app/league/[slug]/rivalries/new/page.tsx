@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { loadManagerOptions } from '@/lib/managerOptions'
 import { NewRivalryForm } from './new-rivalry-form'
 
 export default async function NewRivalryPage({
@@ -18,11 +19,11 @@ export default async function NewRivalryPage({
     .maybeSingle()
   if (!league) notFound()
 
-  const { data: managers } = await supabase
-    .from('managers')
-    .select('id, display_name')
-    .eq('league_id', league.id)
-    .order('display_name')
+  // Deduped by profile (merged managers → one entry, canonical name applied,
+  // hidden profiles excluded). Each option's id is the primary manager id,
+  // which is what rivalries.manager_a_id/_b_id expects.
+  const options = await loadManagerOptions(supabase, league.id)
+  const managers = options.map((o) => ({ id: o.id, display_name: o.name }))
 
   return (
     <main>
@@ -38,7 +39,7 @@ export default async function NewRivalryPage({
 
       <div className="section" style={{ maxWidth: '600px' }}>
         <div className="card" style={{ paddingBottom: '2rem' }}>
-          <NewRivalryForm leagueId={league.id} managers={managers ?? []} />
+          <NewRivalryForm leagueId={league.id} managers={managers} />
         </div>
 
         <div style={{ marginTop: '2rem' }}>

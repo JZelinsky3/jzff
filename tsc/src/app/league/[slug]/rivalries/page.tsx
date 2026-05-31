@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { loadManagerNameMap } from '@/lib/managerOptions'
 import { deleteRivalry } from './actions'
 
 export default async function RivalriesPage({
@@ -18,15 +19,16 @@ export default async function RivalriesPage({
     .maybeSingle()
   if (!league) notFound()
 
-  const [{ data: rivalries }, { data: managers }] = await Promise.all([
+  const [{ data: rivalries }, nameOf] = await Promise.all([
     supabase
       .from('rivalries')
       .select('id, name, manager_a_id, manager_b_id, created_at')
       .eq('league_id', league.id)
       .order('created_at'),
-    supabase.from('managers').select('id, display_name').eq('league_id', league.id),
+    // Resolves stored manager.id → canonical profile name when merged, so
+    // renames + merges land immediately without re-saving the rivalry.
+    loadManagerNameMap(supabase, league.id),
   ])
-  const nameOf = new Map((managers ?? []).map((m) => [m.id, m.display_name]))
 
   async function remove(formData: FormData) {
     'use server'
