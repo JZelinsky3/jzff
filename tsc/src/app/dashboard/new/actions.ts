@@ -15,9 +15,9 @@ import { sleeper, parseDivisionInfo } from '@/lib/platforms/sleeper'
 import { probeLeague as probeEspn } from '@/lib/platforms/espn'
 import {
   getValidAccessToken as getYahooAccessToken,
-  listUserNflLeagues,
+  listUserNflLeaguesDeduped,
   getLeagueDetail as getYahooLeagueDetail,
-  type YahooLeagueSummary,
+  type YahooLeaguePickerEntry,
 } from '@/lib/platforms/yahoo'
 import { canCreateLeague } from '@/lib/stripe'
 
@@ -257,7 +257,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
 // account, across the last 15 seasons. Used by the new-archive form's league
 // picker when the user selects Yahoo as their platform.
 export async function listYahooLeagues(): Promise<
-  | { ok: true; leagues: YahooLeagueSummary[] }
+  | { ok: true; leagues: YahooLeaguePickerEntry[] }
   | { ok: false; error: string }
 > {
   try {
@@ -265,7 +265,7 @@ export async function listYahooLeagues(): Promise<
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { ok: false, error: 'Sign in first.' }
     const token = await getYahooAccessToken(user.id, supabase)
-    const leagues = await listUserNflLeagues(token)
+    const leagues = await listUserNflLeaguesDeduped(token)
     return { ok: true, leagues }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Could not reach Yahoo.' }

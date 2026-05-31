@@ -10,7 +10,7 @@ import { ingestEspnSource, type EspnSourceSettings } from '@/lib/ingest/espn'
 import { ingestYahooSource } from '@/lib/ingest/yahoo'
 import { sleeper } from '@/lib/platforms/sleeper'
 import { probeLeague as probeEspn } from '@/lib/platforms/espn'
-import { getValidAccessToken as getYahooAccessToken, getLeagueDetail as getYahooLeagueDetail, listUserNflLeagues as listYahooNflLeagues, type YahooLeagueSummary } from '@/lib/platforms/yahoo'
+import { getValidAccessToken as getYahooAccessToken, getLeagueDetail as getYahooLeagueDetail, listUserNflLeaguesDeduped, type YahooLeaguePickerEntry } from '@/lib/platforms/yahoo'
 import { devCacheBust } from '@/lib/devCache'
 
 const AddSchema = z.object({
@@ -86,6 +86,14 @@ export async function addSource(_prev: ActionResult, formData: FormData): Promis
     const lg = await sleeper.league(externalId)
     if (!lg) return { ok: false, error: 'No league found on Sleeper with that ID.' }
     if (!resolvedLabel) resolvedLabel = lg.name || null
+    // Optional year-range scope so two sources can split coverage without
+    // duplicating shared seasons.
+    const { seasonStart, seasonEnd } = parsed.data
+    if (seasonStart != null && seasonEnd != null && seasonStart > seasonEnd) {
+      return { ok: false, error: 'Start year must be ≤ end year.' }
+    }
+    if (seasonStart != null) sourceSettings.season_start = seasonStart
+    if (seasonEnd != null) sourceSettings.season_end = seasonEnd
   } else if (platform === 'espn') {
     const { seasonStart, seasonEnd, swid, espnS2 } = parsed.data
     if (!seasonStart || !seasonEnd || seasonStart > seasonEnd) {
@@ -128,6 +136,12 @@ export async function addSource(_prev: ActionResult, formData: FormData): Promis
       const msg = err instanceof Error ? err.message : 'Could not reach Yahoo.'
       return { ok: false, error: msg }
     }
+    const { seasonStart, seasonEnd } = parsed.data
+    if (seasonStart != null && seasonEnd != null && seasonStart > seasonEnd) {
+      return { ok: false, error: 'Start year must be ≤ end year.' }
+    }
+    if (seasonStart != null) sourceSettings.season_start = seasonStart
+    if (seasonEnd != null) sourceSettings.season_end = seasonEnd
   } else {
     // NFL: require per-source season range + playoff config (used at sync time).
     const { seasonStart, seasonEnd, playoffWeekStart, playoffTeamCount } = parsed.data
@@ -193,8 +207,11 @@ export async function syncSource(sourceId: string, leagueId: string) {
 
   try {
     let warnings: string[] = []
+    const settings = (src.settings ?? null) as Record<string, unknown> | null
+    const seasonStart = typeof settings?.season_start === 'number' ? settings.season_start : undefined
+    const seasonEnd = typeof settings?.season_end === 'number' ? settings.season_end : undefined
     if (src.platform === 'sleeper') {
-      const r = await ingestSleeperSource(leagueId, src.external_id, src.walk_history)
+      const r = await ingestSleeperSource(leagueId, src.external_id, src.walk_history, { seasonStart, seasonEnd })
       warnings = r.warnings ?? []
     } else if (src.platform === 'nfl') {
       const r = await ingestNflSource(leagueId, src.external_id, (src.settings ?? {}) as Record<string, number>)
@@ -213,7 +230,7 @@ export async function syncSource(sourceId: string, leagueId: string) {
         .maybeSingle()
       if (!leagueRow?.owner_id) return { ok: false as const, error: 'League has no owner; cannot fetch Yahoo tokens.' }
       const token = await getYahooAccessToken(leagueRow.owner_id, db)
-      const r = await ingestYahooSource(leagueId, src.external_id, !!src.walk_history, token)
+      const r = await ingestYahooSource(leagueId, src.external_id, !!src.walk_history, token, { seasonStart, seasonEnd })
       warnings = r.warnings ?? []
     } else {
       return { ok: false as const, error: `${src.platform} sync not implemented yet.` }
@@ -341,6 +358,62 @@ export async function updateEspnSourceSettings(input: z.infer<typeof UpdateEspnS
   return { ok: true }
 }
 
+// Optional year-range settings for Sleeper + Yahoo sources. Either bound may
+// be blank — leaving them blank means "no filter, ingest every season the
+// chain reaches." A start without an end (or vice versa) is allowed.
+const UpdateChainRangeSchema = z.object({
+  sourceId: z.string().uuid(),
+  leagueId: z.string().uuid(),
+  platform: z.enum(['sleeper', 'yahoo']),
+  seasonStart: z.coerce.number().int().min(2000).max(2100).optional(),
+  seasonEnd: z.coerce.number().int().min(2000).max(2100).optional(),
+  label: z.string().trim().max(120).optional(),
+})
+
+export async function updateChainSourceSettings(input: z.infer<typeof UpdateChainRangeSchema>): Promise<{ ok: false; error: string } | { ok: true }> {
+  const parsed = UpdateChainRangeSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input.' }
+  const { sourceId, leagueId, platform, seasonStart, seasonEnd, label } = parsed.data
+  if (seasonStart != null && seasonEnd != null && seasonStart > seasonEnd) {
+    return { ok: false, error: 'Start year must be ≤ end year.' }
+  }
+
+  const access = await assertWriteAccess(leagueId)
+  if (!access.ok) return access
+
+  const db = createAdminClient()
+  // Preserve any non-range keys already on settings (none today for sleeper/
+  // yahoo, but defensive against future fields).
+  const { data: existing } = await db
+    .from('league_sources')
+    .select('settings')
+    .eq('id', sourceId)
+    .eq('league_id', leagueId)
+    .eq('platform', platform)
+    .maybeSingle()
+  const existingSettings = (existing?.settings ?? {}) as Record<string, unknown>
+
+  const nextSettings: Record<string, unknown> = { ...existingSettings }
+  delete nextSettings.season_start
+  delete nextSettings.season_end
+  if (seasonStart != null) nextSettings.season_start = seasonStart
+  if (seasonEnd != null) nextSettings.season_end = seasonEnd
+
+  const update: Record<string, unknown> = { settings: nextSettings }
+  if (label !== undefined) update.label = label || null
+
+  const { error } = await db
+    .from('league_sources')
+    .update(update)
+    .eq('id', sourceId)
+    .eq('league_id', leagueId)
+    .eq('platform', platform)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath(`/league/${access.slug}/sources`)
+  return { ok: true }
+}
+
 export async function deleteSource(sourceId: string, leagueId: string) {
   const access = await assertWriteAccess(leagueId)
   if (!access.ok) return access
@@ -354,7 +427,7 @@ export async function deleteSource(sourceId: string, leagueId: string) {
 // Lists every NFL league on the signed-in user's connected Yahoo account
 // for the Yahoo source picker on this page.
 export async function listYahooLeaguesForSources(): Promise<
-  | { ok: true; leagues: YahooLeagueSummary[] }
+  | { ok: true; leagues: YahooLeaguePickerEntry[] }
   | { ok: false; error: string }
 > {
   try {
@@ -362,7 +435,7 @@ export async function listYahooLeaguesForSources(): Promise<
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { ok: false, error: 'Sign in first.' }
     const token = await getYahooAccessToken(user.id, supabase)
-    const leagues = await listYahooNflLeagues(token)
+    const leagues = await listUserNflLeaguesDeduped(token)
     return { ok: true, leagues }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Could not reach Yahoo.' }

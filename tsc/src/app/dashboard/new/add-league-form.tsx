@@ -23,7 +23,7 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
   type YahooPickerLeague = {
     league_key: string
     name: string
-    season: string
+    seasons: string[]
     num_teams: number
     logo_url?: string
   }
@@ -180,9 +180,20 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                   </p>
                 )}
                 {yahooLeagues && yahooLeagues.length > 0 && (
+                  <span className="dc-checkbox-hint">
+                    Deduped by Yahoo&apos;s renew chain — each league appears once at its
+                    most-recent season. Walk-history covers the rest.
+                  </span>
+                )}
+                {yahooLeagues && yahooLeagues.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '.4rem', marginTop: '.35rem' }}>
                     {yahooLeagues.map((lg) => {
                       const picked = lg.league_key === pickedYahooKey
+                      const yrs = lg.seasons.length === 0
+                        ? '?'
+                        : lg.seasons.length === 1
+                        ? lg.seasons[0]
+                        : `${lg.seasons[0]}–${lg.seasons.at(-1)}`
                       return (
                         <button
                           key={lg.league_key}
@@ -211,7 +222,7 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                               {lg.name}
                             </span>
                             <span style={{ display: 'block', fontFamily: 'var(--mono)', fontSize: '.7rem', opacity: 0.6, letterSpacing: '.05em' }}>
-                              {lg.season} · {lg.num_teams} teams
+                              {yrs} · {lg.num_teams} teams
                             </span>
                           </span>
                           <span style={{ color: 'var(--gold)', fontFamily: 'var(--mono)', fontSize: '.7rem' }}>

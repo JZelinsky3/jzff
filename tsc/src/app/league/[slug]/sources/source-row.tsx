@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { syncSource, deleteSource, updateNflSourceSettings, updateEspnSourceSettings } from './actions'
+import { syncSource, deleteSource, updateNflSourceSettings, updateEspnSourceSettings, updateChainSourceSettings } from './actions'
 
 type Source = {
   id: string
@@ -20,10 +20,20 @@ function num(s: Record<string, unknown> | null | undefined, k: string): number |
 }
 
 function describeRange(source: Source): string | null {
-  if (source.platform !== 'nfl' && source.platform !== 'espn') return null
+  // NFL + ESPN always show range; Sleeper + Yahoo only show one when a manual
+  // year-scope has been set on the source (otherwise the chain walks freely).
   const start = num(source.settings, 'season_start')
   const end = num(source.settings, 'season_end')
-  if (start && end) return start === end ? String(start) : `${start}–${end}`
+  if (source.platform === 'nfl' || source.platform === 'espn') {
+    if (start && end) return start === end ? String(start) : `${start}–${end}`
+    return null
+  }
+  if (source.platform === 'sleeper' || source.platform === 'yahoo') {
+    if (start && end) return start === end ? `Limited to ${start}` : `Limited to ${start}–${end}`
+    if (start) return `Limited to ${start}+`
+    if (end) return `Limited to ≤${end}`
+    return null
+  }
   return null
 }
 
@@ -111,6 +121,24 @@ export function SourceRow({
     router.refresh()
   }
 
+  async function onSaveChainSettings() {
+    if (source.platform !== 'sleeper' && source.platform !== 'yahoo') return
+    setBusy('saving'); setMsg(null)
+    const result = await updateChainSourceSettings({
+      sourceId: source.id,
+      leagueId,
+      platform: source.platform,
+      seasonStart: seasonStart.trim() ? Number(seasonStart) : undefined,
+      seasonEnd: seasonEnd.trim() ? Number(seasonEnd) : undefined,
+      label: label.trim() || undefined,
+    })
+    setBusy(null)
+    if (!result.ok) { setMsg(result.error); return }
+    setEditing(false)
+    setMsg('Saved. Click Sync to re-import with the new range.')
+    router.refresh()
+  }
+
   async function onSaveEspnSettings() {
     setBusy('saving'); setMsg(null)
     const result = await updateEspnSourceSettings({
@@ -146,7 +174,7 @@ export function SourceRow({
             {source.platform === 'nfl' || source.platform === 'espn'
               ? (describeRange(source) ?? 'No range set')
               : (source.walk_history
-                  ? (syncedRange ?? 'Walks history')
+                  ? (describeRange(source) ?? syncedRange ?? 'Walks history')
                   : 'Single season')}
             {describePlayoff(source) && (
               <>{' · '}{describePlayoff(source)}</>
@@ -164,7 +192,7 @@ export function SourceRow({
           <button onClick={onSync} disabled={busy !== null || isPending} className="dc-btn">
             {busy === 'syncing' ? 'Syncing…' : 'Sync now →'}
           </button>
-          {(source.platform === 'nfl' || source.platform === 'espn') && (
+          {(source.platform === 'nfl' || source.platform === 'espn' || source.platform === 'sleeper' || source.platform === 'yahoo') && (
             <button
               onClick={() => setEditing((v) => !v)}
               disabled={busy !== null || isPending}
@@ -248,6 +276,56 @@ export function SourceRow({
               </span>
             </div>
             <button onClick={onSaveSettings} disabled={busy !== null} className="dc-btn dc-btn-block">
+              {busy === 'saving' ? 'Saving…' : 'Save settings'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {editing && (source.platform === 'sleeper' || source.platform === 'yahoo') && (
+        <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(255,255,255,.025)', borderRadius: '2px', borderLeft: '3px solid var(--gold)' }}>
+          <div className="dc-form" style={{ gap: '.85rem' }}>
+            <div className="dc-field">
+              <label className="dc-label">Label (optional)</label>
+              <input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                className="dc-input"
+                placeholder="e.g. Sleeper era 2021+"
+              />
+            </div>
+            <div className="dc-field">
+              <label className="dc-label">Limit to year range (optional)</label>
+              <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min={2000}
+                  max={2100}
+                  placeholder="from"
+                  value={seasonStart}
+                  onChange={(e) => setSeasonStart(e.target.value)}
+                  className="dc-input mono"
+                  style={{ flex: '0 0 6.5rem', textAlign: 'center' }}
+                />
+                <span style={{ opacity: 0.6 }}>through</span>
+                <input
+                  type="number"
+                  min={2000}
+                  max={2100}
+                  placeholder="to"
+                  value={seasonEnd}
+                  onChange={(e) => setSeasonEnd(e.target.value)}
+                  className="dc-input mono"
+                  style={{ flex: '0 0 6.5rem', textAlign: 'center' }}
+                />
+              </div>
+              <span className="dc-checkbox-hint">
+                Leave both blank to ingest every season the chain reaches. Use this when a
+                second source (e.g. Yahoo) already covers some years and you don&apos;t want
+                duplicates from a partial Sleeper season the league never actually played.
+              </span>
+            </div>
+            <button onClick={onSaveChainSettings} disabled={busy !== null} className="dc-btn dc-btn-block">
               {busy === 'saving' ? 'Saving…' : 'Save settings'}
             </button>
           </div>

@@ -50,14 +50,14 @@ export async function ingestYahooLeague(leagueRowId: string): Promise<IngestResu
 
   const { data: sources } = await db
     .from('league_sources')
-    .select('id, external_id, walk_history')
+    .select('id, external_id, walk_history, settings')
     .eq('league_id', leagueRow.id)
     .eq('platform', 'yahoo')
 
   const sourceList =
     sources && sources.length > 0
       ? sources
-      : [{ id: null, external_id: leagueRow.external_id, walk_history: true }]
+      : [{ id: null, external_id: leagueRow.external_id, walk_history: true, settings: null }]
 
   const aggregate: IngestResult = {
     ok: true,
@@ -69,11 +69,15 @@ export async function ingestYahooLeague(leagueRowId: string): Promise<IngestResu
   }
 
   for (const src of sourceList) {
+    const settings = (src.settings ?? null) as Record<string, unknown> | null
+    const seasonStart = typeof settings?.season_start === 'number' ? settings.season_start : undefined
+    const seasonEnd = typeof settings?.season_end === 'number' ? settings.season_end : undefined
     const result = await ingestYahooSource(
       leagueRowId,
       src.external_id,
       src.walk_history,
-      accessToken
+      accessToken,
+      { seasonStart, seasonEnd }
     )
     aggregate.seasonsIngested += result.seasonsIngested
     aggregate.managersIngested += result.managersIngested
@@ -95,20 +99,40 @@ export async function ingestYahooSource(
   archiveLeagueId: string,
   startLeagueKey: string,
   walkHistory: boolean,
-  accessToken: string
+  accessToken: string,
+  range?: { seasonStart?: number; seasonEnd?: number }
 ): Promise<IngestResult> {
   const db = createAdminClient()
   const warnings: string[] = []
 
   // Build the chronological list of seasons (oldest first).
-  const history: YahooLeagueMeta[] = walkHistory
+  const fullHistory: YahooLeagueMeta[] = walkHistory
     ? await walkLeagueChain(accessToken, startLeagueKey)
     : await (async () => {
         const { getLeagueMeta } = await import('@/lib/platforms/yahoo')
         const one = await getLeagueMeta(accessToken, startLeagueKey)
         return one ? [one] : []
       })()
-  if (history.length === 0) throw new Error('Yahoo returned no league data')
+  if (fullHistory.length === 0) throw new Error('Yahoo returned no league data')
+
+  // Filter to the requested year window if one was set on the source — lets
+  // a user split coverage between Yahoo + another platform without doubling up
+  // on shared seasons.
+  const minYear = range?.seasonStart
+  const maxYear = range?.seasonEnd
+  const history = fullHistory.filter((lg) => {
+    const y = parseInt(lg.season, 10)
+    if (Number.isNaN(y)) return true
+    if (minYear != null && y < minYear) return false
+    if (maxYear != null && y > maxYear) return false
+    return true
+  })
+  if (history.length === 0) {
+    warnings.push(
+      `Yahoo: no seasons in range ${minYear ?? '*'}–${maxYear ?? '*'} (chain had ${fullHistory.length}).`
+    )
+    return { ok: true, seasonsIngested: 0, managersIngested: 0, matchupsIngested: 0, draftsIngested: 0, warnings }
+  }
 
   // Pass 1 — collect every manager (guid) across every season so the managers
   // table is complete before we start per-season writes.
@@ -296,6 +320,25 @@ export async function ingestYahooSource(
       })
       .eq('id', seasonId)
 
+    // Final-rank lookup for bracket attribution. Only populated once the
+    // season is over — Yahoo's `rank` is mid-season otherwise. When unset, we
+    // fall back to trusting Yahoo's is_playoffs/is_consolation flags alone.
+    //
+    // Championship-bracket rule (per league convention):
+    //   - is_consolation games are NEVER playoff games
+    //   - 5th-place-and-below placement games are NEVER playoff games
+    //   - 1st, 3rd-place, and the bracket games that determine top-4 ARE playoff
+    // Operationalized: a matchup counts as playoff iff at least one participant
+    // finished in the top 4. (8-team R1 games count because the winner stays
+    // in the top-4 hunt; a 5th-place game between two teams that both finished
+    // ≥5 does not.)
+    const teamKeyToFinalRank = new Map<string, number>()
+    if (treatRankAsFinal) {
+      for (const t of teams) {
+        if (t.rank != null) teamKeyToFinalRank.set(t.team_key, t.rank)
+      }
+    }
+
     // Matchups — fetch every week up to end_week (Yahoo's full season span).
     // No parallel limit helper for Yahoo; we run sequentially to be polite
     // (Yahoo rate-limits unauthenticated bursts; per-user is more generous
@@ -304,6 +347,8 @@ export async function ingestYahooSource(
     let seasonByeOrSingleSide = 0
     let seasonUnresolvedManager = 0
     let seasonSameManager = 0
+    let seasonConsolationFiltered = 0
+    let seasonPlacementFiltered = 0
     const championshipWeek = lg.end_week
     for (let week = 1; week <= lg.end_week; week++) {
       const scoreboard = await getLeagueScoreboard(accessToken, lg.league_key, week, warnings)
@@ -315,10 +360,39 @@ export async function ingestYahooSource(
         if (aMgr === bMgr) { seasonSameManager++; continue }
 
         const isPlayed = m.status === 'postevent' || m.status === 'midevent'
-        const isPlayoff = m.is_playoffs
-        // Championship = final playoff week, non-consolation playoff matchup.
-        const isChampionship =
-          isPlayoff && !m.is_consolation && week === championshipWeek
+
+        // Bracket attribution. Start from Yahoo's flags, then prune anything
+        // we can prove is a 5th-place-or-below game using final ranks.
+        let isPlayoff = m.is_playoffs && !m.is_consolation
+        if (m.is_playoffs && m.is_consolation) seasonConsolationFiltered++
+        if (isPlayoff && teamKeyToFinalRank.size > 0) {
+          const rA = teamKeyToFinalRank.get(m.team_a_key)
+          const rB = teamKeyToFinalRank.get(m.team_b_key)
+          // If both finished ≥5 it's a placement game (5th, 7th, etc), not
+          // championship bracket — regardless of how Yahoo flagged it.
+          if (rA != null && rB != null && rA >= 5 && rB >= 5) {
+            isPlayoff = false
+            seasonPlacementFiltered++
+          }
+        }
+
+        // Championship = the actual title game (rank 1 vs rank 2) in the final
+        // playoff week. The 3rd-place game also happens that week and is
+        // playoff=true but NOT championship.
+        let isChampionship = false
+        if (isPlayoff && week === championshipWeek) {
+          const rA = teamKeyToFinalRank.get(m.team_a_key)
+          const rB = teamKeyToFinalRank.get(m.team_b_key)
+          if (rA != null && rB != null) {
+            const lo = Math.min(rA, rB), hi = Math.max(rA, rB)
+            isChampionship = lo === 1 && hi === 2
+          } else if (!treatRankAsFinal) {
+            // Season still in progress — preserve the old "final-week non-
+            // consolation game" heuristic so pickems still has something to
+            // call the championship before final ranks land.
+            isChampionship = true
+          }
+        }
 
         // Deterministic a/b ordering — smaller manager UUID is always a — so
         // the upsert key is stable across re-syncs.
@@ -346,7 +420,8 @@ export async function ingestYahooSource(
     }
     warnings.push(
       `Season ${year} matchups: ${seasonInserted} inserted ` +
-      `(bye/single-side=${seasonByeOrSingleSide}, unresolved manager=${seasonUnresolvedManager}, same manager=${seasonSameManager}) ` +
+      `(bye/single-side=${seasonByeOrSingleSide}, unresolved manager=${seasonUnresolvedManager}, same manager=${seasonSameManager}, ` +
+      `consolation-excluded=${seasonConsolationFiltered}, 5th+placement-excluded=${seasonPlacementFiltered}) ` +
       `· playoffStart=week ${playoffStart}, endWeek=${lg.end_week}`
     )
 

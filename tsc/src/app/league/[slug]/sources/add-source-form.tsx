@@ -9,9 +9,15 @@ type Result = { ok: false; error: string } | { ok: true } | null
 type YahooPickerLeague = {
   league_key: string
   name: string
-  season: string
+  seasons: string[]
   num_teams: number
   logo_url?: string
+}
+
+function describeYahooRange(seasons: string[]): string {
+  if (seasons.length === 0) return '?'
+  if (seasons.length === 1) return seasons[0]
+  return `${seasons[0]}–${seasons.at(-1)}`
 }
 
 export function AddSourceForm({
@@ -63,7 +69,7 @@ export function AddSourceForm({
 
   function selectYahooLeague(lg: YahooPickerLeague) {
     setPickedYahooKey(lg.league_key)
-    setPickedYahooName(`${lg.name} (${lg.season})`)
+    setPickedYahooName(`${lg.name} (${describeYahooRange(lg.seasons)})`)
   }
 
   return (
@@ -178,7 +184,7 @@ export function AddSourceForm({
                           {lg.name}
                         </span>
                         <span style={{ display: 'block', fontFamily: 'var(--mono)', fontSize: '.7rem', opacity: 0.6, letterSpacing: '.05em' }}>
-                          {lg.season} · {lg.num_teams} teams
+                          {describeYahooRange(lg.seasons)} · {lg.num_teams} teams
                         </span>
                       </span>
                       <span style={{ color: 'var(--gold)', fontFamily: 'var(--mono)', fontSize: '.7rem' }}>
@@ -388,6 +394,38 @@ export function AddSourceForm({
             </span>
           </span>
         </label>
+      )}
+
+      {(platform === 'sleeper' || (platform === 'yahoo' && yahooConnected)) && walk && (
+        <div className="dc-field">
+          <label className="dc-label">Limit to year range (optional)</label>
+          <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center' }}>
+            <input
+              name="seasonStart"
+              type="number"
+              min={2000}
+              max={2100}
+              placeholder="from"
+              className="dc-input mono"
+              style={{ flex: '0 0 6.5rem', textAlign: 'center' }}
+            />
+            <span style={{ opacity: 0.6 }}>through</span>
+            <input
+              name="seasonEnd"
+              type="number"
+              min={2000}
+              max={2100}
+              placeholder="to"
+              className="dc-input mono"
+              style={{ flex: '0 0 6.5rem', textAlign: 'center' }}
+            />
+          </div>
+          <span className="dc-checkbox-hint">
+            Leave blank to ingest every season the chain reaches. Set bounds when another
+            source already covers some years — prevents double-counting when leagues bounce
+            between platforms.
+          </span>
+        </div>
       )}
 
       <button

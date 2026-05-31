@@ -42,14 +42,14 @@ export async function ingestSleeperLeague(leagueRowId: string): Promise<IngestRe
   // to the legacy single external_id on the leagues row.
   const { data: sources } = await db
     .from('league_sources')
-    .select('id, external_id, walk_history')
+    .select('id, external_id, walk_history, settings')
     .eq('league_id', leagueRow.id)
     .eq('platform', 'sleeper')
 
   const sourceList =
     sources && sources.length > 0
       ? sources
-      : [{ id: null, external_id: leagueRow.external_id, walk_history: true }]
+      : [{ id: null, external_id: leagueRow.external_id, walk_history: true, settings: null }]
 
   const aggregate: IngestResult = {
     ok: true,
@@ -62,7 +62,10 @@ export async function ingestSleeperLeague(leagueRowId: string): Promise<IngestRe
   }
 
   for (const src of sourceList) {
-    const result = await ingestSleeperSource(leagueRowId, src.external_id, src.walk_history)
+    const settings = (src.settings ?? null) as Record<string, unknown> | null
+    const seasonStart = typeof settings?.season_start === 'number' ? settings.season_start : undefined
+    const seasonEnd = typeof settings?.season_end === 'number' ? settings.season_end : undefined
+    const result = await ingestSleeperSource(leagueRowId, src.external_id, src.walk_history, { seasonStart, seasonEnd })
     aggregate.seasonsIngested += result.seasonsIngested
     aggregate.managersIngested += result.managersIngested
     aggregate.matchupsIngested += result.matchupsIngested
@@ -82,21 +85,42 @@ export async function ingestSleeperLeague(leagueRowId: string): Promise<IngestRe
 
 // Ingest from a single source Sleeper league_id.
 // If walkHistory is true, follow previous_league_id back. Otherwise just ingest this one.
+// `range` optionally restricts the years that get ingested — used when two
+// sources cover overlapping seasons and the user wants to scope this one to a
+// specific window (e.g. Sleeper handles 2021+, Yahoo handles ≤2020).
 export async function ingestSleeperSource(
   archiveLeagueId: string,
   startLeagueId: string,
-  walkHistory: boolean
+  walkHistory: boolean,
+  range?: { seasonStart?: number; seasonEnd?: number }
 ): Promise<IngestResult> {
   const db = createAdminClient()
   const warnings: string[] = []
 
-  const history = walkHistory
+  const fullHistory = walkHistory
     ? await fetchLeagueHistory(startLeagueId)
     : await (async () => {
         const one = await sleeper.league(startLeagueId)
         return one ? [one] : []
       })()
-  if (history.length === 0) throw new Error('Sleeper returned no league data')
+  if (fullHistory.length === 0) throw new Error('Sleeper returned no league data')
+
+  // Filter to the requested year window if one was set on the source.
+  const minYear = range?.seasonStart
+  const maxYear = range?.seasonEnd
+  const history = fullHistory.filter((lg) => {
+    const y = parseInt(lg.season, 10)
+    if (Number.isNaN(y)) return true
+    if (minYear != null && y < minYear) return false
+    if (maxYear != null && y > maxYear) return false
+    return true
+  })
+  if (history.length === 0) {
+    warnings.push(
+      `Sleeper: no seasons in range ${minYear ?? '*'}–${maxYear ?? '*'} (chain had ${fullHistory.length}).`
+    )
+    return { ok: true, seasonsIngested: 0, managersIngested: 0, matchupsIngested: 0, draftsIngested: 0, tradesIngested: 0, warnings }
+  }
 
   // Use a local alias so the rest of the legacy code below references `leagueRow`.
   const leagueRow = { id: archiveLeagueId }

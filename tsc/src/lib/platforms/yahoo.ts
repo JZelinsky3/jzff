@@ -223,6 +223,76 @@ export async function listUserNflLeagues(
   return out
 }
 
+// Deduped league listing for the new-archive / add-source pickers. Same league
+// across multiple seasons appears once, with the chain's HEAD league_key (the
+// most recent season) returned so the ingest's renew-walk picks up the rest.
+export type YahooLeaguePickerEntry = {
+  league_key: string  // HEAD of the chain
+  name: string
+  num_teams: number
+  logo_url?: string
+  seasons: string[]   // sorted ascending; e.g. ["2019","2020","2021","2022"]
+}
+
+export async function listUserNflLeaguesDeduped(
+  accessToken: string,
+  opts?: { sinceSeason?: number; throughSeason?: number }
+): Promise<YahooLeaguePickerEntry[]> {
+  const flat = await listUserNflLeagues(accessToken, opts)
+  if (flat.length === 0) return []
+
+  // Resolve each league's `renew` so we can collapse chains. Yahoo's
+  // /leagues collection doesn't include renew, so we hit /league/{key} once
+  // per row. Per-user OAuth gives us enough budget for ~30 parallel calls.
+  const metas = await Promise.all(
+    flat.map(async (lg) => {
+      try {
+        const m = await getLeagueMeta(accessToken, lg.league_key)
+        return { lg, renewKey: m ? renewToLeagueKey(m.renew) : null }
+      } catch {
+        return { lg, renewKey: null }
+      }
+    })
+  )
+
+  const byKey = new Map<string, { lg: YahooLeagueSummary; renewKey: string | null }>()
+  for (const r of metas) byKey.set(r.lg.league_key, r)
+
+  // Any key referenced as someone's renew target is an ancestor — not a head.
+  const ancestors = new Set<string>()
+  for (const r of metas) {
+    if (r.renewKey) ancestors.add(r.renewKey)
+  }
+
+  const out: YahooLeaguePickerEntry[] = []
+  for (const r of metas) {
+    if (ancestors.has(r.lg.league_key)) continue
+    // Walk back through known keys to collect every season in the chain.
+    const seasons: string[] = []
+    let cursor: { lg: YahooLeagueSummary; renewKey: string | null } | undefined = r
+    const guard = new Set<string>()
+    while (cursor && !guard.has(cursor.lg.league_key)) {
+      guard.add(cursor.lg.league_key)
+      if (cursor.lg.season) seasons.push(cursor.lg.season)
+      cursor = cursor.renewKey ? byKey.get(cursor.renewKey) : undefined
+    }
+    out.push({
+      league_key: r.lg.league_key,
+      name: r.lg.name,
+      num_teams: r.lg.num_teams,
+      logo_url: r.lg.logo_url,
+      seasons: seasons.sort(),
+    })
+  }
+
+  // Newest-season-of-chain first.
+  out.sort((a, b) =>
+    (b.seasons.at(-1) ?? '').localeCompare(a.seasons.at(-1) ?? '') ||
+    a.name.localeCompare(b.name)
+  )
+  return out
+}
+
 export type YahooLeagueDetail = YahooLeagueSummary & {
   num_divisions?: number
   division_names?: string[]

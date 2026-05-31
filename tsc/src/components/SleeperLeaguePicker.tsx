@@ -3,11 +3,25 @@
 import { useState, useTransition } from 'react'
 
 type LookupLeague = {
+  // The HEAD league_id of the chain (most-recent season). Submitting this id
+  // and letting walk_history follow `previous_league_id` back covers every
+  // season in `seasons` without duplicates.
   league_id: string
   name: string
   total_rosters: number
   seasons: string[]
   avatar: string | null
+}
+
+// Raw shape returned by Sleeper's user-leagues endpoint. `previous_league_id`
+// is what lets us collapse multiple seasons of the same league into one row.
+type SleeperUserLeague = {
+  league_id: string
+  name: string
+  season: string
+  total_rosters: number
+  avatar: string | null
+  previous_league_id: string | null
 }
 
 // Two-mode picker: username search (default) or paste a Sleeper league ID.
@@ -53,36 +67,67 @@ export function SleeperLeaguePicker({
       }
       const currentYear = new Date().getFullYear()
       const seasons: string[] = []
-      for (let y = 2023; y <= currentYear; y++) seasons.push(String(y))
+      // Reach back to 2020 — Sleeper itself launched in 2017, but five seasons
+      // of history covers the vast majority of leagues without ballooning the
+      // request count.
+      for (let y = 2020; y <= currentYear; y++) seasons.push(String(y))
       const all = await Promise.all(seasons.map(async (s) => {
         const r = await fetch(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${s}`)
-        if (!r.ok) return [] as Array<{ league_id: string; name: string; season: string; total_rosters: number; avatar: string | null }>
-        return (await r.json()) as Array<{ league_id: string; name: string; season: string; total_rosters: number; avatar: string | null }>
+        if (!r.ok) return [] as SleeperUserLeague[]
+        return (await r.json()) as SleeperUserLeague[]
       }))
-      const merged = new Map<string, LookupLeague>()
+
+      // Flatten + index by league_id. Sleeper returns one row per season per
+      // league; previous_league_id chains rows from older seasons.
+      const byId = new Map<string, SleeperUserLeague>()
       for (const list of all) {
         for (const lg of list ?? []) {
-          const existing = merged.get(lg.league_id)
-          if (existing) {
-            if (!existing.seasons.includes(lg.season)) existing.seasons.push(lg.season)
-          } else {
-            merged.set(lg.league_id, {
-              league_id: lg.league_id,
-              name: lg.name,
-              total_rosters: lg.total_rosters,
-              seasons: [lg.season],
-              avatar: lg.avatar ?? null,
-            })
-          }
+          // If the same league_id shows up in two responses, prefer whichever
+          // copy carries the most metadata (they should be identical anyway).
+          if (!byId.has(lg.league_id)) byId.set(lg.league_id, lg)
         }
       }
-      const arr = Array.from(merged.values()).map((l) => ({ ...l, seasons: l.seasons.sort() }))
-      arr.sort((a, b) => (b.seasons.at(-1) ?? '').localeCompare(a.seasons.at(-1) ?? ''))
-      if (arr.length === 0) {
-        setLookupError(`No leagues found for "${u}" in 2023–${currentYear}.`)
+
+      // Anything referenced as someone else's previous_league_id is an
+      // intermediate node in a chain — not a head. Heads are the leagues
+      // nobody points back to.
+      const isAncestor = new Set<string>()
+      for (const lg of byId.values()) {
+        const prev = lg.previous_league_id
+        if (prev && prev !== '0') isAncestor.add(prev)
+      }
+
+      // For each head, walk previous_league_id back through `byId` to collect
+      // every season in the chain. We only walk seasons we actually fetched —
+      // anything outside the 2020+ window is ignored (the ingest's history walk
+      // will still pull it later, this is just for display).
+      const merged: LookupLeague[] = []
+      for (const head of byId.values()) {
+        if (isAncestor.has(head.league_id)) continue
+        const seasons: string[] = []
+        let cursor: SleeperUserLeague | undefined = head
+        const guard = new Set<string>()
+        while (cursor && !guard.has(cursor.league_id)) {
+          guard.add(cursor.league_id)
+          if (cursor.season) seasons.push(cursor.season)
+          const prevId: string | null = cursor.previous_league_id
+          cursor = prevId && prevId !== '0' ? byId.get(prevId) : undefined
+        }
+        merged.push({
+          league_id: head.league_id,
+          name: head.name,
+          total_rosters: head.total_rosters,
+          seasons: seasons.sort(),
+          avatar: head.avatar ?? null,
+        })
+      }
+
+      merged.sort((a, b) => (b.seasons.at(-1) ?? '').localeCompare(a.seasons.at(-1) ?? ''))
+      if (merged.length === 0) {
+        setLookupError(`No leagues found for "${u}" in 2020–${currentYear}.`)
         return
       }
-      setLookupLeagues(arr)
+      setLookupLeagues(merged)
     })
   }
 
@@ -141,7 +186,8 @@ export function SleeperLeaguePicker({
           </button>
         </div>
         <span className="dc-checkbox-hint">
-          We&apos;ll list every Sleeper league you&apos;ve been in from 2023 to now. Pick one.
+          We&apos;ll list every Sleeper league you&apos;ve been in from 2020 to now, deduped
+          by history chain. Pick one — we&apos;ll walk every prior season automatically.
         </span>
         {lookupError && (
           <p className="dc-form-error" style={{ margin: '.5rem 0 0' }}>{lookupError}</p>
