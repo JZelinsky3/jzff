@@ -306,7 +306,7 @@ export async function ingestYahooSource(
     let seasonSameManager = 0
     const championshipWeek = lg.end_week
     for (let week = 1; week <= lg.end_week; week++) {
-      const scoreboard = await getLeagueScoreboard(accessToken, lg.league_key, week)
+      const scoreboard = await getLeagueScoreboard(accessToken, lg.league_key, week, warnings)
       for (const m of scoreboard) {
         if (!m.team_a_key || !m.team_b_key) { seasonByeOrSingleSide++; continue }
         const aMgr = teamKeyToManagerId.get(m.team_a_key)

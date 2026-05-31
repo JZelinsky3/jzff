@@ -538,7 +538,8 @@ export type YahooScoreboardMatchup = {
 export async function getLeagueScoreboard(
   accessToken: string,
   leagueKey: string,
-  week: number
+  week: number,
+  diagOut?: string[]
 ): Promise<YahooScoreboardMatchup[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const raw = await yahooFetchJson<any>(accessToken, `/league/${leagueKey}/scoreboard;week=${week}`)
@@ -548,21 +549,54 @@ export async function getLeagueScoreboard(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (x: any) => x && typeof x === 'object' && 'scoreboard' in x
   )
+  // scoreboard can be `{matchups: ...}` (modern), `{'0': {matchups: ...}}`
+  // (older numbered-map wrapper), or even an array `[{matchups: ...}]`.
+  // Walk all three so a shape change in one season doesn't zero matchups.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const matchupsNode = (sbBlock as any)?.scoreboard?.['0']?.matchups
-  if (!matchupsNode) return []
+  const sbNode = (sbBlock as any)?.scoreboard
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let matchupsNode: any =
+    sbNode?.matchups ??
+    sbNode?.['0']?.matchups ??
+    (Array.isArray(sbNode) ? sbNode[0]?.matchups : undefined)
+  if (!matchupsNode) {
+    if (diagOut && week === 1) {
+      const sbKeys = sbNode && typeof sbNode === 'object' ? Object.keys(sbNode).join(',') : typeof sbNode
+      diagOut.push(`scoreboard(${leagueKey}, w${week}): matchups missing — scoreboard keys: [${sbKeys || '(empty)'}]`)
+    }
+    return []
+  }
 
   const out: YahooScoreboardMatchup[] = []
+  let firstMatchupShapeLogged = false
   for (const mNode of numberedToArray(matchupsNode)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const matchupFrag = (mNode as any)?.matchup
     if (!matchupFrag) continue
     // matchup is a flat object of metadata + a `teams` numbered map.
+    // Newer responses wrap the matchup body as { '0': { matchups: { ... } } }
+    // INSIDE each matchup frag — i.e. the teams collection lives at
+    // matchupFrag['0'].teams rather than meta.teams. Handle both.
     const meta = flattenFragments(Array.isArray(matchupFrag) ? matchupFrag : [matchupFrag])
-    const teamsNode = (meta.teams ?? matchupFrag.teams) as Record<string, unknown> | undefined
-    if (!teamsNode) continue
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const teamsNode = (meta.teams ?? matchupFrag.teams ?? (matchupFrag as any)?.['0']?.teams) as Record<string, unknown> | undefined
+    if (!teamsNode) {
+      if (diagOut && !firstMatchupShapeLogged && week === 1) {
+        firstMatchupShapeLogged = true
+        const mfShape = Array.isArray(matchupFrag) ? `array(len=${matchupFrag.length})` : typeof matchupFrag
+        const mfKeys = matchupFrag && typeof matchupFrag === 'object'
+          ? Object.keys(matchupFrag as object).join(',')
+          : '(n/a)'
+        diagOut.push(`scoreboard(${leagueKey}, w${week}) matchup shape: matchupFrag=${mfShape} · matchupFrag_keys=[${mfKeys}] · meta_keys=[${Object.keys(meta).join(',')}]`)
+      }
+      continue
+    }
     const teamList = numberedToArray(teamsNode)
     if (teamList.length !== 2) continue
+    if (diagOut && !firstMatchupShapeLogged && week === 1) {
+      firstMatchupShapeLogged = true
+      diagOut.push(`scoreboard(${leagueKey}, w${week}) matchup shape: meta_keys=[${Object.keys(meta).join(',')}] · teamList=${teamList.length}`)
+    }
     const [tA, tB] = teamList
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const teamA = flattenFragments((tA as any)?.team?.[0] ?? (tA as any)?.team ?? {})
@@ -584,6 +618,9 @@ export async function getLeagueScoreboard(
       team_b_points: teamBPoints != null && teamBPoints !== '' ? Number(teamBPoints) : null,
       winner_team_key: typeof meta.winner_team_key === 'string' ? meta.winner_team_key : undefined,
     })
+  }
+  if (diagOut && week === 1 && out.length === 0) {
+    diagOut.push(`scoreboard(${leagueKey}, w${week}): 0 matchups parsed — every matchup frag was missing the teams node. See the shape line above.`)
   }
   return out
 }
