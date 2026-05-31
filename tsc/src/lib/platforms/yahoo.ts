@@ -406,7 +406,6 @@ export async function getLeagueTeamsStandings(
   }
 
   const out: YahooTeam[] = []
-  let firstTeamShapeLogged = false
   for (const tNode of numberedToArray(teamsNode)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const teamFrag = (tNode as any)?.team
@@ -438,20 +437,6 @@ export async function getLeagueTeamsStandings(
       {}
     ) as Record<string, unknown>
     const outcome = (team_standings.outcome_totals ?? {}) as Record<string, unknown>
-
-    if (!firstTeamShapeLogged && diagOut) {
-      firstTeamShapeLogged = true
-      const ts_keys = Object.keys(team_standings).join(',') || '(empty)'
-      const ot_keys = Object.keys(outcome).join(',') || '(empty)'
-      const sub_keys = Object.keys(subResources).join(',') || '(empty)'
-      const meta_keys = Object.keys(m).join(',') || '(empty)'
-      const teamFragShape = Array.isArray(teamFrag)
-        ? `array(len=${teamFrag.length}, [0]=${Array.isArray(teamFrag[0]) ? 'array' : typeof teamFrag[0]})`
-        : typeof teamFrag
-      diagOut.push(
-        `standings(${leagueKey}) shape: teamFrag=${teamFragShape} · meta_keys=[${meta_keys}] · sub_keys=[${sub_keys}] · ts_keys=[${ts_keys}] · ot_keys=[${ot_keys}]`
-      )
-    }
 
     // Managers: Yahoo nests these as { managers: [ { manager: {...} }, ... ] } or
     // a numbered-key map. Tolerate both.
@@ -512,8 +497,15 @@ export async function getLeagueTeamsStandings(
   if (diagOut && out.length > 0) {
     const allZero = out.every((t) => t.wins === 0 && t.losses === 0 && t.points_for === 0)
     if (allZero) {
+      // Re-derive a compact shape report so a future Yahoo response change
+      // is debuggable from one warning line alone.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const firstTeamFrag = (numberedToArray(teamsNode)[0] as any)?.team
+      const shape = Array.isArray(firstTeamFrag)
+        ? `len=${firstTeamFrag.length}, [0]=${Array.isArray(firstTeamFrag[0]) ? 'array' : typeof firstTeamFrag[0]}`
+        : typeof firstTeamFrag
       diagOut.push(
-        `standings(${leagueKey}): all ${out.length} teams parsed with 0-0 record and 0 PF — team_standings structure not where the parser is looking. See the shape line above.`
+        `standings(${leagueKey}): all ${out.length} teams parsed with 0-0 record and 0 PF — team_standings structure not where the parser is looking. teamFrag shape: ${shape}`
       )
     }
   }
@@ -568,7 +560,7 @@ export async function getLeagueScoreboard(
   }
 
   const out: YahooScoreboardMatchup[] = []
-  let firstMatchupShapeLogged = false
+  let missingTeamsNodeLogged = false
   for (const mNode of numberedToArray(matchupsNode)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const matchupFrag = (mNode as any)?.matchup
@@ -581,22 +573,18 @@ export async function getLeagueScoreboard(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const teamsNode = (meta.teams ?? matchupFrag.teams ?? (matchupFrag as any)?.['0']?.teams) as Record<string, unknown> | undefined
     if (!teamsNode) {
-      if (diagOut && !firstMatchupShapeLogged && week === 1) {
-        firstMatchupShapeLogged = true
+      if (diagOut && !missingTeamsNodeLogged && week === 1) {
+        missingTeamsNodeLogged = true
         const mfShape = Array.isArray(matchupFrag) ? `array(len=${matchupFrag.length})` : typeof matchupFrag
         const mfKeys = matchupFrag && typeof matchupFrag === 'object'
           ? Object.keys(matchupFrag as object).join(',')
           : '(n/a)'
-        diagOut.push(`scoreboard(${leagueKey}, w${week}) matchup shape: matchupFrag=${mfShape} · matchupFrag_keys=[${mfKeys}] · meta_keys=[${Object.keys(meta).join(',')}]`)
+        diagOut.push(`scoreboard(${leagueKey}, w${week}): matchup is missing the teams node — matchupFrag=${mfShape} · matchupFrag_keys=[${mfKeys}] · meta_keys=[${Object.keys(meta).join(',')}]`)
       }
       continue
     }
     const teamList = numberedToArray(teamsNode)
     if (teamList.length !== 2) continue
-    if (diagOut && !firstMatchupShapeLogged && week === 1) {
-      firstMatchupShapeLogged = true
-      diagOut.push(`scoreboard(${leagueKey}, w${week}) matchup shape: meta_keys=[${Object.keys(meta).join(',')}] · teamList=${teamList.length}`)
-    }
     const [tA, tB] = teamList
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const teamA = flattenFragments((tA as any)?.team?.[0] ?? (tA as any)?.team ?? {})
