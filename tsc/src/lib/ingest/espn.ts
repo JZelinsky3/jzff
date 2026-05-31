@@ -391,8 +391,18 @@ async function ingestSeason(args: {
     if (bPct !== aPct) return bPct - aPct
     return (br?.pointsFor ?? 0) - (ar?.pointsFor ?? 0)
   })
+  // Skip ranking entirely for a season where no games have been played yet
+  // (preseason 2026, for example) — otherwise everyone tied at 0-0/0pts gets
+  // an arbitrary rank based on team.id ordering, which is misleading.
+  const seasonHasGames = (lg.teams ?? []).some((t) => {
+    const r = t.record?.overall
+    return ((r?.wins ?? 0) + (r?.losses ?? 0) + (r?.ties ?? 0)) > 0
+      || (r?.pointsFor ?? 0) > 0
+  })
   const regRank = new Map<number, number>()
-  teamsSorted.forEach((t, idx) => regRank.set(t.id, idx + 1))
+  if (seasonHasGames) {
+    teamsSorted.forEach((t, idx) => regRank.set(t.id, idx + 1))
+  }
 
   for (const team of lg.teams ?? []) {
     const managerId = teamToManagerId(team.id)
@@ -425,8 +435,10 @@ async function ingestSeason(args: {
     if (error) result.warnings.push(`Season ${year} manager_seasons team ${team.id}: ${error.message}`)
   }
 
-  // Regular-season winner = top of regRank.
-  const regularSeasonWinner = teamsSorted[0] ? teamToManagerId(teamsSorted[0].id) : null
+  // Regular-season winner = top of regRank. Null until at least one game.
+  const regularSeasonWinner = seasonHasGames && teamsSorted[0]
+    ? teamToManagerId(teamsSorted[0].id)
+    : null
 
   await db
     .from('seasons')

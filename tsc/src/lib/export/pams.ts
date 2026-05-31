@@ -5,6 +5,7 @@
 // a response, or compare against a fixture.
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { simulateSeason, type SimTeam } from '@/lib/powerSim'
 
 // ============================================================
 // In-memory league snapshot
@@ -33,6 +34,7 @@ type SeasonRow = {
   regular_season_winner_id: string | null
   playoff_weeks: number[] | null
   is_live: boolean | null
+  settings: Record<string, unknown> | null
 }
 
 type ManagerRow = {
@@ -186,7 +188,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
   ] = await Promise.all([
     db
       .from('seasons')
-      .select('id, year, external_id, champion_manager_id, runner_up_manager_id, regular_season_winner_id, playoff_weeks, is_live')
+      .select('id, year, external_id, champion_manager_id, runner_up_manager_id, regular_season_winner_id, playoff_weeks, is_live, settings')
       .eq('league_id', leagueId)
       .order('year', { ascending: true }),
     db
@@ -450,6 +452,21 @@ function isChampionshipBracketGame(s: Snapshot, gm: ManagerGame): boolean {
   return (selfRank != null && selfRank <= 4) || (oppRank != null && oppRank <= 4)
 }
 
+// Did the manager make this season's playoffs? Authoritative answer: their
+// final_rank is within the season's playoff_team_count. Falls back to "had
+// any playoff matchup" only when the season is missing playoff_team_count
+// (older Sleeper/Yahoo data) — NFL.com schedules every team in the playoff
+// weeks (consolation bracket), so without the rank check everyone gets credit
+// for an appearance every year.
+function madePlayoffs(season: SeasonRow, finalRank: number | null, hadPlayoffMatchup: boolean): boolean {
+  const ptc = season.settings?.playoff_team_count
+  const teamCount = typeof ptc === 'number' && ptc > 0 ? ptc : null
+  if (teamCount != null) {
+    return finalRank != null && finalRank <= teamCount
+  }
+  return hadPlayoffMatchup
+}
+
 
 // ============================================================
 // Profile groups — one entry per real person after merging.
@@ -616,19 +633,76 @@ function buildLeagueJson(s: Snapshot): unknown {
     else formerMembers++
   }
 
+  // Defending champion = most recent season that actually has a crowned
+  // champion. Stays in place once that season ends, all the way through
+  // the next year, until the new season's champion_manager_id is set.
   let defendingChampion: Record<string, unknown> | null = null
-  if (currentSeasonRow?.champion_manager_id) {
-    const mgr = s.managers.get(currentSeasonRow.champion_manager_id)
-    const ms = (s.managerSeasonsBySeason.get(currentSeasonRow.id) ?? []).find((r) => r.manager_id === currentSeasonRow.champion_manager_id)
-    const champGroup = buildManagerToGroup(buildProfileGroups(s)).get(currentSeasonRow.champion_manager_id)
+  let defendingRow: SeasonRow | null = null
+  for (let i = s.seasons.length - 1; i >= 0; i--) {
+    if (s.seasons[i].champion_manager_id) {
+      defendingRow = s.seasons[i]
+      break
+    }
+  }
+  if (defendingRow?.champion_manager_id) {
+    const mgr = s.managers.get(defendingRow.champion_manager_id)
+    const ms = (s.managerSeasonsBySeason.get(defendingRow.id) ?? []).find((r) => r.manager_id === defendingRow!.champion_manager_id)
+    const champGroup = buildManagerToGroup(buildProfileGroups(s)).get(defendingRow.champion_manager_id)
+    // Career championship count for the same profile group (counts wins by
+    // any merged identity, so "Mason" gets credit even if their team was
+    // named differently in an earlier title year).
+    let championshipCount = 0
+    const champYears: number[] = []
+    if (champGroup) {
+      for (const sn of s.seasons) {
+        if (sn.champion_manager_id && champGroup.managerIds.has(sn.champion_manager_id)) {
+          championshipCount++
+          champYears.push(sn.year)
+        }
+      }
+    } else if (defendingRow.champion_manager_id) {
+      for (const sn of s.seasons) {
+        if (sn.champion_manager_id === defendingRow.champion_manager_id) {
+          championshipCount++
+          champYears.push(sn.year)
+        }
+      }
+    }
     if (mgr && ms && !(champGroup && isGroupHidden(champGroup))) {
+      // Championship-game summary: the is_championship match where this
+      // manager played. Drives the "Beat X · 142-118" stat in the sidebar.
+      const seasonMatches = s.matchupsBySeason.get(defendingRow.id) ?? []
+      const titleGame = seasonMatches.find((m) => m.is_championship &&
+        (m.manager_a_id === defendingRow!.champion_manager_id || m.manager_b_id === defendingRow!.champion_manager_id))
+      let title_opponent_name: string | null = null
+      let title_score_for: number | null = null
+      let title_score_against: number | null = null
+      if (titleGame && titleGame.score_a != null && titleGame.score_b != null) {
+        const isA = titleGame.manager_a_id === defendingRow.champion_manager_id
+        const oppId = isA ? titleGame.manager_b_id : titleGame.manager_a_id
+        const oppMgr = s.managers.get(oppId)
+        const oppGroup = buildManagerToGroup(buildProfileGroups(s)).get(oppId)
+        title_opponent_name = oppGroup ? groupDisplayName(oppGroup) : (oppMgr?.display_name ?? null)
+        title_score_for = round2(Number(isA ? titleGame.score_a : titleGame.score_b))
+        title_score_against = round2(Number(isA ? titleGame.score_b : titleGame.score_a))
+      }
+      const games = ms.wins + ms.losses + ms.ties
+      const pf = Number(ms.points_for)
       defendingChampion = {
-        year: currentSeasonRow.year,
+        year: defendingRow.year,
         team_name: ms.team_name ?? mgr.team_name ?? mgr.display_name,
         owner_name: champGroup ? groupDisplayName(champGroup) : mgr.display_name,
         owner_user_id: userId(champGroup?.primary ?? mgr),
         record: recordStr(ms.wins, ms.losses, ms.ties),
-        points_for: round2(Number(ms.points_for)),
+        points_for: round2(pf),
+        points_against: round2(Number(ms.points_against)),
+        ppg: games > 0 ? round2(pf / games) : 0,
+        regular_rank: ms.regular_rank,
+        title_opponent_name,
+        title_score_for,
+        title_score_against,
+        championship_count: championshipCount,
+        championship_years: champYears.slice().sort((a, b) => a - b),
       }
     }
   }
@@ -975,7 +1049,7 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
     const hadPlayoff = (s.matchupsBySeason.get(season.id) ?? []).some(
       (m) => m.is_playoff && (g.managerIds.has(m.manager_a_id) || g.managerIds.has(m.manager_b_id))
     )
-    if (hadPlayoff) playoff_appearances++
+    if (madePlayoffs(season, ms.final_rank, hadPlayoff)) playoff_appearances++
   }
 
   const { longestWin, longestLoss } = computeStreaks(games, s)
@@ -2185,7 +2259,7 @@ function buildRecordBook(s: Snapshot): unknown {
       const had = (s.matchupsBySeason.get(season.id) ?? []).some(
         (mt) => mt.is_playoff && (g.managerIds.has(mt.manager_a_id) || g.managerIds.has(mt.manager_b_id))
       )
-      if (had) playoffAppearances++
+      if (madePlayoffs(season, r.final_rank, had)) playoffAppearances++
       const games = r.wins + r.losses + r.ties
       if (games > 0 && r.losses === 0 && r.ties === 0) perfectYears.push(season.year)
       if (games > 0 && r.wins === 0 && r.ties === 0) winlessYears.push(season.year)
@@ -2389,6 +2463,12 @@ export async function exportLeague(
   out['manager_highs.json'] = buildManagerHighs(s)
   out['record_book.json'] = buildRecordBook(s)
   out['rivalries.json'] = buildRivalries(s)
+  // Phase-2 live-season feeds: h2h_matrix is always present (all-time
+  // data). current_form returns null when no season is is_live — the
+  // route handler still serves the JSON; the client treats null as
+  // "no current season" and hides the form sheet.
+  out['h2h_matrix.json'] = buildH2HMatrix(s)
+  out['current_form.json'] = buildCurrentForm(s)
 
   for (const season of s.seasons) {
     out[`seasons/${season.year}.json`] = buildSeasonFile(s, season)
@@ -2404,16 +2484,447 @@ export async function exportLeague(
     if (uid != null) out[`managers/${uid}.json`] = buildManagerFile(s, g)
   }
 
-  // Jake-only previews: real records_watch + milestones snapshots frozen at
-  // end-of-W5-2025 so the live-season templates can be reviewed with real
-  // names + numbers before the live data pipeline ships league-wide.
+  // records_watch.json + milestones.json — emitted for every league.
+  //
+  // jake stays pinned to (2025, W10) as a regression fixture so template
+  // iteration has a known-good snapshot to compare against; every other
+  // league derives (year, throughWeek) from its actual state:
+  //
+  //   • is_live season with completed games  → year = live year,
+  //                                            throughWeek = latest fully-
+  //                                            played week
+  //   • is_live season but no games yet      → year = live year, week = 0
+  //                                            (preseason horizon)
+  //   • no is_live season but seasons exist  → year = max(year) + 1, week 0
+  //                                            (off-season → milestone
+  //                                            horizon framing for the
+  //                                            upcoming year)
+  //   • no seasons at all                    → skip (nothing to surface)
+  //
+  // playoff_odds.json is only emitted once there's enough completed data
+  // for the Monte Carlo sim to mean anything (is_live + ≥4 weeks played);
+  // jake keeps its frozen W10/2025 snapshot.
   if (opts.slug === 'jake') {
     const previews = buildLiveSeasonPreviews(s, 2025, 10)
     out['records_watch.json'] = previews.records_watch
     out['milestones.json'] = previews.milestones
+    const odds = buildPlayoffOddsPreview(s, 2025, 10)
+    if (odds) out['playoff_odds.json'] = odds
+  } else {
+    const ls = resolveLiveSnapshotPoint(s)
+    if (ls) {
+      const previews = buildLiveSeasonPreviews(s, ls.year, ls.throughWeek)
+      out['records_watch.json'] = previews.records_watch
+      out['milestones.json'] = previews.milestones
+      if (ls.isLive && ls.throughWeek >= 4) {
+        const odds = buildPlayoffOddsPreview(s, ls.year, ls.throughWeek)
+        if (odds) out['playoff_odds.json'] = odds
+      }
+    }
   }
 
   return out
+}
+
+// Pick the (year, throughWeek) pair that drives a league's records_watch +
+// milestones snapshot. Backward-looking: throughWeek is the latest week
+// whose matchups have final scores, so the watch page never advances ahead
+// of the data. Falls through to preseason-horizon mode when no live season
+// is flagged. Returns null only when the league has no seasons at all.
+function resolveLiveSnapshotPoint(
+  s: Snapshot,
+): { year: number; throughWeek: number; isLive: boolean } | null {
+  const liveSeason = s.seasons.find((sn) => sn.is_live)
+  if (liveSeason) {
+    const matchups = s.matchupsBySeason.get(liveSeason.id) ?? []
+    let latestCompleted = 0
+    for (const m of matchups) {
+      if (m.score_a == null || m.score_b == null) continue
+      if (m.week > latestCompleted) latestCompleted = m.week
+    }
+    return { year: liveSeason.year, throughWeek: latestCompleted, isLive: true }
+  }
+  if (s.seasons.length === 0) return null
+  const lastYear = s.seasons.reduce((acc, sn) => (sn.year > acc ? sn.year : acc), 0)
+  return { year: lastYear + 1, throughWeek: 0, isLive: false }
+}
+
+// ============================================================
+// h2h_matrix.json — all-time head-to-head between every pair of
+// profile groups. Drives the "Mileage Matrix" widget on the
+// live-season hub: a vintage road-atlas grid of pairwise W-L
+// records and PF. Only regular-season + championship-bracket
+// games count (matches buildLeagueJson's totalMatchups rule).
+// ============================================================
+function buildH2HMatrix(s: Snapshot): unknown {
+  // Cells include every all-time pairwise matchup so an alumni vs current
+  // game still counts in the active manager's row total — but the visible
+  // grid only shows currently-active groups. Alumni get filtered out at
+  // the manager-directory layer below.
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  const managerToGroup = buildManagerToGroup(groups)
+  const autoCurrent = currentManagerIdSet(s)
+
+  // Column-header tag from the manager's display name. Most managers use
+  // platform usernames (not real "First Last" names), so first-letter
+  // initials read as gibberish — "JZ18" → "J1" tells you nothing. Take
+  // the first 4 letters of the name instead, uppercased. Punctuation /
+  // digits stripped so e.g. "Joey_Z18" → "JOEY".
+  function abbrFor(name: string): string {
+    const clean = String(name).replace(/[^A-Za-z]/g, '')
+    if (!clean) return '—'
+    return clean.slice(0, 4).toUpperCase()
+  }
+
+  // Build manager directory entries, ordered by total wins desc so the
+  // matrix's row/col order makes intuitive sense (best at the top).
+  type MgrEntry = {
+    user_id: string
+    name: string
+    team_latest: string
+    abbr: string
+    wins: number
+  }
+  const mgrEntries: MgrEntry[] = []
+  for (const g of groups) {
+    if (!isGroupCurrent(g, autoCurrent)) continue
+    const uid = userId(g.primary)
+    if (uid == null) continue
+    const agg = aggregateProfile(s, g)
+    const wins = agg.reg_wins + agg.playoff_wins
+    // Most recent team_latest: scan most recent manager_season across
+    // every identity in the group.
+    const allMs: ManagerSeasonRow[] = []
+    for (const mid of g.managerIds) allMs.push(...(s.managerSeasonsByManager.get(mid) ?? []))
+    const lastMs = allMs
+      .slice()
+      .sort((a, b) => {
+        const ya = s.seasons.find((sn) => sn.id === a.season_id)?.year ?? 0
+        const yb = s.seasons.find((sn) => sn.id === b.season_id)?.year ?? 0
+        return yb - ya
+      })[0]
+    const name = groupDisplayName(g)
+    const teamLatest = lastMs?.team_name ?? g.primary.team_name ?? name
+    mgrEntries.push({
+      user_id: uid,
+      name,
+      team_latest: teamLatest,
+      abbr: abbrFor(name),
+      wins,
+    })
+  }
+  mgrEntries.sort((a, b) => b.wins - a.wins)
+
+  // Walk every matchup once; aggregate into cells keyed by sorted uid pair.
+  // `a` in the key is the lexicographically-smaller uid; `wins_a` is its
+  // wins. Client orients display from there.
+  type Cell = {
+    wins_a: number
+    wins_b: number
+    ties: number
+    pf_a: number
+    pf_b: number
+    meetings: number
+    first_year: number | null
+    last_year: number | null
+  }
+  const cells: Record<string, Cell> = {}
+
+  for (const arr of s.matchupsBySeason.values()) {
+    for (const m of arr) {
+      if (m.score_a == null || m.score_b == null) continue
+      // Championship-bracket filter: regular season always counts; playoff
+      // games count only when either side finished top-4 that year.
+      if (m.is_playoff) {
+        const aRank = s.finalRankByMgrSeason.get(`${m.season_id}|${m.manager_a_id}`) ?? null
+        const bRank = s.finalRankByMgrSeason.get(`${m.season_id}|${m.manager_b_id}`) ?? null
+        const aBracket = aRank != null && aRank <= 4
+        const bBracket = bRank != null && bRank <= 4
+        if (!aBracket && !bBracket) continue
+      }
+      const groupA = managerToGroup.get(m.manager_a_id)
+      const groupB = managerToGroup.get(m.manager_b_id)
+      if (!groupA || !groupB) continue
+      if (isGroupHidden(groupA) || isGroupHidden(groupB)) continue
+      // Active-only matrix: alumni columns aren't rendered, so cells
+      // involving them would never be looked up. Skipping here keeps
+      // the JSON tight.
+      if (!isGroupCurrent(groupA, autoCurrent) || !isGroupCurrent(groupB, autoCurrent)) continue
+      if (groupA === groupB) continue
+      const uidA = userId(groupA.primary)
+      const uidB = userId(groupB.primary)
+      if (uidA == null || uidB == null) continue
+
+      const year = s.seasons.find((sn) => sn.id === m.season_id)?.year ?? 0
+      // Sort uids for stable key. `aIsLeft` tracks whether matchup.score_a
+      // belongs to the key's first side.
+      const aIsLeft = uidA < uidB
+      const keyA = aIsLeft ? uidA : uidB
+      const keyB = aIsLeft ? uidB : uidA
+      const key = `${keyA}|${keyB}`
+
+      let cell = cells[key]
+      if (!cell) {
+        cell = { wins_a: 0, wins_b: 0, ties: 0, pf_a: 0, pf_b: 0, meetings: 0, first_year: null, last_year: null }
+        cells[key] = cell
+      }
+
+      const scoreLeft = aIsLeft ? Number(m.score_a) : Number(m.score_b)
+      const scoreRight = aIsLeft ? Number(m.score_b) : Number(m.score_a)
+
+      cell.pf_a += scoreLeft
+      cell.pf_b += scoreRight
+      cell.meetings++
+      if (scoreLeft > scoreRight) cell.wins_a++
+      else if (scoreLeft < scoreRight) cell.wins_b++
+      else cell.ties++
+      if (year > 0) {
+        if (cell.first_year == null || year < cell.first_year) cell.first_year = year
+        if (cell.last_year == null || year > cell.last_year) cell.last_year = year
+      }
+    }
+  }
+
+  // Round PF to 2 dp for readability + smaller payload.
+  for (const k of Object.keys(cells)) {
+    cells[k]!.pf_a = round2(cells[k]!.pf_a)
+    cells[k]!.pf_b = round2(cells[k]!.pf_b)
+  }
+
+  return {
+    managers: mgrEntries.map((m) => ({
+      user_id: m.user_id,
+      name: m.name,
+      team_latest: m.team_latest,
+      abbr: m.abbr,
+    })),
+    cells,
+  }
+}
+
+// ============================================================
+// current_form.json — standings + last-5 form per manager + week-
+// over-week deltas. Drives the "Form Sheet" widget on the live-
+// season hub.
+//
+// Source-season selection (in order):
+//   1. is_live season with at least one completed matchup → live mode
+//      (is_final: false). The default in-season case.
+//   2. otherwise, most recent season with completed matchups → final
+//      mode (is_final: true). Lets the off-season view still show a
+//      meaningful standings tower — last year's final table.
+//   3. nothing scored anywhere → null. Client hides the section.
+// ============================================================
+function buildCurrentForm(s: Snapshot): unknown {
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+
+  // Find the season to render. Prefer is_live; fall back to the most
+  // recent season that has scored matchups.
+  function pickFormSeason(): { season: SeasonRow; matchups: MatchupRow[]; isFinal: boolean } | null {
+    const liveSeason = s.seasons.find((sn) => sn.is_live)
+    const matchupsScored = (sn: SeasonRow) =>
+      (s.matchupsBySeason.get(sn.id) ?? []).filter((m) => m.score_a != null && m.score_b != null)
+    if (liveSeason) {
+      const ms = matchupsScored(liveSeason)
+      if (ms.length > 0) return { season: liveSeason, matchups: ms, isFinal: false }
+    }
+    // Off-season / live-but-no-games: walk seasons newest-first for
+    // anything with scored matchups.
+    for (let i = s.seasons.length - 1; i >= 0; i--) {
+      const sn = s.seasons[i]
+      if (liveSeason && sn.id === liveSeason.id) continue
+      const ms = matchupsScored(sn)
+      if (ms.length > 0) return { season: sn, matchups: ms, isFinal: true }
+    }
+    return null
+  }
+  const picked = pickFormSeason()
+  if (!picked) return null
+  const { season: formSeason, matchups: scoredMatchups, isFinal } = picked
+
+  // In final (off-season) mode, anchor on the regular-season slate so the
+  // standings tower reads as the canonical end-of-year table. Including
+  // playoff wins would credit the top-4 with extra W and inflate their
+  // PF gaps relative to non-playoff teams, which isn't how an almanac
+  // frames a "Final · W{N}" view. Live mode keeps all scored games (the
+  // standingsThrough function already filters consolation games on its
+  // own, so championship-bracket games still flow through).
+  const allMatchups = scoredMatchups
+    .slice()
+    .filter((m) => !(isFinal && m.is_playoff))
+    .sort((a, b) => a.week - b.week)
+  if (allMatchups.length === 0) return null
+  const latestWeek = allMatchups[allMatchups.length - 1]!.week
+
+  // Compute standings as of through a specific week (inclusive). Returns
+  // rows keyed by manager.id, with wins/losses/ties + total PF.
+  type StandRow = { wins: number; losses: number; ties: number; pf: number; pa: number; weekly_pf: Map<number, number> }
+  function standingsThrough(week: number): Map<string, StandRow> {
+    const out = new Map<string, StandRow>()
+    function row(mid: string): StandRow {
+      let r = out.get(mid)
+      if (!r) { r = { wins: 0, losses: 0, ties: 0, pf: 0, pa: 0, weekly_pf: new Map() }; out.set(mid, r) }
+      return r
+    }
+    for (const m of allMatchups) {
+      if (m.week > week) continue
+      // Skip playoff placement games (consolation) — same as buildSeasonFile.
+      if (m.is_playoff) {
+        const aRank = s.finalRankByMgrSeason.get(`${m.season_id}|${m.manager_a_id}`) ?? null
+        const bRank = s.finalRankByMgrSeason.get(`${m.season_id}|${m.manager_b_id}`) ?? null
+        if (!((aRank != null && aRank <= 4) || (bRank != null && bRank <= 4))) continue
+      }
+      const sa = Number(m.score_a); const sb = Number(m.score_b)
+      const rA = row(m.manager_a_id); const rB = row(m.manager_b_id)
+      rA.pf += sa; rA.pa += sb; rA.weekly_pf.set(m.week, (rA.weekly_pf.get(m.week) ?? 0) + sa)
+      rB.pf += sb; rB.pa += sa; rB.weekly_pf.set(m.week, (rB.weekly_pf.get(m.week) ?? 0) + sb)
+      if (sa > sb) { rA.wins++; rB.losses++ }
+      else if (sa < sb) { rA.losses++; rB.wins++ }
+      else { rA.ties++; rB.ties++ }
+    }
+    return out
+  }
+
+  const now = standingsThrough(latestWeek)
+  const prev = latestWeek > 1 ? standingsThrough(latestWeek - 1) : new Map<string, StandRow>()
+
+  // Rank rows by wins desc, then PF desc (standard fantasy tiebreaker).
+  function rankFor(stand: Map<string, StandRow>): Map<string, number> {
+    const ranked = [...stand.entries()].sort(([, a], [, b]) => {
+      if (b.wins !== a.wins) return b.wins - a.wins
+      return b.pf - a.pf
+    })
+    const map = new Map<string, number>()
+    ranked.forEach(([mid], i) => map.set(mid, i + 1))
+    return map
+  }
+  const nowRank = rankFor(now)
+  const prevRank = rankFor(prev)
+
+  // Last-5 form per manager, walking matchups from latest week backward.
+  // Filters out consolation playoff games same as standings above.
+  // Returns the W/L array + matching self/opp score arrays so PPG +
+  // point differential can be computed over the same window.
+  function last5For(mid: string): { form: Array<'W' | 'L' | 'T'>; pf: number[]; pa: number[] } {
+    const form: Array<'W' | 'L' | 'T'> = []
+    const pf: number[] = []
+    const pa: number[] = []
+    for (let i = allMatchups.length - 1; i >= 0 && form.length < 5; i--) {
+      const m = allMatchups[i]!
+      if (m.manager_a_id !== mid && m.manager_b_id !== mid) continue
+      if (m.is_playoff) {
+        const aRank = s.finalRankByMgrSeason.get(`${m.season_id}|${m.manager_a_id}`) ?? null
+        const bRank = s.finalRankByMgrSeason.get(`${m.season_id}|${m.manager_b_id}`) ?? null
+        if (!((aRank != null && aRank <= 4) || (bRank != null && bRank <= 4))) continue
+      }
+      const isA = m.manager_a_id === mid
+      const self = isA ? Number(m.score_a) : Number(m.score_b)
+      const opp = isA ? Number(m.score_b) : Number(m.score_a)
+      form.push(self > opp ? 'W' : self < opp ? 'L' : 'T')
+      pf.push(self)
+      pa.push(opp)
+    }
+    return { form, pf, pa }
+  }
+
+  // Build one row per profile group (merged identities = one row).
+  const rows: Array<Record<string, unknown>> = []
+  for (const g of groups) {
+    const uid = userId(g.primary)
+    if (uid == null) continue
+    // Union the group's identities — sum stats across all of them so a
+    // mid-season platform switch doesn't split the row.
+    let wins = 0, losses = 0, ties = 0, pf = 0
+    let nowPosBest = Infinity
+    let prevPosBest = Infinity
+    for (const mid of g.managerIds) {
+      const r = now.get(mid)
+      if (r) { wins += r.wins; losses += r.losses; ties += r.ties; pf += r.pf }
+      const np = nowRank.get(mid); if (np != null && np < nowPosBest) nowPosBest = np
+      const pp = prevRank.get(mid); if (pp != null && pp < prevPosBest) prevPosBest = pp
+    }
+    if (nowPosBest === Infinity) continue
+    // Last-5 is computed from any of the group's identities; pick the one
+    // with the most rows. (Single-identity groups are the common case.)
+    let form: Array<'W' | 'L' | 'T'> = []
+    let last5Pf: number[] = []
+    let last5Pa: number[] = []
+    for (const mid of g.managerIds) {
+      const { form: f, pf: p, pa: ag } = last5For(mid)
+      if (f.length > form.length) { form = f; last5Pf = p; last5Pa = ag }
+    }
+    const ppg5 = last5Pf.length > 0
+      ? round2(last5Pf.reduce((a, b) => a + b, 0) / last5Pf.length)
+      : 0
+    // Point differential over the last-5 window (PF − PA). Reads as
+    // "are you outscoring opponents lately, or scraping by". Positive
+    // = beating opponents on the scoreboard, negative = getting outscored.
+    const pt_diff_5 = last5Pf.length > 0
+      ? round2(
+          last5Pf.reduce((a, b) => a + b, 0) -
+          last5Pa.reduce((a, b) => a + b, 0)
+        )
+      : 0
+    // Most-recent team name across the group.
+    const allMs: ManagerSeasonRow[] = []
+    for (const mid of g.managerIds) allMs.push(...(s.managerSeasonsByManager.get(mid) ?? []))
+    const lastMs = allMs
+      .slice()
+      .sort((a, b) => {
+        const ya = s.seasons.find((sn) => sn.id === a.season_id)?.year ?? 0
+        const yb = s.seasons.find((sn) => sn.id === b.season_id)?.year ?? 0
+        return yb - ya
+      })[0]
+    rows.push({
+      pos: nowPosBest,
+      pos_change: prevPosBest === Infinity ? 0 : prevPosBest - nowPosBest,
+      user_id: uid,
+      name: groupDisplayName(g),
+      team: lastMs?.team_name ?? g.primary.team_name ?? groupDisplayName(g),
+      wins, losses, ties,
+      record: recordStr(wins, losses, ties),
+      form,
+      pts: round2(pf),
+      ppg5,        // avg points per game over the last 5
+      pt_diff_5,   // PF − PA over the last 5
+    })
+  }
+  rows.sort((a, b) => Number(a.pos) - Number(b.pos))
+
+  // GB = games-back from the playoff cutoff seed. Standard baseball
+  // formula: ((cutoff.wins − row.wins) + (row.losses − cutoff.losses)) / 2.
+  // Negative means "this team is above the line" (e.g. the 1-seed at 10-2
+  // vs a 6-team cutoff at 8-4 reads −2.0 GB); positive means "this team
+  // is below the line and needs to make up ground" (e.g. an 8-seed at
+  // 6-6 reads +2.0 GB). The cutoff row itself is 0.0. When fewer rows
+  // exist than playoff slots, the cutoff degrades to the last row and
+  // every team reads negative-or-zero, which still reads sensibly.
+  const liveSettings = (formSeason.settings ?? {}) as Record<string, unknown>
+  const teamCount = rows.length
+  const playoffTeams =
+    (typeof liveSettings.playoff_team_count === 'number'
+      ? (liveSettings.playoff_team_count as number)
+      : null) ??
+    (teamCount >= 10 ? 6 : Math.max(2, Math.round(teamCount / 2)))
+  const cutoffIdx = Math.min(playoffTeams, rows.length) - 1
+  const cutoff = cutoffIdx >= 0 ? rows[cutoffIdx] : null
+  for (const r of rows) {
+    if (!cutoff) { r.gb = 0; continue }
+    const gb = ((Number(cutoff.wins) - Number(r.wins)) +
+                (Number(r.losses) - Number(cutoff.losses))) / 2
+    r.gb = round2(gb)
+  }
+
+  return {
+    week: latestWeek,
+    year: formSeason.year,
+    // Final mode (off-season fallback) signals the client to swap the
+    // mast title from "Standings · Week N" to "{year} Final · W{N}" and
+    // drop the live-dot. pos_change still computes vs week-1 of the same
+    // season so end-of-year trajectory remains visible.
+    is_final: isFinal,
+    rows,
+  }
 }
 
 // ============================================================
@@ -2423,18 +2934,146 @@ export async function exportLeague(
 // Currently used only when slug === 'jake' (see exportLeague).
 // ============================================================
 
+// ============================================================
+// playoff_odds.json (frozen jake-only preview) — Monte Carlo
+// projection from end-of-week N for a given historical season.
+// Mirrors the live powerrank route's sim setup against snapshot
+// data so the trackboard's Odds tab can show real numbers in the
+// off-season without the league being flagged is_live.
+// ============================================================
+function buildPlayoffOddsPreview(
+  s: Snapshot,
+  year: number,
+  throughWeek: number,
+): unknown | null {
+  const season = s.seasons.find((sn) => sn.year === year)
+  if (!season) return null
+  const matchups = s.matchupsBySeason.get(season.id) ?? []
+  const mss = s.managerSeasonsBySeason.get(season.id) ?? []
+  if (matchups.length === 0 || mss.length === 0) return null
+
+  // Walk every regular-season game up to and including throughWeek to
+  // assemble each team's W/L/PF and the league-wide score distribution.
+  const teamWins = new Map<string, number>()
+  const teamLosses = new Map<string, number>()
+  const teamPf = new Map<string, number>()
+  const teamGames = new Map<string, number>()
+  const scores: number[] = []
+
+  for (const m of matchups) {
+    if (m.is_playoff) continue
+    if (m.week > throughWeek) continue
+    if (m.score_a == null || m.score_b == null) continue
+    const sa = Number(m.score_a)
+    const sb = Number(m.score_b)
+    scores.push(sa, sb)
+    teamPf.set(m.manager_a_id, (teamPf.get(m.manager_a_id) ?? 0) + sa)
+    teamPf.set(m.manager_b_id, (teamPf.get(m.manager_b_id) ?? 0) + sb)
+    teamGames.set(m.manager_a_id, (teamGames.get(m.manager_a_id) ?? 0) + 1)
+    teamGames.set(m.manager_b_id, (teamGames.get(m.manager_b_id) ?? 0) + 1)
+    if (sa > sb) {
+      teamWins.set(m.manager_a_id, (teamWins.get(m.manager_a_id) ?? 0) + 1)
+      teamLosses.set(m.manager_b_id, (teamLosses.get(m.manager_b_id) ?? 0) + 1)
+    } else if (sb > sa) {
+      teamWins.set(m.manager_b_id, (teamWins.get(m.manager_b_id) ?? 0) + 1)
+      teamLosses.set(m.manager_a_id, (teamLosses.get(m.manager_a_id) ?? 0) + 1)
+    }
+  }
+  if (scores.length < 4) return null
+
+  // Remaining: matchups after throughWeek but before the playoff bracket
+  // starts. Treat them as unplayed regardless of whether the DB happens to
+  // hold their final scores (this is a frozen W-N snapshot, not "now").
+  const playoffWeeks = season.playoff_weeks ?? []
+  const playoffStart = playoffWeeks.length > 0 ? Math.min(...playoffWeeks) : 15
+  const remaining = matchups
+    .filter((m) => !m.is_playoff && m.week > throughWeek && m.week < playoffStart)
+    .map((m) => ({ a: m.manager_a_id, b: m.manager_b_id }))
+  if (remaining.length === 0) return null
+
+  // Score SD across every completed regular-season point total.
+  const mean = scores.reduce((a, b) => a + b, 0) / scores.length
+  const scoreSd = Math.sqrt(
+    scores.reduce((a, v) => a + (v - mean) ** 2, 0) / scores.length,
+  )
+
+  // Per-team PPG (fall back to league avg for any team with no completed
+  // games — shouldn't happen at W10 but guard anyway).
+  const ppgVals: number[] = []
+  for (const ms of mss) {
+    const gp = teamGames.get(ms.manager_id) ?? 0
+    if (gp > 0) ppgVals.push((teamPf.get(ms.manager_id) ?? 0) / gp)
+  }
+  const leagueAvgPpg = ppgVals.length > 0 ? ppgVals.reduce((a, b) => a + b, 0) / ppgVals.length : 105
+
+  // Playoff structure — same defaults the live route uses when settings
+  // don't expose a playoff_team_count.
+  const teamCount = mss.length
+  const playoffTeams = teamCount >= 10 ? 6 : Math.max(2, Math.round(teamCount / 2))
+  const byeTeams = playoffTeams === 6 ? 2 : 0
+
+  const simTeams: SimTeam[] = mss.map((ms) => {
+    const gp = teamGames.get(ms.manager_id) ?? 0
+    const pf = teamPf.get(ms.manager_id) ?? 0
+    return {
+      teamId: ms.manager_id,
+      division: ms.division_index ?? null,
+      ppg: gp > 0 ? pf / gp : leagueAvgPpg,
+      startWins: teamWins.get(ms.manager_id) ?? 0,
+      startLosses: teamLosses.get(ms.manager_id) ?? 0,
+      startPf: pf,
+    }
+  })
+
+  const projections = simulateSeason(simTeams, remaining, {
+    scoreSd, playoffTeams, byeTeams, runs: 8000,
+  })
+
+  const teams = simTeams.map((t) => {
+    const mgr = s.managers.get(t.teamId)
+    const ms = mss.find((x) => x.manager_id === t.teamId)
+    const p = projections.get(t.teamId)
+    const wins = teamWins.get(t.teamId) ?? 0
+    const losses = teamLosses.get(t.teamId) ?? 0
+    const games = teamGames.get(t.teamId) ?? 0
+    const pf = teamPf.get(t.teamId) ?? 0
+    return {
+      manager_id: t.teamId,
+      team_name: ms?.team_name ?? mgr?.team_name ?? mgr?.display_name ?? '—',
+      manager: mgr?.display_name ?? '—',
+      wins,
+      losses,
+      pf: round2(pf),
+      ppg: games > 0 ? round2(pf / games) : 0,
+      proj_wins: p?.proj_wins ?? 0,
+      proj_losses: p?.proj_losses ?? 0,
+      playoff_pct: p?.playoff_pct ?? 0,
+      bye_pct: p?.bye_pct ?? 0,
+    }
+  }).sort((a, b) => b.playoff_pct - a.playoff_pct)
+
+  return {
+    year,
+    through_week: throughWeek,
+    playoff_teams: playoffTeams,
+    bye_teams: byeTeams,
+    teams,
+  }
+}
+
 function buildLiveSeasonPreviews(
   s: Snapshot,
   year: number,
   throughWeek: number,
 ): { records_watch: unknown; milestones: unknown } {
-  const seasonRow = s.seasons.find((sn) => sn.year === year)
-  if (!seasonRow) {
-    return {
-      records_watch: emptyRecordsWatch(year, throughWeek),
-      milestones: emptyMilestones(year, throughWeek),
-    }
-  }
+  // Preseason mode: when no DB row exists for `year` (e.g. year = lastYear+1
+  // before the upcoming season has been ingested), or when throughWeek is 0
+  // with no completed games yet, the in-season slice is empty. The function
+  // still produces useful milestone "horizon" / "imminent" output because
+  // those are computed from all-time career totals + the active streak that
+  // carries over from the prior season. Records_watch will be mostly empty
+  // (no current-season pace items, no in-season weekly extremes) — that's
+  // intentional, the watch page reads as "nothing on the brink yet".
 
   // Resolve manager.id → canonical display name (profile-group aware).
   const groups = buildProfileGroups(s)
@@ -3250,7 +3889,7 @@ function buildLiveSeasonPreviews(
       on_pace: onPace.length,
       brink: brink.length,
       just_missed: justMissed.length,
-      through: `W${throughWeek} · ${year}`,
+      through: throughLabel(year, throughWeek),
     },
     broken: broken.slice(0, 6),
     on_pace: onPace.slice(0, 6),
@@ -3627,7 +4266,7 @@ function buildLiveSeasonPreviews(
       week: crossed.filter((c) => c.when === `W${throughWeek}`).length,
       season: crossed.length,
       imminent: imminentCount,
-      through: `W${throughWeek} · ${year}`,
+      through: throughLabel(year, throughWeek),
     },
     // Filtered + capped at 12 so the dense Just-Achieved grid stays
     // within scroll-friendly density.
@@ -3662,6 +4301,14 @@ function estimateRegSeasonLength(s: Snapshot, beforeYear: number): number {
   return 14
 }
 
+// "Through" label stamped on the meter foot of records_watch + milestones.
+// Week 0 means we're in preseason mode (no games played yet) — render that
+// as "Preseason · {year}" instead of the nonsensical "W0 · {year}".
+function throughLabel(year: number, throughWeek: number): string {
+  if (throughWeek <= 0) return `Preseason · ${year}`
+  return `W${throughWeek} · ${year}`
+}
+
 function flagFor(pct: number, broke: string, edge: string, brink: string, base: string): string {
   if (pct >= 100) return broke
   if (pct >= 95)  return edge
@@ -3686,18 +4333,4 @@ function ordinal(n: number): string {
 }
 function escTxt(s: string): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-function emptyRecordsWatch(year: number, throughWeek: number) {
-  return {
-    meter: { broken: 0, on_pace: 0, brink: 0, just_missed: 0, through: `W${throughWeek} · ${year}` },
-    broken: [], on_pace: [], brink: [], just_missed: [],
-  }
-}
-function emptyMilestones(year: number, throughWeek: number) {
-  return {
-    meter: { week: 0, season: 0, imminent: 0, through: `W${throughWeek} · ${year}` },
-    crossed: [],
-    imminent_by_category: { wins: [], points: [], streak: [] },
-    horizon_by_category:  { wins: [], points: [], streak: [] },
-  }
 }

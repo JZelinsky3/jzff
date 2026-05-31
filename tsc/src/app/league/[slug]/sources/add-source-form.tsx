@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import { SleeperLeaguePicker } from '@/components/SleeperLeaguePicker'
 import { addSource } from './actions'
 
 type Result = { ok: false; error: string } | { ok: true } | null
@@ -20,6 +21,7 @@ export function AddSourceForm({ leagueId }: { leagueId: string }) {
   const [swid, setSwid] = useState('')
   const [espnS2, setEspnS2] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
+  const [sleeperExternalId, setSleeperExternalId] = useState('')
 
   return (
     <form action={action} className="dc-form">
@@ -53,19 +55,22 @@ export function AddSourceForm({ leagueId }: { leagueId: string }) {
         )}
       </div>
 
-      <div className="dc-field">
-        <label className="dc-label">League ID</label>
-        <input
-          name="externalId"
-          required
-          placeholder={
-            platform === 'nfl' ? '7528632'
-            : platform === 'espn' ? '123456'
-            : '1234567890123456789'
-          }
-          className="dc-input mono"
+      {platform === 'sleeper' ? (
+        <SleeperLeaguePicker
+          externalId={sleeperExternalId}
+          setExternalId={setSleeperExternalId}
         />
-      </div>
+      ) : (
+        <div className="dc-field">
+          <label className="dc-label">League ID</label>
+          <input
+            name="externalId"
+            required
+            placeholder={platform === 'nfl' ? '7528632' : '123456'}
+            className="dc-input mono"
+          />
+        </div>
+      )}
 
       <div className="dc-field">
         <label className="dc-label">Label (optional)</label>
