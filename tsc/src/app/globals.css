@@ -4440,6 +4440,205 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .onb-step-action { width: 100%; justify-content: stretch; margin-top: .25rem; }
 }
 
+/* Public-Almanac billboard — the only non-rectangular block on the hub.
+   Trapezoidal cut so it reads as a marquee/signpost above the other cards,
+   not as another flat ledger row. Double-rule top + bottom evokes a stamped
+   broadside; the gold split between the inner kicker and CTA reinforces
+   that this is the live, public-facing destination. */
+.almanac-billboard {
+    position: relative;
+    display: block;
+    text-decoration: none; color: inherit;
+    margin-bottom: .25rem;
+    cursor: pointer;
+    /* Slight inward angle on both sides — gives the card a marquee silhouette
+       without leaning so far that the corners feel gimmicky. */
+    clip-path: polygon(
+        24px 0,
+        calc(100% - 24px) 0,
+        100% 50%,
+        calc(100% - 24px) 100%,
+        24px 100%,
+        0 50%
+    );
+    background: linear-gradient(135deg,
+        rgba(232, 200, 137, .14) 0%,
+        rgba(232, 200, 137, .04) 40%,
+        rgba(26, 37, 50, .35) 100%);
+    transition: transform .25s cubic-bezier(.2,.8,.2,1);
+}
+.almanac-billboard:hover { transform: translateY(-2px); }
+.almanac-billboard-rule {
+    height: 3px;
+    background: var(--gold);
+    margin: 0 60px;
+    box-shadow: 0 0 12px rgba(232,200,137,.4);
+}
+.almanac-billboard-inner {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 2rem;
+    padding: 1.4rem 4rem;
+}
+.almanac-billboard-left { flex: 1 1 auto; min-width: 0; }
+.almanac-billboard-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .35em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .45rem;
+}
+.almanac-billboard-title {
+    font-family: var(--serif);
+    font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+    line-height: 1.05;
+    color: var(--cream);
+    margin-bottom: .35rem;
+}
+.almanac-billboard-title em { font-style: italic; color: var(--gold); }
+.almanac-billboard-desc {
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; color: var(--cream-soft);
+    max-width: 56ch; line-height: 1.5;
+}
+.almanac-billboard-right {
+    display: flex; flex-direction: column; align-items: flex-end; gap: .65rem;
+    flex-shrink: 0;
+}
+.almanac-billboard-status {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .3em;
+    padding: .35rem .7rem;
+    border: 1px solid var(--gold-deep);
+    color: var(--gold);
+    background: rgba(232, 200, 137, .08);
+}
+.almanac-billboard-status.live {
+    background: var(--gold);
+    color: var(--ink);
+    border-color: var(--gold);
+    box-shadow: 0 0 14px rgba(232,200,137,.35);
+}
+.almanac-billboard-cta {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .7rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid transparent;
+    transition: border-color .2s;
+}
+.almanac-billboard:hover .almanac-billboard-cta {
+    border-bottom-color: var(--gold);
+}
+@media (max-width: 780px) {
+    .almanac-billboard {
+        clip-path: polygon(
+            16px 0,
+            calc(100% - 16px) 0,
+            100% 50%,
+            calc(100% - 16px) 100%,
+            16px 100%,
+            0 50%
+        );
+    }
+    .almanac-billboard-inner {
+        flex-direction: column; align-items: flex-start;
+        gap: 1rem; padding: 1.2rem 2.5rem;
+    }
+    .almanac-billboard-right { align-items: flex-start; flex-direction: row; gap: 1rem; }
+    .almanac-billboard-rule { margin: 0 36px; }
+}
+
+/* Floating setup checklist — Stripe-style FAB that appears once the main
+   onboarding card scrolls off-screen. Collapsed: small pill. Expanded:
+   panel reusing the same .onb-step rows. */
+.onb-fab {
+    position: fixed;
+    bottom: 1.25rem; right: 1.25rem;
+    z-index: 50;
+    animation: onb-fab-rise .25s ease-out;
+}
+@keyframes onb-fab-rise {
+    from { transform: translateY(8px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+.onb-fab-pill {
+    display: inline-flex; align-items: center; gap: .55rem;
+    padding: .6rem .9rem .6rem .65rem;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--gold-deep);
+    color: var(--cream);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 12px 28px rgba(0,0,0,.4), 0 0 18px rgba(232,200,137,.12);
+    transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.onb-fab-pill:hover {
+    transform: translateY(-1px);
+    border-color: var(--gold);
+    box-shadow: 0 14px 32px rgba(0,0,0,.45), 0 0 22px rgba(232,200,137,.2);
+}
+.onb-fab-pill-check {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--gold); color: var(--ink);
+    font-size: .75rem;
+}
+.onb-fab-pill-label strong {
+    color: var(--gold);
+    font-family: var(--mono);
+    margin-left: .15em;
+}
+.onb-fab-pill-arrow {
+    margin-left: .15rem;
+    color: var(--gold);
+    font-size: .85rem;
+    line-height: 1;
+}
+.onb-fab-panel {
+    width: min(360px, calc(100vw - 2.5rem));
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--gold-deep);
+    padding: 1rem 1rem .85rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,.5), 0 0 28px rgba(232,200,137,.12);
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+}
+.onb-fab-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: .75rem; margin-bottom: .85rem;
+}
+.onb-fab-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--gold);
+}
+.onb-fab-title {
+    font-family: var(--serif);
+    font-size: 1.1rem; color: var(--cream);
+    margin-top: .2rem;
+}
+.onb-fab-head-actions { display: flex; gap: .25rem; }
+.onb-fab-iconbtn {
+    background: transparent; border: 1px solid var(--ink-line);
+    color: var(--cream-mute); cursor: pointer;
+    width: 26px; height: 26px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1rem; line-height: 1;
+    transition: color .15s, border-color .15s;
+}
+.onb-fab-iconbtn:hover { color: var(--gold); border-color: var(--gold-deep); }
+/* Tighten the embedded steps in the FAB panel so it doesn't feel like a
+   blown-up copy of the in-page card. */
+.onb-fab-panel .onb-step { padding: .55rem .65rem; gap: .65rem; }
+.onb-fab-panel .onb-step-label { font-size: .9rem; }
+.onb-fab-panel .onb-step-desc { font-size: .72rem; }
+.onb-fab-panel .onb-step-check { width: 22px; height: 22px; font-size: .7rem; }
+.onb-fab-panel .onb-step-cta { font-size: .55rem; padding: .35rem .6rem; }
+@media (max-width: 480px) {
+    .onb-fab { bottom: .75rem; right: .75rem; left: .75rem; }
+    .onb-fab-pill { width: 100%; justify-content: center; }
+    .onb-fab-panel { width: auto; }
+}
+
 /* Inset full-width dashboard banners (testing-window notice, grace-period
    notice) on mobile so they don't go edge-to-edge while every other block on
    the page sits inside `.section`'s 1.25rem inset. The component sets its own

@@ -91,8 +91,7 @@ export default async function LiveSeasonPage({
       <section className="hero">
         <div className="hero-sup">★ Live Season ★</div>
         <h1 className="hero-title">
-          {liveSeason ? `${liveSeason.year} ` : 'Current '}
-          <em>Season.</em>
+          Current <em>Season.</em>
         </h1>
         <p className="hero-sub">
           Mark which season is currently in-progress. Pick&apos;ems, power rankings, and the weekly cron all use this.

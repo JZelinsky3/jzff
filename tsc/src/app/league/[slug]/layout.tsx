@@ -24,13 +24,6 @@ export default async function LeagueLayout({
 
   const isOwner = league.owner_id === user.id
 
-  const { data: liveSeasonRow } = await supabase
-    .from('seasons')
-    .select('year')
-    .eq('league_id', league.id)
-    .eq('is_live', true)
-    .maybeSingle()
-  const liveYear: number | null = liveSeasonRow?.year ?? null
 
   const words = league.name.trim().split(/\s+/)
   const head = words.slice(0, -1).join(' ')
@@ -46,7 +39,7 @@ export default async function LeagueLayout({
             {head} {tail && <em>{tail}.</em>}
           </div>
         </div>
-        <AdminNavMenu slug={slug} isOwner={isOwner} liveYear={liveYear} />
+        <AdminNavMenu slug={slug} isOwner={isOwner} />
       </nav>
       {children}
     </>

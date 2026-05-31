@@ -31,7 +31,6 @@ export default async function LeagueOverviewPage({
     { count: matchupCount },
     { count: rivalryCount },
     { count: sourceCount },
-    { data: liveSeasonRow },
   ] = await Promise.all([
     supabase.from('seasons').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
     supabase.from('managers').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
@@ -41,15 +40,7 @@ export default async function LeagueOverviewPage({
       .eq('season.league_id', league.id),
     supabase.from('rivalries').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
     supabase.from('league_sources').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
-    supabase
-      .from('seasons')
-      .select('year')
-      .eq('league_id', league.id)
-      .eq('is_live', true)
-      .maybeSingle(),
   ])
-
-  const liveYear: number | null = liveSeasonRow?.year ?? null
 
   const words = league.name.trim().split(/\s+/)
   const head = words.slice(0, -1).join(' ')
@@ -121,72 +112,74 @@ export default async function LeagueOverviewPage({
         steps={leagueOnboardingSteps}
       />
 
-      {/* Top row — Almanac (left) + Run it (right). Side-by-side on desktop,
-          stacks on narrower viewports via card-grid's auto-fit. */}
+      {/* § 01 — Public Almanac BILLBOARD. Wide marquee shape: the only
+          non-rectangular block on the page (angled clip on both sides)
+          so the live-site CTA visually pops above the rest. */}
       <div className="section">
+        <div className="section-header">
+          <span className="section-num">§ 01 · Public Almanac</span>
+          <span className="section-title">Your live site —</span>
+          <span className="section-meta">
+            {league.published_at ? 'Live now' : 'Not yet published'}
+          </span>
+        </div>
+        <a
+          href={`/leagues/${slug}/`}
+          target="_blank"
+          rel="noopener"
+          className="almanac-billboard"
+        >
+          <div className="almanac-billboard-rule" aria-hidden />
+          <div className="almanac-billboard-inner">
+            <div className="almanac-billboard-left">
+              <div className="almanac-billboard-kicker">
+                {league.published_at ? '★ Live · Click to open ★' : '★ Setup mode ★'}
+              </div>
+              <div className="almanac-billboard-title">
+                Public <em>Almanac.</em>
+              </div>
+              <div className="almanac-billboard-desc">
+                Standings, season archives, the record book, drafts, manager profiles,
+                rivalries — the whole thing. Opens in a new tab.
+              </div>
+            </div>
+            <div className="almanac-billboard-right">
+              <span className={`almanac-billboard-status ${league.published_at ? 'live' : 'setup'}`}>
+                {league.published_at ? 'LIVE' : 'SETUP'}
+              </span>
+              <span className="almanac-billboard-cta">View site ↗</span>
+            </div>
+          </div>
+          <div className="almanac-billboard-rule" aria-hidden />
+        </a>
+      </div>
+
+      {/* § 02 — Run it. Sync (left) + Publish (right). Grade Trades stacks
+          below Sync (Jake-only beta — only visible for that league). */}
+      <div className="section">
+        <div className="section-header">
+          <span className="section-num">§ 02 · Run it</span>
+          <span className="section-title">Sync &amp; publish —</span>
+          <span className="section-meta">
+            {league.last_synced_at
+              ? `Synced ${new Date(league.last_synced_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+              : 'Never synced'}
+          </span>
+        </div>
+
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: '2rem',
+            gap: '1.25rem',
             alignItems: 'start',
           }}
         >
-          {/* § 01 Public Almanac — featured. */}
+          {/* Left column — Sync, then Grade Trades stacked below for Jake. */}
           <div>
-            <div className="section-header">
-              <span className="section-num">§ 01 · Public Almanac</span>
-              <span className="section-title">Your live site —</span>
-              <span className="section-meta">
-                {league.published_at ? 'Live now' : 'Not yet published'}
-              </span>
-            </div>
-            <a
-              href={`/leagues/${slug}/`}
-              target="_blank"
-              rel="noopener"
-              className="toc-row"
-              style={{
-                border: '1px solid var(--gold-deep)',
-                background:
-                  'linear-gradient(160deg, rgba(232,200,137,.10), rgba(232,200,137,.02))',
-                boxShadow: '0 0 24px rgba(232,200,137,.06)',
-              }}
-            >
-              <div className="toc-chapter">Open ↗</div>
-              <div className="toc-title-wrap">
-                <div className="toc-title">
-                  Public <em>Almanac.</em>
-                </div>
-                <div className="toc-desc">
-                  Standings, season archives, record book, drafts, manager profiles,
-                  rivalries. Opens in a new tab.
-                </div>
-              </div>
-              <span
-                className={`toc-badge ${league.published_at ? 'teal' : 'steel'}`}
-              >
-                {league.published_at ? 'Live' : 'Setup'}
-              </span>
-              <div className="toc-arrow">→</div>
-            </a>
-          </div>
-
-          {/* § 02 Run it — Sync + Publish (+ Trade Grader for Jake). */}
-          <div>
-            <div className="section-header">
-              <span className="section-num">§ 02 · Run it</span>
-              <span className="section-title">Sync &amp; publish —</span>
-              <span className="section-meta">
-                {league.last_synced_at
-                  ? `Synced ${new Date(league.last_synced_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
-                  : 'Never synced'}
-              </span>
-            </div>
-
             <div className="dc-card-row" style={{ alignItems: 'flex-start' }}>
               <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
                   Sync from sources.
                 </div>
                 <div
@@ -218,9 +211,50 @@ export default async function LeagueOverviewPage({
               <SyncButton leagueId={league.id} />
             </div>
 
+            {/* Trade Grader — private beta, only Jake's league sees it. Stacks
+                below Sync so the left column carries two cards while the
+                right keeps just Publish. The route also gates server-side. */}
+            {league.slug === 'jake' && (
+              <div
+                className="dc-card-row"
+                style={{ alignItems: 'flex-start', marginTop: '.6rem' }}
+              >
+                <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
+                    Grade trades with AI.{' '}
+                    <span
+                      style={{
+                        fontFamily: 'var(--mono)',
+                        fontSize: '.55rem',
+                        letterSpacing: '.2em',
+                        color: 'var(--gold)',
+                        marginLeft: '.4rem',
+                      }}
+                    >
+                      BETA
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      opacity: 0.7,
+                      fontSize: '.82rem',
+                      marginTop: '.3rem',
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    Runs Groq on up to 10 ungraded trades at a time. Click again to keep going.
+                  </div>
+                </div>
+                <GradeTradesButton leagueId={league.id} />
+              </div>
+            )}
+          </div>
+
+          {/* Right column — Publish. */}
+          <div>
             <div className="dc-card-row" style={{ alignItems: 'flex-start' }}>
               <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
                   {league.published_at ? 'Almanac is live.' : 'Almanac is hidden.'}
                 </div>
                 <div
@@ -232,8 +266,8 @@ export default async function LeagueOverviewPage({
                   }}
                 >
                   {league.published_at
-                    ? 'Visitors can read the public archive. Unpublish to take it offline.'
-                    : `Visitors to /leagues/${slug}/ see a placeholder until you flip this. Publishing is instant.`}
+                    ? 'Visitors can read the public archive at any time. Unpublish to take it offline again — synced data stays put.'
+                    : `Visitors to /leagues/${slug}/ see a placeholder until you flip this. Publishing is instant and reversible.`}
                 </div>
                 {league.published_at && (
                   <div
@@ -250,34 +284,11 @@ export default async function LeagueOverviewPage({
               </div>
               <PublishButton leagueId={league.id} isPublished={!!league.published_at} />
             </div>
-
-            {/* Trade Grader is in private testing — only Jake's league sees the card.
-                The matching gate also lives on the API route. */}
-            {league.slug === 'jake' && (
-              <div className="dc-card-row" style={{ alignItems: 'flex-start' }}>
-                <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
-                    Grade trades with AI.
-                  </div>
-                  <div
-                    style={{
-                      opacity: 0.7,
-                      fontSize: '.85rem',
-                      marginTop: '.35rem',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    Runs Groq on up to 10 ungraded trades at a time. Click again to keep going.
-                  </div>
-                </div>
-                <GradeTradesButton leagueId={league.id} />
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* § 03 Configuration — full-width 2-col TOC, default density. */}
+      {/* § 03 — Configuration TOC. Two-column ledger (default density). */}
       <div className="section">
         <div className="section-header">
           <span className="section-num">§ 03 · Configuration</span>
@@ -333,15 +344,12 @@ export default async function LeagueOverviewPage({
             <Link href={`/league/${slug}/live`} className="toc-row">
               <div className="toc-chapter">Ch. IV</div>
               <div className="toc-title-wrap">
-                <div className="toc-title">
-                  {liveYear ? `${liveYear} ` : 'Current '}
-                  <em>Season.</em>
-                </div>
+                <div className="toc-title">Current <em>Season.</em></div>
                 <div className="toc-desc">
-                  Mark the in-progress year. Pick&apos;ems, power rankings, and the weekly cron read from this.
+                  Mark the in-progress year. Pick&apos;ems, power rankings, and the weekly cron all read from this.
                 </div>
               </div>
-              <span className="toc-badge teal">{liveYear ? 'Live' : 'Set'}</span>
+              <span className="toc-badge teal">Set</span>
               <div className="toc-arrow">→</div>
             </Link>
             {isOwner && (

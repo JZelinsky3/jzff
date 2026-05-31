@@ -10,24 +10,20 @@ import { NavDropdown, type DropGroup, type SubItem } from '@/components/NavDropd
 export function AdminNavMenu({
   slug,
   isOwner = false,
-  liveYear = null,
 }: {
   slug: string
   isOwner?: boolean
-  liveYear?: number | null
 }) {
   const pathname = usePathname() ?? ''
   const hub = `/league/${slug}`
   const onHub = pathname === hub || pathname === `${hub}/`
 
-  const liveLabel = liveYear ? `${liveYear} Season` : 'Current Season'
-
   const allAdmin = [
-    { href: `${hub}/setup`,     label: 'Members'   },
-    { href: `${hub}/sources`,   label: 'Sources'   },
-    { href: `${hub}/rivalries`, label: 'Rivalries' },
-    { href: `${hub}/settings`,  label: 'Settings'  },
-    { href: `${hub}/live`,      label: liveLabel   },
+    { href: `${hub}/setup`,     label: 'Members'        },
+    { href: `${hub}/sources`,   label: 'Sources'        },
+    { href: `${hub}/rivalries`, label: 'Rivalries'      },
+    { href: `${hub}/settings`,  label: 'Settings'       },
+    { href: `${hub}/live`,      label: 'Current Season' },
   ]
   // Hide the page you're currently on so the menu only shows places you can go.
   const adminPages = allAdmin.filter((p) => !pathname.startsWith(p.href))
