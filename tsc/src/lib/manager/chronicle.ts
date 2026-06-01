@@ -183,10 +183,10 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
   const supabase = createAdminClient()
   const { data: links } = await supabase
     .from('career_links')
-    .select('league_id, manager_external_id, league:leagues!inner(id, slug, name)')
+    .select('league_id, manager_external_id, league_alias, league:leagues!inner(id, slug, name)')
     .eq('chronicle_id', career.chronicle.id)
 
-  type LinkRow = { league_id: string; manager_external_id: string; league: { id: string; slug: string; name: string } }
+  type LinkRow = { league_id: string; manager_external_id: string; league_alias: string | null; league: { id: string; slug: string; name: string } }
   const linkRows = (links ?? []) as unknown as LinkRow[]
 
   const picks: ChroniclePick[] = []
@@ -208,6 +208,8 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
         return
       }
       const me = link.manager_external_id
+      // Per-chronicle alias overrides the archive name for hub display only.
+      const leagueName = link.league_alias?.trim() || link.league.name
 
       // Per-manager file: season ledger, h2h, streaks.
       const mgrFile = bundle[`managers/${me}.json`] as ManagerFile | undefined
@@ -218,7 +220,7 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
           const champ = finish?.champion ?? false
           const runner = !champ && (sl.final_rank === 2)
           seasonBriefs.push({
-            leagueName: link.league.name,
+            leagueName: leagueName,
             leagueSlug: link.league.slug,
             year: sl.year,
             teamName: sl.team_name,
@@ -238,7 +240,7 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
       }
       if (mgrFile?.longest_win_streak) {
         streaks.push({
-          leagueName: link.league.name,
+          leagueName: leagueName,
           leagueSlug: link.league.slug,
           kind: 'win',
           length: mgrFile.longest_win_streak.length,
@@ -247,7 +249,7 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
       }
       if (mgrFile?.longest_loss_streak) {
         streaks.push({
-          leagueName: link.league.name,
+          leagueName: leagueName,
           leagueSlug: link.league.slug,
           kind: 'loss',
           length: mgrFile.longest_loss_streak.length,
@@ -257,7 +259,7 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
       if (mgrFile?.h2h) {
         for (const row of mgrFile.h2h) {
           h2hPerLeague.push({
-            leagueName: link.league.name,
+            leagueName: leagueName,
             leagueSlug: link.league.slug,
             opponent: row.opp_name,
             regRecord: row.reg_record,
@@ -275,7 +277,7 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
         const leagueJson = bundle['league.json'] as LeagueFile | undefined
         const defending = leagueJson?.defending_champion?.year === yr ? leagueJson.defending_champion : null
         titleRuns.push({
-          leagueName: link.league.name,
+          leagueName: leagueName,
           leagueSlug: link.league.slug,
           year: yr,
           finish: 1,
@@ -299,7 +301,7 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
         const brief = mgrFile?.season_ledger?.find((s) => s.year === f.year)
         if (!brief) continue
         titleRuns.push({
-          leagueName: link.league.name,
+          leagueName: leagueName,
           leagueSlug: link.league.slug,
           year: f.year,
           finish: f.rank as 2 | 3,
@@ -325,7 +327,7 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
         for (const p of draft.picks) {
           if (p.user_id !== me) continue
           picks.push({
-            leagueName: link.league.name,
+            leagueName: leagueName,
             leagueSlug: link.league.slug,
             year: draft.year,
             overall: p.overall_pick,
@@ -345,7 +347,7 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
         for (const sl of mgrFile.season_ledger) {
           if (sl.high_week_score) {
             weeklyHighs.push({
-              leagueName: link.league.name,
+              leagueName: leagueName,
               leagueSlug: link.league.slug,
               year: sl.year,
               week: sl.high_week ?? 0,
@@ -358,7 +360,7 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
           }
           if (sl.low_week_score) {
             weeklyLows.push({
-              leagueName: link.league.name,
+              leagueName: leagueName,
               leagueSlug: link.league.slug,
               year: sl.year,
               week: 0,

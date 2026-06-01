@@ -48,6 +48,47 @@ export async function renameChronicle(_prev: { error: string } | null, formData:
   return { error: '' }
 }
 
+// Per-chronicle display alias for a linked league. Empty/blank value clears
+// the alias (reverts the hub to the archive name). Does NOT touch the public
+// almanac — only how the league appears inside this user's manager hub.
+const AliasSchema = z.object({
+  slug: z.string().trim().min(1),
+  linkId: z.string().trim().min(1),
+  alias: z.string().trim().max(120),
+})
+
+export async function renameLinkedLeague(_prev: { error: string } | null, formData: FormData) {
+  const parsed = AliasSchema.safeParse({
+    slug: formData.get('slug'),
+    linkId: formData.get('linkId'),
+    alias: formData.get('alias') ?? '',
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+
+  const { supabase, chronicle } = await ownedChronicle(parsed.data.slug)
+  if (!chronicle) return { error: 'Chronicle not found.' }
+
+  // Confirm the link belongs to this chronicle before mutating.
+  const { data: link } = await supabase
+    .from('career_links')
+    .select('id')
+    .eq('id', parsed.data.linkId)
+    .eq('chronicle_id', chronicle.id)
+    .maybeSingle()
+  if (!link) return { error: 'Link not found in this chronicle.' }
+
+  const aliasValue = parsed.data.alias.trim().length === 0 ? null : parsed.data.alias.trim()
+  const { error } = await supabase
+    .from('career_links')
+    .update({ league_alias: aliasValue })
+    .eq('id', parsed.data.linkId)
+  if (error) return { error: error.message }
+
+  revalidatePath(`/manager/${parsed.data.slug}`)
+  revalidatePath(`/manager/${parsed.data.slug}/settings`)
+  return { error: '' }
+}
+
 // Removes a league from the chronicle. If the underlying league row exists only
 // to feed the hub (manager_view) and no other link references it, delete it too
 // so we don't leave orphaned hidden archives behind. A real public archive that

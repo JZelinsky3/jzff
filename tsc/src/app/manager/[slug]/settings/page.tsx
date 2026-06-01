@@ -4,6 +4,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { SyncButton } from '../../../league/[slug]/sync-button'
 import { RenameForm } from './rename-form'
+import { AliasForm } from './alias-form'
 import { removeLink, removeSource, deleteChronicle } from './actions'
 
 export default async function ManagerSettingsPage({
@@ -26,7 +27,7 @@ export default async function ManagerSettingsPage({
 
   const { data: links } = await supabase
     .from('career_links')
-    .select('id, league_id, source, manager_external_id, display_name_in_league, league:leagues!inner(id, name, slug, platform, last_synced_at, manager_view)')
+    .select('id, league_id, source, manager_external_id, display_name_in_league, league_alias, league:leagues!inner(id, name, slug, platform, last_synced_at, manager_view)')
     .eq('chronicle_id', chronicle.id)
     .order('created_at', { ascending: true })
 
@@ -35,6 +36,7 @@ export default async function ManagerSettingsPage({
     source: string
     manager_external_id: string
     display_name_in_league: string | null
+    league_alias: string | null
     league: { id: string; name: string; slug: string; platform: string; last_synced_at: string | null; manager_view: boolean }
   }
   const linkRows = (links ?? []) as unknown as LinkRow[]
@@ -106,7 +108,7 @@ export default async function ManagerSettingsPage({
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem', color: 'var(--cream)' }}>
-                        {row.league.name}
+                        {row.league_alias?.trim() || row.league.name}
                       </div>
                       <div style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--cream-soft)', marginTop: '.2rem' }}>
                         {row.league.platform} · you: {row.display_name_in_league ?? row.manager_external_id}
@@ -115,6 +117,12 @@ export default async function ManagerSettingsPage({
                           ? `synced ${new Date(row.league.last_synced_at).toLocaleDateString()}`
                           : 'not synced'}
                       </div>
+                      <AliasForm
+                        slug={slug}
+                        linkId={row.id}
+                        archiveName={row.league.name}
+                        currentAlias={row.league_alias}
+                      />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
                       <SyncButton leagueId={row.league.id} />

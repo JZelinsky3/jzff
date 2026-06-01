@@ -44,6 +44,7 @@ type ChronicleRow = { id: string; slug: string; display_name: string }
 type LinkRow = {
   league_id: string
   manager_external_id: string
+  league_alias: string | null
   league: { id: string; name: string; slug: string; platform: string }
 }
 
@@ -86,7 +87,7 @@ export async function loadTradeFloor(slug: string, ownerId: string): Promise<Tra
 
   const { data: links } = await supabase
     .from('career_links')
-    .select('league_id, manager_external_id, league:leagues!inner(id, name, slug, platform)')
+    .select('league_id, manager_external_id, league_alias, league:leagues!inner(id, name, slug, platform)')
     .eq('chronicle_id', chronicle.id)
   const linkRows = (links ?? []) as unknown as LinkRow[]
 
@@ -115,9 +116,11 @@ export async function loadTradeFloor(slug: string, ownerId: string): Promise<Tra
 
   await Promise.all(
     sleeperLinks.map(async (link) => {
+      // Per-chronicle alias overrides the archive name for hub display.
+      const leagueName = link.league_alias?.trim() || link.league.name
       const liveLeagueId = liveByArchive.get(link.league_id)
       if (!liveLeagueId) {
-        errors.push(`${link.league.name}: no current Sleeper league id`)
+        errors.push(`${leagueName}: no current Sleeper league id`)
         return
       }
       let league: SleeperLeague | null = null
@@ -128,11 +131,11 @@ export async function loadTradeFloor(slug: string, ownerId: string): Promise<Tra
         users = await sleeper.users(liveLeagueId)
         rosters = await sleeper.rosters(liveLeagueId)
       } catch (e) {
-        errors.push(`${link.league.name}: ${e instanceof Error ? e.message : String(e)}`)
+        errors.push(`${leagueName}: ${e instanceof Error ? e.message : String(e)}`)
         return
       }
       if (!league || !users || !rosters) {
-        errors.push(`${link.league.name}: Sleeper returned partial data`)
+        errors.push(`${leagueName}: Sleeper returned partial data`)
         return
       }
 
@@ -159,7 +162,7 @@ export async function loadTradeFloor(slug: string, ownerId: string): Promise<Tra
 
       const mine = floorRosters.find((r) => r.isMe)
       if (!mine) {
-        errors.push(`${link.league.name}: couldn't locate your roster (owner ${link.manager_external_id})`)
+        errors.push(`${leagueName}: couldn't locate your roster (owner ${link.manager_external_id})`)
         return
       }
 
@@ -171,7 +174,7 @@ export async function loadTradeFloor(slug: string, ownerId: string): Promise<Tra
       leagues.push({
         archiveLeagueId: link.league_id,
         liveLeagueId,
-        leagueName: link.league.name,
+        leagueName: leagueName,
         leagueSlug: link.league.slug,
         season: league.season,
         mode,
@@ -186,7 +189,7 @@ export async function loadTradeFloor(slug: string, ownerId: string): Promise<Tra
   leagues.sort((a, b) => a.leagueName.localeCompare(b.leagueName))
 
   const unsupported: DeskUnsupported[] = otherLinks.map((l) => ({
-    leagueName: l.league.name,
+    leagueName: l.league_alias?.trim() || l.league.name,
     leagueSlug: l.league.slug,
     platform: l.league.platform,
     reason: 'Trade Desk is Sleeper-only for now.',

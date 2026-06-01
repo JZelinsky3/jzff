@@ -123,7 +123,7 @@ export async function loadCareerSummary(slug: string, ownerId: string): Promise<
 
   const { data: links } = await supabase
     .from('career_links')
-    .select('id, league_id, source, manager_external_id, display_name_in_league, league:leagues!inner(id, name, slug, platform, last_synced_at)')
+    .select('id, league_id, source, manager_external_id, display_name_in_league, league_alias, league:leagues!inner(id, name, slug, platform, last_synced_at)')
     .eq('chronicle_id', chronicle.id)
     .order('created_at', { ascending: true })
 
@@ -132,6 +132,7 @@ export async function loadCareerSummary(slug: string, ownerId: string): Promise<
     source: string
     manager_external_id: string
     display_name_in_league: string | null
+    league_alias: string | null
     league: { id: string; name: string; slug: string; platform: string; last_synced_at: string | null }
   }
   const linkRows = (links ?? []) as unknown as LinkRow[]
@@ -201,6 +202,7 @@ type AnyLink = {
   source: string
   manager_external_id: string
   display_name_in_league: string | null
+  league_alias: string | null
   league: { id: string; name: string; slug: string; platform: string; last_synced_at: string | null }
 }
 
@@ -212,8 +214,10 @@ async function summarizeLeague(
   moments: CareerMoment[],
 ): Promise<CareerLeagueSummary> {
   const lg = link.league
+  // Per-chronicle alias overrides the archive name for hub display only.
+  const displayName = link.league_alias?.trim() || lg.name
   const base: CareerLeagueSummary = {
-    leagueId: lg.id, leagueName: lg.name, leagueSlug: lg.slug, platform: lg.platform,
+    leagueId: lg.id, leagueName: displayName, leagueSlug: lg.slug, platform: lg.platform,
     status: 'pending', managerName: link.display_name_in_league, teamName: null, avatarUrl: null,
     seasonsPlayed: 0, firstYear: null, lastYear: null,
     wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0,
@@ -298,14 +302,14 @@ async function summarizeLeague(
     if (season.champion === mid) {
       base.championships += 1
       base.titleYears.push(season.year)
-      trophyCase.push({ leagueName: lg.name, year: season.year, kind: 'champion' })
+      trophyCase.push({ leagueName: displayName, year: season.year, kind: 'champion' })
     } else if (season.runnerUp === mid) {
       base.runnerUps += 1
-      trophyCase.push({ leagueName: lg.name, year: season.year, kind: 'runner-up' })
+      trophyCase.push({ leagueName: displayName, year: season.year, kind: 'runner-up' })
     } else if (myFinalRankBySeason.get(seasonId) === 3) {
       base.thirdPlaces += 1
       base.thirdPlaceYears.push(season.year)
-      trophyCase.push({ leagueName: lg.name, year: season.year, kind: 'third-place' })
+      trophyCase.push({ leagueName: displayName, year: season.year, kind: 'third-place' })
     }
   }
   base.titleYears.sort((a, b) => a - b)
@@ -356,7 +360,7 @@ async function summarizeLeague(
         riv = { opponent: oppName, games: 0, wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0, playoffGames: 0, leagues: [] }
         rivalryMap.set(oppName, riv)
       }
-      if (!riv.leagues.includes(lg.name)) riv.leagues.push(lg.name)
+      if (!riv.leagues.includes(displayName)) riv.leagues.push(displayName)
       riv.games += 1
       riv.pointsFor += myScore
       riv.pointsAgainst += oppScore
@@ -367,7 +371,7 @@ async function summarizeLeague(
 
       if (season) {
         moments.push({
-          leagueName: lg.name, year: season.year, week: m.week as number,
+          leagueName: displayName, year: season.year, week: m.week as number,
           opponent: oppName, score: myScore, oppScore, margin: myScore - oppScore, isPlayoff,
         })
       }

@@ -61,6 +61,7 @@ type ChronicleRow = { id: string; slug: string; display_name: string }
 type LinkRow = {
   league_id: string
   manager_external_id: string
+  league_alias: string | null
   league: { id: string; name: string; slug: string; platform: string }
 }
 
@@ -76,13 +77,13 @@ export async function loadWireLive(slug: string, ownerId: string): Promise<WireL
 
   const { data: links } = await supabase
     .from('career_links')
-    .select('league_id, manager_external_id, league:leagues!inner(id, name, slug, platform)')
+    .select('league_id, manager_external_id, league_alias, league:leagues!inner(id, name, slug, platform)')
     .eq('chronicle_id', chronicle.id)
   const linkRows = (links ?? []) as unknown as LinkRow[]
   const sleeperLinks = linkRows.filter((l) => l.league.platform === 'sleeper')
   const unsupported: WireUnsupported[] = linkRows
     .filter((l) => l.league.platform !== 'sleeper')
-    .map((l) => ({ leagueName: l.league.name, leagueSlug: l.league.slug, platform: l.league.platform }))
+    .map((l) => ({ leagueName: l.league_alias?.trim() || l.league.name, leagueSlug: l.league.slug, platform: l.league.platform }))
 
   // Most recent season's external_id is the current live Sleeper league.
   const liveByArchive = new Map<string, string>()
@@ -108,9 +109,10 @@ export async function loadWireLive(slug: string, ownerId: string): Promise<WireL
 
   await Promise.all(
     sleeperLinks.map(async (link) => {
+      const leagueName = link.league_alias?.trim() || link.league.name
       const liveLeagueId = liveByArchive.get(link.league_id)
       if (!liveLeagueId) {
-        errors.push(`${link.league.name}: no current Sleeper league id`)
+        errors.push(`${leagueName}: no current Sleeper league id`)
         return
       }
       let league: SleeperLeague | null = null
@@ -121,11 +123,11 @@ export async function loadWireLive(slug: string, ownerId: string): Promise<WireL
         users = await sleeper.users(liveLeagueId)
         rosters = await sleeper.rosters(liveLeagueId)
       } catch (e) {
-        errors.push(`${link.league.name}: ${e instanceof Error ? e.message : String(e)}`)
+        errors.push(`${leagueName}: ${e instanceof Error ? e.message : String(e)}`)
         return
       }
       if (!league || !users || !rosters) {
-        errors.push(`${link.league.name}: Sleeper returned partial data`)
+        errors.push(`${leagueName}: Sleeper returned partial data`)
         return
       }
 
@@ -137,7 +139,7 @@ export async function loadWireLive(slug: string, ownerId: string): Promise<WireL
 
       const myRoster = rosters.find((r) => r.owner_id === link.manager_external_id) ?? null
       if (!myRoster) {
-        errors.push(`${link.league.name}: couldn't locate your roster (owner ${link.manager_external_id})`)
+        errors.push(`${leagueName}: couldn't locate your roster (owner ${link.manager_external_id})`)
         return
       }
 
@@ -168,7 +170,7 @@ export async function loadWireLive(slug: string, ownerId: string): Promise<WireL
           if (mu && mu.length > 0) wireMatchups.push(...buildMatchups(mu, rostersById, usersByOwnerId, myRoster.roster_id))
         } catch {
           // Matchups failing isn't fatal — we can still show form. Surface as warning.
-          errors.push(`${link.league.name}: couldn't load Week ${currentWeek} matchups`)
+          errors.push(`${leagueName}: couldn't load Week ${currentWeek} matchups`)
         }
 
         // Walk back week-by-week to compute the current streak. Cheap fetches.
@@ -178,7 +180,7 @@ export async function loadWireLive(slug: string, ownerId: string): Promise<WireL
       leagues.push({
         archiveLeagueId: link.league_id,
         liveLeagueId,
-        leagueName: link.league.name,
+        leagueName: leagueName,
         leagueSlug: link.league.slug,
         season: league.season,
         currentWeek,

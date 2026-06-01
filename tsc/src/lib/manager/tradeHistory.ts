@@ -69,6 +69,7 @@ type ChronicleRow = { id: string; slug: string; display_name: string }
 type LinkRow = {
   league_id: string
   manager_external_id: string
+  league_alias: string | null
   league: { id: string; name: string; slug: string; platform: string }
 }
 
@@ -84,13 +85,13 @@ export async function loadTradeHistory(slug: string, ownerId: string): Promise<T
 
   const { data: links } = await supabase
     .from('career_links')
-    .select('league_id, manager_external_id, league:leagues!inner(id, name, slug, platform)')
+    .select('league_id, manager_external_id, league_alias, league:leagues!inner(id, name, slug, platform)')
     .eq('chronicle_id', chronicle.id)
   const linkRows = (links ?? []) as unknown as LinkRow[]
   const sleeperLinks = linkRows.filter((l) => l.league.platform === 'sleeper')
   const unsupported: TradeHistoryUnsupported[] = linkRows
     .filter((l) => l.league.platform !== 'sleeper')
-    .map((l) => ({ leagueName: l.league.name, leagueSlug: l.league.slug, platform: l.league.platform }))
+    .map((l) => ({ leagueName: l.league_alias?.trim() || l.league.name, leagueSlug: l.league.slug, platform: l.league.platform }))
 
   // Most recent season's external_id is the live Sleeper league.
   const liveByArchive = new Map<string, string>()
@@ -125,9 +126,10 @@ export async function loadTradeHistory(slug: string, ownerId: string): Promise<T
 
   await Promise.all(
     sleeperLinks.map(async (link) => {
+      const leagueName = link.league_alias?.trim() || link.league.name
       const liveLeagueId = liveByArchive.get(link.league_id)
       if (!liveLeagueId) {
-        errors.push(`${link.league.name}: no current Sleeper league id`)
+        errors.push(`${leagueName}: no current Sleeper league id`)
         return
       }
       let league: SleeperLeague | null = null
@@ -138,11 +140,11 @@ export async function loadTradeHistory(slug: string, ownerId: string): Promise<T
         users = await sleeper.users(liveLeagueId)
         rosters = await sleeper.rosters(liveLeagueId)
       } catch (e) {
-        errors.push(`${link.league.name}: ${e instanceof Error ? e.message : String(e)}`)
+        errors.push(`${leagueName}: ${e instanceof Error ? e.message : String(e)}`)
         return
       }
       if (!league || !users || !rosters) {
-        errors.push(`${link.league.name}: Sleeper returned partial data`)
+        errors.push(`${leagueName}: Sleeper returned partial data`)
         return
       }
 
@@ -155,7 +157,7 @@ export async function loadTradeHistory(slug: string, ownerId: string): Promise<T
 
       const myRoster = rosters.find((r) => r.owner_id === link.manager_external_id)
       if (!myRoster) {
-        errors.push(`${link.league.name}: couldn't locate your roster`)
+        errors.push(`${leagueName}: couldn't locate your roster`)
         return
       }
       const myRosterId = myRoster.roster_id
@@ -221,7 +223,7 @@ export async function loadTradeHistory(slug: string, ownerId: string): Promise<T
 
         trades.push({
           transactionId: tx.transaction_id,
-          leagueName: link.league.name,
+          leagueName: leagueName,
           leagueSlug: link.league.slug,
           season: league.season,
           week: tx.week,
