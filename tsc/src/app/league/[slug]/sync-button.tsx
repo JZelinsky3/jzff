@@ -8,6 +8,11 @@ import { useRouter } from 'next/navigation'
 const SYNC_BUDGET_S = 300
 const PATIENCE_THRESHOLD_S = 30
 const ABORT_THRESHOLD_S = SYNC_BUDGET_S + 30
+// Hobby plan caps every function at 10s regardless of maxDuration. When the
+// fetch rejects with TypeError past this mark, Vercel killed the connection
+// even though the ingest usually finished its writes server-side — surface
+// that as a "looks done, refreshing" instead of a raw network error.
+const HOBBY_FUNCTION_CAP_S = 10
 
 export function SyncButton({ leagueId }: { leagueId: string }) {
   const router = useRouter()
@@ -66,10 +71,19 @@ export function SyncButton({ leagueId }: { leagueId: string }) {
       if (Array.isArray(body.warnings)) setWarnings(body.warnings)
       router.refresh()
     } catch (err) {
-      setState('error')
+      const elapsed = Math.floor((Date.now() - (startedAt.current ?? Date.now())) / 1000)
       if (err instanceof DOMException && err.name === 'AbortError') {
+        setState('error')
         setMsg(`Sync stalled past ${formatElapsed(ABORT_THRESHOLD_S)}. The server likely timed out. Data may still have partially landed — refresh to check.`)
+      } else if (err instanceof TypeError && elapsed >= HOBBY_FUNCTION_CAP_S - 1) {
+        // Vercel killed the connection at the function cap. The ingest almost
+        // always finishes its writes before the cut, so refresh and report
+        // success-ish rather than scaring the user with a raw fetch error.
+        setState('done')
+        setMsg(`Connection cut at ${formatElapsed(elapsed)} (Vercel function cap), but the ingest likely finished — refreshing to confirm…`)
+        router.refresh()
       } else {
+        setState('error')
         setMsg(err instanceof Error ? err.message : 'Sync failed — network error')
       }
     } finally {
