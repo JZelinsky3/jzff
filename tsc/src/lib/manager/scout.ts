@@ -5,7 +5,7 @@
 // or API calls. Same data feeds that drive the Trade Desk (Sleeper-only for
 // now); ESPN / NFL.com / Yahoo surface as unsupported.
 
-import { valuateLeague } from '@/lib/values'
+import { valuateLeague, formatValuationLabel } from '@/lib/values'
 import { computeNeeds, buildRecommendations, TRACKED_POSITIONS, type RosterNeeds, type TradeRecommendation, type TrackedPosition } from '@/lib/values/needs'
 import type { BuilderLeague, BuilderPlayer, BuilderRoster } from './builder-types'
 import { loadTradeFloor } from './tradeFloor'
@@ -79,7 +79,7 @@ export async function loadScoutReport(slug: string, ownerId: string): Promise<Sc
         season: lg.season,
         mode: lg.mode,
         modeLabel: MODE_LABEL[lg.mode],
-        valueProviderLabel: valuation.providerLabel,
+        valueProviderLabel: formatValuationLabel(valuation),
         myOwnerId: lg.myOwnerId,
         qbStarters: lg.qbStarters,
         teamCount: lg.teamCount,

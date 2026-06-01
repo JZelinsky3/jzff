@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { loadCareerChronicle } from '@/lib/manager/chronicle'
 import { loadTradeFloor } from '@/lib/manager/tradeFloor'
-import { valuateLeague, type LeagueMode } from '@/lib/values'
+import { valuateLeague, formatValuationLabel, type LeagueMode } from '@/lib/values'
 import { ChronicleShell, EmptyState } from '../_shell'
 import { TradeBuilder } from './_builder'
 import type { BuilderLeague, BuilderPlayer, BuilderRoster } from '@/lib/manager/builder-types'
@@ -66,7 +66,7 @@ export default async function TradeBuilderPage({ params }: { params: Promise<{ s
         season: lg.season,
         mode: lg.mode,
         modeLabel: MODE_LABEL[lg.mode],
-        valueProviderLabel: valuation.providerLabel,
+        valueProviderLabel: formatValuationLabel(valuation),
         myOwnerId: lg.myOwnerId,
         qbStarters: lg.qbStarters,
         teamCount: lg.teamCount,

@@ -7,7 +7,23 @@
 
 export type LeagueMode = 'dynasty' | 'redraft' | 'keeper'
 
-export type ValueProviderId = 'sleeper-derived' | 'ktc-dynasty' | 'fantasypros-ros' | 'espn-ros'
+export type ValueProviderId =
+  | 'sleeper-derived'
+  | 'fantasycalc-dynasty'
+  | 'fantasycalc-redraft'
+  | 'ktc-dynasty'
+  | 'fantasypros-ros'
+  | 'espn-ros'
+
+// Diagnostic info returned alongside a valuation so the UI can show what
+// happened: which provider was picked, did it succeed, did we fall through.
+export type ProviderAttempt = {
+  provider: ValueProviderId
+  label: string
+  ok: boolean
+  playerCount: number
+  message?: string
+}
 
 export type PlayerValue = {
   playerId: string            // Sleeper player_id — primary identity across providers
