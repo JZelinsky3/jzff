@@ -1,80 +1,25 @@
 // Shared kit for the Manager Hub multi-page chronicle.
 //
-// This file holds everything the per-route pages compose from:
+// SERVER MODULE. The pages that import from this file are server components,
+// so this file must be free of "use client" — otherwise plain helper exports
+// (fmtPct, careerSpan, …) get wrapped as client references and calling them
+// from a server page throws "Attempted to call …() from the server."
+//
+// The only piece that needs client-side state (active-route highlight in the
+// chapter rail) lives in [./_chapter-rail.tsx]; we just compose it in here.
+//
+// Exports:
 //   • <ChronicleShell>   the page frame — top action bar + chapter rail + paper
-//   • <ChapterRail>      the link-bar nav (active = current route)
 //   • <FolioRail>        Spine variant A — left-edge printer's strip + postmark
 //   • <PressPlate>       Spine variant B — top-right registration mark + column rule
-//   • atoms              SecHead, Strip, Empty, FieldRule, Football, Seal, Agate
-//   • helpers            fmtPct, ordinal, romanOr, careerSpan, etc.
-//   • CSS                <ChronicleStyles/> — one <style> tag injected per page
-//
-// Pages mix "ingredients" (drafts + standings + records + rivalries + milestones)
-// using these atoms with a different lead each time. Two pages currently wear
-// different spines so we can A/B them in the real UI without a throwaway demo.
-
-'use client'
+//   • atoms              SecHead, Strip, Empty, FieldRule, Football, Seal, Agate, PullQuote
+//   • helpers            fmtPct, ordinal, romanOr, careerSpan, initials, …
+//   • <ChronicleStyles/> the single <style> tag every page injects
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import type { CareerSummary, CareerLeagueSummary } from '@/lib/manager/career'
-
-// ── chapter rail (link bar, active=route) ─────────────────────────────────────
-
-export type ChapterId = 'front' | 'standings' | 'drafts' | 'records' | 'rivals' | 'trophies' | 'setup'
-
-export const CHAPTERS: { id: ChapterId; label: string; path: (slug: string) => string }[] = [
-  { id: 'front',     label: 'Front Page',      path: (s) => `/manager/${s}` },
-  { id: 'standings', label: 'Standings Desk',  path: (s) => `/manager/${s}/standings` },
-  { id: 'drafts',    label: 'Draft Room',      path: (s) => `/manager/${s}/drafts` },
-  { id: 'records',   label: 'Record Book',     path: (s) => `/manager/${s}/records` },
-  { id: 'rivals',    label: 'Society Page',    path: (s) => `/manager/${s}/rivals` },
-  { id: 'trophies',  label: 'Trophy Room',     path: (s) => `/manager/${s}/trophies` },
-  { id: 'setup',     label: 'Manager Setup',   path: (s) => `/manager/${s}/settings` },
-]
-
-export function ChapterRail({ slug }: { slug: string }) {
-  const path = usePathname() ?? ''
-  const railRef = useRef<HTMLDivElement>(null)
-  const activeId = activeChapter(path, slug)
-
-  useEffect(() => {
-    const tab = railRef.current?.querySelector<HTMLElement>(`[data-tab="${activeId}"]`)
-    tab?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
-  }, [activeId])
-
-  return (
-    <nav className="mh-rail" ref={railRef} aria-label="Chapters">
-      {CHAPTERS.map((c, i) => {
-        const active = c.id === activeId
-        return (
-          <Link
-            key={c.id}
-            data-tab={c.id}
-            href={c.path(slug)}
-            className={`mh-tab ${active ? 'is-active' : ''}`}
-          >
-            <span className="mh-tab-num">{String(i + 1).padStart(2, '0')}</span>
-            {c.label}
-          </Link>
-        )
-      })}
-    </nav>
-  )
-}
-
-function activeChapter(path: string, slug: string): ChapterId {
-  const tail = path.replace(`/manager/${slug}`, '').replace(/^\//, '').split('/')[0] ?? ''
-  if (tail === '') return 'front'
-  if (tail === 'standings') return 'standings'
-  if (tail === 'drafts')    return 'drafts'
-  if (tail === 'records')   return 'records'
-  if (tail === 'rivals')    return 'rivals'
-  if (tail === 'trophies')  return 'trophies'
-  if (tail === 'settings')  return 'setup'
-  return 'front'
-}
+import { ChapterRail } from './_chapter-rail'
 
 // ── Spine A: Folio Rail (left edge printer's strip + postmark) ───────────────
 
