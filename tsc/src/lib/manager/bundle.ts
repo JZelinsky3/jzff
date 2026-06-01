@@ -21,7 +21,7 @@ import { devCacheGet, devCacheSet } from '@/lib/devCache'
 import { createClient } from '@/lib/supabase/server'
 import { loadCareerChronicle, type CareerChronicle } from '@/lib/manager/chronicle'
 
-const BUNDLE_VERSION = 'v4'
+const BUNDLE_VERSION = 'v5'
 
 export type ManagerBundle = Record<string, unknown>
 
@@ -145,6 +145,7 @@ async function buildBundleFromChronicle(c: CareerChronicle): Promise<ManagerBund
   const legacy = buildLegacy(c, career)
   const dynasty = buildDynasty(c)
   const seasons = buildSeasonsHub(c)
+  const vault = buildVault(c)
   // Bundle keys match the leagues pattern: NO `data/` prefix. The catch-all
   // route's resolveRequest() strips the `data/` segment from URLs before
   // looking up the bundle, so /manager/<slug>/data/career.json → 'career.json'.
@@ -154,6 +155,7 @@ async function buildBundleFromChronicle(c: CareerChronicle): Promise<ManagerBund
     'legacy.json': legacy,
     'dynasty.json': dynasty,
     'seasons.json': seasons,
+    'vault.json': vault,
   }
   for (const yr of seasons.years) {
     out[`seasons/${yr}.json`] = buildSeasonDeepDive(c, yr)
@@ -956,5 +958,272 @@ function buildSeasonDeepDive(c: CareerChronicle, year: number): SeasonDeepDive {
     combinedRecord,
     headline,
     deck,
+  }
+}
+
+// ============================================================
+// Issue V — The Record Vault
+// ============================================================
+// Personal record book + draft pedigree (faux Hall of Fame from picks) +
+// Records Watch placeholder for in-season tracking. Editorial copy is built
+// into the data so the template can quote it directly — keeps the page
+// reading like a feature, not a stat dump.
+
+type VaultRecord = {
+  label: string
+  value: string
+  context: string  // a sentence of color: when, against whom, why it matters
+  meta: string     // small mono caption — league, year, week
+  flavor?: 'gold' | 'rust' | 'steel' | 'cream'
+}
+
+type VaultJson = {
+  name: string
+  intro: string            // editor's lede — what the vault is
+  totalRecords: number
+  // Career headline records — the 6-8 numbers that define the chronicle.
+  headlines: VaultRecord[]
+  // Single-game vault — the loudest individual games.
+  singleGame: {
+    intro: string
+    items: VaultRecord[]
+  }
+  // The Streak Files.
+  streaks: {
+    intro: string
+    items: VaultRecord[]
+  }
+  // Draft Pedigree — most-drafted players + earliest picks. Stand-in for HoF
+  // until per-player tenure tracking lands.
+  pedigree: {
+    intro: string
+    repeatPicks: Array<{ player: string; position: string | null; times: number; years: number[]; leagues: string[] }>
+    earliestPicks: Array<{ year: number; leagueName: string; round: number; overall: number; player: string; position: string | null }>
+  }
+  // Watch — Coming Soon until current-season pipeline lands.
+  watch: {
+    enabled: boolean
+    intro: string
+    note: string
+  }
+}
+
+function fmtPts(n: number | null | undefined): string {
+  if (n == null) return '—'
+  return (Math.round(n * 10) / 10).toFixed(1)
+}
+
+function buildVault(c: CareerChronicle): VaultJson {
+  const t = c.totals
+  const yrFirst = Math.min(...c.leagues.map((l) => l.firstYear ?? 9999))
+  const yrLast = Math.max(...c.leagues.map((l) => l.lastYear ?? 0))
+  const yrRange = (yrFirst === 9999 || yrLast === 0)
+    ? '—'
+    : (yrFirst === yrLast ? `${yrFirst}` : `${yrFirst}–${yrLast}`)
+
+  // ─── Headline records ───────────────────────────────────────────
+  const decided = t.wins + t.losses
+  const ppg = t.seasonsPlayed > 0 ? t.pointsFor / Math.max(1, t.seasonsPlayed * 14) : 0
+  const headlines: VaultRecord[] = []
+  headlines.push({
+    label: 'Total Points',
+    value: Math.round(t.pointsFor).toLocaleString('en-US'),
+    context: `Across ${t.seasonsPlayed} seasons and ${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'} — every regular-season point you've banked, cumulative.`,
+    meta: `${yrRange} · all leagues`,
+    flavor: 'gold',
+  })
+  headlines.push({
+    label: 'Lifetime Record',
+    value: t.ties ? `${t.wins}-${t.losses}-${t.ties}` : `${t.wins}-${t.losses}`,
+    context: decided > 0
+      ? `A ${(t.winPct * 100).toFixed(1)}% win rate across ${decided} decisions. Consolation games are excluded — only championship-bracket playoff games count.`
+      : 'No decided games on record yet.',
+    meta: `${yrRange} · regular + playoff`,
+    flavor: 'cream',
+  })
+  if (t.championships > 0) {
+    headlines.push({
+      label: 'Championships',
+      value: String(t.championships),
+      context: `Banked hardware. ${t.runnerUps} runner-up finish${t.runnerUps === 1 ? '' : 'es'} and ${t.thirdPlaces} bronze on top of that — ${t.championships + t.runnerUps + t.thirdPlaces} podium appearance${t.championships + t.runnerUps + t.thirdPlaces === 1 ? '' : 's'} total.`,
+      meta: `Trophy case · ${yrRange}`,
+      flavor: 'gold',
+    })
+  }
+  headlines.push({
+    label: 'Playoff Apps',
+    value: String(t.playoffAppearances),
+    context: t.playoffAppearances > 0
+      ? `Punched ${t.playoffAppearances} brackets and went ${t.playoffWins}-${t.playoffLosses} in championship-bracket games — that's the rule the almanac uses (no consolation noise).`
+      : `Still chasing the first bracket appearance.`,
+    meta: `${t.playoffWins}-${t.playoffLosses} in bracket games`,
+    flavor: 'steel',
+  })
+  headlines.push({
+    label: 'Avg PPG (est.)',
+    value: fmtPts(ppg),
+    context: `Rough scoring rate, assuming a ~14-week regular season per league. Useful as a heuristic, not a hard record.`,
+    meta: `${t.seasonsPlayed} seasons sampled`,
+    flavor: 'cream',
+  })
+  if (t.runnerUps > 0 || t.thirdPlaces > 0) {
+    headlines.push({
+      label: 'Podium Finishes',
+      value: String(t.runnerUps + t.thirdPlaces + t.championships),
+      context: `Champion, runner-up, or bronze. The seasons that ended on a podium — the close calls + the closers.`,
+      meta: `${t.championships} 1st · ${t.runnerUps} 2nd · ${t.thirdPlaces} 3rd`,
+      flavor: 'gold',
+    })
+  }
+
+  // ─── Single game vault ──────────────────────────────────────────
+  const sg: VaultRecord[] = []
+  const big = c.bestWins[0]
+  if (big) {
+    sg.push({
+      label: 'Biggest Win',
+      value: `${fmtPts(big.score)} – ${fmtPts(big.oppScore)}`,
+      context: `A +${fmtPts(big.margin)} margin over ${big.opponent}${big.isPlayoff ? ' in the playoffs' : ''}. Among the loudest single-game blowouts on file.`,
+      meta: `${big.leagueName} · ${big.year} · Wk ${big.week}`,
+      flavor: 'gold',
+    })
+  }
+  const wl = c.worstLosses[0]
+  if (wl) {
+    sg.push({
+      label: 'Worst Loss',
+      value: `${fmtPts(wl.score)} – ${fmtPts(wl.oppScore)}`,
+      context: `A ${fmtPts(wl.margin)} margin against ${wl.opponent}${wl.isPlayoff ? ' in the playoffs' : ''}. The kind of week that haunts a chronicle.`,
+      meta: `${wl.leagueName} · ${wl.year} · Wk ${wl.week}`,
+      flavor: 'rust',
+    })
+  }
+  const hi = c.weeklyHighs[0]
+  if (hi) {
+    sg.push({
+      label: 'Highest Week',
+      value: fmtPts(hi.score),
+      context: `Franchise-tier scoring. The number that other managers in ${hi.leagueName} still bring up.`,
+      meta: `${hi.leagueName} · ${hi.year}${hi.week ? ` · Wk ${hi.week}` : ''}`,
+      flavor: 'gold',
+    })
+  }
+  const lo = c.weeklyLows[0]
+  if (lo) {
+    sg.push({
+      label: 'Lowest Week',
+      value: fmtPts(lo.score),
+      context: `The number you'd rather forget. Every team has one — this is yours.`,
+      meta: `${lo.leagueName} · ${lo.year}`,
+      flavor: 'rust',
+    })
+  }
+  // Add second-best blowout when we have enough data, for variety.
+  const big2 = c.bestWins[1]
+  if (big2) {
+    sg.push({
+      label: 'Second-Biggest',
+      value: `${fmtPts(big2.score)} – ${fmtPts(big2.oppScore)}`,
+      context: `Margin +${fmtPts(big2.margin)} over ${big2.opponent}. Receipts on receipts.`,
+      meta: `${big2.leagueName} · ${big2.year} · Wk ${big2.week}`,
+      flavor: 'cream',
+    })
+  }
+
+  // ─── Streaks ────────────────────────────────────────────────────
+  const wks: VaultRecord[] = []
+  const winStreak = c.streaks.find((s) => s.kind === 'win')
+  if (winStreak) {
+    wks.push({
+      label: 'Longest Win Streak',
+      value: `${winStreak.length} W`,
+      context: `${winStreak.length} games on the bounce — when ${winStreak.leagueName} couldn't find an answer.`,
+      meta: `${winStreak.leagueName} · ${winStreak.when}`,
+      flavor: 'gold',
+    })
+  }
+  const lossStreak = c.streaks.find((s) => s.kind === 'loss')
+  if (lossStreak) {
+    wks.push({
+      label: 'Longest Losing Streak',
+      value: `${lossStreak.length} L`,
+      context: `${lossStreak.length} straight defeats — the kind of skid the rebuild years are made of.`,
+      meta: `${lossStreak.leagueName} · ${lossStreak.when}`,
+      flavor: 'rust',
+    })
+  }
+
+  // ─── Pedigree (HoF stand-in) ────────────────────────────────────
+  type Bucket = { player: string; position: string | null; years: Set<number>; leagues: Set<string>; times: number }
+  const byPlayer = new Map<string, Bucket>()
+  for (const p of c.picks) {
+    const key = p.player.trim().toLowerCase()
+    if (!key) continue
+    const cur = byPlayer.get(key) ?? { player: p.player, position: p.position, years: new Set<number>(), leagues: new Set<string>(), times: 0 }
+    cur.years.add(p.year)
+    cur.leagues.add(p.leagueName)
+    cur.times += 1
+    if (!cur.position && p.position) cur.position = p.position
+    byPlayer.set(key, cur)
+  }
+  const repeatPicks = [...byPlayer.values()]
+    .filter((b) => b.times >= 2)
+    .sort((a, b) => b.times - a.times || a.player.localeCompare(b.player))
+    .slice(0, 12)
+    .map((b) => ({
+      player: b.player,
+      position: b.position,
+      times: b.times,
+      years: [...b.years].sort((a, b2) => a - b2),
+      leagues: [...b.leagues],
+    }))
+
+  const earliestPicks = [...c.picks]
+    .sort((a, b) => a.overall - b.overall || a.year - b.year)
+    .slice(0, 10)
+    .map((p) => ({
+      year: p.year,
+      leagueName: p.leagueName,
+      round: p.round,
+      overall: p.overall,
+      player: p.player,
+      position: p.position,
+    }))
+
+  return {
+    name: c.chronicle.displayName,
+    intro:
+      `Everything that holds a place in the books. Career totals on top, the loudest single ` +
+      `games below that, the streaks that defined the rebuilds and the runs, and the players ` +
+      `who kept showing up on draft day. The Vault doesn't move — but new entries get filed every Sunday.`,
+    totalRecords: headlines.length + sg.length + wks.length,
+    headlines,
+    singleGame: {
+      intro:
+        `Eight games, give or take. The blowouts. The collapses. The weeks where a lineup ` +
+        `caught fire or fell apart and the league couldn't stop talking about it.`,
+      items: sg,
+    },
+    streaks: {
+      intro:
+        `Momentum, in numbers. Win streaks are the seasons that built the trophy case. ` +
+        `Loss streaks are the seasons that built whatever came after.`,
+      items: wks,
+    },
+    pedigree: {
+      intro:
+        `The closest thing this chronicle has to a Hall of Fame: players drafted across ` +
+        `multiple years and leagues — the names you keep coming back to — and the earliest ` +
+        `picks on file, the franchise cornerstones laid round-one and round-two.`,
+      repeatPicks,
+      earliestPicks,
+    },
+    watch: {
+      enabled: false,
+      intro:
+        `Records aren't just historic — some are live. Active streaks, points pace, win-rate ` +
+        `windows you're currently inside. The Watch lights up once the in-season pipeline lands.`,
+      note: 'Live records tracking ships with Phase 6 (The War Room).',
+    },
   }
 }
