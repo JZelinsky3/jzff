@@ -21,7 +21,7 @@ import { devCacheGet, devCacheSet } from '@/lib/devCache'
 import { createClient } from '@/lib/supabase/server'
 import { loadCareerChronicle, type CareerChronicle } from '@/lib/manager/chronicle'
 
-const BUNDLE_VERSION = 'v2'
+const BUNDLE_VERSION = 'v3'
 
 export type ManagerBundle = Record<string, unknown>
 
@@ -143,10 +143,12 @@ async function buildBundleFromChronicle(c: CareerChronicle): Promise<ManagerBund
   const career = buildCareerJson(c)
   const timeline = buildTimeline(c)
   const legacy = buildLegacy(c, career)
+  const dynasty = buildDynasty(c)
   return {
     'data/career.json': career,
     'data/timeline.json': timeline,
     'data/legacy.json': legacy,
+    'data/dynasty.json': dynasty,
   }
 }
 
@@ -576,4 +578,113 @@ export async function getManagerBundle(slug: string, ownerId: string): Promise<{
   const bundle = await cached()
   if (!bundle) return null
   return { chronicleId, bundle }
+}
+
+// ============================================================
+// Issue III — The Dynasty Files
+// ============================================================
+// Per-league dynasty arc: how the franchise has grown across years, the draft
+// anchors that built it, hardware count. KTC portfolio + trade analyzer come
+// in a later phase — sections render as "Coming Soon" until that data lands.
+
+type DynastyAnchor = {
+  year: number
+  round: number
+  overall: number
+  player: string
+  position: string | null
+}
+
+type DynastyLeague = {
+  id: string
+  name: string
+  slug: string
+  platform: string
+  firstYear: number | null
+  lastYear: number | null
+  yearsActive: number
+  championships: number
+  runnerUps: number
+  thirdPlaces: number
+  bestFinish: number | null
+  playoffAppearances: number
+  totalPicks: number
+  // Top draft anchors — earliest-round picks made over the league's history.
+  anchors: DynastyAnchor[]
+  // Season ledger keyed by year, summarized for the per-league timeline.
+  arc: Array<{ year: number; rank: number | null; record: string; champion: boolean }>
+}
+
+type DynastyJson = {
+  name: string
+  totalLeagues: number
+  totalChampionships: number
+  // Per-league entries, ordered by championships desc then years active desc.
+  leagues: DynastyLeague[]
+  // Marker for sections rendered as "coming soon" until KTC + trade data wire in.
+  upcoming: {
+    portfolioChart: { enabled: boolean; reason: string }
+    tradeAnalyzer: { enabled: boolean; reason: string }
+    ktcValueLine: { enabled: boolean; reason: string }
+  }
+}
+
+function buildDynasty(c: CareerChronicle): DynastyJson {
+  const leagues: DynastyLeague[] = c.leagues
+    .filter((l) => l.status === 'ready')
+    .map((lg) => {
+      const myPicks = c.picks.filter((p) => p.leagueSlug === lg.leagueSlug)
+      const anchors: DynastyAnchor[] = myPicks
+        .filter((p) => p.round <= 3)
+        .sort((a, b) => a.year - b.year || a.overall - b.overall)
+        .slice(0, 12)
+        .map((p) => ({
+          year: p.year,
+          round: p.round,
+          overall: p.overall,
+          player: p.player,
+          position: p.position,
+        }))
+
+      const arc = lg.finishes.map((f) => {
+        const ties = f.ties
+        return {
+          year: f.year,
+          rank: f.rank,
+          record: ties > 0 ? `${f.wins}-${f.losses}-${ties}` : `${f.wins}-${f.losses}`,
+          champion: f.champion,
+        }
+      }).sort((a, b) => a.year - b.year)
+
+      return {
+        id: lg.leagueId,
+        name: lg.leagueName,
+        slug: lg.leagueSlug,
+        platform: lg.platform,
+        firstYear: lg.firstYear,
+        lastYear: lg.lastYear,
+        yearsActive: lg.seasonsPlayed,
+        championships: lg.championships,
+        runnerUps: lg.runnerUps,
+        thirdPlaces: lg.thirdPlaces,
+        bestFinish: lg.bestFinish,
+        playoffAppearances: lg.playoffAppearances,
+        totalPicks: myPicks.length,
+        anchors,
+        arc,
+      }
+    })
+    .sort((a, b) => b.championships - a.championships || b.yearsActive - a.yearsActive)
+
+  return {
+    name: c.chronicle.displayName,
+    totalLeagues: leagues.length,
+    totalChampionships: leagues.reduce((s, l) => s + l.championships, 0),
+    leagues,
+    upcoming: {
+      portfolioChart: { enabled: false, reason: 'KTC valuation history is not yet wired into the chronicle bundle.' },
+      tradeAnalyzer: { enabled: false, reason: 'Cross-league trade history pipeline ships in Phase 6.' },
+      ktcValueLine: { enabled: false, reason: 'Per-player KTC time series will live here once ingest lands.' },
+    },
+  }
 }

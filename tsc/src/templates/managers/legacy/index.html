@@ -68,6 +68,20 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 .nav-drop-menu a:hover { background: rgba(232,200,137,.07); color: var(--gold); }
 .nav-drop-menu a.is-active { color: var(--gold); background: rgba(232,200,137,.06); }
 
+/* Slim chapbar */
+.nav-chapbar { position: sticky; top: var(--nav-h, 4.5rem); z-index: 29; background: rgba(14, 22, 32, .9); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-bottom: 1px solid var(--ink-line); }
+.nav-chapbar-track { display: flex; justify-content: center; align-items: stretch; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; max-width: 1370px; margin: 0 auto; padding: 0 1rem; }
+.nav-chapbar-track::-webkit-scrollbar { display: none; }
+.nav-chapbar-link { flex-shrink: 0; position: relative; color: var(--cream-soft); text-decoration: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; padding: .65rem 1.3rem .75rem; transition: color .15s; white-space: nowrap; }
+.nav-chapbar-link:hover, .nav-chapbar-link.is-active { color: var(--gold); }
+.nav-chapbar-link.is-active::after { content: ""; position: absolute; left: 1.3rem; right: 1.3rem; bottom: 0; height: 2px; background: var(--gold); }
+.nav-chapbar-link + .nav-chapbar-link::before { content: ""; position: absolute; left: 0; top: 35%; bottom: 35%; width: 1px; background: var(--ink-line); }
+@media (max-width: 640px) {
+    .nav-chapbar-track { justify-content: flex-start; padding: 0 .15rem; }
+    .nav-chapbar-link { padding: .55rem .75rem; font-size: .55rem; letter-spacing: .15em; }
+    .nav-chapbar-link.is-active::after { left: .75rem; right: .75rem; }
+}
+
 /* Edition masthead */
 .edition { position: relative; z-index: 10; max-width: 1100px; margin: 0 auto; padding: 4.5rem 1.5rem 1rem; text-align: center; }
 .edition-sup { font-family: var(--mono); font-weight: 700; font-size: .65rem; letter-spacing: .4em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.25rem; }
@@ -228,6 +242,17 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
     <a href="/manager/{{MGR_SLUG}}" class="nav-link">← Front Page</a>
 </nav>
 
+<nav class="nav-chapbar" aria-label="Issues">
+    <div class="nav-chapbar-track">
+        <a href="/manager/{{MGR_SLUG}}" class="nav-chapbar-link">I · Front</a>
+        <a href="/manager/{{MGR_SLUG}}/legacy" class="nav-chapbar-link is-active">II · Legacy</a>
+        <a href="/manager/{{MGR_SLUG}}/dynasty" class="nav-chapbar-link">III · Dynasty</a>
+        <a href="/manager/{{MGR_SLUG}}/seasons" class="nav-chapbar-link">IV · Seasons</a>
+        <a href="/manager/{{MGR_SLUG}}/vault" class="nav-chapbar-link">V · Vault</a>
+        <a href="/manager/{{MGR_SLUG}}/war-room" class="nav-chapbar-link">VI · War Room</a>
+    </div>
+</nav>
+
 <header class="edition">
     <div class="edition-sup"><span class="star">★</span> Issue II · Rise &amp; Legacy <span class="star">★</span></div>
     <h1 class="edition-title">The Story of <em>{{MGR_NAME}}.</em></h1>
@@ -297,6 +322,16 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 
 <script>
 (function () {
+    // Publish nav height for chapbar sticky offset
+    var primaryNav = document.querySelector('.nav')
+    function publishNavHeight() {
+        if (!primaryNav) return
+        var h = primaryNav.getBoundingClientRect().height
+        if (h > 0) document.documentElement.style.setProperty('--nav-h', h + 'px')
+    }
+    publishNavHeight()
+    window.addEventListener('resize', publishNavHeight)
+
     // Dropdown
     var drop = document.getElementById('nav-drop')
     if (drop) {
