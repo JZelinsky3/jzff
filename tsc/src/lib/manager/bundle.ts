@@ -286,6 +286,12 @@ type LegacyJson = {
     weeklyHigh: CareerChronicle['weeklyHighs'][number] | null
     weeklyLow: CareerChronicle['weeklyLows'][number] | null
   }
+  intro: string
+  sectionIntros: {
+    eras: string
+    rivalries: string
+    moments: string
+  }
 }
 
 function ordinal(n: number): string {
@@ -571,6 +577,16 @@ function buildLegacy(c: CareerChronicle, career: CareerJson): LegacyJson {
   const longestWin = c.streaks.find((s) => s.kind === 'win') ?? null
   const longestLoss = c.streaks.find((s) => s.kind === 'loss') ?? null
 
+  const totalRings = eras.reduce((s, e) => s + e.titlesWon.length, 0)
+  const intro =
+    totalRings > 0
+      ? `Origins, the climb, the title runs. ${eras.length} ${eras.length === 1 ? 'act' : 'acts'}, ` +
+        `${totalRings} ${totalRings === 1 ? 'ring' : 'rings'} along the way. Each era pulls finishes, ` +
+        `drafts, and rivalries from the same calendar window so the story reads as one through-line.`
+      : `Origins, the climb, and the seasons in between. ${eras.length} ${eras.length === 1 ? 'act' : 'acts'} ` +
+        `tracking the chronicle's arc through finishes, drafts, and rivalries — same calendar window, ` +
+        `one through-line.`
+
   return {
     name: c.chronicle.displayName,
     yearsActive: career.yearsActive,
@@ -584,6 +600,21 @@ function buildLegacy(c: CareerChronicle, career: CareerJson): LegacyJson {
       longestLossStreak: longestLoss,
       weeklyHigh: c.weeklyHighs[0] ?? null,
       weeklyLow: c.weeklyLows[0] ?? null,
+    },
+    intro,
+    sectionIntros: {
+      eras:
+        `Each era gets a sidebar with year-by-year finishes, the signature draft picks made ` +
+        `during the run, and a high-water mark from that window. The narrative on the left weaves ` +
+        `them together; the data on the right backs it.`,
+      rivalries:
+        `Top opponents across every league, scored by total meetings. Gold border = winning ` +
+        `record. Rust = the one who had your number. The narrative line is auto-derived from the ` +
+        `record shape (lopsided, even, playoff-heavy).`,
+      moments:
+        `Six tiles, six single-incident highlights — the loudest win, the worst loss, weekly ` +
+        `highs/lows, and the longest streaks. Bigger context for these numbers lives in Issue V ` +
+        `(The Record Vault).`,
     },
   }
 }
@@ -687,6 +718,12 @@ type DynastyJson = {
     tradeAnalyzer: { enabled: boolean; reason: string }
     ktcValueLine: { enabled: boolean; reason: string }
   }
+  intro: string
+  sectionIntros: {
+    portfolio: string
+    files: string
+    tradeDesk: string
+  }
 }
 
 function buildDynasty(c: CareerChronicle): DynastyJson {
@@ -736,15 +773,38 @@ function buildDynasty(c: CareerChronicle): DynastyJson {
     })
     .sort((a, b) => b.championships - a.championships || b.yearsActive - a.yearsActive)
 
+  const totalChamps = leagues.reduce((s, l) => s + l.championships, 0)
+  const intro = leagues.length === 0
+    ? `Dynasty Files open once at least one league is linked. The shape will read: per-league ` +
+      `arcs, draft anchors, portfolio value over time.`
+    : `${leagues.length} ${leagues.length === 1 ? 'file' : 'files'} on the franchise. ` +
+      `${totalChamps > 0 ? `${totalChamps} ${totalChamps === 1 ? 'ring' : 'rings'} across them — ` : ''}` +
+      `each one is a portfolio with its own arc and its own draft anchors. KTC valuation history ` +
+      `and the cross-league trade analyzer ride in once those pipelines land.`
+
   return {
     name: c.chronicle.displayName,
     totalLeagues: leagues.length,
-    totalChampionships: leagues.reduce((s, l) => s + l.championships, 0),
+    totalChampionships: totalChamps,
     leagues,
     upcoming: {
       portfolioChart: { enabled: false, reason: 'KTC valuation history is not yet wired into the chronicle bundle.' },
       tradeAnalyzer: { enabled: false, reason: 'Cross-league trade history pipeline ships in Phase 6.' },
       ktcValueLine: { enabled: false, reason: 'Per-player KTC time series will live here once ingest lands.' },
+    },
+    intro,
+    sectionIntros: {
+      portfolio:
+        `Portfolio value over time, scored by KeepTradeCut. Once the KTC ingest lands, this is ` +
+        `where you watch the franchise rise and fall — every trade and every draft as a tick on ` +
+        `the line. The skeleton below shows the eventual shape.`,
+      files:
+        `One file per league. Totals across the top (seasons / rings / playoffs / best finish), ` +
+        `the year-by-year arc with gold tiles on ring years, and a sidebar listing the draft ` +
+        `anchors that built the team — every R1 and early R2 pick on record.`,
+      tradeDesk:
+        `Cross-league trade history scored against what the analyzer would have recommended at ` +
+        `the time. Receipts + the take, side by side. Ships alongside the in-season pipeline.`,
     },
   }
 }
@@ -781,6 +841,12 @@ type SeasonsHubJson = {
     multiLeague: Array<{ year: number; leagues: SeasonEntry[] }>
   }
   counts: { total: number; dominance: number; nearMiss: number; rebuild: number; multiLeague: number }
+  intro: string
+  sectionIntros: {
+    themes: string
+    years: string
+    specialEditions: string
+  }
 }
 
 function classifySeason(
@@ -832,6 +898,13 @@ function buildSeasonsHub(c: CareerChronicle): SeasonsHubJson {
 
   const years = [...byYearMap.keys()].sort((a, b) => a - b)
 
+  const intro = all.length === 0
+    ? `Seasons open once the first finish is on the books. Every year will land here, ` +
+      `sorted by the story it tells.`
+    : `${all.length} ${all.length === 1 ? 'season' : 'seasons'} across ${years.length} ${years.length === 1 ? 'year' : 'years'}, ` +
+      `sorted by the story each one tells. Click any year card for the full deep-dive — draft + ` +
+      `roster + h2h + extremes for that season, in one place.`
+
   return {
     name: c.chronicle.displayName,
     years,
@@ -843,6 +916,20 @@ function buildSeasonsHub(c: CareerChronicle): SeasonsHubJson {
       nearMiss: nearMiss.length,
       rebuild: rebuild.length,
       multiLeague: multiLeague.length,
+    },
+    intro,
+    sectionIntros: {
+      themes:
+        `Four anchors for sorting the chronicle: Dominance (podium finish), Near Misses ` +
+        `(playoffs, no ring), Rebuilds (missed the bracket), and Multi-League years (2+ leagues ` +
+        `active that calendar). Click any number to scroll to the grouped editions below.`,
+      years:
+        `Every year, every league, on one card. Border color flags the dominant theme — gold ` +
+        `for a podium year, steel for a playoff run, rust for a rebuild. Multi-league years carry ` +
+        `a footer note showing how many ran in parallel.`,
+      specialEditions:
+        `The same seasons, regrouped thematically. Use this view when you're hunting a specific ` +
+        `kind of year — every podium finish in one place, every near-miss in another.`,
     },
   }
 }
@@ -899,6 +986,11 @@ type SeasonDeepDive = {
   // Cross-league summary blurb.
   headline: string
   deck: string
+  // Lede paragraph and section intro — the editorial layer.
+  intro: string
+  sectionIntros: {
+    files: string
+  }
 }
 
 function buildSeasonDeepDive(c: CareerChronicle, year: number): SeasonDeepDive {
@@ -998,6 +1090,37 @@ function buildSeasonDeepDive(c: CareerChronicle, year: number): SeasonDeepDive {
     }
   }
 
+  // Lede paragraph for the year page — summarizes what the reader will find.
+  let intro = ''
+  if (champs > 0 && multiLeague) {
+    intro =
+      `${year} ran in ${leagues.length} leagues simultaneously and ended with ${champs} ` +
+      `${champs === 1 ? 'ring' : 'rings'} in hand — combined ${combinedRecord} across them. ` +
+      `Each file below is the full per-league rundown: draft + finish + rivals faced + the loudest week.`
+  } else if (champs > 0) {
+    const l = leagues[0]!
+    intro =
+      `${year} ended in gold for ${l.leagueName} — ${l.record} regular, then the bracket run that ` +
+      `closed the deal. The file below carries the draft picks that fueled it, the rivals along the ` +
+      `way, and the title game on the scoreboard.`
+  } else if (multiLeague) {
+    intro =
+      `${year} ran in ${leagues.length} leagues simultaneously — ${combinedRecord} combined. ` +
+      `Each file below is its own rundown: draft + finish + rivals + weekly extremes.`
+  } else if (leagues.length > 0) {
+    const l = leagues[0]!
+    const arc = l.champion ? 'a champion run'
+      : l.runnerUp ? 'a runner-up campaign'
+      : l.thirdPlace ? 'a bronze finish'
+      : l.madePlayoffs ? 'a playoff trip'
+      : 'a regular-season campaign'
+    intro =
+      `${year} in ${l.leagueName}: ${l.record} on the way to ${arc}. The file carries the draft ` +
+      `picks, the rivals faced, and the weekly extremes — everything the season turned on, in one place.`
+  } else {
+    intro = `No file on record for ${year}.`
+  }
+
   return {
     year,
     managerName: c.chronicle.displayName,
@@ -1007,6 +1130,14 @@ function buildSeasonDeepDive(c: CareerChronicle, year: number): SeasonDeepDive {
     combinedRecord,
     headline,
     deck,
+    intro,
+    sectionIntros: {
+      files:
+        `One spread per league. Kicker shows the finish (Champion / Runner-Up / Playoffs / ` +
+        `Regular Season), record on the right. Title-game banner with the final score lights up ` +
+        `when it was a ring year. Draft table is every pick made that season; the sidebar carries ` +
+        `career-vs-rivals records and the weekly high/low.`,
+    },
   }
 }
 
