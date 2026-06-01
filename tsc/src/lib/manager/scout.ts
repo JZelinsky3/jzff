@@ -120,11 +120,14 @@ export async function loadScoutReport(
     totalRecs += lg.recommendations.length
   }
 
+  const primaryMode: LeagueMode = leagues[0]?.builderLeague.mode ?? 'redraft'
+
   return {
     chronicle: floor.chronicle,
     leagues,
     unsupported: floor.unsupported,
     errors: floor.errors,
+    primaryMode,
     totals: { leagues: leagues.length, weakSpots, strongSpots, recommendations: totalRecs },
   }
 }
