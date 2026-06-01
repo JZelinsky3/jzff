@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The {{MGR_NAME}} Chronicle · jzFF Dispatch</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --ink:           #0e1620;
+    --ink-soft:      #16202c;
+    --ink-card:      #1a2532;
+    --ink-line:      #2a3645;
+    --ink-line-soft: #1e2937;
+    --cream:         #f4ebd8;
+    --cream-soft:    #c9c0ad;
+    --cream-mute:    #837b6a;
+    --gold:          #e8c889;
+    --gold-bright:   #f4d9a4;
+    --gold-deep:     #a88a4a;
+    --rust:          #a04830;
+    --steel:         #6b8aa8;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans:  'Inter', system-ui, sans-serif;
+    --mono:  'JetBrains Mono', 'SF Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body {
+    font-family: var(--sans); background: var(--ink); color: var(--cream);
+    min-height: 100vh; line-height: 1.5; overflow-x: hidden;
+}
+
+/* Atmospheric backdrop — grain + radial glow (matches leagues) */
+.site-glow {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+        radial-gradient(circle at 15% 20%, rgba(232, 200, 137, .07) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(160, 72, 48, .04) 0%, transparent 50%);
+}
+.site-grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.04 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+}
+
+/* Animated scrolling ticker */
+.ticker {
+    position: relative; z-index: 10;
+    background: var(--gold); color: var(--ink);
+    border-bottom: 3px solid var(--ink);
+    height: 38px; display: flex; align-items: center; overflow: hidden;
+}
+.ticker-track {
+    display: flex; gap: 3rem; white-space: nowrap; padding-left: 3rem;
+    animation: ticker-scroll 60s linear infinite;
+}
+.ticker-group { display: flex; gap: 3rem; }
+.ticker-item {
+    font-family: var(--mono); font-size: .72rem; font-weight: 700;
+    letter-spacing: .2em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: .6rem;
+}
+.ticker-star { color: var(--rust); }
+@keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+/* Nav — mirrors leagues structure */
+.nav {
+    position: sticky; top: 0; z-index: 30;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem;
+    padding: 1.2rem 2rem;
+    background: rgba(14, 22, 32, .92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ink-line);
+}
+.nav-back, .nav-link {
+    color: var(--gold); text-decoration: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
+    transition: color .2s;
+}
+.nav-back { justify-self: start; }
+.nav-link { justify-self: end; }
+.nav-back:hover, .nav-link:hover { color: var(--gold-bright); }
+.nav-center { text-align: center; justify-self: center; }
+.nav-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--cream-mute); margin-bottom: .3rem;
+}
+.nav-title {
+    font-family: var(--serif); font-size: 1.4rem; letter-spacing: .02em; color: var(--cream);
+}
+.nav-title em { font-style: italic; color: var(--gold); }
+
+/* Library dropdown — Issue jumper + linked leagues */
+.nav-drop { position: relative; }
+.nav-drop-btn {
+    color: var(--gold); background: none; border: none; cursor: pointer; padding: 2px;
+    transition: color .2s; display: flex; align-items: center; line-height: 1;
+}
+.nav-drop-btn:hover { color: var(--gold-bright); }
+.nav-icon { display: block; }
+.nav-drop-menu {
+    display: none;
+    position: fixed; top: 4.5rem; right: 1.5rem; left: auto;
+    min-width: 240px; max-width: calc(100vw - 3rem);
+    background: rgba(14,22,32,.97);
+    border: 1px solid var(--ink-line);
+    backdrop-filter: blur(12px);
+    z-index: 50; overflow: hidden;
+}
+.nav-drop.open .nav-drop-menu { display: block; }
+.nav-drop-label {
+    display: block; padding: .45rem 1.1rem .3rem;
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .25em; text-transform: uppercase;
+    color: var(--cream-mute); border-bottom: 1px solid var(--ink-line-soft);
+}
+.nav-drop-menu a {
+    display: block; padding: .7rem 1.1rem;
+    color: var(--cream-soft); text-decoration: none;
+    font-family: var(--mono); font-size: .68rem;
+    letter-spacing: .18em; text-transform: uppercase;
+    border-bottom: 1px solid var(--ink-line-soft);
+    transition: background .15s, color .15s;
+}
+.nav-drop-menu a:last-child { border-bottom: none; }
+.nav-drop-menu a:hover { background: rgba(232,200,137,.07); color: var(--gold); }
+.nav-drop-menu a.is-active { color: var(--gold); background: rgba(232,200,137,.06); }
+
+/* Hero / masthead — Front Page proper */
+.hero {
+    position: relative; z-index: 10;
+    text-align: center;
+    padding: 5rem 1.5rem 1.5rem;
+    max-width: 1100px; margin: 0 auto;
+}
+.hero-sup {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .4em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1.5rem;
+}
+.hero-sup .star { color: var(--rust); }
+.hero-title {
+    font-family: var(--serif);
+    font-size: clamp(2.8rem, 8vw, 6.5rem);
+    line-height: .92; letter-spacing: -.025em;
+    color: var(--cream); margin-bottom: 1.5rem;
+}
+.hero-title em { font-style: italic; color: var(--gold); }
+.hero-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    line-height: 1.55; color: var(--cream-soft);
+    max-width: 640px; margin: 0 auto;
+}
+.hero-meta {
+    margin-top: 1.5rem;
+    font-family: var(--mono);
+    font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.hero-rule {
+    max-width: 320px; margin: 2rem auto 0;
+    border-top: 1px solid var(--ink-line); position: relative;
+}
+.hero-rule::before {
+    content: '✦';
+    position: absolute; top: -.55rem; left: 50%; transform: translateX(-50%);
+    background: var(--ink); padding: 0 .6rem;
+    color: var(--gold); font-size: .7rem;
+}
+
+/* Highlights row — pull-quote style */
+.highlights {
+    position: relative; z-index: 10;
+    max-width: 1100px; margin: 2.5rem auto 0;
+    padding: 0 1.5rem;
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 1.25rem 2.5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-soft);
+}
+.highlights .dot { color: var(--gold); }
+.highlights span.h { color: var(--gold); }
+
+/* Sections */
+.section {
+    position: relative; z-index: 10;
+    max-width: 1200px; margin: 4rem auto 0;
+    padding: 0 2rem;
+}
+.section-header {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline;
+    gap: .75rem; padding-bottom: 1rem; margin-bottom: 2rem;
+    border-bottom: 3px double var(--ink-line);
+}
+.section-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .7rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold);
+}
+.section-title {
+    font-family: var(--serif); font-style: italic;
+    font-size: clamp(1.5rem, 3vw, 2.1rem); letter-spacing: -.01em;
+    color: var(--cream);
+}
+.section-meta {
+    font-family: var(--mono);
+    font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+
+/* Numbers grid (by-the-numbers infographic) */
+.numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0;
+    border: 1px solid var(--ink-line);
+    background:
+        linear-gradient(135deg, rgba(232, 200, 137, .02), transparent 60%),
+        var(--ink-soft);
+}
+.numbers-cell {
+    padding: 2rem 1.4rem 1.6rem;
+    border-right: 1px dotted var(--ink-line);
+    border-bottom: 1px dotted var(--ink-line);
+    text-align: center;
+}
+.numbers-cell:last-child { border-right: none; }
+.numbers-cell-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: .6rem;
+}
+.numbers-cell-value {
+    font-family: var(--serif);
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
+    line-height: 1; letter-spacing: -.03em;
+    color: var(--cream); margin-bottom: .5rem;
+    font-variant-numeric: tabular-nums;
+}
+.numbers-cell-sub {
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.numbers-cell-sub em { font-style: normal; color: var(--gold); font-weight: 700; }
+@media (max-width: 720px) {
+    .numbers-grid { grid-template-columns: 1fr 1fr; }
+    .numbers-cell:nth-child(2n) { border-right: none; }
+    .numbers-cell:nth-last-child(-n+2) { border-bottom: none; }
+}
+
+/* Trophy collage */
+.trophy-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+.trophy {
+    position: relative;
+    padding: 1.4rem 1.2rem 1.2rem;
+    background: rgba(26,37,50,.5);
+    border: 1px solid var(--ink-line);
+    border-left: 3px solid var(--gold);
+    text-align: left;
+}
+.trophy.runner { border-left-color: var(--rust); }
+.trophy.bronze { border-left-color: var(--steel); }
+.trophy-kind {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: .4rem;
+}
+.trophy.runner .trophy-kind { color: var(--rust); }
+.trophy.bronze .trophy-kind { color: var(--steel); }
+.trophy-year {
+    font-family: var(--serif); font-style: italic;
+    font-size: 2rem; line-height: 1; color: var(--cream);
+    margin-bottom: .4rem;
+}
+.trophy-league {
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.trophy-empty {
+    padding: 2rem 1.5rem;
+    border: 1px dashed var(--ink-line);
+    font-family: var(--serif); font-style: italic;
+    text-align: center; color: var(--cream-mute);
+}
+
+/* Timeline ribbon — every season across all merged leagues */
+.timeline {
+    position: relative;
+    border: 1px solid var(--ink-line);
+    background:
+        linear-gradient(135deg, rgba(232, 200, 137, .02), transparent 60%),
+        var(--ink-soft);
+    padding: 2rem 1.5rem;
+    overflow-x: auto;
+}
+.timeline-track {
+    display: flex; gap: .65rem; min-width: max-content;
+    padding-bottom: .5rem;
+}
+.timeline-year {
+    flex: 0 0 auto;
+    min-width: 78px;
+    padding: .75rem .8rem;
+    border: 1px solid var(--ink-line);
+    background: rgba(14,22,32,.5);
+    text-align: center;
+    text-decoration: none; color: inherit;
+    transition: border-color .15s, background .15s;
+}
+.timeline-year:hover { border-color: var(--gold-deep); background: rgba(232,200,137,.04); }
+.timeline-year.is-champ { border-color: var(--gold); background: rgba(232,200,137,.09); }
+.timeline-year.is-runner { border-color: var(--rust); }
+.timeline-year.is-bronze { border-color: var(--steel); }
+.timeline-year.is-playoffs { border-style: solid; }
+.timeline-year:not(.is-playoffs):not(.is-champ):not(.is-runner):not(.is-bronze) {
+    border-style: dashed; opacity: .75;
+}
+.timeline-yr {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; color: var(--cream); line-height: 1; margin-bottom: .35rem;
+}
+.timeline-year.is-champ .timeline-yr { color: var(--gold); }
+.timeline-rank {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--gold);
+}
+.timeline-lg {
+    font-family: var(--mono); font-size: .5rem;
+    letter-spacing: .15em; text-transform: uppercase;
+    color: var(--cream-mute); margin-top: .25rem;
+}
+
+/* Issue rail — chapbar to other issues */
+.issue-rail {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    border: 1px solid var(--ink-line);
+    background: var(--ink-soft);
+}
+@media (max-width: 1100px) { .issue-rail { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 620px)  { .issue-rail { grid-template-columns: repeat(2, 1fr); } }
+.issue-tile {
+    display: block; text-decoration: none; color: inherit;
+    padding: 1.4rem 1.1rem 1.3rem;
+    border-right: 1px dotted var(--ink-line);
+    border-bottom: 1px dotted var(--ink-line);
+    transition: background .15s, color .15s;
+}
+.issue-tile:hover { background: rgba(232,200,137,.04); }
+.issue-tile.is-active { background: var(--ink-card); }
+.issue-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; color: var(--gold);
+    margin-bottom: .5rem;
+}
+.issue-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; color: var(--cream); margin-bottom: .25rem;
+}
+.issue-tile.is-active .issue-name { color: var(--gold); }
+.issue-kicker {
+    font-family: var(--mono); font-size: .52rem;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+
+/* Editor's note */
+.editor-note {
+    max-width: 780px; margin: 0 auto;
+    padding: 2.25rem 2.5rem;
+    background:
+        linear-gradient(180deg, rgba(232, 200, 137, .03), rgba(232, 200, 137, 0)),
+        var(--ink-card);
+    border: 1px solid var(--ink-line);
+    position: relative;
+}
+.editor-note::before, .editor-note::after {
+    content: ''; position: absolute;
+    left: 1.5rem; right: 1.5rem; height: 1px;
+    background: var(--gold-deep); opacity: .5;
+}
+.editor-note::before { top: .55rem; }
+.editor-note::after  { bottom: .55rem; }
+.editor-note-mast {
+    text-align: center;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .32em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1.25rem;
+}
+.editor-note-mast .star { color: var(--rust); }
+.editor-note-byline {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: 1.5rem; padding-bottom: 1.1rem;
+    border-bottom: 1px dotted var(--ink-line);
+}
+.editor-note-body {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.12rem; line-height: 1.65;
+    color: var(--cream-soft); text-align: left;
+}
+.editor-note-body strong {
+    color: var(--gold); font-style: normal;
+    font-family: var(--sans); font-weight: 700; letter-spacing: .01em;
+}
+.editor-note-body .dropcap {
+    float: left;
+    font-family: var(--serif); font-style: italic;
+    font-size: 4rem; line-height: .85;
+    color: var(--gold);
+    padding: .15rem .55rem 0 0; margin-right: .2rem;
+}
+
+/* Footer */
+.foot {
+    position: relative; z-index: 10;
+    max-width: 1200px; margin: 5rem auto 3rem;
+    padding: 2rem; text-align: center;
+    border-top: 3px double var(--ink-line);
+    font-family: var(--mono);
+    font-size: .62rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.foot em { color: var(--gold); font-style: italic; }
+
+/* Loading + empty states */
+.loading {
+    padding: 3rem 1.5rem; text-align: center;
+    font-family: var(--serif); font-style: italic;
+    color: var(--cream-mute);
+}
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<div class="ticker">
+    <div class="ticker-track" id="ticker-track" aria-hidden="true">
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> THE {{MGR_NAME_UPPER}} CHRONICLE</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> THE {{MGR_NAME_UPPER}} CHRONICLE</span>
+        </div>
+    </div>
+</div>
+
+<nav class="nav">
+    <div class="nav-drop" id="nav-drop">
+        <button class="nav-drop-btn" type="button" aria-haspopup="menu" aria-label="Open library">
+            <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="nav-drop-menu" role="menu">
+            <span class="nav-drop-label">Issues</span>
+            <a href="/manager/{{MGR_SLUG}}" class="is-active">I · The Grand Chronicle</a>
+            <a href="/manager/{{MGR_SLUG}}/legacy">II · Rise &amp; Legacy</a>
+            <a href="/manager/{{MGR_SLUG}}/dynasty">III · The Dynasty Files</a>
+            <a href="/manager/{{MGR_SLUG}}/seasons">IV · Seasons of Glory &amp; Heartbreak</a>
+            <a href="/manager/{{MGR_SLUG}}/vault">V · The Record Vault</a>
+            <a href="/manager/{{MGR_SLUG}}/war-room">VI · The War Room</a>
+            <span class="nav-drop-label">Manager</span>
+            <a href="/manager/{{MGR_SLUG}}/settings">Settings</a>
+            <a href="/dashboard">← Dashboard</a>
+        </div>
+    </div>
+    <div class="nav-center">
+        <div class="nav-kicker">The jzFF Dispatch · Vol. I</div>
+        <div class="nav-title">The <em>{{MGR_NAME}}</em> Chronicle</div>
+    </div>
+    <a href="/dashboard" class="nav-link">Dashboard →</a>
+</nav>
+
+<header class="hero">
+    <div class="hero-sup"><span class="star">★</span> The Career of {{MGR_NAME_UPPER}} <span class="star">★</span></div>
+    <h1 class="hero-title">{{MGR_NAME_HEAD}}<em>{{MGR_NAME_TAIL}}.</em></h1>
+    <p class="hero-sub" id="hero-sub">{{MGR_SUBTITLE}}</p>
+    <div class="hero-meta" id="hero-meta">— Present</div>
+    <div class="hero-rule"></div>
+</header>
+
+<div class="highlights" id="highlights" hidden></div>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ Issue I · The Front Page</span>
+        <h2 class="section-title">By the Numbers</h2>
+        <span class="section-meta">Career Totals</span>
+    </div>
+    <div class="numbers-grid" id="numbers-grid">
+        <div class="loading">Loading career totals…</div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ Issue I · Trophy Case</span>
+        <h2 class="section-title">Hardware</h2>
+        <span class="section-meta" id="trophy-meta"></span>
+    </div>
+    <div class="trophy-grid" id="trophy-grid">
+        <div class="loading">Loading trophy case…</div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ Issue I · Timeline</span>
+        <h2 class="section-title">Every Season, Side by Side</h2>
+        <span class="section-meta" id="timeline-meta"></span>
+    </div>
+    <div class="timeline">
+        <div class="timeline-track" id="timeline-track">
+            <div class="loading">Loading timeline…</div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ Continue Reading</span>
+        <h2 class="section-title">The Library</h2>
+        <span class="section-meta">Six Issues</span>
+    </div>
+    <div class="issue-rail">
+        <a href="/manager/{{MGR_SLUG}}" class="issue-tile is-active">
+            <div class="issue-num">I</div>
+            <div class="issue-name">The Grand Chronicle</div>
+            <div class="issue-kicker">Career masthead</div>
+        </a>
+        <a href="/manager/{{MGR_SLUG}}/legacy" class="issue-tile">
+            <div class="issue-num">II</div>
+            <div class="issue-name">Rise &amp; Legacy</div>
+            <div class="issue-kicker">The story of you</div>
+        </a>
+        <a href="/manager/{{MGR_SLUG}}/dynasty" class="issue-tile">
+            <div class="issue-num">III</div>
+            <div class="issue-name">The Dynasty Files</div>
+            <div class="issue-kicker">Portfolio &amp; trades</div>
+        </a>
+        <a href="/manager/{{MGR_SLUG}}/seasons" class="issue-tile">
+            <div class="issue-num">IV</div>
+            <div class="issue-name">Seasons of Glory &amp; Heartbreak</div>
+            <div class="issue-kicker">Year-by-year</div>
+        </a>
+        <a href="/manager/{{MGR_SLUG}}/vault" class="issue-tile">
+            <div class="issue-num">V</div>
+            <div class="issue-name">The Record Vault</div>
+            <div class="issue-kicker">Personal records</div>
+        </a>
+        <a href="/manager/{{MGR_SLUG}}/war-room" class="issue-tile">
+            <div class="issue-num">VI</div>
+            <div class="issue-name">The War Room</div>
+            <div class="issue-kicker">Live tools</div>
+        </a>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ Editor's Note</span>
+        <h2 class="section-title">From the Desk</h2>
+        <span class="section-meta">Vol. I</span>
+    </div>
+    <div class="editor-note">
+        <div class="editor-note-mast"><span class="star">★</span> The jzFF Dispatch <span class="star">★</span></div>
+        <div class="editor-note-byline">Front Page · {{MGR_NAME_UPPER}}</div>
+        <div class="editor-note-body" id="editor-body">
+            <span class="dropcap">T</span>his is the Grand Chronicle — the bound front matter of a career spanning {{MGR_NAME_UPPER}}'s every league, every season, every ring. Pages II through VI weave the rest: the rise from rookie to contender, the dynasty portfolios, the seasons of glory and the seasons of heartbreak, the records vault, and the live war room. The story doesn't end on this page — it just opens here.
+        </div>
+    </div>
+</section>
+
+<footer class="foot">
+    <div>End of Issue I · The Grand Chronicle</div>
+    <div style="margin-top:.5rem;">The <em>{{MGR_NAME}}</em> Chronicle · The <em>jzFF</em> Dispatch</div>
+</footer>
+
+<script>
+(function () {
+    // Library dropdown — click to open, click outside to close.
+    var drop = document.getElementById('nav-drop')
+    if (drop) {
+        var btn = drop.querySelector('.nav-drop-btn')
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation()
+            drop.classList.toggle('open')
+        })
+        document.addEventListener('click', function (e) {
+            if (!drop.contains(e.target)) drop.classList.remove('open')
+        })
+    }
+
+    function fmtInt(n) { return (n || 0).toLocaleString('en-US') }
+    function fmtPct(n) { return ((n || 0) * 100).toFixed(1) + '%' }
+    function fmtPts(n) {
+        if (!n && n !== 0) return '0'
+        return Math.round(n).toLocaleString('en-US')
+    }
+
+    fetch('data/career.json', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null })
+        .catch(function () { return null })
+        .then(function (c) {
+            if (!c) return
+            // Hero meta
+            var meta = document.getElementById('hero-meta')
+            if (meta && c.yearsActive) {
+                var f = c.yearsActive.first
+                var l = c.yearsActive.last
+                if (f != null && l != null) meta.textContent = (f === l ? String(f) : f + ' — ' + l)
+            }
+            if (!c.subtitle) {
+                var sub = document.getElementById('hero-sub')
+                if (sub) sub.textContent =
+                    (c.totals.leagues || 0) + (c.totals.leagues === 1 ? ' league' : ' leagues') +
+                    ' · ' + (c.totals.seasonsPlayed || 0) + ' seasons' +
+                    ' · ' + (c.totals.championships || 0) + (c.totals.championships === 1 ? ' ring' : ' rings')
+            }
+
+            // Highlights
+            var hl = document.getElementById('highlights')
+            if (hl && c.highlights && c.highlights.length > 0) {
+                hl.hidden = false
+                var parts = c.highlights.map(function (h, i) {
+                    return '<span class="h">' + h + '</span>' +
+                        (i < c.highlights.length - 1 ? '<span class="dot">·</span>' : '')
+                })
+                hl.innerHTML = parts.join(' ')
+            }
+
+            // By the numbers
+            var t = c.totals || {}
+            var cells = [
+                { label: 'Leagues', value: fmtInt(t.leagues), sub: 'merged' },
+                { label: 'Seasons', value: fmtInt(t.seasonsPlayed), sub: 'played' },
+                { label: 'Record', value: (fmtInt(t.wins) + '-' + fmtInt(t.losses) + (t.ties ? '-' + fmtInt(t.ties) : '')), sub: 'regular season' },
+                { label: 'Win %', value: fmtPct(t.winPct), sub: 'lifetime' },
+                { label: 'Points For', value: fmtPts(t.pointsFor), sub: 'all-time' },
+                { label: 'Playoff Apps', value: fmtInt(t.playoffAppearances), sub: '<em>' + fmtInt(t.playoffWins) + '-' + fmtInt(t.playoffLosses) + '</em> in playoffs' },
+                { label: 'Championships', value: fmtInt(t.championships), sub: t.championships === 1 ? 'ring' : 'rings' },
+                { label: 'Trophy Cases', value: fmtInt((t.championships || 0) + (t.runnerUps || 0) + (t.thirdPlaces || 0)), sub: '<em>' + fmtInt(t.runnerUps) + '</em> runner-up · <em>' + fmtInt(t.thirdPlaces) + '</em> bronze' },
+            ]
+            var grid = document.getElementById('numbers-grid')
+            if (grid) {
+                grid.innerHTML = cells.map(function (c) {
+                    return '<div class="numbers-cell">' +
+                        '<div class="numbers-cell-label">' + c.label + '</div>' +
+                        '<div class="numbers-cell-value">' + c.value + '</div>' +
+                        '<div class="numbers-cell-sub">' + c.sub + '</div>' +
+                        '</div>'
+                }).join('')
+            }
+
+            // Trophy case
+            var tg = document.getElementById('trophy-grid')
+            var trophies = c.trophyCase || []
+            var tm = document.getElementById('trophy-meta')
+            if (tm) tm.textContent = trophies.length + (trophies.length === 1 ? ' piece' : ' pieces')
+            if (tg) {
+                if (trophies.length === 0) {
+                    tg.innerHTML = '<div class="trophy-empty">No hardware on the mantle — yet.</div>'
+                } else {
+                    tg.innerHTML = trophies.map(function (tr) {
+                        var cls = tr.kind === 'champion' ? '' : tr.kind === 'runner-up' ? ' runner' : ' bronze'
+                        var label = tr.kind === 'champion' ? '★ Champion' : tr.kind === 'runner-up' ? 'Runner-Up' : '3rd Place'
+                        return '<div class="trophy' + cls + '">' +
+                            '<div class="trophy-kind">' + label + '</div>' +
+                            '<div class="trophy-year">' + tr.year + '</div>' +
+                            '<div class="trophy-league">' + escapeHtml(tr.leagueName) + '</div>' +
+                            '</div>'
+                    }).join('')
+                }
+            }
+
+            // Build extra ticker copy from totals (it'll keep scrolling the marquee)
+            var tt = document.getElementById('ticker-track')
+            if (tt && (t.championships || t.seasonsPlayed)) {
+                var bits = []
+                if (t.championships > 0) bits.push('<span class="ticker-star">★</span> ' + t.championships + (t.championships === 1 ? ' RING' : ' RINGS'))
+                if (t.seasonsPlayed > 0) bits.push(t.seasonsPlayed + ' SEASONS')
+                if (t.leagues > 0) bits.push(t.leagues + (t.leagues === 1 ? ' LEAGUE' : ' LEAGUES'))
+                if (t.wins + t.losses > 0) bits.push(t.wins + '-' + t.losses + (t.ties ? '-' + t.ties : '') + ' · ' + fmtPct(t.winPct))
+                if (t.pointsFor) bits.push(fmtPts(t.pointsFor) + ' PF')
+                var extra = bits.map(function (b) { return '<span class="ticker-item">' + b + '</span>' }).join('')
+                if (extra) {
+                    // Append to BOTH groups so the loop reads identically on the wrap.
+                    var groups = tt.querySelectorAll('.ticker-group')
+                    groups.forEach(function (g) { g.insertAdjacentHTML('beforeend', extra) })
+                }
+            }
+        })
+
+    fetch('data/timeline.json', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null })
+        .catch(function () { return null })
+        .then(function (rows) {
+            var track = document.getElementById('timeline-track')
+            if (!track) return
+            if (!rows || rows.length === 0) {
+                track.innerHTML = '<div class="loading">No seasons synced yet.</div>'
+                var tm = document.getElementById('timeline-meta')
+                if (tm) tm.textContent = '0 entries'
+                return
+            }
+            var tm = document.getElementById('timeline-meta')
+            if (tm) tm.textContent = rows.length + ' entries'
+            track.innerHTML = rows.map(function (r) {
+                var cls = 'timeline-year'
+                if (r.champion) cls += ' is-champ'
+                else if (r.runnerUp) cls += ' is-runner'
+                else if (r.thirdPlace) cls += ' is-bronze'
+                if (r.madePlayoffs) cls += ' is-playoffs'
+                var rank = r.champion ? '🏆 1st'
+                    : r.runnerUp ? '🥈 2nd'
+                    : r.thirdPlace ? '🥉 3rd'
+                    : r.finalRank ? r.finalRank + suf(r.finalRank)
+                    : '—'
+                return '<a href="/manager/{{MGR_SLUG}}/seasons/' + r.year + '" class="' + cls + '">' +
+                    '<div class="timeline-yr">' + r.year + '</div>' +
+                    '<div class="timeline-rank">' + rank + '</div>' +
+                    '<div class="timeline-lg">' + escapeHtml(r.leagueName) + '</div>' +
+                    '</a>'
+            }).join('')
+        })
+
+    function suf(n) {
+        var s = ['th', 'st', 'nd', 'rd'], v = n % 100
+        return s[(v - 20) % 10] || s[v] || s[0]
+    }
+    function escapeHtml(s) {
+        return String(s || '').replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        })
+    }
+})()
+</script>
+</body>
+</html>

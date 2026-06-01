@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rise &amp; Legacy · The {{MGR_NAME}} Chronicle</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --ink:           #0e1620;
+    --ink-soft:      #16202c;
+    --ink-card:      #1a2532;
+    --ink-line:      #2a3645;
+    --ink-line-soft: #1e2937;
+    --cream:         #f4ebd8;
+    --cream-soft:    #c9c0ad;
+    --cream-mute:    #837b6a;
+    --gold:          #e8c889;
+    --gold-bright:   #f4d9a4;
+    --gold-deep:     #a88a4a;
+    --rust:          #a04830;
+    --steel:         #6b8aa8;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans:  'Inter', system-ui, sans-serif;
+    --mono:  'JetBrains Mono', 'SF Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--ink); color: var(--cream); min-height: 100vh; line-height: 1.55; overflow-x: hidden; }
+
+.site-glow { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+        radial-gradient(circle at 12% 18%, rgba(232, 200, 137, .08) 0%, transparent 45%),
+        radial-gradient(circle at 88% 78%, rgba(160, 72, 48, .05) 0%, transparent 50%);
+}
+.site-grain { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.04 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+}
+
+/* Ticker */
+.ticker { position: relative; z-index: 10; background: var(--gold); color: var(--ink); border-bottom: 3px solid var(--ink); height: 38px; display: flex; align-items: center; overflow: hidden; }
+.ticker-track { display: flex; gap: 3rem; white-space: nowrap; padding-left: 3rem; animation: ticker-scroll 60s linear infinite; }
+.ticker-group { display: flex; gap: 3rem; }
+.ticker-item { font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; display: inline-flex; align-items: center; gap: .6rem; }
+.ticker-star { color: var(--rust); }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* Nav (same shape as Issue I) */
+.nav { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; padding: 1.2rem 2rem; background: rgba(14, 22, 32, .92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--ink-line); }
+.nav-back, .nav-link { color: var(--gold); text-decoration: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; transition: color .2s; }
+.nav-back { justify-self: start; } .nav-link { justify-self: end; }
+.nav-back:hover, .nav-link:hover { color: var(--gold-bright); }
+.nav-center { text-align: center; justify-self: center; }
+.nav-kicker { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--cream-mute); margin-bottom: .3rem; }
+.nav-title { font-family: var(--serif); font-size: 1.4rem; letter-spacing: .02em; color: var(--cream); }
+.nav-title em { font-style: italic; color: var(--gold); }
+.nav-drop { position: relative; }
+.nav-drop-btn { color: var(--gold); background: none; border: none; cursor: pointer; padding: 2px; transition: color .2s; display: flex; align-items: center; line-height: 1; }
+.nav-drop-btn:hover { color: var(--gold-bright); }
+.nav-icon { display: block; }
+.nav-drop-menu { display: none; position: fixed; top: 4.5rem; right: 1.5rem; left: auto; min-width: 240px; max-width: calc(100vw - 3rem); background: rgba(14,22,32,.97); border: 1px solid var(--ink-line); backdrop-filter: blur(12px); z-index: 50; overflow: hidden; }
+.nav-drop.open .nav-drop-menu { display: block; }
+.nav-drop-label { display: block; padding: .45rem 1.1rem .3rem; font-family: var(--mono); font-size: .55rem; letter-spacing: .25em; text-transform: uppercase; color: var(--cream-mute); border-bottom: 1px solid var(--ink-line-soft); }
+.nav-drop-menu a { display: block; padding: .7rem 1.1rem; color: var(--cream-soft); text-decoration: none; font-family: var(--mono); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; border-bottom: 1px solid var(--ink-line-soft); transition: background .15s, color .15s; }
+.nav-drop-menu a:last-child { border-bottom: none; }
+.nav-drop-menu a:hover { background: rgba(232,200,137,.07); color: var(--gold); }
+.nav-drop-menu a.is-active { color: var(--gold); background: rgba(232,200,137,.06); }
+
+/* Edition masthead */
+.edition { position: relative; z-index: 10; max-width: 1100px; margin: 0 auto; padding: 4.5rem 1.5rem 1rem; text-align: center; }
+.edition-sup { font-family: var(--mono); font-weight: 700; font-size: .65rem; letter-spacing: .4em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.25rem; }
+.edition-sup .star { color: var(--rust); }
+.edition-title { font-family: var(--serif); font-size: clamp(2.6rem, 7vw, 5.5rem); line-height: .95; letter-spacing: -.025em; color: var(--cream); }
+.edition-title em { font-style: italic; color: var(--gold); }
+.edition-deck { font-family: var(--serif); font-style: italic; font-size: clamp(1.05rem, 1.6vw, 1.3rem); color: var(--cream-soft); max-width: 640px; margin: 1.25rem auto 0; }
+.edition-rule { max-width: 320px; margin: 2rem auto 0; border-top: 1px solid var(--ink-line); position: relative; }
+.edition-rule::before { content: '✦'; position: absolute; top: -.55rem; left: 50%; transform: translateX(-50%); background: var(--ink); padding: 0 .6rem; color: var(--gold); font-size: .7rem; }
+
+/* Year band — every year, colored by era */
+.year-band { position: relative; z-index: 10; max-width: 1200px; margin: 2rem auto 0; padding: 0 2rem; }
+.year-band-track { display: flex; gap: .35rem; flex-wrap: wrap; }
+.yb-year { flex: 0 0 auto; min-width: 60px; padding: .55rem .55rem; text-align: center; border: 1px solid var(--ink-line); background: rgba(14,22,32,.55); text-decoration: none; transition: border-color .15s, background .15s; }
+.yb-year:hover { border-color: var(--gold-deep); }
+.yb-year .yr { font-family: var(--serif); font-style: italic; font-size: .95rem; color: var(--cream); line-height: 1; }
+.yb-year .era { font-family: var(--mono); font-size: .5rem; letter-spacing: .18em; text-transform: uppercase; color: var(--cream-mute); margin-top: .35rem; }
+.yb-year.era-origins { border-color: var(--steel); }
+.yb-year.era-origins .era { color: var(--steel); }
+.yb-year.era-reign, .yb-year.era-climb { border-color: var(--gold); background: rgba(232,200,137,.07); }
+.yb-year.era-reign .yr, .yb-year.era-climb .yr { color: var(--gold); }
+.yb-year.era-reign .era, .yb-year.era-climb .era { color: var(--gold); }
+.yb-year.era-present { border-color: var(--rust); }
+.yb-year.era-present .era { color: var(--rust); }
+.yb-year.is-champ::after { content: '★'; display: block; font-size: .7rem; color: var(--gold); margin-top: .15rem; line-height: 1; }
+
+/* Section base */
+.section { position: relative; z-index: 10; max-width: 1200px; margin: 4rem auto 0; padding: 0 2rem; }
+.section-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .75rem; padding-bottom: 1rem; margin-bottom: 2rem; border-bottom: 3px double var(--ink-line); }
+.section-num { font-family: var(--mono); font-weight: 700; font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); }
+.section-title { font-family: var(--serif); font-style: italic; font-size: clamp(1.5rem, 3vw, 2.1rem); letter-spacing: -.01em; color: var(--cream); }
+.section-meta { font-family: var(--mono); font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); }
+
+/* Era article — newspaper feature layout */
+.era { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 2.5rem; align-items: start; padding: 2.25rem 0; border-bottom: 1px dotted var(--ink-line); }
+.era:first-child { padding-top: 0; }
+.era:last-child { border-bottom: none; }
+@media (max-width: 900px) { .era { grid-template-columns: 1fr; gap: 1.5rem; } }
+.era-kicker { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: .5rem; }
+.era-kicker.steel { color: var(--steel); } .era-kicker.rust { color: var(--rust); }
+.era-head { font-family: var(--serif); font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.1; letter-spacing: -.015em; color: var(--cream); margin-bottom: .55rem; }
+.era-head em { color: var(--gold); font-style: italic; }
+.era-deck { font-family: var(--serif); font-style: italic; font-size: 1.1rem; line-height: 1.5; color: var(--cream-soft); margin-bottom: 1.1rem; }
+.era-body { font-family: var(--serif); font-size: 1.02rem; line-height: 1.7; color: var(--cream-soft); }
+.era-body p + p { margin-top: .85rem; }
+.era-body strong { color: var(--cream); font-family: var(--sans); font-weight: 600; }
+.era-body em { color: var(--gold); font-style: italic; }
+.era-body .dropcap { float: left; font-family: var(--serif); font-style: italic; font-size: 3.4rem; line-height: .8; color: var(--gold); padding: .2rem .55rem 0 0; margin-right: .15rem; }
+
+/* Era sidebar */
+.era-side { display: flex; flex-direction: column; gap: 1.5rem; }
+.box { background: linear-gradient(180deg, rgba(232,200,137,.03), transparent), var(--ink-card); border: 1px solid var(--ink-line); padding: 1.25rem 1.25rem 1.05rem; position: relative; }
+.box::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--gold); }
+.box.rust::before { background: var(--rust); }
+.box.steel::before { background: var(--steel); }
+.box-mast { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .28em; text-transform: uppercase; color: var(--gold); margin-bottom: .85rem; padding-bottom: .65rem; border-bottom: 1px dotted var(--ink-line); }
+.box.rust .box-mast { color: var(--rust); } .box.steel .box-mast { color: var(--steel); }
+.box-line { display: grid; grid-template-columns: auto 1fr auto; gap: .65rem; align-items: baseline; padding: .5rem 0; border-bottom: 1px dotted var(--ink-line-soft); font-family: var(--mono); font-size: .68rem; color: var(--cream); }
+.box-line:last-child { border-bottom: none; }
+.box-line .lbl { color: var(--cream-soft); letter-spacing: .04em; }
+.box-line .yr  { font-family: var(--serif); font-style: italic; color: var(--gold); font-size: .92rem; }
+.box-line .val { color: var(--gold); font-weight: 700; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.box-line .val.cream { color: var(--cream); }
+.box-empty { padding: .75rem 0; font-family: var(--serif); font-style: italic; color: var(--cream-mute); font-size: .92rem; }
+
+/* Title chip used inside era */
+.title-chip { background: rgba(232,200,137,.07); border: 1px solid var(--gold-deep); padding: .9rem 1rem; margin-top: .85rem; }
+.title-chip-mast { font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: .3rem; }
+.title-chip-head { font-family: var(--serif); color: var(--cream); font-size: 1.1rem; line-height: 1.25; }
+.title-chip-head em { color: var(--gold); font-style: italic; }
+.title-chip-meta { font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); margin-top: .35rem; }
+
+/* Rivalry cards */
+.rivalry-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+.rivalry { padding: 1.4rem 1.4rem 1.2rem; background: rgba(26,37,50,.6); border: 1px solid var(--ink-line); border-left: 3px solid var(--rust); }
+.rivalry.won { border-left-color: var(--gold); }
+.rivalry-mast { font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .28em; text-transform: uppercase; color: var(--rust); margin-bottom: .55rem; }
+.rivalry.won .rivalry-mast { color: var(--gold); }
+.rivalry-opp { font-family: var(--serif); font-style: italic; font-size: 1.4rem; color: var(--cream); margin-bottom: .35rem; }
+.rivalry-line { display: flex; gap: 1rem; flex-wrap: wrap; font-family: var(--mono); font-size: .65rem; letter-spacing: .04em; color: var(--cream-soft); margin-bottom: .85rem; }
+.rivalry-line strong { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
+.rivalry-narr { font-family: var(--serif); font-style: italic; font-size: .98rem; line-height: 1.5; color: var(--cream-soft); padding-top: .6rem; border-top: 1px dotted var(--ink-line); }
+.rivalry-leagues { display: flex; gap: .35rem; flex-wrap: wrap; margin-top: .65rem; }
+.rivalry-leagues span { font-family: var(--mono); font-size: .5rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); padding: .15rem .4rem; border: 1px solid var(--ink-line); }
+
+/* Legendary Moments grid */
+.moments-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; }
+.moment { padding: 1.5rem 1.4rem 1.3rem; background: var(--ink-card); border: 1px solid var(--ink-line); position: relative; overflow: hidden; }
+.moment::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gold); }
+.moment.loss::before { background: var(--rust); }
+.moment.streak::before { background: var(--steel); }
+.moment-label { font-family: var(--mono); font-weight: 700; font-size: .56rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: .65rem; }
+.moment.loss .moment-label { color: var(--rust); }
+.moment.streak .moment-label { color: var(--steel); }
+.moment-value { font-family: var(--serif); font-size: clamp(2rem, 3.5vw, 2.8rem); line-height: 1; letter-spacing: -.025em; color: var(--cream); font-variant-numeric: tabular-nums; margin-bottom: .35rem; }
+.moment-value em { color: var(--gold); font-style: italic; }
+.moment-detail { font-family: var(--serif); font-style: italic; font-size: .95rem; color: var(--cream-soft); line-height: 1.4; }
+.moment-meta { font-family: var(--mono); font-size: .55rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); margin-top: .55rem; padding-top: .55rem; border-top: 1px dotted var(--ink-line); }
+.moment-empty { padding: 1.5rem 1.4rem; text-align: center; font-family: var(--serif); font-style: italic; color: var(--cream-mute); border: 1px dashed var(--ink-line); }
+
+/* Continue rail */
+.continue { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 720px) { .continue { grid-template-columns: 1fr; } }
+.continue a { display: block; padding: 1.5rem 1.4rem; background: var(--ink-card); border: 1px solid var(--ink-line); text-decoration: none; color: inherit; transition: background .15s, border-color .15s; }
+.continue a:hover { background: rgba(232,200,137,.04); border-color: var(--gold-deep); }
+.continue-num { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; color: var(--gold); margin-bottom: .55rem; }
+.continue-name { font-family: var(--serif); font-style: italic; font-size: 1.35rem; color: var(--cream); margin-bottom: .25rem; }
+.continue-kicker { font-family: var(--mono); font-size: .55rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); }
+.continue-dir { font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .25em; color: var(--gold-deep); margin-bottom: .4rem; }
+
+/* Foot */
+.foot { position: relative; z-index: 10; max-width: 1200px; margin: 5rem auto 3rem; padding: 2rem; text-align: center; border-top: 3px double var(--ink-line); font-family: var(--mono); font-size: .62rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); }
+.foot em { color: var(--gold); font-style: italic; }
+
+.loading { padding: 3rem 1.5rem; text-align: center; font-family: var(--serif); font-style: italic; color: var(--cream-mute); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<div class="ticker">
+    <div class="ticker-track">
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> ISSUE II · RISE &amp; LEGACY</span>
+            <span class="ticker-item">THE {{MGR_NAME_UPPER}} CHRONICLE</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> ISSUE II · RISE &amp; LEGACY</span>
+            <span class="ticker-item">THE {{MGR_NAME_UPPER}} CHRONICLE</span>
+        </div>
+    </div>
+</div>
+
+<nav class="nav">
+    <div class="nav-drop" id="nav-drop">
+        <button class="nav-drop-btn" type="button" aria-haspopup="menu" aria-label="Open library">
+            <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="nav-drop-menu" role="menu">
+            <span class="nav-drop-label">Issues</span>
+            <a href="/manager/{{MGR_SLUG}}">I · The Grand Chronicle</a>
+            <a href="/manager/{{MGR_SLUG}}/legacy" class="is-active">II · Rise &amp; Legacy</a>
+            <a href="/manager/{{MGR_SLUG}}/dynasty">III · The Dynasty Files</a>
+            <a href="/manager/{{MGR_SLUG}}/seasons">IV · Seasons of Glory &amp; Heartbreak</a>
+            <a href="/manager/{{MGR_SLUG}}/vault">V · The Record Vault</a>
+            <a href="/manager/{{MGR_SLUG}}/war-room">VI · The War Room</a>
+            <span class="nav-drop-label">Manager</span>
+            <a href="/manager/{{MGR_SLUG}}/settings">Settings</a>
+            <a href="/dashboard">← Dashboard</a>
+        </div>
+    </div>
+    <div class="nav-center">
+        <div class="nav-kicker">The jzFF Dispatch · Issue II</div>
+        <div class="nav-title">The <em>{{MGR_NAME}}</em> Chronicle</div>
+    </div>
+    <a href="/manager/{{MGR_SLUG}}" class="nav-link">← Front Page</a>
+</nav>
+
+<header class="edition">
+    <div class="edition-sup"><span class="star">★</span> Issue II · Rise &amp; Legacy <span class="star">★</span></div>
+    <h1 class="edition-title">The Story of <em>{{MGR_NAME}}.</em></h1>
+    <p class="edition-deck" id="legacy-deck">Origins, the climb, the title runs — woven from every season, every draft, every rival.</p>
+    <div class="edition-rule"></div>
+</header>
+
+<section class="year-band">
+    <div class="year-band-track" id="year-band">
+        <div class="loading">Loading timeline…</div>
+    </div>
+</section>
+
+<section class="section" id="era-list">
+    <div class="section-header">
+        <span class="section-num">★ The Eras</span>
+        <h2 class="section-title">Acts of a Career</h2>
+        <span class="section-meta" id="era-meta"></span>
+    </div>
+    <div id="eras"><div class="loading">Loading…</div></div>
+</section>
+
+<section class="section" id="rivalry-section">
+    <div class="section-header">
+        <span class="section-num">★ Society Pages</span>
+        <h2 class="section-title">Rivalries That Defined an Era</h2>
+        <span class="section-meta" id="rivalry-meta"></span>
+    </div>
+    <div class="rivalry-grid" id="rivalries"><div class="loading">Loading rivalries…</div></div>
+</section>
+
+<section class="section" id="moments-section">
+    <div class="section-header">
+        <span class="section-num">★ Legendary Moments</span>
+        <h2 class="section-title">Single Games, Single Streaks</h2>
+        <span class="section-meta">From the desk</span>
+    </div>
+    <div class="moments-grid" id="moments"><div class="loading">Loading moments…</div></div>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ Continue Reading</span>
+        <h2 class="section-title">Up Next</h2>
+        <span class="section-meta">Vol. I</span>
+    </div>
+    <div class="continue">
+        <a href="/manager/{{MGR_SLUG}}">
+            <div class="continue-dir">← Previous</div>
+            <div class="continue-num">Issue I</div>
+            <div class="continue-name">The Grand Chronicle</div>
+            <div class="continue-kicker">Career masthead</div>
+        </a>
+        <a href="/manager/{{MGR_SLUG}}/dynasty">
+            <div class="continue-dir">Next →</div>
+            <div class="continue-num">Issue III</div>
+            <div class="continue-name">The Dynasty Files</div>
+            <div class="continue-kicker">Portfolio &amp; trades</div>
+        </a>
+    </div>
+</section>
+
+<footer class="foot">
+    <div>End of Issue II · Rise &amp; Legacy</div>
+    <div style="margin-top:.5rem;">The <em>{{MGR_NAME}}</em> Chronicle · The <em>jzFF</em> Dispatch</div>
+</footer>
+
+<script>
+(function () {
+    // Dropdown
+    var drop = document.getElementById('nav-drop')
+    if (drop) {
+        drop.querySelector('.nav-drop-btn').addEventListener('click', function (e) {
+            e.stopPropagation(); drop.classList.toggle('open')
+        })
+        document.addEventListener('click', function (e) {
+            if (!drop.contains(e.target)) drop.classList.remove('open')
+        })
+    }
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        })
+    }
+    function suf(n) { var s = ['th','st','nd','rd'], v = n % 100; return s[(v-20)%10] || s[v] || s[0] }
+    function fmtPts(n) { return n == null ? '—' : Math.round(n).toLocaleString('en-US') }
+
+    fetch('data/legacy.json', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null })
+        .catch(function () { return null })
+        .then(function (d) {
+            if (!d) {
+                document.getElementById('eras').innerHTML = '<div class="loading">No data yet.</div>'
+                return
+            }
+            renderYearBand(d.yearBand || [])
+            renderEras(d.eras || [])
+            renderRivalries(d.rivalries || [])
+            renderMoments(d.moments || {})
+
+            // Tweak the deck if we have a champion count
+            var deck = document.getElementById('legacy-deck')
+            var totalRings = (d.eras || []).reduce(function (a, e) { return a + (e.titlesWon || []).length }, 0)
+            if (deck && totalRings > 0) {
+                deck.textContent = totalRings + (totalRings === 1 ? ' ring, ' : ' rings, ') +
+                    (d.eras || []).length + ' acts, the climb between.'
+            }
+        })
+
+    function renderYearBand(rows) {
+        var el = document.getElementById('year-band')
+        if (!el) return
+        if (rows.length === 0) { el.innerHTML = ''; return }
+        el.innerHTML = rows.map(function (r) {
+            var cls = 'yb-year era-' + r.eraId
+            if (r.champion) cls += ' is-champ'
+            return '<div class="' + cls + '">' +
+                '<div class="yr">' + r.year + '</div>' +
+                '<div class="era">' + r.eraId + '</div>' +
+                '</div>'
+        }).join('')
+    }
+
+    function eraKickerClass(id) {
+        return id === 'origins' ? 'steel' : (id === 'present' ? 'rust' : '')
+    }
+
+    function renderEras(eras) {
+        var meta = document.getElementById('era-meta')
+        if (meta) meta.textContent = eras.length + (eras.length === 1 ? ' act' : ' acts')
+        var host = document.getElementById('eras')
+        if (!host) return
+        if (eras.length === 0) {
+            host.innerHTML = '<div class="loading">No seasons synced yet.</div>'
+            return
+        }
+        host.innerHTML = eras.map(function (e) {
+            var bodyHtml = (e.body || []).map(function (p, i) {
+                return i === 0
+                    ? '<p><span class="dropcap">' + escapeHtml((p.replace(/<[^>]+>/g, '')[0] || '·')) + '</span>' + p.slice(1) + '</p>'
+                    : '<p>' + p + '</p>'
+            }).join('')
+
+            var titlesHtml = (e.titlesWon || []).map(function (t) {
+                var detail = t.titleOpponent && t.titleScoreFor != null
+                    ? 'Over <em>' + escapeHtml(t.titleOpponent) + '</em>, ' + t.titleScoreFor.toFixed(1) + '–' + t.titleScoreAgainst.toFixed(1)
+                    : t.playoffRecord + ' in the playoffs'
+                return '<div class="title-chip">' +
+                    '<div class="title-chip-mast">★ Champion · ' + t.year + '</div>' +
+                    '<div class="title-chip-head"><em>' + escapeHtml(t.leagueName) + '</em> · ' + escapeHtml(t.regRecord) + ' regular</div>' +
+                    '<div class="title-chip-meta">' + detail + '</div>' +
+                    '</div>'
+            }).join('')
+
+            var finishLines = (e.finishes || []).slice(0, 8).map(function (f) {
+                var rank = f.champion ? '🏆 1st' : (f.runnerUp ? '🥈 2nd' : (f.thirdPlace ? '🥉 3rd' : (f.rank != null ? f.rank + suf(f.rank) : '—')))
+                return '<div class="box-line">' +
+                    '<span class="yr">' + f.year + '</span>' +
+                    '<span class="lbl">' + escapeHtml(f.leagueName) + '</span>' +
+                    '<span class="val' + (f.champion ? '' : ' cream') + '">' + rank + ' · ' + escapeHtml(f.record) + '</span>' +
+                    '</div>'
+            }).join('') || '<div class="box-empty">No seasons in this stretch.</div>'
+
+            var pickLines = (e.signaturePicks || []).map(function (p) {
+                return '<div class="box-line">' +
+                    '<span class="yr">' + p.year + '</span>' +
+                    '<span class="lbl">R' + p.round + ' · pick ' + p.overall + (p.position ? ' · ' + escapeHtml(p.position) : '') + '</span>' +
+                    '<span class="val cream">' + escapeHtml(p.player) + '</span>' +
+                    '</div>'
+            }).join('') || '<div class="box-empty">No draft data in this stretch.</div>'
+
+            var highBox = e.highWeek
+                ? '<div class="box steel"><div class="box-mast">★ High water mark</div>' +
+                  '<div class="box-line"><span class="yr">' + e.highWeek.year + '</span><span class="lbl">' + escapeHtml(e.highWeek.leagueName) + '</span><span class="val">' + e.highWeek.score.toFixed(1) + ' pts</span></div>' +
+                  '</div>'
+                : ''
+
+            return '<article class="era">' +
+                '<div class="era-main">' +
+                    '<div class="era-kicker ' + eraKickerClass(e.id) + '">' + escapeHtml(e.name) + ' · ' + e.yearRange.first + (e.yearRange.first !== e.yearRange.last ? '–' + e.yearRange.last : '') + '</div>' +
+                    '<h3 class="era-head">' + escapeHtml(e.headline) + '</h3>' +
+                    '<div class="era-deck">' + escapeHtml(e.deck) + '</div>' +
+                    '<div class="era-body">' + bodyHtml + '</div>' +
+                    titlesHtml +
+                '</div>' +
+                '<aside class="era-side">' +
+                    '<div class="box"><div class="box-mast">Year-by-year</div>' + finishLines + '</div>' +
+                    '<div class="box rust"><div class="box-mast">Signature picks</div>' + pickLines + '</div>' +
+                    highBox +
+                '</aside>' +
+                '</article>'
+        }).join('')
+    }
+
+    function renderRivalries(rivs) {
+        var meta = document.getElementById('rivalry-meta')
+        if (meta) meta.textContent = rivs.length + (rivs.length === 1 ? ' name' : ' names')
+        var host = document.getElementById('rivalries')
+        if (!host) return
+        if (rivs.length === 0) {
+            host.innerHTML = '<div class="moment-empty">No cross-league rivalries yet.</div>'
+            return
+        }
+        host.innerHTML = rivs.map(function (r) {
+            var winning = r.wins > r.losses
+            var leagues = (r.leagues || []).map(function (l) { return '<span>' + escapeHtml(l) + '</span>' }).join('')
+            return '<div class="rivalry' + (winning ? ' won' : '') + '">' +
+                '<div class="rivalry-mast">' + (winning ? 'Mark — Owned' : 'Mark — Owed') + '</div>' +
+                '<div class="rivalry-opp">' + escapeHtml(r.opponent) + '</div>' +
+                '<div class="rivalry-line">' +
+                    '<span><strong>' + r.wins + '-' + r.losses + (r.ties ? '-' + r.ties : '') + '</strong></span>' +
+                    '<span>' + r.games + ' meetings</span>' +
+                    (r.playoffGames ? '<span><strong>' + r.playoffGames + '</strong> playoff</span>' : '') +
+                    '<span>' + fmtPts(r.pointsFor) + ' / ' + fmtPts(r.pointsAgainst) + ' pts</span>' +
+                '</div>' +
+                '<div class="rivalry-narr">' + escapeHtml(r.narrative) + '</div>' +
+                (leagues ? '<div class="rivalry-leagues">' + leagues + '</div>' : '') +
+                '</div>'
+        }).join('')
+    }
+
+    function renderMoments(m) {
+        var host = document.getElementById('moments')
+        if (!host) return
+        var tiles = []
+        if (m.biggestWin) {
+            tiles.push({
+                cls: '', label: 'Biggest Win',
+                value: m.biggestWin.score.toFixed(1) + ' – ' + m.biggestWin.oppScore.toFixed(1),
+                detail: 'Over <em>' + escapeHtml(m.biggestWin.opponent) + '</em> · <em>+' + Math.abs(m.biggestWin.margin).toFixed(1) + '</em>',
+                meta: m.biggestWin.leagueName + ' · ' + m.biggestWin.year + ' · Week ' + m.biggestWin.week,
+            })
+        }
+        if (m.worstLoss) {
+            tiles.push({
+                cls: 'loss', label: 'Worst Loss',
+                value: m.worstLoss.score.toFixed(1) + ' – ' + m.worstLoss.oppScore.toFixed(1),
+                detail: 'To <em>' + escapeHtml(m.worstLoss.opponent) + '</em> · <em>' + m.worstLoss.margin.toFixed(1) + '</em>',
+                meta: m.worstLoss.leagueName + ' · ' + m.worstLoss.year + ' · Week ' + m.worstLoss.week,
+            })
+        }
+        if (m.weeklyHigh) {
+            tiles.push({
+                cls: '', label: 'Weekly High',
+                value: m.weeklyHigh.score.toFixed(1),
+                detail: 'A franchise-tier outing.',
+                meta: m.weeklyHigh.leagueName + ' · ' + m.weeklyHigh.year,
+            })
+        }
+        if (m.weeklyLow) {
+            tiles.push({
+                cls: 'loss', label: 'Weekly Low',
+                value: m.weeklyLow.score.toFixed(1),
+                detail: 'A week to forget.',
+                meta: m.weeklyLow.leagueName + ' · ' + m.weeklyLow.year,
+            })
+        }
+        if (m.longestWinStreak) {
+            tiles.push({
+                cls: 'streak', label: 'Longest Win Streak',
+                value: m.longestWinStreak.length + ' <em>W</em>',
+                detail: escapeHtml(m.longestWinStreak.when),
+                meta: m.longestWinStreak.leagueName,
+            })
+        }
+        if (m.longestLossStreak) {
+            tiles.push({
+                cls: 'streak', label: 'Longest Skid',
+                value: m.longestLossStreak.length + ' <em>L</em>',
+                detail: escapeHtml(m.longestLossStreak.when),
+                meta: m.longestLossStreak.leagueName,
+            })
+        }
+        if (tiles.length === 0) {
+            host.innerHTML = '<div class="moment-empty">No moments to report yet — sync a league.</div>'
+            return
+        }
+        host.innerHTML = tiles.map(function (t) {
+            return '<div class="moment ' + t.cls + '">' +
+                '<div class="moment-label">' + t.label + '</div>' +
+                '<div class="moment-value">' + t.value + '</div>' +
+                '<div class="moment-detail">' + t.detail + '</div>' +
+                '<div class="moment-meta">' + escapeHtml(t.meta) + '</div>' +
+                '</div>'
+        }).join('')
+    }
+})()
+</script>
+</body>
+</html>
