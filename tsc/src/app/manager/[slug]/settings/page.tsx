@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { loadCareerSummary } from '@/lib/manager/career'
 import { SyncButton } from '../../../league/[slug]/sync-button'
+import { ChronicleShell } from '../_shell'
 import { RenameForm } from './rename-form'
 import { AliasForm } from './alias-form'
 import { removeLink, removeSource, deleteChronicle } from './actions'
@@ -17,18 +18,15 @@ export default async function ManagerSettingsPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: chronicle } = await supabase
-    .from('career_chronicles')
-    .select('id, slug, display_name, subtitle')
-    .eq('slug', slug)
-    .eq('owner_id', user.id)
-    .maybeSingle()
-  if (!chronicle) notFound()
+  const summary = await loadCareerSummary(slug, user.id)
+  if (!summary) notFound()
 
+  // Pull the link rows for the editable list — summary doesn't carry the
+  // alias or the per-link platform/sync metadata we render here.
   const { data: links } = await supabase
     .from('career_links')
     .select('id, league_id, source, manager_external_id, display_name_in_league, league_alias, league:leagues!inner(id, name, slug, platform, last_synced_at, manager_view)')
-    .eq('chronicle_id', chronicle.id)
+    .eq('chronicle_id', summary.chronicle.id)
     .order('created_at', { ascending: true })
 
   type LinkRow = {
@@ -73,44 +71,61 @@ export default async function ManagerSettingsPage({
     return 'all history'
   }
 
-  return (
-    <main>
-      <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1rem' }}>
-        <div className="hero-sup">★ Manage hub ★</div>
-        <h1 className="hero-title" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
-          {chronicle.display_name}
-        </h1>
-        <div style={{ marginTop: '1rem', display: 'flex', gap: '.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href={`/manager/${slug}`} className="dc-btn">Open the book →</Link>
-          <Link href="/manager/new" className="dc-btn-ghost">+ Add a league</Link>
-        </div>
-      </section>
+  const linkCount = linkRows.length
+  const deck = linkCount === 0
+    ? 'No leagues linked yet — start the chronicle by adding one.'
+    : `${linkCount} league${linkCount === 1 ? '' : 's'} linked. Rename, re-sync, or remove any of them below.`
 
-      <div className="section" style={{ maxWidth: '760px' }}>
-        <div className="section-header">
-          <span className="section-num">§ 01 · Linked leagues</span>
-          <span className="section-title">{linkRows.length} in your hub —</span>
+  const intro = (
+    <>
+      Three sections, all chronicle-scoped. <strong style={{ color: 'var(--gold)', fontFamily: 'var(--sans)', fontWeight: 600, fontStyle: 'normal' }}>Linked Leagues</strong> covers add/remove,
+      hub aliases, and year-range sources. <strong style={{ color: 'var(--gold)', fontFamily: 'var(--sans)', fontWeight: 600, fontStyle: 'normal' }}>Chronicle Details</strong> edits the
+      title and subtitle that show up on the front page. The <strong style={{ color: 'var(--rust)', fontFamily: 'var(--sans)', fontWeight: 600, fontStyle: 'normal' }}>Danger Zone</strong> at the
+      bottom is the kill-switch — deletes the chronicle and sweeps any hub-only leagues that no other chronicle is using.
+    </>
+  )
+
+  return (
+    <ChronicleShell
+      chronicle={summary}
+      active="settings"
+      edition="Chronicle Settings"
+      deck={deck}
+      intro={intro}
+    >
+      {/* ── §01 Linked Leagues ──────────────────────────────────── */}
+      <section>
+        <div className="mh-shead">
+          <h3 className="mh-shead-title">§ 01 · Linked <em>Leagues</em></h3>
+          <span className="mh-shead-meta">{linkCount} in your hub</span>
         </div>
+        <p className="mh-section-intro">
+          Every league that feeds this chronicle, in order added. Rename for the hub, re-sync the
+          archive, or remove a link entirely. Hub-only leagues (auto-created for chronicle ingest)
+          delete on the last removal; real public archives unlink only.
+        </p>
 
         {linkRows.length === 0 ? (
-          <div className="dc-empty">
-            <div className="dc-empty-title">No leagues yet.</div>
-            <div className="dc-empty-text">Add your first league to start the chronicle.</div>
+          <div className="mh-empty" style={{ display: 'flex', flexDirection: 'column', gap: '.85rem', alignItems: 'center' }}>
+            <div style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: '1.1rem' }}>No leagues yet.</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--cream-mute)' }}>
+              Add your first league to start the chronicle.
+            </div>
             <Link href="/manager/new" className="dc-btn">Add a league →</Link>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {linkRows.map((row) => {
               const sources = sourcesByLeague.get(row.league.id) ?? []
               const isRanged = row.league.platform === 'espn' || row.league.platform === 'nfl'
               return (
-                <div key={row.id} className="dc-card-static" style={{ display: 'flex', flexDirection: 'column', gap: '.85rem' }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
+                <article key={row.id} className="mh-box" style={{ display: 'flex', flexDirection: 'column', gap: '.85rem' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '1rem', justifyContent: 'space-between' }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem', color: 'var(--cream)' }}>
+                      <div style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: '1.35rem', color: 'var(--cream)', lineHeight: 1.15 }}>
                         {row.league_alias?.trim() || row.league.name}
                       </div>
-                      <div style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--cream-soft)', marginTop: '.2rem' }}>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: '.58rem', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--cream-mute)', marginTop: '.3rem' }}>
                         {row.league.platform} · you: {row.display_name_in_league ?? row.manager_external_id}
                         {' · '}
                         {row.league.last_synced_at
@@ -129,7 +144,7 @@ export default async function ManagerSettingsPage({
                       <form action={removeLink}>
                         <input type="hidden" name="slug" value={slug} />
                         <input type="hidden" name="linkId" value={row.id} />
-                        <button type="submit" className="dc-btn-ghost" style={{ color: 'var(--rust, #a04830)' }}>
+                        <button type="submit" className="dc-btn-ghost" style={{ color: 'var(--rust)' }}>
                           Remove
                         </button>
                       </form>
@@ -138,18 +153,18 @@ export default async function ManagerSettingsPage({
 
                   {/* Year-range sources — multiple for NFL/ESPN when playoff rules differ. */}
                   {(sources.length > 1 || isRanged) && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', alignItems: 'center', borderTop: '1px solid var(--ink-line)', paddingTop: '.7rem' }}>
-                      <span style={{ fontFamily: 'var(--mono)', fontSize: '.55rem', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--cream-soft)', marginRight: '.2rem' }}>
-                        Years:
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', alignItems: 'center', borderTop: '1px dotted var(--ink-line)', paddingTop: '.7rem' }}>
+                      <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: '.52rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginRight: '.4rem' }}>
+                        Year ranges
                       </span>
                       {sources.map((s) => (
-                        <span key={s.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '.35rem', padding: '.2rem .5rem', background: 'var(--ink)', border: '1px solid var(--gold-soft, rgba(200,160,80,.25))', borderRadius: '3px', fontFamily: 'var(--mono)', fontSize: '.7rem', color: 'var(--cream)' }}>
+                        <span key={s.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '.4rem', padding: '.2rem .55rem', background: 'rgba(232,200,137,.06)', border: '1px solid var(--gold-deep)', fontFamily: 'var(--mono)', fontSize: '.65rem', color: 'var(--cream)' }}>
                           {sourceRangeLabel(s)}
                           {sources.length > 1 && (
                             <form action={removeSource} style={{ display: 'inline' }}>
                               <input type="hidden" name="slug" value={slug} />
                               <input type="hidden" name="sourceId" value={s.id} />
-                              <button type="submit" title="Remove this range" style={{ background: 'none', border: 'none', padding: 0, color: 'var(--rust, #a04830)', cursor: 'pointer', fontSize: '.8rem', lineHeight: 1 }}>
+                              <button type="submit" title="Remove this range" style={{ background: 'none', border: 'none', padding: 0, color: 'var(--rust)', cursor: 'pointer', fontSize: '.8rem', lineHeight: 1 }}>
                                 ×
                               </button>
                             </form>
@@ -157,49 +172,65 @@ export default async function ManagerSettingsPage({
                         </span>
                       ))}
                       {isRanged && (
-                        <Link href="/manager/new" style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.1em', color: 'var(--gold)', textDecoration: 'underline' }}>
-                          + add year range
+                        <Link href="/manager/new" style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.15em', textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'underline' }}>
+                          + add range
                         </Link>
                       )}
                     </div>
                   )}
-                </div>
+                </article>
               )
             })}
+            <div style={{ marginTop: '.25rem' }}>
+              <Link href="/manager/new" className="dc-btn-ghost" style={{ fontSize: '.7rem' }}>+ Add a league</Link>
+            </div>
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="section" style={{ maxWidth: '760px' }}>
-        <div className="section-header">
-          <span className="section-num">§ 02 · Chronicle details</span>
-          <span className="section-title">Title &amp; subtitle —</span>
+      {/* ── §02 Chronicle Details ───────────────────────────────── */}
+      <section>
+        <div className="mh-shead">
+          <h3 className="mh-shead-title">§ 02 · Chronicle <em>Details</em></h3>
+          <span className="mh-shead-meta">Title &amp; subtitle</span>
         </div>
-        <div className="dc-card-static">
-          <RenameForm slug={slug} displayName={chronicle.display_name} subtitle={chronicle.subtitle} />
+        <p className="mh-section-intro">
+          What renders at the top of every issue — the chronicle's display name (used as
+          &ldquo;The {summary.chronicle.displayName} Chronicle&rdquo; throughout) and the optional
+          subtitle that anchors the Grand Chronicle masthead. Keep the title short; let the
+          subtitle do the framing.
+        </p>
+        <div className="mh-box">
+          <RenameForm slug={slug} displayName={summary.chronicle.displayName} subtitle={summary.chronicle.subtitle} />
         </div>
-      </div>
+      </section>
 
-      <div className="section" style={{ maxWidth: '760px' }}>
-        <div className="section-header">
-          <span className="section-num">§ 03 · Danger zone</span>
-          <span className="section-title">Delete chronicle —</span>
+      {/* ── §03 Danger Zone ─────────────────────────────────────── */}
+      <section>
+        <div className="mh-shead">
+          <h3 className="mh-shead-title">§ 03 · <em>Danger Zone</em></h3>
+          <span className="mh-shead-meta">Delete chronicle</span>
         </div>
-        <div className="dc-card-static" style={{ borderColor: 'rgba(160,72,48,.4)' }}>
-          <p style={{ opacity: 0.8, lineHeight: 1.6, marginBottom: '1rem' }}>
-            Deletes this chronicle and unlinks every league. Hub-only leagues with no other
-            link are removed; any public archives you own are untouched.
+        <p className="mh-section-intro">
+          Deletes this chronicle and unlinks every league. Hub-only leagues (auto-created when
+          you added them with no other chronicle holding the link) get swept. Real public
+          archives you own stay untouched.
+        </p>
+        <div className="mh-box rust">
+          <div className="mh-box-mast" style={{ color: 'var(--rust)' }}>Permanent — no undo</div>
+          <p style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: '1rem', lineHeight: 1.6, color: 'var(--cream-soft)', marginBottom: '1rem' }}>
+            Once you delete &ldquo;{summary.chronicle.displayName},&rdquo; the front page, every
+            issue, the per-year deep-dives, and the manager hub URL are all gone. Re-syncing a
+            league later builds a fresh chronicle from scratch.
           </p>
           <form action={deleteChronicle}>
             <input type="hidden" name="slug" value={slug} />
-            <button type="submit" className="dc-btn" style={{ background: 'var(--rust, #a04830)', borderColor: 'var(--rust, #a04830)' }}>
+            <button type="submit" className="dc-btn" style={{ background: 'var(--rust)', borderColor: 'var(--rust)', color: 'var(--cream)' }}>
               Delete chronicle
             </button>
           </form>
         </div>
-      </div>
-
-      <SiteFooter />
-    </main>
+      </section>
+    </ChronicleShell>
   )
 }

@@ -7,12 +7,20 @@
 
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import type { CareerChronicle } from '@/lib/manager/chronicle'
+import type { CareerSummary } from '@/lib/manager/career'
+
+// Minimal shape the shell needs. Real CareerChronicle satisfies this, but
+// pages that don't compute the full chronicle (e.g. settings) can pass a
+// thinner CareerSummary or even a hand-built object.
+type ShellChronicle = {
+  chronicle: { id: string; slug: string; displayName: string; subtitle?: string | null }
+  totals: CareerSummary['totals']
+}
 
 // Tool slugs the shell knows about. The chapbar always highlights Issue VI
-// (these pages live under the War Room), but the legacy mh-rail at the
+// (the tool pages live under the War Room), but the legacy mh-rail at the
 // bottom uses ChapterSlug to mark the active tool.
-export type ChapterSlug = 'front' | 'war-room' | 'desk' | 'trade-desk' | 'scout'
+export type ChapterSlug = 'front' | 'war-room' | 'desk' | 'trade-desk' | 'scout' | 'settings'
 
 export const CHAPTERS: { slug: ChapterSlug; href: (s: string) => string; numeral: string; title: string; kicker: string }[] = [
   { slug: 'front',      numeral: 'I',    title: 'Front Page',  kicker: 'The Masthead',        href: (s) => `/manager/${s}` },
@@ -20,6 +28,7 @@ export const CHAPTERS: { slug: ChapterSlug; href: (s: string) => string; numeral
   { slug: 'desk',       numeral: 'VI·a', title: 'Player Desk', kicker: 'Live Rosters & Wire', href: (s) => `/manager/${s}/desk` },
   { slug: 'trade-desk', numeral: 'VI·b', title: 'Trade Desk',  kicker: 'Builder & Verdicts',  href: (s) => `/manager/${s}/trade-builder` },
   { slug: 'scout',      numeral: 'VI·c', title: 'The Scout',   kicker: 'Needs & Targets',     href: (s) => `/manager/${s}/scout` },
+  { slug: 'settings',   numeral: '§',    title: 'Settings',    kicker: 'Manage the chronicle', href: (s) => `/manager/${s}/settings` },
 ]
 
 // All issue tabs — used by the slim editorial chapbar.
@@ -215,7 +224,7 @@ export function ChronicleShell({
   deck,
   intro,
 }: {
-  chronicle: CareerChronicle
+  chronicle: ShellChronicle
   active: ChapterSlug
   children: ReactNode
   edition?: string
@@ -235,11 +244,13 @@ export function ChronicleShell({
   const editionKicker = active === 'desk' ? 'The War Room · Issue VI · Sub-page'
     : active === 'scout' ? 'The War Room · Issue VI · Sub-page'
     : active === 'trade-desk' ? 'The War Room · Issue VI · Sub-page'
+    : active === 'settings' ? 'Chronicle settings'
     : 'The jzFF Dispatch'
 
-  // Chapbar always lights up Issue VI for the tool pages — they live under
-  // the War Room. Settings/front behave normally.
-  const activeIssue = active === 'front' ? 'front' : 'war-room'
+  // Chapbar lights up Issue VI for the tool pages (they live under the War
+  // Room), front for the masthead, nothing for settings (it sits outside the
+  // Issues).
+  const activeIssue = active === 'front' ? 'front' : active === 'settings' ? '' : 'war-room'
 
   return (
     <>
@@ -288,7 +299,12 @@ export function ChronicleShell({
           <div className="ed-nav-kicker">{editionKicker}</div>
           <div className="ed-nav-title">The <em>{chronicle.chronicle.displayName}</em> Chronicle</div>
         </div>
-        <Link href={`/manager/${slug}/war-room`} className="ed-nav-link">← War Room</Link>
+        <Link
+          href={active === 'settings' ? `/manager/${slug}` : `/manager/${slug}/war-room`}
+          className="ed-nav-link"
+        >
+          {active === 'settings' ? '← Front Page' : '← War Room'}
+        </Link>
       </nav>
 
       <nav className="ed-chapbar" aria-label="Issues">
