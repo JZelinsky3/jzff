@@ -10,10 +10,18 @@ export type SleeperLeague = {
   previous_league_id: string | null
   status: string
   total_rosters: number
+  // Roster slot template (e.g. ['QB','RB','RB','WR','WR','WR','TE','FLEX','BN',...]).
+  // Used by the trade desk to weight position scarcity.
+  roster_positions?: string[]
   settings: {
     leg?: number
     playoff_week_start?: number
     divisions?: number
+    // Sleeper league type: 0 = redraft, 1 = keeper, 2 = dynasty.
+    type?: number
+    // Dynasty taxi-squad slots — non-zero is a hard signal of a dynasty league.
+    taxi_slots?: number
+    // Number of QB starters — superflex if ≥2.
     [k: string]: unknown
   }
   metadata?: {
@@ -145,6 +153,14 @@ export type SleeperPlayer = {
   news_updated?: number | null      // ms epoch
   years_exp?: number | null
   age?: number | null
+  // Sleeper's internal overall popularity rank. Lower = more valuable. Null /
+  // undefined for inactive or obscure players. The trade desk inverts this
+  // into a 0-10000 trade value.
+  search_rank?: number | null
+  // Same idea but scoped to position (e.g. WR rank 3). Useful for positional
+  // tiering inside the analyzer.
+  search_rank_pos?: number | null
+  fantasy_positions?: string[] | null
 }
 
 export type SleeperBracketMatch = {
