@@ -8,6 +8,7 @@
 export type LeagueMode = 'dynasty' | 'redraft' | 'keeper'
 
 export type ValueProviderId =
+  | 'consensus'
   | 'sleeper-derived'
   | 'fantasycalc-dynasty'
   | 'fantasycalc-redraft'
@@ -37,6 +38,10 @@ export type PlayerValue = {
   age: number | null
   yearsExp: number | null
   source: ValueProviderId
+  // For consensus values: how many sources contributed to this blend, plus
+  // their individual values so the UI can show "FC: 8400 · Sleeper: 7200".
+  sourceCount?: number
+  contributions?: Array<{ provider: ValueProviderId; label: string; value: number }>
 }
 
 export type LeagueValuationContext = {

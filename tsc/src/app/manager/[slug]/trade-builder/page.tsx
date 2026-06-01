@@ -2,8 +2,9 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { loadCareerChronicle } from '@/lib/manager/chronicle'
 import { loadTradeFloor } from '@/lib/manager/tradeFloor'
-import { valuateLeague, formatValuationLabel, type LeagueMode } from '@/lib/values'
+import { valuateLeague, formatValuationLabel, availableSourcesForMode, parseSourceParam, type LeagueMode } from '@/lib/values'
 import { ChronicleShell, EmptyState } from '../_shell'
+import { SourceToggle } from '../_source-toggle'
 import { TradeBuilder } from './_builder'
 import type { BuilderLeague, BuilderPlayer, BuilderRoster } from '@/lib/manager/builder-types'
 
@@ -15,8 +16,16 @@ const MODE_LABEL: Record<LeagueMode, string> = {
   keeper: 'Keeper',
 }
 
-export default async function TradeBuilderPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function TradeBuilderPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ source?: string | string[] }>
+}) {
   const { slug } = await params
+  const { source: rawSource } = await searchParams
+  const requestedSource = parseSourceParam(rawSource)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -30,7 +39,10 @@ export default async function TradeBuilderPage({ params }: { params: Promise<{ s
   // mode, so we can't share a single map.
   const builderLeagues: BuilderLeague[] = await Promise.all(
     floor.leagues.map(async (lg) => {
-      const valuation = await valuateLeague({ mode: lg.mode, qbStarters: lg.qbStarters, teamCount: lg.teamCount })
+      const valuation = await valuateLeague(
+        { mode: lg.mode, qbStarters: lg.qbStarters, teamCount: lg.teamCount },
+        { source: requestedSource },
+      )
       const rosters: BuilderRoster[] = lg.rosters.map((r) => {
         const players: BuilderPlayer[] = r.playerIds
           .map((pid) => {
@@ -79,6 +91,13 @@ export default async function TradeBuilderPage({ params }: { params: Promise<{ s
     ? 'No Sleeper leagues linked yet — connect one to start trading.'
     : `${builderLeagues.length} live league${builderLeagues.length === 1 ? '' : 's'} valuated.  Pick a league, pick a counterparty, build a trade.`
 
+  // Toggle options follow the FIRST league's mode (most users have a single
+  // mode across all linked leagues). If a single source is selected that
+  // doesn't apply to a different league's mode, the orchestrator's fallback
+  // handles it per-league.
+  const primaryMode = floor.leagues[0]?.mode ?? 'dynasty'
+  const toggleOptions = availableSourcesForMode(primaryMode)
+
   return (
     <ChronicleShell chronicle={chronicle} active="trade-desk" deck={deck}>
       {floor.errors.length > 0 && (
@@ -92,7 +111,10 @@ export default async function TradeBuilderPage({ params }: { params: Promise<{ s
       {builderLeagues.length === 0 ? (
         <EmptyState>No Sleeper rosters resolved. Link a Sleeper league or re-sync an existing one.</EmptyState>
       ) : (
-        <TradeBuilder leagues={builderLeagues} />
+        <>
+          <SourceToggle active={requestedSource} options={toggleOptions} />
+          <TradeBuilder leagues={builderLeagues} />
+        </>
       )}
       {floor.unsupported.length > 0 && (
         <div className="mh-box steel">

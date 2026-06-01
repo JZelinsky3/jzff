@@ -11,7 +11,7 @@ import type { BuilderLeague, BuilderPlayer, BuilderRoster } from './builder-type
 import { loadTradeFloor } from './tradeFloor'
 import type { DeskUnsupported } from './desk'
 
-import type { LeagueMode } from '@/lib/values'
+import type { LeagueMode, ValueProviderId } from '@/lib/values'
 
 const MODE_LABEL: Record<LeagueMode, string> = {
   dynasty: 'Dynasty',
@@ -30,22 +30,32 @@ export type ScoutReport = {
   leagues: ScoutLeague[]
   unsupported: DeskUnsupported[]
   errors: string[]
+  // Mode of the first linked league — drives the SourceToggle's option set.
+  // Mixed-mode users still get the toggle; per-league fallback handles it.
+  primaryMode: LeagueMode
   // Cross-league rollups.
   totals: {
     leagues: number
-    weakSpots: number          // count of THIN/CRITICAL ratings across all leagues
-    strongSpots: number        // count of STRONG/ELITE ratings
+    weakSpots: number
+    strongSpots: number
     recommendations: number
   }
 }
 
-export async function loadScoutReport(slug: string, ownerId: string): Promise<ScoutReport | null> {
+export async function loadScoutReport(
+  slug: string,
+  ownerId: string,
+  opts: { source?: ValueProviderId } = {},
+): Promise<ScoutReport | null> {
   const floor = await loadTradeFloor(slug, ownerId)
   if (!floor) return null
 
   const leagues: ScoutLeague[] = await Promise.all(
     floor.leagues.map(async (lg) => {
-      const valuation = await valuateLeague({ mode: lg.mode, qbStarters: lg.qbStarters, teamCount: lg.teamCount })
+      const valuation = await valuateLeague(
+        { mode: lg.mode, qbStarters: lg.qbStarters, teamCount: lg.teamCount },
+        { source: opts.source },
+      )
       const rosters: BuilderRoster[] = lg.rosters.map((r) => {
         const players: BuilderPlayer[] = r.playerIds
           .map((pid) => {
