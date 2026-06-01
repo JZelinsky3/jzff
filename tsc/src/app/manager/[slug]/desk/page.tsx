@@ -22,8 +22,18 @@ export default async function PlayerDeskPage({ params }: { params: Promise<{ slu
     ? 'No live rosters loaded yet.'
     : `${desk.totalPlayers} players rostered across ${desk.rosters.length} live league${desk.rosters.length === 1 ? '' : 's'} · refreshed ${timeAgo(desk.refreshedAt)}.`
 
+  const intro = (
+    <>
+      Every active roster pulled live from Sleeper, side by side. Up top: the Injury Wire,
+      anyone carrying a designation across any of your teams. Below that: a position-by-position
+      board comparing your stacks across leagues. At the bottom: per-league sheets you can scan
+      like a Sunday-morning depth chart. ESPN and Yahoo leagues appear as unsupported until
+      those live feeds land.
+    </>
+  )
+
   return (
-    <ChronicleShell chronicle={chronicle} active="desk" deck={deck}>
+    <ChronicleShell chronicle={chronicle} active="desk" edition="The Player Desk" deck={deck} intro={intro}>
       {desk.errors.length > 0 && <ErrorStrip errors={desk.errors} />}
       <InjuryWire desk={desk} />
       <PositionBoard desk={desk} />

@@ -98,8 +98,18 @@ export default async function TradeBuilderPage({
   const primaryMode = floor.leagues[0]?.mode ?? 'dynasty'
   const toggleOptions = availableSourcesForMode(primaryMode)
 
+  const intro = (
+    <>
+      Build a trade, get a verdict. Pick a league at the top, choose a counterparty, drop players
+      on each side, and the value engine grades the swap by tier and scarcity. Verdicts read like
+      Sunday-paper takes — not just "Side A wins" but where each side's roster shape moves.
+      Currently scoped to Sleeper leagues; the value source toggle controls which provider feeds
+      the grading.
+    </>
+  )
+
   return (
-    <ChronicleShell chronicle={chronicle} active="trade-desk" deck={deck}>
+    <ChronicleShell chronicle={chronicle} active="trade-desk" edition="The Trade Desk" deck={deck} intro={intro}>
       {floor.errors.length > 0 && (
         <div className="mh-box rust">
           <div className="mh-box-mast">Wire warning · {floor.errors.length} league{floor.errors.length === 1 ? '' : 's'} couldn&apos;t load</div>

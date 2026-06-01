@@ -31,8 +31,17 @@ export default async function ScoutPage({ params }: { params: Promise<{ slug: st
     ? 'No Sleeper leagues linked yet.'
     : `${report.totals.weakSpots} weak spot${report.totals.weakSpots === 1 ? '' : 's'} · ${report.totals.strongSpots} strong${report.totals.strongSpots === 1 ? '' : 's'} · ${report.totals.recommendations} target${report.totals.recommendations === 1 ? '' : 's'} on the board.`
 
+  const intro = (
+    <>
+      Position scarcity, scored against the league. Where you're elite, where you're thin, where
+      KTC and the slot template say a trade should make sense. The lead story sketches the biggest
+      gap; the strength matrix lines up every league against every position; the recommendation
+      board is starting points for the Trade Desk, not final verdicts. Sleeper-only for now.
+    </>
+  )
+
   return (
-    <ChronicleShell chronicle={chronicle} active="scout" deck={deck}>
+    <ChronicleShell chronicle={chronicle} active="scout" edition="The Scout" deck={deck} intro={intro}>
       {report.errors.length > 0 && (
         <div className="mh-box rust">
           <div className="mh-box-mast">Wire warning · {report.errors.length} league{report.errors.length === 1 ? '' : 's'} couldn&apos;t load</div>

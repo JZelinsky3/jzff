@@ -21,7 +21,7 @@ import { devCacheGet, devCacheSet } from '@/lib/devCache'
 import { createClient } from '@/lib/supabase/server'
 import { loadCareerChronicle, type CareerChronicle } from '@/lib/manager/chronicle'
 
-const BUNDLE_VERSION = 'v6'
+const BUNDLE_VERSION = 'v7'
 
 export type ManagerBundle = Record<string, unknown>
 
@@ -52,6 +52,14 @@ type CareerJson = {
   // Pre-baked "pull quote highlights" for the masthead — derived from totals,
   // so the template can render them without recomputing.
   highlights: string[]
+  // Editorial copy — lede paragraph + per-section intros. Generated server-side
+  // from chronicle data so the template can render them without recomputing.
+  intro: string
+  sectionIntros: {
+    numbers: string
+    trophies: string
+    timeline: string
+  }
 }
 
 type TimelineEntry = {
@@ -111,6 +119,43 @@ function buildCareerJson(c: CareerChronicle): CareerJson {
     })),
     pendingCount: c.pendingCount,
     highlights: buildHighlights(c),
+    intro: composeFrontIntro(c, first, last),
+    sectionIntros: composeFrontSectionIntros(c),
+  }
+}
+
+function composeFrontIntro(c: CareerChronicle, first: number | null, last: number | null): string {
+  const t = c.totals
+  const range = first != null && last != null
+    ? (first === last ? `${first}` : `${first}–${last}`)
+    : 'on the calendar'
+  if (t.championships > 0) {
+    return `${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'}, ${t.seasonsPlayed} seasons, ${t.championships} ${t.championships === 1 ? 'ring' : 'rings'} — the bound front matter of a career running ${range}. ` +
+      `The Grand Chronicle is the cover page; Issues II–VI weave the rest of the story.`
+  }
+  if (t.playoffAppearances > 0) {
+    return `${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'}, ${t.seasonsPlayed} seasons, ${t.playoffAppearances} playoff ${t.playoffAppearances === 1 ? 'appearance' : 'appearances'} across ${range}. ` +
+      `Still chasing the first ring — the Grand Chronicle is the front matter, the rest of the books carry the receipts.`
+  }
+  return `${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'}, ${t.seasonsPlayed} seasons, running ${range}. ` +
+    `Early chapters of a chronicle still being written. Issues II–VI fill in the story.`
+}
+
+function composeFrontSectionIntros(c: CareerChronicle): CareerJson['sectionIntros'] {
+  const t = c.totals
+  return {
+    numbers:
+      `Eight tiles, eight totals. Every regular-season point, every championship-bracket game, ` +
+      `every ring in the case — rolled up across ${t.leagues || 'all'} ${t.leagues === 1 ? 'league' : 'leagues'} into ` +
+      `one cumulative read. Consolation games sit out by design (the almanac rule).`,
+    trophies: t.championships + t.runnerUps + t.thirdPlaces > 0
+      ? `Hardware, year by year. Gold for champion, rust for runner-up, steel for bronze. ` +
+        `Each piece links back to the season that earned it.`
+      : `No podium finishes on file yet — when the first one lands, this is where it gets cataloged.`,
+    timeline:
+      `Every active season, side by side. Champion years glow gold, runners and bronze get their ` +
+      `own borders, missed-bracket years run dashed. Click any tile for the full per-year deep ` +
+      `dive (mixes draft + roster + h2h + extremes for that year).`,
   }
 }
 
