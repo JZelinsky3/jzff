@@ -91,17 +91,70 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 .coming-head em { font-style: italic; color: var(--steel); }
 .coming-body { font-family: var(--serif); font-style: italic; font-size: 1rem; color: var(--cream-soft); }
 
-/* Portfolio chart placeholder */
-.chart-frame { position: relative; padding: 0; background: var(--ink-card); border: 1px solid var(--ink-line); overflow: hidden; }
-.chart-skeleton { padding: 2.5rem 2rem; }
-.chart-axis { display: flex; justify-content: space-between; align-items: flex-end; height: 220px; padding-bottom: 1rem; border-bottom: 1px dotted var(--ink-line); }
-.chart-bar { width: 8%; background: linear-gradient(180deg, rgba(107,138,168,.3), rgba(107,138,168,.1)); border-top: 2px solid var(--steel); }
-.chart-bar.b1 { height: 35%; } .chart-bar.b2 { height: 52%; } .chart-bar.b3 { height: 41%; } .chart-bar.b4 { height: 68%; } .chart-bar.b5 { height: 75%; } .chart-bar.b6 { height: 88%; } .chart-bar.b7 { height: 71%; } .chart-bar.b8 { height: 95%; }
-.chart-label { font-family: var(--mono); font-size: .55rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); margin-top: 1rem; text-align: center; }
-.chart-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,22,32,.45), rgba(14,22,32,.85)); display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 1.5rem; text-align: center; }
-.chart-overlay-mast { font-family: var(--mono); font-weight: 700; font-size: .6rem; letter-spacing: .32em; text-transform: uppercase; color: var(--steel); margin-bottom: .6rem; }
-.chart-overlay-head { font-family: var(--serif); font-style: italic; font-size: 1.5rem; color: var(--cream); margin-bottom: .4rem; }
-.chart-overlay-body { font-family: var(--serif); font-style: italic; font-size: .95rem; color: var(--cream-soft); max-width: 36ch; }
+/* Portfolio snapshot — ranked bars per league + top assets */
+.portfolio { display: grid; gap: 1rem; }
+.pf-row { display: grid; grid-template-columns: minmax(160px, 1.4fr) minmax(0, 3fr) auto; gap: 1rem; align-items: center; padding: 1rem 1.25rem; background: var(--ink-card); border: 1px solid var(--ink-line); border-left: 3px solid var(--steel); }
+.pf-row.lead { border-left-color: var(--gold); background: linear-gradient(135deg, rgba(232,200,137,.04), transparent 60%), var(--ink-card); }
+.pf-row-name { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.pf-row-name strong { font-family: var(--serif); font-style: italic; font-size: 1.1rem; color: var(--cream); line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-row.lead .pf-row-name strong { color: var(--gold); }
+.pf-row-meta { font-family: var(--mono); font-size: .54rem; letter-spacing: .16em; text-transform: uppercase; color: var(--cream-mute); }
+.pf-bar-track { position: relative; height: 28px; background: rgba(14,22,32,.6); border: 1px solid var(--ink-line); overflow: hidden; }
+.pf-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, rgba(107,138,168,.4), var(--steel)); }
+.pf-row.lead .pf-bar-fill { background: linear-gradient(90deg, rgba(232,200,137,.4), var(--gold)); }
+.pf-bar-marker { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--cream-mute); opacity: .5; }
+.pf-bar-marker::after { content: 'avg'; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: .42rem; letter-spacing: .18em; color: var(--cream-mute); white-space: nowrap; }
+.pf-row-total { font-family: var(--serif); font-style: italic; font-size: 1.5rem; color: var(--gold); font-variant-numeric: tabular-nums; min-width: 4rem; text-align: right; line-height: 1; }
+.pf-row-rank { font-family: var(--mono); font-size: .55rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); margin-top: .25rem; }
+@media (max-width: 720px) { .pf-row { grid-template-columns: 1fr; } .pf-row-total { text-align: left; } }
+
+/* Top assets per league — collapsible expander */
+.pf-assets { margin-top: -.5rem; margin-bottom: 1rem; padding: 1rem 1.25rem 1.1rem; background: rgba(14,22,32,.4); border: 1px solid var(--ink-line); border-top: none; border-left: 3px solid var(--ink-line); }
+.pf-assets summary { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .25em; text-transform: uppercase; color: var(--steel); cursor: pointer; user-select: none; }
+.pf-assets summary:hover { color: var(--gold); }
+.pf-asset-list { margin-top: .9rem; display: grid; gap: .5rem; }
+.pf-asset { display: grid; grid-template-columns: auto 1fr auto; gap: .65rem; align-items: baseline; padding: .35rem 0; border-bottom: 1px dotted var(--ink-line-soft); }
+.pf-asset:last-child { border-bottom: none; }
+.pf-asset-pos { font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .18em; color: var(--gold); min-width: 2.2rem; }
+.pf-asset-nm { font-family: var(--serif); font-size: .95rem; color: var(--cream); font-style: italic; }
+.pf-asset-meta { font-family: var(--mono); font-size: .55rem; letter-spacing: .15em; color: var(--cream-mute); }
+.pf-asset-val { font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--gold); font-variant-numeric: tabular-nums; }
+
+/* The "time series version coming soon" sidenote */
+.pf-tsnote { font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); margin-top: 1.5rem; padding: .85rem 1rem; border: 1px dashed var(--ink-line); background: rgba(14,22,32,.4); text-align: center; }
+.pf-tsnote em { color: var(--steel); font-style: italic; }
+.pf-warn { padding: .85rem 1rem; background: rgba(160,72,48,.06); border: 1px dashed var(--rust); font-family: var(--mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--rust); margin-bottom: 1rem; }
+
+/* Trade history list */
+.trade-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0; border: 1px solid var(--ink-line); background: var(--ink-soft); margin-bottom: 2rem; }
+.tt { padding: 1.25rem 1rem 1.1rem; text-align: center; border-right: 1px dotted var(--ink-line); }
+.tt:last-child { border-right: none; }
+.tt-label { font-family: var(--mono); font-weight: 700; font-size: .52rem; letter-spacing: .28em; text-transform: uppercase; color: var(--gold); margin-bottom: .35rem; }
+.tt-value { font-family: var(--serif); font-style: italic; font-size: 1.75rem; line-height: 1; color: var(--cream); font-variant-numeric: tabular-nums; }
+@media (max-width: 540px) { .trade-totals { grid-template-columns: 1fr 1fr; } .tt:nth-child(2) { border-right: none; } .tt:nth-child(-n+2) { border-bottom: 1px dotted var(--ink-line); } }
+
+.trades { display: grid; gap: 1.25rem; }
+.trade { padding: 1.5rem 1.5rem 1.3rem; background: var(--ink-card); border: 1px solid var(--ink-line); border-left: 3px solid var(--cream-mute); }
+.trade.mine { border-left-color: var(--gold); background: linear-gradient(135deg, rgba(232,200,137,.03), transparent 60%), var(--ink-card); }
+.trade-mast { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-bottom: .65rem; margin-bottom: 1rem; border-bottom: 1px dotted var(--ink-line); flex-wrap: wrap; }
+.trade-when { font-family: var(--mono); font-weight: 700; font-size: .56rem; letter-spacing: .25em; text-transform: uppercase; color: var(--gold); }
+.trade-where { font-family: var(--mono); font-size: .58rem; letter-spacing: .15em; color: var(--cream-mute); }
+.trade-sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
+.trade-side { padding: .85rem 1rem; background: rgba(14,22,32,.5); border: 1px solid var(--ink-line); }
+.trade-side.me { border-left: 3px solid var(--gold); background: rgba(232,200,137,.03); }
+.trade-side-name { font-family: var(--serif); font-style: italic; font-size: 1.1rem; color: var(--cream); margin-bottom: .45rem; }
+.trade-side.me .trade-side-name { color: var(--gold); }
+.trade-side-owner { font-family: var(--mono); font-size: .52rem; letter-spacing: .18em; color: var(--cream-mute); text-transform: uppercase; margin-bottom: .65rem; }
+.trade-side-group { padding: .35rem 0; border-top: 1px dotted var(--ink-line-soft); margin-top: .35rem; }
+.trade-side-group:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.trade-side-glabel { font-family: var(--mono); font-weight: 700; font-size: .5rem; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); margin-bottom: .35rem; }
+.trade-side-glabel.out { color: var(--rust); }
+.trade-side-list { display: grid; gap: .25rem; }
+.trade-pl { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: baseline; font-family: var(--mono); font-size: .62rem; color: var(--cream-soft); }
+.trade-pl .nm { font-family: var(--serif); font-size: .92rem; font-style: italic; color: var(--cream); }
+.trade-pl .pos { font-size: .52rem; letter-spacing: .15em; color: var(--cream-mute); white-space: nowrap; }
+.trade-pick { display: inline-block; padding: .2rem .45rem; margin: .15rem .15rem 0 0; font-family: var(--mono); font-size: .56rem; letter-spacing: .15em; color: var(--cream); border: 1px solid var(--ink-line); background: rgba(232,200,137,.05); }
+.trade-empty { padding: 1.5rem; text-align: center; font-family: var(--serif); font-style: italic; color: var(--cream-mute); border: 1px dashed var(--ink-line); }
 
 /* League file card */
 .files { display: grid; gap: 1.5rem; }
@@ -224,29 +277,14 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 <section class="section">
     <div class="section-header">
         <span class="section-num">★ Market Report</span>
-        <h2 class="section-title">Portfolio Value Over Time</h2>
-        <span class="section-meta">KTC · Coming Soon</span>
+        <h2 class="section-title">Portfolio Snapshot · Per League</h2>
+        <span class="section-meta" id="portfolio-meta">Live · KTC</span>
     </div>
-    <p class="section-intro" id="portfolio-intro">Portfolio value over time, scored by KeepTradeCut. The skeleton below shows the eventual shape.</p>
-    <div class="chart-frame">
-        <div class="chart-skeleton">
-            <div class="chart-axis">
-                <div class="chart-bar b1"></div>
-                <div class="chart-bar b2"></div>
-                <div class="chart-bar b3"></div>
-                <div class="chart-bar b4"></div>
-                <div class="chart-bar b5"></div>
-                <div class="chart-bar b6"></div>
-                <div class="chart-bar b7"></div>
-                <div class="chart-bar b8"></div>
-            </div>
-            <div class="chart-label">KeepTradeCut portfolio value over time</div>
-        </div>
-        <div class="chart-overlay">
-            <div class="chart-overlay-mast">★ Bench print ★</div>
-            <div class="chart-overlay-head"><em>Coming soon.</em></div>
-            <div class="chart-overlay-body" id="chart-reason">KTC valuation history isn't wired in yet — once it lands, this is where you'll watch the portfolio rise and fall.</div>
-        </div>
+    <p class="section-intro" id="portfolio-intro">Current portfolio value scored by KeepTradeCut, league by league. Bars compare your team to the league's top portfolio; the dashed marker shows the league average. Expand a row to see your top assets.</p>
+    <div id="portfolio-warn-host"></div>
+    <div class="portfolio" id="portfolio"><div class="loading">Loading portfolio snapshot…</div></div>
+    <div class="pf-tsnote">
+        — <em>Coming soon:</em> portfolio value <em>over time</em> as a real line chart. Needs per-season KTC snapshots; landing in a follow-up.
     </div>
 </section>
 
@@ -263,15 +301,18 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 <section class="section">
     <div class="section-header">
         <span class="section-num">★ The Trade Desk</span>
-        <h2 class="section-title">Cross-League Trade Analyzer</h2>
-        <span class="section-meta">Phase 6</span>
+        <h2 class="section-title">Cross-League Trade History</h2>
+        <span class="section-meta" id="trade-meta">Live · Sleeper</span>
     </div>
-    <p class="section-intro" id="trade-desk-intro">Every trade you've pulled the trigger on, scored against what the analyzer would have called.</p>
-    <div class="coming">
-        <div class="coming-mast">★ The Trade Desk ★</div>
-        <div class="coming-head">The book on every move you've made — <em>side-by-side with the AI's call.</em></div>
-        <div class="coming-body" id="trade-reason">Every trade you ever pulled the trigger on, scored against what the analyzer would've recommended at the time. Ships in Phase 6 alongside the War Room.</div>
+    <p class="section-intro" id="trade-desk-intro">Every completed trade across every linked Sleeper league this season, you on one side or the other. Yours sit gold; the rest run cream so you can scan the floor without your moves blending in.</p>
+    <div id="trade-warn-host"></div>
+    <div class="trade-totals" id="trade-totals" hidden>
+        <div class="tt"><div class="tt-label">Your Trades</div><div class="tt-value" id="tt-trades">—</div></div>
+        <div class="tt"><div class="tt-label">Players In</div><div class="tt-value" id="tt-in">—</div></div>
+        <div class="tt"><div class="tt-label">Players Out</div><div class="tt-value" id="tt-out">—</div></div>
+        <div class="tt"><div class="tt-label">Picks Net</div><div class="tt-value" id="tt-picks">—</div></div>
     </div>
+    <div class="trades" id="trades"><div class="loading">Loading trade history…</div></div>
 </section>
 
 <section class="section">
@@ -361,10 +402,6 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
                     'the arc, the hardware, the anchors that built each team.'
             }
 
-            if (d.upcoming && d.upcoming.portfolioChart && !d.upcoming.portfolioChart.enabled) {
-                var cr = document.getElementById('chart-reason')
-                if (cr) cr.textContent = d.upcoming.portfolioChart.reason
-            }
             if (d.upcoming && d.upcoming.tradeAnalyzer && !d.upcoming.tradeAnalyzer.enabled) {
                 var tr = document.getElementById('trade-reason')
                 if (tr) tr.textContent = d.upcoming.tradeAnalyzer.reason
@@ -372,6 +409,171 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 
             renderFiles(d.leagues || [])
         })
+
+    // ── Live portfolio snapshot ──────────────────────────────────────
+    fetch('/manager/{{MGR_SLUG}}/dynasty/portfolio/data', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null })
+        .catch(function () { return null })
+        .then(function (snap) {
+            if (!snap) {
+                document.getElementById('portfolio').innerHTML = '<div class="empty">Portfolio feed unavailable — try a refresh.</div>'
+                return
+            }
+            renderPortfolioWarnings(snap.errors || [], snap.unsupported || [])
+            renderPortfolio(snap.leagues || [])
+        })
+
+    function renderPortfolioWarnings(errors, unsupported) {
+        var host = document.getElementById('portfolio-warn-host')
+        if (!host) return
+        var bits = []
+        if (errors.length > 0) {
+            bits.push('<div class="pf-warn">Portfolio warning · ' + errors.length + ' issue' + (errors.length === 1 ? '' : 's') + ': ' + errors.map(escapeHtml).join(' · ') + '</div>')
+        }
+        if (unsupported.length > 0) {
+            var names = unsupported.map(function (u) { return escapeHtml(u.leagueName) + ' (' + escapeHtml(u.platform.toUpperCase()) + ')' }).join(' · ')
+            bits.push('<div class="pf-warn" style="border-color: var(--steel); color: var(--steel); background: rgba(107,138,168,.06);">Portfolio feed pending for: ' + names + '</div>')
+        }
+        host.innerHTML = bits.join('')
+    }
+
+    // ── Cross-league trade history ───────────────────────────────────
+    fetch('/manager/{{MGR_SLUG}}/dynasty/trades/data', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null })
+        .catch(function () { return null })
+        .then(function (history) {
+            if (!history) {
+                document.getElementById('trades').innerHTML = '<div class="trade-empty">Trade feed unavailable — try a refresh.</div>'
+                return
+            }
+            renderTradeWarnings(history.errors || [], history.unsupported || [])
+            renderTradeTotals(history.totals || {})
+            renderTrades(history.trades || [])
+        })
+
+    function renderTradeWarnings(errors, unsupported) {
+        var host = document.getElementById('trade-warn-host')
+        if (!host) return
+        var bits = []
+        if (errors.length > 0) {
+            bits.push('<div class="pf-warn">Trade feed warning · ' + errors.length + ' issue' + (errors.length === 1 ? '' : 's') + ': ' + errors.map(escapeHtml).join(' · ') + '</div>')
+        }
+        if (unsupported.length > 0) {
+            var names = unsupported.map(function (u) { return escapeHtml(u.leagueName) + ' (' + escapeHtml(u.platform.toUpperCase()) + ')' }).join(' · ')
+            bits.push('<div class="pf-warn" style="border-color: var(--steel); color: var(--steel); background: rgba(107,138,168,.06);">Trade feed pending for: ' + names + '</div>')
+        }
+        host.innerHTML = bits.join('')
+    }
+
+    function renderTradeTotals(t) {
+        var host = document.getElementById('trade-totals')
+        if (!host) return
+        if (!t || (t.trades || 0) === 0) { host.hidden = true; return }
+        host.hidden = false
+        setText('tt-trades', t.trades || 0)
+        setText('tt-in', t.playersIn || 0)
+        setText('tt-out', t.playersOut || 0)
+        var net = (t.picksIn || 0) - (t.picksOut || 0)
+        setText('tt-picks', (net > 0 ? '+' + net : net))
+        var meta = document.getElementById('trade-meta')
+        if (meta) meta.textContent = (t.trades || 0) + ' your trades · Live'
+    }
+
+    function renderTrades(trades) {
+        var host = document.getElementById('trades')
+        if (!host) return
+        if (trades.length === 0) {
+            host.innerHTML = '<div class="trade-empty">No trades on record this season yet. When you make one, it lands here.</div>'
+            return
+        }
+        host.innerHTML = trades.map(function (t) {
+            var d = new Date(t.createdAt)
+            var dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            return '<article class="trade' + (t.isMine ? ' mine' : '') + '">' +
+                '<div class="trade-mast">' +
+                    '<span class="trade-when">' + (t.isMine ? '★ Your move · ' : '') + 'Week ' + t.week + ' · ' + dateStr + '</span>' +
+                    '<span class="trade-where">' + escapeHtml(t.leagueName) + ' · ' + escapeHtml(t.season) + '</span>' +
+                '</div>' +
+                '<div class="trade-sides">' +
+                    (t.sides || []).map(function (s, i) { return renderTradeSide(s, t.isMine && i === 0) }).join('') +
+                '</div>' +
+            '</article>'
+        }).join('')
+    }
+
+    function renderTradeSide(s, isMe) {
+        var inHtml = (s.in || []).length > 0
+            ? '<div class="trade-side-group"><div class="trade-side-glabel">↓ Acquired</div><div class="trade-side-list">' +
+                s.in.map(playerLine).join('') +
+              '</div></div>'
+            : ''
+        var outHtml = (s.out || []).length > 0
+            ? '<div class="trade-side-group"><div class="trade-side-glabel out">↑ Sent</div><div class="trade-side-list">' +
+                s.out.map(playerLine).join('') +
+              '</div></div>'
+            : ''
+        var pIn = (s.picksIn || []).map(function (p) { return '<span class="trade-pick">' + p.season + ' R' + p.round + '</span>' }).join('')
+        var pOut = (s.picksOut || []).map(function (p) { return '<span class="trade-pick">' + p.season + ' R' + p.round + '</span>' }).join('')
+        var picksHtml = (pIn || pOut)
+            ? '<div class="trade-side-group"><div class="trade-side-glabel">Picks</div>' +
+                (pIn ? '<div style="margin-bottom: .35rem;">' + pIn + '</div>' : '') +
+                (pOut ? '<div class="trade-side-glabel out" style="margin-top: .35rem;">Picks Sent</div><div>' + pOut + '</div>' : '') +
+              '</div>'
+            : ''
+        return '<div class="trade-side' + (isMe ? ' me' : '') + '">' +
+            '<div class="trade-side-name">' + escapeHtml(s.teamName || s.ownerName) + '</div>' +
+            '<div class="trade-side-owner">' + escapeHtml(s.ownerName) + '</div>' +
+            inHtml + outHtml + picksHtml +
+        '</div>'
+    }
+
+    function playerLine(p) {
+        return '<div class="trade-pl">' +
+            '<span class="nm">' + escapeHtml(p.name) + '</span>' +
+            '<span class="pos">' + escapeHtml(p.position || '—') + (p.team ? ' · ' + escapeHtml(p.team) : '') + '</span>' +
+        '</div>'
+    }
+
+    function renderPortfolio(leagues) {
+        var host = document.getElementById('portfolio')
+        if (!host) return
+        if (leagues.length === 0) {
+            host.innerHTML = '<div class="empty">No Sleeper leagues linked yet — link one to wake the portfolio feed.</div>'
+            return
+        }
+        var meta = document.getElementById('portfolio-meta')
+        if (meta) meta.textContent = leagues.length + (leagues.length === 1 ? ' league · KTC' : ' leagues · KTC')
+
+        host.innerHTML = leagues.map(function (l, idx) {
+            var widthPct = l.leagueTopValue > 0 ? Math.max(2, (l.myTotalValue / l.leagueTopValue) * 100) : 2
+            var avgPct = l.leagueTopValue > 0 ? Math.max(0, Math.min(100, (l.leagueAvgValue / l.leagueTopValue) * 100)) : 50
+            var rankClass = idx === 0 && l.myRank === 1 ? ' lead' : (l.myRank === 1 ? ' lead' : '')
+            var ordinal = suf(l.myRank)
+            var assetsHtml = (l.topAssets || []).map(function (p) {
+                return '<div class="pf-asset">' +
+                    '<span class="pf-asset-pos">' + escapeHtml(p.position || '—') + '</span>' +
+                    '<span><span class="pf-asset-nm">' + escapeHtml(p.name) + '</span> ' +
+                        '<span class="pf-asset-meta">· ' + escapeHtml(p.team || '—') + (p.age ? ' · age ' + p.age : '') + '</span></span>' +
+                    '<span class="pf-asset-val">' + Math.round(p.value).toLocaleString('en-US') + '</span>' +
+                '</div>'
+            }).join('')
+            return '<div class="pf-row' + rankClass + '">' +
+                '<div class="pf-row-name">' +
+                    '<strong>' + escapeHtml(l.leagueName) + '</strong>' +
+                    '<span class="pf-row-meta">' + escapeHtml(l.modeLabel) + ' · ' + escapeHtml(l.valueProviderLabel) + '</span>' +
+                '</div>' +
+                '<div class="pf-bar-track">' +
+                    '<div class="pf-bar-fill" style="width: ' + widthPct.toFixed(1) + '%"></div>' +
+                    '<div class="pf-bar-marker" style="left: ' + avgPct.toFixed(1) + '%"></div>' +
+                '</div>' +
+                '<div>' +
+                    '<div class="pf-row-total">' + Math.round(l.myTotalValue).toLocaleString('en-US') + '</div>' +
+                    '<div class="pf-row-rank">' + ordinal + ' of ' + l.leagueTeamCount + '</div>' +
+                '</div>' +
+            '</div>' +
+            (assetsHtml ? '<details class="pf-assets"><summary>Top assets · ' + (l.topAssets.length) + ' on the books</summary><div class="pf-asset-list">' + assetsHtml + '</div></details>' : '')
+        }).join('')
+    }
 
     function renderFiles(leagues) {
         var host = document.getElementById('files')

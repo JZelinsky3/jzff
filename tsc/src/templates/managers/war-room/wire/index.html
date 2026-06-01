@@ -99,6 +99,37 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 .chase-value { font-family: var(--serif); font-style: italic; font-size: clamp(2rem, 3.4vw, 2.6rem); line-height: 1; color: var(--cream); font-variant-numeric: tabular-nums; margin-bottom: .55rem; }
 .chase-context { font-family: var(--serif); font-style: italic; font-size: .95rem; line-height: 1.5; color: var(--cream-soft); padding-top: .55rem; border-top: 1px dotted var(--ink-line); }
 
+/* Live matchups grid */
+.matchups { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; }
+.mu-card { padding: 1.25rem 1.4rem 1.15rem; background: var(--ink-card); border: 1px solid var(--ink-line); border-left: 3px solid var(--cream-mute); }
+.mu-card.mine { border-left-color: var(--gold); background: linear-gradient(135deg, rgba(232,200,137,.04), transparent 60%), var(--ink-card); }
+.mu-mast { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: .55rem; margin-bottom: .85rem; border-bottom: 1px dotted var(--ink-line); font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .25em; text-transform: uppercase; color: var(--cream-mute); }
+.mu-card.mine .mu-mast { color: var(--gold); }
+.mu-tag { color: var(--rust); }
+.mu-side { display: grid; grid-template-columns: 1fr auto; gap: .55rem; align-items: baseline; padding: .55rem 0; }
+.mu-side + .mu-side { border-top: 1px dotted var(--ink-line-soft); }
+.mu-team { font-family: var(--serif); font-style: italic; font-size: 1.1rem; color: var(--cream); line-height: 1.2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mu-card.mine .mu-side.is-me .mu-team { color: var(--gold); }
+.mu-owner { font-family: var(--mono); font-size: .55rem; letter-spacing: .15em; color: var(--cream-mute); margin-top: .15rem; text-transform: uppercase; }
+.mu-pts { font-family: var(--serif); font-style: italic; font-size: 1.45rem; color: var(--cream); font-variant-numeric: tabular-nums; line-height: 1; }
+.mu-card.mine .mu-side.is-me .mu-pts { color: var(--gold); }
+.mu-pts.lead { color: var(--gold); }
+.mu-vs { font-family: var(--mono); font-size: .55rem; letter-spacing: .3em; color: var(--cream-mute); text-align: center; padding: .15rem 0; }
+
+/* Wire form strip per league */
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.form-card { padding: 1rem 1.1rem; background: rgba(14,22,32,.55); border: 1px solid var(--ink-line); border-left: 3px solid var(--steel); }
+.form-name { font-family: var(--serif); font-style: italic; font-size: 1rem; color: var(--cream); margin-bottom: .25rem; }
+.form-meta { font-family: var(--mono); font-size: .55rem; letter-spacing: .18em; color: var(--cream-mute); margin-bottom: .6rem; text-transform: uppercase; }
+.form-line { display: flex; gap: 1rem; flex-wrap: wrap; font-family: var(--mono); font-size: .65rem; color: var(--cream); letter-spacing: .04em; }
+.form-line strong { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
+.form-streak { display: inline-block; padding: .15rem .4rem; margin-top: .55rem; font-family: var(--mono); font-weight: 700; font-size: .52rem; letter-spacing: .22em; text-transform: uppercase; }
+.form-streak.W { background: rgba(232,200,137,.12); color: var(--gold); border: 1px solid var(--gold-deep); }
+.form-streak.L { background: rgba(160,72,48,.12); color: var(--rust); border: 1px solid var(--rust); }
+.form-streak.T { color: var(--cream-mute); border: 1px solid var(--ink-line); }
+
+.warn { padding: .85rem 1rem; background: rgba(160,72,48,.06); border: 1px dashed var(--rust); font-family: var(--mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--rust); margin-bottom: 1.5rem; }
+
 /* Coming-soon banners */
 .coming { padding: 1.85rem 1.85rem 1.6rem; background: linear-gradient(135deg, rgba(107,138,168,.05), transparent 60%), var(--ink-card); border: 1px solid var(--ink-line); border-left: 3px solid var(--steel); }
 .coming-mast { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--steel); margin-bottom: .55rem; }
@@ -217,14 +248,12 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
     <div class="section-header">
         <span class="section-num">★ This Week</span>
         <h2 class="section-title">Matchups Across the Floor</h2>
-        <span class="section-meta">Phase 6+</span>
+        <span class="section-meta" id="matchups-meta">Live · Sleeper</span>
     </div>
-    <div class="coming">
-        <div class="coming-mast">★ Live Matchups</div>
-        <div class="coming-head"><em>This week, every league, scoreboards live.</em></div>
-        <div class="coming-body" id="matchups-body">Loading…</div>
-        <div class="coming-note" id="matchups-note">Goes live alongside the desk port.</div>
-    </div>
+    <p class="section-intro" id="matchups-intro">Every Sleeper league you're in, this week's matchups, scoreboards live. Your matchup goes gold and floats to the top of each league's stack.</p>
+    <div id="matchup-warn-host"></div>
+    <div class="form" id="form"></div>
+    <div id="live-leagues"><div class="loading">Loading live data…</div></div>
 </section>
 
 <section class="continue">
@@ -337,6 +366,147 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
                 '<div class="o-outlook">' + escapeHtml(it.outlook) + '</div>' +
                 '</div>'
         }).join('')
+    }
+
+    // ── Live matchups + season-to-date form ───────────────────────────
+    fetch('/manager/{{MGR_SLUG}}/war-room/wire/live/data', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null })
+        .catch(function () { return null })
+        .then(function (live) {
+            if (!live) {
+                document.getElementById('live-leagues').innerHTML =
+                    '<div class="empty">Live feed unavailable — try a refresh.</div>'
+                return
+            }
+            renderForm(live.leagues || [])
+            renderLiveLeagues(live.leagues || [])
+            renderWarnings(live.errors || [], live.unsupported || [])
+            renderLiveRecords(live)
+        })
+
+    function renderWarnings(errors, unsupported) {
+        var host = document.getElementById('matchup-warn-host')
+        if (!host) return
+        var bits = []
+        if (errors.length > 0) {
+            bits.push('<div class="warn">Wire warning · ' + errors.length + ' issue' + (errors.length === 1 ? '' : 's') + ': ' + errors.map(escapeHtml).join(' · ') + '</div>')
+        }
+        if (unsupported.length > 0) {
+            var names = unsupported.map(function (u) { return escapeHtml(u.leagueName) + ' (' + escapeHtml(u.platform.toUpperCase()) + ')' }).join(' · ')
+            bits.push('<div class="warn" style="border-color: var(--steel); color: var(--steel); background: rgba(107,138,168,.06);">Live feed pending for: ' + names + '</div>')
+        }
+        host.innerHTML = bits.join('')
+    }
+
+    function renderForm(leagues) {
+        var host = document.getElementById('form')
+        if (!host) return
+        if (leagues.length === 0) { host.innerHTML = ''; return }
+        host.innerHTML = leagues.map(function (l) {
+            var f = l.myForm
+            var ppg = f.ppg != null ? f.ppg.toFixed(1) : '—'
+            var pf = Math.round(f.pointsFor || 0).toLocaleString('en-US')
+            var rec = (f.wins || 0) + '-' + (f.losses || 0) + (f.ties ? '-' + f.ties : '')
+            var streakHtml = ''
+            if (l.myStreak && l.myStreak.length > 0) {
+                streakHtml = '<div class="form-streak ' + l.myStreak.kind + '">' + l.myStreak.length + ' ' + l.myStreak.kind + ' streak</div>'
+            }
+            var wkLine = l.currentWeek != null ? 'Week ' + l.currentWeek + ' · ' + l.season : l.season
+            return '<div class="form-card">' +
+                '<div class="form-name">' + escapeHtml(l.leagueName) + '</div>' +
+                '<div class="form-meta">' + wkLine + '</div>' +
+                '<div class="form-line">' +
+                    '<span><strong>' + rec + '</strong> record</span>' +
+                    '<span><strong>' + ppg + '</strong> ppg</span>' +
+                    '<span><strong>' + pf + '</strong> pf</span>' +
+                '</div>' +
+                streakHtml +
+                '</div>'
+        }).join('')
+    }
+
+    function renderLiveLeagues(leagues) {
+        var host = document.getElementById('live-leagues')
+        if (!host) return
+        if (leagues.length === 0) {
+            host.innerHTML = '<div class="empty">No Sleeper leagues linked yet — the Wire goes live once one is connected.</div>'
+            return
+        }
+        var withMatchups = leagues.filter(function (l) { return l.matchups && l.matchups.length > 0 })
+        if (withMatchups.length === 0) {
+            host.innerHTML = '<div class="empty">No matchups scheduled this week. The Wire wakes back up when scoring starts.</div>'
+            return
+        }
+        var meta = document.getElementById('matchups-meta')
+        if (meta) {
+            var totalMu = withMatchups.reduce(function (s, l) { return s + l.matchups.length }, 0)
+            meta.textContent = totalMu + ' matchup' + (totalMu === 1 ? '' : 's') + ' · ' + withMatchups.length + ' league' + (withMatchups.length === 1 ? '' : 's')
+        }
+
+        host.innerHTML = withMatchups.map(function (l) {
+            var headline = escapeHtml(l.leagueName) + (l.currentWeek != null ? ' · Week ' + l.currentWeek : '')
+            return '<div style="margin-bottom: 2.5rem;">' +
+                '<div class="mh-shead" style="border-bottom: 2px solid var(--rust); margin-bottom: 1rem;">' +
+                    '<h3 style="font-family: var(--serif); font-style: italic; font-size: 1.4rem; color: var(--cream);">' + headline + '</h3>' +
+                    '<span style="font-family: var(--mono); font-size: .58rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute);">' +
+                    l.matchups.length + ' matchup' + (l.matchups.length === 1 ? '' : 's') + ' · ' + escapeHtml(l.season) +
+                    '</span>' +
+                '</div>' +
+                '<div class="matchups">' + l.matchups.map(function (m) { return renderMatchup(m, l.myOwnerId) }).join('') + '</div>' +
+                '</div>'
+        }).join('')
+    }
+
+    function renderMatchup(m, myOwnerId) {
+        var aPts = m.a.points || 0
+        var bPts = m.b ? m.b.points || 0 : 0
+        var aLead = m.b && aPts > bPts
+        var bLead = m.b && bPts > aPts
+        var aIsMe = !!myOwnerId && m.a.ownerId === myOwnerId
+        var bIsMe = !!(myOwnerId && m.b && m.b.ownerId === myOwnerId)
+        var aSide = sideHtml(m.a, aLead, aIsMe)
+        var bSide = m.b ? sideHtml(m.b, bLead, bIsMe)
+            : '<div class="mu-side"><div class="mu-team" style="color: var(--cream-mute); font-style: normal;">Bye</div><div class="mu-pts">—</div></div>'
+        return '<div class="mu-card' + (m.isMine ? ' mine' : '') + '">' +
+            '<div class="mu-mast">' +
+                '<span>Matchup #' + m.matchupId + '</span>' +
+                (m.isMine ? '<span class="mu-tag">★ Mine</span>' : '<span>vs.</span>') +
+            '</div>' +
+            aSide +
+            (m.b ? '<div class="mu-vs">VS</div>' : '') +
+            bSide +
+        '</div>'
+    }
+
+    function sideHtml(s, isLeading, isMe) {
+        var pts = (s.points || 0).toFixed(1)
+        return '<div class="mu-side' + (isMe ? ' is-me' : '') + '">' +
+            '<div>' +
+                '<div class="mu-team">' + escapeHtml(s.teamName || s.ownerName) + '</div>' +
+                '<div class="mu-owner">' + escapeHtml(s.ownerName) + '</div>' +
+            '</div>' +
+            '<div class="mu-pts' + (isLeading ? ' lead' : '') + '">' + pts + '</div>' +
+        '</div>'
+    }
+
+    // ── Live records-watch — current streak surfaced against the historical ──
+    function renderLiveRecords(live, historical) {
+        var body = document.getElementById('live-records-body')
+        var note = document.getElementById('live-records-note')
+        if (!body) return
+        if (!live || !live.leagues || live.leagues.length === 0) return
+        var streakLines = live.leagues
+            .filter(function (l) { return l.myStreak && l.myStreak.length > 0 })
+            .map(function (l) {
+                var k = l.myStreak.kind === 'W' ? 'winning' : (l.myStreak.kind === 'L' ? 'losing' : 'tied')
+                return escapeHtml(l.leagueName) + ': ' + l.myStreak.length + '-game ' + k + ' streak'
+            })
+        if (streakLines.length === 0) {
+            body.textContent = 'No active streaks longer than one game. The Wire stays quiet until momentum stacks up.'
+        } else {
+            body.innerHTML = '<strong style="color: var(--gold); font-family: var(--sans); font-weight: 700;">Live:</strong> ' + streakLines.join(' · ') + '.'
+        }
+        if (note) note.textContent = 'Refreshes each request · Sleeper-only feed'
     }
 
     function renderChasing(items) {

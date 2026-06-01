@@ -788,8 +788,12 @@ function buildDynasty(c: CareerChronicle): DynastyJson {
     totalChampionships: totalChamps,
     leagues,
     upcoming: {
-      portfolioChart: { enabled: false, reason: 'KTC valuation history is not yet wired into the chronicle bundle.' },
-      tradeAnalyzer: { enabled: false, reason: 'Cross-league trade history pipeline ships in Phase 6.' },
+      // Snapshot portfolio is live (per-league current value). Time-series
+      // chart still needs per-season KTC snapshots.
+      portfolioChart: { enabled: false, reason: 'Current portfolio snapshot is live; the time-series chart needs per-season KTC ingest.' },
+      // Raw trade history is live. The analyzer-vs-AI verdict layer is the
+      // next half of this feature.
+      tradeAnalyzer: { enabled: false, reason: 'Trade history feed is live; analyzer-vs-actual verdicts ride on the next pass.' },
       ktcValueLine: { enabled: false, reason: 'Per-player KTC time series will live here once ingest lands.' },
     },
     intro,
