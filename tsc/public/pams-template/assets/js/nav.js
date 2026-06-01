@@ -471,7 +471,7 @@
             var action = on ? 'remove' : 'add';
             var origDropText = dropLink ? dropLink.textContent : null;
             if (dropLink) dropLink.textContent = '…';
-            fetch('/api/bookmarks', {
+            fetch('/api/bookmarks/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ slug: slug, action: action }),

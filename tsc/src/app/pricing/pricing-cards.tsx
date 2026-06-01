@@ -42,7 +42,7 @@ export function PricingCards({
       return
     }
     setBusy(tier); setErr(null)
-    const res = await fetch('/api/stripe/checkout', {
+    const res = await fetch('/api/stripe/checkout/', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ tier, period }),

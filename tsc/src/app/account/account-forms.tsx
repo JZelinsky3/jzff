@@ -140,7 +140,7 @@ function SubscriptionCard({
 
   async function openPortal() {
     setErr(null); setOpening(true)
-    const res = await fetch('/api/stripe/portal', { method: 'POST' })
+    const res = await fetch('/api/stripe/portal/', { method: 'POST' })
     const body = await res.json()
     setOpening(false)
     if (!res.ok || !body?.url) {

@@ -49,7 +49,10 @@ export function SyncButton({ leagueId }: { leagueId: string }) {
     abortRef.current = controller
 
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/sync`, { method: 'POST', signal: controller.signal })
+      // Trailing slash matters — next.config has trailingSlash: true, so a
+      // POST to /sync without the slash gets 308-redirected and the browser's
+      // follow-up request hangs. Hit the canonical URL directly.
+      const res = await fetch(`/api/leagues/${leagueId}/sync/`, { method: 'POST', signal: controller.signal })
       const body = await res.json().catch(() => ({}))
       if (!res.ok) {
         setState('error')

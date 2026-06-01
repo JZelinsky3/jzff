@@ -25,7 +25,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
     setMsg(null); setWarnings([])
     setLastAction(force ? 'regrade' : 'grade')
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/grade-trades`, {
+      const res = await fetch(`/api/leagues/${leagueId}/grade-trades/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ limit: 5, force }),
@@ -51,7 +51,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
     setMsg(null); setWarnings([])
     setLastAction('refresh')
     try {
-      const res = await fetch(`/api/admin/refresh-player-values`, { method: 'POST' })
+      const res = await fetch(`/api/admin/refresh-player-values/`, { method: 'POST' })
       const body = await res.json()
       if (!res.ok) {
         setState('error')
@@ -73,7 +73,7 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
     setMsg(null); setWarnings([])
     setLastAction('verdict')
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/revisit-trades`, {
+      const res = await fetch(`/api/leagues/${leagueId}/revisit-trades/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // eligibleOnly=false → revisit any graded trade regardless of age.

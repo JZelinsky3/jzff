@@ -423,7 +423,7 @@
       hl: { highest: state.pending.hl.highest, lowest: state.pending.hl.lowest },
     };
     try {
-      var res = await fetch('live-season/pickems/submit', {
+      var res = await fetch('live-season/pickems/submit/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

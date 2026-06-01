@@ -52,7 +52,7 @@
         status.textContent = 'Saving…';
         btns.forEach(function (b) { b.disabled = true; });
         try {
-          var res = await fetch('/api/leagues/' + dc.id + '/trades-theme', {
+          var res = await fetch('/api/leagues/' + dc.id + '/trades-theme/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ theme: theme }),
