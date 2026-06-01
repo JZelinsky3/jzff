@@ -122,8 +122,30 @@ export default async function TradeBuilderPage({
         <EmptyState>No Sleeper rosters resolved. Link a Sleeper league or re-sync an existing one.</EmptyState>
       ) : (
         <>
-          <SourceToggle active={requestedSource} options={toggleOptions} />
-          <TradeBuilder leagues={builderLeagues} />
+          <section>
+            <div className="mh-shead">
+              <h3 className="mh-shead-title">The <em>Value</em> Source</h3>
+              <span className="mh-shead-meta">Currency the verdict is denominated in</span>
+            </div>
+            <p className="mh-section-intro">
+              Toggle which valuation provider feeds the grade. Dynasty leagues typically read
+              KeepTradeCut; redraft leans on FantasyCalc or expert consensus. The Builder respects
+              per-league mode, so a single toggle works even across mixed lineups.
+            </p>
+            <SourceToggle active={requestedSource} options={toggleOptions} />
+          </section>
+          <section>
+            <div className="mh-shead">
+              <h3 className="mh-shead-title">The <em>Builder</em></h3>
+              <span className="mh-shead-meta">Pick a league · pick a counterparty · drop players</span>
+            </div>
+            <p className="mh-section-intro">
+              Choose a league at the top, then a counterparty roster. Drop names onto either side
+              and the verdict updates live: total value, per-side tier movement, the scarcity tax
+              where it applies. Verdicts read like takes, not scores.
+            </p>
+            <TradeBuilder leagues={builderLeagues} />
+          </section>
         </>
       )}
       {floor.unsupported.length > 0 && (

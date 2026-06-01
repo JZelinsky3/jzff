@@ -169,6 +169,11 @@ function StrengthMatrix({ report }: { report: ScoutReport }) {
         <h3 className="mh-shead-title">The <em>Strength</em> Matrix</h3>
         <span className="mh-shead-meta">Position tiers across every league</span>
       </div>
+      <p className="mh-section-intro">
+        Every league × every position, scored to the same tier scale. Bright cells are elite or
+        strong; dim cells are thin or critical. Read it horizontally to find the holes in a single
+        league, vertically to see which positions you're stacking everywhere.
+      </p>
       <div className="mh-box">
         <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--mono)', fontSize: '.72rem' }}>
           <thead>
@@ -209,6 +214,12 @@ function PerLeagueScout({ report }: { report: ScoutReport }) {
         <h3 className="mh-shead-title">Per-<em>League</em> Scouting</h3>
         <span className="mh-shead-meta">Deep view, one league at a time</span>
       </div>
+      <p className="mh-section-intro">
+        The narrative version of the matrix. Each league gets a lede summarizing the needs and the
+        surpluses, plus a sidebar with the full position breakdown — starter value, league median,
+        the three top names carrying each slot. Use this when you're prepping a single team for
+        Sunday.
+      </p>
       <div className="mh-broadsheet">
         {report.leagues.map((lg) => <LeagueScoutCard key={lg.builderLeague.archiveLeagueId} lg={lg} />)}
       </div>
@@ -311,6 +322,11 @@ function TopRecommendations({ report, slug }: { report: ScoutReport; slug: strin
         <h3 className="mh-shead-title">Trade <em>Targets</em></h3>
         <span className="mh-shead-meta">{top.length} highest-confidence swap{top.length === 1 ? '' : 's'} · take to the Trade Desk</span>
       </div>
+      <p className="mh-section-intro">
+        The Scout's shortlist — swaps where the tier deltas line up cleanly enough to recommend.
+        These aren't verdicts, they're starting points. Click through to the Trade Desk to model
+        the actual swap and read the full grade.
+      </p>
       <div className="mh-row mh-row-2">
         {top.map((rec, i) => <RecommendationCard key={`${rec.archiveLeagueId}-${i}`} r={rec} slug={slug} />)}
       </div>

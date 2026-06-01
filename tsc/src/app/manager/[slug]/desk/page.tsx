@@ -170,12 +170,19 @@ function PositionBoard({ desk }: { desk: PlayerDesk }) {
   const positions = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'] as const
   const hasAny = positions.some((p) => desk.byPosition[p].length > 0)
   if (!hasAny) return null
+  const counts = positions.map((p) => ({ p, n: desk.byPosition[p].length })).filter((x) => x.n > 0)
+  const deepest = counts.reduce((a, b) => (b.n > a.n ? b : a), counts[0]!)
   return (
     <section>
       <div className="mh-shead">
         <h3 className="mh-shead-title">The <em>Position</em> Board</h3>
         <span className="mh-shead-meta">{desk.totalPlayers} players across {desk.rosters.length} {desk.rosters.length === 1 ? 'roster' : 'rosters'}</span>
       </div>
+      <p className="mh-section-intro">
+        Six position groups, every rostered player listed. Injury designations show inline so a
+        quick scan flags Q/D/O across the board. Deepest stack right now: <em style={{ color: 'var(--gold)' }}>{deepest.p}</em> with{' '}
+        {deepest.n} {deepest.n === 1 ? 'name' : 'names'} on file.
+      </p>
       <div className="mh-row mh-row-3">
         {positions
           .filter((p) => desk.byPosition[p].length > 0)
@@ -226,6 +233,11 @@ function LeagueRosters({ desk }: { desk: PlayerDesk }) {
         <h3 className="mh-shead-title">The <em>Roster Sheets</em></h3>
         <span className="mh-shead-meta">{desk.rosters.length} live {desk.rosters.length === 1 ? 'sheet' : 'sheets'}</span>
       </div>
+      <p className="mh-section-intro">
+        One sheet per league. Starters listed first, then bench, IR, and taxi (when applicable).
+        The almanac link in each footer jumps to the public league archive — useful when you need
+        the broader context behind a roster move.
+      </p>
       <div className="mh-row mh-row-2">
         {desk.rosters.map((r) => <RosterSheet key={r.leagueSlug} r={r} />)}
       </div>
