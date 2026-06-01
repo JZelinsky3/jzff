@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Live Wire · The {{MGR_NAME}} Chronicle</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --ink: #0e1620; --ink-soft: #16202c; --ink-card: #1a2532; --ink-line: #2a3645; --ink-line-soft: #1e2937;
+    --cream: #f4ebd8; --cream-soft: #c9c0ad; --cream-mute: #837b6a;
+    --gold: #e8c889; --gold-bright: #f4d9a4; --gold-deep: #a88a4a;
+    --rust: #a04830; --steel: #6b8aa8;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--ink); color: var(--cream); min-height: 100vh; line-height: 1.6; overflow-x: hidden; }
+.site-glow { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: radial-gradient(circle at 18% 22%, rgba(160,72,48,.07) 0%, transparent 45%), radial-gradient(circle at 82% 78%, rgba(232,200,137,.06) 0%, transparent 50%); }
+.site-grain { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='10'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.04 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>"); }
+
+.ticker { position: relative; z-index: 10; background: var(--gold); color: var(--ink); border-bottom: 3px solid var(--ink); height: 38px; display: flex; align-items: center; overflow: hidden; }
+.ticker-track { display: flex; gap: 3rem; white-space: nowrap; padding-left: 3rem; animation: ticker-scroll 60s linear infinite; }
+.ticker-group { display: flex; gap: 3rem; }
+.ticker-item { font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; display: inline-flex; align-items: center; gap: .6rem; }
+.ticker-star { color: var(--rust); }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.nav { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; padding: 1.2rem 2rem; background: rgba(14, 22, 32, .92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--ink-line); }
+.nav-back, .nav-link { color: var(--gold); text-decoration: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; }
+.nav-back { justify-self: start; } .nav-link { justify-self: end; }
+.nav-back:hover, .nav-link:hover { color: var(--gold-bright); }
+.nav-center { text-align: center; justify-self: center; }
+.nav-kicker { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--cream-mute); margin-bottom: .3rem; }
+.nav-title { font-family: var(--serif); font-size: 1.4rem; color: var(--cream); }
+.nav-title em { font-style: italic; color: var(--gold); }
+.nav-drop { position: relative; }
+.nav-drop-btn { color: var(--gold); background: none; border: none; cursor: pointer; padding: 2px; display: flex; align-items: center; }
+.nav-icon { display: block; }
+.nav-drop-menu { display: none; position: fixed; top: 4.5rem; right: 1.5rem; min-width: 240px; max-width: calc(100vw - 3rem); background: rgba(14,22,32,.97); border: 1px solid var(--ink-line); backdrop-filter: blur(12px); z-index: 50; overflow: hidden; }
+.nav-drop.open .nav-drop-menu { display: block; }
+.nav-drop-label { display: block; padding: .45rem 1.1rem .3rem; font-family: var(--mono); font-size: .55rem; letter-spacing: .25em; text-transform: uppercase; color: var(--cream-mute); border-bottom: 1px solid var(--ink-line-soft); }
+.nav-drop-menu a { display: block; padding: .7rem 1.1rem; color: var(--cream-soft); text-decoration: none; font-family: var(--mono); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; border-bottom: 1px solid var(--ink-line-soft); }
+.nav-drop-menu a:last-child { border-bottom: none; }
+.nav-drop-menu a:hover { background: rgba(232,200,137,.07); color: var(--gold); }
+.nav-drop-menu a.is-active { color: var(--gold); background: rgba(232,200,137,.06); }
+
+.nav-chapbar { position: sticky; top: var(--nav-h, 4.5rem); z-index: 29; background: rgba(14, 22, 32, .9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--ink-line); }
+.nav-chapbar-track { display: flex; justify-content: center; align-items: stretch; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; max-width: 1370px; margin: 0 auto; padding: 0 1rem; }
+.nav-chapbar-track::-webkit-scrollbar { display: none; }
+.nav-chapbar-link { flex-shrink: 0; position: relative; color: var(--cream-soft); text-decoration: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; padding: .65rem 1.3rem .75rem; white-space: nowrap; }
+.nav-chapbar-link:hover, .nav-chapbar-link.is-active { color: var(--rust); }
+.nav-chapbar-link.is-active::after { content: ""; position: absolute; left: 1.3rem; right: 1.3rem; bottom: 0; height: 2px; background: var(--rust); }
+.nav-chapbar-link + .nav-chapbar-link::before { content: ""; position: absolute; left: 0; top: 35%; bottom: 35%; width: 1px; background: var(--ink-line); }
+@media (max-width: 640px) { .nav-chapbar-track { justify-content: flex-start; padding: 0 .15rem; } .nav-chapbar-link { padding: .55rem .75rem; font-size: .55rem; letter-spacing: .15em; } .nav-chapbar-link.is-active::after { left: .75rem; right: .75rem; } }
+
+.edition { position: relative; z-index: 10; max-width: 1100px; margin: 0 auto; padding: 4rem 1.5rem 1rem; text-align: center; }
+.edition-sup { font-family: var(--mono); font-weight: 700; font-size: .65rem; letter-spacing: .4em; text-transform: uppercase; color: var(--rust); margin-bottom: 1.25rem; }
+.edition-sup .star { color: var(--gold); }
+.edition-title { font-family: var(--serif); font-size: clamp(2.2rem, 6vw, 4.5rem); line-height: .95; letter-spacing: -.025em; color: var(--cream); }
+.edition-title em { font-style: italic; color: var(--rust); }
+.edition-deck { font-family: var(--serif); font-style: italic; font-size: clamp(1rem, 1.5vw, 1.2rem); color: var(--cream-soft); max-width: 640px; margin: 1.25rem auto 0; }
+.edition-rule { max-width: 320px; margin: 1.75rem auto 0; border-top: 1px solid var(--ink-line); position: relative; }
+.edition-rule::before { content: '✦'; position: absolute; top: -.55rem; left: 50%; transform: translateX(-50%); background: var(--ink); padding: 0 .6rem; color: var(--rust); font-size: .7rem; }
+
+.section { position: relative; z-index: 10; max-width: 1200px; margin: 3.5rem auto 0; padding: 0 2rem; }
+.section-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .75rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 3px double var(--ink-line); }
+.section-num { font-family: var(--mono); font-weight: 700; font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; color: var(--rust); }
+.section-title { font-family: var(--serif); font-style: italic; font-size: clamp(1.4rem, 2.6vw, 1.9rem); color: var(--cream); }
+.section-meta { font-family: var(--mono); font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); }
+.section-intro { font-family: var(--serif); font-style: italic; font-size: 1.05rem; line-height: 1.6; color: var(--cream-soft); max-width: 72ch; margin-bottom: 1.75rem; }
+.section-intro::before { content: '— '; color: var(--rust); font-style: normal; }
+
+/* Outlook cards per league */
+.outlook { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; }
+.o-card { padding: 1.5rem 1.4rem 1.3rem; background: var(--ink-card); border: 1px solid var(--ink-line); border-left: 3px solid var(--cream-mute); }
+.o-card.champ { border-left-color: var(--gold); background: linear-gradient(135deg, rgba(232,200,137,.05), transparent 60%), var(--ink-card); }
+.o-card.runner { border-left-color: var(--rust); }
+.o-card.playoff { border-left-color: var(--steel); }
+.o-mast { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-bottom: .55rem; margin-bottom: .85rem; border-bottom: 1px dotted var(--ink-line); }
+.o-name { font-family: var(--serif); font-style: italic; font-size: 1.25rem; color: var(--cream); }
+.o-card.champ .o-name { color: var(--gold); }
+.o-tag { font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .25em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+.o-card.runner .o-tag { color: var(--rust); }
+.o-card.playoff .o-tag { color: var(--steel); }
+.o-card.miss .o-tag { color: var(--cream-mute); }
+.o-summary { font-family: var(--mono); font-size: .6rem; letter-spacing: .12em; color: var(--cream-soft); margin-bottom: .85rem; }
+.o-summary strong { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
+.o-card.runner .o-summary strong { color: var(--rust); }
+.o-outlook { font-family: var(--serif); font-style: italic; font-size: 1rem; line-height: 1.55; color: var(--cream-soft); padding-top: .65rem; border-top: 1px dotted var(--ink-line); }
+
+/* Records chasing */
+.chase { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+.chase-card { padding: 1.4rem 1.4rem 1.25rem; background: var(--ink-card); border: 1px solid var(--ink-line); position: relative; overflow: hidden; }
+.chase-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--rust); }
+.chase-label { font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .28em; text-transform: uppercase; color: var(--rust); margin-bottom: .55rem; }
+.chase-value { font-family: var(--serif); font-style: italic; font-size: clamp(2rem, 3.4vw, 2.6rem); line-height: 1; color: var(--cream); font-variant-numeric: tabular-nums; margin-bottom: .55rem; }
+.chase-context { font-family: var(--serif); font-style: italic; font-size: .95rem; line-height: 1.5; color: var(--cream-soft); padding-top: .55rem; border-top: 1px dotted var(--ink-line); }
+
+/* Coming-soon banners */
+.coming { padding: 1.85rem 1.85rem 1.6rem; background: linear-gradient(135deg, rgba(107,138,168,.05), transparent 60%), var(--ink-card); border: 1px solid var(--ink-line); border-left: 3px solid var(--steel); }
+.coming-mast { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--steel); margin-bottom: .55rem; }
+.coming-head { font-family: var(--serif); font-size: 1.4rem; color: var(--cream); margin-bottom: .55rem; }
+.coming-head em { font-style: italic; color: var(--steel); }
+.coming-body { font-family: var(--serif); font-style: italic; font-size: 1rem; color: var(--cream-soft); line-height: 1.55; }
+.coming-note { font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); margin-top: .85rem; padding-top: .75rem; border-top: 1px dotted var(--ink-line); }
+
+.continue { position: relative; z-index: 10; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 1200px; margin: 4rem auto 0; padding: 0 2rem; }
+@media (max-width: 720px) { .continue { grid-template-columns: 1fr; } }
+.continue a { display: block; padding: 1.5rem 1.4rem; background: var(--ink-card); border: 1px solid var(--ink-line); text-decoration: none; color: inherit; transition: background .15s; }
+.continue a:hover { background: rgba(232,200,137,.04); border-color: var(--gold-deep); }
+.continue-num { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; color: var(--rust); margin-bottom: .55rem; }
+.continue-name { font-family: var(--serif); font-style: italic; font-size: 1.35rem; color: var(--cream); }
+.continue-dir { font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .25em; color: var(--gold-deep); margin-bottom: .4rem; }
+
+.foot { position: relative; z-index: 10; max-width: 1200px; margin: 5rem auto 3rem; padding: 2rem; text-align: center; border-top: 3px double var(--ink-line); font-family: var(--mono); font-size: .62rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); }
+.foot em { color: var(--rust); font-style: italic; }
+.loading { padding: 3rem 1.5rem; text-align: center; font-family: var(--serif); font-style: italic; color: var(--cream-mute); }
+.empty { padding: 1.5rem; text-align: center; font-family: var(--serif); font-style: italic; color: var(--cream-mute); border: 1px dashed var(--ink-line); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<div class="ticker">
+    <div class="ticker-track">
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> THE LIVE WIRE</span>
+            <span class="ticker-item">{{MGR_NAME_UPPER}} · ISSUE VI</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> THE LIVE WIRE</span>
+            <span class="ticker-item">{{MGR_NAME_UPPER}} · ISSUE VI</span>
+        </div>
+    </div>
+</div>
+
+<nav class="nav">
+    <div class="nav-drop" id="nav-drop">
+        <button class="nav-drop-btn" type="button" aria-haspopup="menu" aria-label="Open library">
+            <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="nav-drop-menu" role="menu">
+            <span class="nav-drop-label">Issues</span>
+            <a href="/manager/{{MGR_SLUG}}">I · The Grand Chronicle</a>
+            <a href="/manager/{{MGR_SLUG}}/legacy">II · Rise &amp; Legacy</a>
+            <a href="/manager/{{MGR_SLUG}}/dynasty">III · The Dynasty Files</a>
+            <a href="/manager/{{MGR_SLUG}}/seasons">IV · Seasons of Glory &amp; Heartbreak</a>
+            <a href="/manager/{{MGR_SLUG}}/vault">V · The Record Vault</a>
+            <a href="/manager/{{MGR_SLUG}}/war-room" class="is-active">VI · The War Room</a>
+            <span class="nav-drop-label">War Room</span>
+            <a href="/manager/{{MGR_SLUG}}/war-room/wire" class="is-active">The Live Wire</a>
+            <a href="/manager/{{MGR_SLUG}}/desk">Player Desk</a>
+            <a href="/manager/{{MGR_SLUG}}/scout">The Scout</a>
+            <a href="/manager/{{MGR_SLUG}}/trade-builder">Trade Desk</a>
+            <span class="nav-drop-label">Manager</span>
+            <a href="/manager/{{MGR_SLUG}}/settings">Settings</a>
+        </div>
+    </div>
+    <div class="nav-center">
+        <div class="nav-kicker">The War Room · Sub-page</div>
+        <div class="nav-title">The Live <em>Wire.</em></div>
+    </div>
+    <a href="/manager/{{MGR_SLUG}}/war-room" class="nav-link">← War Room</a>
+</nav>
+
+<nav class="nav-chapbar" aria-label="Issues">
+    <div class="nav-chapbar-track">
+        <a href="/manager/{{MGR_SLUG}}" class="nav-chapbar-link">I · Front</a>
+        <a href="/manager/{{MGR_SLUG}}/legacy" class="nav-chapbar-link">II · Legacy</a>
+        <a href="/manager/{{MGR_SLUG}}/dynasty" class="nav-chapbar-link">III · Dynasty</a>
+        <a href="/manager/{{MGR_SLUG}}/seasons" class="nav-chapbar-link">IV · Seasons</a>
+        <a href="/manager/{{MGR_SLUG}}/vault" class="nav-chapbar-link">V · Vault</a>
+        <a href="/manager/{{MGR_SLUG}}/war-room" class="nav-chapbar-link is-active">VI · War Room</a>
+    </div>
+</nav>
+
+<header class="edition">
+    <div class="edition-sup"><span class="star">★</span> War Room · The Live Wire <span class="star">★</span></div>
+    <h1 class="edition-title">This Week, This <em>Season.</em></h1>
+    <p class="edition-deck" id="wire-deck">Loading the Wire…</p>
+    <div class="edition-rule"></div>
+</header>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ Outlooks</span>
+        <h2 class="section-title">Recent Form &amp; the Beat</h2>
+        <span class="section-meta" id="outlook-meta"></span>
+    </div>
+    <p class="section-intro" id="outlook-intro">Loading…</p>
+    <div class="outlook" id="outlook"><div class="loading">Loading…</div></div>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ Records Watch</span>
+        <h2 class="section-title">The Bar to Clear</h2>
+        <span class="section-meta">Historic + Live</span>
+    </div>
+    <p class="section-intro" id="records-intro">Loading…</p>
+    <div class="chase" id="chase"><div class="loading">Loading…</div></div>
+    <div style="margin-top: 1.5rem;">
+        <div class="coming">
+            <div class="coming-mast">★ Live Records Tracking</div>
+            <div class="coming-head"><em>Active streaks &amp; pace, watched in real time.</em></div>
+            <div class="coming-body" id="live-records-body">Loading…</div>
+            <div class="coming-note" id="live-records-note">Ships in a follow-up to Phase 6.</div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ This Week</span>
+        <h2 class="section-title">Matchups Across the Floor</h2>
+        <span class="section-meta">Phase 6+</span>
+    </div>
+    <div class="coming">
+        <div class="coming-mast">★ Live Matchups</div>
+        <div class="coming-head"><em>This week, every league, scoreboards live.</em></div>
+        <div class="coming-body" id="matchups-body">Loading…</div>
+        <div class="coming-note" id="matchups-note">Goes live alongside the desk port.</div>
+    </div>
+</section>
+
+<section class="continue">
+    <a href="/manager/{{MGR_SLUG}}/war-room">
+        <div class="continue-dir">← Back</div>
+        <div class="continue-num">Issue VI</div>
+        <div class="continue-name">The War Room</div>
+    </a>
+    <a href="/manager/{{MGR_SLUG}}/vault">
+        <div class="continue-dir">Up next</div>
+        <div class="continue-num">Issue V</div>
+        <div class="continue-name">The Record Vault</div>
+    </a>
+</section>
+
+<footer class="foot">
+    <div>End of The Live Wire</div>
+    <div style="margin-top:.5rem;">The <em>{{MGR_NAME}}</em> Chronicle · The <em>jzFF</em> Dispatch</div>
+</footer>
+
+<script>
+(function () {
+    var primaryNav = document.querySelector('.nav')
+    function publishNavHeight() {
+        if (!primaryNav) return
+        var h = primaryNav.getBoundingClientRect().height
+        if (h > 0) document.documentElement.style.setProperty('--nav-h', h + 'px')
+    }
+    publishNavHeight()
+    window.addEventListener('resize', publishNavHeight)
+
+    var drop = document.getElementById('nav-drop')
+    if (drop) {
+        drop.querySelector('.nav-drop-btn').addEventListener('click', function (e) {
+            e.stopPropagation(); drop.classList.toggle('open')
+        })
+        document.addEventListener('click', function (e) {
+            if (!drop.contains(e.target)) drop.classList.remove('open')
+        })
+    }
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        })
+    }
+    function setText(id, t) { var el = document.getElementById(id); if (el && t != null) el.textContent = t }
+
+    // The wire JSON lives at /data/war-room/wire.json relative to /war-room/wire/.
+    // Use an absolute path so the relative <base> doesn't mis-resolve it.
+    fetch('/manager/{{MGR_SLUG}}/data/war-room/wire.json', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null })
+        .catch(function () { return null })
+        .then(function (d) {
+            if (!d) { document.getElementById('outlook').innerHTML = '<div class="empty">No data yet.</div>'; return }
+            setText('wire-deck', d.intro)
+
+            setText('outlook-intro', (d.recentForm && d.recentForm.intro) || '')
+            renderOutlook((d.recentForm && d.recentForm.items) || [])
+
+            setText('records-intro', (d.records && d.records.intro) || '')
+            renderChasing((d.records && d.records.chasing) || [])
+
+            if (d.records && d.records.live) {
+                setText('live-records-body', d.records.live.intro)
+                setText('live-records-note', d.records.live.note)
+            }
+            if (d.matchups) {
+                setText('matchups-body', d.matchups.intro)
+                setText('matchups-note', d.matchups.note)
+            }
+        })
+
+    function outlookClass(item) {
+        if (item.lastRank === 1) return 'champ'
+        if (item.lastRank === 2) return 'runner'
+        if (item.lastRank != null && item.lastRank <= 6) return 'playoff'
+        return 'miss'
+    }
+    function outlookTag(item) {
+        if (item.lastRank === 1) return '★ Defending'
+        if (item.lastRank === 2) return 'Runner-Up'
+        if (item.lastRank === 3) return '3rd Place'
+        if (item.lastRank != null && item.lastRank <= 6) return 'Playoffs · ' + item.lastRank + suf(item.lastRank)
+        if (item.lastRank != null) return item.lastRank + suf(item.lastRank)
+        return 'Fresh ink'
+    }
+    function suf(n) { var s = ['th','st','nd','rd'], v = n % 100; return s[(v-20)%10] || s[v] || s[0] }
+
+    function renderOutlook(items) {
+        var host = document.getElementById('outlook')
+        if (!host) return
+        var meta = document.getElementById('outlook-meta')
+        if (meta) meta.textContent = items.length + (items.length === 1 ? ' league' : ' leagues')
+        if (items.length === 0) {
+            host.innerHTML = '<div class="empty">No leagues to outlook yet.</div>'
+            return
+        }
+        host.innerHTML = items.map(function (it) {
+            var cls = outlookClass(it)
+            var summary = it.lastYear != null
+                ? '<strong>' + (it.lastYear) + '</strong> · ' + escapeHtml(it.lastRecord || '—') + ' · finished ' + outlookTag(it)
+                : 'No prior season.'
+            return '<div class="o-card ' + cls + '">' +
+                '<div class="o-mast">' +
+                    '<div class="o-name">' + escapeHtml(it.leagueName) + '</div>' +
+                    '<div class="o-tag">' + outlookTag(it) + '</div>' +
+                '</div>' +
+                '<div class="o-summary">' + summary + '</div>' +
+                '<div class="o-outlook">' + escapeHtml(it.outlook) + '</div>' +
+                '</div>'
+        }).join('')
+    }
+
+    function renderChasing(items) {
+        var host = document.getElementById('chase')
+        if (!host) return
+        if (items.length === 0) {
+            host.innerHTML = '<div class="empty">No marks to chase yet.</div>'
+            return
+        }
+        host.innerHTML = items.map(function (c) {
+            return '<div class="chase-card">' +
+                '<div class="chase-label">' + escapeHtml(c.label) + '</div>' +
+                '<div class="chase-value">' + escapeHtml(c.value) + '</div>' +
+                '<div class="chase-context">' + escapeHtml(c.context) + '</div>' +
+                '</div>'
+        }).join('')
+    }
+})()
+</script>
+</body>
+</html>

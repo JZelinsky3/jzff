@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The War Room · The {{MGR_NAME}} Chronicle</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --ink: #0e1620; --ink-soft: #16202c; --ink-card: #1a2532; --ink-line: #2a3645; --ink-line-soft: #1e2937;
+    --cream: #f4ebd8; --cream-soft: #c9c0ad; --cream-mute: #837b6a;
+    --gold: #e8c889; --gold-bright: #f4d9a4; --gold-deep: #a88a4a;
+    --rust: #a04830; --steel: #6b8aa8;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--ink); color: var(--cream); min-height: 100vh; line-height: 1.6; overflow-x: hidden; }
+.site-glow { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: radial-gradient(circle at 18% 22%, rgba(160,72,48,.08) 0%, transparent 45%), radial-gradient(circle at 82% 78%, rgba(107,138,168,.05) 0%, transparent 50%); }
+.site-grain { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='9'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.04 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>"); }
+
+.ticker { position: relative; z-index: 10; background: var(--gold); color: var(--ink); border-bottom: 3px solid var(--ink); height: 38px; display: flex; align-items: center; overflow: hidden; }
+.ticker-track { display: flex; gap: 3rem; white-space: nowrap; padding-left: 3rem; animation: ticker-scroll 60s linear infinite; }
+.ticker-group { display: flex; gap: 3rem; }
+.ticker-item { font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; display: inline-flex; align-items: center; gap: .6rem; }
+.ticker-star { color: var(--rust); }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.nav { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; padding: 1.2rem 2rem; background: rgba(14, 22, 32, .92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--ink-line); }
+.nav-back, .nav-link { color: var(--gold); text-decoration: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; }
+.nav-back { justify-self: start; } .nav-link { justify-self: end; }
+.nav-back:hover, .nav-link:hover { color: var(--gold-bright); }
+.nav-center { text-align: center; justify-self: center; }
+.nav-kicker { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--cream-mute); margin-bottom: .3rem; }
+.nav-title { font-family: var(--serif); font-size: 1.4rem; color: var(--cream); }
+.nav-title em { font-style: italic; color: var(--gold); }
+.nav-drop { position: relative; }
+.nav-drop-btn { color: var(--gold); background: none; border: none; cursor: pointer; padding: 2px; display: flex; align-items: center; }
+.nav-icon { display: block; }
+.nav-drop-menu { display: none; position: fixed; top: 4.5rem; right: 1.5rem; min-width: 240px; max-width: calc(100vw - 3rem); background: rgba(14,22,32,.97); border: 1px solid var(--ink-line); backdrop-filter: blur(12px); z-index: 50; overflow: hidden; }
+.nav-drop.open .nav-drop-menu { display: block; }
+.nav-drop-label { display: block; padding: .45rem 1.1rem .3rem; font-family: var(--mono); font-size: .55rem; letter-spacing: .25em; text-transform: uppercase; color: var(--cream-mute); border-bottom: 1px solid var(--ink-line-soft); }
+.nav-drop-menu a { display: block; padding: .7rem 1.1rem; color: var(--cream-soft); text-decoration: none; font-family: var(--mono); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; border-bottom: 1px solid var(--ink-line-soft); }
+.nav-drop-menu a:last-child { border-bottom: none; }
+.nav-drop-menu a:hover { background: rgba(232,200,137,.07); color: var(--gold); }
+.nav-drop-menu a.is-active { color: var(--gold); background: rgba(232,200,137,.06); }
+
+.nav-chapbar { position: sticky; top: var(--nav-h, 4.5rem); z-index: 29; background: rgba(14, 22, 32, .9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--ink-line); }
+.nav-chapbar-track { display: flex; justify-content: center; align-items: stretch; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; max-width: 1370px; margin: 0 auto; padding: 0 1rem; }
+.nav-chapbar-track::-webkit-scrollbar { display: none; }
+.nav-chapbar-link { flex-shrink: 0; position: relative; color: var(--cream-soft); text-decoration: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; padding: .65rem 1.3rem .75rem; white-space: nowrap; }
+.nav-chapbar-link:hover, .nav-chapbar-link.is-active { color: var(--rust); }
+.nav-chapbar-link.is-active::after { content: ""; position: absolute; left: 1.3rem; right: 1.3rem; bottom: 0; height: 2px; background: var(--rust); }
+.nav-chapbar-link + .nav-chapbar-link::before { content: ""; position: absolute; left: 0; top: 35%; bottom: 35%; width: 1px; background: var(--ink-line); }
+@media (max-width: 640px) { .nav-chapbar-track { justify-content: flex-start; padding: 0 .15rem; } .nav-chapbar-link { padding: .55rem .75rem; font-size: .55rem; letter-spacing: .15em; } .nav-chapbar-link.is-active::after { left: .75rem; right: .75rem; } }
+
+.edition { position: relative; z-index: 10; max-width: 1100px; margin: 0 auto; padding: 4.5rem 1.5rem 1rem; text-align: center; }
+.edition-sup { font-family: var(--mono); font-weight: 700; font-size: .65rem; letter-spacing: .4em; text-transform: uppercase; color: var(--rust); margin-bottom: 1.25rem; }
+.edition-sup .star { color: var(--gold); }
+.edition-title { font-family: var(--serif); font-size: clamp(2.6rem, 7vw, 5.5rem); line-height: .95; letter-spacing: -.025em; color: var(--cream); }
+.edition-title em { font-style: italic; color: var(--rust); }
+.edition-deck { font-family: var(--serif); font-style: italic; font-size: clamp(1.05rem, 1.6vw, 1.3rem); color: var(--cream-soft); max-width: 640px; margin: 1.25rem auto 0; }
+.edition-rule { max-width: 320px; margin: 2rem auto 0; border-top: 1px solid var(--ink-line); position: relative; }
+.edition-rule::before { content: '✦'; position: absolute; top: -.55rem; left: 50%; transform: translateX(-50%); background: var(--ink); padding: 0 .6rem; color: var(--rust); font-size: .7rem; }
+
+/* Lede */
+.lede { position: relative; z-index: 10; max-width: 820px; margin: 3rem auto 0; padding: 0 1.75rem; }
+.lede-frame { padding: 2rem 2.25rem 1.85rem; background: linear-gradient(180deg, rgba(160,72,48,.04), transparent), var(--ink-card); border: 1px solid var(--ink-line); position: relative; }
+.lede-frame::before, .lede-frame::after { content: ''; position: absolute; left: 1.5rem; right: 1.5rem; height: 1px; background: var(--rust); opacity: .55; }
+.lede-frame::before { top: .55rem; } .lede-frame::after { bottom: .55rem; }
+.lede-mast { text-align: center; font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .32em; text-transform: uppercase; color: var(--rust); margin-bottom: 1.25rem; }
+.lede-mast .star { color: var(--gold); }
+.lede-body { font-family: var(--serif); font-style: italic; font-size: 1.1rem; line-height: 1.65; color: var(--cream-soft); }
+.lede-body .dropcap { float: left; font-family: var(--serif); font-style: italic; font-size: 3.8rem; line-height: .85; color: var(--rust); padding: .15rem .55rem 0 0; margin-right: .15rem; }
+
+/* Status callout */
+.callout { position: relative; z-index: 10; max-width: 1100px; margin: 2rem auto 0; padding: 0 1.75rem; }
+.callout-inner { padding: 1.25rem 1.4rem; background: rgba(160,72,48,.06); border: 1px solid var(--rust); display: grid; grid-template-columns: auto 1fr auto; gap: 1.25rem; align-items: center; }
+@media (max-width: 640px) { .callout-inner { grid-template-columns: 1fr; text-align: center; } }
+.callout-mast { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--rust); }
+.callout-note { font-family: var(--serif); font-style: italic; font-size: 1rem; color: var(--cream-soft); }
+.callout-meta { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); }
+.callout-meta strong { color: var(--gold); }
+
+.section { position: relative; z-index: 10; max-width: 1200px; margin: 4rem auto 0; padding: 0 2rem; }
+.section-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .75rem; padding-bottom: 1rem; margin-bottom: 1.25rem; border-bottom: 3px double var(--ink-line); }
+.section-num { font-family: var(--mono); font-weight: 700; font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; color: var(--rust); }
+.section-title { font-family: var(--serif); font-style: italic; font-size: clamp(1.5rem, 3vw, 2.1rem); color: var(--cream); }
+.section-meta { font-family: var(--mono); font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); }
+.section-intro { font-family: var(--serif); font-style: italic; font-size: 1.05rem; line-height: 1.6; color: var(--cream-soft); max-width: 72ch; margin-bottom: 2rem; }
+.section-intro::before { content: '— '; color: var(--rust); font-style: normal; }
+
+/* Desk cards */
+.desks { display: grid; gap: 1.5rem; }
+.desk { display: grid; grid-template-columns: minmax(0, 1.4fr) auto; gap: 1.5rem; align-items: stretch; padding: 1.85rem 1.85rem 1.65rem; background: var(--ink-card); border: 1px solid var(--ink-line); border-left: 3px solid var(--rust); text-decoration: none; color: inherit; transition: background .15s, border-color .15s; }
+.desk:hover { background: rgba(232,200,137,.04); border-color: var(--gold-deep); }
+@media (max-width: 760px) { .desk { grid-template-columns: 1fr; } }
+.desk-body { min-width: 0; }
+.desk-kicker { font-family: var(--mono); font-weight: 700; font-size: .56rem; letter-spacing: .3em; text-transform: uppercase; color: var(--rust); margin-bottom: .55rem; }
+.desk-name { font-family: var(--serif); font-style: italic; font-size: clamp(1.5rem, 2.6vw, 2.1rem); color: var(--cream); margin-bottom: .25rem; line-height: 1.1; }
+.desk-name em { color: var(--rust); font-style: italic; }
+.desk-one { font-family: var(--serif); font-style: italic; font-size: 1.1rem; color: var(--cream-soft); margin-bottom: .85rem; }
+.desk-body-text { font-family: var(--serif); font-size: 1rem; line-height: 1.65; color: var(--cream-soft); padding-top: .75rem; border-top: 1px dotted var(--ink-line); }
+.desk-arrow { font-family: var(--mono); font-weight: 700; font-size: .62rem; letter-spacing: .22em; text-transform: uppercase; color: var(--rust); margin-top: 1rem; }
+
+.desk-aside { display: flex; flex-direction: column; gap: .65rem; min-width: 180px; padding-left: 1.5rem; border-left: 1px dotted var(--ink-line); }
+@media (max-width: 760px) { .desk-aside { padding-left: 0; border-left: none; padding-top: 1rem; border-top: 1px dotted var(--ink-line); flex-direction: row; flex-wrap: wrap; } .desk-aside > * { flex: 1 1 45%; } }
+.metric { padding: .65rem 0; }
+.metric-label { font-family: var(--mono); font-weight: 700; font-size: .52rem; letter-spacing: .25em; text-transform: uppercase; color: var(--cream-mute); margin-bottom: .25rem; }
+.metric-value { font-family: var(--serif); font-style: italic; font-size: 1.6rem; line-height: 1; color: var(--cream); font-variant-numeric: tabular-nums; }
+.status-tag { display: inline-block; padding: .25rem .5rem; font-family: var(--mono); font-weight: 700; font-size: .5rem; letter-spacing: .22em; text-transform: uppercase; border: 1px solid var(--rust); color: var(--rust); }
+.status-tag.live { color: var(--gold); border-color: var(--gold-deep); }
+.status-tag.beta { color: var(--steel); border-color: var(--steel); }
+
+/* Wire callout — the sub-page link */
+.wire-band { position: relative; z-index: 10; max-width: 1200px; margin: 4rem auto 0; padding: 0 2rem; }
+.wire-card { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; padding: 2rem 2rem 1.75rem; background: linear-gradient(135deg, rgba(232,200,137,.05), transparent 60%), var(--ink-card); border: 1px solid var(--gold-deep); align-items: center; text-decoration: none; color: inherit; transition: background .15s; }
+.wire-card:hover { background: linear-gradient(135deg, rgba(232,200,137,.08), transparent 60%), var(--ink-card); }
+@media (max-width: 720px) { .wire-card { grid-template-columns: 1fr; text-align: left; } }
+.wire-mast { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: .4rem; }
+.wire-head { font-family: var(--serif); font-style: italic; font-size: 1.65rem; color: var(--cream); margin-bottom: .4rem; }
+.wire-head em { color: var(--gold); }
+.wire-body { font-family: var(--serif); font-style: italic; font-size: 1.02rem; line-height: 1.55; color: var(--cream-soft); max-width: 60ch; }
+.wire-arrow { font-family: var(--mono); font-weight: 700; font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+
+/* Closer note */
+.closer { position: relative; z-index: 10; max-width: 820px; margin: 4rem auto 0; padding: 0 1.75rem; }
+.closer-frame { padding: 1.65rem 2rem; background: rgba(14,22,32,.45); border: 1px dashed var(--ink-line); font-family: var(--serif); font-style: italic; font-size: 1rem; line-height: 1.65; color: var(--cream-mute); }
+.closer-frame::before { content: "— Editor\2019s Note · "; font-family: var(--mono); font-weight: 700; font-style: normal; font-size: .58rem; letter-spacing: .25em; text-transform: uppercase; color: var(--gold-deep); margin-right: .35rem; }
+
+.continue { position: relative; z-index: 10; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 1200px; margin: 4rem auto 0; padding: 0 2rem; }
+@media (max-width: 720px) { .continue { grid-template-columns: 1fr; } }
+.continue a { display: block; padding: 1.5rem 1.4rem; background: var(--ink-card); border: 1px solid var(--ink-line); text-decoration: none; color: inherit; transition: background .15s; }
+.continue a:hover { background: rgba(232,200,137,.04); border-color: var(--gold-deep); }
+.continue-num { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; color: var(--rust); margin-bottom: .55rem; }
+.continue-name { font-family: var(--serif); font-style: italic; font-size: 1.35rem; color: var(--cream); }
+.continue-dir { font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .25em; color: var(--gold-deep); margin-bottom: .4rem; }
+.continue-kicker { font-family: var(--mono); font-size: .55rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); margin-top: .25rem; }
+
+.foot { position: relative; z-index: 10; max-width: 1200px; margin: 5rem auto 3rem; padding: 2rem; text-align: center; border-top: 3px double var(--ink-line); font-family: var(--mono); font-size: .62rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); }
+.foot em { color: var(--rust); font-style: italic; }
+.loading { padding: 3rem 1.5rem; text-align: center; font-family: var(--serif); font-style: italic; color: var(--cream-mute); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<div class="ticker">
+    <div class="ticker-track">
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> ISSUE VI · THE WAR ROOM</span>
+            <span class="ticker-item">THE {{MGR_NAME_UPPER}} CHRONICLE</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> ISSUE VI · THE WAR ROOM</span>
+            <span class="ticker-item">THE {{MGR_NAME_UPPER}} CHRONICLE</span>
+        </div>
+    </div>
+</div>
+
+<nav class="nav">
+    <div class="nav-drop" id="nav-drop">
+        <button class="nav-drop-btn" type="button" aria-haspopup="menu" aria-label="Open library">
+            <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="nav-drop-menu" role="menu">
+            <span class="nav-drop-label">Issues</span>
+            <a href="/manager/{{MGR_SLUG}}">I · The Grand Chronicle</a>
+            <a href="/manager/{{MGR_SLUG}}/legacy">II · Rise &amp; Legacy</a>
+            <a href="/manager/{{MGR_SLUG}}/dynasty">III · The Dynasty Files</a>
+            <a href="/manager/{{MGR_SLUG}}/seasons">IV · Seasons of Glory &amp; Heartbreak</a>
+            <a href="/manager/{{MGR_SLUG}}/vault">V · The Record Vault</a>
+            <a href="/manager/{{MGR_SLUG}}/war-room" class="is-active">VI · The War Room</a>
+            <span class="nav-drop-label">Manager</span>
+            <a href="/manager/{{MGR_SLUG}}/settings">Settings</a>
+            <a href="/dashboard">← Dashboard</a>
+        </div>
+    </div>
+    <div class="nav-center">
+        <div class="nav-kicker">The jzFF Dispatch · Issue VI</div>
+        <div class="nav-title">The <em>{{MGR_NAME}}</em> Chronicle</div>
+    </div>
+    <a href="/manager/{{MGR_SLUG}}" class="nav-link">← Front Page</a>
+</nav>
+
+<nav class="nav-chapbar" aria-label="Issues">
+    <div class="nav-chapbar-track">
+        <a href="/manager/{{MGR_SLUG}}" class="nav-chapbar-link">I · Front</a>
+        <a href="/manager/{{MGR_SLUG}}/legacy" class="nav-chapbar-link">II · Legacy</a>
+        <a href="/manager/{{MGR_SLUG}}/dynasty" class="nav-chapbar-link">III · Dynasty</a>
+        <a href="/manager/{{MGR_SLUG}}/seasons" class="nav-chapbar-link">IV · Seasons</a>
+        <a href="/manager/{{MGR_SLUG}}/vault" class="nav-chapbar-link">V · Vault</a>
+        <a href="/manager/{{MGR_SLUG}}/war-room" class="nav-chapbar-link is-active">VI · War Room</a>
+    </div>
+</nav>
+
+<header class="edition">
+    <div class="edition-sup"><span class="star">★</span> Issue VI · The War Room <span class="star">★</span></div>
+    <h1 class="edition-title">The Working <em>Side.</em></h1>
+    <p class="edition-deck">Live tools for the season in front of you. Three desks plus a Wire. The archive is closed for the day — this floor is open Sunday.</p>
+    <div class="edition-rule"></div>
+</header>
+
+<section class="lede">
+    <div class="lede-frame">
+        <div class="lede-mast"><span class="star">★</span> The Editor's Lede <span class="star">★</span></div>
+        <div class="lede-body" id="lede-body"><span class="dropcap">W</span>elcome to the working side of the chronicle. Issues I–V are the archive — what was. The War Room is what is.</div>
+    </div>
+</section>
+
+<section class="callout">
+    <div class="callout-inner">
+        <div class="callout-mast">★ Status</div>
+        <div class="callout-note" id="status-note">Loading status…</div>
+        <div class="callout-meta" id="status-meta"></div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">★ The Desks</span>
+        <h2 class="section-title">Three Floors. One Toolkit.</h2>
+        <span class="section-meta" id="desks-meta"></span>
+    </div>
+    <p class="section-intro" id="desks-intro">Each desk owns one job. Roster scanning, position scouting, trade verdicts — they were the old Chapters VI–VIII and they still are. Click into one when you've got a decision to make.</p>
+    <div class="desks" id="desks"><div class="loading">Loading desks…</div></div>
+</section>
+
+<section class="wire-band">
+    <a class="wire-card" href="/manager/{{MGR_SLUG}}/war-room/wire">
+        <div>
+            <div class="wire-mast">★ The Live Wire</div>
+            <div class="wire-head">Sub-page: <em>This week, this season, right now.</em></div>
+            <div class="wire-body">Outlooks per league, records being chased, in-season ticker. Lives one click away — built so the War Room hub stays clean and the Wire stays loud.</div>
+        </div>
+        <div class="wire-arrow">Open the Wire →</div>
+    </a>
+</section>
+
+<section class="closer">
+    <div class="closer-frame" id="closer">The desks here still wear the old chapter design — they're being repainted in this volume's editorial style. Functionally they're the same tools the chronicle has shipped since launch.</div>
+</section>
+
+<section class="continue">
+    <a href="/manager/{{MGR_SLUG}}/vault">
+        <div class="continue-dir">← Previous</div>
+        <div class="continue-num">Issue V</div>
+        <div class="continue-name">The Record Vault</div>
+        <div class="continue-kicker">Personal records</div>
+    </a>
+    <a href="/manager/{{MGR_SLUG}}">
+        <div class="continue-dir">Back to start</div>
+        <div class="continue-num">Issue I</div>
+        <div class="continue-name">The Grand Chronicle</div>
+        <div class="continue-kicker">Career masthead</div>
+    </a>
+</section>
+
+<footer class="foot">
+    <div>End of Vol. I · The <em>{{MGR_NAME}}</em> Chronicle</div>
+    <div style="margin-top:.5rem;">The <em>jzFF</em> Dispatch · Six Issues</div>
+</footer>
+
+<script>
+(function () {
+    var primaryNav = document.querySelector('.nav')
+    function publishNavHeight() {
+        if (!primaryNav) return
+        var h = primaryNav.getBoundingClientRect().height
+        if (h > 0) document.documentElement.style.setProperty('--nav-h', h + 'px')
+    }
+    publishNavHeight()
+    window.addEventListener('resize', publishNavHeight)
+
+    var drop = document.getElementById('nav-drop')
+    if (drop) {
+        drop.querySelector('.nav-drop-btn').addEventListener('click', function (e) {
+            e.stopPropagation(); drop.classList.toggle('open')
+        })
+        document.addEventListener('click', function (e) {
+            if (!drop.contains(e.target)) drop.classList.remove('open')
+        })
+    }
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        })
+    }
+    function setText(id, t) { var el = document.getElementById(id); if (el && t != null) el.textContent = t }
+    function setLede(intro) {
+        var el = document.getElementById('lede-body')
+        if (!el || !intro) return
+        var first = intro.charAt(0) || 'W'
+        var rest = intro.slice(1)
+        el.innerHTML = '<span class="dropcap">' + escapeHtml(first) + '</span>' + escapeHtml(rest)
+    }
+
+    fetch('data/war-room.json', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null })
+        .catch(function () { return null })
+        .then(function (d) {
+            if (!d) { document.getElementById('desks').innerHTML = '<div class="loading">No data yet.</div>'; return }
+            setLede(d.intro)
+            setText('closer', d.closer)
+
+            // Status callout
+            var c = d.callout || {}
+            setText('status-note', c.note || '')
+            var meta = document.getElementById('status-meta')
+            if (meta) {
+                var bits = []
+                if (c.sleeperLeagues != null) bits.push('<strong>' + c.sleeperLeagues + '</strong> Sleeper')
+                if (c.leaguesLinked != null) bits.push('<strong>' + c.leaguesLinked + '</strong> total')
+                if (c.pendingLeagues > 0) bits.push('<strong>' + c.pendingLeagues + '</strong> syncing')
+                meta.innerHTML = bits.join(' · ')
+            }
+
+            renderDesks(d.desks || [])
+        })
+
+    function renderDesks(desks) {
+        var host = document.getElementById('desks')
+        if (!host) return
+        var meta = document.getElementById('desks-meta')
+        if (meta) meta.textContent = desks.length + ' active'
+
+        if (desks.length === 0) {
+            host.innerHTML = '<div class="loading">No desks yet.</div>'
+            return
+        }
+        host.innerHTML = desks.map(function (d) {
+            var metricsHtml = (d.metrics || []).map(function (m) {
+                return '<div class="metric"><div class="metric-label">' + escapeHtml(m.label) + '</div>' +
+                    '<div class="metric-value">' + escapeHtml(m.value) + '</div></div>'
+            }).join('')
+            var statusLabel = d.status === 'sleeper-only' ? 'Sleeper · Live'
+                : (d.status === 'beta' ? 'Beta' : 'Live')
+            var statusCls = d.status === 'sleeper-only' ? 'live'
+                : (d.status === 'beta' ? 'beta' : 'live')
+
+            return '<a class="desk" href="' + d.href + '">' +
+                '<div class="desk-body">' +
+                    '<div class="desk-kicker">' + escapeHtml(d.kicker) + '</div>' +
+                    '<h3 class="desk-name">' + escapeHtml(d.name.replace(/^The /, 'The ')) + '</h3>' +
+                    '<p class="desk-one">' + escapeHtml(d.oneLiner) + '</p>' +
+                    '<p class="desk-body-text">' + escapeHtml(d.body) + '</p>' +
+                    '<div class="desk-arrow">Open the ' + escapeHtml(d.name.replace(/^The /, '')) + ' →</div>' +
+                '</div>' +
+                '<div class="desk-aside">' +
+                    '<div><span class="status-tag ' + statusCls + '">' + statusLabel + '</span></div>' +
+                    metricsHtml +
+                '</div>' +
+                '</a>'
+        }).join('')
+    }
+})()
+</script>
+</body>
+</html>

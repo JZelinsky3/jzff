@@ -21,7 +21,7 @@ import { devCacheGet, devCacheSet } from '@/lib/devCache'
 import { createClient } from '@/lib/supabase/server'
 import { loadCareerChronicle, type CareerChronicle } from '@/lib/manager/chronicle'
 
-const BUNDLE_VERSION = 'v5'
+const BUNDLE_VERSION = 'v6'
 
 export type ManagerBundle = Record<string, unknown>
 
@@ -146,6 +146,8 @@ async function buildBundleFromChronicle(c: CareerChronicle): Promise<ManagerBund
   const dynasty = buildDynasty(c)
   const seasons = buildSeasonsHub(c)
   const vault = buildVault(c)
+  const warRoom = buildWarRoom(c)
+  const wire = buildWire(c)
   // Bundle keys match the leagues pattern: NO `data/` prefix. The catch-all
   // route's resolveRequest() strips the `data/` segment from URLs before
   // looking up the bundle, so /manager/<slug>/data/career.json → 'career.json'.
@@ -156,6 +158,8 @@ async function buildBundleFromChronicle(c: CareerChronicle): Promise<ManagerBund
     'dynasty.json': dynasty,
     'seasons.json': seasons,
     'vault.json': vault,
+    'war-room.json': warRoom,
+    'war-room/wire.json': wire,
   }
   for (const yr of seasons.years) {
     out[`seasons/${yr}.json`] = buildSeasonDeepDive(c, yr)
@@ -1224,6 +1228,256 @@ function buildVault(c: CareerChronicle): VaultJson {
         `Records aren't just historic — some are live. Active streaks, points pace, win-rate ` +
         `windows you're currently inside. The Watch lights up once the in-season pipeline lands.`,
       note: 'Live records tracking ships with Phase 6 (The War Room).',
+    },
+  }
+}
+
+// ============================================================
+// Issue VI — The War Room
+// ============================================================
+// Working tools — Player Desk, The Scout, Trade Desk. The hub here is editorial
+// + a status read on each desk. The actual tool UIs still live as React routes
+// (desk, scout, trade-builder) and will get the new design in a follow-up pass.
+
+type DeskTile = {
+  id: 'desk' | 'scout' | 'trade-desk'
+  name: string
+  kicker: string
+  oneLiner: string
+  body: string  // a paragraph of what this desk does
+  href: string
+  status: 'live' | 'sleeper-only' | 'beta'
+  metrics: Array<{ label: string; value: string }>
+}
+
+type WarRoomJson = {
+  name: string
+  intro: string
+  desks: DeskTile[]
+  // Cross-desk summary line on what's active right now.
+  callout: {
+    leaguesLinked: number
+    sleeperLeagues: number
+    pendingLeagues: number
+    note: string
+  }
+  // Editorial closer at the end of the page.
+  closer: string
+}
+
+function buildWarRoom(c: CareerChronicle): WarRoomJson {
+  const sleeperLeagues = c.leagues.filter((l) => l.platform === 'sleeper' && l.status === 'ready').length
+  const otherLeagues = c.leagues.filter((l) => l.platform !== 'sleeper' && l.status === 'ready').length
+  const pending = c.leagues.filter((l) => l.status === 'pending').length
+
+  const slug = c.chronicle.slug
+  const desks: DeskTile[] = [
+    {
+      id: 'desk',
+      name: 'The Player Desk',
+      kicker: 'Rosters & The Wire',
+      oneLiner: 'Every active roster, side by side.',
+      body:
+        `Live rosters across every Sleeper league you've linked. Filter by position, scan ` +
+        `the wire for free agents worth picking up, check who's on whose taxi. ESPN and ` +
+        `Yahoo leagues show as "unsupported" until those live feeds land.`,
+      href: `/manager/${slug}/desk`,
+      status: 'sleeper-only',
+      metrics: [
+        { label: 'Sleeper leagues', value: String(sleeperLeagues) },
+        { label: 'Other platforms', value: String(otherLeagues) },
+      ],
+    },
+    {
+      id: 'scout',
+      name: 'The Scout',
+      kicker: 'Needs & Targets',
+      oneLiner: 'Position scarcity, scored against the league.',
+      body:
+        `Per-league position needs (where you're thin, where you're stacked) plus trade ` +
+        `recommendations built from KTC values and the league's roster slot template. ` +
+        `Designed to be a starting point for the Trade Desk, not the final word.`,
+      href: `/manager/${slug}/scout`,
+      status: 'sleeper-only',
+      metrics: [
+        { label: 'Sleeper leagues', value: String(sleeperLeagues) },
+      ],
+    },
+    {
+      id: 'trade-desk',
+      name: 'The Trade Desk',
+      kicker: 'Builder & Verdicts',
+      oneLiner: 'Build a trade. Get a verdict.',
+      body:
+        `Pick a counterparty roster, drop players on each side, and the value engine grades ` +
+        `the swap by tier and scarcity. Verdicts read like Sunday-paper takes — not just ` +
+        `"Side A wins."`,
+      href: `/manager/${slug}/trade-builder`,
+      status: 'sleeper-only',
+      metrics: [
+        { label: 'Available counterparties', value: String(Math.max(0, sleeperLeagues * 11)) },
+      ],
+    },
+  ]
+
+  let note = ''
+  if (sleeperLeagues > 0 && otherLeagues === 0 && pending === 0) {
+    note = `${sleeperLeagues} Sleeper ${sleeperLeagues === 1 ? 'league' : 'leagues'} wired in. Every desk is live.`
+  } else if (sleeperLeagues > 0 && otherLeagues > 0) {
+    note = `${sleeperLeagues} Sleeper ${sleeperLeagues === 1 ? 'league' : 'leagues'} live. ${otherLeagues} non-Sleeper ${otherLeagues === 1 ? 'league' : 'leagues'} read-only for now.`
+  } else if (sleeperLeagues === 0 && otherLeagues > 0) {
+    note = `No Sleeper leagues linked — the desks won't have live data until at least one Sleeper league is added.`
+  } else {
+    note = `No leagues ready yet. Add one to wake the desks up.`
+  }
+  if (pending > 0) note += ` ${pending} ${pending === 1 ? 'league is' : 'leagues are'} mid-sync.`
+
+  return {
+    name: c.chronicle.displayName,
+    intro:
+      `Welcome to the working side of the chronicle. Issues I–V are the archive — what was. ` +
+      `The War Room is what is: live rosters, position scouting, trade verdicts, and the in-` +
+      `season Wire. Stop here when it's Sunday night and you've got a decision to make.`,
+    desks,
+    callout: {
+      leaguesLinked: sleeperLeagues + otherLeagues,
+      sleeperLeagues,
+      pendingLeagues: pending,
+      note,
+    },
+    closer:
+      `The desks here still wear the old chapter design — they're being repainted in this ` +
+      `volume's editorial style. Functionally they're the same tools the chronicle has shipped ` +
+      `since launch. New copy on a familiar floor.`,
+  }
+}
+
+// ────────────────────────────────────────────────
+// Live Wire — sub-page at /war-room/wire
+// ────────────────────────────────────────────────
+// Pulls historic-side data from the chronicle (active rivalries / recent form
+// / streaks heading into the season) and labels live-side blocks (this week's
+// matchups, records currently being chased) as Coming Soon until the in-season
+// pipeline lands.
+
+type WireRecentForm = {
+  leagueName: string
+  leagueSlug: string
+  lastYear: number | null
+  lastRank: number | null
+  lastRecord: string | null
+  outlook: string  // editorial sentence
+}
+
+type WireJson = {
+  name: string
+  intro: string
+  recentForm: {
+    intro: string
+    items: WireRecentForm[]
+  }
+  records: {
+    intro: string
+    chasing: Array<{ label: string; value: string; context: string }>
+    live: { enabled: false; intro: string; note: string }
+  }
+  matchups: {
+    enabled: false
+    intro: string
+    note: string
+  }
+}
+
+function buildWire(c: CareerChronicle): WireJson {
+  const recentForm: WireRecentForm[] = c.leagues
+    .filter((l) => l.status === 'ready')
+    .map((lg) => {
+      const last = lg.finishes[lg.finishes.length - 1] ?? null
+      const lastYear = last?.year ?? null
+      const lastRank = last?.rank ?? null
+      const lastRecord = last
+        ? last.ties > 0 ? `${last.wins}-${last.losses}-${last.ties}` : `${last.wins}-${last.losses}`
+        : null
+      let outlook = ''
+      if (last?.champion) {
+        outlook = `Reigning champion in ${lg.leagueName}. The target is on the back this year.`
+      } else if (last?.rank === 2) {
+        outlook = `One game from the ring last time out. Built a contender — needs the close.`
+      } else if (last?.madePlayoffs) {
+        outlook = `Punched the bracket last year. The roster shape suggests another run is on the table.`
+      } else if (last) {
+        outlook = `Missed the bracket last season. Reload cycle — anchors stay, role players turn over.`
+      } else {
+        outlook = `No prior season on file. Fresh ink.`
+      }
+      return {
+        leagueName: lg.leagueName,
+        leagueSlug: lg.leagueSlug,
+        lastYear,
+        lastRank,
+        lastRecord,
+        outlook,
+      }
+    })
+
+  // Records-chasing — historic-derived heuristics (no live data yet). We point
+  // at the marquee numbers from the Vault and label them as the bar to clear.
+  const t = c.totals
+  const winStreak = c.streaks.find((s) => s.kind === 'win')
+  const chasing: Array<{ label: string; value: string; context: string }> = []
+  if (winStreak) {
+    chasing.push({
+      label: 'Win-Streak Mark',
+      value: `${winStreak.length} W`,
+      context: `Currently the line to beat. Any active streak that runs longer files into the Vault.`,
+    })
+  }
+  if (t.championships > 0) {
+    chasing.push({
+      label: 'Championship Count',
+      value: `${t.championships}`,
+      context: `${t.championships} ring${t.championships === 1 ? '' : 's'} on file. Another would tie or pass the current mark.`,
+    })
+  }
+  chasing.push({
+    label: 'Lifetime Points',
+    value: Math.round(t.pointsFor).toLocaleString('en-US'),
+    context: `Every regular-season point clocked in. Compounding — this only goes up.`,
+  })
+
+  return {
+    name: c.chronicle.displayName,
+    intro:
+      `The Wire is the live ledger — what's happening this week, this season, right now. ` +
+      `Outlooks per league lean on last year's finish until the in-season pipeline lands; ` +
+      `matchups and records-watch go live the moment that data is flowing.`,
+    recentForm: {
+      intro:
+        `Read each league's recent form like a beat reporter sketching expectations: champion ` +
+        `defends, runner-up closes, missed-bracket reloads. Outlooks are derived from last year ` +
+        `only — they'll deepen as the in-season pipeline fills in.`,
+      items: recentForm,
+    },
+    records: {
+      intro:
+        `Records-chasing is the historical bar plus a live tracker (the latter coming with the ` +
+        `in-season pipeline). For now: the marquee numbers from the Vault, with a note on what ` +
+        `it'd take to push them.`,
+      chasing,
+      live: {
+        enabled: false,
+        intro:
+          `Live mode tracks active streaks and pace against historical highs. Goes live once ` +
+          `weekly results stream in.`,
+        note: 'Ships in a follow-up to Phase 6.',
+      },
+    },
+    matchups: {
+      enabled: false,
+      intro:
+        `This-week's matchups across every Sleeper league. Score progressions, win probability, ` +
+        `who's currently outscoring whom across rosters.`,
+      note: 'Live matchups feed lights up alongside the desk port.',
     },
   }
 }
