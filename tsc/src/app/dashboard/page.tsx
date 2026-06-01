@@ -197,19 +197,21 @@ export default async function DashboardPage({
             <div className="card-cta">Build an archive <span className="card-arrow">→</span></div>
           </Link>
 
-          <Link href={chronicle ? `/manager/${chronicle.slug}` : '/manager/new'} className="card" style={{ display: 'block' }}>
-            <div className="card-corner">★ Mode II</div>
-            <div className="card-roman">✦</div>
-            <div className="card-title">Manager <em>Hub.</em></div>
-            <div className="card-desc">
-              {chronicle
-                ? `Your career chronicle — ${chronicle.linkCount} ${chronicle.linkCount === 1 ? 'league' : 'leagues'} linked. Open the book.`
-                : 'Track yourself across every league you play in. One book of your whole career.'}
-            </div>
-            <div className="card-cta">
-              {chronicle ? 'Open your chronicle' : 'Start your hub'} <span className="card-arrow">→</span>
-            </div>
-          </Link>
+          {siteAdmin && (
+            <Link href={chronicle ? `/manager/${chronicle.slug}` : '/manager/new'} className="card" style={{ display: 'block' }}>
+              <div className="card-corner">★ Mode II</div>
+              <div className="card-roman">✦</div>
+              <div className="card-title">Manager <em>Hub.</em></div>
+              <div className="card-desc">
+                {chronicle
+                  ? `Your career chronicle — ${chronicle.linkCount} ${chronicle.linkCount === 1 ? 'league' : 'leagues'} linked. Open the book.`
+                  : 'Track yourself across every league you play in. One book of your whole career.'}
+              </div>
+              <div className="card-cta">
+                {chronicle ? 'Open your chronicle' : 'Start your hub'} <span className="card-arrow">→</span>
+              </div>
+            </Link>
+          )}
         </div>
       </div>
 
