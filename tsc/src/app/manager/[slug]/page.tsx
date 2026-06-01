@@ -22,14 +22,16 @@ export default async function ChroniclePage({
 
   return (
     <main>
-      <section className="hero" style={{ paddingTop: '2.5rem', paddingBottom: '1rem' }}>
-        <div className="hero-sup">★ The Chronicle ★</div>
-        <div style={{ display: 'flex', gap: '.6rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '.5rem' }}>
-          <Link href="/manager/new" className="dc-btn">+ Add a league</Link>
-          <Link href={`/manager/${slug}/settings`} className="dc-btn-ghost">Manage hub</Link>
-          <Link href="/dashboard" className="dc-btn-ghost">← Dashboard</Link>
-        </div>
-      </section>
+      <div
+        style={{
+          display: 'flex', gap: '.6rem', justifyContent: 'center', flexWrap: 'wrap',
+          padding: '1.25rem 1rem .5rem',
+        }}
+      >
+        <Link href="/manager/new" className="dc-btn">+ Add a league</Link>
+        <Link href={`/manager/${slug}/settings`} className="dc-btn-ghost">Manage hub</Link>
+        <Link href="/dashboard" className="dc-btn-ghost">← Dashboard</Link>
+      </div>
 
       {sp.added && summary.pendingCount > 0 && (
         <div

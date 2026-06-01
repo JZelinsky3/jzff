@@ -1,394 +1,403 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { CareerSummary, CareerLeagueSummary } from '@/lib/manager/career'
 
-// A newspaper-style "book" of a career chronicle. Each chapter is a full, dense
-// broadsheet page — masthead, ruled columns, stat tables, football motifs — and
-// a sticky chapter rail (like the almanac's nav) jumps between them with a page
-// flip. Pages scroll vertically; they are not constrained to one screen.
-
-type Chapter = { id: string; label: string; node: ReactNode }
+// The career chronicle as a full-screen scrolling broadsheet. Built from the
+// same heavy components the almanac's manager page uses — profile header, stat
+// strip, regular/playoff split, season ledger, head-to-head and top-performance
+// tables — but laid out and dressed as a newspaper, with a sticky chapter rail
+// (like the almanac nav) that jumps between sections.
 
 export function ChronicleBook({ summary }: { summary: CareerSummary }) {
-  const chapters = useMemo(() => buildChapters(summary), [summary])
-  const [index, setIndex] = useState(0)
-  const [dir, setDir] = useState<'next' | 'prev'>('next')
+  const sections = useMemo(() => buildSections(summary), [summary])
+  const [active, setActive] = useState(sections[0]?.id ?? '')
+  const railRef = useRef<HTMLDivElement>(null)
 
-  const total = chapters.length
-  function go(to: number, direction: 'next' | 'prev') {
-    if (to < 0 || to >= total) return
-    setDir(direction)
-    setIndex(to)
-    // Jump the page body back to the top on a chapter change.
-    if (typeof document !== 'undefined') {
-      document.getElementById('nb-book')?.scrollTo?.({ top: 0 })
-      window.scrollTo({ top: (document.getElementById('nb-shell')?.offsetTop ?? 0) - 12, behavior: 'smooth' })
-    }
+  // Highlight the chapter currently in view.
+  useEffect(() => {
+    const els = sections.map((s) => document.getElementById(s.id)).filter(Boolean) as HTMLElement[]
+    if (els.length === 0) return
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)
+        if (visible[0]) setActive(visible[0].target.id)
+      },
+      { rootMargin: '-30% 0px -60% 0px', threshold: [0, 0.25, 0.5] },
+    )
+    els.forEach((el) => obs.observe(el))
+    return () => obs.disconnect()
+  }, [sections])
+
+  // Keep the active tab scrolled into view in the rail.
+  useEffect(() => {
+    const rail = railRef.current
+    if (!rail) return
+    const tab = rail.querySelector<HTMLElement>(`[data-tab="${active}"]`)
+    tab?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+  }, [active])
+
+  function jump(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
-    <div className="nb-wrap" id="nb-shell">
+    <div className="mh">
       <style>{CSS}</style>
 
-      {/* Chapter rail */}
-      <nav className="nb-nav" aria-label="Chapters">
-        {chapters.map((c, i) => (
+      <nav className="mh-rail" ref={railRef} aria-label="Chapters">
+        {sections.map((s, i) => (
           <button
-            key={c.id}
+            key={s.id}
+            data-tab={s.id}
             type="button"
-            className={`nb-tab ${i === index ? 'is-active' : ''}`}
-            onClick={() => go(i, i > index ? 'next' : 'prev')}
+            className={`mh-tab ${active === s.id ? 'is-active' : ''}`}
+            onClick={() => jump(s.id)}
           >
-            <span className="nb-tab-num">{String(i + 1).padStart(2, '0')}</span>
-            {c.label}
+            <span className="mh-tab-num">{String(i + 1).padStart(2, '0')}</span>
+            {s.label}
           </button>
         ))}
       </nav>
 
-      <div className="nb-stage">
-        <button className="nb-arrow" onClick={() => go(index - 1, 'prev')} disabled={index === 0} aria-label="Previous chapter">‹</button>
-
-        <div className="nb-book" id="nb-book">
-          <div key={index} className={`nb-page nb-page-${dir}`}>
-            {chapters[index].node}
-            <div className="nb-folio">
-              <Football size={12} /> {summary.chronicle.displayName} · Page {index + 1} of {total}
-            </div>
-          </div>
-        </div>
-
-        <button className="nb-arrow" onClick={() => go(index + 1, 'next')} disabled={index === total - 1} aria-label="Next chapter">›</button>
+      <div className="mh-paper">
+        {sections.map((s) => (
+          <section key={s.id} id={s.id} className="mh-sec">
+            {s.node}
+          </section>
+        ))}
       </div>
     </div>
   )
 }
 
-// ── chapter assembly ─────────────────────────────────────────────────────────
+// ── sections ─────────────────────────────────────────────────────────────────
 
-function buildChapters(s: CareerSummary): Chapter[] {
-  const chapters: Chapter[] = []
+type Section = { id: string; label: string; node: ReactNode }
+
+function buildSections(s: CareerSummary): Section[] {
+  const out: Section[] = []
   const t = s.totals
   const ready = s.leagues.filter((l) => l.status === 'ready')
-  const decided = t.wins + t.losses
-  const winPct = decided > 0 ? (t.winPct * 100).toFixed(1) : '—'
   const span = careerSpan(ready)
-
-  // ── 1. Front page ──────────────────────────────────────────────────────────
+  const regGames = t.wins + t.losses + t.ties
+  const totalGames = regGames + t.playoffWins + t.playoffLosses
   const lead = leadHeadline(s)
-  chapters.push({
+
+  // ── Front page / masthead ───────────────────────────────────────────────
+  out.push({
     id: 'front', label: 'Front Page', node: (
-      <article className="nb-sheet">
-        <Masthead title={`The ${s.chronicle.displayName} Chronicle`} sub={s.chronicle.subtitle ?? 'A career in full'} span={span} edition="Front Page" />
-        <FieldDivider />
-        <div className="nb-lead">
-          <div className="nb-lead-kicker">★ Career Dispatch ★</div>
-          <h2 className="nb-lead-head">{lead.head}</h2>
-          <p className="nb-lead-sub">{lead.sub}</p>
+      <div className="mh-front">
+        <header className="mh-mast">
+          <div className="mh-mast-rule mh-mast-rule-thick" />
+          <div className="mh-mast-meta">
+            <span>Vol. {romanOr(t.seasonsPlayed)}</span>
+            <span>★</span>
+            <span>The {s.chronicle.displayName} Chronicle</span>
+            <span>★</span>
+            <span>Est. {span}</span>
+          </div>
+          <h1 className="mh-mast-title">{s.chronicle.displayName}<em>.</em></h1>
+          <div className="mh-mast-rule" />
+          <p className="mh-mast-tag">{s.chronicle.subtitle || lead.sub}</p>
+        </header>
+
+        {t.championships > 0 && (
+          <div className="mh-seals">
+            {seriesYears(s).map((y) => <Seal key={y} year={y} />)}
+          </div>
+        )}
+
+        <FieldRule />
+
+        <div className="mh-lead">
+          <div className="mh-kicker">★ Career Dispatch ★</div>
+          <h2 className="mh-lead-head">{lead.head}</h2>
         </div>
-        <div className="nb-frontstats">
-          <BigStat n={t.leagues} label="Leagues" />
-          <BigStat n={t.seasonsPlayed} label="Seasons" />
-          <BigStat n={`${t.wins}–${t.losses}${t.ties ? `–${t.ties}` : ''}`} label="All-time" small />
-          <BigStat n={t.championships} label="Titles" gold />
-          <BigStat n={`${winPct}%`} label="Win rate" small />
+
+        <div className="mh-cols">
+          <p><span className="mh-dropcap">{firstLetter(s.chronicle.displayName)}</span>{frontProse(s, span, totalGames)}</p>
         </div>
-        <FieldDivider />
-        <div className="nb-columns">
-          <p><span className="nb-dropcap">{firstLetter(s.chronicle.displayName)}</span>{frontProse(s, span)}</p>
-        </div>
-      </article>
+      </div>
     ),
   })
 
-  // ── 2. The Ledger (by the numbers) ──────────────────────────────────────────
-  chapters.push({
+  // ── The Ledger ──────────────────────────────────────────────────────────
+  const regPct = regGames > 0 ? t.wins / (t.wins + t.losses || 1) : 0
+  const plGames = t.playoffWins + t.playoffLosses
+  const plPct = plGames > 0 ? t.playoffWins / plGames : 0
+  out.push({
     id: 'ledger', label: 'The Ledger', node: (
-      <article className="nb-sheet">
-        <SectionHead num="I" title="The Ledger" kicker="By the numbers" />
-        {decided === 0 ? (
-          <Empty>No synced seasons yet — add a league and run a sync to fill the ledger.</Empty>
+      <>
+        <SecHead num="§ 01" title="The Ledger —" meta="career, by the numbers" />
+        {regGames === 0 ? (
+          <Empty>No synced seasons yet. Add a league and run a sync to fill the ledger.</Empty>
         ) : (
           <>
-            <div className="nb-statgrid">
-              <Cell label="Regular-season record" value={`${t.wins}–${t.losses}${t.ties ? `–${t.ties}` : ''}`} big />
-              <Cell label="Win rate" value={`${winPct}%`} big />
-              <Cell label="Playoff record" value={`${t.playoffWins}–${t.playoffLosses}`} big />
-              <Cell label="Playoff appearances" value={t.playoffAppearances} big />
-              <Cell label="Seasons played" value={t.seasonsPlayed} />
-              <Cell label="Leagues" value={t.leagues} />
-              <Cell label="Championships" value={t.championships} gold />
-              <Cell label="Runner-up finishes" value={t.runnerUps} />
-              <Cell label="Points for" value={Math.round(t.pointsFor).toLocaleString()} />
-              <Cell label="Points against" value={Math.round(t.pointsAgainst).toLocaleString()} />
-              <Cell label="Avg PF / season" value={t.seasonsPlayed ? Math.round(t.pointsFor / t.seasonsPlayed).toLocaleString() : '—'} />
-              <Cell label="Net points" value={`${t.pointsFor - t.pointsAgainst >= 0 ? '+' : ''}${Math.round(t.pointsFor - t.pointsAgainst).toLocaleString()}`} />
+            <div className="mh-strip">
+              <Strip label="Leagues" value={t.leagues} detail="in the hub" cream />
+              <Strip label="Seasons" value={t.seasonsPlayed} detail={span} />
+              <Strip label="Total games" value={totalGames} detail="reg + playoff" cream />
+              <Strip label="Championships" value={t.championships} detail={t.championships ? 'engraved' : 'still chasing'} />
+              <Strip label="Playoff trips" value={t.playoffAppearances} detail="postseasons" />
+              <Strip label="Runner-ups" value={t.runnerUps} detail="so close" cream />
             </div>
-            <p className="nb-note">★ Consolation &amp; placement games (incl. the 5th-place game) are excluded — playoff figures count championship-bracket games only, matching the league almanac.</p>
+
+            <div className="mh-split">
+              <div className="mh-splitcol">
+                <div className="mh-split-lbl">Regular Season</div>
+                <div className="mh-split-rec">{t.wins}–{t.losses}{t.ties ? `–${t.ties}` : ''}</div>
+                <div className="mh-split-pct">{fmtPct(regPct)} win pct</div>
+                <div className="mh-split-pf">PF {Math.round(t.pointsFor).toLocaleString()} · PA {Math.round(t.pointsAgainst).toLocaleString()}</div>
+              </div>
+              <div className="mh-splitcol is-playoff">
+                <div className="mh-split-lbl">Playoffs</div>
+                <div className="mh-split-rec">{t.playoffWins}–{t.playoffLosses}</div>
+                <div className="mh-split-pct">{plGames ? `${fmtPct(plPct)} win pct` : 'no playoff games yet'}</div>
+                <div className="mh-split-pf">PF {Math.round(t.playoffPointsFor).toLocaleString()} · PA {Math.round(t.playoffPointsAgainst).toLocaleString()}</div>
+              </div>
+            </div>
+            <p className="mh-foot">★ Championship-bracket games only. Consolation &amp; placement games (incl. the 5th-place game) are excluded — same rules as the league almanac.</p>
           </>
         )}
-      </article>
+      </>
     ),
   })
 
-  // ── 3. Trophy case ──────────────────────────────────────────────────────────
-  chapters.push({
+  // ── Trophy case ─────────────────────────────────────────────────────────
+  out.push({
     id: 'trophies', label: 'Trophy Case', node: (
-      <article className="nb-sheet">
-        <SectionHead num="II" title="The Trophy Case" kicker={`${t.championships} titles · ${t.runnerUps} runner-ups`} />
+      <>
+        <SecHead num="§ 02" title="The Trophy Case —" meta={`${t.championships} titles · ${t.runnerUps} runner-ups`} />
         {s.trophyCase.length === 0 ? (
           <Empty>No titles or runner-up finishes on record yet. The case awaits its first plaque.</Empty>
         ) : (
-          <div className="nb-trophies">
+          <div className="mh-trophies">
             {s.trophyCase.map((tr, i) => (
-              <div key={i} className={`nb-plaque ${tr.kind === 'champion' ? 'is-champ' : ''}`}>
-                <div className="nb-plaque-ico">{tr.kind === 'champion' ? '🏆' : '🥈'}</div>
-                <div className="nb-plaque-year">{tr.year}</div>
-                <div className="nb-plaque-league">{tr.leagueName}</div>
-                <div className="nb-plaque-tag">{tr.kind === 'champion' ? 'Champion' : 'Runner-up'}</div>
+              <div key={i} className={`mh-plaque ${tr.kind === 'champion' ? 'is-champ' : ''}`}>
+                {tr.kind === 'champion' ? <Seal year={tr.year} small /> : <div className="mh-plaque-ico">🥈</div>}
+                <div className="mh-plaque-year">{tr.year}</div>
+                <div className="mh-plaque-league">{tr.leagueName}</div>
+                <div className="mh-plaque-tag">{tr.kind === 'champion' ? 'Champion' : 'Runner-up'}</div>
               </div>
             ))}
           </div>
         )}
-      </article>
+      </>
     ),
   })
 
-  // ── 4..n. Per-league chapters ───────────────────────────────────────────────
-  let roman = 3
+  // ── Per-league chapters ─────────────────────────────────────────────────
+  let n = 3
   for (const lg of s.leagues) {
-    const numeral = toRoman(roman++)
-    chapters.push({
-      id: `lg-${lg.leagueId}`, label: shortLabel(lg.leagueName), node: (
-        <article className="nb-sheet">
-          {lg.status === 'pending' ? (
-            <>
-              <SectionHead num={numeral} title={lg.leagueName} kicker={`${lg.platform} · awaiting sync`} />
-              <Empty>Not synced yet. Open <em>Manage hub</em> and run a sync to thread {lg.leagueName} into your chronicle.</Empty>
-            </>
-          ) : (
-            <LeagueChapter lg={lg} numeral={numeral} />
-          )}
-        </article>
-      ),
+    const num = `§ ${String(n).padStart(2, '0')}`
+    n++
+    out.push({
+      id: `lg-${lg.leagueId}`, label: shortLabel(lg.leagueName),
+      node: lg.status === 'pending' ? (
+        <>
+          <SecHead num={num} title={`${lg.leagueName} —`} meta={`${lg.platform} · awaiting sync`} />
+          <Empty>Not synced yet. Open <em>Manage hub</em> and run a sync to thread {lg.leagueName} into your chronicle.</Empty>
+        </>
+      ) : <LeagueSection lg={lg} num={num} />,
     })
   }
 
-  // ── Rivalry desk ─────────────────────────────────────────────────────────────
-  chapters.push({
-    id: 'rivals', label: 'Rivalry Desk', node: (
-      <article className="nb-sheet">
-        <SectionHead num={toRoman(roman++)} title="The Rivalry Desk" kicker="Most-faced opponents, all leagues" />
+  // ── Rivalry desk ────────────────────────────────────────────────────────
+  out.push({
+    id: 'rivals', label: 'Rivalries', node: (
+      <>
+        <SecHead num={`§ ${String(n++).padStart(2, '0')}`} title="The Rivalry Desk —" meta="most-faced, every league" />
         {s.topRivalries.length === 0 ? (
           <Empty>No head-to-head history yet — sync a league to meet your rivals.</Empty>
         ) : (
-          <table className="nb-table">
-            <thead>
-              <tr><th>Opponent</th><th>Record</th><th>Games</th><th>Playoff</th><th>PF–PA</th></tr>
-            </thead>
+          <div className="mh-table">
+            <table>
+              <thead><tr><th>Opponent</th><th className="num">Record</th><th className="num">Playoff</th><th className="num">Games</th><th className="num">PF–PA</th></tr></thead>
+              <tbody>
+                {s.topRivalries.map((r) => {
+                  const cls = r.wins > r.losses ? 'win' : r.losses > r.wins ? 'loss' : 'even'
+                  return (
+                    <tr key={r.opponent}>
+                      <td className="opp">{r.opponent}{r.leagues.length > 1 && <span className="mh-xl"> · {r.leagues.length} lgs</span>}</td>
+                      <td className={`num rec ${cls}`}>{r.wins}–{r.losses}{r.ties ? `–${r.ties}` : ''}</td>
+                      <td className="num">{r.playoffGames || '—'}</td>
+                      <td className="num">{r.games}</td>
+                      <td className="num">{Math.round(r.pointsFor)}–{Math.round(r.pointsAgainst)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </>
+    ),
+  })
+
+  // ── Halls ───────────────────────────────────────────────────────────────
+  out.push({
+    id: 'fame', label: 'Hall of Fame', node: (
+      <>
+        <SecHead num={`§ ${String(n++).padStart(2, '0')}`} title="Hall of Fame —" meta="signature wins" />
+        <Moments moments={s.bestWins} kind="win" empty="Your biggest wins will be enshrined here once a league is synced." />
+      </>
+    ),
+  })
+  out.push({
+    id: 'pain', label: 'Hall of Pain', node: (
+      <>
+        <SecHead num={`§ ${String(n++).padStart(2, '0')}`} title="Hall of Pain —" meta="worst beats" />
+        <Moments moments={s.worstLosses} kind="loss" empty="The losses you'd rather forget will live here. Sync to begin the suffering." />
+      </>
+    ),
+  })
+
+  return out
+}
+
+// ── per-league section ───────────────────────────────────────────────────────
+
+function LeagueSection({ lg, num }: { lg: CareerLeagueSummary; num: string }) {
+  const yrs = lg.firstYear && lg.lastYear ? (lg.firstYear === lg.lastYear ? `${lg.firstYear}` : `${lg.firstYear}–${lg.lastYear}`) : '—'
+  const regGames = lg.wins + lg.losses + lg.ties
+  const regPct = regGames > 0 ? lg.wins / (lg.wins + lg.losses || 1) : 0
+  return (
+    <>
+      <SecHead num={num} title={`${lg.leagueName} —`} meta={`${lg.platform} · ${yrs}`} />
+      <div className="mh-strip mh-strip-4">
+        <Strip label="Reg. record" value={`${lg.wins}–${lg.losses}${lg.ties ? `–${lg.ties}` : ''}`} detail={`${fmtPct(regPct)} pct`} cream />
+        <Strip label="Playoff" value={`${lg.playoffWins}–${lg.playoffLosses}`} detail={`${lg.playoffAppearances} trips`} />
+        <Strip label="Titles" value={lg.championships} detail={lg.titleYears.length ? lg.titleYears.join(', ') : '—'} />
+        <Strip label="Best finish" value={lg.bestFinish != null ? ordinal(lg.bestFinish) : '—'} detail={`${lg.seasonsPlayed} seasons`} cream />
+      </div>
+      {lg.finishes.length > 0 && (
+        <div className="mh-table">
+          <table>
+            <thead><tr><th>Year</th><th className="num">Record</th><th className="num">Finish</th><th>Postseason</th></tr></thead>
             <tbody>
-              {s.topRivalries.map((r) => (
-                <tr key={r.opponent}>
-                  <td className="nb-td-name">{r.opponent}{r.leagues.length > 1 && <span className="nb-xl"> · {r.leagues.length} lgs</span>}</td>
-                  <td className="nb-td-mono">{r.wins}–{r.losses}{r.ties ? `–${r.ties}` : ''}</td>
-                  <td className="nb-td-mono">{r.games}</td>
-                  <td className="nb-td-mono">{r.playoffGames || '—'}</td>
-                  <td className="nb-td-mono">{Math.round(r.pointsFor)}–{Math.round(r.pointsAgainst)}</td>
+              {lg.finishes.map((f) => (
+                <tr key={f.year} className={f.champion ? 'is-title' : ''}>
+                  <td className="year">{f.year}</td>
+                  <td className="num">{f.wins}–{f.losses}{f.ties ? `–${f.ties}` : ''}</td>
+                  <td className={`num finish ${f.rank === 1 ? 'gold' : f.rank === 2 ? 'silver' : f.rank === 3 ? 'bronze' : ''}`}>{f.rank === 1 ? '★ 1st' : f.rank != null ? ordinal(f.rank) : '—'}</td>
+                  <td>{f.champion ? '🏆 Champion' : f.madePlayoffs ? 'Made playoffs' : '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
-      </article>
-    ),
-  })
-
-  // ── Hall of Fame ──────────────────────────────────────────────────────────────
-  chapters.push({
-    id: 'fame', label: 'Hall of Fame', node: (
-      <article className="nb-sheet">
-        <SectionHead num={toRoman(roman++)} title="Hall of Fame" kicker="Signature wins" />
-        <MomentsList moments={s.bestWins} kind="win" empty="Your biggest wins will be enshrined here once a league is synced." />
-      </article>
-    ),
-  })
-
-  // ── Hall of Pain ──────────────────────────────────────────────────────────────
-  chapters.push({
-    id: 'pain', label: 'Hall of Pain', node: (
-      <article className="nb-sheet">
-        <SectionHead num={toRoman(roman++)} title="Hall of Pain" kicker="Worst beats" />
-        <MomentsList moments={s.worstLosses} kind="loss" empty="The losses you'd rather forget will live here. Sync to begin the suffering." />
-      </article>
-    ),
-  })
-
-  // ── Back page ─────────────────────────────────────────────────────────────────
-  chapters.push({
-    id: 'back', label: 'Back Page', node: (
-      <article className="nb-sheet nb-sheet-center">
-        <FieldDivider />
-        <div className="nb-colophon">
-          <Football size={40} />
-          <div className="nb-lead-kicker">— End of Edition —</div>
-          <p className="nb-colophon-text">
-            A living record. Every sync sets the next chapter in type. Add another league to keep
-            the presses running.
-          </p>
-          <div className="nb-colophon-mast">The {s.chronicle.displayName} Chronicle</div>
         </div>
-        <FieldDivider />
-      </article>
-    ),
-  })
-
-  return chapters
-}
-
-// ── per-league chapter body ────────────────────────────────────────────────────
-
-function LeagueChapter({ lg, numeral }: { lg: CareerLeagueSummary; numeral: string }) {
-  const yrs = lg.firstYear && lg.lastYear ? (lg.firstYear === lg.lastYear ? `${lg.firstYear}` : `${lg.firstYear}–${lg.lastYear}`) : '—'
-  return (
-    <>
-      <SectionHead num={numeral} title={lg.leagueName} kicker={`${lg.platform} · ${yrs}`} />
-      <div className="nb-statgrid nb-statgrid-tight">
-        <Cell label="Regular record" value={`${lg.wins}–${lg.losses}${lg.ties ? `–${lg.ties}` : ''}`} />
-        <Cell label="Playoff record" value={`${lg.playoffWins}–${lg.playoffLosses}`} />
-        <Cell label="Playoff trips" value={lg.playoffAppearances} />
-        <Cell label="Titles" value={lg.championships} gold={lg.championships > 0} />
-        <Cell label="Best finish" value={lg.bestFinish != null ? ordinal(lg.bestFinish) : '—'} />
-        <Cell label="Seasons" value={lg.seasonsPlayed} />
-      </div>
-      {lg.titleYears.length > 0 && <p className="nb-note">★ Champion in {lg.titleYears.join(', ')}.</p>}
-      {lg.finishes.length > 0 && (
-        <table className="nb-table">
-          <thead><tr><th>Year</th><th>Record</th><th>Finish</th><th>Postseason</th></tr></thead>
-          <tbody>
-            {lg.finishes.map((f) => (
-              <tr key={f.year} className={f.champion ? 'is-title' : ''}>
-                <td className="nb-td-mono">{f.year}</td>
-                <td className="nb-td-mono">{f.wins}–{f.losses}{f.ties ? `–${f.ties}` : ''}</td>
-                <td className="nb-td-mono">{f.rank != null ? ordinal(f.rank) : '—'}</td>
-                <td>{f.champion ? '🏆 Champion' : f.madePlayoffs ? 'Made playoffs' : '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       )}
     </>
   )
 }
 
-function MomentsList({ moments, kind, empty }: { moments: CareerSummary['bestWins']; kind: 'win' | 'loss'; empty: string }) {
+function Moments({ moments, kind, empty }: { moments: CareerSummary['bestWins']; kind: 'win' | 'loss'; empty: string }) {
   if (moments.length === 0) return <Empty>{empty}</Empty>
   return (
-    <div className="nb-moments">
-      {moments.map((m, i) => (
-        <div key={i} className="nb-moment">
-          <div className={`nb-moment-margin ${kind === 'loss' ? 'is-bad' : ''}`}>{m.margin > 0 ? '+' : ''}{m.margin.toFixed(1)}</div>
-          <div className="nb-moment-body">
-            <div className="nb-moment-score">{m.score.toFixed(1)} – {m.oppScore.toFixed(1)} <span className="nb-moment-vs">vs {m.opponent}</span></div>
-            <div className="nb-moment-meta">{m.leagueName} · {m.year} · Week {m.week}{m.isPlayoff ? ' · Playoffs' : ''}</div>
-          </div>
-        </div>
-      ))}
+    <div className="mh-table">
+      <table>
+        <thead><tr><th className="num">#</th><th className="num">Score</th><th>Opponent</th><th className="num">Margin</th><th>When</th></tr></thead>
+        <tbody>
+          {moments.map((m, i) => (
+            <tr key={i}>
+              <td className={`num rank ${i === 0 ? 'gold' : ''}`}>{i + 1}</td>
+              <td className="num score">{m.score.toFixed(1)} – {m.oppScore.toFixed(1)}</td>
+              <td className="opp">{m.opponent}</td>
+              <td className={`num result ${kind === 'win' ? 'win' : 'loss'}`}>{m.margin > 0 ? '+' : ''}{m.margin.toFixed(1)}</td>
+              <td className="mh-when">{m.leagueName} · {m.year} · W{m.week}{m.isPlayoff ? ' · PO' : ''}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
 
-// ── presentational atoms ────────────────────────────────────────────────────────
+// ── atoms ─────────────────────────────────────────────────────────────────────
 
-function Masthead({ title, sub, span, edition }: { title: string; sub: string; span: string; edition: string }) {
+function SecHead({ num, title, meta }: { num: string; title: string; meta: string }) {
   return (
-    <header className="nb-mast">
-      <div className="nb-mast-rule" />
-      <div className="nb-mast-meta">
-        <span>Est. {span}</span>
-        <span>★</span>
-        <span>{edition}</span>
-      </div>
-      <h1 className="nb-mast-title">{title}</h1>
-      <div className="nb-mast-rule" />
-      <div className="nb-mast-sub">{sub}</div>
-    </header>
-  )
-}
-
-function SectionHead({ num, title, kicker }: { num: string; title: string; kicker?: string }) {
-  return (
-    <header className="nb-sechead">
-      <div className="nb-sechead-top">
-        <span className="nb-sechead-num">§ {num}</span>
-        {kicker && <span className="nb-sechead-kicker">{kicker}</span>}
-      </div>
-      <h2 className="nb-sechead-title">{title}</h2>
-    </header>
-  )
-}
-
-function BigStat({ n, label, gold, small }: { n: ReactNode; label: string; gold?: boolean; small?: boolean }) {
-  return (
-    <div className="nb-bigstat">
-      <div className={`nb-bigstat-n ${gold ? 'is-gold' : ''} ${small ? 'is-small' : ''}`}>{n}</div>
-      <div className="nb-bigstat-l">{label}</div>
+    <div className="section-header mh-sechead">
+      <span className="section-num">{num}</span>
+      <span className="section-title">{title}</span>
+      <span className="section-meta">{meta}</span>
     </div>
   )
 }
 
-function Cell({ label, value, big, gold }: { label: string; value: ReactNode; big?: boolean; gold?: boolean }) {
+function Strip({ label, value, detail, cream }: { label: string; value: ReactNode; detail?: string; cream?: boolean }) {
   return (
-    <div className={`nb-cell ${big ? 'is-big' : ''}`}>
-      <div className={`nb-cell-v ${gold ? 'is-gold' : ''}`}>{value}</div>
-      <div className="nb-cell-l">{label}</div>
+    <div className="mh-stripitem">
+      <div className="mh-strip-lbl">{label}</div>
+      <div className={`mh-strip-val ${cream ? 'is-cream' : ''}`}>{value}</div>
+      {detail && <div className="mh-strip-det">{detail}</div>}
     </div>
   )
 }
 
 function Empty({ children }: { children: ReactNode }) {
-  return <div className="nb-empty">{children}</div>
+  return <div className="mh-empty">{children}</div>
 }
 
-function FieldDivider() {
+function FieldRule() {
   return (
-    <div className="nb-field" aria-hidden>
-      <div className="nb-field-hash" />
-      <Football size={16} />
-      <div className="nb-field-hash" />
+    <div className="mh-fieldrule" aria-hidden>
+      <span className="mh-hash" />
+      <Football />
+      <span className="mh-hash" />
     </div>
   )
 }
 
-function Football({ size = 16 }: { size?: number }) {
+function Football() {
   return (
-    <svg width={size} height={size * 0.62} viewBox="0 0 32 20" aria-hidden style={{ flex: '0 0 auto' }}>
-      <ellipse cx="16" cy="10" rx="15" ry="9" fill="#6b3f1d" stroke="#3a2410" strokeWidth="1.5" />
-      <line x1="10" y1="10" x2="22" y2="10" stroke="#f5edd9" strokeWidth="1.4" />
-      <line x1="12" y1="7" x2="12" y2="13" stroke="#f5edd9" strokeWidth="1.2" />
-      <line x1="15" y1="7" x2="15" y2="13" stroke="#f5edd9" strokeWidth="1.2" />
-      <line x1="18" y1="7" x2="18" y2="13" stroke="#f5edd9" strokeWidth="1.2" />
-      <line x1="21" y1="7" x2="21" y2="13" stroke="#f5edd9" strokeWidth="1.2" />
+    <svg width="26" height="16" viewBox="0 0 32 20" aria-hidden style={{ flex: '0 0 auto' }}>
+      <ellipse cx="16" cy="10" rx="15" ry="9" fill="none" stroke="var(--gold)" strokeWidth="1.4" />
+      <line x1="10" y1="10" x2="22" y2="10" stroke="var(--gold)" strokeWidth="1.2" />
+      <line x1="12.5" y1="7" x2="12.5" y2="13" stroke="var(--gold)" strokeWidth="1" />
+      <line x1="16" y1="6.5" x2="16" y2="13.5" stroke="var(--gold)" strokeWidth="1" />
+      <line x1="19.5" y1="7" x2="19.5" y2="13" stroke="var(--gold)" strokeWidth="1" />
     </svg>
   )
 }
 
-// ── prose + helpers ─────────────────────────────────────────────────────────────
+// Simplified champion seal, echoing the almanac's mini-seal.
+function Seal({ year, small }: { year: number; small?: boolean }) {
+  const sz = small ? 58 : 78
+  return (
+    <svg className="mh-seal" width={sz} height={sz} viewBox="0 0 200 200" aria-hidden>
+      <circle cx="100" cy="100" r="92" fill="none" stroke="var(--gold)" strokeWidth="1.5" opacity="0.4" />
+      <circle cx="100" cy="100" r="86" fill="none" stroke="var(--gold)" strokeWidth="0.5" opacity="0.6" />
+      <polygon points="100,40 103,50 113,50 105,56 108,66 100,60 92,66 95,56 87,50 97,50" fill="var(--gold)" />
+      <text x="100" y="128" fill="var(--cream)" fontFamily="var(--serif)" fontStyle="italic" fontSize="58" textAnchor="middle">★</text>
+      <line x1="74" y1="142" x2="126" y2="142" stroke="var(--gold)" strokeWidth="0.8" />
+      <text x="100" y="158" fill="var(--cream-mute)" fontFamily="var(--mono)" fontSize="13" fontWeight="700" letterSpacing="2" textAnchor="middle">{year}</text>
+    </svg>
+  )
+}
+
+// ── prose + helpers ───────────────────────────────────────────────────────────
 
 function leadHeadline(s: CareerSummary): { head: string; sub: string } {
   const t = s.totals
-  if (t.championships >= 3) return { head: `A Dynasty in ${t.leagues} ${t.leagues === 1 ? 'League' : 'Leagues'}`, sub: `${t.championships} championships and counting.` }
+  if (t.championships >= 3) return { head: `A Dynasty Across ${t.leagues} ${t.leagues === 1 ? 'League' : 'Leagues'}`, sub: `${t.championships} championships and counting.` }
   if (t.championships >= 1) return { head: `${t.championships}× Champion`, sub: `${t.seasonsPlayed} seasons, ${t.wins}–${t.losses} all-time.` }
-  if (t.playoffAppearances >= 3) return { head: 'Perennial Contender', sub: `${t.playoffAppearances} playoff appearances, still chasing the ring.` }
+  if (t.playoffAppearances >= 3) return { head: 'A Perennial Contender', sub: `${t.playoffAppearances} playoff appearances, still chasing the ring.` }
   if (t.seasonsPlayed > 0) return { head: 'The Grind Continues', sub: `${t.seasonsPlayed} seasons across ${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'}.` }
   return { head: 'A New Chronicle Opens', sub: 'Sync your leagues to write the first chapter.' }
 }
 
-function frontProse(s: CareerSummary, span: string): string {
+function frontProse(s: CareerSummary, span: string, totalGames: number): string {
   const t = s.totals
-  if (t.seasonsPlayed === 0) return `his chronicle is freshly bound and waiting. Link your leagues, pick which manager is you, and run a sync — every season, every matchup, and every trophy will be set into these pages automatically.`
-  const titlePhrase = t.championships > 0 ? `${t.championships} championship${t.championships === 1 ? '' : 's'}` : 'no titles yet, but the chase is on'
+  if (t.seasonsPlayed === 0) return `his chronicle is freshly bound and waiting. Link your leagues, choose which manager is you, and run a sync — every season, every matchup, and every trophy will be set into these pages automatically.`
+  const titlePhrase = t.championships > 0 ? `${t.championships} championship${t.championships === 1 ? '' : 's'}` : 'no titles yet, though the chase is alive'
   const playoffPhrase = t.playoffAppearances > 0 ? `${t.playoffAppearances} trip${t.playoffAppearances === 1 ? '' : 's'} to the postseason` : 'a postseason berth still pending'
-  return `cross ${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'} and ${t.seasonsPlayed} season${t.seasonsPlayed === 1 ? '' : 's'} (${span}), the record reads ${t.wins}–${t.losses}${t.ties ? `–${t.ties}` : ''} with ${titlePhrase} and ${playoffPhrase}. The desks that follow break it down league by league, rival by rival.`
+  return `cross ${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'} and ${t.seasonsPlayed} season${t.seasonsPlayed === 1 ? '' : 's'} (${span}), ${totalGames} games have been played. The record reads ${t.wins}–${t.losses}${t.ties ? `–${t.ties}` : ''} with ${titlePhrase} and ${playoffPhrase}. The desks that follow break it down league by league and rival by rival — the full account of a manager's career, set in type.`
+}
+
+function seriesYears(s: CareerSummary): number[] {
+  return s.trophyCase.filter((t) => t.kind === 'champion').map((t) => t.year).sort((a, b) => a - b)
 }
 
 function careerSpan(ready: CareerLeagueSummary[]): string {
@@ -401,160 +410,148 @@ function careerSpan(ready: CareerLeagueSummary[]): string {
   return lo === hi ? `${lo}` : `${lo}–${hi}`
 }
 
-function firstLetter(name: string): string {
-  return (name.trim()[0] ?? 'A').toUpperCase()
+function fmtPct(p: number): string {
+  return p.toFixed(3).replace(/^0\./, '.')
 }
-
-function shortLabel(name: string): string {
-  const clean = name.trim()
-  return clean.length <= 14 ? clean : clean.slice(0, 13) + '…'
-}
-
-function toRoman(n: number): string {
-  const map: [number, string][] = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]
+function firstLetter(name: string): string { return (name.trim()[0] ?? 'A').toUpperCase() }
+function shortLabel(name: string): string { const c = name.trim(); return c.length <= 14 ? c : c.slice(0, 13) + '…' }
+function ordinal(n: number): string { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]) }
+function romanOr(n: number): string {
+  if (n <= 0) return 'I'
+  const map: [number, string][] = [[40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]
   let out = '', v = n
   for (const [val, sym] of map) while (v >= val) { out += sym; v -= val }
-  return out || 'I'
-}
-
-function ordinal(n: number): string {
-  const s = ['th', 'st', 'nd', 'rd'], v = n % 100
-  return n + (s[(v - 20) % 10] || s[v] || s[0])
+  return out
 }
 
 // ── styles ───────────────────────────────────────────────────────────────────────
 
 const CSS = `
-.nb-wrap { max-width: 1000px; margin: 0 auto 3rem; padding: 0 1rem; }
+.mh { max-width: 1040px; margin: 0 auto 4rem; padding: 0 1rem; }
 
-/* chapter rail */
-.nb-nav {
-  display: flex; gap: .25rem; overflow-x: auto; padding: .4rem .2rem;
-  margin-bottom: .9rem; border-top: 1px solid var(--ink-line); border-bottom: 1px solid var(--ink-line);
+/* sticky chapter rail */
+.mh-rail {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; gap: .25rem; overflow-x: auto;
+  padding: .5rem .25rem; margin-bottom: 1.5rem;
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--ink-line);
   scrollbar-width: thin;
 }
-.nb-tab {
+.mh-tab {
   flex: 0 0 auto; display: inline-flex; align-items: center; gap: .4rem;
-  padding: .4rem .7rem; background: none; border: 1px solid transparent; border-radius: 2px;
-  color: var(--cream-soft); cursor: pointer;
-  font-family: var(--mono); font-size: .62rem; letter-spacing: .12em; text-transform: uppercase;
-  white-space: nowrap; transition: background .15s, color .15s, border-color .15s;
+  padding: .45rem .8rem; background: none; border: 1px solid transparent; border-radius: 2px;
+  color: var(--cream-mute); cursor: pointer;
+  font-family: var(--mono); font-weight: 700; font-size: .6rem; letter-spacing: .16em; text-transform: uppercase;
+  white-space: nowrap; transition: all .15s;
 }
-.nb-tab:hover { color: var(--cream); background: var(--ink-soft); }
-.nb-tab.is-active { color: var(--ink, #1a1410); background: var(--gold); border-color: var(--gold); }
-.nb-tab-num { opacity: .55; font-size: .9em; }
+.mh-tab:hover { color: var(--cream); background: var(--ink-soft); }
+.mh-tab.is-active { color: var(--ink); background: var(--gold); border-color: var(--gold); }
+.mh-tab-num { opacity: .5; }
 
-.nb-stage { display: flex; align-items: flex-start; gap: .5rem; }
-.nb-book { flex: 1; perspective: 2400px; min-width: 0; }
-.nb-arrow {
-  position: sticky; top: 45vh; flex: 0 0 auto; width: 2.4rem; height: 2.4rem; border-radius: 50%;
-  background: var(--ink-soft); color: var(--gold); border: 1px solid var(--ink-line);
-  cursor: pointer; font-size: 1.4rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+/* the broadsheet */
+.mh-paper {
+  background:
+    linear-gradient(180deg, rgba(232,200,137,.015), transparent 30%),
+    var(--ink-card);
+  border: 1px solid var(--ink-line);
+  border-radius: 3px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.45);
 }
-.nb-arrow:hover:not(:disabled) { background: rgba(232,200,137,.14); }
-.nb-arrow:disabled { opacity: .2; cursor: default; }
-
-/* the page */
-.nb-page {
-  position: relative; transform-origin: left center;
-  background-color: #f3ead4;
-  background-image:
-    radial-gradient(circle at 20% 10%, rgba(120,90,40,.05), transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(120,90,40,.06), transparent 45%);
-  color: #241c12;
-  border: 1px solid rgba(120,90,40,.3);
-  border-radius: 2px 7px 7px 2px;
-  box-shadow: 0 20px 55px rgba(0,0,0,.5), inset 0 0 80px rgba(150,110,50,.07);
+.mh-sec {
+  scroll-margin-top: 4.5rem;
+  padding: 3rem clamp(1.2rem, 5vw, 4rem);
+  border-bottom: 1px solid var(--ink-line-soft);
 }
-.nb-page-next { animation: nbFlipNext .5s cubic-bezier(.2,.7,.2,1); }
-.nb-page-prev { animation: nbFlipPrev .5s cubic-bezier(.2,.7,.2,1); }
-@keyframes nbFlipNext { from { transform: rotateY(-18deg); opacity: 0 } to { transform: rotateY(0); opacity: 1 } }
-@keyframes nbFlipPrev { from { transform: rotateY(18deg); opacity: 0 } to { transform: rotateY(0); opacity: 1 } }
-
-.nb-sheet { padding: 2rem clamp(1.2rem, 4vw, 3.2rem) 3rem; }
-.nb-sheet-center { display: flex; flex-direction: column; justify-content: center; min-height: 32rem; }
-.nb-folio { padding: .8rem 1.4rem 1.1rem; display: flex; align-items: center; gap: .5rem; font-family: var(--mono); font-size: .58rem; letter-spacing: .14em; color: rgba(80,60,30,.55); border-top: 1px solid rgba(120,90,40,.2); }
+.mh-sec:last-child { border-bottom: none; }
 
 /* masthead */
-.nb-mast { text-align: center; }
-.nb-mast-rule { height: 2px; background: #2a1f12; margin: .3rem 0; }
-.nb-mast-meta { display: flex; justify-content: center; gap: 1rem; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: #6a5128; padding: .2rem 0; }
-.nb-mast-title { font-family: var(--serif); font-weight: 800; font-size: clamp(1.9rem, 6vw, 3.6rem); line-height: 1.02; margin: .2rem 0; color: #1c1409; letter-spacing: -.01em; }
-.nb-mast-sub { font-family: var(--serif); font-style: italic; color: #4a3c28; font-size: 1rem; padding-top: .3rem; }
+.mh-front { text-align: center; }
+.mh-mast { }
+.mh-mast-rule { height: 1px; background: var(--ink-line); margin: .4rem 0; }
+.mh-mast-rule-thick { height: 3px; background: var(--gold); opacity: .6; }
+.mh-mast-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: .8rem; padding: .5rem 0; font-family: var(--mono); font-weight: 700; font-size: .56rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); }
+.mh-mast-title { font-family: var(--serif); font-size: clamp(3rem, 11vw, 7rem); line-height: .88; letter-spacing: -.03em; color: var(--cream); margin: .6rem 0; }
+.mh-mast-title em { font-style: normal; color: var(--gold); }
+.mh-mast-tag { font-family: var(--serif); font-style: italic; font-size: 1.2rem; color: var(--cream-soft); max-width: 56ch; margin: .6rem auto 0; }
 
-/* football field divider */
-.nb-field { display: flex; align-items: center; gap: .6rem; margin: 1.4rem 0; }
-.nb-field-hash { flex: 1; height: 8px; background-image: repeating-linear-gradient(90deg, #2a7d46 0 14px, #226a3b 14px 16px); border-radius: 2px; opacity: .55; }
+.mh-seals { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin: 1.6rem 0 .5rem; }
+.mh-seal { display: block; }
 
-/* lead */
-.nb-lead { text-align: center; margin: 1rem 0; }
-.nb-lead-kicker { font-family: var(--mono); font-size: .62rem; letter-spacing: .28em; text-transform: uppercase; color: #9a7536; }
-.nb-lead-head { font-family: var(--serif); font-weight: 800; font-size: clamp(1.5rem, 4.5vw, 2.6rem); margin: .4rem 0 .2rem; color: #201809; }
-.nb-lead-sub { font-family: var(--serif); font-style: italic; color: #4a3c28; margin: 0; }
+.mh-fieldrule { display: flex; align-items: center; gap: .7rem; margin: 2rem auto; max-width: 30rem; }
+.mh-hash { flex: 1; height: 6px; background-image: repeating-linear-gradient(90deg, var(--gold) 0 10px, transparent 10px 18px); opacity: .35; }
 
-.nb-frontstats { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.4rem 2rem; margin: 1.2rem 0; }
-.nb-bigstat { text-align: center; }
-.nb-bigstat-n { font-family: var(--serif); font-weight: 800; font-size: 2.4rem; line-height: 1; color: #241809; }
-.nb-bigstat-n.is-small { font-size: 1.5rem; }
-.nb-bigstat-n.is-gold { color: #9a7536; }
-.nb-bigstat-l { font-family: var(--mono); font-size: .55rem; letter-spacing: .18em; text-transform: uppercase; color: #6a5128; margin-top: .25rem; }
+.mh-lead { margin: 1.2rem 0 .6rem; }
+.mh-kicker { font-family: var(--mono); font-weight: 700; font-size: .62rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); }
+.mh-lead-head { font-family: var(--serif); font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.05; color: var(--cream); margin: .5rem 0 0; }
 
-/* columns + dropcap */
-.nb-columns { columns: 2; column-gap: 2rem; column-rule: 1px solid rgba(120,90,40,.25); font-family: var(--serif); font-size: .95rem; line-height: 1.6; color: #2e2416; text-align: justify; }
-.nb-columns p { margin: 0; }
-.nb-dropcap { float: left; font-family: var(--serif); font-weight: 800; font-size: 3.4rem; line-height: .8; padding: .15rem .4rem .1rem 0; color: #9a7536; }
-@media (max-width: 620px) { .nb-columns { columns: 1; } }
+.mh-cols { columns: 2; column-gap: 2.4rem; column-rule: 1px solid var(--ink-line); text-align: left; margin-top: 1.4rem; font-family: var(--serif); font-size: 1rem; line-height: 1.65; color: var(--cream-soft); }
+.mh-cols p { margin: 0; text-align: justify; }
+.mh-dropcap { float: left; font-family: var(--serif); font-size: 3.6rem; line-height: .76; padding: .2rem .5rem .1rem 0; color: var(--gold); }
+@media (max-width: 640px) { .mh-cols { columns: 1; } }
 
-/* section heads */
-.nb-sechead { border-bottom: 3px double #2a1f12; padding-bottom: .6rem; margin-bottom: 1.3rem; }
-.nb-sechead-top { display: flex; align-items: baseline; gap: .8rem; }
-.nb-sechead-num { font-family: var(--mono); font-size: .6rem; letter-spacing: .24em; text-transform: uppercase; color: #9a7536; }
-.nb-sechead-kicker { font-family: var(--mono); font-size: .6rem; letter-spacing: .12em; color: rgba(80,60,30,.6); }
-.nb-sechead-title { font-family: var(--serif); font-weight: 800; font-size: clamp(1.7rem, 4.5vw, 2.6rem); margin: .25rem 0 0; color: #1c1409; }
+/* section header (reuses app .section-header tokens, adds a top rule) */
+.mh-sechead { border-top: 3px double var(--ink-line); padding-top: 1rem; margin-bottom: 1.6rem; }
 
-/* stat grid */
-.nb-statgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rgba(120,90,40,.25); border: 1px solid rgba(120,90,40,.25); }
-.nb-statgrid-tight { grid-template-columns: repeat(3, 1fr); }
-.nb-cell { background: #f3ead4; padding: .9rem .8rem; }
-.nb-cell-v { font-family: var(--serif); font-weight: 700; font-size: 1.3rem; color: #2a2014; line-height: 1.05; }
-.nb-cell.is-big .nb-cell-v { font-size: 1.7rem; }
-.nb-cell-v.is-gold { color: #9a7536; }
-.nb-cell-l { font-family: var(--mono); font-size: .52rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(80,60,30,.62); margin-top: .3rem; }
-@media (max-width: 620px) { .nb-statgrid, .nb-statgrid-tight { grid-template-columns: repeat(2, 1fr); } }
+/* stat strip */
+.mh-strip { display: grid; grid-template-columns: repeat(6, 1fr); border-top: 1px solid var(--ink-line); border-bottom: 1px solid var(--ink-line); }
+.mh-strip-4 { grid-template-columns: repeat(4, 1fr); }
+.mh-stripitem { padding: 1.4rem 1rem; border-right: 1px solid var(--ink-line); text-align: center; }
+.mh-stripitem:last-child { border-right: none; }
+.mh-strip-lbl { font-family: var(--mono); font-weight: 700; font-size: .54rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); margin-bottom: .5rem; }
+.mh-strip-val { font-family: var(--serif); font-style: italic; font-size: 2rem; line-height: 1; color: var(--gold); }
+.mh-strip-val.is-cream { color: var(--cream); font-style: normal; }
+.mh-strip-det { font-family: var(--mono); font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; color: var(--cream-mute); margin-top: .45rem; }
+@media (max-width: 760px) { .mh-strip { grid-template-columns: repeat(3, 1fr); } .mh-stripitem { border-bottom: 1px solid var(--ink-line); } }
+@media (max-width: 460px) { .mh-strip, .mh-strip-4 { grid-template-columns: repeat(2, 1fr); } }
 
-.nb-note { font-family: var(--serif); font-style: italic; font-size: .82rem; color: #6a5128; margin: 1rem 0 0; line-height: 1.5; }
+/* regular vs playoff split */
+.mh-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1.6rem; }
+@media (max-width: 640px) { .mh-split { grid-template-columns: 1fr; } }
+.mh-splitcol { position: relative; background: var(--ink-soft); border: 1px solid var(--ink-line); padding: 1.5rem 1.75rem; }
+.mh-splitcol::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--gold); }
+.mh-splitcol.is-playoff::before { background: var(--rust); }
+.mh-split-lbl { font-family: var(--mono); font-weight: 700; font-size: .6rem; letter-spacing: .25em; text-transform: uppercase; color: var(--gold); margin-bottom: .7rem; }
+.mh-splitcol.is-playoff .mh-split-lbl { color: var(--rust); }
+.mh-split-rec { font-family: var(--serif); font-size: 2.6rem; line-height: 1; color: var(--cream); }
+.mh-split-pct { font-family: var(--mono); font-weight: 700; font-size: .8rem; color: var(--cream-soft); margin: .35rem 0 .7rem; }
+.mh-split-pf { font-family: var(--mono); font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; color: var(--cream-mute); }
+
+.mh-foot { font-family: var(--serif); font-style: italic; font-size: .82rem; color: var(--cream-mute); margin-top: 1.2rem; line-height: 1.5; }
 
 /* tables */
-.nb-table { width: 100%; border-collapse: collapse; margin-top: 1.2rem; font-size: .9rem; }
-.nb-table th { text-align: left; font-family: var(--mono); font-size: .56rem; letter-spacing: .14em; text-transform: uppercase; color: #6a5128; border-bottom: 2px solid #2a1f12; padding: .4rem .5rem; }
-.nb-table td { padding: .5rem .5rem; border-bottom: 1px solid rgba(120,90,40,.2); color: #2e2416; }
-.nb-table tr.is-title td { background: rgba(232,200,137,.22); }
-.nb-td-mono { font-family: var(--mono); font-size: .82rem; }
-.nb-td-name { font-weight: 600; }
-.nb-xl { font-family: var(--mono); font-size: .68rem; color: rgba(80,60,30,.55); }
+.mh-table { background: var(--ink-card); border: 1px solid var(--ink-line); overflow-x: auto; margin-top: 1.4rem; }
+.mh-table table { width: 100%; border-collapse: collapse; font-family: var(--sans); }
+.mh-table thead { background: var(--ink-soft); border-bottom: 1px solid var(--ink-line); }
+.mh-table th { padding: .8rem 1rem; font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .18em; text-transform: uppercase; color: var(--cream-mute); text-align: left; white-space: nowrap; }
+.mh-table th.num { text-align: right; }
+.mh-table td { padding: .9rem 1rem; border-top: 1px solid var(--ink-line-soft); font-size: .9rem; color: var(--cream-soft); }
+.mh-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: .82rem; }
+.mh-table tbody tr:hover { background: rgba(232,200,137,.03); }
+.mh-table tr.is-title td { background: rgba(232,200,137,.08); }
+.mh-table td.year { font-family: var(--serif); font-style: italic; font-size: 1.2rem; color: var(--gold); }
+.mh-table td.opp { font-family: var(--serif); font-size: 1.05rem; color: var(--cream); }
+.mh-table td.score { font-family: var(--serif); font-style: italic; font-size: 1.15rem; color: var(--gold); }
+.mh-table td.rank { font-family: var(--mono); font-weight: 700; color: var(--cream-mute); }
+.mh-table td.rank.gold { color: var(--gold); }
+.mh-table td.finish.gold { color: var(--gold); font-weight: 700; }
+.mh-table td.finish.silver { color: #c8c8c8; font-weight: 700; }
+.mh-table td.finish.bronze { color: #cd7f32; font-weight: 700; }
+.mh-table td.rec.win, .mh-table td.result.win { color: var(--gold); font-weight: 700; }
+.mh-table td.rec.loss, .mh-table td.result.loss { color: var(--rust); font-weight: 700; }
+.mh-table td.rec.even { color: var(--cream-soft); }
+.mh-when { font-family: var(--mono); font-size: .66rem; letter-spacing: .06em; color: var(--cream-mute); }
+.mh-xl { font-family: var(--mono); font-size: .66rem; color: var(--cream-mute); }
 
 /* trophies */
-.nb-trophies { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .8rem; }
-.nb-plaque { border: 1px solid rgba(120,90,40,.35); border-radius: 3px; padding: 1rem .8rem; text-align: center; background: #efe4ca; }
-.nb-plaque.is-champ { border-color: #c9a44e; background: rgba(232,200,137,.25); }
-.nb-plaque-ico { font-size: 1.6rem; }
-.nb-plaque-year { font-family: var(--serif); font-weight: 800; font-size: 1.4rem; color: #241809; }
-.nb-plaque-league { font-size: .82rem; color: #4a3c28; }
-.nb-plaque-tag { font-family: var(--mono); font-size: .54rem; letter-spacing: .16em; text-transform: uppercase; color: #9a7536; margin-top: .3rem; }
+.mh-trophies { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 1rem; }
+.mh-plaque { border: 1px solid var(--ink-line); border-radius: 3px; padding: 1.2rem .8rem; text-align: center; background: var(--ink-soft); display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+.mh-plaque.is-champ { border-color: var(--gold-deep); background: rgba(232,200,137,.06); }
+.mh-plaque-ico { font-size: 2rem; }
+.mh-plaque-year { font-family: var(--serif); font-size: 1.5rem; color: var(--cream); }
+.mh-plaque-league { font-size: .82rem; color: var(--cream-soft); }
+.mh-plaque-tag { font-family: var(--mono); font-weight: 700; font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); margin-top: .2rem; }
 
-/* moments */
-.nb-moments { display: flex; flex-direction: column; gap: .6rem; }
-.nb-moment { display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(120,90,40,.2); padding: .6rem 0; }
-.nb-moment-margin { flex: 0 0 4.2rem; text-align: center; font-family: var(--serif); font-weight: 800; font-size: 1.5rem; color: #2a7d46; }
-.nb-moment-margin.is-bad { color: #a04830; }
-.nb-moment-score { font-family: var(--serif); font-size: 1.05rem; color: #241809; }
-.nb-moment-vs { font-style: italic; color: #4a3c28; }
-.nb-moment-meta { font-family: var(--mono); font-size: .62rem; letter-spacing: .08em; color: rgba(80,60,30,.6); margin-top: .15rem; }
-
-.nb-empty { font-family: var(--serif); font-style: italic; color: #5a4a32; line-height: 1.6; padding: 2rem 0; text-align: center; }
-
-/* colophon */
-.nb-colophon { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 0; }
-.nb-colophon-text { font-family: var(--serif); font-style: italic; color: #4a3c28; max-width: 26rem; line-height: 1.6; margin: 0; }
-.nb-colophon-mast { font-family: var(--serif); font-weight: 800; font-size: 1.2rem; color: #241809; }
+.mh-empty { font-family: var(--serif); font-style: italic; color: var(--cream-mute); line-height: 1.6; padding: 2.5rem 1rem; text-align: center; font-size: 1.05rem; }
 `

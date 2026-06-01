@@ -41,6 +41,8 @@ export type CareerLeagueSummary = {
   // Championship-bracket playoff record (consolation excluded).
   playoffWins: number
   playoffLosses: number
+  playoffPointsFor: number
+  playoffPointsAgainst: number
   playoffAppearances: number
   championships: number
   runnerUps: number
@@ -85,6 +87,8 @@ export type CareerSummary = {
     pointsAgainst: number
     playoffWins: number
     playoffLosses: number
+    playoffPointsFor: number
+    playoffPointsAgainst: number
     playoffAppearances: number
     championships: number
     runnerUps: number
@@ -145,12 +149,14 @@ export async function loadCareerSummary(slug: string, ownerId: string): Promise<
       acc.pointsAgainst += l.pointsAgainst
       acc.playoffWins += l.playoffWins
       acc.playoffLosses += l.playoffLosses
+      acc.playoffPointsFor += l.playoffPointsFor
+      acc.playoffPointsAgainst += l.playoffPointsAgainst
       acc.playoffAppearances += l.playoffAppearances
       acc.championships += l.championships
       acc.runnerUps += l.runnerUps
       return acc
     },
-    { seasonsPlayed: 0, wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0, playoffWins: 0, playoffLosses: 0, playoffAppearances: 0, championships: 0, runnerUps: 0 },
+    { seasonsPlayed: 0, wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0, playoffWins: 0, playoffLosses: 0, playoffPointsFor: 0, playoffPointsAgainst: 0, playoffAppearances: 0, championships: 0, runnerUps: 0 },
   )
   const decided = totals.wins + totals.losses
   const winPct = decided > 0 ? totals.wins / decided : 0
@@ -203,7 +209,7 @@ async function summarizeLeague(
     status: 'pending', managerName: link.display_name_in_league, teamName: null, avatarUrl: null,
     seasonsPlayed: 0, firstYear: null, lastYear: null,
     wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0,
-    playoffWins: 0, playoffLosses: 0, playoffAppearances: 0,
+    playoffWins: 0, playoffLosses: 0, playoffPointsFor: 0, playoffPointsAgainst: 0, playoffAppearances: 0,
     championships: 0, runnerUps: 0, bestFinish: null, titleYears: [], finishes: [],
   }
 
@@ -324,6 +330,8 @@ async function summarizeLeague(
       const isPlayoff = cls === 'champ'
 
       if (isPlayoff) {
+        base.playoffPointsFor += myScore
+        base.playoffPointsAgainst += oppScore
         if (myScore > oppScore) base.playoffWins += 1
         else if (myScore < oppScore) base.playoffLosses += 1
       }
