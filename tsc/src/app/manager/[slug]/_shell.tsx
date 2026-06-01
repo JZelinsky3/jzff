@@ -9,17 +9,17 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import type { CareerChronicle } from '@/lib/manager/chronicle'
 
-export type ChapterSlug = 'front' | 'title-chase' | 'draft-room' | 'feuds' | 'ledger' | 'desk' | 'trade-desk' | 'scout'
+// Tool pages only. The narrative chapters (title-chase, draft-room, feuds,
+// ledger) were folded into Issues II/IV/V and now redirect — see
+// next.config.ts. The Front link points at the new template Front Page.
+export type ChapterSlug = 'front' | 'war-room' | 'desk' | 'trade-desk' | 'scout'
 
 export const CHAPTERS: { slug: ChapterSlug; href: (s: string) => string; numeral: string; title: string; kicker: string }[] = [
-  { slug: 'front',       numeral: 'I',    title: 'Front Page',   kicker: 'The Masthead',   href: (s) => `/manager/${s}` },
-  { slug: 'title-chase', numeral: 'II',   title: 'Title Chase',  kicker: 'Rings & Final Fours', href: (s) => `/manager/${s}/title-chase` },
-  { slug: 'draft-room',  numeral: 'III',  title: 'Draft Room',   kicker: 'Picks, Steals & Busts', href: (s) => `/manager/${s}/draft-room` },
-  { slug: 'feuds',       numeral: 'IV',   title: 'The Feuds',    kicker: 'Society Pages',  href: (s) => `/manager/${s}/feuds` },
-  { slug: 'ledger',      numeral: 'V',    title: 'The Ledger',   kicker: 'Records & Extremes', href: (s) => `/manager/${s}/ledger` },
-  { slug: 'desk',        numeral: 'VI',   title: 'Player Desk',  kicker: 'Live Rosters & Wire', href: (s) => `/manager/${s}/desk` },
-  { slug: 'trade-desk',  numeral: 'VII',  title: 'Trade Desk',   kicker: 'Builder & Verdicts', href: (s) => `/manager/${s}/trade-builder` },
-  { slug: 'scout',       numeral: 'VIII', title: 'The Scout',    kicker: 'Needs & Targets', href: (s) => `/manager/${s}/scout` },
+  { slug: 'front',      numeral: 'I',   title: 'Front Page',  kicker: 'The Masthead',        href: (s) => `/manager/${s}` },
+  { slug: 'war-room',   numeral: 'VI',  title: 'War Room',    kicker: 'Live Tools Hub',      href: (s) => `/manager/${s}/war-room` },
+  { slug: 'desk',       numeral: 'VI·a', title: 'Player Desk', kicker: 'Live Rosters & Wire', href: (s) => `/manager/${s}/desk` },
+  { slug: 'trade-desk', numeral: 'VI·b', title: 'Trade Desk',  kicker: 'Builder & Verdicts',  href: (s) => `/manager/${s}/trade-builder` },
+  { slug: 'scout',      numeral: 'VI·c', title: 'The Scout',   kicker: 'Needs & Targets',     href: (s) => `/manager/${s}/scout` },
 ]
 
 const SHELL_STYLES = `
