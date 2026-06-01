@@ -9,16 +9,17 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import type { CareerChronicle } from '@/lib/manager/chronicle'
 
-export type ChapterSlug = 'front' | 'title-chase' | 'draft-room' | 'feuds' | 'ledger' | 'desk' | 'trade-desk'
+export type ChapterSlug = 'front' | 'title-chase' | 'draft-room' | 'feuds' | 'ledger' | 'desk' | 'trade-desk' | 'scout'
 
 export const CHAPTERS: { slug: ChapterSlug; href: (s: string) => string; numeral: string; title: string; kicker: string }[] = [
-  { slug: 'front',       numeral: 'I',   title: 'Front Page',   kicker: 'The Masthead',   href: (s) => `/manager/${s}` },
-  { slug: 'title-chase', numeral: 'II',  title: 'Title Chase',  kicker: 'Rings & Final Fours', href: (s) => `/manager/${s}/title-chase` },
-  { slug: 'draft-room',  numeral: 'III', title: 'Draft Room',   kicker: 'Picks, Steals & Busts', href: (s) => `/manager/${s}/draft-room` },
-  { slug: 'feuds',       numeral: 'IV',  title: 'The Feuds',    kicker: 'Society Pages',  href: (s) => `/manager/${s}/feuds` },
-  { slug: 'ledger',      numeral: 'V',   title: 'The Ledger',   kicker: 'Records & Extremes', href: (s) => `/manager/${s}/ledger` },
-  { slug: 'desk',        numeral: 'VI',  title: 'Player Desk',  kicker: 'Live Rosters & Wire', href: (s) => `/manager/${s}/desk` },
-  { slug: 'trade-desk',  numeral: 'VII', title: 'Trade Desk',   kicker: 'Builder & Verdicts', href: (s) => `/manager/${s}/trade-builder` },
+  { slug: 'front',       numeral: 'I',    title: 'Front Page',   kicker: 'The Masthead',   href: (s) => `/manager/${s}` },
+  { slug: 'title-chase', numeral: 'II',   title: 'Title Chase',  kicker: 'Rings & Final Fours', href: (s) => `/manager/${s}/title-chase` },
+  { slug: 'draft-room',  numeral: 'III',  title: 'Draft Room',   kicker: 'Picks, Steals & Busts', href: (s) => `/manager/${s}/draft-room` },
+  { slug: 'feuds',       numeral: 'IV',   title: 'The Feuds',    kicker: 'Society Pages',  href: (s) => `/manager/${s}/feuds` },
+  { slug: 'ledger',      numeral: 'V',    title: 'The Ledger',   kicker: 'Records & Extremes', href: (s) => `/manager/${s}/ledger` },
+  { slug: 'desk',        numeral: 'VI',   title: 'Player Desk',  kicker: 'Live Rosters & Wire', href: (s) => `/manager/${s}/desk` },
+  { slug: 'trade-desk',  numeral: 'VII',  title: 'Trade Desk',   kicker: 'Builder & Verdicts', href: (s) => `/manager/${s}/trade-builder` },
+  { slug: 'scout',       numeral: 'VIII', title: 'The Scout',    kicker: 'Needs & Targets', href: (s) => `/manager/${s}/scout` },
 ]
 
 const SHELL_STYLES = `
@@ -45,8 +46,8 @@ const SHELL_STYLES = `
 .mh-masthead-meta { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem; font-family: var(--mono); font-size: .6rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); }
 .mh-masthead-meta strong { color: var(--gold); font-weight: 700; }
 
-.mh-rail { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--ink-line); border-bottom: 1px solid var(--ink-line); margin-bottom: 2.5rem; }
-@media (max-width: 1180px) { .mh-rail { grid-template-columns: repeat(4, minmax(0, 1fr)); } .mh-rail-item:nth-child(4n) { border-right: none; } .mh-rail-item:nth-child(n+5) { border-top: 1px dotted var(--ink-line); } }
+.mh-rail { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--ink-line); border-bottom: 1px solid var(--ink-line); margin-bottom: 2.5rem; }
+@media (max-width: 1280px) { .mh-rail { grid-template-columns: repeat(4, minmax(0, 1fr)); } .mh-rail-item:nth-child(4n) { border-right: none; } .mh-rail-item:nth-child(n+5) { border-top: 1px dotted var(--ink-line); } }
 .mh-rail-item { display: block; text-align: center; padding: 1rem .75rem; text-decoration: none; color: var(--cream-mute); border-right: 1px dotted var(--ink-line); transition: background .2s, color .2s; }
 .mh-rail-item:last-child { border-right: none; }
 .mh-rail-item:hover { background: rgba(232,200,137,.04); color: var(--gold); }

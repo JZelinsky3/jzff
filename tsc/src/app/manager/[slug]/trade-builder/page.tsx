@@ -4,7 +4,8 @@ import { loadCareerChronicle } from '@/lib/manager/chronicle'
 import { loadTradeFloor } from '@/lib/manager/tradeFloor'
 import { valuateLeague, type LeagueMode } from '@/lib/values'
 import { ChronicleShell, EmptyState } from '../_shell'
-import { TradeBuilder, type BuilderLeague, type BuilderPlayer, type BuilderRoster } from './_builder'
+import { TradeBuilder } from './_builder'
+import type { BuilderLeague, BuilderPlayer, BuilderRoster } from '@/lib/manager/builder-types'
 
 export const dynamic = 'force-dynamic'
 
