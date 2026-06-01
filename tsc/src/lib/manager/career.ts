@@ -18,7 +18,7 @@
 // A linked league whose archive isn't synced (or whose "me" pick doesn't resolve
 // to a manager) comes back status 'pending' so the UI can prompt a sync.
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export type CareerLeagueSummary = {
   leagueId: string
@@ -107,7 +107,11 @@ export type CareerSummary = {
 type ChronicleRow = { id: string; slug: string; display_name: string; subtitle: string | null }
 
 export async function loadCareerSummary(slug: string, ownerId: string): Promise<CareerSummary | null> {
-  const supabase = await createClient()
+  // Admin client (no cookies) so this function is safe to call inside
+  // unstable_cache. Authorization is enforced by the `.eq('owner_id', ownerId)`
+  // filter on every query; callers must already have verified ownerId via the
+  // session before invoking us.
+  const supabase = createAdminClient()
 
   const { data: chronicle } = await supabase
     .from('career_chronicles')
@@ -191,7 +195,7 @@ export async function loadCareerSummary(slug: string, ownerId: string): Promise<
   }
 }
 
-type Db = Awaited<ReturnType<typeof createClient>>
+type Db = ReturnType<typeof createAdminClient>
 type AnyLink = {
   league_id: string
   source: string

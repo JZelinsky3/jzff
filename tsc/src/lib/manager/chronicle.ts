@@ -12,7 +12,7 @@ import { unstable_cache } from 'next/cache'
 import { exportLeague, type ExportBundle } from '@/lib/export/pams'
 import { devCacheGet, devCacheSet } from '@/lib/devCache'
 import { loadCareerSummary, type CareerSummary } from '@/lib/manager/career'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export type ChroniclePick = {
   leagueName: string
@@ -178,7 +178,9 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
   const career = await loadCareerSummary(slug, ownerId)
   if (!career) return null
 
-  const supabase = await createClient()
+  // Admin client — safe inside unstable_cache. Authorization is enforced by
+  // loadCareerSummary (filters by ownerId) before we get here.
+  const supabase = createAdminClient()
   const { data: links } = await supabase
     .from('career_links')
     .select('league_id, manager_external_id, league:leagues!inner(id, slug, name)')
