@@ -21,7 +21,7 @@ import { devCacheGet, devCacheSet } from '@/lib/devCache'
 import { createClient } from '@/lib/supabase/server'
 import { loadCareerChronicle, type CareerChronicle } from '@/lib/manager/chronicle'
 
-const BUNDLE_VERSION = 'v3'
+const BUNDLE_VERSION = 'v4'
 
 export type ManagerBundle = Record<string, unknown>
 
@@ -144,12 +144,21 @@ async function buildBundleFromChronicle(c: CareerChronicle): Promise<ManagerBund
   const timeline = buildTimeline(c)
   const legacy = buildLegacy(c, career)
   const dynasty = buildDynasty(c)
-  return {
-    'data/career.json': career,
-    'data/timeline.json': timeline,
-    'data/legacy.json': legacy,
-    'data/dynasty.json': dynasty,
+  const seasons = buildSeasonsHub(c)
+  // Bundle keys match the leagues pattern: NO `data/` prefix. The catch-all
+  // route's resolveRequest() strips the `data/` segment from URLs before
+  // looking up the bundle, so /manager/<slug>/data/career.json → 'career.json'.
+  const out: ManagerBundle = {
+    'career.json': career,
+    'timeline.json': timeline,
+    'legacy.json': legacy,
+    'dynasty.json': dynasty,
+    'seasons.json': seasons,
   }
+  for (const yr of seasons.years) {
+    out[`seasons/${yr}.json`] = buildSeasonDeepDive(c, yr)
+  }
+  return out
 }
 
 // ============================================================
@@ -686,5 +695,266 @@ function buildDynasty(c: CareerChronicle): DynastyJson {
       tradeAnalyzer: { enabled: false, reason: 'Cross-league trade history pipeline ships in Phase 6.' },
       ktcValueLine: { enabled: false, reason: 'Per-player KTC time series will live here once ingest lands.' },
     },
+  }
+}
+
+// ============================================================
+// Issue IV — Seasons of Glory & Heartbreak
+// ============================================================
+// Thematic groupings (Dominance / Near Misses / Rebuilds / Multi-League) plus
+// a per-year deep-dive sub-page that mixes finish + draft + rivals + extremes.
+
+type SeasonTheme = 'dominance' | 'near-miss' | 'rebuild'
+
+type SeasonEntry = {
+  year: number
+  leagueName: string
+  leagueSlug: string
+  rank: number | null
+  record: string
+  champion: boolean
+  runnerUp: boolean
+  thirdPlace: boolean
+  madePlayoffs: boolean
+  theme: SeasonTheme
+}
+
+type SeasonsHubJson = {
+  name: string
+  years: number[]          // distinct years across all leagues, ascending
+  byYear: Array<{ year: number; entries: SeasonEntry[]; multiLeague: boolean }>
+  themes: {
+    dominance: SeasonEntry[]
+    nearMiss: SeasonEntry[]
+    rebuild: SeasonEntry[]
+    multiLeague: Array<{ year: number; leagues: SeasonEntry[] }>
+  }
+  counts: { total: number; dominance: number; nearMiss: number; rebuild: number; multiLeague: number }
+}
+
+function classifySeason(
+  f: CareerChronicle['leagues'][number]['finishes'][number],
+): SeasonTheme {
+  if (f.champion || f.rank === 2 || f.rank === 3) return 'dominance'
+  if (f.madePlayoffs) return 'near-miss'
+  return 'rebuild'
+}
+
+function buildSeasonsHub(c: CareerChronicle): SeasonsHubJson {
+  const all: SeasonEntry[] = []
+  for (const lg of c.leagues) {
+    if (lg.status !== 'ready') continue
+    for (const f of lg.finishes) {
+      all.push({
+        year: f.year,
+        leagueName: lg.leagueName,
+        leagueSlug: lg.leagueSlug,
+        rank: f.rank,
+        record: f.ties > 0 ? `${f.wins}-${f.losses}-${f.ties}` : `${f.wins}-${f.losses}`,
+        champion: f.champion,
+        runnerUp: !f.champion && f.rank === 2,
+        thirdPlace: !f.champion && f.rank === 3,
+        madePlayoffs: f.madePlayoffs,
+        theme: classifySeason(f),
+      })
+    }
+  }
+  all.sort((a, b) => b.year - a.year || a.leagueName.localeCompare(b.leagueName))
+
+  // Group by year for the timeline view.
+  const byYearMap = new Map<number, SeasonEntry[]>()
+  for (const s of all) {
+    const arr = byYearMap.get(s.year) ?? []
+    arr.push(s)
+    byYearMap.set(s.year, arr)
+  }
+  const byYear = [...byYearMap.entries()]
+    .map(([year, entries]) => ({ year, entries, multiLeague: entries.length >= 2 }))
+    .sort((a, b) => b.year - a.year)
+
+  const dominance = all.filter((s) => s.theme === 'dominance')
+  const nearMiss = all.filter((s) => s.theme === 'near-miss')
+  const rebuild = all.filter((s) => s.theme === 'rebuild')
+  const multiLeague = byYear
+    .filter((y) => y.multiLeague)
+    .map((y) => ({ year: y.year, leagues: y.entries }))
+
+  const years = [...byYearMap.keys()].sort((a, b) => a - b)
+
+  return {
+    name: c.chronicle.displayName,
+    years,
+    byYear,
+    themes: { dominance, nearMiss, rebuild, multiLeague },
+    counts: {
+      total: all.length,
+      dominance: dominance.length,
+      nearMiss: nearMiss.length,
+      rebuild: rebuild.length,
+      multiLeague: multiLeague.length,
+    },
+  }
+}
+
+// ────────────────────────────────────────────────
+// Per-year deep dive
+// ────────────────────────────────────────────────
+
+type SeasonLeagueDeepDive = {
+  leagueName: string
+  leagueSlug: string
+  platform: string
+  rank: number | null
+  record: string
+  champion: boolean
+  runnerUp: boolean
+  thirdPlace: boolean
+  madePlayoffs: boolean
+  theme: SeasonTheme
+  // Mixed-data per-season:
+  draftPicks: Array<{
+    overall: number
+    round: number
+    roundPick: number
+    player: string
+    position: string | null
+    nflTeam: string | null
+  }>
+  rivalsContext: Array<{
+    opponent: string
+    leagueRecord: string  // career-vs-this-opponent in this league (not per-year)
+    totalGames: number
+    playoffGames: number
+  }>
+  titleNote: {
+    opponent: string | null
+    scoreFor: number | null
+    scoreAgainst: number | null
+  } | null
+  weekly: {
+    highScore: number | null
+    highWeek: number | null
+    lowScore: number | null
+  }
+}
+
+type SeasonDeepDive = {
+  year: number
+  managerName: string
+  leagues: SeasonLeagueDeepDive[]
+  multiLeague: boolean
+  champCount: number
+  combinedRecord: string
+  // Cross-league summary blurb.
+  headline: string
+  deck: string
+}
+
+function buildSeasonDeepDive(c: CareerChronicle, year: number): SeasonDeepDive {
+  const leagues: SeasonLeagueDeepDive[] = []
+  let wins = 0, losses = 0, ties = 0, champs = 0
+
+  for (const lg of c.leagues) {
+    if (lg.status !== 'ready') continue
+    const f = lg.finishes.find((x) => x.year === year)
+    if (!f) continue
+
+    const draftPicks = c.picks
+      .filter((p) => p.leagueSlug === lg.leagueSlug && p.year === year)
+      .sort((a, b) => a.overall - b.overall)
+      .map((p) => ({
+        overall: p.overall,
+        round: p.round,
+        roundPick: p.roundPick,
+        player: p.player,
+        position: p.position,
+        nflTeam: p.nflTeam,
+      }))
+
+    const rivalsContext = c.h2hPerLeague
+      .filter((r) => r.leagueSlug === lg.leagueSlug)
+      .slice(0, 6)
+      .map((r) => ({
+        opponent: r.opponent,
+        leagueRecord: r.totalRecord,
+        totalGames: r.totalGames,
+        playoffGames: 0,
+      }))
+
+    const tr = c.titleRuns.find((t) => t.year === year && t.leagueSlug === lg.leagueSlug && t.finish === 1)
+    const titleNote = tr ? {
+      opponent: tr.titleOpponent,
+      scoreFor: tr.titleScoreFor,
+      scoreAgainst: tr.titleScoreAgainst,
+    } : null
+
+    const briefs = c.seasonBriefs.find((s) => s.year === year && s.leagueSlug === lg.leagueSlug)
+    const weekly = {
+      highScore: briefs?.highWeekScore ?? null,
+      highWeek: briefs?.highWeek ?? null,
+      lowScore: briefs?.lowWeekScore ?? null,
+    }
+
+    wins += f.wins
+    losses += f.losses
+    ties += f.ties
+    if (f.champion) champs += 1
+
+    leagues.push({
+      leagueName: lg.leagueName,
+      leagueSlug: lg.leagueSlug,
+      platform: lg.platform,
+      rank: f.rank,
+      record: f.ties > 0 ? `${f.wins}-${f.losses}-${f.ties}` : `${f.wins}-${f.losses}`,
+      champion: f.champion,
+      runnerUp: !f.champion && f.rank === 2,
+      thirdPlace: !f.champion && f.rank === 3,
+      madePlayoffs: f.madePlayoffs,
+      theme: classifySeason(f),
+      draftPicks,
+      rivalsContext,
+      titleNote,
+      weekly,
+    })
+  }
+
+  const multiLeague = leagues.length >= 2
+  const combinedRecord = ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`
+
+  // Compose a headline + deck for the year masthead.
+  let headline = `${year} Season`
+  let deck = ''
+  if (champs > 0 && multiLeague) {
+    headline = `${year} — ${champs}× Champion`
+    deck = `${champs} ring${champs === 1 ? '' : 's'} across ${leagues.length} leagues. The year of the double crown${champs === 2 ? '' : '+'}.`
+  } else if (champs > 0) {
+    headline = `${year} — Champion`
+    deck = `Hardware. ${combinedRecord} on the road to a ring.`
+  } else if (multiLeague) {
+    headline = `${year} — Multi-League Mayhem`
+    deck = `Active in ${leagues.length} leagues simultaneously. A ${combinedRecord} combined.`
+  } else if (leagues.length > 0) {
+    const l = leagues[0]!
+    if (l.runnerUp) {
+      headline = `${year} — Runner-Up`
+      deck = `${l.record} in ${l.leagueName}, one game short.`
+    } else if (l.madePlayoffs) {
+      headline = `${year} — Playoff Run`
+      deck = `${l.record} in ${l.leagueName}, ${l.rank ? ordinal(l.rank) : '—'} place finish.`
+    } else {
+      headline = `${year} — The Rebuild`
+      deck = `${l.record} in ${l.leagueName}.`
+    }
+  }
+
+  return {
+    year,
+    managerName: c.chronicle.displayName,
+    leagues,
+    multiLeague,
+    champCount: champs,
+    combinedRecord,
+    headline,
+    deck,
   }
 }

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Season · The {{MGR_NAME}} Chronicle</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --ink: #0e1620; --ink-soft: #16202c; --ink-card: #1a2532; --ink-line: #2a3645; --ink-line-soft: #1e2937;
+    --cream: #f4ebd8; --cream-soft: #c9c0ad; --cream-mute: #837b6a;
+    --gold: #e8c889; --gold-bright: #f4d9a4; --gold-deep: #a88a4a;
+    --rust: #a04830; --steel: #6b8aa8;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--ink); color: var(--cream); min-height: 100vh; line-height: 1.55; overflow-x: hidden; }
+.site-glow { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: radial-gradient(circle at 20% 25%, rgba(232,200,137,.07) 0%, transparent 45%), radial-gradient(circle at 80% 75%, rgba(160,72,48,.06) 0%, transparent 50%); }
+.site-grain { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.04 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>"); }
+
+.ticker { position: relative; z-index: 10; background: var(--gold); color: var(--ink); border-bottom: 3px solid var(--ink); height: 38px; display: flex; align-items: center; overflow: hidden; }
+.ticker-track { display: flex; gap: 3rem; white-space: nowrap; padding-left: 3rem; animation: ticker-scroll 60s linear infinite; }
+.ticker-group { display: flex; gap: 3rem; }
+.ticker-item { font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; display: inline-flex; align-items: center; gap: .6rem; }
+.ticker-star { color: var(--rust); }
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.nav { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; padding: 1.2rem 2rem; background: rgba(14, 22, 32, .92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--ink-line); }
+.nav-back, .nav-link { color: var(--gold); text-decoration: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; }
+.nav-back { justify-self: start; } .nav-link { justify-self: end; }
+.nav-back:hover, .nav-link:hover { color: var(--gold-bright); }
+.nav-center { text-align: center; justify-self: center; }
+.nav-kicker { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--cream-mute); margin-bottom: .3rem; }
+.nav-title { font-family: var(--serif); font-size: 1.4rem; color: var(--cream); }
+.nav-title em { font-style: italic; color: var(--gold); }
+.nav-drop { position: relative; }
+.nav-drop-btn { color: var(--gold); background: none; border: none; cursor: pointer; padding: 2px; display: flex; align-items: center; }
+.nav-icon { display: block; }
+.nav-drop-menu { display: none; position: fixed; top: 4.5rem; right: 1.5rem; min-width: 240px; max-width: calc(100vw - 3rem); background: rgba(14,22,32,.97); border: 1px solid var(--ink-line); backdrop-filter: blur(12px); z-index: 50; overflow: hidden; }
+.nav-drop.open .nav-drop-menu { display: block; }
+.nav-drop-label { display: block; padding: .45rem 1.1rem .3rem; font-family: var(--mono); font-size: .55rem; letter-spacing: .25em; text-transform: uppercase; color: var(--cream-mute); border-bottom: 1px solid var(--ink-line-soft); }
+.nav-drop-menu a { display: block; padding: .7rem 1.1rem; color: var(--cream-soft); text-decoration: none; font-family: var(--mono); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; border-bottom: 1px solid var(--ink-line-soft); }
+.nav-drop-menu a:last-child { border-bottom: none; }
+.nav-drop-menu a:hover { background: rgba(232,200,137,.07); color: var(--gold); }
+.nav-drop-menu a.is-active { color: var(--gold); background: rgba(232,200,137,.06); }
+
+.nav-chapbar { position: sticky; top: var(--nav-h, 4.5rem); z-index: 29; background: rgba(14, 22, 32, .9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--ink-line); }
+.nav-chapbar-track { display: flex; justify-content: center; align-items: stretch; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; max-width: 1370px; margin: 0 auto; padding: 0 1rem; }
+.nav-chapbar-track::-webkit-scrollbar { display: none; }
+.nav-chapbar-link { flex-shrink: 0; position: relative; color: var(--cream-soft); text-decoration: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; padding: .65rem 1.3rem .75rem; white-space: nowrap; }
+.nav-chapbar-link:hover, .nav-chapbar-link.is-active { color: var(--gold); }
+.nav-chapbar-link.is-active::after { content: ""; position: absolute; left: 1.3rem; right: 1.3rem; bottom: 0; height: 2px; background: var(--gold); }
+.nav-chapbar-link + .nav-chapbar-link::before { content: ""; position: absolute; left: 0; top: 35%; bottom: 35%; width: 1px; background: var(--ink-line); }
+@media (max-width: 640px) { .nav-chapbar-track { justify-content: flex-start; padding: 0 .15rem; } .nav-chapbar-link { padding: .55rem .75rem; font-size: .55rem; letter-spacing: .15em; } .nav-chapbar-link.is-active::after { left: .75rem; right: .75rem; } }
+
+/* Year hero — big serif year + nav arrows */
+.year-hero { position: relative; z-index: 10; max-width: 1100px; margin: 0 auto; padding: 4rem 1.5rem 1rem; text-align: center; }
+.year-sup { font-family: var(--mono); font-weight: 700; font-size: .65rem; letter-spacing: .4em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.25rem; }
+.year-sup .star { color: var(--rust); }
+.year-big { font-family: var(--serif); font-style: italic; font-size: clamp(5rem, 14vw, 11rem); line-height: .92; letter-spacing: -.035em; color: var(--cream); }
+.year-big em { color: var(--gold); font-style: italic; }
+.year-deck { font-family: var(--serif); font-style: italic; font-size: clamp(1.05rem, 1.8vw, 1.45rem); color: var(--cream-soft); max-width: 720px; margin: 1.25rem auto 0; }
+.year-rule { max-width: 320px; margin: 2rem auto 0; border-top: 1px solid var(--ink-line); position: relative; }
+.year-rule::before { content: '✦'; position: absolute; top: -.55rem; left: 50%; transform: translateX(-50%); background: var(--ink); padding: 0 .6rem; color: var(--gold); font-size: .7rem; }
+.year-nav { display: flex; justify-content: space-between; align-items: center; max-width: 720px; margin: 2rem auto 0; padding: 0 .5rem; }
+.year-nav a { padding: .55rem .85rem; font-family: var(--mono); font-weight: 700; font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-soft); text-decoration: none; border: 1px solid var(--ink-line); transition: color .15s, border-color .15s, background .15s; }
+.year-nav a:hover { color: var(--gold); border-color: var(--gold-deep); background: rgba(232,200,137,.04); }
+.year-nav .all { color: var(--gold); }
+
+/* Combined banner — shown when multi-league */
+.combo-band { position: relative; z-index: 10; max-width: 1100px; margin: 2rem auto 0; padding: 0 1.5rem; }
+.combo { padding: 1.4rem 1.6rem; background: linear-gradient(135deg, rgba(232,200,137,.05), transparent 60%), var(--ink-card); border: 1px solid var(--gold-deep); display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; }
+@media (max-width: 640px) { .combo { grid-template-columns: 1fr; text-align: center; } }
+.combo-mast { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: .35rem; }
+.combo-head { font-family: var(--serif); font-style: italic; font-size: 1.25rem; color: var(--cream); }
+.combo-line { font-family: var(--mono); font-size: .65rem; letter-spacing: .12em; color: var(--cream-soft); }
+.combo-line strong { color: var(--gold); }
+
+.section { position: relative; z-index: 10; max-width: 1200px; margin: 4rem auto 0; padding: 0 2rem; }
+.section-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .75rem; padding-bottom: 1rem; margin-bottom: 2rem; border-bottom: 3px double var(--ink-line); }
+.section-num { font-family: var(--mono); font-weight: 700; font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); }
+.section-title { font-family: var(--serif); font-style: italic; font-size: clamp(1.5rem, 3vw, 2.1rem); color: var(--cream); }
+.section-meta { font-family: var(--mono); font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); }
+
+/* League file — full editorial block */
+.lg { background: var(--ink-card); border: 1px solid var(--ink-line); border-left: 4px solid var(--cream-mute); padding: 2rem 1.75rem 1.75rem; margin-bottom: 2.5rem; }
+.lg.champ { border-left-color: var(--gold); background: linear-gradient(135deg, rgba(232,200,137,.04), transparent 50%), var(--ink-card); }
+.lg.runner { border-left-color: var(--rust); }
+.lg.bronze, .lg.playoff { border-left-color: var(--steel); }
+.lg-mast { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end; padding-bottom: 1.25rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--gold-deep); }
+.lg.runner .lg-mast { border-bottom-color: var(--rust); }
+.lg.bronze .lg-mast, .lg.playoff .lg-mast { border-bottom-color: var(--steel); }
+.lg-kicker { font-family: var(--mono); font-weight: 700; font-size: .56rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: .35rem; }
+.lg.runner .lg-kicker { color: var(--rust); }
+.lg.bronze .lg-kicker, .lg.playoff .lg-kicker { color: var(--steel); }
+.lg-name { font-family: var(--serif); font-style: italic; font-size: clamp(1.6rem, 3vw, 2.4rem); color: var(--cream); line-height: 1.1; }
+.lg.champ .lg-name { color: var(--gold); }
+.lg-record { text-align: right; }
+.lg-rec-val { font-family: var(--serif); font-style: italic; font-size: 2rem; color: var(--cream); line-height: 1; font-variant-numeric: tabular-nums; }
+.lg-rec-lbl { font-family: var(--mono); font-size: .55rem; letter-spacing: .25em; text-transform: uppercase; color: var(--cream-mute); margin-top: .25rem; }
+
+.title-banner { padding: 1.25rem 1.4rem; margin-bottom: 1.5rem; background: rgba(232,200,137,.08); border: 1px solid var(--gold-deep); }
+.title-banner-mast { font-family: var(--mono); font-weight: 700; font-size: .56rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: .35rem; }
+.title-banner-head { font-family: var(--serif); color: var(--cream); font-size: 1.2rem; line-height: 1.3; }
+.title-banner-head em { color: var(--gold); font-style: italic; }
+.title-banner-score { font-family: var(--serif); font-style: italic; font-size: 1.8rem; color: var(--gold); margin-top: .35rem; }
+
+.lg-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 1.75rem; }
+@media (max-width: 900px) { .lg-grid { grid-template-columns: 1fr; } }
+
+/* Draft picks table */
+.draft-mast { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gold); margin-bottom: .65rem; padding-bottom: .55rem; border-bottom: 1px dotted var(--ink-line); }
+.draft-tab { width: 100%; border-collapse: collapse; }
+.draft-tab th { font-family: var(--mono); font-weight: 700; font-size: .52rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); padding: .55rem .55rem; text-align: left; border-bottom: 1px dotted var(--ink-line); }
+.draft-tab th.num { text-align: right; }
+.draft-tab td { font-family: var(--mono); font-size: .68rem; padding: .55rem; border-bottom: 1px dotted var(--ink-line-soft); color: var(--cream); }
+.draft-tab td.player { font-family: var(--serif); font-size: .98rem; font-style: italic; color: var(--cream); }
+.draft-tab td.num { text-align: right; color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
+.draft-tab td.pos { color: var(--cream-soft); }
+.draft-tab tr:last-child td { border-bottom: none; }
+
+/* Sidebar (rivals + weekly) */
+.box { background: rgba(14,22,32,.55); border: 1px solid var(--ink-line); padding: 1.1rem 1.2rem 1rem; margin-bottom: 1rem; position: relative; }
+.box::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--gold-deep); }
+.box.rust::before { background: var(--rust); }
+.box.steel::before { background: var(--steel); }
+.box-mast { font-family: var(--mono); font-weight: 700; font-size: .56rem; letter-spacing: .28em; text-transform: uppercase; color: var(--gold); margin-bottom: .65rem; padding-bottom: .5rem; border-bottom: 1px dotted var(--ink-line); }
+.box.rust .box-mast { color: var(--rust); } .box.steel .box-mast { color: var(--steel); }
+.box-line { display: grid; grid-template-columns: 1fr auto; gap: .65rem; align-items: baseline; padding: .42rem 0; border-bottom: 1px dotted var(--ink-line-soft); font-family: var(--mono); font-size: .65rem; color: var(--cream); }
+.box-line:last-child { border-bottom: none; }
+.box-line .lbl { color: var(--cream-soft); letter-spacing: .04em; }
+.box-line .val { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
+.box-line .val.cream { color: var(--cream); }
+.box-empty { padding: .65rem 0; font-family: var(--serif); font-style: italic; color: var(--cream-mute); font-size: .9rem; }
+.box-big { font-family: var(--serif); font-style: italic; font-size: 1.9rem; color: var(--gold); line-height: 1; }
+.box-big.cream { color: var(--cream); }
+.box-big-sub { font-family: var(--mono); font-size: .55rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); margin-top: .35rem; }
+
+.continue { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 1200px; margin: 4rem auto 0; padding: 0 2rem; position: relative; z-index: 10; }
+@media (max-width: 720px) { .continue { grid-template-columns: 1fr; } }
+.continue a { display: block; padding: 1.5rem 1.4rem; background: var(--ink-card); border: 1px solid var(--ink-line); text-decoration: none; color: inherit; transition: background .15s; }
+.continue a:hover { background: rgba(232,200,137,.04); border-color: var(--gold-deep); }
+.continue-num { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .3em; color: var(--gold); margin-bottom: .55rem; }
+.continue-name { font-family: var(--serif); font-style: italic; font-size: 1.35rem; color: var(--cream); }
+.continue-dir { font-family: var(--mono); font-weight: 700; font-size: .55rem; letter-spacing: .25em; color: var(--gold-deep); margin-bottom: .4rem; }
+
+.foot { position: relative; z-index: 10; max-width: 1200px; margin: 5rem auto 3rem; padding: 2rem; text-align: center; border-top: 3px double var(--ink-line); font-family: var(--mono); font-size: .62rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); }
+.foot em { color: var(--gold); font-style: italic; }
+.loading, .error { padding: 4rem 1.5rem; text-align: center; font-family: var(--serif); font-style: italic; color: var(--cream-mute); }
+.error { color: var(--rust); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<div class="ticker">
+    <div class="ticker-track">
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> ISSUE IV · SEASONS OF GLORY &amp; HEARTBREAK</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> ISSUE IV · SEASONS OF GLORY &amp; HEARTBREAK</span>
+        </div>
+    </div>
+</div>
+
+<nav class="nav">
+    <div class="nav-drop" id="nav-drop">
+        <button class="nav-drop-btn" type="button" aria-haspopup="menu" aria-label="Open library">
+            <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="nav-drop-menu" role="menu">
+            <span class="nav-drop-label">Issues</span>
+            <a href="/manager/{{MGR_SLUG}}">I · The Grand Chronicle</a>
+            <a href="/manager/{{MGR_SLUG}}/legacy">II · Rise &amp; Legacy</a>
+            <a href="/manager/{{MGR_SLUG}}/dynasty">III · The Dynasty Files</a>
+            <a href="/manager/{{MGR_SLUG}}/seasons" class="is-active">IV · Seasons of Glory &amp; Heartbreak</a>
+            <a href="/manager/{{MGR_SLUG}}/vault">V · The Record Vault</a>
+            <a href="/manager/{{MGR_SLUG}}/war-room">VI · The War Room</a>
+            <span class="nav-drop-label">Manager</span>
+            <a href="/manager/{{MGR_SLUG}}/settings">Settings</a>
+            <a href="/dashboard">← Dashboard</a>
+        </div>
+    </div>
+    <div class="nav-center">
+        <div class="nav-kicker">The jzFF Dispatch · Issue IV</div>
+        <div class="nav-title">The <em>{{MGR_NAME}}</em> Chronicle</div>
+    </div>
+    <a href="/manager/{{MGR_SLUG}}/seasons" class="nav-link">← All Seasons</a>
+</nav>
+
+<nav class="nav-chapbar" aria-label="Issues">
+    <div class="nav-chapbar-track">
+        <a href="/manager/{{MGR_SLUG}}" class="nav-chapbar-link">I · Front</a>
+        <a href="/manager/{{MGR_SLUG}}/legacy" class="nav-chapbar-link">II · Legacy</a>
+        <a href="/manager/{{MGR_SLUG}}/dynasty" class="nav-chapbar-link">III · Dynasty</a>
+        <a href="/manager/{{MGR_SLUG}}/seasons" class="nav-chapbar-link is-active">IV · Seasons</a>
+        <a href="/manager/{{MGR_SLUG}}/vault" class="nav-chapbar-link">V · Vault</a>
+        <a href="/manager/{{MGR_SLUG}}/war-room" class="nav-chapbar-link">VI · War Room</a>
+    </div>
+</nav>
+
+<header class="year-hero">
+    <div class="year-sup"><span class="star">★</span> The <em>{{MGR_NAME_UPPER}}</em> Season Files <span class="star">★</span></div>
+    <h1 class="year-big" id="year-big">—</h1>
+    <p class="year-deck" id="year-deck">Loading season…</p>
+    <div class="year-rule"></div>
+    <div class="year-nav" id="year-nav"></div>
+</header>
+
+<div class="combo-band" id="combo-band" hidden></div>
+
+<main id="main"><div class="loading">Loading…</div></main>
+
+<div class="continue">
+    <a href="/manager/{{MGR_SLUG}}/seasons">
+        <div class="continue-dir">← All Seasons</div>
+        <div class="continue-num">Issue IV</div>
+        <div class="continue-name">Seasons of Glory &amp; Heartbreak</div>
+    </a>
+    <a href="/manager/{{MGR_SLUG}}/vault">
+        <div class="continue-dir">Next →</div>
+        <div class="continue-num">Issue V</div>
+        <div class="continue-name">The Record Vault</div>
+    </a>
+</div>
+
+<footer class="foot">
+    <div>End of <span id="foot-year">—</span> · The Season Files</div>
+    <div style="margin-top:.5rem;">The <em>{{MGR_NAME}}</em> Chronicle · The <em>jzFF</em> Dispatch</div>
+</footer>
+
+<script>
+(function () {
+    var primaryNav = document.querySelector('.nav')
+    function publishNavHeight() {
+        if (!primaryNav) return
+        var h = primaryNav.getBoundingClientRect().height
+        if (h > 0) document.documentElement.style.setProperty('--nav-h', h + 'px')
+    }
+    publishNavHeight()
+    window.addEventListener('resize', publishNavHeight)
+
+    var drop = document.getElementById('nav-drop')
+    if (drop) {
+        drop.querySelector('.nav-drop-btn').addEventListener('click', function (e) {
+            e.stopPropagation(); drop.classList.toggle('open')
+        })
+        document.addEventListener('click', function (e) {
+            if (!drop.contains(e.target)) drop.classList.remove('open')
+        })
+    }
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        })
+    }
+    function suf(n) { var s = ['th','st','nd','rd'], v = n % 100; return s[(v-20)%10] || s[v] || s[0] }
+    function fmtPts(n) { return n == null ? '—' : (Math.round(n * 10) / 10).toFixed(1) }
+
+    var params = new URLSearchParams(window.location.search)
+    var year = parseInt(params.get('year') || '0', 10)
+    if (!year) {
+        document.getElementById('main').innerHTML = '<div class="error">No year specified.</div>'
+        return
+    }
+
+    // Fetch the hub first (for year nav) + the per-year deep-dive.
+    Promise.all([
+        fetch('data/seasons.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null }).catch(function () { return null }),
+        fetch('data/seasons/' + year + '.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null }).catch(function () { return null }),
+    ]).then(function (results) {
+        var hub = results[0]
+        var dd = results[1]
+        if (!dd || !dd.leagues || dd.leagues.length === 0) {
+            document.getElementById('main').innerHTML = '<div class="error">No data for ' + year + '.</div>'
+            return
+        }
+
+        renderHero(dd, hub)
+        renderCombo(dd)
+        renderLeagues(dd)
+    })
+
+    function renderHero(dd, hub) {
+        document.getElementById('year-big').innerHTML = String(dd.year).slice(0, 2) + '<em>' + String(dd.year).slice(2) + '.</em>'
+        document.getElementById('year-deck').textContent = dd.deck || ''
+        document.title = dd.year + ' Season · The ' + dd.managerName + ' Chronicle'
+        document.getElementById('foot-year').textContent = dd.year
+
+        var yn = document.getElementById('year-nav')
+        if (yn && hub && hub.years) {
+            var years = hub.years
+            var idx = years.indexOf(dd.year)
+            var prev = idx > 0 ? years[idx - 1] : null
+            var next = idx >= 0 && idx < years.length - 1 ? years[idx + 1] : null
+            var bits = []
+            bits.push(prev ? '<a href="season.html?year=' + prev + '">← ' + prev + '</a>' : '<span></span>')
+            bits.push('<a href="/manager/{{MGR_SLUG}}/seasons" class="all">All Seasons</a>')
+            bits.push(next ? '<a href="season.html?year=' + next + '">' + next + ' →</a>' : '<span></span>')
+            yn.innerHTML = bits.join('')
+        }
+    }
+
+    function renderCombo(dd) {
+        if (!dd.multiLeague) return
+        var band = document.getElementById('combo-band')
+        if (!band) return
+        band.hidden = false
+        var champs = dd.champCount
+        band.innerHTML =
+            '<div class="combo">' +
+                '<div>' +
+                    '<div class="combo-mast">★ Multi-League · ' + dd.leagues.length + ' active</div>' +
+                    '<div class="combo-head">Parallel storylines, one calendar.</div>' +
+                '</div>' +
+                '<div class="combo-line">Combined <strong>' + escapeHtml(dd.combinedRecord) + '</strong>' +
+                    (champs > 0 ? ' · <strong>' + champs + ' ring' + (champs === 1 ? '' : 's') + '</strong>' : '') +
+                '</div>' +
+            '</div>'
+    }
+
+    function leagueClass(l) {
+        if (l.champion) return 'champ'
+        if (l.runnerUp) return 'runner'
+        if (l.thirdPlace) return 'bronze'
+        if (l.madePlayoffs) return 'playoff'
+        return ''
+    }
+    function leagueKicker(l) {
+        if (l.champion) return '★ Champion · ' + l.leagueName
+        if (l.runnerUp) return 'Runner-Up · ' + l.leagueName
+        if (l.thirdPlace) return 'Bronze · ' + l.leagueName
+        if (l.madePlayoffs) return 'Playoffs · ' + l.leagueName
+        return 'Regular Season · ' + l.leagueName
+    }
+
+    function renderLeagues(dd) {
+        var main = document.getElementById('main')
+        main.innerHTML = '<section class="section">' +
+            '<div class="section-header">' +
+                '<span class="section-num">★ The Files</span>' +
+                '<h2 class="section-title">' + (dd.leagues.length === 1 ? dd.leagues[0].leagueName : dd.leagues.length + ' Leagues Active') + '</h2>' +
+                '<span class="section-meta">' + escapeHtml(dd.combinedRecord) + ' combined</span>' +
+            '</div>' +
+            dd.leagues.map(renderLeague).join('') +
+        '</section>'
+    }
+
+    function renderLeague(l) {
+        var cls = leagueClass(l)
+        var ttlBanner = ''
+        if (l.titleNote && l.titleNote.opponent && l.titleNote.scoreFor != null) {
+            ttlBanner = '<div class="title-banner">' +
+                '<div class="title-banner-mast">★ Title Game</div>' +
+                '<div class="title-banner-head">Over <em>' + escapeHtml(l.titleNote.opponent) + '</em></div>' +
+                '<div class="title-banner-score">' + fmtPts(l.titleNote.scoreFor) + ' – ' + fmtPts(l.titleNote.scoreAgainst) + '</div>' +
+                '</div>'
+        }
+
+        var draftRows = (l.draftPicks || []).map(function (p) {
+            return '<tr>' +
+                '<td class="num">' + p.overall + '</td>' +
+                '<td>R' + p.round + '.' + p.roundPick + '</td>' +
+                '<td class="player">' + escapeHtml(p.player) + '</td>' +
+                '<td class="pos">' + escapeHtml(p.position || '—') + '</td>' +
+                '<td class="pos">' + escapeHtml(p.nflTeam || '—') + '</td>' +
+                '</tr>'
+        }).join('')
+        var draftHtml = draftRows
+            ? '<div class="draft-mast">★ The Draft</div>' +
+              '<table class="draft-tab"><thead><tr><th class="num">Pick</th><th>Round</th><th>Player</th><th>Pos</th><th>Team</th></tr></thead><tbody>' + draftRows + '</tbody></table>'
+            : '<div class="draft-mast">★ The Draft</div><div class="box-empty">No draft data recorded.</div>'
+
+        var rivals = (l.rivalsContext || []).map(function (r) {
+            return '<div class="box-line">' +
+                '<span class="lbl">' + escapeHtml(r.opponent) + '</span>' +
+                '<span class="val cream">' + escapeHtml(r.leagueRecord) + '</span>' +
+                '</div>'
+        }).join('') || '<div class="box-empty">No rival data yet.</div>'
+
+        var hiBlock = l.weekly && l.weekly.highScore != null
+            ? '<div class="box-big">' + fmtPts(l.weekly.highScore) + '</div>' +
+              '<div class="box-big-sub">Week ' + (l.weekly.highWeek || '—') + ' high</div>'
+            : '<div class="box-empty">No high recorded.</div>'
+
+        var loBlock = l.weekly && l.weekly.lowScore != null
+            ? '<div class="box-big cream">' + fmtPts(l.weekly.lowScore) + '</div>' +
+              '<div class="box-big-sub">Weekly low</div>'
+            : '<div class="box-empty">No low recorded.</div>'
+
+        return '<article class="lg ' + cls + '">' +
+            '<div class="lg-mast">' +
+                '<div>' +
+                    '<div class="lg-kicker">' + escapeHtml(leagueKicker(l)) + '</div>' +
+                    '<h3 class="lg-name">' + escapeHtml(l.leagueName) + '</h3>' +
+                '</div>' +
+                '<div class="lg-record">' +
+                    '<div class="lg-rec-val">' + escapeHtml(l.record) + '</div>' +
+                    '<div class="lg-rec-lbl">' + (l.rank != null ? l.rank + suf(l.rank) + ' place' : '—') + '</div>' +
+                '</div>' +
+            '</div>' +
+            ttlBanner +
+            '<div class="lg-grid">' +
+                '<div>' + draftHtml + '</div>' +
+                '<aside>' +
+                    '<div class="box"><div class="box-mast">★ Career vs. Rivals</div>' + rivals + '</div>' +
+                    '<div class="box"><div class="box-mast">★ Highest Week</div>' + hiBlock + '</div>' +
+                    '<div class="box rust"><div class="box-mast">★ Lowest Week</div>' + loBlock + '</div>' +
+                '</aside>' +
+            '</div>' +
+        '</article>'
+    }
+})()
+</script>
+</body>
+</html>
