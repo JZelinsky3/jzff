@@ -16,19 +16,19 @@ export default async function TitleChasePage({ params }: { params: Promise<{ slu
 
   const champRuns = chronicle.titleRuns.filter((r) => r.finish === 1)
   const runnerRuns = chronicle.titleRuns.filter((r) => r.finish === 2)
+  const bronzeRuns = chronicle.titleRuns.filter((r) => r.finish === 3)
   const t = chronicle.totals
-  const finalsCount = t.championships + t.runnerUps
-  const deck = finalsCount === 0
-    ? 'No finals reached — yet. The chase begins.'
-    : finalsCount === 1
-    ? 'One night in the bracket. The story of a single final.'
-    : `${t.championships} ring${t.championships === 1 ? '' : 's'} · ${t.runnerUps} runner-up · ${t.playoffAppearances} brackets entered.`
+  const podiumCount = t.championships + t.runnerUps + t.thirdPlaces
+  const deck = podiumCount === 0
+    ? 'No podium finishes yet. The chase begins.'
+    : `${t.championships}G · ${t.runnerUps}S · ${t.thirdPlaces}B across ${t.playoffAppearances} brackets entered.`
 
   return (
     <ChronicleShell chronicle={chronicle} active="title-chase" deck={deck}>
       <ChaseStats c={chronicle} />
       <ChampionRuns runs={champRuns} />
       <RunnerUpRuns runs={runnerRuns} />
+      <BronzeRuns runs={bronzeRuns} />
       <AlsoRans c={chronicle} />
     </ChronicleShell>
   )
@@ -36,7 +36,7 @@ export default async function TitleChasePage({ params }: { params: Promise<{ slu
 
 function ChaseStats({ c }: { c: CareerChronicle }) {
   const t = c.totals
-  const finalsCount = t.championships + t.runnerUps
+  const podiumCount = t.championships + t.runnerUps + t.thirdPlaces
   const playoffPct = (t.playoffWins + t.playoffLosses) > 0
     ? `${((t.playoffWins / (t.playoffWins + t.playoffLosses)) * 100).toFixed(0)}%`
     : '—'
@@ -48,9 +48,9 @@ function ChaseStats({ c }: { c: CareerChronicle }) {
         <div className="mh-stat-sub">{t.championships === 0 ? 'Quest continues' : 'Engraved'}</div>
       </div>
       <div className="mh-stat">
-        <div className="mh-stat-value">{finalsCount}</div>
-        <div className="mh-stat-label">Finals reached</div>
-        <div className="mh-stat-sub">{t.runnerUps} runner-up{t.runnerUps === 1 ? '' : 's'}</div>
+        <div className="mh-stat-value">{podiumCount}</div>
+        <div className="mh-stat-label">On the podium</div>
+        <div className="mh-stat-sub">{t.championships}G · {t.runnerUps}S · {t.thirdPlaces}B</div>
       </div>
       <div className="mh-stat">
         <div className="mh-stat-value">{t.playoffAppearances}</div>
@@ -184,10 +184,41 @@ function RunnerUpRuns({ runs }: { runs: ChronicleTitleRun[] }) {
   )
 }
 
+function BronzeRuns({ runs }: { runs: ChronicleTitleRun[] }) {
+  if (runs.length === 0) return null
+  return (
+    <section>
+      <div className="mh-shead">
+        <h3 className="mh-shead-title"><em>Bronze</em> Finishes</h3>
+        <span className="mh-shead-meta">{runs.length} third-place {runs.length === 1 ? 'finish' : 'finishes'}</span>
+      </div>
+      <div className="mh-row mh-row-2">
+        {runs.map((r) => (
+          <article key={`${r.leagueSlug}-${r.year}`} className="mh-story" style={{ borderTop: '1px dotted var(--ink-line)', paddingTop: '1.25rem' }}>
+            <div className="mh-story-kicker" style={{ color: 'var(--rust)' }}>★ Bronze · {r.leagueName}</div>
+            <h4 className="mh-story-head" style={{ fontSize: '1.4rem' }}><em>{r.year}</em> · On the podium</h4>
+            <div className="mh-story-body">
+              <p>
+                Regular-season finish <strong>{r.regRecord}</strong>, bracket finish <strong>{r.playoffRecord}</strong>.
+                {r.highWeekScore ? <> Peak output: <strong>{r.highWeekScore.toFixed(1)}</strong>{r.highWeek ? ` in Week ${r.highWeek}` : ''}.</> : null}
+                {' '}Third place gets the bronze — and the chronicle still keeps the trophy.
+              </p>
+            </div>
+            <div className="mh-story-byline">
+              <span>{r.leagueName}</span>
+              <span style={{ color: 'var(--rust)' }}>★ <strong>3rd place</strong></span>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function AlsoRans({ c }: { c: CareerChronicle }) {
-  // Top-4 finishes that weren't title runs — "you were close"
+  // Top-4 finishes that weren't podium runs — "you were close"
   const top4 = c.seasonBriefs
-    .filter((s) => s.finalRank != null && s.finalRank > 2 && s.finalRank <= 4)
+    .filter((s) => s.finalRank === 4)
     .slice(0, 8)
   if (top4.length === 0) return null
   return (

@@ -50,6 +50,12 @@ export type SleeperUser = {
 export type SleeperRoster = {
   roster_id: number
   owner_id: string | null
+  // Active player_ids (includes starters + bench). Sleeper omits these when
+  // the league hasn't drafted yet, so the field is optional here too.
+  players?: string[] | null
+  starters?: string[] | null
+  reserve?: string[] | null   // IR slot
+  taxi?: string[] | null      // dynasty taxi squad
   settings: {
     wins?: number
     losses?: number
@@ -119,7 +125,8 @@ export type SleeperTransaction = {
 }
 
 // Sleeper's full NFL player dictionary (~5MB). Keyed by player_id.
-// We fetch this once per ingest run for trade enrichment.
+// We fetch this once per ingest run for trade enrichment, and also for the
+// manager hub's Player Desk (where injury_status drives the injury wire).
 export type SleeperPlayer = {
   player_id: string
   full_name?: string
@@ -127,6 +134,17 @@ export type SleeperPlayer = {
   last_name?: string
   position?: string
   team?: string | null
+  // Game-day status surfaced by Sleeper: 'Questionable' | 'Doubtful' | 'Out' |
+  // 'IR' | 'Suspended' | 'PUP' | 'NA' | 'Healthy' | null. Empty for inactive
+  // players (retired, undrafted, etc).
+  injury_status?: string | null
+  injury_body_part?: string | null
+  injury_notes?: string | null
+  injury_start_date?: string | null
+  status?: string | null            // 'Active' | 'Inactive' | 'Retired'
+  news_updated?: number | null      // ms epoch
+  years_exp?: number | null
+  age?: number | null
 }
 
 export type SleeperBracketMatch = {

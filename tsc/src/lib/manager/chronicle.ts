@@ -32,7 +32,7 @@ export type ChronicleTitleRun = {
   leagueName: string
   leagueSlug: string
   year: number
-  finish: 1 | 2
+  finish: 1 | 2 | 3
   finalRank: number
   regRecord: string
   playoffRecord: string
@@ -290,17 +290,18 @@ export async function loadCareerChronicle(slug: string, ownerId: string): Promis
           titleScoreAgainst: defending?.title_score_against ?? null,
         })
       }
-      // Runner-up runs.
+      // Runner-up + bronze runs (2nd / 3rd place finishes are trophies too).
       for (const f of leagueSummary.finishes) {
-        if (f.rank !== 2 || f.champion) continue
+        if (f.champion) continue
+        if (f.rank !== 2 && f.rank !== 3) continue
         const brief = mgrFile?.season_ledger?.find((s) => s.year === f.year)
         if (!brief) continue
         titleRuns.push({
           leagueName: link.league.name,
           leagueSlug: link.league.slug,
           year: f.year,
-          finish: 2,
-          finalRank: 2,
+          finish: f.rank as 2 | 3,
+          finalRank: f.rank,
           regRecord: brief.reg_record,
           playoffRecord: brief.playoff_record || '0-0',
           playoffPf: brief.playoff_pf,

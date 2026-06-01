@@ -46,8 +46,10 @@ export type CareerLeagueSummary = {
   playoffAppearances: number
   championships: number
   runnerUps: number
+  thirdPlaces: number
   bestFinish: number | null
   titleYears: number[]
+  thirdPlaceYears: number[]
   finishes: { year: number; rank: number | null; wins: number; losses: number; ties: number; madePlayoffs: boolean; champion: boolean }[]
 }
 
@@ -92,9 +94,10 @@ export type CareerSummary = {
     playoffAppearances: number
     championships: number
     runnerUps: number
+    thirdPlaces: number
     winPct: number
   }
-  trophyCase: { leagueName: string; year: number; kind: 'champion' | 'runner-up' }[]
+  trophyCase: { leagueName: string; year: number; kind: 'champion' | 'runner-up' | 'third-place' }[]
   topRivalries: CareerRivalry[]
   bestWins: CareerMoment[]
   worstLosses: CareerMoment[]
@@ -154,9 +157,10 @@ export async function loadCareerSummary(slug: string, ownerId: string): Promise<
       acc.playoffAppearances += l.playoffAppearances
       acc.championships += l.championships
       acc.runnerUps += l.runnerUps
+      acc.thirdPlaces += l.thirdPlaces
       return acc
     },
-    { seasonsPlayed: 0, wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0, playoffWins: 0, playoffLosses: 0, playoffPointsFor: 0, playoffPointsAgainst: 0, playoffAppearances: 0, championships: 0, runnerUps: 0 },
+    { seasonsPlayed: 0, wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0, playoffWins: 0, playoffLosses: 0, playoffPointsFor: 0, playoffPointsAgainst: 0, playoffAppearances: 0, championships: 0, runnerUps: 0, thirdPlaces: 0 },
   )
   const decided = totals.wins + totals.losses
   const winPct = decided > 0 ? totals.wins / decided : 0
@@ -210,7 +214,7 @@ async function summarizeLeague(
     seasonsPlayed: 0, firstYear: null, lastYear: null,
     wins: 0, losses: 0, ties: 0, pointsFor: 0, pointsAgainst: 0,
     playoffWins: 0, playoffLosses: 0, playoffPointsFor: 0, playoffPointsAgainst: 0, playoffAppearances: 0,
-    championships: 0, runnerUps: 0, bestFinish: null, titleYears: [], finishes: [],
+    championships: 0, runnerUps: 0, thirdPlaces: 0, bestFinish: null, titleYears: [], thirdPlaceYears: [], finishes: [],
   }
 
   const { data: me } = await supabase
@@ -284,8 +288,9 @@ async function summarizeLeague(
     if (base.lastYear == null || season.year > base.lastYear) base.lastYear = season.year
   }
 
-  // Titles / runner-ups (ingest already derives these with the same rules).
-  for (const season of seasonById.values()) {
+  // Titles / runner-ups / bronze (3rd-place is a trophy too — derived from
+  // my final_rank since seasons table only stores champion + runner_up ids).
+  for (const [seasonId, season] of seasonById) {
     if (season.champion === mid) {
       base.championships += 1
       base.titleYears.push(season.year)
@@ -293,9 +298,14 @@ async function summarizeLeague(
     } else if (season.runnerUp === mid) {
       base.runnerUps += 1
       trophyCase.push({ leagueName: lg.name, year: season.year, kind: 'runner-up' })
+    } else if (myFinalRankBySeason.get(seasonId) === 3) {
+      base.thirdPlaces += 1
+      base.thirdPlaceYears.push(season.year)
+      trophyCase.push({ leagueName: lg.name, year: season.year, kind: 'third-place' })
     }
   }
   base.titleYears.sort((a, b) => a - b)
+  base.thirdPlaceYears.sort((a, b) => a - b)
 
   // Classify each of my games: regular / championship-bracket / consolation.
   const classify = (m: { season_id: string; manager_a_id: string; manager_b_id: string; is_playoff: boolean | null }): 'reg' | 'champ' | 'consolation' => {

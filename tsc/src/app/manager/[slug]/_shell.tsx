@@ -9,7 +9,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import type { CareerChronicle } from '@/lib/manager/chronicle'
 
-export type ChapterSlug = 'front' | 'title-chase' | 'draft-room' | 'feuds' | 'ledger'
+export type ChapterSlug = 'front' | 'title-chase' | 'draft-room' | 'feuds' | 'ledger' | 'desk'
 
 export const CHAPTERS: { slug: ChapterSlug; href: (s: string) => string; numeral: string; title: string; kicker: string }[] = [
   { slug: 'front',       numeral: 'I',   title: 'Front Page',   kicker: 'The Masthead',   href: (s) => `/manager/${s}` },
@@ -17,6 +17,7 @@ export const CHAPTERS: { slug: ChapterSlug; href: (s: string) => string; numeral
   { slug: 'draft-room',  numeral: 'III', title: 'Draft Room',   kicker: 'Picks, Steals & Busts', href: (s) => `/manager/${s}/draft-room` },
   { slug: 'feuds',       numeral: 'IV',  title: 'The Feuds',    kicker: 'Society Pages',  href: (s) => `/manager/${s}/feuds` },
   { slug: 'ledger',      numeral: 'V',   title: 'The Ledger',   kicker: 'Records & Extremes', href: (s) => `/manager/${s}/ledger` },
+  { slug: 'desk',        numeral: 'VI',  title: 'Player Desk',  kicker: 'Live Rosters & Wire', href: (s) => `/manager/${s}/desk` },
 ]
 
 const SHELL_STYLES = `
@@ -43,7 +44,8 @@ const SHELL_STYLES = `
 .mh-masthead-meta { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem; font-family: var(--mono); font-size: .6rem; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-mute); }
 .mh-masthead-meta strong { color: var(--gold); font-weight: 700; }
 
-.mh-rail { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; border-top: 1px solid var(--ink-line); border-bottom: 1px solid var(--ink-line); margin-bottom: 2.5rem; }
+.mh-rail { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; border-top: 1px solid var(--ink-line); border-bottom: 1px solid var(--ink-line); margin-bottom: 2.5rem; }
+@media (max-width: 1100px) { .mh-rail { grid-template-columns: repeat(3, 1fr); } .mh-rail-item:nth-child(3n) { border-right: none; } }
 .mh-rail-item { display: block; text-align: center; padding: 1rem .75rem; text-decoration: none; color: var(--cream-mute); border-right: 1px dotted var(--ink-line); transition: background .2s, color .2s; }
 .mh-rail-item:last-child { border-right: none; }
 .mh-rail-item:hover { background: rgba(232,200,137,.04); color: var(--gold); }
@@ -52,7 +54,7 @@ const SHELL_STYLES = `
 .mh-rail-kicker { display: block; font-family: var(--mono); font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--cream-mute); margin-top: .25rem; }
 .mh-rail-item.is-active { background: var(--ink-card); }
 .mh-rail-item.is-active .mh-rail-title { color: var(--gold); }
-@media (max-width: 760px) { .mh-rail { grid-template-columns: repeat(2, 1fr); } .mh-rail-item { border-bottom: 1px dotted var(--ink-line); } .mh-rail-item:nth-child(odd) { border-right: 1px dotted var(--ink-line); } .mh-rail-item:nth-child(even) { border-right: none; } .mh-rail-item:last-child { grid-column: 1 / -1; } }
+@media (max-width: 760px) { .mh-rail { grid-template-columns: repeat(2, 1fr); } .mh-rail-item { border-bottom: 1px dotted var(--ink-line); } .mh-rail-item:nth-child(odd) { border-right: 1px dotted var(--ink-line); } .mh-rail-item:nth-child(even) { border-right: none; } }
 
 .mh-broadsheet { display: grid; gap: 2.5rem; }
 

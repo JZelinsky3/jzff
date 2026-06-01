@@ -34,9 +34,11 @@ function LeadStory({ c }: { c: CareerChronicle }) {
     : t.championships === 1
     ? 'one championship to point at'
     : `${t.championships} championships`
-  const finalsClause = t.runnerUps > 0
-    ? ` and ${t.runnerUps} runner-up finish${t.runnerUps === 1 ? '' : 'es'}`
-    : ''
+  const finalsClause = [
+    t.runnerUps > 0 ? `${t.runnerUps} runner-up finish${t.runnerUps === 1 ? '' : 'es'}` : null,
+    t.thirdPlaces > 0 ? `${t.thirdPlaces} bronze finish${t.thirdPlaces === 1 ? '' : 'es'}` : null,
+  ].filter(Boolean).join(' and ')
+  const finalsTail = finalsClause ? ` and ${finalsClause}` : ''
   const leagueCount = t.leagues
   const seasonsClause = t.seasonsPlayed === 1 ? 'one season' : `${t.seasonsPlayed} seasons`
   const topRival = c.topRivalries[0]
@@ -47,14 +49,14 @@ function LeadStory({ c }: { c: CareerChronicle }) {
       <article className="mh-story" style={{ borderTop: 'none', paddingTop: 0 }}>
         <div className="mh-story-kicker">Lead Story · The State of the Career</div>
         <h2 className="mh-story-head">
-          <em>{seasonsClause}</em>, {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'}, {titleClause}{finalsClause}.
+          <em>{seasonsClause}</em>, {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'}, {titleClause}{finalsTail}.
         </h2>
         <p className="mh-story-dek">
           A look at the {c.chronicle.displayName} chronicle — every season, threaded together.
         </p>
         <div className="mh-story-body">
           <p>
-            <span className="dropcap">{c.chronicle.displayName[0]}</span>
+            <span className="dropcap">A</span>
             cross {leagueCount} fantasy {leagueCount === 1 ? 'league' : 'leagues'} the ledger reads{' '}
             <strong>{t.wins}-{t.losses}{t.ties ? `-${t.ties}` : ''}</strong> regular-season —
             a <em>{winPct}</em> clip over <strong>{seasonsClause}</strong>.{' '}
@@ -116,18 +118,21 @@ function TrophyCase({ c }: { c: CareerChronicle }) {
   }
   return (
     <div className="mh-box">
-      <div className="mh-box-mast">★ Trophy Case · {c.trophyCase.length}</div>
-      {c.trophyCase.map((t, i) => (
-        <div key={`${t.leagueName}-${t.year}-${i}`} className="mh-row-line">
-          <span className="lbl">
-            {t.year} · {t.leagueName}
-            {t.kind === 'runner-up' && (
-              <span style={{ fontSize: '.5rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--rust)', marginLeft: '.4rem' }}>2nd</span>
-            )}
-          </span>
-          <span className="val">{t.kind === 'champion' ? 'CHAMP' : '—'}</span>
-        </div>
-      ))}
+      <div className="mh-box-mast">★ Trophy Case · {c.totals.championships}G · {c.totals.runnerUps}S · {c.totals.thirdPlaces}B</div>
+      {c.trophyCase.map((t, i) => {
+        const badge =
+          t.kind === 'champion' ? { label: 'GOLD',   color: 'var(--gold)' } :
+          t.kind === 'runner-up' ? { label: 'SILVER', color: '#c9c0ad' } :
+          /* third-place */         { label: 'BRONZE', color: 'var(--rust)' }
+        return (
+          <div key={`${t.leagueName}-${t.year}-${i}`} className="mh-row-line">
+            <span className="lbl">
+              {t.year} · {t.leagueName}
+            </span>
+            <span className="val" style={{ color: badge.color }}>{badge.label}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -207,10 +212,13 @@ function LeagueGallery({ c }: { c: CareerChronicle }) {
         {ready.map((lg) => {
           const decided = lg.wins + lg.losses
           const winPct = decided > 0 ? `${((lg.wins / decided) * 100).toFixed(0)}%` : '—'
-          const titleLine = lg.championships > 0
-            ? `${lg.championships} ring${lg.championships === 1 ? '' : 's'}${lg.titleYears.length > 0 ? ` (${lg.titleYears.join(', ')})` : ''}`
-            : lg.runnerUps > 0
-            ? `${lg.runnerUps} runner-up`
+          const medalParts = [
+            lg.championships > 0 ? `${lg.championships}G` : null,
+            lg.runnerUps > 0 ? `${lg.runnerUps}S` : null,
+            lg.thirdPlaces > 0 ? `${lg.thirdPlaces}B` : null,
+          ].filter(Boolean)
+          const titleLine = medalParts.length > 0
+            ? medalParts.join(' · ') + (lg.titleYears.length > 0 ? ` (${lg.titleYears.join(', ')})` : '')
             : lg.bestFinish != null
             ? `Best: ${ordinal(lg.bestFinish)}`
             : 'Story being written'
