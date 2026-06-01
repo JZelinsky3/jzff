@@ -89,6 +89,38 @@ export async function removeLink(formData: FormData): Promise<void> {
   revalidatePath(`/manager/${slug}/settings`)
 }
 
+// Removes a single year-range source from a league in the hub (e.g. a mistaken
+// NFL range). Only sources whose league is linked in this user's chronicle are
+// touchable; RLS additionally requires league ownership.
+export async function removeSource(formData: FormData): Promise<void> {
+  const slug = String(formData.get('slug') ?? '')
+  const sourceId = String(formData.get('sourceId') ?? '')
+  if (!slug || !sourceId) return
+
+  const { supabase, chronicle } = await ownedChronicle(slug)
+  if (!chronicle) return
+
+  const { data: src } = await supabase
+    .from('league_sources')
+    .select('id, league_id')
+    .eq('id', sourceId)
+    .maybeSingle()
+  if (!src) return
+
+  const { data: link } = await supabase
+    .from('career_links')
+    .select('id')
+    .eq('chronicle_id', chronicle.id)
+    .eq('league_id', src.league_id as string)
+    .maybeSingle()
+  if (!link) return
+
+  await supabase.from('league_sources').delete().eq('id', sourceId)
+
+  revalidatePath(`/manager/${slug}`)
+  revalidatePath(`/manager/${slug}/settings`)
+}
+
 // Deletes the whole chronicle. Cascades remove its links; any hub-only leagues
 // left orphaned are swept here too.
 export async function deleteChronicle(formData: FormData): Promise<void> {

@@ -253,11 +253,82 @@ export async function addLeagueToHub(_prev: AddResult | null, formData: FormData
     .eq('external_id', d.leagueId)
     .maybeSingle()
 
+  // Per-source settings (ESPN: range + cookies; NFL: range + playoff). Mirrors
+  // the archive flow so the existing ingest reads them unchanged. Same shape is
+  // used whether this is the league's first source or an added year-range.
+  const buildSourceSettings = (): Record<string, unknown> => {
+    const s: Record<string, unknown> = {}
+    if (d.platform === 'espn') {
+      s.season_start = d.seasonStart
+      s.season_end = d.seasonEnd
+      if (d.swid && d.espnS2) { s.swid = d.swid; s.espn_s2 = d.espnS2 }
+    } else if (d.platform === 'nfl') {
+      s.season_start = d.seasonStart
+      s.season_end = d.seasonEnd
+      s.playoff_week_start = d.playoffWeekStart
+      s.playoff_team_count = d.playoffTeamCount
+    }
+    return s
+  }
+  // Year-ranged platforms (ESPN/NFL) carry a per-source range; Sleeper/Yahoo
+  // walk all history from one source, so re-adding them adds nothing.
+  const isRanged = d.platform === 'espn' || d.platform === 'nfl'
+  const rangeLabel = isRanged ? `${d.seasonStart}–${d.seasonEnd}` : null
+
   let leagueRowId: string
   if (existingLeague) {
     leagueRowId = existingLeague.id as string
+
+    if (isRanged) {
+      // Adding another year-range source to a league already in the hub — this
+      // is the NFL-playoff-rules-differ-by-year case. Guard an identical range
+      // so we don't double-ingest the same seasons.
+      const { data: sources } = await supabase
+        .from('league_sources')
+        .select('id, settings')
+        .eq('league_id', leagueRowId)
+        .eq('platform', d.platform)
+        .eq('external_id', d.leagueId)
+      const dup = (sources ?? []).some((s) => {
+        const st = (s.settings ?? {}) as Record<string, unknown>
+        return Number(st.season_start) === d.seasonStart && Number(st.season_end) === d.seasonEnd
+      })
+      if (dup) {
+        return { ok: false, error: `You already added ${d.seasonStart}–${d.seasonEnd} for this league. Pick a different year range.` }
+      }
+      await supabase.from('league_sources').insert({
+        league_id: leagueRowId,
+        platform: d.platform,
+        external_id: d.leagueId,
+        walk_history: true,
+        label: rangeLabel,
+        settings: buildSourceSettings(),
+      })
+    } else {
+      // Sleeper/Yahoo: one source covers everything. If it's already linked,
+      // there's nothing to add.
+      const { data: link } = await supabase
+        .from('career_links')
+        .select('id')
+        .eq('chronicle_id', chronicleId)
+        .eq('league_id', leagueRowId)
+        .maybeSingle()
+      if (link) return { ok: false, error: 'That league is already in your hub.' }
+      // Linking an existing archive to the hub for the first time — make sure it
+      // has at least one source for the sync pipeline.
+      const { count } = await supabase
+        .from('league_sources')
+        .select('id', { count: 'exact', head: true })
+        .eq('league_id', leagueRowId)
+      if ((count ?? 0) === 0) {
+        await supabase.from('league_sources').insert({
+          league_id: leagueRowId, platform: d.platform, external_id: d.leagueId, walk_history: true, settings: {},
+        })
+      }
+    }
   } else {
-    // leagues.settings (NFL stores range + playoff here, like the archive flow).
+    // leagues.settings (NFL stores its first range + playoff here, like the
+    // archive flow; per-source settings are authoritative on sync).
     const leagueSettings: Record<string, unknown> = {}
     if (d.platform === 'nfl') {
       leagueSettings.season_start = d.seasonStart
@@ -297,31 +368,19 @@ export async function addLeagueToHub(_prev: AddResult | null, formData: FormData
     }
     leagueRowId = insertedLeague.id as string
 
-    // Per-source settings (ESPN: range + cookies; NFL: range + playoff). Mirrors
-    // the archive flow so the existing ingest reads them unchanged.
-    const sourceSettings: Record<string, unknown> = {}
-    if (d.platform === 'espn') {
-      sourceSettings.season_start = d.seasonStart
-      sourceSettings.season_end = d.seasonEnd
-      if (d.swid && d.espnS2) {
-        sourceSettings.swid = d.swid
-        sourceSettings.espn_s2 = d.espnS2
-      }
-    } else if (d.platform === 'nfl') {
-      sourceSettings.season_start = d.seasonStart
-      sourceSettings.season_end = d.seasonEnd
-      sourceSettings.playoff_week_start = d.playoffWeekStart
-      sourceSettings.playoff_team_count = d.playoffTeamCount
-    }
     await supabase.from('league_sources').insert({
       league_id: leagueRowId,
       platform: d.platform,
       external_id: d.leagueId,
       walk_history: true,
-      settings: sourceSettings,
+      label: rangeLabel,
+      settings: buildSourceSettings(),
     })
   }
 
+  // Link the league into the chronicle. Idempotent: a duplicate (23505) just
+  // means we added another year-range source to an already-linked league, which
+  // is success — the chronicle still shows one entry per league.
   const { error: linkErr } = await supabase.from('career_links').insert({
     chronicle_id: chronicleId,
     league_id: leagueRowId,
@@ -329,8 +388,7 @@ export async function addLeagueToHub(_prev: AddResult | null, formData: FormData
     manager_external_id: d.managerExternalId,
     display_name_in_league: d.managerName ?? null,
   })
-  if (linkErr) {
-    if (linkErr.code === '23505') return { ok: false, error: 'That league is already in your hub.' }
+  if (linkErr && linkErr.code !== '23505') {
     return { ok: false, error: linkErr.message }
   }
 

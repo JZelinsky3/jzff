@@ -395,6 +395,11 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
                   <option value="8">8 teams</option>
                 </select>
               </div>
+              <span className="dc-checkbox-hint">
+                Playoff rules apply to this whole range. If yours changed over time, add the
+                league once per era — re-run this with a different year range and these settings,
+                and both will sync into one league.
+              </span>
             </div>
           )}
 

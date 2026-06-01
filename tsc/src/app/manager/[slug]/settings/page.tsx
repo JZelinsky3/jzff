@@ -4,7 +4,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { SyncButton } from '../../../league/[slug]/sync-button'
 import { RenameForm } from './rename-form'
-import { removeLink, deleteChronicle } from './actions'
+import { removeLink, removeSource, deleteChronicle } from './actions'
 
 export default async function ManagerSettingsPage({
   params,
@@ -39,6 +39,38 @@ export default async function ManagerSettingsPage({
   }
   const linkRows = (links ?? []) as unknown as LinkRow[]
 
+  // Year-range sources per league. ESPN/NFL leagues can carry several (e.g. one
+  // NFL range per playoff-rules era); Sleeper/Yahoo are single-source.
+  type SourceRow = {
+    id: string
+    league_id: string
+    platform: string
+    label: string | null
+    settings: { season_start?: number; season_end?: number } | null
+  }
+  const leagueIds = [...new Set(linkRows.map((r) => r.league.id))]
+  let sourcesByLeague = new Map<string, SourceRow[]>()
+  if (leagueIds.length > 0) {
+    const { data: srcRows } = await supabase
+      .from('league_sources')
+      .select('id, league_id, platform, label, settings')
+      .in('league_id', leagueIds)
+      .order('created_at', { ascending: true })
+    sourcesByLeague = (srcRows ?? []).reduce((map, s) => {
+      const arr = map.get(s.league_id as string) ?? []
+      arr.push(s as SourceRow)
+      map.set(s.league_id as string, arr)
+      return map
+    }, new Map<string, SourceRow[]>())
+  }
+  const sourceRangeLabel = (s: SourceRow): string => {
+    if (s.label) return s.label
+    const a = s.settings?.season_start
+    const b = s.settings?.season_end
+    if (a && b) return a === b ? `${a}` : `${a}–${b}`
+    return 'all history'
+  }
+
   return (
     <main>
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1rem' }}>
@@ -66,32 +98,66 @@ export default async function ManagerSettingsPage({
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
-            {linkRows.map((row) => (
-              <div key={row.id} className="dc-card-static" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem', color: 'var(--cream)' }}>
-                    {row.league.name}
+            {linkRows.map((row) => {
+              const sources = sourcesByLeague.get(row.league.id) ?? []
+              const isRanged = row.league.platform === 'espn' || row.league.platform === 'nfl'
+              return (
+                <div key={row.id} className="dc-card-static" style={{ display: 'flex', flexDirection: 'column', gap: '.85rem' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem', color: 'var(--cream)' }}>
+                        {row.league.name}
+                      </div>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--cream-soft)', marginTop: '.2rem' }}>
+                        {row.league.platform} · you: {row.display_name_in_league ?? row.manager_external_id}
+                        {' · '}
+                        {row.league.last_synced_at
+                          ? `synced ${new Date(row.league.last_synced_at).toLocaleDateString()}`
+                          : 'not synced'}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
+                      <SyncButton leagueId={row.league.id} />
+                      <form action={removeLink}>
+                        <input type="hidden" name="slug" value={slug} />
+                        <input type="hidden" name="linkId" value={row.id} />
+                        <button type="submit" className="dc-btn-ghost" style={{ color: 'var(--rust, #a04830)' }}>
+                          Remove
+                        </button>
+                      </form>
+                    </div>
                   </div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--cream-soft)', marginTop: '.2rem' }}>
-                    {row.league.platform} · you: {row.display_name_in_league ?? row.manager_external_id}
-                    {' · '}
-                    {row.league.last_synced_at
-                      ? `synced ${new Date(row.league.last_synced_at).toLocaleDateString()}`
-                      : 'not synced'}
-                  </div>
+
+                  {/* Year-range sources — multiple for NFL/ESPN when playoff rules differ. */}
+                  {(sources.length > 1 || isRanged) && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', alignItems: 'center', borderTop: '1px solid var(--ink-line)', paddingTop: '.7rem' }}>
+                      <span style={{ fontFamily: 'var(--mono)', fontSize: '.55rem', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--cream-soft)', marginRight: '.2rem' }}>
+                        Years:
+                      </span>
+                      {sources.map((s) => (
+                        <span key={s.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '.35rem', padding: '.2rem .5rem', background: 'var(--ink)', border: '1px solid var(--gold-soft, rgba(200,160,80,.25))', borderRadius: '3px', fontFamily: 'var(--mono)', fontSize: '.7rem', color: 'var(--cream)' }}>
+                          {sourceRangeLabel(s)}
+                          {sources.length > 1 && (
+                            <form action={removeSource} style={{ display: 'inline' }}>
+                              <input type="hidden" name="slug" value={slug} />
+                              <input type="hidden" name="sourceId" value={s.id} />
+                              <button type="submit" title="Remove this range" style={{ background: 'none', border: 'none', padding: 0, color: 'var(--rust, #a04830)', cursor: 'pointer', fontSize: '.8rem', lineHeight: 1 }}>
+                                ×
+                              </button>
+                            </form>
+                          )}
+                        </span>
+                      ))}
+                      {isRanged && (
+                        <Link href="/manager/new" style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.1em', color: 'var(--gold)', textDecoration: 'underline' }}>
+                          + add year range
+                        </Link>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
-                  <SyncButton leagueId={row.league.id} />
-                  <form action={removeLink}>
-                    <input type="hidden" name="slug" value={slug} />
-                    <input type="hidden" name="linkId" value={row.id} />
-                    <button type="submit" className="dc-btn-ghost" style={{ color: 'var(--rust, #a04830)' }}>
-                      Remove
-                    </button>
-                  </form>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
