@@ -30,7 +30,7 @@ export default async function Home() {
     'New · Live Season Hub · Matchup Preview · Best Coach Tracker',
     'New · Manager Hub — six-issue editorial chronicle',
     'New · Trade Grader · Milestone Tracker · Records Watch',
-    'Soon · Weekly Recap · Manager DNA · Trade grades + revisits',
+    'Soon · Weekly Recap · Manager DNA',
     'Sleeper · ESPN · Yahoo · NFL.com',
   ]
 
