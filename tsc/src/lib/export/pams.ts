@@ -6,6 +6,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { simulateSeason, type SimTeam } from '@/lib/powerSim'
+import { resolveCurrentWeek } from '@/lib/liveSeason'
 
 // ============================================================
 // In-memory league snapshot
@@ -2942,11 +2943,18 @@ function buildCurrentForm(s: Snapshot): unknown {
 // on the live-season subtree.
 //
 // Source-week selection (in order):
-//   1. is_live season with at least one unplayed matchup → the
+//   1. is_live season + a `current_week` pin in settings → that week.
+//      The pin is how commissioners override the auto-advance, and
+//      it's also how a frozen historical season (jake's 2025 W10
+//      fixture) renders a preview even though every game is scored.
+//      In pinned mode, records/form are computed through week N-1,
+//      so the page reads as a true pre-game preview regardless of
+//      whether the matchup rows have scores.
+//   2. is_live season with at least one unplayed matchup → the
 //      smallest-week unplayed slate ("next week"). Common case.
-//   2. is_live season, every scheduled week played → return null
+//   3. is_live season, no pin, every scheduled week played → null
 //      (season is functionally over, nothing to preview).
-//   3. no is_live season → return null (off-season).
+//   4. no is_live season → null (off-season).
 //
 // Each matchup ships everything the page needs without secondary
 // fetches: both managers' name/team/record/form/ppg, all-time
@@ -2959,13 +2967,30 @@ function buildMatchupPreview(s: Snapshot): unknown {
   const allSeasonMatchups = s.matchupsBySeason.get(liveSeason.id) ?? []
   if (allSeasonMatchups.length === 0) return null
 
-  // Find the next unplayed week. A "scheduled" matchup is one with both
-  // manager ids but null scores. Pick the smallest such week.
+  // Pinned week (commissioner override / jake test fixture) wins over
+  // auto-derived "next unplayed" so a finished historical season can
+  // still drive the preview.
+  const pinnedWeek = resolveCurrentWeek(liveSeason.settings ?? null)
   let upcomingWeek: number | null = null
-  for (const m of allSeasonMatchups) {
-    if (m.score_a != null || m.score_b != null) continue
-    if (m.is_playoff) continue   // preview the regular season; playoffs need their own bracket UI
-    if (upcomingWeek == null || m.week < upcomingWeek) upcomingWeek = m.week
+  let pinnedMode = false
+
+  if (pinnedWeek != null) {
+    const hasPair = allSeasonMatchups.some(
+      (m) => m.week === pinnedWeek && !m.is_playoff,
+    )
+    if (hasPair) {
+      upcomingWeek = pinnedWeek
+      pinnedMode = true
+    }
+  }
+
+  if (upcomingWeek == null) {
+    // Auto mode: smallest unplayed regular-season week.
+    for (const m of allSeasonMatchups) {
+      if (m.score_a != null || m.score_b != null) continue
+      if (m.is_playoff) continue
+      if (upcomingWeek == null || m.week < upcomingWeek) upcomingWeek = m.week
+    }
   }
   if (upcomingWeek == null) return null
 
@@ -3102,8 +3127,16 @@ function buildMatchupPreview(s: Snapshot): unknown {
     projected: { a: number; b: number; spread: number; favorite: 'a' | 'b' | 'pp' }
   }
   const week = upcomingWeek
+  // In auto mode we require null scores (it's a true upcoming slate).
+  // In pinned mode we take whatever rows exist for that week — they may
+  // already be scored (jake's frozen 2025 W10 fixture) but the preview
+  // is still meaningful as a "what would have looked like, going in" view.
   const upcomingPairs = allSeasonMatchups
-    .filter((m) => m.week === week && m.score_a == null && m.score_b == null && !m.is_playoff)
+    .filter((m) => {
+      if (m.week !== week || m.is_playoff) return false
+      if (pinnedMode) return true
+      return m.score_a == null && m.score_b == null
+    })
     // Stable order: by manager_a_id so re-renders don't shuffle.
     .sort((a, b) => a.manager_a_id.localeCompare(b.manager_a_id))
 
@@ -3176,6 +3209,7 @@ function buildMatchupPreview(s: Snapshot): unknown {
     year: liveSeason.year,
     week,
     weekRoman: toRomanLite(week),
+    pinned: pinnedMode,   // true when commissioner override / test fixture is driving the week
     matchups: cards,
     managers: directory,
   }

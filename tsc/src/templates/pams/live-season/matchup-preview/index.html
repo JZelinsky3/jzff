@@ -1045,7 +1045,8 @@ body { background: var(--mp-bg); }
 
   function renderBoard(data) {
     sectionTitle.innerHTML = 'Week <em>' + esc(data.weekRoman || data.week) + ' departures —</em>';
-    sectionMeta.textContent = data.year + ' season · Wk ' + data.week;
+    sectionMeta.innerHTML = esc(data.year) + ' season · Wk ' + esc(data.week) +
+      (data.pinned ? ' · <span style="color:var(--mp-amber);letter-spacing:.16em">Pinned</span>' : '');
 
     var html = '' +
       '<div class="mp-board-mast">' +
