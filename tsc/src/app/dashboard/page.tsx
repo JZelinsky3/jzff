@@ -302,9 +302,9 @@ export default async function DashboardPage({
         ) : (
           <div className="card-grid dc-dashboard-grid">
             {leagues.map((l) => (
-              <div key={l.id} style={{ position: 'relative' }}>
+              <div key={l.id} style={{ position: 'relative', display: 'flex' }}>
                 <LeagueCardMenu leagueId={l.id} leagueName={l.name} />
-                <Link href={`/league/${l.slug}`} className="card" style={{ display: 'block' }}>
+                <Link href={`/league/${l.slug}`} className="card" style={{ flex: 1 }}>
                   <div className="card-corner">{l.platform}</div>
                   <div className="card-roman">{l.name.charAt(0).toUpperCase()}</div>
                   <div className="card-title">
@@ -348,7 +348,6 @@ export default async function DashboardPage({
                 key={l.id}
                 href={`/leagues/${l.slug}/`}
                 className="card"
-                style={{ display: 'block' }}
               >
                 <div className="card-corner">★ {l.platform}</div>
                 <div className="card-roman">{l.name.charAt(0).toUpperCase()}</div>

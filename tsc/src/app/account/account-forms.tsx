@@ -54,48 +54,60 @@ export function AccountForms({
       </div>
 
       {isOAuth ? (
-        <div className="section">
-          <div className="section-header">
-            <span className="section-num">§ 02 · Backup email</span>
-            <span className="section-title">In case {providerLabel} access is lost —</span>
-            <span className="section-meta">Optional</span>
+        <div className="dc-account-pair">
+          <div className="section dc-account-col">
+            <div className="section-header">
+              <span className="section-num">§ 02 · Backup email</span>
+              <span className="section-title">In case {providerLabel} access is lost —</span>
+              <span className="section-meta">Optional</span>
+            </div>
+            <BackupEmailForm primaryEmail={email} initial={backupEmail} providerLabel={providerLabel} />
           </div>
-          <BackupEmailForm primaryEmail={email} initial={backupEmail} providerLabel={providerLabel} />
+          <div className="section dc-account-col">
+            <div className="section-header">
+              <span className="section-num">§ 03 · Communication</span>
+              <span className="section-title">What we send you —</span>
+              <span className="section-meta">Off by default for billing</span>
+            </div>
+            <MarketingForm initialOptIn={marketingOptIn} />
+          </div>
         </div>
       ) : (
         <>
-          <div className="section">
-            <div className="section-header">
-              <span className="section-num">§ 02 · Email</span>
-              <span className="section-title">Sign-in address —</span>
-              <span className="section-meta">Magic links go here</span>
+          <div className="dc-account-pair">
+            <div className="section dc-account-col">
+              <div className="section-header">
+                <span className="section-num">§ 02 · Email</span>
+                <span className="section-title">Sign-in address —</span>
+                <span className="section-meta">Magic links go here</span>
+              </div>
+              <EmailForm currentEmail={email} />
             </div>
-            <EmailForm currentEmail={email} />
+
+            <div className="section dc-account-col">
+              <div className="section-header">
+                <span className="section-num">§ 03 · Password</span>
+                <span className="section-title">
+                  {hasPassword ? 'Password —' : 'Set a password —'}
+                </span>
+                <span className="section-meta">
+                  {hasPassword ? '8 character minimum' : 'So you can sign in without a magic link'}
+                </span>
+              </div>
+              <PasswordForm hasPassword={hasPassword} />
+            </div>
           </div>
 
           <div className="section">
             <div className="section-header">
-              <span className="section-num">§ 03 · Password</span>
-              <span className="section-title">
-                {hasPassword ? 'Change password —' : 'Set a password —'}
-              </span>
-              <span className="section-meta">
-                {hasPassword ? '8 character minimum' : 'So you can sign in without a magic link'}
-              </span>
+              <span className="section-num">§ 04 · Communication</span>
+              <span className="section-title">What we send you —</span>
+              <span className="section-meta">Off by default for billing</span>
             </div>
-            <PasswordForm hasPassword={hasPassword} />
+            <MarketingForm initialOptIn={marketingOptIn} />
           </div>
         </>
       )}
-
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ {isOAuth ? '03' : '04'} · Communication</span>
-          <span className="section-title">What we send you —</span>
-          <span className="section-meta">Off by default for billing</span>
-        </div>
-        <MarketingForm initialOptIn={marketingOptIn} />
-      </div>
 
       <div className="section">
         <div className="section-header">
@@ -257,6 +269,20 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
     updateEmail as (prev: Result, fd: FormData) => Promise<Result>,
     null
   )
+  const [editing, setEditing] = useState(false)
+  if (!editing) {
+    return (
+      <div className="dc-card-static dc-form">
+        <div className="dc-field">
+          <label className="dc-label">Current email</label>
+          <input value={currentEmail} disabled className="dc-input mono" />
+        </div>
+        <button type="button" className="dc-btn-ghost" onClick={() => setEditing(true)}>
+          Change email →
+        </button>
+      </div>
+    )
+  }
   return (
     <form action={action} className="dc-card-static dc-form">
       <div className="dc-field">
@@ -269,13 +295,19 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
           name="email"
           type="email"
           required
+          autoFocus
           placeholder="you@newdomain.com"
           className="dc-input mono"
         />
       </div>
-      <button type="submit" disabled={isPending} className="dc-btn">
-        {isPending ? 'Sending…' : 'Send confirmation links →'}
-      </button>
+      <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
+        <button type="submit" disabled={isPending} className="dc-btn">
+          {isPending ? 'Sending…' : 'Send confirmation links →'}
+        </button>
+        <button type="button" className="dc-btn-ghost" onClick={() => setEditing(false)}>
+          Cancel
+        </button>
+      </div>
       {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
       {state && state.ok && state.message && <p className="dc-form-ok">{state.message}</p>}
     </form>
@@ -291,6 +323,24 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
     updatePassword as (prev: Result, fd: FormData) => Promise<Result>,
     null
   )
+  const [editing, setEditing] = useState(false)
+  if (!editing) {
+    return (
+      <div className="dc-card-static dc-form">
+        <div className="dc-field">
+          <label className="dc-label">Status</label>
+          <input
+            value={hasPassword ? 'Password is set' : 'No password — magic links only'}
+            disabled
+            className="dc-input mono"
+          />
+        </div>
+        <button type="button" className="dc-btn-ghost" onClick={() => setEditing(true)}>
+          {hasPassword ? 'Change password →' : 'Set password →'}
+        </button>
+      </div>
+    )
+  }
   return (
     <form action={action} className="dc-card-static dc-form">
       {hasPassword && (
@@ -311,16 +361,22 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
           name="newPassword"
           type="password"
           required
+          autoFocus
           minLength={8}
           autoComplete="new-password"
           className="dc-input mono"
         />
       </div>
-      <button type="submit" disabled={isPending} className="dc-btn">
-        {isPending
-          ? (hasPassword ? 'Updating…' : 'Setting…')
-          : (hasPassword ? 'Update password →' : 'Set password →')}
-      </button>
+      <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
+        <button type="submit" disabled={isPending} className="dc-btn">
+          {isPending
+            ? (hasPassword ? 'Updating…' : 'Setting…')
+            : (hasPassword ? 'Update password →' : 'Set password →')}
+        </button>
+        <button type="button" className="dc-btn-ghost" onClick={() => setEditing(false)}>
+          Cancel
+        </button>
+      </div>
       {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
       {state && state.ok && state.message && <p className="dc-form-ok">{state.message}</p>}
     </form>

@@ -504,6 +504,41 @@ main {
 .dc-champion-link:hover .arrow { transform: translateX(4px); }
 
 /* ============================================================
+   GOTW — main picker + side tally
+   ============================================================ */
+.dc-gotw {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+    gap: 1.25rem;
+    align-items: start;
+}
+@media (max-width: 760px) {
+    .dc-gotw { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   ACCOUNT — two-column section pairing so forms don't span the
+   whole page. Each column is a regular .section but their top
+   margins collapse into the grid's gap.
+   ============================================================ */
+.dc-account-pair {
+    max-width: 1370px;
+    margin: 3rem auto 0;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+.dc-account-pair > .dc-account-col {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+@media (max-width: 760px) {
+    .dc-account-pair { grid-template-columns: 1fr; gap: 3rem; }
+}
+
+/* ============================================================
    FORMS
    ============================================================ */
 .dc-form { display: flex; flex-direction: column; gap: 1.25rem; }

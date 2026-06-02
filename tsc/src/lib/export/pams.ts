@@ -4318,9 +4318,14 @@ function buildLiveSeasonPreviews(
     return ''
   }
 
+  // Alumni filter: skip retired managers entirely so they don't keep showing
+  // up in milestone feeds. They can't earn new milestones, and stale alumni
+  // entries clutter the "Just Achieved" + "Imminent" rails.
+  const milestonesAutoCurrent = currentManagerIdSet(s)
   const careers: Career[] = []
   for (const g of groups) {
     if (isGroupHidden(g)) continue
+    if (!isGroupCurrent(g, milestonesAutoCurrent)) continue
     const career: Career = {
       name: groupDisplayName(g),
       primaryMid: g.primary.id,

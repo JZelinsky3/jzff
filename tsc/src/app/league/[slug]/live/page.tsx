@@ -4,7 +4,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { LiveSeasonForm, type SeasonRow } from './live-form'
 import { SourcePicker, type SourceRow } from './source-picker'
-import { GotwPicker, type GotwMatchup } from './gotw-picker'
+import { GotwPicker, type GotwWeek } from './gotw-picker'
 
 export default async function LiveSeasonPage({
   params,
@@ -55,19 +55,20 @@ export default async function LiveSeasonPage({
     is_live: !!s.is_live,
   }))
 
-  // Load the current week's matchups so the commish can star a Game of the Week.
-  let gotwMatchups: GotwMatchup[] = []
-  let currentGotwId: string | null = null
-  if (liveRaw && currentWeek != null) {
-    const gotwMap = (liveSettings.gotw ?? {}) as Record<string, string>
-    currentGotwId = gotwMap[String(currentWeek)] ?? null
-
+  // Load every regular-season week's matchups so the commish can pre-pick a
+  // Game of the Week for any week — the side panel tallies who's been
+  // featured how many times across the whole season.
+  const gotwMap = (liveSettings.gotw ?? {}) as Record<string, string>
+  let gotwWeeks: GotwWeek[] = []
+  let gotwManagers: string[] = []
+  if (liveRaw) {
     const { data: matchupRows } = await supabase
       .from('matchups')
-      .select('id, manager_a_id, manager_b_id')
+      .select('id, week, manager_a_id, manager_b_id, is_playoff')
       .eq('season_id', liveRaw.id)
-      .eq('week', currentWeek)
-    if (matchupRows && matchupRows.length > 0) {
+      .order('week', { ascending: true })
+    const regular = (matchupRows ?? []).filter((r) => !r.is_playoff)
+    if (regular.length > 0) {
       const [{ data: managers }, { data: profiles }] = await Promise.all([
         supabase.from('managers').select('id, display_name, profile_id').eq('league_id', league.id),
         supabase.from('manager_profiles').select('id, canonical_name').eq('league_id', league.id),
@@ -79,10 +80,25 @@ export default async function LiveSeasonPage({
         if (!m) return 'Unknown'
         return (m.profile_id && profileName.get(m.profile_id)) || m.display_name
       }
-      gotwMatchups = matchupRows.map((r) => ({
-        id: r.id,
-        label: `${nameOf(r.manager_a_id)} vs ${nameOf(r.manager_b_id)}`,
-      }))
+      const byWeek = new Map<number, typeof regular>()
+      for (const r of regular) {
+        if (!byWeek.has(r.week)) byWeek.set(r.week, [])
+        byWeek.get(r.week)!.push(r)
+      }
+      gotwWeeks = [...byWeek.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([week, rows]) => ({
+          week,
+          matchups: rows.map((r) => ({
+            id: r.id,
+            label: `${nameOf(r.manager_a_id)} vs ${nameOf(r.manager_b_id)}`,
+            managerA: nameOf(r.manager_a_id),
+            managerB: nameOf(r.manager_b_id),
+          })),
+        }))
+      const nameSet = new Set<string>()
+      for (const w of gotwWeeks) for (const m of w.matchups) { nameSet.add(m.managerA); nameSet.add(m.managerB) }
+      gotwManagers = [...nameSet].sort((a, b) => a.localeCompare(b))
     }
   }
 
@@ -133,20 +149,21 @@ export default async function LiveSeasonPage({
           <span className="section-num">§ 03 · Game of the Week</span>
           <span className="section-title">Star one matchup —</span>
           <span className="section-meta">
-            {liveSeason && currentWeek != null ? `Week ${currentWeek}` : 'Set a live week first'}
+            {gotwWeeks.length > 0 ? `${gotwWeeks.length} weeks on the schedule` : 'Set a live season first'}
           </span>
         </div>
-        {liveRaw && currentWeek != null ? (
+        {liveRaw && gotwWeeks.length > 0 ? (
           <GotwPicker
             leagueId={league.id}
             seasonId={liveRaw.id}
-            week={currentWeek}
-            matchups={gotwMatchups}
-            currentGotwId={currentGotwId}
+            defaultWeek={currentWeek}
+            weeks={gotwWeeks}
+            currentGotw={gotwMap}
+            managers={gotwManagers}
           />
         ) : (
           <div className="dc-empty">
-            <div className="dc-empty-text">Pick a live season and current week above to choose a Game of the Week.</div>
+            <div className="dc-empty-text">Pick a live season above to choose Games of the Week.</div>
           </div>
         )}
       </div>

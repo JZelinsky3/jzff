@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rivalry · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --rv-red:        #dc2626;
+  --rv-red-dim:    #7f1d1d;
+  --rv-bg:         #0a0a0a;
+  --rv-card:       #111111;
+  --rv-card2:      #141414;
+  --rv-line:       #1e1e1e;
+  --rv-line2:      #272727;
+  --rv-grey:       #374151;
+  --rv-grey-mid:   #6b7280;
+  --rv-grey-lt:    #9ca3af;
+  --rv-white:      #f3f4f6;
+  --rv-cream:      #d1d5db;
+  --rv-gold:       #e8c889;
+  --serif:         'DM Serif Display', Georgia, serif;
+  --sans:          'Inter', system-ui, sans-serif;
+  --mono:          'JetBrains Mono', 'SF Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white); min-height: 100vh; overflow-x: hidden; }
+
+.site-glow {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(220,38,38,.07) 0%, transparent 48%),
+    radial-gradient(circle at 88% 82%, rgba(220,38,38,.04) 0%, transparent 44%);
+}
+.site-grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .45;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+}
+
+/* ─── HEADER ─────────────────────────────────────── */
+.rv-detail-header {
+  position: relative; z-index: 2;
+  text-align: center;
+  padding: 3rem 1.5rem 1.5rem;
+}
+.rv-detail-back {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--rv-red);
+  text-decoration: none;
+  margin-bottom: 1.6rem;
+}
+.rv-detail-back:hover { color: #ef4444; }
+.rv-detail-kicker {
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: 1rem;
+}
+.rv-detail-title {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  line-height: .98;
+  color: var(--rv-white);
+  letter-spacing: -.02em;
+  margin-bottom: .6rem;
+}
+.rv-detail-title em { font-style: italic; color: var(--rv-red); }
+.rv-detail-sub {
+  font-family: var(--mono);
+  font-size: .78rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--rv-cream);
+}
+
+.rv-detail-main {
+  position: relative; z-index: 2;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 6rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* Re-use the card chrome from the index page so the detail summary card
+   reads identically to the list card it expanded from. */
+.rv-card {
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rv-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .5rem 1.2rem;
+  background: var(--rv-card2);
+  border-bottom: 1px solid var(--rv-line2);
+}
+.rv-card-label {
+  font-family: var(--mono);
+  font-size: .66rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rv-cream);
+}
+.rv-badge {
+  font-family: var(--mono);
+  font-size: .57rem; letter-spacing: .14em; text-transform: uppercase;
+  padding: .18rem .55rem;
+  border-radius: 2px;
+  border: 1px solid var(--rv-red-dim);
+  color: var(--rv-red);
+}
+.rv-badge.tied { color: var(--rv-grey-lt); border-color: var(--rv-grey); }
+.rv-body { display: grid; grid-template-columns: 1fr 200px 1fr; }
+.rv-side { padding: 1.6rem 1.8rem; display: flex; flex-direction: column; gap: .35rem; }
+.rv-side-a { align-items: flex-start; border-right: 1px solid var(--rv-line2); }
+.rv-side-b { align-items: flex-end; border-left: 1px solid var(--rv-line2); }
+.rv-side-a.side-leads { background: linear-gradient(105deg, rgba(220,38,38,.055) 0%, transparent 60%); }
+.rv-side-b.side-leads { background: linear-gradient(255deg, rgba(220,38,38,.055) 0%, transparent 60%); }
+.rv-wins { font-family: var(--mono); font-size: 4.2rem; font-weight: 700; line-height: 1; color: var(--rv-grey-lt); }
+.rv-wins.hot { color: var(--rv-red); }
+.rv-wins-lbl { font-family: var(--mono); font-size: .6rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rv-grey-lt); }
+.rv-name { font-family: var(--serif); font-size: 1.9rem; color: var(--rv-white); margin-top: .25rem; line-height: 1; }
+.rv-ppg { font-family: var(--mono); font-size: .85rem; color: var(--rv-cream); }
+.rv-rec { font-family: var(--mono); font-size: .7rem; color: var(--rv-grey-lt); }
+.rv-center {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 1.6rem 1.2rem; gap: .55rem;
+}
+.rv-rivalry-name { font-family: var(--mono); font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--rv-cream); }
+.rv-vs { font-family: var(--serif); font-size: 2.4rem; font-style: italic; color: var(--rv-red); }
+.rv-games { font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--rv-grey-lt); }
+.rv-bar-wrap { width: 100%; display: flex; flex-direction: column; gap: .3rem; }
+.rv-bar { width: 100%; height: 6px; border-radius: 3px; overflow: hidden; }
+.rv-bar-nums { display: flex; justify-content: space-between; font-family: var(--mono); font-size: .7rem; color: var(--rv-cream); }
+.rv-series-lbl { font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; text-align: center; color: var(--rv-red); }
+.rv-last-game { font-family: var(--mono); font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rv-cream); text-align: center; }
+.rv-last-game span { color: var(--rv-white); }
+
+/* ─── DETAIL — recent meetings table ─────────────── */
+.rv-section {
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  padding: 1.5rem 1.75rem;
+}
+.rv-section-title {
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: 1.2rem;
+  padding-bottom: .65rem;
+  border-bottom: 1px solid var(--rv-line2);
+}
+.rv-meet-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--mono); font-size: .78rem;
+  color: var(--rv-cream);
+}
+.rv-meet-table th {
+  text-align: left;
+  font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  padding: .45rem .65rem .55rem;
+  border-bottom: 1px solid var(--rv-line2);
+  font-weight: 600;
+}
+.rv-meet-table th.num { text-align: right; }
+.rv-meet-table td {
+  padding: .55rem .65rem;
+  border-bottom: 1px dotted var(--rv-line2);
+  color: var(--rv-white);
+}
+.rv-meet-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.rv-meet-table td.win { color: var(--rv-red); font-weight: 700; }
+.rv-meet-table td.loss { color: var(--rv-grey-lt); }
+.rv-tag-po {
+  display: inline-block;
+  font-size: .55rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-gold);
+  border: 1px solid var(--rv-grey);
+  padding: 0 .35rem;
+  border-radius: 2px;
+  margin-left: .35rem;
+}
+
+.rv-empty {
+  text-align: center; padding: 4rem 1.5rem;
+  color: var(--rv-cream);
+}
+
+/* Nav theme overrides (same crimson palette as the index page). */
+.nav { background: rgba(14, 3, 3, 0.94) !important; border-bottom-color: rgba(220, 38, 38, 0.18) !important; }
+:root {
+  --chapbar-bg:     rgba(14, 3, 3, 0.92);
+  --chapbar-border: rgba(220, 38, 38, 0.18);
+  --chapbar-text:   var(--rv-grey-mid);
+  --chapbar-active: var(--rv-red);
+  --chapbar-line:   rgba(220, 38, 38, 0.18);
+  --nav-drop-bg:           rgba(12,3,3,.97);
+  --nav-drop-border:       rgba(220,38,38,.15);
+  --nav-drop-text:         var(--rv-cream);
+  --nav-drop-text-mute:    var(--rv-grey-mid);
+  --nav-drop-accent:       var(--rv-red);
+  --nav-drop-hover-bg:     rgba(220,38,38,.1);
+  --nav-drop-sub-bg:       rgba(0,0,0,.35);
+  --nav-drop-accent-line:  rgba(220,38,38,.2);
+}
+.nav-kicker { color: rgba(220, 38, 38, 0.55) !important; }
+.nav-title em { color: var(--rv-red) !important; }
+.nav-drop-btn, .nav-back, .nav-link { color: var(--rv-red) !important; }
+.nav-drop-btn:hover, .nav-back:hover, .nav-link:hover { color: #ef4444 !important; }
+
+@media (max-width: 760px) {
+  .rv-body { grid-template-columns: 1fr; }
+  .rv-side-a { border-right: none; border-bottom: 1px solid var(--rv-line2); }
+  .rv-side-b { border-left: none; border-top: 1px solid var(--rv-line2); align-items: flex-start; }
+  .rv-wins { font-size: 2.6rem; }
+  .rv-name { font-size: 1.2rem; }
+  .rv-vs { font-size: 1.6rem; }
+  .rv-section { padding: 1.25rem 1rem; }
+  .rv-meet-table { font-size: .68rem; }
+}
+</style>
+</head>
+<body data-league-name="{{LEAGUE_NAME}}">
+
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<nav id="site-nav"
+     data-page="rivalries"
+     data-chapter="CH. VI · RIVALRY"
+     data-back-label="← All rivalries"
+     data-back-href="./"></nav>
+<script src="/pams-template/assets/js/nav.js"></script>
+
+<header class="rv-detail-header">
+  <a class="rv-detail-back" href="./">← All rivalries</a>
+  <div class="rv-detail-kicker" id="rv-kicker">{{LEAGUE_NAME}} · Head-to-Head</div>
+  <h1 class="rv-detail-title" id="rv-title">Loading…</h1>
+  <div class="rv-detail-sub" id="rv-sub">&nbsp;</div>
+</header>
+
+<main class="rv-detail-main" id="rv-main">
+  <div class="rv-empty" id="rv-loading">Loading rivalry…</div>
+</main>
+
+<script>
+(function () {
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function getParam(name) {
+    return new URLSearchParams(window.location.search).get(name);
+  }
+  function fmtScore(n) {
+    return typeof n === 'number' ? n.toFixed(1) : '—';
+  }
+
+  function buildSide(side, sideLetter, isLeading) {
+    return `
+      <div class="rv-side rv-side-${sideLetter}${isLeading ? ' side-leads' : ''}">
+        <div class="rv-wins${isLeading ? ' hot' : ''}">${side.wins}</div>
+        <div class="rv-wins-lbl">Wins</div>
+        <div class="rv-name">${escapeHtml(side.name)}</div>
+        <div class="rv-ppg">${side.avg_ppg ? side.avg_ppg.toFixed(1) + ' avg PPG' : '—'}</div>
+        <div class="rv-rec">Reg ${escapeHtml(side.reg_record)} &nbsp;·&nbsp; Playoff ${escapeHtml(side.playoff_record)}</div>
+      </div>
+    `;
+  }
+
+  function buildCard(rv) {
+    const totalDecided = rv.manager_a.wins + rv.manager_b.wins;
+    let aPct = 50;
+    if (totalDecided > 0) aPct = (rv.manager_a.wins / totalDecided) * 100;
+    const aLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_a.name;
+    const bLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_b.name;
+    const aColor = aLeading ? '#dc2626' : '#1f2937';
+    const bColor = bLeading ? '#dc2626' : '#1f2937';
+    const barStyle = `background: linear-gradient(to right, ${aColor} 0%, ${aColor} ${aPct}%, ${bColor} ${aPct}%, ${bColor} 100%)`;
+    const sinceLabel = rv.first_meeting_year ? ` · Since ${rv.first_meeting_year}` : '';
+    const headBadge = rv.is_deadlocked
+      ? `Deadlocked · ${rv.manager_a.wins}–${rv.manager_b.wins}`
+      : rv.leader_name
+        ? `${escapeHtml(rv.leader_name)} Leads · ${escapeHtml(rv.leader_record)}`
+        : 'No games yet';
+    const lastGameStr = rv.last_meeting ? `${rv.last_meeting.year} · W${rv.last_meeting.week}` : '—';
+
+    return `
+      <div class="rv-card">
+        <div class="rv-card-head">
+          <span class="rv-card-label">${escapeHtml(rv.manager_a.name)} vs ${escapeHtml(rv.manager_b.name)} · ${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}${sinceLabel}</span>
+          <span class="rv-badge">${headBadge}</span>
+        </div>
+        <div class="rv-body">
+          ${buildSide(rv.manager_a, 'a', aLeading)}
+          <div class="rv-center">
+            <div class="rv-rivalry-name">${escapeHtml(rv.name).toUpperCase()}</div>
+            <div class="rv-vs">vs</div>
+            <div class="rv-games">${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}</div>
+            <div class="rv-bar-wrap">
+              <div class="rv-bar" style="${barStyle}"></div>
+              <div class="rv-bar-nums"><span>${rv.manager_a.wins}</span><span>${rv.manager_b.wins}</span></div>
+            </div>
+            <div class="rv-series-lbl">${rv.is_deadlocked ? 'Deadlocked' : rv.leader_name ? `${escapeHtml(rv.leader_name)} Leads` : '—'}</div>
+            <div class="rv-last-game">Last: <span>${lastGameStr}</span></div>
+          </div>
+          ${buildSide(rv.manager_b, 'b', bLeading)}
+        </div>
+      </div>
+    `;
+  }
+
+  function buildLast5Table(rv) {
+    // rivalries.json only ships the last 5 meetings — anything further back
+    // would need a richer per-rivalry endpoint. Surface what we have here so
+    // visitors at least see the recent ledger expanded out.
+    const a = rv.manager_a, b = rv.manager_b;
+    const n = Math.min(a.last5.length, b.last5.length);
+    if (n === 0) {
+      return `
+        <section class="rv-section">
+          <div class="rv-section-title">Recent meetings</div>
+          <div class="rv-empty" style="padding:1.5rem 0;">No meetings on file yet.</div>
+        </section>
+      `;
+    }
+    const rows = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const ga = a.last5[i];
+      const aWon = ga.result === 'W';
+      const tie = ga.result === 'T';
+      const winner = tie ? 'Tie' : aWon ? a.name : b.name;
+      const marginStr = tie ? '—' : `by ${ga.margin ? ga.margin.toFixed(1) : '0.0'}`;
+      rows.push(`
+        <tr>
+          <td>${ga.year} <span style="color:var(--rv-grey-lt);">· W${ga.week}</span>${ga.is_playoff ? '<span class="rv-tag-po">PO</span>' : ''}</td>
+          <td class="${tie ? '' : 'win'}">${escapeHtml(winner)}</td>
+          <td class="num">${marginStr}</td>
+        </tr>
+      `);
+    }
+    return `
+      <section class="rv-section">
+        <div class="rv-section-title">Recent meetings · last ${n}</div>
+        <table class="rv-meet-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Winner</th>
+              <th class="num">Margin</th>
+            </tr>
+          </thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>
+      </section>
+    `;
+  }
+
+  async function load() {
+    const id = getParam('id');
+    const main = document.getElementById('rv-main');
+    if (!id) {
+      main.innerHTML = '<div class="rv-empty">No rivalry selected. <a class="rv-detail-back" href="./">← Back to all rivalries</a></div>';
+      document.getElementById('rv-title').textContent = 'Not found.';
+      document.getElementById('rv-sub').textContent = '';
+      return;
+    }
+    try {
+      const res = await fetch('data/rivalries.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const rv = (data.rivalries || []).find((r) => r.id === id);
+      if (!rv) {
+        main.innerHTML = '<div class="rv-empty">That rivalry isn\'t on file. <a class="rv-detail-back" href="./">← Back to all rivalries</a></div>';
+        document.getElementById('rv-title').textContent = 'Not found.';
+        return;
+      }
+      const leagueName = document.body.getAttribute('data-league-name') || '';
+      document.title = rv.name + (leagueName ? ' · ' + leagueName : '');
+      document.getElementById('rv-title').innerHTML = `${escapeHtml(rv.manager_a.name)} <em>vs.</em> ${escapeHtml(rv.manager_b.name)}`;
+      document.getElementById('rv-sub').textContent =
+        rv.total_meetings === 0
+          ? 'No meetings on file yet.'
+          : `${rv.total_meetings} meeting${rv.total_meetings === 1 ? '' : 's'}${rv.first_meeting_year ? ' · Since ' + rv.first_meeting_year : ''}`;
+      const kicker = document.getElementById('rv-kicker');
+      kicker.textContent = (leagueName ? leagueName + ' · ' : '') + rv.name;
+      main.innerHTML = buildCard(rv) + buildLast5Table(rv);
+    } catch (err) {
+      main.innerHTML = `<div class="rv-empty">Couldn't load this rivalry.<br><span style="font-family:var(--mono);font-size:.7rem;color:var(--rv-red);">${escapeHtml(err.message || 'unknown error')}</span></div>`;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', load);
+  } else {
+    load();
+  }
+})();
+</script>
+
+</body>
+</html>

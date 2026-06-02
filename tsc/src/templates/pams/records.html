@@ -148,7 +148,8 @@ body { background: var(--rb-bg); }
     border-bottom: 1px solid var(--rb-line);
     background: var(--rb-soft);
 }
-.streak-board-icon { font-size: 1rem; }
+.streak-board-icon { font-family: var(--mono); font-size: 1.1rem; line-height: 1; color: var(--gold); }
+.streak-board.losses .streak-board-icon { color: var(--rust); }
 .streak-board-title {
     font-family: var(--mono); font-weight: 700;
     font-size: .62rem; letter-spacing: .25em; text-transform: uppercase;
@@ -277,7 +278,10 @@ body { background: var(--rb-bg); }
     border-bottom: 1px solid var(--rb-line);
     background: var(--rb-soft);
 }
-.milestone-col-icon { font-size: 1rem; }
+.milestone-col-icon {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.2rem; line-height: 1; color: var(--gold);
+}
 .milestone-col-title {
     font-family: var(--mono); font-weight: 700;
     font-size: .62rem; letter-spacing: .25em; text-transform: uppercase;
@@ -1032,8 +1036,8 @@ function render(managers, recordBook, managerHighs) {
                     <span class="rec-section-note">Reg season + playoffs</span>
                 </div>
                 <div class="streak-grid">
-                    ${buildStreakBoard('wins', '🔥', 'Longest Win Streaks', winStreaks)}
-                    ${buildStreakBoard('losses', '🩸', 'Longest Loss Streaks', lossStreaks)}
+                    ${buildStreakBoard('wins', '↑', 'Longest Win Streaks', winStreaks)}
+                    ${buildStreakBoard('losses', '↓', 'Longest Loss Streaks', lossStreaks)}
                 </div>
             </div>
 
@@ -1064,8 +1068,6 @@ window.setRecTab = function(name) {
     if (tab) tab.classList.add('active');
     const panel = document.getElementById('panel-' + name);
     if (panel) panel.classList.add('active');
-    // Snap back to the tab strip so the new panel reads from the top.
-    document.querySelector('.rec-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
 function buildStreakBoard(type, icon, title, streaks) {
@@ -1099,8 +1101,8 @@ function buildMilestonesSection(milestones) {
     const pts  = milestones?.quickest_to_points || [];
     return `
         <div class="milestone-cols">
-            ${buildMilestoneCol('mw', '🏆', 'Wins',   wins, fmtWinTier,   fmtWinTab,   'wins')}
-            ${buildMilestoneCol('mp', '📈', 'Points', pts,  fmtPointTier, fmtPointTab, 'pts')}
+            ${buildMilestoneCol('mw', '§', 'Wins',   wins, fmtWinTier,   fmtWinTab,   'wins')}
+            ${buildMilestoneCol('mp', '¶', 'Points', pts,  fmtPointTier, fmtPointTab, 'pts')}
         </div>`;
 }
 
@@ -1215,7 +1217,7 @@ function buildGauntletSection(gauntlet) {
     return `
         <div class="milestone-col gauntlet-col">
             <div class="milestone-col-header">
-                <span class="milestone-col-icon">⚔️</span>
+                <span class="milestone-col-icon">†</span>
                 <span class="milestone-col-title">Gauntlet</span>
             </div>
             <div class="milestone-tabs">${tabs}</div>
@@ -1288,39 +1290,29 @@ function buildGauntletTier(managers, tier) {
     return `${completersHead}${completerRows}${progressHead}${progressRows}`;
 }
 
-// Clutch Index: career one-score W/L counts per manager. Four tabs —
-// "Clutch" (wins ≤ 5 pts), "Unclutch" (losses ≤ 5 pts), "Walk-offs"
-// (wins ≤ 1 pt), "Heartbreaks" (losses ≤ 1 pt). Each panel shows a
-// top-10 ranked by count with the most-recent qualifying game.
+// Clutch Index: combined W/L record per margin bucket. Two tabs —
+// "Clutch" (≤ 5 pts) and "Walk-offs" (≤ 1 pt). Each row reads as
+// "5–3 clutch record" so the reader sees both halves of the same metric.
 function buildClutchSection(clutch) {
     if (!clutch) {
         return `<div class="milestone-col"><div class="milestone-empty">No data yet.</div></div>`;
     }
-    // Tab order: positive flavor first within each margin bucket, then
-    // the flip-side. CLUTCH → WALK-OFFS → UNCLUTCH → HEARTBREAKS.
     const tabs = [
-        { id: 'clutch-w5',   label: 'Clutch',      data: clutch.clutch_5pt,   tone: 'good' },
-        { id: 'clutch-w1',   label: 'Walk-offs',   data: clutch.clutch_1pt,   tone: 'good' },
-        { id: 'clutch-l5',   label: 'Unclutch',    data: clutch.unclutch_5pt, tone: 'bad'  },
-        { id: 'clutch-l1',   label: 'Heartbreaks', data: clutch.unclutch_1pt, tone: 'bad'  },
+        { id: 'clutch-5pt', label: 'Clutch',    wins: clutch.clutch_5pt, losses: clutch.unclutch_5pt, head: '≤ 5 pts · W–L' },
+        { id: 'clutch-1pt', label: 'Walk-offs', wins: clutch.clutch_1pt, losses: clutch.unclutch_1pt, head: '≤ 1 pt · W–L' },
     ];
     const tabBtns = tabs.map((t, i) =>
         `<button class="milestone-tab${i === 0 ? ' active' : ''}" data-target="${t.id}" onclick="switchMilestoneTab(this)">${t.label}</button>`
     ).join('');
-    const panels = tabs.map((t, i) => {
-        const head = (t.id === 'clutch-w5') ? 'Wins by ≤ 5 pts'
-                   : (t.id === 'clutch-w1') ? 'Wins by ≤ 1 pt'
-                   : (t.id === 'clutch-l5') ? 'Losses by ≤ 5 pts'
-                                            : 'Losses by ≤ 1 pt';
-        return `<div class="milestone-panel tier${i === 0 ? ' active' : ''}" id="${t.id}">
-            <div class="milestone-panel-head">${head}</div>
-            ${buildClutchRows(t.data, t.tone)}
-        </div>`;
-    }).join('');
+    const panels = tabs.map((t, i) => `
+        <div class="milestone-panel tier${i === 0 ? ' active' : ''}" id="${t.id}">
+            <div class="milestone-panel-head">${t.head}</div>
+            ${buildClutchRows(mergeClutch(t.wins, t.losses))}
+        </div>`).join('');
     return `
         <div class="milestone-col">
             <div class="milestone-col-header">
-                <span class="milestone-col-icon">🎯</span>
+                <span class="milestone-col-icon">◎</span>
                 <span class="milestone-col-title">Clutch</span>
             </div>
             <div class="milestone-tabs">${tabBtns}</div>
@@ -1329,20 +1321,47 @@ function buildClutchSection(clutch) {
         </div>`;
 }
 
-function buildClutchRows(rows, tone) {
-    if (!rows || !rows.length) {
+// Merge wins + losses by user_id so each manager shows one combined row.
+// Picks the most recent qualifying event from either side so the "Last:"
+// note reflects the freshest one-score game, win or loss.
+function mergeClutch(wins, losses) {
+    const map = new Map();
+    function ensure(r) {
+        if (!map.has(r.user_id)) {
+            map.set(r.user_id, { user_id: r.user_id, name: r.name, wins: 0, losses: 0, last: null });
+        }
+        return map.get(r.user_id);
+    }
+    function take(r, type) {
+        const cur = ensure(r);
+        if (type === 'W') cur.wins = r.count; else cur.losses = r.count;
+        if (r.count > 0) {
+            const stamp = (r.last_year || 0) * 100 + (r.last_week || 0);
+            if (!cur.last || stamp > cur.last.stamp) {
+                cur.last = { stamp, type, week: r.last_week, year: r.last_year, opp: r.last_opp_name, margin: r.last_margin };
+            }
+        }
+    }
+    for (const r of (wins || [])) take(r, 'W');
+    for (const r of (losses || [])) take(r, 'L');
+    return [...map.values()].sort((a, b) =>
+        b.wins - a.wins ||
+        a.losses - b.losses ||
+        a.name.localeCompare(b.name)
+    );
+}
+
+function buildClutchRows(rows) {
+    if (!rows.length) {
         return `<div class="milestone-empty">No qualifying games yet.</div>`;
     }
-    const word = tone === 'good' ? 'wins' : 'losses';
-    const gooseHead = tone === 'good' ? 'Yet to land one' : 'Yet to suffer one';
     let firstZeroEmitted = false;
     let runningRank = 0;
     return rows.map(r => {
-        if (r.count === 0) {
-            // Insert a single panel-head ahead of the first 0-count row,
-            // separating the "haven't done it yet" tail from the leaderboard.
+        const hasAny = (r.wins + r.losses) > 0;
+        if (!hasAny) {
             const head = !firstZeroEmitted
-                ? `<div class="milestone-panel-head">${gooseHead}</div>`
+                ? `<div class="milestone-panel-head">No one-score games yet</div>`
                 : '';
             firstZeroEmitted = true;
             return `${head}
@@ -1353,10 +1372,14 @@ function buildClutchRows(rows, tone) {
                             <a href="managers/manager.html?id=${r.user_id}" style="color:inherit;text-decoration:none;">${r.name}</a>
                         </div>
                     </div>
-                    <span class="milestone-games clutch-zero-count"><em>0</em>${word}</span>
+                    <span class="milestone-games clutch-zero-count"><em>0–0</em>record</span>
                 </div>`;
         }
         runningRank++;
+        const tone = r.wins >= r.losses ? 'good' : 'bad';
+        const lastNote = r.last
+            ? `Last ${r.last.type}: W${r.last.week} · ${r.last.year} vs ${r.last.opp} (${r.last.margin})`
+            : '';
         return `
             <div class="milestone-row">
                 <span class="milestone-rank${runningRank === 1 ? ' gold' : ''}">${runningRank}</span>
@@ -1364,9 +1387,9 @@ function buildClutchRows(rows, tone) {
                     <div class="milestone-name">
                         <a href="managers/manager.html?id=${r.user_id}" style="color:inherit;text-decoration:none;">${r.name}</a>
                     </div>
-                    <div class="milestone-when">Last: W${r.last_week} · ${r.last_year} vs ${r.last_opp_name} (${r.last_margin})</div>
+                    <div class="milestone-when">${lastNote}</div>
                 </div>
-                <span class="milestone-games clutch-${tone}"><em>${r.count}</em>${word}</span>
+                <span class="milestone-games clutch-${tone}"><em>${r.wins}–${r.losses}</em>record</span>
             </div>`;
     }).join('');
 }
@@ -1390,8 +1413,8 @@ function buildBoomBustSection(book) {
     ];
     return `
         <div class="milestone-cols">
-            ${buildBoomCol('bb-boom', '💥', 'Boom',  boomTabs, 'Career Booms · Single Game')}
-            ${buildBoomCol('bb-bust', '🪨', 'Bust',  bustTabs, 'Career Busts · Single Game')}
+            ${buildBoomCol('bb-boom', '★', 'Boom',  boomTabs, 'Career Booms · Single Game')}
+            ${buildBoomCol('bb-bust', '○', 'Bust',  bustTabs, 'Career Busts · Single Game')}
         </div>`;
 }
 
