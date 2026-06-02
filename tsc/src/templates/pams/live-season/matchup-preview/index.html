@@ -710,6 +710,104 @@ body { background: var(--mp-bg); }
     background: var(--mp-brass-hi);
 }
 
+/* ============================================================
+   SHARE STUB — ticket-stub button + slide-up toast
+   ============================================================ */
+.mp-share {
+    display: inline-flex;
+    align-items: stretch;
+    background: transparent;
+    border: 1px solid var(--mp-brass-deep);
+    color: var(--mp-brass);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .66rem; letter-spacing: .22em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0;
+    transition: border-color .15s, color .15s, background .15s;
+    /* Perforated left edge so it reads as a tear-off ticket stub */
+    background-image:
+        radial-gradient(circle at 4px 50%, var(--mp-bg) 1.6px, transparent 1.8px),
+        radial-gradient(circle at 4px 0,   var(--mp-bg) 1.6px, transparent 1.8px),
+        radial-gradient(circle at 4px 100%,var(--mp-bg) 1.6px, transparent 1.8px);
+    background-size: 8px 8px, 8px 8px, 8px 8px;
+    background-position: left center, left top, left bottom;
+    background-repeat: repeat-y, no-repeat, no-repeat;
+    padding-left: 14px;
+}
+.mp-share:hover {
+    color: var(--mp-brass-hi);
+    border-color: var(--mp-brass);
+    background-color: rgba(200,157,92,.06);
+}
+.mp-share-icon {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    padding: .7rem .65rem .7rem .55rem;
+    border-right: 1px dashed var(--mp-brass-deep);
+    color: var(--mp-brass);
+}
+.mp-share-icon svg { width: 12px; height: 12px; display: block; }
+.mp-share-label {
+    padding: .7rem 1rem .7rem .8rem;
+    display: inline-flex;
+    align-items: center;
+}
+.mp-share.primary {
+    background-color: var(--mp-brass);
+    color: var(--mp-bg);
+    border-color: var(--mp-brass);
+    background-image:
+        radial-gradient(circle at 4px 50%, var(--mp-soft) 1.6px, transparent 1.8px),
+        radial-gradient(circle at 4px 0,   var(--mp-soft) 1.6px, transparent 1.8px),
+        radial-gradient(circle at 4px 100%,var(--mp-soft) 1.6px, transparent 1.8px);
+}
+.mp-share.primary .mp-share-icon { color: var(--mp-bg); border-right-color: rgba(0,0,0,.35); }
+.mp-share.primary:hover {
+    background-color: var(--mp-brass-hi);
+    color: var(--mp-bg);
+}
+/* Hub-level share lives in the section-header meta slot */
+.mp-share.in-meta {
+    margin-left: auto;
+    font-size: .6rem;
+    letter-spacing: .2em;
+}
+.mp-share.in-meta .mp-share-icon { padding: .55rem .55rem .55rem .5rem; }
+.mp-share.in-meta .mp-share-label { padding: .55rem .85rem .55rem .7rem; }
+
+/* Slide-up confirmation toast */
+.mp-toast {
+    position: fixed;
+    left: 50%; bottom: 2rem;
+    transform: translate(-50%, 140%);
+    background: var(--mp-brass);
+    color: var(--mp-bg);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .7rem; letter-spacing: .22em;
+    text-transform: uppercase;
+    padding: .8rem 1.3rem .85rem 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    box-shadow:
+        0 8px 24px rgba(0,0,0,.45),
+        inset 0 0 0 1px rgba(0,0,0,.2);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .35s cubic-bezier(.2,.7,.3,1), opacity .25s;
+}
+.mp-toast.is-on {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+.mp-toast::before {
+    content: '★';
+    color: var(--mp-bg);
+    font-size: .9rem;
+}
+
 /* Empty / unavailable states */
 .mp-empty {
     text-align: center;
@@ -788,6 +886,10 @@ body { background: var(--mp-bg); }
             <span class="mp-section-num">§ 01 · The Board</span>
             <span class="mp-section-title" id="mp-board-section-title">This week's <em>departures —</em></span>
             <span class="mp-section-meta" id="mp-board-section-meta">Updated weekly</span>
+            <button type="button" class="mp-share in-meta" id="mp-share-hub" hidden aria-label="Share the departures board">
+                <span class="mp-share-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg></span>
+                <span class="mp-share-label">Share the board</span>
+            </button>
         </div>
 
         <div class="mp-board" id="mp-board-host">
@@ -830,6 +932,8 @@ body { background: var(--mp-bg); }
 
     <div class="mp-foot" id="mp-foot">{{LEAGUE_ABBR}} · Departures · {{LEAGUE_FOUNDED_ROMAN}}</div>
 
+    <output class="mp-toast" id="mp-toast" aria-live="polite">Link copied to clipboard</output>
+
 </main>
 
 <script>
@@ -869,6 +973,7 @@ body { background: var(--mp-bg); }
       }
       renderBoard(data);
       renderConductor(data);
+      wireHubShare(data);
       // ?m=<uid> switches to the desk view for that manager.
       var params = new URLSearchParams(window.location.search);
       var mid = params.get('m');
@@ -876,6 +981,67 @@ body { background: var(--mp-bg); }
         renderDesk(data, mid);
       }
     });
+
+  // ── Share helpers ───────────────────────────────────────────
+  // Tries the native share sheet first (mobile + supported desktops);
+  // falls back to clipboard copy. Either way, surfaces the toast so the
+  // user gets a visible confirmation.
+  function showToast(msg) {
+    var t = document.getElementById('mp-toast');
+    if (!t) return;
+    if (msg) t.textContent = msg;
+    t.classList.add('is-on');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { t.classList.remove('is-on'); }, 2200);
+  }
+  function shareLink(url, title) {
+    // navigator.share needs a user gesture (we have one — click handler)
+    // and HTTPS. On unsupported browsers, fall back to clipboard.
+    if (navigator.share) {
+      navigator.share({ title: title, text: title, url: url })
+        .catch(function () { copyToClipboard(url, title); });
+      return;
+    }
+    copyToClipboard(url, title);
+  }
+  function copyToClipboard(url, title) {
+    var payload = title ? title + ' — ' + url : url;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(payload).then(function () {
+        showToast('Link copied — paste anywhere');
+      }, function () {
+        showToast('Couldn’t copy — long-press to grab it');
+      });
+      return;
+    }
+    // Old-Safari fallback
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = payload;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('Link copied — paste anywhere');
+    } catch (e) {
+      showToast('Couldn’t copy — long-press to grab it');
+    }
+  }
+  function wireHubShare(data) {
+    var btn = document.getElementById('mp-share-hub');
+    if (!btn) return;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      // Always share the hub URL (strip ?m=<uid> if the user navigated
+      // back from a desk view via the picker)
+      var url = new URL(window.location.href);
+      url.searchParams.delete('m');
+      var title = 'Wk ' + data.week + ' Matchups · ' + (window.__DC && window.__DC.name ? window.__DC.name : 'Live Season');
+      shareLink(url.toString(), title);
+    });
+  }
 
   function renderBoard(data) {
     sectionTitle.innerHTML = 'Week <em>' + esc(data.weekRoman || data.week) + ' departures —</em>';
@@ -1106,9 +1272,21 @@ body { background: var(--mp-bg); }
 
       '<div class="mp-actions">' +
         '<div class="mp-actions-msg">Put your stake in. <strong>Pick the winner</strong> for this week before kickoff.</div>' +
+        '<button type="button" class="mp-share primary" id="mp-share-desk" aria-label="Share this matchup">' +
+          '<span class="mp-share-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg></span>' +
+          '<span class="mp-share-label">Share matchup</span>' +
+        '</button>' +
         '<a class="mp-action-btn primary" href="../pickems/">Open Pick’ems →</a>' +
         '<a class="mp-action-btn" href="../powerrank/">Power Rankings</a>' +
       '</div>';
+
+    var shareBtn = document.getElementById('mp-share-desk');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', function () {
+        var title = self.name + ' vs ' + opp.name + ' · Wk ' + data.week + ' · ' + data.year;
+        shareLink(window.location.href, title);
+      });
+    }
 
     deskEl.innerHTML = ticketHtml;
   }
