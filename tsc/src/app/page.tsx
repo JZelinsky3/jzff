@@ -27,10 +27,11 @@ export default async function Home() {
   const admin = signedIn ? await isSiteAdmin(user?.id) : false
 
   const tickerItems = [
-    'The Sunday Chronicle · The League Almanac',
-    'Every Champion · Every Draft · Every Rivalry',
+    'New · Live Season Hub · Matchup Preview · Best Coach Tracker',
+    'New · Manager Hub — six-issue editorial chronicle',
+    'New · Trade Grader · Milestone Tracker · Records Watch',
+    'Soon · Weekly Recap · Manager DNA · Trade grades + revisits',
     'Sleeper · ESPN · Yahoo · NFL.com',
-    'Bring your league ID · we walk the history',
   ]
 
   // LandingNav owns its own trigger + mega-menu shape now (Nike-style
@@ -71,11 +72,6 @@ export default async function Home() {
       <section className="lp-hero">
         <div className="lp-hero-grid">
           <div className="lp-hero-left">
-            <div className="lp-hero-seal">
-              <span className="lp-hero-seal-line">Vol. II</span>
-              <span className="lp-hero-seal-line">★</span>
-              <span className="lp-hero-seal-line">MMXXVI</span>
-            </div>
             <div className="lp-hero-sup">★ JZFF · The Sunday Chronicle · Est. 2026 ★</div>
             <h1 className="lp-hero-title">
               Your league.<br />
