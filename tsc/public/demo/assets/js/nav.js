@@ -500,7 +500,76 @@
         });
     }
 
+    // Demo-only: pin a slim sticky strip above the masthead announcing
+    // that live testing is open. Persists through every scroll so visitors
+    // don't lose the call-to-action once they've scrolled past the
+    // homepage banner. Guarded on URL so this never renders on the real
+    // /leagues/<slug>/ deployments — only inside /demo/.
+    function buildDemoStrip() {
+        if (!/^\/demo(\/|$)/.test(window.location.pathname)) return;
+        if (document.getElementById('dc-demo-strip')) return;
+
+        var strip = document.createElement('div');
+        strip.id = 'dc-demo-strip';
+        strip.className = 'dc-demo-strip';
+        strip.innerHTML =
+            '<span class="dc-demo-strip-pill">★ Demo</span>' +
+            '<span class="dc-demo-strip-text">' +
+                'Live testing is open — spin up your own almanac at ' +
+                '<a href="/" target="_top">jzff.online</a>.' +
+            '</span>';
+        document.body.insertBefore(strip, document.body.firstChild);
+
+        // Push the existing sticky stack (masthead + chapbar) down by the
+        // strip's height so nothing overlaps. Uses !important so per-page
+        // theme styles can't push the nav back to top:0 and bury the strip.
+        var style = document.createElement('style');
+        style.setAttribute('data-demo-strip', '1');
+        style.textContent = [
+            ':root { --demo-strip-h: 34px; }',
+            '.dc-demo-strip {',
+            '  position: fixed; top: 0; left: 0; right: 0; z-index: 100;',
+            '  height: var(--demo-strip-h);',
+            '  display: flex; align-items: center; justify-content: center;',
+            '  gap: .65rem; padding: 0 1rem;',
+            '  background: linear-gradient(90deg, #a88a4a 0%, #e8c889 50%, #a88a4a 100%);',
+            '  color: #0e1620;',
+            '  border-bottom: 1px solid #0e1620;',
+            '  font-family: "JetBrains Mono", "SF Mono", monospace;',
+            '  font-size: .62rem; font-weight: 700;',
+            '  letter-spacing: .18em; text-transform: uppercase;',
+            '  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;',
+            '}',
+            '.dc-demo-strip-pill {',
+            '  background: #0e1620; color: #e8c889;',
+            '  padding: 3px 7px; border-radius: 2px;',
+            '  letter-spacing: .22em;',
+            '}',
+            '.dc-demo-strip-text { color: #0e1620; }',
+            '.dc-demo-strip-text a {',
+            '  color: #0e1620; text-decoration: none;',
+            '  border-bottom: 1px solid currentColor;',
+            '  transition: color .15s, border-color .15s;',
+            '}',
+            '.dc-demo-strip-text a:hover { color: #a04830; border-bottom-color: #a04830; }',
+            '@media (max-width: 480px) {',
+            '  :root { --demo-strip-h: 30px; }',
+            '  .dc-demo-strip { font-size: .54rem; letter-spacing: .12em; gap: .5rem; }',
+            '  .dc-demo-strip-text { letter-spacing: .08em; }',
+            '}',
+            // Reserve space at the top of the page so the body content',
+            // doesn\'t slide under the fixed strip.',
+            'body { padding-top: var(--demo-strip-h) !important; }',
+            // Offset the sticky masthead + chapbar so they ride below the',
+            // strip instead of stacking on top of it.',
+            'nav.nav { top: var(--demo-strip-h) !important; }',
+            '.nav-chapbar { top: calc(var(--nav-h, 4.5rem) + var(--demo-strip-h)) !important; }'
+        ].join('\n');
+        document.head.appendChild(style);
+    }
+
     function init() {
+        buildDemoStrip();
         buildNav();
         enhanceAuthLinks();
         wireBookmarkToggle();
