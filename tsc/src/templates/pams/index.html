@@ -1692,6 +1692,9 @@ body {
     display: none;
 }
 .trackboard.is-visible { display: block; }
+/* TEMPORARILY HIDDEN — keep trackboard off everywhere while we iterate.
+   Re-enable by removing this override. */
+.trackboard, .trackboard.is-visible { display: none !important; }
 .trackboard::before {
     content: ''; position: absolute; top: 0; left: 0;
     width: 3px; height: 100%;
