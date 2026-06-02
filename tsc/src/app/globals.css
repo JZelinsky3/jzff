@@ -4684,7 +4684,6 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-size: .65rem; letter-spacing: .35em; text-transform: uppercase;
     color: var(--gold);
     margin-bottom: 1.4rem;
-    margin-left: 90px;
 }
 .lp-hero-title {
     font-family: var(--serif);

@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Exact-match public paths (the parent landing/auth pages + standalone
 // public sections). Trailing slashes are stripped by the normalization
 // step below before comparison, so list them without trailing slash.
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/demo', '/old']
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/old']
 // /api/cron/ is reached by Vercel's cron infra (no Supabase session); the
 // route handler itself enforces auth via the CRON_SECRET bearer header.
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request
@@ -15,7 +15,7 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/demo', '/ol
 // without auth — visitors to /leagues/<slug>/draft fetch from here, and the
 // gate would otherwise 302 them to /login and break the Steal/Bust panels
 // for anyone not signed in.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/api/cron/', '/api/stripe/webhook']
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/stripe/webhook']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
