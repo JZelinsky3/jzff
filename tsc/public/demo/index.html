@@ -2060,44 +2060,6 @@ body {
 }
 
 
-/* ─── Demo banner (under ticker) ─────────────────────────── */
-.demo-banner {
-    position: relative; z-index: 9;
-    background: linear-gradient(90deg, rgba(232,200,137,.08), rgba(160,72,48,.06));
-    border-bottom: 1px solid var(--ink-line);
-    padding: .9rem 1.5rem;
-}
-.demo-banner-inner {
-    max-width: 1100px; margin: 0 auto;
-    display: flex; flex-wrap: wrap; align-items: center; gap: .9rem;
-    justify-content: center; text-align: center;
-}
-.demo-banner-pill {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .62rem; letter-spacing: .22em; text-transform: uppercase;
-    color: var(--ink); background: var(--gold);
-    padding: .35rem .65rem; border-radius: 2px;
-    box-shadow: 0 1px 0 var(--gold-deep);
-}
-.demo-banner-text {
-    font-family: var(--sans);
-    font-size: .88rem; line-height: 1.45;
-    color: var(--cream-soft);
-}
-.demo-banner-text strong {
-    color: var(--cream); font-weight: 600;
-}
-.demo-banner-link {
-    color: var(--gold); text-decoration: none;
-    border-bottom: 1px solid rgba(232,200,137,.4);
-    transition: color .2s, border-color .2s;
-}
-.demo-banner-link:hover { color: var(--gold-bright); border-bottom-color: var(--gold-bright); }
-@media (max-width: 640px) {
-    .demo-banner { padding: .75rem 1rem; }
-    .demo-banner-text { font-size: .82rem; }
-}
-
 /* ─── Mailing list (Stay Posted) ─────────────────────────── */
 .mailing-card {
     position: relative;
@@ -2174,19 +2136,6 @@ body {
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> THE LAKESIDE LEAGUE · EST. 2019</span>
         </div>
-    </div>
-</div>
-
-<!-- DEMO BANNER — public testing announcement -->
-<div class="demo-banner">
-    <div class="demo-banner-inner">
-        <span class="demo-banner-pill">★ Live · Open for testing</span>
-        <span class="demo-banner-text">
-            The Sunday Chronicle is <strong>live and open to test now.</strong>
-            This page is a real league rendered as a public almanac —
-            spin up your own at
-            <a href="/" class="demo-banner-link">jzff.online</a>.
-        </span>
     </div>
 </div>
 
