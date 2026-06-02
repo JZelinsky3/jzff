@@ -70,6 +70,7 @@ type ManagerSeasonRow = {
 }
 
 type MatchupRow = {
+  id?: string                  // matchups.id — only needed for GOTW resolution; optional to keep existing call sites lax
   season_id: string
   week: number
   manager_a_id: string
@@ -222,7 +223,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
   // never lose any.
   const [matchupsAll, managerSeasonsAll, draftsAll] = await Promise.all([
     seasonIdList.length === 0 ? Promise.resolve([] as MatchupRow[]) : selectAllPaged<MatchupRow>(db, 'matchups',
-      'season_id, week, manager_a_id, manager_b_id, score_a, score_b, is_playoff, is_championship',
+      'id, season_id, week, manager_a_id, manager_b_id, score_a, score_b, is_playoff, is_championship',
       seasonIdList),
     seasonIdList.length === 0 ? Promise.resolve([] as ManagerSeasonRow[]) : selectManagerSeasonsPaged(db, seasonIdList),
     seasonIdList.length === 0 ? Promise.resolve([] as DraftRow[]) : selectAllPaged<DraftRow>(db, 'drafts',
@@ -3022,20 +3023,30 @@ function buildMatchupPreview(s: Snapshot): unknown {
   }
 
   // Walk the live season's scored matchups in week order to compute
-  // a per-group record + last-5 form + ppg5 going into upcomingWeek.
+  // a per-group record + last-5 form + ppg5 + streak + season-high
+  // going into upcomingWeek. fullForm tracks every result this season
+  // (needed for the streak counter, which can run longer than 5).
   type GroupForm = {
     wins: number
     losses: number
     ties: number
     pf: number
     pa: number
-    // most-recent results first (W/L/T) up to 5
-    form: Array<'W' | 'L' | 'T'>
+    games: number
+    // most-recent results first (W/L/T)
+    form: Array<'W' | 'L' | 'T'>        // capped at 5 for the form pills
+    fullForm: Array<'W' | 'L' | 'T'>    // every game this season, newest-first (for streak)
     last5Pf: number[]
     last5Pa: number[]
+    // Best scoring week of the season so far: { week, pts }
+    seasonHigh: { week: number; pts: number } | null
   }
   function blank(): GroupForm {
-    return { wins: 0, losses: 0, ties: 0, pf: 0, pa: 0, form: [], last5Pf: [], last5Pa: [] }
+    return {
+      wins: 0, losses: 0, ties: 0, pf: 0, pa: 0, games: 0,
+      form: [], fullForm: [], last5Pf: [], last5Pa: [],
+      seasonHigh: null,
+    }
   }
   const groupForm = new Map<ProfileGroup, GroupForm>()
   const scoredAsc = allSeasonMatchups
@@ -3048,16 +3059,34 @@ function buildMatchupPreview(s: Snapshot): unknown {
     const sa = Number(m.score_a); const sb = Number(m.score_b)
     const fa = groupForm.get(ga) ?? blank()
     const fb = groupForm.get(gb) ?? blank()
-    fa.pf += sa; fa.pa += sb
-    fb.pf += sb; fb.pa += sa
-    if (sa > sb) { fa.wins++; fb.losses++; fa.form.unshift('W'); fb.form.unshift('L') }
-    else if (sa < sb) { fa.losses++; fb.wins++; fa.form.unshift('L'); fb.form.unshift('W') }
-    else { fa.ties++; fb.ties++; fa.form.unshift('T'); fb.form.unshift('T') }
+    fa.pf += sa; fa.pa += sb; fa.games++
+    fb.pf += sb; fb.pa += sa; fb.games++
+    let resA: 'W' | 'L' | 'T', resB: 'W' | 'L' | 'T'
+    if (sa > sb) { fa.wins++; fb.losses++; resA = 'W'; resB = 'L' }
+    else if (sa < sb) { fa.losses++; fb.wins++; resA = 'L'; resB = 'W' }
+    else { fa.ties++; fb.ties++; resA = 'T'; resB = 'T' }
+    fa.form.unshift(resA); fb.form.unshift(resB)
+    fa.fullForm.unshift(resA); fb.fullForm.unshift(resB)
     fa.last5Pf.unshift(sa); fa.last5Pa.unshift(sb)
     fb.last5Pf.unshift(sb); fb.last5Pa.unshift(sa)
     fa.form = fa.form.slice(0, 5); fa.last5Pf = fa.last5Pf.slice(0, 5); fa.last5Pa = fa.last5Pa.slice(0, 5)
     fb.form = fb.form.slice(0, 5); fb.last5Pf = fb.last5Pf.slice(0, 5); fb.last5Pa = fb.last5Pa.slice(0, 5)
+    if (fa.seasonHigh == null || sa > fa.seasonHigh.pts) fa.seasonHigh = { week: m.week, pts: round2(sa) }
+    if (fb.seasonHigh == null || sb > fb.seasonHigh.pts) fb.seasonHigh = { week: m.week, pts: round2(sb) }
     groupForm.set(ga, fa); groupForm.set(gb, fb)
+  }
+
+  // Current win/loss streak from a newest-first fullForm.
+  // Returns { kind: 'W' | 'L' | 'T' | null, count }.
+  function streakFrom(fullForm: Array<'W' | 'L' | 'T'>): { kind: 'W' | 'L' | 'T' | null; count: number } {
+    if (fullForm.length === 0) return { kind: null, count: 0 }
+    const kind = fullForm[0]
+    let count = 0
+    for (const r of fullForm) {
+      if (r === kind) count++
+      else break
+    }
+    return { kind, count }
   }
 
   // All-time H2H lookup between two groups. Counts every scored
@@ -3125,6 +3154,7 @@ function buildMatchupPreview(s: Snapshot): unknown {
     b: Record<string, unknown>
     h2h: H2HSummary
     projected: { a: number; b: number; spread: number; favorite: 'a' | 'b' | 'pp' }
+    gotw: boolean
   }
   const week = upcomingWeek
   // In auto mode we require null scores (it's a true upcoming slate).
@@ -3140,7 +3170,14 @@ function buildMatchupPreview(s: Snapshot): unknown {
     // Stable order: by manager_a_id so re-renders don't shuffle.
     .sort((a, b) => a.manager_a_id.localeCompare(b.manager_a_id))
 
+  // GOTW: settings.gotw is { [week]: matchupId } — pull the ID for this week.
+  const gotwMap = ((liveSeason.settings ?? {}) as Record<string, unknown>).gotw as
+    | Record<string, string>
+    | undefined
+  const gotwMatchupId = gotwMap?.[String(week)] ?? null
+
   const cards: Card[] = []
+  let gotwIdx: number | null = null
   upcomingPairs.forEach((m, i) => {
     const ga = managerToGroup.get(m.manager_a_id)
     const gb = managerToGroup.get(m.manager_b_id)
@@ -3156,16 +3193,21 @@ function buildMatchupPreview(s: Snapshot): unknown {
     const nameA = groupDisplayName(ga)
     const nameB = groupDisplayName(gb)
     function sideJson(g: ProfileGroup, f: GroupForm, name: string, ppg: number): Record<string, unknown> {
+      const sk = streakFrom(f.fullForm)
+      const ppgSeason = f.games > 0 ? round2(f.pf / f.games) : 0
       return {
         uid: userId(g.primary),
         name,
         team: teamLatest(g),
         abbr: abbrFor(name),
         record: recordStr(f.wins, f.losses, f.ties),
-        form: f.form,           // newest-first
-        ppg5: ppg,
+        form: f.form,                         // last-5, newest-first
+        ppg5: ppg,                            // last-5 avg
+        ppgSeason,                            // season-long avg (for the board column)
         pf: round2(f.pf),
         pa: round2(f.pa),
+        streak: sk.kind ? { kind: sk.kind, count: sk.count } : null,
+        seasonHigh: f.seasonHigh,             // { week, pts } or null
       }
     }
     const h2h = h2hBetween(ga, gb)
@@ -3173,6 +3215,8 @@ function buildMatchupPreview(s: Snapshot): unknown {
     const fav: 'a' | 'b' | 'pp' = ppgA === 0 && ppgB === 0
       ? 'pp'                  // preseason / no data yet → pick'em
       : spread > 0 ? 'a' : spread < 0 ? 'b' : 'pp'
+    const isGotw = !!(gotwMatchupId && m.id && m.id === gotwMatchupId)
+    if (isGotw) gotwIdx = i
     cards.push({
       // Train number: "WW.NN" (week.matchup index). NN is 01-based.
       train: `${week}.${String(i + 1).padStart(2, '0')}`,
@@ -3182,6 +3226,7 @@ function buildMatchupPreview(s: Snapshot): unknown {
       b: sideJson(gb, fb, nameB, ppgB),
       h2h,
       projected: { a: ppgA, b: ppgB, spread: Math.abs(spread), favorite: fav },
+      gotw: isGotw,
     })
   })
 
@@ -3210,6 +3255,7 @@ function buildMatchupPreview(s: Snapshot): unknown {
     week,
     weekRoman: toRomanLite(week),
     pinned: pinnedMode,   // true when commissioner override / test fixture is driving the week
+    gotwIdx,              // index into matchups[] of the featured Game of the Week, or null
     matchups: cards,
     managers: directory,
   }
