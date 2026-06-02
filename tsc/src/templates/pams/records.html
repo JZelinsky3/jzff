@@ -1344,11 +1344,18 @@ function mergeClutch(wins, losses) {
     }
     for (const r of (wins || [])) take(r, 'W');
     for (const r of (losses || [])) take(r, 'L');
-    return [...map.values()].sort((a, b) =>
-        b.wins - a.wins ||
-        a.losses - b.losses ||
-        a.name.localeCompare(b.name)
-    );
+    // Sort: anyone who has at least one qualifying game ranks before the
+    // "no one-score games yet" bucket. Inside the ranked group: wins desc,
+    // then losses asc so winners with cleaner records edge ahead of equally-
+    // winning managers who also took losses in the same bucket.
+    return [...map.values()].sort((a, b) => {
+        const aActive = (a.wins + a.losses) > 0;
+        const bActive = (b.wins + b.losses) > 0;
+        if (aActive !== bActive) return aActive ? -1 : 1;
+        if (a.wins !== b.wins) return b.wins - a.wins;
+        if (a.losses !== b.losses) return a.losses - b.losses;
+        return a.name.localeCompare(b.name);
+    });
 }
 
 function buildClutchRows(rows) {
