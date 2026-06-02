@@ -116,9 +116,9 @@ body { background: var(--mp-bg); }
 }
 .mp-mast-sup .lamp {
     display: inline-block;
-    width: 7px; height: 7px; border-radius: 50%;
+    width: 9px; height: 9px; border-radius: 50%;
     background: var(--mp-amber);
-    box-shadow: 0 0 10px var(--mp-amber-glow);
+    box-shadow: 0 0 12px var(--mp-amber-glow);
     animation: lampPulse 1.6s ease-in-out infinite;
 }
 @keyframes lampPulse {
@@ -279,7 +279,10 @@ body { background: var(--mp-bg); }
 }
 .mp-bd-service .fav-mark {
     color: var(--mp-amber);
-    margin-right: .35rem;
+    font-size: .95rem;      /* matches the legend ★ + the projection ★ */
+    line-height: 1;
+    vertical-align: -1px;
+    flex-shrink: 0;
     text-shadow: 0 0 8px var(--mp-amber-glow);
 }
 /* RECORDS column: "8-4 vs 6-6" — small mono, paired with a dim VS */
@@ -311,8 +314,11 @@ body { background: var(--mp-bg); }
 }
 .mp-bd-spread .fav-mark {
     color: var(--mp-amber);
-    margin-right: .35rem;
-    text-shadow: 0 0 6px var(--mp-amber-glow);
+    margin-right: .4rem;
+    font-size: .95rem;        /* matches the legend ★ at the foot of the board */
+    line-height: 1;
+    vertical-align: -1px;
+    text-shadow: 0 0 8px var(--mp-amber-glow);
 }
 .mp-bd-spread strong {
     color: var(--mp-green);
@@ -320,24 +326,18 @@ body { background: var(--mp-bg); }
     margin-left: .25rem;
 }
 .mp-bd-spread.pp strong { color: var(--mp-mute); }
-/* GOTW row — gold left rule + faint amber wash so the featured matchup
-   stands out without breaking the board's typographic rhythm. */
+/* GOTW (Main Line) board row — gold border outline only, no bg wash.
+   The amber train number is the only inline cue (the marquee above the
+   board already announces what the featured matchup is). */
 .mp-bd-row.gotw {
-    background: rgba(232,176,71,.07);
-    box-shadow: inset 3px 0 0 var(--mp-amber);
+    box-shadow:
+        inset 0 1px 0 var(--mp-amber),
+        inset 0 -1px 0 var(--mp-amber),
+        inset 3px 0 0 var(--mp-amber),
+        inset -3px 0 0 var(--mp-amber);
 }
-.mp-bd-row.gotw:hover { background: rgba(232,176,71,.12); }
+.mp-bd-row.gotw:hover { background: rgba(232,176,71,.05); }
 .mp-bd-row.gotw .mp-bd-train { color: var(--mp-amber); }
-.mp-bd-row.gotw .gotw-tag {
-    display: inline-block;
-    margin-left: .55rem;
-    padding: 1px 5px 2px;
-    background: var(--mp-amber);
-    color: var(--mp-bg);
-    font-family: var(--mono); font-weight: 700;
-    font-size: .5rem; letter-spacing: .22em;
-    vertical-align: 1px;
-}
 
 /* ── GOTW MARQUEE — featured card above the board ───────────── */
 .mp-marquee {
@@ -379,9 +379,9 @@ body { background: var(--mp-bg); }
 }
 .mp-marquee-ribbon .lamp {
     display: inline-block;
-    width: 8px; height: 8px; border-radius: 50%;
+    width: 10px; height: 10px; border-radius: 50%;
     background: var(--mp-amber);
-    box-shadow: 0 0 10px var(--mp-amber-glow);
+    box-shadow: 0 0 12px var(--mp-amber-glow);
     animation: lampPulse 1.6s ease-in-out infinite;
 }
 .mp-marquee-grid {
@@ -442,6 +442,35 @@ body { background: var(--mp-bg); }
     font-size: .88rem;
 }
 .mp-marquee-foot strong { color: var(--mp-amber); font-style: normal; }
+.mp-marquee-cta {
+    display: flex; justify-content: center; gap: .75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+.mp-marquee-btn {
+    display: inline-flex; align-items: center;
+    padding: .7rem 1.2rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .66rem; letter-spacing: .22em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 1px solid var(--mp-amber);
+    color: var(--mp-amber);
+    background: transparent;
+    transition: background .15s, color .15s;
+}
+.mp-marquee-btn:hover {
+    background: rgba(232,176,71,.1);
+    color: var(--mp-amber-hi, var(--mp-amber));
+}
+.mp-marquee-btn.primary {
+    background: var(--mp-amber);
+    color: var(--mp-bg);
+}
+.mp-marquee-btn.primary:hover {
+    background: #f1c264;
+    color: var(--mp-bg);
+}
 @media (max-width: 640px) {
     .mp-marquee-grid { grid-template-columns: 1fr; gap: .8rem; }
     .mp-marquee-side.right, .mp-marquee-side.left { text-align: left; align-items: flex-start; }
@@ -463,8 +492,8 @@ body { background: var(--mp-bg); }
 .mp-bd-legend span { display: inline-flex; align-items: center; gap: .4rem; }
 .mp-bd-legend .star {
     color: var(--mp-amber);
-    text-shadow: 0 0 6px var(--mp-amber-glow);
-    font-size: .8rem;
+    text-shadow: 0 0 8px var(--mp-amber-glow);
+    font-size: .95rem;
     line-height: 1;
 }
 
@@ -599,6 +628,7 @@ body { background: var(--mp-bg); }
 
 /* Ticket header — week / kickoff line above the matchup card */
 .mp-ticket {
+    position: relative;
     border: 1px solid var(--mp-brass-deep);
     background:
         repeating-linear-gradient(135deg, transparent 0 18px, rgba(200,157,92,.025) 18px 19px),
@@ -609,6 +639,32 @@ body { background: var(--mp-bg); }
     gap: 1.5rem;
     align-items: center;
     margin-bottom: 2rem;
+}
+/* When this matchup is the Main Line, swap the ticket frame for an amber
+   theme + add a small corner ribbon so the framing reads instantly. */
+.mp-ticket.is-mainline {
+    border-color: var(--mp-amber);
+    background:
+        radial-gradient(circle at 50% 0%, rgba(232,176,71,.12) 0%, transparent 55%),
+        var(--mp-soft);
+    box-shadow: 0 0 24px rgba(232,176,71,.12);
+}
+.mp-ticket-ribbon {
+    position: absolute;
+    top: -1px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--mp-amber);
+    color: var(--mp-bg);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .28em;
+    text-transform: uppercase;
+    padding: .3rem .9rem .35rem;
+    display: inline-flex; align-items: center; gap: .45rem;
+    white-space: nowrap;
+}
+.mp-ticket-ribbon .star {
+    font-size: .8rem;
+    line-height: 1;
 }
 .mp-ticket-side { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
 .mp-ticket-side.right { text-align: right; align-items: flex-end; }
@@ -644,7 +700,7 @@ body { background: var(--mp-bg); }
     font-family: var(--mono); font-weight: 700;
     font-size: .55rem; letter-spacing: .3em;
     color: var(--mp-mute);
-    margin-top: .35rem;
+    margin-top: .85rem;
     text-transform: uppercase;
 }
 @media (max-width: 640px) {
@@ -821,15 +877,17 @@ body { background: var(--mp-bg); }
     line-height: 1.4;
 }
 
-/* Form card */
+/* Form card. Fixed PPG column width keeps both rows' pill columns aligned
+   at the same x regardless of whether the PPG is "99.7" or "113.3". */
 .mp-form-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto 78px;
     gap: .8rem;
     padding: .65rem 0;
     border-bottom: 1px dotted var(--mp-line-soft);
     align-items: center;
 }
+.mp-form-ppg { text-align: right; }
 .mp-form-row:last-child { border-bottom: none; }
 .mp-form-name {
     font-family: var(--mono); font-weight: 700;
@@ -905,6 +963,25 @@ body { background: var(--mp-bg); }
 }
 .mp-form-high.right { text-align: right; }
 .mp-form-high.right .label { text-align: right; }
+
+/* Streak variant of the highs cell — vertical stack: NAME · chip · SUBLABEL */
+.mp-streak-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .3rem;
+}
+.mp-streak-cell.right { align-items: flex-end; }
+.mp-streak-cell .sublabel {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--mp-mute);
+    /* Match the visual gap that the name → chip has (name has its own
+       .25rem margin-bottom on top of the flex gap). */
+    margin-top: .3rem;
+}
+.mp-streak-cell .mp-streak-chip { margin-top: 0; }
 
 .mp-form-ppg {
     font-family: var(--mono); font-weight: 700;
@@ -1052,7 +1129,8 @@ body { background: var(--mp-bg); }
 .mp-toast::before {
     content: '★';
     color: var(--mp-bg);
-    font-size: .9rem;
+    font-size: 1.05rem;
+    line-height: 1;
 }
 
 /* Empty / unavailable states */
@@ -1160,7 +1238,7 @@ body { background: var(--mp-bg); }
                         <option value="">— Choose your name —</option>
                     </select>
                 </div>
-                <button type="button" class="mp-conductor-go" id="mp-conductor-go" disabled>Board ↗</button>
+                <button type="button" class="mp-conductor-go" id="mp-conductor-go" disabled>Board</button>
             </div>
         </div>
     </section>
@@ -1317,9 +1395,12 @@ body { background: var(--mp-bg); }
       if (saved === a.uid || saved === b.uid) jumpUid = saved;
     } catch (e) { /* ignore */ }
 
+    var h2hLine = m.h2h.meetings > 0
+      ? 'All-time H2H · <strong>' + (m.h2h.winsA) + '–' + (m.h2h.winsB) + (m.h2h.ties ? '–' + m.h2h.ties : '') + '</strong> in ' + m.h2h.meetings + ' meeting' + (m.h2h.meetings === 1 ? '' : 's')
+      : 'First meeting on the board.';
     host.innerHTML =
-      '<a href="?m=' + encodeURIComponent(jumpUid) + '" class="mp-marquee" aria-label="Game of the Week — open preview">' +
-        '<div class="mp-marquee-ribbon"><span class="lamp"></span> ★ Game of the Week ★ <span class="lamp"></span></div>' +
+      '<div class="mp-marquee" aria-label="Featured matchup — The Main Line">' +
+        '<div class="mp-marquee-ribbon"><span class="lamp"></span> ★ The Main Line ★ <span class="lamp"></span></div>' +
         '<div class="mp-marquee-grid">' +
           '<div class="mp-marquee-side left">' +
             '<div class="mp-marquee-name">' + esc(a.name) + '</div>' +
@@ -1333,21 +1414,18 @@ body { background: var(--mp-bg); }
             '<div class="mp-marquee-record">' + esc(b.record) + ' · ' + fmtPts(b.ppgSeason || b.ppg5) + ' PPG</div>' +
           '</div>' +
         '</div>' +
-        '<div class="mp-marquee-foot">' +
-          (m.h2h.meetings > 0
-            ? 'All-time H2H · <strong>' + (m.h2h.winsA) + '–' + (m.h2h.winsB) + (m.h2h.ties ? '–' + m.h2h.ties : '') + '</strong> in ' + m.h2h.meetings + ' meeting' + (m.h2h.meetings === 1 ? '' : 's') + ' · Open the booking →'
-            : 'First meeting on the board. Open the booking →') +
+        '<div class="mp-marquee-foot">' + h2hLine + '</div>' +
+        // Both hrefs are explicit because the document <base> is pinned to
+        // /leagues/<slug>/ — bare "?m=…" resolves to the league root and
+        // "../pickems/" walks above the base. Spelling out the full subpath
+        // from the base keeps the buttons working from the marquee.
+        '<div class="mp-marquee-cta">' +
+          '<a class="mp-marquee-btn primary" href="live-season/matchup-preview/?m=' + encodeURIComponent(jumpUid) + '">Open the booking</a>' +
+          '<a class="mp-marquee-btn" href="live-season/pickems/">Pick this game</a>' +
         '</div>' +
-      '</a>';
+      '</div>';
     host.hidden = false;
   }
-  // Make the GOTW anchor look like a card, not blue underlined text.
-  (function () {
-    var s = document.createElement('style');
-    s.textContent = '#mp-gotw-host a.mp-marquee { display: block; text-decoration: none; color: inherit; }' +
-                    '#mp-gotw-host a.mp-marquee:hover { box-shadow: 0 0 24px rgba(232,176,71,.18); }';
-    document.head.appendChild(s);
-  })();
 
   function renderBoard(data) {
     sectionTitle.innerHTML = 'Week <em>' + esc(data.week) + ' Departures —</em>';
@@ -1363,8 +1441,12 @@ body { background: var(--mp-bg); }
         '<span>TRAIN</span><span>SERVICE</span><span>RECORDS</span><span>PROJECTION</span>' +
       '</div>';
     data.matchups.forEach(function (m) {
-      // ★ now lives only on the spread line; the service line stays clean.
-      var serviceTxt = esc(m.a.team) + ' <span class="arrow">─→─</span> ' + esc(m.b.team);
+      // Star prefixes the favored team name in the service column too,
+      // mirroring the ★ in the spread cell so the visual cue carries
+      // across both columns of the row.
+      var aStar = m.projected.favorite === 'a' ? '<span class="fav-mark">★</span> ' : '';
+      var bStar = m.projected.favorite === 'b' ? ' <span class="fav-mark">★</span>' : '';
+      var serviceTxt = aStar + esc(m.a.team) + ' <span class="arrow">─→─</span> ' + esc(m.b.team) + bStar;
       var recordsTxt = '<span>' + esc(m.a.record) + '</span>' +
                        '<span class="vs">vs</span>' +
                        '<span>' + esc(m.b.record) + '</span>';
@@ -1379,10 +1461,9 @@ body { background: var(--mp-bg); }
         var sideArrow = m.projected.favorite === 'a' ? '◀' : '▶';
         spreadTxt = '<span class="fav-mark">★</span> ' + sideArrow + ' <strong>by ' + fmtPts(m.projected.spread) + '</strong>';
       }
-      var gotwTag = m.gotw ? ' <span class="gotw-tag">GOTW</span>' : '';
       var rowCls = 'mp-bd-row' + (m.gotw ? ' gotw' : '');
       html += '<div class="' + rowCls + '">' +
-                '<span class="mp-bd-train">' + esc(m.train) + gotwTag + '</span>' +
+                '<span class="mp-bd-train">' + esc(m.train) + '</span>' +
                 '<span class="mp-bd-service">' + serviceTxt + '</span>' +
                 '<span class="mp-bd-records">' + recordsTxt + '</span>' +
                 '<span class="mp-bd-spread' + spreadCls + '">' + spreadTxt + '</span>' +
@@ -1457,15 +1538,14 @@ body { background: var(--mp-bg); }
     var k = String(streak.kind).toLowerCase();
     return '<span class="mp-streak-chip ' + k + '">' + esc(streak.kind) + esc(streak.count) + '</span>';
   }
-  // Single row inside the Form card: name · pills · (ppg + streak stacked).
+  // Single row inside the Form card: name · pills · PPG.
+  // (Streak chips live with the Forecast card so all "trajectory" cues are
+  // grouped — form sheet stays a clean five-game ledger.)
   function formRow(side) {
     return '<div class="mp-form-row">' +
              '<span class="mp-form-name">' + esc(side.name) + '</span>' +
              '<span class="mp-form-pills">' + pillsFor(side.form) + '</span>' +
-             '<span class="mp-form-meta">' +
-               '<span class="mp-form-ppg">' + fmtPts(side.ppg5) + '<span class="mp-form-ppg-l"> PPG</span></span>' +
-               streakChip(side.streak) +
-             '</span>' +
+             '<span class="mp-form-ppg">' + fmtPts(side.ppg5) + '<span class="mp-form-ppg-l"> PPG</span></span>' +
            '</div>';
   }
   // Season-high footer for the Form card — side-by-side highs so the
@@ -1478,6 +1558,23 @@ body { background: var(--mp-bg); }
       return '<div class="mp-form-high' + (alignRight ? ' right' : '') + '">' +
                '<span class="label">' + esc(side.name) + ' · High</span>' +
                v +
+             '</div>';
+    }
+    return '<div class="mp-form-highs">' + cell(self, false) + cell(opp, true) + '</div>';
+  }
+  // Streak footer for the Forecast card — same dashed-top treatment as the
+  // Form card's highs. Layout: NAME above the chip, LONGEST W STREAK label
+  // below. Chip shows the longest WIN run of the season (not current).
+  function streaksFooter(self, opp) {
+    function chipFor(n) {
+      if (!n) return '<span class="mp-streak-chip none">None yet</span>';
+      return '<span class="mp-streak-chip w">W' + n + '</span>';
+    }
+    function cell(side, alignRight) {
+      return '<div class="mp-form-high mp-streak-cell' + (alignRight ? ' right' : '') + '">' +
+               '<span class="label">' + esc(side.name) + '</span>' +
+               chipFor(side.longestWinStreak || 0) +
+               '<span class="sublabel">Longest W Streak</span>' +
              '</div>';
     }
     return '<div class="mp-form-highs">' + cell(self, false) + cell(opp, true) + '</div>';
@@ -1584,11 +1681,15 @@ body { background: var(--mp-bg); }
 
     var ticketHtml =
       '<div class="mp-back-row">' +
-        '<a class="mp-back-link" href="./">← Back to the board</a>' +
-        '<span class="mp-back-meta">Wk ' + esc(data.weekRoman) + ' · ' + esc(data.year) + '</span>' +
+        // href is "live-season/matchup-preview/" because the document's
+        // <base> is pinned to /leagues/<slug>/ — "./" would walk back to the
+        // league home, not this page.
+        '<a class="mp-back-link" href="live-season/matchup-preview/">← Back to the board</a>' +
+        '<span class="mp-back-meta">Wk ' + esc(data.week) + ' · ' + esc(data.year) + '</span>' +
       '</div>' +
 
-      '<div class="mp-ticket">' +
+      '<div class="mp-ticket' + (m.gotw ? ' is-mainline' : '') + '">' +
+        (m.gotw ? '<div class="mp-ticket-ribbon"><span class="star">★</span> The Main Line</div>' : '') +
         '<div class="mp-ticket-side left">' +
           '<div class="mp-ticket-name">' + esc(self.name) + '</div>' +
           '<div class="mp-ticket-team">' + esc(self.team) + '</div>' +
@@ -1642,6 +1743,7 @@ body { background: var(--mp-bg); }
               'Spread · ' + fmtPts(spread) + ' pts') +
           '</div>' +
           '<div class="mp-proj-foot">' + projMsg + '</div>' +
+          streaksFooter(self, opp) +
         '</div>' +
 
         // Form — pills + ppg, with current streak chip stacked under each
@@ -1661,7 +1763,7 @@ body { background: var(--mp-bg); }
           '<span class="mp-share-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg></span>' +
           '<span class="mp-share-label">Share matchup</span>' +
         '</button>' +
-        '<a class="mp-action-btn primary" href="../pickems/">Open Pick’ems →</a>' +
+        '<a class="mp-action-btn primary" href="../pickems/">Open Pick’ems</a>' +
         '<a class="mp-action-btn" href="../powerrank/">Power Rankings</a>' +
       '</div>';
 

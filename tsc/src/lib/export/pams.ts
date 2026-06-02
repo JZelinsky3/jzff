@@ -3088,6 +3088,17 @@ function buildMatchupPreview(s: Snapshot): unknown {
     }
     return { kind, count }
   }
+  // Longest WIN streak this season — scan-and-track. Returns 0 when there
+  // are no scored games OR the side has never won.
+  function longestWinStreakFrom(fullForm: Array<'W' | 'L' | 'T'>): number {
+    let best = 0
+    let cur = 0
+    for (const r of fullForm) {
+      if (r === 'W') { cur++; if (cur > best) best = cur }
+      else cur = 0
+    }
+    return best
+  }
 
   // All-time H2H lookup between two groups. Counts every scored
   // regular-season game + championship-bracket playoff games (same
@@ -3194,6 +3205,7 @@ function buildMatchupPreview(s: Snapshot): unknown {
     const nameB = groupDisplayName(gb)
     function sideJson(g: ProfileGroup, f: GroupForm, name: string, ppg: number): Record<string, unknown> {
       const sk = streakFrom(f.fullForm)
+      const lws = longestWinStreakFrom(f.fullForm)
       const ppgSeason = f.games > 0 ? round2(f.pf / f.games) : 0
       return {
         uid: userId(g.primary),
@@ -3207,6 +3219,7 @@ function buildMatchupPreview(s: Snapshot): unknown {
         pf: round2(f.pf),
         pa: round2(f.pa),
         streak: sk.kind ? { kind: sk.kind, count: sk.count } : null,
+        longestWinStreak: lws,                // best consecutive W run this season (0 if none)
         seasonHigh: f.seasonHigh,             // { week, pts } or null
       }
     }
