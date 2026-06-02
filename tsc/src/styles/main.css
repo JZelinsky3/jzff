@@ -53,8 +53,14 @@ body {
         radial-gradient(circle at 85% 80%, rgba(160, 72, 48, .04) 0%, transparent 50%);
 }
 .site-grain {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+    /* Fixed full-viewport SVG-noise overlay at .5 opacity forced Chrome
+       to composite every paint through this layer. Dropped to .22 and
+       gave the layer its own compositor (will-change: transform) so it
+       stops invalidating siblings on scroll. Paper texture still reads
+       on cream surfaces; navy bg looks effectively the same. */
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .22;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.92 0 0 0 0 0.8 0 0 0 0.04 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+    will-change: transform;
 }
 
 /* ============================================================
@@ -91,8 +97,12 @@ body {
     position: sticky; top: 0; z-index: 30;
     display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem;
     padding: 1.2rem 2rem;
-    background: rgba(14, 22, 32, .92);
-    backdrop-filter: blur(12px);
+    /* Was rgba(14,22,32,.92) + backdrop-filter: blur(12px). Sticky element
+       with a backdrop-filter re-rasterizes everything behind it on every
+       scroll frame in Chrome — that single rule dominated landing-page
+       scroll cost. Bumped opacity to .96 so we keep the dark glass feel
+       without the blur. */
+    background: rgba(14, 22, 32, .96);
     border-bottom: 1px solid var(--ink-line);
 }
 .nav-back, .nav-link {
