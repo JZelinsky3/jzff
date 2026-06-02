@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Milestone Alerts · The Lakeside League</title>
+<link rel="stylesheet" href="../../assets/css/main.css">
+<style>
+/* ============================================================
+   MILESTONES — Honors Roll palette
+   Deep plum night, champagne bronze + royal violet accents.
+   Celebratory, personal — every accolade gets its moment.
+   ============================================================ */
+
+:root {
+    --ml-bg:         #110a18;
+    --ml-soft:       #160e21;
+    --ml-card:       #1c1428;
+    --ml-card-hi:    #251a34;
+    --ml-line:       #2e2240;
+    --ml-line-soft:  #221934;
+    --ml-mute:       #c2b6d6;
+    --ml-cream:      #f4ebd8;
+
+    --ml-violet:     #b58cff;
+    --ml-violet-hi:  #cdb1ff;
+    --ml-violet-deep:#7d50d4;
+    --ml-violet-soft:rgba(181,140,255,.15);
+    --ml-violet-glow:rgba(181,140,255,.5);
+
+    --ml-bronze:     #d4a574;
+    --ml-bronze-hi:  #ebbf8e;
+
+    --ml-gold:       var(--gold);
+    --ml-gold-bright:var(--gold-bright);
+}
+
+body { background: var(--ml-bg); }
+
+.site-glow {
+    background-image:
+        radial-gradient(circle at 20% 15%, rgba(181,140,255,.10) 0%, transparent 50%),
+        radial-gradient(circle at 80% 85%, rgba(212,165,116,.07) 0%, transparent 50%),
+        radial-gradient(circle at 50% 105%, rgba(125,80,212,.10) 0%, transparent 55%);
+}
+
+/* ── Nav + chapbar themed to the page ──────────────────────── */
+.nav { background: rgba(17,10,24,.95); border-bottom-color: var(--ml-line); }
+/* Nav masthead text + back arrow: switch from main.css's gold to violet
+   so the whole header reads as one palette. The kicker above the league
+   name (the data-chapter text) also gets re-tinted off cream-mute, and
+   the hamburger dropdown button drops its default gold tint. */
+.nav-back, .nav-link { color: var(--ml-violet); }
+.nav-back:hover, .nav-link:hover { color: var(--ml-violet-hi); }
+.nav-title em { color: var(--ml-cream); }
+.nav-kicker { color: #8c7aac; }
+.nav-drop-btn { color: var(--ml-violet); }
+.nav-drop-btn:hover { color: var(--ml-violet-hi); }
+:root {
+    --chapbar-bg:     rgba(17,10,24,.92);
+    --chapbar-border: var(--ml-line);
+    --chapbar-text:   var(--ml-mute);
+    --chapbar-active: var(--ml-violet);
+    --chapbar-line:   var(--ml-line);
+
+    --nav-drop-bg:           rgba(17,10,24,.97);
+    --nav-drop-border:       var(--ml-line);
+    --nav-drop-text:         #e0d4f0;
+    --nav-drop-text-mute:    var(--ml-mute);
+    --nav-drop-accent:       var(--ml-violet);
+    --nav-drop-hover-bg:     rgba(181,140,255,.10);
+    --nav-drop-sub-bg:       rgba(0,0,0,.20);
+    --nav-drop-accent-line:  rgba(181,140,255,.30);
+}
+
+/* ── Page header ───────────────────────────────────────────── */
+.page-header {
+    text-align: center;
+    padding: 3.5rem 1.5rem 2rem;
+    max-width: 900px; margin: 0 auto;
+    position: relative; z-index: 10;
+}
+.page-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .4em; text-transform: uppercase;
+    color: var(--ml-violet); margin-bottom: 1.4rem;
+    display: inline-flex; align-items: center; gap: .65rem;
+}
+.page-kicker .star {
+    color: var(--ml-violet);
+    text-shadow: 0 0 14px var(--ml-violet-glow);
+    font-size: .9rem; line-height: 1;
+}
+.page-title {
+    font-family: var(--serif);
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: .95; letter-spacing: -.025em;
+    color: var(--ml-cream); margin-bottom: 1rem;
+}
+.page-title em {
+    font-style: italic;
+    background: linear-gradient(135deg, var(--ml-violet), var(--ml-bronze));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.page-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.2rem; line-height: 1.5;
+    color: #d8cbe8; max-width: 560px; margin: 0 auto;
+}
+
+/* ── Status strip ──────────────────────────────────────────── */
+/* Lives inside .ml-wrap, so width is naturally constrained to the
+   wrap's content area — its border lines stay flush with where the
+   section content starts and ends. */
+.ml-meter {
+    margin: 0 0 2.5rem;
+    padding: 1rem 1.4rem;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1.6rem;
+    background: var(--ml-soft);
+    border-top: 1px solid var(--ml-line);
+    border-bottom: 1px solid var(--ml-line);
+}
+/* Equal-width stats so the 3 columns balance visually, instead of each
+   shrinking to fit its label/value content (which left "This week" tiny
+   and "One game away" wide). */
+.ml-meter-stat { display: flex; flex-direction: column; gap: .2rem; flex: 1; min-width: 0; }
+.ml-meter-stat .lbl {
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .25em; text-transform: uppercase;
+    color: var(--ml-mute);
+}
+.ml-meter-stat .val {
+    font-family: var(--serif); font-size: 1.4rem;
+    color: var(--ml-cream); line-height: 1;
+}
+.ml-meter-stat.glow .val { color: var(--ml-violet); text-shadow: 0 0 14px var(--ml-violet-soft); }
+.ml-meter-sep { width: 1px; align-self: stretch; background: var(--ml-line); }
+.ml-meter-foot {
+    margin-left: auto;
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--ml-mute);
+}
+
+/* ── Wrap + sections ───────────────────────────────────────── */
+.ml-wrap {
+    max-width: 1240px; margin: 0 auto;
+    padding: 0 1.5rem 5rem;
+    position: relative; z-index: 1;
+}
+.ml-section { margin-bottom: 4rem; }
+.ml-section-head {
+    display: flex; align-items: baseline; gap: 1.3rem; flex-wrap: wrap;
+    padding-bottom: 1rem; margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--ml-line);
+}
+.ml-section-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--ml-bronze); flex-shrink: 0;
+}
+.ml-section-title {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.7rem; letter-spacing: -.02em;
+    color: var(--ml-cream);
+}
+.ml-section-title em { color: var(--ml-violet); }
+.ml-section-note {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--ml-mute);
+}
+
+/* ── Crossed cards (just-hit milestones) ───────────────────── */
+.ml-crossed-grid {
+    display: grid;
+    /* Default 3-col layout — 1240px container / 3 cols ≈ 393px each, so
+       minmax(360px) snaps to 3 across at the wrap width. */
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.2rem;
+}
+/* Dense (4-col) mode kicks in via JS when there are 10+ milestones —
+   1240/4 ≈ 285px, so minmax(265px) gives 4 across with breathing room. */
+.ml-crossed-grid.dense {
+    grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+    gap: 1rem;
+}
+
+/* "Last week" divider — spans the full grid row between this-week and
+   last-week tiles so older items read as a separate sub-feed. */
+.ml-crossed-divider {
+    grid-column: 1 / -1;
+    display: flex; align-items: center;
+    gap: 1rem;
+    margin: .5rem 0 .2rem;
+}
+.ml-crossed-divider::before,
+.ml-crossed-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--ml-line) 50%, transparent 100%);
+}
+.ml-crossed-divider span {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--ml-mute);
+    padding: 0 .5rem;
+}
+.ml-crossed-grid.dense .ml-crossed { padding: 1.15rem 1.15rem 1.05rem; }
+.ml-crossed-grid.dense .ml-medal {
+    width: 44px; height: 44px;
+    font-size: 1.15rem; margin-bottom: .75rem;
+}
+.ml-crossed-grid.dense .ml-medal img { width: 44px; height: 44px; }
+.ml-crossed-grid.dense .name { font-size: 1.25rem; margin-bottom: .45rem; }
+.ml-crossed-grid.dense .achievement { font-size: .95rem; margin-bottom: .7rem; }
+.ml-crossed-grid.dense .stats { font-size: .6rem; padding: .6rem 0; }
+.ml-crossed-grid.dense .meta { font-size: .53rem; padding-top: .65rem; }
+.ml-crossed {
+    position: relative; overflow: hidden;
+    background: linear-gradient(160deg, var(--ml-card) 0%, var(--ml-soft) 70%);
+    border: 1px solid var(--ml-line);
+    padding: 1.4rem 1.4rem 1.2rem;
+    /* Flex column so .achievement can stretch and push the stats + meta
+       lines to the bottom — keeps those two rows aligned across cards
+       even when achievement copy length varies. */
+    display: flex;
+    flex-direction: column;
+}
+.ml-crossed::before {
+    /* Soft "stage spotlight" glow from upper-left */
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 10% 0%, var(--ml-violet-soft) 0%, transparent 55%);
+}
+.ml-crossed::after {
+    /* Bronze foil ribbon down the right edge */
+    content: ''; position: absolute; top: 0; bottom: 0; right: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--ml-bronze), var(--ml-violet-deep));
+    opacity: .65;
+}
+.ml-medal {
+    position: relative;
+    width: 52px; height: 52px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 1rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.4rem;
+    color: var(--ml-bronze);
+    background: radial-gradient(circle at 30% 30%, var(--ml-card-hi), var(--ml-soft));
+    border: 1.5px solid var(--ml-bronze);
+    box-shadow:
+        0 0 0 4px var(--ml-soft),
+        0 0 0 5px var(--ml-line),
+        0 0 18px var(--ml-violet-soft);
+    z-index: 1;
+    overflow: hidden;
+}
+.ml-medal img {
+    width: 52px; height: 52px;
+    object-fit: cover;
+    display: block;
+}
+.ml-crossed .who {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .26em; text-transform: uppercase;
+    color: var(--ml-mute); margin-bottom: .3rem;
+    z-index: 1; position: relative;
+}
+.ml-crossed .name {
+    font-family: var(--serif); font-size: 1.5rem; line-height: 1.1;
+    color: var(--ml-cream); margin-bottom: .55rem;
+    z-index: 1; position: relative;
+}
+.ml-crossed .name em { font-style: italic; color: var(--ml-violet); }
+.ml-crossed .achievement {
+    font-family: var(--serif); font-size: 1.05rem; line-height: 1.35;
+    color: #e9ddf5; margin-bottom: .9rem;
+    z-index: 1; position: relative;
+    /* Fill remaining vertical space so stats/meta align at the bottom
+       across cards (achievement text length varies, but stats + meta
+       should sit at the same y across the row). */
+    flex: 1;
+}
+.ml-crossed .achievement strong {
+    font-weight: 400; font-style: italic;
+    color: var(--ml-bronze-hi);
+}
+.ml-crossed .stats {
+    font-family: var(--mono); font-size: .65rem;
+    letter-spacing: .08em;
+    color: var(--ml-mute);
+    padding: .7rem 0;
+    margin-bottom: .2rem;
+    border-top: 1px dashed var(--ml-line-soft);
+    z-index: 1; position: relative;
+}
+.ml-crossed .stats strong {
+    color: var(--ml-cream); font-weight: 700;
+}
+.ml-crossed .meta {
+    /* Flexbox so the matchup text + H2H badge sit on one row.
+     * Slightly smaller base font + tighter badge below to keep
+     * H2H from wrapping to a second row on cards with long names. */
+    padding-top: .8rem;
+    border-top: 1px solid var(--ml-line-soft);
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .08em;
+    color: var(--ml-mute);
+    z-index: 1; position: relative;
+    line-height: 1.5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .4rem;
+}
+.ml-crossed .meta strong {
+    color: var(--ml-cream); font-weight: 700;
+}
+.ml-crossed .meta .meta-main {
+    /* Sits at the natural flex flow — left edge of the row. */
+    min-width: 0;
+}
+.ml-crossed .meta .h2h {
+    /* Pushed to the right edge of the row via flex auto-margin so the
+     * matchup text stays left-aligned right after the week. */
+    margin-left: auto;
+    padding: .08rem .32rem .1rem;
+    background: var(--ml-soft);
+    border: 1px solid var(--ml-line-soft);
+    border-radius: 2px;
+    font-size: .5rem;
+    color: var(--ml-bronze-hi);
+    flex-shrink: 0;
+}
+
+/* ── Approaching columns (one-game-away + horizon) ─────────────
+   Three-up grid where each column is a milestone category
+   (Wins · Points · Streak · Loyalty). Each row inside the column
+   leads with the manager name (the prominent thing), then the
+   approach copy + stat line + ETA. */
+.ml-approach-cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+.ml-approach-col {
+    background: var(--ml-card);
+    border: 1px solid var(--ml-line);
+    display: flex; flex-direction: column;
+}
+.ml-approach-col-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: .85rem 1.1rem;
+    background: var(--ml-soft);
+    border-bottom: 1px solid var(--ml-line);
+}
+.ml-approach-col-head .lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--ml-bronze);
+}
+.ml-approach-col-head .count {
+    font-family: var(--mono);
+    font-size: .55rem; letter-spacing: .2em;
+    color: var(--ml-mute);
+}
+.ml-approach-col-body {
+    flex: 1;
+    display: flex; flex-direction: column;
+}
+/* Two-column grid: avatar/glyph at left (spans all rows) + content block
+   on the right. The content block uses flexbox for the head (name + eta
+   side-by-side) so name stays tight against the avatar instead of being
+   pushed across a wide 1fr cell. Copy + stats stack underneath. */
+.ml-approach-row {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    column-gap: .8rem;
+    row-gap: .2rem;
+    padding: .85rem 1rem;
+    border-bottom: 1px solid var(--ml-line-soft);
+    align-items: start;
+}
+.ml-approach-row:last-child { border-bottom: 0; }
+.ml-approach-row.imminent {
+    background: linear-gradient(90deg, var(--ml-violet-soft) 0%, transparent 60%);
+}
+.ml-approach-glyph {
+    grid-row: 1 / span 3;
+    align-self: center;
+    width: 42px; height: 42px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem;
+    color: var(--ml-violet);
+    background: var(--ml-soft);
+    border: 1px solid var(--ml-line);
+    overflow: hidden;
+}
+.ml-approach-glyph img {
+    width: 42px; height: 42px; object-fit: cover; display: block;
+}
+.ml-approach-row.imminent .ml-approach-glyph {
+    color: var(--ml-bronze);
+    border-color: var(--ml-bronze);
+    box-shadow: 0 0 12px var(--ml-violet-soft);
+}
+.ml-approach-head {
+    grid-column: 2;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .8rem;
+}
+.ml-approach-name {
+    /* Prominent: the manager name leads the row. */
+    font-family: var(--serif); font-size: 1.3rem; line-height: 1.05;
+    color: var(--ml-cream);
+    letter-spacing: -.005em;
+    min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1;
+}
+.ml-approach-eta {
+    flex-shrink: 0;
+    text-align: right;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .8rem;
+    color: var(--ml-cream); line-height: 1.05;
+    white-space: nowrap;
+}
+.ml-approach-eta .of {
+    display: block;
+    font-size: .48rem; font-weight: 500;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ml-mute); margin-top: .25rem;
+}
+.ml-approach-row.imminent .ml-approach-eta { color: var(--ml-bronze); }
+.ml-approach-copy {
+    grid-column: 2;
+    font-family: var(--serif); font-size: .94rem; line-height: 1.3;
+    color: var(--ml-mute);
+}
+.ml-approach-copy em { color: var(--ml-bronze-hi); font-style: italic; }
+.ml-approach-stats {
+    grid-column: 2;
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .06em;
+    color: var(--ml-mute);
+    padding-top: .15rem;
+}
+.ml-approach-stats strong {
+    color: var(--ml-cream); font-weight: 700;
+}
+.ml-approach-empty {
+    padding: 1.6rem 1.1rem;
+    font-family: var(--serif); font-style: italic;
+    color: var(--ml-mute); font-size: .92rem;
+    text-align: center;
+}
+
+/* ── Tally / breakdown by category ─────────────────────────── */
+.ml-tally {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.ml-tally-item {
+    padding: 1.1rem 1.2rem;
+    background: var(--ml-soft);
+    border: 1px solid var(--ml-line-soft);
+}
+.ml-tally-item .cat {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .28em; text-transform: uppercase;
+    color: var(--ml-bronze); margin-bottom: .55rem;
+}
+.ml-tally-item .num {
+    font-family: var(--serif); font-size: 2rem;
+    color: var(--ml-cream); line-height: 1;
+}
+.ml-tally-item .sub {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .14em; color: var(--ml-mute);
+    margin-top: .35rem;
+}
+
+/* ── Intro / empty state ───────────────────────────────────── */
+.ml-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--ml-card);
+    border: 1px dashed var(--ml-line);
+}
+.ml-empty .glyph {
+    font-family: var(--serif); font-style: italic;
+    font-size: 2.1rem;
+    color: var(--ml-violet);
+    text-shadow: 0 0 24px var(--ml-violet-glow);
+    margin-bottom: .8rem;
+}
+.ml-empty h3 {
+    font-family: var(--serif); font-size: 1.5rem;
+    color: var(--ml-cream); margin-bottom: .55rem;
+}
+.ml-empty h3 em { color: var(--ml-violet); font-style: italic; }
+.ml-empty p {
+    color: var(--ml-mute); max-width: 480px; margin: 0 auto;
+    font-size: .95rem;
+}
+
+/* ── "What we track" ladder ────────────────────────────────── */
+.ml-ladder {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.ml-ladder-item {
+    padding: 1.1rem 1.2rem;
+    background: var(--ml-soft);
+    border: 1px solid var(--ml-line-soft);
+    position: relative;
+}
+.ml-ladder-item .tier {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .28em; text-transform: uppercase;
+    color: var(--ml-violet); margin-bottom: .5rem;
+}
+.ml-ladder-item h4 {
+    font-family: var(--serif); font-size: 1.05rem;
+    color: var(--ml-cream); margin-bottom: .4rem;
+}
+.ml-ladder-item p {
+    color: var(--ml-mute); font-size: .82rem; line-height: 1.45;
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.ml-foot {
+    margin-top: 4rem; text-align: center;
+    font-family: var(--mono); font-size: .6rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--ml-mute); opacity: .65;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .ml-approach-cols { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 760px) {
+    .page-header { padding: 2.5rem 1rem 1.5rem; }
+    /* Meter shrink: tighter padding + gap, smaller label + val so the
+       four stats fit on the strip without the wrap+overflow they had
+       at phone widths. */
+    .ml-meter { padding: .55rem .75rem; gap: .55rem; }
+    .ml-meter-sep { display: none; }
+    .ml-meter-stat { gap: .15rem; }
+    .ml-meter-stat .lbl { font-size: .48rem; letter-spacing: .18em; }
+    .ml-meter-stat .val { font-size: 1.05rem; }
+    .ml-meter-foot { font-size: .42rem; letter-spacing: .14em; }
+    /* Section number caps run a bit smaller on phones — desktop sizing
+       was overweight on a narrow header row. */
+    .ml-section-num { font-size: .48rem; letter-spacing: .22em; }
+    .ml-section-title { font-size: 1.35rem; }
+    .ml-section-note { font-size: .48rem; letter-spacing: .18em; }
+    /* Just Achieved: force 2 columns on phones so the cards stack 2x
+       down instead of going single-column. Card chrome scales down to
+       match. */
+    .ml-crossed-grid,
+    .ml-crossed-grid.dense {
+        grid-template-columns: 1fr 1fr;
+        gap: .7rem;
+    }
+    /* Card uses normal flex-column flow at this width; .who floats
+       to the top-right corner via absolute positioning so the medal
+       can sit alone on the left without the tier caption stealing
+       vertical room. Padding pulled in across the board so the
+       cards read more square-ish instead of tall + skinny. Selectors
+       qualified with .ml-crossed-grid.dense so they outrank the
+       desktop dense-mode rules (which were winning specificity inside
+       the media query and freezing name / achievement / stats / meta
+       at desktop dense sizes). */
+    .ml-crossed-grid .ml-crossed,
+    .ml-crossed-grid.dense .ml-crossed {
+        position: relative;
+        padding: .6rem .65rem .55rem;
+        display: flex;
+        flex-direction: column;
+    }
+    .ml-crossed-grid .ml-crossed::after,
+    .ml-crossed-grid.dense .ml-crossed::after {
+        /* Bronze foil ribbon hidden on phones — at this card width it
+           reads more like a sliver of clipping than the foil edge it's
+           meant to be. */
+        display: none;
+    }
+    .ml-crossed-grid .ml-crossed > .achievement,
+    .ml-crossed-grid.dense .ml-crossed > .achievement { flex: none; }
+    .ml-crossed-grid .ml-medal,
+    .ml-crossed-grid.dense .ml-medal {
+        width: 32px; height: 32px;
+        font-size: .82rem;
+        margin-bottom: .35rem;
+    }
+    .ml-crossed-grid .ml-medal img,
+    .ml-crossed-grid.dense .ml-medal img { width: 32px; height: 32px; }
+    .ml-crossed-grid .ml-crossed .who,
+    .ml-crossed-grid.dense .ml-crossed .who {
+        position: absolute;
+        top: 1.1rem; right: .6rem;
+        max-width: 55%;
+        text-align: right;
+        font-size: .52rem; letter-spacing: .14em;
+        font-weight: 700;
+        line-height: 1.15;
+        margin: 0;
+    }
+    .ml-crossed-grid .ml-crossed .name,
+    .ml-crossed-grid.dense .ml-crossed .name {
+        font-size: .58rem; line-height: 1.1; margin: 0 0 .18rem;
+    }
+    .ml-crossed-grid .ml-crossed .achievement,
+    .ml-crossed-grid.dense .ml-crossed .achievement {
+        font-size: .44rem; line-height: 1.3; margin-bottom: .25rem;
+    }
+    .ml-crossed-grid .ml-crossed .stats,
+    .ml-crossed-grid.dense .ml-crossed .stats {
+        font-size: .42rem; padding: .22rem 0;
+    }
+    .ml-crossed-grid .ml-crossed .meta,
+    .ml-crossed-grid.dense .ml-crossed .meta {
+        font-size: .38rem; padding-top: .28rem; gap: .16rem;
+    }
+    .ml-crossed-grid .ml-crossed .meta .h2h,
+    .ml-crossed-grid.dense .ml-crossed .meta .h2h {
+        font-size: .36rem; padding: .04rem .2rem .06rem;
+    }
+    .ml-approach-row { grid-template-columns: 38px 1fr; column-gap: .7rem; padding: .75rem .85rem; }
+    .ml-approach-glyph { width: 38px; height: 38px; font-size: .95rem; }
+    .ml-approach-glyph img { width: 38px; height: 38px; }
+    .ml-approach-name { font-size: 1.15rem; }
+    .ml-ladder { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 580px) {
+    .ml-approach-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 400px) {
+    /* On the smallest phones the 2-col Just Achieved cards get a
+       touch tighter so the text inside doesn't wrap painfully. */
+    .ml-crossed-grid,
+    .ml-crossed-grid.dense { gap: .55rem; }
+    .ml-crossed { padding: .8rem .75rem .75rem; }
+    .ml-crossed .name { font-size: .98rem; }
+    .ml-crossed .achievement { font-size: .78rem; }
+}
+@media (max-width: 440px) {
+    .ml-ladder { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="site-glow" aria-hidden="true"></div>
+
+<nav id="site-nav"
+     data-page="milestones"
+     data-chapter="LIVE · MILESTONE ALERTS"
+     data-back-href="live-season/index.html"
+     data-back-label="Back to Live Season"></nav>
+<script src="../../assets/js/nav.js"></script>
+
+<!-- DEMO NOTICE — live-season pages need real-time data -->
+<style>
+.ls-demo-notice {
+    position: relative; z-index: 5;
+    max-width: 980px;
+    margin: 1.25rem auto 0;
+    padding: 1rem 1.25rem;
+    background: rgba(232,200,137,.07);
+    border: 1px solid rgba(232,200,137,.25);
+    border-left: 3px solid #e8c889;
+    border-radius: 2px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: .88rem; line-height: 1.5;
+    color: #f4ebd8;
+    display: flex; flex-wrap: wrap; gap: .9rem;
+    align-items: baseline;
+}
+.ls-demo-notice .ls-demo-pill {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-weight: 700; font-size: .58rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: #15201b; background: #e8c889;
+    padding: .3rem .55rem; border-radius: 2px;
+}
+.ls-demo-notice em { color: #e8c889; font-style: italic; }
+.ls-demo-notice a {
+    color: #e8c889; text-decoration: none;
+    border-bottom: 1px solid rgba(232,200,137,.4);
+}
+.ls-demo-notice a:hover { color: #f4d9a4; }
+</style>
+<div class="ls-demo-notice">
+    <span class="ls-demo-pill">★ Demo only</span>
+    <span>
+        This page runs on <em>live in-season data</em> — current scores,
+        weekly form, milestone tracking, head-to-head matchups. The demo
+        ships with historical data only, so most of the panels below sit
+        idle. Spin up your own league at <a href="/">thesundaychronicle.com</a>
+        to see this live.
+    </span>
+</div>
+
+
+<header class="page-header">
+    <div class="page-kicker"><span class="star">✦</span>Live · LSL · Honors Roll</div>
+    <h1 class="page-title">Milestone <em>Tracker.</em></h1>
+    <p class="page-sub">
+        The personal stuff — career win counts, points totals, anniversaries, signature
+        moments. When a manager crosses a line that matters, the chronicle notes it.
+    </p>
+</header>
+
+<main class="ml-wrap">
+
+    <div class="ml-meter" id="ml-meter">
+        <div class="ml-meter-stat glow">
+            <span class="lbl">This week</span>
+            <span class="val" id="m-week">—</span>
+        </div>
+        <div class="ml-meter-sep"></div>
+        <div class="ml-meter-stat">
+            <span class="lbl">This season</span>
+            <span class="val" id="m-season">—</span>
+        </div>
+        <div class="ml-meter-sep"></div>
+        <div class="ml-meter-stat">
+            <span class="lbl">One game away</span>
+            <span class="val" id="m-imminent">—</span>
+        </div>
+        <div class="ml-meter-foot" id="m-foot">Tracking starts Week 1</div>
+    </div>
+
+    <section class="ml-section">
+        <div class="ml-section-head">
+            <span class="ml-section-num">§ 01 · Crossed</span>
+            <span class="ml-section-title">Just <em>Achieved —</em></span>
+            <span class="ml-section-note">Last 2 weeks</span>
+        </div>
+        <div id="crossed-body">
+            <div class="ml-empty">
+                <div class="glyph">✦</div>
+                <h3>The honors roll <em>begins Week 1.</em></h3>
+                <p>
+                    Every milestone gets its own card the week it's hit — manager name, the
+                    accolade, the game it happened in. No emails, no extra steps; it shows up
+                    here and on the league hub.
+                </p>
+            </div>
+
+            <div class="ml-tally" id="ml-preview">
+                <div class="ml-tally-item">
+                    <div class="cat">Career wins</div>
+                    <div class="num">50 · 100 · 150</div>
+                    <div class="sub">round-number wins</div>
+                </div>
+                <div class="ml-tally-item">
+                    <div class="cat">Career points</div>
+                    <div class="num">10k · 25k · 50k</div>
+                    <div class="sub">lifetime PF</div>
+                </div>
+                <div class="ml-tally-item">
+                    <div class="cat">Streaks</div>
+                    <div class="num">5W · 10W · 15W</div>
+                    <div class="sub">consecutive wins</div>
+                </div>
+                <div class="ml-tally-item">
+                    <div class="cat">Loyalty</div>
+                    <div class="num">5 · 10 · 15 yrs</div>
+                    <div class="sub">seasons in league</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="ml-section">
+        <div class="ml-section-head">
+            <span class="ml-section-num">§ 02 · Imminent</span>
+            <span class="ml-section-title">One Game <em>Away —</em></span>
+            <span class="ml-section-note">Could cross next week</span>
+        </div>
+        <div id="imminent-body">
+            <div class="ml-empty">
+                <h3>Nothing imminent <em>right now.</em></h3>
+                <p>
+                    Once managers are within a single win, a few hundred points, or one week of a
+                    milestone, they appear here so you can flag the matchup in advance.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="ml-section">
+        <div class="ml-section-head">
+            <span class="ml-section-num">§ 03 · Horizon</span>
+            <span class="ml-section-title">On the <em>Horizon —</em></span>
+            <span class="ml-section-note">Within reach this season</span>
+        </div>
+        <div id="horizon-body">
+            <div class="ml-empty">
+                <h3>The ladder <em>fills as the season runs.</em></h3>
+                <p>
+                    Approaching milestones (2–6 weeks out) collect here, sorted by who's closest.
+                    A subtle nudge so you know who's on the doorstep before they ring the bell.
+                </p>
+            </div>
+
+            <div class="ml-ladder">
+                <div class="ml-ladder-item">
+                    <div class="tier">Tier · Bronze</div>
+                    <h4>Round-number wins</h4>
+                    <p>50, 100, 150, 200 career wins — every 50-win mark stamped with the date.</p>
+                </div>
+                <div class="ml-ladder-item">
+                    <div class="tier">Tier · Silver</div>
+                    <h4>Lifetime points</h4>
+                    <p>10k, 25k, 50k, 75k career PF — the long-haul scoring marks.</p>
+                </div>
+                <div class="ml-ladder-item">
+                    <div class="tier">Tier · Gold</div>
+                    <h4>Streak hits</h4>
+                    <p>5, 10, 15 in a row — wins, losses, weekly tops, every notable run.</p>
+                </div>
+                <div class="ml-ladder-item">
+                    <div class="tier">Tier · Loyalty</div>
+                    <h4>Time in league</h4>
+                    <p>5, 10, 15, 20 seasons of service — the alumni-meter anniversaries.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="ml-foot">LSL · Honors Roll · MMXIX</div>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // Milestones reads from /data/milestones.json. Until the exporter wires it
+  // up, the page renders the intro/preview state above. When the JSON shows
+  // up, each section replaces its empty state in place.
+  // Column layout: imminent_by_category + horizon_by_category each carry a
+  // keyed object { wins, points, streak } → Approach[]. The template renders
+  // one column per non-empty category.
+  var COL_LABELS = {
+    wins:    'Wins · Games',
+    points:  'Points',
+    streak:  'Streaks'
+  };
+  var COL_KEYS = ['wins', 'points', 'streak'];
+
+  fetch('data/milestones.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (data) {
+      if (!data) return;
+      renderMeter(data.meter || {});
+      if (Array.isArray(data.crossed) && data.crossed.length) renderCrossed(data.crossed);
+      var imm = data.imminent_by_category;
+      if (imm && hasAny(imm)) renderApproachCols('imminent-body', imm, true);
+      var hor = data.horizon_by_category;
+      if (hor && hasAny(hor))  renderApproachCols('horizon-body',  hor, false);
+    });
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function hasAny(byCat) {
+    for (var k in byCat) {
+      if (Array.isArray(byCat[k]) && byCat[k].length) return true;
+    }
+    return false;
+  }
+
+  function renderMeter(m) {
+    if (m.week     != null) $('m-week').textContent     = m.week;
+    if (m.season   != null) $('m-season').textContent   = m.season;
+    if (m.imminent != null) $('m-imminent').textContent = m.imminent;
+    if (m.through) {
+      // Preseason mode: builder emits "Preseason · {year}" (no week stamp).
+      // Drop the "Through" prefix since "Through Preseason" reads wrong.
+      $('m-foot').textContent = (/^Preseason/i.test(m.through) ? '' : 'Through ') + m.through;
+    }
+  }
+
+  // Render the avatar slot for a milestone item. Prefers the manager's
+  // avatar_url (pulled from manager_seasons / managers); falls back to the
+  // serif glyph in the circular frame if no avatar is configured. If the
+  // avatar URL 404s we just fade the broken img — the framed cell still
+  // reads correctly next to the manager name.
+  function avatarMarkup(it) {
+    if (it.avatar) {
+      return '<img src="' + esc(it.avatar) + '" alt="" onerror="this.style.opacity=0" />';
+    }
+    return esc(it.glyph || '✦');
+  }
+
+  function renderCrossed(items) {
+    // Dense (4-col) layout for 4+ items; 1-3 items render at the
+    // wider 3-col card size so a sparse feed doesn't look stranded.
+    var cls = items.length >= 4 ? 'ml-crossed-grid dense' : 'ml-crossed-grid';
+    // Emit a "Last week" divider between this-week and last-week
+    // groupings (data is pre-sorted this-week-first).
+    var html = '<div class="' + cls + '">';
+    var prevBucket = null;
+    items.forEach(function (it) {
+      if (prevBucket === 'this' && it.week_bucket === 'last') {
+        html += '<div class="ml-crossed-divider"><span>Last week</span></div>';
+      }
+      prevBucket = it.week_bucket || prevBucket;
+      var metaContent = it.meta_html
+        ? it.meta_html
+        : ('<span>' + esc(it.when || '') + '</span><span>' + esc(it.context || '') + '</span>');
+      html +=
+        '<article class="ml-crossed">' +
+          '<div class="ml-medal">' + avatarMarkup(it) + '</div>' +
+          '<div class="who">' + esc(it.tier || 'Milestone') + '</div>' +
+          '<div class="name">' + (it.name_html || esc(it.name || '—')) + '</div>' +
+          '<div class="achievement">' + (it.achievement_html || esc(it.achievement || '')) + '</div>' +
+          (it.stats_html ? '<div class="stats">' + it.stats_html + '</div>' : '') +
+          '<div class="meta">' + metaContent + '</div>' +
+        '</article>';
+    });
+    html += '</div>';
+    $('crossed-body').innerHTML = html;
+  }
+
+  function renderApproachCols(slot, byCat, imminent) {
+    // Render only non-empty categories; column order is fixed to match
+    // the COL_LABELS keys so the layout stays predictable.
+    var keys = COL_KEYS.filter(function (k) {
+      return Array.isArray(byCat[k]) && byCat[k].length;
+    });
+    if (!keys.length) return;
+
+    var html = '<div class="ml-approach-cols">';
+    keys.forEach(function (k) {
+      var items = byCat[k];
+      html +=
+        '<div class="ml-approach-col">' +
+          '<div class="ml-approach-col-head">' +
+            '<span class="lbl">' + esc(COL_LABELS[k] || k) + '</span>' +
+            '<span class="count">' + items.length + '</span>' +
+          '</div>' +
+          '<div class="ml-approach-col-body">';
+      items.forEach(function (it) {
+        html +=
+          '<div class="ml-approach-row' + (imminent ? ' imminent' : '') + '">' +
+            '<div class="ml-approach-glyph">' + avatarMarkup(it) + '</div>' +
+            '<div class="ml-approach-head">' +
+              '<div class="ml-approach-name">' + esc(it.name || '—') + '</div>' +
+              '<div class="ml-approach-eta">' + esc(it.eta || '') +
+                '<span class="of">' + esc(it.eta_unit || 'to go') + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="ml-approach-copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+            (it.stats_html ? '<div class="ml-approach-stats">' + it.stats_html + '</div>' : '') +
+          '</div>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+    $(slot).innerHTML = html;
+  }
+})();
+</script>
+
+</body>
+</html>

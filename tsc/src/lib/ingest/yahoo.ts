@@ -23,9 +23,12 @@ import {
   getLeagueScoreboard,
   getLeagueDraft,
   getPlayersBatch,
+  getTeamRosterWeek,
+  yahooIsStarterSlot,
   type YahooTeam,
   type YahooLeagueMeta,
 } from '@/lib/platforms/yahoo'
+import { parallelLimit } from '@/lib/platforms/sleeper'
 
 export type IngestResult = {
   ok: boolean
@@ -228,6 +231,7 @@ export async function ingestYahooSource(
     // update in place and matchup ids stay stable (FK from pickems_picks).
     await db.from('manager_seasons').delete().eq('season_id', seasonId)
     await db.from('drafts').delete().eq('season_id', seasonId)
+    await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
     const teams = teamsBySeason.get(lg.league_key) ?? []
     if (teams.length === 0) {
@@ -437,6 +441,72 @@ export async function ingestYahooSource(
       `· playoffStart=week ${playoffStart}, endWeek=${lg.end_week} ` +
       `· treatRankAsFinal=${treatRankAsFinal} (currentWeek=${lg.current_week ?? 'unset'}, ranksKnown=${ranksKnown}/${teams.length})`
     )
+
+    // Weekly lineups — fan out per (team, played-week). Yahoo's current_week
+    // (when set) is the canonical "most recent week with scoring data." Falls
+    // back to end_week for completed historical seasons. Skip if no week has
+    // been played yet (preseason).
+    const lastPlayedWeek = lg.current_week != null
+      ? Math.max(0, Number(lg.current_week) - (treatRankAsFinal ? 0 : 1))
+      : lg.end_week
+    if (lastPlayedWeek > 0 && teamKeyToManagerId.size > 0) {
+      const teamWeekPairs: Array<{ teamKey: string; week: number; managerId: string }> = []
+      for (const [teamKey, managerId] of teamKeyToManagerId.entries()) {
+        for (let w = 1; w <= lastPlayedWeek; w++) {
+          teamWeekPairs.push({ teamKey, week: w, managerId })
+        }
+      }
+      // Collect across all (team, week) fetches then bulk-upsert at the end
+      // so the season doesn't pay N round-trips to Supabase.
+      const seasonLineupRows: Array<Record<string, unknown>> = []
+      let lineupPairsEmpty = 0
+      await parallelLimit(teamWeekPairs, 3, async ({ teamKey, week, managerId }) => {
+        let roster
+        try {
+          roster = await getTeamRosterWeek(accessToken, teamKey, week, warnings)
+        } catch (err) {
+          warnings.push(`Season ${year} ${teamKey} w${week} roster: ${(err as Error).message}`)
+          return
+        }
+        if (roster.length === 0) { lineupPairsEmpty++; return }
+        for (const p of roster) {
+          seasonLineupRows.push({
+            season_id: seasonId,
+            week,
+            manager_id: managerId,
+            player_external_id: p.player_key,
+            player_name: p.full_name,
+            position: p.position ?? null,
+            nfl_team: p.nfl_team ?? null,
+            slot: p.slot,
+            is_starter: yahooIsStarterSlot(p.slot),
+            points: p.points,
+            proj_points: p.proj_points,
+          })
+        }
+      })
+      let lineupUpserted = 0
+      let lineupErrors = 0
+      if (seasonLineupRows.length > 0) {
+        const CHUNK = 1000
+        for (let i = 0; i < seasonLineupRows.length; i += CHUNK) {
+          const slice = seasonLineupRows.slice(i, i + CHUNK)
+          const { error } = await db.from('weekly_lineups').upsert(slice, {
+            onConflict: 'season_id,week,manager_id,player_external_id',
+          })
+          if (error) {
+            lineupErrors++
+            warnings.push(`Season ${year} weekly_lineups chunk ${i}-${i + slice.length}: ${error.message}`)
+          } else {
+            lineupUpserted += slice.length
+          }
+        }
+      }
+      warnings.push(
+        `Season ${year} weekly_lineups: ${lineupUpserted} rows upserted across ${teamWeekPairs.length - lineupPairsEmpty}/${teamWeekPairs.length} (team, week) pairs` +
+        (lineupErrors > 0 ? `, ${lineupErrors} chunk errors` : '')
+      )
+    }
 
     // Drafts
     const picks = await getLeagueDraft(accessToken, lg.league_key)

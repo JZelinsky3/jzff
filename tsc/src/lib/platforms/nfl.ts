@@ -245,6 +245,95 @@ export async function fetchStandings(leagueId: string, season: number): Promise<
   return out
 }
 
+// ─── Per-week per-team roster snapshot ────────────────────────────────────
+//
+// NFL.com's gamecenter page renders each team's roster with the slot it
+// filled, the player's name/position/team, and the fantasy points it earned.
+// HTML structure has shifted between seasons — we tolerate the variants we
+// know of and return [] for anything we can't parse so the caller can
+// degrade gracefully. Best-effort by design.
+
+export type NflRosterPlayer = {
+  player_external_id: string  // NFL.com playerId (stable across seasons)
+  full_name: string
+  position: string | null     // primary position (QB/RB/...)
+  nfl_team: string | null
+  slot: string                // the slot the player filled (QB/RB/BN/IR/...)
+  points: number | null
+}
+
+export function nflIsStarterSlot(slot: string): boolean {
+  const s = slot.toUpperCase()
+  return s !== 'BN' && s !== 'IR' && s !== 'BENCH' && s !== 'RES'
+}
+
+export async function fetchTeamWeekRoster(
+  leagueId: string,
+  season: number,
+  teamId: number,
+  week: number
+): Promise<NflRosterPlayer[]> {
+  // Two URL shapes — modern season uses the live gamecenter route, older
+  // archived seasons live under /history. Try the historical path first when
+  // we have a season; it's the format that survives once a season is archived.
+  const urls = [
+    `${BASE}/league/${leagueId}/history/${season}/teamgamecenter?teamId=${teamId}&trackType=fbs&statCategory=stats&statSeason=${season}&statType=weekStats&statWeek=${week}`,
+    `${BASE}/league/${leagueId}/team/${teamId}/gamecenter?gameCenterTab=track&trackType=fbs&statCategory=stats&statSeason=${season}&statType=weekStats&statWeek=${week}`,
+  ]
+
+  let html: string | null = null
+  for (const url of urls) {
+    try {
+      html = await fetchHtml(url)
+      if (html) break
+    } catch {
+      // fall through to next variant
+    }
+  }
+  if (!html) return []
+
+  const $ = cheerio.load(html)
+  const out: NflRosterPlayer[] = []
+
+  // The roster table is usually <table class="tableType-team"> with rows of
+  // class "player". Each row exposes:
+  //   td.teamPosition       → slot (e.g. "QB", "WR", "BN")
+  //   a.playerName          → player display name; class includes playerNameId-N
+  //   em                    → "<POS> - <NFL_TEAM>" meta line
+  //   span.statTotal / td.statTotal → fantasy points (blank for unplayed)
+  $('table.tableType-team tr.player, table tr.player').each((_, tr) => {
+    const row = $(tr)
+    const slotRaw = row.find('td.teamPosition, .teamPosition').first().text().trim()
+    if (!slotRaw) return
+    const slot = slotRaw.toUpperCase()
+
+    const playerLink = row.find('a.playerName').first()
+    const full_name = playerLink.text().trim()
+    if (!full_name) {
+      // Empty slot ("--" row). Skip — no player to record.
+      return
+    }
+    const cls = playerLink.attr('class') || ''
+    const idMatch = cls.match(/playerNameId-(\d+)/)
+    const player_external_id = idMatch ? idMatch[1]! : full_name // fallback so the unique key still works
+
+    let position: string | null = null
+    let nfl_team: string | null = null
+    const meta = row.find('em').first().text().trim()
+    const metaMatch = meta.match(/([A-Z]{1,4})\s*[-–]\s*([A-Z]{2,4})/)
+    if (metaMatch) { position = metaMatch[1]!; nfl_team = metaMatch[2]! }
+    else if (/^(DEF|DST|D\/ST)$/i.test(meta)) { position = 'DEF' }
+
+    const totalText = row.find('.statTotal, td.statTotal').first().text().trim()
+    const parsed = parseFloat(totalText.replace(/,/g, ''))
+    const points = Number.isFinite(parsed) ? parsed : null
+
+    out.push({ player_external_id, full_name, position, nfl_team, slot, points })
+  })
+
+  return out
+}
+
 // ─── Draft results page → ordered list of picks ───────────────────────────
 
 export async function fetchDraft(leagueId: string, season: number): Promise<NflDraftPick[]> {

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.95, viewport-fit=cover" />
+  <title>Pick'ems · The Lakeside League</title>
+  <link rel="stylesheet" href="../../assets/css/main.css" />
+  <link rel="stylesheet" href="../../assets/css/pickems.css" />
+  <style>
+    /* The original auth was a PIN form; we use a no-login profile dropdown.
+       Mirror the .pe-login input styling onto the select so it fits the theme. */
+    select.pe-select {
+      background: var(--pk-card);
+      border: 1px solid var(--pk-line);
+      color: var(--pk-chalk);
+      padding: .58rem .8rem;
+      font-family: var(--sans);
+      font-size: .9rem;
+      border-radius: 2px;
+      min-width: 200px;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    select.pe-select:focus {
+      outline: none;
+      border-color: var(--pk-magenta);
+      background: var(--pk-card-2);
+      box-shadow: 0 0 0 3px rgba(255,61,139,.18);
+    }
+  </style>
+</head>
+<body>
+  <!-- ── MASTHEAD NAV ── -->
+  <nav class="pe-nav">
+    <div class="pe-nav-inner">
+      <button class="pe-nav-back" onclick="history.back()" aria-label="Go back"><svg viewBox="0 0 8 14" width="9" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 1 1 7 7 13"/></svg></button>
+      <div class="pe-nav-center">
+        <a href="./index.html" class="pe-nav-title">Weekly <em>Pick'ems.</em></a>
+        <div class="pe-nav-kicker">THE LAKESIDE LEAGUE</div>
+      </div>
+      <button id="recordsBtn" class="pe-nav-records" type="button">Records</button>
+    </div>
+  </nav>
+
+<!-- DEMO NOTICE — live-season pages need real-time data -->
+<style>
+.ls-demo-notice {
+    position: relative; z-index: 5;
+    max-width: 980px;
+    margin: 1.25rem auto 0;
+    padding: 1rem 1.25rem;
+    background: rgba(232,200,137,.07);
+    border: 1px solid rgba(232,200,137,.25);
+    border-left: 3px solid #e8c889;
+    border-radius: 2px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: .88rem; line-height: 1.5;
+    color: #f4ebd8;
+    display: flex; flex-wrap: wrap; gap: .9rem;
+    align-items: baseline;
+}
+.ls-demo-notice .ls-demo-pill {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-weight: 700; font-size: .58rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: #15201b; background: #e8c889;
+    padding: .3rem .55rem; border-radius: 2px;
+}
+.ls-demo-notice em { color: #e8c889; font-style: italic; }
+.ls-demo-notice a {
+    color: #e8c889; text-decoration: none;
+    border-bottom: 1px solid rgba(232,200,137,.4);
+}
+.ls-demo-notice a:hover { color: #f4d9a4; }
+</style>
+<div class="ls-demo-notice">
+    <span class="ls-demo-pill">★ Demo only</span>
+    <span>
+        This page runs on <em>live in-season data</em> — current scores,
+        weekly form, milestone tracking, head-to-head matchups. The demo
+        ships with historical data only, so most of the panels below sit
+        idle. Spin up your own league at <a href="/">thesundaychronicle.com</a>
+        to see this live.
+    </span>
+</div>
+
+
+  <div class="pe-app">
+
+    <!-- SEO: visually-hidden H1 for crawlers (the visible Weekly Pick'ems
+         lockup above is a link, not a heading, by design). -->
+    <h1 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">
+      Weekly Pick'ems · The Lakeside League fantasy football league
+    </h1>
+
+    <!-- ── IDENTITY (no login — profile dropdown) ── -->
+    <div class="pe-auth" id="authBox">
+      <div class="pe-login">
+        <select id="profileSelect" class="pe-select" aria-label="Pick your name">
+          <option value="">— pick your name —</option>
+        </select>
+      </div>
+      <div id="whoami" class="pe-pill" hidden></div>
+      <button id="changeUserBtn" class="pe-btn pe-btn-ghost" hidden>Change</button>
+    </div>
+
+    <!-- ── WEEK TABS ── -->
+    <div class="pe-tabs" id="weekTabs"></div>
+
+    <!-- ── WEEK VIEWS ── -->
+    <main class="pe-weeks" id="weekViews">
+      <div class="pe-preseason"><h2>Loading…</h2><p>Pulling this week's matchups.</p></div>
+    </main>
+
+    <!-- ── SUBMIT BAR ── -->
+    <div class="pe-submitbar" id="submitBar">
+      <button id="submitPicks" class="pe-btn" disabled>Submit Picks</button>
+      <span class="pe-submit-hint" id="submitHint">Pick your name to vote</span>
+    </div>
+
+    <footer class="pe-footer">
+      The Lakeside League · one submission per week
+    </footer>
+  </div>
+
+  <!-- ── RECORDS MODAL ── -->
+  <div id="recordsModal" class="records-modal" role="dialog" aria-modal="true"
+       aria-labelledby="recordsTitle" hidden>
+    <div class="records-modal-backdrop" data-close="1"></div>
+    <div class="records-modal-content" role="document">
+      <div class="records-modal-header">
+        <h2 id="recordsTitle">Voting Records</h2>
+        <button id="recordsClose" class="records-close" aria-label="Close">×</button>
+      </div>
+      <ol id="recordsList" class="records-list"></ol>
+    </div>
+  </div>
+
+  <script src="../../assets/js/pickems.js"></script>
+</body>
+</html>

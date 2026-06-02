@@ -238,6 +238,96 @@ export async function fetchSchedule(leagueId: string, season: number, auth?: Esp
   return fetchLeaguePayload(leagueId, season, ['mMatchup', 'mStandings'], auth)
 }
 
+// ─── Per-week roster snapshot ─────────────────────────────────────────────
+//
+// For the Best Coach Tracker we need each team's roster *as it stood that
+// week* with per-player fantasy points and which slot the player filled. ESPN
+// returns this when you include `view=mRoster&view=mMatchupScore` and pin a
+// scoringPeriodId. Older history seasons may not honor scoringPeriodId — the
+// caller should be prepared for sparse entries[].
+
+export type EspnPlayerStat = {
+  scoringPeriodId?: number
+  statSourceId?: number      // 0 = actual, 1 = projected
+  statSplitTypeId?: number   // 0 = season, 1 = single scoring period
+  appliedTotal?: number
+}
+
+export type EspnRosterPlayer = {
+  id: number
+  fullName?: string
+  firstName?: string
+  lastName?: string
+  defaultPositionId?: number
+  proTeamId?: number
+  stats?: EspnPlayerStat[]
+}
+
+export type EspnRosterEntry = {
+  lineupSlotId: number
+  playerId: number
+  playerPoolEntry?: { player?: EspnRosterPlayer }
+}
+
+export type EspnTeamRoster = {
+  id: number
+  roster?: { entries?: EspnRosterEntry[] }
+}
+
+export type EspnWeekRosterPayload = {
+  teams?: EspnTeamRoster[]
+}
+
+export async function fetchWeekRoster(
+  leagueId: string,
+  season: number,
+  week: number,
+  auth?: EspnAuth
+): Promise<EspnWeekRosterPayload> {
+  const views = ['mRoster', 'mMatchupScore']
+  const viewQs = views.map((v) => `view=${encodeURIComponent(v)}`).join('&')
+  const url = `${HOST}/apis/v3/games/ffl/seasons/${season}/segments/0/leagues/${encodeURIComponent(leagueId)}?${viewQs}&scoringPeriodId=${week}`
+  try {
+    return await fetchEspn<EspnWeekRosterPayload>(url, auth)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : ''
+    if (!msg.includes('404')) throw err
+    const histUrl = `${HOST}/apis/v3/games/ffl/leagueHistory/${encodeURIComponent(leagueId)}?seasonId=${season}&${viewQs}&scoringPeriodId=${week}`
+    const arr = await fetchEspn<EspnWeekRosterPayload[]>(histUrl, auth)
+    return arr.find((p) => Array.isArray(p.teams)) ?? { teams: [] }
+  }
+}
+
+// ESPN lineup slot id → unified slot string. Bench/IR/taxi are flagged as
+// non-starter by the ingest layer based on the returned string. Slots we
+// don't recognize fall through as `FLEX_OR_UNKNOWN` so the row still writes
+// but we can spot them later if a league uses an exotic slot type.
+const LINEUP_SLOT_BY_ID: Record<number, string> = {
+  0:  'QB',
+  1:  'TQB',
+  2:  'RB',
+  3:  'RB/WR',
+  4:  'WR',
+  5:  'WR/TE',
+  6:  'TE',
+  7:  'OP',
+  16: 'DEF',
+  17: 'K',
+  18: 'P',
+  19: 'HC',
+  20: 'BN',
+  21: 'IR',
+  23: 'FLEX',
+}
+
+export function espnSlotName(id: number): string {
+  return LINEUP_SLOT_BY_ID[id] ?? 'UNKNOWN'
+}
+
+export function isStarterSlot(slot: string): boolean {
+  return slot !== 'BN' && slot !== 'IR' && slot !== 'TAXI' && slot !== 'UNKNOWN'
+}
+
 // ─── Player lookup (kona_player_info) ─────────────────────────────────────
 //
 // The draft view (`mDraftDetail`) returns `playerId` but no player name. Names

@@ -780,6 +780,145 @@ export async function getPlayersBatch(
   return out
 }
 
+// ─── Per-week roster snapshot ─────────────────────────────────────────────
+//
+// For the Best Coach Tracker we need each player's slot + per-week points.
+// Yahoo's roster endpoint, when combined with the players/stats subresource
+// and `type=week;week=N`, returns one frag per player with:
+//   - meta: player_key, name.full, primary_position, editorial_team_abbr
+//   - selected_position[].position — the slot the player filled (BN/IR/QB/...)
+//   - player_points.total — the player's actual fantasy points that week
+// Yahoo's response shapes vary across game years; we tolerate the common
+// permutations the same way getLeagueScoreboard does.
+
+export type YahooRosterPlayer = {
+  player_key: string
+  full_name: string
+  position?: string         // primary position (QB/RB/...)
+  nfl_team?: string
+  slot: string              // selected position that week (QB/RB/BN/IR/...)
+  points: number | null
+  proj_points: number | null
+}
+
+export function yahooIsStarterSlot(slot: string): boolean {
+  const s = slot.toUpperCase()
+  return s !== 'BN' && s !== 'IR' && s !== 'IL' && s !== 'NA'
+}
+
+export async function getTeamRosterWeek(
+  accessToken: string,
+  teamKey: string,
+  week: number,
+  diagOut?: string[]
+): Promise<YahooRosterPlayer[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = await yahooFetchJson<any>(
+    accessToken,
+    `/team/${teamKey}/roster;week=${week}/players/stats;type=week;week=${week}`
+  )
+  const teamArr = raw?.fantasy_content?.team
+  if (!teamArr) {
+    diagOut?.push(`roster(${teamKey}, w${week}): fantasy_content.team missing`)
+    return []
+  }
+  // team[0] is meta frags; team[1] holds the roster subresource.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rosterBlock = (teamArr as unknown[]).find(
+    (x: any) => x && typeof x === 'object' && 'roster' in x
+  )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rosterNode = (rosterBlock as any)?.roster
+  // roster is usually an array — its first entry is coverage meta, the rest
+  // numbered keys wrap a `players` collection. Search for the `players` node.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let playersNode: any = null
+  if (Array.isArray(rosterNode)) {
+    for (const r of rosterNode) {
+      if (r && typeof r === 'object') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const direct = (r as any).players
+        if (direct) { playersNode = direct; break }
+        for (const v of Object.values(r as object)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (v && typeof v === 'object' && (v as any).players) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            playersNode = (v as any).players
+            break
+          }
+        }
+        if (playersNode) break
+      }
+    }
+  } else if (rosterNode && typeof rosterNode === 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    playersNode = (rosterNode as any).players ?? (rosterNode as any)['0']?.players
+  }
+  if (!playersNode) {
+    diagOut?.push(`roster(${teamKey}, w${week}): players node missing`)
+    return []
+  }
+
+  const out: YahooRosterPlayer[] = []
+  for (const pNode of numberedToArray(playersNode)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pFrag = (pNode as any)?.player
+    if (!pFrag || !Array.isArray(pFrag)) continue
+    const metaFrags = Array.isArray(pFrag[0]) ? pFrag[0] : pFrag
+    const m = flattenFragments(metaFrags)
+    const player_key = String(m.player_key ?? '')
+    if (!player_key) continue
+    let full_name = ''
+    const nameObj = m.name as Record<string, unknown> | string | undefined
+    if (typeof nameObj === 'string') full_name = nameObj
+    else if (nameObj && typeof nameObj === 'object') full_name = String(nameObj.full ?? '').trim()
+
+    // Walk the trailing subresources for selected_position + player_points.
+    let slot = 'BN'
+    let points: number | null = null
+    let proj_points: number | null = null
+    for (let i = 1; i < pFrag.length; i++) {
+      const part = pFrag[i]
+      if (!part || typeof part !== 'object') continue
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const obj = part as any
+      const sp = obj.selected_position
+      if (sp) {
+        const spFrags = Array.isArray(sp) ? sp : [sp]
+        const sm = flattenFragments(spFrags)
+        if (sm.position != null) slot = String(sm.position).toUpperCase()
+      }
+      const pp = obj.player_points
+      if (pp) {
+        const total = pp.total ?? pp?.['0']?.total
+        if (total != null && total !== '') {
+          const n = Number(total)
+          if (!Number.isNaN(n)) points = n
+        }
+      }
+      const ppproj = obj.player_projected_points
+      if (ppproj) {
+        const total = ppproj.total ?? ppproj?.['0']?.total
+        if (total != null && total !== '') {
+          const n = Number(total)
+          if (!Number.isNaN(n)) proj_points = n
+        }
+      }
+    }
+
+    out.push({
+      player_key,
+      full_name: full_name || player_key,
+      position: m.primary_position != null ? String(m.primary_position) : undefined,
+      nfl_team: m.editorial_team_abbr != null ? String(m.editorial_team_abbr) : undefined,
+      slot,
+      points,
+      proj_points,
+    })
+  }
+  return out
+}
+
 export async function refreshAccessToken(refreshToken: string): Promise<YahooTokenResponse> {
   const { clientId, clientSecret } = getCredentials()
   const body = new URLSearchParams({

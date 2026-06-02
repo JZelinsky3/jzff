@@ -16,12 +16,16 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import {
   fetchSeason,
   fetchPlayers,
+  fetchWeekRoster,
   flattenSchedule,
   teamDisplayName,
   memberDisplayName,
   deriveChampions,
   positionFromId,
   nflTeamFromId,
+  espnSlotName,
+  isStarterSlot,
+  parallelLimit,
   type EspnAuth,
   type EspnLeague,
   type EspnTeam,
@@ -379,6 +383,7 @@ async function ingestSeason(args: {
   // matchup ids stable (pickems_picks references them via a cascading FK).
   await db.from('manager_seasons').delete().eq('season_id', seasonId)
   await db.from('drafts').delete().eq('season_id', seasonId)
+  await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
   // ─── manager_seasons ────────────────────────────────────────────────────
   // ESPN's team.record.overall has the authoritative regular-season totals.
@@ -589,6 +594,86 @@ async function ingestSeason(args: {
   }
   if (deletedStale > 0) {
     result.warnings.push(`Season ${year}: removed ${deletedStale} stale matchup${deletedStale === 1 ? '' : 's'} (e.g. consolation games no longer imported)`)
+  }
+
+  // ─── weekly lineups ─────────────────────────────────────────────────────
+  // Per-week per-player roster snapshot for the Best Coach Tracker. One row
+  // per rostered player per side per week, with slot + points denormalized.
+  // ESPN's leagueHistory endpoint may not honor scoringPeriodId for ancient
+  // seasons — we tolerate empty teams[] arrays by skipping that week silently.
+  if (latestScored > 0) {
+    const lineupWeeks = Array.from({ length: latestScored }, (_, i) => i + 1)
+    // Accumulator across all weeks — single chunked upsert at the end avoids
+    // ~N round-trips and keeps the season under the Vercel function timeout.
+    const seasonLineupRows: Array<Record<string, unknown>> = []
+    let lineupWeeksEmpty = 0
+    await parallelLimit(lineupWeeks, 4, async (week) => {
+      let payload
+      try {
+        payload = await fetchWeekRoster(String(lg.id), year, week, auth)
+      } catch (err) {
+        result.warnings.push(`Season ${year} week ${week} roster fetch: ${(err as Error).message}`)
+        return
+      }
+      const teams = payload.teams ?? []
+      if (teams.length === 0) { lineupWeeksEmpty++; return }
+      for (const team of teams) {
+        const managerId = teamToManagerId(team.id)
+        if (!managerId) continue
+        for (const entry of team.roster?.entries ?? []) {
+          const player = entry.playerPoolEntry?.player
+          if (!player) continue
+          const slot = espnSlotName(entry.lineupSlotId)
+          // Pick the week's actual fantasy points: scoringPeriodId match,
+          // statSourceId=0 (actual), statSplitTypeId=1 (single period).
+          const weekStat = (player.stats ?? []).find(
+            (s) => s.scoringPeriodId === week && s.statSourceId === 0 && s.statSplitTypeId === 1
+          )
+          const projStat = (player.stats ?? []).find(
+            (s) => s.scoringPeriodId === week && s.statSourceId === 1 && s.statSplitTypeId === 1
+          )
+          const fullName =
+            player.fullName?.trim()
+            || [player.firstName, player.lastName].filter(Boolean).join(' ').trim()
+            || null
+          seasonLineupRows.push({
+            season_id: seasonId,
+            week,
+            manager_id: managerId,
+            player_external_id: String(player.id),
+            player_name: fullName,
+            position: positionFromId(player.defaultPositionId),
+            nfl_team: nflTeamFromId(player.proTeamId),
+            slot,
+            is_starter: isStarterSlot(slot),
+            points: weekStat?.appliedTotal ?? null,
+            proj_points: projStat?.appliedTotal ?? null,
+          })
+        }
+      }
+    })
+    let lineupUpserted = 0
+    let lineupErrors = 0
+    if (seasonLineupRows.length > 0) {
+      const CHUNK = 1000
+      for (let i = 0; i < seasonLineupRows.length; i += CHUNK) {
+        const slice = seasonLineupRows.slice(i, i + CHUNK)
+        const { error } = await db.from('weekly_lineups').upsert(slice, {
+          onConflict: 'season_id,week,manager_id,player_external_id',
+        })
+        if (error) {
+          lineupErrors++
+          result.warnings.push(`Season ${year} weekly_lineups chunk ${i}-${i + slice.length}: ${error.message}`)
+        } else {
+          lineupUpserted += slice.length
+        }
+      }
+    }
+    result.warnings.push(
+      `Season ${year} weekly_lineups: ${lineupUpserted} rows upserted across ${latestScored - lineupWeeksEmpty}/${latestScored} weeks` +
+      (lineupErrors > 0 ? `, ${lineupErrors} chunk errors` : '') +
+      (lineupWeeksEmpty > 0 ? ` (${lineupWeeksEmpty} weeks returned no roster data — likely a historical season ESPN can't slice by scoring period)` : '')
+    )
   }
 
   // ─── draft picks ────────────────────────────────────────────────────────

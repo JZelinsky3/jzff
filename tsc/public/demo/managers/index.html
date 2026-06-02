@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Every manager who has ever played in the demo fantasy football league — career records, championships, and head-to-head matchups.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Managers · The Lakeside League</title>
 <link rel="stylesheet" href="../assets/css/main.css">
@@ -148,12 +147,12 @@
     border: 1px solid;
     border-radius: 2px;
 }
-.ts-conf.north {
+.ts-conf.whole {
     color: var(--gold);
     background: rgba(232,200,137,.1);
     border-color: rgba(232,200,137,.4);
 }
-.ts-conf.south {
+.ts-conf.skim {
     color: #6b8aa8;
     background: rgba(107,138,168,.1);
     border-color: rgba(107,138,168,.4);
@@ -303,7 +302,7 @@
      data-page="managers"
      data-chapter="CH. II · MANAGERS"
      data-back-label="← The Hub"
-     data-back-href="index.html"></nav>
+     data-back-href="./index.html"></nav>
 <script src="../assets/js/nav.js"></script>
 
 <!-- PAGE HEADER -->
@@ -330,7 +329,7 @@
     </div>
 
     <div class="managers-grid" id="managers-grid">
-        <div class="loading-state">Loading the league…</div>
+        <div class="loading-state">Loading the society…</div>
     </div>
 
     <div class="former-wrap">
@@ -345,7 +344,7 @@
 </div>
 
 <footer class="site-footer">
-    <span>The Lakeside League · <em>LSL</em> · Since MMXIX</span>
+    <span>Built by <em>jzFF</em> · LSL · Since MMXIX</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
 </footer>
 
 
@@ -358,8 +357,8 @@ let currentSort = 'winpct';
 async function loadData() {
     try {
         const [dirRes, seasonRes] = await Promise.all([
-            fetch('../data/managers_directory.json'),
-            fetch('../data/seasons/2025.json'),
+            fetch('data/managers_directory.json'),
+            fetch('data/seasons/2025.json'),
         ]);
         if (!dirRes.ok) throw new Error(`HTTP ${dirRes.status}`);
         const data = await dirRes.json();
@@ -426,7 +425,7 @@ function renderCurrent() {
             : '';
 
         return `
-            <a href="manager.html?id=${m.user_id}" class="ts-card">
+            <a href="managers/manager.html?id=${m.user_id}" class="ts-card">
                 <div class="ts-stub">
                     <div class="ts-stub-lbl">Admit</div>
                     <div class="ts-stub-num">${roman}</div>

@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="All-time fantasy football standings for the demo league. Career records, win percentages, points-for, points-against across every season.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>All-Time Standings · The Lakeside League</title>
 <link rel="stylesheet" href="assets/css/main.css">
@@ -43,8 +42,8 @@
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 1.5rem;
     padding: 1.25rem 0;
     margin-bottom: 2rem;
-    border-top: 1px solid var(--ink-line);
-    border-bottom: 1px solid var(--ink-line);
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
 }
 .sort-bar-label {
     font-family: var(--mono); font-weight: 700;
@@ -283,6 +282,11 @@ table.standings tbody tr.former-row td.name-cell a {
 /* ── Full-page cream override ── */
 body { background: var(--cream); }
 .site-glow, .site-grain { display: none; }
+/* Nav + chapbar use the home page's navy/gold palette. Force solid --ink
+   (no alpha) so the cream body underneath doesn't bleed through and wash
+   them out — the default rgba(14,22,32,.9) reads light-grey on cream. */
+.nav { background: var(--ink); }
+:root { --chapbar-bg: var(--ink); }
 
 .page-kicker { color: var(--gold-deep); }
 .page-title  { color: var(--ink); }
@@ -344,13 +348,13 @@ body { background: var(--cream); }
     <div class="ticker-track">
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> ALL-TIME STANDINGS · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> SEVEN SEASONS · SEVENTEEN MANAGERS</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> 644 MATCHUPS · 6 DIFFERENT CHAMPIONS</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-managers">★ — SEASONS · — MANAGERS</span>
+            <span class="ticker-item ticker-stat" data-stat="matchups-champs">★ — MATCHUPS · — CHAMPIONS</span>
         </div>
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> ALL-TIME STANDINGS · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> SEVEN SEASONS · SEVENTEEN MANAGERS</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> 644 MATCHUPS · 6 DIFFERENT CHAMPIONS</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-managers">★ — SEASONS · — MANAGERS</span>
+            <span class="ticker-item ticker-stat" data-stat="matchups-champs">★ — MATCHUPS · — CHAMPIONS</span>
         </div>
     </div>
 </div>
@@ -360,15 +364,15 @@ body { background: var(--cream); }
      data-page="standings"
      data-chapter="CH. I · STANDINGS"
      data-back-label="← The Hub"
-     data-back-href="index.html"></nav>
+     data-back-href="./index.html"></nav>
 <script src="assets/js/nav.js"></script>
 
 <!-- PAGE HEADER -->
 <div class="page-header">
-    <div class="page-kicker">★ 2019 — 2025 · All-Time ★</div>
+    <div class="page-kicker" id="page-kicker">★ All-Time ★</div>
     <h1 class="page-title">All-Time <em>Standings.</em></h1>
     <p class="page-sub">
-        Every win, every loss, every chip — ranked across seven seasons of the league.
+        Every win, every loss, every chip — ranked across <span id="page-sub-seasons">every season</span> of the league.
         Click any manager for their full profile.
     </p>
 </div>
@@ -383,11 +387,11 @@ body { background: var(--cream); }
         </div>
         <div class="total-item">
             <div class="total-label">Seasons</div>
-            <div class="total-value">7</div>
+            <div class="total-value" id="tot-seasons">—</div>
         </div>
         <div class="total-item">
             <div class="total-label">Total Matchups</div>
-            <div class="total-value">644</div>
+            <div class="total-value" id="tot-matchups">—</div>
         </div>
         <div class="total-item">
             <div class="total-label">Different Champions</div>
@@ -399,7 +403,7 @@ body { background: var(--cream); }
         </div>
         <div class="total-item">
             <div class="total-label">Total Prize Pool</div>
-            <div class="total-value">$2,520</div>
+            <div class="total-value" id="tot-prize-pool">—</div>
         </div>
     </div>
 
@@ -413,7 +417,7 @@ body { background: var(--cream); }
             <button class="sort-option" data-sort="pf">Total Points</button>
             <button class="sort-option" data-sort="seasons">Seasons Played</button>
             <button class="sort-option" data-sort="playoffs">Playoff Apps</button>
-            <button class="sort-option" data-sort="avgfinish">Avg Final Finish</button>
+            <button class="sort-option" data-sort="avgfinish">Avg Finish</button>
             <button class="sort-option" data-sort="name">Alphabetical</button>
         </div>
     </div>
@@ -426,7 +430,7 @@ body { background: var(--cream); }
 </div>
 
 <footer class="site-footer">
-    <span>The Lakeside League · <em>LSL</em> · Since MMXIX</span>
+    <span>Built by <em>jzFF</em> · LSL · Since MMXIX</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
 </footer>
 
 
@@ -443,15 +447,30 @@ function correctedFinalRank(season) {
 
 function computeAvgFinalFinish(ledger) {
     if (!ledger || ledger.length === 0) return null;
-    const total = ledger.reduce((sum, s) => sum + correctedFinalRank(s), 0);
-    return total / ledger.length;
+    // Only count seasons that are fully finalized. final_rank is null until
+    // the championship is decided, so an in-progress live season (or an
+    // unplayed future season) is skipped entirely — a mid-season reg-rank
+    // shouldn't pretend to be a final finish.
+    const finalized = ledger.filter((s) => typeof s.final_rank === 'number' && s.final_rank > 0);
+    if (finalized.length === 0) return null;
+    const ranked = finalized
+        .map(correctedFinalRank)
+        .filter((r) => typeof r === 'number' && r > 0);
+    if (ranked.length === 0) return null;
+    return ranked.reduce((sum, r) => sum + r, 0) / ranked.length;
 }
+
+let leagueMeta = null;
 
 async function loadData() {
     try {
-        const dirRes = await fetch('data/managers_directory.json');
+        const [dirRes, leagueRes] = await Promise.all([
+            fetch('data/managers_directory.json'),
+            fetch('data/league.json'),
+        ]);
         if (!dirRes.ok) throw new Error(`HTTP ${dirRes.status}`);
         const dir = await dirRes.json();
+        if (leagueRes.ok) leagueMeta = await leagueRes.json();
 
         // Fetch all individual manager detail files in parallel for reg/playoff splits
         const details = await Promise.all(
@@ -480,7 +499,7 @@ async function loadData() {
     } catch (err) {
         document.getElementById('standings-container').innerHTML = `
             <div class="loading-state" style="color: var(--rust);">
-                Couldn't load standings — make sure you've run build_data.py.<br>
+                Couldn't load standings yet — the data may not be synced.<br>
                 <small>${err.message}</small>
             </div>
         `;
@@ -493,6 +512,38 @@ function populateTotals() {
     document.getElementById('tot-champs').textContent = uniqueChamps;
     const totalPF = allManagers.reduce((s, m) => s + m.total_pf, 0);
     document.getElementById('tot-pf').textContent = Math.round(totalPF / 1000).toLocaleString() + 'K';
+    if (leagueMeta) {
+        const tm = document.getElementById('tot-matchups');
+        if (tm) tm.textContent = leagueMeta.total_matchups != null ? leagueMeta.total_matchups.toLocaleString() : '—';
+        const ts = document.getElementById('tot-seasons');
+        const seasonCount = leagueMeta.total_seasons ?? (leagueMeta.all_seasons?.length ?? 0);
+        if (ts) ts.textContent = seasonCount || '—';
+        const tpp = document.getElementById('tot-prize-pool');
+        if (tpp) tpp.textContent = leagueMeta.prize_pool || '—';
+
+        // Ticker + page kicker (year range)
+        const years = leagueMeta.all_seasons || [];
+        const minY = years.length ? Math.min(...years) : null;
+        const maxY = years.length ? Math.max(...years) : null;
+        const kicker = document.getElementById('page-kicker');
+        if (kicker && minY && maxY) {
+            kicker.textContent = minY === maxY
+                ? `★ ${minY} · All-Time ★`
+                : `★ ${minY} — ${maxY} · All-Time ★`;
+        }
+        const sub = document.getElementById('page-sub-seasons');
+        if (sub && seasonCount) {
+            sub.textContent = seasonCount === 1 ? 'one season' : `${seasonCount} seasons`;
+        }
+        const champCount = new Set(allManagers.flatMap(m => m.championship_seasons)).size;
+        const matchupsStr = leagueMeta.total_matchups != null ? leagueMeta.total_matchups.toLocaleString() : '—';
+        document.querySelectorAll('.ticker-stat[data-stat="seasons-managers"]').forEach(el => {
+            el.innerHTML = `<span class="ticker-star">★</span> ${seasonCount} SEASONS · ${allManagers.length} MANAGERS`;
+        });
+        document.querySelectorAll('.ticker-stat[data-stat="matchups-champs"]').forEach(el => {
+            el.innerHTML = `<span class="ticker-star">★</span> ${matchupsStr} MATCHUPS · ${champCount} DIFFERENT CHAMPION${champCount === 1 ? '' : 'S'}`;
+        });
+    }
 }
 
 function getSortValue(m) {
@@ -564,9 +615,19 @@ function render() {
     const current = sortManagers(allManagers.filter(m => m.is_current));
     const former  = sortManagers(allManagers.filter(m => !m.is_current));
 
+    // Three layouts:
+    //   - active == total → no alumni divider, no former styling
+    //   - some active, some not → actives top, divider, formers below
+    //   - none active (e.g. current season not yet ingested) → show all as primary
     let rank = 1;
-    const currentRows = current.map(m => buildRow(m, rank++, false)).join('');
-    const formerRows  = former.map(m => buildRow(m, rank++, true)).join('');
+    let primaryRows, alumniRows;
+    if (current.length > 0) {
+        primaryRows = current.map(m => buildRow(m, rank++, false)).join('');
+        alumniRows  = former.length > 0 ? former.map(m => buildRow(m, rank++, true)).join('') : '';
+    } else {
+        primaryRows = former.map(m => buildRow(m, rank++, false)).join('');
+        alumniRows  = '';
+    }
 
     const arr = sortAsc ? '↑' : '↓';
 
@@ -613,12 +674,12 @@ function render() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${currentRows}
-                    ${former.length > 0 ? `
+                    ${primaryRows}
+                    ${alumniRows ? `
                         <tr class="divider-row">
                             <td colspan="13">★ Former Members · Alumni</td>
                         </tr>
-                        ${formerRows}
+                        ${alumniRows}
                     ` : ''}
                 </tbody>
             </table>

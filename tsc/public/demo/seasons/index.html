@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Every season of the demo fantasy football league — final standings, playoff brackets, and champions year by year.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Season Archives · The Lakeside League</title>
 <link rel="stylesheet" href="../assets/css/main.css">
@@ -192,13 +191,13 @@
     <div class="ticker-track">
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> SEASON ARCHIVES · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> SEVEN SEASONS · 2019 — 2025</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> SIX CHAMPIONS · ONE DYNASTY IN THE MAKING</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-range">★ — SEASONS</span>
+            <span class="ticker-item ticker-stat" data-stat="champions">★ — CHAMPIONS CROWNED</span>
         </div>
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> SEASON ARCHIVES · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> SEVEN SEASONS · 2019 — 2025</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> SIX CHAMPIONS · ONE DYNASTY IN THE MAKING</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-range">★ — SEASONS</span>
+            <span class="ticker-item ticker-stat" data-stat="champions">★ — CHAMPIONS CROWNED</span>
         </div>
     </div>
 </div>
@@ -208,12 +207,12 @@
      data-page="seasons"
      data-chapter="CH. III · ARCHIVES"
      data-back-label="← The Hub"
-     data-back-href="index.html"></nav>
+     data-back-href="./index.html"></nav>
 <script src="../assets/js/nav.js"></script>
 
 <!-- PAGE HEADER -->
 <div class="page-header">
-    <div class="page-kicker">★ Seven Volumes · Seven Campaigns ★</div>
+    <div class="page-kicker" id="page-kicker">★ Volumes · Campaigns ★</div>
     <h1 class="page-title">Season <em>Archives.</em></h1>
     <p class="page-sub">
         From the founding year to the present — every champion, every campaign, every chapter of the league.
@@ -227,7 +226,7 @@
 </div>
 
 <footer class="site-footer">
-    <span>The Lakeside League · <em>LSL</em> · Since MMXIX</span>
+    <span>Built by <em>jzFF</em> · LSL · Since MMXIX</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
 </footer>
 
 
@@ -244,7 +243,7 @@ function toRoman(n) {
 async function load() {
     try {
         // Get directory for the list of years
-        const dirRes = await fetch('../data/seasons_directory.json');
+        const dirRes = await fetch('data/seasons_directory.json');
         if (!dirRes.ok) throw new Error(`HTTP ${dirRes.status}`);
         const dir = await dirRes.json();
         const years = dir.seasons.map(s => s.year);
@@ -252,7 +251,7 @@ async function load() {
         // Fetch all individual season files in parallel for runner-up / 3rd / champion record
         const seasonData = await Promise.all(
             years.map(y =>
-                fetch(`../data/seasons/${y}.json`)
+                fetch(`data/seasons/${y}.json`)
                     .then(r => r.ok ? r.json() : null)
                     .catch(() => null)
             )
@@ -271,10 +270,36 @@ async function load() {
 }
 
 function render(seasons, latest) {
+    populateChrome(seasons);
     document.getElementById('chronicle-container').innerHTML = `
         <div class="chronicle">
             ${seasons.map(s => buildEntry(s, s.year === latest)).join('')}
         </div>`;
+}
+
+function populateChrome(seasons) {
+    const years = seasons.map(s => s.year);
+    const seasonCount = years.length;
+    const minY = years.length ? Math.min(...years) : null;
+    const maxY = years.length ? Math.max(...years) : null;
+    const champIds = seasons
+        .map(s => s.champion?.owner_user_id ?? s.champion?.user_id)
+        .filter(Boolean);
+    const champCount = new Set(champIds).size;
+
+    const kicker = document.getElementById('page-kicker');
+    if (kicker && minY && maxY) {
+        kicker.textContent = minY === maxY
+            ? `★ ${minY} · Volume I ★`
+            : `★ ${minY} — ${maxY} · ${seasonCount} Volume${seasonCount === 1 ? '' : 's'} ★`;
+    }
+    document.querySelectorAll('.ticker-stat[data-stat="seasons-range"]').forEach(el => {
+        const range = (minY && maxY && minY !== maxY) ? ` · ${minY} — ${maxY}` : (minY ? ` · ${minY}` : '');
+        el.innerHTML = `<span class="ticker-star">★</span> ${seasonCount || '—'} SEASON${seasonCount === 1 ? '' : 'S'}${range}`;
+    });
+    document.querySelectorAll('.ticker-stat[data-stat="champions"]').forEach(el => {
+        el.innerHTML = `<span class="ticker-star">★</span> ${champCount || '—'} DIFFERENT CHAMPION${champCount === 1 ? '' : 'S'} CROWNED`;
+    });
 }
 
 function buildEntry(s, isFeatured) {
@@ -302,7 +327,7 @@ function buildEntry(s, isFeatured) {
         : '';
 
     return `
-        <a href="season.html?year=${s.year}" class="season-entry${isFeatured ? ' featured' : ''}">
+        <a href="seasons/season.html?year=${s.year}" class="season-entry${isFeatured ? ' featured' : ''}">
             <div class="entry-year-col">
                 <div class="entry-year">${s.year}</div>
                 <div class="entry-roman">${toRoman(s.year)}</div>

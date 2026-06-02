@@ -82,6 +82,10 @@ export type SleeperMatchup = {
   points: number | null
   starters?: string[]
   players?: string[]
+  // Per-player scoring. starters_points is positional to `starters`;
+  // players_points keys every rostered player (starter + bench) to points.
+  starters_points?: number[]
+  players_points?: Record<string, number>
 }
 
 export type SleeperDraft = {

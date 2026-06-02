@@ -217,6 +217,7 @@ export async function ingestSleeperSource(
     // matchup ids stable (pickems_picks references them via a cascading FK).
     await db.from('manager_seasons').delete().eq('season_id', seasonId)
     await db.from('drafts').delete().eq('season_id', seasonId)
+    await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
     // 4b. Fetch users + rosters for THIS season
     const [usersThis, rostersThis] = await Promise.all([
@@ -383,6 +384,10 @@ export async function ingestSleeperSource(
     let seasonUnresolvedManager = 0
     let seasonSameManager = 0
     let seasonFlatPairs = 0
+    // Accumulator for per-season lineup rows — bulk-upserted once at the end
+    // of the season loop instead of per-matchup-pair, cutting ~7×weeks DB
+    // round-trips down to one chunked upsert per season.
+    const seasonLineupRows: Array<Record<string, unknown>> = []
 
     for (const { week, rows } of weeklyMatchups) {
       if (rows.length === 0) {
@@ -442,8 +447,88 @@ export async function ingestSleeperSource(
         )
         matchupsIngested++
         seasonInserted++
+
+        // Weekly lineups — one row per rostered player per side per week.
+        // Powers the Best Coach Tracker (starter vs optimal lineup).
+        // starters[] is positional to lg.roster_positions filtered to non-bench
+        // slots; players[] is every rostered player. Sleeper uses "0" for an
+        // empty starting slot — skip those rather than writing a phantom row.
+        const startingSlots = (lg.roster_positions ?? []).filter(
+          (s) => s !== 'BN' && s !== 'TAXI' && s !== 'IR'
+        )
+        const lineupRows = (
+          [
+            { side: a, managerId: aMgr },
+            { side: b, managerId: bMgr },
+          ] as const
+        ).flatMap(({ side, managerId }) => {
+          const starters = side.starters ?? []
+          const starterPts = side.starters_points ?? []
+          const allPlayers = side.players ?? []
+          const playerPts = side.players_points ?? {}
+          const starterSet = new Set(starters.filter((pid) => pid && pid !== '0'))
+          const rows: Array<Record<string, unknown>> = []
+          starters.forEach((pid, idx) => {
+            if (!pid || pid === '0') return
+            const meta = playersByPid?.get(pid)
+            rows.push({
+              season_id: seasonId,
+              week,
+              manager_id: managerId,
+              player_external_id: pid,
+              player_name: meta?.full_name ?? ([meta?.first_name, meta?.last_name].filter(Boolean).join(' ') || null),
+              position: meta?.position ?? null,
+              nfl_team: meta?.team ?? null,
+              slot: startingSlots[idx] ?? 'FLEX',
+              is_starter: true,
+              points: weekPlayed ? (starterPts[idx] ?? playerPts[pid] ?? null) : null,
+            })
+          })
+          for (const pid of allPlayers) {
+            if (!pid || pid === '0' || starterSet.has(pid)) continue
+            const meta = playersByPid?.get(pid)
+            rows.push({
+              season_id: seasonId,
+              week,
+              manager_id: managerId,
+              player_external_id: pid,
+              player_name: meta?.full_name ?? ([meta?.first_name, meta?.last_name].filter(Boolean).join(' ') || null),
+              position: meta?.position ?? null,
+              nfl_team: meta?.team ?? null,
+              slot: 'BN',
+              is_starter: false,
+              points: weekPlayed ? (playerPts[pid] ?? null) : null,
+            })
+          }
+          return rows
+        })
+        if (lineupRows.length > 0) seasonLineupRows.push(...lineupRows)
       }
     }
+    // Bulk-upsert all lineup rows for the season in 1000-row chunks (Supabase's
+    // soft cap per request). One round-trip per ~1000 rows instead of one per
+    // matchup pair. Powers the Best Coach Tracker.
+    let lineupUpserted = 0
+    let lineupErrors = 0
+    if (seasonLineupRows.length > 0) {
+      const CHUNK = 1000
+      for (let i = 0; i < seasonLineupRows.length; i += CHUNK) {
+        const slice = seasonLineupRows.slice(i, i + CHUNK)
+        const { error: lineupErr } = await db.from('weekly_lineups').upsert(slice, {
+          onConflict: 'season_id,week,manager_id,player_external_id',
+        })
+        if (lineupErr) {
+          lineupErrors++
+          warnings.push(`Season ${year} weekly_lineups chunk ${i}-${i + slice.length}: ${lineupErr.message}`)
+        } else {
+          lineupUpserted += slice.length
+        }
+      }
+    }
+    warnings.push(
+      `Season ${year} weekly_lineups: ${lineupUpserted} rows upserted ` +
+      `(${seasonLineupRows.length} built from matchups, ${lineupErrors} chunk errors). Powers Best Coach Tracker.`
+    )
 
     // Per-season matchup breakdown — mirrors the ESPN diagnostic format so
     // we can spot exactly where games are going when a sync looks short.

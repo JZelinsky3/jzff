@@ -96,68 +96,50 @@ body {
     border-bottom: 1px solid var(--ink-line);
 }
 
-/* Chapter section bar — newspaper sub-nav under the masthead. Every
-   in-archive chapter is one click away without opening the dropdown.
-   Active chapter has a gold underline. Horizontally scrollable on
-   narrow viewports. */
-.nav-chapbar {
-    position: sticky; top: 0; z-index: 29;
-    background: rgba(14, 22, 32, .9);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--ink-line);
-}
-.nav-chapbar-track {
-    display: flex;
-    align-items: stretch;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    max-width: 1370px;
-    margin: 0 auto;
-    padding: 0 1rem;
-}
-.nav-chapbar-track::-webkit-scrollbar { display: none; }
-.nav-chapbar-link {
-    flex-shrink: 0;
-    position: relative;
-    color: var(--cream-soft);
-    text-decoration: none;
-    font-family: var(--mono); font-weight: 700;
-    font-size: .64rem; letter-spacing: .22em; text-transform: uppercase;
-    padding: .8rem 1.05rem .9rem;
-    transition: color .15s;
-    white-space: nowrap;
-}
-.nav-chapbar-link:hover { color: var(--gold); }
-.nav-chapbar-link.is-active { color: var(--gold); }
-.nav-chapbar-link.is-active::after {
-    content: '';
-    position: absolute;
-    left: 1.05rem; right: 1.05rem; bottom: 0;
-    height: 2px;
-    background: var(--gold);
-}
-.nav-chapbar-link + .nav-chapbar-link::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 35%; bottom: 35%;
-    width: 1px;
-    background: var(--ink-line);
-}
-@media (max-width: 640px) {
-    .nav-chapbar-track { padding: 0 .25rem; }
-    .nav-chapbar-link { padding: .65rem .8rem .75rem; font-size: .58rem; letter-spacing: .18em; }
-    .nav-chapbar-link.is-active::after { left: .8rem; right: .8rem; }
-}
-
+/* Chapter section bar styles live in nav.js as an inline <style> block —
+   it's injected at runtime so the league hub template (which has no
+   external main.css link) still gets them. Edit those styles in
+   public/pams-template/assets/js/nav.js (lines ~366-420). */
 .nav-back, .nav-link {
     color: var(--gold); text-decoration: none;
     font-family: var(--mono); font-weight: 700;
     font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
     transition: color .2s;
 }
-.nav-back { justify-self: start; background: none; border: none; padding: 0; cursor: pointer; outline: none; }
+.nav-back, button.nav-back {
+    justify-self: start;
+    background-color: transparent !important;
+    background-image: none !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    cursor: pointer; outline: none;
+    /* Generous padding so the tap target hits ~44px on phones.
+       Negative margin pulls the button so the SVG visually aligns at the
+       nav's left padding edge (no shift in apparent layout); positive
+       horizontal padding makes the inset hit area extend rightward, which
+       is easier to thumb-tap on mobile than the very left edge. */
+    padding: .65rem 1.1rem;
+    margin: -.4rem -.4rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    /* Buttons default to a 3D system look with inset borders + bg on
+       Safari/iOS. Reset everything so the bare gold SVG sits on the dark
+       nav with no chrome. */
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    -webkit-tap-highlight-color: transparent;
+    color: var(--gold);
+    font: inherit;
+}
+.nav-back:focus, .nav-back:focus-visible, .nav-back:active, button.nav-back:focus {
+    background: transparent !important;
+    outline: none;
+    box-shadow: none !important;
+}
+/* Let clicks pass through the SVG to the parent button — fill="none"
+   on the star outline otherwise leaves a dead zone in the middle where
+   the click doesn't register. */
+.nav-back svg { pointer-events: none; display: block; }
 .nav-link { justify-self: end; }
 .nav-back:hover, .nav-link:hover { color: var(--gold-bright); }
 
@@ -204,11 +186,12 @@ a.nav-title { text-decoration: none; color: var(--cream); }
 /* Per-page-themable nav dropdown — fallbacks are navy/gold defaults */
 .nav-drop-menu {
     display: none;
-    position: absolute; top: calc(100% + .75rem); right: 0;
+    position: fixed; top: 4.5rem; right: 1.5rem; left: auto;
     background: var(--nav-drop-bg, rgba(14,22,32,.97));
     border: 2px solid var(--nav-drop-border, var(--ink-line));
     border-radius: 2px;
-    min-width: 180px;
+    min-width: 220px;
+    max-width: calc(100vw - 3rem);
     backdrop-filter: blur(12px);
     z-index: 50;
     overflow: hidden;
@@ -551,7 +534,21 @@ table.data tbody tr.highlight {
     font-size: .65rem; letter-spacing: .25em; text-transform: uppercase;
     color: var(--cream-mute);
 }
-.site-footer em { color: var(--gold); font-style: italic; font-family: var(--serif); }
+.site-footer em {
+    color: var(--gold); font-style: italic; font-family: var(--serif);
+    /* Bump the em so "jzFF" optically matches the surrounding mono text —
+       serif italic has smaller x-height at the same computed size. */
+    font-size: 1.15em;
+    letter-spacing: 0;
+    vertical-align: -.05em;
+}
+@media (max-width: 640px) {
+    .site-footer {
+        padding: 1.25rem 1rem;
+        font-size: .55rem; letter-spacing: .2em;
+        margin-top: 3rem;
+    }
+}
 
 /* ============================================================
    UTILITIES

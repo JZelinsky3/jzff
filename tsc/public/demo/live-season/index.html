@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Season · {{LEAGUE_NAME}}</title>
-<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<title>Live Season · The Lakeside League</title>
+<link rel="stylesheet" href="../assets/css/main.css">
 <style>
 /* ============================================================
    LIVE SEASON HUB — in-season launcher
@@ -726,12 +726,12 @@ body { background: var(--ls-bg); }
 <div class="ticker">
     <div class="ticker-track">
         <div class="ticker-group">
-            <span class="ticker-item"><span class="ticker-star">★</span> LIVE · IN SEASON · {{LEAGUE_NAME_UPPER}}</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> LIVE · IN SEASON · THE LAKESIDE LEAGUE</span>
             <span class="ticker-item">CURRENT FORM · POWER RANKS · PICK&apos;EMS</span>
             <span class="ticker-item">RECORDS WATCH · MILESTONE ALERTS</span>
         </div>
         <div class="ticker-group">
-            <span class="ticker-item"><span class="ticker-star">★</span> LIVE · IN SEASON · {{LEAGUE_NAME_UPPER}}</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> LIVE · IN SEASON · THE LAKESIDE LEAGUE</span>
             <span class="ticker-item">CURRENT FORM · POWER RANKS · PICK&apos;EMS</span>
             <span class="ticker-item">RECORDS WATCH · MILESTONE ALERTS</span>
         </div>
@@ -739,16 +739,59 @@ body { background: var(--ls-bg); }
 </div>
 
 <nav id="site-nav" data-page="live-season" data-chapter="CH. VII · IN SEASON"></nav>
-<script src="/pams-template/assets/js/nav.js"></script>
+<script src="../assets/js/nav.js"></script>
+
+<!-- DEMO NOTICE — live-season pages need real-time data -->
+<style>
+.ls-demo-notice {
+    position: relative; z-index: 5;
+    max-width: 980px;
+    margin: 1.25rem auto 0;
+    padding: 1rem 1.25rem;
+    background: rgba(232,200,137,.07);
+    border: 1px solid rgba(232,200,137,.25);
+    border-left: 3px solid #e8c889;
+    border-radius: 2px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: .88rem; line-height: 1.5;
+    color: #f4ebd8;
+    display: flex; flex-wrap: wrap; gap: .9rem;
+    align-items: baseline;
+}
+.ls-demo-notice .ls-demo-pill {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-weight: 700; font-size: .58rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: #15201b; background: #e8c889;
+    padding: .3rem .55rem; border-radius: 2px;
+}
+.ls-demo-notice em { color: #e8c889; font-style: italic; }
+.ls-demo-notice a {
+    color: #e8c889; text-decoration: none;
+    border-bottom: 1px solid rgba(232,200,137,.4);
+}
+.ls-demo-notice a:hover { color: #f4d9a4; }
+</style>
+<div class="ls-demo-notice">
+    <span class="ls-demo-pill">★ Demo only</span>
+    <span>
+        This page runs on <em>live in-season data</em> — current scores,
+        weekly form, milestone tracking, head-to-head matchups. The demo
+        ships with historical data only, so most of the panels below sit
+        idle. Spin up your own league at <a href="/">thesundaychronicle.com</a>
+        to see this live.
+    </span>
+</div>
+
 
 <main class="ls-wrap">
 
     <header class="ls-hero">
-        <div class="ls-hero-sup">{{LEAGUE_ABBR}} · In-Season</div>
+        <div class="ls-hero-sup">LSL · In-Season</div>
         <h1 class="ls-hero-title">Live <em>Season.</em></h1>
         <p class="ls-hero-sub">
             Everything that happens during the season — picks, rankings, records on the
-            line, trades, and the weekly story of {{LEAGUE_ABBR}}. The almanac is for
+            line, trades, and the weekly story of LSL. The almanac is for
             history. This is for right now.
         </p>
     </header>
@@ -762,31 +805,31 @@ body { background: var(--ls-bg); }
 
         <div class="ls-grid">
 
-            <a href="live-season/matchup-preview/" class="ls-card" data-status="live" data-theme="matchup-preview">
+            <a href="live-season/matchup-preview/index.html" class="ls-card" data-status="live" data-theme="matchup-preview">
                 <h2 class="ls-card-title">Matchup <em>Preview.</em></h2>
                 <p class="ls-card-desc">Every game this week on a railway departures board. Claim your name to pull the H2H archive, your form, and a kickoff projection.</p>
                 <span class="ls-card-arrow">→</span>
             </a>
 
-            <a href="live-season/best-coach/" class="ls-card" data-status="live" data-theme="best-coach">
+            <a href="live-season/best-coach/index.html" class="ls-card" data-status="live" data-theme="best-coach">
                 <h2 class="ls-card-title">Best <em>Coach.</em></h2>
                 <p class="ls-card-desc">Every starting lineup graded against its optimal version. Season-long efficiency standings and a running list of the worst single-week benchings.</p>
                 <span class="ls-card-arrow">→</span>
             </a>
 
-            <a href="live-season/pickems/" class="ls-card" data-status="live" data-theme="pickems">
+            <a href="live-season/pickems/index.html" class="ls-card" data-status="live" data-theme="pickems">
                 <h2 class="ls-card-title">Weekly <em>Pick'ems.</em></h2>
                 <p class="ls-card-desc">Pick the winner of every matchup each week. Honor-system identity — claim your name and vote.</p>
                 <span class="ls-card-arrow">→</span>
             </a>
 
-            <a href="live-season/powerrank/" class="ls-card" data-status="live" data-theme="powerrank">
+            <a href="live-season/powerrank/index.html" class="ls-card" data-status="live" data-theme="powerrank">
                 <h2 class="ls-card-title">Power <em>Rankings.</em></h2>
                 <p class="ls-card-desc">Auto-calculated each week from record, points for, recent form, and full league history.</p>
                 <span class="ls-card-arrow">→</span>
             </a>
 
-            <a href="live-season/records-watch/" class="ls-card" data-status="live" data-theme="records-watch">
+            <a href="live-season/records-watch/index.html" class="ls-card" data-status="live" data-theme="records-watch">
                 <h2 class="ls-card-title">Records <em>Watch.</em></h2>
                 <p class="ls-card-desc">Who's on pace to break a record? Single-season highs, win streaks, and franchise marks — tracked live.</p>
                 <span class="ls-card-arrow">→</span>
@@ -798,14 +841,14 @@ body { background: var(--ls-bg); }
                 <p class="ls-card-desc">An auto-written recap of the week's matchups, blowouts, and grudge games — generated every Tuesday morning.</p>
             </div>
 
-            <a href="live-season/trades/" class="ls-card" data-status="live" data-theme="trades">
+            <a href="live-season/trades/index.html" class="ls-card" data-status="live" data-theme="trades">
                 <span class="ls-card-tier">Veteran</span>
                 <h2 class="ls-card-title">Trade <em>Grader.</em></h2>
                 <p class="ls-card-desc">Every completed trade for your league, pulled automatically. Grades and 4-week revisits arrive in the next build.</p>
                 <span class="ls-card-arrow">→</span>
             </a>
 
-            <a href="live-season/milestones/" class="ls-card" data-status="live" data-theme="milestones">
+            <a href="live-season/milestones/index.html" class="ls-card" data-status="live" data-theme="milestones">
                 <h2 class="ls-card-title">Milestone <em>Tracker.</em></h2>
                 <p class="ls-card-desc">An honors-roll feed for every career milestone, streak, and franchise high the moment it happens — right on the page.</p>
                 <span class="ls-card-arrow">→</span>
@@ -848,7 +891,7 @@ body { background: var(--ls-bg); }
         </div>
     </div>
 
-    <div class="ls-foot">{{LEAGUE_ABBR}} · Live Season · {{LEAGUE_FOUNDED_ROMAN}}</div>
+    <div class="ls-foot">LSL · Live Season · MMXIX</div>
 
 </main>
 
@@ -973,7 +1016,7 @@ body { background: var(--ls-bg); }
       host.innerHTML =
         '<div class="matrix-wrap">' +
           '<div class="matrix-title">All-Time Head to Head' +
-            '<span class="matrix-title-sub">{{LEAGUE_NAME_UPPER}} · By the Books</span>' +
+            '<span class="matrix-title-sub">THE LAKESIDE LEAGUE · By the Books</span>' +
           '</div>' +
           '<div class="matrix" style="grid-template-columns: ' + labelWidth + 'px repeat(' + mgrs.length + ', minmax(' + colMin + 'px, 1fr));">' +
             // Header row: corner + abbr cols

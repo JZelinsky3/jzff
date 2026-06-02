@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Season recap for the demo fantasy football league — final standings, playoff bracket, draft results, and league champion.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Season · The Lakeside League</title>
 <link rel="stylesheet" href="../assets/css/main.css">
@@ -459,7 +458,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 </div>
 
 <footer class="site-footer">
-    <span>The Lakeside League · <em>LSL</em> · Since MMXIX</span>
+    <span>Built by <em>jzFF</em> · LSL · Since MMXIX</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
 </footer>
 
 
@@ -469,23 +468,16 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     const params = new URLSearchParams(window.location.search);
     if (params.get('ref') === 'hub') {
         const link = document.getElementById('nav-back-link');
-        link.href = '../index.html';
+        link.href = './';
         link.textContent = '← The Hub';
     }
 })();
 
 
-const ALL_YEARS = [2019, 2020, 2021, 2022, 2023, 2024, 2025];
-
-const SEASON_BLURBS = {
-    2019: `The founding year. Fourteen managers, one title up for grabs. <strong>Marcus</strong> took the first-ever chip with Hammer Time and set the tone for what the league would become.`,
-    2020: `<strong>Ethan</strong>'s East End squad finally broke through in year two — a tighter twelve-team format, and a clean run to the franchise's first title.`,
-    2021: `<strong>Tyler</strong> built a quiet juggernaut — top seed, top scorer, and the cleanest playoff run the league had seen up to that point.`,
-    2022: `<strong>Jordan</strong> waited four years for his moment. The Highland Hawks slipped in as a 3-seed and never looked back.`,
-    2023: `<strong>Marcus</strong> added a second ring with Stoneridge Hammers — the first repeat champion in league history.`,
-    2024: `<strong>Devin</strong>'s Den of Thieves snuck through as a 4-seed and burgled the title out from under everyone.`,
-    2025: `<strong>Cole</strong> finished what he started in year one — top seed, best record, and the first Cold Front banner. No upsets, no debate.`,
-};
+// Populated from data/seasons_directory.json on load; per-season prose is
+// no longer hardcoded — falls back to a generic blurb derived from the data.
+let ALL_YEARS = [];
+const SEASON_BLURBS = {};
 
 function toRoman(n) {
     const vals = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],
@@ -538,7 +530,7 @@ function showError(msg) {
         <div class="error-state">
             <h1>Season not found.</h1>
             <p>${msg}</p>
-            <a href="index.html">← All seasons</a>
+            <a href="seasons/index.html">← All seasons</a>
         </div>`;
 }
 
@@ -559,7 +551,7 @@ function buildStandingsSection(s) {
         return `<tr class="${t.final_rank <= 3 ? 'podium-row' : ''}">
             <td class="final-rank ${rankClass(t.final_rank)}">${t.final_rank}</td>
             <td class="team-name">${t.team_name}</td>
-            <td class="owner-link"><a href="../managers/manager.html?id=${t.owner_user_id}">${t.owner_name}</a></td>
+            <td class="owner-link"><a href="managers/manager.html?id=${t.owner_user_id}">${t.owner_name}</a></td>
             <td class="record num">${t.wins}–${t.losses}${t.ties ? '–'+t.ties : ''}</td>
             <td class="winpct num">${fmtPct(t.win_pct)}</td>
             <td class="num ${pfCls}">${t.points_for.toFixed(1)}</td>
@@ -584,9 +576,11 @@ function buildStandingsSection(s) {
         </div>`;
     }
 
-    if (s.year === 2025) {
-        const whole = s.standings.filter(t => t.division === 'North');
-        const skim  = s.standings.filter(t => t.division === 'South');
+    // Show by-conference toggle only when this season actually has division data.
+    const divisions = Array.from(new Set(s.standings.map(t => t.division).filter(Boolean)));
+    if (divisions.length === 2) {
+        const whole = s.standings.filter(t => t.division === divisions[0]);
+        const skim  = s.standings.filter(t => t.division === divisions[1]);
         return `
             <div class="standings-cream-wrap">
                 <div class="conf-toggle-bar" id="conf-toggle-bar">
@@ -596,12 +590,12 @@ function buildStandingsSection(s) {
                 </div>
                 <div id="view-split">
                     <div class="conf-header">
-                        <span class="conf-name">North Division</span>
+                        <span class="conf-name">Whole Conference</span>
                         <span class="conf-teams">${whole.length} teams</span>
                     </div>
                     ${buildTable(whole)}
                     <div class="conf-header">
-                        <span class="conf-name">South Division</span>
+                        <span class="conf-name">Skim Conference</span>
                         <span class="conf-teams">${skim.length} teams</span>
                     </div>
                     ${buildTable(skim)}
@@ -619,9 +613,21 @@ async function loadSeason() {
     const year = parseInt(new URLSearchParams(window.location.search).get('year'));
     if (!year) return showError('No year specified in the URL.');
 
+    // Pull seasons_directory so prev/next navigation works for any league.
+    try {
+        const dirRes = await fetch('data/seasons_directory.json');
+        if (dirRes.ok) {
+            const dir = await dirRes.json();
+            ALL_YEARS = (dir.seasons || []).map(s => s.year).sort((a, b) => a - b);
+        }
+    } catch (_) { /* leave ALL_YEARS empty */ }
+
+    const foundedYear = ALL_YEARS[0] || year;
+    const volNum = Math.max(1, year - foundedYear + 1);
+
     let s;
     try {
-        const res = await fetch(`../data/seasons/${year}.json`);
+        const res = await fetch(`data/seasons/${year}.json`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         s = await res.json();
     } catch (e) {
@@ -631,11 +637,14 @@ async function loadSeason() {
     document.title = `${year} Season · The Lakeside League`;
     document.getElementById('nav-year').innerHTML = `${year} <em>Season.</em>`;
 
+    const champLine = s.champion
+        ? `CHAMPION · ${s.champion.owner_name.toUpperCase()} · ${s.champion.team_name.toUpperCase()}`
+        : `${year} SEASON · IN PROGRESS`;
     ['ticker-a', 'ticker-b'].forEach(id => {
         document.getElementById(id).innerHTML = `
             <span class="ticker-item"><span class="ticker-star">★</span> ${year} SEASON · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> CHAMPION · ${s.champion.owner_name.toUpperCase()} · ${s.champion.team_name.toUpperCase()}</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> ${s.total_teams} TEAMS · VOL. ${toRoman(year - 2018)}</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> ${champLine}</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> ${s.total_teams} TEAMS · VOL. ${toRoman(volNum)}</span>
         `;
     });
 
@@ -649,8 +658,8 @@ async function loadSeason() {
     const prevYear = idx > 0 ? ALL_YEARS[idx - 1] : null;
     const nextYear = idx < ALL_YEARS.length - 1 ? ALL_YEARS[idx + 1] : null;
     const yearNavHTML = [
-        prevYear ? `<a href="season.html?year=${prevYear}" class="hero-nav-year">← ${prevYear}</a>` : '',
-        nextYear ? `<a href="season.html?year=${nextYear}" class="hero-nav-year">${nextYear} →</a>` : '',
+        prevYear ? `<a href="seasons/season.html?year=${prevYear}" class="hero-nav-year">← ${prevYear}</a>` : '',
+        nextYear ? `<a href="seasons/season.html?year=${nextYear}" class="hero-nav-year">${nextYear} →</a>` : '',
     ].filter(Boolean).join('');
 
     const podiumDefs = [
@@ -661,7 +670,7 @@ async function loadSeason() {
     const podiumHTML = podiumDefs.map(p => {
         const t = s.standings.find(r => r.final_rank === p.rank);
         if (!t) return '';
-        return `<a href="../managers/manager.html?id=${t.owner_user_id}" class="podium-card ${p.cls}">
+        return `<a href="managers/manager.html?id=${t.owner_user_id}" class="podium-card ${p.cls}">
             <div class="podium-medal-label">${p.label}</div>
             <div class="podium-place-num">${p.roman}</div>
             <div class="podium-team">${t.team_name}</div>
@@ -670,13 +679,16 @@ async function loadSeason() {
         </a>`;
     }).join('');
 
-    const blurb = SEASON_BLURBS[year] ?? `<strong>${s.champion.owner_name}</strong> claimed the ${year} title with ${s.champion.team_name}.`;
+    const blurb = SEASON_BLURBS[year]
+        ?? (s.champion
+            ? `<strong>${s.champion.owner_name}</strong> claimed the ${year} title with ${s.champion.team_name}.`
+            : `The ${year} season is still being written. Sync the latest results to keep the chronicle current.`);
 
     document.getElementById('page-body').innerHTML = `
 
         <div class="season-hero">
             <div class="hero-left">
-                <div class="hero-kicker">★ Vol. ${toRoman(year - 2018)} · The Lakeside League · ${year} ★</div>
+                <div class="hero-kicker">★ Vol. ${toRoman(volNum)} · The Lakeside League · ${year} ★</div>
                 <div class="hero-year">${year}</div>
                 <p class="hero-sub">${blurb}</p>
             </div>
@@ -709,11 +721,12 @@ async function loadSeason() {
                 </div>
                 <div class="strip-cell">
                     <div class="strip-label">Champ Record</div>
-                    <div class="strip-val">${s.champion.record ?? '—'}</div>
+                    <div class="strip-val">${s.champion?.record ?? '—'}</div>
                 </div>
             </div>
         </div>
 
+        ${s.champion ? `
         <div class="section" style="margin-top: 3rem;">
             <div class="section-header">
                 <span class="section-num">§ 01 · Champion</span>
@@ -733,12 +746,21 @@ async function loadSeason() {
                         ${s.third_place?.owner_name ? `<div class="champ-fact"><div class="champ-fact-label">Third Place</div><div class="champ-fact-val" style="font-size:1.1rem;">${s.third_place.owner_name}</div></div>` : ''}
                     </div>
                 </div>
-                <a href="../managers/manager.html?id=${s.champion.owner_user_id}" class="champ-profile-link">
+                <a href="managers/manager.html?id=${s.champion.owner_user_id}" class="champ-profile-link">
                     View profile <span class="arrow">→</span>
                 </a>
                 <div class="champ-block-watermark">★</div>
             </div>
         </div>
+        ` : `
+        <div class="section" style="margin-top: 3rem;">
+            <div class="section-header">
+                <span class="section-num">§ 01 · In Progress</span>
+                <span class="section-title">No champion yet —</span>
+                <span class="section-meta">Season ongoing</span>
+            </div>
+        </div>
+        `}
 
         <div class="section" style="margin-top: 3rem;">
             <div class="section-header">

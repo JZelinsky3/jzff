@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Manager profile in the demo fantasy football league — career stats, top 5 scores, head-to-head record, and championships.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manager Profile · The Lakeside League</title>
 <link rel="stylesheet" href="../assets/css/main.css">
@@ -326,7 +325,7 @@
      data-page="manager-detail"
      data-chapter="CH. II · PROFILE"
      data-back-label="← Managers"
-     data-back-href="index.html"
+     data-back-href="managers/index.html"
      data-title-id="nav-name"
      data-title-href="managers/index.html"></nav>
 <script src="../assets/js/nav.js"></script>
@@ -339,7 +338,7 @@
 </div>
 
 <footer class="site-footer">
-    <span>The Lakeside League · <em>LSL</em> · Since MMXIX</span>
+    <span>Built by <em>jzFF</em> · LSL · Since MMXIX</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
 </footer>
 
 
@@ -418,7 +417,7 @@ function showError(msg) {
         <div class="error-state">
             <h1>Manager not found.</h1>
             <p>${msg}</p>
-            <a href="index.html">← View all managers</a>
+            <a href="managers/index.html">← View all managers</a>
         </div>
     `;
 }
@@ -429,7 +428,7 @@ async function loadProfile() {
 
     let m;
     try {
-        const res = await fetch(`../data/managers/${userId}.json`);
+        const res = await fetch(`data/managers/${userId}.json`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         m = await res.json();
     } catch (err) {
@@ -438,7 +437,7 @@ async function loadProfile() {
 
     let top5 = [];
     try {
-        const res = await fetch('../data/manager_highs.json');
+        const res = await fetch('data/manager_highs.json');
         if (res.ok) {
             const highs = await res.json();
             const entry = highs.find(h => String(h.user_id) === String(userId));
@@ -446,6 +445,16 @@ async function loadProfile() {
         }
     } catch (_) { /* non-fatal */ }
 
+    // Anything that throws below leaves the page stuck on the loading state
+    // (the old failure mode for managers with empty stats). Surface it instead.
+    try {
+        renderProfile(m, top5);
+    } catch (err) {
+        showError(`Couldn't render profile (${err.message}). Please report this.`);
+    }
+}
+
+function renderProfile(m, top5) {
     document.getElementById('nav-name').innerHTML = `${m.name} <em>·</em>`;
     document.title = `${m.name} · The Lakeside League`;
 
@@ -612,13 +621,13 @@ async function loadProfile() {
                 </div>
                 <div class="strip-item">
                     <div class="strip-label">Longest Win Streak</div>
-                    <div class="strip-value">${m.longest_win_streak.length}</div>
-                    <div class="strip-detail">${m.longest_win_streak.when || '—'}</div>
+                    <div class="strip-value">${m.longest_win_streak?.length ?? 0}</div>
+                    <div class="strip-detail">${m.longest_win_streak?.when || '—'}</div>
                 </div>
                 <div class="strip-item">
                     <div class="strip-label">Longest Loss Streak</div>
-                    <div class="strip-value">${m.longest_loss_streak.length}</div>
-                    <div class="strip-detail">${m.longest_loss_streak.when || '—'}</div>
+                    <div class="strip-value">${m.longest_loss_streak?.length ?? 0}</div>
+                    <div class="strip-detail">${m.longest_loss_streak?.when || '—'}</div>
                 </div>
             </div>
         </div>

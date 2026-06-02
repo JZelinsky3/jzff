@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="The defining rivalries of the demo fantasy football league — head-to-head records, dominance bars, and key moments between feuding managers.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rivalries · The Lakeside League</title>
 <link rel="stylesheet" href="../assets/css/main.css">
@@ -431,6 +430,14 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   background: rgba(14, 3, 3, 0.94) !important;
   border-bottom-color: rgba(220, 38, 38, 0.18) !important;
 }
+/* Chapbar theme overrides — nav.js reads these vars. */
+:root {
+    --chapbar-bg:     rgba(14, 3, 3, 0.92);
+    --chapbar-border: rgba(220, 38, 38, 0.18);
+    --chapbar-text:   var(--rv-grey-mid);
+    --chapbar-active: var(--rv-red);
+    --chapbar-line:   rgba(220, 38, 38, 0.18);
+}
 :root {
   --nav-drop-bg:           rgba(12,3,3,.97);
   --nav-drop-border:       rgba(220,38,38,.15);
@@ -463,7 +470,9 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   .rv-stat-val { font-size: 1.15rem; }
   .rv-stat-label { font-size: .48rem; letter-spacing: .1em; margin-top: .2rem; }
 
-  /* Card container */
+  /* Card container — bump grid gap so stacked cards have clear visual breaks
+     instead of butting against each other (3px reads as zero on phones). */
+  .rv-grid { gap: 1.25rem; padding: .5rem .85rem 6rem; }
   .rv-content { padding: .25rem .85rem 4rem; }
   .rv-card-head { padding: .4rem .85rem; }
   .rv-card-label { font-size: .5rem; letter-spacing: .16em; }
@@ -536,351 +545,192 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 <div class="site-glow"></div>
 <div class="site-grain"></div>
 
+<!-- TICKER -->
+<div class="ticker">
+    <div class="ticker-track">
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> RIVALRIES · THE LAKESIDE LEAGUE</span>
+            <span class="ticker-item">HEAD-TO-HEAD · BLOOD FEUDS · COLD WARS</span>
+            <span class="ticker-item">EVERY MEETING ON THE LEDGER</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> RIVALRIES · THE LAKESIDE LEAGUE</span>
+            <span class="ticker-item">HEAD-TO-HEAD · BLOOD FEUDS · COLD WARS</span>
+            <span class="ticker-item">EVERY MEETING ON THE LEDGER</span>
+        </div>
+    </div>
+</div>
+
 <nav id="site-nav"
      data-page="rivalries"
-     data-chapter="RIVALRIES"
+     data-chapter="CH. VI · RIVALRIES"
      data-back-label="← The Hub"
-     data-back-href="../index.html"></nav>
+     data-back-href="./index.html"></nav>
 <script src="../assets/js/nav.js"></script>
 
 <!-- ══════════════════════════════════════════════════
-     PAGE HEADER
+     PAGE HEADER (filled in by JS below)
 ════════════════════════════════════════════════════ -->
 <header class="rv-header">
-  <div class="rv-header-kicker">Lakeside League · All-Time Series Records</div>
+  <div class="rv-header-kicker">The Lakeside League · All-Time Series Records</div>
   <h1>Rivalries</h1>
-  <div class="rv-header-sub">Six feuds. Seven seasons. No mercy.</div>
+  <div class="rv-header-sub" id="rv-header-sub">Loading…</div>
   <div class="rv-header-rule"></div>
-  <div class="rv-header-stats">
-    <div class="rv-stat-cell">
-      <span class="rv-stat-val">6</span>
-      <span class="rv-stat-label">Active Feuds</span>
-    </div>
-    <div class="rv-stat-cell">
-      <span class="rv-stat-val">83</span>
-      <span class="rv-stat-label">Total Meetings</span>
-    </div>
-    <div class="rv-stat-cell">
-      <span class="rv-stat-val">7</span>
-      <span class="rv-stat-label">Seasons</span>
-    </div>
-    <div class="rv-stat-cell">
-      <span class="rv-stat-val">6</span>
-      <span class="rv-stat-label">Leaders</span>
-    </div>
-    <div class="rv-stat-cell">
-      <span class="rv-stat-val">0</span>
-      <span class="rv-stat-label">Deadlocked</span>
-    </div>
-  </div>
+  <div class="rv-header-stats" id="rv-header-stats"></div>
 </header>
 
-<!-- ══════════════════════════════════════════════════
-     RIVALRY CARDS
-════════════════════════════════════════════════════ -->
-<main class="rv-grid">
+<main class="rv-grid" id="rv-grid"></main>
 
-  <div class="rv-card">
-    <div class="rv-card-head">
-      <span class="rv-card-label">Rivalry I · Tyler vs Cole · 14 Meetings · Since 2020</span>
-      <span class="rv-badge">Cole Leads · 8–6</span>
-    </div>
-    <div class="rv-body">
-      <div class="rv-side rv-side-a ">
-        <div class="rv-wins ">6</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Tyler</div>
-        <div class="rv-ppg">122.7 avg PPG</div>
-        <div class="rv-rec">Reg 4–8 &nbsp;·&nbsp; Playoff 2–0</div>
-        <div class="rv-dots">
-          <span class="rv-dot l" data-tip="2024 W3 · L · −108.2"></span><span class="rv-dot l" data-tip="2024 W14 · L · −7.2"></span><span class="rv-dot w" data-tip="2024 W16 · W · +34.4"></span><span class="rv-dot l" data-tip="2025 W3 · L · −33.8"></span><span class="rv-dot l" data-tip="2025 W14 · L · −50.2"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-      <div class="rv-center">
-        <div class="rv-rivalry-name">THE BORDER WAR</div>
-        <div class="rv-vs">vs</div>
-        <div class="rv-games">14 Meetings</div>
-        <div class="rv-bar-wrap">
-          <div class="rv-bar" style="background: linear-gradient(to left, #dc2626 0%, #dc2626 57.1%, #1f2937 57.1%, #1f2937 100%)"></div>
-          <div class="rv-bar-nums"><span>6</span><span>8</span></div>
-        </div>
-        <div class="rv-series-lbl">Cole Leads</div>
-        <div class="rv-last-game">Last: <span>2025 · W14</span></div>
-      </div>
-      <div class="rv-side rv-side-b side-leads">
-        <div class="rv-wins hot">8</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Cole</div>
-        <div class="rv-ppg">129.1 avg PPG</div>
-        <div class="rv-rec">Reg 8–4 &nbsp;·&nbsp; Playoff 0–2</div>
-        <div class="rv-dots">
-          <span class="rv-dot w" data-tip="2024 W3 · W · +108.2"></span><span class="rv-dot w" data-tip="2024 W14 · W · +7.2"></span><span class="rv-dot l" data-tip="2024 W16 · L · −34.4"></span><span class="rv-dot w" data-tip="2025 W3 · W · +33.8"></span><span class="rv-dot w" data-tip="2025 W14 · W · +50.2"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-    </div>
-    <div class="rv-key">
-      <span class="rv-key-badge">Key Moment</span>
-      <span class="rv-key-text">Cole drops 169.21 on Tyler — a 108.2-point demolition that still gets brought up at the draft.</span>
-      <span class="rv-key-date">2024 · Week 3</span>
-    </div>
-    <div class="rv-tagline">
-      <em>"Twelve months of trash talk. Sixty minutes to back it up."</em>
-    </div>
-  </div>
+<template id="rv-empty-template">
+  <section style="text-align:center;max-width:48ch;margin:4rem auto;padding:0 1.5rem;">
+    <div style="font-family:var(--mono);font-size:.75rem;letter-spacing:.25em;color:var(--rv-gold);text-transform:uppercase;margin-bottom:1rem;">No rivalries on file yet</div>
+    <h2 style="font-family:var(--serif);font-size:1.8rem;line-height:1.2;margin:0 0 1rem;">Pick two managers. Name the feud. Watch it write itself.</h2>
+    <p style="font-family:var(--serif);font-size:1rem;line-height:1.55;opacity:.78;margin:0 0 1.5rem;">
+      Rivalries are commissioner-curated. Open the league's rivalries tab from your management page and add one — head-to-head records, dominance bars, and recent meetings fill in automatically.
+    </p>
+  </section>
+</template>
 
-  <div class="rv-card">
-    <div class="rv-card-head">
-      <span class="rv-card-label">Rivalry II · Jordan vs Devin · 14 Meetings · Since 2019</span>
-      <span class="rv-badge">Devin Leads · 9–5</span>
-    </div>
-    <div class="rv-body">
-      <div class="rv-side rv-side-a ">
-        <div class="rv-wins ">5</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Jordan</div>
-        <div class="rv-ppg">115.1 avg PPG</div>
-        <div class="rv-rec">Reg 5–8 &nbsp;·&nbsp; Playoff 0–1</div>
-        <div class="rv-dots">
-          <span class="rv-dot l" data-tip="2024 W3 · L · −8.7"></span><span class="rv-dot l" data-tip="2024 W14 · L · −63.9"></span><span class="rv-dot l" data-tip="2024 W16 · L · −6.4"></span><span class="rv-dot l" data-tip="2025 W3 · L · −38.2"></span><span class="rv-dot l" data-tip="2025 W14 · L · −9.9"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-      <div class="rv-center">
-        <div class="rv-rivalry-name">THE LAKEFRONT BOWL</div>
-        <div class="rv-vs">vs</div>
-        <div class="rv-games">14 Meetings</div>
-        <div class="rv-bar-wrap">
-          <div class="rv-bar" style="background: linear-gradient(to left, #dc2626 0%, #dc2626 64.3%, #1f2937 64.3%, #1f2937 100%)"></div>
-          <div class="rv-bar-nums"><span>5</span><span>9</span></div>
-        </div>
-        <div class="rv-series-lbl">Devin Leads</div>
-        <div class="rv-last-game">Last: <span>2025 · W14</span></div>
-      </div>
-      <div class="rv-side rv-side-b side-leads">
-        <div class="rv-wins hot">9</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Devin</div>
-        <div class="rv-ppg">126.6 avg PPG</div>
-        <div class="rv-rec">Reg 8–5 &nbsp;·&nbsp; Playoff 1–0</div>
-        <div class="rv-dots">
-          <span class="rv-dot w" data-tip="2024 W3 · W · +8.7"></span><span class="rv-dot w" data-tip="2024 W14 · W · +63.9"></span><span class="rv-dot w" data-tip="2024 W16 · W · +6.4"></span><span class="rv-dot w" data-tip="2025 W3 · W · +38.2"></span><span class="rv-dot w" data-tip="2025 W14 · W · +9.9"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-    </div>
-    <div class="rv-key">
-      <span class="rv-key-badge">Key Moment</span>
-      <span class="rv-key-text">Devin drops 160.85 on Jordan — a 70.5-point demolition that still gets brought up at the draft.</span>
-      <span class="rv-key-date">2023 · Week 14</span>
-    </div>
-    <div class="rv-tagline">
-      <em>"Tied or trailing — every meeting feels like the tiebreaker."</em>
-    </div>
-  </div>
+<script>
+(function () {
+  const ROMAN = ['', 'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
 
-  <div class="rv-card">
-    <div class="rv-card-head">
-      <span class="rv-card-label">Rivalry III · Ethan vs Brandon · 14 Meetings · Since 2019</span>
-      <span class="rv-badge">Brandon Leads · 9–5</span>
-    </div>
-    <div class="rv-body">
-      <div class="rv-side rv-side-a ">
-        <div class="rv-wins ">5</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Ethan</div>
-        <div class="rv-ppg">116.4 avg PPG</div>
-        <div class="rv-rec">Reg 5–8 &nbsp;·&nbsp; Playoff 0–1</div>
-        <div class="rv-dots">
-          <span class="rv-dot l" data-tip="2023 W14 · L · −22.6"></span><span class="rv-dot l" data-tip="2024 W3 · L · −36.7"></span><span class="rv-dot w" data-tip="2024 W14 · W · +1.1"></span><span class="rv-dot l" data-tip="2025 W3 · L · −6.5"></span><span class="rv-dot l" data-tip="2025 W14 · L · −57.6"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-      <div class="rv-center">
-        <div class="rv-rivalry-name">THE STANDOFF</div>
-        <div class="rv-vs">vs</div>
-        <div class="rv-games">14 Meetings</div>
-        <div class="rv-bar-wrap">
-          <div class="rv-bar" style="background: linear-gradient(to left, #dc2626 0%, #dc2626 64.3%, #1f2937 64.3%, #1f2937 100%)"></div>
-          <div class="rv-bar-nums"><span>5</span><span>9</span></div>
-        </div>
-        <div class="rv-series-lbl">Brandon Leads</div>
-        <div class="rv-last-game">Last: <span>2025 · W14</span></div>
-      </div>
-      <div class="rv-side rv-side-b side-leads">
-        <div class="rv-wins hot">9</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Brandon</div>
-        <div class="rv-ppg">121.4 avg PPG</div>
-        <div class="rv-rec">Reg 8–5 &nbsp;·&nbsp; Playoff 1–0</div>
-        <div class="rv-dots">
-          <span class="rv-dot w" data-tip="2023 W14 · W · +22.6"></span><span class="rv-dot w" data-tip="2024 W3 · W · +36.7"></span><span class="rv-dot l" data-tip="2024 W14 · L · −1.1"></span><span class="rv-dot w" data-tip="2025 W3 · W · +6.5"></span><span class="rv-dot w" data-tip="2025 W14 · W · +57.6"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-    </div>
-    <div class="rv-key">
-      <span class="rv-key-badge">Key Moment</span>
-      <span class="rv-key-text">Ethan drops 167.70 on Brandon — a 75.1-point demolition that still gets brought up at the draft.</span>
-      <span class="rv-key-date">2023 · Week 3</span>
-    </div>
-    <div class="rv-tagline">
-      <em>"Familiarity breeds contempt. So does the schedule."</em>
-    </div>
-  </div>
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
 
-  <div class="rv-card">
-    <div class="rv-card-head">
-      <span class="rv-card-label">Rivalry IV · Brandon vs Trevor · 13 Meetings · Since 2019</span>
-      <span class="rv-badge">Brandon Leads · 7–6</span>
-    </div>
-    <div class="rv-body">
-      <div class="rv-side rv-side-a side-leads">
-        <div class="rv-wins hot">7</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Brandon</div>
-        <div class="rv-ppg">113.7 avg PPG</div>
-        <div class="rv-rec">Reg 7–6 &nbsp;·&nbsp; Playoff 0–0</div>
-        <div class="rv-dots">
-          <span class="rv-dot l" data-tip="2023 W12 · L · −21.8"></span><span class="rv-dot l" data-tip="2024 W1 · L · −33.1"></span><span class="rv-dot l" data-tip="2024 W12 · L · −1.7"></span><span class="rv-dot l" data-tip="2025 W1 · L · −25.7"></span><span class="rv-dot w" data-tip="2025 W12 · W · +27.3"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-      <div class="rv-center">
-        <div class="rv-rivalry-name">THE COLD WAR</div>
-        <div class="rv-vs">vs</div>
-        <div class="rv-games">13 Meetings</div>
-        <div class="rv-bar-wrap">
-          <div class="rv-bar" style="background: linear-gradient(to right, #dc2626 0%, #dc2626 53.8%, #1f2937 53.8%, #1f2937 100%)"></div>
-          <div class="rv-bar-nums"><span>7</span><span>6</span></div>
-        </div>
-        <div class="rv-series-lbl">Brandon Leads</div>
-        <div class="rv-last-game">Last: <span>2025 · W12</span></div>
-      </div>
-      <div class="rv-side rv-side-b ">
-        <div class="rv-wins ">6</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Trevor</div>
-        <div class="rv-ppg">103.6 avg PPG</div>
-        <div class="rv-rec">Reg 6–7 &nbsp;·&nbsp; Playoff 0–0</div>
-        <div class="rv-dots">
-          <span class="rv-dot w" data-tip="2023 W12 · W · +21.8"></span><span class="rv-dot w" data-tip="2024 W1 · W · +33.1"></span><span class="rv-dot w" data-tip="2024 W12 · W · +1.7"></span><span class="rv-dot w" data-tip="2025 W1 · W · +25.7"></span><span class="rv-dot l" data-tip="2025 W12 · L · −27.3"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-    </div>
-    <div class="rv-key">
-      <span class="rv-key-badge">Key Moment</span>
-      <span class="rv-key-text">Brandon drops 188.74 on Trevor — a 87.3-point demolition that still gets brought up at the draft.</span>
-      <span class="rv-key-date">2021 · Week 1</span>
-    </div>
-    <div class="rv-tagline">
-      <em>"First on the schedule, last to be forgiven."</em>
-    </div>
-  </div>
+  function fmtMargin(g) {
+    if (g.result === 'T') return 'T';
+    const sign = g.result === 'W' ? '+' : '−';
+    return `${sign}${g.margin.toFixed(1)}`;
+  }
 
-  <div class="rv-card">
-    <div class="rv-card-head">
-      <span class="rv-card-label">Rivalry V · Ethan vs Cole · 14 Meetings · Since 2020</span>
-      <span class="rv-badge">Cole Leads · 10–4</span>
-    </div>
-    <div class="rv-body">
-      <div class="rv-side rv-side-a ">
-        <div class="rv-wins ">4</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Ethan</div>
-        <div class="rv-ppg">123.7 avg PPG</div>
-        <div class="rv-rec">Reg 3–9 &nbsp;·&nbsp; Playoff 1–1</div>
-        <div class="rv-dots">
-          <span class="rv-dot l" data-tip="2023 W13 · L · −0.2"></span><span class="rv-dot l" data-tip="2024 W2 · L · −79.6"></span><span class="rv-dot l" data-tip="2024 W13 · L · −9.8"></span><span class="rv-dot w" data-tip="2025 W2 · W · +23.3"></span><span class="rv-dot w" data-tip="2025 W13 · W · +24.3"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-      <div class="rv-center">
-        <div class="rv-rivalry-name">THE NEIGHBORS' FEUD</div>
-        <div class="rv-vs">vs</div>
-        <div class="rv-games">14 Meetings</div>
-        <div class="rv-bar-wrap">
-          <div class="rv-bar" style="background: linear-gradient(to left, #dc2626 0%, #dc2626 71.4%, #1f2937 71.4%, #1f2937 100%)"></div>
-          <div class="rv-bar-nums"><span>4</span><span>10</span></div>
-        </div>
-        <div class="rv-series-lbl">Cole Leads</div>
-        <div class="rv-last-game">Last: <span>2025 · W13</span></div>
-      </div>
-      <div class="rv-side rv-side-b side-leads">
-        <div class="rv-wins hot">10</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Cole</div>
-        <div class="rv-ppg">137.9 avg PPG</div>
-        <div class="rv-rec">Reg 9–3 &nbsp;·&nbsp; Playoff 1–1</div>
-        <div class="rv-dots">
-          <span class="rv-dot w" data-tip="2023 W13 · W · +0.2"></span><span class="rv-dot w" data-tip="2024 W2 · W · +79.6"></span><span class="rv-dot w" data-tip="2024 W13 · W · +9.8"></span><span class="rv-dot l" data-tip="2025 W2 · L · −23.3"></span><span class="rv-dot l" data-tip="2025 W13 · L · −24.3"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-    </div>
-    <div class="rv-key">
-      <span class="rv-key-badge">Key Moment</span>
-      <span class="rv-key-text">Cole drops 161.94 on Ethan — a 79.6-point demolition that still gets brought up at the draft.</span>
-      <span class="rv-key-date">2024 · Week 2</span>
-    </div>
-    <div class="rv-tagline">
-      <em>"Nothing personal. Except all of it."</em>
-    </div>
-  </div>
+  function dot(g) {
+    const cls = g.result === 'W' ? 'w' : g.result === 'L' ? 'l' : 't';
+    const tip = `${g.year} W${g.week} · ${g.result} · ${fmtMargin(g)}${g.is_playoff ? ' · PO' : ''}`;
+    return `<span class="rv-dot ${cls}" data-tip="${escapeHtml(tip)}"></span>`;
+  }
 
-  <div class="rv-card">
-    <div class="rv-card-head">
-      <span class="rv-card-label">Rivalry VI · Devin vs Cole · 14 Meetings · Since 2020</span>
-      <span class="rv-badge">Cole Leads · 10–4</span>
-    </div>
-    <div class="rv-body">
-      <div class="rv-side rv-side-a ">
-        <div class="rv-wins ">4</div>
+  function buildSide(side, sideLetter, isLeading) {
+    const dots = side.last5.map(dot).join('') || '<span class="rv-dot t" style="opacity:.3" data-tip="No meetings yet"></span>';
+    return `
+      <div class="rv-side rv-side-${sideLetter}${isLeading ? ' side-leads' : ''}">
+        <div class="rv-wins${isLeading ? ' hot' : ''}">${side.wins}</div>
         <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Devin</div>
-        <div class="rv-ppg">121.8 avg PPG</div>
-        <div class="rv-rec">Reg 3–9 &nbsp;·&nbsp; Playoff 1–1</div>
-        <div class="rv-dots">
-          <span class="rv-dot l" data-tip="2023 W12 · L · −19.3"></span><span class="rv-dot w" data-tip="2024 W1 · W · +39.5"></span><span class="rv-dot l" data-tip="2024 W12 · L · −52.2"></span><span class="rv-dot w" data-tip="2025 W1 · W · +15.8"></span><span class="rv-dot l" data-tip="2025 W12 · L · −17.5"></span>
-        </div>
+        <div class="rv-name">${side.user_id ? `<a href="managers/manager.html?id=${escapeHtml(side.user_id)}" style="color:inherit;text-decoration:none;">${escapeHtml(side.name)}</a>` : escapeHtml(side.name)}</div>
+        <div class="rv-ppg">${side.avg_ppg ? side.avg_ppg.toFixed(1) + ' avg PPG' : '—'}</div>
+        <div class="rv-rec">Reg ${escapeHtml(side.reg_record)} &nbsp;·&nbsp; Playoff ${escapeHtml(side.playoff_record)}</div>
+        <div class="rv-dots">${dots}</div>
         <div class="rv-dots-label">Last 5</div>
       </div>
-      <div class="rv-center">
-        <div class="rv-rivalry-name">THE GROUDGE MATCH</div>
-        <div class="rv-vs">vs</div>
-        <div class="rv-games">14 Meetings</div>
-        <div class="rv-bar-wrap">
-          <div class="rv-bar" style="background: linear-gradient(to left, #dc2626 0%, #dc2626 71.4%, #1f2937 71.4%, #1f2937 100%)"></div>
-          <div class="rv-bar-nums"><span>4</span><span>10</span></div>
-        </div>
-        <div class="rv-series-lbl">Cole Leads</div>
-        <div class="rv-last-game">Last: <span>2025 · W12</span></div>
-      </div>
-      <div class="rv-side rv-side-b side-leads">
-        <div class="rv-wins hot">10</div>
-        <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">Cole</div>
-        <div class="rv-ppg">133.4 avg PPG</div>
-        <div class="rv-rec">Reg 9–3 &nbsp;·&nbsp; Playoff 1–1</div>
-        <div class="rv-dots">
-          <span class="rv-dot w" data-tip="2023 W12 · W · +19.3"></span><span class="rv-dot l" data-tip="2024 W1 · L · −39.5"></span><span class="rv-dot w" data-tip="2024 W12 · W · +52.2"></span><span class="rv-dot l" data-tip="2025 W1 · L · −15.8"></span><span class="rv-dot w" data-tip="2025 W12 · W · +17.5"></span>
-        </div>
-        <div class="rv-dots-label">Last 5</div>
-      </div>
-    </div>
-    <div class="rv-key">
-      <span class="rv-key-badge">Key Moment</span>
-      <span class="rv-key-text">Cole drops 150.18 on Devin — a 52.2-point demolition that still gets brought up at the draft.</span>
-      <span class="rv-key-date">2024 · Week 12</span>
-    </div>
-    <div class="rv-tagline">
-      <em>"Decided in the regular season. Decided again in the playoffs."</em>
-    </div>
-  </div>
+    `;
+  }
 
-</main>
+  function buildCard(rv, idx) {
+    const totalDecided = rv.manager_a.wins + rv.manager_b.wins;
+    let aPct = 50, bPct = 50;
+    if (totalDecided > 0) {
+      aPct = (rv.manager_a.wins / totalDecided) * 100;
+      bPct = 100 - aPct;
+    }
+    const leaderClass = rv.is_deadlocked || !rv.leader_name ? 'rv-deadlocked' : '';
+    const headBadge = rv.is_deadlocked
+      ? `Deadlocked · ${rv.manager_a.wins}–${rv.manager_b.wins}`
+      : rv.leader_name
+        ? `${escapeHtml(rv.leader_name)} Leads · ${escapeHtml(rv.leader_record)}`
+        : 'No games yet';
+    const sinceLabel = rv.first_meeting_year ? ` · Since ${rv.first_meeting_year}` : '';
+    const aLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_a.name;
+    const bLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_b.name;
+    const lastGameStr = rv.last_meeting
+      ? `${rv.last_meeting.year} · W${rv.last_meeting.week}`
+      : '—';
+
+    // Bar segments: A from left (in red if A leads, charcoal otherwise), B from right.
+    const aColor = aLeading ? '#dc2626' : '#1f2937';
+    const bColor = bLeading ? '#dc2626' : '#1f2937';
+    const barStyle = `background: linear-gradient(to right, ${aColor} 0%, ${aColor} ${aPct}%, ${bColor} ${aPct}%, ${bColor} 100%)`;
+
+    return `
+      <div class="rv-card ${leaderClass}" id="rivalry-${escapeHtml(rv.id)}">
+        <div class="rv-card-head">
+          <span class="rv-card-label">Rivalry ${ROMAN[idx + 1] || idx + 1} · ${escapeHtml(rv.manager_a.name)} vs ${escapeHtml(rv.manager_b.name)} · ${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}${sinceLabel}</span>
+          <span class="rv-badge">${headBadge}</span>
+        </div>
+        <div class="rv-body">
+          ${buildSide(rv.manager_a, 'a', aLeading)}
+          <div class="rv-center">
+            <div class="rv-rivalry-name">${escapeHtml(rv.name).toUpperCase()}</div>
+            <div class="rv-vs">vs</div>
+            <div class="rv-games">${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}</div>
+            <div class="rv-bar-wrap">
+              <div class="rv-bar" style="${barStyle}"></div>
+              <div class="rv-bar-nums"><span>${rv.manager_a.wins}</span><span>${rv.manager_b.wins}</span></div>
+            </div>
+            <div class="rv-series-lbl">${rv.is_deadlocked ? 'Deadlocked' : rv.leader_name ? `${escapeHtml(rv.leader_name)} Leads` : '—'}</div>
+            <div class="rv-last-game">Last: <span>${lastGameStr}</span></div>
+          </div>
+          ${buildSide(rv.manager_b, 'b', bLeading)}
+        </div>
+      </div>
+    `;
+  }
+
+  async function load() {
+    try {
+      const res = await fetch('data/rivalries.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const rivalries = data.rivalries || [];
+      const summary = data.summary || { active_feuds: 0, total_meetings: 0, leaders: 0, deadlocked: 0 };
+
+      // Header
+      const sub = document.getElementById('rv-header-sub');
+      if (rivalries.length === 0) {
+        sub.textContent = 'No rivalries on file yet.';
+      } else {
+        sub.textContent = `${rivalries.length} feud${rivalries.length === 1 ? '' : 's'}. ${summary.total_meetings} meeting${summary.total_meetings === 1 ? '' : 's'}. No mercy.`;
+      }
+
+      // Header stat cells
+      const stats = [
+        { val: summary.active_feuds, label: 'Active Feuds' },
+        { val: summary.total_meetings, label: 'Total Meetings' },
+        { val: summary.leaders, label: 'Leaders' },
+        { val: summary.deadlocked, label: 'Deadlocked' },
+      ];
+      document.getElementById('rv-header-stats').innerHTML = stats.map((s) => `
+        <div class="rv-stat-cell">
+          <span class="rv-stat-val">${s.val}</span>
+          <span class="rv-stat-label">${s.label}</span>
+        </div>
+      `).join('');
+
+      // Cards
+      const grid = document.getElementById('rv-grid');
+      if (rivalries.length === 0) {
+        const tpl = document.getElementById('rv-empty-template');
+        grid.appendChild(tpl.content.cloneNode(true));
+      } else {
+        grid.innerHTML = rivalries.map(buildCard).join('');
+      }
+    } catch (err) {
+      document.getElementById('rv-grid').innerHTML = `
+        <section style="text-align:center;max-width:48ch;margin:4rem auto;padding:0 1.5rem;color:var(--rv-cream);">
+          <div style="font-family:var(--mono);font-size:.75rem;letter-spacing:.25em;color:var(--rv-red);text-transform:uppercase;margin-bottom:1rem;">Couldn't load rivalries</div>
+          <p style="font-family:var(--serif);">${escapeHtml(err.message || 'unknown error')}</p>
+        </section>
+      `;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', load);
+  } else {
+    load();
+  }
+})();
+</script>
 
 </body>
 </html>

@@ -107,6 +107,20 @@ type RivalryRow = {
   created_at: string
 }
 
+type WeeklyLineupRow = {
+  season_id: string
+  week: number
+  manager_id: string
+  player_external_id: string
+  player_name: string | null
+  position: string | null
+  nfl_team: string | null
+  slot: string
+  is_starter: boolean
+  points: number | null
+  proj_points: number | null
+}
+
 type Snapshot = {
   league: LeagueRow
   seasons: SeasonRow[]                          // sorted by year asc
@@ -121,6 +135,10 @@ type Snapshot = {
   draftsBySeason: Map<string, DraftRow>
   picksByDraft: Map<string, DraftPickRow[]>
   rivalries: RivalryRow[]
+  // Weekly per-player roster snapshot. Empty for seasons that pre-date the
+  // 0029 migration or for platforms whose ingest didn't capture lineup data
+  // for that week. Keyed by season_id; each manager-week's rows live together.
+  weeklyLineupsBySeason: Map<string, WeeklyLineupRow[]>
 }
 
 async function loadSnapshot(leagueId: string): Promise<Snapshot> {
@@ -221,7 +239,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
   // tail of matchups (typically the most-recently-synced league) would
   // disappear entirely from exports. Filter at query time + paginate so we
   // never lose any.
-  const [matchupsAll, managerSeasonsAll, draftsAll] = await Promise.all([
+  const [matchupsAll, managerSeasonsAll, draftsAll, weeklyLineupsAll] = await Promise.all([
     seasonIdList.length === 0 ? Promise.resolve([] as MatchupRow[]) : selectAllPaged<MatchupRow>(db, 'matchups',
       'id, season_id, week, manager_a_id, manager_b_id, score_a, score_b, is_playoff, is_championship',
       seasonIdList),
@@ -229,6 +247,9 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     seasonIdList.length === 0 ? Promise.resolve([] as DraftRow[]) : selectAllPaged<DraftRow>(db, 'drafts',
       'id, season_id, draft_type, rounds',
       seasonIdList),
+    seasonIdList.length === 0 ? Promise.resolve([] as WeeklyLineupRow[]) : selectAllPaged<WeeklyLineupRow>(db, 'weekly_lineups',
+      'season_id, week, manager_id, player_external_id, player_name, position, nfl_team, slot, is_starter, points, proj_points',
+      seasonIdList).catch(() => [] as WeeklyLineupRow[]),
   ])
 
   // Both queries are already filtered by season_id, but keep the manager
@@ -321,6 +342,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     draftsBySeason,
     picksByDraft,
     rivalries,
+    weeklyLineupsBySeason: groupBy(weeklyLineupsAll, (r) => r.season_id),
   }
 }
 
@@ -340,7 +362,7 @@ function groupBy<T, K>(rows: T[], key: (r: T) => K): Map<K, T[]> {
 // season_id IN (...) so we only download rows for the league being exported.
 async function selectAllPaged<T>(
   db: ReturnType<typeof createAdminClient>,
-  table: 'matchups' | 'drafts',
+  table: 'matchups' | 'drafts' | 'weekly_lineups',
   columns: string,
   seasonIds: string[],
 ): Promise<T[]> {
@@ -2480,6 +2502,7 @@ export async function exportLeague(
   out['h2h_matrix.json'] = buildH2HMatrix(s)
   out['current_form.json'] = buildCurrentForm(s)
   out['matchup_preview.json'] = buildMatchupPreview(s)
+  out['best_coach.json'] = buildBestCoach(s)
 
   for (const season of s.seasons) {
     out[`seasons/${season.year}.json`] = buildSeasonFile(s, season)
@@ -4698,4 +4721,315 @@ function ordinal(n: number): string {
 }
 function escTxt(s: string): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+// ============================================================
+// best_coach.json — Best Coach Tracker (live season only)
+//
+// For each manager × week in the is_live season, compute:
+//   • actual    — sum of every player they started that week
+//   • optimal   — sum of the best-possible legal lineup chosen from
+//                 the same rostered pool, honoring that week's slot
+//                 template (greedy: fill the most-restrictive slots
+//                 first, then flex/superflex).
+//   • left      — optimal − actual ("points left on the bench")
+//
+// Rolls up to season totals + rankings (by efficiency and by total
+// left-on-bench), plus a top-10 "worst single weeks" board for the
+// running-drama angle the tile is built around.
+//
+// Returns null when the league has no live season, or when no
+// season has weekly_lineups data (pre-migration leagues fall here).
+// ============================================================
+type BestCoachWeek = {
+  week: number
+  actual: number | null
+  optimal: number | null
+  left: number | null
+  starters: Array<{ slot: string; name: string | null; pos: string | null; pts: number | null }>
+  optimal_lineup: Array<{ slot: string; name: string | null; pos: string | null; pts: number | null }>
+}
+
+type BestCoachManager = {
+  manager_id: string
+  uid: string | null
+  display_name: string
+  team_name: string | null
+  weeks: BestCoachWeek[]
+  season_actual: number
+  season_optimal: number
+  season_left: number
+  efficiency_pct: number | null
+  worst_week: { week: number; left: number } | null
+}
+
+// Player position → list of slot names that player is eligible to fill.
+// Reverse map keyed by slot is computed inline (small data, clarity > perf).
+function slotsEligibleForPosition(pos: string): Set<string> {
+  const P = pos.toUpperCase()
+  const out = new Set<string>()
+  if (P === 'QB') { out.add('QB'); out.add('OP'); out.add('SUPER_FLEX'); out.add('SUPERFLEX'); out.add('TQB'); out.add('Q/W/R/T') }
+  if (P === 'RB') { out.add('RB'); out.add('FLEX'); out.add('RB/WR'); out.add('OP'); out.add('SUPER_FLEX'); out.add('SUPERFLEX'); out.add('W/R/T'); out.add('Q/W/R/T') }
+  if (P === 'WR') { out.add('WR'); out.add('FLEX'); out.add('RB/WR'); out.add('WR/TE'); out.add('OP'); out.add('SUPER_FLEX'); out.add('SUPERFLEX'); out.add('W/R/T'); out.add('Q/W/R/T') }
+  if (P === 'TE') { out.add('TE'); out.add('FLEX'); out.add('WR/TE'); out.add('OP'); out.add('SUPER_FLEX'); out.add('SUPERFLEX'); out.add('W/R/T'); out.add('Q/W/R/T') }
+  if (P === 'K') out.add('K')
+  if (P === 'DEF' || P === 'DST' || P === 'D/ST') { out.add('DEF'); out.add('D/ST'); out.add('DST') }
+  return out
+}
+
+// Fewer eligible positions = more restrictive = fill first. K and DEF have
+// exactly one eligible position so they win every tiebreak; FLEX-style
+// multi-position slots get filled last from whatever's left.
+function slotRestrictiveness(slot: string): number {
+  const S = slot.toUpperCase()
+  if (S === 'QB' || S === 'K' || S === 'DEF' || S === 'D/ST' || S === 'DST') return 1
+  if (S === 'RB' || S === 'WR' || S === 'TE') return 2
+  if (S === 'RB/WR' || S === 'WR/TE') return 3
+  if (S === 'FLEX' || S === 'W/R/T') return 4
+  if (S === 'OP' || S === 'TQB') return 5
+  if (S === 'SUPER_FLEX' || S === 'SUPERFLEX' || S === 'Q/W/R/T') return 6
+  return 7
+}
+
+function computeOptimalLineup(
+  pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number }>,
+  slotCounts: Map<string, number>,
+): { total: number; lineup: Array<{ slot: string; name: string | null; pos: string; pts: number }> } {
+  // Expand slot counts into a flat list of slot names, ordered most-restrictive
+  // first so QB/K/DEF get their pick before FLEX touches the pool.
+  const slots: string[] = []
+  for (const [slot, count] of slotCounts.entries()) {
+    for (let i = 0; i < count; i++) slots.push(slot)
+  }
+  slots.sort((a, b) => slotRestrictiveness(a) - slotRestrictiveness(b))
+
+  const used = new Set<string>()
+  const lineup: Array<{ slot: string; name: string | null; pos: string; pts: number }> = []
+  let total = 0
+  for (const slot of slots) {
+    // Eligible candidates: not yet used, position is in this slot's eligibility set.
+    let best: typeof pool[number] | null = null
+    for (const p of pool) {
+      if (used.has(p.player_external_id)) continue
+      const eligible = slotsEligibleForPosition(p.pos)
+      if (!eligible.has(slot.toUpperCase())) continue
+      if (best == null || p.pts > best.pts) best = p
+    }
+    if (best) {
+      used.add(best.player_external_id)
+      total += best.pts
+      lineup.push({ slot, name: best.name, pos: best.pos, pts: best.pts })
+    } else {
+      lineup.push({ slot, name: null, pos: '', pts: 0 })
+    }
+  }
+  return { total, lineup }
+}
+
+function buildBestCoach(s: Snapshot): unknown {
+  // Prefer the live season; otherwise fall back to the most recent season
+  // that has lineup data so the page is useful year-round (and so leagues
+  // out of season today can still render their last completed year).
+  let liveSeason = s.seasons.find((sn) => sn.is_live)
+  let rows = liveSeason ? (s.weeklyLineupsBySeason.get(liveSeason.id) ?? []) : []
+  let isLiveMode = !!liveSeason && rows.length > 0
+  if (rows.length === 0) {
+    const seasonsDesc = [...s.seasons].sort((a, b) => b.year - a.year)
+    for (const sn of seasonsDesc) {
+      const r = s.weeklyLineupsBySeason.get(sn.id) ?? []
+      if (r.length > 0) { liveSeason = sn; rows = r; break }
+    }
+  }
+  if (!liveSeason || rows.length === 0) return null
+
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  const managerToGroup = buildManagerToGroup(groups)
+
+  // Bucket rows by manager → week → players.
+  type WeekBucket = { starters: WeeklyLineupRow[]; all: WeeklyLineupRow[] }
+  const byMgr = new Map<string, Map<number, WeekBucket>>()
+  let maxWeek = 0
+  for (const r of rows) {
+    if (!managerToGroup.has(r.manager_id)) continue
+    if (r.week > maxWeek) maxWeek = r.week
+    let weeks = byMgr.get(r.manager_id)
+    if (!weeks) { weeks = new Map(); byMgr.set(r.manager_id, weeks) }
+    let b = weeks.get(r.week)
+    if (!b) { b = { starters: [], all: [] }; weeks.set(r.week, b) }
+    b.all.push(r)
+    if (r.is_starter) b.starters.push(r)
+  }
+
+  const managers: BestCoachManager[] = []
+  for (const [managerId, weeks] of byMgr.entries()) {
+    const group = managerToGroup.get(managerId)
+    if (!group) continue
+    const mgr = s.managers.get(managerId)
+    if (!mgr) continue
+
+    const weekBlocks: BestCoachWeek[] = []
+    let seasonActual = 0
+    let seasonOptimal = 0
+    let worstWeek: { week: number; left: number } | null = null
+
+    const sortedWeeks = [...weeks.entries()].sort(([a], [b]) => a - b)
+    for (const [week, bucket] of sortedWeeks) {
+      // Skip the week entirely if no starter has scored points yet — that's
+      // an unplayed-future or in-progress week and including it would
+      // bias the season totals.
+      const anyStarterScored = bucket.starters.some((r) => r.points != null)
+      if (!anyStarterScored) continue
+
+      const actual = bucket.starters.reduce((sum, r) => sum + (r.points ?? 0), 0)
+
+      // Slot template = exactly what they started. Empty starter rows (slot
+      // present but no player) would be tracked here too, but ingest skips
+      // those — so any zero-player slot the manager left empty just doesn't
+      // exist in our pool and can't be optimally filled either.
+      const slotCounts = new Map<string, number>()
+      for (const r of bucket.starters) {
+        slotCounts.set(r.slot, (slotCounts.get(r.slot) ?? 0) + 1)
+      }
+
+      // Optimal pool: every player on the roster that week with a position
+      // and points. Bench players with null points get treated as 0 — they
+      // had a bye or weren't active. Players with no position string can't
+      // be slotted, so drop them.
+      const pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number }> = []
+      for (const r of bucket.all) {
+        if (!r.position) continue
+        pool.push({
+          player_external_id: r.player_external_id,
+          name: r.player_name,
+          pos: r.position,
+          pts: r.points ?? 0,
+        })
+      }
+
+      const { total: optimal, lineup: optLineup } = computeOptimalLineup(pool, slotCounts)
+      const left = Math.max(0, optimal - actual)
+      seasonActual += actual
+      seasonOptimal += optimal
+      if (worstWeek == null || left > worstWeek.left) worstWeek = { week, left: round2(left) }
+
+      weekBlocks.push({
+        week,
+        actual: round2(actual),
+        optimal: round2(optimal),
+        left: round2(left),
+        starters: bucket.starters.map((r) => ({
+          slot: r.slot,
+          name: r.player_name,
+          pos: r.position,
+          pts: r.points,
+        })),
+        optimal_lineup: optLineup.map((p) => ({
+          slot: p.slot,
+          name: p.name,
+          pos: p.pos || null,
+          pts: round2(p.pts),
+        })),
+      })
+    }
+
+    if (weekBlocks.length === 0) continue
+    const efficiency = seasonOptimal > 0 ? (seasonActual / seasonOptimal) * 100 : null
+    managers.push({
+      manager_id: managerId,
+      uid: userId(mgr),
+      display_name: groupDisplayName(group),
+      team_name: mgr.team_name,
+      weeks: weekBlocks,
+      season_actual: round2(seasonActual),
+      season_optimal: round2(seasonOptimal),
+      season_left: round2(seasonOptimal - seasonActual),
+      efficiency_pct: efficiency != null ? round2(efficiency) : null,
+      worst_week: worstWeek,
+    })
+  }
+
+  if (managers.length === 0) return null
+
+  // Rankings — efficiency desc (best coaches first), left desc (worst).
+  const byEfficiency = [...managers]
+    .filter((m) => m.efficiency_pct != null)
+    .sort((a, b) => (b.efficiency_pct! - a.efficiency_pct!))
+    .map((m, idx) => ({ rank: idx + 1, manager_id: m.manager_id, uid: m.uid, name: m.display_name, efficiency_pct: m.efficiency_pct }))
+  const byLeftOnBench = [...managers]
+    .sort((a, b) => b.season_left - a.season_left)
+    .map((m, idx) => ({ rank: idx + 1, manager_id: m.manager_id, uid: m.uid, name: m.display_name, left: m.season_left }))
+
+  // Worst-single-week board — top 10 most points any manager left on bench in a single week.
+  const allWeekLeft: Array<{ manager_id: string; uid: string | null; name: string; week: number; left: number; actual: number; optimal: number }> = []
+  // Perfect-week board — every week where a manager played the optimal lineup
+  // (zero points left on bench). Sorted by actual points desc so the biggest
+  // perfectly-coached weeks float to the top.
+  const allPerfectWeeks: Array<{ manager_id: string; uid: string | null; name: string; week: number; actual: number }> = []
+  for (const m of managers) {
+    for (const w of m.weeks) {
+      if (w.left == null) continue
+      if (w.left <= 0) {
+        allPerfectWeeks.push({
+          manager_id: m.manager_id,
+          uid: m.uid,
+          name: m.display_name,
+          week: w.week,
+          actual: w.actual ?? 0,
+        })
+      } else {
+        allWeekLeft.push({
+          manager_id: m.manager_id,
+          uid: m.uid,
+          name: m.display_name,
+          week: w.week,
+          left: w.left,
+          actual: w.actual ?? 0,
+          optimal: w.optimal ?? 0,
+        })
+      }
+    }
+  }
+  allWeekLeft.sort((a, b) => b.left - a.left)
+  const worstWeeks = allWeekLeft.slice(0, 10)
+  allPerfectWeeks.sort((a, b) => b.actual - a.actual)
+  const perfectWeeks = allPerfectWeeks.slice(0, 10)
+
+  // Per-manager perfect-lineup tally — the "who's been perfect most often"
+  // sidebar. Includes only managers with at least one perfect week so the
+  // list reads as an accolades column rather than a goose-egg leaderboard.
+  const perfectCountByMgr = new Map<string, { manager_id: string; uid: string | null; name: string; count: number }>()
+  for (const w of allPerfectWeeks) {
+    const cur = perfectCountByMgr.get(w.manager_id)
+    if (cur) cur.count++
+    else perfectCountByMgr.set(w.manager_id, { manager_id: w.manager_id, uid: w.uid, name: w.name, count: 1 })
+  }
+  const perfectCounts = [...perfectCountByMgr.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+
+  // Per-manager "bench bomb" tally — weeks where 30+ pts were stranded on
+  // the bench. Mirror of the perfect-count column for the right rail.
+  const BENCH_BOMB_THRESHOLD = 30
+  const bombCountByMgr = new Map<string, { manager_id: string; uid: string | null; name: string; count: number }>()
+  for (const w of allWeekLeft) {
+    if (w.left < BENCH_BOMB_THRESHOLD) continue
+    const cur = bombCountByMgr.get(w.manager_id)
+    if (cur) cur.count++
+    else bombCountByMgr.set(w.manager_id, { manager_id: w.manager_id, uid: w.uid, name: w.name, count: 1 })
+  }
+  const benchBombCounts = [...bombCountByMgr.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+
+  return {
+    year: liveSeason.year,
+    throughWeek: maxWeek,
+    is_live: isLiveMode,
+    managers,
+    rankings: {
+      by_efficiency_desc: byEfficiency,
+      by_left_desc: byLeftOnBench,
+    },
+    worst_weeks: worstWeeks,
+    perfect_weeks: perfectWeeks,
+    perfect_counts: perfectCounts,
+    bench_bomb_counts: benchBombCounts,
+    bench_bomb_threshold: BENCH_BOMB_THRESHOLD,
+  }
 }

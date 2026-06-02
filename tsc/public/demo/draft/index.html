@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="description" content="Every fantasy football draft in the demo league — round-by-round picks, draft slot history, and the picks that defined each season.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Draft History · The Lakeside League</title>
 <link rel="stylesheet" href="../assets/css/main.css">
@@ -16,8 +15,8 @@
     --dg-soft:        #131313;
     --dg-card:        #1a1a1a;
     --dg-card-hover:  #212121;
-    --dg-line:        #2c2c2c;
-    --dg-line-soft:   #1f1f1f;
+    --dg-line:        #3e3e3e;
+    --dg-line-soft:   #2f2f2f;
     --dg-accent:      #e8c889;
     --dg-bright:      #f4d9a4;
     --dg-mute:        #8a7a60;
@@ -32,6 +31,14 @@ body { background: var(--dg-bg); }
 }
 
 .nav { background: rgba(13, 13, 13, .94); border-bottom-color: var(--dg-line); }
+/* Chapbar theme overrides — nav.js reads these vars. */
+:root {
+    --chapbar-bg:     rgba(13, 13, 13, .92);
+    --chapbar-border: var(--dg-line);
+    --chapbar-text:   var(--cream-soft);
+    --chapbar-active: var(--dg-accent, var(--gold));
+    --chapbar-line:   var(--dg-line);
+}
 
 /* Themed nav dropdown — draft history dark */
 :root {
@@ -228,9 +235,12 @@ body { background: var(--dg-bg); }
     position: sticky; left: 0; z-index: 1;
     padding: .55rem 1rem;
     border-right: 2px solid var(--dg-line);
+    border-bottom: 1px solid var(--dg-line-soft);
     min-width: 120px;
     white-space: nowrap;
 }
+.board-table tbody tr:last-child .board-mgr-td,
+.board-table tbody tr:last-child .board-cell { border-bottom: none; }
 .board-mgr-name {
     display: block;
     font-family: var(--sans); font-weight: 600;
@@ -246,6 +256,7 @@ body { background: var(--dg-bg); }
 .board-cell {
     padding: .45rem .55rem;
     border-right: 1px solid var(--dg-line-soft);
+    border-bottom: 1px solid var(--dg-line-soft);
     vertical-align: top;
     min-width: 90px; max-width: 110px;
     cursor: default;
@@ -264,20 +275,66 @@ body { background: var(--dg-bg); }
     padding: .1rem .3rem; margin-top: .25rem;
     border-radius: 2px;
 }
-.board-empty { color: var(--cream-mute); text-align: center; vertical-align: middle; font-size: .65rem; }
+.board-empty {
+    color: var(--cream-mute);
+    text-align: center; vertical-align: middle;
+    font-family: var(--serif); font-style: italic;
+    font-size: .78rem; letter-spacing: .04em;
+    opacity: .55;
+}
 
-.board-cell.p-rb .board-player { color: #6dc28c; }
-.board-cell.p-rb .board-pos  { background: rgba(74,154,106,.2); color: #6dc28c; }
-.board-cell.p-wr .board-player { color: var(--gold-bright); }
-.board-cell.p-wr .board-pos  { background: rgba(232,200,137,.15); color: var(--gold); }
-.board-cell.p-qb .board-player { color: #8aaccc; }
-.board-cell.p-qb .board-pos  { background: rgba(107,138,168,.2); color: #8aaccc; }
-.board-cell.p-te .board-player { color: #c4a3e8; }
-.board-cell.p-te .board-pos  { background: rgba(155,123,184,.2); color: #b89fd8; }
-.board-cell.p-k  .board-player,
-.board-cell.p-def .board-player { color: var(--cream-soft); }
-.board-cell.p-k  .board-pos,
-.board-cell.p-def .board-pos  { background: rgba(100,100,100,.2); color: var(--cream-mute); }
+/* Cells holding 2+ picks (traded picks) stack vertically with a thin divider. */
+.board-cell-multi { padding: 0; }
+.board-cell-multi .board-cell-pick {
+    padding: .4rem .55rem;
+    border-bottom: 1px dashed var(--dg-line-soft);
+}
+.board-cell-multi .board-cell-pick:last-child { border-bottom: none; }
+
+/* Mobile: shrink the board table aggressively so users can see more
+   of the draft at once. Padding, fonts, and column widths all dial
+   down. Single-pick cells get vertical-align: middle so they don't
+   show dead space below their content when a row gets stretched by
+   a multi-pick cell elsewhere in the same row. */
+@media (max-width: 640px) {
+    .board-table { font-size: .62rem; }
+    .board-table thead th { font-size: .5rem; letter-spacing: .12em; padding: .35rem .25rem; }
+    .board-table thead th:first-child { padding-left: .4rem; }
+    .board-mgr-td { padding: .45rem .35rem; min-width: 70px; max-width: 90px; }
+    .board-mgr-name { font-size: .62rem; }
+    .board-team-name { font-size: .46rem; max-width: 80px; }
+    .board-cell {
+        padding: .3rem .35rem;
+        min-width: 56px; max-width: 76px;
+        vertical-align: middle;
+    }
+    .board-player { font-size: .58rem; max-width: 70px; }
+    .board-pos { font-size: .42rem; padding: 0 .2rem; margin-top: .15rem; letter-spacing: .04em; }
+    .board-empty { font-size: .58rem; }
+    .board-cell-multi .board-cell-pick { padding: .25rem .35rem; }
+}
+@media (max-width: 380px) {
+    .board-table thead th { font-size: .44rem; padding: .25rem .15rem; }
+    .board-mgr-td { padding: .35rem .25rem; min-width: 58px; max-width: 76px; }
+    .board-mgr-name { font-size: .54rem; }
+    .board-team-name { font-size: .4rem; max-width: 68px; }
+    .board-cell { padding: .25rem .25rem; min-width: 46px; max-width: 64px; }
+    .board-player { font-size: .52rem; max-width: 58px; }
+    .board-pos { font-size: .38rem; }
+}
+
+.p-rb .board-player { color: #6dc28c; }
+.p-rb .board-pos  { background: rgba(74,154,106,.2); color: #6dc28c; }
+.p-wr .board-player { color: var(--gold-bright); }
+.p-wr .board-pos  { background: rgba(232,200,137,.15); color: var(--gold); }
+.p-qb .board-player { color: #8aaccc; }
+.p-qb .board-pos  { background: rgba(107,138,168,.2); color: #8aaccc; }
+.p-te .board-player { color: #c4a3e8; }
+.p-te .board-pos  { background: rgba(155,123,184,.2); color: #b89fd8; }
+.p-k   .board-player { color: #d4a574; }
+.p-k   .board-pos    { background: rgba(212,165,116,.18); color: #d4a574; }
+.p-def .board-player { color: #8a9a8e; }
+.p-def .board-pos    { background: rgba(138,154,142,.18); color: #8a9a8e; }
 
 /* ── Position legend ── */
 .pos-legend {
@@ -294,7 +351,8 @@ body { background: var(--dg-bg); }
 .dot-wr  { background: var(--gold); }
 .dot-qb  { background: #8aaccc; }
 .dot-te  { background: #c4a3e8; }
-.dot-def { background: var(--cream-mute); }
+.dot-def { background: #8a9a8e; }
+.dot-k   { background: #d4a574; }
 
 /* ── Loading state ── */
 .board-loading {
@@ -306,8 +364,12 @@ body { background: var(--dg-bg); }
 
 /* ── First round pivot table ── */
 .r1-pivot-wrap { overflow-x: auto; border: 1px solid var(--dg-line); }
+/* Natural width — every year column is a fixed pixel width regardless of how
+   many seasons the league has. Short leagues get blank placeholder columns
+   appended in JS so the layout doesn't collapse the manager column inwards;
+   long leagues just scroll horizontally inside `.r1-pivot-wrap`. */
 .r1-pivot {
-    border-collapse: collapse; min-width: 100%; width: max-content;
+    border-collapse: collapse; width: max-content; min-width: 100%;
 }
 .r1-pivot th {
     font-family: var(--mono); font-weight: 700;
@@ -319,12 +381,36 @@ body { background: var(--dg-bg); }
     color: var(--dg-accent); text-align: center;
     white-space: nowrap;
 }
-.r1-pivot th:first-child { text-align: left; min-width: 90px; }
+.r1-pivot th:first-child {
+    text-align: left;
+    width: 11rem; min-width: 11rem; max-width: 11rem;
+}
+.r1-pivot th:not(:first-child) { width: 130px; min-width: 130px; }
 .r1-pivot td {
     padding: .6rem .75rem;
     border-right: 1px solid var(--dg-line-soft);
     border-bottom: 1px solid var(--dg-line-soft);
-    vertical-align: top; min-width: 110px;
+    vertical-align: top;
+    width: 130px; min-width: 130px;
+    overflow: hidden;
+}
+.r1-pivot td.r1-mgr-cell { width: 11rem; min-width: 11rem; max-width: 11rem; }
+/* Greyed-out future-season placeholder columns. Borders here use the dimmer
+   pre-brighten color so the placeholders recede instead of looking like real
+   data columns. */
+.r1-pivot th.r1-placeholder,
+.r1-pivot td.r1-placeholder {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent 0 6px,
+        rgba(232,200,137,0.025) 6px 12px
+    ) !important;
+    color: var(--dg-line);
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .15em; text-transform: uppercase;
+    text-align: center;
+    border-right-color: #1f1f1f !important;
+    border-bottom-color: #1f1f1f !important;
 }
 .r1-pivot tbody tr:last-child td { border-bottom: none; }
 .r1-pivot tbody tr:nth-child(odd) td  { background: var(--dg-card); }
@@ -335,6 +421,7 @@ body { background: var(--dg-bg); }
     font-size: .82rem; color: var(--cream);
     border-right: 2px solid var(--dg-line) !important;
     white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
     position: sticky; left: 0; z-index: 1;
 }
 .r1-year-cell { text-align: center; }
@@ -362,7 +449,12 @@ body { background: var(--dg-bg); }
 .r1-year-cell.p-te .r1-pick-name { color: #c4a3e8; }
 
 /* ── Draft order history ── */
-.do-table { border-collapse: collapse; min-width: 100%; }
+/* Same fixed-column treatment as the R1 pivot: name column pinned, year
+   columns each a consistent pixel width regardless of season count. Avg
+   sits at the end with two new sibling summary cells (Best / Worst) to
+   fill the right side without inventing fake placeholder years (which
+   would mess with the Avg calculation if not filtered out). */
+.do-table { border-collapse: collapse; width: max-content; }
 .do-table th {
     font-family: var(--mono); font-weight: 700;
     font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
@@ -373,7 +465,34 @@ body { background: var(--dg-bg); }
     color: var(--dg-accent); text-align: center;
     white-space: nowrap;
 }
-.do-table th:first-child { text-align: left; padding-left: 1rem; min-width: 90px; }
+.do-table th:first-child,
+.do-table td:first-child {
+    text-align: left; padding-left: 1rem;
+    width: 11rem; min-width: 11rem; max-width: 11rem;
+}
+.do-table th:not(:first-child),
+.do-table td:not(:first-child) {
+    width: 160px; min-width: 160px;
+}
+.do-table th.do-summary,
+.do-table td.do-summary {
+    width: 108px; min-width: 108px;
+}
+/* Each year cell stacks pick slot on top, finish position underneath. */
+.do-table td .do-slot {
+    display: block; font-family: var(--mono); font-weight: 700;
+    font-size: .9rem; line-height: 1.05;
+}
+.do-finish {
+    display: block; margin-top: .2rem;
+    font-family: var(--mono); font-size: .5rem;
+    letter-spacing: .1em; color: var(--cream-mute);
+}
+.do-finish .do-finish-arrow { opacity: .55; margin: 0 .15em; }
+.do-finish .do-finish-rank { color: var(--cream-soft); font-weight: 700; }
+.do-finish.do-finish-champ .do-finish-rank { color: var(--gold); }
+.do-finish.do-finish-podium .do-finish-rank { color: var(--gold-bright, var(--gold)); }
+.do-finish.do-finish-pending .do-finish-rank { color: var(--dg-line); }
 .do-table td {
     padding: .55rem .6rem;
     border-right: 1px solid var(--dg-line-soft);
@@ -384,9 +503,11 @@ body { background: var(--dg-bg); }
 .do-table tbody tr:nth-child(odd) td  { background: var(--dg-card); }
 .do-table tbody tr:nth-child(even) td { background: var(--dg-soft); }
 .do-table tbody tr:hover td { background: var(--dg-card-hover) !important; }
-.do-mgr { font-family: var(--sans); font-weight: 700; font-size: .82rem; color: var(--cream); text-align: left !important; padding-left: 1rem !important; border-right: 2px solid var(--dg-line) !important; white-space: nowrap; }
+.do-mgr { font-family: var(--sans); font-weight: 700; font-size: .82rem; color: var(--cream); text-align: left !important; padding-left: 1rem !important; border-right: 2px solid var(--dg-line) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .do-slot { font-family: var(--mono); font-weight: 700; font-size: .82rem; }
-.do-avg  { font-family: var(--mono); font-size: .72rem; color: var(--cream-mute); border-left: 1px solid var(--dg-line) !important; }
+.do-avg  { font-family: var(--mono); font-size: .8rem; color: var(--cream); border-left: 1px solid var(--dg-line) !important; }
+.do-best { font-family: var(--mono); font-size: .8rem; color: var(--gold); border-left: 1px solid var(--dg-line) !important; }
+.do-worst { font-family: var(--mono); font-size: .8rem; color: var(--cream-mute); }
 
 /* ── Manager DNA ── */
 .mgr-dna-grid {
@@ -456,6 +577,136 @@ body { background: var(--dg-bg); }
 .tend-mgr { font-family: var(--sans) !important; font-weight: 700; font-size: .82rem !important; color: var(--cream); text-align: left !important; padding-left: 1rem !important; border-right: 2px solid var(--dg-line) !important; white-space: nowrap; }
 .tend-note { font-family: var(--mono); font-size: .6rem; color: var(--cream-mute); margin-top: 1rem; letter-spacing: .05em; }
 
+/* ── Loyalty: favorite player table ── */
+.loyal-wrap { overflow-x: auto; border: 1px solid #6e6e6e; }
+.loyal-table { border-collapse: collapse; min-width: 100%; }
+.loyal-table th {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .6rem .8rem;
+    background: var(--dg-soft);
+    border-bottom: 2px solid #6e6e6e;
+    border-right: 1px solid #6e6e6e;
+    color: var(--dg-accent); text-align: left;
+    white-space: nowrap;
+}
+.loyal-table td {
+    padding: .6rem .8rem;
+    border-right: 1px solid #6e6e6e;
+    border-bottom: 1px solid var(--dg-line-soft);
+    font-family: var(--mono); font-size: .78rem;
+    vertical-align: top;
+}
+.loyal-table tbody tr:last-child td { border-bottom: none; }
+.loyal-table tbody tr.loyal-group-a td { background: var(--dg-card); }
+.loyal-table tbody tr.loyal-group-b td { background: var(--dg-soft); }
+.loyal-table tbody tr.loyal-row-last td,
+.loyal-table tbody td.loyal-mgr { border-bottom: 2px solid #6e6e6e; }
+.loyal-table tbody tr.loyal-row-last:last-child td,
+.loyal-table tbody td.loyal-mgr.loyal-mgr-end { border-bottom: none; }
+.loyal-table tbody tr:hover td { background: var(--dg-card-hover) !important; }
+.loyal-mgr {
+    font-family: var(--sans) !important; font-weight: 700;
+    font-size: .82rem !important; color: var(--cream);
+    border-right: 2px solid #6e6e6e !important;
+    vertical-align: middle !important;
+    white-space: nowrap;
+}
+.loyal-player-name { font-family: var(--sans); font-weight: 600; font-size: .82rem; color: var(--cream); }
+.loyal-player-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .3rem; }
+.loyal-player-row:last-child { margin-bottom: 0; }
+.loyal-pos {
+    display: inline-block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .1em;
+    padding: .1rem .35rem; border-radius: 2px;
+}
+.loyal-count {
+    font-family: var(--mono); font-size: .62rem;
+    color: var(--cream-mute); letter-spacing: .05em;
+}
+.loyal-times {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .82rem; color: var(--cream); letter-spacing: .04em;
+}
+.loyal-years { font-family: var(--mono); font-size: .58rem; color: var(--cream-mute); letter-spacing: .05em; }
+.loyal-year {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .74rem; color: var(--cream); letter-spacing: .04em;
+}
+.loyal-rp { font-size: .58rem; color: var(--cream-mute); }
+.loyal-sep { color: var(--cream-mute); opacity: .5; }
+
+/* ── Loyalty: NFL team affinity cards ── */
+.affinity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1px;
+    background: var(--dg-line);
+    border: 1px solid var(--dg-line);
+}
+.affinity-card { background: var(--dg-card); padding: 1rem 1.15rem; }
+.affinity-mgr {
+    font-family: var(--sans); font-weight: 700;
+    font-size: 1rem; color: var(--cream);
+    margin-bottom: .15rem;
+}
+.affinity-team-sub {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .1em; color: var(--cream-mute);
+    margin-bottom: .8rem;
+    padding-bottom: .6rem; border-bottom: 1px solid var(--dg-line-soft);
+}
+.affinity-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .85rem;
+}
+.affinity-col-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--dg-accent); margin-bottom: .5rem;
+}
+.affinity-col-label.bot { color: var(--cream-mute); }
+.affinity-list { list-style: none; padding: 0; margin: 0; }
+.affinity-list li {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: .68rem;
+    color: var(--cream-soft);
+    padding: .18rem 0;
+    border-bottom: 1px dotted var(--dg-line-soft);
+}
+.affinity-list li:last-child { border-bottom: none; }
+.affinity-team { letter-spacing: .08em; }
+.affinity-n { color: var(--gold); font-weight: 700; }
+.affinity-list.bot .affinity-n { color: var(--cream-mute); font-weight: 600; }
+.affinity-list .affinity-zero .affinity-team { color: var(--cream-mute); opacity: .65; }
+.affinity-list .affinity-zero .affinity-n { color: var(--cream-mute); opacity: .55; }
+.affinity-list .affinity-multi .affinity-team,
+.affinity-list .affinity-summary .affinity-team {
+    letter-spacing: .04em; line-height: 1.35;
+    word-spacing: .05em;
+}
+.affinity-list .affinity-multi { align-items: flex-start; gap: .5rem; }
+.affinity-list .affinity-summary .affinity-team { font-style: italic; }
+
+@media (max-width: 640px) {
+    .loyal-table th { font-size: .5rem; letter-spacing: .12em; padding: .4rem .5rem; }
+    .loyal-table td { font-size: .62rem; padding: .45rem .5rem; }
+    .loyal-player-name { font-size: .68rem; }
+    .loyal-mgr { font-size: .7rem !important; }
+    .loyal-pos { font-size: .46rem; padding: .08rem .3rem; }
+    .loyal-times { font-size: .7rem; }
+    .loyal-year { font-size: .62rem; }
+    .loyal-rp { font-size: .48rem; }
+
+    .affinity-grid { grid-template-columns: 1fr; }
+    .affinity-card { padding: .75rem .85rem; }
+    .affinity-mgr { font-size: .8rem; }
+    .affinity-list li { font-size: .58rem; padding: .15rem 0; }
+    .affinity-col-label { font-size: .44rem; letter-spacing: .15em; }
+}
+
 /* ── Most coveted ── */
 .coveted-grid {
     display: grid;
@@ -507,7 +758,7 @@ body { background: var(--dg-bg); }
     /* Top-level page tabs — equally spaced to fill full width */
     .draft-tabs {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 0;
         margin-bottom: 2rem;
         overflow-x: visible;
@@ -544,7 +795,11 @@ body { background: var(--dg-bg); }
 
 /* ── Pick slot value ── */
 .slot-wrap { overflow-x: auto; border: 1px solid var(--dg-line); }
-.slot-table { border-collapse: collapse; min-width: 100%; width: max-content; }
+/* Drop `min-width: 100%` on purpose: with explicit `width` on every cell the
+   table should hold its natural width (slot+common+years×108px). Forcing it
+   to fill the container made the Common column balloon to absorb extra space
+   when the league has few seasons. */
+.slot-table { border-collapse: collapse; width: max-content; }
 .slot-table th {
     font-family: var(--mono); font-weight: 700;
     font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
@@ -555,8 +810,12 @@ body { background: var(--dg-bg); }
     color: var(--dg-accent); text-align: center;
     white-space: nowrap;
 }
-.slot-table th:first-child { text-align: center; min-width: 52px; }
-.slot-table th:nth-child(2) { min-width: 52px; }
+/* Slot # column and Common-pos column: pin to a small explicit width so they
+   don't soak up leftover container width when the league has few seasons. */
+.slot-table th:first-child,
+.slot-table td:first-child { text-align: center; width: 76px; min-width: 76px; max-width: 76px; }
+.slot-table th:nth-child(2),
+.slot-table td:nth-child(2) { width: 76px; min-width: 76px; max-width: 76px; text-align: center; }
 .slot-table td {
     padding: .5rem .7rem;
     border-right: 1px solid var(--dg-line-soft);
@@ -569,9 +828,27 @@ body { background: var(--dg-bg); }
 .slot-table tbody tr:hover td { background: var(--dg-card-hover) !important; }
 .slot-num { font-family: var(--mono); font-weight: 700; font-size: .85rem; text-align: center; }
 .slot-pos { font-family: var(--mono); font-weight: 700; font-size: .72rem; text-align: center; }
-.slot-cell { min-width: 108px; }
-.slot-player { font-size: .72rem; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; display: block; }
-.slot-mgr { font-family: var(--mono); font-size: .55rem; color: var(--cream-mute); display: block; margin-top: .15rem; }
+.slot-cell { min-width: 170px; width: 170px; }
+.slot-player { font-size: .85rem; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; display: block; }
+.slot-mgr { font-family: var(--mono); font-size: .62rem; color: var(--cream-mute); display: block; margin-top: .2rem; }
+.slot-table th:not(:first-child):not(:nth-child(2)) { min-width: 170px; width: 170px; font-size: .62rem; }
+/* Greyed-out future-season placeholders for short leagues. Borders use the
+   dimmer pre-brighten color so placeholders recede behind real data cells. */
+.slot-table th.slot-placeholder,
+.slot-table td.slot-placeholder {
+    background: repeating-linear-gradient(
+        45deg,
+        transparent 0 6px,
+        rgba(232,200,137,0.025) 6px 12px
+    ) !important;
+    color: var(--dg-line);
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .15em; text-transform: uppercase;
+    text-align: center;
+    min-width: 170px; width: 170px;
+    border-right-color: #1f1f1f !important;
+    border-bottom-color: #1f1f1f !important;
+}
 
 /* ── Draft value analysis ── */
 .value-unavail {
@@ -655,10 +932,20 @@ body { background: var(--dg-bg); }
 .hb-card2-label {
     font-family: var(--mono); font-size: .52rem;
     letter-spacing: .18em; text-transform: uppercase;
-    color: var(--cream-mute); margin-bottom: .2rem;
+    color: var(--cream-mute); margin-bottom: .25rem;
+    display: flex; align-items: center; gap: .35rem; flex-wrap: wrap;
 }
-.hb-card2-player { font-weight: 700; font-size: .9rem; line-height: 1.2; }
-.hb-card2-info { font-family: var(--mono); font-size: .6rem; color: var(--cream-mute); margin-top: .15rem; }
+.hb-card2-label .hb-mgr { color: var(--cream); font-weight: 700; letter-spacing: .12em; }
+.hb-card2-label .hb-verb { color: var(--cream-mute); }
+.hb-card2-player { font-weight: 700; font-size: .78rem; line-height: 1.2; display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.hb-card2-player .hb-pos-pill {
+    display: inline-block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .1em;
+    padding: .1rem .3rem; border-radius: 2px;
+    vertical-align: middle;
+}
+.hb-card2-info { font-family: var(--mono); font-size: .6rem; color: var(--cream-mute); margin-top: .2rem; }
 .hb-card2-arrow { color: var(--dg-line); font-size: 1rem; padding: 1.2rem .35rem 0; flex-shrink: 0; }
 
 /* ── Alumni / Retired separator ── */
@@ -717,21 +1004,37 @@ body { background: var(--dg-bg); }
 <div class="site-glow" aria-hidden="true"></div>
 <div class="site-grain" aria-hidden="true"></div>
 
+<!-- TICKER -->
+<div class="ticker">
+    <div class="ticker-track">
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> DRAFT HISTORY · THE LAKESIDE LEAGUE</span>
+            <span class="ticker-item">EVERY PICK · EVERY ROUND · EVERY YEAR</span>
+            <span class="ticker-item">STEALS · BUSTS · HEARTBREAKERS</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> DRAFT HISTORY · THE LAKESIDE LEAGUE</span>
+            <span class="ticker-item">EVERY PICK · EVERY ROUND · EVERY YEAR</span>
+            <span class="ticker-item">STEALS · BUSTS · HEARTBREAKERS</span>
+        </div>
+    </div>
+</div>
+
 <nav id="site-nav"
      data-page="draft"
-     data-chapter="CH. VII · DRAFT HISTORY"
+     data-chapter="CH. IV · DRAFT HISTORY"
      data-back-label="← The Hub"
-     data-back-href="index.html"></nav>
+     data-back-href="./index.html"></nav>
 <script src="../assets/js/nav.js"></script>
 
 <header class="page-header">
-    <div class="page-kicker">The Lakeside League · 2019 – 2025</div>
+    <div class="page-kicker" id="pageKicker">The Lakeside League · —</div>
     <h1 class="page-title">Draft <em>History.</em></h1>
-    <p class="page-sub">Seven years of picks, patterns, and poor decisions.</p>
+    <p class="page-sub">Picks, patterns, and poor decisions.</p>
 
     <div class="hero-stats" id="heroStats">
         <div class="hero-stat">
-            <div class="hero-stat-num">7</div>
+            <div class="hero-stat-num" id="heroSeasons">—</div>
             <div class="hero-stat-label">Seasons</div>
         </div>
         <div class="hero-stat">
@@ -753,6 +1056,7 @@ body { background: var(--dg-bg); }
         <button class="draft-tab" onclick="setTab('history')">History</button>
         <button class="draft-tab" onclick="setTab('tendencies')">Tendencies</button>
         <button class="draft-tab" onclick="setTab('players')">Players</button>
+        <button class="draft-tab" onclick="setTab('loyalty')">Loyalty</button>
         <button class="draft-tab" onclick="setTab('value')">Value</button>
     </nav>
 
@@ -774,7 +1078,8 @@ body { background: var(--dg-bg); }
                 <span class="pos-legend-item"><span class="pos-dot dot-rb"></span>RB</span>
                 <span class="pos-legend-item"><span class="pos-dot dot-wr"></span>WR</span>
                 <span class="pos-legend-item"><span class="pos-dot dot-te"></span>TE</span>
-                <span class="pos-legend-item"><span class="pos-dot dot-def"></span>K / DEF</span>
+                <span class="pos-legend-item"><span class="pos-dot dot-k"></span>K</span>
+                <span class="pos-legend-item"><span class="pos-dot dot-def"></span>DEF</span>
             </div>
 
             <div class="board-scroll" id="boardWrap">
@@ -793,7 +1098,7 @@ body { background: var(--dg-bg); }
             <div class="section-header">
                 <span class="section-num">§ II</span>
                 <h2 class="section-title">First Round History</h2>
-                <span class="section-note">All 7 seasons · R1 picks by manager</span>
+                <span class="section-note" id="r1Note">R1 picks by manager</span>
             </div>
             <div id="r1Container"><div class="board-loading">Loading…</div></div>
         </section>
@@ -867,9 +1172,41 @@ body { background: var(--dg-bg); }
             <div id="bestWorstContainer">
                 <div class="value-unavail">
                     <p>Rankings data not yet available</p>
-                    <p>Run <code>08_scrape_fantasy_ranks.py</code> to unlock steal &amp; bust of the year</p>
+                    <p>Final-season rankings haven&rsquo;t been published yet for these years.</p>
                 </div>
             </div>
+        </section>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         LOYALTY TAB
+    ═══════════════════════════════════════════════════════ -->
+    <div class="draft-panel" id="panel-loyalty">
+
+        <!-- Favorite Player by Manager -->
+        <section class="draft-section" id="sec-favplayer">
+            <div class="section-header">
+                <span class="section-num">§ VIII</span>
+                <h2 class="section-title">Favorite Player</h2>
+                <span class="section-note">Most-drafted · ties broken by avg pick</span>
+            </div>
+            <div class="loyal-wrap" id="favPlayerContainer">
+                <div class="board-loading">Loading…</div>
+            </div>
+        </section>
+
+        <!-- NFL Team Affinity by Manager -->
+        <section class="draft-section" id="sec-teamaffinity">
+            <div class="section-header">
+                <span class="section-num">§ IX</span>
+                <h2 class="section-title">NFL Team Affinity</h2>
+                <span class="section-note">Top 5 most / least drafted from</span>
+            </div>
+            <div class="affinity-grid" id="teamAffinityContainer">
+                <div class="board-loading">Loading…</div>
+            </div>
+            <p class="tend-note">NFL team captured at time of pick — players may have moved since.</p>
         </section>
 
     </div>
@@ -882,7 +1219,7 @@ body { background: var(--dg-bg); }
         <!-- Pick Slot History -->
         <section class="draft-section" id="sec-slots">
             <div class="section-header">
-                <span class="section-num">§ VIII</span>
+                <span class="section-num">§ X</span>
                 <h2 class="section-title">Pick Slot History</h2>
                 <span class="section-note">Round 1 · each slot across all years</span>
             </div>
@@ -894,7 +1231,7 @@ body { background: var(--dg-bg); }
         <!-- Draft Value (steals / busts / heartbreakers) -->
         <section class="draft-section" id="sec-value">
             <div class="section-header">
-                <span class="section-num">§ IX</span>
+                <span class="section-num">§ XI</span>
                 <h2 class="section-title">Draft Value</h2>
                 <span class="section-note" id="valueNote">Loading rankings…</span>
             </div>
@@ -907,7 +1244,7 @@ body { background: var(--dg-bg); }
             <div id="valueContainer">
                 <div class="value-unavail">
                     <p>Rankings data not yet available</p>
-                    <p>Run <code>08_scrape_fantasy_ranks.py</code> to unlock steals, busts &amp; heartbreakers</p>
+                    <p>Final-season rankings haven&rsquo;t been published yet for these years.</p>
                 </div>
             </div>
         </section>
@@ -920,25 +1257,30 @@ body { background: var(--dg-bg); }
 (function () {
 'use strict';
 
-var YEARS = [2019, 2020, 2021, 2022, 2023, 2024, 2025];
+// Populated from drafts_directory.json on boot.
+var YEARS = [];
 var POS_COLORS = {
     QB:  { bg: 'rgba(107,138,168,.2)',  text: '#8aaccc', swatch: '#8aaccc' },
     RB:  { bg: 'rgba(74,154,106,.2)',   text: '#6dc28c', swatch: '#6dc28c' },
     WR:  { bg: 'rgba(232,200,137,.15)', text: '#e8c889', swatch: '#e8c889' },
     TE:  { bg: 'rgba(155,123,184,.2)',  text: '#c4a3e8', swatch: '#c4a3e8' },
-    K:   { bg: 'rgba(100,100,100,.15)', text: '#837b6a', swatch: '#666' },
-    DEF: { bg: 'rgba(100,100,100,.15)', text: '#837b6a', swatch: '#5a6a60' },
+    K:   { bg: 'rgba(212,165,116,.18)', text: '#d4a574', swatch: '#d4a574' },
+    DEF: { bg: 'rgba(138,154,142,.18)', text: '#8a9a8e', swatch: '#8a9a8e' },
 };
 var POS_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
+var SCORING_PROFILE = 'ppr_6pt';
 var yearData      = {};
+var yearFinishes  = {};
+var yearTeamCount = {};
 var rankData      = {};
 var draftPosRanks = {};
 var allPicks      = [];
 var activeYear    = null;
 var activeValuePos = 'QB';
 
-var RETIRED = ['Pete', 'Dave', 'Greg', 'Sam', 'Nathan'];
+// Populated from managers_directory.json on load.
+var RETIRED = [];
 function isRetired(mgr) { return RETIRED.indexOf(mgr) >= 0; }
 
 // ── Tab navigation ────────────────────────────────────────────────────────
@@ -952,8 +1294,53 @@ window.setTab = function setTab(name) {
 };
 
 // ── Boot ──────────────────────────────────────────────────────────────────
-buildYearTabs();
-loadAllYears();
+Promise.all([
+    fetch('data/drafts/drafts_directory.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+    fetch('data/managers_directory.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+    fetch('data/league.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+]).then(function (results) {
+    var dir = results[0];
+    var mgrs = results[1];
+    var league = results[2];
+    YEARS = dir ? (dir.drafts || []).map(function (d) { return d.year; }).sort(function (a, b) { return a - b; }) : [];
+    RETIRED = mgrs ? (mgrs.managers || []).filter(function (m) { return !m.is_current; }).map(function (m) { return m.name; }) : [];
+
+    if (league && league.draft_scoring_profile) {
+        SCORING_PROFILE = league.draft_scoring_profile;
+    }
+
+    // Populate hero — driven by league.json + managers count
+    if (league) {
+        var allYears = league.all_seasons || [];
+        var minY = allYears.length ? Math.min.apply(null, allYears) : null;
+        var maxY = allYears.length ? Math.max.apply(null, allYears) : null;
+        var kicker = document.getElementById('pageKicker');
+        if (kicker) {
+            var name = league.name || '';
+            var yrSpan = minY && maxY ? (minY === maxY ? String(minY) : minY + ' – ' + maxY) : '—';
+            kicker.textContent = name + ' · ' + yrSpan;
+        }
+        var heroSeasons = document.getElementById('heroSeasons');
+        if (heroSeasons) heroSeasons.textContent = (league.total_seasons != null ? league.total_seasons : (allYears.length || '—'));
+    }
+    if (mgrs) {
+        var heroMgrs = document.getElementById('heroManagers');
+        if (heroMgrs) heroMgrs.textContent = (mgrs.managers || []).length;
+    }
+    if (dir) {
+        var totalPicks = (dir.drafts || []).reduce(function (acc, d) { return acc + (d.total_picks || 0); }, 0);
+        var heroTotalPicks = document.getElementById('heroTotalPicks');
+        if (heroTotalPicks) heroTotalPicks.textContent = totalPicks ? totalPicks.toLocaleString() : '—';
+        var r1Note = document.getElementById('r1Note');
+        if (r1Note) {
+            var n = YEARS.length;
+            r1Note.textContent = n + ' season' + (n === 1 ? '' : 's') + ' · R1 picks by manager';
+        }
+    }
+
+    buildYearTabs();
+    loadAllYears();
+});
 
 // ── Year tabs (board) ─────────────────────────────────────────────────────
 function buildYearTabs() {
@@ -982,10 +1369,12 @@ function selectYear(year) {
 
 // ── Data loading ──────────────────────────────────────────────────────────
 function loadYear(year, cb) {
-    fetch('../data/drafts/' + year + '.json')
+    fetch('data/drafts/' + year + '.json')
         .then(function (r) { return r.json(); })
         .then(function (d) {
             yearData[year] = d.picks;
+            yearFinishes[year] = d.finishes || {};
+            yearTeamCount[year] = d.team_count || 0;
             if (cb) cb();
         })
         .catch(function (e) {
@@ -998,10 +1387,12 @@ function loadYear(year, cb) {
 function loadAllYears() {
     var remaining = YEARS.length;
     YEARS.forEach(function (y) {
-        fetch('../data/drafts/' + y + '.json')
+        fetch('data/drafts/' + y + '.json')
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 yearData[y] = d.picks;
+                yearFinishes[y] = d.finishes || {};
+                yearTeamCount[y] = d.team_count || 0;
                 d.picks.forEach(function (p) { allPicks.push(Object.assign({year: y}, p)); });
                 remaining--;
                 if (remaining === 0) onAllLoaded();
@@ -1018,7 +1409,7 @@ function loadAllRankings(cb) {
     var remaining = YEARS.length;
     var anyLoaded = false;
     YEARS.forEach(function (y) {
-        fetch('../data/fantasy_ranks/' + y + '.json')
+        fetch('/data/fantasy_ranks/' + SCORING_PROFILE + '/' + y + '.json')
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 var players = d.players || [];
@@ -1094,6 +1485,7 @@ function onAllLoaded() {
     renderDNA();
     renderMgrTendencies();
     renderCoveted();
+    renderLoyalty();
     renderPickSlotHistory();
     selectYear(YEARS[YEARS.length - 1]);
 
@@ -1125,12 +1517,29 @@ function renderBoard(year) {
     }
     var r1 = picks.filter(function(p){ return p.round === 1; })
                   .sort(function(a,b){ return a.round_pick - b.round_pick; });
-    var managerOrder = r1.map(function(p){ return p.manager_name; });
+    // Dedupe — when a manager traded for a second round-1 pick, their
+    // name would otherwise appear twice in managerOrder and render two
+    // identical board rows. Keep the first round-1 appearance to preserve
+    // draft slot order.
+    var managerOrder = [];
+    var seenManager = {};
+    r1.forEach(function(p) {
+        if (p.manager_name && !seenManager[p.manager_name]) {
+            seenManager[p.manager_name] = true;
+            managerOrder.push(p.manager_name);
+        }
+    });
     var grid = {};
     picks.forEach(function(p) {
         if (!p.manager_name) return;
         if (!grid[p.manager_name]) grid[p.manager_name] = {};
-        grid[p.manager_name][p.round] = p;
+        if (!grid[p.manager_name][p.round]) grid[p.manager_name][p.round] = [];
+        grid[p.manager_name][p.round].push(p);
+    });
+    Object.keys(grid).forEach(function(m) {
+        Object.keys(grid[m]).forEach(function(r) {
+            grid[m][r].sort(function(a, b) { return (a.overall_pick || 0) - (b.overall_pick || 0); });
+        });
     });
     var teamNames = {};
     r1.forEach(function(p) { teamNames[p.manager_name] = p.team_name || ''; });
@@ -1152,8 +1561,11 @@ function renderBoard(year) {
               + '<span class="board-team-name" title="' + esc(team) + '">' + esc(team) + '</span>'
               + '</td>';
         for (var r = 1; r <= maxRound; r++) {
-            var pick = grid[mgr] && grid[mgr][r];
-            if (pick) {
+            var roundPicks = (grid[mgr] && grid[mgr][r]) || [];
+            if (roundPicks.length === 0) {
+                html += '<td class="board-cell board-empty">traded</td>';
+            } else if (roundPicks.length === 1) {
+                var pick = roundPicks[0];
                 var pos = (pick.position || '?').toUpperCase();
                 var cls = 'p-' + pos.toLowerCase();
                 html += '<td class="board-cell ' + cls + '">'
@@ -1162,7 +1574,15 @@ function renderBoard(year) {
                       + '<span class="board-pos">' + esc(pos) + '</span>'
                       + '</td>';
             } else {
-                html += '<td class="board-cell board-empty">—</td>';
+                var inner = roundPicks.map(function(p) {
+                    var pp = (p.position || '?').toUpperCase();
+                    return '<div class="board-cell-pick p-' + pp.toLowerCase() + '">'
+                         + '<span class="board-player" title="' + esc(p.player_name) + '">'
+                         + esc(truncName(p.player_name)) + '</span>'
+                         + '<span class="board-pos">' + esc(pp) + '</span>'
+                         + '</div>';
+                }).join('');
+                html += '<td class="board-cell board-cell-multi">' + inner + '</td>';
             }
         }
         html += '</tr>';
@@ -1196,16 +1616,28 @@ function renderR1Table() {
     var retiredMgrs = allMgrs.filter(function(m){ return  isRetired(m); }).sort(sortFn);
     allMgrs = activeMgrs.concat(retiredMgrs);
 
+    // Pad short leagues out with greyed "future season" placeholder columns so
+    // 3-year leagues don't get a deformed table. Targets MIN_COLS year columns
+    // total (placeholders + real years). Leagues with ≥ MIN_COLS years just
+    // render naturally and overflow into a horizontal scroll.
+    var MIN_COLS = 6;
+    var placeholderCount = Math.max(0, MIN_COLS - YEARS.length);
+    var nextYear = (YEARS.length ? Math.max.apply(null, YEARS) : new Date().getFullYear()) + 1;
+    var totalCols = YEARS.length + placeholderCount + 1;
+
     var html = '<div class="r1-pivot-wrap"><table class="r1-pivot"><thead><tr>'
              + '<th>Manager</th>';
     YEARS.forEach(function(y){ html += '<th>' + y + '</th>'; });
+    for (var ph = 0; ph < placeholderCount; ph++) {
+        html += '<th class="r1-placeholder">' + (nextYear + ph) + '</th>';
+    }
     html += '</tr></thead><tbody>';
 
     var sep = false;
     allMgrs.forEach(function(mgr) {
         if (!sep && isRetired(mgr)) {
             sep = true;
-            html += '<tr class="alumni-divider"><td colspan="' + (YEARS.length + 1) + '">— Alumni —</td></tr>';
+            html += '<tr class="alumni-divider"><td colspan="' + totalCols + '">— Alumni —</td></tr>';
         }
         html += '<tr' + (isRetired(mgr) ? ' class="alumni-row"' : '') + '>';
         html += '<td class="r1-mgr-cell">' + esc(mgr) + '</td>';
@@ -1226,6 +1658,9 @@ function renderR1Table() {
                 html += '<td class="r1-year-cell r1-empty-cell">—</td>';
             }
         });
+        for (var ph2 = 0; ph2 < placeholderCount; ph2++) {
+            html += '<td class="r1-placeholder">·</td>';
+        }
         html += '</tr>';
     });
     html += '</tbody></table></div>';
@@ -1257,34 +1692,70 @@ function renderDraftOrderHistory() {
     var retiredMgrs = allMgrs.filter(function(m){ return  isRetired(m); }).sort(sortFn);
     allMgrs = activeMgrs.concat(retiredMgrs);
 
+    function finishClass(rank, teams) {
+        if (rank == null) return 'do-finish-pending';
+        if (rank === 1) return 'do-finish-champ';
+        if (rank <= 3) return 'do-finish-podium';
+        if (teams && rank >= teams - 1) return 'do-finish-bottom';
+        return '';
+    }
+
     var html = '<table class="do-table"><thead><tr><th>Manager</th>';
     YEARS.forEach(function(y){ html += '<th>' + y + '</th>'; });
-    html += '<th>Avg</th></tr></thead><tbody>';
+    html += '<th class="do-summary">Avg Pick</th>';
+    html += '<th class="do-summary">Avg Finish</th>';
+    html += '</tr></thead><tbody>';
+
+    var totalCols = YEARS.length + 1 + 2;
 
     var sep = false;
     allMgrs.forEach(function(mgr) {
         if (!sep && isRetired(mgr)) {
             sep = true;
-            html += '<tr class="alumni-divider"><td colspan="' + (YEARS.length + 2) + '">— Alumni —</td></tr>';
+            html += '<tr class="alumni-divider"><td colspan="' + totalCols + '">— Alumni —</td></tr>';
         }
         html += '<tr' + (isRetired(mgr) ? ' class="alumni-row"' : '') + '>';
         html += '<td class="do-mgr">' + esc(mgr) + '</td>';
-        var vals = [];
+        var pickVals = [];
+        var finishVals = [];
         YEARS.forEach(function(y) {
             var slot = pivot[mgr] && pivot[mgr][y];
+            var finishes = yearFinishes[y] || {};
+            var finish = finishes[mgr];
+            var teams = yearTeamCount[y] || 0;
             if (slot != null) {
-                vals.push(slot);
+                pickVals.push(slot);
                 var col = slot <= 4  ? 'var(--gold)'
                         : slot <= 8  ? 'var(--dg-accent)'
                         : slot <= 11 ? 'var(--cream-soft)'
                         : 'var(--cream-mute)';
-                html += '<td><span class="do-slot" style="color:' + col + '">' + ordinal(slot) + '</span></td>';
+                var finishHtml;
+                if (finish != null) {
+                    finishVals.push(finish);
+                    finishHtml = '<span class="do-finish ' + finishClass(finish, teams) + '">'
+                               + '<span class="do-finish-arrow">→</span>'
+                               + 'finished <span class="do-finish-rank">' + ordinal(finish) + '</span>'
+                               + '</span>';
+                } else {
+                    finishHtml = '<span class="do-finish do-finish-pending">'
+                               + '<span class="do-finish-arrow">→</span>in progress</span>';
+                }
+                html += '<td>'
+                      + '<span class="do-slot" style="color:' + col + '">' + ordinal(slot) + ' pick</span>'
+                      + finishHtml
+                      + '</td>';
             } else {
                 html += '<td class="r1-empty-cell">—</td>';
             }
         });
-        var avg = vals.length ? (vals.reduce(function(s,v){return s+v;},0)/vals.length).toFixed(1) : '—';
-        html += '<td class="do-avg">' + avg + '</td>';
+        var avgPick = pickVals.length
+            ? (pickVals.reduce(function(s,v){return s+v;},0) / pickVals.length).toFixed(1)
+            : '—';
+        var avgFinish = finishVals.length
+            ? (finishVals.reduce(function(s,v){return s+v;},0) / finishVals.length).toFixed(1)
+            : '—';
+        html += '<td class="do-summary do-avg">' + avgPick + '</td>';
+        html += '<td class="do-summary do-avg">' + avgFinish + '</td>';
         html += '</tr>';
     });
 
@@ -1445,6 +1916,222 @@ function renderCoveted() {
     document.getElementById('covetedGrid').innerHTML = html;
 }
 
+// ── Loyalty: favorite player + NFL team affinity (current managers only) ──
+function renderLoyalty() {
+    // Group picks by current manager
+    var byMgr = {};
+    allPicks.forEach(function(p) {
+        var m = p.manager_name;
+        if (!m || isRetired(m)) return;
+        if (!byMgr[m]) byMgr[m] = [];
+        byMgr[m].push(p);
+    });
+
+    var managers = Object.keys(byMgr).sort();
+
+    // ── Section 1: favorite player table ─────────────────────────────────
+    // Most-drafted player per manager. If 3+ players tie for the top count,
+    // narrow to the 2 with the earliest avg overall pick. 1 or 2 tied → show all.
+    var rows = managers.map(function(m) {
+        var picks = byMgr[m];
+        var byPlayer = {};
+        picks.forEach(function(p) {
+            var n = p.player_name;
+            if (!n || p.overall_pick == null) return;
+            if (!byPlayer[n]) byPlayer[n] = { picks: [], pos: (p.position || '?').toUpperCase() };
+            byPlayer[n].picks.push(p);
+        });
+        var ranked = Object.keys(byPlayer).map(function(n) {
+            var arr = byPlayer[n].picks;
+            var sum = arr.reduce(function(s, p) { return s + p.overall_pick; }, 0);
+            return {
+                name:  n,
+                pos:   byPlayer[n].pos,
+                avg:   sum / arr.length,
+                count: arr.length,
+                picks: arr.slice().sort(function(a, b) { return a.year - b.year; }),
+            };
+        });
+        if (!ranked.length) return { mgr: m, top: [] };
+        var max = ranked.reduce(function(mx, r) { return r.count > mx ? r.count : mx; }, 0);
+        var tied = ranked.filter(function(r) { return r.count === max; });
+        var display;
+        if (tied.length <= 2) {
+            display = tied.slice().sort(function(a, b) { return a.avg - b.avg; });
+        } else {
+            display = tied.slice().sort(function(a, b) {
+                if (a.avg !== b.avg) return a.avg - b.avg;
+                return a.name.localeCompare(b.name);
+            }).slice(0, 2);
+        }
+        return { mgr: m, top: display };
+    });
+
+    var html = '<table class="loyal-table"><thead><tr>'
+             + '<th>Manager</th><th>Player</th><th>×</th><th>Avg Pick</th><th>Drafted</th>'
+             + '</tr></thead><tbody>';
+    rows.forEach(function(r) {
+        if (!r.top.length) return;
+        var rIdx = rows.indexOf(r);
+        var groupCls = ' loyal-group-' + (rIdx % 2 === 0 ? 'a' : 'b');
+        var isLastGroup = rIdx === rows.length - 1;
+        r.top.forEach(function(p, idx) {
+            var pc = POS_COLORS[p.pos] || POS_COLORS['K'];
+            var avgStr = (p.avg % 1 === 0) ? String(p.avg) : p.avg.toFixed(1);
+            var detail = p.picks.map(function(pp) {
+                var rp = pp.round_pick != null ? String(pp.round_pick).padStart(2, '0') : '?';
+                return '<span class="loyal-year">' + pp.year + '</span>'
+                     + '<span class="loyal-rp"> · R' + pp.round + '.' + rp + '</span>';
+            }).join('<span class="loyal-sep"> &nbsp;·&nbsp; </span>');
+            html += '<tr class="loyal-row' + groupCls + (idx === 0 ? ' loyal-row-first' : '') + (idx === r.top.length - 1 ? ' loyal-row-last' : '') + '">'
+                  + (idx === 0 ? '<td class="loyal-mgr' + (isLastGroup ? ' loyal-mgr-end' : '') + '" rowspan="' + r.top.length + '">' + esc(r.mgr) + '</td>' : '')
+                  + '<td>'
+                  +   '<div class="loyal-player-row">'
+                  +     '<span class="loyal-player-name">' + esc(p.name) + '</span>'
+                  +     '<span class="loyal-pos" style="background:' + pc.bg + ';color:' + pc.text + '">' + esc(p.pos) + '</span>'
+                  +   '</div>'
+                  + '</td>'
+                  + '<td><span class="loyal-times">' + p.count + '</span></td>'
+                  + '<td><span class="loyal-count">#' + avgStr + '</span></td>'
+                  + '<td><span class="loyal-years">' + detail + '</span></td>'
+                  + '</tr>';
+        });
+    });
+    html += '</tbody></table>';
+    document.getElementById('favPlayerContainer').innerHTML = html;
+
+    // ── Section 2: NFL team affinity cards ──
+    var cardHtml = '';
+    managers.forEach(function(m) {
+        var picks = byMgr[m];
+        var teamCounts = {};
+        NFL_TEAMS.forEach(function(t) { teamCounts[t] = 0; });
+        var unmatched = 0;
+        picks.forEach(function(p) {
+            var t = normNflTeam(p);
+            if (!t) { unmatched++; return; }
+            teamCounts[t] = (teamCounts[t] || 0) + 1;
+        });
+
+        var drafted = NFL_TEAMS.filter(function(t) { return teamCounts[t] > 0; });
+        var teamsSortedDesc = NFL_TEAMS.slice().sort(function(a, b) {
+            return teamCounts[b] - teamCounts[a] || a.localeCompare(b);
+        });
+        var teamsSortedAsc = NFL_TEAMS.slice().sort(function(a, b) {
+            return teamCounts[a] - teamCounts[b] || a.localeCompare(b);
+        });
+        var top5 = teamsSortedDesc.slice(0, 5);
+
+        // Bottom list — collapse 0-count teams when there are several:
+        //   0 zeros  → 5 lowest non-zero rows
+        //   1 zero   → that team + 4 lowest non-zero
+        //   2–4 zeros→ single combined row listing all + 4 lowest non-zero
+        //   5+ zeros → "N teams never drafted" summary + 4 lowest non-zero
+        var nonZeroAsc = teamsSortedAsc.filter(function(t) { return teamCounts[t] > 0; });
+        var zeroTeams  = teamsSortedAsc.filter(function(t) { return teamCounts[t] === 0; });
+        var botItems = [];
+        if (zeroTeams.length === 0) {
+            botItems = nonZeroAsc.slice(0, 5).map(function(t) {
+                return { kind: 'team', code: t, n: teamCounts[t] };
+            });
+        } else if (zeroTeams.length === 1) {
+            botItems.push({ kind: 'team', code: zeroTeams[0], n: 0 });
+            nonZeroAsc.slice(0, 4).forEach(function(t) {
+                botItems.push({ kind: 'team', code: t, n: teamCounts[t] });
+            });
+        } else if (zeroTeams.length <= 4) {
+            botItems.push({ kind: 'zero-multi', codes: zeroTeams });
+            nonZeroAsc.slice(0, 4).forEach(function(t) {
+                botItems.push({ kind: 'team', code: t, n: teamCounts[t] });
+            });
+        } else {
+            botItems.push({ kind: 'zero-summary', count: zeroTeams.length });
+            nonZeroAsc.slice(0, 4).forEach(function(t) {
+                botItems.push({ kind: 'team', code: t, n: teamCounts[t] });
+            });
+        }
+
+        var totalPicks = picks.length - unmatched;
+
+        var topList = top5.map(function(t) {
+            return '<li><span class="affinity-team">' + esc(t) + '</span>'
+                 + '<span class="affinity-n">' + teamCounts[t] + '</span></li>';
+        }).join('');
+        var botList = botItems.map(function(it) {
+            if (it.kind === 'team') {
+                var cls = it.n === 0 ? ' affinity-zero' : '';
+                return '<li class="' + cls + '"><span class="affinity-team">' + esc(it.code) + '</span>'
+                     + '<span class="affinity-n">' + it.n + '</span></li>';
+            }
+            if (it.kind === 'zero-multi') {
+                return '<li class="affinity-zero affinity-multi"><span class="affinity-team">'
+                     + it.codes.map(esc).join(' · ') + '</span>'
+                     + '<span class="affinity-n">0</span></li>';
+            }
+            // zero-summary
+            return '<li class="affinity-zero affinity-summary"><span class="affinity-team">'
+                 + it.count + ' teams</span>'
+                 + '<span class="affinity-n">0</span></li>';
+        }).join('');
+
+        cardHtml += '<div class="affinity-card">'
+                  + '<div class="affinity-mgr">' + esc(m) + '</div>'
+                  + '<div class="affinity-team-sub">' + totalPicks + ' picks · ' + drafted.length + ' of 32 NFL teams</div>'
+                  + '<div class="affinity-cols">'
+                  +   '<div>'
+                  +     '<div class="affinity-col-label">Most Drafted</div>'
+                  +     '<ul class="affinity-list">' + topList + '</ul>'
+                  +   '</div>'
+                  +   '<div>'
+                  +     '<div class="affinity-col-label bot">Least Drafted</div>'
+                  +     '<ul class="affinity-list bot">' + botList + '</ul>'
+                  +   '</div>'
+                  + '</div>'
+                  + '</div>';
+    });
+    document.getElementById('teamAffinityContainer').innerHTML = cardHtml;
+}
+
+// Canonical NFL team codes used for affinity counting.
+var NFL_TEAMS = [
+    'ARI','ATL','BAL','BUF','CAR','CHI','CIN','CLE','DAL','DEN',
+    'DET','GB','HOU','IND','JAX','KC','LAC','LAR','LV','MIA',
+    'MIN','NE','NO','NYG','NYJ','PHI','PIT','SEA','SF','TB',
+    'TEN','WAS',
+];
+// Normalize legacy codes (e.g. Rams switched LA→LAR mid-history).
+var NFL_TEAM_ALIAS = { LA: 'LAR', OAK: 'LV', SD: 'LAC', STL: 'LAR', WSH: 'WAS', JAC: 'JAX' };
+// Map DEF player_name → team code (DEF picks often have empty nfl_team).
+var DEF_NAME_TO_TEAM = {
+    'arizona cardinals': 'ARI', 'atlanta falcons': 'ATL', 'baltimore ravens': 'BAL',
+    'buffalo bills': 'BUF', 'carolina panthers': 'CAR', 'chicago bears': 'CHI',
+    'cincinnati bengals': 'CIN', 'cleveland browns': 'CLE', 'dallas cowboys': 'DAL',
+    'denver broncos': 'DEN', 'detroit lions': 'DET', 'green bay packers': 'GB',
+    'houston texans': 'HOU', 'indianapolis colts': 'IND', 'jacksonville jaguars': 'JAX',
+    'kansas city chiefs': 'KC', 'las vegas raiders': 'LV', 'oakland raiders': 'LV',
+    'los angeles chargers': 'LAC', 'san diego chargers': 'LAC',
+    'los angeles rams': 'LAR', 'st. louis rams': 'LAR',
+    'miami dolphins': 'MIA', 'minnesota vikings': 'MIN', 'new england patriots': 'NE',
+    'new orleans saints': 'NO', 'new york giants': 'NYG', 'new york jets': 'NYJ',
+    'philadelphia eagles': 'PHI', 'pittsburgh steelers': 'PIT',
+    'san francisco 49ers': 'SF', 'seattle seahawks': 'SEA',
+    'tampa bay buccaneers': 'TB', 'tennessee titans': 'TEN',
+    'washington commanders': 'WAS', 'washington football team': 'WAS', 'washington redskins': 'WAS',
+};
+function normNflTeam(p) {
+    var raw = (p.nfl_team || '').trim().toUpperCase();
+    if (raw) {
+        if (NFL_TEAM_ALIAS[raw]) return NFL_TEAM_ALIAS[raw];
+        return NFL_TEAMS.indexOf(raw) >= 0 ? raw : null;
+    }
+    // Fallback for DEF picks where nfl_team is blank but the team name is the player.
+    if ((p.position || '').toUpperCase() === 'DEF') {
+        var key = (p.player_name || '').trim().toLowerCase();
+        if (DEF_NAME_TO_TEAM[key]) return DEF_NAME_TO_TEAM[key];
+    }
+    return null;
+}
+
 // ── Best & Worst pick by year (requires rank data) ────────────────────────
 function renderBestWorstByYear() {
     var yearsWithRanks = YEARS.filter(function(y){
@@ -1536,9 +2223,18 @@ function renderPickSlotHistory() {
                    .forEach(function(p){ if (p.round_pick > maxSlot) maxSlot = p.round_pick; });
     });
 
+    // Same placeholder treatment as the R1 pivot — pad short leagues out so
+    // year columns stay a consistent width regardless of how many seasons.
+    var MIN_COLS_SLOT = 8;
+    var placeholderCountSlot = Math.max(0, MIN_COLS_SLOT - YEARS.length);
+    var nextYearSlot = (YEARS.length ? Math.max.apply(null, YEARS) : new Date().getFullYear()) + 1;
+
     var html = '<table class="slot-table"><thead><tr>';
     html += '<th>Slot</th><th>Common</th>';
     YEARS.forEach(function(y){ html += '<th>' + y + '</th>'; });
+    for (var phs = 0; phs < placeholderCountSlot; phs++) {
+        html += '<th class="slot-placeholder">' + (nextYearSlot + phs) + '</th>';
+    }
     html += '</tr></thead><tbody>';
 
     for (var slot = 1; slot <= maxSlot; slot++) {
@@ -1563,6 +2259,9 @@ function renderPickSlotHistory() {
                 html += '<td style="text-align:center;color:var(--dg-line)">—</td>';
             }
         });
+        for (var phs2 = 0; phs2 < placeholderCountSlot; phs2++) {
+            html += '<td class="slot-placeholder">·</td>';
+        }
         html += '</tr>';
     }
 
@@ -1687,18 +2386,34 @@ function renderValuePos() {
                   + '<span class="hb-card2-gap">+' + h.gap + ' spots</span>'
                   + '</div>';
             html += '<div class="hb-card2-versus">';
+            // Left side: <manager> took → <player> [POS] → Finished #X
             html += '<div>'
-                  + '<div class="hb-card2-label">Took · <span style="color:' + pcA.text + '">' + posA + '</span></div>'
-                  + '<div class="hb-card2-player">' + esc(h.taken.player_name) + '</div>'
-                  + '<div class="hb-card2-info">' + esc(h.taken.manager_name)
-                  + ' · ' + (takenFinal ? 'Finished #' + takenFinal.rank : 'No data') + '</div>'
+                  + '<div class="hb-card2-label">'
+                    + '<span class="hb-mgr">' + esc(h.taken.manager_name) + '</span>'
+                    + '<span class="hb-verb">took</span>'
+                  + '</div>'
+                  + '<div class="hb-card2-player">'
+                    + '<span>' + esc(h.taken.player_name) + '</span>'
+                    + '<span class="hb-pos-pill" style="background:' + pcA.bg + ';color:' + pcA.text + '">' + posA + '</span>'
+                  + '</div>'
+                  + '<div class="hb-card2-info">'
+                    + (takenFinal ? 'Finished #' + takenFinal.rank : 'No data')
+                  + '</div>'
                   + '</div>';
             html += '<div class="hb-card2-arrow">→</div>';
+            // Right side: same shape, missed instead of took, player name tinted red.
             html += '<div>'
-                  + '<div class="hb-card2-label">Missed · <span style="color:' + pcB.text + '">' + posB + '</span></div>'
-                  + '<div class="hb-card2-player" style="color:#c87060">' + esc(h.missed.player_name) + '</div>'
-                  + '<div class="hb-card2-info">' + esc(h.missed.manager_name)
-                  + ' · Finished #' + missedFinal.rank + '</div>'
+                  + '<div class="hb-card2-label">'
+                    + '<span class="hb-mgr">' + esc(h.taken.manager_name) + '</span>'
+                    + '<span class="hb-verb">missed</span>'
+                  + '</div>'
+                  + '<div class="hb-card2-player" style="color:#c87060">'
+                    + '<span>' + esc(h.missed.player_name) + '</span>'
+                    + '<span class="hb-pos-pill" style="background:' + pcB.bg + ';color:' + pcB.text + '">' + posB + '</span>'
+                  + '</div>'
+                  + '<div class="hb-card2-info">'
+                    + 'Finished #' + missedFinal.rank
+                  + '</div>'
                   + '</div>';
             html += '</div></div>';
         });
