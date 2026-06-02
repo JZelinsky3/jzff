@@ -2477,6 +2477,7 @@ export async function exportLeague(
   // "no current season" and hides the form sheet.
   out['h2h_matrix.json'] = buildH2HMatrix(s)
   out['current_form.json'] = buildCurrentForm(s)
+  out['matchup_preview.json'] = buildMatchupPreview(s)
 
   for (const season of s.seasons) {
     out[`seasons/${season.year}.json`] = buildSeasonFile(s, season)
@@ -2933,6 +2934,269 @@ function buildCurrentForm(s: Snapshot): unknown {
     is_final: isFinal,
     rows,
   }
+}
+
+// ============================================================
+// matchup_preview.json — Departures board for the upcoming week
+// plus per-manager preview cards. Drives the Matchup Preview hub
+// on the live-season subtree.
+//
+// Source-week selection (in order):
+//   1. is_live season with at least one unplayed matchup → the
+//      smallest-week unplayed slate ("next week"). Common case.
+//   2. is_live season, every scheduled week played → return null
+//      (season is functionally over, nothing to preview).
+//   3. no is_live season → return null (off-season).
+//
+// Each matchup ships everything the page needs without secondary
+// fetches: both managers' name/team/record/form/ppg, all-time
+// H2H summary + up-to-3 most recent meetings, and a naive
+// projection (avg of each side's last-5 PPG window).
+// ============================================================
+function buildMatchupPreview(s: Snapshot): unknown {
+  const liveSeason = s.seasons.find((sn) => sn.is_live)
+  if (!liveSeason) return null
+  const allSeasonMatchups = s.matchupsBySeason.get(liveSeason.id) ?? []
+  if (allSeasonMatchups.length === 0) return null
+
+  // Find the next unplayed week. A "scheduled" matchup is one with both
+  // manager ids but null scores. Pick the smallest such week.
+  let upcomingWeek: number | null = null
+  for (const m of allSeasonMatchups) {
+    if (m.score_a != null || m.score_b != null) continue
+    if (m.is_playoff) continue   // preview the regular season; playoffs need their own bracket UI
+    if (upcomingWeek == null || m.week < upcomingWeek) upcomingWeek = m.week
+  }
+  if (upcomingWeek == null) return null
+
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  const managerToGroup = buildManagerToGroup(groups)
+
+  // ── Helpers ──────────────────────────────────────────────────
+  // Most-recent team name for a group across the live season (preferred)
+  // or the latest season it appears in.
+  function teamLatest(g: ProfileGroup): string {
+    let latestYear = -Infinity
+    let latestTeam: string | null = null
+    for (const mid of g.managerIds) {
+      for (const ms of s.managerSeasonsByManager.get(mid) ?? []) {
+        const yr = s.seasons.find((sn) => sn.id === ms.season_id)?.year ?? 0
+        if (yr > latestYear && ms.team_name) {
+          latestYear = yr
+          latestTeam = ms.team_name
+        }
+      }
+    }
+    return latestTeam ?? g.primary.team_name ?? groupDisplayName(g)
+  }
+
+  function abbrFor(name: string): string {
+    const clean = String(name).replace(/[^A-Za-z]/g, '')
+    if (!clean) return '—'
+    return clean.slice(0, 4).toUpperCase()
+  }
+
+  // Walk the live season's scored matchups in week order to compute
+  // a per-group record + last-5 form + ppg5 going into upcomingWeek.
+  type GroupForm = {
+    wins: number
+    losses: number
+    ties: number
+    pf: number
+    pa: number
+    // most-recent results first (W/L/T) up to 5
+    form: Array<'W' | 'L' | 'T'>
+    last5Pf: number[]
+    last5Pa: number[]
+  }
+  function blank(): GroupForm {
+    return { wins: 0, losses: 0, ties: 0, pf: 0, pa: 0, form: [], last5Pf: [], last5Pa: [] }
+  }
+  const groupForm = new Map<ProfileGroup, GroupForm>()
+  const scoredAsc = allSeasonMatchups
+    .filter((m) => m.score_a != null && m.score_b != null && m.week < upcomingWeek!)
+    .sort((a, b) => a.week - b.week)
+  for (const m of scoredAsc) {
+    const ga = managerToGroup.get(m.manager_a_id)
+    const gb = managerToGroup.get(m.manager_b_id)
+    if (!ga || !gb) continue
+    const sa = Number(m.score_a); const sb = Number(m.score_b)
+    const fa = groupForm.get(ga) ?? blank()
+    const fb = groupForm.get(gb) ?? blank()
+    fa.pf += sa; fa.pa += sb
+    fb.pf += sb; fb.pa += sa
+    if (sa > sb) { fa.wins++; fb.losses++; fa.form.unshift('W'); fb.form.unshift('L') }
+    else if (sa < sb) { fa.losses++; fb.wins++; fa.form.unshift('L'); fb.form.unshift('W') }
+    else { fa.ties++; fb.ties++; fa.form.unshift('T'); fb.form.unshift('T') }
+    fa.last5Pf.unshift(sa); fa.last5Pa.unshift(sb)
+    fb.last5Pf.unshift(sb); fb.last5Pa.unshift(sa)
+    fa.form = fa.form.slice(0, 5); fa.last5Pf = fa.last5Pf.slice(0, 5); fa.last5Pa = fa.last5Pa.slice(0, 5)
+    fb.form = fb.form.slice(0, 5); fb.last5Pf = fb.last5Pf.slice(0, 5); fb.last5Pa = fb.last5Pa.slice(0, 5)
+    groupForm.set(ga, fa); groupForm.set(gb, fb)
+  }
+
+  // All-time H2H lookup between two groups. Counts every scored
+  // regular-season game + championship-bracket playoff games (same
+  // rule as buildH2HMatrix).
+  type H2HSummary = {
+    meetings: number
+    winsA: number
+    winsB: number
+    ties: number
+    pfA: number
+    pfB: number
+    firstYear: number | null
+    lastYear: number | null
+    recent: Array<{ year: number; week: number; scoreA: number; scoreB: number; winner: 'a' | 'b' | 't' }>
+  }
+  function h2hBetween(ga: ProfileGroup, gb: ProfileGroup): H2HSummary {
+    const sum: H2HSummary = {
+      meetings: 0, winsA: 0, winsB: 0, ties: 0, pfA: 0, pfB: 0,
+      firstYear: null, lastYear: null, recent: [],
+    }
+    const meetings: Array<{ year: number; week: number; scoreA: number; scoreB: number; winner: 'a' | 'b' | 't' }> = []
+    for (const arr of s.matchupsBySeason.values()) {
+      for (const m of arr) {
+        if (m.score_a == null || m.score_b == null) continue
+        if (m.is_playoff) {
+          const aRank = s.finalRankByMgrSeason.get(`${m.season_id}|${m.manager_a_id}`) ?? null
+          const bRank = s.finalRankByMgrSeason.get(`${m.season_id}|${m.manager_b_id}`) ?? null
+          if (!((aRank != null && aRank <= 4) || (bRank != null && bRank <= 4))) continue
+        }
+        const mA = managerToGroup.get(m.manager_a_id)
+        const mB = managerToGroup.get(m.manager_b_id)
+        if (!mA || !mB) continue
+        // Orient to ga = "a side", gb = "b side"
+        let aScore: number; let bScore: number
+        if (mA === ga && mB === gb) { aScore = Number(m.score_a); bScore = Number(m.score_b) }
+        else if (mA === gb && mB === ga) { aScore = Number(m.score_b); bScore = Number(m.score_a) }
+        else continue
+        const year = s.seasons.find((sn) => sn.id === m.season_id)?.year ?? 0
+        sum.meetings++
+        sum.pfA += aScore; sum.pfB += bScore
+        const winner: 'a' | 'b' | 't' = aScore > bScore ? 'a' : aScore < bScore ? 'b' : 't'
+        if (winner === 'a') sum.winsA++
+        else if (winner === 'b') sum.winsB++
+        else sum.ties++
+        if (year > 0) {
+          if (sum.firstYear == null || year < sum.firstYear) sum.firstYear = year
+          if (sum.lastYear == null || year > sum.lastYear) sum.lastYear = year
+        }
+        meetings.push({ year, week: m.week, scoreA: round2(aScore), scoreB: round2(bScore), winner })
+      }
+    }
+    // Sort meetings newest-first; keep up to 3 for the "recent" strip.
+    meetings.sort((x, y) => (y.year - x.year) || (y.week - x.week))
+    sum.recent = meetings.slice(0, 3)
+    sum.pfA = round2(sum.pfA); sum.pfB = round2(sum.pfB)
+    return sum
+  }
+
+  // Build the matchup cards for upcomingWeek.
+  type Card = {
+    train: string
+    plat: string
+    a: Record<string, unknown>
+    b: Record<string, unknown>
+    h2h: H2HSummary
+    projected: { a: number; b: number; spread: number; favorite: 'a' | 'b' | 'pp' }
+  }
+  const week = upcomingWeek
+  const upcomingPairs = allSeasonMatchups
+    .filter((m) => m.week === week && m.score_a == null && m.score_b == null && !m.is_playoff)
+    // Stable order: by manager_a_id so re-renders don't shuffle.
+    .sort((a, b) => a.manager_a_id.localeCompare(b.manager_a_id))
+
+  const cards: Card[] = []
+  upcomingPairs.forEach((m, i) => {
+    const ga = managerToGroup.get(m.manager_a_id)
+    const gb = managerToGroup.get(m.manager_b_id)
+    if (!ga || !gb) return
+    const fa = groupForm.get(ga) ?? blank()
+    const fb = groupForm.get(gb) ?? blank()
+    const ppgA = fa.last5Pf.length
+      ? round2(fa.last5Pf.reduce((x, y) => x + y, 0) / fa.last5Pf.length)
+      : 0
+    const ppgB = fb.last5Pf.length
+      ? round2(fb.last5Pf.reduce((x, y) => x + y, 0) / fb.last5Pf.length)
+      : 0
+    const nameA = groupDisplayName(ga)
+    const nameB = groupDisplayName(gb)
+    function sideJson(g: ProfileGroup, f: GroupForm, name: string, ppg: number): Record<string, unknown> {
+      return {
+        uid: userId(g.primary),
+        name,
+        team: teamLatest(g),
+        abbr: abbrFor(name),
+        record: recordStr(f.wins, f.losses, f.ties),
+        form: f.form,           // newest-first
+        ppg5: ppg,
+        pf: round2(f.pf),
+        pa: round2(f.pa),
+      }
+    }
+    const h2h = h2hBetween(ga, gb)
+    const spread = round2(ppgA - ppgB)
+    const fav: 'a' | 'b' | 'pp' = ppgA === 0 && ppgB === 0
+      ? 'pp'                  // preseason / no data yet → pick'em
+      : spread > 0 ? 'a' : spread < 0 ? 'b' : 'pp'
+    cards.push({
+      // Train number: "WW.NN" (week.matchup index). NN is 01-based.
+      train: `${week}.${String(i + 1).padStart(2, '0')}`,
+      // Platform: roman numeral matchup index.
+      plat: toRomanLite(i + 1),
+      a: sideJson(ga, fa, nameA, ppgA),
+      b: sideJson(gb, fb, nameB, ppgB),
+      h2h,
+      projected: { a: ppgA, b: ppgB, spread: Math.abs(spread), favorite: fav },
+    })
+  })
+
+  if (cards.length === 0) return null
+
+  // Manager directory for the picker dropdown — every active group that
+  // shows up in an upcoming matchup, sorted alphabetically.
+  type DirEntry = { uid: string; name: string; team: string; matchupIdx: number }
+  const directory: DirEntry[] = []
+  cards.forEach((c, idx) => {
+    for (const side of [c.a, c.b]) {
+      const uid = side.uid as string | null
+      if (!uid) continue
+      directory.push({
+        uid,
+        name: side.name as string,
+        team: side.team as string,
+        matchupIdx: idx,
+      })
+    }
+  })
+  directory.sort((x, y) => x.name.localeCompare(y.name))
+
+  return {
+    year: liveSeason.year,
+    week,
+    weekRoman: toRomanLite(week),
+    matchups: cards,
+    managers: directory,
+  }
+}
+
+// Tiny roman-numeral helper local to live-season feeds. The main route
+// handler already exports one for tokens; we keep a local copy so this
+// builder stays self-contained inside the export bundle pipeline.
+function toRomanLite(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return ''
+  const numerals: Array<[number, string]> = [
+    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+    [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+    [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+  ]
+  let out = ''
+  let v = Math.floor(n)
+  for (const [val, sym] of numerals) {
+    while (v >= val) { out += sym; v -= val }
+  }
+  return out
 }
 
 // ============================================================
