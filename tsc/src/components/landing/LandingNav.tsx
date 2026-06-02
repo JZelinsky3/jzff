@@ -331,16 +331,16 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
               <div className="ln-mega-aside-section-label">New</div>
               <ul>
                 <li>
-                  <span className="ln-mega-aside-item-name">Yahoo support</span>
-                  <span className="ln-mega-aside-item-detail">OAuth import live.</span>
+                  <span className="ln-mega-aside-item-name">Live Season Hub</span>
+                  <span className="ln-mega-aside-item-detail">Matchup Preview + Best Coach.</span>
                 </li>
                 <li>
-                  <span className="ln-mega-aside-item-name">NFL.com guide</span>
-                  <span className="ln-mega-aside-item-detail">Publicly readable, no sign-in.</span>
+                  <span className="ln-mega-aside-item-name">Manager Hub</span>
+                  <span className="ln-mega-aside-item-detail">Six-issue editorial chronicle.</span>
                 </li>
                 <li>
-                  <span className="ln-mega-aside-item-name">Compare plans</span>
-                  <span className="ln-mega-aside-item-detail">All three tiers side-by-side.</span>
+                  <span className="ln-mega-aside-item-name">Trade Grader</span>
+                  <span className="ln-mega-aside-item-detail">Plus Milestones + Records Watch.</span>
                 </li>
               </ul>
             </div>
@@ -349,16 +349,16 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
               <div className="ln-mega-aside-section-label">Coming soon</div>
               <ul>
                 <li>
-                  <span className="ln-mega-aside-item-name">Weekly recaps</span>
-                  <span className="ln-mega-aside-item-detail">Veteran &amp; All-Pro.</span>
+                  <span className="ln-mega-aside-item-name">Weekly Recap</span>
+                  <span className="ln-mega-aside-item-detail">Auto-written every Tuesday.</span>
                 </li>
                 <li>
-                  <span className="ln-mega-aside-item-name">Trade recaps</span>
+                  <span className="ln-mega-aside-item-name">Manager DNA</span>
+                  <span className="ln-mega-aside-item-detail">Live-season tendencies + tells.</span>
+                </li>
+                <li>
+                  <span className="ln-mega-aside-item-name">Trade grades</span>
                   <span className="ln-mega-aside-item-detail">With four-week revisits.</span>
-                </li>
-                <li>
-                  <span className="ln-mega-aside-item-name">Annual chronicle</span>
-                  <span className="ln-mega-aside-item-detail">End-of-season printable recap.</span>
                 </li>
               </ul>
             </div>
