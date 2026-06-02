@@ -154,6 +154,7 @@ function injectDcConfig(
   isCommish: boolean,
   isSignedIn: boolean,
   isBookmarked: boolean,
+  tutorialDismissed: boolean,
 ): string {
   const config = `<script>window.__DC=${JSON.stringify({
     id: meta.id,
@@ -164,6 +165,7 @@ function injectDcConfig(
     isBookmarked,
     isTestingLeague: meta.created_during_testing,
     tradesTheme: meta.trades_theme,
+    tutorialDismissed,
   })};</script>`
   // Stamp the theme as a body data-attribute so theme CSS applies during the
   // first paint without waiting for JS. We only do this when the template
@@ -362,12 +364,20 @@ export async function GET(
         .maybeSingle()
       isBookmarked = !!bm
     }
+    // Tour dismissal lives in user_metadata.tutorials.leagues (an ISO
+    // timestamp set the first time the user closes or finishes the tour).
+    // Anonymous viewers get a falsy value here and the client falls back
+    // to localStorage so the tour still suppresses on repeat visits.
+    const tutorialDismissed =
+      isSignedIn &&
+      !!(user!.user_metadata as { tutorials?: Record<string, unknown> } | null)?.tutorials?.['leagues']
     const html = injectDcConfig(
       injectBaseTag(applyTokens(raw, meta), meta),
       meta,
       isCommish,
       isSignedIn,
       isBookmarked,
+      tutorialDismissed,
     )
     return new NextResponse(html, {
       status: 200,

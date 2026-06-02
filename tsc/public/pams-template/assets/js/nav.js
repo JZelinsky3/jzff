@@ -500,10 +500,25 @@
         });
     }
 
+    // Onboarding tour. Loaded lazily after nav builds so first-time visitors
+    // see a guided walkthrough; one-line shim so every templated page picks
+    // it up without each template having to add a <script> tag. The tour
+    // itself handles per-user dismissal (server-side for signed-in users,
+    // localStorage for everyone else), so re-injecting it is cheap.
+    function loadTutorial() {
+        if (document.getElementById('dc-tour-script')) return;
+        var s = document.createElement('script');
+        s.id = 'dc-tour-script';
+        s.src = '/pams-template/assets/js/tutorial.js';
+        s.async = true;
+        document.head.appendChild(s);
+    }
+
     function init() {
         buildNav();
         enhanceAuthLinks();
         wireBookmarkToggle();
+        loadTutorial();
     }
 
     if (document.readyState === 'loading') {
