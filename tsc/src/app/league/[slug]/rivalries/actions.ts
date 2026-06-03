@@ -96,6 +96,7 @@ function lastWord(s: string): string {
 // surfaces in a few of the picks — adds variety without leaking obvious
 // "X vs Y" repetition.
 const RIVALRY_NAME_BANK: readonly string[] = [
+  // Original conflict/feud lexicon
   'The Border War',
   'Civil War',
   'Battle Royale',
@@ -126,9 +127,59 @@ const RIVALRY_NAME_BANK: readonly string[] = [
   'The Eruption',
   'The Crusade',
   'The Showdown',
+
+  // Combat-sport venue names — every fantasy rivalry should feel a
+  // little like a fight night.
+  'Mortal Kombat',
+  'Thunderdome',
+  'The Octagon',
+  'Steel Cage',
+  'Hell in a Cell',
+  'The Pit',
+  'The Squared Circle',
+  'The Slugfest',
+  'The Donnybrook',
+  'The Throwdown',
+  'The Rumble',
+
+  // Apocalypse / mythic — bigger stakes for the bigger games.
+  'Clash of the Titans',
+  'Ragnarok',
+  'Armageddon',
+  'The Apocalypse',
+  'Doomsday',
+  'Scorched Earth',
+  'The Onslaught',
+  'The Maelstrom',
+  'The Last Dance',
+  'Total War',
+  'Trial by Combat',
+
+  // Trench-warfare framings — slow burn, attritional rivalries.
+  'The Trenches',
+  'The Frontline',
+  'The Siege',
+  'The Long War',
+
+  // Bowl-game tradition — leans into the league-pageantry feel.
+  'The Backyard Brawl',
+  'The Egg Bowl',
+  'The Iron Skillet',
+  'The Toilet Bowl',
+  'The Hate Bowl',
+  'The Spite Bowl',
+  'The Pride Bowl',
+
+  // Templated picks — the pair's names star in the title. Mixed in
+  // sparingly so the bank still reads as varied even when a league
+  // has 10+ auto-named rivalries.
   '{A} vs {B}: The Reckoning',
+  '{A} vs {B}: Endgame',
   'The Battle of {A} and {B}',
   '{A}-{B} War',
+  'The {A}-{B} Throwdown',
+  'The {A}-{B} Stakes',
+  '{A} & {B}: Mortal Enemies',
 ] as const
 
 // Deterministic 32-bit hash. Same string in → same number out, across runs
