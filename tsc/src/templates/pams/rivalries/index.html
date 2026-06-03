@@ -125,6 +125,355 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   margin-top: .3rem;
 }
 
+/* ─── REVEAL LAUNCH BUTTON ───────────────────────────
+   Sits below the stats grid in the page header. Marquee-style red
+   button to invite the user into the presentation mode. */
+.rv-reveal-launch {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .2rem;
+  margin: 2rem auto 0;
+  padding: 1rem 2.4rem 1.1rem;
+  background: linear-gradient(180deg, #1a0a0a 0%, #0e0606 100%);
+  border: 1px solid var(--rv-red-dim);
+  border-radius: 4px;
+  color: var(--rv-cream);
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .25s ease;
+}
+.rv-reveal-launch::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 100%, rgba(220,38,38,.18) 0%, transparent 60%);
+  pointer-events: none;
+}
+.rv-reveal-launch:hover {
+  transform: translateY(-1px);
+  border-color: var(--rv-red);
+  box-shadow: 0 6px 24px rgba(220,38,38,.18);
+}
+.rv-reveal-launch-icon {
+  font-family: var(--mono);
+  font-size: .8rem;
+  color: var(--rv-red);
+  margin-right: .3rem;
+}
+.rv-reveal-launch-label {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.45rem;
+  letter-spacing: .01em;
+  line-height: 1;
+  color: var(--rv-white);
+}
+.rv-reveal-launch-sub {
+  font-family: var(--mono);
+  font-size: .55rem;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  margin-top: .25rem;
+}
+
+/* ─── REVEAL OVERLAY ─────────────────────────────────
+   Fixed full-screen container with backdrop, slide stage, top progress
+   bar, and bottom controls. Slides themselves are rendered into the
+   stage by the JS engine. */
+.rv-reveal {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: stretch; justify-content: center;
+  font-family: var(--sans);
+}
+.rv-reveal[hidden] { display: none; }
+.rv-reveal-backdrop {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(220,38,38,.12) 0%, transparent 55%),
+    radial-gradient(circle at 50% 110%, rgba(220,38,38,.08) 0%, transparent 55%),
+    #050505;
+  animation: rv-reveal-fade-in .3s ease-out;
+}
+.rv-reveal-shell {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  display: flex; flex-direction: column;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+@keyframes rv-reveal-fade-in { from { opacity: 0 } to { opacity: 1 } }
+.rv-reveal-topbar {
+  display: flex; align-items: center; gap: 1rem;
+  padding-bottom: 1rem;
+}
+.rv-reveal-progress {
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  font-variant-numeric: tabular-nums;
+  min-width: 4.5rem;
+}
+.rv-reveal-progress span { color: var(--rv-white); }
+.rv-reveal-progress-sep { color: var(--rv-grey-lt); margin: 0 .25rem; }
+.rv-reveal-progress-bar {
+  flex: 1; height: 2px;
+  background: rgba(255,255,255,.08);
+  border-radius: 1px;
+  overflow: hidden;
+}
+#rv-reveal-progress-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--rv-red-dim) 0%, var(--rv-red) 100%);
+  transition: width .35s ease;
+}
+.rv-reveal-icon-btn {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--rv-cream);
+  width: 2.4rem; height: 2.4rem;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.rv-reveal-icon-btn:hover {
+  background: rgba(220,38,38,.1);
+  border-color: var(--rv-red-dim);
+  color: var(--rv-white);
+}
+.rv-reveal-icon-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+/* The stage takes the bulk of the overlay's vertical space — each
+   slide is centered inside and animates in from the bottom. */
+.rv-reveal-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 1rem 0;
+  position: relative;
+}
+.rv-reveal-controls {
+  display: flex; align-items: center; justify-content: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.rv-reveal-play-btn {
+  background: var(--rv-red);
+  border: 1px solid var(--rv-red);
+  color: var(--rv-white);
+  padding: .65rem 1.4rem;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; gap: .55rem;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  transition: background .15s ease, transform .15s ease;
+}
+.rv-reveal-play-btn:hover {
+  background: #ef4444;
+  transform: translateY(-1px);
+}
+.rv-reveal-play-icon {
+  font-size: .7rem;
+  font-family: var(--mono);
+}
+
+/* ─── SLIDES ─────────────────────────────────────────
+   Each slide is its own card that mounts into the stage, runs an
+   entry animation (fade + rise), then waits to be replaced. */
+.rv-slide {
+  width: 100%;
+  text-align: center;
+  animation: rv-slide-enter .55s cubic-bezier(.2,.6,.2,1) both;
+}
+@keyframes rv-slide-enter {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rv-slide-eyebrow {
+  font-family: var(--mono);
+  font-size: .75rem; letter-spacing: .32em; text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: 1.75rem;
+  animation: rv-slide-rise .65s .05s both cubic-bezier(.2,.6,.2,1);
+}
+@keyframes rv-slide-rise {
+  from { opacity: 0; transform: translateY(16px); letter-spacing: .5em; }
+  to   { opacity: 1; transform: translateY(0); letter-spacing: .32em; }
+}
+.rv-slide-title-text,
+.rv-slide-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2.5rem, 8vw, 5.6rem);
+  line-height: 1.04;
+  color: var(--rv-white);
+  letter-spacing: -.01em;
+  margin: 0 auto 1.5rem;
+  max-width: 22ch;
+  animation: rv-slide-title-in .85s .12s both cubic-bezier(.2,.6,.2,1);
+}
+@keyframes rv-slide-title-in {
+  from { opacity: 0; transform: translateY(28px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.rv-slide-title em { color: var(--rv-red); }
+.rv-slide-sub {
+  font-family: var(--mono);
+  font-size: .78rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rv-cream);
+  animation: rv-slide-fade-in .8s .55s both ease-out;
+}
+@keyframes rv-slide-fade-in {
+  from { opacity: 0 } to { opacity: 1 }
+}
+
+/* Combatants slide — two cards sliding in from opposite sides, then
+   the wins/PPG numbers count up. */
+.rv-slide-combatants {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1.25rem 2rem;
+  align-items: center;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.rv-slide-combatants .combatant {
+  display: flex; flex-direction: column;
+  gap: .5rem;
+}
+.rv-slide-combatants .combatant.a {
+  text-align: left;
+  animation: rv-slide-from-left .7s cubic-bezier(.2,.6,.2,1) both;
+}
+.rv-slide-combatants .combatant.b {
+  text-align: right;
+  animation: rv-slide-from-right .7s cubic-bezier(.2,.6,.2,1) both;
+}
+@keyframes rv-slide-from-left {
+  from { opacity: 0; transform: translateX(-50px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes rv-slide-from-right {
+  from { opacity: 0; transform: translateX(50px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.rv-slide-combatants .combatant-eyebrow {
+  font-family: var(--mono);
+  font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-slide-combatants .combatant-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1;
+  color: var(--rv-white);
+}
+.rv-slide-combatants .combatant.leads .combatant-name { color: var(--rv-red); }
+.rv-slide-combatants .combatant-wins {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(3.5rem, 9vw, 6rem);
+  line-height: .95;
+  color: var(--rv-cream);
+  font-variant-numeric: tabular-nums;
+}
+.rv-slide-combatants .combatant.leads .combatant-wins { color: var(--rv-red); }
+.rv-slide-combatants .combatant-stats {
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-slide-combatants .combatant-stats strong {
+  color: var(--rv-white);
+  font-weight: 600;
+}
+.rv-slide-combatants .combatant-vs {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2rem, 6vw, 4rem);
+  color: var(--rv-red);
+  animation: rv-slide-vs-zoom .75s .35s both cubic-bezier(.2,.6,.2,1);
+}
+@keyframes rv-slide-vs-zoom {
+  from { opacity: 0; transform: scale(.4) rotate(-8deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* Verdict slide — bar fills from one side, leader line reveals at end. */
+.rv-slide-verdict { max-width: 880px; margin: 0 auto; }
+.rv-verdict-bar-wrap {
+  margin: 2rem 0 2.5rem;
+}
+.rv-verdict-bar {
+  width: 100%;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--rv-grey-dk, #1f2937);
+  position: relative;
+}
+.rv-verdict-bar-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--a-color, #1f2937) 0%, var(--a-color, #1f2937) 100%);
+  animation: rv-bar-fill 1.4s .35s cubic-bezier(.2,.6,.2,1) both;
+}
+@keyframes rv-bar-fill {
+  from { width: 0; }
+  to   { width: var(--pct, 50%); }
+}
+.rv-verdict-bar-nums {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--rv-cream);
+  margin-top: .5rem;
+  font-variant-numeric: tabular-nums;
+}
+.rv-verdict-bar-nums span:first-child { color: var(--a-color-readable, var(--rv-white)); }
+.rv-verdict-bar-nums span:last-child { color: var(--b-color-readable, var(--rv-white)); }
+.rv-verdict-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  color: var(--rv-white);
+  margin: 0 0 .85rem;
+  animation: rv-slide-title-in .8s 1.55s both cubic-bezier(.2,.6,.2,1);
+}
+.rv-verdict-title em { color: var(--rv-red); }
+.rv-verdict-record {
+  font-family: var(--mono);
+  font-size: 1rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--rv-cream);
+  animation: rv-slide-fade-in .9s 2.05s both ease-out;
+}
+
+@media (max-width: 720px) {
+  .rv-slide-combatants {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .rv-slide-combatants .combatant.a,
+  .rv-slide-combatants .combatant.b { text-align: center; }
+  .rv-slide-combatants .combatant-vs { font-size: 2.5rem; }
+  .rv-reveal-shell { padding: .75rem .9rem 1rem; }
+  .rv-reveal-controls { gap: .65rem; }
+}
+
 /* ─── MAIN GRID ──────────────────────────────────── */
 /* Used to be 3px between cards — reads as one continuous block when
    there's more than one rivalry. Now each rivalry is its own
@@ -661,9 +1010,44 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   <div class="rv-header-sub" id="rv-header-sub">Loading…</div>
   <div class="rv-header-rule"></div>
   <div class="rv-header-stats" id="rv-header-stats"></div>
+  <button type="button" id="rv-reveal-launch" class="rv-reveal-launch" hidden>
+    <span class="rv-reveal-launch-icon" aria-hidden="true">▶</span>
+    <span class="rv-reveal-launch-label">Play the reveal</span>
+    <span class="rv-reveal-launch-sub">Walk through every feud · ~90s</span>
+  </button>
 </header>
 
 <main class="rv-grid" id="rv-grid"></main>
+
+<!-- ══════════════════════════════════════════════════
+     REVEAL OVERLAY (hidden until launched)
+     Renders one slide at a time on top of the page. The slide engine
+     in <script> below populates #rv-reveal-stage and runs entry
+     animations per slide.
+════════════════════════════════════════════════════ -->
+<div id="rv-reveal" class="rv-reveal" hidden aria-modal="true" role="dialog" aria-label="Rivalries reveal">
+  <div class="rv-reveal-backdrop"></div>
+  <div class="rv-reveal-shell">
+    <div class="rv-reveal-topbar">
+      <div class="rv-reveal-progress">
+        <span id="rv-reveal-pos">1</span>
+        <span class="rv-reveal-progress-sep">/</span>
+        <span id="rv-reveal-total">1</span>
+      </div>
+      <div class="rv-reveal-progress-bar"><div id="rv-reveal-progress-fill"></div></div>
+      <button type="button" id="rv-reveal-close" class="rv-reveal-icon-btn" aria-label="Close reveal">✕</button>
+    </div>
+    <div class="rv-reveal-stage" id="rv-reveal-stage" role="region" aria-live="polite"></div>
+    <div class="rv-reveal-controls">
+      <button type="button" id="rv-reveal-prev" class="rv-reveal-icon-btn" aria-label="Previous slide">←</button>
+      <button type="button" id="rv-reveal-play" class="rv-reveal-play-btn" aria-label="Pause">
+        <span class="rv-reveal-play-icon" id="rv-reveal-play-icon">❚❚</span>
+        <span class="rv-reveal-play-label" id="rv-reveal-play-label">Pause</span>
+      </button>
+      <button type="button" id="rv-reveal-next" class="rv-reveal-icon-btn" aria-label="Next slide">→</button>
+    </div>
+  </div>
+</div>
 
 <template id="rv-empty-template">
   <section style="text-align:center;max-width:48ch;margin:4rem auto;padding:0 1.5rem;">
@@ -819,13 +1203,16 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 
       // Cards
       const grid = document.getElementById('rv-grid');
+      const ordered = sortRivalries(rivalries);
       if (rivalries.length === 0) {
         const tpl = document.getElementById('rv-empty-template');
         grid.appendChild(tpl.content.cloneNode(true));
       } else {
-        const ordered = sortRivalries(rivalries);
         grid.innerHTML = ordered.map(buildCard).join('');
       }
+      // Wire the reveal launcher only when there's at least one rivalry to
+      // present — empty-state shouldn't dangle a non-functional CTA.
+      if (ordered.length > 0) wireReveal(ordered);
     } catch (err) {
       document.getElementById('rv-grid').innerHTML = `
         <section style="text-align:center;max-width:48ch;margin:4rem auto;padding:0 1.5rem;color:var(--rv-cream);">
@@ -834,6 +1221,259 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
         </section>
       `;
     }
+  }
+
+  // ═════════════════════════════════════════════════════
+  // REVEAL MODE — slideshow presentation of every rivalry
+  // ═════════════════════════════════════════════════════
+  // Slide types:
+  //   intro       — "The Rivalries" front card
+  //   title       — "Rivalry I · {name}" chapter title
+  //   combatants  — both managers' names + wins count up + avg PPG
+  //   verdict     — head-to-head bar fills, leader announced
+  //   outro       — closing card
+  //
+  // Each slide has a base duration; the engine auto-advances after that
+  // unless the user pauses or navigates manually. Animations are CSS
+  // keyframes triggered on mount; the count-up is a small rAF loop.
+
+  const SLIDE_DURATIONS = {
+    intro:      3500,
+    title:      3500,
+    combatants: 4500,
+    verdict:    4500,
+    outro:      4500,
+  };
+
+  function buildSlides(rivalries) {
+    const slides = [];
+    slides.push({ type: 'intro', rivalries });
+    rivalries.forEach((rv, idx) => {
+      slides.push({ type: 'title',      rv, idx });
+      slides.push({ type: 'combatants', rv, idx });
+      slides.push({ type: 'verdict',    rv, idx });
+    });
+    slides.push({ type: 'outro', rivalries });
+    return slides;
+  }
+
+  function renderSlide(slide) {
+    switch (slide.type) {
+      case 'intro':      return renderIntroSlide(slide);
+      case 'title':      return renderTitleSlide(slide);
+      case 'combatants': return renderCombatantsSlide(slide);
+      case 'verdict':    return renderVerdictSlide(slide);
+      case 'outro':      return renderOutroSlide(slide);
+      default:           return '';
+    }
+  }
+
+  function renderIntroSlide(slide) {
+    const n = slide.rivalries.length;
+    const meetings = slide.rivalries.reduce((a, r) => a + r.total_meetings, 0);
+    return `
+      <section class="rv-slide rv-slide-intro">
+        <div class="rv-slide-eyebrow">★ The Sunday Chronicle ★</div>
+        <h1 class="rv-slide-title">The <em>Rivalries.</em></h1>
+        <div class="rv-slide-sub">${n} feud${n === 1 ? '' : 's'} · ${meetings} meeting${meetings === 1 ? '' : 's'} · No mercy</div>
+      </section>
+    `;
+  }
+
+  function renderTitleSlide(slide) {
+    const roman = ROMAN[slide.idx + 1] || String(slide.idx + 1);
+    const rv = slide.rv;
+    const meta = rv.total_meetings > 0
+      ? `${rv.total_meetings} meeting${rv.total_meetings === 1 ? '' : 's'}${rv.first_meeting_year ? ' · Since ' + rv.first_meeting_year : ''}`
+      : 'No meetings on file yet';
+    return `
+      <section class="rv-slide rv-slide-title-wrap">
+        <div class="rv-slide-eyebrow">★ Rivalry ${escapeHtml(roman)} ★</div>
+        <h1 class="rv-slide-title-text">${escapeHtml(rv.name)}</h1>
+        <div class="rv-slide-sub">${escapeHtml(meta)}</div>
+      </section>
+    `;
+  }
+
+  function renderCombatantsSlide(slide) {
+    const rv = slide.rv;
+    const aLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_a.name;
+    const bLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_b.name;
+    const aPpg = typeof rv.manager_a.avg_ppg === 'number' && rv.manager_a.avg_ppg > 0
+      ? rv.manager_a.avg_ppg.toFixed(1) : '—';
+    const bPpg = typeof rv.manager_b.avg_ppg === 'number' && rv.manager_b.avg_ppg > 0
+      ? rv.manager_b.avg_ppg.toFixed(1) : '—';
+    return `
+      <section class="rv-slide rv-slide-combatants">
+        <div class="combatant a${aLeading ? ' leads' : ''}">
+          <div class="combatant-eyebrow">Manager A</div>
+          <div class="combatant-name">${escapeHtml(rv.manager_a.name)}</div>
+          <div class="combatant-wins" data-count="${rv.manager_a.wins}">0</div>
+          <div class="combatant-stats"><strong>${escapeHtml(aPpg)}</strong> avg PPG · ${escapeHtml(rv.manager_a.reg_record)}</div>
+        </div>
+        <div class="combatant-vs">vs.</div>
+        <div class="combatant b${bLeading ? ' leads' : ''}">
+          <div class="combatant-eyebrow">Manager B</div>
+          <div class="combatant-name">${escapeHtml(rv.manager_b.name)}</div>
+          <div class="combatant-wins" data-count="${rv.manager_b.wins}">0</div>
+          <div class="combatant-stats"><strong>${escapeHtml(bPpg)}</strong> avg PPG · ${escapeHtml(rv.manager_b.reg_record)}</div>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderVerdictSlide(slide) {
+    const rv = slide.rv;
+    const totalDecided = rv.manager_a.wins + rv.manager_b.wins;
+    const aPct = totalDecided > 0 ? (rv.manager_a.wins / totalDecided) * 100 : 50;
+    const aLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_a.name;
+    const aColor = aLeading ? '#dc2626' : '#1f2937';
+    const aReadable = aLeading ? '#ef4444' : '#9ca3af';
+    const bReadable = !aLeading && !rv.is_deadlocked ? '#ef4444' : '#9ca3af';
+    const verdictText = rv.is_deadlocked
+      ? 'Deadlocked.'
+      : rv.leader_name
+        ? `${rv.leader_name} <em>leads.</em>`
+        : 'No verdict yet.';
+    const lastGameStr = rv.last_meeting
+      ? `Last meeting · ${rv.last_meeting.year} · W${rv.last_meeting.week}${rv.last_meeting.is_playoff ? ' · PO' : ''}`
+      : '';
+    return `
+      <section class="rv-slide rv-slide-verdict" style="--pct: ${aPct.toFixed(2)}%; --a-color: ${aColor}; --a-color-readable: ${aReadable}; --b-color-readable: ${bReadable};">
+        <div class="rv-slide-eyebrow">★ The Verdict ★</div>
+        <div class="rv-verdict-bar-wrap">
+          <div class="rv-verdict-bar">
+            <div class="rv-verdict-bar-fill"></div>
+          </div>
+          <div class="rv-verdict-bar-nums">
+            <span>${rv.manager_a.wins}</span>
+            <span>${rv.manager_b.wins}</span>
+          </div>
+        </div>
+        <h2 class="rv-verdict-title">${verdictText}</h2>
+        ${rv.leader_record ? `<div class="rv-verdict-record">${escapeHtml(rv.leader_record)}${lastGameStr ? ' &nbsp;·&nbsp; ' + escapeHtml(lastGameStr) : ''}</div>` : (lastGameStr ? `<div class="rv-verdict-record">${escapeHtml(lastGameStr)}</div>` : '')}
+      </section>
+    `;
+  }
+
+  function renderOutroSlide(slide) {
+    const n = slide.rivalries.length;
+    return `
+      <section class="rv-slide rv-slide-intro">
+        <div class="rv-slide-eyebrow">★ Filed ★</div>
+        <h1 class="rv-slide-title">The book stays <em>open.</em></h1>
+        <div class="rv-slide-sub">${n} feud${n === 1 ? '' : 's'} on the books · The grudge holds</div>
+      </section>
+    `;
+  }
+
+  // Animate any data-count number in the freshly-mounted slide from 0 to
+  // its target with an ease-out cubic. Mirrors the staggered CSS entrance
+  // (slide name flies in, then the number counts up after a short delay).
+  function animateCountsIn(stage) {
+    const els = stage.querySelectorAll('[data-count]');
+    els.forEach((el, i) => {
+      const target = parseInt(el.dataset.count, 10);
+      if (!Number.isFinite(target) || target <= 0) {
+        el.textContent = String(target || 0);
+        return;
+      }
+      const duration = 1300;
+      const delay = 350 + i * 100; // stagger so A counts slightly before B
+      const startAt = performance.now() + delay;
+      function tick(now) {
+        if (now < startAt) { requestAnimationFrame(tick); return; }
+        const t = Math.min((now - startAt) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = String(Math.round(target * eased));
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function wireReveal(rivalries) {
+    const slides = buildSlides(rivalries);
+    const launch = document.getElementById('rv-reveal-launch');
+    const overlay = document.getElementById('rv-reveal');
+    const stage = document.getElementById('rv-reveal-stage');
+    const posEl = document.getElementById('rv-reveal-pos');
+    const totalEl = document.getElementById('rv-reveal-total');
+    const fill = document.getElementById('rv-reveal-progress-fill');
+    const prevBtn = document.getElementById('rv-reveal-prev');
+    const nextBtn = document.getElementById('rv-reveal-next');
+    const playBtn = document.getElementById('rv-reveal-play');
+    const playIcon = document.getElementById('rv-reveal-play-icon');
+    const playLabel = document.getElementById('rv-reveal-play-label');
+    const closeBtn = document.getElementById('rv-reveal-close');
+    if (!launch || !overlay || !stage) return;
+
+    let idx = 0;
+    let playing = true;
+    let timer = 0;
+
+    function clearTimer() {
+      if (timer) { clearTimeout(timer); timer = 0; }
+    }
+    function scheduleAdvance(slide) {
+      clearTimer();
+      if (!playing) return;
+      if (idx >= slides.length - 1) return;  // outro lingers until user closes
+      const ms = SLIDE_DURATIONS[slide.type] || 4000;
+      timer = setTimeout(() => { go(idx + 1); }, ms);
+    }
+    function go(nextIdx) {
+      idx = Math.max(0, Math.min(slides.length - 1, nextIdx));
+      const slide = slides[idx];
+      // Replacing innerHTML restarts CSS animations on the new content.
+      stage.innerHTML = renderSlide(slide);
+      animateCountsIn(stage);
+      posEl.textContent = String(idx + 1);
+      totalEl.textContent = String(slides.length);
+      fill.style.width = (((idx + 1) / slides.length) * 100).toFixed(2) + '%';
+      prevBtn.disabled = idx === 0;
+      nextBtn.disabled = idx === slides.length - 1;
+      scheduleAdvance(slide);
+    }
+    function setPlaying(on) {
+      playing = on;
+      if (on) {
+        playIcon.textContent = '❚❚';
+        playLabel.textContent = 'Pause';
+        scheduleAdvance(slides[idx]);
+      } else {
+        playIcon.textContent = '▶';
+        playLabel.textContent = 'Play';
+        clearTimer();
+      }
+    }
+    function open() {
+      idx = 0;
+      playing = true;
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      go(0);
+    }
+    function close() {
+      clearTimer();
+      overlay.hidden = true;
+      document.body.style.overflow = '';
+    }
+    function onKey(e) {
+      if (overlay.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(idx + 1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1); }
+      else if (e.key.toLowerCase() === 'p') { e.preventDefault(); setPlaying(!playing); }
+    }
+
+    launch.hidden = false;
+    launch.addEventListener('click', open);
+    prevBtn.addEventListener('click', () => { clearTimer(); go(idx - 1); });
+    nextBtn.addEventListener('click', () => { clearTimer(); go(idx + 1); });
+    playBtn.addEventListener('click', () => setPlaying(!playing));
+    closeBtn.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
   }
 
   if (document.readyState === 'loading') {
