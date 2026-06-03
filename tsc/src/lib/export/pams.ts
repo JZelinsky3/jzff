@@ -5472,12 +5472,14 @@ function buildManagerDna(s: Snapshot): unknown {
         strength: Math.abs(z_trade) + 0.3,
       })
     }
-    // The Vault — career trade pace is below 2/season. Used to require
-    // *zero* trades, which almost nobody hits in a long-running league.
-    // Now catches anyone clearly below the typical-trader pace (≈2/yr).
+    // The Vault — strictly under one trade per season on average. Used to
+    // require *zero* trades (almost nobody hits that in a long league), then
+    // briefly relaxed to <2/yr (too permissive — caught half the field).
+    // The 1/yr line is the sweet spot: anyone making fewer than one trade
+    // per season on average is genuinely a hold-the-line drafter.
     if (
       signals.career_seasons >= 2
-      && signals.trades_total < 2 * signals.career_seasons
+      && signals.trades_total < signals.career_seasons
     ) {
       const tradeRate = (signals.trades_total / signals.career_seasons).toFixed(1)
       candidates.push({
@@ -5486,10 +5488,9 @@ function buildManagerDna(s: Snapshot): unknown {
         tagline: 'Draft-and-hold disciple',
         blurb: signals.trades_total === 0
           ? `Zero completed trades across ${signals.career_seasons} season${signals.career_seasons === 1 ? '' : 's'}. What's drafted is what's kept.`
-          : `Only ${signals.trades_total} trade${signals.trades_total === 1 ? '' : 's'} across ${signals.career_seasons} seasons (${tradeRate}/yr) — well under the typical pace. Drafts the roster and lives with it.`,
-        // Stronger the further below 2/yr they sit. Capped at 2.0 so it
-        // doesn't always dominate the field.
-        strength: Math.min(2.0, 1.4 + (2 * signals.career_seasons - signals.trades_total) / (2 * signals.career_seasons)),
+          : `Only ${signals.trades_total} trade${signals.trades_total === 1 ? '' : 's'} across ${signals.career_seasons} seasons (${tradeRate}/yr) — well under one a year. Drafts the roster and lives with it.`,
+        // Stronger the closer they sit to zero trades, capped at 2.0.
+        strength: Math.min(2.0, 1.5 + (signals.career_seasons - signals.trades_total) / signals.career_seasons),
       })
     }
     // Optimizer / Reactionary / Set-and-Forget
