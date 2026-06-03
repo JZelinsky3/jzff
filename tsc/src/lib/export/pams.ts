@@ -5131,11 +5131,18 @@ type DnaSignals = {
   close_record: { w: number; l: number; t: number }
   blowout_games: number                 // games decided by ≥ 30 pts
   blowout_record: { w: number; l: number; t: number }
-  // Draft signals (first 5 rounds, all drafts in profile history)
+  // Draft signals
+  // RB-share is career-flat across the first 5 rounds of every draft on file.
+  // Early-QB / Early-TE are PERCENTAGES of drafts where they took the position
+  // inside rounds 1–4 — used to be a boolean ("ever") which over-fired in
+  // long-running leagues. total_drafts is the denominator.
   draft_rb_share_pct: number | null     // 0..100, % of first-5-round picks that were RB
-  draft_qb_early: boolean               // true if any QB taken in rounds 1–4
-  draft_te_early: boolean               // true if any TE taken in rounds 1–4
-  // Trade signals
+  total_drafts: number                  // # of drafts the profile participated in (round-1–4 picks)
+  draft_qb_early_pct: number | null     // 0..100, % of drafts where a QB was taken in rounds 1–4
+  draft_te_early_pct: number | null     // 0..100, % of drafts where a TE was taken in rounds 1–4
+  // Trade signals — per-season divisor is FULL career seasons (not just
+  // seasons in which they traded), so a single trade in 7 years now reads
+  // as ~0.14/yr rather than 1.0/yr.
   trades_total: number
   trades_per_season: number | null
 }
@@ -5184,8 +5191,12 @@ function buildManagerDna(s: Snapshot): unknown {
     starterChurnSum: number  // sum of per-week churn ratios
     churnWeeksCounted: number  // number of (week→week) transitions counted
     // Draft-level
+    // first5Picks is career-flat (used for RB-share %). draftSlates groups
+    // round-1–4 picks by draft so we can compute "% of drafts where they
+    // took a QB early" — a single early QB pick used to qualify someone as
+    // Anchor QB forever, which over-fired in long-running leagues.
     first5Picks: Array<{ position: string | null }>
-    first4Picks: Array<{ position: string | null }>
+    draftSlates: Array<Array<{ round: number; position: string | null }>>
     // Trade-level
     tradeCount: number
     tradeSeasons: Set<string>
@@ -5209,7 +5220,7 @@ function buildManagerDna(s: Snapshot): unknown {
       starterChurnSum: 0,
       churnWeeksCounted: 0,
       first5Picks: [],
-      first4Picks: [],
+      draftSlates: [],
       tradeCount: 0,
       tradeSeasons: new Set(),
     })
@@ -5288,10 +5299,16 @@ function buildManagerDna(s: Snapshot): unknown {
     }
   }
 
-  // -------- Drafts: first-4 + first-5 round picks per profile --------
+  // -------- Drafts: first-5 picks (career-flat for RB-share) + per-draft
+  // round-1–4 slates (so Anchor QB / TE Premium can check "% of drafts" not
+  // "ever in any draft"). --------
   for (const [seasonId, draft] of s.draftsBySeason) {
     if (!draft) continue
     const picks = s.picksByDraft.get(draft.id) ?? []
+    // Bucket this draft's round-1–4 picks per profile so each profile sees
+    // its own slate for this draft. A profile with no picks here gets no
+    // slate entry — they didn't participate.
+    const slatesThisDraft = new Map<string, Array<{ round: number; position: string | null }>>()
     for (const p of picks) {
       if (p.manager_id == null) continue
       const g = managerToGroup.get(p.manager_id)
@@ -5299,7 +5316,15 @@ function buildManagerDna(s: Snapshot): unknown {
       const bundle = bundles.get(g.primary.id)
       if (!bundle) continue
       if (p.round <= 5) bundle.first5Picks.push({ position: p.position })
-      if (p.round <= 4) bundle.first4Picks.push({ position: p.position })
+      if (p.round <= 4) {
+        const slate = slatesThisDraft.get(g.primary.id) ?? []
+        slate.push({ round: p.round, position: p.position })
+        slatesThisDraft.set(g.primary.id, slate)
+      }
+    }
+    for (const [groupId, slate] of slatesThisDraft) {
+      const bundle = bundles.get(groupId)
+      if (bundle) bundle.draftSlates.push(slate)
     }
     void seasonId
   }
@@ -5364,11 +5389,24 @@ function buildManagerDna(s: Snapshot): unknown {
     const rbShare = f5.length > 0
       ? (f5.filter((p) => (p.position ?? '').toUpperCase() === 'RB').length / f5.length) * 100
       : null
-    const qbEarly = bundle.first4Picks.some((p) => (p.position ?? '').toUpperCase() === 'QB')
-    const teEarly = bundle.first4Picks.some((p) => (p.position ?? '').toUpperCase() === 'TE')
+    // Per-draft early-position rate: of the drafts where this profile took
+    // any round-1–4 pick, how many included a QB / TE?
+    const totalDrafts = bundle.draftSlates.length
+    const qbEarlyDrafts = bundle.draftSlates.filter((slate) =>
+      slate.some((p) => (p.position ?? '').toUpperCase() === 'QB')
+    ).length
+    const teEarlyDrafts = bundle.draftSlates.filter((slate) =>
+      slate.some((p) => (p.position ?? '').toUpperCase() === 'TE')
+    ).length
+    const qbEarlyPct = totalDrafts > 0 ? (qbEarlyDrafts / totalDrafts) * 100 : null
+    const teEarlyPct = totalDrafts > 0 ? (teEarlyDrafts / totalDrafts) * 100 : null
 
-    const tradeSeasonsN = bundle.tradeSeasons.size
-    const tradesPerSeason = tradeSeasonsN > 0 ? bundle.tradeCount / tradeSeasonsN : null
+    // Trades per season — divide by full career seasons so a manager who
+    // traded once in 1 of 7 seasons reads as 0.14/yr (not 1.0/yr from
+    // dividing by "seasons in which they traded").
+    const tradesPerSeason = careerSeasonsSet.size > 0
+      ? bundle.tradeCount / careerSeasonsSet.size
+      : null
 
     const signals: DnaSignals = {
       career_games: totalGames,
@@ -5382,8 +5420,9 @@ function buildManagerDna(s: Snapshot): unknown {
       blowout_games: blowN,
       blowout_record: { w: bw, l: bl, t: bt },
       draft_rb_share_pct: rbShare != null ? round2(rbShare) : null,
-      draft_qb_early: qbEarly,
-      draft_te_early: teEarly,
+      total_drafts: totalDrafts,
+      draft_qb_early_pct: qbEarlyPct != null ? round2(qbEarlyPct) : null,
+      draft_te_early_pct: teEarlyPct != null ? round2(teEarlyPct) : null,
       trades_total: bundle.tradeCount,
       trades_per_season: tradesPerSeason != null ? round2(tradesPerSeason) : null,
     }
@@ -5433,13 +5472,24 @@ function buildManagerDna(s: Snapshot): unknown {
         strength: Math.abs(z_trade) + 0.3,
       })
     }
-    if (signals.trades_total === 0 && signals.career_seasons >= 2) {
+    // The Vault — career trade pace is below 2/season. Used to require
+    // *zero* trades, which almost nobody hits in a long-running league.
+    // Now catches anyone clearly below the typical-trader pace (≈2/yr).
+    if (
+      signals.career_seasons >= 2
+      && signals.trades_total < 2 * signals.career_seasons
+    ) {
+      const tradeRate = (signals.trades_total / signals.career_seasons).toFixed(1)
       candidates.push({
         key: 'the_vault',
         name: 'The Vault',
         tagline: 'Draft-and-hold disciple',
-        blurb: `Zero completed trades across ${signals.career_seasons} season${signals.career_seasons === 1 ? '' : 's'}. What's drafted is what's kept.`,
-        strength: 2.0,
+        blurb: signals.trades_total === 0
+          ? `Zero completed trades across ${signals.career_seasons} season${signals.career_seasons === 1 ? '' : 's'}. What's drafted is what's kept.`
+          : `Only ${signals.trades_total} trade${signals.trades_total === 1 ? '' : 's'} across ${signals.career_seasons} seasons (${tradeRate}/yr) — well under the typical pace. Drafts the roster and lives with it.`,
+        // Stronger the further below 2/yr they sit. Capped at 2.0 so it
+        // doesn't always dominate the field.
+        strength: Math.min(2.0, 1.4 + (2 * signals.career_seasons - signals.trades_total) / (2 * signals.career_seasons)),
       })
     }
     // Optimizer / Reactionary / Set-and-Forget
@@ -5537,22 +5587,37 @@ function buildManagerDna(s: Snapshot): unknown {
         strength: Math.abs(z_rb),
       })
     }
-    if (signals.draft_qb_early && bundle.first4Picks.length >= 4) {
+    // Anchor QB — used to fire on *any* single early-QB pick across a
+    // manager's career, which over-fired in long-running leagues. Now
+    // requires the manager to have reached for a QB in rounds 1–4 in at
+    // least 40% of their drafts (and ≥3 drafts on file as a sample-size
+    // floor). Strength scales with how habitual the pattern is.
+    if (
+      signals.draft_qb_early_pct != null
+      && signals.total_drafts >= 3
+      && signals.draft_qb_early_pct >= 40
+    ) {
       candidates.push({
         key: 'anchor_qb',
         name: 'The Anchor QB',
         tagline: 'Locks the position early',
-        blurb: `Has taken a QB inside the first four rounds — refuses to play the streamer's game.`,
-        strength: 1.05,
+        blurb: `Has reached for a QB inside the first four rounds in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts on file. Refuses to play the streamer's game.`,
+        strength: 0.9 + signals.draft_qb_early_pct / 200,  // 40% → 1.10, 100% → 1.40
       })
     }
-    if (signals.draft_te_early && bundle.first4Picks.length >= 4) {
+    // TE Premium — same shape as Anchor QB but the position is rarer
+    // (elite TEs are a smaller class), so the bar is 25% rather than 40%.
+    if (
+      signals.draft_te_early_pct != null
+      && signals.total_drafts >= 3
+      && signals.draft_te_early_pct >= 25
+    ) {
       candidates.push({
         key: 'te_premium',
         name: 'The TE Premium',
         tagline: 'Pays the elite-TE tax',
-        blurb: `Has spent a top-4-round pick on a TE — willing to corner the position rather than chase it.`,
-        strength: 0.95,
+        blurb: `Has spent a top-4-round pick on a TE in ${signals.draft_te_early_pct.toFixed(0)}% of drafts on file. Willing to corner the position rather than chase it.`,
+        strength: 0.8 + signals.draft_te_early_pct / 200,  // 25% → 0.925, 100% → 1.30
       })
     }
 
@@ -5606,8 +5671,24 @@ function buildManagerDna(s: Snapshot): unknown {
       if (z_rb <= -0.7 && archetype.key !== 'zero_rb') pushTrait('wr_heavy', 'WR-Heavy Drafter', `${signals.draft_rb_share_pct.toFixed(0)}% early-round RBs`)
       else if (z_rb >= 0.7 && archetype.key !== 'hog_mollie') pushTrait('rb_heavy', 'RB-Heavy Drafter', `${signals.draft_rb_share_pct.toFixed(0)}% early-round RBs`)
     }
-    if (signals.draft_qb_early && archetype.key !== 'anchor_qb') pushTrait('early_qb', 'Early-QB History', `Has used a top-4 pick on a QB`)
-    if (signals.draft_te_early && archetype.key !== 'te_premium') pushTrait('early_te', 'Early-TE History', `Has used a top-4 pick on a TE`)
+    // Trait chips for early-position drafting — show as a "noticed it" tell
+    // when the manager has done it at least once but isn't full Anchor QB /
+    // TE Premium. Surfaces single early QB picks that no longer trigger the
+    // primary archetype, so the signal still lives somewhere on the card.
+    if (
+      signals.draft_qb_early_pct != null
+      && signals.draft_qb_early_pct > 0
+      && archetype.key !== 'anchor_qb'
+    ) {
+      pushTrait('early_qb', 'Early-QB History', `Top-4 QB in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts`)
+    }
+    if (
+      signals.draft_te_early_pct != null
+      && signals.draft_te_early_pct > 0
+      && archetype.key !== 'te_premium'
+    ) {
+      pushTrait('early_te', 'Early-TE History', `Top-4 TE in ${signals.draft_te_early_pct.toFixed(0)}% of drafts`)
+    }
     // Blowouts
     if (blowWinRate != null && signals.blowout_games >= 4) {
       if (blowWinRate >= 0.6 && archetype.key !== 'steamroller') pushTrait('steamroller_lite', 'Steamroller Streak', `${signals.blowout_record.w}–${signals.blowout_record.l} in ≥30-pt games`)
