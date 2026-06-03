@@ -122,7 +122,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   color: var(--rv-red);
 }
 .rv-badge.tied { color: var(--rv-grey-lt); border-color: var(--rv-grey); }
-.rv-body { display: grid; grid-template-columns: 1fr 200px 1fr; }
+.rv-body { display: grid; grid-template-columns: 1fr 240px 1fr; }
 .rv-side { padding: 1.6rem 1.8rem; display: flex; flex-direction: column; gap: .35rem; }
 .rv-side-a { align-items: flex-start; border-right: 1px solid var(--rv-line2); }
 .rv-side-b { align-items: flex-end; border-left: 1px solid var(--rv-line2); }
@@ -200,6 +200,162 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 .rv-empty {
   text-align: center; padding: 4rem 1.5rem;
   color: var(--rv-cream);
+}
+
+/* ─── BY THE NUMBERS — top stat strip ────────────────
+   Five compact cells across the top of the body so the headline stats
+   read at a glance before you scroll. Stats come straight from the
+   rivalry record + a tiny derivation from last5 (avg margin, streak).
+   On narrow viewports the strip wraps so the cells stay readable. */
+.rv-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--rv-line2);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rv-stat {
+  background: var(--rv-card);
+  padding: 1rem 1.1rem 1.05rem;
+  display: flex; flex-direction: column;
+  gap: .25rem;
+}
+.rv-stat-label {
+  font-family: var(--mono);
+  font-size: .54rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-stat-value {
+  font-family: var(--serif);
+  font-size: 1.6rem; line-height: 1;
+  color: var(--rv-white);
+}
+.rv-stat-value em { color: var(--rv-red); font-style: italic; }
+.rv-stat-sub {
+  font-family: var(--mono);
+  font-size: .58rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+
+/* ─── LAST MEETING — featured recap ─────────────────
+   Shows the most recent matchup as its own card: both scores, week,
+   playoff flag. Hidden when total_meetings === 0. */
+.rv-last-card {
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  padding: 1.4rem 1.6rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+.rv-last-card .rv-last-meta {
+  grid-column: 1 / -1;
+  font-family: var(--mono);
+  font-size: .6rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--rv-red);
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--rv-line2);
+  margin-bottom: .25rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.rv-last-side {
+  display: flex; flex-direction: column;
+}
+.rv-last-side.a { align-items: flex-start; }
+.rv-last-side.b { align-items: flex-end; }
+.rv-last-name {
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  margin-bottom: .35rem;
+}
+.rv-last-score {
+  font-family: var(--serif);
+  font-size: 2.4rem; line-height: 1;
+  color: var(--rv-grey-lt);
+}
+.rv-last-side.won .rv-last-score { color: var(--rv-red); }
+.rv-last-vs {
+  font-family: var(--serif); font-style: italic;
+  font-size: 1.4rem;
+  color: var(--rv-grey-lt);
+}
+
+/* ─── DUAL-SIDE LEDGER ──────────────────────────────
+   Replaces the old single-column meetings table with a two-sided
+   scoreboard layout — A on the left, B on the right, the matchup
+   metadata in the middle. Reads like a real game ledger. */
+.rv-ledger { display: flex; flex-direction: column; gap: .4rem; }
+.rv-ledger-row {
+  display: grid;
+  grid-template-columns: 1fr 8rem 1fr;
+  align-items: center;
+  background: var(--rv-card2);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  padding: .65rem .9rem;
+}
+.rv-ledger-side {
+  font-family: var(--mono);
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; gap: .5rem;
+}
+.rv-ledger-side.a { justify-content: flex-start; }
+.rv-ledger-side.b { justify-content: flex-end; }
+.rv-ledger-side .marg {
+  color: var(--rv-grey-lt);
+  font-size: .65rem;
+}
+.rv-ledger-side.won { color: var(--rv-red); font-weight: 700; }
+.rv-ledger-mid {
+  font-family: var(--mono);
+  font-size: .6rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  text-align: center;
+  display: flex; flex-direction: column; gap: .15rem;
+}
+.rv-ledger-mid .yr { color: var(--rv-white); letter-spacing: .12em; }
+.rv-tag-po-inline {
+  display: inline-block;
+  font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-gold);
+  border: 1px solid var(--rv-grey);
+  padding: 0 .35rem;
+  border-radius: 2px;
+}
+
+/* ─── STREAK CHIP ───────────────────────────────────
+   A small pill above the ledger summarizing the active streak (e.g.
+   "ceejeroonie has won 2 straight"). Derived from the last entries of
+   last5. */
+.rv-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  background: var(--rv-card2);
+  border: 1px solid var(--rv-red-dim);
+  border-radius: 999px;
+  padding: .4rem .85rem;
+  font-family: var(--mono);
+  font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-cream);
+  margin-bottom: 1rem;
+}
+.rv-streak strong { color: var(--rv-red); font-weight: 700; }
+
+@media (max-width: 760px) {
+  .rv-stats { grid-template-columns: 1fr 1fr; }
+  .rv-stat-value { font-size: 1.3rem; }
+  .rv-last-card { grid-template-columns: 1fr; gap: .6rem; }
+  .rv-last-card .rv-last-vs { display: none; }
+  .rv-last-side.b { align-items: flex-start; }
+  .rv-ledger-row { grid-template-columns: 1fr 5.5rem 1fr; padding: .55rem .65rem; }
+  .rv-ledger-side { font-size: .68rem; gap: .35rem; }
 }
 
 /* Nav theme overrides (same crimson palette as the index page). */
@@ -325,10 +481,134 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     `;
   }
 
-  function buildLast5Table(rv) {
-    // rivalries.json only ships the last 5 meetings — anything further back
-    // would need a richer per-rivalry endpoint. Surface what we have here so
-    // visitors at least see the recent ledger expanded out.
+  // Walk last5 from the most recent entry backward until the result
+  // flips — that's the active streak length + which side owns it.
+  // Returns null when there are no meetings or the most recent was a tie
+  // (no clear streak owner).
+  function activeStreak(rv) {
+    const a = rv.manager_a, b = rv.manager_b;
+    const n = Math.min(a.last5.length, b.last5.length);
+    if (n === 0) return null;
+    const lastA = a.last5[n - 1];
+    if (lastA.result === 'T') return null;
+    const winner = lastA.result === 'W' ? a.name : b.name;
+    let count = 1;
+    for (let i = n - 2; i >= 0; i--) {
+      const g = a.last5[i];
+      if (g.result === lastA.result) count++;
+      else break;
+    }
+    return { winner, count };
+  }
+
+  // Average absolute margin across the recorded last5 — gives a feel for
+  // how close or blowout-y this rivalry has been recently.
+  function avgMargin(rv) {
+    const games = rv.manager_a.last5 || [];
+    const decided = games.filter((g) => g.result !== 'T' && typeof g.margin === 'number');
+    if (decided.length === 0) return null;
+    const total = decided.reduce((sum, g) => sum + Math.abs(g.margin), 0);
+    return total / decided.length;
+  }
+
+  function postseasonCount(rv) {
+    const games = rv.manager_a.last5 || [];
+    return games.filter((g) => g.is_playoff).length;
+  }
+
+  function buildStatStrip(rv) {
+    const seriesValue = rv.is_deadlocked
+      ? `${rv.manager_a.wins}<em>—</em>${rv.manager_b.wins}`
+      : rv.leader_record
+        ? escapeHtml(rv.leader_record).replace(/[-–]/g, '<em>—</em>')
+        : '—';
+    const seriesSub = rv.is_deadlocked
+      ? 'Deadlocked'
+      : rv.leader_name
+        ? `${escapeHtml(rv.leader_name)} leads`
+        : 'No games yet';
+    const sinceVal = rv.first_meeting_year ? rv.first_meeting_year : '—';
+    const streak = activeStreak(rv);
+    const streakVal = streak ? `${streak.count}` : '—';
+    const streakSub = streak ? `${escapeHtml(streak.winner)} · in a row` : 'No active streak';
+    const avg = avgMargin(rv);
+    const avgVal = avg != null ? avg.toFixed(1) : '—';
+    const po = postseasonCount(rv);
+    const poSub = rv.manager_a.last5.length
+      ? `${po} of last ${rv.manager_a.last5.length}`
+      : 'None yet';
+
+    return `
+      <section class="rv-stats" aria-label="By the numbers">
+        <div class="rv-stat">
+          <div class="rv-stat-label">Meetings</div>
+          <div class="rv-stat-value">${rv.total_meetings}</div>
+          <div class="rv-stat-sub">All-time</div>
+        </div>
+        <div class="rv-stat">
+          <div class="rv-stat-label">Series</div>
+          <div class="rv-stat-value">${seriesValue}</div>
+          <div class="rv-stat-sub">${seriesSub}</div>
+        </div>
+        <div class="rv-stat">
+          <div class="rv-stat-label">Since</div>
+          <div class="rv-stat-value">${sinceVal}</div>
+          <div class="rv-stat-sub">First meeting</div>
+        </div>
+        <div class="rv-stat">
+          <div class="rv-stat-label">Streak</div>
+          <div class="rv-stat-value">${streakVal}</div>
+          <div class="rv-stat-sub">${streakSub}</div>
+        </div>
+        <div class="rv-stat">
+          <div class="rv-stat-label">Avg margin</div>
+          <div class="rv-stat-value">${avgVal}</div>
+          <div class="rv-stat-sub">${poSub} · Postseason</div>
+        </div>
+      </section>
+    `;
+  }
+
+  function buildLastMeetingCard(rv) {
+    if (!rv.last_meeting || typeof rv.last_meeting.a_score !== 'number') return '';
+    const lm = rv.last_meeting;
+    const a = rv.manager_a, b = rv.manager_b;
+    const aWon = lm.a_score > lm.b_score;
+    const bWon = lm.b_score > lm.a_score;
+    const poTag = lm.is_playoff ? '<span class="rv-tag-po-inline">Playoff</span>' : '';
+    return `
+      <section class="rv-last-card" aria-label="Last meeting">
+        <div class="rv-last-meta">
+          <span>Last meeting · ${lm.year} · W${lm.week}</span>
+          <span>${poTag}</span>
+        </div>
+        <div class="rv-last-side a${aWon ? ' won' : ''}">
+          <div class="rv-last-name">${escapeHtml(a.name)}</div>
+          <div class="rv-last-score">${fmtScore(lm.a_score)}</div>
+        </div>
+        <div class="rv-last-vs">vs.</div>
+        <div class="rv-last-side b${bWon ? ' won' : ''}">
+          <div class="rv-last-name">${escapeHtml(b.name)}</div>
+          <div class="rv-last-score">${fmtScore(lm.b_score)}</div>
+        </div>
+      </section>
+    `;
+  }
+
+  function buildStreakChip(rv) {
+    const streak = activeStreak(rv);
+    if (!streak || streak.count < 2) return '';
+    return `
+      <div class="rv-streak">★ <strong>${escapeHtml(streak.winner)}</strong> · ${streak.count} in a row</div>
+    `;
+  }
+
+  function buildLedger(rv) {
+    // rivalries.json ships the last 5 meetings per side. Render them
+    // newest-first as a two-sided scoreboard so visitors see both
+    // sides' margins at the same glance instead of a one-column winner
+    // list. Anything older than 5 isn't in the bundle — when more is
+    // available we'll expand this from a richer per-rivalry endpoint.
     const a = rv.manager_a, b = rv.manager_b;
     const n = Math.min(a.last5.length, b.last5.length);
     if (n === 0) {
@@ -342,31 +622,40 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const rows = [];
     for (let i = n - 1; i >= 0; i--) {
       const ga = a.last5[i];
+      const gb = b.last5[i];
       const aWon = ga.result === 'W';
+      const bWon = ga.result === 'L'; // from a's perspective
       const tie = ga.result === 'T';
-      const winner = tie ? 'Tie' : aWon ? a.name : b.name;
-      const marginStr = tie ? '—' : `by ${ga.margin ? ga.margin.toFixed(1) : '0.0'}`;
+      const margin = typeof ga.margin === 'number' ? ga.margin.toFixed(1) : '0.0';
+      const aMargStr = aWon ? `<span class="marg">+${margin}</span>` : '';
+      const bMargStr = bWon ? `<span class="marg">+${margin}</span>` : '';
+      const tagPo = ga.is_playoff ? '<span class="rv-tag-po-inline">PO</span>' : '';
       rows.push(`
-        <tr>
-          <td>${ga.year} <span style="color:var(--rv-grey-lt);">· W${ga.week}</span>${ga.is_playoff ? '<span class="rv-tag-po">PO</span>' : ''}</td>
-          <td class="${tie ? '' : 'win'}">${escapeHtml(winner)}</td>
-          <td class="num">${marginStr}</td>
-        </tr>
+        <div class="rv-ledger-row">
+          <div class="rv-ledger-side a${aWon ? ' won' : ''}${tie ? ' tie' : ''}">
+            <span>${escapeHtml(a.name)}</span>
+            ${aMargStr}
+          </div>
+          <div class="rv-ledger-mid">
+            <span class="yr">${ga.year}</span>
+            <span>Week ${ga.week} ${tagPo}</span>
+          </div>
+          <div class="rv-ledger-side b${bWon ? ' won' : ''}${tie ? ' tie' : ''}">
+            ${bMargStr}
+            <span>${escapeHtml(b.name)}</span>
+          </div>
+        </div>
       `);
     }
+    const moreNote = rv.total_meetings > n
+      ? `<div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--rv-grey-lt);margin-top:1rem;text-align:center;">Showing last ${n} of ${rv.total_meetings} all-time meetings.</div>`
+      : '';
     return `
       <section class="rv-section">
         <div class="rv-section-title">Recent meetings · last ${n}</div>
-        <table class="rv-meet-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Winner</th>
-              <th class="num">Margin</th>
-            </tr>
-          </thead>
-          <tbody>${rows.join('')}</tbody>
-        </table>
+        ${buildStreakChip(rv)}
+        <div class="rv-ledger">${rows.join('')}</div>
+        ${moreNote}
       </section>
     `;
   }
@@ -399,7 +688,11 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
           : `${rv.total_meetings} meeting${rv.total_meetings === 1 ? '' : 's'}${rv.first_meeting_year ? ' · Since ' + rv.first_meeting_year : ''}`;
       const kicker = document.getElementById('rv-kicker');
       kicker.textContent = (leagueName ? leagueName + ' · ' : '') + rv.name;
-      main.innerHTML = buildCard(rv) + buildLast5Table(rv);
+      main.innerHTML =
+        buildStatStrip(rv) +
+        buildCard(rv) +
+        buildLastMeetingCard(rv) +
+        buildLedger(rv);
     } catch (err) {
       main.innerHTML = `<div class="rv-empty">Couldn't load this rivalry.<br><span style="font-family:var(--mono);font-size:.7rem;color:var(--rv-red);">${escapeHtml(err.message || 'unknown error')}</span></div>`;
     }

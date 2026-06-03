@@ -369,6 +369,12 @@
             '  padding: .55rem; aspect-ratio: 1 / 1;',
             '  display: inline-flex; align-items: center; justify-content: center;',
             '  cursor: pointer; font-family: inherit;',
+            // Next has `box-shadow: 0 2px 0 #a88a4a` painting a dark base
+            // below its layout box, which shifts its perceived center ~1px
+            // down even though geometrically it's flex-centered with Back.
+            // Translate Back down 1px so the two read as aligned to the eye
+            // instead of the layout engine.
+            '  transform: translateY(1px);',
             '}',
             '.dc-tour-back:hover:not(:disabled) { border-color: #e8c889; color: #f4ebd8; }',
             '.dc-tour-back:disabled { opacity: .35; cursor: not-allowed; }',
