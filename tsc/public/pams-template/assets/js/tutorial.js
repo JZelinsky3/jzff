@@ -255,19 +255,37 @@
         var s = document.createElement('style');
         s.id = 'dc-tour-style';
         s.textContent = [
+            // Full-screen backdrop used only for centered (no-target) steps.
+            // Steps with a target use four .dc-tour-pane rects instead so the
+            // spotlighted element stays sharp.
             '.dc-tour-backdrop {',
             '  position: fixed; inset: 0; z-index: 9000;',
             '  background: rgba(8, 14, 22, .55);',
-            '  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);',
+            '  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);',
             '  cursor: pointer;',
             '  animation: dc-tour-fade .18s ease-out;',
             '}',
             '@keyframes dc-tour-fade { from { opacity: 0 } to { opacity: 1 } }',
-            // Highlight ring punched out of the backdrop using a box-shadow halo.
+            // Four-pane backdrop: top/bottom/left/right strips that surround
+            // the target rect. Each pane carries the dim + blur; the target
+            // sits in the uncovered window between them, fully crisp. Click
+            // any pane to advance the tour.
+            '.dc-tour-pane {',
+            '  position: fixed; z-index: 9000;',
+            '  background: rgba(8, 14, 22, .55);',
+            '  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);',
+            '  cursor: pointer;',
+            '  transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease;',
+            '  animation: dc-tour-fade .18s ease-out;',
+            '}',
+            // Gold halo around the spotlighted element. Sits ABOVE the panes
+            // but below the popover; pointer-events:none so the user can
+            // still interact with the highlighted element through it
+            // (e.g. read a tooltip, scroll a carousel).
             '.dc-tour-spot {',
             '  position: fixed; z-index: 9001; pointer-events: none;',
             '  border-radius: 10px;',
-            '  box-shadow: 0 0 0 4px rgba(232, 200, 137, .85), 0 0 0 9999px rgba(8, 14, 22, .55);',
+            '  box-shadow: 0 0 0 2px rgba(232, 200, 137, .95), 0 0 18px rgba(232, 200, 137, .35);',
             '  transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease;',
             '}',
             '.dc-tour-pop {',
@@ -308,6 +326,20 @@
             '  text-transform: uppercase; cursor: pointer; padding: .35rem 0;',
             '}',
             '.dc-tour-skip:hover { color: #c9c0ad; }',
+            // Back + Next sit side-by-side; back is a small ghost circle, next
+            // is the gold pill. Stop event propagation on this row so clicks
+            // never bubble up to the backdrop's advance handler.
+            '.dc-tour-nav { display: inline-flex; align-items: center; gap: .45rem; }',
+            '.dc-tour-back {',
+            '  background: transparent; color: #c9c0ad;',
+            '  border: 1px solid rgba(232,200,137,.4); border-radius: 999px;',
+            '  width: 2rem; height: 2rem; padding: 0;',
+            '  display: inline-flex; align-items: center; justify-content: center;',
+            '  cursor: pointer; font-family: inherit;',
+            '}',
+            '.dc-tour-back:hover:not(:disabled) { border-color: #e8c889; color: #f4ebd8; }',
+            '.dc-tour-back:disabled { opacity: .35; cursor: not-allowed; }',
+            '.dc-tour-back svg { display: block; }',
             '.dc-tour-next {',
             '  background: #e8c889; color: #0e1620;',
             '  border: 0; border-radius: 999px;',
@@ -356,6 +388,7 @@
         idx: -1,
         popoverEl: null,
         backdropEl: null,
+        panesEl: null,
         spotEl: null,
         repositionRaf: 0,
         keyHandler: null,
@@ -365,6 +398,7 @@
     function destroyTour() {
         if (state.popoverEl) { state.popoverEl.remove(); state.popoverEl = null; }
         if (state.backdropEl) { state.backdropEl.remove(); state.backdropEl = null; }
+        if (state.panesEl) { state.panesEl.remove(); state.panesEl = null; }
         if (state.spotEl) { state.spotEl.remove(); state.spotEl = null; }
         if (state.keyHandler) { document.removeEventListener('keydown', state.keyHandler); state.keyHandler = null; }
         if (state.resizeHandler) {
@@ -403,6 +437,23 @@
         renderStep(next);
     }
 
+    function goBack() {
+        var prev = state.idx - 1;
+        if (prev < 0) return;
+        var step = STEPS[prev];
+        var page = currentPageKey();
+        if (step.page !== '*' && step.page !== page) {
+            // Previous step lives on another page — write its index as the
+            // resume marker so the destination page picks it up. Same shape
+            // as advance() so the same resume code handles both directions.
+            writeProgress(prev);
+            var path = step.path || '';
+            location.href = path;
+            return;
+        }
+        renderStep(prev);
+    }
+
     function renderStep(idx) {
         var step = STEPS[idx];
         if (!step) { close({ dismissed: true }); return; }
@@ -434,11 +485,34 @@
         }
 
         ensureStyles();
-        if (!state.backdropEl) {
-            state.backdropEl = document.createElement('div');
-            state.backdropEl.className = 'dc-tour-backdrop';
-            state.backdropEl.addEventListener('click', function () { advance(); });
-            document.body.appendChild(state.backdropEl);
+
+        // Build (or clear) the right kind of backdrop for this step. Targeted
+        // steps use 4 panes around the target so the highlighted element
+        // stays unblurred; centered/no-target steps use a single full-screen
+        // backdrop. Swap between modes if the previous step used the other.
+        var needsPanes = !!step.target && step.placement !== 'center';
+        if (needsPanes) {
+            if (state.backdropEl) { state.backdropEl.remove(); state.backdropEl = null; }
+            if (!state.panesEl) {
+                state.panesEl = document.createElement('div');
+                state.panesEl.setAttribute('data-dc-tour-panes', '');
+                ['top','bottom','left','right'].forEach(function (k) {
+                    var pane = document.createElement('div');
+                    pane.className = 'dc-tour-pane';
+                    pane.dataset.pane = k;
+                    pane.addEventListener('click', function () { advance(); });
+                    state.panesEl.appendChild(pane);
+                });
+                document.body.appendChild(state.panesEl);
+            }
+        } else {
+            if (state.panesEl) { state.panesEl.remove(); state.panesEl = null; }
+            if (!state.backdropEl) {
+                state.backdropEl = document.createElement('div');
+                state.backdropEl.className = 'dc-tour-backdrop';
+                state.backdropEl.addEventListener('click', function () { advance(); });
+                document.body.appendChild(state.backdropEl);
+            }
         }
 
         // Tear down the prior popover/spotlight so transitions don't fight us.
@@ -449,6 +523,7 @@
         pop.className = 'dc-tour-pop';
         var totalCount = STEPS.length;
         var stepNum = idx + 1;
+        var canGoBack = idx > 0;
         pop.innerHTML =
             '<div class="dc-tour-kicker">' +
               '<span>★ Tour · ' + stepNum + ' / ' + totalCount + '</span>' +
@@ -458,10 +533,15 @@
             '<p class="dc-tour-body"></p>' +
             '<div class="dc-tour-actions">' +
               '<button type="button" class="dc-tour-skip">Skip tour</button>' +
-              '<button type="button" class="dc-tour-next">' +
-                (step.isFinal ? 'Finish' : 'Next') +
-                ' <svg viewBox="0 0 14 14" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 1 9 7 3 13"/></svg>' +
-              '</button>' +
+              '<div class="dc-tour-nav">' +
+                '<button type="button" class="dc-tour-back" aria-label="Previous"' + (canGoBack ? '' : ' disabled') + '>' +
+                  '<svg viewBox="0 0 14 14" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 1 3 7 9 13"/></svg>' +
+                '</button>' +
+                '<button type="button" class="dc-tour-next">' +
+                  (step.isFinal ? 'Finish' : 'Next') +
+                  ' <svg viewBox="0 0 14 14" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 1 9 7 3 13"/></svg>' +
+                '</button>' +
+              '</div>' +
             '</div>';
         // .textContent avoids any chance of HTML in step copy escaping.
         pop.querySelector('.dc-tour-title').textContent = step.title || '';
@@ -470,6 +550,7 @@
         // inside the popover card itself.
         pop.addEventListener('click', function (e) { e.stopPropagation(); });
         pop.querySelector('.dc-tour-next').addEventListener('click', function () { advance(); });
+        pop.querySelector('.dc-tour-back').addEventListener('click', function () { if (canGoBack) goBack(); });
         pop.querySelector('.dc-tour-skip').addEventListener('click', function () { close({ dismissed: true }); });
         pop.querySelector('.dc-tour-close').addEventListener('click', function () { close({ dismissed: true }); });
         document.body.appendChild(pop);
@@ -517,6 +598,10 @@
         if (!state.keyHandler) {
             state.keyHandler = function (e) {
                 if (e.key === 'Escape') { close({ dismissed: true }); }
+                else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    if (state.idx > 0) goBack();
+                }
                 else if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     advance();
@@ -524,6 +609,46 @@
             };
             document.addEventListener('keydown', state.keyHandler);
         }
+    }
+
+    function positionPanes(rect, pad) {
+        // Lay out the four blur panes so they surround the target rect,
+        // leaving an unblurred window over the target itself. Clamp to
+        // viewport edges so an off-screen target doesn't produce negative
+        // widths/heights. We slightly UNDER-cover by `pad` so the gold
+        // halo bleeds into the unblurred window — it reads sharper.
+        if (!state.panesEl) return;
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var top    = Math.max(0, rect.top    - pad);
+        var bottom = Math.min(vh, rect.bottom + pad);
+        var left   = Math.max(0, rect.left   - pad);
+        var right  = Math.min(vw, rect.right  + pad);
+
+        var paneTop    = state.panesEl.querySelector('.dc-tour-pane[data-pane="top"]');
+        var paneBottom = state.panesEl.querySelector('.dc-tour-pane[data-pane="bottom"]');
+        var paneLeft   = state.panesEl.querySelector('.dc-tour-pane[data-pane="left"]');
+        var paneRight  = state.panesEl.querySelector('.dc-tour-pane[data-pane="right"]');
+        if (!paneTop) return;
+
+        paneTop.style.top = '0px';
+        paneTop.style.left = '0px';
+        paneTop.style.width = vw + 'px';
+        paneTop.style.height = top + 'px';
+
+        paneBottom.style.top = bottom + 'px';
+        paneBottom.style.left = '0px';
+        paneBottom.style.width = vw + 'px';
+        paneBottom.style.height = Math.max(0, vh - bottom) + 'px';
+
+        paneLeft.style.top = top + 'px';
+        paneLeft.style.left = '0px';
+        paneLeft.style.width = left + 'px';
+        paneLeft.style.height = Math.max(0, bottom - top) + 'px';
+
+        paneRight.style.top = top + 'px';
+        paneRight.style.left = right + 'px';
+        paneRight.style.width = Math.max(0, vw - right) + 'px';
+        paneRight.style.height = Math.max(0, bottom - top) + 'px';
     }
 
     function positionPopover(pop, spot, targetEl, step) {
@@ -534,6 +659,7 @@
         spot.style.left   = (rect.left   - pad) + 'px';
         spot.style.width  = (rect.width  + pad * 2) + 'px';
         spot.style.height = (rect.height + pad * 2) + 'px';
+        positionPanes(rect, pad);
 
         // Decide placement. If the caller specified one and it fits, honor it;
         // otherwise pick the side with the most room. The popover is measured
