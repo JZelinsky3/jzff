@@ -653,6 +653,12 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: .6rem;
+  /* Empty meter used to flash in at slide mount, then sit there idle
+     for ~2s before filling — read as a layout artifact. Fade the
+     track in just before the fills start so it shows up intentionally
+     in sync with the rest of the choreography. */
+  opacity: 0;
+  animation: rv-slide-fade-in .25s 2.25s both ease-out;
 }
 .rv-verdict-meter-a,
 .rv-verdict-meter-b {
@@ -706,6 +712,11 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   font-size: 1rem; letter-spacing: .2em; text-transform: uppercase;
   color: var(--rv-cream);
   animation: rv-slide-fade-in .85s 5.05s both ease-out;
+  /* Padding below the record line pushes the centered slide content
+     up — the title + record were sitting too close to the bottom edge
+     of the stage; this shifts the visible block higher without
+     restructuring the layout. */
+  padding-bottom: 2.5rem;
 }
 .rv-verdict-record strong { color: var(--rv-white); }
 
