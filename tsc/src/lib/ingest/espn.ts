@@ -394,7 +394,9 @@ async function ingestSeason(args: {
   // with a deterministic a/b key so re-syncs update rows in place, keeping
   // matchup ids stable (pickems_picks references them via a cascading FK).
   await db.from('manager_seasons').delete().eq('season_id', seasonId)
-  if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId)
+  // Preserve curated drafts (e.g. the hand-authored 2019 Lubbs import)
+  // across re-syncs by matching on external_id pattern.
+  if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
   if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
   // ─── manager_seasons ────────────────────────────────────────────────────
