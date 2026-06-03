@@ -529,30 +529,108 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-tape-foot strong { color: var(--rv-cream); }
 
-/* ─── VERDICT — meter version ─────────────────────────
-   Bigger, more dramatic. Two coloured halves of one bar that fill
-   from opposite ends toward the divider. Each side has its own
-   label row with wins + percentage. Verdict title and signature
-   line ladder in after the fill completes. */
+/* ─── VERDICT — weighted scorecard + meter ────────────
+   Verdict is no longer just record-based. Six categories split 100
+   points; the leader meter shows the WEIGHTED score split. The
+   scorecard ladders in row-by-row before the meter fills, so the
+   audience sees the math add up to the result rather than just
+   reading a final percentage. */
 .rv-slide-verdict {
   max-width: 940px;
   margin: 0 auto;
   width: 100%;
 }
-.rv-verdict-labels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  font-family: var(--mono);
-  font-size: .82rem;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: var(--rv-cream);
-  margin-bottom: 1rem;
-  animation: rv-slide-fade-in .7s .25s both ease-out;
+.rv-score-card {
+  max-width: 640px;
+  margin: 0 auto 2rem;
+  border: 1px solid var(--rv-line2);
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0,0,0,.25);
 }
-.rv-verdict-labels .a { text-align: left; color: var(--a-color-readable, var(--rv-white)); }
-.rv-verdict-labels .b { text-align: right; color: var(--b-color-readable, var(--rv-white)); }
-.rv-verdict-labels strong { font-weight: 700; }
+.rv-score-row {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1fr;
+  gap: 1rem;
+  padding: .7rem 1.4rem;
+  align-items: baseline;
+  border-bottom: 1px dotted rgba(255,255,255,.1);
+  opacity: 0;
+  animation: rv-score-row-in .55s both cubic-bezier(.2,.6,.2,1);
+}
+.rv-score-row:last-child { border-bottom: none; }
+.rv-score-head { animation-delay: .35s; }
+.rv-score-row.rv-score-data:nth-of-type(2) { animation-delay: .6s; }
+.rv-score-row.rv-score-data:nth-of-type(3) { animation-delay: .8s; }
+.rv-score-row.rv-score-data:nth-of-type(4) { animation-delay: 1.0s; }
+.rv-score-row.rv-score-data:nth-of-type(5) { animation-delay: 1.2s; }
+.rv-score-row.rv-score-data:nth-of-type(6) { animation-delay: 1.4s; }
+.rv-score-row.rv-score-data:nth-of-type(7) { animation-delay: 1.6s; }
+.rv-score-total { animation-delay: 1.95s; }
+@keyframes rv-score-row-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rv-score-head {
+  background: rgba(255,255,255,.04);
+  border-bottom: 1px solid var(--rv-line2);
+  padding: .85rem 1.4rem;
+}
+.rv-score-head .rv-score-val {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.4rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.rv-score-head .rv-score-val.a { color: var(--a-color-readable, var(--rv-white)); }
+.rv-score-head .rv-score-val.b { color: var(--b-color-readable, var(--rv-white)); }
+.rv-score-head .rv-score-label {
+  color: var(--rv-red);
+  font-weight: 700;
+  font-size: .62rem;
+  letter-spacing: .3em;
+}
+.rv-score-val {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--rv-cream);
+}
+.rv-score-val.a { text-align: right; color: var(--a-color-readable, var(--rv-cream)); }
+.rv-score-val.b { text-align: left;  color: var(--b-color-readable, var(--rv-cream)); }
+/* Category-winner cell gets the brighter readable color + glow so the
+   audience clocks who's earning each category as the row enters. */
+.rv-score-val.wins { text-shadow: 0 0 16px rgba(220,38,38,.4); }
+.rv-score-label {
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  text-align: center;
+  display: flex; align-items: center; justify-content: center;
+  gap: .35rem;
+}
+.rv-score-label .max {
+  color: var(--rv-grey);
+  font-size: .56rem;
+  letter-spacing: .12em;
+}
+.rv-score-total {
+  background: rgba(220,38,38,.07);
+  border-top: 1px solid var(--rv-red-dim);
+  padding: 1rem 1.4rem;
+}
+.rv-score-total .rv-score-val { font-size: 1.85rem; }
+.rv-score-total .rv-score-label {
+  color: var(--rv-red);
+  font-weight: 700;
+  letter-spacing: .3em;
+}
+
 .rv-verdict-meter {
   position: relative;
   height: 32px;
@@ -570,12 +648,12 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 .rv-verdict-meter-a {
   left: 0;
   background: var(--a-color, #1f2937);
-  animation: rv-meter-a-fill 1.6s .35s cubic-bezier(.2,.6,.2,1) both;
+  animation: rv-meter-a-fill 1.6s 2.45s cubic-bezier(.2,.6,.2,1) both;
 }
 .rv-verdict-meter-b {
   right: 0;
   background: var(--b-color, #1f2937);
-  animation: rv-meter-b-fill 1.6s .35s cubic-bezier(.2,.6,.2,1) both;
+  animation: rv-meter-b-fill 1.6s 2.45s cubic-bezier(.2,.6,.2,1) both;
 }
 @keyframes rv-meter-a-fill { from { width: 0; } to { width: var(--a-pct, 50%); } }
 @keyframes rv-meter-b-fill { from { width: 0; } to { width: var(--b-pct, 50%); } }
@@ -585,7 +663,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   width: 1px;
   background: var(--rv-white);
   opacity: 0;
-  animation: rv-slide-fade-in .35s 1.9s both ease-out;
+  animation: rv-slide-fade-in .35s 4.0s both ease-out;
 }
 .rv-verdict-meter-nums {
   display: grid;
@@ -596,7 +674,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   font-variant-numeric: tabular-nums;
   margin-bottom: 2.25rem;
   opacity: 0;
-  animation: rv-slide-fade-in .55s 2.05s both ease-out;
+  animation: rv-slide-fade-in .55s 4.15s both ease-out;
 }
 .rv-verdict-meter-nums .a { text-align: left;  color: var(--a-color-readable, var(--rv-white)); }
 .rv-verdict-meter-nums .b { text-align: right; color: var(--b-color-readable, var(--rv-white)); }
@@ -606,16 +684,25 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   font-size: clamp(2.2rem, 6.5vw, 4.2rem);
   color: var(--rv-white);
   margin: 0 0 1rem;
-  animation: rv-slide-title-in 1s 2.3s both cubic-bezier(.2,.6,.2,1);
+  animation: rv-slide-title-in 1s 4.4s both cubic-bezier(.2,.6,.2,1);
 }
 .rv-verdict-title em { color: var(--rv-red); }
 .rv-verdict-record {
   font-family: var(--mono);
   font-size: 1rem; letter-spacing: .2em; text-transform: uppercase;
   color: var(--rv-cream);
-  animation: rv-slide-fade-in .85s 2.9s both ease-out;
+  animation: rv-slide-fade-in .85s 5.05s both ease-out;
 }
 .rv-verdict-record strong { color: var(--rv-white); }
+
+@media (max-width: 720px) {
+  .rv-score-card { max-width: 100%; }
+  .rv-score-row { padding: .55rem .9rem; grid-template-columns: 1fr 1.2fr 1fr; gap: .65rem; }
+  .rv-score-val { font-size: 1rem; }
+  .rv-score-total .rv-score-val { font-size: 1.45rem; }
+  .rv-score-head .rv-score-val { font-size: 1.05rem; }
+  .rv-score-label { font-size: .58rem; letter-spacing: .15em; }
+}
 
 @media (max-width: 720px) {
   .rv-reveal-shell { padding: .75rem .9rem 1rem; }
@@ -1325,13 +1412,35 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     });
   }
 
+  // Map of user_id → most recent team name from the league sync. Populated
+  // by the parallel managers_directory.json fetch in load() and read by
+  // the reveal tape slide so each combatant's "in this corner" label can
+  // surface their actual team name instead of just their handle.
+  const teamByUid = new Map();
+
   async function load() {
     try {
-      const res = await fetch('data/rivalries.json');
+      const [res, dirRes] = await Promise.all([
+        fetch('data/rivalries.json'),
+        fetch('data/managers_directory.json').catch(() => null),
+      ]);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       const rivalries = data.rivalries || [];
       const summary = data.summary || { active_feuds: 0, total_meetings: 0, leaders: 0, deadlocked: 0 };
+
+      // Best-effort: directory may not be available; the reveal silently
+      // falls back to uppercased manager handles when team_latest is null.
+      if (dirRes && dirRes.ok) {
+        try {
+          const dir = await dirRes.json();
+          for (const m of (dir.managers || [])) {
+            if (m.user_id && m.team_latest) {
+              teamByUid.set(m.user_id, m.team_latest);
+            }
+          }
+        } catch (_) {}
+      }
 
       // Header
       const sub = document.getElementById('rv-header-sub');
@@ -1392,13 +1501,14 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   // keyframes triggered on mount; the count-up is a small rAF loop.
 
   // Durations let animation-heavy slides breathe — tape's row-stagger
-  // alone is ~2s, verdict's meter fill + title ladder is ~3.5s, so
-  // they need longer holds than a flat title slide.
+  // alone is ~2s, verdict's scorecard + meter + title ladder runs ~6s
+  // (scorecard rows ladder 0.35-2.05s, meter fill 2.45-4.05s, divider
+  // 4.0s, nums 4.15s, verdict title 4.4s, record 5.05s).
   const SLIDE_DURATIONS = {
     intro:   5000,
     title:   4500,
     tape:    7500,
-    verdict: 6500,
+    verdict: 8500,
     outro:   5500,
   };
 
@@ -1577,17 +1687,27 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     if (rv.ties_count > 0) footParts.push(`${rv.ties_count} tie${rv.ties_count === 1 ? '' : 's'}`);
     const foot = footParts.join(' &nbsp;·&nbsp; ');
 
+    // Pull each side's most recent team name from the directory. Falls
+    // back to the manager handle when unavailable so the layout never
+    // collapses. The team name reads as the corner banner; the manager
+    // handle (already shown big in serif below) plays the role of "and
+    // their handle is" without being duplicated.
+    const aTeam = teamByUid.get(a.user_id) || '';
+    const bTeam = teamByUid.get(b.user_id) || '';
+    const aCorner = aTeam ? aTeam : (a.name || '');
+    const bCorner = bTeam ? bTeam : (b.name || '');
+
     return `
       <section class="rv-slide rv-slide-tape">
         <div class="rv-slide-eyebrow">★ Tale of the Tape ★</div>
         <div class="rv-tape-head">
           <div class="rv-tape-side a${aLeading ? ' leads' : ''}">
-            <div class="rv-tape-corner">${escapeHtml((a.name || '').toUpperCase())}</div>
+            <div class="rv-tape-corner">${escapeHtml(aCorner.toUpperCase())}</div>
             <div class="rv-tape-name">${escapeHtml(a.name)}</div>
           </div>
           <div class="rv-tape-vs">vs.</div>
           <div class="rv-tape-side b${bLeading ? ' leads' : ''}">
-            <div class="rv-tape-corner">${escapeHtml((b.name || '').toUpperCase())}</div>
+            <div class="rv-tape-corner">${escapeHtml(bCorner.toUpperCase())}</div>
             <div class="rv-tape-name">${escapeHtml(b.name)}</div>
           </div>
         </div>
@@ -1597,34 +1717,163 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     `;
   }
 
+  // Weighted scorecard. Six categories split 100 points; each category's
+  // share is split between A and B based on their numbers. The final
+  // totals drive the verdict meter — so the verdict isn't just W-L, it
+  // factors in scoring rate, blowout-ness, peak score, playoff weight,
+  // and recent momentum.
+  //
+  // Category weights (sum to 100):
+  //   Record (H2H)   35  — direct measure, biggest single factor
+  //   Avg PPG        20  — scoring rate in this matchup
+  //   Margin         15  — average signed margin from A's perspective
+  //                        (positive = A wins by more, negative = B does)
+  //   Peak Score     10  — single best week against this opponent
+  //   Playoff        10  — wins specifically in postseason meetings
+  //   Momentum       10  — current active streak (bigger streak = more pts)
+  function computeScorecard(rv) {
+    const a = rv.manager_a, b = rv.manager_b;
+
+    // 1. Record (35 pts) — share of H2H wins, ties split the unused pts.
+    const totalDecided = a.wins + b.wins;
+    const aRec = totalDecided > 0 ? (a.wins / totalDecided) * 35 : 17.5;
+    const bRec = 35 - aRec;
+
+    // 2. Avg PPG (20 pts) — share of combined PPG in this matchup.
+    const sumPpg = (a.avg_ppg || 0) + (b.avg_ppg || 0);
+    const aPpg = sumPpg > 0 ? ((a.avg_ppg || 0) / sumPpg) * 20 : 10;
+    const bPpg = 20 - aPpg;
+
+    // 3. Margin (15 pts) — signed avg margin from A's view, clamped to
+    //    ±30 and linearly mapped to a 0..15 share. +30 → all 15 for A;
+    //    -30 → all 15 for B; 0 → 7.5 each.
+    let signed = 0, mGames = 0;
+    for (const g of (a.last5 || [])) {
+      if (typeof g.margin !== 'number') continue;
+      mGames++;
+      if (g.result === 'W') signed += g.margin;
+      else if (g.result === 'L') signed -= g.margin;
+    }
+    const avgM = mGames > 0 ? signed / mGames : 0;
+    const clamped = Math.max(-30, Math.min(30, avgM));
+    const aMargin = ((clamped + 30) / 60) * 15;
+    const bMargin = 15 - aMargin;
+
+    // 4. Peak Score (10 pts) — share of combined high_score.
+    const aHi = (a.high_score && typeof a.high_score.score === 'number') ? a.high_score.score : 0;
+    const bHi = (b.high_score && typeof b.high_score.score === 'number') ? b.high_score.score : 0;
+    const sumHi = aHi + bHi;
+    const aPeak = sumHi > 0 ? (aHi / sumHi) * 10 : 5;
+    const bPeak = 10 - aPeak;
+
+    // 5. Playoff (10 pts) — share of postseason H2H wins.
+    const aPo = wOf(a.playoff_record) || 0;
+    const bPo = wOf(b.playoff_record) || 0;
+    const sumPo = aPo + bPo;
+    const aPlayoff = sumPo > 0 ? (aPo / sumPo) * 10 : 5;
+    const bPlayoff = 10 - aPlayoff;
+
+    // 6. Momentum (10 pts) — active streak length (capped at 5) maps the
+    //    winner's share from 5 to 10; the other side gets the remainder.
+    //    No streak (tied last result) → 5/5.
+    let aMomentum = 5, bMomentum = 5;
+    const games = a.last5 || [];
+    if (games.length > 0 && games[games.length - 1].result !== 'T') {
+      const last = games[games.length - 1];
+      let runLen = 1;
+      for (let i = games.length - 2; i >= 0; i--) {
+        if (games[i].result === last.result) runLen++;
+        else break;
+      }
+      const share = Math.min(runLen, 5) / 5;     // 1→.2, 5+→1
+      const winnerPts = 5 + share * 5;            // 6..10
+      if (last.result === 'W') { aMomentum = winnerPts; bMomentum = 10 - winnerPts; }
+      else                     { aMomentum = 10 - winnerPts; bMomentum = winnerPts; }
+    }
+
+    const rows = [
+      { label: 'Record', max: 35, a: aRec,      b: bRec },
+      { label: 'Avg PPG', max: 20, a: aPpg,     b: bPpg },
+      { label: 'Margin', max: 15, a: aMargin,   b: bMargin },
+      { label: 'Peak Score', max: 10, a: aPeak, b: bPeak },
+      { label: 'Playoff', max: 10, a: aPlayoff, b: bPlayoff },
+      { label: 'Momentum', max: 10, a: aMomentum, b: bMomentum },
+    ];
+    const aTotal = rows.reduce((s, r) => s + r.a, 0);
+    const bTotal = rows.reduce((s, r) => s + r.b, 0);
+    return { rows, aTotal, bTotal };
+  }
+
   function renderVerdictSlide(slide) {
     const rv = slide.rv;
-    const totalDecided = rv.manager_a.wins + rv.manager_b.wins;
-    const aPct = totalDecided > 0 ? (rv.manager_a.wins / totalDecided) * 100 : 50;
-    const bPct = 100 - aPct;
-    const aLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_a.name;
-    const bLeading = !aLeading && !rv.is_deadlocked && rv.leader_name === rv.manager_b.name;
+    const a = rv.manager_a, b = rv.manager_b;
+    const score = computeScorecard(rv);
+    const { rows, aTotal, bTotal } = score;
+
+    // Weighted leader detection. A 2-point window counts as "tightly
+    // contested" — close enough that the meter is right around 50/50.
+    const margin = aTotal - bTotal;
+    const tight = Math.abs(margin) < 2;
+    const aLeading = !tight && margin > 0;
+    const bLeading = !tight && margin < 0;
+
     const aColor = aLeading ? '#dc2626' : '#374151';
     const bColor = bLeading ? '#dc2626' : '#374151';
     const aReadable = aLeading ? '#ef4444' : '#c9c0ad';
     const bReadable = bLeading ? '#ef4444' : '#c9c0ad';
-    const verdictText = rv.is_deadlocked
-      ? 'Deadlocked.'
-      : rv.leader_name
-        ? `${escapeHtml(rv.leader_name)} <em>leads.</em>`
-        : 'No verdict yet.';
+
+    // Use the WEIGHTED totals (sum to 100) for the meter percentages.
+    const aPct = aTotal;
+    const bPct = bTotal;
+
+    const verdictText = tight
+      ? 'Tightly contested.'
+      : aLeading
+        ? `${escapeHtml(a.name)} <em>edges it.</em>`
+        : `${escapeHtml(b.name)} <em>edges it.</em>`;
+
+    // Track raw record vs weighted leader — when they disagree, surface
+    // it in the record line so the audience sees "record says X but the
+    // weighted call goes the other way."
+    const recordLeader = rv.is_deadlocked || !rv.leader_name
+      ? null
+      : (rv.leader_name === a.name ? 'a' : 'b');
+    const weightedLeader = tight ? null : (aLeading ? 'a' : 'b');
+    const disagreement = recordLeader && weightedLeader && recordLeader !== weightedLeader;
+
     const recordBits = [];
-    if (rv.leader_record) recordBits.push(`<strong>${escapeHtml(rv.leader_record)}</strong> series`);
-    if (rv.last_meeting) recordBits.push(`Last met · <strong>${rv.last_meeting.year} W${rv.last_meeting.week}</strong>${rv.last_meeting.is_playoff ? ' (Playoff)' : ''}`);
+    if (rv.leader_record) recordBits.push(`Raw record <strong>${escapeHtml(rv.leader_record)}</strong>${disagreement ? ' — overruled by the scorecard' : ''}`);
+    if (rv.last_meeting) recordBits.push(`Last met <strong>${rv.last_meeting.year} W${rv.last_meeting.week}</strong>${rv.last_meeting.is_playoff ? ' (Playoff)' : ''}`);
     const record = recordBits.join(' &nbsp;·&nbsp; ');
+
+    const rowsHtml = rows.map((r) => {
+      const aWins = r.a > r.b + 0.05;
+      const bWins = r.b > r.a + 0.05;
+      return `
+        <div class="rv-score-row rv-score-data">
+          <div class="rv-score-val a${aWins ? ' wins' : ''}">${r.a.toFixed(1)}</div>
+          <div class="rv-score-label">${escapeHtml(r.label)} <span class="max">(${r.max})</span></div>
+          <div class="rv-score-val b${bWins ? ' wins' : ''}">${r.b.toFixed(1)}</div>
+        </div>
+      `;
+    }).join('');
 
     return `
       <section class="rv-slide rv-slide-verdict"
                style="--a-pct: ${aPct.toFixed(2)}%; --b-pct: ${bPct.toFixed(2)}%; --a-color: ${aColor}; --b-color: ${bColor}; --a-color-readable: ${aReadable}; --b-color-readable: ${bReadable};">
         <div class="rv-slide-eyebrow">★ The Verdict ★</div>
-        <div class="rv-verdict-labels">
-          <span class="a"><strong>${escapeHtml(rv.manager_a.name)}</strong></span>
-          <span class="b"><strong>${escapeHtml(rv.manager_b.name)}</strong></span>
+        <div class="rv-score-card">
+          <div class="rv-score-row rv-score-head">
+            <div class="rv-score-val a">${escapeHtml(a.name)}</div>
+            <div class="rv-score-label">Scorecard</div>
+            <div class="rv-score-val b">${escapeHtml(b.name)}</div>
+          </div>
+          ${rowsHtml}
+          <div class="rv-score-row rv-score-total">
+            <div class="rv-score-val a">${aTotal.toFixed(1)}</div>
+            <div class="rv-score-label">Total <span class="max">(100)</span></div>
+            <div class="rv-score-val b">${bTotal.toFixed(1)}</div>
+          </div>
         </div>
         <div class="rv-verdict-meter" aria-hidden="true">
           <div class="rv-verdict-meter-a"></div>
@@ -1632,8 +1881,8 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
           <div class="rv-verdict-meter-divider"></div>
         </div>
         <div class="rv-verdict-meter-nums">
-          <span class="a">${rv.manager_a.wins} <span style="opacity:.5;">·</span> ${aPct.toFixed(1)}%</span>
-          <span class="b">${bPct.toFixed(1)}% <span style="opacity:.5;">·</span> ${rv.manager_b.wins}</span>
+          <span class="a">${aTotal.toFixed(1)} <span style="opacity:.5;">·</span> ${aPct.toFixed(1)}%</span>
+          <span class="b">${bPct.toFixed(1)}% <span style="opacity:.5;">·</span> ${bTotal.toFixed(1)}</span>
         </div>
         <h2 class="rv-verdict-title">${verdictText}</h2>
         ${record ? `<div class="rv-verdict-record">${record}</div>` : ''}
