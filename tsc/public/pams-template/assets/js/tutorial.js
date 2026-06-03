@@ -46,66 +46,48 @@
     //               Auto-picks the side with the most room if omitted.
     var STEPS_BY_PAGE = {
         // ─────────── HUB / index.html ───────────
+        // High-altitude: orient the reader, point at the big things, send
+        // them on. The detailed section-by-section walkthrough lived here
+        // before but read as overkill — the hub is supposed to feel like a
+        // newspaper front page, not a feature checklist.
         hub: [
             {
                 placement: 'center',
                 title: 'Welcome to your league chronicle.',
-                body: "This is your league's public almanac — every champion, record, and rivalry, kept in the books. Quick tour of the hub: tap Next or click anywhere.",
+                body: "This is the public almanac for your league — past champions, leaderboards, rivalries, a featured manager, and a full record book. Quick tour, then you're loose.",
             },
             {
                 target: '#site-nav', placement: 'bottom',
                 title: 'The masthead.',
-                body: "Every page has it. The title takes you home; the ▦ icon (top-right) opens the menu for your account, bookmarks, and admin links.",
+                body: "Lives on every page. The title takes you home; the ▦ icon (top-right) opens the menu for sign-in, bookmarks, and admin.",
             },
             {
                 target: '#nav-chapbar', placement: 'bottom',
-                title: 'Chapter bar — your main navigation.',
-                body: "Standings, Managers, Seasons, Drafts, Records, Rivalries, Live. Click any chapter to jump there — a quick guide will pop up the first time you land on each.",
-            },
-            {
-                target: '#nav-drop', placement: 'bottom', align: 'end',
-                title: 'Menu (▦).',
-                body: "Sign in, bookmark this league, jump back to your library, or — if you're the commissioner — manage the league. Always here, top-right.",
+                title: 'Chapter bar — your main nav.',
+                body: "Standings · Managers · Seasons · Drafts · Records · Rivalries · Live. Pick a chapter; a quick guide pops up the first time you land on each.",
             },
             {
                 target: '.hero', placement: 'bottom',
-                title: "Hero — your league's headline.",
-                body: "Name, the years it's been running, the editorial subtitle. Sets the tone for the rest of the volume.",
-            },
-            {
-                target: '#hero-stat', placement: 'top',
-                title: 'Benchmarks (§ 01).',
-                body: "The biggest single-game scores in league history and the records that own them. The trio below it shows other record-holders to know.",
-            },
-            {
-                target: '#dc-hall-row', placement: 'top',
-                title: 'Hall of Champions (§ 03).',
-                body: "Every champion this league has crowned. Scroll horizontally — each banner links to that season's writeup.",
-            },
-            {
-                target: '#dc-leaders-section', placement: 'top',
-                title: 'Career leaders (§ 04).',
-                body: "Top-3 per category — points, wins, playoff appearances. Use the arrows to flip through the leaderboards.",
-            },
-            {
-                target: '#dc-reel-row', placement: 'top',
-                title: 'Spotlight + Clippings (§ 05).',
-                body: "A featured manager each week, plus a fresh clipping from the press room. Spotlight links straight to that manager's profile.",
+                title: 'The chronicle, below.',
+                body: "Scroll down for the highlights — champions, career leaders, manager spotlight, rivalries reel. Each block links into a fuller chapter.",
             },
             {
                 target: '#dc-trackboard', placement: 'left',
                 title: 'Trackboard (right rail).',
-                body: "Live updates during the season — news, players on watch, risers, odds. Click the rail to expand it, or the ✕ to collapse.",
+                body: "Live in-season updates — news, watch list, risers, odds. Click the rail to expand, ✕ to collapse.",
             },
             {
-                placement: 'center',
-                title: 'Hub tour complete.',
-                body: "Click around — when you open Standings, Managers, or any other chapter for the first time, a quick guide will pop up there too. Re-open this tour anytime from the menu → Replay tour.",
+                target: '.toc', placement: 'top',
+                title: 'Table of contents.',
+                body: "Bottom of every chronicle page — the full index. Click a chapter to jump straight there.",
                 isFinal: true,
             },
         ],
 
         // ─────────── STANDINGS ───────────
+        // Two steps is plenty — there's exactly one thing on this page.
+        // The redundant "use the chapter bar" closer got dropped because
+        // the user already saw it on the hub tour.
         standings: [
             {
                 placement: 'center',
@@ -116,11 +98,6 @@
                 target: '#standings-container', placement: 'top',
                 title: 'The table.',
                 body: "Record, points for/against, streak, and playoff seed. Column headers tell you what's what; the league average row anchors the field.",
-            },
-            {
-                target: '#nav-chapbar', placement: 'bottom',
-                title: 'Jump anywhere.',
-                body: "Use the chapter bar to keep exploring — Managers, Seasons, Records, the works.",
                 isFinal: true,
             },
         ],
@@ -163,19 +140,21 @@
                 body: "Every draft board your league has run — and the analytics behind them.",
             },
             {
-                target: '#sec-board', placement: 'top',
-                title: 'The board.',
-                body: "Round by round — picks, positions, who reached, who waited. Use the year tabs to flip drafts.",
+                target: '.draft-tabs', placement: 'bottom',
+                title: 'Sections, up top.',
+                body: "Board · Round 1 · Order · DNA · Tendencies · Value · more. Pick a section to jump down; lots of data is organized behind these tabs.",
             },
             {
-                target: '#sec-dna', placement: 'top',
-                title: 'Draft DNA.',
-                body: "Each manager's drafting personality: positional tendencies, favored archetypes, value calls vs. reaches. Scroll for the rest of the analytics.",
+                target: '#yearTabs', placement: 'bottom',
+                title: 'Pick a draft year.',
+                body: "The year tabs flip the board (and most sections) to a specific draft. Newest year defaults; click any to time-travel.",
                 isFinal: true,
             },
         ],
 
         // ─────────── RECORDS ───────────
+        // User feedback: the records page doesn't need a play-by-play. One
+        // intro + one "use the tabs" pointer is enough.
         records: [
             {
                 placement: 'center',
@@ -183,9 +162,9 @@
                 body: "Every record worth holding — and who currently owns it.",
             },
             {
-                target: 'main', placement: 'top',
-                title: 'The book.',
-                body: "Highest score, biggest blowout, longest streak, most points in a season. Records held by the current season are flagged so you know who's chasing what.",
+                target: '.rec-tabs', placement: 'bottom',
+                title: 'Sections, up top.',
+                body: "Weekly · Career · Season · more. Each tab is its own slice of the record book — flip through to find highest scores, biggest blowouts, longest streaks, season totals. Records held by the current season are flagged.",
                 isFinal: true,
             },
         ],
@@ -206,6 +185,10 @@
         ],
 
         // ─────────── LIVE-SEASON HUB ───────────
+        // The masthead menu doesn't actually link to live-season sub-pages
+        // (that earlier claim was wrong) — the entrypoints are the cards
+        // on this page. Point at .ls-grid so the user clicks the right
+        // thing.
         'live-season': [
             {
                 placement: 'center',
@@ -213,9 +196,9 @@
                 body: "Tools that run while the season is live — previews, picks, rankings, watch lists, trade grades.",
             },
             {
-                target: '#site-nav', placement: 'bottom',
-                title: 'Live tools menu.',
-                body: "Open the menu (▦) to jump between Matchup Preview, Pick'ems, Power Rankings, Records Watch, Milestones, and the Trade Grader.",
+                target: '.ls-grid', placement: 'top',
+                title: 'Pick a tool.',
+                body: "Each card opens a live-season tool: Matchup Preview, Best Coach, Pick'ems, Power Rankings, Records Watch, Milestones, Trade Grader. Use the back arrow on those pages to return here.",
                 isFinal: true,
             },
         ],
@@ -423,7 +406,17 @@
             '  .dc-tour-pop::after { display: none !important; }',
             '  .dc-tour-pop.is-center { top: 50% !important; bottom: auto !important; transform: translate(-50%, -50%); left: 50% !important; right: auto !important; }',
             '}',
-            '.nav-drop-menu a.dc-tour-replay { color: #c9c0ad; }',
+            // Replay link is a low-frequency utility, so render it about
+            // half the visual weight of normal dropdown items — smaller
+            // font, tighter padding, dimmer color. Hover lifts it to
+            // gold so it's still discoverable.
+            '.nav-drop-menu a.dc-tour-replay {',
+            '  color: #837b6a;',
+            '  font-size: .68rem;',
+            '  letter-spacing: .08em;',
+            '  padding-top: .35rem; padding-bottom: .35rem;',
+            '  margin-top: .15rem;',
+            '}',
             '.nav-drop-menu a.dc-tour-replay:hover { color: #e8c889; }',
         ].join('\n');
         document.head.appendChild(s);

@@ -180,10 +180,41 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   border-color: var(--rv-grey);
 }
 
+/* ─── OPEN-CARD AFFORDANCE ─────────────────────────
+   Each .rv-card is a link to rivalry.html?id=… for the full series
+   detail, but the card body looks self-contained and users weren't
+   noticing the click target. A small footer strip with "Open the
+   file →" makes it unmistakable, and the arrow nudges right on hover
+   so the action reads. */
+.rv-open {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .35rem;
+  padding: .5rem 1.2rem;
+  border-top: 1px solid var(--rv-line2);
+  background: var(--rv-card2);
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-open-arrow {
+  display: inline-block;
+  transition: transform .2s ease;
+  color: var(--rv-red);
+}
+.rv-card:hover .rv-open { color: var(--rv-cream); }
+.rv-card:hover .rv-open-arrow { transform: translateX(3px); }
+
 /* ─── CARD BODY 3-COL ────────────────────────────── */
 .rv-body {
   display: grid;
-  grid-template-columns: 1fr 180px 1fr;
+  /* Bumped from 180px so the rivalry name + meeting count + bar/leader
+     line all get breathing room. The two side columns still flex 1:1
+     so balance survives the wider middle. */
+  grid-template-columns: 1fr 240px 1fr;
 }
 
 /* ─── MANAGER SIDES ──────────────────────────────── */
@@ -671,6 +702,10 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
             <div class="rv-last-game">Last: <span>${lastGameStr}</span></div>
           </div>
           ${buildSide(rv.manager_b, 'b', bLeading)}
+        </div>
+        <div class="rv-open" aria-hidden="true">
+          <span>Open the file</span>
+          <span class="rv-open-arrow">→</span>
         </div>
       </a>
     `;
