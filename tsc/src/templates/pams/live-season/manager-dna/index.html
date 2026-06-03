@@ -299,6 +299,9 @@ main { position: relative; z-index: 1; }
 .dna-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+    /* Each card sizes to its own content — opening one in column A no
+       longer stretches its row-neighbor in column B. */
+    align-items: start;
     gap: 1.1rem;
 }
 @media (max-width: 820px) {
@@ -985,8 +988,11 @@ main { position: relative; z-index: 1; }
         const seq = seqCode(m.archetype.key + '|' + m.name);
 
         // Profile link sits inside the expanded section so the collapsed
-        // summary is purely an "open the vault" affordance.
-        const profileHref = m.uid ? `../../managers/manager.html?id=${m.uid}` : null;
+        // summary is purely an "open the vault" affordance. The page is
+        // served with <base href="/leagues/<slug>/"> so relative paths
+        // resolve against the league root — use a base-relative href
+        // rather than walking up directories.
+        const profileHref = m.uid ? `managers/manager.html?id=${m.uid}` : null;
 
         return `
             <details class="dna-card">
@@ -1020,7 +1026,7 @@ main { position: relative; z-index: 1; }
     // Alumni list — name + their primary archetype only. Clicking jumps to
     // the manager's profile page (if we have a uid for them).
     function renderAlumniItem(m) {
-        const href = m.uid ? `../../managers/manager.html?id=${m.uid}` : null;
+        const href = m.uid ? `managers/manager.html?id=${m.uid}` : null;
         const inner = `
             <span class="dna-alumni-name">${escapeHtml(m.name)}</span>
             <span class="dna-alumni-arch">${escapeHtml(m.archetype.name)}</span>
