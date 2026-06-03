@@ -248,16 +248,19 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 
 /* ─── LAST MEETING — featured recap ─────────────────
-   Shows the most recent matchup as its own card: both scores, week,
-   playoff flag. Hidden when total_meetings === 0. */
+   Shows the most recent matchup with both scores AND the supporting
+   numbers around it: margin, combined total, and a knockout footer
+   when one player's playoff run ended on this game. The middle column
+   carries margin/combined chips so the card doesn't read as 70% white
+   space (the old "name vs. name" layout did). */
 .rv-last-card {
   background: var(--rv-card);
   border: 1px solid var(--rv-line2);
   border-radius: 3px;
   padding: 1.4rem 1.6rem;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 1fr minmax(150px, auto) 1fr;
+  gap: .75rem 1.25rem;
   align-items: center;
 }
 .rv-last-card .rv-last-meta {
@@ -283,14 +286,81 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-last-score {
   font-family: var(--serif);
-  font-size: 2.4rem; line-height: 1;
+  font-size: 2.6rem; line-height: 1;
   color: var(--rv-grey-lt);
 }
 .rv-last-side.won .rv-last-score { color: var(--rv-red); }
+.rv-last-mid {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .35rem;
+}
 .rv-last-vs {
   font-family: var(--serif); font-style: italic;
   font-size: 1.4rem;
   color: var(--rv-grey-lt);
+}
+.rv-last-chip {
+  font-family: var(--mono);
+  font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rv-line2);
+  border-radius: 2px;
+  color: var(--rv-cream);
+  background: var(--rv-card2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rv-last-chip strong { color: var(--rv-red); font-weight: 700; }
+/* Footer row spans both sides. Carries the knockout note (if any) and
+   a small "vs. league avg" comparison so the post-game read goes
+   beyond just "who scored more." Lives at the bottom of the card. */
+.rv-last-foot {
+  grid-column: 1 / -1;
+  margin-top: .25rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--rv-line2);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--mono);
+  font-size: .62rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-last-foot .ko {
+  color: var(--rv-gold);
+}
+
+/* ─── BIGGEST MEETING — pulled out as its own callout ─
+   Walks last5, finds the largest-margin meeting (playoff bias-breaks
+   ties), and surfaces it as a one-liner above the ledger. Reads like
+   "this is the one to remember." */
+.rv-biggest {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem;
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  border-left: 3px solid var(--rv-red);
+  border-radius: 3px;
+  padding: .85rem 1.2rem;
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--rv-cream);
+}
+.rv-biggest-label {
+  color: var(--rv-red);
+  letter-spacing: .22em;
+}
+.rv-biggest strong { color: var(--rv-white); font-weight: 700; }
+
+/* Inline knockout tag for ledger rows. Sits next to the year/week
+   metadata when the loser's playoff run ended on that meeting. */
+.rv-tag-ko {
+  display: inline-block;
+  font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-gold);
+  border: 1px solid var(--rv-gold);
+  padding: 0 .35rem;
+  border-radius: 2px;
+  margin-left: .25rem;
 }
 
 /* ─── DUAL-SIDE LEDGER ──────────────────────────────
@@ -631,6 +701,62 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     return directory.managers.find((m) => m.user_id === userId) || null;
   }
 
+  // League-average PPG, computed from the directory rather than shipped
+  // as its own number. Sum every manager's total PF; divide by their
+  // total games. Returns null when the directory's missing or empty.
+  function leagueAvgPpg(directory) {
+    if (!directory || !Array.isArray(directory.managers) || directory.managers.length === 0) return null;
+    let totalPf = 0, totalGames = 0;
+    for (const m of directory.managers) {
+      const games = (m.wins || 0) + (m.losses || 0) + (m.ties || 0);
+      totalPf += m.total_pf || 0;
+      totalGames += games;
+    }
+    if (totalGames === 0) return null;
+    return totalPf / totalGames;
+  }
+
+  // Heuristic playoff-outcome detector. For a playoff game in `year`,
+  // look up the loser's per-season ledger entry and return their final
+  // rank. We flag a definite knockout only when the loser played exactly
+  // one playoff game that year (one-and-done) — anything else could be a
+  // semi loss followed by a consolation game we can't see, so we report
+  // the final placement without claiming "this was THE knockout."
+  function playoffOutcome(game, loserProfile) {
+    if (!game || !game.is_playoff || !loserProfile) return null;
+    const row = (loserProfile.season_ledger || []).find((s) => s.year === game.year);
+    if (!row) return null;
+    const finalRank = row.final_rank;
+    if (finalRank == null) return null;
+    const games = row.playoff_games || 0;
+    return { finalRank, isCertainKO: games === 1 };
+  }
+
+  // Walk last5 from manager A's perspective, find the meeting with the
+  // largest |margin|. Playoff games tie-break above regular-season games
+  // at the same margin since they tend to be the more memorable beating.
+  function biggestMeeting(rv) {
+    const games = rv.manager_a.last5 || [];
+    if (games.length === 0) return null;
+    let best = null;
+    for (const g of games) {
+      if (g.result === 'T' || typeof g.margin !== 'number') continue;
+      if (!best) { best = g; continue; }
+      if (g.margin > best.margin) { best = g; continue; }
+      if (g.margin === best.margin && g.is_playoff && !best.is_playoff) { best = g; }
+    }
+    if (!best) return null;
+    const winner = best.result === 'W' ? rv.manager_a.name : rv.manager_b.name;
+    return { game: best, winner };
+  }
+
+  function ordinal(n) {
+    const v = n % 100;
+    if (v >= 11 && v <= 13) return n + 'th';
+    const d = n % 10;
+    return n + (d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th');
+  }
+
   // Render N gold rings for a championship count, padded with empty
   // rings up to 3 so a 1-time champion's row reads as "● ○ ○" not
   // just one lonely glyph.
@@ -643,7 +769,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     return `<span class="rv-rings">${out || '<span class="rv-ring empty">○</span>'}</span>`;
   }
 
-  function buildCareerCard(side, dirEntry) {
+  function buildCareerCard(side, dirEntry, profile) {
     if (!dirEntry) {
       return `
         <div class="rv-career-card">
@@ -662,6 +788,16 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const winPctStr = typeof dirEntry.win_pct === 'number'
       ? (dirEntry.win_pct * 100).toFixed(1) + '%'
       : '—';
+    // Career high + longest win streak come from the richer per-manager
+    // profile (.json). When that's not available (e.g. archive-only or
+    // network skipped), the cells render as em-dashes so the grid layout
+    // doesn't shift between sides.
+    const highScore = profile && typeof profile.high_score === 'number'
+      ? profile.high_score.toFixed(1) : '—';
+    const wsLen = profile && profile.longest_win_streak
+      ? profile.longest_win_streak.length : null;
+    const wsWhen = profile && profile.longest_win_streak
+      ? profile.longest_win_streak.when : '';
     return `
       <div class="rv-career-card">
         <div class="rv-career-head">
@@ -689,12 +825,22 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
             <div class="rv-career-cell-value">${dirEntry.seasons_played || 0}</div>
             <div class="rv-career-cell-sub">${dirEntry.is_current ? 'Active' : 'Alumni'}</div>
           </div>
+          <div class="rv-career-cell">
+            <div class="rv-career-cell-label">Career high</div>
+            <div class="rv-career-cell-value">${highScore}</div>
+            <div class="rv-career-cell-sub">Single week PF</div>
+          </div>
+          <div class="rv-career-cell">
+            <div class="rv-career-cell-label">Longest WS</div>
+            <div class="rv-career-cell-value">${wsLen != null ? wsLen : '—'}</div>
+            <div class="rv-career-cell-sub">${escapeHtml(wsWhen || 'No data')}</div>
+          </div>
         </div>
       </div>
     `;
   }
 
-  function buildCareers(rv, directory) {
+  function buildCareers(rv, directory, profiles) {
     const aDir = findInDirectory(directory, rv.manager_a.user_id);
     const bDir = findInDirectory(directory, rv.manager_b.user_id);
     // If neither side resolved (e.g. directory still loading or both are
@@ -703,8 +849,8 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     if (!aDir && !bDir) return '';
     return `
       <section class="rv-careers" aria-label="Career snapshots">
-        ${buildCareerCard(rv.manager_a, aDir)}
-        ${buildCareerCard(rv.manager_b, bDir)}
+        ${buildCareerCard(rv.manager_a, aDir, profiles && profiles.a)}
+        ${buildCareerCard(rv.manager_b, bDir, profiles && profiles.b)}
       </section>
     `;
   }
@@ -788,13 +934,43 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     `;
   }
 
-  function buildLastMeetingCard(rv) {
+  function buildLastMeetingCard(rv, leagueAvg, profiles) {
     if (!rv.last_meeting || typeof rv.last_meeting.a_score !== 'number') return '';
     const lm = rv.last_meeting;
     const a = rv.manager_a, b = rv.manager_b;
     const aWon = lm.a_score > lm.b_score;
     const bWon = lm.b_score > lm.a_score;
     const poTag = lm.is_playoff ? '<span class="rv-tag-po-inline">Playoff</span>' : '';
+    const margin = Math.abs(lm.a_score - lm.b_score);
+    const combined = lm.a_score + lm.b_score;
+    const combinedAvg = combined / 2;
+    // Comparison against the league's all-time PPG. Skip if we don't have
+    // it (avoids "vs. NaN" rendering when record_book/directory missed).
+    let avgCompare = '';
+    if (typeof leagueAvg === 'number' && leagueAvg > 0) {
+      const delta = ((combinedAvg - leagueAvg) / leagueAvg) * 100;
+      const sign = delta >= 0 ? '+' : '';
+      avgCompare = `Combined avg ${combinedAvg.toFixed(1)} · ${sign}${delta.toFixed(1)}% vs lg avg ${leagueAvg.toFixed(1)}`;
+    } else {
+      avgCompare = `Combined ${combined.toFixed(1)}`;
+    }
+    // Knockout footer: cross-reference the loser's per-manager profile.
+    // We tag "Knockout" with high confidence when their playoff_games
+    // that year was 1 (one-and-done); otherwise we just report the final
+    // placement so the reader knows where this game led without claiming
+    // it was THE knockout punch.
+    let koLine = '';
+    if (lm.is_playoff) {
+      const loserProf = aWon ? (profiles && profiles.b) : (profiles && profiles.a);
+      const loserName = aWon ? b.name : a.name;
+      const out = playoffOutcome(lm, loserProf);
+      if (out) {
+        const label = out.isCertainKO ? 'Knockout' : 'Playoff exit';
+        koLine = `<span class="ko">★ ${escapeHtml(label)} — ${escapeHtml(loserName)} finished ${ordinal(out.finalRank)}</span>`;
+      } else {
+        koLine = `<span>Playoff matchup</span>`;
+      }
+    }
     return `
       <section class="rv-last-card" aria-label="Last meeting">
         <div class="rv-last-meta">
@@ -805,12 +981,37 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
           <div class="rv-last-name">${escapeHtml(a.name)}</div>
           <div class="rv-last-score">${fmtScore(lm.a_score)}</div>
         </div>
-        <div class="rv-last-vs">vs.</div>
+        <div class="rv-last-mid">
+          <div class="rv-last-vs">vs.</div>
+          <div class="rv-last-chip">Margin · <strong>${margin.toFixed(1)}</strong></div>
+          <div class="rv-last-chip">Total · ${combined.toFixed(1)}</div>
+        </div>
         <div class="rv-last-side b${bWon ? ' won' : ''}">
           <div class="rv-last-name">${escapeHtml(b.name)}</div>
           <div class="rv-last-score">${fmtScore(lm.b_score)}</div>
         </div>
+        <div class="rv-last-foot">
+          ${koLine || '<span></span>'}
+          <span>${escapeHtml(avgCompare)}</span>
+        </div>
       </section>
+    `;
+  }
+
+  function buildBiggestMeeting(rv) {
+    const big = biggestMeeting(rv);
+    if (!big) return '';
+    const g = big.game;
+    const poTag = g.is_playoff ? '<span class="rv-tag-po-inline" style="margin-left:.4rem;">Playoff</span>' : '';
+    return `
+      <div class="rv-biggest">
+        <span class="rv-biggest-label">Biggest meeting</span>
+        <span>
+          <strong>${escapeHtml(big.winner)}</strong>
+          by <strong>${g.margin.toFixed(1)}</strong>
+          · ${g.year} W${g.week}${poTag}
+        </span>
+      </div>
     `;
   }
 
@@ -822,11 +1023,14 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     `;
   }
 
-  function buildLedger(rv) {
+  function buildLedger(rv, profiles) {
     // rivalries.json ships the last 5 meetings per side. Render them
     // newest-first as a two-sided scoreboard so visitors see both
     // sides' margins at the same glance instead of a one-column winner
-    // list. Anything older than 5 isn't in the bundle — when more is
+    // list. Playoff games get a `PO` tag; when we can resolve the
+    // loser's profile + that season's playoff_games count, we also tag
+    // certain knockouts with a `KO` chip ("ended their season").
+    // Anything older than 5 isn't in the bundle — when more is
     // available we'll expand this from a richer per-rivalry endpoint.
     const a = rv.manager_a, b = rv.manager_b;
     const n = Math.min(a.last5.length, b.last5.length);
@@ -841,7 +1045,6 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const rows = [];
     for (let i = n - 1; i >= 0; i--) {
       const ga = a.last5[i];
-      const gb = b.last5[i];
       const aWon = ga.result === 'W';
       const bWon = ga.result === 'L'; // from a's perspective
       const tie = ga.result === 'T';
@@ -849,6 +1052,14 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       const aMargStr = aWon ? `<span class="marg">+${margin}</span>` : '';
       const bMargStr = bWon ? `<span class="marg">+${margin}</span>` : '';
       const tagPo = ga.is_playoff ? '<span class="rv-tag-po-inline">PO</span>' : '';
+      // KO chip: only show when we can confidently say the loser was
+      // eliminated by this game (their playoff_games for that year was 1).
+      let tagKo = '';
+      if (ga.is_playoff && !tie) {
+        const loserProf = aWon ? (profiles && profiles.b) : (profiles && profiles.a);
+        const out = playoffOutcome(ga, loserProf);
+        if (out && out.isCertainKO) tagKo = '<span class="rv-tag-ko">KO</span>';
+      }
       rows.push(`
         <div class="rv-ledger-row">
           <div class="rv-ledger-side a${aWon ? ' won' : ''}${tie ? ' tie' : ''}">
@@ -857,7 +1068,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
           </div>
           <div class="rv-ledger-mid">
             <span class="yr">${ga.year}</span>
-            <span>Week ${ga.week} ${tagPo}</span>
+            <span>Week ${ga.week} ${tagPo}${tagKo}</span>
           </div>
           <div class="rv-ledger-side b${bWon ? ' won' : ''}${tie ? ' tie' : ''}">
             ${bMargStr}
@@ -889,10 +1100,9 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       return;
     }
     try {
-      // Fire both fetches in parallel — managers_directory is small and
-      // already cached after the index page (most users land here from
-      // there). Both share the per-league bundle, so neither pays a
-      // second build cost.
+      // First round: rivalries + directory in parallel. Directory tells
+      // us the user_ids' career snapshot AND lets us compute the league
+      // PPG benchmark used by the last-meeting comparison.
       const [rvRes, dirRes] = await Promise.all([
         fetch('data/rivalries.json'),
         fetch('data/managers_directory.json').catch(() => null),
@@ -906,6 +1116,24 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
         document.getElementById('rv-title').textContent = 'Not found.';
         return;
       }
+      // Second round: per-manager profiles. We need both rv user_ids
+      // (only known after rvRes resolves) and they power: career-card
+      // high score + longest WS, playoff knockout detection in the
+      // ledger, and the last-meeting card's KO line. Both calls are
+      // best-effort — null on miss, the renderers degrade gracefully.
+      const fetchProfile = (uid) =>
+        uid
+          ? fetch(`data/managers/${encodeURIComponent(uid)}.json`)
+              .then((r) => (r.ok ? r.json() : null))
+              .catch(() => null)
+          : Promise.resolve(null);
+      const [profA, profB] = await Promise.all([
+        fetchProfile(rv.manager_a.user_id),
+        fetchProfile(rv.manager_b.user_id),
+      ]);
+      const profiles = { a: profA, b: profB };
+      const leagueAvg = leagueAvgPpg(directory);
+
       const leagueName = document.body.getAttribute('data-league-name') || '';
       document.title = rv.name + (leagueName ? ' · ' + leagueName : '');
       document.getElementById('rv-title').innerHTML = `${escapeHtml(rv.manager_a.name)} <em>vs.</em> ${escapeHtml(rv.manager_b.name)}`;
@@ -918,10 +1146,11 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       main.innerHTML =
         buildStatStrip(rv) +
         buildCard(rv) +
-        buildLastMeetingCard(rv) +
-        buildCareers(rv, directory) +
+        buildLastMeetingCard(rv, leagueAvg, profiles) +
+        buildCareers(rv, directory, profiles) +
+        buildBiggestMeeting(rv) +
         buildMetInStrip(rv) +
-        buildLedger(rv);
+        buildLedger(rv, profiles);
     } catch (err) {
       main.innerHTML = `<div class="rv-empty">Couldn't load this rivalry.<br><span style="font-family:var(--mono);font-size:.7rem;color:var(--rv-red);">${escapeHtml(err.message || 'unknown error')}</span></div>`;
     }
