@@ -644,22 +644,31 @@ main { position: relative; z-index: 1; }
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: .35rem 1rem;
 }
+/* Pack name + archetype tightly with a small dot separator so the eye
+   groups them as one row. Earlier we used justify-content: space-between,
+   which pushed the archetype to the far right of the grid cell — making
+   it visually closer to the next column's name than its own. */
 .dna-alumni-item {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: .75rem;
+    gap: .5rem;
     padding: .35rem 0;
     border-bottom: 1px dotted var(--dna-line-soft);
     font-family: var(--serif);
     color: var(--dna-cream-soft);
     text-decoration: none;
     transition: color .2s;
+    min-width: 0;
 }
 .dna-alumni-item:hover { color: var(--dna-cyan); }
 .dna-alumni-name {
     font-size: .92rem;
     font-style: italic;
+    flex-shrink: 0;
+}
+.dna-alumni-sep {
+    color: var(--dna-mute-deep);
+    flex-shrink: 0;
 }
 .dna-alumni-arch {
     font-family: var(--mono);
@@ -667,7 +676,10 @@ main { position: relative; z-index: 1; }
     letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--dna-mute);
-    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ── EMPTY / LOADING ───────────────────────────────────────── */
@@ -1024,11 +1036,15 @@ main { position: relative; z-index: 1; }
     }
 
     // Alumni list — name + their primary archetype only. Clicking jumps to
-    // the manager's profile page (if we have a uid for them).
+    // the manager's profile page (if we have a uid for them). The separator
+    // dot keeps the name and archetype visually paired — without it, a
+    // grid cell wider than the content would split the pair toward opposite
+    // edges and the archetype could read as belonging to the next column.
     function renderAlumniItem(m) {
         const href = m.uid ? `managers/manager.html?id=${m.uid}` : null;
         const inner = `
             <span class="dna-alumni-name">${escapeHtml(m.name)}</span>
+            <span class="dna-alumni-sep">·</span>
             <span class="dna-alumni-arch">${escapeHtml(m.archetype.name)}</span>
         `;
         return href
