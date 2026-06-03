@@ -5749,10 +5749,12 @@ function buildManagerDna(s: Snapshot): unknown {
     })
   }
 
-  // Current first, then by archetype name for stable grouping.
+  // Current first, then alphabetical by manager name. Earlier we grouped by
+  // archetype which made same-archetype managers cluster together — but the
+  // page now exposes the archetype tally in the strand panel, so the grid
+  // reads more naturally in name order.
   result.sort((a, b) => {
     if (a.is_current !== b.is_current) return a.is_current ? -1 : 1
-    if (a.archetype.key !== b.archetype.key) return a.archetype.key.localeCompare(b.archetype.key)
     return a.name.localeCompare(b.name)
   })
 
