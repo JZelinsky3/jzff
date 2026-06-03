@@ -314,7 +314,12 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 /* League-avg comparison sits centered in the middle column below the
    chips (used to live in a full-width footer; that footer was dropped
    when knockout detection got vaulted, since it was its only other
-   tenant). The narrow line wraps softly so the card stays compact. */
+   tenant). The middle column stretches the full row height and the
+   avg pushes itself toward the bottom with margin-top:auto so the
+   white space above and below the avg reads as balanced — the
+   alternative (margin-top: .15rem) crammed the avg right under the
+   chips and left a giant gap below it. */
+.rv-last-mid { align-self: stretch; padding: .15rem 0 .25rem; }
 .rv-last-avg {
   font-family: var(--mono);
   font-size: .56rem; letter-spacing: .12em; text-transform: uppercase;
@@ -322,7 +327,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   text-align: center;
   max-width: 18rem;
   line-height: 1.4;
-  margin-top: .15rem;
+  margin-top: auto;
 }
 
 /* ─── BIGGEST MEETING — pulled out as its own callout ─
@@ -756,83 +761,109 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     return null;
   }
 
-  // Render N gold rings for a championship count, padded with empty
-  // rings up to 3 so a 1-time champion's row reads as "● ○ ○" not
-  // just one lonely glyph.
-  function ringsHtml(count) {
-    const filled = Math.min(count, 5);
-    const empties = Math.max(0, Math.min(3, 3 - filled));
-    let out = '';
-    for (let i = 0; i < filled; i++) out += '<span class="rv-ring">●</span>';
-    for (let i = 0; i < empties; i++) out += '<span class="rv-ring empty">○</span>';
-    return `<span class="rv-rings">${out || '<span class="rv-ring empty">○</span>'}</span>`;
+  // From a side's last5, find the meeting with the biggest margin matching
+  // a given result ('W' or 'L'). Returns null when no such meeting exists
+  // — e.g., a side that's never won this rivalry has no "best win" to show.
+  function biggestByResult(side, result) {
+    const games = (side.last5 || []).filter(
+      (g) => g.result === result && typeof g.margin === 'number',
+    );
+    if (games.length === 0) return null;
+    return games.reduce((best, g) => (g.margin > best.margin ? g : best));
   }
 
-  function buildCareerCard(side, dirEntry, profile) {
-    if (!dirEntry) {
-      return `
-        <div class="rv-career-card">
-          <div class="rv-career-head">
-            <span class="rv-career-name">${escapeHtml(side.name)}</span>
-            <span class="rv-career-team">No career data</span>
-          </div>
-          <div class="rv-empty" style="padding:.6rem 0;">Career snapshot unavailable for this manager.</div>
-        </div>
-      `;
+  // Walk backward from the most recent meeting and count consecutive
+  // same-result games — this side's active streak in the rivalry. Returns
+  // null when there are no meetings or the most recent was a tie (no run
+  // owner). Mirrors streakImpact's logic but reports the count from the
+  // SIDE's perspective rather than the series-flipping interpretation.
+  function sideRun(side) {
+    const games = side.last5 || [];
+    if (games.length === 0) return null;
+    const last = games[games.length - 1];
+    if (last.result === 'T') return null;
+    let count = 1;
+    for (let i = games.length - 2; i >= 0; i--) {
+      if (games[i].result === last.result) count++;
+      else break;
     }
-    const champs = dirEntry.championships || 0;
-    const champsSub = champs === 0
-      ? 'Still chasing'
-      : (dirEntry.championship_seasons || []).join(', ') || `${champs} title${champs === 1 ? '' : 's'}`;
-    const winPctStr = typeof dirEntry.win_pct === 'number'
-      ? (dirEntry.win_pct * 100).toFixed(1) + '%'
-      : '—';
-    // Career high + longest win streak come from the richer per-manager
-    // profile (.json). When that's not available (e.g. archive-only or
-    // network skipped), the cells render as em-dashes so the grid layout
-    // doesn't shift between sides.
-    const highScore = profile && typeof profile.high_score === 'number'
-      ? profile.high_score.toFixed(1) : '—';
-    const wsLen = profile && profile.longest_win_streak
-      ? profile.longest_win_streak.length : null;
-    const wsWhen = profile && profile.longest_win_streak
-      ? profile.longest_win_streak.when : '';
+    return { result: last.result, count };
+  }
+
+  // "1-0-0" → "1-0" (drop trailing zero-tie segment). Server ships records
+  // in W-L-T but the tie column is almost always zero and noisy when it is.
+  function tidyRecord(rec) {
+    const parts = (rec || '').split('-');
+    if (parts.length === 3 && parts[2] === '0') return parts.slice(0, 2).join('-');
+    return rec || '—';
+  }
+
+  function buildRivalryCard(side, opp, rv, dirEntry, profile) {
+    // Win pct against THIS opponent (not career). Ties count against both
+    // the wins and losses denominator.
+    const totalH2H = side.wins + opp.wins + (rv.ties_count || 0);
+    const winPct = totalH2H > 0 ? ((side.wins / totalH2H) * 100).toFixed(1) + '%' : '—';
+
+    const bestW = biggestByResult(side, 'W');
+    const worstL = biggestByResult(side, 'L');
+    const playoffRec = tidyRecord(side.playoff_record);
+
+    // PPG in this rivalry vs this manager's career PPG. Profile fetch may
+    // have failed silently (archive manager, network blip) — in that case
+    // we just show the rivalry number without a delta.
+    const careerAvg = profile && typeof profile.avg_ppg === 'number' ? profile.avg_ppg : null;
+    const rivAvg = typeof side.avg_ppg === 'number' ? side.avg_ppg : null;
+    let avgSub = 'PPG vs this opponent';
+    if (rivAvg != null && careerAvg != null && careerAvg > 0) {
+      const delta = ((rivAvg - careerAvg) / careerAvg) * 100;
+      const sign = delta >= 0 ? '+' : '';
+      avgSub = `${sign}${delta.toFixed(1)}% vs career avg`;
+    }
+
+    const run = sideRun(side);
+    const runValue = run ? `${run.count} ${run.result}` : '—';
+    const runSub = run
+      ? (run.result === 'W' ? 'Last result(s) won' : 'Last result(s) lost')
+      : 'No active run';
+
+    const teamLabel = dirEntry && dirEntry.team_latest ? dirEntry.team_latest : '';
+
     return `
       <div class="rv-career-card">
         <div class="rv-career-head">
           <span class="rv-career-name">${escapeHtml(side.name)}</span>
-          <span class="rv-career-team">${escapeHtml(dirEntry.team_latest || '')}</span>
+          <span class="rv-career-team">${escapeHtml(teamLabel)}</span>
         </div>
         <div class="rv-career-grid">
           <div class="rv-career-cell">
-            <div class="rv-career-cell-label">Championships</div>
-            <div class="rv-career-cell-value">${ringsHtml(champs)}</div>
-            <div class="rv-career-cell-sub">${escapeHtml(champsSub)}</div>
+            <div class="rv-career-cell-label">vs. ${escapeHtml(opp.name)}</div>
+            <div class="rv-career-cell-value">${side.wins}–${opp.wins}${rv.ties_count ? '–' + rv.ties_count : ''}</div>
+            <div class="rv-career-cell-sub">${winPct} win rate</div>
           </div>
           <div class="rv-career-cell">
-            <div class="rv-career-cell-label">Playoff trips</div>
-            <div class="rv-career-cell-value">${dirEntry.playoff_appearances || 0}</div>
-            <div class="rv-career-cell-sub">${dirEntry.top_three_finishes || 0} top-3 finish${(dirEntry.top_three_finishes || 0) === 1 ? '' : 'es'}</div>
+            <div class="rv-career-cell-label">Best win</div>
+            <div class="rv-career-cell-value">${bestW ? '+' + bestW.margin.toFixed(1) : '—'}</div>
+            <div class="rv-career-cell-sub">${bestW ? `${bestW.year} · W${bestW.week}${bestW.is_playoff ? ' · PO' : ''}` : 'No wins yet'}</div>
           </div>
           <div class="rv-career-cell">
-            <div class="rv-career-cell-label">Career record</div>
-            <div class="rv-career-cell-value">${escapeHtml(dirEntry.total_record || '—')}</div>
-            <div class="rv-career-cell-sub">${winPctStr} all-time</div>
+            <div class="rv-career-cell-label">Toughest loss</div>
+            <div class="rv-career-cell-value">${worstL ? '−' + worstL.margin.toFixed(1) : '—'}</div>
+            <div class="rv-career-cell-sub">${worstL ? `${worstL.year} · W${worstL.week}${worstL.is_playoff ? ' · PO' : ''}` : 'No losses yet'}</div>
           </div>
           <div class="rv-career-cell">
-            <div class="rv-career-cell-label">Seasons played</div>
-            <div class="rv-career-cell-value">${dirEntry.seasons_played || 0}</div>
-            <div class="rv-career-cell-sub">${dirEntry.is_current ? 'Active' : 'Alumni'}</div>
+            <div class="rv-career-cell-label">Playoff series</div>
+            <div class="rv-career-cell-value">${escapeHtml(playoffRec)}</div>
+            <div class="rv-career-cell-sub">In postseason</div>
           </div>
           <div class="rv-career-cell">
-            <div class="rv-career-cell-label">Career high</div>
-            <div class="rv-career-cell-value">${highScore}</div>
-            <div class="rv-career-cell-sub">Single week PF</div>
+            <div class="rv-career-cell-label">Avg in series</div>
+            <div class="rv-career-cell-value">${rivAvg != null ? rivAvg.toFixed(1) : '—'}</div>
+            <div class="rv-career-cell-sub">${escapeHtml(avgSub)}</div>
           </div>
           <div class="rv-career-cell">
-            <div class="rv-career-cell-label">Longest WS</div>
-            <div class="rv-career-cell-value">${wsLen != null ? wsLen : '—'}</div>
-            <div class="rv-career-cell-sub">${escapeHtml(wsWhen || 'No data')}</div>
+            <div class="rv-career-cell-label">Current run</div>
+            <div class="rv-career-cell-value">${escapeHtml(runValue)}</div>
+            <div class="rv-career-cell-sub">${escapeHtml(runSub)}</div>
           </div>
         </div>
       </div>
@@ -840,16 +871,18 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   }
 
   function buildCareers(rv, directory, profiles) {
+    // Render the two rivalry cards whenever the rivalry has any data —
+    // career snapshots used to require a directory hit, but rivalry-
+    // specific stats come from rivalries.json itself, which is always
+    // present on this page. Directory + profile only add cosmetic
+    // sub-info (team name, career PPG delta); their absence shouldn't
+    // suppress the cards.
     const aDir = findInDirectory(directory, rv.manager_a.user_id);
     const bDir = findInDirectory(directory, rv.manager_b.user_id);
-    // If neither side resolved (e.g. directory still loading or both are
-    // archive-only profiles without directory entries), skip the row
-    // entirely rather than render two empty placeholders.
-    if (!aDir && !bDir) return '';
     return `
-      <section class="rv-careers" aria-label="Career snapshots">
-        ${buildCareerCard(rv.manager_a, aDir, profiles && profiles.a)}
-        ${buildCareerCard(rv.manager_b, bDir, profiles && profiles.b)}
+      <section class="rv-careers" aria-label="Head-to-head splits">
+        ${buildRivalryCard(rv.manager_a, rv.manager_b, rv, aDir, profiles && profiles.a)}
+        ${buildRivalryCard(rv.manager_b, rv.manager_a, rv, bDir, profiles && profiles.b)}
       </section>
     `;
   }
