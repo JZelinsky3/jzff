@@ -225,29 +225,47 @@ export function SourceRow({
               : 'never synced'}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem', minWidth: '14rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
           <button onClick={onSync} disabled={busy !== null || isPending} className="dc-btn">
             {busy === 'syncing' ? 'Syncing…' : 'Sync now →'}
           </button>
           {/* Custom sync + Edit settings share one row to keep the column
-              from growing. Custom sync expands a checkbox panel below. */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.4rem' }}>
+              from growing. Inner buttons shrink their font + allow a
+              line break so the two-row label fits without forcing the
+              column wider than "Sync now" / "Remove". */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.35rem' }}>
             <button
               onClick={() => setCustomSyncOpen((v) => !v)}
               disabled={busy !== null || isPending}
               className="dc-btn-ghost"
-              style={{ padding: '.5rem .4rem' }}
+              style={{
+                padding: '.45rem .3rem',
+                fontSize: '.7rem',
+                lineHeight: 1.15,
+                whiteSpace: 'normal',
+                minWidth: 0,
+              }}
             >
-              {customSyncOpen ? 'Cancel' : 'Custom sync'}
+              {customSyncOpen
+                ? 'Cancel'
+                : (<><span>Custom</span><br /><span>sync</span></>)}
             </button>
             {(source.platform === 'nfl' || source.platform === 'espn' || source.platform === 'sleeper' || source.platform === 'yahoo') && (
               <button
                 onClick={() => setEditing((v) => !v)}
                 disabled={busy !== null || isPending}
                 className="dc-btn-ghost"
-                style={{ padding: '.5rem .4rem' }}
+                style={{
+                  padding: '.45rem .3rem',
+                  fontSize: '.7rem',
+                  lineHeight: 1.15,
+                  whiteSpace: 'normal',
+                  minWidth: 0,
+                }}
               >
-                {editing ? 'Cancel' : 'Edit settings'}
+                {editing
+                  ? 'Cancel'
+                  : (<><span>Edit</span><br /><span>settings</span></>)}
               </button>
             )}
           </div>
