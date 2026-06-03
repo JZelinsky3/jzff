@@ -155,6 +155,7 @@ function injectDcConfig(
   isSignedIn: boolean,
   isBookmarked: boolean,
   tutorialDismissed: boolean,
+  tutorialSeenPages: string[],
 ): string {
   const config = `<script>window.__DC=${JSON.stringify({
     id: meta.id,
@@ -166,6 +167,7 @@ function injectDcConfig(
     isTestingLeague: meta.created_during_testing,
     tradesTheme: meta.trades_theme,
     tutorialDismissed,
+    tutorialSeenPages,
   })};</script>`
   // Stamp the theme as a body data-attribute so theme CSS applies during the
   // first paint without waiting for JS. We only do this when the template
@@ -364,13 +366,20 @@ export async function GET(
         .maybeSingle()
       isBookmarked = !!bm
     }
-    // Tour dismissal lives in user_metadata.tutorials.leagues (an ISO
-    // timestamp set the first time the user closes or finishes the tour).
-    // Anonymous viewers get a falsy value here and the client falls back
-    // to localStorage so the tour still suppresses on repeat visits.
-    const tutorialDismissed =
-      isSignedIn &&
-      !!(user!.user_metadata as { tutorials?: Record<string, unknown> } | null)?.tutorials?.['leagues']
+    // Tour state lives in user_metadata.tutorials:
+    //   • leagues       — ISO timestamp of global dismissal (✕ / Skip).
+    //   • leagues_seen  — array of data-page values the user has already
+    //                     completed a tour for. Per-page tours are
+    //                     suppressed once their page is in this list.
+    // Anonymous viewers get falsy/empty values and the client falls back
+    // to localStorage so per-device suppression still works.
+    const tutorialsMeta = (user?.user_metadata as { tutorials?: Record<string, unknown> } | null)
+      ?.tutorials ?? {}
+    const tutorialDismissed = isSignedIn && !!tutorialsMeta['leagues']
+    const tutorialSeenPages =
+      isSignedIn && Array.isArray(tutorialsMeta['leagues_seen'])
+        ? (tutorialsMeta['leagues_seen'] as string[])
+        : []
     const html = injectDcConfig(
       injectBaseTag(applyTokens(raw, meta), meta),
       meta,
@@ -378,6 +387,7 @@ export async function GET(
       isSignedIn,
       isBookmarked,
       tutorialDismissed,
+      tutorialSeenPages,
     )
     return new NextResponse(html, {
       status: 200,
