@@ -514,12 +514,125 @@
         document.head.appendChild(s);
     }
 
+    // Top-of-page progress bar — shown while any data/*.json fetch is in
+    // flight. We wrap window.fetch and watch for URLs that look like a
+    // data file under the current league bundle. Counter-based so the bar
+    // stays visible across the hub's 5 parallel fetches and disappears
+    // once they all settle. The bar itself is a fixed gold sliver that
+    // animates an indeterminate "marching" gradient — no need to know
+    // total work upfront, which we don't.
+    //
+    // We install the wrapper as early as possible (before nav builds) so
+    // a template's fetches that fire on DOMContentLoaded are captured.
+    function installProgressBar() {
+        if (window.__DC_PROGRESS_INSTALLED) return;
+        window.__DC_PROGRESS_INSTALLED = true;
+
+        // Inject the style sheet once.
+        var css = document.createElement('style');
+        css.textContent = [
+            '#dc-progress {',
+            '  position: fixed; top: 0; left: 0; right: 0;',
+            '  height: 2px; z-index: 8999;',
+            '  background: linear-gradient(90deg,',
+            '    rgba(232,200,137,0) 0%,',
+            '    rgba(232,200,137,.95) 50%,',
+            '    rgba(232,200,137,0) 100%);',
+            '  background-size: 40% 100%;',
+            '  background-repeat: no-repeat;',
+            '  background-position: -40% 0;',
+            '  opacity: 0;',
+            '  pointer-events: none;',
+            '  transition: opacity .25s ease;',
+            '}',
+            '#dc-progress.is-active {',
+            '  opacity: 1;',
+            '  animation: dc-progress-march 1.1s linear infinite;',
+            '}',
+            '@keyframes dc-progress-march {',
+            '  from { background-position: -40% 0; }',
+            '  to   { background-position: 140% 0; }',
+            '}',
+        ].join('\n');
+        document.head.appendChild(css);
+
+        // The bar element. We need it in the DOM before the first fetch
+        // resolves so the transition has somewhere to apply.
+        var bar = document.createElement('div');
+        bar.id = 'dc-progress';
+        bar.setAttribute('role', 'progressbar');
+        bar.setAttribute('aria-label', 'Loading league data');
+        // <head> already exists by the time nav.js runs; the bar still
+        // needs to live in <body> to render. If body isn't here yet (it
+        // always is — nav.js runs from a body-end <script> — but be safe),
+        // queue insertion for DOMContentLoaded.
+        var insert = function () { if (document.body) document.body.appendChild(bar); };
+        if (document.body) insert();
+        else document.addEventListener('DOMContentLoaded', insert, { once: true });
+
+        var inflight = 0;
+        var hideTimer = 0;
+        function show() {
+            if (hideTimer) { clearTimeout(hideTimer); hideTimer = 0; }
+            bar.classList.add('is-active');
+        }
+        function hide() {
+            // Tiny grace period so several back-to-back fetches don't
+            // flicker the bar on/off between them — wait 80ms and only
+            // hide if the count is still zero.
+            if (hideTimer) clearTimeout(hideTimer);
+            hideTimer = setTimeout(function () {
+                hideTimer = 0;
+                if (inflight === 0) bar.classList.remove('is-active');
+            }, 80);
+        }
+
+        var origFetch = window.fetch;
+        if (typeof origFetch !== 'function') return;
+
+        // Match data/*.json under the current league. We accept both the
+        // relative form ("data/league.json", what templates write) and the
+        // absolute form ("/leagues/<slug>/data/league.json") in case any
+        // page hand-rolls the URL. Skip everything else — API calls,
+        // bookmarks, tutorial dismissals, etc.
+        function isLeagueDataUrl(input) {
+            try {
+                var s = typeof input === 'string'
+                    ? input
+                    : (input && input.url) || String(input);
+                if (!s) return false;
+                if (s.indexOf('data/') === 0) return true;
+                if (s.indexOf('/leagues/') !== -1 && s.indexOf('/data/') !== -1) return true;
+                return false;
+            } catch (_) { return false; }
+        }
+
+        window.fetch = function (input, init) {
+            if (!isLeagueDataUrl(input)) return origFetch.apply(this, arguments);
+            inflight++;
+            show();
+            var p;
+            try { p = origFetch.apply(this, arguments); }
+            catch (e) { inflight--; hide(); throw e; }
+            return p.then(function (r) { inflight--; hide(); return r; },
+                          function (e) { inflight--; hide(); throw e; });
+        };
+    }
+
     function init() {
         buildNav();
         enhanceAuthLinks();
         wireBookmarkToggle();
         loadTutorial();
     }
+
+    // Install the fetch wrapper SYNCHRONOUSLY, before any template inline
+    // scripts run. Templates fire their data fetches from inline body
+    // scripts that execute during HTML parsing — earlier than
+    // DOMContentLoaded — so if we waited for init() we'd patch fetch
+    // after the first 5 hub requests had already started, and the bar
+    // would never show.
+    installProgressBar();
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
