@@ -536,7 +536,7 @@ async function ingestSeason(args: {
       for (const [tid, assets] of assetsByTeam) {
         const mgrId = teamToManagerId(tid)
         if (!mgrId) {
-          result.warnings.push(`Season ${year} trade ${t.synthetic_id}: team ${tid} has no manager mapping; side skipped`)
+          result.warnings.push(`Season ${year} trade ${t.trade_id}: team ${tid} has no manager mapping; side skipped`)
           continue
         }
         sidesWithMgrs.push({ teamId: tid, managerId: mgrId, assets })
@@ -550,8 +550,8 @@ async function ingestSeason(args: {
             league_id: leagueId,
             season_id: seasonId,
             platform: 'nfl',
-            external_id: t.synthetic_id,
-            week: null,
+            external_id: t.trade_id,
+            week: t.week,
             executed_at: t.executed_at,
             status: 'completed',
             raw_payload: { team_ids: t.team_ids, players: t.players },
@@ -561,7 +561,7 @@ async function ingestSeason(args: {
         .select('id')
         .single()
       if (tradeErr || !tradeRow) {
-        result.warnings.push(`Season ${year} trade ${t.synthetic_id}: upsert failed: ${tradeErr?.message ?? 'no row'}`)
+        result.warnings.push(`Season ${year} trade ${t.trade_id}: upsert failed: ${tradeErr?.message ?? 'no row'}`)
         continue
       }
       await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
@@ -573,7 +573,7 @@ async function ingestSeason(args: {
           assets: side.assets,
         })
         if (sideErr) {
-          result.warnings.push(`Season ${year} trade ${t.synthetic_id} side team ${side.teamId}: ${sideErr.message}`)
+          result.warnings.push(`Season ${year} trade ${t.trade_id} side team ${side.teamId}: ${sideErr.message}`)
           continue
         }
         sidesInserted++

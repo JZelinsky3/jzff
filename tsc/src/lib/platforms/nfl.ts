@@ -437,125 +437,127 @@ export type NflTradePlayer = {
 }
 
 export type NflTrade = {
-  synthetic_id: string        // hash of date + teams + players (stable across syncs)
-  executed_at: string         // ISO timestamp (date midnight UTC if only the date is shown)
-  team_ids: number[]          // every team appearing in the trade row (usually 2)
+  trade_id: string            // NFL.com trade id (stable per league across re-syncs)
+  executed_at: string         // ISO timestamp (NFL.com omits the year — we append the season)
+  week: number | null         // league week from the row's transactionWeek cell
+  team_ids: number[]          // every team appearing in the trade (usually 2)
   players: NflTradePlayer[]
 }
 
 export async function fetchTrades(leagueId: string, season: number): Promise<NflTrade[]> {
+  // NFL.com's transactions page is a <table class="tableType-transaction">
+  // where each trade SIDE is a <tr class="transaction-trade-{tradeId}-{n}">.
+  // A standard 2-team trade has rows -1 and -2; auto-drops triggered by the
+  // trade get a -3/-4 row with type="Drop" which we skip.
+  // Columns we read per row:
+  //   .transactionDate  → "Nov 10, 5:08am" (no year)
+  //   .transactionWeek  → "10"
+  //   .transactionType  → "Trade" | "Drop"
+  //   .playerNameAndInfo → <ul><li><a class="playerName playerNameId-N">Name</a> <em>POS - TEAM</em></li>...</ul>
+  //   .transactionFrom  → <a class="teamName teamId-N">Team A</a>
+  //   .transactionTo    → <a class="teamName teamId-N">Team B</a>
   const url = `${BASE}/league/${leagueId}/history/${season}/transactions?transactionType=trade`
   const html = await fetchHtml(url)
   const $ = cheerio.load(html)
-  const out: NflTrade[] = []
 
-  // Each row is <li class="transaction*"> or <tr class="transaction*">. We
-  // accept anything with a `transaction` class and at least one teamId anchor
-  // plus one playerId anchor — that filters out the "no transactions yet"
-  // placeholder and section headers.
-  const rows = $('[class*="transaction"]').filter((_, el) => {
-    const $el = $(el)
-    const hasTeam = $el.find('a[class*="teamId-"]').length >= 1
-    const hasPlayer = $el.find('a[class*="playerId-"]').length >= 1
-    return hasTeam && hasPlayer
+  type SideRow = {
+    side: number
+    type: string
+    dateText: string
+    week: number | null
+    from_team_id: number | null
+    to_team_id: number | null
+    players: Array<{ player_external_id: string; full_name: string; position: string | null; nfl_team: string | null }>
+  }
+  const byTradeId = new Map<string, SideRow[]>()
+
+  $('tr[class*="transaction-trade-"]').each((_, el) => {
+    const row = $(el)
+    const cls = row.attr('class') || ''
+    const idMatch = cls.match(/transaction-trade-(\d+)-(\d+)/)
+    if (!idMatch) return
+    const tradeId = idMatch[1]!
+    const side = Number(idMatch[2])
+
+    const type = row.find('td.transactionType').first().text().trim()
+    const dateText = row.find('td.transactionDate').first().text().trim()
+    const weekText = row.find('td.transactionWeek').first().text().trim()
+    const week = /^\d+$/.test(weekText) ? Number(weekText) : null
+
+    const fromAnchor = row.find('td.transactionFrom a[class*="teamId-"]').first()
+    const toAnchor = row.find('td.transactionTo a[class*="teamId-"]').first()
+    const fromMatch = (fromAnchor.attr('class') || '').match(/teamId-(\d+)/)
+    const toMatch = (toAnchor.attr('class') || '').match(/teamId-(\d+)/)
+    const from_team_id = fromMatch ? Number(fromMatch[1]) : null
+    const to_team_id = toMatch ? Number(toMatch[1]) : null
+
+    const players: SideRow['players'] = []
+    row.find('td.playerNameAndInfo li').each((_, li) => {
+      const item = $(li)
+      const playerLink = item.find('a[class*="playerNameId-"]').first()
+      const pCls = playerLink.attr('class') || ''
+      const pMatch = pCls.match(/playerNameId-(\d+)/)
+      if (!pMatch) return
+      const player_external_id = pMatch[1]!
+      const full_name = playerLink.text().trim()
+      const meta = item.find('em').first().text().trim()
+      let position: string | null = null
+      let nfl_team: string | null = null
+      const metaMatch = meta.match(/([A-Z]{1,4})\s*[-–]\s*([A-Z]{2,4})/)
+      if (metaMatch) { position = metaMatch[1]!; nfl_team = metaMatch[2]! }
+      else if (/^(DEF|DST|D\/ST)/i.test(meta)) { position = 'DEF' }
+      players.push({ player_external_id, full_name, position, nfl_team })
+    })
+
+    const list = byTradeId.get(tradeId) ?? []
+    list.push({ side, type, dateText, week, from_team_id, to_team_id, players })
+    byTradeId.set(tradeId, list)
   })
 
-  rows.each((_, el) => {
-    const row = $(el)
+  const out: NflTrade[] = []
+  for (const [tradeId, sides] of byTradeId) {
+    // Only "Trade" rows are part of the asset ledger. Auto-drop ("Drop")
+    // rows share a trade id but represent roster cuts triggered to clear
+    // space for incoming players — they aren't part of the deal itself.
+    const tradeSides = sides.filter((s) => s.type.toLowerCase() === 'trade')
+    if (tradeSides.length === 0) continue
+    tradeSides.sort((a, b) => a.side - b.side)
 
-    // Date — typical class names: .date, .timeStamp, .transactionDate.
-    let dateText = row.find('.date, .timeStamp, .transactionDate, time').first().text().trim()
-    if (!dateText) {
-      // Fallback: first <em> or <span> that parses as a date.
-      row.find('em, span').each((_, e) => {
-        const t = $(e).text().trim()
-        if (/\d/.test(t) && Date.parse(t)) { dateText = t; return false }
-      })
-    }
-    const ts = Date.parse(dateText)
-    const isoDate = Number.isFinite(ts) ? new Date(ts).toISOString() : new Date(`${season}-12-31T00:00:00Z`).toISOString()
+    // NFL.com renders dates without the year. Append the season for parse.
+    const dateText = tradeSides[0].dateText
+    const parsed = Date.parse(`${dateText} ${season}`)
+    const executed_at = Number.isFinite(parsed)
+      ? new Date(parsed).toISOString()
+      : new Date(`${season}-12-31T00:00:00Z`).toISOString()
+    const week = tradeSides[0].week
 
-    // Team ids — collect every distinct teamId-N anchor.
     const teamIds = new Set<number>()
-    row.find('a[class*="teamId-"]').each((_, a) => {
-      const m = ($(a).attr('class') || '').match(/teamId-(\d+)/)
-      if (m) teamIds.add(Number(m[1]))
-    })
-    if (teamIds.size < 2) return
-
-    // Player tags — each carries playerId-N. For attribution (who sent what)
-    // we look at the nearest preceding teamId anchor in the row's text order.
-    // NFL.com renders trades as "<TeamA> traded <Player>, <Player> to <TeamB>"
-    // (and a sibling line in the other direction), so an anchor's nearest
-    // preceding team is the sender.
-    const orderedAnchors: Array<{ kind: 'team' | 'player'; el: cheerio.Cheerio<AnyNode> }> = []
-    row.find('a[class*="teamId-"], a[class*="playerId-"]').each((_, a) => {
-      const cls = $(a).attr('class') || ''
-      if (/teamId-/.test(cls)) orderedAnchors.push({ kind: 'team', el: $(a) })
-      else if (/playerId-/.test(cls)) orderedAnchors.push({ kind: 'player', el: $(a) })
-    })
-
     const players: NflTradePlayer[] = []
-    let currentSender: number | null = null
-    for (let i = 0; i < orderedAnchors.length; i++) {
-      const node = orderedAnchors[i]
-      if (node.kind === 'team') {
-        const m = (node.el.attr('class') || '').match(/teamId-(\d+)/)
-        currentSender = m ? Number(m[1]) : currentSender
-        continue
+    for (const s of tradeSides) {
+      if (s.from_team_id != null) teamIds.add(s.from_team_id)
+      if (s.to_team_id != null) teamIds.add(s.to_team_id)
+      if (s.from_team_id == null || s.to_team_id == null) continue
+      for (const p of s.players) {
+        players.push({
+          ...p,
+          from_team_id: s.from_team_id,
+          to_team_id: s.to_team_id,
+        })
       }
-      // Player — receiver is the *other* team in this trade, sender is current.
-      if (currentSender == null) continue
-      const pCls = node.el.attr('class') || ''
-      const pIdMatch = pCls.match(/playerId-(\d+)/)
-      if (!pIdMatch) continue
-      const player_external_id = pIdMatch[1]!
-
-      // Try to find a position + team in the trailing <em> sibling text.
-      const fullName = node.el.text().trim()
-      let position: string | null = null
-      let nflTeam: string | null = null
-      // The player <a> is often immediately followed by " (POS - TEAM)" or
-      // a sibling <em>POS - TEAM</em>.
-      const next = node.el[0]?.nextSibling
-      const tail = next && 'data' in next ? String((next as { data?: string }).data ?? '') : ''
-      const tailEm = node.el.next('em').text() || tail
-      const m = tailEm.match(/([A-Z]{1,4})\s*[-–]\s*([A-Z]{2,4})/)
-      if (m) { position = m[1]!; nflTeam = m[2]! }
-      else if (/DEF|DST/i.test(tailEm)) { position = 'DEF' }
-
-      // Receiver = any team in teamIds that isn't the sender.
-      let receiver: number | null = null
-      for (const tid of teamIds) {
-        if (tid !== currentSender) { receiver = tid; break }
-      }
-      if (receiver == null) continue
-
-      players.push({
-        player_external_id,
-        full_name: fullName,
-        position,
-        nfl_team: nflTeam,
-        to_team_id: receiver,
-        from_team_id: currentSender,
-      })
     }
-
-    if (players.length === 0) return
-
-    // Synthesize a stable id: date|sorted-teams|sorted-playerIds.
-    const teamPart = [...teamIds].sort((a, b) => a - b).join(',')
-    const playerPart = players.map((p) => p.player_external_id).sort().join(',')
-    const synthetic_id = `${isoDate}|${teamPart}|${playerPart}`
+    if (teamIds.size < 2 || players.length === 0) continue
 
     out.push({
-      synthetic_id,
-      executed_at: isoDate,
+      trade_id: tradeId,
+      executed_at,
+      week,
       team_ids: [...teamIds],
       players,
     })
-  })
+  }
 
+  // Newest first — mirrors how the page displays them.
+  out.sort((a, b) => b.executed_at.localeCompare(a.executed_at))
   return out
 }
 
