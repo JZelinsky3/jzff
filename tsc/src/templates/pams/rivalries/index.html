@@ -1906,8 +1906,8 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
           <div class="rv-verdict-meter-divider"></div>
         </div>
         <div class="rv-verdict-meter-nums">
-          <span class="a">${aTotal.toFixed(1)} <span style="opacity:.5;">·</span> ${aPct.toFixed(1)}%</span>
-          <span class="b">${bPct.toFixed(1)}% <span style="opacity:.5;">·</span> ${bTotal.toFixed(1)}</span>
+          <span class="a">${aPct.toFixed(1)}%</span>
+          <span class="b">${bPct.toFixed(1)}%</span>
         </div>
         <h2 class="rv-verdict-title">${verdictText}</h2>
         ${record ? `<div class="rv-verdict-record">${record}</div>` : ''}
