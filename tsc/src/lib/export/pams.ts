@@ -1390,6 +1390,12 @@ function buildRivalries(s: Snapshot): unknown {
     if (groupA === groupB) return null  // sanity: merged into same profile
 
     // Collect every matchup between any identity in groupA and any in groupB.
+    // Championship-bracket filter (same rule used in buildH2HMatrix +
+    // buildLeagueJson's totalMatchups counter): regular season always
+    // counts; playoff games only count when at least one side finished
+    // top-4 that year. That excludes consolation-bracket games (5th-place,
+    // 7th-place, etc.) — those aren't "real" playoff meetings and were
+    // inflating rivalry stats with games neither side cared about.
     const seenKey = new Set<string>()
     type Game = {
       season_id: string
@@ -1408,6 +1414,13 @@ function buildRivalries(s: Snapshot): unknown {
         if (seenKey.has(key)) continue
         seenKey.add(key)
         if (mt.score_a == null || mt.score_b == null) continue
+        if (mt.is_playoff) {
+          const aRank = s.finalRankByMgrSeason.get(`${mt.season_id}|${mt.manager_a_id}`) ?? null
+          const bRank = s.finalRankByMgrSeason.get(`${mt.season_id}|${mt.manager_b_id}`) ?? null
+          const aBracket = aRank != null && aRank <= 4
+          const bBracket = bRank != null && bRank <= 4
+          if (!aBracket && !bBracket) continue
+        }
         const aIsA = mt.manager_a_id === ma
         const aScore = aIsA ? Number(mt.score_a) : Number(mt.score_b)
         const bScore = aIsA ? Number(mt.score_b) : Number(mt.score_a)
