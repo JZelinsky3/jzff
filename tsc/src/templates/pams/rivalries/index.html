@@ -729,6 +729,150 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   .rv-score-label { font-size: .58rem; letter-spacing: .15em; }
 }
 
+/* ─── SUMMARY OUTRO ──────────────────────────────────
+   Final slide. Every rivalry's weighted verdict on one page, one row
+   each. Each row mini-meter fills on entry; rows stagger top-to-bottom
+   so the whole "ledger" assembles itself in front of the reader. */
+.rv-slide-summary {
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+}
+.rv-summary-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  color: var(--rv-white);
+  margin: 0 0 1.75rem;
+  animation: rv-slide-title-in .9s .25s both cubic-bezier(.2,.6,.2,1);
+}
+.rv-summary-title em { color: var(--rv-red); }
+.rv-summary-list {
+  display: flex; flex-direction: column;
+  border-top: 1px solid var(--rv-line2);
+  border-bottom: 1px solid var(--rv-line2);
+  background: rgba(0,0,0,.25);
+}
+.rv-summary-row {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1.5fr) minmax(0, 2fr) minmax(0, 1.3fr);
+  gap: 1.25rem;
+  align-items: center;
+  padding: .75rem 1.25rem;
+  border-bottom: 1px dotted rgba(255,255,255,.08);
+  text-align: left;
+  opacity: 0;
+  animation: rv-summary-row-in .55s both cubic-bezier(.2,.6,.2,1);
+}
+.rv-summary-row:last-child { border-bottom: none; }
+.rv-summary-row:nth-child(1)  { animation-delay: .65s; }
+.rv-summary-row:nth-child(2)  { animation-delay: .8s; }
+.rv-summary-row:nth-child(3)  { animation-delay: .95s; }
+.rv-summary-row:nth-child(4)  { animation-delay: 1.1s; }
+.rv-summary-row:nth-child(5)  { animation-delay: 1.25s; }
+.rv-summary-row:nth-child(6)  { animation-delay: 1.4s; }
+.rv-summary-row:nth-child(7)  { animation-delay: 1.55s; }
+.rv-summary-row:nth-child(8)  { animation-delay: 1.7s; }
+.rv-summary-row:nth-child(9)  { animation-delay: 1.85s; }
+.rv-summary-row:nth-child(10) { animation-delay: 2.0s; }
+@keyframes rv-summary-row-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rv-summary-num {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: .85rem;
+  letter-spacing: .15em;
+  color: var(--rv-red);
+  text-align: center;
+}
+.rv-summary-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--rv-white);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rv-summary-versus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: .75rem;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-summary-versus .a { text-align: right; color: var(--a-color-readable, var(--rv-cream)); }
+.rv-summary-versus .b { text-align: left;  color: var(--b-color-readable, var(--rv-cream)); }
+.rv-summary-meter {
+  position: relative;
+  height: 7px;
+  width: 100%;
+  border-radius: 3.5px;
+  background: rgba(255,255,255,.04);
+  overflow: hidden;
+}
+.rv-summary-meter::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to right,
+    var(--a-color, #374151) 0%,
+    var(--a-color, #374151) var(--a-pct, 50%),
+    var(--b-color, #374151) var(--a-pct, 50%),
+    var(--b-color, #374151) 100%);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: rv-summary-bar-fill .7s var(--bar-delay, .9s) cubic-bezier(.2,.6,.2,1) both;
+}
+@keyframes rv-summary-bar-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.rv-summary-result {
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--rv-cream);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.rv-summary-result strong { color: var(--rv-white); font-weight: 700; }
+.rv-summary-result.tight { color: var(--rv-grey-lt); }
+.rv-summary-foot {
+  text-align: center;
+  margin-top: 1.75rem;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  animation: rv-slide-fade-in .8s 2.3s both ease-out;
+}
+.rv-summary-foot strong { color: var(--rv-white); font-weight: 700; }
+
+@media (max-width: 720px) {
+  .rv-summary-row {
+    grid-template-columns: 2.2rem 1fr;
+    grid-template-areas:
+      "num name"
+      "num bar"
+      "num verdict";
+    gap: .35rem .9rem;
+    padding: .85rem 1rem;
+  }
+  .rv-summary-num     { grid-area: num; align-self: center; }
+  .rv-summary-name    { grid-area: name; }
+  .rv-summary-versus  { grid-area: bar; }
+  .rv-summary-result  { grid-area: verdict; text-align: left; }
+}
+
 @media (max-width: 720px) {
   .rv-reveal-shell { padding: .75rem .9rem 1rem; }
   .rv-reveal-controls { gap: .65rem; }
@@ -1918,12 +2062,65 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   function renderOutroSlide(slide) {
     const n = slide.rivalries.length;
     const leagueName = getLeagueName();
+
+    // Recompute each rivalry's weighted scorecard so the summary
+    // reflects the SAME math the per-rivalry verdict slides showed.
+    // Single pass — cheap even for 10+ rivalries since the scorecard
+    // helper is pure arithmetic over a handful of fields.
+    const rows = slide.rivalries.map((rv, idx) => {
+      const score = computeScorecard(rv);
+      const margin = score.aTotal - score.bTotal;
+      const tight = Math.abs(margin) < 2;
+      const aLeads = !tight && margin > 0;
+      const bLeads = !tight && margin < 0;
+      return {
+        rv, idx, score, tight, aLeads, bLeads,
+        roman: ROMAN[idx + 1] || String(idx + 1),
+      };
+    });
+
+    const rowsHtml = rows.map((r) => {
+      const { rv, idx, score, tight, aLeads, bLeads, roman } = r;
+      const aColor    = aLeads ? '#dc2626' : '#374151';
+      const bColor    = bLeads ? '#dc2626' : '#374151';
+      const aReadable = aLeads ? '#ef4444' : '#9ca3af';
+      const bReadable = bLeads ? '#ef4444' : '#9ca3af';
+      // Stagger each row's bar fill so it kicks off slightly after the
+      // row itself slides in. (Row enters at .65+.15*idx; bar fills
+      // .25s after that.)
+      const rowDelay = .65 + idx * .15;
+      const barDelay = (rowDelay + .25).toFixed(2) + 's';
+      const aPct = score.aTotal.toFixed(2);
+      const bPct = score.bTotal.toFixed(2);
+      const verdictLine = tight
+        ? '<span>Tightly contested</span>'
+        : aLeads
+          ? `<strong>${escapeHtml(rv.manager_a.name)}</strong> · ${score.aTotal.toFixed(1)}%`
+          : `<strong>${escapeHtml(rv.manager_b.name)}</strong> · ${score.bTotal.toFixed(1)}%`;
+      return `
+        <div class="rv-summary-row"
+             style="--a-pct: ${aPct}%; --b-pct: ${bPct}%; --a-color: ${aColor}; --b-color: ${bColor}; --a-color-readable: ${aReadable}; --b-color-readable: ${bReadable}; --bar-delay: ${barDelay};">
+          <div class="rv-summary-num">${escapeHtml(roman)}</div>
+          <div class="rv-summary-name">${escapeHtml(rv.name)}</div>
+          <div class="rv-summary-versus">
+            <span class="a">${escapeHtml(rv.manager_a.name)}</span>
+            <div class="rv-summary-meter"></div>
+            <span class="b">${escapeHtml(rv.manager_b.name)}</span>
+          </div>
+          <div class="rv-summary-result${tight ? ' tight' : ''}">${verdictLine}</div>
+        </div>
+      `;
+    }).join('');
+
     return `
-      <section class="rv-slide rv-slide-title-wrap">
-        <div class="rv-slide-eyebrow">★ Filed ★</div>
-        <h1 class="rv-slide-title">The book stays <em>open.</em></h1>
-        <div class="rv-slide-sub">
-          ${n} feud${n === 1 ? '' : 's'} on the books${leagueName ? ` · <strong style="color:var(--rv-white);">${escapeHtml(leagueName)}</strong>` : ''}
+      <section class="rv-slide rv-slide-summary">
+        <div class="rv-slide-eyebrow">★ Final Verdicts ★</div>
+        <h1 class="rv-summary-title">The <em>Book.</em></h1>
+        <div class="rv-summary-list">
+          ${rowsHtml}
+        </div>
+        <div class="rv-summary-foot">
+          ${leagueName ? `<strong>${escapeHtml(leagueName)}</strong> · ` : ''}${n} feud${n === 1 ? '' : 's'} on the books · The book stays open
         </div>
       </section>
     `;
