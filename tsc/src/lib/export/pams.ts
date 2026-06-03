@@ -5127,6 +5127,15 @@ type DnaSignals = {
   // Matchup signals
   pf_per_game: number | null
   volatility_pct: number | null         // 100 * stddev(weekly PF) / mean(weekly PF)
+  // avg_margin_pts is the average regular-season point differential (own
+  // score - opponent's). Positive = wins are bigger than losses; negative
+  // = blown out more than they blow others out. Works on every platform
+  // (matchup data only) so it's the natural replacement for the lineup
+  // churn slot on NFL.com-only leagues.
+  avg_margin_pts: number | null
+  // clutch_win_pct is the regular-season win rate in close games (≤5 pts).
+  // Null when they haven't played ≥6 close games yet.
+  clutch_win_pct: number | null
   close_games: number                   // games decided by ≤ 5 pts
   close_record: { w: number; l: number; t: number }
   blowout_games: number                 // games decided by ≥ 30 pts
@@ -5359,27 +5368,40 @@ function buildManagerDna(s: Snapshot): unknown {
       volatility = (sd / mean) * 100
     }
 
-    // Close / blowout (regular-season only — playoffs are small-sample noise)
+    // Close / blowout (regular-season only — playoffs are small-sample noise).
+    // marginSum is signed (own − opp), so its average reflects whether wins
+    // are bigger than losses (positive) or vice versa.
     const CLOSE = 5
     const BLOWOUT = 30
     let cw = 0, cl = 0, ct = 0, bw = 0, bl = 0, bt = 0
     let closeN = 0, blowN = 0
+    let marginSum = 0
     for (const gm of regGames) {
-      const margin = Math.abs(gm.margin)
-      if (margin <= CLOSE) {
+      marginSum += gm.margin
+      const absMargin = Math.abs(gm.margin)
+      if (absMargin <= CLOSE) {
         closeN++
         if (gm.result === 'W') cw++; else if (gm.result === 'L') cl++; else ct++
       }
-      if (margin >= BLOWOUT) {
+      if (absMargin >= BLOWOUT) {
         blowN++
         if (gm.result === 'W') bw++; else if (gm.result === 'L') bl++; else bt++
       }
     }
+    const avgMargin = regGames.length > 0 ? marginSum / regGames.length : null
+    // Require ≥6 close games before publishing a clutch number; below that
+    // single results swing the rate too much to mean anything.
+    const clutchWinPct = closeN >= 6 ? (cw / closeN) * 100 : null
 
-    // Lineup efficiency + churn
-    const efficiency = bundle.optimalSum > 0
+    // Lineup efficiency + churn. The optimal-lineup calc is a greedy slot
+    // picker (not Hungarian), so it can underestimate the true optimum when
+    // FLEX eligibility lets the actual lineup beat the greedy assignment.
+    // Cap at 100 so the UI never shows nonsense like 102% — Evan / Sleeper
+    // leagues hit this routinely with a great FLEX-RB call.
+    const efficiencyRaw = bundle.optimalSum > 0
       ? (bundle.actualSum / bundle.optimalSum) * 100
       : null
+    const efficiency = efficiencyRaw != null ? Math.min(100, efficiencyRaw) : null
     const churn = bundle.churnWeeksCounted > 0
       ? (bundle.starterChurnSum / bundle.churnWeeksCounted) * 100
       : null
@@ -5389,14 +5411,15 @@ function buildManagerDna(s: Snapshot): unknown {
     const rbShare = f5.length > 0
       ? (f5.filter((p) => (p.position ?? '').toUpperCase() === 'RB').length / f5.length) * 100
       : null
-    // Per-draft early-position rate: of the drafts where this profile took
-    // any round-1–4 pick, how many included a QB / TE?
+    // Per-draft early-position rate. QBs need to be locked in rounds 1–3
+    // (round 4 is borderline and too inclusive); TEs use rounds 1–4 because
+    // elite TEs typically come off the board slightly later than elite QBs.
     const totalDrafts = bundle.draftSlates.length
     const qbEarlyDrafts = bundle.draftSlates.filter((slate) =>
-      slate.some((p) => (p.position ?? '').toUpperCase() === 'QB')
+      slate.some((p) => p.round <= 3 && (p.position ?? '').toUpperCase() === 'QB')
     ).length
     const teEarlyDrafts = bundle.draftSlates.filter((slate) =>
-      slate.some((p) => (p.position ?? '').toUpperCase() === 'TE')
+      slate.some((p) => p.round <= 4 && (p.position ?? '').toUpperCase() === 'TE')
     ).length
     const qbEarlyPct = totalDrafts > 0 ? (qbEarlyDrafts / totalDrafts) * 100 : null
     const teEarlyPct = totalDrafts > 0 ? (teEarlyDrafts / totalDrafts) * 100 : null
@@ -5415,6 +5438,8 @@ function buildManagerDna(s: Snapshot): unknown {
       lineup_churn_pct: churn != null ? round2(churn) : null,
       pf_per_game: pf.length > 0 ? round2(mean) : null,
       volatility_pct: volatility != null ? round2(volatility) : null,
+      avg_margin_pts: avgMargin != null ? round2(avgMargin) : null,
+      clutch_win_pct: clutchWinPct != null ? round2(clutchWinPct) : null,
       close_games: closeN,
       close_record: { w: cw, l: cl, t: ct },
       blowout_games: blowN,
@@ -5443,6 +5468,8 @@ function buildManagerDna(s: Snapshot): unknown {
   const vol = stat(profiles.map((p) => p.signals.volatility_pct).filter((v): v is number => v != null))
   const rb = stat(profiles.map((p) => p.signals.draft_rb_share_pct).filter((v): v is number => v != null))
   const tr = stat(profiles.map((p) => p.signals.trades_per_season).filter((v): v is number => v != null))
+  const mg = stat(profiles.map((p) => p.signals.avg_margin_pts).filter((v): v is number => v != null))
+  const cl = stat(profiles.map((p) => p.signals.clutch_win_pct).filter((v): v is number => v != null))
 
   const z = (v: number | null, st: { mean: number; sd: number }) =>
     v == null || st.sd === 0 ? 0 : (v - st.mean) / st.sd
@@ -5588,11 +5615,11 @@ function buildManagerDna(s: Snapshot): unknown {
         strength: Math.abs(z_rb),
       })
     }
-    // Anchor QB — used to fire on *any* single early-QB pick across a
-    // manager's career, which over-fired in long-running leagues. Now
-    // requires the manager to have reached for a QB in rounds 1–4 in at
-    // least 40% of their drafts (and ≥3 drafts on file as a sample-size
-    // floor). Strength scales with how habitual the pattern is.
+    // Anchor QB — requires a top-3-round QB in at least 40% of drafts on
+    // file (≥3 drafts as a sample-size floor). Used to use rounds 1–4 which
+    // was too inclusive — round 4 captures a lot of "best player available"
+    // QB grabs rather than true position-anchoring. Rounds 1–3 is closer to
+    // "I refuse to stream the position" behavior.
     if (
       signals.draft_qb_early_pct != null
       && signals.total_drafts >= 3
@@ -5602,7 +5629,7 @@ function buildManagerDna(s: Snapshot): unknown {
         key: 'anchor_qb',
         name: 'The Anchor QB',
         tagline: 'Locks the position early',
-        blurb: `Has reached for a QB inside the first four rounds in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts on file. Refuses to play the streamer's game.`,
+        blurb: `Has reached for a QB inside the first three rounds in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts on file. Refuses to play the streamer's game.`,
         strength: 0.9 + signals.draft_qb_early_pct / 200,  // 40% → 1.10, 100% → 1.40
       })
     }
@@ -5681,7 +5708,7 @@ function buildManagerDna(s: Snapshot): unknown {
       && signals.draft_qb_early_pct > 0
       && archetype.key !== 'anchor_qb'
     ) {
-      pushTrait('early_qb', 'Early-QB History', `Top-4 QB in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts`)
+      pushTrait('early_qb', 'Early-QB History', `Top-3 QB in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts`)
     }
     if (
       signals.draft_te_early_pct != null
@@ -5739,11 +5766,13 @@ function buildManagerDna(s: Snapshot): unknown {
   return {
     generated_at: new Date().toISOString(),
     league_baselines: {
-      efficiency_pct: round2(eff.mean),
-      lineup_churn_pct: round2(ch.mean),
+      efficiency_pct: eff.mean > 0 ? round2(eff.mean) : null,
+      lineup_churn_pct: ch.mean > 0 ? round2(ch.mean) : null,
       volatility_pct: round2(vol.mean),
-      draft_rb_share_pct: round2(rb.mean),
+      draft_rb_share_pct: rb.mean > 0 ? round2(rb.mean) : null,
       trades_per_season: round2(tr.mean),
+      avg_margin_pts: round2(mg.mean),
+      clutch_win_pct: cl.mean > 0 ? round2(cl.mean) : null,
     },
     archetype_counts: archetypeCounts,
     managers: result,

@@ -939,19 +939,12 @@ main { position: relative; z-index: 1; }
     // Signal bar — value relative to a 0..max scale, with baseline tick.
     // For percent-style stats (eff, churn, vol, rb-share) max = 100. For trades
     // we cap at ~ league baseline × 2.5 so the league avg sits near 40% fill.
+    // Returns null when the value is null so the caller can drop the slot
+    // entirely instead of rendering a dead "—" bar (used for NFL-only leagues
+    // that have no lineup data behind eff/churn).
     function signalBar(lbl, value, baseline, max, opts = {}) {
+        if (value == null) return null;
         const fmt = opts.fmt || ((v) => `${v.toFixed(1)}%`);
-        if (value == null) {
-            return `
-                <div class="dna-sig">
-                    <div class="dna-sig-head">
-                        <span class="dna-sig-lbl">${escapeHtml(lbl)}</span>
-                        <span class="dna-sig-val is-none">—</span>
-                    </div>
-                    <div class="dna-sig-bar"></div>
-                </div>
-            `;
-        }
         const pctFill = Math.max(2, Math.min(100, (value / max) * 100));
         const pctMark = Math.max(0, Math.min(100, (baseline / max) * 100));
         // High/low classification — depends on whether higher is better.
@@ -996,15 +989,28 @@ main { position: relative; z-index: 1; }
                 </span>
             `).join('');
 
-        const sigBars = [
+        // Compose the signal bars. Drop nulls so leagues with sparse data
+        // (NFL.com-only → no lineup eff/churn) gracefully fall back to
+        // matchup-derived signals instead of showing dead bars.
+        // Order: try the four "richest" signals first, fill remaining slots
+        // (target: 4 bars total) from the matchup-only fallbacks.
+        const candidateBars = [
             signalBar('Eff', m.signals.efficiency_pct, baselines.efficiency_pct || 70, 100, { higherIsBetter: true }),
             signalBar('Churn', m.signals.lineup_churn_pct, baselines.lineup_churn_pct || 18, 60, { higherIsBetter: false }),
             signalBar('Vol', m.signals.volatility_pct, baselines.volatility_pct || 20, 50, { higherIsBetter: false }),
             signalBar('Trade', m.signals.trades_per_season, baselines.trades_per_season || 1.2, Math.max(3, (baselines.trades_per_season || 1.2) * 2.5), {
-                higherIsBetter: undefined,
                 fmt: (v) => v.toFixed(1) + '/yr',
             }),
-        ].join('');
+            // Fallbacks — both work on any platform that has matchup data.
+            // Avg margin: scaled by ±30pts (typical max). higher-is-better.
+            signalBar('Margin', m.signals.avg_margin_pts, baselines.avg_margin_pts || 0, 30, {
+                higherIsBetter: true,
+                fmt: (v) => (v >= 0 ? '+' : '') + v.toFixed(1),
+            }),
+            // Clutch %: win rate in ≤5pt games. higher-is-better.
+            signalBar('Clutch', m.signals.clutch_win_pct, baselines.clutch_win_pct || 50, 100, { higherIsBetter: true }),
+        ].filter((b) => b != null);
+        const sigBars = candidateBars.slice(0, 4).join('');
 
         const num = String(idx + 1).padStart(3, '0');
         const seq = seqCode(m.archetype.key + '|' + m.name);
@@ -1100,17 +1106,22 @@ main { position: relative; z-index: 1; }
     }
 
     function renderBaselines(b) {
+        // Drop baselines the league simply doesn't have — NFL-only leagues
+        // get no efficiency / churn signals, so we hide those rows instead
+        // of printing a dead "—" everywhere.
         const items = [
             { lbl: 'Avg Lineup Eff', val: b.efficiency_pct, fmt: (v) => `${v.toFixed(1)}%` },
             { lbl: 'Avg Churn / wk', val: b.lineup_churn_pct, fmt: (v) => `${v.toFixed(1)}%` },
             { lbl: 'Avg Volatility', val: b.volatility_pct, fmt: (v) => `± ${v.toFixed(1)}%` },
+            { lbl: 'Avg Margin / game', val: b.avg_margin_pts, fmt: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}` },
+            { lbl: 'Avg Clutch win-rate', val: b.clutch_win_pct, fmt: (v) => `${v.toFixed(1)}%` },
             { lbl: 'Avg RB-share (rd 1-5)', val: b.draft_rb_share_pct, fmt: (v) => `${v.toFixed(1)}%` },
             { lbl: 'Avg Trades / season', val: b.trades_per_season, fmt: (v) => v.toFixed(2) },
-        ];
+        ].filter((it) => it.val != null);
         return items.map(it => `
             <div class="dna-baseline">
                 <span class="dna-baseline-lbl">${escapeHtml(it.lbl)}</span>
-                <span class="dna-baseline-val">${it.val != null ? it.fmt(it.val) : '—'}</span>
+                <span class="dna-baseline-val">${it.fmt(it.val)}</span>
             </div>
         `).join('');
     }
