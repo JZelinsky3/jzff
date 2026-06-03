@@ -49,6 +49,167 @@
     border-radius: 2px;
 }
 
+/* ── Manager DNA teaser card ───────────────────────────────────
+   Sits between the masthead banner and the stat strip — visible
+   the moment the profile loads. Compact: barcode, archetype name,
+   tagline, two trait chips, a "see full DNA" link. Cyan/magenta
+   palette ties it to the Manager DNA page; locked variant (no DNA
+   data on the league, i.e. the commissioner isn't on Veteran+)
+   greys it out with a small upgrade hint instead of a link. */
+.profile-dna {
+    position: relative;
+    max-width: 720px;
+    margin: 1rem auto 0;
+    padding: 1.1rem 1.35rem 1.1rem 2.25rem;
+    background: linear-gradient(90deg, rgba(20, 23, 42, .65), rgba(20, 23, 42, .35));
+    border: 1px solid rgba(79, 209, 255, .28);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.profile-dna::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #4fd1ff, #ff5db1);
+}
+.profile-dna.is-locked {
+    border-color: rgba(122, 131, 166, .25);
+    background: rgba(20, 23, 42, .25);
+    opacity: 0.72;
+}
+.profile-dna.is-locked::before {
+    background: rgba(122, 131, 166, .4);
+}
+
+.pdna-head {
+    display: flex;
+    align-items: baseline;
+    gap: .65rem;
+    margin-bottom: .6rem;
+    flex-wrap: wrap;
+}
+.pdna-lbl {
+    font-family: var(--mono);
+    font-size: .54rem;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: #4fd1ff;
+}
+.is-locked .pdna-lbl { color: var(--cream-mute); }
+.pdna-tier {
+    margin-left: auto;
+    padding: .15rem .45rem;
+    font-family: var(--mono);
+    font-size: .48rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid rgba(232, 200, 137, .35);
+    border-radius: 2px;
+}
+
+.pdna-barcode {
+    display: flex;
+    height: 14px;
+    gap: 2px;
+    margin-bottom: .65rem;
+}
+.pdna-band {
+    flex: 1;
+    border-radius: 1px;
+}
+.pdna-band.b-cyan    { background: rgba(79, 209, 255, var(--a, .8)); }
+.pdna-band.b-magenta { background: rgba(255, 93, 177, var(--a, .8)); }
+.pdna-band.b-lime    { background: rgba(216, 255, 93,  var(--a, .8)); }
+.pdna-band.b-amber   { background: rgba(255, 203, 107, var(--a, .8)); }
+.pdna-band.b-mute    { background: rgba(122, 131, 166, var(--a, .3)); }
+
+.pdna-arch {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.4rem;
+    color: #f0f2ff;
+    line-height: 1.05;
+    margin-bottom: .15rem;
+}
+.is-locked .pdna-arch { color: var(--cream-soft); }
+.pdna-tagline {
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: #ff5db1;
+    margin-bottom: .6rem;
+}
+.is-locked .pdna-tagline { color: var(--cream-mute); }
+
+.pdna-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-bottom: .85rem;
+}
+.pdna-trait {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .25rem .55rem;
+    background: rgba(79, 209, 255, .05);
+    border: 1px solid rgba(79, 209, 255, .22);
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: .52rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--cream-soft);
+}
+.pdna-trait::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #4fd1ff;
+    flex-shrink: 0;
+}
+
+.pdna-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .4rem .75rem;
+    background: rgba(79, 209, 255, .08);
+    border: 1px solid rgba(79, 209, 255, .35);
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: #4fd1ff;
+    text-decoration: none;
+    transition: background .2s, color .2s;
+}
+.pdna-cta:hover {
+    background: rgba(79, 209, 255, .16);
+    color: #82e0ff;
+}
+.pdna-cta.is-locked {
+    cursor: not-allowed;
+    border-color: rgba(122, 131, 166, .3);
+    background: rgba(122, 131, 166, .08);
+    color: var(--cream-mute);
+}
+.pdna-cta.is-locked:hover { background: rgba(122, 131, 166, .08); color: var(--cream-mute); }
+.pdna-cta-arrow { font-family: var(--serif); font-style: italic; }
+
+.pdna-locked-msg {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--cream-soft);
+    margin-bottom: .85rem;
+    line-height: 1.45;
+}
+
 .stat-strip {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -445,10 +606,28 @@ async function loadProfile() {
         }
     } catch (_) { /* non-fatal */ }
 
+    // Manager DNA — Veteran-tier feature. The exporter only emits this
+    // bundle when the commissioner is on Veteran+. If the file 404s OR the
+    // payload is null OR this manager isn't in the manager list, we render
+    // the locked variant instead of nothing — gives non-Veteran leagues a
+    // visible "upgrade to unlock" prompt rather than an invisible feature.
+    let dnaEntry = null;
+    let dnaAvailable = false;
+    try {
+        const res = await fetch('data/manager_dna.json');
+        if (res.ok) {
+            const dna = await res.json();
+            if (dna && Array.isArray(dna.managers)) {
+                dnaAvailable = true;
+                dnaEntry = dna.managers.find(d => String(d.uid) === String(userId)) ?? null;
+            }
+        }
+    } catch (_) { /* non-fatal */ }
+
     // Anything that throws below leaves the page stuck on the loading state
     // (the old failure mode for managers with empty stats). Surface it instead.
     try {
-        renderProfile(m, top5);
+        renderProfile(m, top5, dnaEntry, dnaAvailable);
     } catch (err) {
         showError(`Couldn't render profile (${err.message}). Please report this.`);
     }
