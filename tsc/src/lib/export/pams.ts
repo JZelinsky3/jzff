@@ -1444,8 +1444,17 @@ function buildRivalries(s: Snapshot): unknown {
     const aReg = { w: 0, l: 0, t: 0 }, bReg = { w: 0, l: 0, t: 0 }
     const aPlayoff = { w: 0, l: 0, t: 0 }, bPlayoff = { w: 0, l: 0, t: 0 }
     let aPF = 0, bPF = 0
+    // Each side's biggest single-week score in this rivalry. Walked
+    // alongside the totals so we don't loop the games twice. Stored as
+    // `{ score, year, week, is_playoff }` per side and shipped to the
+    // detail page so the head-to-head card can show "best week vs.
+    // this opponent" — a stat that doesn't exist anywhere else.
+    let aHigh: Game | null = null
+    let bHigh: Game | null = null
     for (const g of games) {
       aPF += g.a_score; bPF += g.b_score
+      if (!aHigh || g.a_score > aHigh.a_score) aHigh = g
+      if (!bHigh || g.b_score > bHigh.b_score) bHigh = g
       if (g.a_score > g.b_score) {
         aWins++
         if (g.is_playoff) { aPlayoff.w++; bPlayoff.l++ } else { aReg.w++; bReg.l++ }
@@ -1497,6 +1506,9 @@ function buildRivalries(s: Snapshot): unknown {
         avg_ppg: games.length > 0 ? round2(aPF / games.length) : 0,
         reg_record: recordStr(aReg.w, aReg.l, aReg.t),
         playoff_record: recordStr(aPlayoff.w, aPlayoff.l, aPlayoff.t),
+        high_score: aHigh
+          ? { score: round2(aHigh.a_score), year: aHigh.year, week: aHigh.week, is_playoff: aHigh.is_playoff }
+          : null,
         last5: last5.map((g) => ({
           year: g.year, week: g.week, is_playoff: g.is_playoff,
           result: g.a_result, margin: g.margin,
@@ -1509,6 +1521,9 @@ function buildRivalries(s: Snapshot): unknown {
         avg_ppg: games.length > 0 ? round2(bPF / games.length) : 0,
         reg_record: recordStr(bReg.w, bReg.l, bReg.t),
         playoff_record: recordStr(bPlayoff.w, bPlayoff.l, bPlayoff.t),
+        high_score: bHigh
+          ? { score: round2(bHigh.b_score), year: bHigh.year, week: bHigh.week, is_playoff: bHigh.is_playoff }
+          : null,
         last5: last5.map((g) => ({
           year: g.year, week: g.week, is_playoff: g.is_playoff,
           result: g.b_result, margin: g.margin,
@@ -1544,6 +1559,7 @@ function emptyRivalrySide(g: ProfileGroup) {
     avg_ppg: 0,
     reg_record: '0-0-0',
     playoff_record: '0-0-0',
+    high_score: null as { score: number; year: number; week: number; is_playoff: boolean } | null,
     last5: [] as Array<{ year: number; week: number; is_playoff: boolean; result: 'W' | 'L' | 'T'; margin: number }>,
   }
 }
