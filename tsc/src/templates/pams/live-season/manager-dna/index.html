@@ -1103,7 +1103,7 @@ main { position: relative; z-index: 1; }
         const items = [
             { lbl: 'Avg Lineup Eff', val: b.efficiency_pct, fmt: (v) => `${v.toFixed(1)}%` },
             { lbl: 'Avg Churn / wk', val: b.lineup_churn_pct, fmt: (v) => `${v.toFixed(1)}%` },
-            { lbl: 'Avg Volatility', val: b.volatility_pct, fmt: (v) => `±${v.toFixed(1)}%` },
+            { lbl: 'Avg Volatility', val: b.volatility_pct, fmt: (v) => `± ${v.toFixed(1)}%` },
             { lbl: 'Avg RB-share (rd 1-5)', val: b.draft_rb_share_pct, fmt: (v) => `${v.toFixed(1)}%` },
             { lbl: 'Avg Trades / season', val: b.trades_per_season, fmt: (v) => v.toFixed(2) },
         ];
