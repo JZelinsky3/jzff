@@ -16,6 +16,7 @@ import {
   parallelLimit,
   type NflOwner, type NflMatchup, type NflStandingsRow,
 } from '@/lib/platforms/nfl'
+import { resolveStages, type IngestStages } from './stages'
 
 export type IngestResult = {
   ok: boolean
@@ -104,8 +105,10 @@ export async function ingestNflLeague(leagueRowId: string): Promise<IngestResult
 export async function ingestNflSource(
   leagueRowId: string,
   externalId: string,
-  settingsOverride: LeagueSettings = {}
+  settingsOverride: LeagueSettings = {},
+  stagesIn?: IngestStages,
 ): Promise<IngestResult> {
+  const stages = resolveStages(stagesIn)
   const db = createAdminClient()
   const { data: leagueRow, error: leagueErr } = await db
     .from('leagues')
@@ -192,6 +195,7 @@ export async function ingestNflSource(
         ownersThisYear: ownersByYear.get(year) ?? [],
         managerIdByUserId,
         result,
+        stages,
       })
       result.seasonsIngested++
     } catch (err) {
@@ -214,8 +218,9 @@ async function ingestSeason(args: {
   ownersThisYear: NflOwner[]
   managerIdByUserId: Map<string, string>
   result: IngestResult
+  stages: Required<IngestStages>
 }): Promise<void> {
-  const { db, leagueId, externalLeagueId, year, playoffStart, playoffTeams, ownersThisYear, managerIdByUserId, result } = args
+  const { db, leagueId, externalLeagueId, year, playoffStart, playoffTeams, ownersThisYear, managerIdByUserId, result, stages } = args
 
   // team_id → user_id for this season (NFL recycles team_ids across years
   // but the owner mapping can shift, so we recompute per season).
@@ -257,33 +262,41 @@ async function ingestSeason(args: {
   // Rebuild per-season aggregates. Matchups are NOT wiped — they're upserted
   // with a deterministic a/b key so re-syncs update rows in place, keeping
   // matchup ids stable (pickems_picks references them via a cascading FK).
-  await db.from('manager_seasons').delete().eq('season_id', seasonId)
+  if (stages.matchups) await db.from('manager_seasons').delete().eq('season_id', seasonId)
   // Drafts cascade to draft_picks via FK; delete drafts for the season too.
-  await db.from('drafts').delete().eq('season_id', seasonId)
+  if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId)
+  // weekly_lineups for NFL.com is always wiped (the data is bogus per the
+  // platform limitation noted below); the ingest never re-inserts.
   await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
   // Fetch all weekly matchups (1..lastPlayoffWeek). NFL serves a page per
-  // week; parallel-fetch with a small concurrency cap to be polite.
+  // week; parallel-fetch with a small concurrency cap to be polite. Skip
+  // entirely when the matchups stage isn't requested (e.g. trades-only sync).
   const weeks = Array.from({ length: lastPlayoffWeek }, (_, i) => i + 1)
-  const weekly = await parallelLimit(weeks, 4, async (w) => {
-    try {
-      const rows = await fetchWeekSchedule(externalLeagueId, year, w)
-      return { week: w, rows }
-    } catch (err) {
-      result.warnings.push(`Season ${year} week ${w}: ${(err as Error).message}`)
-      return { week: w, rows: [] as NflMatchup[] }
-    }
-  })
+  const weekly = stages.matchups
+    ? await parallelLimit(weeks, 4, async (w) => {
+        try {
+          const rows = await fetchWeekSchedule(externalLeagueId, year, w)
+          return { week: w, rows }
+        } catch (err) {
+          result.warnings.push(`Season ${year} week ${w}: ${(err as Error).message}`)
+          return { week: w, rows: [] as NflMatchup[] }
+        }
+      })
+    : ([] as Array<{ week: number; rows: NflMatchup[] }>)
 
-  // Fetch standings (final rankings + champion/runner-up).
+  // Fetch standings (final rankings + champion/runner-up). Only needed
+  // when we're upserting matchups + manager_seasons; trades-only sync skips.
   let standings: NflStandingsRow[] = []
-  try {
-    standings = await fetchStandings(externalLeagueId, year)
-    if (standings.length === 0) {
-      result.warnings.push(`Season ${year} standings: parser returned 0 rows — playoff records and final finishes will be blank for this year. Likely a markup change on NFL.com's standings page.`)
+  if (stages.matchups) {
+    try {
+      standings = await fetchStandings(externalLeagueId, year)
+      if (standings.length === 0) {
+        result.warnings.push(`Season ${year} standings: parser returned 0 rows — playoff records and final finishes will be blank for this year. Likely a markup change on NFL.com's standings page.`)
+      }
+    } catch (err) {
+      result.warnings.push(`Season ${year} standings: ${(err as Error).message}`)
     }
-  } catch (err) {
-    result.warnings.push(`Season ${year} standings: ${(err as Error).message}`)
   }
   const finalRankByTeam = new Map<number, number>()
   for (const s of standings) finalRankByTeam.set(s.team_id, s.final_rank)
@@ -361,7 +374,9 @@ async function ingestSeason(args: {
   const regRank = new Map<number, number>()
   ranked.forEach(([tid], idx) => regRank.set(tid, idx + 1))
 
-  // Upsert manager_seasons rows.
+  // Upsert manager_seasons rows. Gated alongside matchups since the wins/PF
+  // aggregates come from the matchup loop.
+  if (stages.matchups) {
   for (const owner of ownersThisYear) {
     const managerId = teamToManagerId(owner.team_id)
     if (!managerId) continue
@@ -396,6 +411,7 @@ async function ingestSeason(args: {
     .eq('id', seasonId)
 
   result.matchupsIngested += matchupsCount
+  } // end stages.matchups
 
   // Weekly lineups — intentionally NOT ingested from NFL.com.
   //
@@ -421,6 +437,7 @@ async function ingestSeason(args: {
   }
 
   // Draft picks (optional — failures non-fatal).
+  if (stages.drafts) {
   try {
     const picks = await fetchDraft(externalLeagueId, year)
     if (picks.length === 0) {
@@ -463,10 +480,12 @@ async function ingestSeason(args: {
   } catch (err) {
     result.warnings.push(`Season ${year} draft: ${(err as Error).message}`)
   }
+  } // end stages.drafts
 
   // ─── trades ──────────────────────────────────────────────────────────────
   // NFL.com renders trades on the transactions history page. The scraper is
   // best-effort; if the markup shifted, we get [] and warn.
+  if (stages.trades) {
   try {
     const trades = await fetchTrades(externalLeagueId, year)
     if (trades.length === 0) {
@@ -539,6 +558,7 @@ async function ingestSeason(args: {
   } catch (err) {
     result.warnings.push(`Season ${year} trades: ${(err as Error).message}`)
   }
+  } // end stages.trades
 }
 
 function round2(n: number): number {

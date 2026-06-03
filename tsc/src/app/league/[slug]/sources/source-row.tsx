@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { syncSource, deleteSource, updateNflSourceSettings, updateEspnSourceSettings, updateChainSourceSettings } from './actions'
+import type { StageKey } from '@/lib/ingest/stages'
 
 type Source = {
   id: string
@@ -58,6 +59,19 @@ export function SourceRow({
   const [busy, setBusy] = useState<'syncing' | 'deleting' | 'saving' | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
+  // Custom sync panel — lets the commissioner pick which stages to refresh
+  // instead of paying the full-sync runtime cost every time.
+  const [customSyncOpen, setCustomSyncOpen] = useState(false)
+  // NFL.com can't supply per-week lineup data (platform limitation), so
+  // we disable that checkbox and exclude it from default selection there.
+  const lineupsSupported = source.platform !== 'nfl'
+  const [stagesSelected, setStagesSelected] = useState<Record<StageKey, boolean>>({
+    matchups: true,
+    drafts: true,
+    lineups: lineupsSupported,
+    trades: true,
+  })
+  const toggleStage = (k: StageKey) => setStagesSelected((s) => ({ ...s, [k]: !s[k] }))
 
   // Edit form state (shared between NFL + ESPN where the field overlaps)
   const [seasonStart, setSeasonStart] = useState(String(num(source.settings, 'season_start') ?? ''))
@@ -89,6 +103,29 @@ export function SourceRow({
         const more = warns.length > 6 ? `\n…and ${warns.length - 6} more` : ''
         setMsg(`Synced with warnings:\n${preview}${more}`)
       }
+      router.refresh()
+    }
+  }
+
+  async function onCustomSync() {
+    const stages = (Object.keys(stagesSelected) as StageKey[]).filter((k) => stagesSelected[k])
+    if (stages.length === 0) { setMsg('Pick at least one part to sync.'); return }
+    setBusy('syncing'); setMsg(null)
+    const result = await syncSource(source.id, leagueId, stages)
+    setBusy(null)
+    if (!result.ok) {
+      setMsg(result.error)
+    } else {
+      const warns = (result as { warnings?: string[] }).warnings ?? []
+      const label = stages.join(', ')
+      if (warns.length) {
+        const preview = warns.slice(0, 6).join('\n')
+        const more = warns.length > 6 ? `\n…and ${warns.length - 6} more` : ''
+        setMsg(`Synced ${label} with warnings:\n${preview}${more}`)
+      } else {
+        setMsg(`Synced ${label}.`)
+      }
+      setCustomSyncOpen(false)
       router.refresh()
     }
   }
@@ -188,24 +225,81 @@ export function SourceRow({
               : 'never synced'}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem', minWidth: '14rem' }}>
           <button onClick={onSync} disabled={busy !== null || isPending} className="dc-btn">
             {busy === 'syncing' ? 'Syncing…' : 'Sync now →'}
           </button>
-          {(source.platform === 'nfl' || source.platform === 'espn' || source.platform === 'sleeper' || source.platform === 'yahoo') && (
+          {/* Custom sync + Edit settings share one row to keep the column
+              from growing. Custom sync expands a checkbox panel below. */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.4rem' }}>
             <button
-              onClick={() => setEditing((v) => !v)}
+              onClick={() => setCustomSyncOpen((v) => !v)}
               disabled={busy !== null || isPending}
               className="dc-btn-ghost"
+              style={{ padding: '.5rem .4rem' }}
             >
-              {editing ? 'Cancel' : 'Edit settings'}
+              {customSyncOpen ? 'Cancel' : 'Custom sync'}
             </button>
-          )}
+            {(source.platform === 'nfl' || source.platform === 'espn' || source.platform === 'sleeper' || source.platform === 'yahoo') && (
+              <button
+                onClick={() => setEditing((v) => !v)}
+                disabled={busy !== null || isPending}
+                className="dc-btn-ghost"
+                style={{ padding: '.5rem .4rem' }}
+              >
+                {editing ? 'Cancel' : 'Edit settings'}
+              </button>
+            )}
+          </div>
           <button onClick={onDelete} disabled={busy !== null || isPending} className="dc-btn-ghost">
             Remove
           </button>
         </div>
       </div>
+
+      {customSyncOpen && (
+        <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(255,255,255,.025)', borderRadius: '2px', borderLeft: '3px solid var(--gold)' }}>
+          <div className="dc-form" style={{ gap: '.75rem' }}>
+            <div className="dc-field">
+              <label className="dc-label">Sync only these parts</label>
+              <span className="dc-checkbox-hint" style={{ marginBottom: '.5rem' }}>
+                Skip the ones you don&apos;t need to refresh — faster than a full sync.
+              </span>
+              <label className="dc-checkbox-row">
+                <input type="checkbox" checked={stagesSelected.matchups} onChange={() => toggleStage('matchups')} />
+                <span><strong>Matchups &amp; standings</strong> — per-week scores, records, finishes</span>
+              </label>
+              <label className="dc-checkbox-row">
+                <input type="checkbox" checked={stagesSelected.drafts} onChange={() => toggleStage('drafts')} />
+                <span><strong>Drafts</strong> — pick-by-pick results</span>
+              </label>
+              <label className="dc-checkbox-row" style={{ opacity: lineupsSupported ? 1 : 0.5 }}>
+                <input
+                  type="checkbox"
+                  checked={stagesSelected.lineups}
+                  onChange={() => toggleStage('lineups')}
+                  disabled={!lineupsSupported}
+                />
+                <span>
+                  <strong>Weekly lineups</strong> — per-week starters &amp; bench
+                  {!lineupsSupported && (
+                    <em style={{ display: 'block', fontSize: '.7rem', opacity: 0.75, marginTop: '.1rem' }}>
+                      NFL.com doesn&apos;t preserve per-week lineup data in their archive.
+                    </em>
+                  )}
+                </span>
+              </label>
+              <label className="dc-checkbox-row">
+                <input type="checkbox" checked={stagesSelected.trades} onChange={() => toggleStage('trades')} />
+                <span><strong>Trades</strong> — completed deals &amp; assets</span>
+              </label>
+            </div>
+            <button onClick={onCustomSync} disabled={busy !== null} className="dc-btn dc-btn-block">
+              {busy === 'syncing' ? 'Syncing…' : 'Sync selected →'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {editing && source.platform === 'nfl' && (
         <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(255,255,255,.025)', borderRadius: '2px', borderLeft: '3px solid var(--gold)' }}>

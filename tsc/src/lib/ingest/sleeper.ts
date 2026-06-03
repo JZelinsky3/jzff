@@ -15,6 +15,7 @@ import {
   type SleeperPlayer,
   type SleeperTransaction,
 } from '@/lib/platforms/sleeper'
+import { resolveStages, type IngestStages } from './stages'
 
 export type IngestResult = {
   ok: boolean
@@ -92,10 +93,12 @@ export async function ingestSleeperSource(
   archiveLeagueId: string,
   startLeagueId: string,
   walkHistory: boolean,
-  range?: { seasonStart?: number; seasonEnd?: number }
+  range?: { seasonStart?: number; seasonEnd?: number },
+  stagesIn?: IngestStages,
 ): Promise<IngestResult> {
   const db = createAdminClient()
   const warnings: string[] = []
+  const stages = resolveStages(stagesIn)
 
   const fullHistory = walkHistory
     ? await fetchLeagueHistory(startLeagueId)
@@ -215,9 +218,11 @@ export async function ingestSleeperSource(
     // Rebuild per-season aggregates. Matchups are NOT wiped — they're upserted
     // with a deterministic a/b key so re-syncs update rows in place, keeping
     // matchup ids stable (pickems_picks references them via a cascading FK).
+    // Stage-gated: only wipe what we're about to re-ingest. A trades-only
+    // sync leaves drafts/lineups/manager_seasons alone.
     await db.from('manager_seasons').delete().eq('season_id', seasonId)
-    await db.from('drafts').delete().eq('season_id', seasonId)
-    await db.from('weekly_lineups').delete().eq('season_id', seasonId)
+    if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId)
+    if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
     // 4b. Fetch users + rosters for THIS season
     const [usersThis, rostersThis] = await Promise.all([
@@ -369,13 +374,19 @@ export async function ingestSleeperSource(
       })
       .eq('id', seasonId)
 
-    // 4e. Matchups — fetch all weeks in parallel (limit 5 concurrent)
+    // 4e. Matchups — fetch all weeks in parallel (limit 5 concurrent).
+    // Weeks are needed for both matchups + lineups; trades reuses the same
+    // `weeks` array further down too. Skip the actual fetch only if none
+    // of those three stages are requested.
     const maxWeek = playoffStart + 3
     const weeks = Array.from({ length: maxWeek }, (_, i) => i + 1)
-    const weeklyMatchups = await parallelLimit(weeks, 5, async (w) => {
-      const m = await sleeper.matchups(lg.league_id, w)
-      return { week: w, rows: m ?? [] }
-    })
+    const needWeeklyMatchups = stages.matchups || stages.lineups
+    const weeklyMatchups: Array<{ week: number; rows: SleeperMatchup[] }> = needWeeklyMatchups
+      ? await parallelLimit(weeks, 5, async (w) => {
+          const m = await sleeper.matchups(lg.league_id, w)
+          return { week: w, rows: m ?? [] }
+        })
+      : []
 
     // Per-season diagnostic counters so we can see exactly where matchups go.
     let seasonInserted = 0
@@ -432,21 +443,23 @@ export async function ingestSleeperSource(
         let mA = aMgr, mB = bMgr, sA = aScore, sB = bScore
         if (mA > mB) { [mA, mB] = [mB, mA]; [sA, sB] = [sB, sA] }
 
-        await db.from('matchups').upsert(
-          {
-            season_id: seasonId,
-            week,
-            manager_a_id: mA,
-            manager_b_id: mB,
-            score_a: sA,
-            score_b: sB,
-            is_playoff: isPlayoff,
-            is_championship: isChampionship,
-          },
-          { onConflict: 'season_id,week,manager_a_id,manager_b_id' }
-        )
-        matchupsIngested++
-        seasonInserted++
+        if (stages.matchups) {
+          await db.from('matchups').upsert(
+            {
+              season_id: seasonId,
+              week,
+              manager_a_id: mA,
+              manager_b_id: mB,
+              score_a: sA,
+              score_b: sB,
+              is_playoff: isPlayoff,
+              is_championship: isChampionship,
+            },
+            { onConflict: 'season_id,week,manager_a_id,manager_b_id' }
+          )
+          matchupsIngested++
+          seasonInserted++
+        }
 
         // Weekly lineups — one row per rostered player per side per week.
         // Powers the Best Coach Tracker (starter vs optimal lineup).
@@ -502,43 +515,48 @@ export async function ingestSleeperSource(
           }
           return rows
         })
-        if (lineupRows.length > 0) seasonLineupRows.push(...lineupRows)
+        if (stages.lineups && lineupRows.length > 0) seasonLineupRows.push(...lineupRows)
       }
     }
     // Bulk-upsert all lineup rows for the season in 1000-row chunks (Supabase's
     // soft cap per request). One round-trip per ~1000 rows instead of one per
     // matchup pair. Powers the Best Coach Tracker.
-    let lineupUpserted = 0
-    let lineupErrors = 0
-    if (seasonLineupRows.length > 0) {
-      const CHUNK = 1000
-      for (let i = 0; i < seasonLineupRows.length; i += CHUNK) {
-        const slice = seasonLineupRows.slice(i, i + CHUNK)
-        const { error: lineupErr } = await db.from('weekly_lineups').upsert(slice, {
-          onConflict: 'season_id,week,manager_id,player_external_id',
-        })
-        if (lineupErr) {
-          lineupErrors++
-          warnings.push(`Season ${year} weekly_lineups chunk ${i}-${i + slice.length}: ${lineupErr.message}`)
-        } else {
-          lineupUpserted += slice.length
+    if (stages.lineups) {
+      let lineupUpserted = 0
+      let lineupErrors = 0
+      if (seasonLineupRows.length > 0) {
+        const CHUNK = 1000
+        for (let i = 0; i < seasonLineupRows.length; i += CHUNK) {
+          const slice = seasonLineupRows.slice(i, i + CHUNK)
+          const { error: lineupErr } = await db.from('weekly_lineups').upsert(slice, {
+            onConflict: 'season_id,week,manager_id,player_external_id',
+          })
+          if (lineupErr) {
+            lineupErrors++
+            warnings.push(`Season ${year} weekly_lineups chunk ${i}-${i + slice.length}: ${lineupErr.message}`)
+          } else {
+            lineupUpserted += slice.length
+          }
         }
       }
+      warnings.push(
+        `Season ${year} weekly_lineups: ${lineupUpserted} rows upserted ` +
+        `(${seasonLineupRows.length} built from matchups, ${lineupErrors} chunk errors). Powers Best Coach Tracker.`
+      )
     }
-    warnings.push(
-      `Season ${year} weekly_lineups: ${lineupUpserted} rows upserted ` +
-      `(${seasonLineupRows.length} built from matchups, ${lineupErrors} chunk errors). Powers Best Coach Tracker.`
-    )
 
     // Per-season matchup breakdown — mirrors the ESPN diagnostic format so
     // we can spot exactly where games are going when a sync looks short.
-    warnings.push(
-      `Season ${year} matchups breakdown: ${seasonFlatPairs} pairs from Sleeper → ${seasonInserted} inserted ` +
-      `(empty weeks=${seasonEmptyWeeks}, bye/single-side=${seasonByeOrSingleSide}, ` +
-      `unresolved manager=${seasonUnresolvedManager}, same manager=${seasonSameManager}) · playoffStart=week ${playoffStart}`
-    )
+    if (stages.matchups) {
+      warnings.push(
+        `Season ${year} matchups breakdown: ${seasonFlatPairs} pairs from Sleeper → ${seasonInserted} inserted ` +
+        `(empty weeks=${seasonEmptyWeeks}, bye/single-side=${seasonByeOrSingleSide}, ` +
+        `unresolved manager=${seasonUnresolvedManager}, same manager=${seasonSameManager}) · playoffStart=week ${playoffStart}`
+      )
+    }
 
     // 4f. Drafts
+    if (stages.drafts) {
     const draftsList = await sleeper.drafts(lg.league_id)
     if (draftsList && draftsList.length > 0) {
       const primary = draftsList[0] // Sleeper returns most recent first
@@ -587,6 +605,7 @@ export async function ingestSleeperSource(
         }
       }
     }
+    } // end stages.drafts
 
     // 4g. Trades — walk every regular-season week, filter type='trade' &&
     // status='complete'. Sleeper's transactions endpoint returns an empty
@@ -594,6 +613,7 @@ export async function ingestSleeperSource(
     // Trades after the trade deadline are rare but still legal in some
     // leagues, so we go all the way through maxWeek rather than stopping
     // at a hardcoded deadline.
+    if (stages.trades) {
     const tradeWeekly = await parallelLimit(weeks, 5, async (w) => {
       const tx = await sleeper.transactions(lg.league_id, w)
       return tx ?? []
@@ -706,6 +726,7 @@ export async function ingestSleeperSource(
 
       if (sidesInserted >= 2) tradesIngested++
     }
+    } // end stages.trades
   }
 
   return {

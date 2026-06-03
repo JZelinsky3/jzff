@@ -8,6 +8,8 @@ import { ingestSleeperSource } from '@/lib/ingest/sleeper'
 import { ingestNflSource } from '@/lib/ingest/nfl'
 import { ingestEspnSource, type EspnSourceSettings } from '@/lib/ingest/espn'
 import { ingestYahooSource } from '@/lib/ingest/yahoo'
+import type { IngestStages } from '@/lib/ingest/stages'
+import { STAGE_KEYS, type StageKey } from '@/lib/ingest/stages'
 import { sleeper } from '@/lib/platforms/sleeper'
 import { probeLeague as probeEspn } from '@/lib/platforms/espn'
 import { getValidAccessToken as getYahooAccessToken, getLeagueDetail as getYahooLeagueDetail, listUserNflLeaguesDeduped, type YahooLeaguePickerEntry } from '@/lib/platforms/yahoo'
@@ -192,7 +194,14 @@ export async function addSource(_prev: ActionResult, formData: FormData): Promis
   return { ok: true }
 }
 
-export async function syncSource(sourceId: string, leagueId: string) {
+export async function syncSource(
+  sourceId: string,
+  leagueId: string,
+  // Optional list of stages to run. Omitted = run all (the default "Sync now"
+  // behavior). When the commissioner picks "Custom sync" in the UI they hand
+  // us an explicit subset of {matchups, drafts, lineups, trades}.
+  selectedStages?: StageKey[],
+) {
   const access = await assertWriteAccess(leagueId)
   if (!access.ok) return access
 
@@ -205,19 +214,33 @@ export async function syncSource(sourceId: string, leagueId: string) {
     .maybeSingle()
   if (!src) return { ok: false as const, error: 'Source not found.' }
 
+  // Translate the wire-friendly list into the ingest-internal shape. Empty
+  // array → run nothing (we still let it through; the ingest preamble still
+  // runs and the warnings array will be empty). Undefined → run everything.
+  let stages: IngestStages | undefined
+  if (selectedStages !== undefined) {
+    const allowed = new Set<StageKey>(STAGE_KEYS.filter((k) => selectedStages.includes(k)))
+    stages = {
+      matchups: allowed.has('matchups'),
+      drafts: allowed.has('drafts'),
+      lineups: allowed.has('lineups'),
+      trades: allowed.has('trades'),
+    }
+  }
+
   try {
     let warnings: string[] = []
     const settings = (src.settings ?? null) as Record<string, unknown> | null
     const seasonStart = typeof settings?.season_start === 'number' ? settings.season_start : undefined
     const seasonEnd = typeof settings?.season_end === 'number' ? settings.season_end : undefined
     if (src.platform === 'sleeper') {
-      const r = await ingestSleeperSource(leagueId, src.external_id, src.walk_history, { seasonStart, seasonEnd })
+      const r = await ingestSleeperSource(leagueId, src.external_id, src.walk_history, { seasonStart, seasonEnd }, stages)
       warnings = r.warnings ?? []
     } else if (src.platform === 'nfl') {
-      const r = await ingestNflSource(leagueId, src.external_id, (src.settings ?? {}) as Record<string, number>)
+      const r = await ingestNflSource(leagueId, src.external_id, (src.settings ?? {}) as Record<string, number>, stages)
       warnings = r.warnings ?? []
     } else if (src.platform === 'espn') {
-      const r = await ingestEspnSource(leagueId, src.external_id, (src.settings ?? {}) as EspnSourceSettings)
+      const r = await ingestEspnSource(leagueId, src.external_id, (src.settings ?? {}) as EspnSourceSettings, stages)
       warnings = r.warnings ?? []
     } else if (src.platform === 'yahoo') {
       // Yahoo per-source ingest needs the league owner's OAuth token (admin
@@ -230,7 +253,7 @@ export async function syncSource(sourceId: string, leagueId: string) {
         .maybeSingle()
       if (!leagueRow?.owner_id) return { ok: false as const, error: 'League has no owner; cannot fetch Yahoo tokens.' }
       const token = await getYahooAccessToken(leagueRow.owner_id, db)
-      const r = await ingestYahooSource(leagueId, src.external_id, !!src.walk_history, token, { seasonStart, seasonEnd })
+      const r = await ingestYahooSource(leagueId, src.external_id, !!src.walk_history, token, { seasonStart, seasonEnd }, stages)
       warnings = r.warnings ?? []
     } else {
       return { ok: false as const, error: `${src.platform} sync not implemented yet.` }

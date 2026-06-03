@@ -34,6 +34,7 @@ import {
   type EspnMember,
   type EspnTransaction,
 } from '@/lib/platforms/espn'
+import { resolveStages, type IngestStages } from './stages'
 
 export type IngestResult = {
   ok: boolean
@@ -113,8 +114,10 @@ export async function ingestEspnLeague(leagueRowId: string): Promise<IngestResul
 export async function ingestEspnSource(
   archiveLeagueId: string,
   externalId: string,
-  settings: EspnSourceSettings = {}
+  settings: EspnSourceSettings = {},
+  stagesIn?: IngestStages,
 ): Promise<IngestResult> {
+  const stages = resolveStages(stagesIn)
   const db = createAdminClient()
 
   const startYear = settings.season_start
@@ -228,6 +231,7 @@ export async function ingestEspnSource(
         managerIdBySwid,
         auth,
         result,
+        stages,
       })
       result.seasonsIngested++
     } catch (err) {
@@ -248,8 +252,9 @@ async function ingestSeason(args: {
   managerIdBySwid: Map<string, string>
   auth?: EspnAuth
   result: IngestResult
+  stages: Required<IngestStages>
 }): Promise<void> {
-  const { db, archiveLeagueId, year, lg, managerIdBySwid, auth, result } = args
+  const { db, archiveLeagueId, year, lg, managerIdBySwid, auth, result, stages } = args
 
   // team_id → SWID (this season only — ESPN recycles team_ids across years).
   // Some old seasons return teams whose owners[0] points at a SWID that was
@@ -389,8 +394,8 @@ async function ingestSeason(args: {
   // with a deterministic a/b key so re-syncs update rows in place, keeping
   // matchup ids stable (pickems_picks references them via a cascading FK).
   await db.from('manager_seasons').delete().eq('season_id', seasonId)
-  await db.from('drafts').delete().eq('season_id', seasonId)
-  await db.from('weekly_lineups').delete().eq('season_id', seasonId)
+  if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId)
+  if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
   // ─── manager_seasons ────────────────────────────────────────────────────
   // ESPN's team.record.overall has the authoritative regular-season totals.
@@ -461,11 +466,15 @@ async function ingestSeason(args: {
     })
     .eq('id', seasonId)
 
-  // ─── matchups ───────────────────────────────────────────────────────────
   // ESPN's status.latestScoringPeriod is the most recent week that has been
-  // (or is being) scored. Anything beyond it is a future week — write the
-  // matchup with null scores so pickems can show it, but don't count it.
+  // (or is being) scored. Used by both matchups and lineups, so compute once
+  // outside the stage gates.
   const latestScored = lg.status?.latestScoringPeriod ?? 0
+
+  // ─── matchups ───────────────────────────────────────────────────────────
+  // Stage-gated: trades-only / lineups-only sync skips the matchup write
+  // and the stale-row cleanup pass.
+  if (stages.matchups) {
   let matchupsCount = 0
   // Track every (week,mA,mB) tuple we write so we can wipe stale rows that
   // existed from a previous sync but no longer come through (e.g. consolation
@@ -602,13 +611,14 @@ async function ingestSeason(args: {
   if (deletedStale > 0) {
     result.warnings.push(`Season ${year}: removed ${deletedStale} stale matchup${deletedStale === 1 ? '' : 's'} (e.g. consolation games no longer imported)`)
   }
+  } // end stages.matchups
 
   // ─── weekly lineups ─────────────────────────────────────────────────────
   // Per-week per-player roster snapshot for the Best Coach Tracker. One row
   // per rostered player per side per week, with slot + points denormalized.
   // ESPN's leagueHistory endpoint may not honor scoringPeriodId for ancient
   // seasons — we tolerate empty teams[] arrays by skipping that week silently.
-  if (latestScored > 0) {
+  if (stages.lineups && latestScored > 0) {
     const lineupWeeks = Array.from({ length: latestScored }, (_, i) => i + 1)
     // Accumulator across all weeks — single chunked upsert at the end avoids
     // ~N round-trips and keeps the season under the Vercel function timeout.
@@ -688,6 +698,7 @@ async function ingestSeason(args: {
   // names via the kona_player_info endpoint (one call per season, regardless
   // of pick count). If the lookup fails the picks still write with null name +
   // position — the player_external_id is preserved so we can backfill later.
+  if (stages.drafts) {
   const picks = lg.draftDetail?.picks ?? []
   if (picks.length > 0 && lg.draftDetail?.completed !== false) {
     const isAuction = picks.some((p) => typeof p.bidAmount === 'number')
@@ -740,11 +751,13 @@ async function ingestSeason(args: {
       result.draftsIngested++
     }
   }
+  } // end stages.drafts
 
   // ─── trades ─────────────────────────────────────────────────────────────
   // mTransactions2 ledger → only EXECUTED TRADE_ACCEPT rows. Each ESPN trade
   // is one transaction with N items spanning ≥2 distinct teams; we group items
   // by team-as-receiver to build the per-side asset list.
+  if (stages.trades) {
   let txs: EspnTransaction[] = []
   try {
     txs = await fetchTransactions(String(lg.id), year, auth)
@@ -867,6 +880,7 @@ async function ingestSeason(args: {
       if (sidesInserted >= 2) result.tradesIngested++
     }
   }
+  } // end stages.trades
 }
 
 function winPctFromRecord(r?: { wins?: number; losses?: number; ties?: number }): number {

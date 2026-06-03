@@ -30,6 +30,7 @@ import {
   type YahooLeagueMeta,
 } from '@/lib/platforms/yahoo'
 import { parallelLimit } from '@/lib/platforms/sleeper'
+import { resolveStages, type IngestStages } from './stages'
 
 export type IngestResult = {
   ok: boolean
@@ -107,10 +108,12 @@ export async function ingestYahooSource(
   startLeagueKey: string,
   walkHistory: boolean,
   accessToken: string,
-  range?: { seasonStart?: number; seasonEnd?: number }
+  range?: { seasonStart?: number; seasonEnd?: number },
+  stagesIn?: IngestStages,
 ): Promise<IngestResult> {
   const db = createAdminClient()
   const warnings: string[] = []
+  const stages = resolveStages(stagesIn)
 
   // Build the chronological list of seasons (oldest first).
   const fullHistory: YahooLeagueMeta[] = walkHistory
@@ -235,8 +238,8 @@ export async function ingestYahooSource(
     // upsert by (season_id, week, manager_a_id, manager_b_id) so re-syncs
     // update in place and matchup ids stay stable (FK from pickems_picks).
     await db.from('manager_seasons').delete().eq('season_id', seasonId)
-    await db.from('drafts').delete().eq('season_id', seasonId)
-    await db.from('weekly_lineups').delete().eq('season_id', seasonId)
+    if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId)
+    if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
     const teams = teamsBySeason.get(lg.league_key) ?? []
     if (teams.length === 0) {
@@ -370,6 +373,7 @@ export async function ingestYahooSource(
     let seasonConsolationFiltered = 0
     let seasonPlacementFiltered = 0
     const championshipWeek = lg.end_week
+    if (stages.matchups) {
     for (let week = 1; week <= lg.end_week; week++) {
       const scoreboard = await getLeagueScoreboard(accessToken, lg.league_key, week, warnings)
       for (const m of scoreboard) {
@@ -446,6 +450,7 @@ export async function ingestYahooSource(
       `· playoffStart=week ${playoffStart}, endWeek=${lg.end_week} ` +
       `· treatRankAsFinal=${treatRankAsFinal} (currentWeek=${lg.current_week ?? 'unset'}, ranksKnown=${ranksKnown}/${teams.length})`
     )
+    } // end stages.matchups
 
     // Weekly lineups — fan out per (team, played-week). Yahoo's current_week
     // (when set) is the canonical "most recent week with scoring data." Falls
@@ -454,7 +459,7 @@ export async function ingestYahooSource(
     const lastPlayedWeek = lg.current_week != null
       ? Math.max(0, Number(lg.current_week) - (treatRankAsFinal ? 0 : 1))
       : lg.end_week
-    if (lastPlayedWeek > 0 && teamKeyToManagerId.size > 0) {
+    if (stages.lineups && lastPlayedWeek > 0 && teamKeyToManagerId.size > 0) {
       const teamWeekPairs: Array<{ teamKey: string; week: number; managerId: string }> = []
       for (const [teamKey, managerId] of teamKeyToManagerId.entries()) {
         for (let w = 1; w <= lastPlayedWeek; w++) {
@@ -514,6 +519,7 @@ export async function ingestYahooSource(
     }
 
     // Drafts
+    if (stages.drafts) {
     const picks = await getLeagueDraft(accessToken, lg.league_key)
     if (picks.length > 0) {
       // Yahoo doesn't tell us snake vs auction directly in draftresults — infer
@@ -561,11 +567,13 @@ export async function ingestYahooSource(
         draftsIngested++
       }
     }
+    } // end stages.drafts
 
     // ─── trades ──────────────────────────────────────────────────────────
     // Yahoo's transactions endpoint returns the per-league ledger. We pull
     // only successful trades; the parser collapses each into a per-team
     // asset list via destination_team_key.
+    if (stages.trades) {
     let yahooTxs: Awaited<ReturnType<typeof getLeagueTransactions>> = []
     try {
       yahooTxs = await getLeagueTransactions(accessToken, lg.league_key)
@@ -655,6 +663,7 @@ export async function ingestYahooSource(
       }
       if (sidesInserted >= 2) tradesIngested++
     }
+    } // end stages.trades
   }
 
   return {
