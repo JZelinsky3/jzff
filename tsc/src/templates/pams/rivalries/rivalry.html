@@ -311,22 +311,18 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   white-space: nowrap;
 }
 .rv-last-chip strong { color: var(--rv-red); font-weight: 700; }
-/* Footer row spans both sides. Carries the knockout note (if any) and
-   a small "vs. league avg" comparison so the post-game read goes
-   beyond just "who scored more." Lives at the bottom of the card. */
-.rv-last-foot {
-  grid-column: 1 / -1;
-  margin-top: .25rem;
-  padding-top: .75rem;
-  border-top: 1px solid var(--rv-line2);
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 1rem;
+/* League-avg comparison sits centered in the middle column below the
+   chips (used to live in a full-width footer; that footer was dropped
+   when knockout detection got vaulted, since it was its only other
+   tenant). The narrow line wraps softly so the card stays compact. */
+.rv-last-avg {
   font-family: var(--mono);
-  font-size: .62rem; letter-spacing: .14em; text-transform: uppercase;
+  font-size: .56rem; letter-spacing: .12em; text-transform: uppercase;
   color: var(--rv-grey-lt);
-}
-.rv-last-foot .ko {
-  color: var(--rv-gold);
+  text-align: center;
+  max-width: 18rem;
+  line-height: 1.4;
+  margin-top: .15rem;
 }
 
 /* ─── BIGGEST MEETING — pulled out as its own callout ─
@@ -351,17 +347,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-biggest strong { color: var(--rv-white); font-weight: 700; }
 
-/* Inline knockout tag for ledger rows. Sits next to the year/week
-   metadata when the loser's playoff run ended on that meeting. */
-.rv-tag-ko {
-  display: inline-block;
-  font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--rv-gold);
-  border: 1px solid var(--rv-gold);
-  padding: 0 .35rem;
-  border-radius: 2px;
-  margin-left: .25rem;
-}
+/* (Knockout chip styles vaulted alongside the detection logic.) */
 
 /* ─── DUAL-SIDE LEDGER ──────────────────────────────
    Replaces the old single-column meetings table with a two-sided
@@ -499,7 +485,9 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   font-family: var(--mono);
   font-size: .62rem; letter-spacing: .14em; text-transform: uppercase;
   color: var(--rv-grey-lt);
-  margin-bottom: 1rem;
+  /* No margin-bottom — the parent .rv-detail-main is a grid with a
+     1.5rem gap, and a margin here would stack on top of the gap and
+     leave Met-in/Ledger spaced further than Biggest/Met-in. */
 }
 .rv-metin-label { color: var(--rv-red); margin-right: .4rem; }
 .rv-metin-chip {
@@ -716,21 +704,13 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     return totalPf / totalGames;
   }
 
-  // Heuristic playoff-outcome detector. For a playoff game in `year`,
-  // look up the loser's per-season ledger entry and return their final
-  // rank. We flag a definite knockout only when the loser played exactly
-  // one playoff game that year (one-and-done) — anything else could be a
-  // semi loss followed by a consolation game we can't see, so we report
-  // the final placement without claiming "this was THE knockout."
-  function playoffOutcome(game, loserProfile) {
-    if (!game || !game.is_playoff || !loserProfile) return null;
-    const row = (loserProfile.season_ledger || []).find((s) => s.year === game.year);
-    if (!row) return null;
-    const finalRank = row.final_rank;
-    if (finalRank == null) return null;
-    const games = row.playoff_games || 0;
-    return { finalRank, isCertainKO: games === 1 };
-  }
+  // VAULTED: playoff knockout detection. Removed for now because it
+  // crowded the last-meeting card and the heuristic ("playoff_games === 1
+  // is a certain KO, anything else is ambiguous") couldn't tell a final
+  // loss from a semi loss without per-game bracket data. Bring this back
+  // alongside the regular-season elimination feature once exportLeague
+  // ships per-week standings + bracket position. See git history for the
+  // earlier implementation.
 
   // Walk last5 from manager A's perspective, find the meeting with the
   // largest |margin|. Playoff games tie-break above regular-season games
@@ -750,11 +730,30 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     return { game: best, winner };
   }
 
-  function ordinal(n) {
-    const v = n % 100;
-    if (v >= 11 && v <= 13) return n + 'th';
-    const d = n % 10;
-    return n + (d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th');
+  // Did the latest game continue a streak or end one? Walks last5 from
+  // the perspective of manager A (which is what rivalries.json ships).
+  // Returns:
+  //   { type: 'extended', count }  — current winner just won their Nth straight
+  //   { type: 'snapped',  count, snappedOwner }  — broke an opponent's run
+  //   null                         — first meeting, ties, or 1-1 alternation
+  function streakImpact(games) {
+    if (!games || games.length < 2) return null;
+    const last = games[games.length - 1];
+    if (last.result === 'T') return null;
+    let runLen = 1;
+    for (let i = games.length - 2; i >= 0; i--) {
+      if (games[i].result === last.result) runLen++;
+      else break;
+    }
+    if (runLen > 1) return { type: 'extended', count: runLen };
+    let priorRun = 0;
+    for (let i = games.length - 2; i >= 0; i--) {
+      if (games[i].result === 'T') break;
+      if (games[i].result !== last.result) priorRun++;
+      else break;
+    }
+    if (priorRun >= 2) return { type: 'snapped', count: priorRun };
+    return null;
   }
 
   // Render N gold rings for a championship count, padded with empty
@@ -934,7 +933,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     `;
   }
 
-  function buildLastMeetingCard(rv, leagueAvg, profiles) {
+  function buildLastMeetingCard(rv, leagueAvg) {
     if (!rv.last_meeting || typeof rv.last_meeting.a_score !== 'number') return '';
     const lm = rv.last_meeting;
     const a = rv.manager_a, b = rv.manager_b;
@@ -942,34 +941,27 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const bWon = lm.b_score > lm.a_score;
     const poTag = lm.is_playoff ? '<span class="rv-tag-po-inline">Playoff</span>' : '';
     const margin = Math.abs(lm.a_score - lm.b_score);
-    const combined = lm.a_score + lm.b_score;
-    const combinedAvg = combined / 2;
+    const combinedAvg = (lm.a_score + lm.b_score) / 2;
     // Comparison against the league's all-time PPG. Skip if we don't have
-    // it (avoids "vs. NaN" rendering when record_book/directory missed).
-    let avgCompare = '';
+    // it (avoids "vs. NaN" rendering when directory missed).
+    let avgLine = '';
     if (typeof leagueAvg === 'number' && leagueAvg > 0) {
       const delta = ((combinedAvg - leagueAvg) / leagueAvg) * 100;
       const sign = delta >= 0 ? '+' : '';
-      avgCompare = `Combined avg ${combinedAvg.toFixed(1)} · ${sign}${delta.toFixed(1)}% vs lg avg ${leagueAvg.toFixed(1)}`;
-    } else {
-      avgCompare = `Combined ${combined.toFixed(1)}`;
+      avgLine = `Combined avg ${combinedAvg.toFixed(1)} · ${sign}${delta.toFixed(1)}% vs lg avg ${leagueAvg.toFixed(1)}`;
     }
-    // Knockout footer: cross-reference the loser's per-manager profile.
-    // We tag "Knockout" with high confidence when their playoff_games
-    // that year was 1 (one-and-done); otherwise we just report the final
-    // placement so the reader knows where this game led without claiming
-    // it was THE knockout punch.
-    let koLine = '';
-    if (lm.is_playoff) {
-      const loserProf = aWon ? (profiles && profiles.b) : (profiles && profiles.a);
-      const loserName = aWon ? b.name : a.name;
-      const out = playoffOutcome(lm, loserProf);
-      if (out) {
-        const label = out.isCertainKO ? 'Knockout' : 'Playoff exit';
-        koLine = `<span class="ko">★ ${escapeHtml(label)} — ${escapeHtml(loserName)} finished ${ordinal(out.finalRank)}</span>`;
-      } else {
-        koLine = `<span>Playoff matchup</span>`;
-      }
+    // Streak chip: did this game extend or break a run? `last5` ships
+    // oldest-first with the most recent meeting last, so it includes
+    // `last_meeting` as its tail entry — exactly what streakImpact
+    // expects. We render the chip only when the game had a meaningful
+    // streak effect (≥2 in a row or snapped a ≥2 run).
+    const streak = streakImpact(rv.manager_a.last5);
+    let streakChip = '';
+    if (streak) {
+      const text = streak.type === 'extended'
+        ? `Run · ${streak.count} in a row`
+        : `Snapped ${streak.count}-game run`;
+      streakChip = `<div class="rv-last-chip">${escapeHtml(text)}</div>`;
     }
     return `
       <section class="rv-last-card" aria-label="Last meeting">
@@ -984,15 +976,12 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
         <div class="rv-last-mid">
           <div class="rv-last-vs">vs.</div>
           <div class="rv-last-chip">Margin · <strong>${margin.toFixed(1)}</strong></div>
-          <div class="rv-last-chip">Total · ${combined.toFixed(1)}</div>
+          ${streakChip}
+          ${avgLine ? `<div class="rv-last-avg">${escapeHtml(avgLine)}</div>` : ''}
         </div>
         <div class="rv-last-side b${bWon ? ' won' : ''}">
           <div class="rv-last-name">${escapeHtml(b.name)}</div>
           <div class="rv-last-score">${fmtScore(lm.b_score)}</div>
-        </div>
-        <div class="rv-last-foot">
-          ${koLine || '<span></span>'}
-          <span>${escapeHtml(avgCompare)}</span>
         </div>
       </section>
     `;
@@ -1023,15 +1012,13 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     `;
   }
 
-  function buildLedger(rv, profiles) {
+  function buildLedger(rv) {
     // rivalries.json ships the last 5 meetings per side. Render them
     // newest-first as a two-sided scoreboard so visitors see both
     // sides' margins at the same glance instead of a one-column winner
-    // list. Playoff games get a `PO` tag; when we can resolve the
-    // loser's profile + that season's playoff_games count, we also tag
-    // certain knockouts with a `KO` chip ("ended their season").
-    // Anything older than 5 isn't in the bundle — when more is
-    // available we'll expand this from a richer per-rivalry endpoint.
+    // list. Playoff games get a `PO` tag. Anything older than 5 isn't
+    // in the bundle — when more is available we'll expand this from a
+    // richer per-rivalry endpoint.
     const a = rv.manager_a, b = rv.manager_b;
     const n = Math.min(a.last5.length, b.last5.length);
     if (n === 0) {
@@ -1052,14 +1039,6 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       const aMargStr = aWon ? `<span class="marg">+${margin}</span>` : '';
       const bMargStr = bWon ? `<span class="marg">+${margin}</span>` : '';
       const tagPo = ga.is_playoff ? '<span class="rv-tag-po-inline">PO</span>' : '';
-      // KO chip: only show when we can confidently say the loser was
-      // eliminated by this game (their playoff_games for that year was 1).
-      let tagKo = '';
-      if (ga.is_playoff && !tie) {
-        const loserProf = aWon ? (profiles && profiles.b) : (profiles && profiles.a);
-        const out = playoffOutcome(ga, loserProf);
-        if (out && out.isCertainKO) tagKo = '<span class="rv-tag-ko">KO</span>';
-      }
       rows.push(`
         <div class="rv-ledger-row">
           <div class="rv-ledger-side a${aWon ? ' won' : ''}${tie ? ' tie' : ''}">
@@ -1068,7 +1047,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
           </div>
           <div class="rv-ledger-mid">
             <span class="yr">${ga.year}</span>
-            <span>Week ${ga.week} ${tagPo}${tagKo}</span>
+            <span>Week ${ga.week} ${tagPo}</span>
           </div>
           <div class="rv-ledger-side b${bWon ? ' won' : ''}${tie ? ' tie' : ''}">
             ${bMargStr}
@@ -1146,11 +1125,11 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       main.innerHTML =
         buildStatStrip(rv) +
         buildCard(rv) +
-        buildLastMeetingCard(rv, leagueAvg, profiles) +
+        buildLastMeetingCard(rv, leagueAvg) +
         buildCareers(rv, directory, profiles) +
         buildBiggestMeeting(rv) +
         buildMetInStrip(rv) +
-        buildLedger(rv, profiles);
+        buildLedger(rv);
     } catch (err) {
       main.innerHTML = `<div class="rv-empty">Couldn't load this rivalry.<br><span style="font-family:var(--mono);font-size:.7rem;color:var(--rv-red);">${escapeHtml(err.message || 'unknown error')}</span></div>`;
     }
