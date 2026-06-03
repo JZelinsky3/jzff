@@ -304,6 +304,21 @@ body { background: var(--ls-bg); }
     --card-accent-bar: #b58cff;
 }
 
+/* Manager DNA — Genome Lab: midnight indigo + electric cyan/magenta */
+.ls-card[data-theme="manager-dna"] {
+    --card-bg:         #14172a;
+    --card-bg-hover:   #1a1e36;
+    --card-border:     #232844;
+    --card-border-hi:  #4fd1ff;
+    --card-title:      #e8eaff;
+    --card-title-em:   #4fd1ff;
+    --card-desc:       #b5b9d6;
+    --card-status:     #ff5db1;
+    --card-status-dot: #ff5db1;
+    --card-arrow:      #4fd1ff;
+    --card-accent-bar: linear-gradient(90deg, #4fd1ff, #ff5db1);
+}
+
 /* Coming-soon cards: more aggressively greyed out so themed live cards
    pop and unfinished features visibly recede. */
 .ls-card[data-status="soon"],
@@ -808,6 +823,13 @@ body { background: var(--ls-bg); }
             <a href="live-season/milestones/" class="ls-card" data-status="live" data-theme="milestones">
                 <h2 class="ls-card-title">Milestone <em>Tracker.</em></h2>
                 <p class="ls-card-desc">An honors-roll feed for every career milestone, streak, and franchise high the moment it happens — right on the page.</p>
+                <span class="ls-card-arrow">→</span>
+            </a>
+
+            <a href="live-season/manager-dna/" class="ls-card" data-status="live" data-theme="manager-dna">
+                <span class="ls-card-tier">Veteran</span>
+                <h2 class="ls-card-title">Manager <em>DNA.</em></h2>
+                <p class="ls-card-desc">Every transaction, lineup, and draft leaves a trace — sequenced into an archetype per manager. Trade Hawks, Coin-Flippers, Set-and-Forget disciples, more.</p>
                 <span class="ls-card-arrow">→</span>
             </a>
 

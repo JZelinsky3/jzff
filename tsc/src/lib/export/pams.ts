@@ -121,6 +121,15 @@ type WeeklyLineupRow = {
   proj_points: number | null
 }
 
+// Trade participation row — Manager DNA only needs counts + timing + who-with,
+// not the full asset payload, so we read just the join fields.
+type TradeParticipationRow = {
+  trade_id: string
+  season_id: string
+  week: number | null
+  manager_id: string
+}
+
 type Snapshot = {
   league: LeagueRow
   seasons: SeasonRow[]                          // sorted by year asc
@@ -139,6 +148,9 @@ type Snapshot = {
   // 0029 migration or for platforms whose ingest didn't capture lineup data
   // for that week. Keyed by season_id; each manager-week's rows live together.
   weeklyLineupsBySeason: Map<string, WeeklyLineupRow[]>
+  // Trade participation, one row per (trade, manager-side). Empty if the
+  // league predates migration 0022 or the platform isn't Sleeper.
+  tradeParticipationByManager: Map<string, TradeParticipationRow[]>
 }
 
 async function loadSnapshot(leagueId: string): Promise<Snapshot> {
@@ -324,6 +336,34 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     .order('created_at', { ascending: true })
   const rivalries: RivalryRow[] = (rivalriesQuery.data ?? []) as RivalryRow[]
 
+  // Trade participation — join trades + trade_sides so Manager DNA can count
+  // trade volume per profile. Pre-0022 leagues return error → empty.
+  const tradeParticipation: TradeParticipationRow[] = await (async () => {
+    const { data, error } = await db
+      .from('trade_sides')
+      .select('trade_id, manager_id, trades!inner(season_id, week, status, league_id)')
+      .eq('trades.league_id', leagueId)
+      .eq('trades.status', 'completed')
+    if (error || !data) return []
+    type Joined = {
+      trade_id: string
+      manager_id: string
+      trades: { season_id: string; week: number | null } | { season_id: string; week: number | null }[]
+    }
+    const rows: TradeParticipationRow[] = []
+    for (const r of data as Joined[]) {
+      const t = Array.isArray(r.trades) ? r.trades[0] : r.trades
+      if (!t || !seasonIds.has(t.season_id)) continue
+      rows.push({
+        trade_id: r.trade_id,
+        season_id: t.season_id,
+        week: t.week,
+        manager_id: r.manager_id,
+      })
+    }
+    return rows
+  })()
+
   return {
     league: league as LeagueRow,
     seasons: (seasons ?? []) as SeasonRow[],
@@ -343,6 +383,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     picksByDraft,
     rivalries,
     weeklyLineupsBySeason: groupBy(weeklyLineupsAll, (r) => r.season_id),
+    tradeParticipationByManager: groupBy(tradeParticipation, (r) => r.manager_id),
   }
 }
 
@@ -2532,6 +2573,7 @@ export async function exportLeague(
   out['current_form.json'] = buildCurrentForm(s)
   out['matchup_preview.json'] = buildMatchupPreview(s)
   out['best_coach.json'] = buildBestCoach(s)
+  out['manager_dna.json'] = buildManagerDna(s)
 
   for (const season of s.seasons) {
     out[`seasons/${season.year}.json`] = buildSeasonFile(s, season)
@@ -5065,5 +5107,563 @@ function buildBestCoach(s: Snapshot): unknown {
     perfect_counts: perfectCounts,
     bench_bomb_counts: benchBombCounts,
     bench_bomb_threshold: BENCH_BOMB_THRESHOLD,
+  }
+}
+
+// ============================================================
+// Manager DNA — per-manager archetype + trait markers, derived from
+// lineup behavior, matchup outcomes, draft tendencies, and trade volume.
+// Each profile gets one primary archetype (the most extreme signal) plus
+// up to four secondary "gene" chips, plus the raw signal values so the
+// page can render bars and tooltips.
+// ============================================================
+
+type DnaSignals = {
+  career_games: number
+  career_seasons: number
+  // Lineup signals (null = no weekly_lineups data for this profile)
+  efficiency_pct: number | null         // 0..100, actual / optimal
+  lineup_churn_pct: number | null       // 0..100, avg % of starters that changed vs prior week
+  // Matchup signals
+  pf_per_game: number | null
+  volatility_pct: number | null         // 100 * stddev(weekly PF) / mean(weekly PF)
+  close_games: number                   // games decided by ≤ 5 pts
+  close_record: { w: number; l: number; t: number }
+  blowout_games: number                 // games decided by ≥ 30 pts
+  blowout_record: { w: number; l: number; t: number }
+  // Draft signals (first 5 rounds, all drafts in profile history)
+  draft_rb_share_pct: number | null     // 0..100, % of first-5-round picks that were RB
+  draft_qb_early: boolean               // true if any QB taken in rounds 1–4
+  draft_te_early: boolean               // true if any TE taken in rounds 1–4
+  // Trade signals
+  trades_total: number
+  trades_per_season: number | null
+}
+
+type DnaTrait = {
+  key: string
+  label: string
+  detail: string
+}
+
+type DnaManager = {
+  manager_id: string
+  uid: string | null
+  name: string
+  team_latest: string | null
+  is_current: boolean
+  archetype: {
+    key: string
+    name: string
+    tagline: string
+    blurb: string
+  }
+  traits: DnaTrait[]
+  signals: DnaSignals
+}
+
+function buildManagerDna(s: Snapshot): unknown {
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  if (groups.length === 0) return null
+  const autoCurrent = currentManagerIdSet(s)
+  const managerToGroup = buildManagerToGroup(groups)
+
+  // -------- Per-profile aggregation pass --------
+  type ProfileBundle = {
+    group: ProfileGroup
+    primary: ManagerRow
+    name: string
+    is_current: boolean
+    // Game-level
+    weeklyPF: number[]
+    games: ManagerGame[]   // regular season only — playoffs distort volatility
+    // Lineup-level (career)
+    actualSum: number
+    optimalSum: number
+    lineupWeeksSeen: number  // weeks with any lineup data
+    starterChurnSum: number  // sum of per-week churn ratios
+    churnWeeksCounted: number  // number of (week→week) transitions counted
+    // Draft-level
+    first5Picks: Array<{ position: string | null }>
+    first4Picks: Array<{ position: string | null }>
+    // Trade-level
+    tradeCount: number
+    tradeSeasons: Set<string>
+  }
+
+  // ProfileGroup has no stable id field — use primary.id as the bundle key
+  // since managerToGroup() always resolves any manager_id back to the group
+  // whose primary owns that id (or that contains it as an alt identity).
+  const bundles = new Map<string, ProfileBundle>()
+  for (const g of groups) {
+    bundles.set(g.primary.id, {
+      group: g,
+      primary: g.primary,
+      name: groupDisplayName(g),
+      is_current: isGroupCurrent(g, autoCurrent),
+      weeklyPF: [],
+      games: [],
+      actualSum: 0,
+      optimalSum: 0,
+      lineupWeeksSeen: 0,
+      starterChurnSum: 0,
+      churnWeeksCounted: 0,
+      first5Picks: [],
+      first4Picks: [],
+      tradeCount: 0,
+      tradeSeasons: new Set(),
+    })
+  }
+
+  // -------- Matchups: PF per week + close/blowout buckets --------
+  for (const g of groups) {
+    const bundle = bundles.get(g.primary.id)!
+    for (const mid of g.managerIds) {
+      const mList = s.matchupsByManager.get(mid) ?? []
+      for (const m of mList) {
+        const gm = asManagerGame(m, mid)
+        if (!gm) continue
+        // Skip 5th/7th-place placement games (mirror buildManagerFile).
+        if (gm.is_playoff && !isChampionshipBracketGame(s, gm)) continue
+        bundle.games.push(gm)
+        if (!gm.is_playoff) bundle.weeklyPF.push(gm.self_score)
+      }
+    }
+  }
+
+  // -------- Lineups: efficiency + week-to-week starter churn --------
+  // Walk every season's lineups, bucket by (manager_id, week), then for each
+  // (profile, season) sort weeks ascending and compare consecutive starter
+  // sets to compute churn.
+  for (const season of s.seasons) {
+    const rows = s.weeklyLineupsBySeason.get(season.id) ?? []
+    if (rows.length === 0) continue
+    type WB = { starters: WeeklyLineupRow[]; all: WeeklyLineupRow[] }
+    const byProfileWeek = new Map<string, Map<number, WB>>()
+    for (const r of rows) {
+      const g = managerToGroup.get(r.manager_id)
+      if (!g) continue
+      let weeks = byProfileWeek.get(g.primary.id)
+      if (!weeks) { weeks = new Map(); byProfileWeek.set(g.primary.id, weeks) }
+      let b = weeks.get(r.week)
+      if (!b) { b = { starters: [], all: [] }; weeks.set(r.week, b) }
+      b.all.push(r)
+      if (r.is_starter) b.starters.push(r)
+    }
+    for (const [groupId, weeks] of byProfileWeek) {
+      const bundle = bundles.get(groupId)
+      if (!bundle) continue
+      const sortedWeeks = [...weeks.entries()].sort(([a], [b]) => a - b)
+      let prevStarterIds: Set<string> | null = null
+      for (const [, bucket] of sortedWeeks) {
+        const anyScored = bucket.starters.some((r) => r.points != null)
+        if (!anyScored) continue
+        // Efficiency contribution
+        const actual = bucket.starters.reduce((sum, r) => sum + (r.points ?? 0), 0)
+        const slotCounts = new Map<string, number>()
+        for (const r of bucket.starters) slotCounts.set(r.slot, (slotCounts.get(r.slot) ?? 0) + 1)
+        const pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number }> = []
+        for (const r of bucket.all) {
+          if (!r.position) continue
+          pool.push({ player_external_id: r.player_external_id, name: r.player_name, pos: r.position, pts: r.points ?? 0 })
+        }
+        const { total: optimal } = computeOptimalLineup(pool, slotCounts)
+        bundle.actualSum += actual
+        bundle.optimalSum += optimal
+        bundle.lineupWeeksSeen++
+
+        // Churn vs previous week (within same season)
+        const curIds = new Set(bucket.starters.map((r) => r.player_external_id))
+        if (prevStarterIds != null && prevStarterIds.size > 0 && curIds.size > 0) {
+          let changed = 0
+          for (const id of curIds) if (!prevStarterIds.has(id)) changed++
+          // Symmetric: also count those dropped that are no longer here.
+          // Use the larger lineup size as denom so 100% = total swap.
+          const denom = Math.max(curIds.size, prevStarterIds.size)
+          bundle.starterChurnSum += changed / denom
+          bundle.churnWeeksCounted++
+        }
+        prevStarterIds = curIds
+      }
+    }
+  }
+
+  // -------- Drafts: first-4 + first-5 round picks per profile --------
+  for (const [seasonId, draft] of s.draftsBySeason) {
+    if (!draft) continue
+    const picks = s.picksByDraft.get(draft.id) ?? []
+    for (const p of picks) {
+      if (p.manager_id == null) continue
+      const g = managerToGroup.get(p.manager_id)
+      if (!g) continue
+      const bundle = bundles.get(g.primary.id)
+      if (!bundle) continue
+      if (p.round <= 5) bundle.first5Picks.push({ position: p.position })
+      if (p.round <= 4) bundle.first4Picks.push({ position: p.position })
+    }
+    void seasonId
+  }
+
+  // -------- Trades --------
+  for (const g of groups) {
+    const bundle = bundles.get(g.primary.id)!
+    for (const mid of g.managerIds) {
+      const tps = s.tradeParticipationByManager.get(mid) ?? []
+      for (const tp of tps) {
+        bundle.tradeCount++
+        bundle.tradeSeasons.add(tp.season_id)
+      }
+    }
+  }
+
+  // -------- Build signals per profile --------
+  const profiles: Array<{ bundle: ProfileBundle; signals: DnaSignals }> = []
+  for (const bundle of bundles.values()) {
+    const totalGames = bundle.games.length
+    if (totalGames === 0) continue
+    const careerSeasonsSet = new Set(bundle.games.map((g) => g.season_id))
+    const regGames = bundle.games.filter((g) => !g.is_playoff)
+
+    // PF/volatility
+    const pf = bundle.weeklyPF
+    const mean = pf.length > 0 ? pf.reduce((a, b) => a + b, 0) / pf.length : 0
+    let volatility: number | null = null
+    if (pf.length >= 4 && mean > 0) {
+      const variance = pf.reduce((sum, v) => sum + (v - mean) * (v - mean), 0) / pf.length
+      const sd = Math.sqrt(variance)
+      volatility = (sd / mean) * 100
+    }
+
+    // Close / blowout (regular-season only — playoffs are small-sample noise)
+    const CLOSE = 5
+    const BLOWOUT = 30
+    let cw = 0, cl = 0, ct = 0, bw = 0, bl = 0, bt = 0
+    let closeN = 0, blowN = 0
+    for (const gm of regGames) {
+      const margin = Math.abs(gm.margin)
+      if (margin <= CLOSE) {
+        closeN++
+        if (gm.result === 'W') cw++; else if (gm.result === 'L') cl++; else ct++
+      }
+      if (margin >= BLOWOUT) {
+        blowN++
+        if (gm.result === 'W') bw++; else if (gm.result === 'L') bl++; else bt++
+      }
+    }
+
+    // Lineup efficiency + churn
+    const efficiency = bundle.optimalSum > 0
+      ? (bundle.actualSum / bundle.optimalSum) * 100
+      : null
+    const churn = bundle.churnWeeksCounted > 0
+      ? (bundle.starterChurnSum / bundle.churnWeeksCounted) * 100
+      : null
+
+    // Draft tendencies
+    const f5 = bundle.first5Picks
+    const rbShare = f5.length > 0
+      ? (f5.filter((p) => (p.position ?? '').toUpperCase() === 'RB').length / f5.length) * 100
+      : null
+    const qbEarly = bundle.first4Picks.some((p) => (p.position ?? '').toUpperCase() === 'QB')
+    const teEarly = bundle.first4Picks.some((p) => (p.position ?? '').toUpperCase() === 'TE')
+
+    const tradeSeasonsN = bundle.tradeSeasons.size
+    const tradesPerSeason = tradeSeasonsN > 0 ? bundle.tradeCount / tradeSeasonsN : null
+
+    const signals: DnaSignals = {
+      career_games: totalGames,
+      career_seasons: careerSeasonsSet.size,
+      efficiency_pct: efficiency != null ? round2(efficiency) : null,
+      lineup_churn_pct: churn != null ? round2(churn) : null,
+      pf_per_game: pf.length > 0 ? round2(mean) : null,
+      volatility_pct: volatility != null ? round2(volatility) : null,
+      close_games: closeN,
+      close_record: { w: cw, l: cl, t: ct },
+      blowout_games: blowN,
+      blowout_record: { w: bw, l: bl, t: bt },
+      draft_rb_share_pct: rbShare != null ? round2(rbShare) : null,
+      draft_qb_early: qbEarly,
+      draft_te_early: teEarly,
+      trades_total: bundle.tradeCount,
+      trades_per_season: tradesPerSeason != null ? round2(tradesPerSeason) : null,
+    }
+    profiles.push({ bundle, signals })
+  }
+
+  if (profiles.length === 0) return null
+
+  // -------- League-wide stats for z-score classification --------
+  const stat = (vals: number[]) => {
+    if (vals.length === 0) return { mean: 0, sd: 0 }
+    const m = vals.reduce((a, b) => a + b, 0) / vals.length
+    const v = vals.reduce((sum, x) => sum + (x - m) * (x - m), 0) / vals.length
+    return { mean: m, sd: Math.sqrt(v) }
+  }
+  const eff = stat(profiles.map((p) => p.signals.efficiency_pct).filter((v): v is number => v != null))
+  const ch = stat(profiles.map((p) => p.signals.lineup_churn_pct).filter((v): v is number => v != null))
+  const vol = stat(profiles.map((p) => p.signals.volatility_pct).filter((v): v is number => v != null))
+  const rb = stat(profiles.map((p) => p.signals.draft_rb_share_pct).filter((v): v is number => v != null))
+  const tr = stat(profiles.map((p) => p.signals.trades_per_season).filter((v): v is number => v != null))
+
+  const z = (v: number | null, st: { mean: number; sd: number }) =>
+    v == null || st.sd === 0 ? 0 : (v - st.mean) / st.sd
+
+  // -------- Pick archetype per profile (highest |z| across signals, with tiebreakers) --------
+  type Candidate = { key: string; name: string; tagline: string; blurb: string; strength: number }
+
+  const result: DnaManager[] = []
+  for (const { bundle, signals } of profiles) {
+    const z_eff = z(signals.efficiency_pct, eff)
+    const z_churn = z(signals.lineup_churn_pct, ch)
+    const z_vol = z(signals.volatility_pct, vol)
+    const z_rb = z(signals.draft_rb_share_pct, rb)
+    const z_trade = z(signals.trades_per_season, tr)
+
+    const closeWinRate = signals.close_games > 0 ? signals.close_record.w / signals.close_games : null
+    const blowWinRate = signals.blowout_games > 0 ? signals.blowout_record.w / signals.blowout_games : null
+
+    const candidates: Candidate[] = []
+    // Trade Hawk / Vault
+    if (signals.trades_per_season != null && z_trade >= 1.0) {
+      candidates.push({
+        key: 'trade_hawk',
+        name: 'The Trade Hawk',
+        tagline: 'Always on the phone',
+        blurb: `Trades at ${signals.trades_per_season.toFixed(1)} deals per season — well above league baseline. The roster is never finished.`,
+        strength: Math.abs(z_trade) + 0.3,
+      })
+    }
+    if (signals.trades_total === 0 && signals.career_seasons >= 2) {
+      candidates.push({
+        key: 'the_vault',
+        name: 'The Vault',
+        tagline: 'Draft-and-hold disciple',
+        blurb: `Zero completed trades across ${signals.career_seasons} season${signals.career_seasons === 1 ? '' : 's'}. What's drafted is what's kept.`,
+        strength: 2.0,
+      })
+    }
+    // Optimizer / Reactionary / Set-and-Forget
+    if (signals.efficiency_pct != null && z_eff >= 1.0) {
+      candidates.push({
+        key: 'the_optimizer',
+        name: 'The Optimizer',
+        tagline: 'Squeezes every last point',
+        blurb: `Career lineup efficiency of ${signals.efficiency_pct.toFixed(1)}% — top of the league at starting the right names.`,
+        strength: Math.abs(z_eff) + 0.2,
+      })
+    }
+    if (signals.lineup_churn_pct != null && z_churn >= 1.2) {
+      candidates.push({
+        key: 'the_tinkerer',
+        name: 'The Tinkerer',
+        tagline: 'Lineup is never finished',
+        blurb: `Swaps ~${signals.lineup_churn_pct.toFixed(0)}% of starters week to week. The roster shifts constantly.`,
+        strength: Math.abs(z_churn),
+      })
+    }
+    if (signals.lineup_churn_pct != null && z_churn <= -1.0 && (signals.efficiency_pct == null || z_eff <= 0.2)) {
+      candidates.push({
+        key: 'set_and_forget',
+        name: 'The Set-and-Forget',
+        tagline: 'Drafted in August, started in January',
+        blurb: `Touches the lineup the least in the league — only ~${(signals.lineup_churn_pct ?? 0).toFixed(0)}% turnover week to week.`,
+        strength: Math.abs(z_churn) + 0.1,
+      })
+    }
+    // Coin Flipper / Steady Hand
+    if (signals.volatility_pct != null && z_vol >= 1.2) {
+      candidates.push({
+        key: 'coin_flipper',
+        name: 'The Coin-Flipper',
+        tagline: 'Boom one week, bust the next',
+        blurb: `Score swings ±${signals.volatility_pct.toFixed(0)}% week to week — most volatile output in the league.`,
+        strength: Math.abs(z_vol),
+      })
+    }
+    if (signals.volatility_pct != null && z_vol <= -1.0) {
+      candidates.push({
+        key: 'steady_hand',
+        name: 'The Steady Hand',
+        tagline: 'Same number every week',
+        blurb: `Lowest week-to-week swing in the league — predictable ${signals.pf_per_game?.toFixed(0) ?? '—'} most Sundays.`,
+        strength: Math.abs(z_vol),
+      })
+    }
+    // Cardiac / Heartbreaker
+    if (closeWinRate != null && signals.close_games >= 6 && closeWinRate >= 0.65) {
+      candidates.push({
+        key: 'cardiac_kid',
+        name: 'The Cardiac Kid',
+        tagline: 'Lives in one-score games',
+        blurb: `${signals.close_record.w}–${signals.close_record.l}${signals.close_record.t ? `–${signals.close_record.t}` : ''} in games decided by ≤5 pts. Refuses to lose close.`,
+        strength: 1.2 + closeWinRate,
+      })
+    }
+    if (closeWinRate != null && signals.close_games >= 6 && closeWinRate <= 0.35) {
+      candidates.push({
+        key: 'heartbreaker',
+        name: 'The Heartbreaker',
+        tagline: 'Cursed by the photo finish',
+        blurb: `${signals.close_record.w}–${signals.close_record.l}${signals.close_record.t ? `–${signals.close_record.t}` : ''} in games decided by ≤5 pts. The margin gods are not friends.`,
+        strength: 1.2 + (1 - closeWinRate),
+      })
+    }
+    // Steamroller / Punching Bag
+    if (blowWinRate != null && signals.blowout_games >= 4 && blowWinRate >= 0.70) {
+      candidates.push({
+        key: 'steamroller',
+        name: 'The Steamroller',
+        tagline: 'When they win, they win big',
+        blurb: `${signals.blowout_record.w}–${signals.blowout_record.l} in ≥30-pt games. No cruise control — pedal stays floored.`,
+        strength: 1.1 + blowWinRate,
+      })
+    }
+    // Zero-RB / Hog Mollie / Anchor QB / TE Premium
+    if (signals.draft_rb_share_pct != null && z_rb <= -1.0 && bundle.first5Picks.length >= 5) {
+      candidates.push({
+        key: 'zero_rb',
+        name: 'The Zero-RB Prophet',
+        tagline: 'Pass-catchers first, RBs later',
+        blurb: `Only ${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — well below the league norm. Believer in the WR-first build.`,
+        strength: Math.abs(z_rb),
+      })
+    }
+    if (signals.draft_rb_share_pct != null && z_rb >= 1.2 && bundle.first5Picks.length >= 5) {
+      candidates.push({
+        key: 'hog_mollie',
+        name: 'The Hog Mollie',
+        tagline: 'RBs first, RBs always',
+        blurb: `${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — the most run-heavy build in the league.`,
+        strength: Math.abs(z_rb),
+      })
+    }
+    if (signals.draft_qb_early && bundle.first4Picks.length >= 4) {
+      candidates.push({
+        key: 'anchor_qb',
+        name: 'The Anchor QB',
+        tagline: 'Locks the position early',
+        blurb: `Has taken a QB inside the first four rounds — refuses to play the streamer's game.`,
+        strength: 1.05,
+      })
+    }
+    if (signals.draft_te_early && bundle.first4Picks.length >= 4) {
+      candidates.push({
+        key: 'te_premium',
+        name: 'The TE Premium',
+        tagline: 'Pays the elite-TE tax',
+        blurb: `Has spent a top-4-round pick on a TE — willing to corner the position rather than chase it.`,
+        strength: 0.95,
+      })
+    }
+
+    let archetype: Candidate
+    if (candidates.length === 0) {
+      archetype = {
+        key: 'the_average_joe',
+        name: 'The Average Joe',
+        tagline: 'Defies categorization',
+        blurb: `Sits in the middle of every distribution — no extreme behaviors, no obvious tells. Quietly competitive.`,
+        strength: 0,
+      }
+    } else {
+      candidates.sort((a, b) => b.strength - a.strength)
+      archetype = candidates[0]
+    }
+
+    // -------- Build trait chips (gene markers) — secondary archetypes, capped 4 --------
+    const traits: DnaTrait[] = []
+    const pushTrait = (key: string, label: string, detail: string) => {
+      if (traits.find((t) => t.key === key)) return
+      if (traits.length >= 4) return
+      traits.push({ key, label, detail })
+    }
+    // Lineup
+    if (signals.efficiency_pct != null) {
+      if (z_eff >= 0.7 && archetype.key !== 'the_optimizer') pushTrait('high_eff', 'Lineup Optimizer', `${signals.efficiency_pct.toFixed(1)}% career efficiency`)
+      else if (z_eff <= -0.7) pushTrait('low_eff', 'Bench Burner', `${signals.efficiency_pct.toFixed(1)}% career efficiency`)
+    }
+    if (signals.lineup_churn_pct != null) {
+      if (z_churn >= 0.7 && archetype.key !== 'the_tinkerer') pushTrait('high_churn', 'High Churn', `${signals.lineup_churn_pct.toFixed(0)}% lineup turnover/wk`)
+      else if (z_churn <= -0.7 && archetype.key !== 'set_and_forget') pushTrait('low_churn', 'Iron Lineup', `${signals.lineup_churn_pct.toFixed(0)}% lineup turnover/wk`)
+    }
+    // Volatility
+    if (signals.volatility_pct != null) {
+      if (z_vol >= 0.7 && archetype.key !== 'coin_flipper') pushTrait('volatile', 'High Variance', `±${signals.volatility_pct.toFixed(0)}% weekly swing`)
+      else if (z_vol <= -0.7 && archetype.key !== 'steady_hand') pushTrait('consistent', 'Low Variance', `±${signals.volatility_pct.toFixed(0)}% weekly swing`)
+    }
+    // Close-game
+    if (closeWinRate != null && signals.close_games >= 6) {
+      if (closeWinRate >= 0.6 && archetype.key !== 'cardiac_kid') pushTrait('clutch', 'Clutch in Close', `${(closeWinRate * 100).toFixed(0)}% win rate in ≤5-pt games`)
+      else if (closeWinRate <= 0.4 && archetype.key !== 'heartbreaker') pushTrait('unclutch', 'Coughs Close Ones', `${(closeWinRate * 100).toFixed(0)}% win rate in ≤5-pt games`)
+    }
+    // Trade
+    if (signals.trades_per_season != null) {
+      if (z_trade >= 0.7 && archetype.key !== 'trade_hawk') pushTrait('active_trader', 'Active Trader', `${signals.trades_per_season.toFixed(1)} trades/season`)
+      else if (signals.trades_total === 0 && signals.career_seasons >= 2 && archetype.key !== 'the_vault') pushTrait('no_trader', 'Never Trades', `0 completed trades`)
+    }
+    // Draft
+    if (signals.draft_rb_share_pct != null && bundle.first5Picks.length >= 5) {
+      if (z_rb <= -0.7 && archetype.key !== 'zero_rb') pushTrait('wr_heavy', 'WR-Heavy Drafter', `${signals.draft_rb_share_pct.toFixed(0)}% early-round RBs`)
+      else if (z_rb >= 0.7 && archetype.key !== 'hog_mollie') pushTrait('rb_heavy', 'RB-Heavy Drafter', `${signals.draft_rb_share_pct.toFixed(0)}% early-round RBs`)
+    }
+    if (signals.draft_qb_early && archetype.key !== 'anchor_qb') pushTrait('early_qb', 'Early-QB History', `Has used a top-4 pick on a QB`)
+    if (signals.draft_te_early && archetype.key !== 'te_premium') pushTrait('early_te', 'Early-TE History', `Has used a top-4 pick on a TE`)
+    // Blowouts
+    if (blowWinRate != null && signals.blowout_games >= 4) {
+      if (blowWinRate >= 0.6 && archetype.key !== 'steamroller') pushTrait('steamroller_lite', 'Steamroller Streak', `${signals.blowout_record.w}–${signals.blowout_record.l} in ≥30-pt games`)
+      else if (blowWinRate <= 0.4) pushTrait('punching_bag', 'Takes Big Hits', `${signals.blowout_record.w}–${signals.blowout_record.l} in ≥30-pt games`)
+    }
+
+    // team_latest — most recent manager_season name
+    const allMs: ManagerSeasonRow[] = []
+    for (const mid of bundle.group.managerIds) allMs.push(...(s.managerSeasonsByManager.get(mid) ?? []))
+    const lastMs = allMs.slice().sort((a, b) => {
+      const ya = s.seasons.find((sn) => sn.id === a.season_id)?.year ?? 0
+      const yb = s.seasons.find((sn) => sn.id === b.season_id)?.year ?? 0
+      return yb - ya
+    })[0]
+
+    result.push({
+      manager_id: bundle.group.primary.id,
+      uid: userId(bundle.primary),
+      name: bundle.name,
+      team_latest: lastMs?.team_name ?? bundle.primary.team_name ?? null,
+      is_current: bundle.is_current,
+      archetype: {
+        key: archetype.key,
+        name: archetype.name,
+        tagline: archetype.tagline,
+        blurb: archetype.blurb,
+      },
+      traits,
+      signals,
+    })
+  }
+
+  // Current first, then by archetype name for stable grouping.
+  result.sort((a, b) => {
+    if (a.is_current !== b.is_current) return a.is_current ? -1 : 1
+    if (a.archetype.key !== b.archetype.key) return a.archetype.key.localeCompare(b.archetype.key)
+    return a.name.localeCompare(b.name)
+  })
+
+  // League-level summary for the page header.
+  const archetypeCounts: Record<string, number> = {}
+  for (const m of result) {
+    if (!m.is_current) continue
+    archetypeCounts[m.archetype.key] = (archetypeCounts[m.archetype.key] ?? 0) + 1
+  }
+
+  return {
+    generated_at: new Date().toISOString(),
+    league_baselines: {
+      efficiency_pct: round2(eff.mean),
+      lineup_churn_pct: round2(ch.mean),
+      volatility_pct: round2(vol.mean),
+      draft_rb_share_pct: round2(rb.mean),
+      trades_per_season: round2(tr.mean),
+    },
+    archetype_counts: archetypeCounts,
+    managers: result,
   }
 }

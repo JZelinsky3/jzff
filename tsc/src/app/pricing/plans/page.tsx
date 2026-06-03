@@ -60,6 +60,11 @@ const FEATURES: Feature[] = [
     included: { tier1: false, tier2: true, tier3: true },
   },
   {
+    label: 'Manager DNA',
+    detail: 'Every manager auto-classified into an archetype — Trade Hawk, Coin-Flipper, Set-and-Forget, more — from their actual transactions, lineups, and draft history.',
+    included: { tier1: false, tier2: true, tier3: true },
+  },
+  {
     label: 'Multiple leagues',
     // Rookie's check intentionally false — 'multiple' implies >1. Each
     // card shows only its own league count, not the whole ladder.
@@ -103,8 +108,9 @@ export default function PlansPage() {
           Compare <em>the three.</em>
         </h1>
         <p className="hero-sub" style={{ maxWidth: '62ch', margin: '0 auto' }}>
-          Every plan unlocks the full chronicle — archives, drafts, records, pick&apos;ems. Two
-          differences: how many leagues you can archive, and whether you get AI weekly recaps.
+          Every plan unlocks the full chronicle — archives, drafts, records, pick&apos;ems. The
+          differences: how many leagues you can archive, and the auto-generated extras —
+          weekly recaps, trade recaps, and the Manager DNA lab.
         </p>
       </section>
 

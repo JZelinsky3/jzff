@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager DNA · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+/* ============================================================
+   MANAGER DNA — Genome Lab
+   Midnight-indigo canvas, electric cyan + hot magenta double-helix
+   accents, mono "specimen sheet" type. Distinct from every other
+   live-season page (railway, chalkboard, plaque, ledger): this one
+   reads as a lab — grid paper, barcode strips, helix columns.
+   ============================================================ */
+
+:root {
+    --dna-bg:           #0c0d18;
+    --dna-bg-soft:      #0f1224;
+    --dna-card:         #14172a;
+    --dna-card-hi:      #1a1e36;
+    --dna-line:         #232844;
+    --dna-line-soft:    #1b2038;
+    --dna-cream:        #e8eaff;
+    --dna-cream-soft:   #b5b9d6;
+    --dna-mute:         #7a83a6;
+    --dna-mute-deep:    #555c7a;
+    --dna-cyan:         #4fd1ff;   /* primary strand */
+    --dna-cyan-deep:    #2aa9d8;
+    --dna-magenta:      #ff5db1;   /* secondary strand */
+    --dna-magenta-deep: #d83f8c;
+    --dna-lime:         #d8ff5d;   /* above-baseline accent */
+    --dna-amber:        #ffcb6b;   /* warning / below-baseline accent */
+    --dna-gold:         #e8c889;
+}
+
+/* Nav + chapbar palette overrides */
+.nav { background: #0a0b15; border-bottom-color: var(--dna-line); }
+.nav-back, .nav-link { color: var(--dna-cyan); }
+.nav-back:hover, .nav-link:hover { color: #82e0ff; }
+.nav-title em { color: var(--dna-cream); font-style: italic; }
+.nav-kicker { color: var(--dna-cyan); }
+.nav-drop-btn { color: var(--dna-cyan); }
+.nav-drop-btn:hover { color: #82e0ff; }
+:root {
+    --chapbar-bg:     #0a0b15;
+    --chapbar-border: var(--dna-line);
+    --chapbar-text:   var(--dna-mute);
+    --chapbar-active: var(--dna-cyan);
+    --chapbar-line:   var(--dna-line);
+
+    --nav-drop-bg:           #0a0b15;
+    --nav-drop-border:       var(--dna-line);
+    --nav-drop-text:         var(--dna-cream);
+    --nav-drop-text-mute:    var(--dna-mute);
+    --nav-drop-accent:       var(--dna-cyan);
+    --nav-drop-hover-bg:     rgba(79, 209, 255, .08);
+    --nav-drop-sub-bg:       rgba(0, 0, 0, .25);
+    --nav-drop-accent-line:  rgba(79, 209, 255, .32);
+}
+
+html, body {
+    background: var(--dna-bg);
+    color: var(--dna-cream);
+    font-family: var(--serif);
+}
+
+/* Lab grid paper — fine cyan/magenta crosshatch across the canvas */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: .18;
+    background-image:
+        linear-gradient(to right, rgba(79, 209, 255, .08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 93, 177, .05) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse at 18% 12%, rgba(79, 209, 255, .07) 0%, transparent 55%),
+        radial-gradient(ellipse at 82% 88%, rgba(255, 93, 177, .05) 0%, transparent 55%);
+}
+.site-glow { display: none; }
+
+main { position: relative; z-index: 1; }
+
+.dna-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+}
+
+/* ── MASTHEAD ───────────────────────────────────────────────── */
+.dna-mast {
+    text-align: center;
+    padding: 1rem 1rem 2.5rem;
+    border-bottom: 1px dashed var(--dna-line);
+    margin-bottom: 3rem;
+    position: relative;
+}
+.dna-mast-sup {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    color: var(--dna-cyan);
+    margin-bottom: 1.1rem;
+}
+.dna-mast-sup::before, .dna-mast-sup::after {
+    content: '◇';
+    color: var(--dna-magenta);
+    font-size: .55rem;
+}
+.dna-mast-title {
+    font-family: var(--serif);
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    line-height: 1.04;
+    color: var(--dna-cream);
+    margin: 0 0 1rem;
+    letter-spacing: -.015em;
+}
+.dna-mast-title em {
+    font-style: italic;
+    background: linear-gradient(90deg, var(--dna-cyan) 0%, var(--dna-magenta) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.dna-mast-sub {
+    max-width: 40rem;
+    margin: 0 auto;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--dna-cream-soft);
+    font-size: 1.05rem;
+    line-height: 1.55;
+}
+.dna-mast-meta {
+    margin-top: 1.4rem;
+    font-family: var(--mono);
+    font-size: .65rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+}
+.dna-mast-meta strong { color: var(--dna-cream); font-weight: 600; }
+
+/* Tier badge — Veteran lock */
+.dna-mast-tier {
+    display: inline-block;
+    margin-top: 1.2rem;
+    padding: .35rem .8rem;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--dna-gold);
+    border: 1px solid rgba(232, 200, 137, .4);
+    background: rgba(232, 200, 137, .06);
+    border-radius: 2px;
+}
+
+/* ── LEAGUE STRAND (top summary) ────────────────────────────── */
+.dna-strand-wrap {
+    margin-bottom: 3rem;
+    background: var(--dna-bg-soft);
+    border: 1px solid var(--dna-line);
+    border-radius: 4px;
+    padding: 1.5rem 1.75rem 1.4rem;
+    position: relative;
+    overflow: hidden;
+}
+.dna-strand-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--dna-cyan), var(--dna-magenta));
+}
+.dna-strand-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+.dna-strand-num {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--dna-cyan);
+}
+.dna-strand-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.4rem;
+    color: var(--dna-cream);
+}
+.dna-strand-title em { color: var(--dna-magenta); font-style: italic; }
+.dna-strand-note {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+}
+
+.dna-strand-tally {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem .65rem;
+}
+.dna-strand-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .42rem .75rem;
+    background: rgba(79, 209, 255, .06);
+    border: 1px solid rgba(79, 209, 255, .25);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--dna-cream-soft);
+}
+.dna-strand-pill-count {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .9rem;
+    color: var(--dna-cyan);
+}
+
+.dna-strand-baselines {
+    margin-top: 1.1rem;
+    padding-top: 1rem;
+    border-top: 1px dotted var(--dna-line);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+.dna-baseline {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+}
+.dna-baseline-lbl {
+    font-family: var(--mono);
+    font-size: .54rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+}
+.dna-baseline-val {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--dna-cream);
+}
+
+/* ── SPECIMEN GRID ──────────────────────────────────────────── */
+.dna-section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+.dna-section-num {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--dna-magenta);
+}
+.dna-section-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.4rem;
+    color: var(--dna-cream);
+}
+.dna-section-title em { color: var(--dna-cyan); font-style: italic; }
+
+.dna-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.1rem;
+}
+@media (max-width: 820px) {
+    .dna-grid { grid-template-columns: 1fr; }
+}
+
+/* ── SPECIMEN CARD ──────────────────────────────────────────── */
+.dna-card {
+    position: relative;
+    display: flex;
+    background: var(--dna-card);
+    border: 1px solid var(--dna-line);
+    border-radius: 4px;
+    color: inherit;
+    text-decoration: none;
+    transition: transform .25s, border-color .25s, background .25s, box-shadow .25s;
+    overflow: hidden;
+    min-height: 340px;
+}
+.dna-card:hover {
+    background: var(--dna-card-hi);
+    border-color: rgba(79, 209, 255, .45);
+    transform: translateY(-2px);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, .45),
+                0 0 22px rgba(79, 209, 255, .08);
+}
+.dna-card:hover .dna-helix-cyan { filter: drop-shadow(0 0 4px rgba(79, 209, 255, .65)); }
+.dna-card:hover .dna-helix-mag  { filter: drop-shadow(0 0 4px rgba(255, 93, 177, .55)); }
+
+/* Left rail — vertical double-helix SVG column */
+.dna-helix {
+    flex: 0 0 36px;
+    background: linear-gradient(180deg, rgba(79, 209, 255, .06), rgba(255, 93, 177, .04));
+    border-right: 1px solid var(--dna-line);
+    position: relative;
+}
+.dna-helix svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+.dna-helix-cyan { stroke: var(--dna-cyan); stroke-width: 1.5; fill: none; transition: filter .3s; }
+.dna-helix-mag  { stroke: var(--dna-magenta); stroke-width: 1.5; fill: none; transition: filter .3s; }
+.dna-helix-rung { stroke: rgba(184, 195, 230, .28); stroke-width: 1; }
+
+/* Body */
+.dna-card-body {
+    flex: 1;
+    min-width: 0;
+    padding: 1.25rem 1.4rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Top barcode strip — visualizes signal genotype at a glance */
+.dna-barcode {
+    display: flex;
+    height: 22px;
+    gap: 2px;
+    margin: -.1rem 0 .3rem;
+}
+.dna-barcode-band {
+    flex: 1;
+    border-radius: 1px;
+    transition: filter .25s;
+}
+.dna-barcode-band.b-cyan    { background: rgba(79, 209, 255, var(--a, .8)); }
+.dna-barcode-band.b-magenta { background: rgba(255, 93, 177, var(--a, .8)); }
+.dna-barcode-band.b-lime    { background: rgba(216, 255, 93,  var(--a, .8)); }
+.dna-barcode-band.b-amber   { background: rgba(255, 203, 107, var(--a, .8)); }
+.dna-barcode-band.b-mute    { background: rgba(122, 131, 166, var(--a, .25)); }
+
+/* Specimen label */
+.dna-specimen-lbl {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-family: var(--mono);
+    font-size: .56rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+}
+.dna-specimen-lbl-num { color: var(--dna-cyan); }
+.dna-specimen-lbl-seq { color: var(--dna-mute-deep); letter-spacing: .18em; }
+.dna-specimen-lbl-alumni {
+    padding: .15rem .5rem;
+    border: 1px solid rgba(122, 131, 166, .35);
+    border-radius: 2px;
+    color: var(--dna-mute);
+    font-size: .52rem;
+}
+
+/* Identity row */
+.dna-id-row { display: flex; flex-direction: column; gap: .15rem; }
+.dna-id-name {
+    font-family: var(--serif);
+    font-size: 1.45rem;
+    line-height: 1.05;
+    color: var(--dna-cream);
+    letter-spacing: -.015em;
+}
+.dna-id-team {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+}
+
+/* Archetype headline */
+.dna-archetype {
+    padding: .65rem 0 .15rem;
+    border-top: 1px dotted var(--dna-line);
+}
+.dna-archetype-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.6rem;
+    color: var(--dna-cyan);
+    line-height: 1.1;
+    letter-spacing: -.01em;
+}
+.dna-archetype-tagline {
+    margin-top: .2rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dna-magenta);
+}
+.dna-archetype-blurb {
+    margin-top: .55rem;
+    font-family: var(--serif);
+    font-size: .9rem;
+    line-height: 1.5;
+    color: var(--dna-cream-soft);
+}
+
+/* Gene-marker chips */
+.dna-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-top: .15rem;
+}
+.dna-trait {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .3rem .55rem;
+    background: rgba(79, 209, 255, .05);
+    border: 1px solid rgba(79, 209, 255, .22);
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--dna-cream-soft);
+}
+.dna-trait::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--dna-cyan);
+    flex-shrink: 0;
+}
+.dna-trait-detail {
+    color: var(--dna-mute);
+    letter-spacing: .12em;
+    text-transform: none;
+    font-size: .56rem;
+}
+.dna-traits-empty {
+    font-family: var(--mono);
+    font-size: .56rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dna-mute-deep);
+}
+
+/* Signal bars — bottom readout */
+.dna-signals {
+    margin-top: auto;
+    padding-top: .9rem;
+    border-top: 1px dotted var(--dna-line);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .55rem .9rem;
+}
+.dna-sig {
+    display: flex;
+    flex-direction: column;
+    gap: .18rem;
+    min-width: 0;
+}
+.dna-sig-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .5rem;
+    font-family: var(--mono);
+    font-size: .52rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+}
+.dna-sig-lbl { color: var(--dna-mute); }
+.dna-sig-val { color: var(--dna-cream); font-size: .68rem; letter-spacing: .14em; }
+.dna-sig-val.is-high { color: var(--dna-lime); }
+.dna-sig-val.is-low  { color: var(--dna-amber); }
+.dna-sig-val.is-none { color: var(--dna-mute-deep); }
+.dna-sig-bar {
+    height: 4px;
+    background: rgba(35, 40, 68, .8);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+.dna-sig-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--w, 0%);
+    background: linear-gradient(90deg, var(--dna-cyan-deep), var(--dna-cyan));
+    transition: width .4s;
+}
+.dna-sig-fill.is-high { background: linear-gradient(90deg, var(--dna-cyan), var(--dna-lime)); }
+.dna-sig-fill.is-low  { background: linear-gradient(90deg, var(--dna-magenta-deep), var(--dna-amber)); }
+/* Baseline marker — vertical tick at the league average so each bar
+   reads as "where this manager sits vs the league," not just a raw value. */
+.dna-sig-mark {
+    position: absolute;
+    top: -2px; bottom: -2px;
+    left: var(--m, 50%);
+    width: 1px;
+    background: rgba(232, 200, 137, .55);
+}
+
+@media (max-width: 520px) {
+    .dna-card { min-height: 0; }
+    .dna-helix { flex: 0 0 28px; }
+    .dna-card-body { padding: 1rem 1.1rem; gap: .85rem; }
+    .dna-id-name { font-size: 1.25rem; }
+    .dna-archetype-name { font-size: 1.35rem; }
+    .dna-signals { grid-template-columns: 1fr; gap: .4rem; }
+}
+
+/* ── EMPTY / LOADING ───────────────────────────────────────── */
+.dna-empty {
+    padding: 4rem 2rem;
+    text-align: center;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--dna-mute);
+    background: var(--dna-card);
+    border: 1px dashed var(--dna-line);
+    border-radius: 4px;
+}
+.dna-empty strong { color: var(--dna-cream); font-style: normal; }
+
+.dna-archetype-legend {
+    margin-top: 3rem;
+    padding: 1.4rem 1.6rem 1.6rem;
+    background: var(--dna-bg-soft);
+    border: 1px solid var(--dna-line);
+    border-radius: 4px;
+}
+.dna-legend-head {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+    margin-bottom: 1rem;
+}
+.dna-legend-head em { color: var(--dna-cyan); font-style: normal; }
+.dna-legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: .8rem 1.4rem;
+}
+.dna-legend-item {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+}
+.dna-legend-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .92rem;
+    color: var(--dna-cream);
+}
+.dna-legend-desc {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+}
+</style>
+</head>
+<body>
+
+<nav id="site-nav" data-page="manager-dna" data-chapter="CH. IX · MANAGER DNA"></nav>
+<script src="/pams-template/assets/js/nav.js"></script>
+
+<main>
+<div class="dna-wrap">
+
+    <!-- MASTHEAD -->
+    <header class="dna-mast">
+        <div class="dna-mast-sup">Genome Lab · Behavioral DNA</div>
+        <h1 class="dna-mast-title">Twelve managers. Twelve different <em>code.</em></h1>
+        <p class="dna-mast-sub">
+            Every transaction, every lineup, every draft pick leaves a trace. We sequenced the league —
+            here's what came back. Updates as the season writes new behavior.
+        </p>
+        <div class="dna-mast-meta" id="dna-meta">SPECIMENS SEQUENCED <strong id="dna-count">—</strong></div>
+        <div><span class="dna-mast-tier">★ Veteran · The Sunday Chronicle ★</span></div>
+    </header>
+
+    <!-- LEAGUE STRAND -->
+    <section class="dna-strand-wrap" id="dna-strand" hidden>
+        <div class="dna-strand-head">
+            <span class="dna-strand-num">§ I · League Strand</span>
+            <span class="dna-strand-title">The <em>archetype</em> spread.</span>
+            <span class="dna-strand-note" id="dna-strand-note">Current society only</span>
+        </div>
+        <div class="dna-strand-tally" id="dna-tally"></div>
+        <div class="dna-strand-baselines" id="dna-baselines"></div>
+    </section>
+
+    <!-- SPECIMEN GRID -->
+    <section>
+        <div class="dna-section-head">
+            <span class="dna-section-num">§ II · Specimen Sheets</span>
+            <span class="dna-section-title">One <em>manager,</em> one strand.</span>
+        </div>
+        <div class="dna-grid" id="dna-grid">
+            <div class="dna-empty">Sequencing the league…</div>
+        </div>
+    </section>
+
+    <!-- LEGEND -->
+    <section class="dna-archetype-legend" id="dna-legend" hidden>
+        <div class="dna-legend-head">★ Reading the <em>signals</em> ★</div>
+        <div class="dna-legend-grid">
+            <div class="dna-legend-item">
+                <div class="dna-legend-name">EFF · Lineup Efficiency</div>
+                <div class="dna-legend-desc">% of optimal lineup actually started</div>
+            </div>
+            <div class="dna-legend-item">
+                <div class="dna-legend-name">CHURN · Weekly Turnover</div>
+                <div class="dna-legend-desc">% of starters changed vs prior week</div>
+            </div>
+            <div class="dna-legend-item">
+                <div class="dna-legend-name">VOL · Score Volatility</div>
+                <div class="dna-legend-desc">Std-dev as % of mean weekly PF</div>
+            </div>
+            <div class="dna-legend-item">
+                <div class="dna-legend-name">TRADE · Trade Volume</div>
+                <div class="dna-legend-desc">Completed trades per season</div>
+            </div>
+        </div>
+    </section>
+
+</div>
+</main>
+
+<footer class="site-footer">
+    <span>Built by <em>jzFF</em> · {{LEAGUE_ABBR}} · Since {{LEAGUE_FOUNDED_ROMAN}}</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dna-cyan);text-decoration:none;">Start your own league</a>
+</footer>
+
+<script>
+(() => {
+    const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
+    // ── Helix SVG generator — vertical double-helix, sized to card height.
+    // Two sine paths phase-shifted 180°, plus rungs every quarter wave.
+    // Deterministic per-card so it renders identically across paints.
+    function helixSvg(seedHash) {
+        // Choose a wave count from the seed so cards differ subtly. 6-9 turns.
+        const turns = 6 + (seedHash % 4);
+        const STEPS = 80;
+        const H = 100; // viewBox height, units
+        const W = 18;
+        const amp = 5;
+        const mid = W / 2;
+        const ptsA = [];
+        const ptsB = [];
+        for (let i = 0; i <= STEPS; i++) {
+            const t = i / STEPS;
+            const angle = t * turns * Math.PI * 2;
+            const xA = mid + Math.sin(angle) * amp;
+            const xB = mid - Math.sin(angle) * amp;
+            const y = t * H;
+            ptsA.push(`${xA.toFixed(2)},${y.toFixed(2)}`);
+            ptsB.push(`${xB.toFixed(2)},${y.toFixed(2)}`);
+        }
+        // Rungs at every half-wave where the strands cross or are at extremes.
+        const rungCount = turns * 2;
+        let rungs = '';
+        for (let i = 1; i < rungCount; i++) {
+            const t = i / rungCount;
+            const angle = t * turns * Math.PI * 2;
+            const xA = mid + Math.sin(angle) * amp;
+            const xB = mid - Math.sin(angle) * amp;
+            const y = t * H;
+            rungs += `<line class="dna-helix-rung" x1="${xA.toFixed(2)}" y1="${y.toFixed(2)}" x2="${xB.toFixed(2)}" y2="${y.toFixed(2)}"/>`;
+        }
+        return `
+            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+                ${rungs}
+                <polyline class="dna-helix-cyan" points="${ptsA.join(' ')}" />
+                <polyline class="dna-helix-mag" points="${ptsB.join(' ')}" />
+            </svg>
+        `;
+    }
+
+    // Simple hash for a string → small positive int. Used to seed helix variation
+    // and the barcode "sequence" overlay so each manager's strip is distinct
+    // but stable across reloads.
+    function hashStr(s) {
+        let h = 0;
+        for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+        return Math.abs(h);
+    }
+
+    // Pretty 4-letter "gene sequence" derived from the archetype key.
+    // Reads like a specimen marker (e.g., GTCA-AAGT-CCAG-TG…) without claiming
+    // any real bioinformatics meaning.
+    function seqCode(key) {
+        const letters = 'ACGT';
+        let h = hashStr(key + '|seq');
+        const groups = [];
+        for (let g = 0; g < 3; g++) {
+            let s = '';
+            for (let i = 0; i < 4; i++) {
+                s += letters[h % 4];
+                h = Math.floor(h / 4) + (h * 7) % 113;
+            }
+            groups.push(s);
+        }
+        return groups.join('-');
+    }
+
+    // Barcode strip — 14 bands. The first 5 reflect signal genotype (low / mid /
+    // high colored bands per signal). The rest are a pseudo-random sequence
+    // seeded by manager name so identical archetypes still look distinct.
+    function barcodeHtml(signals, seedHash) {
+        const bands = [];
+        // EFF, CHURN, VOL, RB-share, Trades — each maps to color + intensity.
+        const sigBands = [
+            classifyBand(signals.efficiency_pct, 50, 80, 'cyan', 'amber', 'lime'),
+            classifyBand(signals.lineup_churn_pct, 12, 28, 'cyan', 'lime', 'magenta'),
+            classifyBand(signals.volatility_pct, 14, 26, 'cyan', 'lime', 'amber'),
+            classifyBand(signals.draft_rb_share_pct, 30, 60, 'cyan', 'lime', 'amber'),
+            classifyBand(signals.trades_per_season, 0.6, 2.5, 'cyan', 'mute', 'magenta'),
+        ];
+        bands.push(...sigBands);
+        // Decorative fill — alternating cyan / magenta / mute keyed by hash.
+        const palette = ['cyan', 'magenta', 'mute', 'cyan', 'lime', 'mute', 'magenta', 'cyan', 'mute'];
+        let h = seedHash;
+        while (bands.length < 14) {
+            const cls = palette[h % palette.length];
+            const a = 0.25 + ((h % 60) / 100);  // .25-.85 opacity
+            bands.push({ cls, a });
+            h = Math.floor(h / 3) + (h * 11) % 233;
+        }
+        return bands.map(b => `<span class="dna-barcode-band b-${b.cls}" style="--a:${b.a.toFixed(2)}"></span>`).join('');
+    }
+
+    function classifyBand(value, lo, hi, midColor, lowColor, highColor) {
+        if (value == null) return { cls: 'mute', a: 0.25 };
+        if (value < lo) return { cls: lowColor, a: 0.5 };
+        if (value > hi) return { cls: highColor, a: 0.85 };
+        return { cls: midColor, a: 0.65 };
+    }
+
+    // Signal bar — value relative to a 0..max scale, with baseline tick.
+    // For percent-style stats (eff, churn, vol, rb-share) max = 100. For trades
+    // we cap at ~ league baseline × 2.5 so the league avg sits near 40% fill.
+    function signalBar(lbl, value, baseline, max, opts = {}) {
+        const fmt = opts.fmt || ((v) => `${v.toFixed(1)}%`);
+        if (value == null) {
+            return `
+                <div class="dna-sig">
+                    <div class="dna-sig-head">
+                        <span class="dna-sig-lbl">${escapeHtml(lbl)}</span>
+                        <span class="dna-sig-val is-none">—</span>
+                    </div>
+                    <div class="dna-sig-bar"></div>
+                </div>
+            `;
+        }
+        const pctFill = Math.max(2, Math.min(100, (value / max) * 100));
+        const pctMark = Math.max(0, Math.min(100, (baseline / max) * 100));
+        // High/low classification — depends on whether higher is better.
+        // For "good when high" (eff): >baseline = high. For "good when low"
+        // (vol, churn): <baseline = high (positive). Use opts.higherIsBetter.
+        let cls = '';
+        if (opts.higherIsBetter !== undefined) {
+            const aboveBase = value > baseline;
+            const isPositive = opts.higherIsBetter ? aboveBase : !aboveBase;
+            cls = isPositive ? 'is-high' : 'is-low';
+        }
+        return `
+            <div class="dna-sig">
+                <div class="dna-sig-head">
+                    <span class="dna-sig-lbl">${escapeHtml(lbl)}</span>
+                    <span class="dna-sig-val ${cls}">${fmt(value)}</span>
+                </div>
+                <div class="dna-sig-bar">
+                    <div class="dna-sig-fill ${cls}" style="--w:${pctFill.toFixed(1)}%"></div>
+                    <div class="dna-sig-mark" style="--m:${pctMark.toFixed(1)}%"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCard(m, idx, baselines) {
+        const seedHash = hashStr(m.name + '|' + m.archetype.key);
+        const traits = (m.traits ?? []).slice(0, 4);
+        const traitsHtml = traits.length === 0
+            ? `<span class="dna-traits-empty">No notable markers yet.</span>`
+            : traits.map(t => `
+                <span class="dna-trait" title="${escapeHtml(t.detail)}">
+                    ${escapeHtml(t.label)}
+                    <span class="dna-trait-detail">${escapeHtml(t.detail)}</span>
+                </span>
+            `).join('');
+
+        const sigBars = [
+            signalBar('Eff', m.signals.efficiency_pct, baselines.efficiency_pct || 70, 100, { higherIsBetter: true }),
+            signalBar('Churn', m.signals.lineup_churn_pct, baselines.lineup_churn_pct || 18, 60, { higherIsBetter: false }),
+            signalBar('Vol', m.signals.volatility_pct, baselines.volatility_pct || 20, 50, { higherIsBetter: false }),
+            signalBar('Trade', m.signals.trades_per_season, baselines.trades_per_season || 1.2, Math.max(3, (baselines.trades_per_season || 1.2) * 2.5), {
+                higherIsBetter: undefined,
+                fmt: (v) => v.toFixed(1) + '/yr',
+            }),
+        ].join('');
+
+        const num = String(idx + 1).padStart(3, '0');
+        const seq = seqCode(m.archetype.key + '|' + m.name);
+
+        const href = m.uid ? `../../managers/manager.html?id=${m.uid}` : null;
+        const open = href ? `<a class="dna-card" href="${href}">` : `<div class="dna-card">`;
+        const close = href ? `</a>` : `</div>`;
+
+        return `
+            ${open}
+                <div class="dna-helix">${helixSvg(seedHash)}</div>
+                <div class="dna-card-body">
+                    <div class="dna-specimen-lbl">
+                        <span class="dna-specimen-lbl-num">SPECIMEN № ${num}</span>
+                        <span class="dna-specimen-lbl-seq">${seq}</span>
+                        ${m.is_current ? '' : '<span class="dna-specimen-lbl-alumni">Alumni</span>'}
+                    </div>
+                    <div class="dna-barcode">${barcodeHtml(m.signals, seedHash)}</div>
+                    <div class="dna-id-row">
+                        <div class="dna-id-name">${escapeHtml(m.name)}</div>
+                        ${m.team_latest ? `<div class="dna-id-team">${escapeHtml(m.team_latest)}</div>` : ''}
+                    </div>
+                    <div class="dna-archetype">
+                        <div class="dna-archetype-name">${escapeHtml(m.archetype.name)}</div>
+                        <div class="dna-archetype-tagline">${escapeHtml(m.archetype.tagline)}</div>
+                        <p class="dna-archetype-blurb">${escapeHtml(m.archetype.blurb)}</p>
+                    </div>
+                    <div class="dna-traits">${traitsHtml}</div>
+                    <div class="dna-signals">${sigBars}</div>
+                </div>
+            ${close}
+        `;
+    }
+
+    function renderEmpty(reason) {
+        document.getElementById('dna-grid').innerHTML = `
+            <div class="dna-empty" style="grid-column: 1 / -1;">
+                <strong>No DNA on file yet.</strong><br>${escapeHtml(reason)}
+            </div>
+        `;
+    }
+
+    function renderTally(counts, total) {
+        // counts is { archetype_key: n }. Sort by n desc and label nicely.
+        const NAMES = {
+            trade_hawk: 'Trade Hawk',
+            the_vault: 'The Vault',
+            the_optimizer: 'Optimizer',
+            the_tinkerer: 'Tinkerer',
+            set_and_forget: 'Set-and-Forget',
+            coin_flipper: 'Coin-Flipper',
+            steady_hand: 'Steady Hand',
+            cardiac_kid: 'Cardiac Kid',
+            heartbreaker: 'Heartbreaker',
+            steamroller: 'Steamroller',
+            zero_rb: 'Zero-RB',
+            hog_mollie: 'Hog Mollie',
+            anchor_qb: 'Anchor QB',
+            te_premium: 'TE Premium',
+            the_average_joe: 'Average Joe',
+        };
+        const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        if (entries.length === 0) return '';
+        return entries.map(([k, n]) => `
+            <span class="dna-strand-pill">
+                <span class="dna-strand-pill-count">${n}</span>
+                ${escapeHtml(NAMES[k] ?? k)}
+            </span>
+        `).join('');
+    }
+
+    function renderBaselines(b) {
+        const items = [
+            { lbl: 'Avg Lineup Eff', val: b.efficiency_pct, fmt: (v) => `${v.toFixed(1)}%` },
+            { lbl: 'Avg Churn / wk', val: b.lineup_churn_pct, fmt: (v) => `${v.toFixed(1)}%` },
+            { lbl: 'Avg Volatility', val: b.volatility_pct, fmt: (v) => `±${v.toFixed(1)}%` },
+            { lbl: 'Avg RB-share (rd 1-5)', val: b.draft_rb_share_pct, fmt: (v) => `${v.toFixed(1)}%` },
+            { lbl: 'Avg Trades / season', val: b.trades_per_season, fmt: (v) => v.toFixed(2) },
+        ];
+        return items.map(it => `
+            <div class="dna-baseline">
+                <span class="dna-baseline-lbl">${escapeHtml(it.lbl)}</span>
+                <span class="dna-baseline-val">${it.val != null ? it.fmt(it.val) : '—'}</span>
+            </div>
+        `).join('');
+    }
+
+    fetch('data/manager_dna.json', { credentials: 'same-origin' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data || !data.managers || data.managers.length === 0) {
+                renderEmpty('Sync at least one season with weekly lineup data — the genome lab runs on what your league has done, not what they say they\'ll do.');
+                return;
+            }
+            const current = data.managers.filter(m => m.is_current);
+            document.getElementById('dna-count').textContent = String(current.length || data.managers.length);
+
+            // Strand panel
+            const strand = document.getElementById('dna-strand');
+            const tallyHtml = renderTally(data.archetype_counts || {}, current.length);
+            if (tallyHtml) {
+                document.getElementById('dna-tally').innerHTML = tallyHtml;
+                document.getElementById('dna-baselines').innerHTML = renderBaselines(data.league_baselines || {});
+                strand.hidden = false;
+            }
+
+            // Grid
+            const grid = document.getElementById('dna-grid');
+            grid.innerHTML = data.managers.map((m, i) => renderCard(m, i, data.league_baselines || {})).join('');
+
+            // Legend
+            document.getElementById('dna-legend').hidden = false;
+        })
+        .catch(err => {
+            console.error('manager_dna.json fetch failed', err);
+            renderEmpty('Couldn\'t pull the strand. Try refreshing in a moment.');
+        });
+})();
+</script>
+
+</body>
+</html>
