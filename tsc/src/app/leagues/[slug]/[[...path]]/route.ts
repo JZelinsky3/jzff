@@ -18,7 +18,7 @@ import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { exportLeague, type ExportBundle } from '@/lib/export/pams'
-import { devCacheGet, devCacheSet } from '@/lib/devCache'
+import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 
@@ -41,43 +41,16 @@ function normalizeTradesTheme(v: unknown): LeagueMeta['trades_theme'] {
     : 'cards'
 }
 
-async function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
+// Meta lookup. Slug→row + the league's first season year for the masthead
+// "EST." line. Two queries on a cold call; in dev they're deduped by
+// devMetaGet so the hub's 5 parallel data fetches share one round-trip.
+async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> {
   const db = createAdminClient()
-  // Try richest schema first; fall back when older migrations haven't run.
-  let row: {
-    id: string
-    name: string
-    slug: string
-    abbreviation?: string | null
-    published_at?: string | null
-    owner_id?: string | null
-    created_during_testing?: boolean | null
-    trades_theme?: string | null
-  } | null = null
-  const full = await db
+  const { data: row } = await db
     .from('leagues')
     .select('id, name, slug, abbreviation, published_at, owner_id, created_during_testing, trades_theme')
     .eq('slug', slug)
     .maybeSingle()
-  if (full.data) {
-    row = full.data
-  } else {
-    const withAbbr = await db
-      .from('leagues')
-      .select('id, name, slug, abbreviation')
-      .eq('slug', slug)
-      .maybeSingle()
-    if (withAbbr.data) {
-      row = withAbbr.data
-    } else {
-      const bare = await db
-        .from('leagues')
-        .select('id, name, slug')
-        .eq('slug', slug)
-        .maybeSingle()
-      row = bare.data
-    }
-  }
   if (!row) return null
   const { data: firstSeason } = await db
     .from('seasons')
@@ -97,6 +70,21 @@ async function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
     created_during_testing: !!row.created_during_testing,
     trades_theme: normalizeTradesTheme(row.trades_theme),
   }
+}
+
+function loadLeagueMeta(slug: string): Promise<LeagueMeta | null> {
+  // Dev: dedupe parallel lookups. Every request to /leagues/<slug>/... (HTML
+  // and every data file) needs meta, and the hub fires 5+ of those in
+  // close succession — without this, each one pays the Supabase floor.
+  // Prod: skip the in-memory cache. Reads here are fast against the
+  // hosted Postgres and we'd rather not hand-roll TTL invalidation on
+  // settings changes; trust the platform.
+  if (process.env.NODE_ENV === 'production') return loadLeagueMetaUncached(slug)
+  const cached = devMetaGet<LeagueMeta>(slug)
+  if (cached) return cached
+  const fresh = loadLeagueMetaUncached(slug)
+  devMetaSet(slug, fresh)
+  return fresh
 }
 
 function toRoman(n: number): string {
@@ -184,7 +172,27 @@ function injectDcConfig(
 // hrefs (standings.html, seasons/index.html, data/league.json, etc.) resolve
 // the same way regardless of whether the request URL has a trailing slash.
 // Absolute paths (/pams-template/...) are unaffected.
-function injectBaseTag(html: string, meta: LeagueMeta): string {
+// Pages that fetch a known set of data/*.json files. We emit
+// <link rel="preload"> hints for those files so the browser starts the
+// network requests as soon as it parses <head> — instead of waiting until
+// the body's inline script runs and calls fetch(). Shaves the parse +
+// script-eval delay off the start of every data load.
+//
+// Only the hub is wired up so far; other pages can opt in by adding a
+// matching entry here. We deliberately don't preload EVERY data file on
+// every page — preloading something the page doesn't fetch wastes
+// bandwidth and triggers a console warning.
+const PRELOADS_BY_FILE: Record<string, string[]> = {
+  'index.html': [
+    'data/league.json',
+    'data/record_book.json',
+    'data/managers_directory.json',
+    'data/rivalries.json',
+    'data/seasons_directory.json',
+  ],
+}
+
+function injectBaseTag(html: string, meta: LeagueMeta, file: string): string {
   // <base> pins relative hrefs to /leagues/<slug>/; favicon link points at
   // the absolute /icon.svg the Next.js root layout serves (templates don't
   // inherit from the layout so they don't get the favicon automatically).
@@ -192,10 +200,18 @@ function injectBaseTag(html: string, meta: LeagueMeta): string {
   // every almanac page as missing one.
   const safeName = escapeHtml(meta.name)
   const description = `Public almanac for ${safeName} — full fantasy football league history, season archives, draft results, head-to-head records, rivalries, and weekly pick'ems.`
+  // The preload hints MUST come after <base> so the browser resolves them
+  // against /leagues/<slug>/ — otherwise a relative href like
+  // data/league.json resolves against the document URL and can hit a path
+  // that doesn't exist (e.g. on a sub-route).
+  const preloads = (PRELOADS_BY_FILE[file] ?? [])
+    .map((href) => `<link rel="preload" as="fetch" crossorigin href="${href}">`)
+    .join('\n')
   const tags =
     `<base href="/leagues/${meta.slug}/">` +
     `\n<link rel="icon" href="/icon.svg" type="image/svg+xml">` +
-    `\n<meta name="description" content="${description}">`
+    `\n<meta name="description" content="${description}">` +
+    (preloads ? `\n${preloads}` : '')
   if (/<head[^>]*>/i.test(html)) {
     return html.replace(/<head[^>]*>/i, (m) => `${m}\n${tags}`)
   }
@@ -218,12 +234,15 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   // future slug rename rebuilds the bundle without waiting for revalidation.
   if (process.env.NODE_ENV !== 'production') {
     const cacheKey = `${leagueId}|${slug}`
-    const cached = devCacheGet(cacheKey)
-    if (cached) return Promise.resolve(cached)
-    return exportLeague(leagueId, { slug }).then((bundle) => {
-      devCacheSet(cacheKey, bundle)
-      return bundle
-    })
+    // Cache the in-flight Promise itself, not just the resolved bundle.
+    // Hub renders trigger 5 parallel data/*.json requests; without this,
+    // each one that arrived before the first build finished kicked off
+    // its own exportLeague() call (~4s each). Now they all await one.
+    const inflight = devBundleGet(cacheKey)
+    if (inflight) return inflight
+    const fresh = exportLeague(leagueId, { slug })
+    devBundleSet(cacheKey, fresh)
+    return fresh
   }
   // Bundle schema version. Bump this when the bundle shape changes in a
   // way that the templates need to see immediately — adding a new field,
@@ -381,7 +400,7 @@ export async function GET(
         ? (tutorialsMeta['leagues_seen'] as string[])
         : []
     const html = injectDcConfig(
-      injectBaseTag(applyTokens(raw, meta), meta),
+      injectBaseTag(applyTokens(raw, meta), meta, resolved.file),
       meta,
       isCommish,
       isSignedIn,
