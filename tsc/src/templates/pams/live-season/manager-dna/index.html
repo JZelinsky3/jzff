@@ -306,34 +306,40 @@ main { position: relative; z-index: 1; }
 }
 
 /* ── SPECIMEN CARD ──────────────────────────────────────────── */
+/* Each card is a <details>. Collapsed = specimen label + barcode + name.
+   Click expands to reveal archetype, traits, signals, profile link.
+   Multiple cards can be open at once — no accordion auto-close. */
 .dna-card {
     position: relative;
-    display: flex;
     background: var(--dna-card);
     border: 1px solid var(--dna-line);
     border-radius: 4px;
     color: inherit;
-    text-decoration: none;
-    transition: transform .25s, border-color .25s, background .25s, box-shadow .25s;
+    transition: border-color .25s, background .25s, box-shadow .25s;
     overflow: hidden;
-    min-height: 340px;
 }
-.dna-card:hover {
-    background: var(--dna-card-hi);
+.dna-card[open] {
     border-color: rgba(79, 209, 255, .45);
-    transform: translateY(-2px);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, .45),
-                0 0 22px rgba(79, 209, 255, .08);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, .35),
+                0 0 22px rgba(79, 209, 255, .07);
 }
-.dna-card:hover .dna-helix-cyan { filter: drop-shadow(0 0 4px rgba(79, 209, 255, .65)); }
-.dna-card:hover .dna-helix-mag  { filter: drop-shadow(0 0 4px rgba(255, 93, 177, .55)); }
+.dna-card:not([open]):hover {
+    background: var(--dna-card-hi);
+    border-color: rgba(79, 209, 255, .32);
+}
+.dna-card:hover .dna-helix-cyan { filter: drop-shadow(0 0 4px rgba(79, 209, 255, .55)); }
+.dna-card:hover .dna-helix-mag  { filter: drop-shadow(0 0 4px rgba(255, 93, 177, .45)); }
 
-/* Left rail — vertical double-helix SVG column */
+/* Left rail — vertical double-helix SVG column, absolutely positioned so
+   it spans the full card height whether collapsed or expanded. */
 .dna-helix {
-    flex: 0 0 36px;
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 36px;
     background: linear-gradient(180deg, rgba(79, 209, 255, .06), rgba(255, 93, 177, .04));
     border-right: 1px solid var(--dna-line);
-    position: relative;
+    pointer-events: none;
+    z-index: 1;
 }
 .dna-helix svg {
     position: absolute;
@@ -345,14 +351,68 @@ main { position: relative; z-index: 1; }
 .dna-helix-mag  { stroke: var(--dna-magenta); stroke-width: 1.5; fill: none; transition: filter .3s; }
 .dna-helix-rung { stroke: rgba(184, 195, 230, .28); stroke-width: 1; }
 
-/* Body */
-.dna-card-body {
-    flex: 1;
-    min-width: 0;
-    padding: 1.25rem 1.4rem 1.25rem;
+/* Summary (collapsed header) — always visible. Hides the default
+   disclosure triangle so the card looks like a unified surface. */
+.dna-card-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.05rem 1.3rem 1.05rem calc(36px + 1.3rem);
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+    position: relative;
+    z-index: 2;
+}
+.dna-card-summary::-webkit-details-marker { display: none; }
+.dna-card-summary::marker { content: ''; }
+.dna-card-summary:focus-visible {
+    outline: 2px solid rgba(79, 209, 255, .6);
+    outline-offset: -2px;
+}
+
+/* Chevron — rotates when open. Lives in the summary's top row. */
+.dna-card-chev {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    color: var(--dna-cyan);
+    transition: transform .25s;
+}
+.dna-card[open] .dna-card-chev { transform: rotate(180deg); }
+
+/* Expanded panel — only shown when [open]. Padded same as summary. */
+.dna-card-expanded {
+    padding: 0 1.3rem 1.2rem calc(36px + 1.3rem);
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    position: relative;
+    z-index: 2;
+    animation: dnaExpand .28s ease;
+}
+@keyframes dnaExpand {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Profile link at the bottom of the expanded section. */
+.dna-card-link {
+    margin-top: .25rem;
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dna-cyan);
+    text-decoration: none;
+    padding: .35rem .6rem;
+    border: 1px solid rgba(79, 209, 255, .3);
+    border-radius: 2px;
+    transition: background .2s, color .2s;
+}
+.dna-card-link:hover {
+    background: rgba(79, 209, 255, .12);
+    color: #82e0ff;
 }
 
 /* Top barcode strip — visualizes signal genotype at a glance */
@@ -540,12 +600,71 @@ main { position: relative; z-index: 1; }
 }
 
 @media (max-width: 520px) {
-    .dna-card { min-height: 0; }
-    .dna-helix { flex: 0 0 28px; }
-    .dna-card-body { padding: 1rem 1.1rem; gap: .85rem; }
+    .dna-helix { width: 28px; }
+    .dna-card-summary { padding: .9rem 1rem .9rem calc(28px + 1rem); gap: .55rem; }
+    .dna-card-expanded { padding: 0 1rem 1rem calc(28px + 1rem); gap: .85rem; }
     .dna-id-name { font-size: 1.25rem; }
     .dna-archetype-name { font-size: 1.35rem; }
     .dna-signals { grid-template-columns: 1fr; gap: .4rem; }
+}
+
+/* ── ALUMNI — compact name-only list of past society members ─── */
+.dna-alumni-wrap {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px dashed var(--dna-line);
+}
+.dna-alumni-head {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: baseline;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+.dna-alumni-head em {
+    color: var(--dna-magenta);
+    font-style: normal;
+    letter-spacing: .14em;
+}
+.dna-alumni-note {
+    color: var(--dna-mute-deep);
+    letter-spacing: .18em;
+    font-size: .54rem;
+}
+.dna-alumni-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: .35rem 1rem;
+}
+.dna-alumni-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .35rem 0;
+    border-bottom: 1px dotted var(--dna-line-soft);
+    font-family: var(--serif);
+    color: var(--dna-cream-soft);
+    text-decoration: none;
+    transition: color .2s;
+}
+.dna-alumni-item:hover { color: var(--dna-cyan); }
+.dna-alumni-name {
+    font-size: .92rem;
+    font-style: italic;
+}
+.dna-alumni-arch {
+    font-family: var(--mono);
+    font-size: .52rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+    flex-shrink: 0;
 }
 
 /* ── EMPTY / LOADING ───────────────────────────────────────── */
@@ -638,9 +757,19 @@ main { position: relative; z-index: 1; }
         <div class="dna-section-head">
             <span class="dna-section-num">§ II · Specimen Sheets</span>
             <span class="dna-section-title">One <em>manager,</em> one strand.</span>
+            <span class="dna-strand-note">Tap any specimen to unseal the vault</span>
         </div>
         <div class="dna-grid" id="dna-grid">
             <div class="dna-empty">Sequencing the league…</div>
+        </div>
+
+        <!-- ALUMNI — past members, name + archetype only -->
+        <div class="dna-alumni-wrap" id="dna-alumni" hidden>
+            <div class="dna-alumni-head">
+                <span>★ <em>Alumni</em> · Past society strands ★</span>
+                <span class="dna-alumni-note">Last sequenced before they left the league</span>
+            </div>
+            <div class="dna-alumni-grid" id="dna-alumni-grid"></div>
         </div>
     </section>
 
@@ -823,6 +952,13 @@ main { position: relative; z-index: 1; }
         `;
     }
 
+    // Chevron icon shown in the summary row — rotates 180° when [open].
+    const CHEV_SVG = `
+        <svg class="dna-card-chev" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="3 5 7 9 11 5"></polyline>
+        </svg>
+    `;
+
     function renderCard(m, idx, baselines) {
         const seedHash = hashStr(m.name + '|' + m.archetype.key);
         const traits = (m.traits ?? []).slice(0, 4);
@@ -848,24 +984,26 @@ main { position: relative; z-index: 1; }
         const num = String(idx + 1).padStart(3, '0');
         const seq = seqCode(m.archetype.key + '|' + m.name);
 
-        const href = m.uid ? `../../managers/manager.html?id=${m.uid}` : null;
-        const open = href ? `<a class="dna-card" href="${href}">` : `<div class="dna-card">`;
-        const close = href ? `</a>` : `</div>`;
+        // Profile link sits inside the expanded section so the collapsed
+        // summary is purely an "open the vault" affordance.
+        const profileHref = m.uid ? `../../managers/manager.html?id=${m.uid}` : null;
 
         return `
-            ${open}
+            <details class="dna-card">
                 <div class="dna-helix">${helixSvg(seedHash)}</div>
-                <div class="dna-card-body">
+                <summary class="dna-card-summary">
                     <div class="dna-specimen-lbl">
                         <span class="dna-specimen-lbl-num">SPECIMEN № ${num}</span>
                         <span class="dna-specimen-lbl-seq">${seq}</span>
-                        ${m.is_current ? '' : '<span class="dna-specimen-lbl-alumni">Alumni</span>'}
+                        ${CHEV_SVG}
                     </div>
                     <div class="dna-barcode">${barcodeHtml(m.signals, seedHash)}</div>
                     <div class="dna-id-row">
                         <div class="dna-id-name">${escapeHtml(m.name)}</div>
                         ${m.team_latest ? `<div class="dna-id-team">${escapeHtml(m.team_latest)}</div>` : ''}
                     </div>
+                </summary>
+                <div class="dna-card-expanded">
                     <div class="dna-archetype">
                         <div class="dna-archetype-name">${escapeHtml(m.archetype.name)}</div>
                         <div class="dna-archetype-tagline">${escapeHtml(m.archetype.tagline)}</div>
@@ -873,9 +1011,23 @@ main { position: relative; z-index: 1; }
                     </div>
                     <div class="dna-traits">${traitsHtml}</div>
                     <div class="dna-signals">${sigBars}</div>
+                    ${profileHref ? `<a class="dna-card-link" href="${profileHref}">View full profile →</a>` : ''}
                 </div>
-            ${close}
+            </details>
         `;
+    }
+
+    // Alumni list — name + their primary archetype only. Clicking jumps to
+    // the manager's profile page (if we have a uid for them).
+    function renderAlumniItem(m) {
+        const href = m.uid ? `../../managers/manager.html?id=${m.uid}` : null;
+        const inner = `
+            <span class="dna-alumni-name">${escapeHtml(m.name)}</span>
+            <span class="dna-alumni-arch">${escapeHtml(m.archetype.name)}</span>
+        `;
+        return href
+            ? `<a class="dna-alumni-item" href="${href}">${inner}</a>`
+            : `<div class="dna-alumni-item">${inner}</div>`;
     }
 
     function renderEmpty(reason) {
@@ -938,7 +1090,10 @@ main { position: relative; z-index: 1; }
                 renderEmpty('Sync at least one season with weekly lineup data — the genome lab runs on what your league has done, not what they say they\'ll do.');
                 return;
             }
+            // Split current society from alumni — only current goes in the
+            // specimen grid; alumni land in a compact list below.
             const current = data.managers.filter(m => m.is_current);
+            const alumni = data.managers.filter(m => !m.is_current);
             document.getElementById('dna-count').textContent = String(current.length || data.managers.length);
 
             // Strand panel
@@ -950,9 +1105,23 @@ main { position: relative; z-index: 1; }
                 strand.hidden = false;
             }
 
-            // Grid
+            // Specimen grid — current society only
             const grid = document.getElementById('dna-grid');
-            grid.innerHTML = data.managers.map((m, i) => renderCard(m, i, data.league_baselines || {})).join('');
+            if (current.length > 0) {
+                grid.innerHTML = current.map((m, i) => renderCard(m, i, data.league_baselines || {})).join('');
+            } else {
+                grid.innerHTML = `<div class="dna-empty" style="grid-column: 1 / -1;">No active managers found.</div>`;
+            }
+
+            // Alumni list
+            if (alumni.length > 0) {
+                const alumniGrid = document.getElementById('dna-alumni-grid');
+                // Sort alumni alphabetically — there's no ranking to preserve
+                // and the data builder's current-first sort isn't meaningful here.
+                alumni.sort((a, b) => a.name.localeCompare(b.name));
+                alumniGrid.innerHTML = alumni.map(renderAlumniItem).join('');
+                document.getElementById('dna-alumni').hidden = false;
+            }
 
             // Legend
             document.getElementById('dna-legend').hidden = false;
