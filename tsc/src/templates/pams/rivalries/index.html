@@ -125,58 +125,58 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   margin-top: .3rem;
 }
 
-/* ─── REVEAL LAUNCH BUTTON ───────────────────────────
-   Sits below the stats grid in the page header. Marquee-style red
-   button to invite the user into the presentation mode. */
+/* ─── REVEAL LAUNCH ──────────────────────────────────
+   Thin line treatment: monospace text flanked by hairline rules so the
+   CTA reads like an editorial section break rather than a stamp-style
+   button. Hover lights up the rules + text to red. Sits below the
+   stats grid; doesn't dominate but is still unmistakable. */
 .rv-reveal-launch {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
-  gap: .2rem;
-  margin: 2rem auto 0;
-  padding: 1rem 2.4rem 1.1rem;
-  background: linear-gradient(180deg, #1a0a0a 0%, #0e0606 100%);
-  border: 1px solid var(--rv-red-dim);
-  border-radius: 4px;
+  gap: .75rem;
+  margin: 1.75rem auto 0;
+  padding: .4rem 0;
+  background: transparent;
+  border: none;
   color: var(--rv-cream);
   cursor: pointer;
-  font-family: inherit;
-  position: relative;
-  overflow: hidden;
-  transition: transform .2s ease, border-color .2s ease, box-shadow .25s ease;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  transition: color .2s ease;
 }
-.rv-reveal-launch::before {
+.rv-reveal-launch::before,
+.rv-reveal-launch::after {
   content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(circle at 50% 100%, rgba(220,38,38,.18) 0%, transparent 60%);
-  pointer-events: none;
+  width: 4.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--rv-line2) 50%, transparent 100%);
+  transition: background .2s ease;
 }
-.rv-reveal-launch:hover {
-  transform: translateY(-1px);
-  border-color: var(--rv-red);
-  box-shadow: 0 6px 24px rgba(220,38,38,.18);
+.rv-reveal-launch:hover { color: var(--rv-white); }
+.rv-reveal-launch:hover::before,
+.rv-reveal-launch:hover::after {
+  background: linear-gradient(90deg, transparent 0%, var(--rv-red) 50%, transparent 100%);
 }
 .rv-reveal-launch-icon {
-  font-family: var(--mono);
-  font-size: .8rem;
   color: var(--rv-red);
-  margin-right: .3rem;
+  font-size: .58rem;
+  letter-spacing: 0;
+  margin-right: -.1rem;
 }
 .rv-reveal-launch-label {
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 1.45rem;
-  letter-spacing: .01em;
-  line-height: 1;
-  color: var(--rv-white);
+  color: inherit;
+  font-weight: 700;
 }
 .rv-reveal-launch-sub {
-  font-family: var(--mono);
-  font-size: .55rem;
-  letter-spacing: .25em;
-  text-transform: uppercase;
   color: var(--rv-grey-lt);
-  margin-top: .25rem;
+  font-weight: 500;
+}
+.rv-reveal-launch-sub::before {
+  content: '· ';
+  opacity: .55;
+  margin-right: .15rem;
 }
 
 /* ─── REVEAL OVERLAY ─────────────────────────────────
@@ -1167,7 +1167,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   <button type="button" id="rv-reveal-launch" class="rv-reveal-launch" hidden>
     <span class="rv-reveal-launch-icon" aria-hidden="true">▶</span>
     <span class="rv-reveal-launch-label">Play the reveal</span>
-    <span class="rv-reveal-launch-sub">Walk through every feud · ~90s</span>
+    <span class="rv-reveal-launch-sub">~90s walk-through</span>
   </button>
 </header>
 
