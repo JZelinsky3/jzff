@@ -633,7 +633,94 @@ async function loadProfile() {
     }
 }
 
-function renderProfile(m, top5) {
+// Tiny helper for the DNA teaser barcode — 12 bands, first 5 keyed off
+// the manager's signal genotype, rest are decorative + seeded by name so
+// repeat archetypes still look distinct. Mirrors the bigger version on the
+// Manager DNA page so the teaser visually previews the destination.
+function dnaTeaserBarcode(signals, seed) {
+    function classifyBand(v, lo, hi, midColor, lowColor, highColor) {
+        if (v == null) return { cls: 'mute', a: 0.3 };
+        if (v < lo) return { cls: lowColor, a: 0.55 };
+        if (v > hi) return { cls: highColor, a: 0.85 };
+        return { cls: midColor, a: 0.65 };
+    }
+    const bands = [
+        classifyBand(signals.efficiency_pct, 50, 80, 'cyan', 'amber', 'lime'),
+        classifyBand(signals.lineup_churn_pct, 12, 28, 'cyan', 'lime', 'magenta'),
+        classifyBand(signals.volatility_pct, 14, 26, 'cyan', 'lime', 'amber'),
+        classifyBand(signals.draft_rb_share_pct, 30, 60, 'cyan', 'lime', 'amber'),
+        classifyBand(signals.trades_per_season, 0.6, 2.5, 'cyan', 'mute', 'magenta'),
+    ];
+    const palette = ['cyan', 'magenta', 'mute', 'cyan', 'lime', 'mute', 'magenta'];
+    let h = seed;
+    while (bands.length < 12) {
+        bands.push({ cls: palette[h % palette.length], a: 0.3 + ((h % 50) / 100) });
+        h = Math.floor(h / 3) + (h * 11) % 233;
+    }
+    return bands.map(b => `<span class="pdna-band b-${b.cls}" style="--a:${b.a.toFixed(2)}"></span>`).join('');
+}
+
+function escapeHtmlDna(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+}
+
+function hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
+}
+
+function renderDnaCard(dnaEntry, dnaAvailable, managerName) {
+    // Locked variant when the league owner isn't on Veteran+. Greyed out
+    // with an upgrade hint and no link to the full DNA page.
+    if (!dnaAvailable || !dnaEntry) {
+        return `
+            <div class="profile-dna is-locked">
+                <div class="pdna-head">
+                    <span class="pdna-lbl">Manager DNA</span>
+                    <span class="pdna-tier">★ Veteran ★</span>
+                </div>
+                <div class="pdna-arch">Sequencing locked.</div>
+                <p class="pdna-locked-msg">
+                    Behavioral DNA — archetypes, trait markers, and the genome lab — unlocks
+                    when this league&apos;s commissioner is on the Veteran tier.
+                </p>
+                <span class="pdna-cta is-locked">
+                    Manager DNA <span class="pdna-cta-arrow">→</span>
+                </span>
+            </div>
+        `;
+    }
+
+    const traits = (dnaEntry.traits ?? []).slice(0, 2);
+    const traitsHtml = traits
+        .map(t => `<span class="pdna-trait" title="${escapeHtmlDna(t.detail)}">${escapeHtmlDna(t.label)}</span>`)
+        .join('');
+    const seed = hashStr((managerName || '') + '|' + (dnaEntry.archetype?.key || ''));
+    const barcode = dnaTeaserBarcode(dnaEntry.signals ?? {}, seed);
+
+    // Unlocked variant: no Veteran badge — the link is itself proof the
+    // viewer has access. The badge stays on the locked variant above as a
+    // hint about what gates the feature.
+    return `
+        <div class="profile-dna">
+            <div class="pdna-head">
+                <span class="pdna-lbl">Manager DNA · Specimen</span>
+            </div>
+            <div class="pdna-barcode">${barcode}</div>
+            <div class="pdna-arch">${escapeHtmlDna(dnaEntry.archetype.name)}</div>
+            <div class="pdna-tagline">${escapeHtmlDna(dnaEntry.archetype.tagline)}</div>
+            ${traits.length > 0 ? `<div class="pdna-traits">${traitsHtml}</div>` : ''}
+            <a class="pdna-cta" href="live-season/manager-dna/">
+                See full strand <span class="pdna-cta-arrow">→</span>
+            </a>
+        </div>
+    `;
+}
+
+function renderProfile(m, top5, dnaEntry, dnaAvailable) {
     document.getElementById('nav-name').innerHTML = `${m.name} <em>·</em>`;
     document.title = `${m.name} · {{LEAGUE_NAME}}`;
 
@@ -768,12 +855,15 @@ function renderProfile(m, top5) {
         top5HTML = `<p style="font-family: var(--serif); font-style: italic; color: var(--cream-mute); padding: 1rem;">No top performances on file.</p>`;
     }
 
+    const dnaCardHTML = renderDnaCard(dnaEntry, dnaAvailable, m.name);
+
     document.getElementById('profile-body').innerHTML = `
         <div class="profile-header">
             <div class="profile-kicker">★ ${m.seasons_played} Seasons · ${m.championships} ${m.championships === 1 ? 'Chip' : 'Chips'} ★</div>
             <h1 class="profile-name">${m.name}<em>.</em></h1>
             <p class="profile-tagline">${m.tagline}</p>
             ${bannerHTML}
+            ${dnaCardHTML}
         </div>
 
         <div class="section">

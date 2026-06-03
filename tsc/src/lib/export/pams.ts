@@ -5471,6 +5471,21 @@ function buildManagerDna(s: Snapshot): unknown {
   const mg = stat(profiles.map((p) => p.signals.avg_margin_pts).filter((v): v is number => v != null))
   const cl = stat(profiles.map((p) => p.signals.clutch_win_pct).filter((v): v is number => v != null))
 
+  // If the league baseline for churn is effectively zero, the weekly_lineups
+  // data we have is bogus (NFL.com history serves the same roster for every
+  // week, so every consecutive-week comparison is identical → 0% churn for
+  // everyone). When that happens, efficiency comes from the same bad data
+  // (actual lineup ≈ "optimal" because they're the same players), so both
+  // signals should be nulled out across the board. The page renderer will
+  // then fall back to matchup-derived signals (Margin, Clutch).
+  const lineupSignalsUsable = ch.mean >= 1
+  if (!lineupSignalsUsable) {
+    for (const p of profiles) {
+      p.signals.efficiency_pct = null
+      p.signals.lineup_churn_pct = null
+    }
+  }
+
   const z = (v: number | null, st: { mean: number; sd: number }) =>
     v == null || st.sd === 0 ? 0 : (v - st.mean) / st.sd
 
@@ -5768,8 +5783,8 @@ function buildManagerDna(s: Snapshot): unknown {
   return {
     generated_at: new Date().toISOString(),
     league_baselines: {
-      efficiency_pct: eff.mean > 0 ? round2(eff.mean) : null,
-      lineup_churn_pct: ch.mean > 0 ? round2(ch.mean) : null,
+      efficiency_pct: lineupSignalsUsable && eff.mean > 0 ? round2(eff.mean) : null,
+      lineup_churn_pct: lineupSignalsUsable && ch.mean > 0 ? round2(ch.mean) : null,
       volatility_pct: round2(vol.mean),
       draft_rb_share_pct: rb.mean > 0 ? round2(rb.mean) : null,
       trades_per_season: round2(tr.mean),
