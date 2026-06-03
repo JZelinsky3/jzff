@@ -220,8 +220,12 @@ export async function ingestSleeperSource(
     // matchup ids stable (pickems_picks references them via a cascading FK).
     // Stage-gated: only wipe what we're about to re-ingest. A trades-only
     // sync leaves drafts/lineups/manager_seasons alone.
+    // Drafts: skip rows whose external_id starts with 'curated-' so the
+    // hand-authored 2019 Lubbs import (and any future curated imports)
+    // survive re-syncs. The platform-side delete only targets drafts that
+    // the ingest would have produced itself.
     await db.from('manager_seasons').delete().eq('season_id', seasonId)
-    if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId)
+    if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
     if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
     // 4b. Fetch users + rosters for THIS season
