@@ -374,11 +374,16 @@
             '  text-transform: uppercase; cursor: pointer; padding: .35rem 0;',
             '}',
             '.dc-tour-skip:hover { color: #c9c0ad; }',
-            '.dc-tour-nav { display: inline-flex; align-items: center; gap: .45rem; }',
+            '.dc-tour-nav { display: inline-flex; align-items: stretch; gap: .45rem; }',
+            // Back matches Next's vertical metrics by sharing its padding +
+            // line-height, plus `align-items: stretch` on .dc-tour-nav lets
+            // both buttons grow to the same height. The aspect-ratio keeps
+            // the circle shape regardless of the resulting size — no more
+            // back-button-sits-slightly-higher-than-next look.
             '.dc-tour-back {',
             '  background: transparent; color: #c9c0ad;',
             '  border: 1px solid rgba(232,200,137,.4); border-radius: 999px;',
-            '  width: 2rem; height: 2rem; padding: 0;',
+            '  padding: .55rem; aspect-ratio: 1 / 1;',
             '  display: inline-flex; align-items: center; justify-content: center;',
             '  cursor: pointer; font-family: inherit;',
             '}',
