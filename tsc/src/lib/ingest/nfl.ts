@@ -12,7 +12,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   fetchOwners, fetchWeekSchedule, fetchStandings, fetchDraft,
-  fetchTeamWeekRoster, nflIsStarterSlot,
+  fetchTeamWeekRoster, fetchTrades, nflIsStarterSlot,
   parallelLimit,
   type NflOwner, type NflMatchup, type NflStandingsRow,
 } from '@/lib/platforms/nfl'
@@ -23,6 +23,7 @@ export type IngestResult = {
   managersIngested: number
   matchupsIngested: number
   draftsIngested: number
+  tradesIngested: number
   warnings: string[]
 }
 
@@ -70,6 +71,7 @@ export async function ingestNflLeague(leagueRowId: string): Promise<IngestResult
     managersIngested: 0,
     matchupsIngested: 0,
     draftsIngested: 0,
+    tradesIngested: 0,
     warnings: [],
   }
 
@@ -78,6 +80,7 @@ export async function ingestNflLeague(leagueRowId: string): Promise<IngestResult
     aggregate.seasonsIngested += result.seasonsIngested
     aggregate.matchupsIngested += result.matchupsIngested
     aggregate.draftsIngested += result.draftsIngested
+    aggregate.tradesIngested += result.tradesIngested
     aggregate.warnings.push(...result.warnings)
     // managersIngested is the count of managers seen by THIS source; the
     // archive-wide tally would over-count if we summed across sources, so
@@ -129,6 +132,7 @@ export async function ingestNflSource(
     managersIngested: 0,
     matchupsIngested: 0,
     draftsIngested: 0,
+    tradesIngested: 0,
     warnings: [],
   }
 
@@ -502,6 +506,82 @@ async function ingestSeason(args: {
     }
   } catch (err) {
     result.warnings.push(`Season ${year} draft: ${(err as Error).message}`)
+  }
+
+  // ─── trades ──────────────────────────────────────────────────────────────
+  // NFL.com renders trades on the transactions history page. The scraper is
+  // best-effort; if the markup shifted, we get [] and warn.
+  try {
+    const trades = await fetchTrades(externalLeagueId, year)
+    if (trades.length === 0) {
+      result.warnings.push(`Season ${year} trades: scraper returned 0 trades. Either the league had no trades, or NFL.com markup has shifted for this season.`)
+    }
+    for (const t of trades) {
+      // Group player assets by receiver team.
+      const assetsByTeam = new Map<number, Array<Record<string, unknown>>>()
+      for (const tid of t.team_ids) assetsByTeam.set(tid, [])
+      for (const p of t.players) {
+        const arr = assetsByTeam.get(p.to_team_id) ?? []
+        arr.push({
+          kind: 'player',
+          player_id: p.player_external_id,
+          name: p.full_name,
+          position: p.position,
+          team: p.nfl_team,
+        })
+        assetsByTeam.set(p.to_team_id, arr)
+      }
+      // Need ≥2 sides AND both teams resolve to managers we know.
+      const sidesWithMgrs: Array<{ teamId: number; managerId: string; assets: Array<Record<string, unknown>> }> = []
+      for (const [tid, assets] of assetsByTeam) {
+        const mgrId = teamToManagerId(tid)
+        if (!mgrId) {
+          result.warnings.push(`Season ${year} trade ${t.synthetic_id}: team ${tid} has no manager mapping; side skipped`)
+          continue
+        }
+        sidesWithMgrs.push({ teamId: tid, managerId: mgrId, assets })
+      }
+      if (sidesWithMgrs.length < 2) continue
+
+      const { data: tradeRow, error: tradeErr } = await db
+        .from('trades')
+        .upsert(
+          {
+            league_id: leagueId,
+            season_id: seasonId,
+            platform: 'nfl',
+            external_id: t.synthetic_id,
+            week: null,
+            executed_at: t.executed_at,
+            status: 'completed',
+            raw_payload: { team_ids: t.team_ids, players: t.players },
+          },
+          { onConflict: 'league_id,platform,external_id' }
+        )
+        .select('id')
+        .single()
+      if (tradeErr || !tradeRow) {
+        result.warnings.push(`Season ${year} trade ${t.synthetic_id}: upsert failed: ${tradeErr?.message ?? 'no row'}`)
+        continue
+      }
+      await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
+      let sidesInserted = 0
+      for (const side of sidesWithMgrs) {
+        const { error: sideErr } = await db.from('trade_sides').insert({
+          trade_id: tradeRow.id,
+          manager_id: side.managerId,
+          assets: side.assets,
+        })
+        if (sideErr) {
+          result.warnings.push(`Season ${year} trade ${t.synthetic_id} side team ${side.teamId}: ${sideErr.message}`)
+          continue
+        }
+        sidesInserted++
+      }
+      if (sidesInserted >= 2) result.tradesIngested++
+    }
+  } catch (err) {
+    result.warnings.push(`Season ${year} trades: ${(err as Error).message}`)
   }
 }
 

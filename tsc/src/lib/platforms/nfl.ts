@@ -407,6 +407,158 @@ export async function fetchDraft(leagueId: string, season: number): Promise<NflD
   return out
 }
 
+// ─── Transactions page → completed trades ────────────────────────────────
+//
+// NFL.com renders the transaction history at:
+//   /league/<id>/history/<year>/transactions?transactionType=trade
+// Each trade is a row that names the two teams and lists the players that
+// went each direction. The HTML has shifted across seasons — we tolerate
+// the two most common shapes:
+//
+//   modern: <li class="transaction"><span class="date">…</span>…
+//             <a class="teamId-N">…</a> traded <a class="playerId-M">…</a> …
+//
+//   legacy: a flat <ul.transactionList> with <li> rows of the same anchors
+//
+// We don't get a stable transaction id in the HTML, so we synthesize one
+// from (date, team-pair, sorted player ids) — stable enough to dedupe on
+// re-sync as long as the trade text hasn't been edited by NFL.com.
+//
+// Defensive by design: if no trade rows parse, we return [] and let the
+// caller emit a warning instead of failing the sync.
+
+export type NflTradePlayer = {
+  player_external_id: string  // NFL.com playerId
+  full_name: string
+  position: string | null
+  nfl_team: string | null
+  to_team_id: number          // receiver
+  from_team_id: number        // sender (the team trading the player away)
+}
+
+export type NflTrade = {
+  synthetic_id: string        // hash of date + teams + players (stable across syncs)
+  executed_at: string         // ISO timestamp (date midnight UTC if only the date is shown)
+  team_ids: number[]          // every team appearing in the trade row (usually 2)
+  players: NflTradePlayer[]
+}
+
+export async function fetchTrades(leagueId: string, season: number): Promise<NflTrade[]> {
+  const url = `${BASE}/league/${leagueId}/history/${season}/transactions?transactionType=trade`
+  const html = await fetchHtml(url)
+  const $ = cheerio.load(html)
+  const out: NflTrade[] = []
+
+  // Each row is <li class="transaction*"> or <tr class="transaction*">. We
+  // accept anything with a `transaction` class and at least one teamId anchor
+  // plus one playerId anchor — that filters out the "no transactions yet"
+  // placeholder and section headers.
+  const rows = $('[class*="transaction"]').filter((_, el) => {
+    const $el = $(el)
+    const hasTeam = $el.find('a[class*="teamId-"]').length >= 1
+    const hasPlayer = $el.find('a[class*="playerId-"]').length >= 1
+    return hasTeam && hasPlayer
+  })
+
+  rows.each((_, el) => {
+    const row = $(el)
+
+    // Date — typical class names: .date, .timeStamp, .transactionDate.
+    let dateText = row.find('.date, .timeStamp, .transactionDate, time').first().text().trim()
+    if (!dateText) {
+      // Fallback: first <em> or <span> that parses as a date.
+      row.find('em, span').each((_, e) => {
+        const t = $(e).text().trim()
+        if (/\d/.test(t) && Date.parse(t)) { dateText = t; return false }
+      })
+    }
+    const ts = Date.parse(dateText)
+    const isoDate = Number.isFinite(ts) ? new Date(ts).toISOString() : new Date(`${season}-12-31T00:00:00Z`).toISOString()
+
+    // Team ids — collect every distinct teamId-N anchor.
+    const teamIds = new Set<number>()
+    row.find('a[class*="teamId-"]').each((_, a) => {
+      const m = ($(a).attr('class') || '').match(/teamId-(\d+)/)
+      if (m) teamIds.add(Number(m[1]))
+    })
+    if (teamIds.size < 2) return
+
+    // Player tags — each carries playerId-N. For attribution (who sent what)
+    // we look at the nearest preceding teamId anchor in the row's text order.
+    // NFL.com renders trades as "<TeamA> traded <Player>, <Player> to <TeamB>"
+    // (and a sibling line in the other direction), so an anchor's nearest
+    // preceding team is the sender.
+    const orderedAnchors: Array<{ kind: 'team' | 'player'; el: cheerio.Cheerio<AnyNode> }> = []
+    row.find('a[class*="teamId-"], a[class*="playerId-"]').each((_, a) => {
+      const cls = $(a).attr('class') || ''
+      if (/teamId-/.test(cls)) orderedAnchors.push({ kind: 'team', el: $(a) })
+      else if (/playerId-/.test(cls)) orderedAnchors.push({ kind: 'player', el: $(a) })
+    })
+
+    const players: NflTradePlayer[] = []
+    let currentSender: number | null = null
+    for (let i = 0; i < orderedAnchors.length; i++) {
+      const node = orderedAnchors[i]
+      if (node.kind === 'team') {
+        const m = (node.el.attr('class') || '').match(/teamId-(\d+)/)
+        currentSender = m ? Number(m[1]) : currentSender
+        continue
+      }
+      // Player — receiver is the *other* team in this trade, sender is current.
+      if (currentSender == null) continue
+      const pCls = node.el.attr('class') || ''
+      const pIdMatch = pCls.match(/playerId-(\d+)/)
+      if (!pIdMatch) continue
+      const player_external_id = pIdMatch[1]!
+
+      // Try to find a position + team in the trailing <em> sibling text.
+      const fullName = node.el.text().trim()
+      let position: string | null = null
+      let nflTeam: string | null = null
+      // The player <a> is often immediately followed by " (POS - TEAM)" or
+      // a sibling <em>POS - TEAM</em>.
+      const next = node.el[0]?.nextSibling
+      const tail = next && 'data' in next ? String((next as { data?: string }).data ?? '') : ''
+      const tailEm = node.el.next('em').text() || tail
+      const m = tailEm.match(/([A-Z]{1,4})\s*[-–]\s*([A-Z]{2,4})/)
+      if (m) { position = m[1]!; nflTeam = m[2]! }
+      else if (/DEF|DST/i.test(tailEm)) { position = 'DEF' }
+
+      // Receiver = any team in teamIds that isn't the sender.
+      let receiver: number | null = null
+      for (const tid of teamIds) {
+        if (tid !== currentSender) { receiver = tid; break }
+      }
+      if (receiver == null) continue
+
+      players.push({
+        player_external_id,
+        full_name: fullName,
+        position,
+        nfl_team: nflTeam,
+        to_team_id: receiver,
+        from_team_id: currentSender,
+      })
+    }
+
+    if (players.length === 0) return
+
+    // Synthesize a stable id: date|sorted-teams|sorted-playerIds.
+    const teamPart = [...teamIds].sort((a, b) => a - b).join(',')
+    const playerPart = players.map((p) => p.player_external_id).sort().join(',')
+    const synthetic_id = `${isoDate}|${teamPart}|${playerPart}`
+
+    out.push({
+      synthetic_id,
+      executed_at: isoDate,
+      team_ids: [...teamIds],
+      players,
+    })
+  })
+
+  return out
+}
+
 // ─── Concurrency helper (mirrors sleeper.ts parallelLimit) ───────────────
 
 export async function parallelLimit<T, R>(

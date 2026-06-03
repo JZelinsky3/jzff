@@ -384,6 +384,91 @@ export function nflTeamFromId(id: number | undefined | null): string | null {
   return NFL_TEAM_BY_ID[id] ?? null
 }
 
+// ─── Transactions (trades) ────────────────────────────────────────────────
+//
+// ESPN's `mTransactions2` view returns the per-season transactions ledger.
+// Each entry has a string `type` (TRADE_ACCEPT, TRADE_DECLINE, FREEAGENT,
+// WAIVER, etc.) and a `status` (EXECUTED, QUEUED, CANCELED, etc.). Items
+// inside a single transaction are atomic — a multi-team trade can have many
+// items and many distinct fromTeamId / toTeamId pairs, all sharing the same
+// transaction id. We only care about TRADE_ACCEPT + EXECUTED (the trade
+// actually went through).
+//
+// Older seasons sometimes return `type` as a numeric code. The codes have
+// drifted over the years, so instead of hard-coding numbers we keep the
+// string match and fall back to detecting "trade-shaped" entries (≥2 distinct
+// teams involved across items) when type comes back numeric.
+
+export type EspnTransactionItem = {
+  type?: string             // 'PLAYER' | 'DRAFT_PICK' | etc.
+  playerId?: number
+  fromTeamId?: number
+  toTeamId?: number
+  // Pick metadata (when type === 'DRAFT_PICK')
+  bidAmount?: number        // FAAB on waivers; sometimes used for pick swaps
+  // Older feeds use these for pick descriptors:
+  pickNumber?: number
+  roundNumber?: number
+  // The pick's *originally owned* team — useful for "Joe's 2026 2nd" UI.
+  originalTeamId?: number
+}
+
+export type EspnTransaction = {
+  id?: string | number
+  type?: string | number    // 'TRADE_ACCEPT' for an executed trade
+  status?: string           // 'EXECUTED' is what we want
+  isPending?: boolean
+  proposedDate?: number     // epoch ms
+  processDate?: number      // epoch ms — when it actually executed
+  scoringPeriodId?: number
+  teamId?: number           // proposer
+  memberId?: string         // proposer SWID
+  items?: EspnTransactionItem[]
+}
+
+export type EspnTransactionsPayload = {
+  transactions?: EspnTransaction[]
+}
+
+// Fetch every transaction for a season. The transactions array can include
+// hundreds of rows (every waiver claim, every drop) — we don't filter to
+// trades here; the caller does, because they have richer context for
+// distinguishing executed trades from declined / pending ones.
+export async function fetchTransactions(
+  leagueId: string,
+  season: number,
+  auth?: EspnAuth
+): Promise<EspnTransaction[]> {
+  const payload = await fetchLeaguePayload(leagueId, season, ['mTransactions2'], auth) as unknown as EspnTransactionsPayload
+  return payload.transactions ?? []
+}
+
+// Convenience: keep only TRADE_ACCEPT + EXECUTED transactions and dedupe by
+// id. ESPN occasionally returns the same trade twice (once per proposer-side
+// view) so we collapse to a single canonical entry per transaction id.
+export function filterExecutedTrades(txs: EspnTransaction[]): EspnTransaction[] {
+  const out = new Map<string, EspnTransaction>()
+  for (const t of txs) {
+    const typeStr = typeof t.type === 'string' ? t.type.toUpperCase() : ''
+    const statusStr = (t.status ?? '').toUpperCase()
+    // Primary path: explicit TRADE_ACCEPT / EXECUTED.
+    const isTradeByType = typeStr === 'TRADE_ACCEPT'
+    // Fallback: multi-team item structure (≥2 distinct teams across items)
+    // catches older seasons where ESPN sent numeric type codes.
+    const teams = new Set<number>()
+    for (const item of t.items ?? []) {
+      if (typeof item.fromTeamId === 'number') teams.add(item.fromTeamId)
+      if (typeof item.toTeamId === 'number') teams.add(item.toTeamId)
+    }
+    const isTradeByShape = teams.size >= 2 && typeStr !== 'WAIVER' && typeStr !== 'FREEAGENT'
+    if (!isTradeByType && !isTradeByShape) continue
+    if (statusStr && statusStr !== 'EXECUTED') continue
+    const key = String(t.id ?? `${t.processDate ?? t.proposedDate ?? 0}|${[...teams].sort().join(',')}`)
+    if (!out.has(key)) out.set(key, t)
+  }
+  return [...out.values()]
+}
+
 // Batch-fetch player info for an explicit list of playerIds. Returns a Map
 // keyed by playerId so callers can look up names without scanning the array.
 // ESPN's filter accepts up to a few thousand ids per call; we chunk at 1000

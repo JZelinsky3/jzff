@@ -24,6 +24,7 @@ import {
   getLeagueDraft,
   getPlayersBatch,
   getTeamRosterWeek,
+  getLeagueTransactions,
   yahooIsStarterSlot,
   type YahooTeam,
   type YahooLeagueMeta,
@@ -36,6 +37,7 @@ export type IngestResult = {
   managersIngested: number
   matchupsIngested: number
   draftsIngested: number
+  tradesIngested: number
   warnings: string[]
 }
 
@@ -68,6 +70,7 @@ export async function ingestYahooLeague(leagueRowId: string): Promise<IngestResu
     managersIngested: 0,
     matchupsIngested: 0,
     draftsIngested: 0,
+    tradesIngested: 0,
     warnings: [],
   }
 
@@ -86,6 +89,7 @@ export async function ingestYahooLeague(leagueRowId: string): Promise<IngestResu
     aggregate.managersIngested += result.managersIngested
     aggregate.matchupsIngested += result.matchupsIngested
     aggregate.draftsIngested += result.draftsIngested
+    aggregate.tradesIngested += result.tradesIngested
     aggregate.warnings.push(...result.warnings)
     if (src.id) {
       await db
@@ -134,7 +138,7 @@ export async function ingestYahooSource(
     warnings.push(
       `Yahoo: no seasons in range ${minYear ?? '*'}–${maxYear ?? '*'} (chain had ${fullHistory.length}).`
     )
-    return { ok: true, seasonsIngested: 0, managersIngested: 0, matchupsIngested: 0, draftsIngested: 0, warnings }
+    return { ok: true, seasonsIngested: 0, managersIngested: 0, matchupsIngested: 0, draftsIngested: 0, tradesIngested: 0, warnings }
   }
 
   // Pass 1 — collect every manager (guid) across every season so the managers
@@ -185,6 +189,7 @@ export async function ingestYahooSource(
 
   let matchupsIngested = 0
   let draftsIngested = 0
+  let tradesIngested = 0
 
   // Pass 2 — per-season ingest.
   for (const lg of history) {
@@ -556,6 +561,100 @@ export async function ingestYahooSource(
         draftsIngested++
       }
     }
+
+    // ─── trades ──────────────────────────────────────────────────────────
+    // Yahoo's transactions endpoint returns the per-league ledger. We pull
+    // only successful trades; the parser collapses each into a per-team
+    // asset list via destination_team_key.
+    let yahooTxs: Awaited<ReturnType<typeof getLeagueTransactions>> = []
+    try {
+      yahooTxs = await getLeagueTransactions(accessToken, lg.league_key)
+    } catch (err) {
+      warnings.push(`Season ${year} transactions: ${(err as Error).message} — skipping trade ingest for this year`)
+    }
+    for (const t of yahooTxs) {
+      // Both sides must resolve to managers we know about.
+      const traderMgr = teamKeyToManagerId.get(t.trader_team_key) ?? null
+      const tradeeMgr = teamKeyToManagerId.get(t.tradee_team_key) ?? null
+      if (!traderMgr || !tradeeMgr) {
+        warnings.push(`Season ${year} trade ${t.transaction_id}: unmapped team(s); side skipped`)
+        continue
+      }
+
+      // Convert Yahoo's team-key-keyed asset map into the asset shape the
+      // trades schema expects (kind: 'player' | 'pick' | 'faab'). Picks
+      // need original_owner_manager_id, so resolve original_owner_team_key
+      // → manager_id at write time.
+      const assetsByTeamKey = new Map<string, Array<Record<string, unknown>>>()
+      for (const [teamKey, assets] of t.assetsByTeam) {
+        const out: Array<Record<string, unknown>> = []
+        for (const a of assets) {
+          if (a.kind === 'player') {
+            out.push({
+              kind: 'player',
+              player_id: a.player_key,
+              name: a.full_name,
+              position: a.position,
+              team: a.nfl_team,
+            })
+          } else if (a.kind === 'pick') {
+            out.push({
+              kind: 'pick',
+              season_year: a.season_year,
+              round: a.round,
+              original_owner_manager_id: a.original_owner_team_key
+                ? teamKeyToManagerId.get(a.original_owner_team_key) ?? null
+                : null,
+            })
+          } else if (a.kind === 'faab') {
+            out.push({ kind: 'faab', amount: a.amount })
+          }
+        }
+        assetsByTeamKey.set(teamKey, out)
+      }
+
+      const executedAt = t.ts ? new Date(t.ts * 1000).toISOString() : new Date().toISOString()
+
+      const { data: tradeRow, error: tradeErr } = await db
+        .from('trades')
+        .upsert(
+          {
+            league_id: archiveLeagueId,
+            season_id: seasonId,
+            platform: 'yahoo',
+            external_id: t.transaction_key || t.transaction_id,
+            week: null,        // Yahoo doesn't surface the league-week on trades
+            executed_at: executedAt,
+            status: 'completed',
+            raw_payload: t.raw,
+          },
+          { onConflict: 'league_id,platform,external_id' }
+        )
+        .select('id')
+        .single()
+      if (tradeErr || !tradeRow) {
+        warnings.push(`Season ${year} trade ${t.transaction_id}: upsert failed: ${tradeErr?.message ?? 'no row'}`)
+        continue
+      }
+
+      await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
+      let sidesInserted = 0
+      for (const [teamKey, assets] of assetsByTeamKey) {
+        const managerId = teamKeyToManagerId.get(teamKey)
+        if (!managerId) continue
+        const { error: sideErr } = await db.from('trade_sides').insert({
+          trade_id: tradeRow.id,
+          manager_id: managerId,
+          assets,
+        })
+        if (sideErr) {
+          warnings.push(`Season ${year} trade ${t.transaction_id} side ${teamKey}: ${sideErr.message}`)
+          continue
+        }
+        sidesInserted++
+      }
+      if (sidesInserted >= 2) tradesIngested++
+    }
   }
 
   return {
@@ -564,6 +663,7 @@ export async function ingestYahooSource(
     managersIngested: managerByGuid.size,
     matchupsIngested,
     draftsIngested,
+    tradesIngested,
     warnings,
   }
 }

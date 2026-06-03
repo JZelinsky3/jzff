@@ -723,6 +723,174 @@ export async function getLeagueDraft(
   return out
 }
 
+// ─── Transactions (trades) ────────────────────────────────────────────────
+//
+// Yahoo doesn't support multi-team trades, so every trade has exactly two
+// sides: trader_team_key and tradee_team_key. Each player in `players` carries
+// its own `transaction_data` block with source_team_key + destination_team_key,
+// which is how we know which side received which player. The endpoint also
+// surfaces FAAB swaps under the same player-block shape (`destination_type`:
+// 'team' for the receiver, 'waivers' for drops, etc.) — we only pull `trade`-
+// type transactions with a `successful` status.
+
+export type YahooTradeAsset =
+  | { kind: 'player'; player_key: string; full_name: string | null; position: string | null; nfl_team: string | null }
+  | { kind: 'pick'; season_year: number | null; round: number | null; original_owner_team_key: string | null }
+  | { kind: 'faab'; amount: number }
+
+export type YahooTransaction = {
+  transaction_id: string                      // numeric portion, stable per league
+  transaction_key: string                     // full key (`<game>.l.<lg>.tr.<id>`)
+  status: string                              // 'successful' | 'pending' | 'rejected'
+  type: string                                // 'trade'
+  ts: number | null                           // epoch seconds
+  trader_team_key: string
+  tradee_team_key: string
+  raw: unknown                                // original blob for raw_payload
+  // assetsByTeam: team_key → assets it RECEIVED in this trade.
+  assetsByTeam: Map<string, YahooTradeAsset[]>
+}
+
+// GET /league/{key}/transactions;types=trade
+// Walks the response array shape (league = [meta, { transactions }]).
+// Pulls successful trades only.
+export async function getLeagueTransactions(
+  accessToken: string,
+  leagueKey: string
+): Promise<YahooTransaction[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = await yahooFetchJson<any>(accessToken, `/league/${leagueKey}/transactions;types=trade`)
+  const leagueArr = raw?.fantasy_content?.league
+  if (!leagueArr) return []
+  const block = (leagueArr as unknown[]).find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (x: any) => x && typeof x === 'object' && 'transactions' in x
+  )
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const txNode = (block as any)?.transactions
+  if (!txNode) return []
+
+  const out: YahooTransaction[] = []
+  for (const node of numberedToArray(txNode)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const txFrag = (node as any)?.transaction
+    if (!txFrag) continue
+    // The transaction is itself an array: [metaFrags, { players: ... } | extras].
+    // Meta lives in the first sub-array of fragments.
+    const metaFrags = Array.isArray(txFrag[0]) ? txFrag[0] : txFrag
+    const meta = flattenFragments(metaFrags)
+    const type = String(meta.type ?? '')
+    if (type !== 'trade') continue
+    const status = String(meta.status ?? '').toLowerCase()
+    if (status !== 'successful') continue
+
+    const trader = String(meta.trader_team_key ?? '')
+    const tradee = String(meta.tradee_team_key ?? '')
+    if (!trader || !tradee) continue
+
+    const assetsByTeam = new Map<string, YahooTradeAsset[]>([
+      [trader, []],
+      [tradee, []],
+    ])
+
+    // Players block — find it anywhere in the transaction tail.
+    let playersNode: unknown = null
+    if (Array.isArray(txFrag)) {
+      for (const part of txFrag) {
+        if (part && typeof part === 'object' && 'players' in (part as Record<string, unknown>)) {
+          playersNode = (part as Record<string, unknown>).players
+          break
+        }
+      }
+    }
+    if (playersNode) {
+      for (const pNode of numberedToArray(playersNode)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pArr = (pNode as any)?.player
+        if (!pArr) continue
+        // player is also [metaFrags, { transaction_data }]
+        const pMetaFrags = Array.isArray(pArr[0]) ? pArr[0] : pArr
+        const pm = flattenFragments(pMetaFrags)
+        const player_key = String(pm.player_key ?? '')
+        if (!player_key) continue
+        // Extract destination team from the transaction_data tail block.
+        let dest: string | null = null
+        if (Array.isArray(pArr)) {
+          for (const part of pArr) {
+            if (part && typeof part === 'object' && 'transaction_data' in (part as Record<string, unknown>)) {
+              // transaction_data is either an object or an array of objects.
+              const td = (part as Record<string, unknown>).transaction_data
+              const arr = Array.isArray(td) ? td : [td]
+              for (const entry of arr) {
+                if (entry && typeof entry === 'object') {
+                  const e = entry as Record<string, unknown>
+                  if (String(e.destination_type ?? '') === 'team' && e.destination_team_key) {
+                    dest = String(e.destination_team_key)
+                    break
+                  }
+                }
+              }
+              if (dest) break
+            }
+          }
+        }
+        if (!dest || !assetsByTeam.has(dest)) continue
+        // Name + position from the player meta.
+        let full_name: string | null = null
+        const nameObj = pm.name as Record<string, unknown> | string | undefined
+        if (typeof nameObj === 'string') full_name = nameObj
+        else if (nameObj && typeof nameObj === 'object') full_name = String(nameObj.full ?? '').trim() || null
+        assetsByTeam.get(dest)!.push({
+          kind: 'player',
+          player_key,
+          full_name,
+          position: pm.display_position != null ? String(pm.display_position) : (pm.primary_position != null ? String(pm.primary_position) : null),
+          nfl_team: pm.editorial_team_abbr != null ? String(pm.editorial_team_abbr) : null,
+        })
+      }
+    }
+
+    // FAAB / waiver-budget swaps live in `picks` for some seasons. Yahoo
+    // doesn't surface draft-pick trades through the public API (they happen
+    // outside the league system), so this stays empty in practice.
+    if (Array.isArray(txFrag)) {
+      for (const part of txFrag) {
+        if (part && typeof part === 'object' && 'picks' in (part as Record<string, unknown>)) {
+          const picks = (part as Record<string, unknown>).picks
+          for (const pk of numberedToArray(picks)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const pickArr = (pk as any)?.pick
+            if (!pickArr) continue
+            const pkMeta = flattenFragments(Array.isArray(pickArr[0]) ? pickArr[0] : pickArr)
+            const destTeam = String(pkMeta.destination_team_key ?? '')
+            const origTeam = String(pkMeta.original_team_key ?? '') || null
+            if (!destTeam || !assetsByTeam.has(destTeam)) continue
+            assetsByTeam.get(destTeam)!.push({
+              kind: 'pick',
+              season_year: pkMeta.season != null ? Number(pkMeta.season) : null,
+              round: pkMeta.round != null ? Number(pkMeta.round) : null,
+              original_owner_team_key: origTeam,
+            })
+          }
+        }
+      }
+    }
+
+    out.push({
+      transaction_id: String(meta.transaction_id ?? meta.transaction_key ?? ''),
+      transaction_key: String(meta.transaction_key ?? ''),
+      status,
+      type,
+      ts: meta.timestamp != null ? Number(meta.timestamp) : null,
+      trader_team_key: trader,
+      tradee_team_key: tradee,
+      assetsByTeam,
+      raw: txFrag,
+    })
+  }
+  return out
+}
+
 export type YahooPlayerInfo = {
   player_key: string
   full_name: string

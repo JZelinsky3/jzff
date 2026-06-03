@@ -17,6 +17,8 @@ import {
   fetchSeason,
   fetchPlayers,
   fetchWeekRoster,
+  fetchTransactions,
+  filterExecutedTrades,
   flattenSchedule,
   teamDisplayName,
   memberDisplayName,
@@ -30,6 +32,7 @@ import {
   type EspnLeague,
   type EspnTeam,
   type EspnMember,
+  type EspnTransaction,
 } from '@/lib/platforms/espn'
 
 export type IngestResult = {
@@ -38,6 +41,7 @@ export type IngestResult = {
   managersIngested: number
   matchupsIngested: number
   draftsIngested: number
+  tradesIngested: number
   warnings: string[]
 }
 
@@ -79,6 +83,7 @@ export async function ingestEspnLeague(leagueRowId: string): Promise<IngestResul
     managersIngested: 0,
     matchupsIngested: 0,
     draftsIngested: 0,
+    tradesIngested: 0,
     warnings: [],
   }
 
@@ -87,6 +92,7 @@ export async function ingestEspnLeague(leagueRowId: string): Promise<IngestResul
     aggregate.seasonsIngested += result.seasonsIngested
     aggregate.matchupsIngested += result.matchupsIngested
     aggregate.draftsIngested += result.draftsIngested
+    aggregate.tradesIngested += result.tradesIngested
     aggregate.warnings.push(...result.warnings)
     if (result.managersIngested > aggregate.managersIngested) {
       aggregate.managersIngested = result.managersIngested
@@ -127,6 +133,7 @@ export async function ingestEspnSource(
     managersIngested: 0,
     matchupsIngested: 0,
     draftsIngested: 0,
+    tradesIngested: 0,
     warnings: [],
   }
 
@@ -731,6 +738,133 @@ async function ingestSeason(args: {
         if (error) result.warnings.push(`Season ${year} draft pick ${p.overallPickNumber}: ${error.message}`)
       }
       result.draftsIngested++
+    }
+  }
+
+  // ─── trades ─────────────────────────────────────────────────────────────
+  // mTransactions2 ledger → only EXECUTED TRADE_ACCEPT rows. Each ESPN trade
+  // is one transaction with N items spanning ≥2 distinct teams; we group items
+  // by team-as-receiver to build the per-side asset list.
+  let txs: EspnTransaction[] = []
+  try {
+    txs = await fetchTransactions(String(lg.id), year, auth)
+  } catch (err) {
+    // Some old seasons 404 on mTransactions2 — non-fatal.
+    result.warnings.push(`Season ${year} transactions: ${(err as Error).message} — skipping trade ingest for this year`)
+  }
+  const trades = filterExecutedTrades(txs)
+  if (trades.length > 0) {
+    // Batch-resolve player names across every player referenced in trades for
+    // this season. One call instead of one per trade.
+    const tradePlayerIds = new Set<number>()
+    for (const t of trades) {
+      for (const item of t.items ?? []) {
+        if (typeof item.playerId === 'number' && item.type !== 'DRAFT_PICK') {
+          tradePlayerIds.add(item.playerId)
+        }
+      }
+    }
+    let tradePlayers = new Map<number, { fullName?: string; firstName?: string; lastName?: string; defaultPositionId?: number; proTeamId?: number }>()
+    if (tradePlayerIds.size > 0) {
+      try {
+        tradePlayers = await fetchPlayers(year, [...tradePlayerIds], auth)
+      } catch (err) {
+        result.warnings.push(`Season ${year} trade player lookup: ${(err as Error).message} — names will be null`)
+      }
+    }
+
+    for (const t of trades) {
+      // assetsByTeam: each side's asset list is the items where toTeamId ===
+      // that team (i.e. they're the receiver of the asset).
+      const assetsByTeam = new Map<number, Array<Record<string, unknown>>>()
+      const ensureTeam = (tid: number) => {
+        if (!assetsByTeam.has(tid)) assetsByTeam.set(tid, [])
+        return assetsByTeam.get(tid)!
+      }
+      for (const item of t.items ?? []) {
+        const to = item.toTeamId
+        if (typeof to !== 'number') continue
+        ensureTeam(to)
+        if (typeof item.fromTeamId === 'number') ensureTeam(item.fromTeamId)
+        if (item.type === 'DRAFT_PICK') {
+          const arr = ensureTeam(to)
+          // ESPN's pick metadata is inconsistent across seasons. We capture
+          // whatever shape we get and let the UI degrade gracefully when a
+          // field is missing.
+          const originalTid = typeof item.originalTeamId === 'number' ? item.originalTeamId : item.fromTeamId
+          arr.push({
+            kind: 'pick',
+            season_year: year,
+            round: typeof item.roundNumber === 'number' ? item.roundNumber : null,
+            pick: typeof item.pickNumber === 'number' ? item.pickNumber : null,
+            original_owner_manager_id: typeof originalTid === 'number' ? teamToManagerId(originalTid) : null,
+          })
+        } else if (typeof item.playerId === 'number') {
+          const info = tradePlayers.get(item.playerId)
+          const fullName =
+            info?.fullName?.trim()
+            || [info?.firstName, info?.lastName].filter(Boolean).join(' ').trim()
+            || null
+          const arr = ensureTeam(to)
+          arr.push({
+            kind: 'player',
+            player_id: String(item.playerId),
+            name: fullName,
+            position: positionFromId(info?.defaultPositionId),
+            team: nflTeamFromId(info?.proTeamId),
+          })
+        }
+      }
+
+      // Skip degenerate "trades" with fewer than 2 sides after grouping —
+      // can happen when ESPN returns a half-applied trade row.
+      if (assetsByTeam.size < 2) continue
+
+      const externalTradeId = String(t.id ?? `${seasonId}|${t.processDate ?? t.proposedDate ?? Date.now()}|${[...assetsByTeam.keys()].sort().join(',')}`)
+      const executedAtMs = t.processDate ?? t.proposedDate ?? Date.now()
+
+      const { data: tradeRow, error: tradeErr } = await db
+        .from('trades')
+        .upsert(
+          {
+            league_id: archiveLeagueId,
+            season_id: seasonId,
+            platform: 'espn',
+            external_id: externalTradeId,
+            week: typeof t.scoringPeriodId === 'number' ? t.scoringPeriodId : null,
+            executed_at: new Date(executedAtMs).toISOString(),
+            status: 'completed',
+            raw_payload: t,
+          },
+          { onConflict: 'league_id,platform,external_id' }
+        )
+        .select('id')
+        .single()
+      if (tradeErr || !tradeRow) {
+        result.warnings.push(`Season ${year} trade ${externalTradeId}: upsert failed: ${tradeErr?.message ?? 'no row'}`)
+        continue
+      }
+
+      await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
+      let sidesInserted = 0
+      for (const [tid, assets] of assetsByTeam) {
+        const managerId = teamToManagerId(tid)
+        if (!managerId) {
+          result.warnings.push(`Season ${year} trade ${externalTradeId}: team ${tid} has no manager mapping; side skipped`)
+          continue
+        }
+        const { error: sideErr } = await db.from('trade_sides').insert({
+          trade_id: tradeRow.id,
+          manager_id: managerId,
+          assets,
+        })
+        if (sideErr) {
+          result.warnings.push(`Season ${year} trade ${externalTradeId} side team ${tid}: ${sideErr.message}`)
+          continue
+        }
+        sidesInserted++
+      }
+      if (sidesInserted >= 2) result.tradesIngested++
     }
   }
 }
