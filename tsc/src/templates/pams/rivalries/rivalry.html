@@ -359,14 +359,14 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 
 /* Nav theme overrides (same crimson palette as the index page). */
-.nav { background: rgba(14, 3, 3, 0.94) !important; border-bottom-color: rgba(220, 38, 38, 0.18) !important; }
+.nav { background: rgb(14, 3, 3) !important; border-bottom-color: rgba(220, 38, 38, 0.18) !important; }
 :root {
-  --chapbar-bg:     rgba(14, 3, 3, 0.92);
+  --chapbar-bg:     rgb(14, 3, 3);
   --chapbar-border: rgba(220, 38, 38, 0.18);
   --chapbar-text:   var(--rv-grey-mid);
   --chapbar-active: var(--rv-red);
   --chapbar-line:   rgba(220, 38, 38, 0.18);
-  --nav-drop-bg:           rgba(12,3,3,.97);
+  --nav-drop-bg:           rgb(12, 3, 3);
   --nav-drop-border:       rgba(220,38,38,.15);
   --nav-drop-text:         var(--rv-cream);
   --nav-drop-text-mute:    var(--rv-grey-mid);
@@ -401,11 +401,11 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
      data-page="rivalries"
      data-chapter="CH. VI · RIVALRY"
      data-back-label="← All rivalries"
-     data-back-href="./"></nav>
+     data-back-href="rivalries/"></nav>
 <script src="/pams-template/assets/js/nav.js"></script>
 
 <header class="rv-detail-header">
-  <a class="rv-detail-back" href="./">← All rivalries</a>
+  <a class="rv-detail-back" href="rivalries/">← All rivalries</a>
   <div class="rv-detail-kicker" id="rv-kicker">{{LEAGUE_NAME}} · Head-to-Head</div>
   <h1 class="rv-detail-title" id="rv-title">Loading…</h1>
   <div class="rv-detail-sub" id="rv-sub">&nbsp;</div>
@@ -664,7 +664,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const id = getParam('id');
     const main = document.getElementById('rv-main');
     if (!id) {
-      main.innerHTML = '<div class="rv-empty">No rivalry selected. <a class="rv-detail-back" href="./">← Back to all rivalries</a></div>';
+      main.innerHTML = '<div class="rv-empty">No rivalry selected. <a class="rv-detail-back" href="rivalries/">← Back to all rivalries</a></div>';
       document.getElementById('rv-title').textContent = 'Not found.';
       document.getElementById('rv-sub').textContent = '';
       return;
@@ -675,7 +675,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       const data = await res.json();
       const rv = (data.rivalries || []).find((r) => r.id === id);
       if (!rv) {
-        main.innerHTML = '<div class="rv-empty">That rivalry isn\'t on file. <a class="rv-detail-back" href="./">← Back to all rivalries</a></div>';
+        main.innerHTML = '<div class="rv-empty">That rivalry isn\'t on file. <a class="rv-detail-back" href="rivalries/">← Back to all rivalries</a></div>';
         document.getElementById('rv-title').textContent = 'Not found.';
         return;
       }

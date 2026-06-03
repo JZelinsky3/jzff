@@ -381,7 +381,7 @@
         // to the navy/gold palette so untouched pages render fine.
         '.nav-chapbar {',
         '  position: sticky; top: var(--nav-h, 4.5rem); z-index: 29;',
-        '  background: var(--chapbar-bg, rgba(14, 22, 32, .9));',
+        '  background: var(--chapbar-bg, rgb(14, 22, 32));',
         '  -webkit-backdrop-filter: blur(12px);',
         '  backdrop-filter: blur(12px);',
         '  border-bottom: 1px solid var(--chapbar-border, var(--ink-line, #2a3645));',

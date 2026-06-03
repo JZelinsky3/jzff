@@ -458,19 +458,19 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 
 /* ─── NAV OVERRIDE — crimson instead of navy ────────── */
 .nav {
-  background: rgba(14, 3, 3, 0.94) !important;
+  background: rgb(14, 3, 3) !important;
   border-bottom-color: rgba(220, 38, 38, 0.18) !important;
 }
 /* Chapbar theme overrides — nav.js reads these vars. */
 :root {
-    --chapbar-bg:     rgba(14, 3, 3, 0.92);
+    --chapbar-bg:     rgb(14, 3, 3);
     --chapbar-border: rgba(220, 38, 38, 0.18);
     --chapbar-text:   var(--rv-grey-mid);
     --chapbar-active: var(--rv-red);
     --chapbar-line:   rgba(220, 38, 38, 0.18);
 }
 :root {
-  --nav-drop-bg:           rgba(12,3,3,.97);
+  --nav-drop-bg:           rgb(12, 3, 3);
   --nav-drop-border:       rgba(220,38,38,.15);
   --nav-drop-text:         var(--rv-cream);
   --nav-drop-text-mute:    var(--rv-grey-mid);
@@ -683,7 +683,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const barStyle = `background: linear-gradient(to right, ${aColor} 0%, ${aColor} ${aPct}%, ${bColor} ${aPct}%, ${bColor} 100%)`;
 
     return `
-      <a class="rv-card ${leaderClass}" id="rivalry-${escapeHtml(rv.id)}" href="rivalry.html?id=${encodeURIComponent(rv.id || '')}" style="display:block;color:inherit;text-decoration:none;">
+      <a class="rv-card ${leaderClass}" id="rivalry-${escapeHtml(rv.id)}" href="rivalries/rivalry.html?id=${encodeURIComponent(rv.id || '')}" style="display:block;color:inherit;text-decoration:none;">
         <div class="rv-card-head">
           <span class="rv-card-label">Rivalry ${ROMAN[idx + 1] || idx + 1} · ${escapeHtml(rv.manager_a.name)} vs ${escapeHtml(rv.manager_b.name)} · ${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}${sinceLabel}</span>
           <span class="rv-badge">${headBadge}</span>

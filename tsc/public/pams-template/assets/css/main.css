@@ -91,7 +91,11 @@ body {
     position: sticky; top: 0; z-index: 30;
     display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem;
     padding: 1.2rem 2rem;
-    background: rgba(14, 22, 32, .92);
+    /* Fully opaque so scrolled-over body text never bleeds through the
+       title + chapter kicker. The blur is kept as a no-op fallback for
+       browsers that ignore the solid bg (and in case a future theme
+       wants to dial alpha back). */
+    background: rgb(14, 22, 32);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--ink-line);
 }
