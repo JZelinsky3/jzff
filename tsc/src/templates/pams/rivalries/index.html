@@ -291,8 +291,11 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 
 /* ─── SLIDES ─────────────────────────────────────────
-   Each slide is its own card that mounts into the stage, runs an
-   entry animation (fade + rise), then waits to be replaced. */
+   Each slide mounts into the stage, runs an entry animation (fade +
+   rise), then waits to be replaced. Animation timing is intentionally
+   staged so the reader's eye is led — eyebrow first, big text second,
+   sub-text last. Title slides hold a brief pause before reveal for
+   suspense; tape and verdict slides ladder content in row by row. */
 .rv-slide {
   width: 100%;
   text-align: center;
@@ -304,64 +307,118 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-slide-eyebrow {
   font-family: var(--mono);
-  font-size: .75rem; letter-spacing: .32em; text-transform: uppercase;
+  font-size: .8rem; letter-spacing: .35em; text-transform: uppercase;
   color: var(--rv-red);
   margin-bottom: 1.75rem;
-  animation: rv-slide-rise .65s .05s both cubic-bezier(.2,.6,.2,1);
+  animation: rv-eyebrow-pulse .9s .05s both cubic-bezier(.2,.6,.2,1);
 }
-@keyframes rv-slide-rise {
-  from { opacity: 0; transform: translateY(16px); letter-spacing: .5em; }
-  to   { opacity: 1; transform: translateY(0); letter-spacing: .32em; }
+/* Eyebrow squeezes into place and brightens — a soft "drumroll" cue */
+@keyframes rv-eyebrow-pulse {
+  0%   { opacity: 0; letter-spacing: .7em; transform: translateY(12px); }
+  60%  { opacity: 1; letter-spacing: .3em; }
+  100% { opacity: 1; letter-spacing: .35em; transform: translateY(0); }
 }
 .rv-slide-title-text,
 .rv-slide-title {
   font-family: var(--serif);
   font-style: italic;
-  font-size: clamp(2.5rem, 8vw, 5.6rem);
+  font-size: clamp(2.6rem, 8.5vw, 6.4rem);
   line-height: 1.04;
   color: var(--rv-white);
   letter-spacing: -.01em;
   margin: 0 auto 1.5rem;
   max-width: 22ch;
-  animation: rv-slide-title-in .85s .12s both cubic-bezier(.2,.6,.2,1);
+  /* Held off-screen for ~.55s after eyebrow before slamming in — that
+     pause is the suspense beat. */
+  animation: rv-slide-title-in 1s .55s both cubic-bezier(.2,.6,.2,1);
 }
 @keyframes rv-slide-title-in {
-  from { opacity: 0; transform: translateY(28px) scale(.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(36px) scale(.94); filter: blur(8px); }
+  to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 .rv-slide-title em { color: var(--rv-red); }
 .rv-slide-sub {
   font-family: var(--mono);
-  font-size: .78rem; letter-spacing: .2em; text-transform: uppercase;
+  font-size: .9rem; letter-spacing: .22em; text-transform: uppercase;
   color: var(--rv-cream);
-  animation: rv-slide-fade-in .8s .55s both ease-out;
+  animation: rv-slide-fade-in .9s 1.35s both ease-out;
 }
 @keyframes rv-slide-fade-in {
   from { opacity: 0 } to { opacity: 1 }
 }
 
-/* Combatants slide — two cards sliding in from opposite sides, then
-   the wins/PPG numbers count up. */
-.rv-slide-combatants {
+/* Intro/title support: big faded backdrop numeral for chapter title
+   so the slide has visual mass even with sparse text. */
+.rv-slide-title-wrap { position: relative; }
+.rv-slide-roman {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(12rem, 30vw, 24rem);
+  font-weight: 700;
+  color: rgba(220, 38, 38, .06);
+  letter-spacing: -.05em;
+  z-index: 0;
+  pointer-events: none;
+  animation: rv-roman-in 1.4s .1s both cubic-bezier(.2,.6,.2,1);
+}
+@keyframes rv-roman-in {
+  from { opacity: 0; transform: scale(.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.rv-slide-title-wrap > *:not(.rv-slide-roman) { position: relative; z-index: 1; }
+.rv-slide-intro-lead {
+  font-family: var(--mono);
+  font-size: .9rem; letter-spacing: .35em; text-transform: uppercase;
+  color: var(--rv-cream);
+  margin-bottom: 1.25rem;
+  animation: rv-slide-fade-in .8s .15s both ease-out;
+}
+.rv-slide-intro-lead strong {
+  color: var(--rv-white);
+  font-weight: 700;
+}
+.rv-slide-presents {
+  display: inline-flex; align-items: center; gap: 1rem;
+  font-family: var(--mono);
+  font-size: .65rem; letter-spacing: .45em; text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: 2rem;
+  animation: rv-slide-fade-in .8s .4s both ease-out;
+}
+.rv-slide-presents::before,
+.rv-slide-presents::after {
+  content: '';
+  width: 3rem; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--rv-red) 50%, transparent 100%);
+}
+
+/* ─── TALE OF THE TAPE ────────────────────────────────
+   Boxing-style stat comparison. Two name columns flanking a centered
+   label column; rows ladder in one at a time so the audience clocks
+   each comparison before the next drops. Stat winner cell gets
+   white + bold; loser stays cream. */
+.rv-slide-tape {
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
+}
+.rv-tape-head {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: 1.25rem 2rem;
-  align-items: center;
-  max-width: 1000px;
-  margin: 0 auto;
+  gap: 1rem 2rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--rv-line2);
 }
-.rv-slide-combatants .combatant {
-  display: flex; flex-direction: column;
-  gap: .5rem;
+.rv-tape-side {
+  display: flex; flex-direction: column; gap: .35rem;
 }
-.rv-slide-combatants .combatant.a {
-  text-align: left;
-  animation: rv-slide-from-left .7s cubic-bezier(.2,.6,.2,1) both;
-}
-.rv-slide-combatants .combatant.b {
-  text-align: right;
-  animation: rv-slide-from-right .7s cubic-bezier(.2,.6,.2,1) both;
-}
+.rv-tape-side.a { text-align: left;  animation: rv-slide-from-left  .75s .1s both cubic-bezier(.2,.6,.2,1); }
+.rv-tape-side.b { text-align: right; animation: rv-slide-from-right .75s .1s both cubic-bezier(.2,.6,.2,1); }
 @keyframes rv-slide-from-left {
   from { opacity: 0; transform: translateX(-50px); }
   to   { opacity: 1; transform: translateX(0); }
@@ -370,108 +427,205 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   from { opacity: 0; transform: translateX(50px); }
   to   { opacity: 1; transform: translateX(0); }
 }
-.rv-slide-combatants .combatant-eyebrow {
+.rv-tape-corner {
   font-family: var(--mono);
-  font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+  font-size: .58rem; letter-spacing: .28em; text-transform: uppercase;
   color: var(--rv-grey-lt);
 }
-.rv-slide-combatants .combatant-name {
+.rv-tape-side.a .rv-tape-corner::before { content: 'IN THIS CORNER · '; color: var(--rv-red); }
+.rv-tape-side.b .rv-tape-corner::after  { content: ' · IN THIS CORNER'; color: var(--rv-red); }
+.rv-tape-name {
   font-family: var(--serif);
   font-style: italic;
-  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-size: clamp(2.4rem, 5.5vw, 3.6rem);
   line-height: 1;
   color: var(--rv-white);
 }
-.rv-slide-combatants .combatant.leads .combatant-name { color: var(--rv-red); }
-.rv-slide-combatants .combatant-wins {
+.rv-tape-side.leads .rv-tape-name { color: var(--rv-red); }
+.rv-tape-team {
   font-family: var(--mono);
-  font-weight: 700;
-  font-size: clamp(3.5rem, 9vw, 6rem);
-  line-height: .95;
+  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
   color: var(--rv-cream);
-  font-variant-numeric: tabular-nums;
 }
-.rv-slide-combatants .combatant.leads .combatant-wins { color: var(--rv-red); }
-.rv-slide-combatants .combatant-stats {
-  font-family: var(--mono);
-  font-size: .68rem; letter-spacing: .15em; text-transform: uppercase;
-  color: var(--rv-grey-lt);
-}
-.rv-slide-combatants .combatant-stats strong {
-  color: var(--rv-white);
-  font-weight: 600;
-}
-.rv-slide-combatants .combatant-vs {
+.rv-tape-vs {
   font-family: var(--serif);
   font-style: italic;
-  font-size: clamp(2rem, 6vw, 4rem);
+  font-size: clamp(2rem, 5vw, 3.4rem);
   color: var(--rv-red);
-  animation: rv-slide-vs-zoom .75s .35s both cubic-bezier(.2,.6,.2,1);
+  align-self: center;
+  animation: rv-slide-vs-zoom .8s .4s both cubic-bezier(.2,.6,.2,1);
 }
 @keyframes rv-slide-vs-zoom {
-  from { opacity: 0; transform: scale(.4) rotate(-8deg); }
+  from { opacity: 0; transform: scale(.4) rotate(-10deg); }
   to   { opacity: 1; transform: scale(1) rotate(0deg); }
 }
-
-/* Verdict slide — bar fills from one side, leader line reveals at end. */
-.rv-slide-verdict { max-width: 880px; margin: 0 auto; }
-.rv-verdict-bar-wrap {
-  margin: 2rem 0 2.5rem;
+.rv-tape-rows {
+  display: flex; flex-direction: column;
 }
-.rv-verdict-bar {
-  width: 100%;
-  height: 14px;
-  border-radius: 7px;
-  overflow: hidden;
-  background: var(--rv-grey-dk, #1f2937);
-  position: relative;
+.rv-tape-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(140px, auto) 1fr;
+  gap: 1rem 2rem;
+  align-items: baseline;
+  padding: .9rem .25rem;
+  border-bottom: 1px dotted rgba(255,255,255,.08);
+  opacity: 0;
+  animation: rv-tape-row-in .55s both cubic-bezier(.2,.6,.2,1);
 }
-.rv-verdict-bar-fill {
-  height: 100%;
-  width: 0;
-  background: linear-gradient(90deg, var(--a-color, #1f2937) 0%, var(--a-color, #1f2937) 100%);
-  animation: rv-bar-fill 1.4s .35s cubic-bezier(.2,.6,.2,1) both;
+.rv-tape-row:last-child { border-bottom: none; }
+/* Stagger each row's entrance so the audience reads them in order
+   rather than all at once. Delay grows with the row index. */
+.rv-tape-row:nth-child(1) { animation-delay: .9s; }
+.rv-tape-row:nth-child(2) { animation-delay: 1.15s; }
+.rv-tape-row:nth-child(3) { animation-delay: 1.4s; }
+.rv-tape-row:nth-child(4) { animation-delay: 1.65s; }
+.rv-tape-row:nth-child(5) { animation-delay: 1.9s; }
+.rv-tape-row:nth-child(6) { animation-delay: 2.15s; }
+.rv-tape-row:nth-child(7) { animation-delay: 2.4s; }
+.rv-tape-row:nth-child(8) { animation-delay: 2.65s; }
+@keyframes rv-tape-row-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes rv-bar-fill {
-  from { width: 0; }
-  to   { width: var(--pct, 50%); }
-}
-.rv-verdict-bar-nums {
-  display: flex; justify-content: space-between;
-  font-family: var(--mono); font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--rv-cream);
-  margin-top: .5rem;
+.rv-tape-val {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
   font-variant-numeric: tabular-nums;
+  color: var(--rv-grey-lt);
 }
-.rv-verdict-bar-nums span:first-child { color: var(--a-color-readable, var(--rv-white)); }
-.rv-verdict-bar-nums span:last-child { color: var(--b-color-readable, var(--rv-white)); }
+.rv-tape-val.a { text-align: right; }
+.rv-tape-val.b { text-align: left; }
+/* Stat winner: white + slightly larger, plus a subtle glow for drama */
+.rv-tape-val.wins {
+  color: var(--rv-white);
+  text-shadow: 0 0 18px rgba(220,38,38,.35);
+}
+.rv-tape-val .sub {
+  display: block;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: .55rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  margin-top: .15rem;
+}
+.rv-tape-label {
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .25em; text-transform: uppercase;
+  color: var(--rv-red);
+  text-align: center;
+  white-space: nowrap;
+}
+.rv-tape-foot {
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rv-line2);
+  animation: rv-slide-fade-in .8s 2.9s both ease-out;
+}
+.rv-tape-foot strong { color: var(--rv-cream); }
+
+/* ─── VERDICT — meter version ─────────────────────────
+   Bigger, more dramatic. Two coloured halves of one bar that fill
+   from opposite ends toward the divider. Each side has its own
+   label row with wins + percentage. Verdict title and signature
+   line ladder in after the fill completes. */
+.rv-slide-verdict {
+  max-width: 940px;
+  margin: 0 auto;
+  width: 100%;
+}
+.rv-verdict-labels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: var(--mono);
+  font-size: .82rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--rv-cream);
+  margin-bottom: 1rem;
+  animation: rv-slide-fade-in .7s .25s both ease-out;
+}
+.rv-verdict-labels .a { text-align: left; color: var(--a-color-readable, var(--rv-white)); }
+.rv-verdict-labels .b { text-align: right; color: var(--b-color-readable, var(--rv-white)); }
+.rv-verdict-labels strong { font-weight: 700; }
+.rv-verdict-meter {
+  position: relative;
+  height: 32px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: .6rem;
+}
+.rv-verdict-meter-a,
+.rv-verdict-meter-b {
+  position: absolute; top: 0; bottom: 0;
+  width: 0;
+}
+.rv-verdict-meter-a {
+  left: 0;
+  background: var(--a-color, #1f2937);
+  animation: rv-meter-a-fill 1.6s .35s cubic-bezier(.2,.6,.2,1) both;
+}
+.rv-verdict-meter-b {
+  right: 0;
+  background: var(--b-color, #1f2937);
+  animation: rv-meter-b-fill 1.6s .35s cubic-bezier(.2,.6,.2,1) both;
+}
+@keyframes rv-meter-a-fill { from { width: 0; } to { width: var(--a-pct, 50%); } }
+@keyframes rv-meter-b-fill { from { width: 0; } to { width: var(--b-pct, 50%); } }
+.rv-verdict-meter-divider {
+  position: absolute; top: -4px; bottom: -4px;
+  left: var(--a-pct, 50%);
+  width: 1px;
+  background: var(--rv-white);
+  opacity: 0;
+  animation: rv-slide-fade-in .35s 1.9s both ease-out;
+}
+.rv-verdict-meter-nums {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 2.25rem;
+  opacity: 0;
+  animation: rv-slide-fade-in .55s 2.05s both ease-out;
+}
+.rv-verdict-meter-nums .a { text-align: left;  color: var(--a-color-readable, var(--rv-white)); }
+.rv-verdict-meter-nums .b { text-align: right; color: var(--b-color-readable, var(--rv-white)); }
 .rv-verdict-title {
   font-family: var(--serif);
   font-style: italic;
-  font-size: clamp(2rem, 6vw, 3.6rem);
+  font-size: clamp(2.2rem, 6.5vw, 4.2rem);
   color: var(--rv-white);
-  margin: 0 0 .85rem;
-  animation: rv-slide-title-in .8s 1.55s both cubic-bezier(.2,.6,.2,1);
+  margin: 0 0 1rem;
+  animation: rv-slide-title-in 1s 2.3s both cubic-bezier(.2,.6,.2,1);
 }
 .rv-verdict-title em { color: var(--rv-red); }
 .rv-verdict-record {
   font-family: var(--mono);
-  font-size: 1rem; letter-spacing: .15em; text-transform: uppercase;
+  font-size: 1rem; letter-spacing: .2em; text-transform: uppercase;
   color: var(--rv-cream);
-  animation: rv-slide-fade-in .9s 2.05s both ease-out;
+  animation: rv-slide-fade-in .85s 2.9s both ease-out;
 }
+.rv-verdict-record strong { color: var(--rv-white); }
 
 @media (max-width: 720px) {
-  .rv-slide-combatants {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  .rv-slide-combatants .combatant.a,
-  .rv-slide-combatants .combatant.b { text-align: center; }
-  .rv-slide-combatants .combatant-vs { font-size: 2.5rem; }
   .rv-reveal-shell { padding: .75rem .9rem 1rem; }
   .rv-reveal-controls { gap: .65rem; }
+  .rv-tape-head { grid-template-columns: 1fr; gap: .6rem; text-align: center; }
+  .rv-tape-side.a, .rv-tape-side.b { text-align: center; }
+  .rv-tape-vs { font-size: 1.6rem; }
+  .rv-tape-row { grid-template-columns: 1fr minmax(100px, auto) 1fr; padding: .65rem .15rem; }
+  .rv-tape-val { font-size: 1.2rem; }
+  .rv-slide-roman { font-size: 10rem; }
 }
 
 /* ─── MAIN GRID ──────────────────────────────────── */
@@ -973,7 +1127,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 </style>
 </head>
-<body>
+<body data-league-name="{{LEAGUE_NAME}}">
 
 <div class="site-glow"></div>
 <div class="site-grain"></div>
@@ -1237,21 +1391,24 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   // unless the user pauses or navigates manually. Animations are CSS
   // keyframes triggered on mount; the count-up is a small rAF loop.
 
+  // Durations let animation-heavy slides breathe — tape's row-stagger
+  // alone is ~2s, verdict's meter fill + title ladder is ~3.5s, so
+  // they need longer holds than a flat title slide.
   const SLIDE_DURATIONS = {
-    intro:      3500,
-    title:      3500,
-    combatants: 4500,
-    verdict:    4500,
-    outro:      4500,
+    intro:   5000,
+    title:   4500,
+    tape:    7500,
+    verdict: 6500,
+    outro:   5500,
   };
 
   function buildSlides(rivalries) {
     const slides = [];
     slides.push({ type: 'intro', rivalries });
     rivalries.forEach((rv, idx) => {
-      slides.push({ type: 'title',      rv, idx });
-      slides.push({ type: 'combatants', rv, idx });
-      slides.push({ type: 'verdict',    rv, idx });
+      slides.push({ type: 'title',   rv, idx });
+      slides.push({ type: 'tape',    rv, idx });
+      slides.push({ type: 'verdict', rv, idx });
     });
     slides.push({ type: 'outro', rivalries });
     return slides;
@@ -1259,23 +1416,73 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 
   function renderSlide(slide) {
     switch (slide.type) {
-      case 'intro':      return renderIntroSlide(slide);
-      case 'title':      return renderTitleSlide(slide);
-      case 'combatants': return renderCombatantsSlide(slide);
-      case 'verdict':    return renderVerdictSlide(slide);
-      case 'outro':      return renderOutroSlide(slide);
-      default:           return '';
+      case 'intro':   return renderIntroSlide(slide);
+      case 'title':   return renderTitleSlide(slide);
+      case 'tape':    return renderTapeSlide(slide);
+      case 'verdict': return renderVerdictSlide(slide);
+      case 'outro':   return renderOutroSlide(slide);
+      default:        return '';
     }
   }
 
+  // ─── Helpers ─────────────────────────────────────────────────────────
+  // Pull the league name the route handler stamped on <body>.
+  function getLeagueName() {
+    return document.body.getAttribute('data-league-name') || '';
+  }
+
+  // Best margin victory (largest +margin on a W) and largest L (largest
+  // margin on a loss) from a side's last5. Both used in the tape row
+  // for "biggest win" and "toughest loss."
+  function bigByResult(side, result) {
+    const games = (side.last5 || []).filter(
+      (g) => g.result === result && typeof g.margin === 'number',
+    );
+    if (games.length === 0) return null;
+    return games.reduce((b, g) => (g.margin > b.margin ? g : b));
+  }
+
+  // "1-0-0" → "1-0". Trailing zero-tie segment is noise on a tape row.
+  function tidy(rec) {
+    const parts = (rec || '').split('-');
+    if (parts.length === 3 && parts[2] === '0') return parts.slice(0, 2).join('-');
+    return rec || '—';
+  }
+
+  // Returns 'a' | 'b' | null indicating which side has the higher value
+  // for a given comparison. Used to add the .wins class for emphasis.
+  function compare(av, bv) {
+    if (av == null && bv == null) return null;
+    if (av == null) return 'b';
+    if (bv == null) return 'a';
+    if (av > bv) return 'a';
+    if (bv > av) return 'b';
+    return null;
+  }
+  // Compare W from "X-Y-Z" records (more wins = better).
+  function wOf(rec) {
+    const m = String(rec || '').match(/^(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  // ─── Renderers ───────────────────────────────────────────────────────
   function renderIntroSlide(slide) {
     const n = slide.rivalries.length;
     const meetings = slide.rivalries.reduce((a, r) => a + r.total_meetings, 0);
+    const leaders = slide.rivalries.filter((r) => r.leader_name && !r.is_deadlocked).length;
+    const deadlocked = slide.rivalries.filter((r) => r.is_deadlocked && r.total_meetings > 0).length;
+    const leagueName = getLeagueName();
     return `
-      <section class="rv-slide rv-slide-intro">
-        <div class="rv-slide-eyebrow">★ The Sunday Chronicle ★</div>
+      <section class="rv-slide rv-slide-title-wrap">
+        <div class="rv-slide-intro-lead">${leagueName ? `<strong>${escapeHtml(leagueName)}</strong>` : ''}</div>
+        <div class="rv-slide-presents">Presents</div>
         <h1 class="rv-slide-title">The <em>Rivalries.</em></h1>
-        <div class="rv-slide-sub">${n} feud${n === 1 ? '' : 's'} · ${meetings} meeting${meetings === 1 ? '' : 's'} · No mercy</div>
+        <div class="rv-slide-sub">
+          ${n} feud${n === 1 ? '' : 's'} &nbsp;·&nbsp;
+          ${meetings} meeting${meetings === 1 ? '' : 's'} &nbsp;·&nbsp;
+          ${leaders} leader${leaders === 1 ? '' : 's'} &nbsp;·&nbsp;
+          ${deadlocked} deadlocked
+        </div>
       </section>
     `;
   }
@@ -1283,41 +1490,109 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   function renderTitleSlide(slide) {
     const roman = ROMAN[slide.idx + 1] || String(slide.idx + 1);
     const rv = slide.rv;
-    const meta = rv.total_meetings > 0
-      ? `${rv.total_meetings} meeting${rv.total_meetings === 1 ? '' : 's'}${rv.first_meeting_year ? ' · Since ' + rv.first_meeting_year : ''}`
-      : 'No meetings on file yet';
+    const since = rv.first_meeting_year ? `Since ${rv.first_meeting_year}` : 'New feud';
+    const last = rv.last_meeting
+      ? `Last met · ${rv.last_meeting.year} W${rv.last_meeting.week}`
+      : 'No games yet';
     return `
       <section class="rv-slide rv-slide-title-wrap">
-        <div class="rv-slide-eyebrow">★ Rivalry ${escapeHtml(roman)} ★</div>
+        <div class="rv-slide-roman" aria-hidden="true">${escapeHtml(roman)}</div>
+        <div class="rv-slide-eyebrow">★ Chapter ${escapeHtml(roman)} · Rivalry ${escapeHtml(roman)} ★</div>
         <h1 class="rv-slide-title-text">${escapeHtml(rv.name)}</h1>
-        <div class="rv-slide-sub">${escapeHtml(meta)}</div>
+        <div class="rv-slide-sub">
+          ${rv.total_meetings} meeting${rv.total_meetings === 1 ? '' : 's'} &nbsp;·&nbsp;
+          ${escapeHtml(since)} &nbsp;·&nbsp;
+          ${escapeHtml(last)}
+        </div>
       </section>
     `;
   }
 
-  function renderCombatantsSlide(slide) {
+  function renderTapeSlide(slide) {
     const rv = slide.rv;
-    const aLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_a.name;
-    const bLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_b.name;
-    const aPpg = typeof rv.manager_a.avg_ppg === 'number' && rv.manager_a.avg_ppg > 0
-      ? rv.manager_a.avg_ppg.toFixed(1) : '—';
-    const bPpg = typeof rv.manager_b.avg_ppg === 'number' && rv.manager_b.avg_ppg > 0
-      ? rv.manager_b.avg_ppg.toFixed(1) : '—';
+    const a = rv.manager_a, b = rv.manager_b;
+    const aLeading = !rv.is_deadlocked && rv.leader_name === a.name;
+    const bLeading = !rv.is_deadlocked && rv.leader_name === b.name;
+
+    // Per-row winner detection — drives the .wins class for emphasis.
+    const winsCmp     = compare(a.wins, b.wins);
+    const regCmp      = compare(wOf(a.reg_record), wOf(b.reg_record));
+    const poCmp       = compare(wOf(a.playoff_record), wOf(b.playoff_record));
+    const ppgCmp      = compare(a.avg_ppg, b.avg_ppg);
+    const aHigh       = a.high_score ? a.high_score.score : null;
+    const bHigh       = b.high_score ? b.high_score.score : null;
+    const highCmp     = compare(aHigh, bHigh);
+    const aBest       = bigByResult(a, 'W');
+    const bBest       = bigByResult(b, 'W');
+    const bestCmp     = compare(aBest ? aBest.margin : null, bBest ? bBest.margin : null);
+
+    const winsRow = (cmp, av, bv) => {
+      const ac = cmp === 'a' ? ' wins' : '';
+      const bc = cmp === 'b' ? ' wins' : '';
+      return { ac, bc };
+    };
+
+    const totalRows = [
+      { label: 'Wins (H2H)',     a: String(a.wins), b: String(b.wins), cmp: winsCmp },
+      { label: 'Regular Season', a: tidy(a.reg_record), b: tidy(b.reg_record), cmp: regCmp },
+      { label: 'Playoff Series', a: tidy(a.playoff_record), b: tidy(b.playoff_record), cmp: poCmp },
+      { label: 'Avg PPG',
+        a: typeof a.avg_ppg === 'number' && a.avg_ppg > 0 ? a.avg_ppg.toFixed(1) : '—',
+        b: typeof b.avg_ppg === 'number' && b.avg_ppg > 0 ? b.avg_ppg.toFixed(1) : '—',
+        cmp: ppgCmp },
+      { label: 'High Score',
+        a: aHigh != null ? aHigh.toFixed(1) : '—',
+        b: bHigh != null ? bHigh.toFixed(1) : '—',
+        aSub: a.high_score ? `${a.high_score.year} W${a.high_score.week}` : '',
+        bSub: b.high_score ? `${b.high_score.year} W${b.high_score.week}` : '',
+        cmp: highCmp },
+      { label: 'Best Win Margin',
+        a: aBest ? '+' + aBest.margin.toFixed(1) : '—',
+        b: bBest ? '+' + bBest.margin.toFixed(1) : '—',
+        aSub: aBest ? `${aBest.year} W${aBest.week}` : '',
+        bSub: bBest ? `${bBest.year} W${bBest.week}` : '',
+        cmp: bestCmp },
+    ];
+
+    const rowsHtml = totalRows.map((r) => {
+      const { ac, bc } = winsRow(r.cmp);
+      return `
+        <div class="rv-tape-row">
+          <div class="rv-tape-val a${ac}">
+            ${escapeHtml(r.a)}
+            ${r.aSub ? `<span class="sub">${escapeHtml(r.aSub)}</span>` : ''}
+          </div>
+          <div class="rv-tape-label">${escapeHtml(r.label)}</div>
+          <div class="rv-tape-val b${bc}">
+            ${escapeHtml(r.b)}
+            ${r.bSub ? `<span class="sub">${escapeHtml(r.bSub)}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const footParts = [];
+    if (rv.first_meeting_year) footParts.push(`First met <strong>${rv.first_meeting_year}</strong>`);
+    if (rv.last_meeting) footParts.push(`Last met <strong>${rv.last_meeting.year} W${rv.last_meeting.week}</strong>${rv.last_meeting.is_playoff ? ' (Playoff)' : ''}`);
+    if (rv.ties_count > 0) footParts.push(`${rv.ties_count} tie${rv.ties_count === 1 ? '' : 's'}`);
+    const foot = footParts.join(' &nbsp;·&nbsp; ');
+
     return `
-      <section class="rv-slide rv-slide-combatants">
-        <div class="combatant a${aLeading ? ' leads' : ''}">
-          <div class="combatant-eyebrow">Manager A</div>
-          <div class="combatant-name">${escapeHtml(rv.manager_a.name)}</div>
-          <div class="combatant-wins" data-count="${rv.manager_a.wins}">0</div>
-          <div class="combatant-stats"><strong>${escapeHtml(aPpg)}</strong> avg PPG · ${escapeHtml(rv.manager_a.reg_record)}</div>
+      <section class="rv-slide rv-slide-tape">
+        <div class="rv-slide-eyebrow">★ Tale of the Tape ★</div>
+        <div class="rv-tape-head">
+          <div class="rv-tape-side a${aLeading ? ' leads' : ''}">
+            <div class="rv-tape-corner">${escapeHtml((a.name || '').toUpperCase())}</div>
+            <div class="rv-tape-name">${escapeHtml(a.name)}</div>
+          </div>
+          <div class="rv-tape-vs">vs.</div>
+          <div class="rv-tape-side b${bLeading ? ' leads' : ''}">
+            <div class="rv-tape-corner">${escapeHtml((b.name || '').toUpperCase())}</div>
+            <div class="rv-tape-name">${escapeHtml(b.name)}</div>
+          </div>
         </div>
-        <div class="combatant-vs">vs.</div>
-        <div class="combatant b${bLeading ? ' leads' : ''}">
-          <div class="combatant-eyebrow">Manager B</div>
-          <div class="combatant-name">${escapeHtml(rv.manager_b.name)}</div>
-          <div class="combatant-wins" data-count="${rv.manager_b.wins}">0</div>
-          <div class="combatant-stats"><strong>${escapeHtml(bPpg)}</strong> avg PPG · ${escapeHtml(rv.manager_b.reg_record)}</div>
-        </div>
+        <div class="rv-tape-rows">${rowsHtml}</div>
+        ${foot ? `<div class="rv-tape-foot">${foot}</div>` : ''}
       </section>
     `;
   }
@@ -1326,43 +1601,56 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const rv = slide.rv;
     const totalDecided = rv.manager_a.wins + rv.manager_b.wins;
     const aPct = totalDecided > 0 ? (rv.manager_a.wins / totalDecided) * 100 : 50;
+    const bPct = 100 - aPct;
     const aLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_a.name;
-    const aColor = aLeading ? '#dc2626' : '#1f2937';
-    const aReadable = aLeading ? '#ef4444' : '#9ca3af';
-    const bReadable = !aLeading && !rv.is_deadlocked ? '#ef4444' : '#9ca3af';
+    const bLeading = !aLeading && !rv.is_deadlocked && rv.leader_name === rv.manager_b.name;
+    const aColor = aLeading ? '#dc2626' : '#374151';
+    const bColor = bLeading ? '#dc2626' : '#374151';
+    const aReadable = aLeading ? '#ef4444' : '#c9c0ad';
+    const bReadable = bLeading ? '#ef4444' : '#c9c0ad';
     const verdictText = rv.is_deadlocked
       ? 'Deadlocked.'
       : rv.leader_name
-        ? `${rv.leader_name} <em>leads.</em>`
+        ? `${escapeHtml(rv.leader_name)} <em>leads.</em>`
         : 'No verdict yet.';
-    const lastGameStr = rv.last_meeting
-      ? `Last meeting · ${rv.last_meeting.year} · W${rv.last_meeting.week}${rv.last_meeting.is_playoff ? ' · PO' : ''}`
-      : '';
+    const recordBits = [];
+    if (rv.leader_record) recordBits.push(`<strong>${escapeHtml(rv.leader_record)}</strong> series`);
+    if (rv.last_meeting) recordBits.push(`Last met · <strong>${rv.last_meeting.year} W${rv.last_meeting.week}</strong>${rv.last_meeting.is_playoff ? ' (Playoff)' : ''}`);
+    const record = recordBits.join(' &nbsp;·&nbsp; ');
+
     return `
-      <section class="rv-slide rv-slide-verdict" style="--pct: ${aPct.toFixed(2)}%; --a-color: ${aColor}; --a-color-readable: ${aReadable}; --b-color-readable: ${bReadable};">
+      <section class="rv-slide rv-slide-verdict"
+               style="--a-pct: ${aPct.toFixed(2)}%; --b-pct: ${bPct.toFixed(2)}%; --a-color: ${aColor}; --b-color: ${bColor}; --a-color-readable: ${aReadable}; --b-color-readable: ${bReadable};">
         <div class="rv-slide-eyebrow">★ The Verdict ★</div>
-        <div class="rv-verdict-bar-wrap">
-          <div class="rv-verdict-bar">
-            <div class="rv-verdict-bar-fill"></div>
-          </div>
-          <div class="rv-verdict-bar-nums">
-            <span>${rv.manager_a.wins}</span>
-            <span>${rv.manager_b.wins}</span>
-          </div>
+        <div class="rv-verdict-labels">
+          <span class="a"><strong>${escapeHtml(rv.manager_a.name)}</strong></span>
+          <span class="b"><strong>${escapeHtml(rv.manager_b.name)}</strong></span>
+        </div>
+        <div class="rv-verdict-meter" aria-hidden="true">
+          <div class="rv-verdict-meter-a"></div>
+          <div class="rv-verdict-meter-b"></div>
+          <div class="rv-verdict-meter-divider"></div>
+        </div>
+        <div class="rv-verdict-meter-nums">
+          <span class="a">${rv.manager_a.wins} <span style="opacity:.5;">·</span> ${aPct.toFixed(1)}%</span>
+          <span class="b">${bPct.toFixed(1)}% <span style="opacity:.5;">·</span> ${rv.manager_b.wins}</span>
         </div>
         <h2 class="rv-verdict-title">${verdictText}</h2>
-        ${rv.leader_record ? `<div class="rv-verdict-record">${escapeHtml(rv.leader_record)}${lastGameStr ? ' &nbsp;·&nbsp; ' + escapeHtml(lastGameStr) : ''}</div>` : (lastGameStr ? `<div class="rv-verdict-record">${escapeHtml(lastGameStr)}</div>` : '')}
+        ${record ? `<div class="rv-verdict-record">${record}</div>` : ''}
       </section>
     `;
   }
 
   function renderOutroSlide(slide) {
     const n = slide.rivalries.length;
+    const leagueName = getLeagueName();
     return `
-      <section class="rv-slide rv-slide-intro">
+      <section class="rv-slide rv-slide-title-wrap">
         <div class="rv-slide-eyebrow">★ Filed ★</div>
         <h1 class="rv-slide-title">The book stays <em>open.</em></h1>
-        <div class="rv-slide-sub">${n} feud${n === 1 ? '' : 's'} on the books · The grudge holds</div>
+        <div class="rv-slide-sub">
+          ${n} feud${n === 1 ? '' : 's'} on the books${leagueName ? ` · <strong style="color:var(--rv-white);">${escapeHtml(leagueName)}</strong>` : ''}
+        </div>
       </section>
     `;
   }
