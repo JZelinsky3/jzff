@@ -183,10 +183,24 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
    Fixed full-screen container with backdrop, slide stage, top progress
    bar, and bottom controls. Slides themselves are rendered into the
    stage by the JS engine. */
+/* The container is a <dialog> for screen-reader semantics, but we
+   manage visibility ourselves via the [hidden] attribute (not the
+   native open/showModal/close API), so this rule resets every
+   user-agent dialog default that would otherwise leak through —
+   margin, border, background, max-width, position. */
 .rv-reveal {
   position: fixed; inset: 0; z-index: 9000;
   display: flex; align-items: stretch; justify-content: center;
   font-family: var(--sans);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  max-width: none;
+  max-height: none;
+  width: 100%;
+  height: 100%;
 }
 .rv-reveal[hidden] { display: none; }
 .rv-reveal-backdrop {
@@ -1266,7 +1280,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
      in <script> below populates #rv-reveal-stage and runs entry
      animations per slide.
 ════════════════════════════════════════════════════ -->
-<div id="rv-reveal" class="rv-reveal" hidden aria-modal="true" role="dialog" aria-label="Rivalries reveal">
+<dialog id="rv-reveal" class="rv-reveal" hidden aria-modal="true" aria-label="Rivalries reveal">
   <div class="rv-reveal-backdrop"></div>
   <div class="rv-reveal-shell">
     <div class="rv-reveal-topbar">
@@ -1278,7 +1292,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       <div class="rv-reveal-progress-bar"><div id="rv-reveal-progress-fill"></div></div>
       <button type="button" id="rv-reveal-close" class="rv-reveal-icon-btn" aria-label="Close reveal">✕</button>
     </div>
-    <div class="rv-reveal-stage" id="rv-reveal-stage" role="region" aria-live="polite"></div>
+    <section class="rv-reveal-stage" id="rv-reveal-stage" aria-live="polite" aria-label="Current slide"></section>
     <div class="rv-reveal-controls">
       <button type="button" id="rv-reveal-prev" class="rv-reveal-icon-btn" aria-label="Previous slide">←</button>
       <button type="button" id="rv-reveal-play" class="rv-reveal-play-btn" aria-label="Pause">
@@ -1288,7 +1302,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       <button type="button" id="rv-reveal-next" class="rv-reveal-icon-btn" aria-label="Next slide">→</button>
     </div>
   </div>
-</div>
+</dialog>
 
 <template id="rv-empty-template">
   <section style="text-align:center;max-width:48ch;margin:4rem auto;padding:0 1.5rem;">
