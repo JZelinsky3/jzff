@@ -295,36 +295,64 @@ export async function fetchTeamWeekRoster(
   const $ = cheerio.load(html)
   const out: NflRosterPlayer[] = []
 
-  // The roster table is usually <table class="tableType-team"> with rows of
-  // class "player". Each row exposes:
-  //   td.teamPosition       → slot (e.g. "QB", "WR", "BN")
-  //   a.playerName          → player display name; class includes playerNameId-N
-  //   em                    → "<POS> - <NFL_TEAM>" meta line
-  //   span.statTotal / td.statTotal → fantasy points (blank for unplayed)
-  $('table.tableType-team tr.player, table tr.player').each((_, tr) => {
-    const row = $(tr)
-    const slotRaw = row.find('td.teamPosition, .teamPosition').first().text().trim()
-    if (!slotRaw) return
-    const slot = slotRaw.toUpperCase()
+  // The gamecenter page renders BOTH teams' rosters in
+  // <div id="teamMatchupFullBoxScore"> — the requested team is always
+  // teamWrap-1 (NFL.com puts the URL's teamId on the left), opponent is
+  // teamWrap-2. Scope to teamWrap-1 so we don't ingest the opponent's
+  // roster under this manager's id. The two outer score-header divs at the
+  // top of the page also carry teamId-N classes but they don't contain
+  // roster rows. Fall back to a page-wide search only if the boxscore
+  // container isn't present (older single-team layouts).
+  const scoped = $('#teamMatchupFullBoxScore div.teamWrap.teamWrap-1').first()
+  const rows = scoped.length > 0
+    ? scoped.find('tr[class*="player-"]')
+    : $('tr[class*="player-"]')
 
-    const playerLink = row.find('a.playerName').first()
+  // NFL.com encodes the slot in the row class itself: <tr class="player-{SLOT}-{N}">
+  // where SLOT is "QB" / "RB" / "WR" / "TE" / "W/R" (flex) / "K" / "DEF" / "BN" / "IR".
+  // The slot text also appears in <td.teamPosition><span class="final">QB</span></td>.
+  // We pull from the class first (most reliable; works even for empty starter
+  // slots where the cell text is dim) and fall back to the cell.
+  // Columns per row:
+  //   td.teamPosition       → slot text (also in row class)
+  //   td.playerNameAndInfo  → <a class="playerName playerNameId-N">Name</a> <em>POS - TEAM</em>
+  //   td.stat.statTotal     → <span class="playerTotal …">23.22</span>  (blank for unplayed)
+  rows.each((_, tr) => {
+    const row = $(tr)
+    const cls = row.attr('class') || ''
+    // The row class is `player-{SLOT}-{N}` but we have to be careful: the SLOT
+    // can contain a slash ("W/R") and the trailing number is what marks the
+    // ordinal within the slot. Match greedy up to the LAST hyphen.
+    const slotMatch = cls.match(/player-([A-Z/]+)-\d+/i)
+    if (!slotMatch) return
+    let slot = slotMatch[1]!.toUpperCase()
+    // Fall back to the visible cell if the regex somehow misses.
+    if (!slot) {
+      const slotText = row.find('td.teamPosition span').first().text().trim()
+      slot = slotText.toUpperCase()
+    }
+
+    const playerLink = row.find('a[class*="playerNameId-"]').first()
     const full_name = playerLink.text().trim()
     if (!full_name) {
-      // Empty slot ("--" row). Skip — no player to record.
+      // Empty slot (no player started here). Skip — there's no row to record.
       return
     }
-    const cls = playerLink.attr('class') || ''
-    const idMatch = cls.match(/playerNameId-(\d+)/)
+    const pCls = playerLink.attr('class') || ''
+    const idMatch = pCls.match(/playerNameId-(\d+)/)
     const player_external_id = idMatch ? idMatch[1]! : full_name // fallback so the unique key still works
 
     let position: string | null = null
     let nfl_team: string | null = null
-    const meta = row.find('em').first().text().trim()
+    const meta = row.find('td.playerNameAndInfo em').first().text().trim()
     const metaMatch = meta.match(/([A-Z]{1,4})\s*[-–]\s*([A-Z]{2,4})/)
     if (metaMatch) { position = metaMatch[1]!; nfl_team = metaMatch[2]! }
-    else if (/^(DEF|DST|D\/ST)$/i.test(meta)) { position = 'DEF' }
+    else if (/^(DEF|DST|D\/ST)/i.test(meta)) { position = 'DEF' }
 
-    const totalText = row.find('.statTotal, td.statTotal').first().text().trim()
+    // Total fantasy points live in td.stat.statTotal > span.playerTotal.
+    // Blank for an unplayed/bye week — leave null in that case so callers
+    // can distinguish "scored zero" from "didn't play."
+    const totalText = row.find('td.statTotal .playerTotal, td.statTotal').first().text().trim()
     const parsed = parseFloat(totalText.replace(/,/g, ''))
     const points = Number.isFinite(parsed) ? parsed : null
 
