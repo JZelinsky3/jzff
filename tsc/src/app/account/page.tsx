@@ -4,6 +4,8 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getUserSubscription, isCompUser, TIER_LABELS } from '@/lib/stripe'
 import { AccountForms } from './account-forms'
+import { AccountNavMenu } from './account-nav-menu'
+import { MemberCodeChip } from './member-code-chip'
 
 export default async function AccountPage({
   searchParams,
@@ -39,14 +41,23 @@ export default async function AccountPage({
   // Count the user's leagues so the subscription card can show current usage
   // against the tier limit, and load the live subscription state from our
   // local mirror (last-known-good from Stripe webhooks).
-  const [{ count: leagueCount }, sub, profileRes] = await Promise.all([
+  // Fetch the owned-leagues list (for the nav menu) and the member code in one
+  // round-trip alongside the subscription. The same query covers both
+  // leagueCount (for the subscription card) and the nav-menu options below.
+  const [leaguesRes, sub, profileRes] = await Promise.all([
     supabase
       .from('leagues')
-      .select('id', { count: 'exact', head: true })
-      .eq('owner_id', user.id),
+      .select('slug, name, created_at')
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: false }),
     getUserSubscription(user.id),
     supabase.from('profiles').select('member_code').eq('id', user.id).single(),
   ])
+  const navLeagues = (leaguesRes.data ?? []).map((l) => ({
+    slug: l.slug as string,
+    name: l.name as string,
+  }))
+  const leagueCount = navLeagues.length
   const memberCode = (profileRes.data?.member_code as string | undefined) ?? ''
   // Provide tier label for the subscription card render; lib export is the
   // source of truth so we don't re-derive it in the client component.
@@ -65,7 +76,7 @@ export default async function AccountPage({
           <div className="nav-kicker">Account</div>
           <div className="nav-title">Your <em>profile.</em></div>
         </div>
-        <span className="dc-nav-icon" aria-hidden style={{ visibility: 'hidden' }} />
+        <AccountNavMenu leagues={navLeagues} />
       </nav>
 
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
@@ -78,14 +89,19 @@ export default async function AccountPage({
           and (eventually) handle your subscription.
         </p>
         <div className="hero-meta">
-          {user.email} · {leagueCount ?? 0} {(leagueCount ?? 0) === 1 ? 'league' : 'leagues'} on file
+          {user.email} · {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'} on file
         </div>
+        {memberCode && (
+          <div style={{ textAlign: 'center' }}>
+            <MemberCodeChip code={memberCode} />
+          </div>
+        )}
       </section>
 
       <AccountForms
         email={user.email ?? ''}
         marketingOptIn={marketingOptIn}
-        leagueCount={leagueCount ?? 0}
+        leagueCount={leagueCount}
         isOAuth={isOAuth}
         providerLabel={providerLabel}
         hasPassword={hasPassword}
@@ -101,7 +117,6 @@ export default async function AccountPage({
         } : null}
         lifetime={lifetime}
         justSubscribed={justSubscribed}
-        memberCode={memberCode}
       />
 
       <SiteFooter />

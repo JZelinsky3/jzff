@@ -27,7 +27,6 @@ export function AccountForms({
   subscription,
   lifetime,
   justSubscribed,
-  memberCode,
 }: {
   email: string
   marketingOptIn: boolean
@@ -39,7 +38,6 @@ export function AccountForms({
   subscription: SubscriptionSummary | null
   lifetime: boolean
   justSubscribed: boolean
-  memberCode: string
 }) {
   // Section numbers shift depending on whether the OAuth-branch ("backup email")
   // or the password-branch ("email change + password") is rendered. Just
@@ -55,20 +53,11 @@ export function AccountForms({
         <SubscriptionCard leagueCount={leagueCount} subscription={subscription} lifetime={lifetime} justSubscribed={justSubscribed} />
       </div>
 
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 02 · Member code</span>
-          <span className="section-title">Your press pass —</span>
-          <span className="section-meta">Permanent, unique to you</span>
-        </div>
-        <MemberCodeCard code={memberCode} />
-      </div>
-
       {isOAuth ? (
         <div className="dc-account-pair">
           <div className="section dc-account-col">
             <div className="section-header">
-              <span className="section-num">§ 03 · Backup email</span>
+              <span className="section-num">§ 02 · Backup email</span>
               <span className="section-title">In case {providerLabel} access is lost —</span>
               <span className="section-meta">Optional</span>
             </div>
@@ -76,7 +65,7 @@ export function AccountForms({
           </div>
           <div className="section dc-account-col">
             <div className="section-header">
-              <span className="section-num">§ 04 · Communication</span>
+              <span className="section-num">§ 03 · Communication</span>
               <span className="section-title">What we send you —</span>
               <span className="section-meta">Off by default for billing</span>
             </div>
@@ -88,7 +77,7 @@ export function AccountForms({
           <div className="dc-account-pair">
             <div className="section dc-account-col">
               <div className="section-header">
-                <span className="section-num">§ 03 · Email</span>
+                <span className="section-num">§ 02 · Email</span>
                 <span className="section-title">Sign-in address —</span>
                 <span className="section-meta">Magic links go here</span>
               </div>
@@ -97,7 +86,7 @@ export function AccountForms({
 
             <div className="section dc-account-col">
               <div className="section-header">
-                <span className="section-num">§ 04 · Password</span>
+                <span className="section-num">§ 03 · Password</span>
                 <span className="section-title">
                   {hasPassword ? 'Password —' : 'Set a password —'}
                 </span>
@@ -111,7 +100,7 @@ export function AccountForms({
 
           <div className="section">
             <div className="section-header">
-              <span className="section-num">§ 05 · Communication</span>
+              <span className="section-num">§ 04 · Communication</span>
               <span className="section-title">What we send you —</span>
               <span className="section-meta">Off by default for billing</span>
             </div>
@@ -122,7 +111,7 @@ export function AccountForms({
 
       <div className="section">
         <div className="section-header">
-          <span className="section-num">§ {isOAuth ? '05' : '06'} · Sign out</span>
+          <span className="section-num">§ {isOAuth ? '04' : '05'} · Sign out</span>
           <span className="section-title">See you next time —</span>
           <span className="section-meta">Ends this session</span>
         </div>
@@ -137,52 +126,6 @@ export function AccountForms({
         </form>
       </div>
     </>
-  )
-}
-
-// ─── Member code card ─────────────────────────────────────────────────────
-// Read-only display of the user's permanent member code, with a copy button.
-// Used as the handle for promo grants — share with admin instead of email.
-
-function MemberCodeCard({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false)
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(code)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
-    } catch {
-      // clipboard blocked — fall back to selecting the text
-      const el = document.getElementById('dc-member-code') as HTMLInputElement | null
-      el?.select()
-    }
-  }
-
-  return (
-    <div className="dc-card-row" style={{ alignItems: 'flex-start' }}>
-      <div style={{ flex: 1, minWidth: '14rem' }}>
-        <div className="dc-field" style={{ marginBottom: '.4rem' }}>
-          <label className="dc-label">Code</label>
-          <input
-            id="dc-member-code"
-            value={code}
-            readOnly
-            onFocus={(e) => e.currentTarget.select()}
-            className="dc-input mono"
-            style={{ fontSize: '1.05rem', letterSpacing: '.15em', textAlign: 'center' }}
-          />
-        </div>
-        <div style={{ opacity: 0.65, fontSize: '.82rem', lineHeight: 1.5 }}>
-          Share this code when redeeming a promo or asking for a comp — it's
-          faster than digging up which email you signed up with. Generated once
-          on signup and never changes.
-        </div>
-      </div>
-      <button type="button" onClick={copy} className="dc-btn">
-        {copied ? 'Copied ✓' : 'Copy code'}
-      </button>
-    </div>
   )
 }
 
