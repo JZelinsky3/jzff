@@ -5504,6 +5504,17 @@ function buildManagerDna(s: Snapshot): unknown {
     const blowWinRate = signals.blowout_games > 0 ? signals.blowout_record.w / signals.blowout_games : null
 
     const candidates: Candidate[] = []
+    // Strength is normalized as `actual / threshold` — the ratio of the
+    // manager's signal to the bar it had to clear to qualify. 1.0 = exactly
+    // at the threshold, 2.0 = double the threshold, etc. This lets every
+    // archetype's strength be compared on the same scale, so the one a
+    // manager exceeds by the largest relative margin is the best descriptor
+    // (e.g. someone 56% past a 25% bar beats someone 36% past a 25% bar, and
+    // also beats someone 50% past a 40% bar). Previously each candidate had
+    // its own ad-hoc formula on a different scale — Cardiac Kid started at
+    // 1.85 and Anchor QB maxed at 1.40, so the close-game winner basically
+    // always won the tiebreak even when a deep QB-anchor manager was much
+    // further past their own bar.
     // Trade Hawk / Vault
     if (signals.trades_per_season != null && z_trade >= 1.0) {
       candidates.push({
@@ -5511,7 +5522,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Trade Hawk',
         tagline: 'Always on the phone',
         blurb: `Trades at ${signals.trades_per_season.toFixed(1)} deals per season — well above league baseline. The roster is never finished.`,
-        strength: Math.abs(z_trade) + 0.3,
+        strength: z_trade / 1.0,
       })
     }
     // The Vault — strictly under one trade per season on average. Used to
@@ -5531,8 +5542,9 @@ function buildManagerDna(s: Snapshot): unknown {
         blurb: signals.trades_total === 0
           ? `Zero completed trades across ${signals.career_seasons} season${signals.career_seasons === 1 ? '' : 's'}. What's drafted is what's kept.`
           : `Only ${signals.trades_total} trade${signals.trades_total === 1 ? '' : 's'} across ${signals.career_seasons} seasons (${tradeRate}/yr) — well under one a year. Drafts the roster and lives with it.`,
-        // Stronger the closer they sit to zero trades, capped at 2.0.
-        strength: Math.min(2.0, 1.5 + (signals.career_seasons - signals.trades_total) / signals.career_seasons),
+        // Threshold = 1 trade/season. Headroom = how far below that they
+        // actually sit. 0 trades → ∞ in the limit, so cap at 2.0.
+        strength: Math.min(2.0, 1 / Math.max(0.25, signals.trades_total / signals.career_seasons)),
       })
     }
     // Optimizer / Reactionary / Set-and-Forget
@@ -5542,7 +5554,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Optimizer',
         tagline: 'Squeezes every last point',
         blurb: `Career lineup efficiency of ${signals.efficiency_pct.toFixed(1)}% — top of the league at starting the right names.`,
-        strength: Math.abs(z_eff) + 0.2,
+        strength: z_eff / 1.0,
       })
     }
     if (signals.lineup_churn_pct != null && z_churn >= 1.2) {
@@ -5551,7 +5563,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Tinkerer',
         tagline: 'Lineup is never finished',
         blurb: `Swaps ~${signals.lineup_churn_pct.toFixed(0)}% of starters week to week. The roster shifts constantly.`,
-        strength: Math.abs(z_churn),
+        strength: z_churn / 1.2,
       })
     }
     if (signals.lineup_churn_pct != null && z_churn <= -1.0 && (signals.efficiency_pct == null || z_eff <= 0.2)) {
@@ -5560,7 +5572,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Set-and-Forget',
         tagline: 'Drafted in August, started in January',
         blurb: `Touches the lineup the least in the league — only ~${(signals.lineup_churn_pct ?? 0).toFixed(0)}% turnover week to week.`,
-        strength: Math.abs(z_churn) + 0.1,
+        strength: Math.abs(z_churn) / 1.0,
       })
     }
     // Coin Flipper / Steady Hand
@@ -5570,7 +5582,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Coin-Flipper',
         tagline: 'Boom one week, bust the next',
         blurb: `Score swings ±${signals.volatility_pct.toFixed(0)}% week to week — most volatile output in the league.`,
-        strength: Math.abs(z_vol),
+        strength: z_vol / 1.2,
       })
     }
     if (signals.volatility_pct != null && z_vol <= -1.0) {
@@ -5579,7 +5591,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Steady Hand',
         tagline: 'Same number every week',
         blurb: `Lowest week-to-week swing in the league — predictable ${signals.pf_per_game?.toFixed(0) ?? '—'} most Sundays.`,
-        strength: Math.abs(z_vol),
+        strength: Math.abs(z_vol) / 1.0,
       })
     }
     // Cardiac / Heartbreaker
@@ -5589,7 +5601,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Cardiac Kid',
         tagline: 'Lives in one-score games',
         blurb: `${signals.close_record.w}–${signals.close_record.l}${signals.close_record.t ? `–${signals.close_record.t}` : ''} in games decided by ≤5 pts. Refuses to lose close.`,
-        strength: 1.2 + closeWinRate,
+        strength: closeWinRate / 0.65,
       })
     }
     if (closeWinRate != null && signals.close_games >= 6 && closeWinRate <= 0.35) {
@@ -5598,7 +5610,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Heartbreaker',
         tagline: 'Cursed by the photo finish',
         blurb: `${signals.close_record.w}–${signals.close_record.l}${signals.close_record.t ? `–${signals.close_record.t}` : ''} in games decided by ≤5 pts. The margin gods are not friends.`,
-        strength: 1.2 + (1 - closeWinRate),
+        strength: (1 - closeWinRate) / 0.65,
       })
     }
     // Steamroller / Punching Bag
@@ -5608,7 +5620,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Steamroller',
         tagline: 'When they win, they win big',
         blurb: `${signals.blowout_record.w}–${signals.blowout_record.l} in ≥30-pt games. No cruise control — pedal stays floored.`,
-        strength: 1.1 + blowWinRate,
+        strength: blowWinRate / 0.70,
       })
     }
     // Zero-RB / Hog Mollie / Anchor QB / TE Premium
@@ -5618,7 +5630,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Zero-RB Prophet',
         tagline: 'Pass-catchers first, RBs later',
         blurb: `Only ${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — well below the league norm. Believer in the WR-first build.`,
-        strength: Math.abs(z_rb),
+        strength: Math.abs(z_rb) / 1.0,
       })
     }
     if (signals.draft_rb_share_pct != null && z_rb >= 1.2 && bundle.first5Picks.length >= 5) {
@@ -5627,7 +5639,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Hog Mollie',
         tagline: 'RBs first, RBs always',
         blurb: `${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — the most run-heavy build in the league.`,
-        strength: Math.abs(z_rb),
+        strength: z_rb / 1.2,
       })
     }
     // Anchor QB — requires a top-3-round QB in at least 40% of drafts on
@@ -5645,7 +5657,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The Anchor QB',
         tagline: 'Locks the position early',
         blurb: `Has reached for a QB inside the first three rounds in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts on file. Refuses to play the streamer's game.`,
-        strength: 0.9 + signals.draft_qb_early_pct / 200,  // 40% → 1.10, 100% → 1.40
+        strength: signals.draft_qb_early_pct / 40,  // 40% → 1.0, 100% → 2.5
       })
     }
     // TE Premium — same shape as Anchor QB but the position is rarer
@@ -5660,7 +5672,7 @@ function buildManagerDna(s: Snapshot): unknown {
         name: 'The TE Premium',
         tagline: 'Pays the elite-TE tax',
         blurb: `Has spent a top-4-round pick on a TE in ${signals.draft_te_early_pct.toFixed(0)}% of drafts on file. Willing to corner the position rather than chase it.`,
-        strength: 0.8 + signals.draft_te_early_pct / 200,  // 25% → 0.925, 100% → 1.30
+        strength: signals.draft_te_early_pct / 25,  // 25% → 1.0, 100% → 4.0
       })
     }
 
