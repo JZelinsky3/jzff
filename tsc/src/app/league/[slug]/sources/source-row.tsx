@@ -253,7 +253,7 @@ export function SourceRow({
               <button
                 onClick={() => setEditing((v) => !v)}
                 disabled={busy !== null || isPending}
-                className="dc-btn"
+                className="dc-btn-ghost"
                 style={{
                   padding: '.7rem .25rem',
                   fontSize: '.75rem',
