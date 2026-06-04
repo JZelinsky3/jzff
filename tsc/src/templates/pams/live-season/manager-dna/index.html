@@ -281,6 +281,332 @@ main { position: relative; z-index: 1; }
     color: var(--dna-cream);
 }
 
+/* ── GENOME MAP — 2-axis scatter of the league ──────────────── */
+.dna-genome-map {
+    margin-bottom: 3rem;
+    background: var(--dna-bg-soft);
+    border: 1px solid var(--dna-line);
+    border-radius: 4px;
+    padding: 1.5rem 1.75rem 1.6rem;
+    position: relative;
+}
+.dna-genome-map-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+}
+.dna-genome-map-num {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--dna-cyan);
+}
+.dna-genome-map-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.4rem;
+    color: var(--dna-cream);
+}
+.dna-genome-map-title em { color: var(--dna-magenta); font-style: italic; }
+.dna-genome-map-note {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+}
+.dna-genome-svg {
+    width: 100%;
+    height: 360px;
+    display: block;
+}
+.dna-genome-axis-line { stroke: var(--dna-line); stroke-width: 1; }
+.dna-genome-baseline  { stroke: rgba(232, 200, 137, .35); stroke-width: 1; stroke-dasharray: 4 4; }
+.dna-genome-grid      { stroke: var(--dna-line-soft); stroke-width: 1; }
+.dna-genome-axis-lbl {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    fill: var(--dna-cream-soft);
+}
+.dna-genome-axis-end {
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    fill: var(--dna-mute);
+}
+.dna-genome-pt-dot { fill: var(--dna-cyan); stroke: rgba(12, 13, 24, .9); stroke-width: 2; transition: fill .2s, r .2s; }
+.dna-genome-pt-lbl {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 11px;
+    fill: var(--dna-cream);
+    pointer-events: none;
+}
+.dna-genome-pt:hover .dna-genome-pt-dot { fill: var(--dna-magenta); }
+.dna-genome-pt { cursor: pointer; }
+.dna-genome-empty {
+    padding: 2rem;
+    text-align: center;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--dna-mute);
+}
+@media (max-width: 620px) {
+    .dna-genome-svg { height: 300px; }
+    .dna-genome-pt-lbl { font-size: 10px; }
+}
+
+/* ── DOPPELGÄNGERS — closest-pair card ──────────────────────── */
+.dna-doppel-wrap {
+    margin-bottom: 3rem;
+    background: var(--dna-bg-soft);
+    border: 1px solid var(--dna-line);
+    border-radius: 4px;
+    padding: 1.4rem 1.6rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.dna-doppel-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--dna-magenta), var(--dna-cyan));
+}
+.dna-doppel-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+.dna-doppel-num {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--dna-magenta);
+}
+.dna-doppel-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.4rem;
+    color: var(--dna-cream);
+}
+.dna-doppel-title em { color: var(--dna-cyan); font-style: italic; }
+.dna-doppel-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+.dna-doppel-row {
+    padding: .9rem 1rem;
+    background: var(--dna-card);
+    border: 1px solid var(--dna-line);
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+}
+.dna-doppel-pair {
+    display: flex;
+    align-items: baseline;
+    gap: .4rem;
+    flex-wrap: wrap;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--dna-cream);
+    line-height: 1.15;
+}
+.dna-doppel-pair-amp {
+    color: var(--dna-magenta);
+    font-style: normal;
+    font-weight: 400;
+}
+.dna-doppel-meta {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+}
+.dna-doppel-meta strong { color: var(--dna-cyan); font-weight: 600; }
+
+/* ── COMPARE — toggle on each card + side-by-side panel ─────── */
+.dna-compare-toggle {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: .2rem .55rem;
+    background: transparent;
+    border: 1px solid rgba(79, 209, 255, .25);
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: .52rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--dna-cyan);
+    cursor: pointer;
+    transition: background .2s, color .2s, border-color .2s;
+}
+.dna-compare-toggle:hover {
+    background: rgba(79, 209, 255, .1);
+    border-color: rgba(79, 209, 255, .55);
+}
+.dna-card.is-comparing {
+    border-color: rgba(255, 93, 177, .55);
+    box-shadow: 0 0 0 1px rgba(255, 93, 177, .35), 0 14px 30px rgba(0, 0, 0, .28);
+}
+.dna-card.is-comparing .dna-compare-toggle {
+    background: rgba(255, 93, 177, .12);
+    border-color: rgba(255, 93, 177, .6);
+    color: var(--dna-magenta);
+}
+/* The specimen label row uses justify-content:space-between via flex; the
+   compare toggle sits between the seq code and the chevron, so we collapse
+   the label gap so the row reads as a unit. */
+.dna-specimen-lbl { flex-wrap: wrap; row-gap: .35rem; }
+
+.dna-compare-panel {
+    margin-bottom: 2rem;
+    background: var(--dna-bg-soft);
+    border: 1px solid rgba(255, 93, 177, .35);
+    border-radius: 4px;
+    padding: 1.4rem 1.6rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.dna-compare-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--dna-magenta), var(--dna-cyan));
+}
+.dna-compare-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+    flex-wrap: wrap;
+}
+.dna-compare-num {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--dna-magenta);
+}
+.dna-compare-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.4rem;
+    color: var(--dna-cream);
+}
+.dna-compare-title em { color: var(--dna-cyan); font-style: italic; }
+.dna-compare-close {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--dna-line);
+    border-radius: 2px;
+    padding: .3rem .65rem;
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+}
+.dna-compare-close:hover { color: var(--dna-cream); border-color: var(--dna-cream-soft); }
+.dna-compare-hint {
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+    margin-bottom: 1rem;
+}
+.dna-compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.4rem;
+    margin-bottom: 1.4rem;
+}
+@media (max-width: 620px) { .dna-compare-grid { grid-template-columns: 1fr; } }
+.dna-compare-col-name {
+    font-family: var(--serif);
+    font-size: 1.45rem;
+    color: var(--dna-cream);
+    line-height: 1.05;
+    margin-bottom: .25rem;
+}
+.dna-compare-col-arch {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+.dna-compare-col-arch.is-a { color: var(--dna-cyan); }
+.dna-compare-col-arch.is-b { color: var(--dna-magenta); }
+.dna-compare-rail {
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+}
+.dna-compare-sig {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .35rem;
+}
+.dna-compare-sig-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: .54rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+}
+.dna-compare-sig-lbl { color: var(--dna-mute); }
+.dna-compare-sig-vals { display: flex; gap: .65rem; }
+.dna-compare-sig-vals .va { color: var(--dna-cyan); font-weight: 600; }
+.dna-compare-sig-vals .vb { color: var(--dna-magenta); font-weight: 600; }
+.dna-compare-sig-bars {
+    display: flex;
+    height: 8px;
+    background: rgba(35, 40, 68, .8);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+.dna-compare-sig-bars .ba {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--wa, 0%);
+    height: 100%;
+    background: linear-gradient(90deg, var(--dna-cyan-deep), var(--dna-cyan));
+    transition: width .35s;
+}
+.dna-compare-sig-bars .bb {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: var(--wb, 0%);
+    height: 100%;
+    background: linear-gradient(270deg, var(--dna-magenta-deep), var(--dna-magenta));
+    transition: width .35s;
+}
+
 /* ── SPECIMEN GRID ──────────────────────────────────────────── */
 .dna-section-head {
     display: flex;
@@ -875,7 +1201,7 @@ main { position: relative; z-index: 1; }
     <!-- MASTHEAD -->
     <header class="dna-mast">
         <div class="dna-mast-sup">Genome Lab · Behavioral DNA</div>
-        <h1 class="dna-mast-title">Who's got the <em>strongest</em> strand?</h1>
+        <h1 class="dna-mast-title">Tested by the <em>league.</em></h1>
         <p class="dna-mast-sub">
             Every transaction, every lineup, every draft pick leaves a trace. We sequenced the league —
             here's what came back. Updates as the season writes new behavior.
@@ -894,12 +1220,41 @@ main { position: relative; z-index: 1; }
         <div class="dna-strand-baselines" id="dna-baselines"></div>
     </section>
 
+    <!-- GENOME MAP — 2-axis scatter of the active society -->
+    <section class="dna-genome-map" id="dna-genome-map" hidden>
+        <div class="dna-genome-map-head">
+            <span class="dna-genome-map-num">§ II · Genome Map</span>
+            <span class="dna-genome-map-title">The <em>spread.</em></span>
+            <span class="dna-genome-map-note" id="dna-genome-axes">—</span>
+        </div>
+        <div id="dna-genome-body"></div>
+    </section>
+
+    <!-- DOPPELGÄNGERS — closest strand neighbors -->
+    <section class="dna-doppel-wrap" id="dna-doppel" hidden>
+        <div class="dna-doppel-head">
+            <span class="dna-doppel-num">§ III · Doppelgängers</span>
+            <span class="dna-doppel-title">Same <em>strand,</em> different name.</span>
+        </div>
+        <div class="dna-doppel-list" id="dna-doppel-list"></div>
+    </section>
+
+    <!-- COMPARE — appears when 2 specimens are tagged -->
+    <section class="dna-compare-panel" id="dna-compare" hidden>
+        <div class="dna-compare-head">
+            <span class="dna-compare-num">§ IV · Side-by-Side</span>
+            <span class="dna-compare-title">Two <em>strands,</em> one comparison.</span>
+            <button class="dna-compare-close" id="dna-compare-close" type="button">Clear ×</button>
+        </div>
+        <div id="dna-compare-body"></div>
+    </section>
+
     <!-- SPECIMEN GRID -->
     <section>
         <div class="dna-section-head">
-            <span class="dna-section-num">§ II · Specimen Sheets</span>
+            <span class="dna-section-num">§ V · Specimen Sheets</span>
             <span class="dna-section-title">One <em>manager,</em> one strand.</span>
-            <span class="dna-strand-note">Tap any specimen to unseal the vault</span>
+            <span class="dna-strand-note">Tap any specimen to unseal the vault · Pin two with Compare to score them head-to-head</span>
         </div>
         <div class="dna-page-body">
             <aside class="dna-leaders" id="dna-leaders" hidden></aside>
@@ -1165,13 +1520,20 @@ main { position: relative; z-index: 1; }
         // rather than walking up directories.
         const profileHref = m.uid ? `managers/manager.html?id=${m.uid}` : null;
 
+        // Compare key — uid when we have one, otherwise fall back to the
+        // display name. Stable enough across re-renders and unique across
+        // current society (uids are user-account-scoped, names are unique
+        // within a single league export).
+        const cmpKey = m.uid ?? `name:${m.name}`;
+
         return `
-            <details class="dna-card">
+            <details class="dna-card" data-cmp-key="${escapeHtml(cmpKey)}">
                 <div class="dna-helix">${helixSvg(seedHash)}</div>
                 <summary class="dna-card-summary">
                     <div class="dna-specimen-lbl">
                         <span class="dna-specimen-lbl-num">SPECIMEN № ${num}</span>
                         <span class="dna-specimen-lbl-seq">${seq}</span>
+                        <button type="button" class="dna-compare-toggle" data-compare-toggle aria-pressed="false" title="Tag this specimen for side-by-side">+ Compare</button>
                         ${CHEV_SVG}
                     </div>
                     <div class="dna-barcode">${barcodeHtml(m.signals, seedHash)}</div>
@@ -1248,6 +1610,255 @@ main { position: relative; z-index: 1; }
         `).join('');
     }
 
+    // ─── Signal schema, shared by genome map / doppelgängers / compare ───
+    // For each signal we keep a "scale" — the value range used to normalize
+    // to 0..1 for distance math and to map onto bar widths or scatter axes —
+    // a display label, a formatter, and the league-baseline lookup key. The
+    // scales mirror the per-card signalBar maxes so visuals stay consistent
+    // across the page.
+    const DNA_SIGNAL_SPEC = {
+        efficiency_pct:    { label: 'Efficiency',    short: 'Eff',    min: 50,  max: 100, base: 70, higherIsBetter: true,  bipolar: false, fmt: (v) => `${v.toFixed(1)}%` },
+        lineup_churn_pct:  { label: 'Lineup Churn',  short: 'Churn',  min: 0,   max: 60,  base: 18, higherIsBetter: false, bipolar: false, fmt: (v) => `${v.toFixed(1)}%` },
+        volatility_pct:    { label: 'Volatility',    short: 'Vol',    min: 5,   max: 50,  base: 20, higherIsBetter: false, bipolar: false, fmt: (v) => `±${v.toFixed(1)}%` },
+        avg_margin_pts:    { label: 'Margin / game', short: 'Margin', min: -10, max: 10,  base: 0,  higherIsBetter: true,  bipolar: true,  fmt: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}` },
+        clutch_win_pct:    { label: 'Clutch (≤5pt)', short: 'Clutch', min: 0,   max: 100, base: 50, higherIsBetter: true,  bipolar: false, fmt: (v) => `${v.toFixed(1)}%` },
+        trades_per_season: { label: 'Trades / yr',   short: 'Trade',  min: 0,   max: 4,   base: 1.2, higherIsBetter: true,  bipolar: false, fmt: (v) => `${v.toFixed(1)}/yr` },
+    };
+
+    // Normalize value to [0,1] over its signal's scale; null in → null out.
+    function normSignal(key, v) {
+        if (v == null) return null;
+        const spec = DNA_SIGNAL_SPEC[key];
+        if (!spec) return null;
+        return Math.max(0, Math.min(1, (v - spec.min) / (spec.max - spec.min)));
+    }
+
+    // List of signal keys at least `minCount` managers have a value for.
+    function signalKeysWithCoverage(current, minCount) {
+        const keys = [];
+        for (const k of Object.keys(DNA_SIGNAL_SPEC)) {
+            const n = current.filter((m) => m.signals[k] != null).length;
+            if (n >= minCount) keys.push(k);
+        }
+        return keys;
+    }
+
+    // Pick two complementary axes for the genome map. Preference order
+    // mirrors the editorial value of the signal (efficiency tells the most
+    // story; churn is great too but null on NFL leagues; margin × clutch
+    // is the universal fallback because it's matchup-derived).
+    function pickGenomeAxes(current) {
+        const have = new Set(signalKeysWithCoverage(current, 2));
+        const preferred = [
+            ['efficiency_pct',   'volatility_pct'],
+            ['efficiency_pct',   'lineup_churn_pct'],
+            ['avg_margin_pts',   'clutch_win_pct'],
+            ['volatility_pct',   'avg_margin_pts'],
+            ['trades_per_season','efficiency_pct'],
+            ['trades_per_season','clutch_win_pct'],
+        ];
+        for (const [x, y] of preferred) {
+            if (have.has(x) && have.has(y)) return [x, y];
+        }
+        return null;
+    }
+
+    // First two letters of the first two words — capped at 2 chars so the
+    // dot labels never get pushed off the scatter plot.
+    function initialsOf(name) {
+        if (!name) return '??';
+        const parts = name.trim().split(/\s+/);
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+
+    // ─── Genome map — 2-axis scatter rendered as inline SVG ────────────
+    function renderGenomeMap(current, baselines) {
+        const axes = pickGenomeAxes(current);
+        if (!axes) return null;
+        const [xKey, yKey] = axes;
+        const xSpec = DNA_SIGNAL_SPEC[xKey];
+        const ySpec = DNA_SIGNAL_SPEC[yKey];
+        const pts = current
+            .map((m) => ({
+                name: m.name,
+                cmpKey: m.uid ?? `name:${m.name}`,
+                x: m.signals[xKey],
+                y: m.signals[yKey],
+            }))
+            .filter((p) => p.x != null && p.y != null);
+        if (pts.length < 2) return null;
+
+        // Viewbox in user units; CSS sizes it responsively. Padding leaves
+        // room for axis labels at the edges.
+        const W = 760, H = 360;
+        const padL = 56, padR = 24, padT = 18, padB = 36;
+        const innerW = W - padL - padR;
+        const innerH = H - padT - padB;
+        const scaleX = (v) => padL + ((v - xSpec.min) / (xSpec.max - xSpec.min)) * innerW;
+        // SVG y grows downward; flip so higher values render up.
+        const scaleY = (v) => padT + (1 - (v - ySpec.min) / (ySpec.max - ySpec.min)) * innerH;
+
+        const xBase = baselines[xKey] ?? xSpec.base;
+        const yBase = baselines[yKey] ?? ySpec.base;
+        const xBaseClamped = Math.max(xSpec.min, Math.min(xSpec.max, xBase));
+        const yBaseClamped = Math.max(ySpec.min, Math.min(ySpec.max, yBase));
+
+        // Grid: divide each axis into thirds so the eye can group points
+        // into "low/mid/high" bins without a heavy gridline.
+        let grid = '';
+        for (let i = 1; i < 3; i++) {
+            const xx = padL + (innerW * i) / 3;
+            const yy = padT + (innerH * i) / 3;
+            grid += `<line class="dna-genome-grid" x1="${xx}" y1="${padT}" x2="${xx}" y2="${padT + innerH}" />`;
+            grid += `<line class="dna-genome-grid" x1="${padL}" y1="${yy}" x2="${padL + innerW}" y2="${yy}" />`;
+        }
+
+        // Plotted points — radius bumps slightly on hover via CSS for affordance.
+        const dotsAndLabels = pts.map((p) => {
+            const cx = scaleX(Math.max(xSpec.min, Math.min(xSpec.max, p.x)));
+            const cy = scaleY(Math.max(ySpec.min, Math.min(ySpec.max, p.y)));
+            const lblX = cx + 8;
+            const lblY = cy + 4;
+            return `
+                <g class="dna-genome-pt" data-cmp-key="${escapeHtml(p.cmpKey)}">
+                    <title>${escapeHtml(p.name)} · ${xSpec.short} ${xSpec.fmt(p.x)} · ${ySpec.short} ${ySpec.fmt(p.y)}</title>
+                    <circle class="dna-genome-pt-dot" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5"></circle>
+                    <text class="dna-genome-pt-lbl" x="${lblX.toFixed(1)}" y="${lblY.toFixed(1)}">${escapeHtml(initialsOf(p.name))}</text>
+                </g>
+            `;
+        }).join('');
+
+        const svg = `
+            <svg class="dna-genome-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Genome map scatter">
+                ${grid}
+                <line class="dna-genome-axis-line" x1="${padL}" y1="${padT + innerH}" x2="${padL + innerW}" y2="${padT + innerH}" />
+                <line class="dna-genome-axis-line" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + innerH}" />
+                <line class="dna-genome-baseline" x1="${scaleX(xBaseClamped).toFixed(1)}" y1="${padT}" x2="${scaleX(xBaseClamped).toFixed(1)}" y2="${padT + innerH}" />
+                <line class="dna-genome-baseline" x1="${padL}" y1="${scaleY(yBaseClamped).toFixed(1)}" x2="${padL + innerW}" y2="${scaleY(yBaseClamped).toFixed(1)}" />
+                <text class="dna-genome-axis-lbl" x="${padL + innerW / 2}" y="${H - 8}" text-anchor="middle">${escapeHtml(xSpec.label.toUpperCase())} →</text>
+                <text class="dna-genome-axis-lbl" transform="translate(14, ${padT + innerH / 2}) rotate(-90)" text-anchor="middle">${escapeHtml(ySpec.label.toUpperCase())} →</text>
+                <text class="dna-genome-axis-end" x="${padL}" y="${H - 22}">${escapeHtml(xSpec.fmt(xSpec.min))}</text>
+                <text class="dna-genome-axis-end" x="${padL + innerW}" y="${H - 22}" text-anchor="end">${escapeHtml(xSpec.fmt(xSpec.max))}</text>
+                <text class="dna-genome-axis-end" x="${padL - 6}" y="${padT + innerH}" text-anchor="end">${escapeHtml(ySpec.fmt(ySpec.min))}</text>
+                <text class="dna-genome-axis-end" x="${padL - 6}" y="${padT + 10}" text-anchor="end">${escapeHtml(ySpec.fmt(ySpec.max))}</text>
+                ${dotsAndLabels}
+            </svg>
+        `;
+        return { svg, xLabel: xSpec.label, yLabel: ySpec.label };
+    }
+
+    // ─── Doppelgängers — closest pairs by normalized signal distance ────
+    // Pairwise distance is Euclidean over the signals BOTH managers have.
+    // We weight by the number of overlapping signals so a 2-signal match
+    // doesn't beat out a 5-signal one purely by accident of sparse data.
+    function renderDoppelgangers(current) {
+        const sharedKeys = signalKeysWithCoverage(current, 2);
+        if (sharedKeys.length < 2 || current.length < 3) return null;
+        const pairs = [];
+        for (let i = 0; i < current.length; i++) {
+            for (let j = i + 1; j < current.length; j++) {
+                const a = current[i];
+                const b = current[j];
+                const overlap = [];
+                let sumSq = 0;
+                for (const k of sharedKeys) {
+                    const av = normSignal(k, a.signals[k]);
+                    const bv = normSignal(k, b.signals[k]);
+                    if (av == null || bv == null) continue;
+                    overlap.push(k);
+                    sumSq += (av - bv) ** 2;
+                }
+                if (overlap.length < 3) continue;
+                // Normalize so distances stay comparable across pairs with
+                // different overlap counts.
+                const dist = Math.sqrt(sumSq / overlap.length);
+                pairs.push({ a, b, dist, overlap });
+            }
+        }
+        if (pairs.length === 0) return null;
+        pairs.sort((p, q) => p.dist - q.dist);
+        const top = pairs.slice(0, 3);
+        // Score field reads "84/100 match" — easier to grok than a raw 0.x
+        // distance. 0 dist → 100, dist 0.5 → 50, dist >=1 → 0 (clamped).
+        const scoreOf = (d) => Math.round(Math.max(0, Math.min(100, (1 - d) * 100)));
+        return top.map((p) => `
+            <div class="dna-doppel-row">
+                <div class="dna-doppel-pair">
+                    <span>${escapeHtml(p.a.name)}</span>
+                    <span class="dna-doppel-pair-amp">≈</span>
+                    <span>${escapeHtml(p.b.name)}</span>
+                </div>
+                <div class="dna-doppel-meta">
+                    <strong>${scoreOf(p.dist)}/100</strong> match · ${p.overlap.length} signals
+                </div>
+                <div class="dna-doppel-meta" style="color: var(--dna-cream-soft); letter-spacing: .12em; text-transform: none; font-size: .68rem; font-family: var(--serif); font-style: italic;">
+                    ${escapeHtml(p.a.archetype.name)} <span style="color: var(--dna-mute);">·</span> ${escapeHtml(p.b.archetype.name)}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ─── Compare panel — paired side-by-side specimen sheets ───────────
+    function renderComparePanel(a, b, baselines) {
+        const SIG_ORDER = [
+            'efficiency_pct',
+            'clutch_win_pct',
+            'avg_margin_pts',
+            'volatility_pct',
+            'lineup_churn_pct',
+            'trades_per_season',
+        ];
+        const rails = SIG_ORDER.map((k) => {
+            const spec = DNA_SIGNAL_SPEC[k];
+            const av = a.signals[k];
+            const bv = b.signals[k];
+            if (av == null && bv == null) return '';
+            // For bipolar (margin), bars grow inward from each side toward
+            // center; for everything else they grow from each side toward
+            // the center too — but the width is value/max * 50. This makes
+            // big values from both managers visibly meet in the middle,
+            // which reads as "they're both high" without any extra labeling.
+            const range = spec.max - spec.min;
+            const widthOf = (v) => {
+                if (v == null) return 0;
+                const clamped = Math.max(spec.min, Math.min(spec.max, v));
+                return Math.max(0, Math.min(50, ((clamped - spec.min) / range) * 50));
+            };
+            const wa = widthOf(av);
+            const wb = widthOf(bv);
+            const fmtA = av == null ? '—' : spec.fmt(av);
+            const fmtB = bv == null ? '—' : spec.fmt(bv);
+            return `
+                <div class="dna-compare-sig">
+                    <div class="dna-compare-sig-head">
+                        <span class="dna-compare-sig-lbl">${escapeHtml(spec.label)}</span>
+                        <span class="dna-compare-sig-vals"><span class="va">${escapeHtml(fmtA)}</span><span class="vb">${escapeHtml(fmtB)}</span></span>
+                    </div>
+                    <div class="dna-compare-sig-bars">
+                        <div class="ba" style="--wa:${wa.toFixed(1)}%"></div>
+                        <div class="bb" style="--wb:${wb.toFixed(1)}%"></div>
+                    </div>
+                </div>
+            `;
+        }).filter(Boolean).join('');
+
+        return `
+            <div class="dna-compare-hint">Cyan = ${escapeHtml(a.name)} · Magenta = ${escapeHtml(b.name)} — bars grow inward from each side, meeting in the middle when both run high.</div>
+            <div class="dna-compare-grid">
+                <div>
+                    <div class="dna-compare-col-name">${escapeHtml(a.name)}</div>
+                    <div class="dna-compare-col-arch is-a">${escapeHtml(a.archetype.name)} — <span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(a.archetype.tagline)}</span></div>
+                </div>
+                <div>
+                    <div class="dna-compare-col-name">${escapeHtml(b.name)}</div>
+                    <div class="dna-compare-col-arch is-b">${escapeHtml(b.archetype.name)} — <span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(b.archetype.tagline)}</span></div>
+                </div>
+            </div>
+            <div class="dna-compare-rail">${rails}</div>
+        `;
+    }
+
     // Pick highest/lowest manager per signal across the current society. Skips
     // signals where < 2 managers have a value (no meaningful "leader" possible
     // with one data point). Keys are ordered so the column reads top-down from
@@ -1294,11 +1905,11 @@ main { position: relative; z-index: 1; }
         `;
         return `
             <div class="dna-leader-card is-high">
-                <div class="dna-leader-head">§ III · <em>Top</em> of the strand</div>
+                <div class="dna-leader-head">§ Va · <em>Top</em> of the strand</div>
                 <div class="dna-leader-list">${highs.map(row).join('')}</div>
             </div>
             <div class="dna-leader-card is-low">
-                <div class="dna-leader-head">§ IV · <em>Bottom</em> of the strand</div>
+                <div class="dna-leader-head">§ Vb · <em>Bottom</em> of the strand</div>
                 <div class="dna-leader-list">${lows.map(row).join('')}</div>
             </div>
         `;
@@ -1347,6 +1958,26 @@ main { position: relative; z-index: 1; }
                 strand.hidden = false;
             }
 
+            const baselines = data.league_baselines || {};
+
+            // Genome Map — 2-axis scatter. Hidden when fewer than two
+            // managers share both axes (e.g. brand-new league with sparse
+            // history) so we don't render a dot-less plot.
+            const mapEl = document.getElementById('dna-genome-map');
+            const mapPayload = renderGenomeMap(current, baselines);
+            if (mapPayload) {
+                document.getElementById('dna-genome-body').innerHTML = mapPayload.svg;
+                document.getElementById('dna-genome-axes').textContent = `X · ${mapPayload.xLabel.toUpperCase()} · Y · ${mapPayload.yLabel.toUpperCase()}`;
+                mapEl.hidden = false;
+            }
+
+            // Doppelgängers — closest signal-vector pairs.
+            const doppelHtml = renderDoppelgangers(current);
+            if (doppelHtml) {
+                document.getElementById('dna-doppel-list').innerHTML = doppelHtml;
+                document.getElementById('dna-doppel').hidden = false;
+            }
+
             // Genome Leaders rail — highest/lowest manager per signal.
             // Rendered before the grid so the layout reserves space for it on
             // wide screens (sidebar) without a render-flicker.
@@ -1375,6 +2006,92 @@ main { position: relative; z-index: 1; }
             } else {
                 grid.innerHTML = `<div class="dna-empty">No active managers found.</div>`;
             }
+
+            // Compare — pin up to two cards and render a side-by-side panel.
+            // Selection lives in this closure rather than on the DOM so the
+            // panel stays consistent if a render replaces a card (e.g.
+            // expand/collapse doesn't trigger one, but future refresh paths
+            // might). Looking up the manager record by cmpKey keeps us
+            // resilient to re-renders.
+            const compareSel = [];
+            const compareEl = document.getElementById('dna-compare');
+            const compareBody = document.getElementById('dna-compare-body');
+            const compareClose = document.getElementById('dna-compare-close');
+            const currentByKey = new Map();
+            for (const m of current) currentByKey.set(m.uid ?? `name:${m.name}`, m);
+
+            function refreshCompareUI() {
+                // Update each card's pressed state + visual highlight.
+                document.querySelectorAll('.dna-card[data-cmp-key]').forEach((card) => {
+                    const key = card.getAttribute('data-cmp-key');
+                    const on = compareSel.includes(key);
+                    card.classList.toggle('is-comparing', on);
+                    const btn = card.querySelector('[data-compare-toggle]');
+                    if (btn) {
+                        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+                        btn.textContent = on ? '✓ Tagged' : '+ Compare';
+                    }
+                });
+                if (compareSel.length === 2) {
+                    const a = currentByKey.get(compareSel[0]);
+                    const b = currentByKey.get(compareSel[1]);
+                    if (a && b) {
+                        compareBody.innerHTML = renderComparePanel(a, b, baselines);
+                        compareEl.hidden = false;
+                        compareEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        return;
+                    }
+                }
+                compareEl.hidden = true;
+                compareBody.innerHTML = '';
+            }
+
+            // Event delegation — clicking the compare toggle stops the
+            // <details> from opening/closing. Selecting a third card bumps
+            // the oldest selection (FIFO) so the user always sees the most-
+            // recent two specimens compared without having to clear first.
+            document.getElementById('dna-grid').addEventListener('click', (ev) => {
+                const btn = ev.target.closest('[data-compare-toggle]');
+                if (!btn) return;
+                ev.preventDefault();
+                ev.stopPropagation();
+                const card = btn.closest('.dna-card[data-cmp-key]');
+                if (!card) return;
+                const key = card.getAttribute('data-cmp-key');
+                const idx = compareSel.indexOf(key);
+                if (idx >= 0) {
+                    compareSel.splice(idx, 1);
+                } else {
+                    compareSel.push(key);
+                    if (compareSel.length > 2) compareSel.shift();
+                }
+                refreshCompareUI();
+            });
+
+            // Genome-map dot click → tag for compare. Lets the user steer
+            // the scatter's outliers straight into the comparison panel
+            // without having to scroll-find their card.
+            const genomeBody = document.getElementById('dna-genome-body');
+            if (genomeBody) {
+                genomeBody.addEventListener('click', (ev) => {
+                    const pt = ev.target.closest('.dna-genome-pt[data-cmp-key]');
+                    if (!pt) return;
+                    const key = pt.getAttribute('data-cmp-key');
+                    const idx = compareSel.indexOf(key);
+                    if (idx >= 0) {
+                        compareSel.splice(idx, 1);
+                    } else {
+                        compareSel.push(key);
+                        if (compareSel.length > 2) compareSel.shift();
+                    }
+                    refreshCompareUI();
+                });
+            }
+
+            compareClose.addEventListener('click', () => {
+                compareSel.length = 0;
+                refreshCompareUI();
+            });
 
             // Alumni list
             if (alumni.length > 0) {
