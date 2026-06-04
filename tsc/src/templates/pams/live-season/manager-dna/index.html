@@ -1770,14 +1770,36 @@ main { position: relative; z-index: 1; }
         const padL = 56, padR = 24, padT = 18, padB = 36;
         const innerW = W - padL - padR;
         const innerH = H - padT - padB;
-        const scaleX = (v) => padL + ((v - xSpec.min) / (xSpec.max - xSpec.min)) * innerW;
-        // SVG y grows downward; flip so higher values render up.
-        const scaleY = (v) => padT + (1 - (v - ySpec.min) / (ySpec.max - ySpec.min)) * innerH;
 
+        // League-relative axis bounds — the spread reads as "where this
+        // league actually landed" rather than against a hard-coded scale.
+        // Pad the league min/max by 5% of the range on each side so points
+        // don't sit pinned to the chart edges. Include the baseline value
+        // in the data so the dashed league-average line still falls inside
+        // the visible range even when every manager is above (or below) it.
+        // Falls back to the spec's static range only when the league sits
+        // at a single value with no spread.
+        function leagueBounds(values, spec, baseVal) {
+            const all = values.slice();
+            if (baseVal != null && Number.isFinite(baseVal)) all.push(baseVal);
+            if (all.length === 0) return { min: spec.min, max: spec.max };
+            let lo = Infinity, hi = -Infinity;
+            for (const v of all) { if (v < lo) lo = v; if (v > hi) hi = v; }
+            const range = hi - lo;
+            if (range === 0) return { min: spec.min, max: spec.max };
+            const pad = range * 0.05;
+            return { min: lo - pad, max: hi + pad };
+        }
         const xBase = baselines[xKey] ?? xSpec.base;
         const yBase = baselines[yKey] ?? ySpec.base;
-        const xBaseClamped = Math.max(xSpec.min, Math.min(xSpec.max, xBase));
-        const yBaseClamped = Math.max(ySpec.min, Math.min(ySpec.max, yBase));
+        const xBounds = leagueBounds(pts.map((p) => p.x), xSpec, xBase);
+        const yBounds = leagueBounds(pts.map((p) => p.y), ySpec, yBase);
+        const scaleX = (v) => padL + ((v - xBounds.min) / (xBounds.max - xBounds.min)) * innerW;
+        // SVG y grows downward; flip so higher values render up.
+        const scaleY = (v) => padT + (1 - (v - yBounds.min) / (yBounds.max - yBounds.min)) * innerH;
+
+        const xBaseClamped = Math.max(xBounds.min, Math.min(xBounds.max, xBase));
+        const yBaseClamped = Math.max(yBounds.min, Math.min(yBounds.max, yBase));
 
         // Grid: divide each axis into thirds so the eye can group points
         // into "low/mid/high" bins without a heavy gridline.
@@ -1791,8 +1813,8 @@ main { position: relative; z-index: 1; }
 
         // Plotted points — radius bumps slightly on hover via CSS for affordance.
         const dotsAndLabels = pts.map((p) => {
-            const cx = scaleX(Math.max(xSpec.min, Math.min(xSpec.max, p.x)));
-            const cy = scaleY(Math.max(ySpec.min, Math.min(ySpec.max, p.y)));
+            const cx = scaleX(Math.max(xBounds.min, Math.min(xBounds.max, p.x)));
+            const cy = scaleY(Math.max(yBounds.min, Math.min(yBounds.max, p.y)));
             const lblX = cx + 8;
             const lblY = cy + 4;
             return `
@@ -1813,10 +1835,10 @@ main { position: relative; z-index: 1; }
                 <line class="dna-genome-baseline" x1="${padL}" y1="${scaleY(yBaseClamped).toFixed(1)}" x2="${padL + innerW}" y2="${scaleY(yBaseClamped).toFixed(1)}" />
                 <text class="dna-genome-axis-lbl" x="${padL + innerW / 2}" y="${H - 8}" text-anchor="middle">${escapeHtml(xSpec.label.toUpperCase())} →</text>
                 <text class="dna-genome-axis-lbl" transform="translate(14, ${padT + innerH / 2}) rotate(-90)" text-anchor="middle">${escapeHtml(ySpec.label.toUpperCase())} →</text>
-                <text class="dna-genome-axis-end" x="${padL}" y="${H - 22}">${escapeHtml(xSpec.fmt(xSpec.min))}</text>
-                <text class="dna-genome-axis-end" x="${padL + innerW}" y="${H - 22}" text-anchor="end">${escapeHtml(xSpec.fmt(xSpec.max))}</text>
-                <text class="dna-genome-axis-end" x="${padL - 6}" y="${padT + innerH}" text-anchor="end">${escapeHtml(ySpec.fmt(ySpec.min))}</text>
-                <text class="dna-genome-axis-end" x="${padL - 6}" y="${padT + 10}" text-anchor="end">${escapeHtml(ySpec.fmt(ySpec.max))}</text>
+                <text class="dna-genome-axis-end" x="${padL}" y="${H - 22}">${escapeHtml(xSpec.fmt(xBounds.min))}</text>
+                <text class="dna-genome-axis-end" x="${padL + innerW}" y="${H - 22}" text-anchor="end">${escapeHtml(xSpec.fmt(xBounds.max))}</text>
+                <text class="dna-genome-axis-end" x="${padL - 6}" y="${padT + innerH}" text-anchor="end">${escapeHtml(ySpec.fmt(yBounds.min))}</text>
+                <text class="dna-genome-axis-end" x="${padL - 6}" y="${padT + 10}" text-anchor="end">${escapeHtml(ySpec.fmt(yBounds.max))}</text>
                 ${dotsAndLabels}
             </svg>
         `;

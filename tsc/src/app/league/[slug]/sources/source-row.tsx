@@ -224,9 +224,9 @@ export function SourceRow({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', width: '12rem', flexShrink: 0 }}>
           {/* Action column — 12rem wide so the four buttons read comfortably.
-              Custom + Settings share the filled treatment with Sync (they're
-              all "do a thing" actions); Remove stays ghost as the destructive
-              outlier. */}
+              Only Sync gets the filled treatment (primary action); Custom /
+              Settings / Remove all read as ghost buttons that hover into
+              their themes. */}
           <button
             onClick={onSync}
             disabled={busy !== null || isPending}
@@ -239,7 +239,7 @@ export function SourceRow({
             <button
               onClick={() => setCustomSyncOpen((v) => !v)}
               disabled={busy !== null || isPending}
-              className="dc-btn"
+              className="dc-btn-ghost"
               style={{
                 padding: '.7rem .25rem',
                 fontSize: '.75rem',

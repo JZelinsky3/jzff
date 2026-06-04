@@ -5710,14 +5710,14 @@ function buildManagerDna(s: Snapshot): unknown {
     if (
       signals.draft_qb_early_pct != null
       && signals.total_drafts >= 3
-      && signals.draft_qb_early_pct >= 40
+      && signals.draft_qb_early_pct >= 55
     ) {
       candidates.push({
         key: 'anchor_qb',
         name: 'The Anchor QB',
         tagline: 'Locks the position early',
         blurb: `Has reached for a QB inside the first three rounds in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts on file. Refuses to play the streamer's game.`,
-        strength: signals.draft_qb_early_pct / 40,  // 40% → 1.0, 100% → 2.5
+        strength: signals.draft_qb_early_pct / 55,  // 55% → 1.0, 100% → 1.82
       })
     }
     // TE Premium — same shape as Anchor QB. Bar was originally 25% (too
