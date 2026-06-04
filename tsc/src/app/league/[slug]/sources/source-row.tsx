@@ -62,13 +62,10 @@ export function SourceRow({
   // Custom sync panel — lets the commissioner pick which stages to refresh
   // instead of paying the full-sync runtime cost every time.
   const [customSyncOpen, setCustomSyncOpen] = useState(false)
-  // NFL.com can't supply per-week lineup data (platform limitation), so
-  // we disable that checkbox and exclude it from default selection there.
-  const lineupsSupported = source.platform !== 'nfl'
   const [stagesSelected, setStagesSelected] = useState<Record<StageKey, boolean>>({
     matchups: true,
     drafts: true,
-    lineups: lineupsSupported,
+    lineups: true,
     trades: true,
   })
   const toggleStage = (k: StageKey) => setStagesSelected((s) => ({ ...s, [k]: !s[k] }))
@@ -225,18 +222,18 @@ export function SourceRow({
               : 'never synced'}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
-          {/* Sync + Remove get trimmed horizontal padding so the whole
-              action column reads narrow — matching the compact width of
-              the Custom / Edit grid underneath — while keeping enough
-              vertical padding to stay easy to hit with a thumb. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', width: '6.25rem', flexShrink: 0 }}>
+          {/* Action column is hard-pinned narrow (6.25rem) so the source
+              metadata at left gets the breathing room. Buttons trade width
+              for height — taller padding keeps them easy to tap; labels
+              stack onto two lines when they don't fit one. */}
           <button
             onClick={onSync}
             disabled={busy !== null || isPending}
             className="dc-btn"
-            style={{ padding: '.55rem .55rem' }}
+            style={{ padding: '.75rem .3rem', fontSize: '.78rem', whiteSpace: 'nowrap' }}
           >
-            {busy === 'syncing' ? 'Syncing…' : 'Sync now →'}
+            {busy === 'syncing' ? 'Syncing…' : 'Sync →'}
           </button>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.35rem' }}>
             <button
@@ -244,8 +241,8 @@ export function SourceRow({
               disabled={busy !== null || isPending}
               className="dc-btn-ghost"
               style={{
-                padding: '.45rem .3rem',
-                fontSize: '.7rem',
+                padding: '.65rem .15rem',
+                fontSize: '.62rem',
                 lineHeight: 1.15,
                 whiteSpace: 'normal',
                 minWidth: 0,
@@ -261,8 +258,8 @@ export function SourceRow({
                 disabled={busy !== null || isPending}
                 className="dc-btn-ghost"
                 style={{
-                  padding: '.45rem .3rem',
-                  fontSize: '.7rem',
+                  padding: '.65rem .15rem',
+                  fontSize: '.62rem',
                   lineHeight: 1.15,
                   whiteSpace: 'normal',
                   minWidth: 0,
@@ -278,7 +275,7 @@ export function SourceRow({
             onClick={onDelete}
             disabled={busy !== null || isPending}
             className="dc-btn-ghost"
-            style={{ padding: '.55rem .55rem' }}
+            style={{ padding: '.7rem .3rem', fontSize: '.72rem' }}
           >
             Remove
           </button>
@@ -301,21 +298,13 @@ export function SourceRow({
                 <input type="checkbox" checked={stagesSelected.drafts} onChange={() => toggleStage('drafts')} />
                 <span><strong>Drafts</strong> — pick-by-pick results</span>
               </label>
-              <label className="dc-checkbox-row" style={{ opacity: lineupsSupported ? 1 : 0.5 }}>
+              <label className="dc-checkbox-row">
                 <input
                   type="checkbox"
                   checked={stagesSelected.lineups}
                   onChange={() => toggleStage('lineups')}
-                  disabled={!lineupsSupported}
                 />
-                <span>
-                  <strong>Weekly lineups</strong> — per-week starters &amp; bench
-                  {!lineupsSupported && (
-                    <em style={{ display: 'block', fontSize: '.7rem', opacity: 0.75, marginTop: '.1rem' }}>
-                      NFL.com doesn&apos;t preserve per-week lineup data in their archive.
-                    </em>
-                  )}
-                </span>
+                <span><strong>Weekly lineups</strong> — per-week starters &amp; bench</span>
               </label>
               <label className="dc-checkbox-row">
                 <input type="checkbox" checked={stagesSelected.trades} onChange={() => toggleStage('trades')} />
