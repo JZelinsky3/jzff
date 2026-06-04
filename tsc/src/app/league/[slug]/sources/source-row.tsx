@@ -225,14 +225,19 @@ export function SourceRow({
               : 'never synced'}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
-          <button onClick={onSync} disabled={busy !== null || isPending} className="dc-btn">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
+          {/* All four action buttons share a compact size so the column
+              doesn't dominate the row. Sync + Remove previously rendered at
+              the default .dc-btn / .dc-btn-ghost size and dwarfed the
+              Custom/Edit pair beside them. */}
+          <button
+            onClick={onSync}
+            disabled={busy !== null || isPending}
+            className="dc-btn"
+            style={{ padding: '.45rem .55rem', fontSize: '.7rem', lineHeight: 1.15 }}
+          >
             {busy === 'syncing' ? 'Syncing…' : 'Sync now →'}
           </button>
-          {/* Custom sync + Edit settings share one row to keep the column
-              from growing. Inner buttons shrink their font + allow a
-              line break so the two-row label fits without forcing the
-              column wider than "Sync now" / "Remove". */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.35rem' }}>
             <button
               onClick={() => setCustomSyncOpen((v) => !v)}
@@ -269,7 +274,12 @@ export function SourceRow({
               </button>
             )}
           </div>
-          <button onClick={onDelete} disabled={busy !== null || isPending} className="dc-btn-ghost">
+          <button
+            onClick={onDelete}
+            disabled={busy !== null || isPending}
+            className="dc-btn-ghost"
+            style={{ padding: '.45rem .55rem', fontSize: '.7rem', lineHeight: 1.15 }}
+          >
             Remove
           </button>
         </div>

@@ -949,7 +949,7 @@ body::before {
         .then(r => r.ok ? r.json() : null)
         .then(data => {
             if (!data || !data.managers || data.managers.length === 0) {
-                renderEmpty('No live season is flagged, and no completed season has weekly lineup data yet. Sync a league to chalk it up.');
+                renderEmpty('No weekly lineup data on file yet. NFL.com leagues don\'t qualify — their history archive returns the season\'s final roster for every week, so Best Coach can\'t score it. Mix in a Sleeper, ESPN, or Yahoo source (or sync a current Sleeper season) and the board will chalk itself.');
                 return;
             }
             yearEl.textContent = data.year ?? '—';

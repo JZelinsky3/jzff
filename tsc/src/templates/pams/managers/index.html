@@ -47,37 +47,42 @@
     gap: .55rem;
     margin-top: 1.5rem;
     padding: .55rem 1rem;
-    border: 1px solid rgba(79, 209, 255, .35);
-    background: linear-gradient(90deg, rgba(79, 209, 255, .06), rgba(255, 93, 177, .04));
+    border: 1px solid rgba(79, 209, 255, .22);
+    background: linear-gradient(90deg, rgba(79, 209, 255, .035), rgba(255, 93, 177, .025));
     border-radius: 999px;
     font-family: var(--mono);
     font-size: .62rem;
     letter-spacing: .22em;
     text-transform: uppercase;
-    color: #4fd1ff;
+    color: rgba(181, 185, 214, .85);
     text-decoration: none;
-    transition: border-color .25s, background .25s, transform .25s, box-shadow .25s;
+    transition: border-color .25s, background .25s, color .25s, transform .25s, box-shadow .25s;
 }
 .page-dna-cta:hover {
     transform: translateY(-1px);
-    border-color: rgba(79, 209, 255, .65);
-    background: linear-gradient(90deg, rgba(79, 209, 255, .12), rgba(255, 93, 177, .08));
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .35), 0 0 18px rgba(79, 209, 255, .15);
+    border-color: rgba(79, 209, 255, .55);
+    background: linear-gradient(90deg, rgba(79, 209, 255, .1), rgba(255, 93, 177, .07));
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .25), 0 0 18px rgba(79, 209, 255, .12);
     color: #82e0ff;
 }
 .page-dna-cta-helix {
     width: 12px;
     height: 12px;
     flex-shrink: 0;
+    opacity: .75;
+    transition: opacity .25s;
 }
+.page-dna-cta:hover .page-dna-cta-helix { opacity: 1; }
 .page-dna-cta-helix .pdc-strand-a { stroke: #4fd1ff; }
 .page-dna-cta-helix .pdc-strand-b { stroke: #ff5db1; }
 .page-dna-cta-arrow {
     font-family: var(--serif);
     font-style: italic;
-    color: #ff5db1;
+    color: rgba(255, 93, 177, .7);
     margin-left: .15rem;
+    transition: color .25s;
 }
+.page-dna-cta:hover .page-dna-cta-arrow { color: #ff5db1; }
 
 .sort-bar {
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 1.5rem;

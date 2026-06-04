@@ -5674,7 +5674,14 @@ function buildManagerDna(s: Snapshot): unknown {
         strength: 0,
       }
     } else {
-      candidates.sort((a, b) => b.strength - a.strength)
+      // Trade Hawk reads as "just another trader" when stamped on three or
+      // four cards. Demote it whenever another archetype fits — keep it as a
+      // fallback only when it's literally the manager's lone candidate.
+      candidates.sort((a, b) => {
+        if (a.key === 'trade_hawk' && b.key !== 'trade_hawk') return 1
+        if (b.key === 'trade_hawk' && a.key !== 'trade_hawk') return -1
+        return b.strength - a.strength
+      })
       archetype = candidates[0]
     }
 

@@ -34,6 +34,15 @@
     --dna-gold:         #e8c889;
 }
 
+/* Footer palette overrides — pull "BUILT BY jzFF · LU · SINCE MMXIX"
+   into the strand palette so the page ends on the same cyan/magenta
+   accents the masthead opens with, instead of the gold/cream default. */
+.site-footer {
+    color: rgba(79, 209, 255, .7);
+    border-top-color: var(--dna-line);
+}
+.site-footer em { color: var(--dna-magenta); }
+
 /* Nav + chapbar palette overrides */
 .nav { background: #0a0b15; border-bottom-color: var(--dna-line); }
 .nav-back, .nav-link { color: var(--dna-cyan); }
@@ -598,10 +607,17 @@ main { position: relative; z-index: 1; }
     inset: 0 auto 0 0;
     width: var(--w, 0%);
     background: linear-gradient(90deg, var(--dna-cyan-deep), var(--dna-cyan));
-    transition: width .4s;
+    transition: width .4s, left .4s, right .4s;
 }
 .dna-sig-fill.is-high { background: linear-gradient(90deg, var(--dna-cyan), var(--dna-lime)); }
 .dna-sig-fill.is-low  { background: linear-gradient(90deg, var(--dna-magenta-deep), var(--dna-amber)); }
+/* Bipolar fill — value of 0 sits at the center, positive grows right,
+   negative grows left. Used for margin where +/- both matter and a
+   strictly left-pinned bar would hide the polarity. */
+.dna-sig-fill.is-bipolar { inset: 0 auto 0 50%; width: var(--w, 0%); }
+.dna-sig-fill.is-bipolar.is-neg { inset: 0 50% 0 auto; }
+.dna-sig-fill.is-bipolar.is-high { background: linear-gradient(90deg, var(--dna-cyan-deep), var(--dna-lime)); }
+.dna-sig-fill.is-bipolar.is-low  { background: linear-gradient(270deg, var(--dna-magenta-deep), var(--dna-amber)); }
 /* Baseline marker — vertical tick at the league average so each bar
    reads as "where this manager sits vs the league," not just a raw value. */
 .dna-sig-mark {
@@ -712,6 +728,108 @@ main { position: relative; z-index: 1; }
     border: 1px solid var(--dna-line);
     border-radius: 4px;
 }
+.dna-legend-foot {
+    margin-top: 1rem;
+    padding-top: .9rem;
+    border-top: 1px dotted var(--dna-line);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .82rem;
+    line-height: 1.5;
+    color: var(--dna-mute);
+}
+
+/* ── GENOME LEADERS — extreme-value rail beside the specimen grid ─── */
+.dna-page-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.4rem;
+}
+.dna-leaders {
+    flex: 0 0 240px;
+    position: sticky;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.dna-page-body > .dna-grid { flex: 1 1 0; min-width: 0; }
+
+.dna-leader-card {
+    background: var(--dna-bg-soft);
+    border: 1px solid var(--dna-line);
+    border-radius: 4px;
+    padding: .85rem .95rem 1rem;
+    position: relative;
+    overflow: hidden;
+}
+.dna-leader-card.is-high::before,
+.dna-leader-card.is-low::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+}
+.dna-leader-card.is-high::before { background: linear-gradient(90deg, var(--dna-cyan), var(--dna-lime)); }
+.dna-leader-card.is-low::before  { background: linear-gradient(90deg, var(--dna-magenta), var(--dna-amber)); }
+.dna-leader-head {
+    font-family: var(--mono);
+    font-size: .56rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+    margin-bottom: .65rem;
+}
+.dna-leader-card.is-high .dna-leader-head em { color: var(--dna-lime); font-style: normal; }
+.dna-leader-card.is-low  .dna-leader-head em { color: var(--dna-amber); font-style: normal; }
+.dna-leader-list {
+    display: flex;
+    flex-direction: column;
+    gap: .42rem;
+}
+.dna-leader-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    column-gap: .55rem;
+    padding-bottom: .4rem;
+    border-bottom: 1px dotted var(--dna-line-soft);
+}
+.dna-leader-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.dna-leader-lbl {
+    font-family: var(--mono);
+    font-size: .52rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--dna-mute);
+    grid-column: 1 / -1;
+    margin-bottom: .1rem;
+}
+.dna-leader-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .88rem;
+    color: var(--dna-cream);
+    line-height: 1.1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dna-leader-val {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    color: var(--dna-cream);
+    font-weight: 600;
+}
+.dna-leader-card.is-high .dna-leader-val { color: var(--dna-lime); }
+.dna-leader-card.is-low  .dna-leader-val { color: var(--dna-amber); }
+@media (max-width: 920px) {
+    .dna-page-body { flex-direction: column; }
+    .dna-leaders { position: static; flex: 1 1 auto; width: 100%; flex-direction: row; flex-wrap: wrap; }
+    .dna-leader-card { flex: 1 1 220px; }
+}
 .dna-legend-head {
     font-family: var(--mono);
     font-size: .6rem;
@@ -757,7 +875,7 @@ main { position: relative; z-index: 1; }
     <!-- MASTHEAD -->
     <header class="dna-mast">
         <div class="dna-mast-sup">Genome Lab · Behavioral DNA</div>
-        <h1 class="dna-mast-title">Twelve managers. Twelve different <em>code.</em></h1>
+        <h1 class="dna-mast-title">Who's got the <em>strongest</em> strand?</h1>
         <p class="dna-mast-sub">
             Every transaction, every lineup, every draft pick leaves a trace. We sequenced the league —
             here's what came back. Updates as the season writes new behavior.
@@ -783,8 +901,11 @@ main { position: relative; z-index: 1; }
             <span class="dna-section-title">One <em>manager,</em> one strand.</span>
             <span class="dna-strand-note">Tap any specimen to unseal the vault</span>
         </div>
-        <div class="dna-grid" id="dna-grid">
-            <div class="dna-empty">Sequencing the league…</div>
+        <div class="dna-page-body">
+            <aside class="dna-leaders" id="dna-leaders" hidden></aside>
+            <div class="dna-grid" id="dna-grid">
+                <div class="dna-empty">Sequencing the league…</div>
+            </div>
         </div>
 
         <!-- ALUMNI — past members, name + archetype only -->
@@ -803,11 +924,11 @@ main { position: relative; z-index: 1; }
         <div class="dna-legend-grid">
             <div class="dna-legend-item">
                 <div class="dna-legend-name">EFF · Lineup Efficiency</div>
-                <div class="dna-legend-desc">% of optimal lineup actually started</div>
+                <div class="dna-legend-desc">% of optimal lineup actually started · Sleeper / ESPN / Yahoo only</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">CHURN · Weekly Turnover</div>
-                <div class="dna-legend-desc">% of starters changed vs prior week</div>
+                <div class="dna-legend-desc">% of starters changed vs prior week · Sleeper / ESPN / Yahoo only</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">VOL · Score Volatility</div>
@@ -817,6 +938,17 @@ main { position: relative; z-index: 1; }
                 <div class="dna-legend-name">TRADE · Trade Volume</div>
                 <div class="dna-legend-desc">Completed trades per season</div>
             </div>
+            <div class="dna-legend-item">
+                <div class="dna-legend-name">MARGIN · Avg Margin</div>
+                <div class="dna-legend-desc">Average margin of victory or defeat, points/game</div>
+            </div>
+            <div class="dna-legend-item">
+                <div class="dna-legend-name">CLUTCH · Close-Game Win %</div>
+                <div class="dna-legend-desc">Win rate in games decided by ≤5 points</div>
+            </div>
+        </div>
+        <div class="dna-legend-foot">
+            NFL.com leagues fall back to Margin and Clutch — NFL's history archive doesn't preserve per-week starters, so Eff and Churn can't be derived.
         </div>
     </section>
 
@@ -944,8 +1076,17 @@ main { position: relative; z-index: 1; }
     function signalBar(lbl, value, baseline, max, opts = {}) {
         if (value == null) return null;
         const fmt = opts.fmt || ((v) => `${v.toFixed(1)}%`);
-        const pctFill = Math.max(2, Math.min(100, (value / max) * 100));
-        const pctMark = Math.max(0, Math.min(100, (baseline / max) * 100));
+        // Bipolar bars (used for margin) grow outward from a centered 0.
+        // Half the bar's width on each side of center represents `max`, so the
+        // fill is |value/max| * 50, capped at 48% to keep a visible sliver of
+        // track on the dominant side.
+        const bipolar = opts.bipolar === true;
+        const pctFill = bipolar
+            ? Math.max(0, Math.min(48, (Math.abs(value) / max) * 50))
+            : Math.max(2, Math.min(100, (value / max) * 100));
+        const pctMark = bipolar
+            ? 50
+            : Math.max(0, Math.min(100, (baseline / max) * 100));
         // High/low classification — depends on whether higher is better.
         // For "good when high" (eff): >baseline = high. For "good when low"
         // (vol, churn): <baseline = high (positive). Use opts.higherIsBetter.
@@ -955,6 +1096,7 @@ main { position: relative; z-index: 1; }
             const isPositive = opts.higherIsBetter ? aboveBase : !aboveBase;
             cls = isPositive ? 'is-high' : 'is-low';
         }
+        const fillCls = [cls, bipolar ? 'is-bipolar' : '', bipolar && value < 0 ? 'is-neg' : ''].filter(Boolean).join(' ');
         return `
             <div class="dna-sig">
                 <div class="dna-sig-head">
@@ -962,7 +1104,7 @@ main { position: relative; z-index: 1; }
                     <span class="dna-sig-val ${cls}">${fmt(value)}</span>
                 </div>
                 <div class="dna-sig-bar">
-                    <div class="dna-sig-fill ${cls}" style="--w:${pctFill.toFixed(1)}%"></div>
+                    <div class="dna-sig-fill ${fillCls}" style="--w:${pctFill.toFixed(1)}%"></div>
                     <div class="dna-sig-mark" style="--m:${pctMark.toFixed(1)}%"></div>
                 </div>
             </div>
@@ -1001,9 +1143,11 @@ main { position: relative; z-index: 1; }
                 fmt: (v) => v.toFixed(1) + '/yr',
             }),
             // Fallbacks — both work on any platform that has matchup data.
-            // Avg margin: scaled by ±30pts (typical max). higher-is-better.
-            signalBar('Margin', m.signals.avg_margin_pts, baselines.avg_margin_pts || 0, 30, {
+            // Avg margin: scaled by ±10pts so a –1 league average sits near
+            // the baseline tick instead of pinned to the left edge.
+            signalBar('Margin', m.signals.avg_margin_pts, baselines.avg_margin_pts || 0, 10, {
                 higherIsBetter: true,
+                bipolar: true,
                 fmt: (v) => (v >= 0 ? '+' : '') + v.toFixed(1),
             }),
             // Clutch %: win rate in ≤5pt games. higher-is-better.
@@ -1104,6 +1248,59 @@ main { position: relative; z-index: 1; }
         `).join('');
     }
 
+    // Pick highest/lowest manager per signal across the current society. Skips
+    // signals where < 2 managers have a value (no meaningful "leader" possible
+    // with one data point). Keys are ordered so the column reads top-down from
+    // the most universally-available signals to the more specialized ones.
+    function renderLeaders(current) {
+        const fmtPct = (v) => `${v.toFixed(1)}%`;
+        const fmtPm  = (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`;
+        const fmtPer = (v) => `${v.toFixed(1)}/yr`;
+        const fmtVol = (v) => `±${v.toFixed(1)}%`;
+        // [signal key, label, formatter, "high-is-positive" boolean used for
+        // wording — true means high = brag, low = drag; false means low =
+        // brag (volatility, churn).]
+        const SIGNALS = [
+            { key: 'efficiency_pct',    high: 'Most Efficient',     low: 'Least Efficient', fmt: fmtPct },
+            { key: 'clutch_win_pct',    high: 'Best Clutch',        low: 'Worst Clutch',    fmt: fmtPct },
+            { key: 'avg_margin_pts',    high: 'Best Margin',        low: 'Worst Margin',    fmt: fmtPm  },
+            { key: 'lineup_churn_pct',  high: 'Most Churn',         low: 'Iron Lineup',     fmt: fmtPct },
+            { key: 'volatility_pct',    high: 'Most Volatile',      low: 'Steadiest',       fmt: fmtVol },
+            { key: 'trades_per_season', high: 'Most Active Trader', low: 'Fewest Trades',   fmt: fmtPer },
+        ];
+        const highs = [];
+        const lows = [];
+        for (const sig of SIGNALS) {
+            const rows = current
+                .map((m) => ({ name: m.name, v: m.signals[sig.key] }))
+                .filter((r) => r.v != null);
+            if (rows.length < 2) continue;
+            const hi = rows.reduce((a, b) => (b.v > a.v ? b : a));
+            const lo = rows.reduce((a, b) => (b.v < a.v ? b : a));
+            if (hi.name === lo.name) continue;
+            highs.push({ lbl: sig.high, name: hi.name, val: sig.fmt(hi.v) });
+            lows .push({ lbl: sig.low,  name: lo.name, val: sig.fmt(lo.v) });
+        }
+        if (highs.length === 0) return '';
+        const row = (r) => `
+            <div class="dna-leader-row">
+                <span class="dna-leader-lbl">${escapeHtml(r.lbl)}</span>
+                <span class="dna-leader-name">${escapeHtml(r.name)}</span>
+                <span class="dna-leader-val">${escapeHtml(r.val)}</span>
+            </div>
+        `;
+        return `
+            <div class="dna-leader-card is-high">
+                <div class="dna-leader-head">§ III · <em>Highest</em> on the strand</div>
+                <div class="dna-leader-list">${highs.map(row).join('')}</div>
+            </div>
+            <div class="dna-leader-card is-low">
+                <div class="dna-leader-head">§ IV · <em>Lowest</em> on the strand</div>
+                <div class="dna-leader-list">${lows.map(row).join('')}</div>
+            </div>
+        `;
+    }
+
     function renderBaselines(b) {
         // Drop baselines the league simply doesn't have — NFL-only leagues
         // get no efficiency / churn signals, so we hide those rows instead
@@ -1145,6 +1342,16 @@ main { position: relative; z-index: 1; }
                 document.getElementById('dna-tally').innerHTML = tallyHtml;
                 document.getElementById('dna-baselines').innerHTML = renderBaselines(data.league_baselines || {});
                 strand.hidden = false;
+            }
+
+            // Genome Leaders rail — highest/lowest manager per signal.
+            // Rendered before the grid so the layout reserves space for it on
+            // wide screens (sidebar) without a render-flicker.
+            const leadersEl = document.getElementById('dna-leaders');
+            const leadersHtml = renderLeaders(current);
+            if (leadersHtml) {
+                leadersEl.innerHTML = leadersHtml;
+                leadersEl.hidden = false;
             }
 
             // Specimen grid — current society only. Cards are distributed

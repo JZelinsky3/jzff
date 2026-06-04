@@ -61,8 +61,8 @@
     max-width: 720px;
     margin: 1rem auto 0;
     padding: 1.1rem 1.35rem 1.1rem 2.25rem;
-    background: linear-gradient(90deg, rgba(20, 23, 42, .65), rgba(20, 23, 42, .35));
-    border: 1px solid rgba(79, 209, 255, .28);
+    background: linear-gradient(90deg, rgba(20, 23, 42, .5), rgba(20, 23, 42, .25));
+    border: 1px solid rgba(79, 209, 255, .18);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -70,8 +70,8 @@
     content: '';
     position: absolute;
     top: 0; bottom: 0; left: 0;
-    width: 3px;
-    background: linear-gradient(180deg, #4fd1ff, #ff5db1);
+    width: 2px;
+    background: linear-gradient(180deg, rgba(79, 209, 255, .55), rgba(255, 93, 177, .45));
 }
 .profile-dna.is-locked {
     border-color: rgba(122, 131, 166, .25);
@@ -94,7 +94,7 @@
     font-size: .54rem;
     letter-spacing: .28em;
     text-transform: uppercase;
-    color: #4fd1ff;
+    color: rgba(79, 209, 255, .8);
 }
 .is-locked .pdna-lbl { color: var(--cream-mute); }
 .pdna-tier {
@@ -139,7 +139,7 @@
     font-size: .58rem;
     letter-spacing: .2em;
     text-transform: uppercase;
-    color: #ff5db1;
+    color: rgba(255, 93, 177, .8);
     margin-bottom: .6rem;
 }
 .is-locked .pdna-tagline { color: var(--cream-mute); }
@@ -177,19 +177,20 @@
     align-items: center;
     gap: .4rem;
     padding: .4rem .75rem;
-    background: rgba(79, 209, 255, .08);
-    border: 1px solid rgba(79, 209, 255, .35);
+    background: rgba(79, 209, 255, .04);
+    border: 1px solid rgba(79, 209, 255, .22);
     border-radius: 2px;
     font-family: var(--mono);
     font-size: .58rem;
     letter-spacing: .2em;
     text-transform: uppercase;
-    color: #4fd1ff;
+    color: rgba(181, 185, 214, .9);
     text-decoration: none;
-    transition: background .2s, color .2s;
+    transition: background .2s, color .2s, border-color .2s;
 }
 .pdna-cta:hover {
-    background: rgba(79, 209, 255, .16);
+    background: rgba(79, 209, 255, .14);
+    border-color: rgba(79, 209, 255, .5);
     color: #82e0ff;
 }
 .pdna-cta.is-locked {
