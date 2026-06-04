@@ -302,9 +302,9 @@ export default async function DashboardPage({
         ) : (
           <div className="card-grid dc-dashboard-grid">
             {leagues.map((l) => (
-              <div key={l.id} style={{ position: 'relative', display: 'flex' }}>
+              <div key={l.id} style={{ position: 'relative', display: 'flex', height: '100%' }}>
                 <LeagueCardMenu leagueId={l.id} leagueName={l.name} />
-                <Link href={`/league/${l.slug}`} className="card" style={{ flex: 1 }}>
+                <Link href={`/league/${l.slug}`} className="card" style={{ flex: 1, height: '100%' }}>
                   <div className="card-corner">{l.platform}</div>
                   <div className="card-roman">{l.name.charAt(0).toUpperCase()}</div>
                   <div className="card-title">
