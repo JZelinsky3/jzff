@@ -1260,13 +1260,16 @@ main { position: relative; z-index: 1; }
         // [signal key, label, formatter, "high-is-positive" boolean used for
         // wording — true means high = brag, low = drag; false means low =
         // brag (volatility, churn).]
+        // Labels stay neutral on signals where neither extreme is unambiguously
+        // "better" (volatility, churn, trades). Eff / Clutch / Margin are the
+        // only signals where high is plainly the brag.
         const SIGNALS = [
-            { key: 'efficiency_pct',    high: 'Most Efficient',     low: 'Least Efficient', fmt: fmtPct },
-            { key: 'clutch_win_pct',    high: 'Best Clutch',        low: 'Worst Clutch',    fmt: fmtPct },
-            { key: 'avg_margin_pts',    high: 'Best Margin',        low: 'Worst Margin',    fmt: fmtPm  },
-            { key: 'lineup_churn_pct',  high: 'Most Churn',         low: 'Iron Lineup',     fmt: fmtPct },
-            { key: 'volatility_pct',    high: 'Most Volatile',      low: 'Steadiest',       fmt: fmtVol },
-            { key: 'trades_per_season', high: 'Most Active Trader', low: 'Fewest Trades',   fmt: fmtPer },
+            { key: 'efficiency_pct',    label: 'Efficiency',     fmt: fmtPct },
+            { key: 'clutch_win_pct',    label: 'Clutch (≤5pt)',  fmt: fmtPct },
+            { key: 'avg_margin_pts',    label: 'Margin / game',  fmt: fmtPm  },
+            { key: 'lineup_churn_pct',  label: 'Lineup Churn',   fmt: fmtPct },
+            { key: 'volatility_pct',    label: 'Volatility',     fmt: fmtVol },
+            { key: 'trades_per_season', label: 'Trades / yr',    fmt: fmtPer },
         ];
         const highs = [];
         const lows = [];
@@ -1278,8 +1281,8 @@ main { position: relative; z-index: 1; }
             const hi = rows.reduce((a, b) => (b.v > a.v ? b : a));
             const lo = rows.reduce((a, b) => (b.v < a.v ? b : a));
             if (hi.name === lo.name) continue;
-            highs.push({ lbl: sig.high, name: hi.name, val: sig.fmt(hi.v) });
-            lows .push({ lbl: sig.low,  name: lo.name, val: sig.fmt(lo.v) });
+            highs.push({ lbl: sig.label, name: hi.name, val: sig.fmt(hi.v) });
+            lows .push({ lbl: sig.label, name: lo.name, val: sig.fmt(lo.v) });
         }
         if (highs.length === 0) return '';
         const row = (r) => `
@@ -1291,11 +1294,11 @@ main { position: relative; z-index: 1; }
         `;
         return `
             <div class="dna-leader-card is-high">
-                <div class="dna-leader-head">§ III · <em>Highest</em> on the strand</div>
+                <div class="dna-leader-head">§ III · <em>Top</em> of the strand</div>
                 <div class="dna-leader-list">${highs.map(row).join('')}</div>
             </div>
             <div class="dna-leader-card is-low">
-                <div class="dna-leader-head">§ IV · <em>Lowest</em> on the strand</div>
+                <div class="dna-leader-head">§ IV · <em>Bottom</em> of the strand</div>
                 <div class="dna-leader-list">${lows.map(row).join('')}</div>
             </div>
         `;
