@@ -27,7 +27,7 @@ export default function TocPage() {
 
       <div
         style={{
-          paddingLeft: "20%",
+          paddingLeft: "15%",
           paddingRight: "1.5rem",
           paddingTop: "2.5rem",
           paddingBottom: "4rem",
@@ -144,16 +144,16 @@ export default function TocPage() {
         <ChildItem>Records Watch — <Path>/leagues/{`{slug}`}/live-season/records-watch/</Path></ChildItem>
         <ChildSub>what&apos;s on pace to break — Records Broken · On the Brink · On Pace · Just Missed</ChildSub>
 
-        <ChildItem>Trade Grader — <Path>/leagues/{`{slug}`}/live-season/trades/</Path></ChildItem>
+        <ChildItem>Trade Grader <Badge tier="Veteran" /> — <Path>/leagues/{`{slug}`}/live-season/trades/</Path></ChildItem>
         <ChildSub>every completed trade for your league, auto-pulled; themed per league setting (Tribunal · Wire · Floor · Cards)</ChildSub>
 
         <ChildItem>Milestone Tracker — <Path>/leagues/{`{slug}`}/live-season/milestones/</Path></ChildItem>
         <ChildSub>honors-roll feed — Just Achieved · One Game Away · On the Horizon</ChildSub>
 
-        <ChildItem>Manager DNA — <Path>/leagues/{`{slug}`}/live-season/manager-dna/</Path></ChildItem>
+        <ChildItem>Manager DNA <Badge tier="Veteran" /> — <Path>/leagues/{`{slug}`}/live-season/manager-dna/</Path></ChildItem>
         <ChildSub>every transaction, lineup, and draft pick sequenced into an archetype per manager (Trade Hawks, Coin-Flippers, Set-and-Forget, more)</ChildSub>
 
-        <ChildItem>Weekly Recap — <i>coming soon</i></ChildItem>
+        <ChildItem>Weekly Recap <Badge tier="Veteran" /> — <i>coming soon</i></ChildItem>
         <ChildSub>Veteran tier — auto-written recap of the week&apos;s matchups, blowouts, and grudge games every Tuesday morning; card is on the hub but not yet wired</ChildSub>
 
       </div>
@@ -238,8 +238,32 @@ function ChildItem({ children }: { children: React.ReactNode }) {
         fontWeight: 500,
       }}
     >
-      • {children}
+      <span style={{ color: "var(--gold)", marginRight: ".4rem" }}>▸</span>
+      {children}
     </p>
+  )
+}
+
+function Badge({ tier }: { tier: "Veteran" | "All-Pro" }) {
+  const color = tier === "All-Pro" ? "#d3a655" : "#9dc4d8"
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        marginLeft: ".55rem",
+        padding: ".08rem .5rem",
+        border: `1px solid ${color}`,
+        borderRadius: "2px",
+        color,
+        fontFamily: "var(--mono)",
+        fontSize: ".58rem",
+        letterSpacing: ".14em",
+        textTransform: "uppercase",
+        verticalAlign: "middle",
+      }}
+    >
+      {tier}
+    </span>
   )
 }
 
