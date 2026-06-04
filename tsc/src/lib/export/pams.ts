@@ -4822,8 +4822,6 @@ type BestCoachWeek = {
   actual: number | null
   optimal: number | null
   left: number | null
-  starters: Array<{ slot: string; name: string | null; pos: string | null; pts: number | null }>
-  optimal_lineup: Array<{ slot: string; name: string | null; pos: string | null; pts: number | null }>
 }
 
 type BestCoachManager = {
@@ -5025,7 +5023,7 @@ function buildBestCoach(s: Snapshot): unknown {
         })
       }
 
-      const { total: optimal, lineup: optLineup } = computeOptimalLineup(pool, slotCounts)
+      const { total: optimal } = computeOptimalLineup(pool, slotCounts)
       const left = Math.max(0, optimal - actual)
       seasonActual += actual
       seasonOptimal += optimal
@@ -5036,18 +5034,6 @@ function buildBestCoach(s: Snapshot): unknown {
         actual: round2(actual),
         optimal: round2(optimal),
         left: round2(left),
-        starters: bucket.starters.map((r) => ({
-          slot: r.slot,
-          name: r.player_name,
-          pos: r.position,
-          pts: r.points,
-        })),
-        optimal_lineup: optLineup.map((p) => ({
-          slot: p.slot,
-          name: p.name,
-          pos: p.pos || null,
-          pts: round2(p.pts),
-        })),
       })
     }
 
