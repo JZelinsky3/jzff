@@ -276,9 +276,16 @@ export async function fetchTeamWeekRoster(
   // Two URL shapes — modern season uses the live gamecenter route, older
   // archived seasons live under /history. Try the historical path first when
   // we have a season; it's the format that survives once a season is archived.
+  //
+  // CRITICAL: the param that scopes the ROSTER SNAPSHOT to a given week is
+  // `week=N`, NOT `statWeek=N`. `statWeek` only repaints the stats columns
+  // for the season-final roster (verified by trying just `statWeek=N` and
+  // seeing identical 9-starter sets across W1/W10 of 2020, including players
+  // who weren't on the team that early). Always pass `&week=${week}` — it's
+  // what makes the bench/starter list change week to week.
   const urls = [
-    `${BASE}/league/${leagueId}/history/${season}/teamgamecenter?teamId=${teamId}&trackType=fbs&statCategory=stats&statSeason=${season}&statType=weekStats&statWeek=${week}`,
-    `${BASE}/league/${leagueId}/team/${teamId}/gamecenter?gameCenterTab=track&trackType=fbs&statCategory=stats&statSeason=${season}&statType=weekStats&statWeek=${week}`,
+    `${BASE}/league/${leagueId}/history/${season}/teamgamecenter?teamId=${teamId}&week=${week}&trackType=fbs&statCategory=stats&statSeason=${season}&statType=weekStats&statWeek=${week}`,
+    `${BASE}/league/${leagueId}/team/${teamId}/gamecenter?gameCenterTab=track&week=${week}&trackType=fbs&statCategory=stats&statSeason=${season}&statType=weekStats&statWeek=${week}`,
   ]
 
   let html: string | null = null

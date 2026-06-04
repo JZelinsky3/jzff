@@ -12,7 +12,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   fetchOwners, fetchWeekSchedule, fetchStandings, fetchDraft,
-  fetchTrades,
+  fetchTrades, fetchTeamWeekRoster, nflIsStarterSlot,
   parallelLimit,
   type NflOwner, type NflMatchup, type NflStandingsRow,
 } from '@/lib/platforms/nfl'
@@ -265,9 +265,7 @@ async function ingestSeason(args: {
   if (stages.matchups) await db.from('manager_seasons').delete().eq('season_id', seasonId)
   // Drafts cascade to draft_picks via FK; delete drafts for the season too.
   if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId)
-  // weekly_lineups for NFL.com is always wiped (the data is bogus per the
-  // platform limitation noted below); the ingest never re-inserts.
-  await db.from('weekly_lineups').delete().eq('season_id', seasonId)
+  if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
   // Fetch all weekly matchups (1..lastPlayoffWeek). NFL serves a page per
   // week; parallel-fetch with a small concurrency cap to be polite. Skip
@@ -413,27 +411,76 @@ async function ingestSeason(args: {
   result.matchupsIngested += matchupsCount
   } // end stages.matchups
 
-  // Weekly lineups — intentionally NOT ingested from NFL.com.
-  //
-  // The /history/<year>/teamgamecenter?statWeek=N URL returns the season's
-  // FINAL roster for every week — the statWeek parameter only swaps the
-  // stats columns, not the roster snapshot. We verified this directly:
-  // W1 and W10 of 2020 returned an identical 9-starter set, including
-  // Antonio Brown listed as a Tampa Bay WR in W1 even though he didn't
-  // sign there until W7. So every week's "starters" would collapse to the
-  // same 9 player ids, making week-to-week churn always 0 and lineup
-  // efficiency a constant per (manager, season) — neither signal is
-  // meaningful, and the Best Coach board would be misleading.
-  //
-  // The season-level `await db.from('weekly_lineups').delete().eq(...)`
-  // above already wipes any rows we previously persisted from earlier
-  // (incorrect) ingest runs, so this no-op also doubles as cleanup.
-  //
-  // Implication: NFL.com-only leagues will show null for lineup_churn,
-  // lineup_efficiency, and the Best Coach board. Mix in any other source
-  // (Sleeper / Yahoo / ESPN) to recover those signals.
-  if (year >= new Date().getUTCFullYear()) {
-    result.warnings.push(`Season ${year} weekly_lineups: not ingested from NFL.com — their gamecenter archive doesn't preserve per-week roster state, so churn/efficiency signals would be meaningless. Add another platform as a source if you need lineup-based analytics for this league.`)
+  // Weekly lineups — scrape each (team, played-week) gamecenter page and
+  // map players to weekly_lineups rows. We pass `&week=N` in the URL, which
+  // (unlike `statWeek=N`) scopes the roster snapshot to that specific week,
+  // so bench/starter assignments and points are real per-week values.
+  // Only fetch weeks that actually had played games — unplayed/future weeks
+  // would just be the current roster echoed back.
+  if (stages.lineups) {
+    const playedWeeks = weekly
+      .filter(({ rows }) => rows.some((m) => m.a_score != null && m.b_score != null))
+      .map(({ week }) => week)
+    const teamWeekPairs: Array<{ teamId: number; managerId: string; week: number }> = []
+    for (const week of playedWeeks) {
+      for (const owner of ownersThisYear) {
+        const managerId = teamToManagerId(owner.team_id)
+        if (!managerId) continue
+        teamWeekPairs.push({ teamId: owner.team_id, managerId, week })
+      }
+    }
+    const seasonLineupRows: Array<Record<string, unknown>> = []
+    let pairsEmpty = 0
+    if (teamWeekPairs.length > 0) {
+      const rosters = await parallelLimit(teamWeekPairs, 4, async (p) => {
+        try {
+          const players = await fetchTeamWeekRoster(externalLeagueId, year, p.teamId, p.week)
+          return { ...p, players }
+        } catch (err) {
+          result.warnings.push(`Season ${year} W${p.week} team ${p.teamId} lineup: ${(err as Error).message}`)
+          return { ...p, players: [] }
+        }
+      })
+      for (const r of rosters) {
+        if (r.players.length === 0) { pairsEmpty++; continue }
+        for (const pl of r.players) {
+          seasonLineupRows.push({
+            season_id: seasonId,
+            week: r.week,
+            manager_id: r.managerId,
+            player_external_id: pl.player_external_id,
+            player_name: pl.full_name,
+            position: pl.position,
+            nfl_team: pl.nfl_team,
+            slot: pl.slot,
+            is_starter: nflIsStarterSlot(pl.slot),
+            points: pl.points,
+          })
+        }
+      }
+    }
+    let lineupUpserted = 0
+    let lineupErrors = 0
+    if (seasonLineupRows.length > 0) {
+      const CHUNK = 1000
+      for (let i = 0; i < seasonLineupRows.length; i += CHUNK) {
+        const slice = seasonLineupRows.slice(i, i + CHUNK)
+        const { error } = await db.from('weekly_lineups').upsert(slice, {
+          onConflict: 'season_id,week,manager_id,player_external_id',
+        })
+        if (error) {
+          lineupErrors++
+          result.warnings.push(`Season ${year} weekly_lineups chunk ${i}-${i + slice.length}: ${error.message}`)
+        } else {
+          lineupUpserted += slice.length
+        }
+      }
+    }
+    result.warnings.push(
+      `Season ${year} weekly_lineups: ${lineupUpserted} rows upserted across ${teamWeekPairs.length - pairsEmpty}/${teamWeekPairs.length} (team, week) pairs` +
+      (lineupErrors ? ` (${lineupErrors} chunk errors)` : '') +
+      `. Powers Best Coach Tracker.`
+    )
   }
 
   // Draft picks (optional — failures non-fatal).
