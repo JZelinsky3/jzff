@@ -226,15 +226,16 @@ export function SourceRow({
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
-          {/* All four action buttons share a compact size so the column
-              doesn't dominate the row. Sync + Remove previously rendered at
-              the default .dc-btn / .dc-btn-ghost size and dwarfed the
-              Custom/Edit pair beside them. */}
+          {/* Sync + Remove keep their default horizontal padding so they
+              match the row's overall width; only the vertical padding is
+              trimmed so the column doesn't tower over the source label
+              beside it. Custom / Edit inside the grid already render at a
+              compact height. */}
           <button
             onClick={onSync}
             disabled={busy !== null || isPending}
             className="dc-btn"
-            style={{ padding: '.45rem .55rem', fontSize: '.7rem', lineHeight: 1.15 }}
+            style={{ padding: '.4rem 1.5rem' }}
           >
             {busy === 'syncing' ? 'Syncing…' : 'Sync now →'}
           </button>
@@ -278,7 +279,7 @@ export function SourceRow({
             onClick={onDelete}
             disabled={busy !== null || isPending}
             className="dc-btn-ghost"
-            style={{ padding: '.45rem .55rem', fontSize: '.7rem', lineHeight: 1.15 }}
+            style={{ padding: '.4rem 1.5rem' }}
           >
             Remove
           </button>
