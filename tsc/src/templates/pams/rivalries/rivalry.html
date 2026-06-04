@@ -557,6 +557,123 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   .rv-section { padding: 1.25rem 1rem; }
   .rv-meet-table { font-size: .68rem; }
 }
+
+/* ─── SHARE BUTTON + DIALOG ─────────────────────── */
+.rv-share-btn {
+  position: fixed;
+  top: 76px;
+  right: 18px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(17, 17, 17, .85);
+  border: 1px solid var(--rv-line2);
+  color: var(--rv-cream);
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  padding: .55rem .85rem;
+  border-radius: 2px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: color .15s, border-color .15s, background .15s;
+}
+.rv-share-btn:hover {
+  color: var(--rv-white);
+  border-color: var(--rv-red-dim);
+  background: rgba(127, 29, 29, .25);
+}
+.rv-share-btn svg { width: 12px; height: 12px; }
+.rv-share-btn[hidden] { display: none; }
+
+.rv-share-dialog {
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  color: var(--rv-white);
+  max-width: 460px;
+  width: calc(100% - 2rem);
+  padding: 1.75rem 1.75rem 1.5rem;
+  text-align: center;
+  font-family: var(--sans);
+  border-radius: 2px;
+}
+.rv-share-dialog::backdrop {
+  background: rgba(0, 0, 0, .72);
+  backdrop-filter: blur(4px);
+}
+.rv-share-modal-kicker {
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: .65rem;
+}
+.rv-share-modal-title {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  color: var(--rv-white);
+  margin-bottom: .4rem;
+}
+.rv-share-modal-sub {
+  font-size: .82rem;
+  color: var(--rv-grey-lt);
+  margin-bottom: 1.4rem;
+}
+.rv-share-preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1200 / 630;
+  background: #0a0a0a;
+  border: 1px solid var(--rv-line2);
+  margin-bottom: 1.25rem;
+  object-fit: contain;
+}
+.rv-share-actions {
+  display: flex;
+  gap: .6rem;
+}
+.rv-share-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  background: transparent;
+  border: 1px solid var(--rv-line2);
+  color: var(--rv-cream);
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  padding: .8rem .6rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.rv-share-action:hover {
+  color: var(--rv-white);
+  border-color: var(--rv-red);
+  background: rgba(220, 38, 38, .08);
+}
+.rv-share-action.is-success {
+  color: var(--rv-gold);
+  border-color: var(--rv-gold);
+}
+.rv-share-close {
+  margin-top: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--rv-grey-mid);
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.rv-share-close:hover { color: var(--rv-red); }
 </style>
 </head>
 <body data-league-name="{{LEAGUE_NAME}}">
@@ -570,6 +687,36 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
      data-back-label="← All rivalries"
      data-back-href="rivalries/"></nav>
 <script src="/pams-template/assets/js/nav.js"></script>
+
+<button type="button" class="rv-share-btn" id="rv-share-btn" hidden aria-label="Share this rivalry">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+  </svg>
+  <span>Share</span>
+</button>
+
+<dialog class="rv-share-dialog" id="rv-share-dialog" aria-labelledby="rv-share-title">
+  <div class="rv-share-modal-kicker">Share this rivalry</div>
+  <div class="rv-share-modal-title" id="rv-share-title">&nbsp;</div>
+  <div class="rv-share-modal-sub" id="rv-share-sub">A clipping from the head-to-head record</div>
+  <img class="rv-share-preview" id="rv-share-preview" alt="Rivalry card preview" />
+  <div class="rv-share-actions">
+    <button type="button" class="rv-share-action" id="rv-share-copy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      <span id="rv-share-copy-label">Copy link</span>
+    </button>
+    <button type="button" class="rv-share-action" id="rv-share-download">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      <span>Download card</span>
+    </button>
+  </div>
+  <button type="button" class="rv-share-close" id="rv-share-close">Close</button>
+</dialog>
 
 <header class="rv-detail-header">
   <div class="rv-detail-kicker" id="rv-kicker">{{LEAGUE_NAME}} · Head-to-Head</div>
@@ -1095,6 +1242,80 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     `;
   }
 
+  function setupShare(rv, rivalryId) {
+    const btn = document.getElementById('rv-share-btn');
+    const dialog = document.getElementById('rv-share-dialog');
+    const closeBtn = document.getElementById('rv-share-close');
+    const copyBtn = document.getElementById('rv-share-copy');
+    const copyLabel = document.getElementById('rv-share-copy-label');
+    const downloadBtn = document.getElementById('rv-share-download');
+    const preview = document.getElementById('rv-share-preview');
+    const titleEl = document.getElementById('rv-share-title');
+    if (!btn || !dialog) return;
+
+    const slug = (document.body.getAttribute('data-league-name-slug')) ||
+      (window.__DC && window.__DC.slug) || '';
+    const ogPath = '/api/og/rivalry/' + encodeURIComponent(slug) + '/' + encodeURIComponent(rivalryId);
+    const ogUrl = new URL(ogPath, window.location.origin).toString();
+    const shareUrl = window.location.href;
+    const safeFile = (rv.manager_a.name + '-vs-' + rv.manager_b.name)
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'rivalry';
+
+    titleEl.textContent = rv.manager_a.name + ' vs. ' + rv.manager_b.name;
+    preview.src = ogUrl;
+    btn.hidden = false;
+
+    btn.addEventListener('click', () => {
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    });
+    closeBtn.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        copyLabel.textContent = 'Copied!';
+        copyBtn.classList.add('is-success');
+        setTimeout(() => {
+          copyLabel.textContent = 'Copy link';
+          copyBtn.classList.remove('is-success');
+        }, 1800);
+      } catch {
+        // Older browsers / insecure contexts: fall back to a textarea select.
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); copyLabel.textContent = 'Copied!'; } catch {}
+        document.body.removeChild(ta);
+      }
+    });
+
+    downloadBtn.addEventListener('click', async () => {
+      try {
+        const res = await fetch(ogUrl);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = safeFile + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        // Last-resort: open the image in a new tab so the user can save it.
+        window.open(ogUrl, '_blank', 'noopener');
+      }
+    });
+  }
+
   async function load() {
     const id = getParam('id');
     const main = document.getElementById('rv-main');
@@ -1156,6 +1377,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
         buildBiggestMeeting(rv) +
         buildMetInStrip(rv) +
         buildLedger(rv);
+      setupShare(rv, id);
     } catch (err) {
       main.innerHTML = `<div class="rv-empty">Couldn't load this rivalry.<br><span style="font-family:var(--mono);font-size:.7rem;color:var(--rv-red);">${escapeHtml(err.message || 'unknown error')}</span></div>`;
     }

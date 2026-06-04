@@ -222,6 +222,61 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
 }
 
+// Inject Open Graph + Twitter card meta tags so shared links produce rich
+// previews in iMessage, Slack, Discord, Twitter, etc. The og:image URL is
+// page-specific where it's worth it (e.g. rivalry detail pages get a card
+// per rivalry) and falls back to a generic league-level image otherwise.
+//
+// Generic image route is not built yet; we render only the rivalry-specific
+// tags for now. Other pages keep their pre-OG behavior until the rest land.
+function injectOgTags(html: string, meta: LeagueMeta, file: string, req: NextRequest): string {
+  const ogImage = buildOgImageUrl(meta, file, req)
+  if (!ogImage) return html
+
+  const pageUrl = new URL(req.nextUrl.pathname + req.nextUrl.search, req.nextUrl.origin).toString()
+  const safeName = escapeHtml(meta.name)
+  const safeTitle = escapeHtml(ogImage.title)
+  const safeDesc = escapeHtml(ogImage.description)
+
+  const tags = [
+    `<meta property="og:type" content="article">`,
+    `<meta property="og:site_name" content="The Sunday Chronicle">`,
+    `<meta property="og:title" content="${safeTitle}">`,
+    `<meta property="og:description" content="${safeDesc}">`,
+    `<meta property="og:url" content="${escapeHtml(pageUrl)}">`,
+    `<meta property="og:image" content="${escapeHtml(ogImage.url)}">`,
+    `<meta property="og:image:width" content="1200">`,
+    `<meta property="og:image:height" content="630">`,
+    `<meta property="og:image:alt" content="${safeName} — ${safeTitle}">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+    `<meta name="twitter:title" content="${safeTitle}">`,
+    `<meta name="twitter:description" content="${safeDesc}">`,
+    `<meta name="twitter:image" content="${escapeHtml(ogImage.url)}">`,
+  ].join('\n')
+
+  if (/<head[^>]*>/i.test(html)) {
+    return html.replace(/<head[^>]*>/i, (m) => `${m}\n${tags}`)
+  }
+  return tags + html
+}
+
+type OgImage = { url: string; title: string; description: string }
+
+function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgImage | null {
+  // Rivalry detail: /leagues/<slug>/rivalries/rivalry.html?id=<rivalryId>
+  if (file === 'rivalries/rivalry.html') {
+    const rivalryId = req.nextUrl.searchParams.get('id')
+    if (!rivalryId) return null
+    const url = new URL(`/api/og/rivalry/${meta.slug}/${encodeURIComponent(rivalryId)}`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · Head-to-Head`,
+      description: `A fantasy football rivalry tracked in ${meta.name}'s almanac on The Sunday Chronicle.`,
+    }
+  }
+  return null
+}
+
 // Memoize each league's full JSON bundle. Bust via revalidateTag(`league-<id>`).
 // Prod: persistent unstable_cache with 1h TTL + tag bust on sync.
 // Dev: in-memory cache (30s TTL, see @/lib/devCache) so a page with multiple
@@ -400,7 +455,12 @@ export async function GET(
         ? (tutorialsMeta['leagues_seen'] as string[])
         : []
     const html = injectDcConfig(
-      injectBaseTag(applyTokens(raw, meta), meta, resolved.file),
+      injectOgTags(
+        injectBaseTag(applyTokens(raw, meta), meta, resolved.file),
+        meta,
+        resolved.file,
+        req,
+      ),
       meta,
       isCommish,
       isSignedIn,
