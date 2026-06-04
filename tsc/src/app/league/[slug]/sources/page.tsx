@@ -98,7 +98,7 @@ export default async function SourcesPage({
         {!sources || sources.length === 0 ? (
           <div className="dc-empty"><div className="dc-empty-text">No sources yet.</div></div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))', gap: '.6rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))', gap: '.6rem', alignItems: 'start' }}>
             {sources.map((s) => (
               <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
             ))}
