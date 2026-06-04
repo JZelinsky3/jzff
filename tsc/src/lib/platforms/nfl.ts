@@ -355,6 +355,19 @@ export async function fetchTeamWeekRoster(
     const metaMatch = meta.match(/([A-Z]{1,4})\s*[-–]\s*([A-Z]{2,4})/)
     if (metaMatch) { position = metaMatch[1]!; nfl_team = metaMatch[2]! }
     else if (/^(DEF|DST|D\/ST)/i.test(meta)) { position = 'DEF' }
+    // Fallback: when the meta cell didn't parse, infer the position from
+    // the slot. For dedicated single-position slots (QB/RB/WR/TE/K/DEF),
+    // the slot itself is the position. Skips flex slots and BN/IR — those
+    // genuinely don't tell us anything about position. Keeps Best Coach
+    // from dropping starters whose meta string rendered oddly.
+    if (position == null) {
+      const SLOT_AS_POS: Record<string, string> = {
+        QB: 'QB', RB: 'RB', WR: 'WR', TE: 'TE', K: 'K',
+        DEF: 'DEF', DST: 'DEF', 'D/ST': 'DEF',
+      }
+      const inferred = SLOT_AS_POS[slot.toUpperCase()]
+      if (inferred) position = inferred
+    }
 
     // Total fantasy points live in td.stat.statTotal > span.playerTotal.
     // Blank for an unplayed/bye week — leave null in that case so callers
