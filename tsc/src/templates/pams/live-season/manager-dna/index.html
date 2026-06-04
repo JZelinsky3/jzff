@@ -1465,7 +1465,19 @@ main { position: relative; z-index: 1; }
             bands.push({ cls, a });
             h = Math.floor(h / 3) + (h * 11) % 233;
         }
-        return bands.map(b => `<span class="dna-barcode-band b-${b.cls}" style="--a:${b.a.toFixed(2)}"></span>`).join('');
+        // Vary each band's flex weight so the strip reads like a real barcode
+        // (small width irregularity) instead of a perfectly even tile grid.
+        // Weights cluster around 1.0 (range ~0.8–1.3) so the differences
+        // translate to ~1–3px per band at the strip's natural width.
+        const widths = [1.0, 1.2, 0.85, 1.1, 1.3, 0.9, 1.05, 1.25, 0.8, 1.15, 0.95, 1.3, 0.9, 1.1];
+        let wh = seedHash;
+        return bands.map((b, i) => {
+            // Rotate the width sequence by the manager's hash so two managers
+            // with identical signal colors still get distinct bar rhythms.
+            const w = widths[(i + wh) % widths.length];
+            wh = Math.floor(wh / 2) + 7;
+            return `<span class="dna-barcode-band b-${b.cls}" style="--a:${b.a.toFixed(2)};flex:${w}"></span>`;
+        }).join('');
     }
 
     function classifyBand(value, lo, hi, midColor, lowColor, highColor) {
@@ -1670,9 +1682,9 @@ main { position: relative; z-index: 1; }
     // scales mirror the per-card signalBar maxes so visuals stay consistent
     // across the page.
     const DNA_SIGNAL_SPEC = {
-        efficiency_pct:    { label: 'Efficiency',    short: 'Eff',    min: 50,  max: 100, base: 70, higherIsBetter: true,  bipolar: false, fmt: (v) => `${v.toFixed(1)}%` },
+        efficiency_pct:    { label: 'Efficiency',    short: 'Eff',    min: 85,  max: 100, base: 92, higherIsBetter: true,  bipolar: false, fmt: (v) => `${v.toFixed(1)}%` },
         lineup_churn_pct:  { label: 'Lineup Churn',  short: 'Churn',  min: 0,   max: 60,  base: 18, higherIsBetter: false, bipolar: false, fmt: (v) => `${v.toFixed(1)}%` },
-        volatility_pct:    { label: 'Volatility',    short: 'Vol',    min: 5,   max: 50,  base: 20, higherIsBetter: false, bipolar: false, fmt: (v) => `±${v.toFixed(1)}%` },
+        volatility_pct:    { label: 'Volatility',    short: 'Vol',    min: 10,  max: 35,  base: 20, higherIsBetter: false, bipolar: false, fmt: (v) => `±${v.toFixed(1)}%` },
         avg_margin_pts:    { label: 'Margin / game', short: 'Margin', min: -10, max: 10,  base: 0,  higherIsBetter: true,  bipolar: true,  fmt: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}` },
         clutch_win_pct:    { label: 'Clutch (≤5pt)', short: 'Clutch', min: 0,   max: 100, base: 50, higherIsBetter: true,  bipolar: false, fmt: (v) => `${v.toFixed(1)}%` },
         trades_per_season: { label: 'Trades / yr',   short: 'Trade',  min: 0,   max: 4,   base: 1.2, higherIsBetter: true,  bipolar: false, fmt: (v) => `${v.toFixed(1)}/yr` },

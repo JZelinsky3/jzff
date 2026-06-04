@@ -222,16 +222,16 @@ export function SourceRow({
               : 'never synced'}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', width: '6.25rem', flexShrink: 0 }}>
-          {/* Action column is hard-pinned narrow (6.25rem) so the source
-              metadata at left gets the breathing room. Buttons trade width
-              for height — taller padding keeps them easy to tap; labels
-              stack onto two lines when they don't fit one. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', width: '9rem', flexShrink: 0 }}>
+          {/* Action column is pinned narrow (9rem) so the source metadata
+              at left keeps the breathing room. Buttons trade width for
+              height — taller padding stays thumb-friendly. Labels are
+              single words so they fit on one line at this width. */}
           <button
             onClick={onSync}
             disabled={busy !== null || isPending}
             className="dc-btn"
-            style={{ padding: '.75rem .3rem', fontSize: '.78rem', whiteSpace: 'nowrap' }}
+            style={{ padding: '.75rem .3rem', fontSize: '.8rem', whiteSpace: 'nowrap' }}
           >
             {busy === 'syncing' ? 'Syncing…' : 'Sync →'}
           </button>
@@ -241,16 +241,13 @@ export function SourceRow({
               disabled={busy !== null || isPending}
               className="dc-btn-ghost"
               style={{
-                padding: '.65rem .15rem',
-                fontSize: '.62rem',
-                lineHeight: 1.15,
-                whiteSpace: 'normal',
+                padding: '.7rem .25rem',
+                fontSize: '.72rem',
+                whiteSpace: 'nowrap',
                 minWidth: 0,
               }}
             >
-              {customSyncOpen
-                ? 'Cancel'
-                : (<><span>Custom</span><br /><span>sync</span></>)}
+              {customSyncOpen ? 'Cancel' : 'Custom'}
             </button>
             {(source.platform === 'nfl' || source.platform === 'espn' || source.platform === 'sleeper' || source.platform === 'yahoo') && (
               <button
@@ -258,16 +255,13 @@ export function SourceRow({
                 disabled={busy !== null || isPending}
                 className="dc-btn-ghost"
                 style={{
-                  padding: '.65rem .15rem',
-                  fontSize: '.62rem',
-                  lineHeight: 1.15,
-                  whiteSpace: 'normal',
+                  padding: '.7rem .25rem',
+                  fontSize: '.72rem',
+                  whiteSpace: 'nowrap',
                   minWidth: 0,
                 }}
               >
-                {editing
-                  ? 'Cancel'
-                  : (<><span>Edit</span><br /><span>settings</span></>)}
+                {editing ? 'Cancel' : 'Settings'}
               </button>
             )}
           </div>
@@ -275,7 +269,7 @@ export function SourceRow({
             onClick={onDelete}
             disabled={busy !== null || isPending}
             className="dc-btn-ghost"
-            style={{ padding: '.7rem .3rem', fontSize: '.72rem' }}
+            style={{ padding: '.7rem .3rem', fontSize: '.75rem' }}
           >
             Remove
           </button>

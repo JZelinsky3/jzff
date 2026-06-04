@@ -5660,19 +5660,21 @@ function buildManagerDna(s: Snapshot): unknown {
         strength: signals.draft_qb_early_pct / 40,  // 40% → 1.0, 100% → 2.5
       })
     }
-    // TE Premium — same shape as Anchor QB but the position is rarer
-    // (elite TEs are a smaller class), so the bar is 25% rather than 40%.
+    // TE Premium — same shape as Anchor QB. Bar was originally 25% (too
+    // permissive — five managers hit it in a 10-team league), raised to
+    // 50% so it identifies genuine "I always take an elite TE" drafters
+    // rather than anyone who's reached for the position twice in four years.
     if (
       signals.draft_te_early_pct != null
       && signals.total_drafts >= 3
-      && signals.draft_te_early_pct >= 25
+      && signals.draft_te_early_pct >= 50
     ) {
       candidates.push({
         key: 'te_premium',
         name: 'The TE Premium',
         tagline: 'Pays the elite-TE tax',
         blurb: `Has spent a top-4-round pick on a TE in ${signals.draft_te_early_pct.toFixed(0)}% of drafts on file. Willing to corner the position rather than chase it.`,
-        strength: signals.draft_te_early_pct / 25,  // 25% → 1.0, 100% → 4.0
+        strength: signals.draft_te_early_pct / 50,  // 50% → 1.0, 100% → 2.0
       })
     }
 
