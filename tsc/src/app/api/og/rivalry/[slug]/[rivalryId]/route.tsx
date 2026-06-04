@@ -1,15 +1,26 @@
 // OG image generator for individual rivalry pages.
 // URL: /api/og/rivalry/<slug>/<rivalryId>
-// Referenced by <meta property="og:image"> on /leagues/<slug>/rivalries/rivalry.html?id=<rivalryId>.
 //
-// Renders a 1200x630 PNG card matching the rivalry detail page's red/black
-// editorial aesthetic. CDN-cached forever per (slug, rivalryId); busted only
-// when the league bundle's `league-<id>` tag is revalidated by sync.
+// Renders a 1200x630 PNG "tale of the tape" card. Layout, fonts, and
+// imagery are designed to match the rivalry detail page's editorial vibe
+// and to actually carry product signal — the character pair is chosen by
+// rivalry STATS (blowout vs deadlocked vs high-scoring vs ancient feud)
+// rather than dropped in as decoration. See `pickRivalryTheme`.
+//
+// CDN-cached per (slug, rivalryId); busted only when the league bundle's
+// `league-<id>` tag is revalidated by sync.
 
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
+import { readFile } from 'fs/promises'
+import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLeagueBundle } from '@/lib/leagueBundleCache'
+import {
+  buildThemeContext,
+  pickRivalryTheme,
+  type RivalrySummary,
+} from '@/lib/og/rivalryTheme'
 
 export const runtime = 'nodejs'
 
@@ -22,15 +33,10 @@ type RivalrySide = {
   high_score: { score: number; year: number; week: number; is_playoff: boolean } | null
 }
 
-type Rivalry = {
-  id: string
+type Rivalry = RivalrySummary & {
   name: string
-  total_meetings: number
-  first_meeting_year: number | null
   last_meeting: { year: number; week: number } | null
   leader_name: string | null
-  leader_record: string | null
-  is_deadlocked: boolean
   ties_count: number
   manager_a: RivalrySide
   manager_b: RivalrySide
@@ -38,6 +44,23 @@ type Rivalry = {
 
 type RivalriesBundle = {
   rivalries: Rivalry[]
+}
+
+const FONT_DIR = path.join(process.cwd(), 'public', 'og', 'fonts')
+
+async function loadFonts() {
+  const [serif, serifItalic, mono, monoBold] = await Promise.all([
+    readFile(path.join(FONT_DIR, 'DMSerifDisplay-Regular.ttf')),
+    readFile(path.join(FONT_DIR, 'DMSerifDisplay-Italic.ttf')),
+    readFile(path.join(FONT_DIR, 'JetBrainsMono-Regular.ttf')),
+    readFile(path.join(FONT_DIR, 'JetBrainsMono-Bold.ttf')),
+  ])
+  return [
+    { name: 'DMSerif', data: serif, style: 'normal' as const, weight: 400 as const },
+    { name: 'DMSerif', data: serifItalic, style: 'italic' as const, weight: 400 as const },
+    { name: 'JetBrains', data: mono, style: 'normal' as const, weight: 400 as const },
+    { name: 'JetBrains', data: monoBold, style: 'normal' as const, weight: 700 as const },
+  ]
 }
 
 export async function GET(
@@ -63,23 +86,47 @@ export async function GET(
     return new Response('Rivalry not found', { status: 404 })
   }
 
-  return renderRivalryCard(league.name, rivalry)
+  const themeCtx = buildThemeContext(rivalriesData!.rivalries)
+  const { theme, pair } = pickRivalryTheme(rivalry, themeCtx)
+  const fonts = await loadFonts()
+
+  return renderRivalryCard(league.name, rivalry, theme, pair, fonts)
 }
 
-function renderRivalryCard(leagueName: string, rv: Rivalry) {
+function renderRivalryCard(
+  leagueName: string,
+  rv: Rivalry,
+  theme: ReturnType<typeof pickRivalryTheme>['theme'],
+  pair: readonly [string, string],
+  fonts: Awaited<ReturnType<typeof loadFonts>>,
+) {
   const aWins = rv.manager_a.wins
   const bWins = rv.manager_b.wins
   const ties = rv.ties_count
+  const aLeads = aWins > bWins
+  const bLeads = bWins > aWins
+  const isDeadlocked = rv.is_deadlocked && rv.total_meetings > 0
 
-  const leaderLine = rv.total_meetings === 0
-    ? 'Never met'
-    : rv.is_deadlocked
-      ? 'Deadlocked'
-      : `${rv.leader_name} leads`
+  const verdict = rv.total_meetings === 0
+    ? 'NEVER MET'
+    : isDeadlocked
+      ? `DEADLOCKED ${aWins}—${bWins}`
+      : `${(rv.leader_name ?? '').toUpperCase()} LEADS`
 
-  const metaLine = rv.first_meeting_year
-    ? `First met ${rv.first_meeting_year}${rv.last_meeting ? ` · Last met ${rv.last_meeting.year} W${rv.last_meeting.week}` : ''}`
-    : 'No meetings on record'
+  const meetingsLine = rv.total_meetings === 0
+    ? 'NO MEETINGS ON RECORD'
+    : [
+        rv.first_meeting_year ? `FIRST MET ${rv.first_meeting_year}` : null,
+        `${rv.total_meetings} MEETING${rv.total_meetings === 1 ? '' : 'S'}`,
+        rv.last_meeting ? `LAST ${rv.last_meeting.year} W${rv.last_meeting.week}` : null,
+      ].filter(Boolean).join(' · ')
+
+  // Background: editorial dark wash with theme-accent corner glows + a
+  // subtle gridiron rule pattern overlay so the card doesn't read as a
+  // flat black rectangle.
+  const gridiron = encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
+  )
 
   return new ImageResponse(
     (
@@ -91,181 +138,289 @@ function renderRivalryCard(leagueName: string, rv: Rivalry) {
           flexDirection: 'column',
           background: '#0a0a0a',
           color: '#f3f4f6',
-          fontFamily: 'Georgia, serif',
+          fontFamily: 'JetBrains',
           position: 'relative',
         }}
       >
-        {/* Atmospheric glow */}
+        {/* Gridiron rule overlay */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            background:
-              'radial-gradient(circle at 12% 18%, rgba(220,38,38,0.18) 0%, transparent 55%), radial-gradient(circle at 88% 82%, rgba(220,38,38,0.10) 0%, transparent 50%)',
+            opacity: 0.5,
+            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
+            backgroundSize: '80px 80px',
+          }}
+        />
+        {/* Theme-accent corner glows */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            background: `radial-gradient(circle at 10% 20%, ${theme.accent}33 0%, transparent 45%), radial-gradient(circle at 90% 80%, ${theme.accent}1f 0%, transparent 45%)`,
           }}
         />
 
-        {/* Kicker */}
+        {/* TOP BAR: league kicker + masthead */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '36px 64px 0',
-            fontFamily: 'ui-monospace, "SF Mono", monospace',
-            fontSize: '18px',
-            letterSpacing: '0.28em',
-            color: '#dc2626',
+            padding: '32px 56px 0',
+            fontSize: '17px',
+            letterSpacing: '0.3em',
+            color: theme.accent,
             textTransform: 'uppercase',
+            zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex' }}>{leagueName} · Head-to-Head</span>
-          <span style={{ display: 'flex', color: '#9ca3af' }}>The Sunday Chronicle</span>
+          <span style={{ display: 'flex' }}>{leagueName.toUpperCase()} · HEAD-TO-HEAD</span>
+          <span style={{ display: 'flex', color: '#9ca3af', letterSpacing: '0.32em' }}>
+            THE SUNDAY CHRONICLE
+          </span>
         </div>
 
-        {/* Main body */}
+        {/* THEME BANNER */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '14px',
+            zIndex: 2,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              padding: '7px 22px',
+              border: `1px solid ${theme.accent}66`,
+              background: `${theme.accent}12`,
+              fontSize: '15px',
+              letterSpacing: '0.4em',
+              color: theme.accent,
+              textTransform: 'uppercase',
+              fontWeight: 700,
+            }}
+          >
+            <div style={{ display: 'flex', width: '24px', height: '1px', background: theme.accent }} />
+            <span style={{ display: 'flex' }}>{theme.label}</span>
+            <div style={{ display: 'flex', width: '24px', height: '1px', background: theme.accent }} />
+          </div>
+        </div>
+
+        {/* MAIN TALE OF THE TAPE */}
         <div
           style={{
             flex: 1,
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
             alignItems: 'center',
-            padding: '0 80px',
-            zIndex: 1,
+            justifyContent: 'space-between',
+            padding: '0 60px',
+            zIndex: 2,
           }}
         >
-          {/* Manager A */}
-          <div
-            style={{
-              fontSize: '78px',
-              lineHeight: 1,
-              fontWeight: 400,
-              letterSpacing: '-0.01em',
-              textAlign: 'center',
-              display: 'flex',
-              maxWidth: '100%',
-            }}
-          >
-            {rv.manager_a.name}
-          </div>
-
-          {/* vs */}
-          <div
-            style={{
-              fontSize: '36px',
-              fontStyle: 'italic',
-              color: '#dc2626',
-              margin: '14px 0',
-              display: 'flex',
-            }}
-          >
-            vs.
-          </div>
-
-          {/* Manager B */}
-          <div
-            style={{
-              fontSize: '78px',
-              lineHeight: 1,
-              fontWeight: 400,
-              letterSpacing: '-0.01em',
-              textAlign: 'center',
-              display: 'flex',
-              maxWidth: '100%',
-            }}
-          >
-            {rv.manager_b.name}
-          </div>
-
-          {/* Rule */}
-          <div
-            style={{
-              display: 'flex',
-              width: '160px',
-              height: '1px',
-              background: '#374151',
-              margin: '36px 0 28px',
-            }}
+          {/* LEFT SIDE */}
+          <Side
+            emoji={pair[0]}
+            name={rv.manager_a.name}
+            wins={aWins}
+            ppg={rv.manager_a.avg_ppg}
+            highScore={rv.manager_a.high_score?.score ?? null}
+            leading={aLeads}
+            accent={theme.accent}
+            align="left"
           />
 
-          {/* Record */}
+          {/* CENTER: verdict block */}
           <div
             style={{
               display: 'flex',
-              alignItems: 'baseline',
-              gap: '24px',
-              fontSize: '64px',
-              letterSpacing: '0.04em',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '6px',
+              minWidth: '260px',
             }}
           >
-            <span style={{ display: 'flex', color: '#f3f4f6' }}>{aWins}</span>
-            <span style={{ display: 'flex', color: '#6b7280', fontSize: '40px' }}>—</span>
-            <span style={{ display: 'flex', color: '#f3f4f6' }}>{bWins}</span>
-            {ties > 0 && (
-              <>
-                <span style={{ display: 'flex', color: '#6b7280', fontSize: '40px' }}>—</span>
-                <span style={{ display: 'flex', color: '#f3f4f6' }}>{ties}</span>
-              </>
-            )}
-            <span
+            <div
+              style={{
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '34px',
+                color: theme.accent,
+                marginBottom: '4px',
+                display: 'flex',
+              }}
+            >
+              vs.
+            </div>
+            <div
               style={{
                 display: 'flex',
-                marginLeft: '16px',
-                fontFamily: 'ui-monospace, "SF Mono", monospace',
-                fontSize: '18px',
-                letterSpacing: '0.28em',
-                color: '#9ca3af',
+                alignItems: 'center',
+                gap: '20px',
+                fontFamily: 'DMSerif',
+              }}
+            >
+              <span style={{ display: 'flex', fontSize: '108px', lineHeight: 1, color: aLeads ? '#f3f4f6' : '#6b7280' }}>{aWins}</span>
+              <div style={{ display: 'flex', width: '34px', height: '6px', background: '#4b5563', borderRadius: '3px' }} />
+              <span style={{ display: 'flex', fontSize: '108px', lineHeight: 1, color: bLeads ? '#f3f4f6' : '#6b7280' }}>{bWins}</span>
+              {ties > 0 && (
+                <>
+                  <div style={{ display: 'flex', width: '34px', height: '6px', background: '#4b5563', borderRadius: '3px' }} />
+                  <span style={{ display: 'flex', fontSize: '108px', lineHeight: 1, color: '#6b7280' }}>{ties}</span>
+                </>
+              )}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                padding: '6px 14px',
+                marginTop: '10px',
+                border: `1px solid ${theme.accent}`,
+                background: `${theme.accent}1a`,
+                color: theme.accent,
+                fontFamily: 'JetBrains',
+                fontWeight: 700,
+                fontSize: '15px',
+                letterSpacing: '0.22em',
                 textTransform: 'uppercase',
               }}
             >
-              All-time
-            </span>
+              {verdict}
+            </div>
           </div>
 
-          {/* Leader line */}
-          <div
-            style={{
-              display: 'flex',
-              marginTop: '20px',
-              fontSize: '24px',
-              fontStyle: 'italic',
-              color: '#e8c889',
-            }}
-          >
-            {leaderLine}
-          </div>
+          {/* RIGHT SIDE */}
+          <Side
+            emoji={pair[1]}
+            name={rv.manager_b.name}
+            wins={bWins}
+            ppg={rv.manager_b.avg_ppg}
+            highScore={rv.manager_b.high_score?.score ?? null}
+            leading={bLeads}
+            accent={theme.accent}
+            align="right"
+          />
         </div>
 
-        {/* Footer */}
+        {/* FOOTER */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '0 64px 36px',
-            fontFamily: 'ui-monospace, "SF Mono", monospace',
-            fontSize: '16px',
-            letterSpacing: '0.18em',
+            padding: '0 56px 28px',
+            fontSize: '13px',
+            letterSpacing: '0.28em',
             color: '#6b7280',
             textTransform: 'uppercase',
+            zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex' }}>{metaLine}</span>
-          <span style={{ display: 'flex', color: '#dc2626' }}>tsc.football</span>
+          <span style={{ display: 'flex' }}>{meetingsLine}</span>
+          <span style={{ display: 'flex', color: theme.accent, fontWeight: 700 }}>TSC.FOOTBALL</span>
         </div>
       </div>
     ),
     {
       width: 1200,
       height: 630,
+      fonts,
+      emoji: 'twemoji',
       headers: {
-        // Long-lived: bundle re-builds invalidate via league-<id> tag, and
-        // we'd reissue a fresh URL anyway if rivalry stats change enough to
-        // matter. Worth the headroom on share crawlers.
         'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
       },
     },
+  )
+}
+
+function Side(props: {
+  emoji: string
+  name: string
+  wins: number
+  ppg: number
+  highScore: number | null
+  leading: boolean
+  accent: string
+  align: 'left' | 'right'
+}) {
+  const { emoji, name, wins, ppg, highScore, leading, accent, align } = props
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: align === 'left' ? 'flex-start' : 'flex-end',
+        gap: '14px',
+        width: '320px',
+      }}
+    >
+      {/* Character emoji in a glowing ring */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '200px',
+          height: '200px',
+          borderRadius: '50%',
+          border: leading ? `3px solid ${accent}` : '2px solid #272727',
+          background: leading
+            ? `radial-gradient(circle, ${accent}33 0%, #0a0a0a 70%)`
+            : 'radial-gradient(circle, #1a1a1a 0%, #0a0a0a 70%)',
+          fontSize: '128px',
+          lineHeight: 1,
+          boxShadow: leading ? `0 0 60px ${accent}55` : 'none',
+        }}
+      >
+        {emoji}
+      </div>
+
+      {/* Name */}
+      <div
+        style={{
+          fontFamily: 'DMSerif',
+          fontSize: '40px',
+          lineHeight: 1,
+          color: leading ? '#f3f4f6' : '#d1d5db',
+          maxWidth: '320px',
+          textAlign: align,
+          display: 'flex',
+        }}
+      >
+        {name}
+      </div>
+
+      {/* Stats line */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: align === 'left' ? 'flex-start' : 'flex-end',
+          gap: '4px',
+          fontFamily: 'JetBrains',
+          fontSize: '15px',
+          letterSpacing: '0.18em',
+          color: '#9ca3af',
+          textTransform: 'uppercase',
+        }}
+      >
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <span style={{ display: 'flex', color: '#f3f4f6', fontWeight: 700 }}>{wins} W</span>
+          <span style={{ display: 'flex' }}>·</span>
+          <span style={{ display: 'flex' }}>{ppg.toFixed(1)} PPG</span>
+        </div>
+        {highScore !== null && (
+          <div style={{ display: 'flex', color: '#6b7280' }}>
+            BEST: {highScore.toFixed(1)}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
