@@ -15,7 +15,10 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // without auth — visitors to /leagues/<slug>/draft fetch from here, and the
 // gate would otherwise 302 them to /login and break the Steal/Bust panels
 // for anyone not signed in.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/stripe/webhook']
+// `/api/og/` serves Open Graph card images for shareable almanac pages
+// (e.g. rivalry detail). They MUST be reachable without auth — Twitter,
+// Facebook, iMessage, Discord etc. crawl them with no session cookies.
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
