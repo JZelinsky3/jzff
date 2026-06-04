@@ -156,6 +156,40 @@ export default function TocPage() {
         <ChildItem>Weekly Recap <Badge tier="Veteran" /> — <i>coming soon</i></ChildItem>
         <ChildSub>Veteran tier — auto-written recap of the week&apos;s matchups, blowouts, and grudge games every Tuesday morning; card is on the hub but not yet wired</ChildSub>
 
+        {/* ════════════ TALLY ════════════ */}
+        <hr
+          style={{
+            margin: "3rem 0 1.5rem",
+            border: 0,
+            borderTop: "1px dashed rgba(180,140,60,0.45)",
+          }}
+        />
+        <p
+          style={{
+            fontFamily: "var(--mono)",
+            fontSize: ".68rem",
+            color: "var(--gold)",
+            opacity: 0.75,
+            letterSpacing: ".14em",
+            textTransform: "uppercase",
+            margin: "0 0 .9rem",
+          }}
+        >
+          By the numbers
+        </p>
+        <Tally label="Pages (with their own URL)" value="31" />
+        <Tally label="Top-level pages" value="25" />
+        <Tally label="Sub-pages (manager profile, season page, etc.)" value="6" />
+        <Tally label="Sections on the League Home" value="9" />
+        <Tally label="In-season feature pages" value="9" />
+        <Tally label="Tabbed views (Home Trackboard · Draft · Records · Draft Value)" value="4" />
+        <Tally label="Total tabs across those views" value="19" />
+        <Tally label="Sort bars (Standings · Society)" value="2" />
+        <Tally label="Sort options across both" value="13" />
+        <Tally label="Live Season charts (Form Sheet · Mileage Matrix)" value="2" />
+        <Tally label="Trade Grader themes (Tribunal · Wire · Floor · Cards)" value="4" />
+        <Tally label="Veteran-tier features" value="3" />
+
       </div>
 
       <SiteFooter />
@@ -278,6 +312,33 @@ function ChildSub({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+    </p>
+  )
+}
+
+function Tally({ label, value }: { label: string; value: string }) {
+  return (
+    <p
+      style={{
+        margin: ".2rem 0",
+        display: "flex",
+        alignItems: "baseline",
+        gap: ".6rem",
+        fontSize: ".92rem",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "var(--mono)",
+          color: "var(--cream)",
+          minWidth: "2.2rem",
+          textAlign: "right",
+          fontWeight: 600,
+        }}
+      >
+        {value}
+      </span>
+      <span style={{ color: "var(--cream-soft)", opacity: 0.85 }}>{label}</span>
     </p>
   )
 }
