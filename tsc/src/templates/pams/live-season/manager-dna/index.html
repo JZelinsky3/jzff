@@ -283,6 +283,7 @@ main { position: relative; z-index: 1; }
 
 /* ── GENOME MAP — 2-axis scatter of the league ──────────────── */
 .dna-genome-map {
+    margin-top: 3rem;
     margin-bottom: 3rem;
     background: var(--dna-bg-soft);
     border: 1px solid var(--dna-line);
@@ -366,6 +367,7 @@ main { position: relative; z-index: 1; }
 
 /* ── DOPPELGÄNGERS — closest-pair card ──────────────────────── */
 .dna-doppel-wrap {
+    margin-top: 3rem;
     margin-bottom: 3rem;
     background: var(--dna-bg-soft);
     border: 1px solid var(--dna-line);
@@ -562,33 +564,73 @@ main { position: relative; z-index: 1; }
 .dna-compare-rail {
     display: flex;
     flex-direction: column;
-    gap: .8rem;
+    gap: 1.2rem;
 }
 .dna-compare-sig {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: .35rem;
-}
-.dna-compare-sig-head {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: .2rem;
+}
+.dna-compare-sig-lbl {
     font-family: var(--mono);
     font-size: .54rem;
     letter-spacing: .22em;
     text-transform: uppercase;
+    color: var(--dna-mute);
 }
-.dna-compare-sig-lbl { color: var(--dna-mute); }
-.dna-compare-sig-vals { display: flex; gap: .65rem; }
-.dna-compare-sig-vals .va { color: var(--dna-cyan); font-weight: 600; }
-.dna-compare-sig-vals .vb { color: var(--dna-magenta); font-weight: 600; }
+/* Value row sits directly above the bar. Each value owns the same %
+   slice of the row as its bar segment below — A right-aligned in the
+   cyan slice, B left-aligned in the magenta slice — so the two
+   numbers visually meet at the same boundary as the bars. */
+.dna-compare-sig-vals {
+    display: flex;
+    height: 1rem;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    line-height: 1;
+}
+.dna-compare-sig-vals .va {
+    flex: 0 0 var(--wa, 50%);
+    text-align: right;
+    padding-right: .35rem;
+    color: var(--dna-cyan);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dna-compare-sig-vals .vb {
+    flex: 0 0 var(--wb, 50%);
+    text-align: left;
+    padding-left: .35rem;
+    color: var(--dna-magenta);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .dna-compare-sig-bars {
     display: flex;
-    height: 8px;
+    height: 10px;
     background: rgba(35, 40, 68, .8);
     border-radius: 2px;
     overflow: hidden;
     position: relative;
+}
+.dna-compare-sig-bars::after {
+    /* 50% reference tick — sits on top of the fills so a tie or near-tie
+       reads as "right on the line." Slight white instead of cream so it
+       reads as a measurement mark, not part of the strand palette. */
+    content: '';
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    left: 50%;
+    width: 1px;
+    background: rgba(255, 255, 255, .45);
+    pointer-events: none;
+    z-index: 2;
 }
 .dna-compare-sig-bars .ba {
     position: absolute;
@@ -1073,6 +1115,12 @@ main { position: relative; z-index: 1; }
 }
 .dna-leaders {
     flex: 0 0 240px;
+    /* Sticky — but offset by the masthead nav (--nav-h is set at runtime
+       by nav.js to the real masthead height) PLUS the chapter bar that
+       sits underneath it (~2.6rem). Without this margin, the first few
+       leader rows were getting covered by the nav as the user scrolled. */
+    position: sticky;
+    top: calc(var(--nav-h, 4.5rem) + 3rem);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -1151,7 +1199,7 @@ main { position: relative; z-index: 1; }
 .dna-leader-card.is-low  .dna-leader-val { color: var(--dna-amber); }
 @media (max-width: 920px) {
     .dna-page-body { flex-direction: column; }
-    .dna-leaders { flex: 1 1 auto; width: 100%; flex-direction: row; flex-wrap: wrap; }
+    .dna-leaders { position: static; flex: 1 1 auto; width: 100%; flex-direction: row; flex-wrap: wrap; }
     .dna-leader-card { flex: 1 1 220px; }
 }
 .dna-legend-head {
@@ -1850,9 +1898,9 @@ main { position: relative; z-index: 1; }
             const shareB = wb.toFixed(0);
             return `
                 <div class="dna-compare-sig">
-                    <div class="dna-compare-sig-head">
-                        <span class="dna-compare-sig-lbl">${escapeHtml(spec.label)}</span>
-                        <span class="dna-compare-sig-vals"><span class="va">${escapeHtml(fmtA)}</span><span class="vb">${escapeHtml(fmtB)}</span></span>
+                    <div class="dna-compare-sig-lbl">${escapeHtml(spec.label)}</div>
+                    <div class="dna-compare-sig-vals" style="--wa:${wa.toFixed(1)}%;--wb:${wb.toFixed(1)}%">
+                        <span class="va">${escapeHtml(fmtA)}</span><span class="vb">${escapeHtml(fmtB)}</span>
                     </div>
                     <div class="dna-compare-sig-bars" title="${escapeHtml(a.name)} owns ${shareA}% · ${escapeHtml(b.name)} owns ${shareB}%">
                         <div class="ba" style="--wa:${wa.toFixed(1)}%"></div>
@@ -1869,7 +1917,7 @@ main { position: relative; z-index: 1; }
                     <div class="dna-compare-col-name">${escapeHtml(a.name)}</div>
                     <div class="dna-compare-col-arch is-a">${escapeHtml(a.archetype.name)} — <span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(a.archetype.tagline)}</span></div>
                 </div>
-                <div>
+                <div style="text-align: right;">
                     <div class="dna-compare-col-name">${escapeHtml(b.name)}</div>
                     <div class="dna-compare-col-arch is-b">${escapeHtml(b.archetype.name)} — <span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(b.archetype.tagline)}</span></div>
                 </div>
