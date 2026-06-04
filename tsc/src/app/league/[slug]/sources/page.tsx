@@ -4,6 +4,16 @@ import { createClient } from '@/lib/supabase/server'
 import { AddSourceForm } from './add-source-form'
 import { SourceRow } from './source-row'
 
+// Round-robin distribution preserves row-major reading order: items[0,1,2]
+// land at the top of col 0, 1, 2 respectively; items[3,4,5] form the next
+// row. Each returned column is rendered as an independent flex stack so
+// expanding a card only shifts items below it WITHIN the same column.
+function splitColumns<T>(items: T[], cols: number): T[][] {
+  const out: T[][] = Array.from({ length: cols }, () => [])
+  items.forEach((item, i) => { out[i % cols].push(item) })
+  return out
+}
+
 export default async function SourcesPage({
   params,
 }: {
@@ -98,27 +108,38 @@ export default async function SourcesPage({
         {!sources || sources.length === 0 ? (
           <div className="dc-empty"><div className="dc-empty-text">No sources yet.</div></div>
         ) : (
-          // CSS multi-column instead of grid: each column flows independently,
-          // so expanding a card in one column doesn't push cards in other
-          // columns down. Trade-off — items flow column-major (top of col 1,
-          // down, then top of col 2…) rather than row-major. break-inside +
-          // the WebKit prefix keep Safari from splitting a card across cols.
-          <div style={{ columns: '280px 3', columnGap: '.6rem' }}>
-            {sources.map((s) => (
-              <div
-                key={s.id}
-                // Inline style is cast loose because csstype doesn't include
-                // the WebKit-prefixed multi-column break hint Safari needs.
-                style={{
-                  breakInside: 'avoid',
-                  marginBottom: '.6rem',
-                  WebkitColumnBreakInside: 'avoid',
-                } as React.CSSProperties}
-              >
-                <SourceRow source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
-              </div>
-            ))}
-          </div>
+          // Pre-distribute sources into independent columns so expanding one
+          // card only pushes items in the SAME column. Each column is a flex
+          // stack; the outer grid arranges the columns side-by-side. The
+          // dc-source-ledger class swaps column count by viewport in
+          // globals.css — three trees are rendered (3/2/1 col) and the
+          // unused two are display:none. Distribution is round-robin so
+          // reading row-major still gives original insertion order.
+          <>
+            <div className="dc-source-ledger dc-source-ledger-3">
+              {splitColumns(sources, 3).map((col, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+                  {col.map((s) => (
+                    <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="dc-source-ledger dc-source-ledger-2">
+              {splitColumns(sources, 2).map((col, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+                  {col.map((s) => (
+                    <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="dc-source-ledger dc-source-ledger-1">
+              {sources.map((s) => (
+                <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
