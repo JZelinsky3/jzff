@@ -27,13 +27,15 @@ export default function TocPage() {
 
       <div
         style={{
-          maxWidth: "780px",
-          margin: "0 auto",
-          padding: "2.5rem 1.5rem 4rem",
+          paddingLeft: "20%",
+          paddingRight: "1.5rem",
+          paddingTop: "2.5rem",
+          paddingBottom: "4rem",
           color: "var(--cream-soft)",
           fontFamily: "var(--serif)",
           fontSize: "1.02rem",
           lineHeight: 1.65,
+          textAlign: "left",
         }}
       >
         <p style={{ opacity: 0.7, fontSize: ".88rem", marginBottom: "2rem" }}>
@@ -126,33 +128,33 @@ export default function TocPage() {
         <Sub>↳ § 01 · This Week — the nine feature cards listed below</Sub>
         <Sub>↳ § 02 · The Charts — Current Form Sheet + The Mileage Matrix (paged)</Sub>
 
-        <Item>Live Season · Matchup Preview — <Path>/leagues/{`{slug}`}/live-season/matchup-preview/</Path></Item>
-        <Sub>every game this week on a railway departures board; claim your name for the H2H archive, your current form, and a kickoff projection</Sub>
+        <ChildItem>Matchup Preview — <Path>/leagues/{`{slug}`}/live-season/matchup-preview/</Path></ChildItem>
+        <ChildSub>every game this week on a railway departures board; claim your name for the H2H archive, your current form, and a kickoff projection</ChildSub>
 
-        <Item>Live Season · Best Coach Board — <Path>/leagues/{`{slug}`}/live-season/best-coach/</Path></Item>
-        <Sub>every starting lineup graded against its optimal version; season-long efficiency standings + worst single-week benchings</Sub>
+        <ChildItem>Best Coach Board — <Path>/leagues/{`{slug}`}/live-season/best-coach/</Path></ChildItem>
+        <ChildSub>every starting lineup graded against its optimal version; season-long efficiency standings + worst single-week benchings</ChildSub>
 
-        <Item>Live Season · Weekly Pick&apos;ems — <Path>/leagues/{`{slug}`}/live-season/pickems/</Path></Item>
-        <Sub>pick the winner of every matchup each week; honor-system identity (claim your name and vote); Voting Records section below</Sub>
-        <Sub>↳ Submit endpoint — <Path>/leagues/{`{slug}`}/live-season/pickems/submit</Path></Sub>
+        <ChildItem>Weekly Pick&apos;ems — <Path>/leagues/{`{slug}`}/live-season/pickems/</Path></ChildItem>
+        <ChildSub>pick the winner of every matchup each week; honor-system identity (claim your name and vote); Voting Records section below</ChildSub>
+        <ChildSub>↳ Submit endpoint — <Path>/leagues/{`{slug}`}/live-season/pickems/submit</Path></ChildSub>
 
-        <Item>Live Season · Power Rankings — <Path>/leagues/{`{slug}`}/live-season/powerrank/</Path></Item>
-        <Sub>auto-calculated each week from record, points for, recent form, and full league history; includes Season Outlook</Sub>
+        <ChildItem>Power Rankings — <Path>/leagues/{`{slug}`}/live-season/powerrank/</Path></ChildItem>
+        <ChildSub>auto-calculated each week from record, points for, recent form, and full league history; includes Season Outlook</ChildSub>
 
-        <Item>Live Season · Records Watch — <Path>/leagues/{`{slug}`}/live-season/records-watch/</Path></Item>
-        <Sub>what&apos;s on pace to break — Records Broken · On the Brink · On Pace · Just Missed</Sub>
+        <ChildItem>Records Watch — <Path>/leagues/{`{slug}`}/live-season/records-watch/</Path></ChildItem>
+        <ChildSub>what&apos;s on pace to break — Records Broken · On the Brink · On Pace · Just Missed</ChildSub>
 
-        <Item>Live Season · Trade Grader — <Path>/leagues/{`{slug}`}/live-season/trades/</Path></Item>
-        <Sub>every completed trade for your league, auto-pulled; themed per league setting (Tribunal · Wire · Floor · Cards)</Sub>
+        <ChildItem>Trade Grader — <Path>/leagues/{`{slug}`}/live-season/trades/</Path></ChildItem>
+        <ChildSub>every completed trade for your league, auto-pulled; themed per league setting (Tribunal · Wire · Floor · Cards)</ChildSub>
 
-        <Item>Live Season · Milestone Tracker — <Path>/leagues/{`{slug}`}/live-season/milestones/</Path></Item>
-        <Sub>honors-roll feed — Just Achieved · One Game Away · On the Horizon</Sub>
+        <ChildItem>Milestone Tracker — <Path>/leagues/{`{slug}`}/live-season/milestones/</Path></ChildItem>
+        <ChildSub>honors-roll feed — Just Achieved · One Game Away · On the Horizon</ChildSub>
 
-        <Item>Live Season · Manager DNA — <Path>/leagues/{`{slug}`}/live-season/manager-dna/</Path></Item>
-        <Sub>every transaction, lineup, and draft pick sequenced into an archetype per manager (Trade Hawks, Coin-Flippers, Set-and-Forget, more)</Sub>
+        <ChildItem>Manager DNA — <Path>/leagues/{`{slug}`}/live-season/manager-dna/</Path></ChildItem>
+        <ChildSub>every transaction, lineup, and draft pick sequenced into an archetype per manager (Trade Hawks, Coin-Flippers, Set-and-Forget, more)</ChildSub>
 
-        <Item>Live Season · Weekly Recap — <i>coming soon</i></Item>
-        <Sub>Veteran tier — auto-written recap of the week&apos;s matchups, blowouts, and grudge games every Tuesday morning; card is on the hub but not yet wired</Sub>
+        <ChildItem>Weekly Recap — <i>coming soon</i></ChildItem>
+        <ChildSub>Veteran tier — auto-written recap of the week&apos;s matchups, blowouts, and grudge games every Tuesday morning; card is on the hub but not yet wired</ChildSub>
 
       </div>
 
@@ -217,6 +219,35 @@ function Sub({ children }: { children: React.ReactNode }) {
     <p
       style={{
         margin: ".15rem 0 .15rem 1.4rem",
+        color: "var(--cream-soft)",
+        fontSize: ".93rem",
+        opacity: 0.85,
+      }}
+    >
+      {children}
+    </p>
+  )
+}
+
+function ChildItem({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      style={{
+        margin: "1rem 0 .1rem 1.6rem",
+        color: "var(--cream)",
+        fontWeight: 500,
+      }}
+    >
+      • {children}
+    </p>
+  )
+}
+
+function ChildSub({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      style={{
+        margin: ".15rem 0 .15rem 3rem",
         color: "var(--cream-soft)",
         fontSize: ".93rem",
         opacity: 0.85,
