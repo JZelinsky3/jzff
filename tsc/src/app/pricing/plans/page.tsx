@@ -65,6 +65,11 @@ const FEATURES: Feature[] = [
     included: { tier1: false, tier2: true, tier3: true },
   },
   {
+    label: 'Best Coach Board',
+    detail: 'Every starting lineup graded against its optimal version. Season-long efficiency standings plus a running tally of the worst single-week benchings.',
+    included: { tier1: false, tier2: true, tier3: true },
+  },
+  {
     label: 'Multiple leagues',
     // Rookie's check intentionally false — 'multiple' implies >1. Each
     // card shows only its own league count, not the whole ladder.

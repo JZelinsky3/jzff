@@ -131,7 +131,7 @@ export default function TocPage() {
         <ChildItem>Matchup Preview — <Path>/leagues/{`{slug}`}/live-season/matchup-preview/</Path></ChildItem>
         <ChildSub>every game this week on a railway departures board; claim your name for the H2H archive, your current form, and a kickoff projection</ChildSub>
 
-        <ChildItem>Best Coach Board — <Path>/leagues/{`{slug}`}/live-season/best-coach/</Path></ChildItem>
+        <ChildItem>Best Coach Board <Badge tier="Veteran" /> — <Path>/leagues/{`{slug}`}/live-season/best-coach/</Path></ChildItem>
         <ChildSub>every starting lineup graded against its optimal version; season-long efficiency standings + worst single-week benchings</ChildSub>
 
         <ChildItem>Weekly Pick&apos;ems — <Path>/leagues/{`{slug}`}/live-season/pickems/</Path></ChildItem>
@@ -197,7 +197,7 @@ export default function TocPage() {
           <Tally label="Sort options" value="13" />
           <Tally label="Live charts" value="2" />
           <Tally label="Trades themes" value="4" />
-          <Tally label="Veteran features" value="3" />
+          <Tally label="Veteran features" value="4" />
         </div>
 
       </div>
