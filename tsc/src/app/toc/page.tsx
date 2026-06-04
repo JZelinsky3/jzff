@@ -180,24 +180,24 @@ export default function TocPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
             columnGap: "1.5rem",
             rowGap: ".25rem",
-            maxWidth: "640px",
+            maxWidth: "560px",
           }}
         >
-          <Tally label="Pages (with their own URL)" value="31" />
+          <Tally label="Total pages" value="31" />
           <Tally label="Top-level pages" value="25" />
           <Tally label="Sub-pages" value="6" />
           <Tally label="Home sections" value="9" />
-          <Tally label="In-season feature pages" value="9" />
+          <Tally label="In-season pages" value="9" />
           <Tally label="Tabbed views" value="4" />
           <Tally label="Total tabs" value="19" />
           <Tally label="Sort bars" value="2" />
           <Tally label="Sort options" value="13" />
-          <Tally label="Live Season charts" value="2" />
-          <Tally label="Trade Grader themes" value="4" />
-          <Tally label="Veteran-tier features" value="3" />
+          <Tally label="Live charts" value="2" />
+          <Tally label="Trades themes" value="4" />
+          <Tally label="Veteran features" value="3" />
         </div>
 
       </div>
@@ -333,23 +333,25 @@ function Tally({ label, value }: { label: string; value: string }) {
         margin: 0,
         display: "flex",
         alignItems: "baseline",
-        gap: ".5rem",
-        fontSize: ".75rem",
+        justifyContent: "space-between",
+        gap: ".6rem",
+        fontSize: ".72rem",
         lineHeight: 1.5,
+        borderBottom: "1px dotted rgba(180,140,60,0.18)",
+        paddingBottom: ".1rem",
       }}
     >
+      <span style={{ color: "var(--cream-soft)", opacity: 0.8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
       <span
         style={{
           fontFamily: "var(--mono)",
-          color: "var(--cream)",
-          minWidth: "1.6rem",
-          textAlign: "right",
+          color: "var(--gold)",
           fontWeight: 600,
+          flexShrink: 0,
         }}
       >
         {value}
       </span>
-      <span style={{ color: "var(--cream-soft)", opacity: 0.8 }}>{label}</span>
     </p>
   )
 }
