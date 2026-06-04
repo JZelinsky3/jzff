@@ -1773,13 +1773,15 @@ main { position: relative; z-index: 1; }
 
         // League-relative axis bounds — the spread reads as "where this
         // league actually landed" rather than against a hard-coded scale.
-        // Pad the league min/max by 5% of the range on each side so points
-        // don't sit pinned to the chart edges. Include the baseline value
-        // in the data so the dashed league-average line still falls inside
-        // the visible range even when every manager is above (or below) it.
-        // Falls back to the spec's static range only when the league sits
-        // at a single value with no spread.
-        function leagueBounds(values, spec, baseVal) {
+        // Pad the league min/max so points don't sit pinned to the chart
+        // edges. Volatility gets a flat ±1pp pad (its working range is
+        // narrow — a 5%-of-range pad sometimes barely budges the bounds);
+        // every other signal gets 5% of the league range. Include the
+        // baseline value in the data so the dashed league-average line
+        // still falls inside the visible range even when every manager is
+        // above (or below) it. Falls back to the spec's static range only
+        // when the league sits at a single value with no spread.
+        function leagueBounds(values, spec, baseVal, key) {
             const all = values.slice();
             if (baseVal != null && Number.isFinite(baseVal)) all.push(baseVal);
             if (all.length === 0) return { min: spec.min, max: spec.max };
@@ -1787,13 +1789,13 @@ main { position: relative; z-index: 1; }
             for (const v of all) { if (v < lo) lo = v; if (v > hi) hi = v; }
             const range = hi - lo;
             if (range === 0) return { min: spec.min, max: spec.max };
-            const pad = range * 0.05;
+            const pad = key === 'volatility_pct' ? 1 : range * 0.05;
             return { min: lo - pad, max: hi + pad };
         }
         const xBase = baselines[xKey] ?? xSpec.base;
         const yBase = baselines[yKey] ?? ySpec.base;
-        const xBounds = leagueBounds(pts.map((p) => p.x), xSpec, xBase);
-        const yBounds = leagueBounds(pts.map((p) => p.y), ySpec, yBase);
+        const xBounds = leagueBounds(pts.map((p) => p.x), xSpec, xBase, xKey);
+        const yBounds = leagueBounds(pts.map((p) => p.y), ySpec, yBase, yKey);
         const scaleX = (v) => padL + ((v - xBounds.min) / (xBounds.max - xBounds.min)) * innerW;
         // SVG y grows downward; flip so higher values render up.
         const scaleY = (v) => padT + (1 - (v - yBounds.min) / (yBounds.max - yBounds.min)) * innerH;
