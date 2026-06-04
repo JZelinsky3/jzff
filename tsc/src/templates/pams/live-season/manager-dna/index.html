@@ -1073,8 +1073,6 @@ main { position: relative; z-index: 1; }
 }
 .dna-leaders {
     flex: 0 0 240px;
-    position: sticky;
-    top: 1rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -1153,7 +1151,7 @@ main { position: relative; z-index: 1; }
 .dna-leader-card.is-low  .dna-leader-val { color: var(--dna-amber); }
 @media (max-width: 920px) {
     .dna-page-body { flex-direction: column; }
-    .dna-leaders { position: static; flex: 1 1 auto; width: 100%; flex-direction: row; flex-wrap: wrap; }
+    .dna-leaders { flex: 1 1 auto; width: 100%; flex-direction: row; flex-wrap: wrap; }
     .dna-leader-card { flex: 1 1 220px; }
 }
 .dna-legend-head {
@@ -1220,10 +1218,38 @@ main { position: relative; z-index: 1; }
         <div class="dna-strand-baselines" id="dna-baselines"></div>
     </section>
 
+    <!-- SPECIMEN GRID — with the side-by-side compare panel tucked above
+         the grid so the comparison reads as a focused view *of* the
+         specimens, not a separate page section. -->
+    <section>
+        <div class="dna-section-head">
+            <span class="dna-section-num">§ II · Specimen Sheets</span>
+            <span class="dna-section-title">One <em>manager,</em> one strand.</span>
+            <span class="dna-strand-note">Tap any specimen to unseal the vault · Pin two with Compare to score them head-to-head</span>
+        </div>
+
+        <!-- COMPARE — appears when 2 specimens are tagged. Sits above the
+             specimen grid as a sub-block of § II. -->
+        <div class="dna-compare-panel" id="dna-compare" hidden>
+            <div class="dna-compare-head">
+                <span class="dna-compare-num">§ II · Side-by-Side</span>
+                <span class="dna-compare-title">Two <em>strands,</em> one comparison.</span>
+                <button class="dna-compare-close" id="dna-compare-close" type="button">Clear ×</button>
+            </div>
+            <div id="dna-compare-body"></div>
+        </div>
+        <div class="dna-page-body">
+            <aside class="dna-leaders" id="dna-leaders" hidden></aside>
+            <div class="dna-grid" id="dna-grid">
+                <div class="dna-empty">Sequencing the league…</div>
+            </div>
+        </div>
+    </section>
+
     <!-- GENOME MAP — 2-axis scatter of the active society -->
     <section class="dna-genome-map" id="dna-genome-map" hidden>
         <div class="dna-genome-map-head">
-            <span class="dna-genome-map-num">§ II · Genome Map</span>
+            <span class="dna-genome-map-num">§ III · Genome Map</span>
             <span class="dna-genome-map-title">The <em>spread.</em></span>
             <span class="dna-genome-map-note" id="dna-genome-axes">—</span>
         </div>
@@ -1233,44 +1259,19 @@ main { position: relative; z-index: 1; }
     <!-- DOPPELGÄNGERS — closest strand neighbors -->
     <section class="dna-doppel-wrap" id="dna-doppel" hidden>
         <div class="dna-doppel-head">
-            <span class="dna-doppel-num">§ III · Doppelgängers</span>
+            <span class="dna-doppel-num">§ IV · Doppelgängers</span>
             <span class="dna-doppel-title">Same <em>strand,</em> different name.</span>
         </div>
         <div class="dna-doppel-list" id="dna-doppel-list"></div>
     </section>
 
-    <!-- COMPARE — appears when 2 specimens are tagged -->
-    <section class="dna-compare-panel" id="dna-compare" hidden>
-        <div class="dna-compare-head">
-            <span class="dna-compare-num">§ IV · Side-by-Side</span>
-            <span class="dna-compare-title">Two <em>strands,</em> one comparison.</span>
-            <button class="dna-compare-close" id="dna-compare-close" type="button">Clear ×</button>
+    <!-- ALUMNI — past members, name + archetype only -->
+    <section class="dna-alumni-wrap" id="dna-alumni" hidden>
+        <div class="dna-alumni-head">
+            <span>★ <em>Alumni</em> · Past society strands ★</span>
+            <span class="dna-alumni-note">Last sequenced before they left the league</span>
         </div>
-        <div id="dna-compare-body"></div>
-    </section>
-
-    <!-- SPECIMEN GRID -->
-    <section>
-        <div class="dna-section-head">
-            <span class="dna-section-num">§ V · Specimen Sheets</span>
-            <span class="dna-section-title">One <em>manager,</em> one strand.</span>
-            <span class="dna-strand-note">Tap any specimen to unseal the vault · Pin two with Compare to score them head-to-head</span>
-        </div>
-        <div class="dna-page-body">
-            <aside class="dna-leaders" id="dna-leaders" hidden></aside>
-            <div class="dna-grid" id="dna-grid">
-                <div class="dna-empty">Sequencing the league…</div>
-            </div>
-        </div>
-
-        <!-- ALUMNI — past members, name + archetype only -->
-        <div class="dna-alumni-wrap" id="dna-alumni" hidden>
-            <div class="dna-alumni-head">
-                <span>★ <em>Alumni</em> · Past society strands ★</span>
-                <span class="dna-alumni-note">Last sequenced before they left the league</span>
-            </div>
-            <div class="dna-alumni-grid" id="dna-alumni-grid"></div>
-        </div>
+        <div class="dna-alumni-grid" id="dna-alumni-grid"></div>
     </section>
 
     <!-- LEGEND -->
@@ -1814,28 +1815,46 @@ main { position: relative; z-index: 1; }
             const av = a.signals[k];
             const bv = b.signals[k];
             if (av == null && bv == null) return '';
-            // For bipolar (margin), bars grow inward from each side toward
-            // center; for everything else they grow from each side toward
-            // the center too — but the width is value/max * 50. This makes
-            // big values from both managers visibly meet in the middle,
-            // which reads as "they're both high" without any extra labeling.
+            // Share-of-100 model: normalize each value into [0, 1] over the
+            // signal's spec range, then split the bar so A and B own
+            // percentage shares that sum to 100. Bipolar margin handles
+            // cleanly because the shift to [0, 1] absorbs the negative
+            // half (a –10 margin becomes 0; a +10 becomes 1). Reads as
+            // "who owns more of this signal" rather than "how full is
+            // each side of an empty bar."
             const range = spec.max - spec.min;
-            const widthOf = (v) => {
-                if (v == null) return 0;
+            const norm = (v) => {
+                if (v == null) return null;
                 const clamped = Math.max(spec.min, Math.min(spec.max, v));
-                return Math.max(0, Math.min(50, ((clamped - spec.min) / range) * 50));
+                return (clamped - spec.min) / range;
             };
-            const wa = widthOf(av);
-            const wb = widthOf(bv);
+            const na = norm(av);
+            const nb = norm(bv);
+            // Edge cases:
+            //   • only one side has a value → the present one owns 100%
+            //   • both are at the floor (norm 0 each) → 50/50 (a tie at the
+            //     bottom is still a tie; arbitrary split keeps the bar from
+            //     collapsing to invisible).
+            let wa, wb;
+            if (na == null && nb == null) return '';
+            if (na == null) { wa = 0; wb = 100; }
+            else if (nb == null) { wa = 100; wb = 0; }
+            else if (na + nb === 0) { wa = 50; wb = 50; }
+            else {
+                wa = (na / (na + nb)) * 100;
+                wb = 100 - wa;
+            }
             const fmtA = av == null ? '—' : spec.fmt(av);
             const fmtB = bv == null ? '—' : spec.fmt(bv);
+            const shareA = wa.toFixed(0);
+            const shareB = wb.toFixed(0);
             return `
                 <div class="dna-compare-sig">
                     <div class="dna-compare-sig-head">
                         <span class="dna-compare-sig-lbl">${escapeHtml(spec.label)}</span>
                         <span class="dna-compare-sig-vals"><span class="va">${escapeHtml(fmtA)}</span><span class="vb">${escapeHtml(fmtB)}</span></span>
                     </div>
-                    <div class="dna-compare-sig-bars">
+                    <div class="dna-compare-sig-bars" title="${escapeHtml(a.name)} owns ${shareA}% · ${escapeHtml(b.name)} owns ${shareB}%">
                         <div class="ba" style="--wa:${wa.toFixed(1)}%"></div>
                         <div class="bb" style="--wb:${wb.toFixed(1)}%"></div>
                     </div>
@@ -1844,7 +1863,7 @@ main { position: relative; z-index: 1; }
         }).filter(Boolean).join('');
 
         return `
-            <div class="dna-compare-hint">Cyan = ${escapeHtml(a.name)} · Magenta = ${escapeHtml(b.name)} — bars grow inward from each side, meeting in the middle when both run high.</div>
+            <div class="dna-compare-hint">Cyan = ${escapeHtml(a.name)} · Magenta = ${escapeHtml(b.name)} — each bar is split into shares that sum to 100%. The bigger slice owns more of the signal.</div>
             <div class="dna-compare-grid">
                 <div>
                     <div class="dna-compare-col-name">${escapeHtml(a.name)}</div>
@@ -1905,11 +1924,11 @@ main { position: relative; z-index: 1; }
         `;
         return `
             <div class="dna-leader-card is-high">
-                <div class="dna-leader-head">§ Va · <em>Top</em> of the strand</div>
+                <div class="dna-leader-head">§ IIa · <em>Top</em> of the strand</div>
                 <div class="dna-leader-list">${highs.map(row).join('')}</div>
             </div>
             <div class="dna-leader-card is-low">
-                <div class="dna-leader-head">§ Vb · <em>Bottom</em> of the strand</div>
+                <div class="dna-leader-head">§ IIb · <em>Bottom</em> of the strand</div>
                 <div class="dna-leader-list">${lows.map(row).join('')}</div>
             </div>
         `;
