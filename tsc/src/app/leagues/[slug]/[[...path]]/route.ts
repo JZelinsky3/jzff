@@ -274,6 +274,18 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       description: `A fantasy football rivalry tracked in ${meta.name}'s almanac on The Sunday Chronicle.`,
     }
   }
+  // Season detail: /leagues/<slug>/seasons/season.html?year=YYYY
+  if (file === 'seasons/season.html') {
+    const yearStr = req.nextUrl.searchParams.get('year')
+    const year = yearStr ? Number(yearStr) : NaN
+    if (!Number.isFinite(year)) return null
+    const url = new URL(`/api/og/season/${meta.slug}/${year}`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · ${year} Champion`,
+      description: `The ${year} season of ${meta.name}, chronicled on The Sunday Chronicle.`,
+    }
+  }
   return null
 }
 
