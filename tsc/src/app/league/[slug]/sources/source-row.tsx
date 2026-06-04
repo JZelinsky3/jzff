@@ -226,16 +226,15 @@ export function SourceRow({
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
-          {/* Sync + Remove keep their default horizontal padding so they
-              match the row's overall width; only the vertical padding is
-              trimmed so the column doesn't tower over the source label
-              beside it. Custom / Edit inside the grid already render at a
-              compact height. */}
+          {/* Sync + Remove get trimmed horizontal padding so the whole
+              action column reads narrow — matching the compact width of
+              the Custom / Edit grid underneath — while keeping enough
+              vertical padding to stay easy to hit with a thumb. */}
           <button
             onClick={onSync}
             disabled={busy !== null || isPending}
             className="dc-btn"
-            style={{ padding: '.4rem 1.5rem' }}
+            style={{ padding: '.55rem .55rem' }}
           >
             {busy === 'syncing' ? 'Syncing…' : 'Sync now →'}
           </button>
@@ -279,7 +278,7 @@ export function SourceRow({
             onClick={onDelete}
             disabled={busy !== null || isPending}
             className="dc-btn-ghost"
-            style={{ padding: '.4rem 1.5rem' }}
+            style={{ padding: '.55rem .55rem' }}
           >
             Remove
           </button>
