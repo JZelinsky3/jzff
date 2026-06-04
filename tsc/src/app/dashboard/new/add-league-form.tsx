@@ -550,7 +550,12 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                   className="dc-input mono"
                 />
                 <span className="dc-checkbox-hint">
-                  Get both from a logged-in ESPN tab: DevTools → Application → Cookies → fantasy.espn.com.
+                  Easy mode: install our{' '}
+                  <a href="/tools/espn-cookies/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)' }}>
+                    one-click bookmarklet
+                  </a>
+                  {' '}to grab both with a single click on fantasy.espn.com. Or
+                  manually: DevTools → Application → Cookies → fantasy.espn.com.
                 </span>
               </div>
             </>

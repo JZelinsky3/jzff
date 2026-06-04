@@ -11,6 +11,7 @@ type ProfileRow = {
   id: string
   display_name: string | null
   email: string | null
+  member_code: string | null
   created_at: string
 }
 
@@ -47,7 +48,7 @@ export default async function AdminPage() {
   const db = createAdminClient()
 
   const [profilesRes, leaguesRes, subsRes, compsRes, authUsersRes] = await Promise.all([
-    db.from('profiles').select('id, display_name, created_at').order('created_at', { ascending: false }),
+    db.from('profiles').select('id, display_name, member_code, created_at').order('created_at', { ascending: false }),
     db.from('leagues').select('id, name, slug, platform, owner_id, created_at, last_synced_at, published_at, grace_period_ends_at, created_during_testing').order('created_at', { ascending: false }),
     db.from('subscriptions').select('user_id, tier, billing_period, status, current_period_end, trial_ends_at'),
     db.from('comp_grants').select('user_id, granted_by, note, created_at'),
@@ -63,6 +64,7 @@ export default async function AdminPage() {
     id: p.id as string,
     display_name: (p.display_name as string | null) ?? null,
     email: emailById.get(p.id as string) ?? null,
+    member_code: (p.member_code as string | null) ?? null,
     created_at: p.created_at as string,
   }))
   const leagues = (leaguesRes.data ?? []) as LeagueRow[]
@@ -117,6 +119,7 @@ export default async function AdminPage() {
               <tr style={{ background: 'rgba(232,200,137,.06)', textAlign: 'left' }}>
                 <th style={th}>User</th>
                 <th style={th}>Email</th>
+                <th style={th}>Code</th>
                 <th style={th}>Leagues</th>
                 <th style={th}>Subscription</th>
                 <th style={th}>Comp</th>
@@ -135,6 +138,9 @@ export default async function AdminPage() {
                       <div style={{ opacity: 0.5, fontFamily: 'var(--mono)', fontSize: '.65rem' }}>{p.id.slice(0, 8)}…</div>
                     </td>
                     <td style={td}>{p.email ?? '—'}</td>
+                    <td style={{ ...td, fontFamily: 'var(--mono)', letterSpacing: '.1em', color: 'var(--cream)' }}>
+                      {p.member_code ?? '—'}
+                    </td>
                     <td style={td}>{leagueCountByOwner.get(p.id) ?? 0}</td>
                     <td style={td}>
                       {sub ? (

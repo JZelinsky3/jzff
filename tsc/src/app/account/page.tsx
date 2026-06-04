@@ -39,13 +39,15 @@ export default async function AccountPage({
   // Count the user's leagues so the subscription card can show current usage
   // against the tier limit, and load the live subscription state from our
   // local mirror (last-known-good from Stripe webhooks).
-  const [{ count: leagueCount }, sub] = await Promise.all([
+  const [{ count: leagueCount }, sub, profileRes] = await Promise.all([
     supabase
       .from('leagues')
       .select('id', { count: 'exact', head: true })
       .eq('owner_id', user.id),
     getUserSubscription(user.id),
+    supabase.from('profiles').select('member_code').eq('id', user.id).single(),
   ])
+  const memberCode = (profileRes.data?.member_code as string | undefined) ?? ''
   // Provide tier label for the subscription card render; lib export is the
   // source of truth so we don't re-derive it in the client component.
   const tierLabel = sub ? TIER_LABELS[sub.tier].name : null
@@ -99,6 +101,7 @@ export default async function AccountPage({
         } : null}
         lifetime={lifetime}
         justSubscribed={justSubscribed}
+        memberCode={memberCode}
       />
 
       <SiteFooter />

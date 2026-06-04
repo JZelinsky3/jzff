@@ -66,7 +66,14 @@ export default function Page() {
         Private ESPN leagues require authentication. ESPN doesn&apos;t expose user passwords through its API — instead, it uses two session cookies that your browser holds when you&apos;re logged in: <strong>SWID</strong> and <strong>espn_s2</strong>.
       </P>
       <P>
-        To grab them:
+        <strong>Easy mode (recommended):</strong> use our one-click bookmarklet at{' '}
+        <Link href="/tools/espn-cookies/" style={{ color: "var(--gold)" }}>jzff.online/tools/espn-cookies</Link>.
+        Drag it to your bookmarks bar once; from then on, one click on a logged-in
+        fantasy.espn.com tab copies both cookies to your clipboard. No DevTools, no
+        third-party extension, ~5 seconds.
+      </P>
+      <P>
+        <strong>Manual fallback,</strong> if you&apos;d rather:
       </P>
       <ol style={{ paddingLeft: "1.4rem", marginBottom: "1.25rem" }}>
         <li>Open ESPN Fantasy in a desktop browser, signed in to your league.</li>
