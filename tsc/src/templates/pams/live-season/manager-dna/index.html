@@ -1603,7 +1603,7 @@ main { position: relative; z-index: 1; }
 
         return `
             <details class="dna-card" data-cmp-key="${escapeHtml(cmpKey)}">
-                <div class="dna-helix">${helixSvg(seedHash)}</div>
+                <div class="dna-helix" data-helix-seed="${seedHash}"></div>
                 <summary class="dna-card-summary">
                     <div class="dna-specimen-lbl">
                         <span class="dna-specimen-lbl-num">SPECIMEN № ${num}</span>
@@ -2109,17 +2109,49 @@ main { position: relative; z-index: 1; }
             // round-robin into two flex columns (col A: 0,2,4…; col B: 1,3,5…)
             // so the columns can grow independently. When a card opens, only
             // its own column's later cards push down.
+            //
+            // Rendering is chunked across animation frames so the browser
+            // can paint between batches instead of blocking on one giant
+            // innerHTML assignment. Helix SVGs (the heaviest per-card
+            // content — ~180 nodes each) are emitted as empty placeholders
+            // with `data-helix-seed`; we populate them in a later frame so
+            // card text + barcode show up immediately and the strand paints
+            // in after. No visual loss — just a different paint order.
             const grid = document.getElementById('dna-grid');
+            const cardBaselines = data.league_baselines || {};
             if (current.length > 0) {
-                const colA = [];
-                const colB = [];
-                current.forEach((m, i) => {
-                    (i % 2 === 0 ? colA : colB).push(renderCard(m, i, data.league_baselines || {}));
-                });
-                grid.innerHTML = `
-                    <div class="dna-col">${colA.join('')}</div>
-                    <div class="dna-col">${colB.join('')}</div>
-                `;
+                const colA = document.createElement('div'); colA.className = 'dna-col';
+                const colB = document.createElement('div'); colB.className = 'dna-col';
+                grid.replaceChildren(colA, colB);
+                const BATCH = 4;
+                let nextIdx = 0;
+                function renderBatch() {
+                    const end = Math.min(nextIdx + BATCH, current.length);
+                    let aHtml = '', bHtml = '';
+                    for (let i = nextIdx; i < end; i++) {
+                        const html = renderCard(current[i], i, cardBaselines);
+                        if (i % 2 === 0) aHtml += html; else bHtml += html;
+                    }
+                    if (aHtml) colA.insertAdjacentHTML('beforeend', aHtml);
+                    if (bHtml) colB.insertAdjacentHTML('beforeend', bHtml);
+                    nextIdx = end;
+                    if (nextIdx < current.length) {
+                        requestAnimationFrame(renderBatch);
+                    } else {
+                        // Defer helix paint one more frame so the card text
+                        // + barcode reaches the screen before the SVG work.
+                        requestAnimationFrame(paintHelixes);
+                    }
+                }
+                function paintHelixes() {
+                    const slots = grid.querySelectorAll('.dna-helix[data-helix-seed]');
+                    slots.forEach((el) => {
+                        const seed = parseInt(el.getAttribute('data-helix-seed'), 10);
+                        if (Number.isFinite(seed)) el.innerHTML = helixSvg(seed);
+                        el.removeAttribute('data-helix-seed');
+                    });
+                }
+                renderBatch();
             } else {
                 grid.innerHTML = `<div class="dna-empty">No active managers found.</div>`;
             }
