@@ -5544,8 +5544,16 @@ function buildManagerDna(s: Snapshot): unknown {
 
   // -------- Pick archetype per profile (highest |z| across signals, with tiebreakers) --------
   type Candidate = { key: string; name: string; tagline: string; blurb: string; strength: number }
+  type ProfileBuild = {
+    bundle: ProfileBundle
+    signals: DnaSignals
+    z_eff: number; z_churn: number; z_vol: number; z_rb: number; z_trade: number
+    closeWinRate: number | null
+    blowWinRate: number | null
+    candidates: Candidate[]
+  }
 
-  const result: DnaManager[] = []
+  const builds: ProfileBuild[] = []
   for (const { bundle, signals } of profiles) {
     const z_eff = z(signals.efficiency_pct, eff)
     const z_churn = z(signals.lineup_churn_pct, ch)
@@ -5710,14 +5718,14 @@ function buildManagerDna(s: Snapshot): unknown {
     if (
       signals.draft_qb_early_pct != null
       && signals.total_drafts >= 3
-      && signals.draft_qb_early_pct >= 55
+      && signals.draft_qb_early_pct >= 50
     ) {
       candidates.push({
         key: 'anchor_qb',
         name: 'The Anchor QB',
         tagline: 'Locks the position early',
         blurb: `Has reached for a QB inside the first three rounds in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts on file. Refuses to play the streamer's game.`,
-        strength: signals.draft_qb_early_pct / 55,  // 55% → 1.0, 100% → 1.82
+        strength: signals.draft_qb_early_pct / 50,  // 50% → 1.0, 100% → 2.0
       })
     }
     // TE Premium — same shape as Anchor QB. Bar was originally 25% (too
@@ -5738,26 +5746,64 @@ function buildManagerDna(s: Snapshot): unknown {
       })
     }
 
-    let archetype: Candidate
-    if (candidates.length === 0) {
-      archetype = {
-        key: 'the_average_joe',
-        name: 'The Average Joe',
-        tagline: 'Defies categorization',
-        blurb: `Sits in the middle of every distribution — no extreme behaviors, no obvious tells. Quietly competitive.`,
-        strength: 0,
-      }
-    } else {
-      // Trade Hawk reads as "just another trader" when stamped on three or
-      // four cards. Demote it whenever another archetype fits — keep it as a
-      // fallback only when it's literally the manager's lone candidate.
-      candidates.sort((a, b) => {
-        if (a.key === 'trade_hawk' && b.key !== 'trade_hawk') return 1
-        if (b.key === 'trade_hawk' && a.key !== 'trade_hawk') return -1
-        return b.strength - a.strength
-      })
-      archetype = candidates[0]
+    // Trade Hawk reads as "just another trader" when stamped on three or
+    // four cards. Demote it whenever another archetype fits — keep it as a
+    // fallback only when it's literally the manager's lone candidate.
+    candidates.sort((a, b) => {
+      if (a.key === 'trade_hawk' && b.key !== 'trade_hawk') return 1
+      if (b.key === 'trade_hawk' && a.key !== 'trade_hawk') return -1
+      return b.strength - a.strength
+    })
+    builds.push({ bundle, signals, z_eff, z_churn, z_vol, z_rb, z_trade, closeWinRate, blowWinRate, candidates })
+  }
+
+  // -------- Spread archetypes across the league --------
+  // No single archetype should land on 3+ managers — when it does, the page
+  // reads as "everyone's a Cardiac Kid" rather than a distinct lineup of
+  // archetypes. Algorithm: every manager starts on their strongest candidate;
+  // if any archetype has 3+ holders, demote the weakest holder of that group
+  // to their next-best candidate. Repeat until no archetype is overstuffed
+  // (or the demoted manager runs out of candidates and falls through to The
+  // Average Joe). Iteration is bounded by the sum of candidate-list lengths
+  // so the loop can never run more times than total demotions available.
+  const AVERAGE_JOE: Candidate = {
+    key: 'the_average_joe',
+    name: 'The Average Joe',
+    tagline: 'Defies categorization',
+    blurb: 'Sits in the middle of every distribution — no extreme behaviors, no obvious tells. Quietly competitive.',
+    strength: 0,
+  }
+  const selectedIdx = builds.map(() => 0)
+  const archetypeAt = (i: number): Candidate => {
+    const c = builds[i].candidates
+    if (c.length === 0 || selectedIdx[i] >= c.length) return AVERAGE_JOE
+    return c[selectedIdx[i]]
+  }
+  const maxIter = builds.reduce((sum, b) => sum + b.candidates.length, 0) + builds.length
+  for (let iter = 0; iter < maxIter; iter++) {
+    const byKey = new Map<string, number[]>()
+    for (let i = 0; i < builds.length; i++) {
+      const k = archetypeAt(i).key
+      if (k === 'the_average_joe') continue
+      let arr = byKey.get(k)
+      if (!arr) { arr = []; byKey.set(k, arr) }
+      arr.push(i)
     }
+    let toReduce: number[] | null = null
+    for (const arr of byKey.values()) {
+      if (arr.length >= 3) { toReduce = arr; break }
+    }
+    if (!toReduce) break
+    // Weakest holder loses the slot — lowest current strength gets demoted.
+    toReduce.sort((a, b) => archetypeAt(a).strength - archetypeAt(b).strength)
+    selectedIdx[toReduce[0]]++
+  }
+
+  // -------- Build traits + result rows using the finalized archetype --------
+  const result: DnaManager[] = []
+  for (let i = 0; i < builds.length; i++) {
+    const { bundle, signals, z_eff, z_churn, z_vol, z_rb, z_trade, closeWinRate, blowWinRate } = builds[i]
+    const archetype = archetypeAt(i)
 
     // -------- Build trait chips (gene markers) — secondary archetypes, capped 4 --------
     const traits: DnaTrait[] = []
