@@ -4930,12 +4930,27 @@ function buildBestCoach(s: Snapshot): unknown {
   const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
   const managerToGroup = buildManagerToGroup(groups)
 
+  // Consolation-game lookup: (manager, week) pairs where the matchup is a
+  // playoff placement game (neither participant finished top-4). Managers
+  // have nothing to play for, so a week-16 bench bomb from someone in the
+  // 7th-place game shouldn't count against their coaching record.
+  const consolationKeys = new Set<string>()
+  for (const m of s.matchupsBySeason.get(liveSeason.id) ?? []) {
+    if (!m.is_playoff) continue
+    const game = asManagerGame(m, m.manager_a_id)
+    if (game && !isChampionshipBracketGame(s, game)) {
+      consolationKeys.add(`${m.manager_a_id}|${m.week}`)
+      consolationKeys.add(`${m.manager_b_id}|${m.week}`)
+    }
+  }
+
   // Bucket rows by manager → week → players.
   type WeekBucket = { starters: WeeklyLineupRow[]; all: WeeklyLineupRow[] }
   const byMgr = new Map<string, Map<number, WeekBucket>>()
   let maxWeek = 0
   for (const r of rows) {
     if (!managerToGroup.has(r.manager_id)) continue
+    if (consolationKeys.has(`${r.manager_id}|${r.week}`)) continue
     if (r.week > maxWeek) maxWeek = r.week
     let weeks = byMgr.get(r.manager_id)
     if (!weeks) { weeks = new Map(); byMgr.set(r.manager_id, weeks) }
