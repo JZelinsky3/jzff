@@ -5677,22 +5677,29 @@ function buildManagerDna(s: Snapshot): unknown {
       })
     }
     // Zero-RB / Hog Mollie / Anchor QB / TE Premium
-    if (signals.draft_rb_share_pct != null && z_rb <= -1.0 && bundle.first5Picks.length >= 5) {
+    // Bar was z ≤ -1.0 (strength = |z|/1.0). In tight leagues where the RB-share
+    // distribution clusters near the mean, a small absolute deviation (29% vs a
+    // 36% mean) reads as z ≈ -2.0 and out-prioritized Anchor QB at 71% (strength
+    // 1.78). A drafter that's only 7pp below norm shouldn't outweigh a manager
+    // taking a QB top-3 in 71% of drafts. Raised threshold to z ≤ -1.5 with
+    // matching strength denominator — Zero-RB now needs roughly z ≤ -2.7 to
+    // out-strength an Anchor QB at 71%, which is genuinely WR-first behavior.
+    if (signals.draft_rb_share_pct != null && z_rb <= -1.5 && bundle.first5Picks.length >= 5) {
       candidates.push({
         key: 'zero_rb',
         name: 'The Zero-RB Prophet',
         tagline: 'Pass-catchers first, RBs later',
         blurb: `Only ${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — well below the league norm. Believer in the WR-first build.`,
-        strength: Math.abs(z_rb) / 1.0,
+        strength: Math.abs(z_rb) / 1.5,
       })
     }
-    if (signals.draft_rb_share_pct != null && z_rb >= 1.2 && bundle.first5Picks.length >= 5) {
+    if (signals.draft_rb_share_pct != null && z_rb >= 1.5 && bundle.first5Picks.length >= 5) {
       candidates.push({
         key: 'hog_mollie',
         name: 'The Hog Mollie',
         tagline: 'RBs first, RBs always',
         blurb: `${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — the most run-heavy build in the league.`,
-        strength: z_rb / 1.2,
+        strength: z_rb / 1.5,
       })
     }
     // Anchor QB — requires a top-3-round QB in at least 40% of drafts on

@@ -1570,8 +1570,18 @@ main { position: relative; z-index: 1; }
                 bipolar: true,
                 fmt: (v) => (v >= 0 ? '+' : '') + v.toFixed(1),
             }),
-            // Clutch %: win rate in ≤5pt games. higher-is-better.
-            signalBar('Clutch', m.signals.clutch_win_pct, baselines.clutch_win_pct || 50, 100, { higherIsBetter: true }),
+            // Clutch %: win rate in ≤5pt games. higher-is-better. Bar fill is
+            // still % of 100, but the displayed value is the underlying W–L
+            // record so the specimen card reads as a counting stat. The §I
+            // League Strand keeps the percentage for aggregate comparisons.
+            signalBar('Clutch', m.signals.clutch_win_pct, baselines.clutch_win_pct || 50, 100, {
+                higherIsBetter: true,
+                fmt: () => {
+                    const r = m.signals.close_record;
+                    if (!r) return `${m.signals.clutch_win_pct.toFixed(1)}%`;
+                    return r.t ? `${r.w}–${r.l}–${r.t}` : `${r.w}–${r.l}`;
+                },
+            }),
         ].filter((b) => b != null);
         const sigBars = candidateBars.slice(0, 4).join('');
 
@@ -1988,11 +1998,11 @@ main { position: relative; z-index: 1; }
         `;
         return `
             <div class="dna-leader-card is-high">
-                <div class="dna-leader-head">§ IIa · <em>Top</em> of the strand</div>
+                <div class="dna-leader-head">§ <em>Top</em> of the strand</div>
                 <div class="dna-leader-list">${highs.map(row).join('')}</div>
             </div>
             <div class="dna-leader-card is-low">
-                <div class="dna-leader-head">§ IIb · <em>Bottom</em> of the strand</div>
+                <div class="dna-leader-head">§ <em>Bottom</em> of the strand</div>
                 <div class="dna-leader-list">${lows.map(row).join('')}</div>
             </div>
         `;
