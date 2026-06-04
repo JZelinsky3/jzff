@@ -620,15 +620,19 @@ main { position: relative; z-index: 1; }
 }
 .dna-compare-sig-bars::after {
     /* 50% reference tick — sits on top of the fills so a tie or near-tie
-       reads as "right on the line." Slight white instead of cream so it
-       reads as a measurement mark, not part of the strand palette. */
+       reads as "right on the line." White, taller than the bar with
+       little caps that poke out top and bottom so the tick reads as a
+       measurement mark even when both fills are running at full bar
+       height beside it. */
     content: '';
     position: absolute;
-    top: -2px;
-    bottom: -2px;
-    left: 50%;
-    width: 1px;
-    background: rgba(255, 255, 255, .45);
+    top: -5px;
+    bottom: -5px;
+    left: calc(50% - 1.5px);
+    width: 3px;
+    background: rgba(255, 255, 255, .85);
+    box-shadow: 0 0 4px rgba(255, 255, 255, .35);
+    border-radius: 1px;
     pointer-events: none;
     z-index: 2;
 }
@@ -1919,7 +1923,7 @@ main { position: relative; z-index: 1; }
                 </div>
                 <div style="text-align: right;">
                     <div class="dna-compare-col-name">${escapeHtml(b.name)}</div>
-                    <div class="dna-compare-col-arch is-b">${escapeHtml(b.archetype.name)} — <span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(b.archetype.tagline)}</span></div>
+                    <div class="dna-compare-col-arch is-b"><span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(b.archetype.tagline)}</span> — ${escapeHtml(b.archetype.name)}</div>
                 </div>
             </div>
             <div class="dna-compare-rail">${rails}</div>
