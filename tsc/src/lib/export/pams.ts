@@ -4868,7 +4868,7 @@ function slotRestrictiveness(slot: string): number {
 }
 
 function computeOptimalLineup(
-  pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number }>,
+  pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number; forceSlot?: string }>,
   slotCounts: Map<string, number>,
 ): { total: number; lineup: Array<{ slot: string; name: string | null; pos: string; pts: number }> } {
   // Expand slot counts into a flat list of slot names, ordered most-restrictive
@@ -4883,12 +4883,21 @@ function computeOptimalLineup(
   const lineup: Array<{ slot: string; name: string | null; pos: string; pts: number }> = []
   let total = 0
   for (const slot of slots) {
-    // Eligible candidates: not yet used, position is in this slot's eligibility set.
+    // Eligible candidates: not yet used, position is in this slot's
+    // eligibility set OR the player is a wildcard pinned to exactly this slot
+    // (used for starters whose position the parser couldn't identify or that
+    // sits outside the standard QB/RB/WR/TE/K/DEF set — IDP slots, niche
+    // platform positions, etc.). Wildcards can only fill their original
+    // slot, so they never bump a real player off a flex spot.
+    const slotUpper = slot.toUpperCase()
     let best: typeof pool[number] | null = null
     for (const p of pool) {
       if (used.has(p.player_external_id)) continue
-      const eligible = slotsEligibleForPosition(p.pos)
-      if (!eligible.has(slot.toUpperCase())) continue
+      const isWild = p.forceSlot != null && p.forceSlot.toUpperCase() === slotUpper
+      if (!isWild) {
+        const eligible = slotsEligibleForPosition(p.pos)
+        if (!eligible.has(slotUpper)) continue
+      }
       if (best == null || p.pts > best.pts) best = p
     }
     if (best) {
@@ -4969,15 +4978,34 @@ function buildBestCoach(s: Snapshot): unknown {
 
       // Optimal pool: every player on the roster that week with a position
       // and points. Bench players with null points get treated as 0 — they
-      // had a bye or weren't active. Players with no position string can't
-      // be slotted, so drop them.
-      const pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number }> = []
+      // had a bye or weren't active. Starters whose position the parser
+      // couldn't extract (or whose position sits outside the standard
+      // QB/RB/WR/TE/K/DEF set — IDP, niche platform slots) get pushed as
+      // wildcards pinned to the slot they actually started in. Without this,
+      // their points landed in the actual sum but they couldn't fill any
+      // optimal slot, producing actual > optimal weeks.
+      const pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number; forceSlot?: string }> = []
       for (const r of bucket.all) {
-        if (!r.position) continue
+        const pos = r.position ?? ''
+        const eligibleAny = pos ? slotsEligibleForPosition(pos).size > 0 : false
+        if (!eligibleAny) {
+          // Bench players with no position are dropped (they couldn't have
+          // helped anyway); starters get a wildcard entry so they fill
+          // their own slot in the optimal lineup.
+          if (!r.is_starter) continue
+          pool.push({
+            player_external_id: r.player_external_id,
+            name: r.player_name,
+            pos: pos,
+            pts: r.points ?? 0,
+            forceSlot: r.slot,
+          })
+          continue
+        }
         pool.push({
           player_external_id: r.player_external_id,
           name: r.player_name,
-          pos: r.position,
+          pos: pos,
           pts: r.points ?? 0,
         })
       }
@@ -5282,10 +5310,20 @@ function buildManagerDna(s: Snapshot): unknown {
         const actual = bucket.starters.reduce((sum, r) => sum + (r.points ?? 0), 0)
         const slotCounts = new Map<string, number>()
         for (const r of bucket.starters) slotCounts.set(r.slot, (slotCounts.get(r.slot) ?? 0) + 1)
-        const pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number }> = []
+        // Same wildcard treatment as buildBestCoach — starters with unknown
+        // positions get pinned to their original slot so the optimal can
+        // never come in below actual (which would let efficiency exceed
+        // 100% and break the DNA bar visualization).
+        const pool: Array<{ player_external_id: string; name: string | null; pos: string; pts: number; forceSlot?: string }> = []
         for (const r of bucket.all) {
-          if (!r.position) continue
-          pool.push({ player_external_id: r.player_external_id, name: r.player_name, pos: r.position, pts: r.points ?? 0 })
+          const pos = r.position ?? ''
+          const eligibleAny = pos ? slotsEligibleForPosition(pos).size > 0 : false
+          if (!eligibleAny) {
+            if (!r.is_starter) continue
+            pool.push({ player_external_id: r.player_external_id, name: r.player_name, pos, pts: r.points ?? 0, forceSlot: r.slot })
+            continue
+          }
+          pool.push({ player_external_id: r.player_external_id, name: r.player_name, pos, pts: r.points ?? 0 })
         }
         const { total: optimal } = computeOptimalLineup(pool, slotCounts)
         bundle.actualSum += actual
