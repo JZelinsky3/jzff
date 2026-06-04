@@ -98,9 +98,25 @@ export default async function SourcesPage({
         {!sources || sources.length === 0 ? (
           <div className="dc-empty"><div className="dc-empty-text">No sources yet.</div></div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+          // CSS multi-column instead of grid: each column flows independently,
+          // so expanding a card in one column doesn't push cards in other
+          // columns down. Trade-off — items flow column-major (top of col 1,
+          // down, then top of col 2…) rather than row-major. break-inside +
+          // the WebKit prefix keep Safari from splitting a card across cols.
+          <div style={{ columns: '280px 3', columnGap: '.6rem' }}>
             {sources.map((s) => (
-              <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
+              <div
+                key={s.id}
+                // Inline style is cast loose because csstype doesn't include
+                // the WebKit-prefixed multi-column break hint Safari needs.
+                style={{
+                  breakInside: 'avoid',
+                  marginBottom: '.6rem',
+                  WebkitColumnBreakInside: 'avoid',
+                } as React.CSSProperties}
+              >
+                <SourceRow source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
+              </div>
             ))}
           </div>
         )}
