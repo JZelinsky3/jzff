@@ -323,7 +323,7 @@ function renderRivalryCard(
           }}
         >
           <span style={{ display: 'flex' }}>{meetingsLine}</span>
-          <span style={{ display: 'flex', color: theme.accent, fontWeight: 700 }}>TSC.FOOTBALL</span>
+          <span style={{ display: 'flex', color: theme.accent, fontWeight: 700 }}>JZFF.ONLINE</span>
         </div>
       </div>
     ),
