@@ -222,11 +222,11 @@ export function SourceRow({
               : 'never synced'}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', width: '9rem', flexShrink: 0 }}>
-          {/* Action column is pinned narrow (9rem) so the source metadata
-              at left keeps the breathing room. Buttons trade width for
-              height — taller padding stays thumb-friendly. Labels are
-              single words so they fit on one line at this width. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', width: '12rem', flexShrink: 0 }}>
+          {/* Action column — 12rem wide so the four buttons read comfortably.
+              Custom + Settings share the filled treatment with Sync (they're
+              all "do a thing" actions); Remove stays ghost as the destructive
+              outlier. */}
           <button
             onClick={onSync}
             disabled={busy !== null || isPending}
@@ -239,10 +239,10 @@ export function SourceRow({
             <button
               onClick={() => setCustomSyncOpen((v) => !v)}
               disabled={busy !== null || isPending}
-              className="dc-btn-ghost"
+              className="dc-btn"
               style={{
                 padding: '.7rem .25rem',
-                fontSize: '.72rem',
+                fontSize: '.75rem',
                 whiteSpace: 'nowrap',
                 minWidth: 0,
               }}
@@ -253,10 +253,10 @@ export function SourceRow({
               <button
                 onClick={() => setEditing((v) => !v)}
                 disabled={busy !== null || isPending}
-                className="dc-btn-ghost"
+                className="dc-btn"
                 style={{
                   padding: '.7rem .25rem',
-                  fontSize: '.72rem',
+                  fontSize: '.75rem',
                   whiteSpace: 'nowrap',
                   minWidth: 0,
                 }}
