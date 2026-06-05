@@ -164,8 +164,17 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
   // handle_new_user trigger is supposed to populate on signup. Accounts
   // that predate the trigger — or signups where it failed silently —
   // would otherwise hit a 23503 FK violation on insert. Upsert the row
-  // here via the admin client so RLS doesn't block it.
+  // here via the admin client so RLS doesn't block it. Surface any error
+  // instead of swallowing it; a silent failure here just hands the user
+  // the same FK violation downstream.
   {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return {
+        ok: false,
+        error:
+          'Server is missing SUPABASE_SERVICE_ROLE_KEY — profile row cannot be created. Set the env var and redeploy.',
+      }
+    }
     const { createAdminClient } = await import('@/lib/supabase/admin')
     const admin = createAdminClient()
     const displayName =
@@ -173,9 +182,21 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
       (user.user_metadata?.name as string | undefined) ||
       user.email ||
       null
-    await admin
+    const { error: profileErr } = await admin
       .from('profiles')
-      .upsert({ id: user.id, display_name: displayName }, { onConflict: 'id', ignoreDuplicates: true })
+      .upsert({ id: user.id, display_name: displayName }, { onConflict: 'id' })
+    if (profileErr) {
+      console.error('[addLeague] profile upsert failed', {
+        userId: user.id,
+        code: profileErr.code,
+        message: profileErr.message,
+        details: profileErr.details,
+      })
+      return {
+        ok: false,
+        error: `Could not provision your profile row: ${profileErr.message}`,
+      }
+    }
   }
 
   const finalName = customName && customName.length > 0 ? customName : leagueName
