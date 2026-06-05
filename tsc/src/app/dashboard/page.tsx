@@ -323,6 +323,18 @@ export default async function DashboardPage({
                 <LeagueCardMenu leagueId={l.id} leagueName={l.name} />
                 <Link href={`/league/${l.slug}`} className="card" style={{ flex: 1, height: '100%' }}>
                   <div className="card-corner">{l.platform}</div>
+                  {/* Tier badge — only on UDFA users' cards. During testing
+                      window: "TRIAL · FULL ACCESS" (premium features unlocked
+                      site-wide). After testing closes: "UDFA · FREE" (1
+                      league, premium features locked behind upgrade). Paid
+                      and comp users get no badge — their tier shows in the
+                      hero pill instead. */}
+                  {isUDFA && (
+                    <div className={`dc-league-tier ${testingActive ? 'is-trial' : 'is-udfa'}`}>
+                      <span aria-hidden>★</span>
+                      {testingActive ? 'Trial · Full access' : 'UDFA · Free'}
+                    </div>
+                  )}
                   <div className="card-roman">{l.name.charAt(0).toUpperCase()}</div>
                   <div className="card-title">
                     {splitName(l.name).head} <em>{splitName(l.name).tail}.</em>

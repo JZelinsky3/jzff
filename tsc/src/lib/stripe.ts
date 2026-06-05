@@ -135,26 +135,32 @@ export async function isCompUser(userId: string): Promise<boolean> {
 
 // ─── Testing window ───────────────────────────────────────────────────────
 // Time-limited preview period. Set TESTING_MODE_UNTIL to an ISO date
-// (e.g. "2026-06-22T23:59:59Z"). While now() < that, any signed-in UDFA
-// (free-tier) user can use the *entire* paid feature set — Pick'ems,
-// Power Rankings, Live Season Hub, Manager Hub — without a subscription.
-// Outside the window, UDFA stays free but is limited to 1 archive league
-// and locks the paid features behind the upgrade rails. Empty / missing =
-// testing window closed.
+// (e.g. "2026-06-22T23:59:59Z") to override. Falls back to TESTING_DEFAULT_UNTIL
+// below so the banner / trial badge "just work" without env config in dev.
+// While now() < cutoff, any signed-in UDFA (free-tier) user can use the
+// *entire* paid feature set — Pick'ems, Power Rankings, Live Season Hub,
+// Manager Hub — without a subscription. Outside the window, UDFA stays
+// free but is limited to 1 archive league and locks the paid features
+// behind the upgrade rails.
+//
+// To force the window closed locally, set TESTING_MODE_UNTIL to a past
+// ISO date (or any unparseable string).
+const TESTING_DEFAULT_UNTIL = '2026-06-22T23:59:59Z'
+
+function resolveTestingCutoff(): Date | null {
+  const raw = process.env.TESTING_MODE_UNTIL ?? TESTING_DEFAULT_UNTIL
+  const t = Date.parse(raw)
+  return Number.isNaN(t) ? null : new Date(t)
+}
 
 export function isTestingModeActive(): boolean {
-  const until = process.env.TESTING_MODE_UNTIL
-  if (!until) return false
-  const cutoff = Date.parse(until)
-  if (Number.isNaN(cutoff)) return false
-  return Date.now() < cutoff
+  const cutoff = resolveTestingCutoff()
+  if (!cutoff) return false
+  return Date.now() < cutoff.getTime()
 }
 
 export function testingModeEndsAt(): Date | null {
-  const until = process.env.TESTING_MODE_UNTIL
-  if (!until) return null
-  const t = Date.parse(until)
-  return Number.isNaN(t) ? null : new Date(t)
+  return resolveTestingCutoff()
 }
 
 // ─── Subscription state ───────────────────────────────────────────────────

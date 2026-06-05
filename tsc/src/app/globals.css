@@ -692,6 +692,31 @@ main {
     color: var(--gold);
 }
 
+/* Per-card tier badge shown on UDFA users' league cards. Sits below the
+   platform corner-tag, above the title — small editorial pill. */
+.dc-league-tier {
+    display: inline-flex; align-items: center; gap: .35rem;
+    align-self: flex-start;
+    padding: .25rem .55rem;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    margin-bottom: .35rem;
+}
+.dc-league-tier.is-trial {
+    background: linear-gradient(180deg, rgba(232,200,137,.16), rgba(232,200,137,.06));
+    border: 1px solid rgba(232,200,137,.45);
+    color: var(--gold);
+}
+.dc-league-tier.is-udfa {
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--ink-line);
+    color: var(--cream);
+    opacity: .75;
+}
+
 /* Dashboard cards adapt to the number of children:
    1 child → full width, 2 → 50/50, 3 → thirds, 4+ → caps at 3 columns and
    wraps to the next row. Collapses to 1 column on mobile. */
