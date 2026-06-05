@@ -4719,9 +4719,44 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 /* ============================================================
    WELCOME POPUP — landing-only "note from the desk" modal.
    Tall portrait card, rounded, multi-slide. First slide greets,
-   feature slides drill into what's new, closing slide CTAs out.
-   Dismissal stored in localStorage against WELCOME_VERSION.
+   feature slides drill into what's new, promo slide pushes the
+   discount code, closing slide CTAs out. Dismissal stored in
+   localStorage against WELCOME_VERSION; once dismissed, a small
+   star-fab in the bottom-right reopens it on demand.
    ============================================================ */
+
+/* Reopen button — small sticky star pill bottom-right once
+   the popup has been dismissed at least once. */
+.lp-welcome-reopen {
+    position: fixed;
+    bottom: 1.25rem; right: 1.25rem;
+    z-index: 150;
+    width: 48px; height: 48px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+    color: #1a140b;
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: var(--serif); font-size: 1.4rem; font-weight: 600;
+    box-shadow:
+        0 12px 28px rgba(0,0,0,.45),
+        0 0 24px rgba(232,200,137,.35);
+    transition: transform .15s ease-out, box-shadow .15s, filter .15s;
+    animation: lp-welcome-reopen-in .35s cubic-bezier(.2,.8,.2,1);
+}
+.lp-welcome-reopen:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow:
+        0 16px 32px rgba(0,0,0,.5),
+        0 0 32px rgba(232,200,137,.5);
+    filter: brightness(1.04);
+}
+@keyframes lp-welcome-reopen-in {
+    from { transform: translateY(10px) scale(.85); opacity: 0; }
+    to   { transform: translateY(0)    scale(1);   opacity: 1; }
+}
+
 .lp-welcome-backdrop {
     position: fixed; inset: 0;
     z-index: 200;
@@ -4739,16 +4774,16 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .lp-welcome-card {
     position: relative;
     width: 100%;
-    max-width: 460px;
-    min-height: 620px;
+    max-width: 560px;
+    min-height: 760px;
     display: flex; flex-direction: column;
     background:
         radial-gradient(120% 60% at 50% -10%, rgba(232,200,137,.10), transparent 60%),
         linear-gradient(165deg, #14110d 0%, #0e0c09 100%);
     border: 1px solid rgba(232,200,137,.22);
-    border-radius: 20px;
+    border-radius: 22px;
     box-shadow:
-        0 40px 80px -20px rgba(0,0,0,.7),
+        0 50px 100px -24px rgba(0,0,0,.75),
         0 0 0 1px rgba(255,255,255,.02) inset,
         0 1px 0 rgba(255,255,255,.05) inset;
     color: var(--cream);
@@ -4778,38 +4813,27 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     border-color: rgba(232,200,137,.35);
 }
 
-/* Thin progress bar at top edge — feels like Notion / Linear */
-.lp-welcome-bar {
-    height: 2px;
-    background: rgba(255,255,255,.04);
-    position: relative;
-    flex: 0 0 auto;
-}
-.lp-welcome-bar-fill {
-    position: absolute; left: 0; top: 0; bottom: 0;
-    background: linear-gradient(90deg, var(--gold-deep), var(--gold));
-    box-shadow: 0 0 12px rgba(232,200,137,.45);
-    transition: width .35s cubic-bezier(.2,.8,.2,1);
-}
-
 .lp-welcome-body {
     flex: 1 1 auto;
     display: flex; flex-direction: column;
-    padding: 2.25rem 1.85rem 1rem;
+    padding: 3rem 2.4rem 1.25rem;
     min-height: 0;
+    position: relative;
 }
 
 .lp-welcome-stage {
     flex: 1 1 auto;
     display: flex; flex-direction: column;
     animation: lp-welcome-slide-in .35s cubic-bezier(.2,.8,.2,1);
+    position: relative;
 }
 @keyframes lp-welcome-slide-in {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 .lp-welcome-stage-greet,
-.lp-welcome-stage-closing {
+.lp-welcome-stage-closing,
+.lp-welcome-stage-promo {
     justify-content: center;
     text-align: center;
     align-items: center;
@@ -4817,124 +4841,176 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 .lp-welcome-mark {
     font-family: var(--serif);
-    font-size: 3.2rem; line-height: 1;
+    font-size: 3.8rem; line-height: 1;
     color: var(--gold);
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
     text-shadow: 0 0 32px rgba(232,200,137,.4);
+}
+
+.lp-welcome-masthead {
+    width: 220px; height: 60px;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    opacity: .9;
+}
+
+.lp-welcome-fleuron {
+    width: 80px; height: 14px;
+    color: var(--gold);
+    opacity: .5;
+    margin-top: 1.5rem;
 }
 
 .lp-welcome-eyebrow {
     font-family: var(--mono);
-    font-size: .58rem;
-    letter-spacing: .26em;
+    font-size: .65rem;
+    letter-spacing: .28em;
     text-transform: uppercase;
     color: var(--gold);
     opacity: .85;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
-.lp-welcome-hello {
+.lp-welcome-display {
     font-family: var(--serif);
-    font-size: 3rem;
-    line-height: 1;
+    font-size: 3.2rem;
+    line-height: 1.04;
     font-weight: 400;
-    margin: 0 0 1rem;
-    letter-spacing: -.01em;
+    margin: 0 0 1.5rem;
+    letter-spacing: -.015em;
 }
-.lp-welcome-hello em {
+.lp-welcome-display em {
     font-style: italic;
     color: var(--gold);
 }
 
 .lp-welcome-greet-lede {
     font-family: var(--serif);
-    font-size: 1rem;
-    line-height: 1.5;
-    opacity: .72;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    opacity: .76;
     margin: 0 0 1.75rem;
-    max-width: 28ch;
+    max-width: 32ch;
 }
 
-.lp-welcome-greet-tease {
-    width: 100%;
-    text-align: left;
-    border-top: 1px dotted rgba(232,200,137,.2);
-    padding-top: 1rem;
-    margin-top: auto;
+/* Greet/closing promo pill — compact inline reminder */
+.lp-welcome-promo-pill {
+    display: inline-flex; align-items: center; gap: .65rem;
+    padding: .65rem 1.1rem;
+    background: linear-gradient(180deg, rgba(232,200,137,.14), rgba(232,200,137,.04));
+    border: 1px solid rgba(232,200,137,.4);
+    border-radius: 999px;
+    box-shadow: 0 8px 22px -10px rgba(232,200,137,.5);
 }
-.lp-welcome-greet-tease > span {
-    display: block;
+.lp-welcome-promo-label {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--cream);
+    opacity: .55;
+}
+.lp-welcome-promo-code {
+    font-family: var(--mono);
+    font-size: .85rem;
+    letter-spacing: .18em;
+    color: var(--gold);
+    font-weight: 700;
+    padding: .15rem .55rem;
+    background: rgba(232,200,137,.1);
+    border-radius: 6px;
+}
+.lp-welcome-promo-tag {
+    font-family: var(--serif);
+    font-size: .92rem;
+    font-style: italic;
+    color: var(--cream);
+    opacity: .85;
+}
+
+/* Promo slide — big card-style code reveal */
+.lp-welcome-promo-card {
+    margin-top: 2rem;
+    padding: 1.75rem 1.5rem;
+    width: 100%;
+    max-width: 340px;
+    background:
+        radial-gradient(80% 60% at 50% 0%, rgba(232,200,137,.18), transparent 70%),
+        linear-gradient(180deg, rgba(232,200,137,.08), rgba(232,200,137,.02));
+    border: 1px dashed rgba(232,200,137,.5);
+    border-radius: 16px;
+    text-align: center;
+}
+.lp-welcome-promo-card-label {
     font-family: var(--mono);
     font-size: .58rem;
-    letter-spacing: .22em;
+    letter-spacing: .26em;
     text-transform: uppercase;
     color: var(--gold);
     opacity: .8;
-    margin-bottom: .55rem;
+    margin-bottom: .65rem;
 }
-.lp-welcome-greet-tease ul {
-    list-style: none;
-    margin: 0; padding: 0;
-    display: flex; flex-direction: column; gap: .3rem;
-}
-.lp-welcome-greet-tease li {
-    font-family: var(--serif);
-    font-size: .88rem;
-    line-height: 1.4;
-    opacity: .82;
-    padding-left: 1.1rem;
-    position: relative;
-}
-.lp-welcome-greet-tease li::before {
-    content: '★';
-    position: absolute;
-    left: 0; top: 0;
+.lp-welcome-promo-card-code {
+    font-family: var(--mono);
+    font-size: 2rem;
+    letter-spacing: .22em;
     color: var(--gold);
-    font-size: .65rem;
-    line-height: 1.6;
+    font-weight: 700;
+    text-shadow: 0 0 24px rgba(232,200,137,.4);
+    margin-bottom: .5rem;
+}
+.lp-welcome-promo-card-tag {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--cream);
+    opacity: .8;
 }
 
 .lp-welcome-row {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
+    position: relative; z-index: 2;
 }
 .lp-welcome-badge {
     display: inline-flex; align-items: center;
-    padding: .3rem .55rem;
+    padding: .35rem .65rem;
     background: linear-gradient(180deg, rgba(232,200,137,.18), rgba(232,200,137,.08));
     border: 1px solid rgba(232,200,137,.4);
     border-radius: 999px;
     font-family: var(--mono);
-    font-size: .55rem;
+    font-size: .6rem;
     font-weight: 700;
-    letter-spacing: .2em;
+    letter-spacing: .22em;
     color: var(--gold);
     text-transform: uppercase;
 }
 .lp-welcome-counter {
     font-family: var(--mono);
-    font-size: .6rem;
-    letter-spacing: .2em;
+    font-size: .65rem;
+    letter-spacing: .22em;
     color: var(--cream);
     opacity: .4;
 }
 
 .lp-welcome-kicker {
     font-family: var(--mono);
-    font-size: .65rem;
-    letter-spacing: .22em;
+    font-size: .72rem;
+    letter-spacing: .24em;
     text-transform: uppercase;
     color: var(--gold);
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    position: relative; z-index: 2;
 }
 
 .lp-welcome-title {
     font-family: var(--serif);
-    font-size: 2.05rem;
+    font-size: 2.55rem;
     line-height: 1.05;
     font-weight: 400;
-    margin: 0 0 1.25rem;
-    letter-spacing: -.01em;
+    margin: 0 0 1.5rem;
+    letter-spacing: -.015em;
+    position: relative; z-index: 2;
 }
 .lp-welcome-title em {
     font-style: italic;
@@ -4943,11 +5019,15 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 .lp-welcome-text {
     font-family: var(--serif);
-    font-size: 1rem;
-    line-height: 1.55;
-    opacity: .8;
+    font-size: 1.15rem;
+    line-height: 1.65;
+    opacity: .82;
     margin: 0;
+    max-width: 38ch;
+    position: relative; z-index: 2;
 }
+.lp-welcome-stage-promo .lp-welcome-text,
+.lp-welcome-stage-closing .lp-welcome-text { max-width: 36ch; }
 .lp-welcome-text strong {
     color: var(--cream);
     opacity: 1;
@@ -4955,11 +5035,36 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 
 .lp-welcome-cta-row {
-    margin-top: 1.75rem;
+    margin-top: 2rem;
+    position: relative; z-index: 2;
 }
 .lp-welcome-cta {
     border-radius: 999px;
-    padding: .75rem 1.4rem;
+    padding: .85rem 1.6rem;
+    font-size: .95rem;
+}
+
+/* Decorative SVG ornaments — sit behind text via z-index */
+.lp-welcome-side {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px; height: 240px;
+    color: var(--gold);
+    opacity: .35;
+    z-index: 1;
+    pointer-events: none;
+}
+.lp-welcome-side-left  { left: -.5rem; }
+.lp-welcome-side-right { right: -.5rem; }
+
+.lp-welcome-starfield {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    color: var(--gold);
+    z-index: 0;
+    pointer-events: none;
 }
 
 /* Footer — dots left, paired rounded arrows right */
@@ -5021,18 +5126,22 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: #1a140b;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 600px) {
     .lp-welcome-card {
-        min-height: 560px;
+        min-height: 640px;
         max-width: 100%;
         border-radius: 18px;
     }
-    .lp-welcome-body { padding: 2rem 1.4rem .85rem; }
-    .lp-welcome-foot { padding: .85rem 1.4rem 1.25rem; }
-    .lp-welcome-hello { font-size: 2.4rem; }
-    .lp-welcome-title { font-size: 1.7rem; }
-    .lp-welcome-text { font-size: .94rem; }
-    .lp-welcome-mark { font-size: 2.6rem; }
+    .lp-welcome-body { padding: 2.25rem 1.5rem 1rem; }
+    .lp-welcome-foot { padding: .85rem 1.5rem 1.4rem; }
+    .lp-welcome-display { font-size: 2.4rem; }
+    .lp-welcome-title { font-size: 1.95rem; }
+    .lp-welcome-text { font-size: 1.02rem; }
+    .lp-welcome-greet-lede { font-size: 1.02rem; }
+    .lp-welcome-mark { font-size: 3rem; }
+    .lp-welcome-masthead { width: 180px; height: 50px; margin-bottom: 1.1rem; }
+    .lp-welcome-side { display: none; }
+    .lp-welcome-promo-card-code { font-size: 1.6rem; }
 }
 
 /* ============================================================

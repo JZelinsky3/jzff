@@ -8,8 +8,13 @@ import { useEffect, useState } from 'react'
 // popup stays dismissed for returning visitors. Material additions
 // (new feature slides, reordered narrative) — bump it, and everyone
 // sees the popup once on their next landing.
-const WELCOME_VERSION = '2026-06-05-2'
+const WELCOME_VERSION = '2026-06-05-3'
 const STORAGE_KEY = 'tsc-welcome-dismissed-v'
+
+// Promo code surfaced on the greeting + promo slides. Single source so
+// renaming is one edit. Set to null to hide the promo blocks.
+const PROMO_CODE = 'FIRST50'
+const PROMO_TAGLINE = '50% off your first issue'
 
 type FeatureSlide = {
   kind: 'feature'
@@ -17,21 +22,15 @@ type FeatureSlide = {
   kicker: string
   title: React.ReactNode
   body: React.ReactNode
+  ornament?: 'left' | 'right' | 'starfield'
 }
 
-type GreetSlide = {
-  kind: 'greet'
-}
+type Slide =
+  | { kind: 'greet' }
+  | FeatureSlide
+  | { kind: 'promo' }
+  | { kind: 'closing' }
 
-type ClosingSlide = {
-  kind: 'closing'
-}
-
-type Slide = GreetSlide | FeatureSlide | ClosingSlide
-
-// Slide 1 (greeting) is rendered specially using the signedIn prop —
-// hence not in this array. Same for the closing slide. Feature slides
-// in between are the "what's new" headlines.
 const FEATURE_SLIDES: FeatureSlide[] = [
   {
     kind: 'feature',
@@ -50,6 +49,7 @@ const FEATURE_SLIDES: FeatureSlide[] = [
         Pick&apos;ems, Power Rankings, the Live Season Hub, and the Manager Hub.
       </>
     ),
+    ornament: 'right',
   },
   {
     kind: 'feature',
@@ -69,6 +69,7 @@ const FEATURE_SLIDES: FeatureSlide[] = [
         Sunday voice.
       </>
     ),
+    ornament: 'left',
   },
   {
     kind: 'feature',
@@ -87,6 +88,7 @@ const FEATURE_SLIDES: FeatureSlide[] = [
         Sleeper data through per-chronicle aliases.
       </>
     ),
+    ornament: 'right',
   },
   {
     kind: 'feature',
@@ -105,23 +107,101 @@ const FEATURE_SLIDES: FeatureSlide[] = [
         where it&apos;s hosted.
       </>
     ),
+    ornament: 'starfield',
   },
 ]
 
 const ALL_SLIDES: Slide[] = [
   { kind: 'greet' },
   ...FEATURE_SLIDES,
+  { kind: 'promo' },
   { kind: 'closing' },
 ]
 
+// ── Decorative SVGs ────────────────────────────────────────────────
+function Fleuron({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 60 12" aria-hidden>
+      <path d="M0 6h22M38 6h22" stroke="currentColor" strokeWidth=".8" />
+      <path d="M30 1.5l1.3 3.4L34.7 6l-3.4 1.1L30 10.5l-1.3-3.4L25.3 6l3.4-1.1L30 1.5z" fill="currentColor" />
+    </svg>
+  )
+}
+
+function SideOrnament({ side }: { side: 'left' | 'right' }) {
+  return (
+    <svg
+      className={`lp-welcome-side lp-welcome-side-${side}`}
+      viewBox="0 0 24 240"
+      aria-hidden
+    >
+      <path d="M12 4v60M12 96v48M12 176v60" stroke="currentColor" strokeWidth=".8" />
+      <circle cx="12" cy="80" r="2.2" fill="currentColor" />
+      <circle cx="12" cy="160" r="2.2" fill="currentColor" />
+      <path d="M9 24l3-6 3 6M9 216l3 6 3-6" stroke="currentColor" strokeWidth=".8" fill="none" />
+    </svg>
+  )
+}
+
+function StarField() {
+  return (
+    <svg className="lp-welcome-starfield" viewBox="0 0 400 600" aria-hidden>
+      {[
+        [40, 80], [120, 50], [200, 120], [330, 70], [70, 220], [280, 200],
+        [180, 320], [60, 400], [340, 380], [150, 480], [300, 520], [90, 540],
+        [230, 60], [360, 250], [40, 320], [240, 440], [320, 460], [110, 160],
+      ].map(([x, y], i) => (
+        <text
+          key={i}
+          x={x}
+          y={y}
+          fontSize={i % 3 === 0 ? 14 : i % 2 === 0 ? 9 : 6}
+          fill="currentColor"
+          opacity={i % 3 === 0 ? 0.18 : i % 2 === 0 ? 0.12 : 0.08}
+          textAnchor="middle"
+        >
+          ★
+        </text>
+      ))}
+    </svg>
+  )
+}
+
+function MastheadOrnament() {
+  return (
+    <svg className="lp-welcome-masthead" viewBox="0 0 260 80" aria-hidden>
+      <path d="M0 40h100M160 40h100" stroke="currentColor" strokeWidth=".8" />
+      <g transform="translate(130 40)">
+        <circle r="20" stroke="currentColor" strokeWidth=".8" fill="none" />
+        <text x="0" y="6" fontSize="18" fill="currentColor" textAnchor="middle">★</text>
+      </g>
+      <text x="130" y="74" fontSize="7" fill="currentColor" textAnchor="middle" letterSpacing="3" opacity=".55">
+        EST. 2026
+      </text>
+    </svg>
+  )
+}
+
+// ── Component ──────────────────────────────────────────────────────
 export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
+  const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
+  // Once the user has dismissed at least once, render a small sticky
+  // reopen button at bottom-right so they can pull the popup back up.
+  // Dismissal state persists across reloads; reopen state is derived
+  // from "current localStorage matches WELCOME_VERSION".
+  const [hasDismissed, setHasDismissed] = useState(false)
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
+    setMounted(true)
     try {
       const dismissed = window.localStorage.getItem(STORAGE_KEY)
-      if (dismissed !== WELCOME_VERSION) setOpen(true)
+      if (dismissed === WELCOME_VERSION) {
+        setHasDismissed(true)
+      } else {
+        setOpen(true)
+      }
     } catch {
       setOpen(true)
     }
@@ -148,9 +228,31 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
   function dismiss() {
     try { window.localStorage.setItem(STORAGE_KEY, WELCOME_VERSION) } catch {}
     setOpen(false)
+    setHasDismissed(true)
+    setIndex(0)
   }
 
-  if (!open) return null
+  function reopen() {
+    setIndex(0)
+    setOpen(true)
+  }
+
+  if (!mounted) return null
+
+  if (!open) {
+    if (!hasDismissed) return null
+    return (
+      <button
+        type="button"
+        className="lp-welcome-reopen"
+        onClick={reopen}
+        aria-label="Reopen what's new"
+        title="What's new"
+      >
+        <span aria-hidden>★</span>
+      </button>
+    )
+  }
 
   const slide = ALL_SLIDES[index]
   const isFirst = index === 0
@@ -176,40 +278,38 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
           </svg>
         </button>
 
-        <div className="lp-welcome-bar" aria-hidden>
-          <div
-            className="lp-welcome-bar-fill"
-            style={{ width: `${((index + 1) / ALL_SLIDES.length) * 100}%` }}
-          />
-        </div>
-
         <div className="lp-welcome-body">
           {slide.kind === 'greet' && (
             <div className="lp-welcome-stage lp-welcome-stage-greet">
-              <div className="lp-welcome-mark" aria-hidden>★</div>
+              <MastheadOrnament />
               <div className="lp-welcome-eyebrow">Vol. II · The Sunday Chronicle</div>
-              <h2 className="lp-welcome-hello" id="lp-welcome-heading">
-                {signedIn ? <>Welcome <em>back.</em></> : <>Hello.</>}
+              <h2 className="lp-welcome-display" id="lp-welcome-heading">
+                {signedIn ? <>Welcome <em>back</em> to the desk.</> : <>A new <em>page</em> turns.</>}
               </h2>
               <p className="lp-welcome-greet-lede">
                 {signedIn
                   ? 'A few headlines from the desk since you last turned the page.'
-                  : 'A few headlines from the desk before you turn the first page.'}
+                  : 'A handful of headlines before you turn the first page of your league’s almanac.'}
               </p>
-              <div className="lp-welcome-greet-tease">
-                <span>What&apos;s in this issue —</span>
-                <ul>
-                  <li>A free-forever tier called UDFA</li>
-                  <li>The Live Season Hub goes live</li>
-                  <li>A six-issue Manager Hub</li>
-                  <li>Yahoo &amp; ESPN now reading</li>
-                </ul>
-              </div>
+
+              {PROMO_CODE && (
+                <div className="lp-welcome-promo-pill" role="note">
+                  <span className="lp-welcome-promo-label">Use code</span>
+                  <span className="lp-welcome-promo-code">{PROMO_CODE}</span>
+                  <span className="lp-welcome-promo-tag">{PROMO_TAGLINE}</span>
+                </div>
+              )}
+
+              <Fleuron className="lp-welcome-fleuron" />
             </div>
           )}
 
           {slide.kind === 'feature' && (
             <div className="lp-welcome-stage">
+              {slide.ornament === 'left' && <SideOrnament side="left" />}
+              {slide.ornament === 'right' && <SideOrnament side="right" />}
+              {slide.ornament === 'starfield' && <StarField />}
+
               <div className="lp-welcome-row">
                 <span className="lp-welcome-badge">{slide.badge}</span>
                 <span className="lp-welcome-counter">
@@ -222,16 +322,37 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
             </div>
           )}
 
+          {slide.kind === 'promo' && (
+            <div className="lp-welcome-stage lp-welcome-stage-promo">
+              <StarField />
+              <div className="lp-welcome-eyebrow">A note from the publisher</div>
+              <h2 className="lp-welcome-title" id="lp-welcome-heading">
+                Half off your<br /><em>first issue.</em>
+              </h2>
+              <p className="lp-welcome-text">
+                A token of welcome — apply <strong>{PROMO_CODE}</strong> at checkout
+                for <strong>{PROMO_TAGLINE.toLowerCase()}</strong>. Good on any
+                paid tier the first time you upgrade. One per reader.
+              </p>
+
+              <div className="lp-welcome-promo-card">
+                <div className="lp-welcome-promo-card-label">Promo code</div>
+                <div className="lp-welcome-promo-card-code">{PROMO_CODE}</div>
+                <div className="lp-welcome-promo-card-tag">{PROMO_TAGLINE}</div>
+              </div>
+            </div>
+          )}
+
           {slide.kind === 'closing' && (
             <div className="lp-welcome-stage lp-welcome-stage-closing">
               <div className="lp-welcome-mark" aria-hidden>§</div>
               <div className="lp-welcome-eyebrow">Open the book</div>
-              <h2 className="lp-welcome-title" id="lp-welcome-heading">
-                {signedIn ? <>Pick up where you<br /><em>left off.</em></> : <>Start your<br /><em>archive.</em></>}
+              <h2 className="lp-welcome-display" id="lp-welcome-heading">
+                {signedIn ? <>Pick up where<br />you <em>left off.</em></> : <>Start your<br /><em>archive.</em></>}
               </h2>
               <p className="lp-welcome-text">
                 {signedIn
-                  ? 'Your library is waiting — and every new feature above is live in your dashboard.'
+                  ? 'Your library is waiting — every new feature above is live in your dashboard.'
                   : 'Bring a league ID and we walk every season back to the beginning. Free forever to start, no card.'}
               </p>
               <div className="lp-welcome-cta-row">
@@ -243,6 +364,7 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
                   {signedIn ? 'Open dashboard →' : 'Start your archive →'}
                 </Link>
               </div>
+              <Fleuron className="lp-welcome-fleuron" />
             </div>
           )}
         </div>
