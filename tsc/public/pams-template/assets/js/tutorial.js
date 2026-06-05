@@ -748,6 +748,16 @@
         var menu = document.querySelector('.nav-drop-menu');
         if (!menu) return;
         if (menu.querySelector('.dc-tour-replay')) return;
+        // Only show "Replay tour" on pages that actually have a tour —
+        // otherwise the link is a dead-end.
+        var page = currentPageKey();
+        var steps = STEPS_BY_PAGE[page];
+        if (!steps || !steps.length) return;
+        // The link's small/dim styling lives in the tour stylesheet, which
+        // is otherwise only injected when a tour starts. Inject up front so
+        // the link is the small size on first render, not full-size until
+        // the user clicks it once.
+        ensureStyles();
         var a = document.createElement('a');
         a.href = '#';
         a.className = 'dc-tour-replay';
