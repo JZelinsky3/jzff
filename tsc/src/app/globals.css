@@ -696,6 +696,13 @@ main {
    stretch full-width and look oversized. Collapses to 1 column on mobile via
    the global card-grid breakpoint at 768px. */
 .dc-dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* When only one card renders (e.g. non-admin user sees just League Archive,
+   or commish has a single league on file), constrain + center it so it
+   doesn't stretch wide on its own row. */
+.dc-dashboard-grid:has(> :only-child) {
+    grid-template-columns: minmax(0, 360px);
+    justify-content: center;
+}
 @media (max-width: 768px) {
     .dc-dashboard-grid { grid-template-columns: 1fr; }
 }
@@ -4367,8 +4374,8 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .onb-card {
     position: relative;
     margin: 1.5rem auto 2.5rem;
-    max-width: 980px;
-    padding: 1.75rem 2rem 1.5rem;
+    max-width: 560px;
+    padding: 1.5rem 1.75rem 1.25rem;
     background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
     border: 1px solid var(--ink-line);
     overflow: hidden;
@@ -4711,6 +4718,113 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 @media (max-width: 480px) {
     .lp-nav-title { font-size: .95rem; }
+}
+
+/* ============================================================
+   WELCOME POPUP — landing-only "note from the desk" modal.
+   Slides through what's new; dismissal stored in localStorage
+   against WELCOME_VERSION (bump in component to re-show).
+   ============================================================ */
+.lp-welcome-backdrop {
+    position: fixed; inset: 0;
+    z-index: 200;
+    background: rgba(8, 8, 10, .72);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.25rem;
+    animation: lp-welcome-fade .22s ease-out;
+}
+@keyframes lp-welcome-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.lp-welcome-card {
+    position: relative;
+    width: 100%;
+    max-width: 540px;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--gold-deep);
+    box-shadow: 0 30px 60px rgba(0,0,0,.55), 0 0 32px rgba(232,200,137,.15);
+    padding: 1.75rem 1.75rem 1.25rem;
+    color: var(--cream);
+    animation: lp-welcome-rise .28s ease-out;
+}
+@keyframes lp-welcome-rise {
+    from { transform: translateY(10px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+.lp-welcome-close {
+    position: absolute; top: .5rem; right: .65rem;
+    width: 28px; height: 28px;
+    background: transparent; border: 0;
+    color: var(--cream); opacity: .55;
+    font-size: 1.4rem; line-height: 1; cursor: pointer;
+    transition: opacity .15s;
+}
+.lp-welcome-close:hover { opacity: 1; }
+
+.lp-welcome-head { border-bottom: 1px dotted var(--ink-line); padding-bottom: 1rem; margin-bottom: 1rem; }
+.lp-welcome-issue {
+    font-family: var(--mono); font-size: .6rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold); opacity: .85;
+}
+.lp-welcome-greeting {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.8rem; line-height: 1.1;
+    margin: .35rem 0 .3rem;
+}
+.lp-welcome-lede {
+    font-family: var(--serif); font-size: .92rem;
+    opacity: .72;
+}
+
+.lp-welcome-slide { min-height: 9rem; }
+.lp-welcome-kicker {
+    font-family: var(--mono); font-size: .62rem;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .45rem;
+}
+.lp-welcome-title {
+    font-family: var(--serif); font-size: 1.25rem;
+    line-height: 1.25;
+    margin-bottom: .6rem;
+}
+.lp-welcome-body {
+    font-family: var(--serif); font-size: .95rem;
+    line-height: 1.55; opacity: .82;
+    margin: 0;
+}
+
+.lp-welcome-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .75rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px dotted var(--ink-line);
+}
+.lp-welcome-nav { min-width: 5.5rem; }
+.lp-welcome-nav:disabled { opacity: .35; cursor: not-allowed; }
+
+.lp-welcome-dots { display: inline-flex; gap: .4rem; }
+.lp-welcome-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ink-line);
+    transition: background .2s, transform .2s;
+}
+.lp-welcome-dot.is-active {
+    background: var(--gold);
+    transform: scale(1.25);
+}
+
+@media (max-width: 520px) {
+    .lp-welcome-card { padding: 1.4rem 1.25rem 1rem; }
+    .lp-welcome-greeting { font-size: 1.5rem; }
+    .lp-welcome-title { font-size: 1.1rem; }
+    .lp-welcome-body { font-size: .9rem; }
+    .lp-welcome-nav { min-width: 4.5rem; font-size: .75rem; }
 }
 
 /* ============================================================

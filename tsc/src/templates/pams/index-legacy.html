@@ -994,12 +994,12 @@ table.data tbody tr.highlight {
         </a>
 
         <script>
-          // Free testing-mode leagues don't get the live-season hub — those
+          // UDFA (free) leagues don't get the live-season hub — those
           // features are paid-tier. Hide its chapter card client-side so the
-          // toc reads cleanly. window.__DC.isTestingLeague is injected by the
+          // toc reads cleanly. window.__DC.isUdfaLeague is injected by the
           // route handler at /leagues/<slug>/[[...path]]/route.ts.
           (function () {
-            if (window.__DC && window.__DC.isTestingLeague) {
+            if (window.__DC && window.__DC.isUdfaLeague) {
               document.querySelectorAll('[data-paid-feature]').forEach(function (el) {
                 el.style.display = 'none';
               });

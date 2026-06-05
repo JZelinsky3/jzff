@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient as createBrowserSupabase } from '@/lib/supabase/client'
 import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail } from './actions'
 
 type Result = { ok: false; error: string } | { ok: true; message?: string } | null
@@ -54,16 +55,17 @@ export function AccountForms({
       </div>
 
       {isOAuth ? (
-        <div className="dc-account-pair">
-          <div className="section dc-account-col">
+        <>
+          <div className="section">
             <div className="section-header">
-              <span className="section-num">§ 02 · Backup email</span>
+              <span className="section-num">§ 02 · Backup access</span>
               <span className="section-title">In case {providerLabel} access is lost —</span>
               <span className="section-meta">Optional</span>
             </div>
             <BackupEmailForm primaryEmail={email} initial={backupEmail} providerLabel={providerLabel} />
           </div>
-          <div className="section dc-account-col">
+
+          <div className="section">
             <div className="section-header">
               <span className="section-num">§ 03 · Communication</span>
               <span className="section-title">What we send you —</span>
@@ -71,7 +73,7 @@ export function AccountForms({
             </div>
             <MarketingForm initialOptIn={marketingOptIn} />
           </div>
-        </div>
+        </>
       ) : (
         <>
           <div className="dc-account-pair">
@@ -398,6 +400,24 @@ function BackupEmailForm({
     updateBackupEmail as (prev: Result, fd: FormData) => Promise<Result>,
     null
   )
+  const [linking, setLinking] = useState(false)
+  const [linkErr, setLinkErr] = useState<string | null>(null)
+
+  // Adds a second OAuth identity to the current user so they can sign in
+  // with either provider account. Supabase calls this "manual identity
+  // linking" — must be enabled on the project (Auth → Settings).
+  async function onLinkAnother() {
+    setLinkErr(null); setLinking(true)
+    const supabase = createBrowserSupabase()
+    const redirectTo = new URL('/auth/callback', window.location.origin).toString()
+    const { error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: { redirectTo },
+    })
+    if (error) { setLinkErr(error.message); setLinking(false) }
+    // On success the browser is navigated to Google — no further code runs here.
+  }
+
   return (
     <form action={action} className="dc-card-static dc-form">
       <div className="dc-field">
@@ -421,9 +441,23 @@ function BackupEmailForm({
           Leave blank to clear.
         </span>
       </div>
-      <button type="submit" disabled={isPending} className="dc-btn">
-        {isPending ? 'Saving…' : 'Save backup email →'}
-      </button>
+      <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
+        <button type="submit" disabled={isPending} className="dc-btn">
+          {isPending ? 'Saving…' : 'Save backup email →'}
+        </button>
+        <button
+          type="button"
+          onClick={onLinkAnother}
+          disabled={linking}
+          className="dc-btn-ghost"
+        >
+          {linking ? 'Opening…' : `Link another ${providerLabel} account →`}
+        </button>
+      </div>
+      <span className="dc-checkbox-hint" style={{ marginTop: '.25rem' }}>
+        Linking a second {providerLabel} account lets you sign in with either one — useful if you lose access to the first.
+      </span>
+      {linkErr && <p className="dc-form-error">{linkErr}</p>}
       {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
       {state && state.ok && state.message && <p className="dc-form-ok">{state.message}</p>}
     </form>

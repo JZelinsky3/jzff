@@ -5,6 +5,7 @@ import { ChroniclePages } from '@/components/landing/ChroniclePages'
 import { DemoViewer } from '@/components/landing/DemoViewer'
 import { HeroClipping } from '@/components/landing/HeroClipping'
 import { LandingNav } from '@/components/landing/LandingNav'
+import { WelcomePopup } from '@/components/landing/WelcomePopup'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 
@@ -40,6 +41,7 @@ export default async function Home() {
 
   return (
     <main className="lp-main">
+      <WelcomePopup signedIn={signedIn} />
       <div className="ticker">
         <div className="ticker-track">
           <div className="ticker-group">

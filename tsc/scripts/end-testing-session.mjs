@@ -34,7 +34,7 @@ const db = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_
 const { data: testingLeagues, error } = await db
   .from('leagues')
   .select('id, name, slug, owner_id, grace_period_ends_at')
-  .eq('created_during_testing', true)
+  .eq('is_udfa', true)
 
 if (error) { console.error(error.message); process.exit(1) }
 

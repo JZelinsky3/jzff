@@ -6,8 +6,6 @@ import {
   getUserSubscription,
   isCompUser,
   isSubscriptionActive,
-  isTestingModeActive,
-  testingModeEndsAt,
   TIER_LABELS,
 } from '@/lib/stripe'
 import { isSiteAdmin } from '@/lib/siteAdmin'
@@ -87,9 +85,6 @@ export default async function DashboardPage({
   const earliestGrace = leaguesWithGrace
     .map((l) => new Date(l.grace_period_ends_at as string))
     .sort((a, b) => a.getTime() - b.getTime())[0]
-
-  const testingActive = isTestingModeActive()
-  const testingEnds = testingModeEndsAt()
 
   // Subscription summary card: shows tier + renewal/end date so commish
   // doesn't have to hop to /account just to check. Lifetime users get a
@@ -184,38 +179,7 @@ export default async function DashboardPage({
         )}
       </section>
 
-      <div className="section" style={{ paddingTop: '1rem' }}>
-        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: '880px', margin: '0 auto' }}>
-          <Link href="/dashboard/new" className="card" style={{ display: 'block' }}>
-            <div className="card-corner">Mode I</div>
-            <div className="card-roman">§</div>
-            <div className="card-title">League <em>Archive.</em></div>
-            <div className="card-desc">
-              Chronicle an entire league&apos;s history — drafts, matchups, champions —
-              into a public almanac you own as commissioner.
-            </div>
-            <div className="card-cta">Build an archive <span className="card-arrow">→</span></div>
-          </Link>
-
-          {siteAdmin && (
-            <Link href={chronicle ? `/manager/${chronicle.slug}` : '/manager/new'} className="card" style={{ display: 'block' }}>
-              <div className="card-corner">★ Mode II</div>
-              <div className="card-roman">✦</div>
-              <div className="card-title">Manager <em>Hub.</em></div>
-              <div className="card-desc">
-                {chronicle
-                  ? `Your career chronicle — ${chronicle.linkCount} ${chronicle.linkCount === 1 ? 'league' : 'leagues'} linked. Open the book.`
-                  : 'Track yourself across every league you play in. One book of your whole career.'}
-              </div>
-              <div className="card-cta">
-                {chronicle ? 'Open your chronicle' : 'Start your hub'} <span className="card-arrow">→</span>
-              </div>
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {testingActive && testingEnds && (
+      {user && !comp && !subActive && (
         <div
           className="dc-banner"
           style={{
@@ -224,21 +188,23 @@ export default async function DashboardPage({
             background: 'rgba(232,200,137,.06)',
             border: '1px solid var(--gold-deep)',
             borderRadius: '2px',
+            display: 'flex', gap: '1rem', flexWrap: 'wrap',
+            alignItems: 'center', justifyContent: 'space-between',
           }}
         >
-          <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
-            ★ Free testing window
+          <div style={{ flex: '1 1 24rem', minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
+              ★ UDFA · Free tier
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
+              One league, <strong style={{ color: 'var(--gold)' }}>free forever</strong> — no card, no expiration.
+            </div>
+            <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.35rem' }}>
+              Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub are paid-tier — upgrade any time to unlock them.{' '}
+              Email <a href="mailto:jzffgames@gmail.com" style={{ color: 'var(--gold)' }}>jzffgames@gmail.com</a> with bugs or suggestions.
+            </div>
           </div>
-          <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
-            One free league per account until{' '}
-            <strong style={{ color: 'var(--gold)' }}>
-              {testingEnds.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-            </strong>.
-          </div>
-          <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.35rem' }}>
-            Pick&apos;ems and power rankings are paid-tier features and stay locked during testing. After the window closes, free leagues enter a 3-month grace period before deletion unless you subscribe.{' '}
-            Email <a href="mailto:jzffgames@gmail.com" style={{ color: 'var(--gold)' }}>jzffgames@gmail.com</a> with bugs or suggestions.
-          </div>
+          <Link href="/pricing" className="dc-btn">Upgrade →</Link>
         </div>
       )}
 
@@ -283,6 +249,34 @@ export default async function DashboardPage({
         subtitle="Each step ticks itself off as you go."
         steps={onboardingSteps}
       />
+
+      <div className="section" style={{ paddingTop: '1rem' }}>
+        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: '880px', margin: '0 auto' }}>
+          <Link href="/dashboard/new" className="card" style={{ display: 'block' }}>
+            <div className="card-corner">Mode I</div>
+            <div className="card-roman">§</div>
+            <div className="card-title">League <em>Archive.</em></div>
+            <div className="card-desc">A public almanac of your league&apos;s history — drafts, matchups, champions.</div>
+            <div className="card-cta">Build an archive <span className="card-arrow">→</span></div>
+          </Link>
+
+          {siteAdmin && (
+            <Link href={chronicle ? `/manager/${chronicle.slug}` : '/manager/new'} className="card" style={{ display: 'block' }}>
+              <div className="card-corner">★ Mode II</div>
+              <div className="card-roman">✦</div>
+              <div className="card-title">Manager <em>Hub.</em></div>
+              <div className="card-desc">
+                {chronicle
+                  ? `Your career chronicle — ${chronicle.linkCount} ${chronicle.linkCount === 1 ? 'league' : 'leagues'} linked. Open the book.`
+                  : 'Track yourself across every league you play in. One book of your whole career.'}
+              </div>
+              <div className="card-cta">
+                {chronicle ? 'Open your chronicle' : 'Start your hub'} <span className="card-arrow">→</span>
+              </div>
+            </Link>
+          )}
+        </div>
+      </div>
 
       <div className="section">
         <div className="section-header">

@@ -357,7 +357,7 @@ export async function addLeagueToHub(_prev: AddResult | null, formData: FormData
         division_names: [],
         draft_scoring_profile: 'ppr_6pt',
         settings: leagueSettings,
-        created_during_testing: false,
+        is_udfa: false,
         manager_view: true,
       })
       .select('id')

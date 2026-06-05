@@ -133,29 +133,6 @@ export async function isCompUser(userId: string): Promise<boolean> {
   return hasCompGrant(userId)
 }
 
-// ─── Testing mode ─────────────────────────────────────────────────────────
-// Time-limited free preview window. Set TESTING_MODE_UNTIL to an ISO date
-// (e.g. "2026-07-01T23:59:59Z"). While now() < that, any signed-in user can
-// create exactly one league without a Stripe subscription. Those leagues
-// get created_during_testing=true. When the window closes,
-// scripts/end-testing-session.mjs grants every testing league a 3-month
-// grace period before deletion. Empty / missing = testing mode off.
-
-export function isTestingModeActive(): boolean {
-  const until = process.env.TESTING_MODE_UNTIL
-  if (!until) return false
-  const cutoff = Date.parse(until)
-  if (Number.isNaN(cutoff)) return false
-  return Date.now() < cutoff
-}
-
-export function testingModeEndsAt(): Date | null {
-  const until = process.env.TESTING_MODE_UNTIL
-  if (!until) return null
-  const t = Date.parse(until)
-  return Number.isNaN(t) ? null : new Date(t)
-}
-
 // ─── Subscription state ───────────────────────────────────────────────────
 
 export type SubscriptionRow = {
@@ -202,26 +179,24 @@ export async function canCreateLeague(userId: string): Promise<EnforcementResult
   // Lifetime / comp accounts skip every other check.
   if (await isCompUser(userId)) return { ok: true }
 
-  // Testing-mode free path: during the open window, any signed-in user can
-  // create exactly one league without paying. Counts ALL their leagues
-  // (paid + testing) so they can't claim a free league on top of an
-  // existing paid one. Once they have any league, they're back on the
-  // normal subscription rails.
+  // UDFA free path: any signed-in user with no active subscription can have
+  // exactly one league, perpetually. Counts ALL their leagues so they can't
+  // stack a free league on top of a paid one — the free slot is only for
+  // users who have nothing yet (or have lapsed back to nothing).
   const db = createAdminClient()
-  if (isTestingModeActive()) {
+  const sub = await getUserSubscription(userId)
+  if (!isSubscriptionActive(sub)) {
     const { count } = await db
       .from('leagues')
       .select('id', { count: 'exact', head: true })
       .eq('owner_id', userId)
     if ((count ?? 0) === 0) return { ok: true }
   }
-
-  const sub = await getUserSubscription(userId)
   if (!isSubscriptionActive(sub) || !sub) {
     return {
       ok: false,
       reason: 'no_subscription',
-      message: 'Start a trial or subscribe to create your first league.',
+      message: 'UDFA (free) tier covers 1 league. Upgrade to add more.',
     }
   }
 

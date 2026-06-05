@@ -9,7 +9,6 @@ import {
   getUserSubscription,
   isCompUser,
   isSubscriptionActive,
-  isTestingModeActive,
 } from '@/lib/stripe'
 import { sleeper, parseDivisionInfo } from '@/lib/platforms/sleeper'
 import { probeLeague as probeEspn } from '@/lib/platforms/espn'
@@ -180,13 +179,12 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     settings.playoff_team_count = playoffTeamCount
   }
 
-  // Stamp the league as testing-mode-created if (a) the testing window is
-  // currently open AND (b) the user has no Stripe subscription. Paid users
-  // creating leagues during the testing window still get full features.
-  const testingNow = isTestingModeActive()
-  const existingSub = testingNow ? await getUserSubscription(user.id) : null
+  // Stamp the league as UDFA (free tier) when the owner has no active
+  // subscription and no comp grant. Paid users always get the full feature
+  // set on every league they create.
+  const existingSub = await getUserSubscription(user.id)
   const subActive = isSubscriptionActive(existingSub)
-  const createdDuringTesting = testingNow && !subActive && !(await isCompUser(user.id))
+  const isUdfa = !subActive && !(await isCompUser(user.id))
 
   const { data: inserted, error: insertError } = await supabase
     .from('leagues')
@@ -202,7 +200,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
       division_names: finalDivisionNames,
       draft_scoring_profile: parsed.data.draftScoringProfile,
       settings,
-      created_during_testing: createdDuringTesting,
+      is_udfa: isUdfa,
     })
     .select('id, slug')
     .single()

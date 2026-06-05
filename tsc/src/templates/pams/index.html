@@ -2346,9 +2346,9 @@ body {
         </a>
 
         <script>
-          // Hide the live-season row for testing-mode leagues (paid-tier only).
+          // Hide the live-season row for UDFA (free) leagues — paid-tier only.
           (function () {
-            if (window.__DC && window.__DC.isTestingLeague) {
+            if (window.__DC && window.__DC.isUdfaLeague) {
               document.querySelectorAll('[data-paid-feature]').forEach(function (el) {
                 el.style.display = 'none';
               });

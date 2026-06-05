@@ -25,7 +25,7 @@ type LeagueRow = {
   last_synced_at: string | null
   published_at: string | null
   grace_period_ends_at: string | null
-  created_during_testing: boolean
+  is_udfa: boolean
 }
 
 type SubscriptionRow = {
@@ -49,7 +49,7 @@ export default async function AdminPage() {
 
   const [profilesRes, leaguesRes, subsRes, compsRes, authUsersRes] = await Promise.all([
     db.from('profiles').select('id, display_name, member_code, created_at').order('created_at', { ascending: false }),
-    db.from('leagues').select('id, name, slug, platform, owner_id, created_at, last_synced_at, published_at, grace_period_ends_at, created_during_testing').order('created_at', { ascending: false }),
+    db.from('leagues').select('id, name, slug, platform, owner_id, created_at, last_synced_at, published_at, grace_period_ends_at, is_udfa').order('created_at', { ascending: false }),
     db.from('subscriptions').select('user_id, tier, billing_period, status, current_period_end, trial_ends_at'),
     db.from('comp_grants').select('user_id, granted_by, note, created_at'),
     db.auth.admin.listUsers({ perPage: 1000 }),
@@ -196,7 +196,7 @@ export default async function AdminPage() {
                 const owner = profileById.get(l.owner_id)
                 const grace = l.grace_period_ends_at
                 const tags: string[] = []
-                if (l.created_during_testing) tags.push('testing')
+                if (l.is_udfa) tags.push('udfa')
                 if (l.published_at) tags.push('published')
                 if (grace) tags.push('grace')
                 return (

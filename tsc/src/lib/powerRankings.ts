@@ -102,12 +102,12 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
 
   const { data: league } = await db
     .from('leagues')
-    .select('id, division_names, created_during_testing')
+    .select('id, division_names, is_udfa')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) return null
-  // Power rankings is a paid-tier feature — blocked for free testing leagues.
-  if (league.created_during_testing) return null
+  // Power rankings is a paid-tier feature — UDFA (free) leagues never get it.
+  if (league.is_udfa) return null
   const divisionNames: string[] = Array.isArray(league.division_names) ? league.division_names : []
 
   const { data: liveSeason } = await db

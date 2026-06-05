@@ -30,7 +30,7 @@ type LeagueMeta = {
   founded: number | null
   published_at: string | null
   owner_id: string | null
-  created_during_testing: boolean
+  is_udfa: boolean
   trades_theme: 'tribunal' | 'wire' | 'floor' | 'cards'
 }
 
@@ -48,7 +48,7 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
   const db = createAdminClient()
   const { data: row } = await db
     .from('leagues')
-    .select('id, name, slug, abbreviation, published_at, owner_id, created_during_testing, trades_theme')
+    .select('id, name, slug, abbreviation, published_at, owner_id, is_udfa, trades_theme')
     .eq('slug', slug)
     .maybeSingle()
   if (!row) return null
@@ -67,7 +67,7 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
     founded: firstSeason?.year ?? null,
     published_at: row.published_at ?? null,
     owner_id: row.owner_id ?? null,
-    created_during_testing: !!row.created_during_testing,
+    is_udfa: !!row.is_udfa,
     trades_theme: normalizeTradesTheme(row.trades_theme),
   }
 }
@@ -152,7 +152,7 @@ function injectDcConfig(
     isCommish,
     isSignedIn,
     isBookmarked,
-    isTestingLeague: meta.created_during_testing,
+    isUdfaLeague: meta.is_udfa,
     tradesTheme: meta.trades_theme,
     tutorialDismissed,
     tutorialSeenPages,
@@ -258,12 +258,9 @@ function injectOgTags(html: string, meta: LeagueMeta, file: string, req: NextReq
     ? html.replace(/<head[^>]*>/i, (m) => `${m}\n${tags}`)
     : tags + html
 
-  // Inject the share button + dialog + init script right before </body>
-  // so the markup is present once `share.js` boots. Skipped on the
-  // rivalry detail page because it ships its own scoped share UI (the
-  // first card built — left in place so the editorial red theme matches
-  // its surroundings). Other pages all use the shared module.
-  const skipShareInjection = file === 'rivalries/rivalry.html'
+  // Share UI is hidden site-wide for now. Flip back to
+  // `file === 'rivalries/rivalry.html'` to restore the global share button.
+  const skipShareInjection = true
   if (!skipShareInjection) {
     const shareBlock = `${shareModuleMarkup()}\n${shareInitScript(ogImage, meta, req)}`
     if (/<\/body>/i.test(out)) {
