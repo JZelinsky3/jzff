@@ -45,20 +45,40 @@ export function OnboardingChecklist({
   // scrolls off, we surface the Stripe-style FAB at bottom-right so the
   // user can keep tabs on remaining steps without losing context.
   const [mainVisible, setMainVisible] = useState(true)
-  // FAB starts expanded so the first scroll-off reveals the full checklist.
-  // Minimize collapses it to a pill the user can click to reopen.
+  // FAB open/closed states are persisted to localStorage so the user's
+  // last interaction (minimized to a pill, or fully closed for the
+  // session) survives reloads and route changes. Closed is "soft" — it
+  // hides the FAB but leaves the main card visible; the user can re-open
+  // by re-summoning from elsewhere, or via the next-page-load reset.
   const [fabOpen, setFabOpen] = useState(true)
-  // Session-only close for the FAB. Doesn't write localStorage, so the
-  // main card stays visible and the FAB returns on the next page load.
   const [fabClosed, setFabClosed] = useState(false)
   const cardRef = useRef<HTMLDivElement | null>(null)
+
+  // Storage key suffixes — paired with the per-instance storageKey so
+  // different checklists (dashboard vs league) don't share FAB state.
+  const fabOpenKey = `${storageKey}__fabOpen`
+  const fabClosedKey = `${storageKey}__fabClosed`
 
   useEffect(() => {
     setMounted(true)
     if (typeof window !== 'undefined') {
       setDismissed(window.localStorage.getItem(storageKey) === '1')
+      const storedOpen = window.localStorage.getItem(fabOpenKey)
+      if (storedOpen === '0') setFabOpen(false)
+      if (storedOpen === '1') setFabOpen(true)
+      if (window.localStorage.getItem(fabClosedKey) === '1') setFabClosed(true)
     }
-  }, [storageKey])
+  }, [storageKey, fabOpenKey, fabClosedKey])
+
+  // Persist FAB state on every change after mount.
+  useEffect(() => {
+    if (!mounted) return
+    try { window.localStorage.setItem(fabOpenKey, fabOpen ? '1' : '0') } catch {}
+  }, [fabOpen, mounted, fabOpenKey])
+  useEffect(() => {
+    if (!mounted) return
+    try { window.localStorage.setItem(fabClosedKey, fabClosed ? '1' : '0') } catch {}
+  }, [fabClosed, mounted, fabClosedKey])
 
   useEffect(() => {
     if (!mounted) return

@@ -133,6 +133,30 @@ export async function isCompUser(userId: string): Promise<boolean> {
   return hasCompGrant(userId)
 }
 
+// ─── Testing window ───────────────────────────────────────────────────────
+// Time-limited preview period. Set TESTING_MODE_UNTIL to an ISO date
+// (e.g. "2026-06-22T23:59:59Z"). While now() < that, any signed-in UDFA
+// (free-tier) user can use the *entire* paid feature set — Pick'ems,
+// Power Rankings, Live Season Hub, Manager Hub — without a subscription.
+// Outside the window, UDFA stays free but is limited to 1 archive league
+// and locks the paid features behind the upgrade rails. Empty / missing =
+// testing window closed.
+
+export function isTestingModeActive(): boolean {
+  const until = process.env.TESTING_MODE_UNTIL
+  if (!until) return false
+  const cutoff = Date.parse(until)
+  if (Number.isNaN(cutoff)) return false
+  return Date.now() < cutoff
+}
+
+export function testingModeEndsAt(): Date | null {
+  const until = process.env.TESTING_MODE_UNTIL
+  if (!until) return null
+  const t = Date.parse(until)
+  return Number.isNaN(t) ? null : new Date(t)
+}
+
 // ─── Subscription state ───────────────────────────────────────────────────
 
 export type SubscriptionRow = {

@@ -6,7 +6,10 @@ import {
   getUserSubscription,
   isCompUser,
   isSubscriptionActive,
+  isTestingModeActive,
+  testingModeEndsAt,
   TIER_LABELS,
+  TIER_LIMITS,
 } from '@/lib/stripe'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { LeagueCardMenu } from './league-card-menu'
@@ -97,6 +100,14 @@ export default async function DashboardPage({
   const subEndsLabel = formatSubEndsLabel(sub)
   const subTierName = sub ? TIER_LABELS[sub.tier]?.name ?? sub.tier : null
 
+  // UDFA = signed-in user with no comp, no active subscription. They get
+  // the free 1-league slot. During the testing window they also get full
+  // access to every paid feature for free.
+  const isUDFA = !!user && !comp && !subActive
+  const testingActive = isTestingModeActive()
+  const testingEnds = testingModeEndsAt()
+  const tier1Limit = TIER_LIMITS.tier1
+
   // Demo card hides permanently once the user has created their first league
   // (flag set in /dashboard/new/actions.ts after a successful insert). Stays
   // hidden even if they later delete every league — they're past the
@@ -150,9 +161,9 @@ export default async function DashboardPage({
         <div style={{ marginTop: '1.75rem' }}>
           <Link href="/dashboard/new" className="dc-btn">+ New archive →</Link>
         </div>
-        {(comp || subActive) && (
+        {(comp || subActive || isUDFA) && (
           <Link
-            href="/account"
+            href={comp || subActive ? '/account' : '/pricing'}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '.5rem',
               marginTop: '1.25rem',
@@ -162,24 +173,34 @@ export default async function DashboardPage({
               color: 'var(--cream-soft)', textDecoration: 'none',
               border: '1px solid var(--ink-line)', borderRadius: '2px',
             }}
-            title="Manage subscription"
+            title={comp || subActive ? 'Manage subscription' : 'See plans'}
           >
             {comp ? (
               <>
                 <span style={{ color: 'var(--gold)' }}>★ Comp</span>
                 <span style={{ opacity: 0.6 }}>· Unlimited access</span>
               </>
-            ) : (
+            ) : subActive ? (
               <>
                 <span style={{ color: 'var(--gold)' }}>{subTierName}</span>
                 {subEndsLabel && <span style={{ opacity: 0.7 }}>· {subEndsLabel}</span>}
+              </>
+            ) : (
+              <>
+                <span style={{ color: 'var(--gold)' }}>★ UDFA</span>
+                <span style={{ opacity: 0.6 }}>
+                  · {tier1Limit} Free {tier1Limit === 1 ? 'League' : 'Leagues'}
+                </span>
+                {testingActive && (
+                  <span style={{ opacity: 0.6 }}>· Testing access</span>
+                )}
               </>
             )}
           </Link>
         )}
       </section>
 
-      {user && !comp && !subActive && (
+      {isUDFA && testingActive && testingEnds && (
         <div
           className="dc-banner"
           style={{
@@ -188,23 +209,21 @@ export default async function DashboardPage({
             background: 'rgba(232,200,137,.06)',
             border: '1px solid var(--gold-deep)',
             borderRadius: '2px',
-            display: 'flex', gap: '1rem', flexWrap: 'wrap',
-            alignItems: 'center', justifyContent: 'space-between',
           }}
         >
-          <div style={{ flex: '1 1 24rem', minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
-              ★ UDFA · Free tier
-            </div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
-              One league, <strong style={{ color: 'var(--gold)' }}>free forever</strong> — no card, no expiration.
-            </div>
-            <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.35rem' }}>
-              Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub are paid-tier — upgrade any time to unlock them.{' '}
-              Email <a href="mailto:jzffgames@gmail.com" style={{ color: 'var(--gold)' }}>jzffgames@gmail.com</a> with bugs or suggestions.
-            </div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
+            ★ Free testing window
           </div>
-          <Link href="/pricing" className="dc-btn">Upgrade →</Link>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
+            UDFA gets the <strong style={{ color: 'var(--gold)' }}>whole site</strong> — every page, every paid feature — until{' '}
+            <strong style={{ color: 'var(--gold)' }}>
+              {testingEnds.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+            </strong>.
+          </div>
+          <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.35rem' }}>
+            Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub are all unlocked for free during testing. After the window closes, UDFA stays free with one league — paid tiers re-gate the premium features.{' '}
+            Email <a href="mailto:jzffgames@gmail.com" style={{ color: 'var(--gold)' }}>jzffgames@gmail.com</a> with bugs or suggestions.
+          </div>
         </div>
       )}
 
@@ -255,7 +274,7 @@ export default async function DashboardPage({
         {/* ← MANUAL EDIT: change `maxWidth` to widen/narrow the League Archive
             cards row. Larger value (e.g. '1080px') = wider; smaller (e.g. '640px')
             = narrower. Affects both the lone-card and 2-up (admin) layouts. */}
-        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: '780px', margin: '0 auto' }}>
+        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: '580px', margin: '0 auto' }}>
           <Link href="/dashboard/new" className="card" style={{ display: 'block' }}>
             <div className="card-corner">Mode I</div>
             <div className="card-roman">§</div>
