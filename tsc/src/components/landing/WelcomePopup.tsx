@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 // popup stays dismissed for returning visitors. Material additions
 // (new feature slides, reordered narrative) — bump it, and everyone
 // sees the popup once on their next landing.
-const WELCOME_VERSION = '2026-06-05-5'
+const WELCOME_VERSION = '2026-06-05-6'
 const STORAGE_KEY = 'tsc-welcome-dismissed-v'
 
 const PROMO_CODE = 'FIRST50'
@@ -198,26 +198,31 @@ function PromoHero() {
   return (
     <svg viewBox="0 0 360 220" className="lp-welcome-hero-svg" aria-hidden>
       <rect x="0" y="0" width="360" height="220" fill="#1a1410" />
-      {/* coupon body */}
+      {/* coupon body — left and right panels widened so text fits */}
       <g>
         {/* shadow */}
-        <rect x="56" y="44" width="248" height="132" rx="10" fill="#000" opacity=".25" />
-        {/* perforation circles */}
+        <rect x="24" y="44" width="312" height="132" rx="10" fill="#000" opacity=".25" />
+        {/* perforation circles between panels */}
         {[...Array(10)].map((_, i) => (
-          <circle key={`p${i}`} cx="190" cy={50 + i * 14} r="3.5" fill="#1a1410" />
+          <circle key={`p${i}`} cx="180" cy={50 + i * 14} r="3.5" fill="#1a1410" />
         ))}
-        <rect x="52" y="40" width="136" height="132" rx="10" fill="#f4ead0" />
-        <rect x="192" y="40" width="116" height="132" rx="10" fill="#f4ead0" />
+        {/* left panel — wider */}
+        <rect x="20" y="40" width="156" height="132" rx="10" fill="#f4ead0" />
+        {/* right panel — wider */}
+        <rect x="184" y="40" width="156" height="132" rx="10" fill="#f4ead0" />
+
         {/* left side: tagline */}
-        <text x="120" y="80" fontFamily="Georgia, serif" fontSize="10" letterSpacing="3" fill="#a04830" textAnchor="middle">SUNDAY CHRONICLE</text>
-        <text x="120" y="118" fontFamily="Georgia, serif" fontSize="28" fontStyle="italic" fontWeight="700" fill="#1a1410" textAnchor="middle">50%</text>
-        <text x="120" y="138" fontFamily="Georgia, serif" fontSize="11" fontStyle="italic" fill="#1a1410" textAnchor="middle">off your first issue</text>
-        <text x="120" y="158" fontFamily="ui-monospace, monospace" fontSize="7" letterSpacing="2" fill="#a04830" textAnchor="middle">★ ONE PER READER</text>
+        <text x="98" y="78" fontFamily="Georgia, serif" fontSize="10" letterSpacing="3" fill="#a04830" textAnchor="middle">SUNDAY CHRONICLE</text>
+        <text x="98" y="120" fontFamily="Georgia, serif" fontSize="34" fontStyle="italic" fontWeight="700" fill="#1a1410" textAnchor="middle">50%</text>
+        <text x="98" y="142" fontFamily="Georgia, serif" fontSize="11" fontStyle="italic" fill="#1a1410" textAnchor="middle">off your first issue</text>
+        <text x="98" y="160" fontFamily="ui-monospace, monospace" fontSize="7" letterSpacing="2" fill="#a04830" textAnchor="middle">★ ONE PER READER</text>
+
         {/* right side: code */}
-        <text x="250" y="78" fontFamily="ui-monospace, monospace" fontSize="8" letterSpacing="3" fill="#a04830" textAnchor="middle">PROMO CODE</text>
-        <rect x="208" y="92" width="84" height="36" rx="4" fill="none" stroke="#a04830" strokeWidth="1.4" strokeDasharray="2 2" />
-        <text x="250" y="117" fontFamily="ui-monospace, monospace" fontSize="16" letterSpacing="4" fontWeight="700" fill="#1a1410" textAnchor="middle">FIRST50</text>
-        <text x="250" y="148" fontFamily="Georgia, serif" fontSize="9" fontStyle="italic" fill="#1a1410" textAnchor="middle">apply at checkout</text>
+        <text x="262" y="74" fontFamily="ui-monospace, monospace" fontSize="8" letterSpacing="3" fill="#a04830" textAnchor="middle">PROMO CODE</text>
+        {/* dashed box — longer + taller, wraps the code generously */}
+        <rect x="198" y="86" width="128" height="48" rx="6" fill="none" stroke="#a04830" strokeWidth="1.6" strokeDasharray="3 3" />
+        <text x="262" y="118" fontFamily="ui-monospace, monospace" fontSize="20" letterSpacing="4" fontWeight="700" fill="#1a1410" textAnchor="middle">FIRST50</text>
+        <text x="262" y="155" fontFamily="Georgia, serif" fontSize="9" fontStyle="italic" fill="#1a1410" textAnchor="middle">apply at checkout</text>
       </g>
     </svg>
   )
@@ -468,7 +473,10 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
           {slide.kind === 'closing' && <ClosingHero />}
         </div>
 
-        <div className="lp-welcome-body">
+        {/* Alternating text alignment — even slides flush-left, odd
+            slides flush-right — so the reader's eye is led across the
+            spread instead of stuck in one column. */}
+        <div className={`lp-welcome-body ${index % 2 === 0 ? 'is-left' : 'is-right'}`}>
           {slide.kind === 'greet' && (
             <div className="lp-welcome-stage">
               <div className="lp-welcome-eyebrow">★ A note from the desk</div>
@@ -480,10 +488,13 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
                 platforms — and a discount waiting at the end. Turn the page.
               </p>
               {PROMO_CODE && (
-                <div className="lp-welcome-promo-pill">
-                  <span className="lp-welcome-promo-label">Code</span>
-                  <span className="lp-welcome-promo-code">{PROMO_CODE}</span>
-                  <span className="lp-welcome-promo-tag">{PROMO_TAGLINE}</span>
+                <div className="lp-welcome-promo-block">
+                  <div className="lp-welcome-promo-block-label">
+                    ★ Promo code · {PROMO_TAGLINE}
+                  </div>
+                  <div className="lp-welcome-promo-block-pill">
+                    <span className="lp-welcome-promo-block-code">{PROMO_CODE}</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -500,6 +511,17 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
               <div className="lp-welcome-kicker">★ {slide.kicker}</div>
               <h2 className="lp-welcome-title" id="lp-welcome-heading">{slide.title}</h2>
               <p className="lp-welcome-text">{slide.body}</p>
+              {/* UDFA slide gets a "Start today" CTA so signed-out
+                  readers can act on the free-tier pitch immediately. */}
+              {slide.kicker === 'UDFA · Free forever' && !signedIn && (
+                <Link
+                  href="/login?mode=signup"
+                  className="lp-welcome-cta lp-welcome-cta-small"
+                  onClick={dismiss}
+                >
+                  Start today →
+                </Link>
+              )}
             </div>
           )}
 
@@ -514,6 +536,13 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
                 for <strong>{PROMO_TAGLINE.toLowerCase()}</strong> — good on any
                 paid tier, the first time you upgrade. One per reader.
               </p>
+              <Link
+                href="/pricing"
+                className="lp-welcome-cta lp-welcome-cta-small"
+                onClick={dismiss}
+              >
+                See pricing →
+              </Link>
             </div>
           )}
 
