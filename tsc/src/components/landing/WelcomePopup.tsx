@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 // popup stays dismissed for returning visitors. Material additions
 // (new feature slides, reordered narrative) — bump it, and everyone
 // sees the popup once on their next landing.
-const WELCOME_VERSION = '2026-06-05-7'
+const WELCOME_VERSION = '2026-06-05-8'
 const STORAGE_KEY = 'tsc-welcome-dismissed-v'
 
 const PROMO_CODE = 'FIRST50'
@@ -420,18 +420,20 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
       aria-labelledby="lp-welcome-heading"
       onClick={dismiss}
     >
-      {/* External arrows — Arc-style, floating outside the card */}
-      <button
-        type="button"
-        className="lp-welcome-arrow-ext lp-welcome-arrow-ext-left"
-        onClick={(e) => { e.stopPropagation(); setIndex((i) => Math.max(0, i - 1)) }}
-        disabled={isFirst}
-        aria-label="Previous"
-      >
-        <svg width="18" height="18" viewBox="0 0 14 14" aria-hidden>
-          <path d="M9 1L3 7l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        </svg>
-      </button>
+      {/* External arrows — Arc-style, floating outside the card.
+          Left arrow hidden on slide 1 (no previous to go to). */}
+      {!isFirst && (
+        <button
+          type="button"
+          className="lp-welcome-arrow-ext lp-welcome-arrow-ext-left"
+          onClick={(e) => { e.stopPropagation(); setIndex((i) => Math.max(0, i - 1)) }}
+          aria-label="Previous"
+        >
+          <svg width="18" height="18" viewBox="0 0 14 14" aria-hidden>
+            <path d="M9 1L3 7l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+        </button>
+      )}
       <button
         type="button"
         className="lp-welcome-arrow-ext lp-welcome-arrow-ext-right"
@@ -485,14 +487,25 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
                 platforms — and a discount waiting at the end. Turn the page.
               </p>
               {PROMO_CODE && (
-                <div className="lp-welcome-promo-block">
-                  <div className="lp-welcome-promo-block-label">
-                    ★ Promo code · {PROMO_TAGLINE}
-                  </div>
-                  <div className="lp-welcome-promo-block-pill">
-                    <span className="lp-welcome-promo-block-code">{PROMO_CODE}</span>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  className="lp-welcome-promo-tease"
+                  onClick={() => {
+                    // Jump to the promo slide (kind === 'promo') so the
+                    // user has to turn the page for the actual code —
+                    // tease + reveal beats giving it away on slide 1.
+                    const promoIdx = ALL_SLIDES.findIndex((s) => s.kind === 'promo')
+                    if (promoIdx !== -1) setIndex(promoIdx)
+                  }}
+                >
+                  <span className="lp-welcome-promo-tease-icon" aria-hidden>★</span>
+                  <span className="lp-welcome-promo-tease-text">
+                    <span className="lp-welcome-promo-tease-line">
+                      A <strong>50% off</strong> promo code is hiding in this issue.
+                    </span>
+                    <span className="lp-welcome-promo-tease-hint">Tap to reveal →</span>
+                  </span>
+                </button>
               )}
             </div>
           )}
