@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 // popup stays dismissed for returning visitors. Material additions
 // (new feature slides, reordered narrative) — bump it, and everyone
 // sees the popup once on their next landing.
-const WELCOME_VERSION = '2026-06-05-6'
+const WELCOME_VERSION = '2026-06-05-7'
 const STORAGE_KEY = 'tsc-welcome-dismissed-v'
 
 const PROMO_CODE = 'FIRST50'
@@ -473,10 +473,7 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
           {slide.kind === 'closing' && <ClosingHero />}
         </div>
 
-        {/* Alternating text alignment — even slides flush-left, odd
-            slides flush-right — so the reader's eye is led across the
-            spread instead of stuck in one column. */}
-        <div className={`lp-welcome-body ${index % 2 === 0 ? 'is-left' : 'is-right'}`}>
+        <div className="lp-welcome-body">
           {slide.kind === 'greet' && (
             <div className="lp-welcome-stage">
               <div className="lp-welcome-eyebrow">★ A note from the desk</div>

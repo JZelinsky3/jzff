@@ -4871,19 +4871,25 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 
 .lp-welcome-close {
-    position: absolute; top: 14px; right: 14px;
-    width: 32px; height: 32px;
+    position: absolute; top: 12px; right: 12px;
+    width: 30px; height: 30px;
     display: inline-flex; align-items: center; justify-content: center;
-    background: rgba(26,20,16,.06);
-    border: 1px solid rgba(26,20,16,.12);
+    background: rgba(244,234,208,.92);
+    border: 1px solid rgba(26,20,16,.18);
     border-radius: 999px;
     color: #1a1410;
-    opacity: .65;
+    opacity: .85;
     cursor: pointer;
-    transition: opacity .15s, background .15s, border-color .15s;
-    z-index: 3;
+    box-shadow: 0 2px 6px rgba(0,0,0,.18);
+    transition: opacity .15s, background .15s, border-color .15s, transform .12s;
+    z-index: 4;
 }
-.lp-welcome-close:hover { opacity: 1; background: rgba(26,20,16,.12); border-color: rgba(26,20,16,.25); }
+.lp-welcome-close:hover {
+    opacity: 1;
+    background: #fff8e6;
+    border-color: rgba(26,20,16,.35);
+    transform: scale(1.06);
+}
 
 /* Hero illustration band — top of every slide. */
 .lp-welcome-hero {
@@ -4993,34 +4999,28 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .lp-welcome-promo-block-label {
     font-family: var(--mono);
-    font-size: .58rem;
-    letter-spacing: .22em;
+    font-size: .72rem;
+    letter-spacing: .2em;
     text-transform: uppercase;
     color: #a04830;
+    font-weight: 700;
 }
 .lp-welcome-promo-block-pill {
     display: inline-flex; align-items: center; justify-content: center;
-    padding: .5rem 1.1rem;
+    padding: .4rem .95rem;
     background: #1a1410;
     border-radius: 999px;
     box-shadow: 0 6px 18px -8px rgba(0,0,0,.45);
 }
 .lp-welcome-promo-block-code {
     font-family: var(--mono);
-    font-size: 1.35rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    letter-spacing: .28em;
+    letter-spacing: .26em;
     color: #f5c95a;
-    text-shadow: 0 0 16px rgba(245,201,90,.4);
+    text-shadow: 0 0 14px rgba(245,201,90,.4);
 }
 
-/* Right-alignment variant — odd slides flip the body so the eye is
-   led across the spread. Mirror flex anchors + text-align. */
-.lp-welcome-body.is-right .lp-welcome-stage { align-items: flex-end; text-align: right; }
-.lp-welcome-body.is-right .lp-welcome-text { margin-left: auto; }
-.lp-welcome-body.is-right .lp-welcome-promo-block,
-.lp-welcome-body.is-right .lp-welcome-cta { align-self: flex-end; }
-.lp-welcome-body.is-right .lp-welcome-row { flex-direction: row-reverse; }
 
 /* Yellow CTA — the Arc Raiders READ MORE move. */
 .lp-welcome-cta {

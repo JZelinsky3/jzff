@@ -5,7 +5,17 @@ import { ChroniclePages } from '@/components/landing/ChroniclePages'
 import { DemoViewer } from '@/components/landing/DemoViewer'
 import { HeroClipping } from '@/components/landing/HeroClipping'
 import { LandingNav } from '@/components/landing/LandingNav'
-import { WelcomePopup } from '@/components/landing/WelcomePopup'
+import dynamic from 'next/dynamic'
+
+// Defer the welcome popup off the critical path. It's a heavy module
+// (eight inline SVG illustrations, multi-slide state machine) and only
+// ever opens after first render anyway — either via the localStorage
+// check on mount, or via the bottom-right reopen star. ssr:false skips
+// it on the server too, since localStorage isn't readable there.
+const WelcomePopup = dynamic(
+  () => import('@/components/landing/WelcomePopup').then((m) => m.WelcomePopup),
+  { ssr: false },
+)
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 
