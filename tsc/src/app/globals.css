@@ -692,19 +692,15 @@ main {
     color: var(--gold);
 }
 
-/* Dashboard cards always render in a 2-column grid so a single league doesn't
-   stretch full-width and look oversized. Collapses to 1 column on mobile via
-   the global card-grid breakpoint at 768px. */
-.dc-dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-/* When only one card renders (e.g. non-admin user sees just League Archive,
-   or commish has a single league on file), constrain + center it so it
-   doesn't stretch wide on its own row. */
-.dc-dashboard-grid:has(> :only-child) {
-    grid-template-columns: minmax(0, 360px);
-    justify-content: center;
-}
+/* Dashboard cards adapt to the number of children:
+   1 child → full width, 2 → 50/50, 3 → thirds, 4+ → caps at 3 columns and
+   wraps to the next row. Collapses to 1 column on mobile. */
+.dc-dashboard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dc-dashboard-grid:has(> :nth-child(1):last-child) { grid-template-columns: minmax(0, 1fr); }
+.dc-dashboard-grid:has(> :nth-child(2):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 768px) {
-    .dc-dashboard-grid { grid-template-columns: 1fr; }
+    .dc-dashboard-grid,
+    .dc-dashboard-grid:has(> :nth-child(2):last-child) { grid-template-columns: 1fr; }
 }
 
 /* Non-interactive split card: info on left, action button on right.
@@ -4722,18 +4718,19 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 /* ============================================================
    WELCOME POPUP — landing-only "note from the desk" modal.
-   Slides through what's new; dismissal stored in localStorage
-   against WELCOME_VERSION (bump in component to re-show).
+   Tall portrait card, rounded, multi-slide. First slide greets,
+   feature slides drill into what's new, closing slide CTAs out.
+   Dismissal stored in localStorage against WELCOME_VERSION.
    ============================================================ */
 .lp-welcome-backdrop {
     position: fixed; inset: 0;
     z-index: 200;
-    background: rgba(8, 8, 10, .72);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: radial-gradient(circle at 50% 30%, rgba(20,15,10,.55), rgba(0,0,0,.82));
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
     display: flex; align-items: center; justify-content: center;
     padding: 1.25rem;
-    animation: lp-welcome-fade .22s ease-out;
+    animation: lp-welcome-fade .25s ease-out;
 }
 @keyframes lp-welcome-fade {
     from { opacity: 0; }
@@ -4742,89 +4739,300 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .lp-welcome-card {
     position: relative;
     width: 100%;
-    max-width: 540px;
-    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
-    border: 1px solid var(--gold-deep);
-    box-shadow: 0 30px 60px rgba(0,0,0,.55), 0 0 32px rgba(232,200,137,.15);
-    padding: 1.75rem 1.75rem 1.25rem;
+    max-width: 460px;
+    min-height: 620px;
+    display: flex; flex-direction: column;
+    background:
+        radial-gradient(120% 60% at 50% -10%, rgba(232,200,137,.10), transparent 60%),
+        linear-gradient(165deg, #14110d 0%, #0e0c09 100%);
+    border: 1px solid rgba(232,200,137,.22);
+    border-radius: 20px;
+    box-shadow:
+        0 40px 80px -20px rgba(0,0,0,.7),
+        0 0 0 1px rgba(255,255,255,.02) inset,
+        0 1px 0 rgba(255,255,255,.05) inset;
     color: var(--cream);
-    animation: lp-welcome-rise .28s ease-out;
+    overflow: hidden;
+    animation: lp-welcome-rise .35s cubic-bezier(.2,.8,.2,1);
 }
 @keyframes lp-welcome-rise {
-    from { transform: translateY(10px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
+    from { transform: translateY(16px) scale(.985); opacity: 0; }
+    to   { transform: translateY(0)     scale(1);    opacity: 1; }
 }
+
 .lp-welcome-close {
-    position: absolute; top: .5rem; right: .65rem;
-    width: 28px; height: 28px;
-    background: transparent; border: 0;
+    position: absolute; top: 14px; right: 14px;
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 999px;
     color: var(--cream); opacity: .55;
-    font-size: 1.4rem; line-height: 1; cursor: pointer;
-    transition: opacity .15s;
+    cursor: pointer;
+    transition: opacity .15s, background .15s, border-color .15s;
+    z-index: 3;
 }
-.lp-welcome-close:hover { opacity: 1; }
-
-.lp-welcome-head { border-bottom: 1px dotted var(--ink-line); padding-bottom: 1rem; margin-bottom: 1rem; }
-.lp-welcome-issue {
-    font-family: var(--mono); font-size: .6rem;
-    letter-spacing: .22em; text-transform: uppercase;
-    color: var(--gold); opacity: .85;
-}
-.lp-welcome-greeting {
-    font-family: var(--serif); font-style: italic;
-    font-size: 1.8rem; line-height: 1.1;
-    margin: .35rem 0 .3rem;
-}
-.lp-welcome-lede {
-    font-family: var(--serif); font-size: .92rem;
-    opacity: .72;
+.lp-welcome-close:hover {
+    opacity: 1;
+    background: rgba(255,255,255,.08);
+    border-color: rgba(232,200,137,.35);
 }
 
-.lp-welcome-slide { min-height: 9rem; }
-.lp-welcome-kicker {
-    font-family: var(--mono); font-size: .62rem;
-    letter-spacing: .2em; text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: .45rem;
+/* Thin progress bar at top edge — feels like Notion / Linear */
+.lp-welcome-bar {
+    height: 2px;
+    background: rgba(255,255,255,.04);
+    position: relative;
+    flex: 0 0 auto;
 }
-.lp-welcome-title {
-    font-family: var(--serif); font-size: 1.25rem;
-    line-height: 1.25;
-    margin-bottom: .6rem;
+.lp-welcome-bar-fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+    box-shadow: 0 0 12px rgba(232,200,137,.45);
+    transition: width .35s cubic-bezier(.2,.8,.2,1);
 }
+
 .lp-welcome-body {
-    font-family: var(--serif); font-size: .95rem;
-    line-height: 1.55; opacity: .82;
+    flex: 1 1 auto;
+    display: flex; flex-direction: column;
+    padding: 2.25rem 1.85rem 1rem;
+    min-height: 0;
+}
+
+.lp-welcome-stage {
+    flex: 1 1 auto;
+    display: flex; flex-direction: column;
+    animation: lp-welcome-slide-in .35s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes lp-welcome-slide-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.lp-welcome-stage-greet,
+.lp-welcome-stage-closing {
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+}
+
+.lp-welcome-mark {
+    font-family: var(--serif);
+    font-size: 3.2rem; line-height: 1;
+    color: var(--gold);
+    margin-bottom: 1.25rem;
+    text-shadow: 0 0 32px rgba(232,200,137,.4);
+}
+
+.lp-welcome-eyebrow {
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: .85;
+    margin-bottom: 1rem;
+}
+
+.lp-welcome-hello {
+    font-family: var(--serif);
+    font-size: 3rem;
+    line-height: 1;
+    font-weight: 400;
+    margin: 0 0 1rem;
+    letter-spacing: -.01em;
+}
+.lp-welcome-hello em {
+    font-style: italic;
+    color: var(--gold);
+}
+
+.lp-welcome-greet-lede {
+    font-family: var(--serif);
+    font-size: 1rem;
+    line-height: 1.5;
+    opacity: .72;
+    margin: 0 0 1.75rem;
+    max-width: 28ch;
+}
+
+.lp-welcome-greet-tease {
+    width: 100%;
+    text-align: left;
+    border-top: 1px dotted rgba(232,200,137,.2);
+    padding-top: 1rem;
+    margin-top: auto;
+}
+.lp-welcome-greet-tease > span {
+    display: block;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: .8;
+    margin-bottom: .55rem;
+}
+.lp-welcome-greet-tease ul {
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: .3rem;
+}
+.lp-welcome-greet-tease li {
+    font-family: var(--serif);
+    font-size: .88rem;
+    line-height: 1.4;
+    opacity: .82;
+    padding-left: 1.1rem;
+    position: relative;
+}
+.lp-welcome-greet-tease li::before {
+    content: '★';
+    position: absolute;
+    left: 0; top: 0;
+    color: var(--gold);
+    font-size: .65rem;
+    line-height: 1.6;
+}
+
+.lp-welcome-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+.lp-welcome-badge {
+    display: inline-flex; align-items: center;
+    padding: .3rem .55rem;
+    background: linear-gradient(180deg, rgba(232,200,137,.18), rgba(232,200,137,.08));
+    border: 1px solid rgba(232,200,137,.4);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: .55rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    color: var(--gold);
+    text-transform: uppercase;
+}
+.lp-welcome-counter {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .2em;
+    color: var(--cream);
+    opacity: .4;
+}
+
+.lp-welcome-kicker {
+    font-family: var(--mono);
+    font-size: .65rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+}
+
+.lp-welcome-title {
+    font-family: var(--serif);
+    font-size: 2.05rem;
+    line-height: 1.05;
+    font-weight: 400;
+    margin: 0 0 1.25rem;
+    letter-spacing: -.01em;
+}
+.lp-welcome-title em {
+    font-style: italic;
+    color: var(--gold);
+}
+
+.lp-welcome-text {
+    font-family: var(--serif);
+    font-size: 1rem;
+    line-height: 1.55;
+    opacity: .8;
     margin: 0;
 }
+.lp-welcome-text strong {
+    color: var(--cream);
+    opacity: 1;
+    font-weight: 600;
+}
 
+.lp-welcome-cta-row {
+    margin-top: 1.75rem;
+}
+.lp-welcome-cta {
+    border-radius: 999px;
+    padding: .75rem 1.4rem;
+}
+
+/* Footer — dots left, paired rounded arrows right */
 .lp-welcome-foot {
+    flex: 0 0 auto;
     display: flex; align-items: center; justify-content: space-between;
-    gap: .75rem;
-    margin-top: 1.25rem;
-    padding-top: 1rem;
-    border-top: 1px dotted var(--ink-line);
+    gap: 1rem;
+    padding: 1rem 1.85rem 1.5rem;
+    border-top: 1px solid rgba(255,255,255,.04);
 }
-.lp-welcome-nav { min-width: 5.5rem; }
-.lp-welcome-nav:disabled { opacity: .35; cursor: not-allowed; }
 
-.lp-welcome-dots { display: inline-flex; gap: .4rem; }
-.lp-welcome-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--ink-line);
-    transition: background .2s, transform .2s;
+.lp-welcome-dots {
+    display: inline-flex; gap: .45rem;
 }
+.lp-welcome-dot {
+    width: 6px; height: 6px;
+    padding: 0; border: 0;
+    border-radius: 999px;
+    background: rgba(255,255,255,.15);
+    cursor: pointer;
+    transition: background .2s, width .2s;
+}
+.lp-welcome-dot:hover { background: rgba(232,200,137,.5); }
 .lp-welcome-dot.is-active {
     background: var(--gold);
-    transform: scale(1.25);
+    width: 18px;
+}
+
+.lp-welcome-arrows {
+    display: inline-flex; gap: .5rem;
+}
+.lp-welcome-arrow {
+    width: 38px; height: 38px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 999px;
+    color: var(--cream);
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s, transform .12s;
+}
+.lp-welcome-arrow:hover:not(:disabled) {
+    background: rgba(255,255,255,.07);
+    border-color: rgba(232,200,137,.35);
+    transform: translateY(-1px);
+}
+.lp-welcome-arrow:disabled {
+    opacity: .3; cursor: not-allowed;
+}
+.lp-welcome-arrow-primary {
+    background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+    border-color: var(--gold-deep);
+    color: #1a140b;
+    box-shadow: 0 8px 20px -8px rgba(232,200,137,.5);
+}
+.lp-welcome-arrow-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #f3d28b, var(--gold));
+    border-color: var(--gold);
+    color: #1a140b;
 }
 
 @media (max-width: 520px) {
-    .lp-welcome-card { padding: 1.4rem 1.25rem 1rem; }
-    .lp-welcome-greeting { font-size: 1.5rem; }
-    .lp-welcome-title { font-size: 1.1rem; }
-    .lp-welcome-body { font-size: .9rem; }
-    .lp-welcome-nav { min-width: 4.5rem; font-size: .75rem; }
+    .lp-welcome-card {
+        min-height: 560px;
+        max-width: 100%;
+        border-radius: 18px;
+    }
+    .lp-welcome-body { padding: 2rem 1.4rem .85rem; }
+    .lp-welcome-foot { padding: .85rem 1.4rem 1.25rem; }
+    .lp-welcome-hello { font-size: 2.4rem; }
+    .lp-welcome-title { font-size: 1.7rem; }
+    .lp-welcome-text { font-size: .94rem; }
+    .lp-welcome-mark { font-size: 2.6rem; }
 }
 
 /* ============================================================

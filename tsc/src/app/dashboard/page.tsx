@@ -248,10 +248,11 @@ export default async function DashboardPage({
         titleEm="archive."
         subtitle="Each step ticks itself off as you go."
         steps={onboardingSteps}
+        fabOnly
       />
 
       <div className="section" style={{ paddingTop: '1rem' }}>
-        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: '880px', margin: '0 auto' }}>
+        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: '1080px', margin: '0 auto' }}>
           <Link href="/dashboard/new" className="card" style={{ display: 'block' }}>
             <div className="card-corner">Mode I</div>
             <div className="card-roman">§</div>

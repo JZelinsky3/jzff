@@ -23,6 +23,10 @@ type Props = {
   subtitle: string
   steps: OnboardingStep[]
   hideWhenAllDone?: boolean
+  // When true, skip the inline checklist card entirely and surface only
+  // the corner FAB. Used on the dashboard where the cards-grid above is
+  // the primary CTA and we don't want a second large block stacked under.
+  fabOnly?: boolean
 }
 
 export function OnboardingChecklist({
@@ -33,6 +37,7 @@ export function OnboardingChecklist({
   subtitle,
   steps,
   hideWhenAllDone = true,
+  fabOnly = false,
 }: Props) {
   const [mounted, setMounted] = useState(false)
   const [dismissed, setDismissed] = useState(false)
@@ -57,6 +62,9 @@ export function OnboardingChecklist({
 
   useEffect(() => {
     if (!mounted) return
+    // fabOnly mode skips the inline card, so there's nothing to observe —
+    // pin mainVisible=false so the FAB renders immediately.
+    if (fabOnly) { setMainVisible(false); return }
     const el = cardRef.current
     if (!el) return
     const obs = new IntersectionObserver(
@@ -65,7 +73,7 @@ export function OnboardingChecklist({
     )
     obs.observe(el)
     return () => obs.disconnect()
-  }, [mounted])
+  }, [mounted, fabOnly])
 
   if (!mounted) return null
   if (dismissed) return null
@@ -116,6 +124,7 @@ export function OnboardingChecklist({
 
   return (
     <>
+      {!fabOnly && (
       <div className="onb-card" ref={cardRef}>
         <button
           type="button"
@@ -146,6 +155,7 @@ export function OnboardingChecklist({
 
         {stepsList}
       </div>
+      )}
 
       {/* Floating fallback — appears once the main card scrolls off-screen
           so the user keeps a path back to remaining steps. Stripe-style. */}
