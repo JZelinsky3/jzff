@@ -5101,8 +5101,8 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 
 @media (max-width: 720px) {
-    .lp-welcome-arrow-ext-left  { left: .55rem; }
-    .lp-welcome-arrow-ext-right { right: .55rem; }
+    .lp-welcome-arrow-ext-left  { left: .25rem; }
+    .lp-welcome-arrow-ext-right { right: .25rem; }
 }
 @media (max-width: 540px) {
     .lp-welcome-card {
