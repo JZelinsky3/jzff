@@ -163,10 +163,13 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
   // Defensive: the leagues_owner_id_fkey points at profiles(id), which the
   // handle_new_user trigger is supposed to populate on signup. Accounts
   // that predate the trigger — or signups where it failed silently —
-  // would otherwise hit a 23503 FK violation on insert. Upsert the row
-  // here via the admin client so RLS doesn't block it. Surface any error
-  // instead of swallowing it; a silent failure here just hands the user
-  // the same FK violation downstream.
+  // would otherwise hit a 23503 FK violation on insert. Provision the
+  // missing row here via the admin client so RLS doesn't block it.
+  //
+  // The profiles table requires a NOT-NULL, unique `member_code` (see
+  // 0030_profile_member_code.sql) so we generate one in TS using the
+  // same alphabet as the SQL `gen_member_code()` function and retry on
+  // the vanishingly rare unique_violation.
   {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return {
@@ -177,24 +180,58 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     }
     const { createAdminClient } = await import('@/lib/supabase/admin')
     const admin = createAdminClient()
-    const displayName =
-      (user.user_metadata?.full_name as string | undefined) ||
-      (user.user_metadata?.name as string | undefined) ||
-      user.email ||
-      null
-    const { error: profileErr } = await admin
+
+    const { data: existingProfile } = await admin
       .from('profiles')
-      .upsert({ id: user.id, display_name: displayName }, { onConflict: 'id' })
-    if (profileErr) {
-      console.error('[addLeague] profile upsert failed', {
-        userId: user.id,
-        code: profileErr.code,
-        message: profileErr.message,
-        details: profileErr.details,
-      })
-      return {
-        ok: false,
-        error: `Could not provision your profile row: ${profileErr.message}`,
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!existingProfile) {
+      const displayName =
+        (user.user_metadata?.full_name as string | undefined) ||
+        (user.user_metadata?.name as string | undefined) ||
+        user.email ||
+        null
+      const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
+      const genCode = () => {
+        let s = ''
+        for (let i = 0; i < 7; i++) s += ALPHABET[Math.floor(Math.random() * ALPHABET.length)]
+        return s
+      }
+      let lastErr: { code?: string; message?: string; details?: string } | null = null
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const { error: insertErr } = await admin
+          .from('profiles')
+          .insert({ id: user.id, display_name: displayName, member_code: genCode() })
+        if (!insertErr) {
+          lastErr = null
+          break
+        }
+        lastErr = insertErr
+        // 23505 = unique_violation. Only retry when the collision is on
+        // member_code; an id-collision means the row was created in a
+        // race and we can stop.
+        if (insertErr.code === '23505' && insertErr.message?.includes('member_code')) continue
+        break
+      }
+      if (lastErr) {
+        // Race: another request inserted the row between our SELECT and
+        // INSERT. Treat as success.
+        if (lastErr.code === '23505') {
+          // fall through
+        } else {
+          console.error('[addLeague] profile provision failed', {
+            userId: user.id,
+            code: lastErr.code,
+            message: lastErr.message,
+            details: lastErr.details,
+          })
+          return {
+            ok: false,
+            error: `Could not provision your profile row: ${lastErr.message}`,
+          }
+        }
       }
     }
   }
