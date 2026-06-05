@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -10,12 +11,19 @@ import {
   isCompUser,
 } from '@/lib/stripe'
 import { PricingCards } from './pricing-cards'
+import { PricingViewTabs } from './pricing-view-tabs'
+import { PLAN_FEATURES, FREE_MULTIPLE_LEAGUES_DETAIL } from '@/lib/planFeatures'
 
 const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '10')
 
 export default async function PricingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  // Read the persisted view choice (cookie set by PricingViewTabs).
+  // Reading server-side means the right tab is rendered in the initial
+  // HTML — no useEffect flash, no Safari localStorage quirks.
+  const viewCookie = (await cookies()).get('tsc-pricing-view')?.value
+  const initialView: 'paid' | 'free' = viewCookie === 'free' ? 'free' : 'paid'
 
   // If they're already subscribed, show the pricing page with their current
   // tier highlighted as "Current plan" and the other(s) as "Switch to".
@@ -35,7 +43,23 @@ export default async function PricingPage() {
           <div className="nav-kicker">Pricing</div>
           <div className="nav-title">The <em>plans.</em></div>
         </div>
-        <span className="dc-nav-icon" aria-hidden style={{ visibility: 'hidden' }} />
+        <div className="pricing-nav-right">
+          <Link href="/" className="pricing-nav-link">
+            <span className="pricing-nav-link-text">Home</span>
+          </Link>
+          <Link href="/pricing/plans" className="pricing-nav-link">
+            <span className="pricing-nav-link-text">Plans</span>
+          </Link>
+          {user ? (
+            <Link href="/dashboard" className="pricing-nav-cta">
+              Library <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+            </Link>
+          ) : (
+            <Link href="/login" className="pricing-nav-cta">
+              Login <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+            </Link>
+          )}
+        </div>
       </nav>
 
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
@@ -70,56 +94,144 @@ export default async function PricingPage() {
           </div>
         </div>
       ) : (
-      <PricingCards
-        signedIn={!!user}
-        currentTier={hasActive && sub ? sub.tier : null}
-        currentPeriod={hasActive && sub ? sub.billing_period : null}
-        trialDays={TRIAL_DAYS}
-        tiers={[
-          {
-            tier: 'tier1',
-            name: TIER_LABELS.tier1.name,
-            tagline: TIER_LABELS.tier1.tagline,
-            limit: TIER_LIMITS.tier1,
-            monthly: TIER_PRICES.tier1.monthly,
-            yearly: TIER_PRICES.tier1.yearly,
-            features: [
-              'Archive 1 league',
-              'Full season history walk',
-              'Public almanac per league',
-              'Pick&apos;ems + power rankings',
-              'Weekly cron auto-sync',
-            ],
-          },
-          {
-            tier: 'tier2',
-            name: TIER_LABELS.tier2.name,
-            tagline: TIER_LABELS.tier2.tagline,
-            limit: TIER_LIMITS.tier2,
-            monthly: TIER_PRICES.tier2.monthly,
-            yearly: TIER_PRICES.tier2.yearly,
-            features: [
-              'Archive up to 5 leagues',
-              'Everything in Rookie',
-              'Run multiple leagues from one account',
-              'Priority on platform integrations',
-            ],
-            highlight: true,
-          },
-          {
-            tier: 'tier3',
-            name: TIER_LABELS.tier3.name,
-            tagline: TIER_LABELS.tier3.tagline,
-            limit: TIER_LIMITS.tier3,
-            monthly: TIER_PRICES.tier3.monthly,
-            yearly: TIER_PRICES.tier3.yearly,
-            features: [
-              'Unlimited leagues',
-              'Everything in Veteran',
-              'First in line for new platform integrations',
-            ],
-          },
-        ]}
+      <PricingViewTabs
+        initialView={initialView}
+        paid={
+          <PricingCards
+            signedIn={!!user}
+            currentTier={hasActive && sub ? sub.tier : null}
+            currentPeriod={hasActive && sub ? sub.billing_period : null}
+            trialDays={TRIAL_DAYS}
+            tiers={[
+              {
+                tier: 'tier1',
+                name: TIER_LABELS.tier1.name,
+                tagline: TIER_LABELS.tier1.tagline,
+                limit: TIER_LIMITS.tier1,
+                monthly: TIER_PRICES.tier1.monthly,
+                yearly: TIER_PRICES.tier1.yearly,
+                features: [
+                  'Archive 1 league',
+                  'Full season history walk',
+                  'Public almanac per league',
+                  'Pick&apos;ems + power rankings',
+                  'Weekly cron auto-sync',
+                ],
+              },
+              {
+                tier: 'tier2',
+                name: TIER_LABELS.tier2.name,
+                tagline: TIER_LABELS.tier2.tagline,
+                limit: TIER_LIMITS.tier2,
+                monthly: TIER_PRICES.tier2.monthly,
+                yearly: TIER_PRICES.tier2.yearly,
+                features: [
+                  'Archive up to 5 leagues',
+                  'Everything in Rookie',
+                  'Run multiple leagues from one account',
+                  'Priority on platform integrations',
+                ],
+                highlight: true,
+              },
+              {
+                tier: 'tier3',
+                name: TIER_LABELS.tier3.name,
+                tagline: TIER_LABELS.tier3.tagline,
+                limit: TIER_LIMITS.tier3,
+                monthly: TIER_PRICES.tier3.monthly,
+                yearly: TIER_PRICES.tier3.yearly,
+                features: [
+                  'Unlimited leagues',
+                  'Everything in Veteran',
+                  'First in line for new platform integrations',
+                ],
+              },
+            ]}
+          />
+        }
+        free={
+          <section className="section pricing-free-strip pricing-free-strip-narrow" aria-labelledby="pricing-free-h">
+            <div className="pricing-free-card">
+              {/* Cream badge — counterpart to the paid Veteran card's
+                  gold "Most popular" flag. Signals that Free is its own
+                  featured option, not a fallback. */}
+              <div className="pricing-free-flag">★ Free forever ★</div>
+              <div className="pricing-free-head">
+                <div className="pricing-free-kicker">★ Tier 0 · Free forever</div>
+                <h3 className="pricing-free-name" id="pricing-free-h">
+                  UDFA.
+                </h3>
+                <div className="pricing-free-tagline">
+                  Try the chronicle with no card.
+                </div>
+              </div>
+
+              <div className="pricing-free-price">
+                <span className="pricing-free-price-amount">$0</span>
+                <span className="pricing-free-price-per">/mo</span>
+              </div>
+
+              {/* /pricing shows only what UDFA includes — all ticked.
+                  The full "here's what you're missing" comparison lives
+                  on /pricing/plans. Single source of truth: PLAN_FEATURES.
+                  "Archive 1 league" is prepended as a UDFA-specific row
+                  since the paid feature list calls this "Multiple leagues"
+                  and reads from per-tier limits. */}
+              <ul className="pricing-free-list">
+                <li>
+                  <span className="pricing-free-mark is-yes" aria-hidden>✓</span>
+                  <span className="pricing-free-body">
+                    <span className="pricing-free-feat-label">Archive 1 league</span>
+                    <span className="pricing-free-feat-detail">
+                      Your league, bound forever. No card, no expiration.
+                    </span>
+                  </span>
+                </li>
+                {PLAN_FEATURES.filter((f) => f.includedFree).map((f) => {
+                  const detail = f.detailFree
+                    ?? (typeof f.detail === 'function' ? f.detail('tier2') : f.detail)
+                  return (
+                    <li key={f.label}>
+                      <span className="pricing-free-mark is-yes" aria-hidden>✓</span>
+                      <span className="pricing-free-body">
+                        <span className="pricing-free-feat-label">{f.label}</span>
+                        <span className="pricing-free-feat-detail">{detail}</span>
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {/* CTA varies by auth + plan state:
+                  - Logged out → "Start free →" → signup
+                  - Logged in & no active sub (UDFA) → "Continue →" → dashboard
+                  - Logged in & active paid sub → small info + Manage link;
+                    we don't push them to downgrade themselves. */}
+              <div className="pricing-free-cta">
+                {!user && (
+                  <Link href="/login?mode=signup" className="dc-btn-ghost">
+                    Start free →
+                  </Link>
+                )}
+                {user && !hasActive && (
+                  <Link href="/dashboard" className="dc-btn-ghost">
+                    Continue →
+                  </Link>
+                )}
+                {user && hasActive && sub && (
+                  <div className="pricing-free-paid-note">
+                    <span className="pricing-free-paid-note-label">
+                      You&apos;re on {TIER_LABELS[sub.tier].name}
+                    </span>
+                    <Link href="/account" className="pricing-free-paid-link">
+                      Manage →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        }
       />
       )}
 

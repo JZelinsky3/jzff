@@ -5105,13 +5105,27 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .lp-welcome-arrow-ext-right { right: .75rem; }
 }
 @media (max-width: 540px) {
-    .lp-welcome-card { min-height: 580px; border-radius: 16px; }
-    .lp-welcome-hero { height: 190px; }
-    .lp-welcome-body { padding: 1.4rem 1.4rem .9rem; }
-    .lp-welcome-foot { padding: .85rem 1.4rem 1.1rem; }
-    .lp-welcome-title { font-size: 1.8rem; }
-    .lp-welcome-text { font-size: .96rem; }
-    .lp-welcome-arrow-ext { width: 32px; height: 32px; }
+    .lp-welcome-card {
+        max-width: 340px;
+        min-height: 500px;
+        border-radius: 14px;
+    }
+    .lp-welcome-hero { height: 150px; }
+    .lp-welcome-body { padding: 1.1rem 1.15rem .75rem; }
+    .lp-welcome-foot { padding: .65rem 1.15rem .9rem; }
+    .lp-welcome-title { font-size: 1.5rem; margin-bottom: .8rem; }
+    .lp-welcome-text { font-size: .88rem; line-height: 1.5; }
+    .lp-welcome-eyebrow,
+    .lp-welcome-kicker { font-size: .56rem; margin-bottom: .65rem; }
+    .lp-welcome-arrow-ext { width: 28px; height: 28px; }
+    .lp-welcome-arrow-ext svg { width: 14px; height: 14px; }
+    .lp-welcome-arrow-ext-left  { left: .5rem; }
+    .lp-welcome-arrow-ext-right { right: .5rem; }
+    .lp-welcome-cta { padding: .7rem 1.15rem; font-size: .72rem; }
+    .lp-welcome-cta-small { padding: .55rem .9rem; font-size: .65rem; }
+    .lp-welcome-promo-tease { padding: .55rem .8rem .55rem .7rem; }
+    .lp-welcome-promo-tease-line { font-size: .85rem; }
+    .lp-welcome-promo-tease-icon { font-size: 1.2rem; }
 }
 
 /* ============================================================
@@ -7506,4 +7520,325 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 @media (max-width: 860px) {
     .plans-grid { grid-template-columns: 1fr; }
+}
+
+/* Pricing & Plans top-right nav menu. Two-tier hierarchy:
+   - .pricing-nav-link  → secondary text link, animated gold underline
+                          on hover.
+   - .pricing-nav-cta   → primary action, gold-bordered pill with arrow
+                          that nudges right on hover.
+   Balances the back-arrow on the left side of the nav. */
+.pricing-nav-right {
+    display: inline-flex; align-items: center;
+    gap: 1.1rem;
+    justify-self: end;
+}
+
+/* Secondary text link */
+.pricing-nav-link {
+    position: relative;
+    padding: .3rem 0;
+    font-family: var(--mono);
+    font-size: .66rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--cream);
+    opacity: .72;
+    text-decoration: none;
+    transition: color .15s, opacity .15s;
+}
+.pricing-nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 1px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform .28s cubic-bezier(.2,.8,.2,1);
+}
+.pricing-nav-link:hover { color: var(--gold); opacity: 1; }
+.pricing-nav-link:hover::after { transform: scaleX(1); }
+
+/* Primary CTA pill */
+.pricing-nav-cta {
+    display: inline-flex; align-items: center;
+    gap: .4rem;
+    padding: .5rem .95rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--gold);
+    background: rgba(232,200,137,.08);
+    border: 1px solid rgba(232,200,137,.45);
+    border-radius: 999px;
+    text-decoration: none;
+    transition: background .15s, border-color .15s, color .15s, transform .15s;
+}
+.pricing-nav-cta:hover {
+    background: rgba(232,200,137,.16);
+    border-color: var(--gold);
+    transform: translateY(-1px);
+}
+.pricing-nav-cta-arrow {
+    display: inline-block;
+    transition: transform .2s ease-out;
+}
+.pricing-nav-cta:hover .pricing-nav-cta-arrow { transform: translateX(3px); }
+
+@media (max-width: 600px) {
+    .pricing-nav-right { gap: .7rem; }
+    .pricing-nav-link { font-size: .56rem; letter-spacing: .16em; }
+    .pricing-nav-cta {
+        padding: .4rem .75rem;
+        font-size: .54rem; letter-spacing: .18em;
+    }
+}
+
+/* Free / Paid view tabs — small, low-key toggle. Sized down so the
+   reader sees them as "view filter," not "you must choose one." */
+.pricing-view-tabs-wrap {
+    display: flex; justify-content: center;
+    margin: 0 0 2rem;
+    padding-top: .5rem;
+}
+.pricing-view-content { display: contents; }
+/* .section in main.css sets `margin: 3rem auto 0` — that 3rem TOP
+   MARGIN is what's been opening the gap between the view tabs and the
+   period toggle. main.css is imported AFTER globals.css in layout.tsx,
+   and even though our selector here is more specific (0,2,0 beats
+   0,1,0), build/CSS-Modules ordering can still let main.css win in
+   some HMR / production-build edge cases. !important closes the gap
+   for good. */
+.pricing-view-content > .section {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+.pricing-view-content > .pricing-free-strip { margin-top: 0 !important; }
+.pricing-view-tabs {
+    display: inline-flex;
+    gap: .15rem;
+    padding: .2rem;
+    background: rgba(0,0,0,.25);
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+}
+.pricing-view-tab {
+    padding: .3rem .85rem;
+    border-radius: 999px;
+    border: 0;
+    background: transparent;
+    color: var(--cream-soft, var(--cream));
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    opacity: .6;
+    transition: background .15s, color .15s, opacity .15s;
+}
+.pricing-view-tab:hover { opacity: .9; }
+.pricing-view-tab.is-active {
+    background: rgba(232,200,137,.15);
+    color: var(--gold);
+    opacity: 1;
+}
+
+/* Plans page: raise the tabs by reducing the section's top padding.
+   Default .section sets ~3rem padding-top — this override keeps the
+   tabs sitting just under the hero copy. */
+.plans-page-body { padding-top: 1rem; }
+
+/* "You're already on a paid plan" note in the Free card CTA slot —
+   shown instead of the Start/Continue button when the user has an
+   active sub. Keeps the layout balanced without nudging downgrades. */
+.pricing-free-paid-note {
+    display: flex; flex-direction: column;
+    align-items: flex-end;
+    gap: .35rem;
+    text-align: right;
+}
+.pricing-free-paid-note-label {
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+.pricing-free-paid-link {
+    font-family: var(--mono);
+    font-size: .65rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream);
+    opacity: .75;
+    text-decoration: none;
+    transition: color .15s, opacity .15s;
+}
+.pricing-free-paid-link:hover { color: var(--gold); opacity: 1; }
+@media (max-width: 860px) {
+    .pricing-free-paid-note { align-items: flex-start; text-align: left; }
+}
+
+/* ============================================================
+   PRICING — Free / UDFA strip. Horizontal banner card that sits
+   *below* the 3-column paid tier grid so the paid columns stay
+   visually equal. Used on both /pricing and /pricing/plans.
+   ============================================================ */
+/* Horizontal "wide" variant of a tier card. Visually matches the
+   3-column paid grid above — same ink gradient, same border, same
+   serif name, same gold price treatment — but laid out as one wide
+   row so it doesn't compete for column space. */
+/* Vertical column variant — mirrors the paid tier cards. Sits alone,
+   centered, so Free gets the same column rhythm as the 3 paid columns
+   above when the Free tab is selected. */
+.pricing-free-strip {
+    max-width: 1140px;
+    margin: 1.5rem auto 0;
+    padding: 0 1rem;
+    display: flex; justify-content: center;
+}
+/* Narrower variant — used only on /pricing where the Free card has a
+   short feature list. /pricing/plans keeps the wider default so its
+   longer label+description list breathes. */
+.pricing-free-strip-narrow .pricing-free-card { max-width: 380px; }
+
+/* "Free forever" badge — cream counterpart to the paid Veteran card's
+   gold "Most popular" pill. Floats over the top-right corner of the
+   card. */
+.pricing-free-flag {
+    position: absolute;
+    top: -.7rem; right: 1.25rem;
+    background: var(--cream);
+    color: var(--ink);
+    padding: .25rem .65rem;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    font-weight: 700;
+    border-radius: 2px;
+    z-index: 1;
+}
+.pricing-free-card {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    display: flex; flex-direction: column;
+    gap: 1.1rem;
+    padding: 2.25rem 2.25rem;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    /* Cream border — visually echoes the gold "Most popular" border on
+       the paid Veteran card so Free reads as featured in its own right
+       when its tab is active. */
+    border: 2px solid var(--cream);
+    border-radius: 5px;
+}
+
+.pricing-free-head { min-width: 0; }
+.pricing-free-kicker {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--cream);
+    opacity: .6;
+    margin-bottom: .35rem;
+}
+.pricing-free-name {
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    line-height: 1.05;
+    margin: 0;
+    font-weight: 400;
+    color: var(--cream);
+}
+.pricing-free-tagline {
+    font-family: var(--serif);
+    font-size: .9rem;
+    color: var(--cream);
+    opacity: .7;
+    margin-top: .35rem;
+}
+
+.pricing-free-price {
+    display: flex; align-items: baseline; gap: .35rem;
+    white-space: nowrap;
+}
+.pricing-free-price-amount {
+    font-family: var(--serif);
+    font-size: 2.6rem;
+    color: var(--gold);
+    line-height: 1;
+}
+.pricing-free-price-per {
+    font-family: var(--serif);
+    font-size: .9rem;
+    color: var(--cream);
+    opacity: .65;
+}
+
+.pricing-free-list {
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column;
+    gap: .5rem;
+}
+.pricing-free-list li {
+    display: flex; gap: .6rem;
+    align-items: flex-start;
+    color: var(--cream);
+    opacity: .9;
+}
+.pricing-free-body {
+    display: flex; flex-direction: column;
+    gap: .1rem;
+    min-width: 0;
+}
+.pricing-free-feat-label {
+    font-family: var(--serif);
+    font-size: .98rem;
+    line-height: 1.25;
+    color: var(--cream);
+    font-weight: 600;
+}
+.pricing-free-feat-detail {
+    font-family: var(--serif);
+    font-size: .82rem;
+    line-height: 1.35;
+    color: var(--cream);
+    opacity: .65;
+}
+/* Cross out features UDFA doesn't get — at-a-glance differentiation
+   from the paid tiers. Strike only the label so the description stays
+   readable and continues to sell the feature. */
+.pricing-free-list li:has(.pricing-free-mark.is-no) {
+    opacity: .55;
+}
+.pricing-free-list li:has(.pricing-free-mark.is-no) .pricing-free-feat-label {
+    text-decoration: line-through;
+    text-decoration-color: rgba(255,255,255,.4);
+}
+.pricing-free-mark {
+    flex: 0 0 auto;
+    width: 16px; text-align: left;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-top: .15rem;
+}
+.pricing-free-mark.is-yes { color: var(--gold); }
+.pricing-free-mark.is-no  { color: var(--cream); opacity: .35; }
+
+.pricing-free-cta {
+    display: flex; justify-content: center;
+    margin-top: auto;
+    padding-top: .5rem;
+}
+.pricing-free-cta .dc-btn-ghost { width: 100%; text-align: center; }
+
+@media (max-width: 540px) {
+    .pricing-free-card { padding: 1.75rem 1.4rem; }
 }

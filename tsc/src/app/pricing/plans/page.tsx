@@ -1,8 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { TIER_LABELS, TIER_LIMITS, TIER_PRICES, type Tier } from '@/lib/stripe'
+import { PricingViewTabs } from '../pricing-view-tabs'
+import { PLAN_FEATURES, FREE_MULTIPLE_LEAGUES_DETAIL } from '@/lib/planFeatures'
 
 export const metadata: Metadata = {
   title: 'Compare plans — The Sunday Chronicle',
@@ -95,7 +98,11 @@ function leagueLine(t: Tier) {
   return n === 1 ? '1 league' : `Up to ${n} leagues`
 }
 
-export default function PlansPage() {
+export default async function PlansPage() {
+  // Server-side cookie read so the initial HTML renders the tab the
+  // visitor last selected — same source of truth as /pricing.
+  const viewCookie = (await cookies()).get('tsc-pricing-view')?.value
+  const initialView: 'paid' | 'free' = viewCookie === 'free' ? 'free' : 'paid'
   return (
     <main>
       <nav className="nav">
@@ -104,7 +111,17 @@ export default function PlansPage() {
           <div className="nav-kicker">Plans · The Sunday Chronicle</div>
           <div className="nav-title">TS<em>C.</em></div>
         </div>
-        <span className="dc-nav-icon" aria-hidden style={{ visibility: 'hidden' }} />
+        <div className="pricing-nav-right">
+          <Link href="/" className="pricing-nav-link">
+            <span className="pricing-nav-link-text">Home</span>
+          </Link>
+          <Link href="/pricing" className="pricing-nav-link">
+            <span className="pricing-nav-link-text">Pricing</span>
+          </Link>
+          <Link href="/login" className="pricing-nav-cta">
+            Login <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+          </Link>
+        </div>
       </nav>
 
       <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
@@ -119,49 +136,114 @@ export default function PlansPage() {
         </p>
       </section>
 
-      <div className="section" style={{ maxWidth: '1180px', margin: '0 auto' }}>
-        <div className="plans-grid">
-          {TIERS.map((t, i) => {
-            const featured = t === 'tier2'
-            const numeral = ['I', 'II', 'III'][i]
-            return (
-              <div key={t} className={`plans-card${featured ? ' is-featured' : ''}`}>
-                {featured && <div className="plans-card-flag">★ Most popular ★</div>}
-                <div className="plans-card-num">{numeral}</div>
-                <div className="plans-card-name">{TIER_LABELS[t].name}</div>
-                <div className="plans-card-price">{priceLine(t)}</div>
-                <div className="plans-card-leagues">{leagueLine(t)}</div>
+      <div className="plans-page-body" style={{ maxWidth: '1180px', margin: '0 auto' }}>
+        <PricingViewTabs
+          initialView={initialView}
+          paid={
+            <div className="plans-paid-view">
+              <div className="plans-grid">
+                {TIERS.map((t, i) => {
+                  const featured = t === 'tier2'
+                  const numeral = ['I', 'II', 'III'][i]
+                  return (
+                    <div key={t} className={`plans-card${featured ? ' is-featured' : ''}`}>
+                      {featured && <div className="plans-card-flag">★ Most popular ★</div>}
+                      <div className="plans-card-num">{numeral}</div>
+                      <div className="plans-card-name">{TIER_LABELS[t].name}</div>
+                      <div className="plans-card-price">{priceLine(t)}</div>
+                      <div className="plans-card-leagues">{leagueLine(t)}</div>
 
-                <ul className="plans-feat-list">
-                  {FEATURES.map((f) => {
-                    const inc = f.included[t]
-                    const detail = typeof f.detail === 'function' ? f.detail(t) : f.detail
+                      <ul className="plans-feat-list">
+                        {FEATURES.map((f) => {
+                          const inc = f.included[t]
+                          const detail = typeof f.detail === 'function' ? f.detail(t) : f.detail
+                          return (
+                            <li key={f.label} className={`plans-feat${inc ? '' : ' is-excluded'}`}>
+                              <span className="plans-feat-mark" aria-hidden="true">
+                                {inc ? '✓' : '—'}
+                              </span>
+                              <span className="plans-feat-body">
+                                <span className="plans-feat-label">{f.label}</span>
+                                <span className="plans-feat-detail">{detail}</span>
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+
+                      <Link href="/pricing" className={`plans-card-cta${featured ? ' is-featured' : ''}`}>
+                        Start {TIER_LABELS[t].name} →
+                      </Link>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <p className="plans-foot">
+                Same chronicle, different reach. Upgrade or downgrade anytime — leagues over your new
+                plan&apos;s cap stay viewable but go read-only until you reduce or upgrade.
+              </p>
+            </div>
+          }
+          free={
+            <section className="pricing-free-strip" aria-labelledby="plans-free-h">
+              <div className="pricing-free-card">
+                <div className="pricing-free-flag">★ Free forever ★</div>
+                <div className="pricing-free-head">
+                  <div className="pricing-free-kicker">★ Tier 0 · Free forever</div>
+                  <h3 className="pricing-free-name" id="plans-free-h">
+                    UDFA.
+                  </h3>
+                  <div className="pricing-free-tagline">
+                    Try the chronicle with no card.
+                  </div>
+                </div>
+
+                <div className="pricing-free-price">
+                  <span className="pricing-free-price-amount">$0</span>
+                  <span className="pricing-free-price-per">/mo</span>
+                </div>
+
+                {/* Same label + description rows as the comparison
+                    table above, with UDFA's inclusion mapping. Both
+                    surfaces read from PLAN_FEATURES so changes stay
+                    in sync. */}
+                <ul className="pricing-free-list">
+                  {PLAN_FEATURES.map((f) => {
+                    // Free card prefers detailFree for partial features
+                    // (e.g. League archive). Multiple leagues row is
+                    // special-cased because its detail is a per-tier
+                    // function that doesn't apply to UDFA.
+                    const detail = f.label === 'Multiple leagues'
+                      ? FREE_MULTIPLE_LEAGUES_DETAIL
+                      : f.detailFree
+                        ?? (typeof f.detail === 'function' ? f.detail('tier2') : f.detail)
                     return (
-                      <li key={f.label} className={`plans-feat${inc ? '' : ' is-excluded'}`}>
-                        <span className="plans-feat-mark" aria-hidden="true">
-                          {inc ? '✓' : '—'}
+                      <li key={f.label}>
+                        <span
+                          className={`pricing-free-mark ${f.includedFree ? 'is-yes' : 'is-no'}`}
+                          aria-hidden
+                        >
+                          {f.includedFree ? '✓' : '—'}
                         </span>
-                        <span className="plans-feat-body">
-                          <span className="plans-feat-label">{f.label}</span>
-                          <span className="plans-feat-detail">{detail}</span>
+                        <span className="pricing-free-body">
+                          <span className="pricing-free-feat-label">{f.label}</span>
+                          <span className="pricing-free-feat-detail">{detail}</span>
                         </span>
                       </li>
                     )
                   })}
                 </ul>
 
-                <Link href="/pricing" className={`plans-card-cta${featured ? ' is-featured' : ''}`}>
-                  Start {TIER_LABELS[t].name} →
-                </Link>
+                <div className="pricing-free-cta">
+                  <Link href="/login?mode=signup" className="dc-btn-ghost">
+                    Start free →
+                  </Link>
+                </div>
               </div>
-            )
-          })}
-        </div>
-
-        <p className="plans-foot">
-          Same chronicle, different reach. Upgrade or downgrade anytime — leagues over your new
-          plan&apos;s cap stay viewable but go read-only until you reduce or upgrade.
-        </p>
+            </section>
+          }
+        />
       </div>
 
       <SiteFooter />

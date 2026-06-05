@@ -4,8 +4,9 @@
 import Link from "next/link"
 import { BackButton } from "@/components/BackButton"
 import { SiteFooter } from "@/components/SiteFooter"
+import { createClient } from "@/lib/supabase/server"
 
-export function GuideShell({
+export async function GuideShell({
   kicker,
   title,
   titleEm,
@@ -20,6 +21,11 @@ export function GuideShell({
   faqJsonLd?: object
   children: React.ReactNode
 }) {
+  // Auth check is server-side so the right-side nav can show "Library"
+  // for signed-in readers and "Login" for everyone else. Async server
+  // component — callers can await this directly in their JSX.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   return (
     <main>
       {faqJsonLd && (
@@ -34,7 +40,23 @@ export function GuideShell({
           <div className="nav-kicker">Guides · The Sunday Chronicle</div>
           <div className="nav-title">TS<em>C.</em></div>
         </div>
-        <span className="dc-nav-icon" aria-hidden style={{ visibility: "hidden" }} />
+        <div className="pricing-nav-right">
+          <Link href="/" className="pricing-nav-link">
+            <span className="pricing-nav-link-text">Home</span>
+          </Link>
+          <Link href="/guides/" className="pricing-nav-link">
+            <span className="pricing-nav-link-text">Guides</span>
+          </Link>
+          {user ? (
+            <Link href="/dashboard" className="pricing-nav-cta">
+              Library <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+            </Link>
+          ) : (
+            <Link href="/login" className="pricing-nav-cta">
+              Login <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+            </Link>
+          )}
+        </div>
       </nav>
 
       <section className="hero" style={{ paddingTop: "3rem", paddingBottom: "1.5rem" }}>

@@ -354,8 +354,16 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
     setMounted(true)
     try {
       const dismissed = window.localStorage.getItem(STORAGE_KEY)
-      if (dismissed === WELCOME_VERSION) setHasDismissed(true)
-      else setOpen(true)
+      if (dismissed === WELCOME_VERSION) {
+        setHasDismissed(true)
+      } else {
+        // Persist on open, not just on dismiss — Safari (and any browser
+        // where the user closes the tab / navigates away without clicking
+        // dismiss) would otherwise re-trigger the popup on every refresh.
+        // Bumping WELCOME_VERSION is still the way to force a re-show.
+        try { window.localStorage.setItem(STORAGE_KEY, WELCOME_VERSION) } catch {}
+        setOpen(true)
+      }
     } catch {
       setOpen(true)
     }
