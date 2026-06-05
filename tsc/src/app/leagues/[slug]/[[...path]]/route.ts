@@ -254,13 +254,85 @@ function injectOgTags(html: string, meta: LeagueMeta, file: string, req: NextReq
     `<meta name="twitter:image" content="${escapeHtml(ogImage.url)}">`,
   ].join('\n')
 
-  if (/<head[^>]*>/i.test(html)) {
-    return html.replace(/<head[^>]*>/i, (m) => `${m}\n${tags}`)
+  let out = /<head[^>]*>/i.test(html)
+    ? html.replace(/<head[^>]*>/i, (m) => `${m}\n${tags}`)
+    : tags + html
+
+  // Inject the share button + dialog + init script right before </body>
+  // so the markup is present once `share.js` boots. Skipped on the
+  // rivalry detail page because it ships its own scoped share UI (the
+  // first card built — left in place so the editorial red theme matches
+  // its surroundings). Other pages all use the shared module.
+  const skipShareInjection = file === 'rivalries/rivalry.html'
+  if (!skipShareInjection) {
+    const shareBlock = `${shareModuleMarkup()}\n${shareInitScript(ogImage, meta, req)}`
+    if (/<\/body>/i.test(out)) {
+      out = out.replace(/<\/body>/i, `${shareBlock}\n</body>`)
+    } else {
+      out = `${out}\n${shareBlock}`
+    }
   }
-  return tags + html
+
+  return out
 }
 
-type OgImage = { url: string; title: string; description: string }
+type OgImage = { url: string; title: string; description: string; downloadName?: string; shareSub?: string }
+
+// Markup injected by the public-almanac route into every page that has an
+// OG image. Avoids hand-rolling the same share dialog into each template;
+// the JS module at /pams-template/assets/js/share.js handles the dialog
+// behaviour and gets initialized with this page's metadata via a tiny
+// inline <script> we also inject.
+function shareModuleMarkup(): string {
+  return `
+<link rel="stylesheet" href="/pams-template/assets/css/share.css">
+<button type="button" class="tsc-share-btn" id="tsc-share-btn" hidden aria-label="Share this page">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+  </svg>
+  <span>Share</span>
+</button>
+<dialog class="tsc-share-dialog" id="tsc-share-dialog" aria-labelledby="tsc-share-title">
+  <div class="tsc-share-kicker">Share this page</div>
+  <div class="tsc-share-title" id="tsc-share-title">&nbsp;</div>
+  <div class="tsc-share-sub" id="tsc-share-sub">&nbsp;</div>
+  <img class="tsc-share-preview" id="tsc-share-preview" alt="Card preview">
+  <div class="tsc-share-actions">
+    <button type="button" class="tsc-share-action" id="tsc-share-copy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      <span id="tsc-share-copy-label">Copy link</span>
+    </button>
+    <button type="button" class="tsc-share-action" id="tsc-share-download">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      <span>Download card</span>
+    </button>
+  </div>
+  <button type="button" class="tsc-share-close" id="tsc-share-close">Close</button>
+</dialog>
+<script src="/pams-template/assets/js/share.js" defer></script>`
+}
+
+function shareInitScript(og: OgImage, meta: LeagueMeta, req: NextRequest): string {
+  // Strip origin from the OG URL so we pass a path to share.js (it'll
+  // resolve against window.location.origin client-side — keeps the
+  // dialog working on preview/prod without baking in an origin).
+  let ogPath = og.url
+  try { ogPath = new URL(og.url).pathname } catch { /* og.url is already a path */ }
+  const shareUrl = new URL(req.nextUrl.pathname + req.nextUrl.search, req.nextUrl.origin).toString()
+  const cfg = {
+    ogPath,
+    shareUrl,
+    title: og.title,
+    sub: og.shareSub ?? `A clipping from ${meta.name}'s almanac`,
+    downloadName: og.downloadName ?? og.title,
+  }
+  return `<script>window.TSCShare && TSCShare.init(${JSON.stringify(cfg)});</script>`
+}
 
 function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgImage | null {
   // Rivalry detail: /leagues/<slug>/rivalries/rivalry.html?id=<rivalryId>
@@ -286,7 +358,16 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       description: `The ${year} season of ${meta.name}, chronicled on The Sunday Chronicle.`,
     }
   }
-  return null
+  // Default: league-level "almanac front cover" for every other public
+  // almanac page. Means any share — landing, standings, records, draft —
+  // gets the league's identity card in the link preview rather than a
+  // generic site-default. Page-specific routes above override this.
+  const url = new URL(`/api/og/league/${meta.slug}`, req.nextUrl.origin).toString()
+  return {
+    url,
+    title: `${meta.name} · The Almanac`,
+    description: `The full history of ${meta.name} — seasons, champions, rivalries, records — on The Sunday Chronicle.`,
+  }
 }
 
 // Memoize each league's full JSON bundle. Bust via revalidateTag(`league-<id>`).
