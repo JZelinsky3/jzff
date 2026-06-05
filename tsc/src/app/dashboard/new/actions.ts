@@ -160,6 +160,24 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
   const gate = await canCreateLeague(user.id)
   if (!gate.ok) return { ok: false, error: gate.message }
 
+  // Defensive: the leagues_owner_id_fkey points at profiles(id), which the
+  // handle_new_user trigger is supposed to populate on signup. Accounts
+  // that predate the trigger — or signups where it failed silently —
+  // would otherwise hit a 23503 FK violation on insert. Upsert the row
+  // here via the admin client so RLS doesn't block it.
+  {
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const admin = createAdminClient()
+    const displayName =
+      (user.user_metadata?.full_name as string | undefined) ||
+      (user.user_metadata?.name as string | undefined) ||
+      user.email ||
+      null
+    await admin
+      .from('profiles')
+      .upsert({ id: user.id, display_name: displayName }, { onConflict: 'id', ignoreDuplicates: true })
+  }
+
   const finalName = customName && customName.length > 0 ? customName : leagueName
   const baseSlug = slugify(finalName)
   let slug = baseSlug

@@ -273,8 +273,9 @@ export default async function DashboardPage({
       <div className="section" style={{ paddingTop: '1rem' }}>
         {/* ← MANUAL EDIT: change `maxWidth` to widen/narrow the League Archive
             cards row. Larger value (e.g. '1080px') = wider; smaller (e.g. '640px')
-            = narrower. Affects both the lone-card and 2-up (admin) layouts. */}
-        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: '580px', margin: '0 auto' }}>
+            = narrower. Admin sees 2 cards side-by-side so they get a wider
+            cap so each card stays readable. */}
+        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: siteAdmin ? '880px' : '580px', margin: '0 auto' }}>
           <Link href="/dashboard/new" className="card" style={{ display: 'block' }}>
             <div className="card-corner">Mode I</div>
             <div className="card-roman">§</div>

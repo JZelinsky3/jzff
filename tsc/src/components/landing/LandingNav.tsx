@@ -18,7 +18,11 @@ type ColumnKey = 'library' | 'discover' | 'demo' | 'account' | 'get-started'
 
 type Trigger =
   | { kind: 'link'; label: string; href: string; column: ColumnKey }
-  | { kind: 'group'; label: string; column: ColumnKey }
+  // Group triggers open the mega-panel on hover. If `href` is set they
+  // also navigate on click — matching the way the Pricing trigger feels,
+  // so users don't have to dig through the menu just to land on the
+  // obvious destination.
+  | { kind: 'group'; label: string; href?: string; column: ColumnKey }
 
 type ColumnItem =
   | { label: string; href: string; indent?: boolean }
@@ -71,10 +75,10 @@ function buildSignedIn(admin: boolean): { triggers: Trigger[]; columns: Column[]
   // Nav trigger order matches column order so the eye reads cleanly
   // left-to-right between the masthead row and the mega panel below.
   const triggers: Trigger[] = [
-    { kind: 'group', label: 'Library',  column: 'library'  },
-    { kind: 'link',  label: 'Pricing',  href: '/pricing', column: 'discover' },
-    { kind: 'group', label: 'Demo',     column: 'demo'     },
-    { kind: 'group', label: 'Account',  column: 'account'  },
+    { kind: 'group', label: 'Library',  href: '/dashboard', column: 'library'  },
+    { kind: 'link',  label: 'Pricing',  href: '/pricing',   column: 'discover' },
+    { kind: 'group', label: 'Demo',     href: '/demo/',     column: 'demo'     },
+    { kind: 'group', label: 'Account',  href: '/account',   column: 'account'  },
   ]
   const accountItems: ColumnItem[] = [
     { label: 'Profile', href: '/account' },
@@ -99,9 +103,9 @@ function buildSignedIn(admin: boolean): { triggers: Trigger[]; columns: Column[]
 
 function buildSignedOut(): { triggers: Trigger[]; columns: Column[] } {
   const triggers: Trigger[] = [
-    { kind: 'link', label: 'Pricing', href: '/pricing', column: 'discover' },
-    { kind: 'group', label: 'Demo', column: 'demo' },
-    { kind: 'link', label: 'Sign in', href: '/login', column: 'get-started' },
+    { kind: 'link',  label: 'Pricing', href: '/pricing', column: 'discover' },
+    { kind: 'group', label: 'Demo',    href: '/demo/',   column: 'demo' },
+    { kind: 'link',  label: 'Sign in', href: '/login',   column: 'get-started' },
   ]
   const columns: Column[] = [
     { key: 'discover', num: ROMAN[0], label: 'Discover',       items: DISCOVER_ITEMS },
@@ -249,6 +253,24 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
                   href={t.href}
                   className={`ln-link${isActive ? ' is-active' : ''}`}
                   onMouseEnter={() => enter(t.column)}
+                  onClick={closeAll}
+                >
+                  {t.label}
+                </Link>
+              )
+            }
+            // Group trigger with a destination: clicking navigates to the
+            // group's "home" page (e.g. Demo → /demo/); hovering opens the
+            // mega panel for users who want a sub-item.
+            if (t.href) {
+              return (
+                <Link
+                  key={i}
+                  href={t.href}
+                  className={`ln-link ln-trigger${isActive ? ' is-active' : ''}`}
+                  aria-expanded={isActive}
+                  onMouseEnter={() => enter(t.column)}
+                  onClick={closeAll}
                 >
                   {t.label}
                 </Link>
