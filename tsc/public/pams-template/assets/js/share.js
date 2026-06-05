@@ -1,25 +1,20 @@
 // TSC Share dialog — reusable across almanac pages.
 //
-// Usage:
-//   <link rel="stylesheet" href="/pams-template/assets/css/share.css">
-//   <script src="/pams-template/assets/js/share.js" defer></script>
-//   ...
-//   <button type="button" class="tsc-share-btn" id="tsc-share-btn" hidden>...</button>
-//   <dialog class="tsc-share-dialog" id="tsc-share-dialog">...</dialog>
-//   ...
-//   <script>
-//     TSCShare.init({
-//       ogPath: '/api/og/rivalry/<slug>/<id>',
-//       shareUrl: window.location.href,
-//       title: 'Bouchard vs Smith',
-//       sub: 'A clipping from the head-to-head record',
-//       downloadName: 'bouchard-vs-smith',
-//     })
-//   </script>
+// Wiring (two parts injected by the server's leagues route):
 //
-// init() may be called more than once on the same page — it idempotently
-// rewires the SAME dialog/button with new metadata. Calls before the DOM
-// has the elements are queued and replayed on DOMContentLoaded.
+//   1) Above </body>:
+//        <script>window.__TSCShareConfig = {ogPath, shareUrl, title, sub, downloadName};</script>
+//        <script src="/pams-template/assets/js/share.js" defer></script>
+//
+//   2) The config-set runs immediately when parsed. The script tag loads
+//      deferred and reads __TSCShareConfig on DOMContentLoaded. This
+//      ordering avoids the "TSCShare is undefined" race that an explicit
+//      init() call would hit (defer scripts run AFTER inline scripts).
+//
+// `TSCShare.init({...})` is also exposed for pages that prefer a manual
+// hook (e.g. SPAs that change the share target after navigation). init()
+// can be called multiple times — each call idempotently rewires the
+// SAME dialog/button with new metadata.
 
 (function () {
   'use strict';
@@ -141,12 +136,22 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function bootFromConfig() {
     if (pendingInit) {
       wire(pendingInit);
       pendingInit = null;
+      return;
     }
-  });
+    if (window.__TSCShareConfig) {
+      wire(window.__TSCShareConfig);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootFromConfig);
+  } else {
+    bootFromConfig();
+  }
 
   window.TSCShare = { init: init };
 })();

@@ -331,7 +331,10 @@ function shareInitScript(og: OgImage, meta: LeagueMeta, req: NextRequest): strin
     sub: og.shareSub ?? `A clipping from ${meta.name}'s almanac`,
     downloadName: og.downloadName ?? og.title,
   }
-  return `<script>window.TSCShare && TSCShare.init(${JSON.stringify(cfg)});</script>`
+  // Set config inline (runs immediately when parsed); share.js loads
+  // deferred and picks the config up on DOMContentLoaded. Calling
+  // TSCShare.init() directly here would race the defer load.
+  return `<script>window.__TSCShareConfig=${JSON.stringify(cfg)};</script>`
 }
 
 function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgImage | null {
