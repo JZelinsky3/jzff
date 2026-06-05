@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 // popup stays dismissed for returning visitors. Material additions
 // (new feature slides, reordered narrative) — bump it, and everyone
 // sees the popup once on their next landing.
-const WELCOME_VERSION = '2026-06-05-3'
+const WELCOME_VERSION = '2026-06-05-4'
 const STORAGE_KEY = 'tsc-welcome-dismissed-v'
 
 // Promo code surfaced on the greeting + promo slides. Single source so
