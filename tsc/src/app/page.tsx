@@ -5,17 +5,11 @@ import { ChroniclePages } from '@/components/landing/ChroniclePages'
 import { DemoViewer } from '@/components/landing/DemoViewer'
 import { HeroClipping } from '@/components/landing/HeroClipping'
 import { LandingNav } from '@/components/landing/LandingNav'
-import dynamic from 'next/dynamic'
-
-// Defer the welcome popup off the critical path. It's a heavy module
-// (eight inline SVG illustrations, multi-slide state machine) and only
-// ever opens after first render anyway — either via the localStorage
-// check on mount, or via the bottom-right reopen star. ssr:false skips
-// it on the server too, since localStorage isn't readable there.
-const WelcomePopup = dynamic(
-  () => import('@/components/landing/WelcomePopup').then((m) => m.WelcomePopup),
-  { ssr: false },
-)
+// Client-only loader — dynamic-imports the heavy WelcomePopup module
+// (eight inline SVGs, multi-slide state machine) off the critical path.
+// Has to live in its own 'use client' file because `dynamic({ ssr:false })`
+// isn't allowed in Server Components.
+import { WelcomePopupLoader } from '@/components/landing/WelcomePopupLoader'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 
@@ -51,7 +45,7 @@ export default async function Home() {
 
   return (
     <main className="lp-main">
-      <WelcomePopup signedIn={signedIn} />
+      <WelcomePopupLoader signedIn={signedIn} />
       <div className="ticker">
         <div className="ticker-track">
           <div className="ticker-group">

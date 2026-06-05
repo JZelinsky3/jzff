@@ -4818,8 +4818,11 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .lp-welcome-arrow-ext:disabled {
     opacity: .35; cursor: not-allowed;
 }
-.lp-welcome-arrow-ext-left  { left: max(1.25rem, calc(50% - 320px)); }
-.lp-welcome-arrow-ext-right { right: max(1.25rem, calc(50% - 320px)); }
+/* Sit ~30px outside the card edge (card max-width 480 → half 240, so
+   50% - 270px is the inset). Floor at 1rem so they don't fall off the
+   viewport on small screens. */
+.lp-welcome-arrow-ext-left  { left: max(1rem, calc(50% - 280px)); }
+.lp-welcome-arrow-ext-right { right: max(1rem, calc(50% - 280px)); }
 
 /* The card — cream parchment. */
 .lp-welcome-card {
