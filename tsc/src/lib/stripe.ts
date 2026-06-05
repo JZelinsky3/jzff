@@ -312,8 +312,32 @@ export async function upsertSubscriptionFromStripe(
   const priceId = item?.price.id
   if (!priceId) throw new Error(`Subscription ${sub.id} has no price item`)
 
-  const mapped = tierFromPriceId(priceId)
-  if (!mapped) throw new Error(`Subscription ${sub.id} uses unknown price ${priceId}`)
+  const db = createAdminClient()
+
+  // Resolve tier/period from the price ID. If the price isn't in our
+  // current TIER_PRICES map (legacy price from a rebuilt tier structure,
+  // orphan from a removed product, etc.) fall back to whatever the
+  // existing subscriptions row already records for this user. This keeps
+  // lifecycle events flowing (cancel / trial_will_end / etc.) for subs
+  // that predate a price rotation. New subs on unknown prices still
+  // throw — that's real misconfig and should be visible.
+  let mapped = tierFromPriceId(priceId)
+  if (!mapped) {
+    const { data: existing } = await db
+      .from('subscriptions')
+      .select('tier, billing_period')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (existing?.tier && existing?.billing_period) {
+      mapped = { tier: existing.tier as Tier, period: existing.billing_period as BillingPeriod }
+      console.warn(
+        `[stripe] subscription ${sub.id} uses legacy price ${priceId}; ` +
+        `falling back to stored tier=${mapped.tier} period=${mapped.period}`,
+      )
+    } else {
+      throw new Error(`Subscription ${sub.id} uses unknown price ${priceId}`)
+    }
+  }
 
   // In Stripe API 2025+ / SDK v22, current_period_end moved from the
   // Subscription to each SubscriptionItem (because items can now have
@@ -322,7 +346,6 @@ export async function upsertSubscriptionFromStripe(
   const periodEndSec = item.current_period_end
   const trialEndSec = sub.trial_end
 
-  const db = createAdminClient()
   const { error } = await db.from('subscriptions').upsert(
     {
       user_id: userId,
