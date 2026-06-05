@@ -5101,8 +5101,8 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 
 @media (max-width: 720px) {
-    .lp-welcome-arrow-ext-left  { left: .65rem; }
-    .lp-welcome-arrow-ext-right { right: .65rem; }
+    .lp-welcome-arrow-ext-left  { left: .55rem; }
+    .lp-welcome-arrow-ext-right { right: .55rem; }
 }
 @media (max-width: 540px) {
     .lp-welcome-card {
@@ -5119,8 +5119,8 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .lp-welcome-kicker { font-size: .56rem; margin-bottom: .65rem; }
     .lp-welcome-arrow-ext { width: 28px; height: 28px; }
     .lp-welcome-arrow-ext svg { width: 14px; height: 14px; }
-    .lp-welcome-arrow-ext-left  { left: .5rem; }
-    .lp-welcome-arrow-ext-right { right: .5rem; }
+    .lp-welcome-arrow-ext-left  { left: .4rem; }
+    .lp-welcome-arrow-ext-right { right: .4rem; }
     .lp-welcome-cta { padding: .7rem 1.15rem; font-size: .72rem; }
     .lp-welcome-cta-small { padding: .55rem .9rem; font-size: .65rem; }
     .lp-welcome-promo-tease { padding: .55rem .8rem .55rem .7rem; }
