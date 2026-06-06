@@ -75,8 +75,15 @@ export default async function AdminPage() {
   const compByUser = new Map(comps.map((c) => [c.user_id, c]))
   const profileById = new Map(profiles.map((p) => [p.id, p]))
   const leagueCountByOwner = new Map<string, number>()
+  // Earliest-created league per owner = their trial slot. The query above
+  // returned leagues newest-first, so iterating forward and overwriting
+  // leaves the *last* (i.e. oldest, smallest created_at) league id in the
+  // map. Mirrors the trial-resolution rule in resolveLeagueTier without
+  // running N round-trips.
+  const earliestLeagueByOwner = new Map<string, string>()
   for (const l of leagues) {
     leagueCountByOwner.set(l.owner_id, (leagueCountByOwner.get(l.owner_id) ?? 0) + 1)
+    earliestLeagueByOwner.set(l.owner_id, l.id)
   }
 
   return (
@@ -195,8 +202,21 @@ export default async function AdminPage() {
               {leagues.map((l) => {
                 const owner = profileById.get(l.owner_id)
                 const grace = l.grace_period_ends_at
+                // Per-league state — mirrors resolveLeagueTier:
+                //   • Comp owner → no state badge (full access, uninteresting).
+                //   • Owner's earliest league → 'testing' (trial slot).
+                //   • Non-trial league of an un-subscribed owner → 'udfa'.
+                //   • Non-trial league of a paid owner → no state badge;
+                //     subscription tier already shows in the upper table.
+                const sub = subByUser.get(l.owner_id)
+                const ownerHasSub = !!sub && (sub.status === 'active' || sub.status === 'trialing')
+                const ownerComp = compByUser.has(l.owner_id) || isLifetimeUser(l.owner_id)
+                const isOwnersEarliest = earliestLeagueByOwner.get(l.owner_id) === l.id
                 const tags: string[] = []
-                if (l.is_udfa) tags.push('udfa')
+                if (!ownerComp) {
+                  if (isOwnersEarliest) tags.push('testing')
+                  else if (!ownerHasSub) tags.push('udfa')
+                }
                 if (l.published_at) tags.push('published')
                 if (grace) tags.push('grace')
                 return (
@@ -215,16 +235,27 @@ export default async function AdminPage() {
                       {tags.length === 0 ? (
                         <span style={{ opacity: 0.4 }}>—</span>
                       ) : (
-                        tags.map((t) => (
-                          <span key={t} style={{
-                            display: 'inline-block', marginRight: '.35rem',
-                            padding: '.1rem .4rem',
-                            fontFamily: 'var(--mono)', fontSize: '.6rem',
-                            letterSpacing: '.15em', textTransform: 'uppercase',
-                            border: '1px solid var(--ink-line)', borderRadius: '2px',
-                            color: t === 'grace' ? 'rgba(220,120,80,.85)' : 'var(--cream-soft)',
-                          }}>{t}</span>
-                        ))
+                        tags.map((t) => {
+                          // Color the state chip so the trial/UDFA call-outs
+                          // pop against the neutral published/grace badges.
+                          const palette: Record<string, { color: string; border: string }> = {
+                            testing:   { color: '#b8d4e6',          border: 'rgba(143,180,207,.5)' },
+                            udfa:      { color: 'var(--cream)',     border: 'var(--ink-line)' },
+                            published: { color: 'var(--cream-soft)', border: 'var(--ink-line)' },
+                            grace:     { color: 'rgba(220,120,80,.85)', border: 'rgba(220,120,80,.4)' },
+                          }
+                          const c = palette[t] ?? { color: 'var(--cream-soft)', border: 'var(--ink-line)' }
+                          return (
+                            <span key={t} style={{
+                              display: 'inline-block', marginRight: '.35rem',
+                              padding: '.1rem .4rem',
+                              fontFamily: 'var(--mono)', fontSize: '.6rem',
+                              letterSpacing: '.15em', textTransform: 'uppercase',
+                              border: `1px solid ${c.border}`, borderRadius: '2px',
+                              color: c.color,
+                            }}>{t}</span>
+                          )
+                        })
                       )}
                       {grace && (
                         <div style={{ opacity: 0.6, fontSize: '.65rem', marginTop: '.2rem' }}>
