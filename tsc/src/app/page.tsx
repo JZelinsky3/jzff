@@ -142,7 +142,7 @@ export default async function Home() {
           <Platform name="Sleeper"  status="Available"   pill="Live" klass="" />
           <Platform name="ESPN"     status="Available"   pill="Live" klass="" />
           <Platform name="NFL.com"  status="Historical"  pill="Live" klass="" />
-          <Platform name="Yahoo"    status="Coming soon" pill="Soon" klass="cream" />
+          <Platform name="Yahoo"    status="In testing"  pill="Beta" klass="cream" />
         </div>
       </div>
 
