@@ -681,7 +681,7 @@
             text = 'Your free trial league. The Sunday Chronicle is still under construction; some features may be incomplete. When the trial ends you can roll this league into your paid plan.';
         } else if (tier === 'udfa') {
             pillLabel = '★ UDFA · Limited';
-            text = 'Free-tier league. Stats are locked on the live season, draft, record-book, and individual season pages — upgrade to unlock the full chronicle.';
+            text = 'Free-tier league — upgrade to unlock the full chronicle.';
         } else {
             // 'paid' and 'comp' both surface the beta message — the only
             // distinction is the badge color in the hub.
@@ -1020,6 +1020,14 @@
             card.setAttribute('data-locked', '1');
             card.setAttribute('aria-disabled', 'true');
             card.setAttribute('title', 'Locked — upgrade to unlock');
+            // Veteran-tier cards (Best Coach, Manager DNA, Trade Grader,
+            // Weekly Recap) already wear a tier ribbon in the top-right
+            // corner — stacking a second "Locked" chip on top reads as
+            // a clutter pile. Skip the chip for those; the click block
+            // still applies.
+            if (!card.querySelector('.ls-card-tier')) {
+                card.setAttribute('data-locked-badge', '1');
+            }
         }
         // Single delegated listener so dynamically-added cards still
         // get caught. Capture phase so the template's own click
@@ -1044,15 +1052,19 @@
             'a.ls-card[data-locked="1"]:hover {',
             '  opacity: .75;',
             '}',
-            'a.ls-card[data-locked="1"]::after {',
+            // Position + sizing mirror the .ls-card-tier "Veteran"
+            // ribbon (top:1rem right:1rem, .58rem mono, 2px 6px pad)
+            // so the locked chip lines up with the tier ribbon on the
+            // adjacent veteran cards rather than floating higher.
+            'a.ls-card[data-locked-badge="1"]::after {',
             "  content: '✦ Locked';",
-            '  position: absolute; top: .6rem; right: .8rem;',
+            '  position: absolute; top: 1rem; right: 1rem;',
             '  font-family: var(--mono, monospace);',
-            '  font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;',
+            '  font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;',
             '  color: var(--gold, #e8c889);',
-            '  border: 1px solid rgba(232,200,137,.55);',
-            '  padding: .15rem .4rem; border-radius: 2px;',
-            '  background: rgba(14,22,32,.55);',
+            '  border: 1px solid var(--gold, #e8c889);',
+            '  padding: 2px 6px; border-radius: 2px;',
+            '  opacity: .85;',
             '}',
         ].join('\n');
         document.head.appendChild(style);

@@ -76,7 +76,10 @@ const UDFA_LOCKED_PAGE_PATTERNS: RegExp[] = [
   /^live-season\/(?!index\.html$).+/,
   /^draft(\/|$)/,
   /^records\.html$/,
-  /^seasons\/season\.html$/,
+  // NOTE: seasons/season.html was previously locked, but the per-season
+  // JSON (data/seasons/<year>.json) is already part of the normal sync
+  // bundle and the seasons index needs to stay open anyway, so there's
+  // no extra cost to letting UDFA viewers see the individual seasons.
 ]
 
 // Data files that should 404 for UDFA viewers. Locked pages won't fetch

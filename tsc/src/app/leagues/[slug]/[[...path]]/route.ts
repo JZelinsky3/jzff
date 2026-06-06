@@ -150,6 +150,15 @@ async function injectDcConfig(
   pageLocked: boolean,
 ): Promise<string> {
   const leagueTier = await resolveLeagueTier(meta.id, meta.owner_id)
+  // Surface the owner's *actual* subscription tier (tier1/2/3) so the
+  // hub can show a "Rookie · Upgrade" line under the totals. Only
+  // matters for non-comp owners; for comp/no-owner we leave it null
+  // and the hub script falls back to a tier-from-leagueTier label.
+  let paidTier: 'tier1' | 'tier2' | 'tier3' | null = null
+  if (meta.owner_id && leagueTier !== 'comp') {
+    const sub = await getUserSubscription(meta.owner_id)
+    if (isSubscriptionActive(sub) && sub) paidTier = sub.tier
+  }
   const config = `<script>window.__DC=${JSON.stringify({
     id: meta.id,
     slug: meta.slug,
@@ -159,6 +168,7 @@ async function injectDcConfig(
     isBookmarked,
     isUdfaLeague: meta.is_udfa,
     leagueTier,
+    paidTier,
     pageLocked,
     tradesTheme: meta.trades_theme,
     tutorialDismissed,

@@ -2346,12 +2346,12 @@ body {
         </a>
 
         <script>
-          // Mark UDFA-locked TOC rows with the same gold-lock treatment
-          // the chapbar uses: gold title, ✦ badge after the label, and a
-          // hover tooltip. The click still navigates — the locked-page
-          // overlay on the destination explains the gate. Live Season's
-          // hub stays open for UDFA (the cards inside lock individually),
-          // so its row keeps the default styling.
+          // Mark UDFA-locked TOC rows. Title stays cream so the row
+          // still reads normally; the *card* recedes (darker, near-black
+          // background) and gains a small "Locked" chip at the right
+          // edge — same shape as the Veteran ribbon on the Live Season
+          // cards. Click still navigates so the locked-page overlay on
+          // the destination does the explaining.
           (function () {
             var dc = window.__DC || {};
             if (dc.leagueTier !== 'udfa') return;
@@ -2360,24 +2360,39 @@ body {
               var row = rows[i];
               row.classList.add('toc-row-locked');
               row.setAttribute('title', 'Locked — upgrade to unlock');
-              var title = row.querySelector('.toc-title');
-              if (title && !title.querySelector('.toc-lock')) {
-                var badge = document.createElement('span');
-                badge.className = 'toc-lock';
-                badge.setAttribute('aria-hidden', 'true');
-                badge.textContent = ' ✦';
-                title.appendChild(badge);
+              var arrow = row.querySelector('.toc-arrow');
+              if (arrow && !row.querySelector('.toc-lock-chip')) {
+                var chip = document.createElement('span');
+                chip.className = 'toc-lock-chip';
+                chip.textContent = 'Locked';
+                arrow.parentNode.insertBefore(chip, arrow);
               }
             }
             var style = document.createElement('style');
+            // Locked rows get a 4-column grid (chapter | title | chip |
+            // arrow) so the chip slots in beside the arrow instead of
+            // wrapping to a second line. The default .toc-row grid is
+            // `auto 1fr auto` so we add the chip as a fourth `auto`.
             style.textContent =
-              '.toc-row-locked .toc-title { color: rgba(232,200,137,.7); }' +
-              '.toc-row-locked:hover .toc-title { color: var(--gold-bright); }' +
-              '.toc-row-locked .toc-chapter { color: var(--gold); opacity: .8; }' +
-              '.toc-row-locked .toc-arrow { color: var(--gold); opacity: .6; }' +
-              '.toc-row-locked .toc-lock {' +
-              '  font-family: var(--serif); font-size: .85em;' +
-              '  color: var(--gold); margin-left: .35em;' +
+              '.toc-row-locked {' +
+              '  background: rgba(0,0,0,.45);' +
+              '  grid-template-columns: auto 1fr auto auto;' +
+              '}' +
+              '.toc-row-locked:hover {' +
+              '  background: rgba(0,0,0,.55);' +
+              '}' +
+              '.toc-row-locked .toc-lock-chip {' +
+              '  font-family: var(--mono);' +
+              '  font-size: .58rem;' +
+              '  letter-spacing: .2em;' +
+              '  text-transform: uppercase;' +
+              '  color: var(--gold);' +
+              '  border: 1px solid var(--gold);' +
+              '  padding: 2px 6px;' +
+              '  border-radius: 2px;' +
+              '  opacity: .85;' +
+              '  align-self: center;' +
+              '  white-space: nowrap;' +
               '}';
             document.head.appendChild(style);
           })();
