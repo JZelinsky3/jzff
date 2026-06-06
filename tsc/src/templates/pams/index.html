@@ -2148,26 +2148,25 @@ body {
    on free/rookie leagues, "Trial" on the trial slot, "Lifetime" on
    comp. Stays out of the way; readers who don't care can scan past it. */
 .hero-tier {
-    margin-top: .5rem;
+    margin-top: 1.25rem;
     font-family: var(--mono);
-    font-size: .58rem;
-    letter-spacing: .22em;
+    font-size: .5rem;
+    letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--cream-mute);
-    opacity: .85;
+    opacity: .7;
 }
-.hero-tier .hero-tier-label { color: var(--gold); }
+.hero-tier .hero-tier-label { color: var(--cream-mute); }
 .hero-tier .hero-tier-up {
-    margin-left: .55em;
-    color: var(--gold);
+    color: var(--cream-mute);
     text-decoration: none;
-    border-bottom: 1px solid rgba(232,200,137,.4);
+    border-bottom: 1px solid rgba(131, 123, 106, .35);
     padding-bottom: 1px;
     transition: color .15s, border-color .15s;
 }
 .hero-tier .hero-tier-up:hover {
-    color: var(--gold-bright);
-    border-color: var(--gold-bright);
+    color: var(--cream-soft);
+    border-color: var(--cream-soft);
 }
 </style>
 <script>
@@ -2185,7 +2184,7 @@ body {
     if (dc.leagueTier === 'comp') {
       label = 'Lifetime · Unlimited';
     } else if (dc.leagueTier === 'udfa') {
-      label = 'UDFA · Free Tier';
+      label = 'Free Tier';
       showUpgrade = true;
     } else if (dc.leagueTier === 'test') {
       label = 'Trial League';
@@ -2199,7 +2198,8 @@ body {
     if (!label) return;
     var html = '<span class="hero-tier-label">' + label + '</span>';
     if (showUpgrade) {
-      html += '<a class="hero-tier-up" href="/pricing" target="_top">Upgrade →</a>';
+      html += '<span class="hero-tier-sep" aria-hidden="true"> · </span>';
+      html += '<a class="hero-tier-up" href="/pricing" target="_top">Upgrade</a>';
     }
     el.innerHTML = html;
     el.hidden = false;
