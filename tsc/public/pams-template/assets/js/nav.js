@@ -695,118 +695,171 @@
     }
 
     // Locked-page overlay. Route handler sets __DC.pageLocked = true for
-    // UDFA-locked pages; the page renders normally (chrome, tabs, section
-    // layout) but its data fetches 404 so stat blocks stay empty. We
-    // float a fixed badge near the top of the viewport so visitors
-    // immediately see "this needs an upgrade" without losing the layout
-    // teaser behind it. Click-through is allowed on the rest of the
-    // page so users can still navigate to unlocked chapters.
+    // UDFA-locked pages. We mount a full-viewport overlay with the same
+    // centered "Locked" card the deprecated _locked.html used, lock body
+    // scroll so the page content underneath can't be browsed, and let
+    // the masthead nav sit above the overlay so the back arrow + the
+    // dropdown menu stay interactive. Everything else on the page is
+    // unreachable until the user upgrades or navigates away.
     function buildLockOverlay() {
         var dc = window.__DC || {};
         if (!dc.pageLocked) return;
-        if (document.getElementById('dc-lock-badge')) return;
+        if (document.getElementById('dc-lock-overlay')) return;
 
-        var badge = document.createElement('div');
-        badge.id = 'dc-lock-badge';
-        badge.className = 'dc-lock-badge';
-        badge.innerHTML =
-            '<div class="dc-lock-badge-icon" aria-hidden>✦</div>' +
-            '<div class="dc-lock-badge-body">' +
-                '<div class="dc-lock-badge-kicker">★ Locked Chapter ★</div>' +
-                '<div class="dc-lock-badge-title">Upgrade to unlock the stats.</div>' +
-                '<div class="dc-lock-badge-sub">' +
-                    'Free-tier leagues see the page layout but not the data. ' +
-                    'Upgrade to fill it in.' +
-                '</div>' +
-                '<a class="dc-lock-badge-cta" href="/pricing" target="_top">' +
-                    'See plans <span aria-hidden>→</span>' +
+        var leagueName = dc.name || 'This league';
+
+        var overlay = document.createElement('div');
+        overlay.id = 'dc-lock-overlay';
+        overlay.className = 'dc-lock-overlay';
+        overlay.innerHTML =
+            '<div class="dc-locked-card" role="alertdialog" aria-labelledby="dc-locked-title">' +
+                '<div class="dc-locked-kicker">★ Free Tier · UDFA ★</div>' +
+                '<div class="dc-locked-icon" aria-hidden>✦</div>' +
+                '<h2 class="dc-locked-title" id="dc-locked-title">' +
+                    'This chapter is <em>locked.</em>' +
+                '</h2>' +
+                '<p class="dc-locked-sub">' +
+                    escapeHtmlLock(leagueName) + ' is on the free UDFA tier. The full almanac' +
+                    ' — live season, draft history, the record book, individual season archives' +
+                    ' — opens up on a paid plan.' +
+                '</p>' +
+                '<a class="dc-locked-cta" href="/pricing" target="_top">' +
+                    'See plans &amp; upgrade <span aria-hidden>→</span>' +
                 '</a>' +
+                '<div>' +
+                    '<a class="dc-locked-ghost" href="./" target="_top">← Back to the hub</a>' +
+                '</div>' +
             '</div>';
-        document.body.appendChild(badge);
+        document.body.appendChild(overlay);
 
         var style = document.createElement('style');
         style.setAttribute('data-lock-overlay', '1');
         style.textContent = [
-            '.dc-lock-badge {',
-            '  position: fixed;',
-            // Sit just below the nav (and below the demo/testing strip when
-            // one is present). The strip pushes nav.nav.top via its inline
-            // style, so the badge needs the same offset stack — easiest to
-            // reference the rendered top of nav.nav at mount time.
-            '  top: calc(var(--lock-badge-top, 5.25rem));',
-            '  left: 50%;',
-            '  transform: translateX(-50%);',
-            '  z-index: 80;',
-            '  display: flex; align-items: flex-start; gap: 1.1rem;',
-            '  width: min(540px, calc(100vw - 2rem));',
-            '  padding: 1.1rem 1.4rem;',
-            '  background: rgba(14, 22, 32, 0.94);',
-            '  border: 1px solid rgba(232, 200, 137, 0.45);',
-            '  border-radius: 3px;',
-            '  box-shadow: 0 12px 32px rgba(0,0,0,.55), 0 0 0 1px rgba(232,200,137,.1);',
+            // Hard scroll lock + freeze the height so the underlying
+            // content can't be panned via touch on mobile either.
+            'html.dc-lock-active, body.dc-lock-active {',
+            '  overflow: hidden !important;',
+            '  height: 100% !important;',
+            '  overscroll-behavior: none !important;',
+            '}',
+            // The nav has its own positioning. Bump it above the overlay
+            // so the back arrow + dropdown stay clickable.
+            'html.dc-lock-active nav.nav { z-index: 200 !important; }',
+            // Demo / testing strip stays above the overlay too.
+            'html.dc-lock-active .dc-demo-strip { z-index: 200 !important; }',
+
+            '.dc-lock-overlay {',
+            '  position: fixed; inset: 0;',
+            '  z-index: 150;',
+            '  background: rgba(8, 12, 18, 0.88);',
             '  backdrop-filter: blur(6px);',
+            '  -webkit-backdrop-filter: blur(6px);',
+            '  display: flex; align-items: center; justify-content: center;',
+            '  padding: 5.5rem 1.25rem 1.5rem;',
+            '  overflow-y: auto;',
             '}',
-            '.dc-lock-badge-icon {',
-            '  flex: 0 0 auto;',
-            '  font-family: var(--serif);',
-            '  font-size: 2.2rem; line-height: 1;',
-            '  color: var(--gold);',
-            '  margin-top: .1rem;',
+            '.dc-locked-card {',
+            '  position: relative;',
+            '  width: min(720px, 100%);',
+            '  padding: 3rem 2.5rem;',
+            '  background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));',
+            '  border: 1px solid var(--ink-line);',
+            '  text-align: center;',
+            '  box-shadow: 0 20px 60px rgba(0,0,0,.7);',
             '}',
-            '.dc-lock-badge-body { flex: 1 1 auto; min-width: 0; }',
-            '.dc-lock-badge-kicker {',
+            '.dc-locked-card::before {',
+            "  content: '';",
+            '  position: absolute; top: 0; left: 50%;',
+            '  width: 60%; max-width: 360px;',
+            '  height: 2px;',
+            '  transform: translateX(-50%);',
+            '  background: linear-gradient(90deg, transparent, var(--gold), transparent);',
+            '}',
+            '.dc-locked-kicker {',
             '  font-family: var(--mono); font-weight: 700;',
-            '  font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;',
+            '  font-size: .65rem; letter-spacing: .35em; text-transform: uppercase;',
             '  color: var(--gold);',
-            '  margin-bottom: .4rem;',
+            '  margin-bottom: 1.5rem;',
             '}',
-            '.dc-lock-badge-title {',
-            '  font-family: var(--serif); font-style: italic;',
-            '  font-size: 1.15rem; line-height: 1.25;',
-            '  color: var(--cream);',
-            '  margin-bottom: .35rem;',
-            '}',
-            '.dc-lock-badge-sub {',
+            '.dc-locked-icon {',
             '  font-family: var(--serif);',
-            '  font-size: .82rem; line-height: 1.45;',
+            '  font-size: 3rem; line-height: 1;',
             '  color: var(--cream-soft);',
-            '  margin-bottom: .8rem;',
+            '  opacity: .35;',
+            '  margin-bottom: 1.25rem;',
             '}',
-            '.dc-lock-badge-cta {',
-            '  display: inline-flex; align-items: center; gap: .45rem;',
-            '  padding: .5rem .85rem;',
+            '.dc-locked-title {',
+            '  font-family: var(--serif);',
+            '  font-size: clamp(2rem, 5vw, 3rem);',
+            '  line-height: 1.05; letter-spacing: -.02em;',
+            '  color: var(--cream);',
+            '  margin: 0 0 1rem;',
+            '}',
+            '.dc-locked-title em { font-style: italic; color: var(--gold); }',
+            '.dc-locked-sub {',
+            '  font-family: var(--serif); font-style: italic;',
+            '  font-size: 1.05rem; line-height: 1.55;',
+            '  color: var(--cream-soft);',
+            '  max-width: 36rem;',
+            '  margin: 0 auto 2rem;',
+            '}',
+            '.dc-locked-cta {',
+            '  display: inline-flex; align-items: center; gap: .55rem;',
+            '  padding: .9rem 1.6rem;',
             '  background: var(--gold); color: var(--ink);',
             '  border: 1px solid var(--gold);',
             '  font-family: var(--mono); font-weight: 700;',
-            '  font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;',
+            '  font-size: .7rem; letter-spacing: .22em; text-transform: uppercase;',
             '  text-decoration: none;',
             '  transition: background .15s, border-color .15s;',
             '}',
-            '.dc-lock-badge-cta:hover {',
-            '  background: var(--gold-bright); border-color: var(--gold-bright);',
+            '.dc-locked-cta:hover {',
+            '  background: var(--gold-bright);',
+            '  border-color: var(--gold-bright);',
             '}',
+            '.dc-locked-ghost {',
+            '  display: inline-block;',
+            '  margin-top: 1.15rem;',
+            '  color: var(--cream-mute);',
+            '  font-family: var(--mono);',
+            '  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;',
+            '  text-decoration: none;',
+            '}',
+            '.dc-locked-ghost:hover { color: var(--gold); }',
             '@media (max-width: 560px) {',
-            '  .dc-lock-badge { gap: .75rem; padding: .85rem 1rem; width: calc(100vw - 1rem); }',
-            '  .dc-lock-badge-icon { font-size: 1.7rem; }',
-            '  .dc-lock-badge-title { font-size: 1rem; }',
-            '  .dc-lock-badge-sub { font-size: .76rem; }',
+            '  .dc-lock-overlay { padding: 4.5rem .9rem 1rem; }',
+            '  .dc-locked-card { padding: 2rem 1.25rem; }',
+            '  .dc-locked-sub { font-size: .95rem; }',
             '}',
         ].join('\n');
         document.head.appendChild(style);
 
-        // Resolve the actual nav bottom edge once and feed it to the css
-        // var so the badge clears the masthead regardless of the demo /
-        // testing strip stack. Re-runs on resize because mobile nav can
-        // change height across breakpoints.
-        function syncTop() {
-            var nav = document.querySelector('nav.nav');
-            if (!nav) return;
-            var rect = nav.getBoundingClientRect();
-            var bottom = Math.max(0, rect.bottom);
-            document.documentElement.style.setProperty('--lock-badge-top', (bottom + 16) + 'px');
+        // Apply scroll lock to html + body. Removed automatically if the
+        // user navigates to an unlocked page (full-page load drops the
+        // overlay along with the class).
+        document.documentElement.classList.add('dc-lock-active');
+        document.body.classList.add('dc-lock-active');
+
+        // Belt + suspenders for touch: block keyboard scroll keys + wheel
+        // events that would scroll the underlying page through gaps not
+        // caught by overflow:hidden (some iOS Safari versions still let
+        // the body pan).
+        var blockKeys = { ArrowUp: 1, ArrowDown: 1, PageUp: 1, PageDown: 1, Home: 1, End: 1, ' ': 1 };
+        function maybeBlockKey(e) {
+            if (e.target && e.target.closest && e.target.closest('nav.nav')) return;
+            if (blockKeys[e.key]) e.preventDefault();
         }
-        syncTop();
-        window.addEventListener('resize', syncTop);
+        document.addEventListener('keydown', maybeBlockKey, { passive: false });
+    }
+
+    // Local helper — escape user-provided strings before dropping them
+    // into the locked-card innerHTML. The league name comes from the
+    // route handler so it should already be safe, but this keeps the
+    // surface defensive.
+    function escapeHtmlLock(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
     }
 
     function init() {
