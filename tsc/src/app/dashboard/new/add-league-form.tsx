@@ -2,7 +2,16 @@
 
 import { useActionState, useEffect, useState, useTransition } from 'react'
 import { SleeperLeaguePicker } from '@/components/SleeperLeaguePicker'
-import { addLeague, listYahooLeagues, previewSleeperLeague, previewYahooLeague } from './actions'
+import { slugify } from '@/lib/slugify'
+import {
+  addLeague,
+  checkSlugAvailable,
+  listYahooLeagues,
+  previewSleeperLeague,
+  previewYahooLeague,
+} from './actions'
+
+type SlugStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
 
 export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
   const [state, formAction, isPending] = useActionState(addLeague, null)
@@ -10,6 +19,9 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
   const [platform, setPlatform] = useState<'sleeper' | 'nfl' | 'espn' | 'yahoo'>('sleeper')
   const [externalId, setExternalId] = useState('')
   const [customName, setCustomName] = useState('')
+  const [customSlug, setCustomSlug] = useState('')
+  const [slugTouched, setSlugTouched] = useState(false)
+  const [slugStatus, setSlugStatus] = useState<SlugStatus>('idle')
   const [abbreviation, setAbbreviation] = useState('')
   const [divisionCount, setDivisionCount] = useState(0)
   const [divisionTerm, setDivisionTerm] = useState<'conference' | 'division'>('division')
@@ -50,6 +62,95 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
       setYahooLeagues(res.leagues)
     })
   }, [platform, yahooConnected, yahooLeagues, isLoadingYahooLeagues])
+
+  // Auto-fill the slug from the league name until the user edits it directly.
+  // We mirror slugify() (lowercase + dashes), but bail once the user has typed
+  // their own — they own the value from that point forward.
+  useEffect(() => {
+    if (slugTouched) return
+    setCustomSlug(slugify(customName))
+  }, [customName, slugTouched])
+
+  // Debounced availability check. Empty / un-slugifiable input is "invalid"
+  // (e.g. only symbols) so the submit stays gated until the user types
+  // something usable.
+  useEffect(() => {
+    const normalized = slugify(customSlug)
+    if (!normalized) {
+      setSlugStatus(customSlug.length === 0 ? 'idle' : 'invalid')
+      return
+    }
+    setSlugStatus('checking')
+    const t = setTimeout(async () => {
+      const res = await checkSlugAvailable(customSlug)
+      setSlugStatus(res.available ? 'available' : 'taken')
+    }, 350)
+    return () => clearTimeout(t)
+  }, [customSlug])
+
+  const slugBlocked = slugStatus === 'taken' || slugStatus === 'invalid' || slugStatus === 'checking' || slugStatus === 'idle'
+
+  function handleSlugChange(v: string) {
+    setSlugTouched(true)
+    // Restrict input to slug-safe chars as the user types so they don't end
+    // up with a value that won't survive slugify() on submit.
+    const cleaned = v.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+/, '')
+    setCustomSlug(cleaned)
+  }
+
+  const slugField = customName.length > 0 ? (
+    <div className="dc-field">
+      <label htmlFor="customSlug" className="dc-label">League URL</label>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            left: '.7rem',
+            fontFamily: 'var(--mono)',
+            fontSize: '.8rem',
+            color: 'var(--cream-mute)',
+            pointerEvents: 'none',
+          }}
+        >
+          /league/
+        </span>
+        <input
+          id="customSlug"
+          name="customSlug"
+          value={customSlug}
+          onChange={(e) => handleSlugChange(e.target.value)}
+          className="dc-input mono"
+          maxLength={60}
+          style={{ flex: 1, paddingLeft: '4.4rem', paddingRight: '2.4rem' }}
+        />
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            right: '.8rem',
+            fontFamily: 'var(--mono)',
+            fontSize: '1rem',
+            color:
+              slugStatus === 'available' ? 'var(--gold)' :
+              slugStatus === 'taken' || slugStatus === 'invalid' ? '#e76f51' :
+              'var(--cream-mute)',
+          }}
+        >
+          {slugStatus === 'checking' ? '…' :
+            slugStatus === 'available' ? '✓' :
+            slugStatus === 'taken' || slugStatus === 'invalid' ? '✗' : ''}
+        </span>
+      </div>
+      <span className="dc-checkbox-hint">
+        {slugStatus === 'available' && 'Available.'}
+        {slugStatus === 'taken' && 'That URL is already taken — pick another.'}
+        {slugStatus === 'invalid' && 'Use letters, numbers, and dashes.'}
+        {slugStatus === 'checking' && 'Checking…'}
+        {slugStatus === 'idle' && 'Auto-filled from your league name. Edit if you like.'}
+      </span>
+    </div>
+  ) : null
 
   function selectYahooLeague(lg: YahooPickerLeague) {
     setPickedYahooKey(lg.league_key)
@@ -258,6 +359,8 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                 />
               </div>
 
+              {slugField}
+
               <div className="dc-field">
                 <label htmlFor="draftScoringProfile" className="dc-label">Draft scoring profile</label>
                 <input type="hidden" name="draftScoringProfile" value={draftScoringProfile} />
@@ -293,10 +396,18 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
 
               <button
                 type="submit"
-                disabled={isPending || !pickedYahooKey}
+                disabled={isPending || !pickedYahooKey || slugBlocked}
                 className="dc-btn dc-btn-block"
               >
-                {isPending ? 'Validating…' : pickedYahooKey ? 'Create archive →' : 'Pick a league first'}
+                {isPending
+                  ? 'Validating…'
+                  : !pickedYahooKey
+                  ? 'Pick a league first'
+                  : slugStatus === 'taken'
+                  ? 'Change the URL to continue'
+                  : slugStatus === 'invalid'
+                  ? 'Enter a valid URL'
+                  : 'Create archive →'}
               </button>
               {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
             </>
@@ -356,6 +467,8 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
           className="dc-input"
         />
       </div>
+
+      {slugField}
 
       <div className="dc-field">
         <label className="dc-label">Draft scoring profile</label>
@@ -615,8 +728,18 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
         </div>
       )}
 
-      <button type="submit" disabled={isPending} className="dc-btn dc-btn-block">
-        {isPending ? 'Validating…' : 'Create archive →'}
+      <button
+        type="submit"
+        disabled={isPending || slugBlocked}
+        className="dc-btn dc-btn-block"
+      >
+        {isPending
+          ? 'Validating…'
+          : slugStatus === 'taken'
+          ? 'Change the URL to continue'
+          : slugStatus === 'invalid'
+          ? 'Enter a valid URL'
+          : 'Create archive →'}
       </button>
 
       {state && !state.ok && <p className="dc-form-error">{state.error}</p>}

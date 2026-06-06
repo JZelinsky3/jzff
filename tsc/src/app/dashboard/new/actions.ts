@@ -40,6 +40,9 @@ const Schema = z.object({
   // Scoring profile used to evaluate draft picks on the draft history page.
   // Maps to public/data/fantasy_ranks/<profile>/<year>.json.
   draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt', 'ppr_4pt', 'half_6pt']).default('ppr_6pt'),
+  // User-chosen URL slug. The form auto-fills it from the league name but the
+  // user can override. Defensive: server still normalizes via slugify().
+  customSlug: z.string().trim().max(60).optional(),
 })
 
 type ActionResult = { ok: false; error: string } | { ok: true }
@@ -67,6 +70,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     swid: formData.get('swid') || undefined,
     espnS2: formData.get('espnS2') || undefined,
     draftScoringProfile: formData.get('draftScoringProfile') || undefined,
+    customSlug: formData.get('customSlug') || undefined,
   })
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
@@ -237,12 +241,18 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
   }
 
   const finalName = customName && customName.length > 0 ? customName : leagueName
-  const baseSlug = slugify(finalName)
+  const requestedSlug = parsed.data.customSlug ? slugify(parsed.data.customSlug) : ''
+  const baseSlug = requestedSlug || slugify(finalName)
   let slug = baseSlug
-  for (let attempt = 0; attempt < 5; attempt++) {
+  if (requestedSlug) {
     const { data: existing } = await supabase.from('leagues').select('id').eq('slug', slug).maybeSingle()
-    if (!existing) break
-    slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`
+    if (existing) return { ok: false, error: 'That league URL is already taken. Pick a different one.' }
+  } else {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const { data: existing } = await supabase.from('leagues').select('id').eq('slug', slug).maybeSingle()
+      if (!existing) break
+      slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`
+    }
   }
 
   // NFL settings live in the JSONB; Sleeper auto-detects everything we need.
@@ -371,6 +381,24 @@ export async function previewYahooLeague(leagueKey: string): Promise<
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Could not reach Yahoo.' }
   }
+}
+
+// Live availability check for the user-chosen league URL slug. Returns the
+// normalized slug so the client can show the user exactly what would be saved.
+export async function checkSlugAvailable(slug: string): Promise<{
+  ok: true
+  normalized: string
+  available: boolean
+}> {
+  const normalized = slugify(slug)
+  if (!normalized) return { ok: true, normalized: '', available: false }
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('leagues')
+    .select('id')
+    .eq('slug', normalized)
+    .maybeSingle()
+  return { ok: true, normalized, available: !data }
 }
 
 // Used by the form's "Detect from platform" button to auto-fill the
