@@ -37,7 +37,10 @@ type LeagueSettings = {
 
 // Top-level: walk every NFL source attached to this archive, ingesting each
 // with its own season range and playoff config.
-export async function ingestNflLeague(leagueRowId: string): Promise<IngestResult> {
+export async function ingestNflLeague(
+  leagueRowId: string,
+  stages?: IngestStages,
+): Promise<IngestResult> {
   const db = createAdminClient()
   const { data: leagueRow, error: leagueErr } = await db
     .from('leagues')
@@ -77,7 +80,7 @@ export async function ingestNflLeague(leagueRowId: string): Promise<IngestResult
   }
 
   for (const src of sourceList) {
-    const result = await ingestNflSource(leagueRowId, src.external_id, src.settings)
+    const result = await ingestNflSource(leagueRowId, src.external_id, src.settings, stages)
     aggregate.seasonsIngested += result.seasonsIngested
     aggregate.matchupsIngested += result.matchupsIngested
     aggregate.draftsIngested += result.draftsIngested

@@ -30,7 +30,10 @@ export type IngestResult = {
 const PLAYOFF_DEFAULT_START = 15
 
 // Ingest from every source attached to this archive.
-export async function ingestSleeperLeague(leagueRowId: string): Promise<IngestResult> {
+export async function ingestSleeperLeague(
+  leagueRowId: string,
+  stages?: IngestStages,
+): Promise<IngestResult> {
   const db = createAdminClient()
   const { data: leagueRow, error: leagueErr } = await db
     .from('leagues')
@@ -66,7 +69,7 @@ export async function ingestSleeperLeague(leagueRowId: string): Promise<IngestRe
     const settings = (src.settings ?? null) as Record<string, unknown> | null
     const seasonStart = typeof settings?.season_start === 'number' ? settings.season_start : undefined
     const seasonEnd = typeof settings?.season_end === 'number' ? settings.season_end : undefined
-    const result = await ingestSleeperSource(leagueRowId, src.external_id, src.walk_history, { seasonStart, seasonEnd })
+    const result = await ingestSleeperSource(leagueRowId, src.external_id, src.walk_history, { seasonStart, seasonEnd }, stages)
     aggregate.seasonsIngested += result.seasonsIngested
     aggregate.managersIngested += result.managersIngested
     aggregate.matchupsIngested += result.matchupsIngested

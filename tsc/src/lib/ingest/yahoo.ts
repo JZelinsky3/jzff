@@ -42,7 +42,10 @@ export type IngestResult = {
   warnings: string[]
 }
 
-export async function ingestYahooLeague(leagueRowId: string): Promise<IngestResult> {
+export async function ingestYahooLeague(
+  leagueRowId: string,
+  stages?: IngestStages,
+): Promise<IngestResult> {
   const db = createAdminClient()
   const { data: leagueRow, error: leagueErr } = await db
     .from('leagues')
@@ -84,7 +87,8 @@ export async function ingestYahooLeague(leagueRowId: string): Promise<IngestResu
       src.external_id,
       src.walk_history,
       accessToken,
-      { seasonStart, seasonEnd }
+      { seasonStart, seasonEnd },
+      stages,
     )
     aggregate.seasonsIngested += result.seasonsIngested
     aggregate.managersIngested += result.managersIngested

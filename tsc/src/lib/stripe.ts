@@ -227,10 +227,10 @@ export async function canCreateLeague(userId: string): Promise<EnforcementResult
   // Trial slot: first league is always allowed regardless of plan.
   if (current === 0) return { ok: true }
 
-  // No active subscription past the trial.
+  // No active subscription past the trial. UDFA is capped at 1 league
+  // immediately — no preview-window grace. The trial slot covers the
+  // first league; everything else needs a paid plan.
   if (!hasSub) {
-    // Preview window: free users get unlimited so they can kick the tires.
-    if (isTestingModeActive()) return { ok: true }
     return {
       ok: false,
       reason: 'no_subscription',

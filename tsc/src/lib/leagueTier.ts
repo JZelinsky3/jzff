@@ -3,7 +3,6 @@ import {
   getUserSubscription,
   isCompUser,
   isSubscriptionActive,
-  isTestingModeActive,
 } from '@/lib/stripe'
 
 // Tier classification for a specific league instance — used by both the
@@ -52,15 +51,14 @@ export function tierBadgeLabel(tier: LeagueTier): string {
   }
 }
 
-// Is this league subject to UDFA feature locks? Only true for tier ==
-// 'udfa' AND outside the testing window. Comp, paid, and the trial slot
-// (test) all get the full feature set so the user can preview what
-// they'd pay for.
+// Is this league subject to UDFA feature locks? True for tier == 'udfa'
+// — applied immediately, no testing-window grace. Comp, paid, and the
+// trial slot ('test') all bypass so the trial league still works as a
+// preview of paid.
 export async function isLeagueLocked(
   leagueId: string,
   ownerId: string | null,
 ): Promise<boolean> {
-  if (isTestingModeActive()) return false
   const tier = await resolveLeagueTier(leagueId, ownerId)
   return tier === 'udfa'
 }
@@ -91,7 +89,10 @@ const UDFA_LOCKED_DATA_PATTERNS: RegExp[] = [
   /^data\/best_coach\.json$/,
   /^data\/records_watch\.json$/,
   /^data\/milestones\.json$/,
-  /^data\/seasons\/\d+\.json$/,
+  // NOTE: data/seasons/<year>.json stays open even though seasons/season.html
+  // is locked — the seasons index page pulls each year's JSON to render the
+  // featured-per-year cards the user wants UDFA to keep seeing. Page-level
+  // lock on season.html is what enforces "can't open an individual season".
 ]
 
 export type LockKind = 'page' | 'data' | null

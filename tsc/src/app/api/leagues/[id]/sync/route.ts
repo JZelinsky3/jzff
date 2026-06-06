@@ -7,6 +7,8 @@ import { ingestNflLeague } from '@/lib/ingest/nfl'
 import { ingestEspnLeague } from '@/lib/ingest/espn'
 import { ingestYahooLeague } from '@/lib/ingest/yahoo'
 import { devCacheBust } from '@/lib/devCache'
+import { isLeagueLocked } from '@/lib/leagueTier'
+import type { IngestStages } from '@/lib/ingest/stages'
 
 export const maxDuration = 300 // 5 min, plenty of headroom on Vercel Pro
 
@@ -78,14 +80,25 @@ export async function POST(
       tradesIngested: 0,
       warnings: [] as string[],
     }
+    // UDFA leagues only need data that feeds the unlocked pages: matchups
+    // (standings + rivalries) and lineups (manager profile shell). Drafts
+    // and trades feed locked surfaces — skip them at ingest so we're not
+    // burning API quota / DB writes on data the public almanac will never
+    // surface. If the league later upgrades to paid, a fresh sync will
+    // backfill drafts + trades.
+    const udfaLocked = await isLeagueLocked(league.id, league.owner_id)
+    const stages: IngestStages | undefined = udfaLocked
+      ? { drafts: false, trades: false }
+      : undefined
+
     const errors: Array<{ platform: string; error: string }> = []
     for (const p of platforms) {
       try {
         let r: IngestResult | undefined
-        if (p === 'sleeper') r = await ingestSleeperLeague(league.id)
-        else if (p === 'nfl') r = await ingestNflLeague(league.id)
-        else if (p === 'espn') r = await ingestEspnLeague(league.id)
-        else if (p === 'yahoo') r = await ingestYahooLeague(league.id)
+        if (p === 'sleeper') r = await ingestSleeperLeague(league.id, stages)
+        else if (p === 'nfl') r = await ingestNflLeague(league.id, stages)
+        else if (p === 'espn') r = await ingestEspnLeague(league.id, stages)
+        else if (p === 'yahoo') r = await ingestYahooLeague(league.id, stages)
         else { errors.push({ platform: p, error: `${p} sync not implemented yet` }); continue }
         totals.seasonsIngested += r?.seasonsIngested ?? 0
         totals.managersIngested += r?.managersIngested ?? 0

@@ -54,7 +54,10 @@ export type EspnSourceSettings = {
 }
 
 // Top-level: walk every ESPN source attached to this archive.
-export async function ingestEspnLeague(leagueRowId: string): Promise<IngestResult> {
+export async function ingestEspnLeague(
+  leagueRowId: string,
+  stages?: IngestStages,
+): Promise<IngestResult> {
   const db = createAdminClient()
   const { data: leagueRow, error: leagueErr } = await db
     .from('leagues')
@@ -89,7 +92,7 @@ export async function ingestEspnLeague(leagueRowId: string): Promise<IngestResul
   }
 
   for (const src of sourceList) {
-    const result = await ingestEspnSource(leagueRowId, src.external_id, src.settings)
+    const result = await ingestEspnSource(leagueRowId, src.external_id, src.settings, stages)
     aggregate.seasonsIngested += result.seasonsIngested
     aggregate.matchupsIngested += result.matchupsIngested
     aggregate.draftsIngested += result.draftsIngested
