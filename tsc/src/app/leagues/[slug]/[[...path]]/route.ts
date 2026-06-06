@@ -19,6 +19,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { exportLeague, type ExportBundle } from '@/lib/export/pams'
 import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
+import { testingModeEndsAt } from '@/lib/stripe'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 
@@ -31,6 +32,7 @@ type LeagueMeta = {
   published_at: string | null
   owner_id: string | null
   is_udfa: boolean
+  created_at: string | null
   trades_theme: 'tribunal' | 'wire' | 'floor' | 'cards'
 }
 
@@ -48,7 +50,7 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
   const db = createAdminClient()
   const { data: row } = await db
     .from('leagues')
-    .select('id, name, slug, abbreviation, published_at, owner_id, is_udfa, trades_theme')
+    .select('id, name, slug, abbreviation, published_at, owner_id, is_udfa, created_at, trades_theme')
     .eq('slug', slug)
     .maybeSingle()
   if (!row) return null
@@ -68,6 +70,7 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
     published_at: row.published_at ?? null,
     owner_id: row.owner_id ?? null,
     is_udfa: !!row.is_udfa,
+    created_at: (row.created_at as string | null) ?? null,
     trades_theme: normalizeTradesTheme(row.trades_theme),
   }
 }
@@ -145,6 +148,14 @@ function injectDcConfig(
   tutorialDismissed: boolean,
   tutorialSeenPages: string[],
 ): string {
+  // "Testing-era" league: created before the testing-window cutoff. The
+  // pams nav.js renders a light-blue advisory strip on these so visitors
+  // know the archive was built during the free preview and may still be
+  // under construction. We do the date comparison server-side because the
+  // cutoff is server-config (TESTING_MODE_UNTIL env var).
+  const cutoff = testingModeEndsAt()
+  const isTestingLeague =
+    !!cutoff && !!meta.created_at && Date.parse(meta.created_at) < cutoff.getTime()
   const config = `<script>window.__DC=${JSON.stringify({
     id: meta.id,
     slug: meta.slug,
@@ -153,6 +164,7 @@ function injectDcConfig(
     isSignedIn,
     isBookmarked,
     isUdfaLeague: meta.is_udfa,
+    isTestingLeague,
     tradesTheme: meta.trades_theme,
     tutorialDismissed,
     tutorialSeenPages,

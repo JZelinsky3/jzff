@@ -620,7 +620,66 @@
         };
     }
 
+    // Light-blue advisory strip for leagues built during the testing
+    // window. The route handler sets __DC.isTestingLeague when the
+    // league's created_at < TESTING_MODE_UNTIL cutoff. Visually mirrors
+    // the demo strip (same gradient + pill treatment) so the two read as
+    // the same "advisory surface" but with copy specific to test-era
+    // archives.
+    function buildTestingStrip() {
+        var dc = window.__DC || {};
+        if (!dc.isTestingLeague) return;
+        if (document.getElementById('dc-testing-strip')) return;
+
+        var strip = document.createElement('div');
+        strip.id = 'dc-testing-strip';
+        strip.className = 'dc-demo-strip dc-testing-strip';
+        strip.innerHTML =
+            '<span class="dc-demo-strip-pill">★ Test League</span>' +
+            '<span class="dc-demo-strip-text">' +
+                'Built during The Sunday Chronicle preview window — still under construction; some features may be incomplete.' +
+            '</span>';
+        document.body.insertBefore(strip, document.body.firstChild);
+
+        var style = document.createElement('style');
+        style.setAttribute('data-testing-strip', '1');
+        style.textContent = [
+            ':root { --demo-strip-h: 44px; }',
+            '.dc-demo-strip {',
+            '  position: fixed; top: 0; left: 0; right: 0; z-index: 100;',
+            '  height: var(--demo-strip-h);',
+            '  display: flex; align-items: center; justify-content: center;',
+            '  gap: .8rem; padding: 0 1rem;',
+            '  background: linear-gradient(90deg, #8fb4cf 0%, #b8d4e6 50%, #8fb4cf 100%);',
+            '  color: #0e1620;',
+            '  border-bottom: 1px solid #2a3645;',
+            '  font-family: "JetBrains Mono", "SF Mono", monospace;',
+            '  font-size: .76rem; font-weight: 700;',
+            '  letter-spacing: .18em; text-transform: uppercase;',
+            '  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;',
+            '}',
+            '.dc-demo-strip-pill {',
+            '  background: #0e1620; color: #b8d4e6;',
+            '  padding: 4px 9px; border-radius: 2px;',
+            '  font-size: .72rem;',
+            '  letter-spacing: .22em;',
+            '}',
+            '.dc-demo-strip-text { color: #0e1620; }',
+            '@media (max-width: 480px) {',
+            '  :root { --demo-strip-h: 38px; }',
+            '  .dc-demo-strip { font-size: .6rem; letter-spacing: .1em; gap: .55rem; padding: 0 .6rem; }',
+            '  .dc-demo-strip-pill { font-size: .55rem; padding: 3px 7px; }',
+            '  .dc-demo-strip-text { letter-spacing: .06em; white-space: normal; line-height: 1.25; }',
+            '}',
+            'body { padding-top: var(--demo-strip-h) !important; }',
+            'nav.nav { top: var(--demo-strip-h) !important; }',
+            '.nav-chapbar { top: calc(var(--nav-h, 4.5rem) + var(--demo-strip-h)) !important; }'
+        ].join('\n');
+        document.head.appendChild(style);
+    }
+
     function init() {
+        buildTestingStrip();
         buildNav();
         enhanceAuthLinks();
         wireBookmarkToggle();
