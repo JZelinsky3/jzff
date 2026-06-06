@@ -219,6 +219,17 @@ export default async function AdminPage() {
                 }
                 if (l.published_at) tags.push('published')
                 if (grace) tags.push('grace')
+
+                // Plan badge — what feature tier this league actually
+                // runs under. Anon owners, testing/trial, and UDFA all
+                // get the Rookie feature set (same as paid tier1).
+                // Veteran (tier2), All-Pro (tier3), and comp all share
+                // the premium feature set, so they collapse to a single
+                // "Veteran+" chip.
+                let planBadge: 'rookie' | 'veteran+' = 'rookie'
+                if (ownerComp) planBadge = 'veteran+'
+                else if (ownerHasSub && (sub!.tier === 'tier2' || sub!.tier === 'tier3')) planBadge = 'veteran+'
+                tags.push(planBadge)
                 return (
                   <tr key={l.id} style={{ borderTop: '1px solid var(--ink-line)' }}>
                     <td style={td}>
@@ -239,10 +250,16 @@ export default async function AdminPage() {
                           // Color the state chip so the trial/UDFA call-outs
                           // pop against the neutral published/grace badges.
                           const palette: Record<string, { color: string; border: string }> = {
-                            testing:   { color: '#b8d4e6',          border: 'rgba(143,180,207,.5)' },
-                            udfa:      { color: 'var(--cream)',     border: 'var(--ink-line)' },
-                            published: { color: 'var(--cream-soft)', border: 'var(--ink-line)' },
-                            grace:     { color: 'rgba(220,120,80,.85)', border: 'rgba(220,120,80,.4)' },
+                            testing:    { color: '#b8d4e6',          border: 'rgba(143,180,207,.5)' },
+                            udfa:       { color: 'var(--cream)',     border: 'var(--ink-line)' },
+                            published:  { color: 'var(--cream-soft)', border: 'var(--ink-line)' },
+                            grace:      { color: 'rgba(220,120,80,.85)', border: 'rgba(220,120,80,.4)' },
+                            // Plan-feature badges: rookie = the basic free
+                            // feature set (UDFA / trial / tier1); veteran+
+                            // = everything from Veteran tier on up plus
+                            // comp grants.
+                            rookie:     { color: 'var(--cream)',     border: 'var(--ink-line)' },
+                            'veteran+': { color: 'var(--gold)',      border: 'rgba(232,200,137,.55)' },
                           }
                           const c = palette[t] ?? { color: 'var(--cream-soft)', border: 'var(--ink-line)' }
                           return (
