@@ -1122,24 +1122,33 @@ body { background: var(--ls-bg); }
     });
   }
 
-  var didInit = false;
+  // Re-anchor to page 1 on every reveal until the visitor has actually
+  // touched the pager. The two sections load independently — if matrix
+  // resolves before form (common on UDFA leagues where form-sheet data
+  // takes a beat longer), the previous `didInit` latch would lock the
+  // scroller on slide 2 and never snap back when form unhid. Now we
+  // re-snap to the leftmost visible section (Form Sheet is first in DOM)
+  // until the user scrolls / clicks a dot / hits an arrow.
+  var userInteracted = false;
+  function markInteracted() { userInteracted = true; }
+
   window.lsPagesReveal = function () {
-    if (!visibleSections().length) return;
+    var secs = visibleSections();
+    if (!secs.length) return;
     wrap.hidden = false;
     renderDots();
-    // When the second section appears, scroll-snap can land the scroller
-    // on the newer page. Force the first page on initial reveal so we
-    // always boot on the Form Sheet (or whichever is page 1).
-    if (!didInit) {
-      var first = visibleSections()[0];
-      if (first) scroller.scrollLeft = first.offsetLeft;
-      didInit = true;
+    if (!userInteracted) {
+      scroller.scrollLeft = secs[0].offsetLeft;
     }
     update();
   };
 
-  if (prevBtn) prevBtn.addEventListener('click', function () { goTo(activeIndex() - 1); });
-  if (nextBtn) nextBtn.addEventListener('click', function () { goTo(activeIndex() + 1); });
+  if (prevBtn) prevBtn.addEventListener('click', function () { markInteracted(); goTo(activeIndex() - 1); });
+  if (nextBtn) nextBtn.addEventListener('click', function () { markInteracted(); goTo(activeIndex() + 1); });
+  if (dotsHost) dotsHost.addEventListener('click', markInteracted);
+  scroller.addEventListener('wheel', markInteracted, { passive: true });
+  scroller.addEventListener('pointerdown', markInteracted, { passive: true });
+  scroller.addEventListener('touchstart', markInteracted, { passive: true });
 
   var raf = 0;
   scroller.addEventListener('scroll', function () {

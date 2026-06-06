@@ -33,9 +33,10 @@ export default async function Home() {
 
   const tickerItems = [
     'New · Live Season Hub · Matchup Preview · Best Coach Tracker',
-    'New · Manager Hub — six-issue editorial chronicle',
     'New · Trade Grader · Milestone Tracker · Records Watch',
-    'Soon · Weekly Recap · Manager DNA',
+    'New · Manager DNA · Live-season tendencies + tells',
+    'New · Free tier — one league, forever',
+    'Soon · Weekly Recap · Underdog Fantasy',
     'Sleeper · ESPN · Yahoo · NFL.com',
   ]
 

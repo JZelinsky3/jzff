@@ -373,12 +373,16 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
                   <span className="ln-mega-aside-item-detail">Matchup Preview + Best Coach.</span>
                 </li>
                 <li>
-                  <span className="ln-mega-aside-item-name">Manager Hub</span>
-                  <span className="ln-mega-aside-item-detail">Six-issue editorial chronicle.</span>
-                </li>
-                <li>
                   <span className="ln-mega-aside-item-name">Trade Grader</span>
                   <span className="ln-mega-aside-item-detail">Plus Milestones + Records Watch.</span>
+                </li>
+                <li>
+                  <span className="ln-mega-aside-item-name">Manager DNA</span>
+                  <span className="ln-mega-aside-item-detail">Live-season tendencies + tells.</span>
+                </li>
+                <li>
+                  <span className="ln-mega-aside-item-name">Free tier</span>
+                  <span className="ln-mega-aside-item-detail">UDFA · one league, forever.</span>
                 </li>
               </ul>
             </div>
@@ -391,12 +395,8 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
                   <span className="ln-mega-aside-item-detail">Auto-written every Tuesday.</span>
                 </li>
                 <li>
-                  <span className="ln-mega-aside-item-name">Manager DNA</span>
-                  <span className="ln-mega-aside-item-detail">Live-season tendencies + tells.</span>
-                </li>
-                <li>
-                  <span className="ln-mega-aside-item-name">Trade grades</span>
-                  <span className="ln-mega-aside-item-detail">With four-week revisits.</span>
+                  <span className="ln-mega-aside-item-name">Underdog Fantasy</span>
+                  <span className="ln-mega-aside-item-detail">Fifth platform on the way.</span>
                 </li>
               </ul>
             </div>
