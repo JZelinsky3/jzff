@@ -2321,13 +2321,13 @@ body {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="draft/" class="toc-row">
+        <a href="draft/" class="toc-row" data-udfa-locked>
             <div class="toc-chapter">Ch. IV</div>
             <div class="toc-title">Draft <em>History.</em></div>
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="records.html" class="toc-row">
+        <a href="records.html" class="toc-row" data-udfa-locked>
             <div class="toc-chapter">Ch. V</div>
             <div class="toc-title">Record <em>Book.</em></div>
             <div class="toc-arrow">→</div>
@@ -2339,20 +2339,47 @@ body {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="live-season/" class="toc-row" data-paid-feature>
+        <a href="live-season/" class="toc-row">
             <div class="toc-chapter">Ch. VII</div>
             <div class="toc-title">Live <em>Season.</em></div>
             <div class="toc-arrow">→</div>
         </a>
 
         <script>
-          // Hide the live-season row for UDFA (free) leagues — paid-tier only.
+          // Mark UDFA-locked TOC rows with the same gold-lock treatment
+          // the chapbar uses: gold title, ✦ badge after the label, and a
+          // hover tooltip. The click still navigates — the locked-page
+          // overlay on the destination explains the gate. Live Season's
+          // hub stays open for UDFA (the cards inside lock individually),
+          // so its row keeps the default styling.
           (function () {
-            if (window.__DC && window.__DC.isUdfaLeague) {
-              document.querySelectorAll('[data-paid-feature]').forEach(function (el) {
-                el.style.display = 'none';
-              });
+            var dc = window.__DC || {};
+            if (dc.leagueTier !== 'udfa') return;
+            var rows = document.querySelectorAll('.toc-row[data-udfa-locked]');
+            for (var i = 0; i < rows.length; i++) {
+              var row = rows[i];
+              row.classList.add('toc-row-locked');
+              row.setAttribute('title', 'Locked — upgrade to unlock');
+              var title = row.querySelector('.toc-title');
+              if (title && !title.querySelector('.toc-lock')) {
+                var badge = document.createElement('span');
+                badge.className = 'toc-lock';
+                badge.setAttribute('aria-hidden', 'true');
+                badge.textContent = ' ✦';
+                title.appendChild(badge);
+              }
             }
+            var style = document.createElement('style');
+            style.textContent =
+              '.toc-row-locked .toc-title { color: rgba(232,200,137,.7); }' +
+              '.toc-row-locked:hover .toc-title { color: var(--gold-bright); }' +
+              '.toc-row-locked .toc-chapter { color: var(--gold); opacity: .8; }' +
+              '.toc-row-locked .toc-arrow { color: var(--gold); opacity: .6; }' +
+              '.toc-row-locked .toc-lock {' +
+              '  font-family: var(--serif); font-size: .85em;' +
+              '  color: var(--gold); margin-left: .35em;' +
+              '}';
+            document.head.appendChild(style);
           })();
         </script>
 

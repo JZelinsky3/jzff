@@ -444,7 +444,7 @@
         // than just "active". The underline stays so the user still has
         // a hint of which tab they're on.
         '.nav-chapbar-link.is-locked {',
-        '  color: rgba(232, 200, 137, .7);',
+        '  color: var(--gold);',
         '}',
         '.nav-chapbar-link.is-locked:hover { color: var(--gold-bright, #f4d9a4); }',
         '.nav-chapbar-link.is-locked.is-active { color: var(--gold, #e8c889); }',
