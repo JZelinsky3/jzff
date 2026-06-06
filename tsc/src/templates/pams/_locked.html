@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locked · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+.locked-wrap {
+    max-width: 720px;
+    margin: 4rem auto;
+    padding: 0 1.5rem;
+}
+.locked-card {
+    position: relative;
+    padding: 3rem 2.5rem;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--ink-line);
+    text-align: center;
+    overflow: hidden;
+}
+.locked-card::before {
+    content: '';
+    position: absolute; top: 0; left: 50%;
+    width: 60%; max-width: 360px;
+    height: 2px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.locked-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .35em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+}
+.locked-icon {
+    font-family: var(--serif);
+    font-size: 3rem; line-height: 1;
+    color: var(--cream-soft);
+    opacity: .35;
+    margin-bottom: 1.25rem;
+}
+.locked-title {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.05; letter-spacing: -.02em;
+    color: var(--cream);
+    margin-bottom: 1rem;
+}
+.locked-title em { font-style: italic; color: var(--gold); }
+.locked-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem; line-height: 1.55;
+    color: var(--cream-soft);
+    max-width: 36rem;
+    margin: 0 auto 2rem;
+}
+.locked-cta {
+    display: inline-flex; align-items: center; gap: .55rem;
+    padding: .9rem 1.6rem;
+    background: var(--gold); color: var(--ink);
+    border: 1px solid var(--gold);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .7rem; letter-spacing: .22em; text-transform: uppercase;
+    text-decoration: none;
+    transition: background .15s, border-color .15s;
+}
+.locked-cta:hover {
+    background: var(--gold-bright);
+    border-color: var(--gold-bright);
+}
+.locked-ghost {
+    display: inline-block;
+    margin-top: 1.15rem;
+    color: var(--cream-mute);
+    font-family: var(--mono);
+    font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+    text-decoration: none;
+}
+.locked-ghost:hover { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<div class="ticker">
+    <div class="ticker-track">
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · LOCKED CHAPTER</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> UPGRADE TO UNLOCK FULL ALMANAC</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · LOCKED CHAPTER</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> UPGRADE TO UNLOCK FULL ALMANAC</span>
+        </div>
+    </div>
+</div>
+
+<nav id="site-nav"
+     data-page="locked"
+     data-chapter="LOCKED · UPGRADE REQUIRED"
+     data-back-label="← The Hub"
+     data-back-href="./"></nav>
+<script src="/pams-template/assets/js/nav.js"></script>
+
+<div class="locked-wrap">
+    <div class="locked-card">
+        <div class="locked-kicker">★ Free Tier · UDFA ★</div>
+        <div class="locked-icon" aria-hidden>✦</div>
+        <h1 class="locked-title">This chapter is <em>locked.</em></h1>
+        <p class="locked-sub">
+            {{LEAGUE_NAME}} is on the free UDFA tier. The full almanac &mdash;
+            live season, draft history, the record book, individual season
+            archives &mdash; opens up on a paid plan.
+        </p>
+        <a class="locked-cta" href="/pricing" target="_top">
+            See plans &amp; upgrade <span>→</span>
+        </a>
+        <div>
+            <a class="locked-ghost" href="./" target="_top">← Back to the hub</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

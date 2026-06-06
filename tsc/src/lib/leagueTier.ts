@@ -3,6 +3,7 @@ import {
   getUserSubscription,
   isCompUser,
   isSubscriptionActive,
+  isTestingModeActive,
 } from '@/lib/stripe'
 
 // Tier classification for a specific league instance — used by both the
@@ -49,4 +50,54 @@ export function tierBadgeLabel(tier: LeagueTier): string {
     case 'udfa':
       return 'UDFA · Free'
   }
+}
+
+// Is this league subject to UDFA feature locks? Only true for tier ==
+// 'udfa' AND outside the testing window. Comp, paid, and the trial slot
+// (test) all get the full feature set so the user can preview what
+// they'd pay for.
+export async function isLeagueLocked(
+  leagueId: string,
+  ownerId: string | null,
+): Promise<boolean> {
+  if (isTestingModeActive()) return false
+  const tier = await resolveLeagueTier(leagueId, ownerId)
+  return tier === 'udfa'
+}
+
+// Paths within /leagues/<slug>/ that a UDFA league hides behind the
+// "Locked — upgrade to unlock" placeholder. Matched against the
+// resolved template path (relative to TEMPLATE_ROOT), not the URL.
+const UDFA_LOCKED_PAGE_PATTERNS: RegExp[] = [
+  /^live-season(\/|$)/,
+  /^draft(\/|$)/,
+  /^records\.html$/,
+  /^seasons\/season\.html$/,
+]
+
+// Data files that should 404 for UDFA viewers. Locked pages won't fetch
+// these (they get the placeholder template), but the unlocked pages
+// (manager.html, etc.) might try and we want to fall back gracefully —
+// e.g. manager_dna 404 already triggers the locked-DNA card in the
+// existing template.
+const UDFA_LOCKED_DATA_PATTERNS: RegExp[] = [
+  /^data\/record_book\.json$/,
+  /^data\/manager_dna\.json$/,
+  /^data\/manager_highs\.json$/,
+  /^data\/drafts\//,
+  /^data\/h2h_matrix\.json$/,
+  /^data\/current_form\.json$/,
+  /^data\/matchup_preview\.json$/,
+  /^data\/best_coach\.json$/,
+  /^data\/records_watch\.json$/,
+  /^data\/milestones\.json$/,
+  /^data\/seasons\/\d+\.json$/,
+]
+
+export type LockKind = 'page' | 'data' | null
+export function classifyLockedPath(file: string, locked: boolean): LockKind {
+  if (!locked) return null
+  for (const re of UDFA_LOCKED_PAGE_PATTERNS) if (re.test(file)) return 'page'
+  for (const re of UDFA_LOCKED_DATA_PATTERNS) if (re.test(file)) return 'data'
+  return null
 }

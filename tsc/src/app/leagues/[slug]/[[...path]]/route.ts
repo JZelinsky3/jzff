@@ -19,7 +19,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { exportLeague, type ExportBundle } from '@/lib/export/pams'
 import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
-import { resolveLeagueTier } from '@/lib/leagueTier'
+import { resolveLeagueTier, isLeagueLocked, classifyLockedPath } from '@/lib/leagueTier'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 
@@ -510,8 +510,20 @@ export async function GET(
     })
   }
 
+  // UDFA gate: certain pages and data files are locked behind the upgrade
+  // wall outside the testing window. Locked HTML pages get replaced with
+  // the shared _locked.html template; locked data files 404 (the templates
+  // that consume them — e.g. the manager DNA card — already render a
+  // graceful "locked" fallback when the JSON is missing).
+  const lockedLeague = await isLeagueLocked(meta.id, meta.owner_id)
+  const lockKind = classifyLockedPath(resolved.file, lockedLeague)
+  if (lockKind === 'data') {
+    return new NextResponse('Locked', { status: 404 })
+  }
+
   if (resolved.kind === 'html') {
-    const filePath = safeTemplatePath(resolved.file)
+    const templateFile = lockKind === 'page' ? '_locked.html' : resolved.file
+    const filePath = safeTemplatePath(templateFile)
     if (!filePath) return new NextResponse('Forbidden', { status: 403 })
     let raw: string
     try {

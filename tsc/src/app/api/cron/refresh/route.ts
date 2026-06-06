@@ -7,6 +7,7 @@ import { ingestEspnSource, type EspnSourceSettings } from '@/lib/ingest/espn'
 import { ingestYahooSource } from '@/lib/ingest/yahoo'
 import { getValidAccessToken as getYahooAccessToken } from '@/lib/platforms/yahoo'
 import { devCacheBust } from '@/lib/devCache'
+import { isLeagueLocked } from '@/lib/leagueTier'
 
 export const maxDuration = 300
 
@@ -33,9 +34,32 @@ export async function GET(req: Request) {
     .eq('is_live', true)
 
   const results: Array<{ source: string; league_id: string; ok: boolean; error?: string }> = []
+  const skipped: Array<{ source: string; league_id: string; reason: string }> = []
   const touchedLeagues = new Set<string>()
 
+  // UDFA leagues don't get cron refreshes — live-season data is a paid
+  // feature and we don't want to spend cron budget on free-tier archives
+  // that can't display it anyway. Cache the per-league lock result so we
+  // only pay the tier lookup once per league per run.
+  const lockedCache = new Map<string, boolean>()
+  async function leagueIsLocked(leagueId: string): Promise<boolean> {
+    const cached = lockedCache.get(leagueId)
+    if (cached !== undefined) return cached
+    const { data: lg } = await db
+      .from('leagues')
+      .select('owner_id')
+      .eq('id', leagueId)
+      .maybeSingle()
+    const locked = await isLeagueLocked(leagueId, lg?.owner_id ?? null)
+    lockedCache.set(leagueId, locked)
+    return locked
+  }
+
   for (const src of sources ?? []) {
+    if (await leagueIsLocked(src.league_id)) {
+      skipped.push({ source: src.external_id, league_id: src.league_id, reason: 'udfa-locked' })
+      continue
+    }
     try {
       if (src.platform === 'sleeper') {
         await ingestSleeperSource(src.league_id, src.external_id, src.walk_history)
@@ -72,5 +96,11 @@ export async function GET(req: Request) {
     devCacheBust(leagueId)
   }
 
-  return NextResponse.json({ synced: results.filter((r) => r.ok).length, total: results.length, results })
+  return NextResponse.json({
+    synced: results.filter((r) => r.ok).length,
+    total: results.length,
+    skipped: skipped.length,
+    results,
+    skippedDetail: skipped,
+  })
 }

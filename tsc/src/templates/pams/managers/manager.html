@@ -852,6 +852,26 @@ function renderProfile(m, top5, dnaEntry, dnaAvailable) {
                 </table>
             </div>
         `;
+    } else if (window.__DC && window.__DC.leagueTier === 'udfa') {
+        // UDFA leagues 404 manager_highs.json by design — render a
+        // matched-style locked card so users see "this is gated" instead
+        // of the generic "no data" message that's confusing for a fresh
+        // free-tier league.
+        top5HTML = `
+            <div class="profile-dna is-locked" style="margin:0">
+                <div class="pdna-head">
+                    <span class="pdna-lbl">Top Performances</span>
+                    <span class="pdna-tier">★ Paid Tier ★</span>
+                </div>
+                <div class="pdna-arch">Top weeks locked.</div>
+                <p class="pdna-locked-msg">
+                    Career highs unlock when this league's commissioner is on a paid plan.
+                </p>
+                <a class="pdna-cta is-locked" href="/pricing" target="_top">
+                    <span>Upgrade to unlock</span>
+                    <span class="pdna-cta-arrow">→</span>
+                </a>
+            </div>`;
     } else {
         top5HTML = `<p style="font-family: var(--serif); font-style: italic; color: var(--cream-mute); padding: 1rem;">No top performances on file.</p>`;
     }

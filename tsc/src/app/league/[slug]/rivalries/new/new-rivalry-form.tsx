@@ -54,7 +54,7 @@ export function NewRivalryForm({
         />
         <span>
           Auto-name this rivalry
-          <span className="dc-checkbox-hint">We&apos;ll pick a title automatically from a curated bank of fantasy-football rivalry names. The same manager pairing always proposes the same title.</span>
+          <span className="dc-checkbox-hint">We&apos;ll pick a title automatically from a curated bank of fantasy-football rivalry names.</span>
         </span>
       </label>
 
