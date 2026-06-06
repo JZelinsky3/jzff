@@ -16,7 +16,11 @@ import { PLAN_FEATURES, FREE_MULTIPLE_LEAGUES_DETAIL } from '@/lib/planFeatures'
 
 const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '10')
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ back?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   // Read the persisted view choice (cookie set by PricingViewTabs).
@@ -24,6 +28,16 @@ export default async function PricingPage() {
   // HTML — no useEffect flash, no Safari localStorage quirks.
   const viewCookie = (await cookies()).get('tsc-pricing-view')?.value
   const initialView: 'paid' | 'free' = viewCookie === 'free' ? 'free' : 'paid'
+
+  // ?back=<path> — set by the locked-page overlay so the masthead's
+  // back arrow returns the user to the chapter they came from instead
+  // of the dashboard. Same-origin path only (must start with `/` and
+  // not `//`) to keep this from being an open-redirect surface.
+  const rawBack = (await searchParams)?.back
+  const backHref =
+    rawBack && rawBack.startsWith('/') && !rawBack.startsWith('//')
+      ? rawBack
+      : (user ? '/dashboard' : '/')
 
   // If they're already subscribed, show the pricing page with their current
   // tier highlighted as "Current plan" and the other(s) as "Switch to".
@@ -34,7 +48,7 @@ export default async function PricingPage() {
   return (
     <main>
       <nav className="nav">
-        <Link href={user ? '/dashboard' : '/'} className="dc-nav-icon" aria-label="Back">
+        <Link href={backHref} className="dc-nav-icon" aria-label="Back">
           <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="7 1 1 7 7 13" />
           </svg>
