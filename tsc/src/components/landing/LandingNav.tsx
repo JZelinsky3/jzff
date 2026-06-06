@@ -17,7 +17,7 @@ import { NavDropdown, type DropGroup, type DropEntry, type SubItem } from '@/com
 type ColumnKey = 'library' | 'discover' | 'demo' | 'account' | 'get-started'
 
 type Trigger =
-  | { kind: 'link'; label: string; href: string; column: ColumnKey }
+  | { kind: 'link'; label: string; href: string; column: ColumnKey; cta?: boolean }
   // Group triggers open the mega-panel on hover. If `href` is set they
   // also navigate on click — matching the way the Pricing trigger feels,
   // so users don't have to dig through the menu just to land on the
@@ -105,7 +105,7 @@ function buildSignedOut(): { triggers: Trigger[]; columns: Column[] } {
   const triggers: Trigger[] = [
     { kind: 'link',  label: 'Pricing', href: '/pricing', column: 'discover' },
     { kind: 'group', label: 'Demo',    href: '/demo/',   column: 'demo' },
-    { kind: 'link',  label: 'Sign in', href: '/login',   column: 'get-started' },
+    { kind: 'link',  label: 'Login', href: '/login',   column: 'get-started', cta: true },
   ]
   const columns: Column[] = [
     { key: 'discover', num: ROMAN[0], label: 'Discover',       items: DISCOVER_ITEMS },
@@ -247,6 +247,22 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
           {triggers.map((t, i) => {
             const isActive = hovered === t.column
             if (t.kind === 'link') {
+              if (t.cta) {
+                // Pill-shaped CTA — same shape used by the guides + pricing
+                // nav so the "log in" affordance reads identically across
+                // the marketing pages.
+                return (
+                  <Link
+                    key={i}
+                    href={t.href}
+                    className="pricing-nav-cta"
+                    onMouseEnter={() => enter(t.column)}
+                    onClick={closeAll}
+                  >
+                    {t.label} <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+                  </Link>
+                )
+              }
               return (
                 <Link
                   key={i}
