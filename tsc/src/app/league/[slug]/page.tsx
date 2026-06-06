@@ -47,6 +47,8 @@ export default async function LeagueOverviewPage({
   const head = words.slice(0, -1).join(' ')
   const tail = words[words.length - 1] ?? ''
 
+  const tier = await resolveLeagueTier(league.id, league.owner_id ?? null)
+
   const hasSources = (sourceCount ?? 0) > 0
   const hasSynced = !!league.last_synced_at
   const hasMembers = (managerCount ?? 0) > 0
@@ -101,6 +103,21 @@ export default async function LeagueOverviewPage({
         </p>
         <div className="hero-meta">
           {seasonCount ?? 0} season{seasonCount === 1 ? '' : 's'} · {managerCount ?? 0} managers · {matchupCount ?? 0} matchups
+        </div>
+        <div
+          className={`dc-tier-badge dc-tier-badge--${tier}`}
+          title={
+            tier === 'test'
+              ? 'Your free trial league — every non-comp user gets one slot.'
+              : tier === 'udfa'
+              ? 'Free-tier (UDFA) league. Upgrade for more features.'
+              : tier === 'paid'
+              ? 'Paid plan league.'
+              : 'Comped account — unlimited access.'
+          }
+        >
+          <span aria-hidden>★</span>
+          {tierBadgeLabel(tier)}
         </div>
       </section>
 

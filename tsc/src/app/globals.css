@@ -717,6 +717,43 @@ main {
     opacity: .75;
 }
 
+/* Tier badge on the /league/<slug>/ hub hero. Same pill shape as the
+   per-card .dc-league-tier but a touch larger so it reads at hero scale.
+   Colors keyed off the tier so they line up with the advisory strip on
+   the public almanac (test = light blue, paid = gold, etc.). */
+.dc-tier-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    margin-top: .85rem;
+    padding: .35rem .7rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    border-radius: 999px;
+}
+.dc-tier-badge--test {
+    background: linear-gradient(180deg, rgba(143,180,207,.18), rgba(143,180,207,.06));
+    border: 1px solid rgba(143,180,207,.5);
+    color: #b8d4e6;
+}
+.dc-tier-badge--udfa {
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--ink-line);
+    color: var(--cream);
+    opacity: .8;
+}
+.dc-tier-badge--paid {
+    background: linear-gradient(180deg, rgba(232,200,137,.16), rgba(232,200,137,.06));
+    border: 1px solid rgba(232,200,137,.45);
+    color: var(--gold);
+}
+.dc-tier-badge--comp {
+    background: linear-gradient(180deg, rgba(232,200,137,.28), rgba(232,200,137,.12));
+    border: 1px solid var(--gold);
+    color: var(--gold);
+}
+
 /* Dashboard cards adapt to the number of children:
    1 child → full width, 2 → 50/50, 3 → thirds, 4+ → caps at 3 columns and
    wraps to the next row. Collapses to 1 column on mobile. */

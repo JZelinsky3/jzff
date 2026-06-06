@@ -631,7 +631,7 @@
     function buildTestingStrip() {
         var dc = window.__DC || {};
         var tier = dc.leagueTier;
-        if (tier !== 'test' && tier !== 'udfa' && tier !== 'paid') return;
+        if (tier !== 'test' && tier !== 'udfa' && tier !== 'paid' && tier !== 'comp') return;
         if (document.getElementById('dc-testing-strip')) return;
 
         var pillLabel, text;
@@ -643,6 +643,8 @@
             pillLabel = '★ UDFA · Free';
             text = 'Free-tier league. The Sunday Chronicle is still under active construction; some features may be incomplete.';
         } else {
+            // 'paid' and 'comp' both surface the beta message — the only
+            // distinction is the badge color in the hub.
             pillLabel = '★ Beta';
             text = 'The Sunday Chronicle is still being polished — thanks for the early support. Expect rough edges while we ship.';
         }
