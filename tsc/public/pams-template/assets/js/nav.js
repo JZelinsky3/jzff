@@ -81,6 +81,12 @@
         { key: 'live-season', label: 'Live',      path: 'live-season/' }
     ];
 
+    // Chapter keys that the UDFA gate locks at the page level. Mirrors
+    // UDFA_LOCKED_PAGE_PATTERNS in src/lib/leagueTier.ts — keep them in
+    // sync. Tabs in this list get an 'is-locked' class on UDFA leagues
+    // so visitors see at a glance which chapters need an upgrade.
+    var UDFA_LOCKED_CHAPTER_KEYS = ['live-season', 'draft', 'records'];
+
     function buildChapBar(currentPage, root) {
         // Remove any prior render so multiple buildNav() calls don't stack bars.
         var existing = document.getElementById('nav-chapbar');
@@ -91,6 +97,9 @@
         bar.className = 'nav-chapbar';
         bar.setAttribute('aria-label', 'Chapters');
 
+        var dc = window.__DC || {};
+        var udfa = dc.leagueTier === 'udfa';
+
         var html = '<div class="nav-chapbar-track">';
         for (var i = 0; i < CHAPBAR_ITEMS.length; i++) {
             var item = CHAPBAR_ITEMS[i];
@@ -100,10 +109,17 @@
             var isActive = item.key === 'live-season'
                 ? LIVE_SEASON_KEYS.indexOf(currentPage) !== -1
                 : item.key === currentPage;
+            var isLocked = udfa && UDFA_LOCKED_CHAPTER_KEYS.indexOf(item.key) !== -1;
+            var cls = 'nav-chapbar-link'
+                    + (isActive ? ' is-active' : '')
+                    + (isLocked ? ' is-locked' : '');
             html += '<a href="' + root + item.path + '"'
-                  + ' class="nav-chapbar-link' + (isActive ? ' is-active' : '') + '"'
+                  + ' class="' + cls + '"'
                   + (isActive ? ' aria-current="page"' : '')
-                  + '>' + item.label + '</a>';
+                  + (isLocked ? ' title="Locked — upgrade to unlock"' : '')
+                  + '>' + item.label
+                  + (isLocked ? ' <span class="nav-chapbar-lock" aria-hidden>✦</span>' : '')
+                  + '</a>';
         }
         html += '</div>';
         bar.innerHTML = html;
@@ -418,6 +434,30 @@
         '  content: ""; position: absolute; left: 0;',
         '  top: 35%; bottom: 35%; width: 1px;',
         '  background: var(--chapbar-line, var(--ink-line, #2a3645));',
+        '}',
+        // UDFA-locked chapter tab: muted color + lock glyph after the
+        // label so the user can see at a glance which chapters need an
+        // upgrade. Stays clickable — clicking lands on the lock overlay.
+        // When such a tab is ALSO the active page (you're standing on it)
+        // we override the gold active color with the locked muted color
+        // so the active indicator reads as "active and locked" rather
+        // than just "active". The underline stays so the user still has
+        // a hint of which tab they're on.
+        '.nav-chapbar-link.is-locked {',
+        '  color: rgba(122, 131, 166, .65);',
+        '}',
+        '.nav-chapbar-link.is-locked:hover { color: var(--cream, #ddd2bb); }',
+        '.nav-chapbar-link.is-locked.is-active { color: rgba(122, 131, 166, .85); }',
+        '.nav-chapbar-link.is-locked.is-active::after {',
+        '  background: rgba(122, 131, 166, .55);',
+        '}',
+        '.nav-chapbar-lock {',
+        '  display: inline-block;',
+        '  margin-left: .35em;',
+        '  font-family: var(--serif, "Cormorant Garamond", serif);',
+        '  font-size: .85em;',
+        '  color: rgba(143, 180, 207, .85);',
+        '  vertical-align: -0.05em;',
         '}',
         '@media (max-width: 640px) {',
         '  .nav-chapbar-track { justify-content: flex-start; padding: 0 .15rem; }',
@@ -743,9 +783,14 @@
             '  overscroll-behavior: none !important;',
             '}',
             // The nav has its own positioning. Bump it above the overlay
-            // so the back arrow + dropdown stay clickable.
+            // so the back arrow + dropdown stay clickable. Same treatment
+            // for the chapbar (so locked-tab styling is visible and
+            // unlocked chapters remain reachable), the ticker (we want
+            // visitors to keep reading the page's marquee even on locked
+            // pages), and the demo/testing strip when one is present.
             'html.dc-lock-active nav.nav { z-index: 200 !important; }',
-            // Demo / testing strip stays above the overlay too.
+            'html.dc-lock-active .nav-chapbar { z-index: 200 !important; position: sticky; }',
+            'html.dc-lock-active .ticker { z-index: 200 !important; position: sticky; top: 0; }',
             'html.dc-lock-active .dc-demo-strip { z-index: 200 !important; }',
 
             '.dc-lock-overlay {',
@@ -755,7 +800,11 @@
             '  backdrop-filter: blur(6px);',
             '  -webkit-backdrop-filter: blur(6px);',
             '  display: flex; align-items: center; justify-content: center;',
-            '  padding: 5.5rem 1.25rem 1.5rem;',
+            // Top padding clears the ticker + masthead + chapbar stack so
+            // the locked card never tucks behind them. Bottom padding
+            // gives the card a little breathing room above the viewport
+            // edge when its content forces a scroll.
+            '  padding: 9.5rem 1.25rem 1.5rem;',
             '  overflow-y: auto;',
             '}',
             '.dc-locked-card {',
@@ -827,7 +876,7 @@
             '}',
             '.dc-locked-ghost:hover { color: var(--gold); }',
             '@media (max-width: 560px) {',
-            '  .dc-lock-overlay { padding: 4.5rem .9rem 1rem; }',
+            '  .dc-lock-overlay { padding: 8rem .9rem 1rem; }',
             '  .dc-locked-card { padding: 2rem 1.25rem; }',
             '  .dc-locked-sub { font-size: .95rem; }',
             '}',
@@ -839,6 +888,12 @@
         // overlay along with the class).
         document.documentElement.classList.add('dc-lock-active');
         document.body.classList.add('dc-lock-active');
+
+        // Rewrite the ticker so the marquee describes the lock state
+        // instead of the original page's title — gives visitors a
+        // moving banner of "what this chapter is and how to unlock it"
+        // even while the rest of the page is overlayed.
+        rewriteTickerForLock(leagueName);
 
         // Belt + suspenders for touch: block keyboard scroll keys + wheel
         // events that would scroll the underlying page through gaps not
@@ -860,6 +915,34 @@
         return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
+    }
+
+    // Replace the ticker marquee on locked pages with a lock-specific
+    // message loop: chapter name, league name, subscription nudge. The
+    // ticker DOM is identical across every template page (.ticker >
+    // .ticker-track > .ticker-group × 2 for the seamless loop), so we
+    // just rewrite both groups in place.
+    function rewriteTickerForLock(leagueName) {
+        var track = document.querySelector('.ticker .ticker-track');
+        if (!track) return;
+        var nav = document.getElementById('site-nav');
+        var chapter = (nav && nav.dataset.chapter) || 'Locked Chapter';
+
+        var items = [
+            chapter + ' · LOCKED',
+            String(leagueName || 'This league').toUpperCase() + ' · NEEDS A SUBSCRIPTION',
+            'FREE TIER · UDFA',
+            'UPGRADE TO UNLOCK',
+        ];
+        var groupHTML = '';
+        for (var i = 0; i < items.length; i++) {
+            groupHTML += '<span class="ticker-item"><span class="ticker-star">★</span> '
+                       + escapeHtmlLock(items[i]) + '</span>';
+        }
+        // Two groups so the marquee loop stays seamless.
+        track.innerHTML =
+            '<div class="ticker-group">' + groupHTML + '</div>' +
+            '<div class="ticker-group">' + groupHTML + '</div>';
     }
 
     function init() {
