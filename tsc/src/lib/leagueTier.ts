@@ -67,7 +67,10 @@ export async function isLeagueLocked(
 // "Locked — upgrade to unlock" placeholder. Matched against the
 // resolved template path (relative to TEMPLATE_ROOT), not the URL.
 const UDFA_LOCKED_PAGE_PATTERNS: RegExp[] = [
-  /^live-season(\/|$)/,
+  // Live-season HUB stays open so UDFA users can see the chapter index,
+  // but every page underneath it is locked. nav.js then disables the
+  // hub's card clicks for UDFA leagues so the entry tiles preview-only.
+  /^live-season\/.+/,
   /^draft(\/|$)/,
   /^records\.html$/,
   /^seasons\/season\.html$/,

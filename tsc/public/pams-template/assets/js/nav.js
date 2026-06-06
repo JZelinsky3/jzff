@@ -444,19 +444,19 @@
         // than just "active". The underline stays so the user still has
         // a hint of which tab they're on.
         '.nav-chapbar-link.is-locked {',
-        '  color: rgba(122, 131, 166, .65);',
+        '  color: rgba(232, 200, 137, .7);',
         '}',
-        '.nav-chapbar-link.is-locked:hover { color: var(--cream, #ddd2bb); }',
-        '.nav-chapbar-link.is-locked.is-active { color: rgba(122, 131, 166, .85); }',
+        '.nav-chapbar-link.is-locked:hover { color: var(--gold-bright, #f4d9a4); }',
+        '.nav-chapbar-link.is-locked.is-active { color: var(--gold, #e8c889); }',
         '.nav-chapbar-link.is-locked.is-active::after {',
-        '  background: rgba(122, 131, 166, .55);',
+        '  background: var(--gold, #e8c889);',
         '}',
         '.nav-chapbar-lock {',
         '  display: inline-block;',
         '  margin-left: .35em;',
         '  font-family: var(--serif, "Cormorant Garamond", serif);',
         '  font-size: .85em;',
-        '  color: rgba(143, 180, 207, .85);',
+        '  color: var(--gold, #e8c889);',
         '  vertical-align: -0.05em;',
         '}',
         '@media (max-width: 640px) {',
@@ -748,6 +748,16 @@
 
         var leagueName = dc.name || 'This league';
 
+        // Pricing CTA carries ?back=<current-url> so /pricing's back arrow
+        // can return the user to the locked page they came from instead of
+        // dumping them on the dashboard.
+        var backHref = '/pricing';
+        try {
+            backHref = '/pricing?back=' + encodeURIComponent(
+                window.location.pathname + window.location.search,
+            );
+        } catch (e) { /* fall back to /pricing */ }
+
         var overlay = document.createElement('div');
         overlay.id = 'dc-lock-overlay';
         overlay.className = 'dc-lock-overlay';
@@ -763,7 +773,7 @@
                     ' — live season, draft history, the record book, individual season archives' +
                     ' — opens up on a paid plan.' +
                 '</p>' +
-                '<a class="dc-locked-cta" href="/pricing" target="_top">' +
+                '<a class="dc-locked-cta" href="' + backHref + '" target="_top">' +
                     'See plans &amp; upgrade <span aria-hidden>→</span>' +
                 '</a>' +
                 '<div>' +
@@ -771,6 +781,20 @@
                 '</div>' +
             '</div>';
         document.body.appendChild(overlay);
+
+        // Match the overlay backdrop to the page's own body background so
+        // each locked chapter (records green, draft black, default navy)
+        // reads as a continuation of its palette rather than a generic
+        // dark navy wash. Falls back to the dark navy if computed bg is
+        // transparent or unreadable.
+        var pageBg = '';
+        try {
+            pageBg = window.getComputedStyle(document.body).backgroundColor || '';
+        } catch (e) { /* keep default */ }
+        if (!pageBg || pageBg === 'rgba(0, 0, 0, 0)' || pageBg === 'transparent') {
+            pageBg = 'rgb(14, 22, 32)';
+        }
+        overlay.style.background = pageBg;
 
         var style = document.createElement('style');
         style.setAttribute('data-lock-overlay', '1');
@@ -781,6 +805,31 @@
             '  overflow: hidden !important;',
             '  height: 100% !important;',
             '  overscroll-behavior: none !important;',
+            '}',
+            // Hide the underlying page content while the overlay is up.
+            // Locked pages still render the full template + run inline
+            // scripts (data fetches, charts), and the resulting paint /
+            // animation churn under a translucent overlay was hammering
+            // the GPU and making the lock card visibly laggy. With the
+            // overlay now opaque we can safely freeze the layer below:
+            // `content-visibility: hidden` short-circuits layout +
+            // paint for everything inside <main>, and `animation-play-
+            // state: paused` halts any keyframe animations the template
+            // had running. The ticker / nav / chapbar / demo strip get
+            // bumped above the overlay so they stay readable.
+            'html.dc-lock-active main {',
+            '  content-visibility: hidden !important;',
+            '  contain: strict !important;',
+            '  animation-play-state: paused !important;',
+            '}',
+            'html.dc-lock-active .site-glow,',
+            'html.dc-lock-active .site-grain {',
+            '  display: none !important;',
+            '}',
+            'html.dc-lock-active *,',
+            'html.dc-lock-active *::before,',
+            'html.dc-lock-active *::after {',
+            '  animation-play-state: running;',
             '}',
             // The nav has its own positioning. Bump it above the overlay
             // so the back arrow + dropdown stay clickable. Same treatment
@@ -793,12 +842,14 @@
             'html.dc-lock-active .ticker { z-index: 200 !important; position: sticky; top: 0; }',
             'html.dc-lock-active .dc-demo-strip { z-index: 200 !important; }',
 
+            // Opaque background, page-matched at runtime (see the
+            // overlay.style.background assignment in buildLockOverlay).
+            // No backdrop-filter — blur over animated underlying content
+            // (ticker, charts, marquee) was the dominant cause of the
+            // sluggish lock card on lower-end devices.
             '.dc-lock-overlay {',
             '  position: fixed; inset: 0;',
             '  z-index: 150;',
-            '  background: rgba(8, 12, 18, 0.88);',
-            '  backdrop-filter: blur(6px);',
-            '  -webkit-backdrop-filter: blur(6px);',
             '  display: flex; align-items: center; justify-content: center;',
             // Top padding clears the ticker + masthead + chapbar stack so
             // the locked card never tucks behind them. Bottom padding
@@ -945,6 +996,68 @@
             '<div class="ticker-group">' + groupHTML + '</div>';
     }
 
+    // Live-season hub stays unlocked for UDFA so they can preview the
+    // chapter index, but every card underneath links to a locked
+    // subpage. Intercept clicks so the hub becomes a visual catalog —
+    // hover/focus still works, clicks bounce to /pricing with the
+    // current URL as the ?back= return target.
+    function lockLiveSeasonHub() {
+        var dc = window.__DC || {};
+        if (dc.leagueTier !== 'udfa') return;
+        var nav = document.getElementById('site-nav');
+        if (!nav || nav.dataset.page !== 'live-season') return;
+
+        var backHref = '/pricing';
+        try {
+            backHref = '/pricing?back=' + encodeURIComponent(
+                window.location.pathname + window.location.search,
+            );
+        } catch (e) { /* fall back to /pricing */ }
+
+        var cards = document.querySelectorAll('a.ls-card');
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            card.setAttribute('data-locked', '1');
+            card.setAttribute('aria-disabled', 'true');
+            card.setAttribute('title', 'Locked — upgrade to unlock');
+        }
+        // Single delegated listener so dynamically-added cards still
+        // get caught. Capture phase so the template's own click
+        // handlers don't fire first.
+        document.addEventListener('click', function (e) {
+            var t = e.target;
+            if (!t || !t.closest) return;
+            var card = t.closest('a.ls-card[data-locked="1"]');
+            if (!card) return;
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.assign(backHref);
+        }, true);
+
+        var style = document.createElement('style');
+        style.textContent = [
+            'a.ls-card[data-locked="1"] {',
+            '  cursor: not-allowed;',
+            '  opacity: .55;',
+            '  position: relative;',
+            '}',
+            'a.ls-card[data-locked="1"]:hover {',
+            '  opacity: .75;',
+            '}',
+            'a.ls-card[data-locked="1"]::after {',
+            "  content: '✦ Locked';",
+            '  position: absolute; top: .6rem; right: .8rem;',
+            '  font-family: var(--mono, monospace);',
+            '  font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;',
+            '  color: var(--gold, #e8c889);',
+            '  border: 1px solid rgba(232,200,137,.55);',
+            '  padding: .15rem .4rem; border-radius: 2px;',
+            '  background: rgba(14,22,32,.55);',
+            '}',
+        ].join('\n');
+        document.head.appendChild(style);
+    }
+
     function init() {
         buildTestingStrip();
         buildNav();
@@ -952,6 +1065,7 @@
         wireBookmarkToggle();
         loadTutorial();
         buildLockOverlay();
+        lockLiveSeasonHub();
     }
 
     // Install the fetch wrapper SYNCHRONOUSLY, before any template inline
