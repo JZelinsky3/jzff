@@ -213,9 +213,15 @@ export async function canCreateLeague(userId: string): Promise<EnforcementResult
   // exactly one league, perpetually. Counts ALL their leagues so they can't
   // stack a free league on top of a paid one — the free slot is only for
   // users who have nothing yet (or have lapsed back to nothing).
+  //
+  // EXCEPTION: while the testing window is open, UDFA users can create
+  // unlimited leagues — the whole point of the window is to let people
+  // kick the tires without paying. Outside the window we re-impose the
+  // 1-league cap.
   const db = createAdminClient()
   const sub = await getUserSubscription(userId)
   if (!isSubscriptionActive(sub)) {
+    if (isTestingModeActive()) return { ok: true }
     const { count } = await db
       .from('leagues')
       .select('id', { count: 'exact', head: true })

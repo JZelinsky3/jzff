@@ -54,7 +54,7 @@ export function NewRivalryForm({
         />
         <span>
           Auto-name this rivalry
-          <span className="dc-checkbox-hint">We&apos;ll use each manager&apos;s last word — e.g. &quot;Smith vs Jones Bowl&quot;.</span>
+          <span className="dc-checkbox-hint">We&apos;ll pick a title from a curated bank of fantasy-football rivalry names — e.g. &quot;The Border War&quot;, &quot;Thunderdome&quot;, &quot;Trial by Combat&quot;. Same pairing always proposes the same title.</span>
         </span>
       </label>
 

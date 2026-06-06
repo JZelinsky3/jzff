@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
-import { AddSourceForm } from './add-source-form'
+import { AddSourcePanel } from './add-source-panel'
 import { SourceRow } from './source-row'
 
 // Round-robin distribution preserves row-major reading order: items[0,1,2]
@@ -98,7 +98,7 @@ export default async function SourcesPage({
         </p>
       </section>
 
-      <div className="section">
+      <div className="section" id="sources-ledger">
         <div className="section-header">
           <span className="section-num">§ 01 · On the ledger</span>
           <span className="section-title">Attached sources —</span>
@@ -149,14 +149,7 @@ export default async function SourcesPage({
           <span className="section-title">A new league ID —</span>
           <span className="section-meta">Walk history or single season</span>
         </div>
-        <p style={{ color: 'var(--cream-soft)', fontSize: '.92rem', lineHeight: 1.6, maxWidth: '60ch', marginBottom: '1.5rem' }}>
-          Toggle <span className="text-gold">walk-history</span> on to follow Sleeper&apos;s{' '}
-          <code style={{ background: 'var(--ink-soft)', padding: '.1rem .35rem', borderRadius: '2px', fontSize: '.85em' }}>previous_league_id</code>{' '}
-          chain back from this ID. Off means only that one season is imported.
-        </p>
-        <div className="card" style={{ paddingBottom: '2rem' }}>
-          <AddSourceForm leagueId={league.id} slug={slug} yahooConnected={yahooConnected} />
-        </div>
+        <AddSourcePanel leagueId={league.id} slug={slug} yahooConnected={yahooConnected} />
       </div>
 
       <SiteFooter />
