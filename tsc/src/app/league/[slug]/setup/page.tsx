@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SiteFooter } from '@/components/SiteFooter'
 import { SetupList, type ProfileRow } from './setup-list'
+import { MarkReviewedButton } from './mark-reviewed-button'
 
 export default async function SetupPage({
   params,
@@ -12,10 +13,12 @@ export default async function SetupPage({
   const supabase = await createClient()
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name')
+    .select('id, name, settings')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) notFound()
+  const reviewedAt = (((league.settings ?? {}) as { members_reviewed_at?: string })
+    .members_reviewed_at) ?? null
 
   // Fetch profiles + the platform managers linked to each.
   const [{ data: profiles }, { data: managers }] = await Promise.all([
@@ -113,6 +116,9 @@ export default async function SetupPage({
           <span className="section-meta">Select 2+ → Merge</span>
         </div>
         <SetupList leagueId={league.id} slug={slug} profiles={profilesList} />
+        <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+          <MarkReviewedButton leagueId={league.id} reviewedAt={reviewedAt} />
+        </div>
       </div>
 
       <SiteFooter />

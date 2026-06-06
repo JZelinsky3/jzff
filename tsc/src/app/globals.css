@@ -4756,6 +4756,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     letter-spacing: .08em !important;
     max-width: 140px !important;
 }
+/* Secondary actions inside the checklist action slot (e.g. "+ Add more"
+   under Sync). Hidden in the FAB so the popup stays compact — only the
+   primary control surfaces there. */
+.onb-fab-panel .onb-step-extra { display: none; }
 @media (max-width: 480px) {
     .onb-fab { bottom: .75rem; right: .75rem; left: .75rem; }
     .onb-fab-pill { width: 100%; justify-content: center; }

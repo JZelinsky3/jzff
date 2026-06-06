@@ -13,6 +13,34 @@ function bustExportCache(leagueId: string): void {
   devCacheBust(leagueId)
 }
 
+// Stamp the commissioner's "I've looked at the roster" signal on the
+// league. Merged into the existing settings JSONB to avoid a schema
+// migration. Used by the hub onboarding checklist so the "Review members"
+// step only ticks after an actual edit (or the explicit Mark-Reviewed
+// button) — not just because the sync created manager rows.
+async function stampMembersReviewed(leagueId: string): Promise<void> {
+  const db = createAdminClient()
+  const { data: row } = await db
+    .from('leagues')
+    .select('settings')
+    .eq('id', leagueId)
+    .maybeSingle()
+  const settings = (row?.settings ?? {}) as Record<string, unknown>
+  if (settings.members_reviewed_at) return
+  settings.members_reviewed_at = new Date().toISOString()
+  await db.from('leagues').update({ settings }).eq('id', leagueId)
+}
+
+export async function markMembersReviewed(leagueId: string): Promise<Result> {
+  const access = await assertWriteAccess(leagueId)
+  if (!access.ok) return access
+  await stampMembersReviewed(leagueId)
+  bustExportCache(leagueId)
+  revalidatePath(`/league/${access.slug}`)
+  revalidatePath(`/league/${access.slug}/setup`)
+  return { ok: true }
+}
+
 async function assertWriteAccess(leagueId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -61,7 +89,9 @@ export async function renameProfile(_prev: Result | null, formData: FormData): P
     .eq('league_id', parsed.data.leagueId)
   if (error) return { ok: false, error: error.message }
 
+  await stampMembersReviewed(parsed.data.leagueId)
   bustExportCache(parsed.data.leagueId)
+  revalidatePath(`/league/${access.slug}`)
   revalidatePath(`/league/${access.slug}/setup`)
   return { ok: true }
 }
@@ -84,7 +114,9 @@ export async function setAlumniOverride(
     .eq('league_id', leagueId)
   if (error) return { ok: false, error: error.message }
 
+  await stampMembersReviewed(leagueId)
   bustExportCache(leagueId)
+  revalidatePath(`/league/${access.slug}`)
   revalidatePath(`/league/${access.slug}/setup`)
   return { ok: true }
 }
@@ -101,7 +133,9 @@ export async function setHidden(profileId: string, leagueId: string, hidden: boo
     .eq('league_id', leagueId)
   if (error) return { ok: false, error: error.message }
 
+  await stampMembersReviewed(leagueId)
   bustExportCache(leagueId)
+  revalidatePath(`/league/${access.slug}`)
   revalidatePath(`/league/${access.slug}/setup`)
   return { ok: true }
 }
@@ -143,7 +177,9 @@ export async function mergeProfiles(input: z.infer<typeof MergeSchema>): Promise
     .eq('league_id', leagueId)
   if (delErr) return { ok: false, error: delErr.message }
 
+  await stampMembersReviewed(parsed.data.leagueId)
   bustExportCache(parsed.data.leagueId)
+  revalidatePath(`/league/${access.slug}`)
   revalidatePath(`/league/${access.slug}/setup`)
   return { ok: true }
 }
@@ -184,7 +220,9 @@ export async function deleteProfiles(input: z.infer<typeof DeleteProfilesSchema>
     .eq('league_id', leagueId)
   if (profErr) return { ok: false, error: `Delete profiles: ${profErr.message}` }
 
+  await stampMembersReviewed(leagueId)
   bustExportCache(leagueId)
+  revalidatePath(`/league/${access.slug}`)
   revalidatePath(`/league/${access.slug}/setup`)
   return { ok: true }
 }

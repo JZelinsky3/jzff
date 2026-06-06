@@ -18,7 +18,7 @@ export default async function LeagueOverviewPage({
 
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, slug, last_synced_at, published_at, owner_id')
+    .select('id, name, slug, last_synced_at, published_at, owner_id, settings')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) notFound()
@@ -51,7 +51,13 @@ export default async function LeagueOverviewPage({
 
   const hasSources = (sourceCount ?? 0) > 0
   const hasSynced = !!league.last_synced_at
-  const hasMembers = (managerCount ?? 0) > 0
+  // "Reviewed members" is an explicit signal: the commissioner either
+  // clicked "Mark reviewed" on /setup or took any member-edit action
+  // (rename, merge, hide, alumni override, delete). Sync alone doesn't
+  // count — managers get created automatically and the commissioner may
+  // still want to merge / hide duplicates.
+  const leagueSettings = (league.settings ?? {}) as { members_reviewed_at?: string }
+  const hasMembers = !!leagueSettings.members_reviewed_at
   const hasRivalries = (rivalryCount ?? 0) > 0
   const hasPublished = !!league.published_at
 
@@ -67,7 +73,21 @@ export default async function LeagueOverviewPage({
       label: 'Sync the league',
       description: 'Pulls every season, draft, and matchup your sources can reach. Stay on this page until it finishes — closing the tab cancels the run.',
       done: hasSynced,
-      action: <SyncButton leagueId={league.id} />,
+      action: (
+        // Wrapper is intentionally a column so the "Add more" link sits
+        // centered under the Sync button. The .onb-step-extra class is
+        // hidden inside the FAB panel — that variant only shows Sync.
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.4rem' }}>
+          <SyncButton leagueId={league.id} />
+          <Link
+            href={`/league/${slug}/sources`}
+            className="dc-btn-ghost onb-step-extra"
+            style={{ fontSize: '.58rem', padding: '.3rem .65rem', letterSpacing: '.18em' }}
+          >
+            + Add more
+          </Link>
+        </div>
+      ),
     },
     {
       label: 'Review members',
