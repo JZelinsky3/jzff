@@ -147,6 +147,7 @@ async function injectDcConfig(
   isBookmarked: boolean,
   tutorialDismissed: boolean,
   tutorialSeenPages: string[],
+  pageLocked: boolean,
 ): Promise<string> {
   const leagueTier = await resolveLeagueTier(meta.id, meta.owner_id)
   const config = `<script>window.__DC=${JSON.stringify({
@@ -158,6 +159,7 @@ async function injectDcConfig(
     isBookmarked,
     isUdfaLeague: meta.is_udfa,
     leagueTier,
+    pageLocked,
     tradesTheme: meta.trades_theme,
     tutorialDismissed,
     tutorialSeenPages,
@@ -511,19 +513,22 @@ export async function GET(
   }
 
   // UDFA gate: certain pages and data files are locked behind the upgrade
-  // wall outside the testing window. Locked HTML pages get replaced with
-  // the shared _locked.html template; locked data files 404 (the templates
-  // that consume them — e.g. the manager DNA card — already render a
-  // graceful "locked" fallback when the JSON is missing).
+  // wall. Locked HTML pages still render their own template (so the user
+  // sees the chrome + tabs + section layout); we signal the lock via
+  // __DC.pageLocked and nav.js overlays a "Locked · Upgrade" badge.
+  // Locked data files 404 so stats stay empty — the user sees the page
+  // structure without the gated numbers. (The manager DNA + top-perf
+  // cards have their own in-place locked variants triggered by the same
+  // JSON 404.)
   const lockedLeague = await isLeagueLocked(meta.id, meta.owner_id)
   const lockKind = classifyLockedPath(resolved.file, lockedLeague)
   if (lockKind === 'data') {
     return new NextResponse('Locked', { status: 404 })
   }
+  const pageLocked = lockKind === 'page'
 
   if (resolved.kind === 'html') {
-    const templateFile = lockKind === 'page' ? '_locked.html' : resolved.file
-    const filePath = safeTemplatePath(templateFile)
+    const filePath = safeTemplatePath(resolved.file)
     if (!filePath) return new NextResponse('Forbidden', { status: 403 })
     let raw: string
     try {
@@ -577,6 +582,7 @@ export async function GET(
       isBookmarked,
       tutorialDismissed,
       tutorialSeenPages,
+      pageLocked,
     )
     return new NextResponse(html, {
       status: 200,

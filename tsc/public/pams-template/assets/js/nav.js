@@ -694,12 +694,128 @@
         document.head.appendChild(style);
     }
 
+    // Locked-page overlay. Route handler sets __DC.pageLocked = true for
+    // UDFA-locked pages; the page renders normally (chrome, tabs, section
+    // layout) but its data fetches 404 so stat blocks stay empty. We
+    // float a fixed badge near the top of the viewport so visitors
+    // immediately see "this needs an upgrade" without losing the layout
+    // teaser behind it. Click-through is allowed on the rest of the
+    // page so users can still navigate to unlocked chapters.
+    function buildLockOverlay() {
+        var dc = window.__DC || {};
+        if (!dc.pageLocked) return;
+        if (document.getElementById('dc-lock-badge')) return;
+
+        var badge = document.createElement('div');
+        badge.id = 'dc-lock-badge';
+        badge.className = 'dc-lock-badge';
+        badge.innerHTML =
+            '<div class="dc-lock-badge-icon" aria-hidden>✦</div>' +
+            '<div class="dc-lock-badge-body">' +
+                '<div class="dc-lock-badge-kicker">★ Locked Chapter ★</div>' +
+                '<div class="dc-lock-badge-title">Upgrade to unlock the stats.</div>' +
+                '<div class="dc-lock-badge-sub">' +
+                    'Free-tier leagues see the page layout but not the data. ' +
+                    'Upgrade to fill it in.' +
+                '</div>' +
+                '<a class="dc-lock-badge-cta" href="/pricing" target="_top">' +
+                    'See plans <span aria-hidden>→</span>' +
+                '</a>' +
+            '</div>';
+        document.body.appendChild(badge);
+
+        var style = document.createElement('style');
+        style.setAttribute('data-lock-overlay', '1');
+        style.textContent = [
+            '.dc-lock-badge {',
+            '  position: fixed;',
+            // Sit just below the nav (and below the demo/testing strip when
+            // one is present). The strip pushes nav.nav.top via its inline
+            // style, so the badge needs the same offset stack — easiest to
+            // reference the rendered top of nav.nav at mount time.
+            '  top: calc(var(--lock-badge-top, 5.25rem));',
+            '  left: 50%;',
+            '  transform: translateX(-50%);',
+            '  z-index: 80;',
+            '  display: flex; align-items: flex-start; gap: 1.1rem;',
+            '  width: min(540px, calc(100vw - 2rem));',
+            '  padding: 1.1rem 1.4rem;',
+            '  background: rgba(14, 22, 32, 0.94);',
+            '  border: 1px solid rgba(232, 200, 137, 0.45);',
+            '  border-radius: 3px;',
+            '  box-shadow: 0 12px 32px rgba(0,0,0,.55), 0 0 0 1px rgba(232,200,137,.1);',
+            '  backdrop-filter: blur(6px);',
+            '}',
+            '.dc-lock-badge-icon {',
+            '  flex: 0 0 auto;',
+            '  font-family: var(--serif);',
+            '  font-size: 2.2rem; line-height: 1;',
+            '  color: var(--gold);',
+            '  margin-top: .1rem;',
+            '}',
+            '.dc-lock-badge-body { flex: 1 1 auto; min-width: 0; }',
+            '.dc-lock-badge-kicker {',
+            '  font-family: var(--mono); font-weight: 700;',
+            '  font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;',
+            '  color: var(--gold);',
+            '  margin-bottom: .4rem;',
+            '}',
+            '.dc-lock-badge-title {',
+            '  font-family: var(--serif); font-style: italic;',
+            '  font-size: 1.15rem; line-height: 1.25;',
+            '  color: var(--cream);',
+            '  margin-bottom: .35rem;',
+            '}',
+            '.dc-lock-badge-sub {',
+            '  font-family: var(--serif);',
+            '  font-size: .82rem; line-height: 1.45;',
+            '  color: var(--cream-soft);',
+            '  margin-bottom: .8rem;',
+            '}',
+            '.dc-lock-badge-cta {',
+            '  display: inline-flex; align-items: center; gap: .45rem;',
+            '  padding: .5rem .85rem;',
+            '  background: var(--gold); color: var(--ink);',
+            '  border: 1px solid var(--gold);',
+            '  font-family: var(--mono); font-weight: 700;',
+            '  font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;',
+            '  text-decoration: none;',
+            '  transition: background .15s, border-color .15s;',
+            '}',
+            '.dc-lock-badge-cta:hover {',
+            '  background: var(--gold-bright); border-color: var(--gold-bright);',
+            '}',
+            '@media (max-width: 560px) {',
+            '  .dc-lock-badge { gap: .75rem; padding: .85rem 1rem; width: calc(100vw - 1rem); }',
+            '  .dc-lock-badge-icon { font-size: 1.7rem; }',
+            '  .dc-lock-badge-title { font-size: 1rem; }',
+            '  .dc-lock-badge-sub { font-size: .76rem; }',
+            '}',
+        ].join('\n');
+        document.head.appendChild(style);
+
+        // Resolve the actual nav bottom edge once and feed it to the css
+        // var so the badge clears the masthead regardless of the demo /
+        // testing strip stack. Re-runs on resize because mobile nav can
+        // change height across breakpoints.
+        function syncTop() {
+            var nav = document.querySelector('nav.nav');
+            if (!nav) return;
+            var rect = nav.getBoundingClientRect();
+            var bottom = Math.max(0, rect.bottom);
+            document.documentElement.style.setProperty('--lock-badge-top', (bottom + 16) + 'px');
+        }
+        syncTop();
+        window.addEventListener('resize', syncTop);
+    }
+
     function init() {
         buildTestingStrip();
         buildNav();
         enhanceAuthLinks();
         wireBookmarkToggle();
         loadTutorial();
+        buildLockOverlay();
     }
 
     // Install the fetch wrapper SYNCHRONOUSLY, before any template inline
