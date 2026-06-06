@@ -54,13 +54,44 @@ export function tierBadgeLabel(tier: LeagueTier): string {
 // Is this league subject to UDFA feature locks? True for tier == 'udfa'
 // — applied immediately, no testing-window grace. Comp, paid, and the
 // trial slot ('test') all bypass so the trial league still works as a
-// preview of paid.
+// preview of paid. This boolean is used by the sync/cron entry points
+// to decide whether to even bother refreshing data — Rookie subs are
+// still 'paid' here because we DO want to sync their data; the Rookie
+// page-level lock kicks in below at request time, not at sync time.
 export async function isLeagueLocked(
   leagueId: string,
   ownerId: string | null,
 ): Promise<boolean> {
   const tier = await resolveLeagueTier(leagueId, ownerId)
   return tier === 'udfa'
+}
+
+// Layered page/data lock at view time. Returns the *reason* a viewer
+// is gated on this league, so the route handler can pick the right
+// pattern list:
+//
+//   'udfa'   → UDFA pattern list (broad — live-season subpages, draft,
+//              record book). Free-tier league.
+//   'rookie' → Veteran-only pattern list (narrow — best coach, manager
+//              DNA, trade grader). Owner is on the Rookie paid plan,
+//              so they have most of the site but not the Veteran tier
+//              features documented in PLAN_FEATURES.
+//   null     → no lock. Comp grants, trial slot, and Veteran/All-Pro
+//              subs all see the full site.
+export type LockReason = 'udfa' | 'rookie' | null
+export async function getLockReason(
+  leagueId: string,
+  ownerId: string | null,
+): Promise<LockReason> {
+  const tier = await resolveLeagueTier(leagueId, ownerId)
+  if (tier === 'udfa') return 'udfa'
+  if (tier === 'comp' || tier === 'test') return null
+  // 'paid' — defer to the actual Stripe tier. tier1 (Rookie) gates the
+  // Veteran-only pages; tier2/tier3 unlock everything.
+  if (!ownerId) return null
+  const sub = await getUserSubscription(ownerId)
+  if (isSubscriptionActive(sub) && sub?.tier === 'tier1') return 'rookie'
+  return null
 }
 
 // Paths within /leagues/<slug>/ that a UDFA league hides behind the
@@ -104,10 +135,36 @@ const UDFA_LOCKED_DATA_PATTERNS: RegExp[] = [
   // lock on season.html is what enforces "can't open an individual season".
 ]
 
+// Veteran-only pages — locked for Rookie (tier1) paid subs. The cards
+// for these features carry a "Veteran" ribbon on the live-season hub,
+// so the hub stays accessible and only the destinations gate. Weekly
+// Recap isn't here because it's not a built page yet (status="pro-soon"
+// on the hub).
+const VETERAN_LOCKED_PAGE_PATTERNS: RegExp[] = [
+  /^live-season\/best-coach(\/|$)/,
+  /^live-season\/manager-dna(\/|$)/,
+  /^live-season\/trades(\/|$)/,
+]
+
+// Data files for the Veteran-only features. 404 these on Rookie so
+// the locked page card on manager.html (which falls back to the DNA-
+// locked card on JSON 404) keeps working there too.
+const VETERAN_LOCKED_DATA_PATTERNS: RegExp[] = [
+  /^data\/best_coach\.json$/,
+  /^data\/manager_dna\.json$/,
+]
+
 export type LockKind = 'page' | 'data' | null
-export function classifyLockedPath(file: string, locked: boolean): LockKind {
-  if (!locked) return null
-  for (const re of UDFA_LOCKED_PAGE_PATTERNS) if (re.test(file)) return 'page'
-  for (const re of UDFA_LOCKED_DATA_PATTERNS) if (re.test(file)) return 'data'
+export function classifyLockedPath(file: string, reason: LockReason): LockKind {
+  if (reason === 'udfa') {
+    for (const re of UDFA_LOCKED_PAGE_PATTERNS) if (re.test(file)) return 'page'
+    for (const re of UDFA_LOCKED_DATA_PATTERNS) if (re.test(file)) return 'data'
+    return null
+  }
+  if (reason === 'rookie') {
+    for (const re of VETERAN_LOCKED_PAGE_PATTERNS) if (re.test(file)) return 'page'
+    for (const re of VETERAN_LOCKED_DATA_PATTERNS) if (re.test(file)) return 'data'
+    return null
+  }
   return null
 }

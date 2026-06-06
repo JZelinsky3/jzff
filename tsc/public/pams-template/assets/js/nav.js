@@ -996,14 +996,20 @@
             '<div class="ticker-group">' + groupHTML + '</div>';
     }
 
-    // Live-season hub stays unlocked for UDFA so they can preview the
-    // chapter index, but every card underneath links to a locked
-    // subpage. Intercept clicks so the hub becomes a visual catalog —
-    // hover/focus still works, clicks bounce to /pricing with the
-    // current URL as the ?back= return target.
+    // Live-season hub stays unlocked for UDFA *and* Rookie so both
+    // tiers can preview the chapter index, but the cards inside lock
+    // differently:
+    //   • UDFA  → every card locks (the entire chapter is paid).
+    //   • Rookie → only the Veteran-ribbon cards lock (Best Coach,
+    //              Manager DNA, Trade Grader); pickems, power rank,
+    //              matchup preview etc. work normally.
+    // Intercepted clicks bounce to /pricing with ?back=<current> so the
+    // pricing back arrow returns the user to the hub.
     function lockLiveSeasonHub() {
         var dc = window.__DC || {};
-        if (dc.leagueTier !== 'udfa') return;
+        var isUdfa = dc.leagueTier === 'udfa';
+        var isRookie = dc.leagueTier === 'paid' && dc.paidTier === 'tier1';
+        if (!isUdfa && !isRookie) return;
         var nav = document.getElementById('site-nav');
         if (!nav || nav.dataset.page !== 'live-season') return;
 
@@ -1017,15 +1023,17 @@
         var cards = document.querySelectorAll('a.ls-card');
         for (var i = 0; i < cards.length; i++) {
             var card = cards[i];
+            var hasTierRibbon = !!card.querySelector('.ls-card-tier');
+            // Rookie only locks Veteran-ribbon cards; everything else
+            // on the hub stays clickable for them.
+            if (isRookie && !hasTierRibbon) continue;
             card.setAttribute('data-locked', '1');
             card.setAttribute('aria-disabled', 'true');
             card.setAttribute('title', 'Locked — upgrade to unlock');
-            // Veteran-tier cards (Best Coach, Manager DNA, Trade Grader,
-            // Weekly Recap) already wear a tier ribbon in the top-right
-            // corner — stacking a second "Locked" chip on top reads as
-            // a clutter pile. Skip the chip for those; the click block
-            // still applies.
-            if (!card.querySelector('.ls-card-tier')) {
+            // Cards that already carry a tier ribbon get the click
+            // block but skip the "✦ Locked" chip — the ribbon is
+            // enough signal and stacking two chips reads as clutter.
+            if (!hasTierRibbon) {
                 card.setAttribute('data-locked-badge', '1');
             }
         }

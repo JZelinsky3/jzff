@@ -19,7 +19,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { exportLeague, type ExportBundle } from '@/lib/export/pams'
 import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
-import { resolveLeagueTier, isLeagueLocked, classifyLockedPath } from '@/lib/leagueTier'
+import { resolveLeagueTier, getLockReason, classifyLockedPath } from '@/lib/leagueTier'
 import { getUserSubscription, isSubscriptionActive } from '@/lib/stripe'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
@@ -531,8 +531,8 @@ export async function GET(
   // structure without the gated numbers. (The manager DNA + top-perf
   // cards have their own in-place locked variants triggered by the same
   // JSON 404.)
-  const lockedLeague = await isLeagueLocked(meta.id, meta.owner_id)
-  const lockKind = classifyLockedPath(resolved.file, lockedLeague)
+  const lockReason = await getLockReason(meta.id, meta.owner_id)
+  const lockKind = classifyLockedPath(resolved.file, lockReason)
   if (lockKind === 'data') {
     return new NextResponse('Locked', { status: 404 })
   }
