@@ -640,8 +640,8 @@
             pillLabel = '★ Trial League';
             text = 'Your free trial league. The Sunday Chronicle is still under construction; some features may be incomplete. When the trial ends you can roll this league into your paid plan.';
         } else if (tier === 'udfa') {
-            pillLabel = '★ UDFA · Free';
-            text = 'Free-tier league. The Sunday Chronicle is still under active construction; some features may be incomplete.';
+            pillLabel = '★ UDFA · Limited';
+            text = 'Free-tier league. Stats are locked on the live season, draft, record-book, and individual season pages — upgrade to unlock the full chronicle.';
         } else {
             // 'paid' and 'comp' both surface the beta message — the only
             // distinction is the badge color in the hub.

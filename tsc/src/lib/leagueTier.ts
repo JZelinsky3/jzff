@@ -47,7 +47,7 @@ export function tierBadgeLabel(tier: LeagueTier): string {
     case 'paid':
       return 'Paid Plan'
     case 'udfa':
-      return 'UDFA · Free'
+      return 'UDFA · Limited'
   }
 }
 

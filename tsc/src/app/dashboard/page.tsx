@@ -124,6 +124,14 @@ export default async function DashboardPage({
   const firstUnpublishedSlug = leagues?.find((l) => !l.published_at)?.slug
   const targetSlug = firstUnsyncedSlug ?? firstUnpublishedSlug ?? leagues?.[0]?.slug
 
+  // The user's earliest-created league is their trial slot — gets the
+  // "Trial · Full access" badge. Subsequent free-tier leagues show as
+  // UDFA-limited. Leagues come back sorted newest-first so the last
+  // entry is the oldest. Mirrors the trial-resolution rule used by
+  // resolveLeagueTier on the public side.
+  const earliestOwnedLeagueId =
+    leagues && leagues.length > 0 ? leagues[leagues.length - 1].id : null
+
   const onboardingSteps: OnboardingStep[] = [
     {
       label: 'Create your first league',
@@ -324,16 +332,16 @@ export default async function DashboardPage({
                 <LeagueCardMenu leagueId={l.id} leagueName={l.name} />
                 <Link href={`/league/${l.slug}`} className="card" style={{ flex: 1, height: '100%' }}>
                   <div className="card-corner">{l.platform}</div>
-                  {/* Tier badge — only on UDFA users' cards. During testing
-                      window: "TRIAL · FULL ACCESS" (premium features unlocked
-                      site-wide). After testing closes: "UDFA · FREE" (1
-                      league, premium features locked behind upgrade). Paid
-                      and comp users get no badge — their tier shows in the
-                      hero pill instead. */}
+                  {/* Tier badge — only on UDFA users' cards. The user's
+                      earliest league is their one free trial slot ("Trial
+                      · Full access"); subsequent free leagues are UDFA-
+                      limited. Independent of the testing window — the
+                      gate applies immediately. Paid and comp users get
+                      no badge — their tier shows in the hero pill. */}
                   {isUDFA && (
-                    <div className={`dc-league-tier ${testingActive ? 'is-trial' : 'is-udfa'}`}>
+                    <div className={`dc-league-tier ${l.id === earliestOwnedLeagueId ? 'is-trial' : 'is-udfa'}`}>
                       <span aria-hidden>★</span>
-                      {testingActive ? 'Trial · Full access' : 'UDFA · Free'}
+                      {l.id === earliestOwnedLeagueId ? 'Trial · Full access' : 'UDFA · Limited'}
                     </div>
                   )}
                   <div className="card-roman">{l.name.charAt(0).toUpperCase()}</div>
