@@ -2139,8 +2139,72 @@ body {
         every Sunday — kept in the books.
     </p>
     <div class="hero-meta" id="dc-hero-meta">{{LEAGUE_FOUNDED}} — Present</div>
+    <div class="hero-tier" id="dc-hero-tier" hidden></div>
     <div class="hero-rule"></div>
 </div>
+
+<style>
+/* Tiny tier line under the totals — gold label + "Upgrade →" link
+   on free/rookie leagues, "Trial" on the trial slot, "Lifetime" on
+   comp. Stays out of the way; readers who don't care can scan past it. */
+.hero-tier {
+    margin-top: .5rem;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    opacity: .85;
+}
+.hero-tier .hero-tier-label { color: var(--gold); }
+.hero-tier .hero-tier-up {
+    margin-left: .55em;
+    color: var(--gold);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(232,200,137,.4);
+    padding-bottom: 1px;
+    transition: color .15s, border-color .15s;
+}
+.hero-tier .hero-tier-up:hover {
+    color: var(--gold-bright);
+    border-color: var(--gold-bright);
+}
+</style>
+<script>
+  (function () {
+    var dc = window.__DC || {};
+    var el = document.getElementById('dc-hero-tier');
+    if (!el) return;
+    // Map leagueTier + paidTier to a short label. paidTier is the
+    // actual Stripe tier (tier1/2/3) when the owner has an active sub;
+    // null otherwise. leagueTier ('comp' | 'test' | 'paid' | 'udfa')
+    // covers everything else.
+    var TIER_NAMES = { tier1: 'Rookie', tier2: 'Veteran', tier3: 'All-Pro' };
+    var label = null;
+    var showUpgrade = false;
+    if (dc.leagueTier === 'comp') {
+      label = 'Lifetime · Unlimited';
+    } else if (dc.leagueTier === 'udfa') {
+      label = 'UDFA · Free Tier';
+      showUpgrade = true;
+    } else if (dc.leagueTier === 'test') {
+      label = 'Trial League';
+      showUpgrade = true;
+    } else if (dc.leagueTier === 'paid' && dc.paidTier && TIER_NAMES[dc.paidTier]) {
+      label = TIER_NAMES[dc.paidTier] + ' Plan';
+      // Show upgrade prompt only for Rookie (tier1) — Veteran + All-Pro
+      // are already at/above the paid feature ceiling.
+      if (dc.paidTier === 'tier1') showUpgrade = true;
+    }
+    if (!label) return;
+    var html = '<span class="hero-tier-label">' + label + '</span>';
+    if (showUpgrade) {
+      html += '<a class="hero-tier-up" href="/pricing" target="_top">Upgrade →</a>';
+    }
+    el.innerHTML = html;
+    el.hidden = false;
+  })();
+</script>
 
 
 <!-- § 02 — BENCHMARKS (full width — 1 hero record + 3 small below) -->

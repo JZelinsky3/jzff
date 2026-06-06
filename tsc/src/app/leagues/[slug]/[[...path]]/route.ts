@@ -20,6 +20,7 @@ import { createClient } from '@/lib/supabase/server'
 import { exportLeague, type ExportBundle } from '@/lib/export/pams'
 import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
 import { resolveLeagueTier, isLeagueLocked, classifyLockedPath } from '@/lib/leagueTier'
+import { getUserSubscription, isSubscriptionActive } from '@/lib/stripe'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 
