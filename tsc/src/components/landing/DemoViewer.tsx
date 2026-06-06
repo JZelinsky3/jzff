@@ -22,6 +22,16 @@ export function DemoViewer() {
           <span className="dv-chrome-lock">●</span>
           jzff.online<span className="dv-chrome-path">/dashboard</span>
         </div>
+        {loaded && (
+          <button
+            type="button"
+            onClick={() => setLoaded(false)}
+            className="dv-chrome-open"
+            aria-label="Pause the demo and return to the cover"
+          >
+            Pause ❚❚
+          </button>
+        )}
         <a href="/demo/" target="_blank" rel="noopener" className="dv-chrome-open">
           Open ↗
         </a>

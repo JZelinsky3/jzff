@@ -56,11 +56,38 @@ const PAGES: Page[] = [
 export function HeroClipping() {
   const [idx, setIdx] = useState(0)
 
+  // Auto-rotate, but skip work when the visitor isn't watching: stop on tab
+  // blur (saves repeated React commits + paint) and skip entirely when the
+  // user prefers reduced motion. The dot tablist still lets them step
+  // through manually in both cases.
   useEffect(() => {
-    const t = setInterval(() => {
-      setIdx((i) => (i + 1) % PAGES.length)
-    }, 7000)
-    return () => clearInterval(t)
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce) return
+
+    let timer: ReturnType<typeof setInterval> | null = null
+    const start = () => {
+      if (timer) return
+      timer = setInterval(() => {
+        setIdx((i) => (i + 1) % PAGES.length)
+      }, 7000)
+    }
+    const stop = () => {
+      if (!timer) return
+      clearInterval(timer)
+      timer = null
+    }
+    const onVisibility = () => {
+      if (document.hidden) stop()
+      else start()
+    }
+    start()
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      stop()
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [])
 
   return (

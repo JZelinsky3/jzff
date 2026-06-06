@@ -2,14 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-
-// Bump WELCOME_VERSION when the slides below change in a way that
-// readers should see again. Cosmetic/typo fixes — leave it alone, the
-// popup stays dismissed for returning visitors. Material additions
-// (new feature slides, reordered narrative) — bump it, and everyone
-// sees the popup once on their next landing.
-const WELCOME_VERSION = '2026-06-05-8'
-const STORAGE_KEY = 'tsc-welcome-dismissed-v'
+import { WELCOME_VERSION, WELCOME_STORAGE_KEY as STORAGE_KEY } from './welcomeMeta'
 
 const PROMO_CODE = 'FIRST50'
 const PROMO_TAGLINE = '50% off your first issue'
@@ -344,7 +337,13 @@ const ALL_SLIDES: Slide[] = [
   { kind: 'closing' },
 ]
 
-export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
+export function WelcomePopup({
+  signedIn,
+  forceOpen = false,
+}: {
+  signedIn: boolean
+  forceOpen?: boolean
+}) {
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [hasDismissed, setHasDismissed] = useState(false)
@@ -352,6 +351,12 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
 
   useEffect(() => {
     setMounted(true)
+    // forceOpen path = user explicitly clicked the inline reopen ★ in the
+    // loader. Skip the localStorage check entirely; they've asked to see it.
+    if (forceOpen) {
+      setOpen(true)
+      return
+    }
     try {
       const dismissed = window.localStorage.getItem(STORAGE_KEY)
       if (dismissed === WELCOME_VERSION) {
@@ -367,7 +372,7 @@ export function WelcomePopup({ signedIn }: { signedIn: boolean }) {
     } catch {
       setOpen(true)
     }
-  }, [])
+  }, [forceOpen])
 
   useEffect(() => {
     if (!open) return
