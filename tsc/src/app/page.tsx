@@ -141,8 +141,8 @@ export default async function Home() {
         <div className="lp-platforms">
           <Platform name="Sleeper"  status="Available"   pill="Live" klass="" />
           <Platform name="ESPN"     status="Available"   pill="Live" klass="" />
-          <Platform name="NFL.com"  status="Historical"  pill="Live" klass="" />
-          <Platform name="Yahoo"    status="In testing"  pill="Beta" klass="cream" />
+          <Platform name="NFL.com"  status="Testing"  pill="Beta" klass="cream" />
+          <Platform name="Yahoo"    status="Testing"  pill="Beta" klass="cream" />
         </div>
       </div>
 
