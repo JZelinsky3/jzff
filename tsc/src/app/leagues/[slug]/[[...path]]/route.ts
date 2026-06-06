@@ -19,7 +19,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { exportLeague, type ExportBundle } from '@/lib/export/pams'
 import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
-import { testingModeEndsAt } from '@/lib/stripe'
+import {
+  getUserSubscription,
+  isCompUser,
+  isSubscriptionActive,
+  testingModeEndsAt,
+} from '@/lib/stripe'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 
@@ -137,9 +142,41 @@ function applyTokens(html: string, meta: LeagueMeta): string {
     .replaceAll('{{LEAGUE_SLUG}}', meta.slug)
 }
 
+// Tier classification for the advisory strip on the public almanac:
+//   'test'  → owner's first league AND created during the preview window
+//             (their "trial" slot — full features for free)
+//   'udfa'  → owner has no active subscription; subsequent leagues fall
+//             here even when created inside the preview window
+//   'paid'  → comp grant or active subscription
+type LeagueTier = 'test' | 'udfa' | 'paid'
+
+async function resolveLeagueTier(meta: LeagueMeta): Promise<LeagueTier> {
+  if (!meta.owner_id) return 'paid'
+  if (await isCompUser(meta.owner_id)) return 'paid'
+  const sub = await getUserSubscription(meta.owner_id)
+  if (isSubscriptionActive(sub)) return 'paid'
+
+  const cutoff = testingModeEndsAt()
+  const createdDuringTesting =
+    !!cutoff && !!meta.created_at && Date.parse(meta.created_at) < cutoff.getTime()
+  if (!createdDuringTesting) return 'udfa'
+
+  // First league of this owner gets the "test" slot. Subsequent free-tier
+  // leagues stay 'udfa' even during the preview — only one trial per user.
+  const db = createAdminClient()
+  const { data: firstRow } = await db
+    .from('leagues')
+    .select('id')
+    .eq('owner_id', meta.owner_id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  return firstRow?.id === meta.id ? 'test' : 'udfa'
+}
+
 // Inject a small config script with the current league's context so nav.js
 // can wire absolute links to the Dynasty Codex dashboard and management view.
-function injectDcConfig(
+async function injectDcConfig(
   html: string,
   meta: LeagueMeta,
   isCommish: boolean,
@@ -147,15 +184,8 @@ function injectDcConfig(
   isBookmarked: boolean,
   tutorialDismissed: boolean,
   tutorialSeenPages: string[],
-): string {
-  // "Testing-era" league: created before the testing-window cutoff. The
-  // pams nav.js renders a light-blue advisory strip on these so visitors
-  // know the archive was built during the free preview and may still be
-  // under construction. We do the date comparison server-side because the
-  // cutoff is server-config (TESTING_MODE_UNTIL env var).
-  const cutoff = testingModeEndsAt()
-  const isTestingLeague =
-    !!cutoff && !!meta.created_at && Date.parse(meta.created_at) < cutoff.getTime()
+): Promise<string> {
+  const leagueTier = await resolveLeagueTier(meta)
   const config = `<script>window.__DC=${JSON.stringify({
     id: meta.id,
     slug: meta.slug,
@@ -164,7 +194,7 @@ function injectDcConfig(
     isSignedIn,
     isBookmarked,
     isUdfaLeague: meta.is_udfa,
-    isTestingLeague,
+    leagueTier,
     tradesTheme: meta.trades_theme,
     tutorialDismissed,
     tutorialSeenPages,
@@ -559,7 +589,7 @@ export async function GET(
       isSignedIn && Array.isArray(tutorialsMeta['leagues_seen'])
         ? (tutorialsMeta['leagues_seen'] as string[])
         : []
-    const html = injectDcConfig(
+    const html = await injectDcConfig(
       injectOgTags(
         injectBaseTag(applyTokens(raw, meta), meta, resolved.file),
         meta,

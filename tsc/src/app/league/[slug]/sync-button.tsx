@@ -101,15 +101,21 @@ export function SyncButton({ leagueId }: { leagueId: string }) {
           ? `Syncing… ${formatElapsed(elapsedS)}`
           : state === 'done'
           ? 'Sync again →'
-          : 'Sync from sources →'}
+          : 'Sync →'}
       </button>
-      {showPatience && !showWarning && (
-        <p style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--cream-mute)', textTransform: 'uppercase' }}>
-          Large ingests can take 2–5 minutes — hang tight.
+      {state === 'syncing' && !showWarning && (
+        // Width-capped + right-aligned so the hint never extends further
+        // left than the button above it — wraps onto a second/third line
+        // instead. Surfaces "stay on this page" immediately so the warning
+        // lands before someone clicks away.
+        <p style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--cream-mute)', textTransform: 'uppercase', textAlign: 'right', maxWidth: '180px', lineHeight: 1.45 }}>
+          {showPatience
+            ? 'Large ingests can take 2–5 min — stay on this page.'
+            : 'Stay on this page until it finishes.'}
         </p>
       )}
       {showWarning && (
-        <p style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--rust)', textTransform: 'uppercase' }}>
+        <p style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--rust)', textTransform: 'uppercase', textAlign: 'right', maxWidth: '180px', lineHeight: 1.45 }}>
           Past the server budget — will abort soon. Sources may still be updating in the background.
         </p>
       )}

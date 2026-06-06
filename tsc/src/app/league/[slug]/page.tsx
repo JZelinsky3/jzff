@@ -62,7 +62,7 @@ export default async function LeagueOverviewPage({
     },
     {
       label: 'Sync the league',
-      description: 'Pulls every season, draft, and matchup your sources can reach.',
+      description: 'Pulls every season, draft, and matchup your sources can reach. Stay on this page until it finishes — closing the tab cancels the run.',
       done: hasSynced,
       action: <SyncButton leagueId={league.id} />,
     },

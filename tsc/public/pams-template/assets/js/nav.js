@@ -620,25 +620,38 @@
         };
     }
 
-    // Light-blue advisory strip for leagues built during the testing
-    // window. The route handler sets __DC.isTestingLeague when the
-    // league's created_at < TESTING_MODE_UNTIL cutoff. Visually mirrors
-    // the demo strip (same gradient + pill treatment) so the two read as
-    // the same "advisory surface" but with copy specific to test-era
-    // archives.
+    // Light-blue advisory strip for every public almanac during the
+    // pre-launch build phase. Wording varies by the league's tier so
+    // the message lines up with what the visitor's seeing:
+    //   - 'test' → owner's first/free trial league
+    //   - 'udfa' → owner's free-tier (non-trial) league
+    //   - 'paid' → comp or paid plan
+    // The route handler resolves the tier server-side and injects it as
+    // __DC.leagueTier.
     function buildTestingStrip() {
         var dc = window.__DC || {};
-        if (!dc.isTestingLeague) return;
+        var tier = dc.leagueTier;
+        if (tier !== 'test' && tier !== 'udfa' && tier !== 'paid') return;
         if (document.getElementById('dc-testing-strip')) return;
+
+        var pillLabel, text;
+        if (tier === 'test') {
+            pillLabel = '★ Trial League';
+            text = 'Built during The Sunday Chronicle preview window — your free trial slot. Site is still under construction; some features may be incomplete.';
+        } else if (tier === 'udfa') {
+            pillLabel = '★ UDFA · Free';
+            text = 'Free-tier league. The Sunday Chronicle is still under active construction; some features may be incomplete.';
+        } else {
+            pillLabel = '★ Beta';
+            text = 'The Sunday Chronicle is still being polished — thanks for the early support. Expect rough edges while we ship.';
+        }
 
         var strip = document.createElement('div');
         strip.id = 'dc-testing-strip';
-        strip.className = 'dc-demo-strip dc-testing-strip';
+        strip.className = 'dc-demo-strip dc-testing-strip dc-testing-strip--' + tier;
         strip.innerHTML =
-            '<span class="dc-demo-strip-pill">★ Test League</span>' +
-            '<span class="dc-demo-strip-text">' +
-                'Built during The Sunday Chronicle preview window — still under construction; some features may be incomplete.' +
-            '</span>';
+            '<span class="dc-demo-strip-pill">' + pillLabel + '</span>' +
+            '<span class="dc-demo-strip-text">' + text + '</span>';
         document.body.insertBefore(strip, document.body.firstChild);
 
         var style = document.createElement('style');
