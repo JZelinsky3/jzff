@@ -212,24 +212,26 @@ export default async function AdminPage() {
                 const ownerHasSub = !!sub && (sub.status === 'active' || sub.status === 'trialing')
                 const ownerComp = compByUser.has(l.owner_id) || isLifetimeUser(l.owner_id)
                 const isOwnersEarliest = earliestLeagueByOwner.get(l.owner_id) === l.id
-                const tags: string[] = []
-                if (!ownerComp) {
-                  if (isOwnersEarliest) tags.push('testing')
-                  else if (!ownerHasSub) tags.push('udfa')
-                }
-                if (l.published_at) tags.push('published')
-                if (grace) tags.push('grace')
+                const isTrial = !ownerComp && isOwnersEarliest
 
-                // Plan badge — what feature tier this league actually
-                // runs under. Anon owners, testing/trial, and UDFA all
-                // get the Rookie feature set (same as paid tier1).
-                // Veteran (tier2), All-Pro (tier3), and comp all share
-                // the premium feature set, so they collapse to a single
-                // "Veteran+" chip.
+                // Veteran (tier2), All-Pro (tier3), and comp all share the
+                // premium feature set, so they collapse to a single
+                // "Veteran+" chip. Everything else is the Rookie feature
+                // set (same as paid tier1).
                 let planBadge: 'rookie' | 'veteran+' = 'rookie'
                 if (ownerComp) planBadge = 'veteran+'
                 else if (ownerHasSub && (sub!.tier === 'tier2' || sub!.tier === 'tier3')) planBadge = 'veteran+'
-                tags.push(planBadge)
+
+                // Order: plan/testing badge on the inside, then UDFA,
+                // then grace, with `published` always furthest right.
+                // testing and rookie are mutually exclusive — trial
+                // leagues show 'testing' instead of a plan badge.
+                const tags: string[] = []
+                if (isTrial) tags.push('testing')
+                else tags.push(planBadge)
+                if (!ownerComp && !isOwnersEarliest && !ownerHasSub) tags.push('udfa')
+                if (grace) tags.push('grace')
+                if (l.published_at) tags.push('published')
                 return (
                   <tr key={l.id} style={{ borderTop: '1px solid var(--ink-line)' }}>
                     <td style={td}>
