@@ -6,8 +6,6 @@ import {
   getUserSubscription,
   isCompUser,
   isSubscriptionActive,
-  isTestingModeActive,
-  testingModeEndsAt,
   TIER_LABELS,
   TIER_LIMITS,
 } from '@/lib/stripe'
@@ -100,12 +98,10 @@ export default async function DashboardPage({
   const subEndsLabel = formatSubEndsLabel(sub)
   const subTierName = sub ? TIER_LABELS[sub.tier]?.name ?? sub.tier : null
 
-  // UDFA = signed-in user with no comp, no active subscription. They get
-  // the free 1-league slot. During the testing window they also get full
-  // access to every paid feature for free.
+  // UDFA = signed-in user with no comp, no active subscription. Their
+  // earliest league gets the trial slot (full paid-feature preview);
+  // additional leagues use the UDFA feature set.
   const isUDFA = !!user && !comp && !subActive
-  const testingActive = isTestingModeActive()
-  const testingEnds = testingModeEndsAt()
   const tier1Limit = TIER_LIMITS.tier1
 
   // Demo card hides permanently once the user has created their first league
@@ -199,16 +195,13 @@ export default async function DashboardPage({
                 <span style={{ opacity: 0.6 }}>
                   · {tier1Limit} Free {tier1Limit === 1 ? 'League' : 'Leagues'}
                 </span>
-                {testingActive && (
-                  <span style={{ opacity: 0.6 }}>· Testing access</span>
-                )}
               </>
             )}
           </Link>
         )}
       </section>
 
-      {isUDFA && testingActive && testingEnds && (
+      {isUDFA && (
         <div
           className="dc-banner"
           style={{
@@ -220,16 +213,13 @@ export default async function DashboardPage({
           }}
         >
           <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
-            ★ Free testing window
+            ★ How UDFA works
           </div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
-            UDFA gets the <strong style={{ color: 'var(--gold)' }}>whole site</strong> — every page, every paid feature — until{' '}
-            <strong style={{ color: 'var(--gold)' }}>
-              {testingEnds.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-            </strong>.
+            Your <strong style={{ color: 'var(--gold)' }}>earliest league</strong> is a free trial — every page, every paid feature, unlocked as a preview of the paid plans.
           </div>
           <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.35rem' }}>
-            Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub are all unlocked for free during testing. After the window closes, UDFA stays free with one league — paid tiers re-gate the premium features.{' '}
+            Additional leagues use the free UDFA feature set (all-time standings, rivalries, and the manager strip). Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub stay locked on UDFA leagues until you upgrade.{' '}
             Email <a href="mailto:jzffgames@gmail.com" style={{ color: 'var(--gold)' }}>jzffgames@gmail.com</a> with bugs or suggestions.
           </div>
         </div>
