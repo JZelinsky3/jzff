@@ -23,7 +23,6 @@ import {
   getUserSubscription,
   isCompUser,
   isSubscriptionActive,
-  testingModeEndsAt,
 } from '@/lib/stripe'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
@@ -143,26 +142,19 @@ function applyTokens(html: string, meta: LeagueMeta): string {
 }
 
 // Tier classification for the advisory strip on the public almanac:
-//   'test'  → owner's first league AND created during the preview window
-//             (their "trial" slot — full features for free)
+//   'test'  → owner's earliest league (their trial slot — every non-comp
+//             user gets one regardless of plan)
 //   'udfa'  → owner has no active subscription; subsequent leagues fall
-//             here even when created inside the preview window
-//   'paid'  → comp grant or active subscription
+//             here once the trial slot has been claimed
+//   'paid'  → comp grant, or active subscription on a non-trial league
 type LeagueTier = 'test' | 'udfa' | 'paid'
 
 async function resolveLeagueTier(meta: LeagueMeta): Promise<LeagueTier> {
   if (!meta.owner_id) return 'paid'
   if (await isCompUser(meta.owner_id)) return 'paid'
-  const sub = await getUserSubscription(meta.owner_id)
-  if (isSubscriptionActive(sub)) return 'paid'
 
-  const cutoff = testingModeEndsAt()
-  const createdDuringTesting =
-    !!cutoff && !!meta.created_at && Date.parse(meta.created_at) < cutoff.getTime()
-  if (!createdDuringTesting) return 'udfa'
-
-  // First league of this owner gets the "test" slot. Subsequent free-tier
-  // leagues stay 'udfa' even during the preview — only one trial per user.
+  // Trial slot is owner-wide: first-created league always wins. Subsequent
+  // leagues classify by sub status.
   const db = createAdminClient()
   const { data: firstRow } = await db
     .from('leagues')
@@ -171,7 +163,10 @@ async function resolveLeagueTier(meta: LeagueMeta): Promise<LeagueTier> {
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle()
-  return firstRow?.id === meta.id ? 'test' : 'udfa'
+  if (firstRow?.id === meta.id) return 'test'
+
+  const sub = await getUserSubscription(meta.owner_id)
+  return isSubscriptionActive(sub) ? 'paid' : 'udfa'
 }
 
 // Inject a small config script with the current league's context so nav.js

@@ -202,6 +202,12 @@ export type EnforcementResult =
   | { ok: true }
   | { ok: false; reason: 'no_subscription' | 'tier_limit'; tier?: Tier; limit?: number; current?: number; message: string }
 
+// Every non-comp user gets one free trial league on top of whatever
+// their plan allows. Tier1 (1 league) → 2 total (1 paid + 1 trial).
+// UDFA (no plan) → 1 trial league. During the preview window UDFA gets
+// unlimited; the trial flag still latches onto their first league.
+const TRIAL_BONUS = 1
+
 // Can this user create another league? Loads their subscription + counts
 // existing leagues. Returns a typed result so the caller can render a
 // matching upgrade prompt without re-deriving the reason.
@@ -209,51 +215,42 @@ export async function canCreateLeague(userId: string): Promise<EnforcementResult
   // Lifetime / comp accounts skip every other check.
   if (await isCompUser(userId)) return { ok: true }
 
-  // UDFA free path: any signed-in user with no active subscription can have
-  // exactly one league, perpetually. Counts ALL their leagues so they can't
-  // stack a free league on top of a paid one — the free slot is only for
-  // users who have nothing yet (or have lapsed back to nothing).
-  //
-  // EXCEPTION: while the testing window is open, UDFA users can create
-  // unlimited leagues — the whole point of the window is to let people
-  // kick the tires without paying. Outside the window we re-impose the
-  // 1-league cap.
   const db = createAdminClient()
-  const sub = await getUserSubscription(userId)
-  if (!isSubscriptionActive(sub)) {
-    if (isTestingModeActive()) return { ok: true }
-    const { count } = await db
-      .from('leagues')
-      .select('id', { count: 'exact', head: true })
-      .eq('owner_id', userId)
-    if ((count ?? 0) === 0) return { ok: true }
-  }
-  if (!isSubscriptionActive(sub) || !sub) {
-    return {
-      ok: false,
-      reason: 'no_subscription',
-      message: 'UDFA (free) tier covers 1 league. Upgrade to add more.',
-    }
-  }
-
   const { count } = await db
     .from('leagues')
     .select('id', { count: 'exact', head: true })
     .eq('owner_id', userId)
   const current = count ?? 0
-  const limit = TIER_LIMITS[sub.tier]
+  const sub = await getUserSubscription(userId)
+  const hasSub = isSubscriptionActive(sub) && !!sub
 
-  if (current >= limit) {
+  // Trial slot: first league is always allowed regardless of plan.
+  if (current === 0) return { ok: true }
+
+  // No active subscription past the trial.
+  if (!hasSub) {
+    // Preview window: free users get unlimited so they can kick the tires.
+    if (isTestingModeActive()) return { ok: true }
+    return {
+      ok: false,
+      reason: 'no_subscription',
+      message: "You've used your free trial league. Upgrade to add more.",
+    }
+  }
+
+  // Active subscription: trial slot stacks on top of the plan's allowance.
+  const limit = TIER_LIMITS[sub.tier]
+  const cap = limit + TRIAL_BONUS
+  if (current >= cap) {
     return {
       ok: false,
       reason: 'tier_limit',
       tier: sub.tier,
       limit,
       current,
-      message: `Your ${TIER_LABELS[sub.tier].name} plan covers ${limit} ${limit === 1 ? 'league' : 'leagues'}. You currently have ${current}. Upgrade to add more.`,
+      message: `Your ${TIER_LABELS[sub.tier].name} plan covers ${limit} ${limit === 1 ? 'league' : 'leagues'} plus a 1-league free trial slot (${cap} total). You currently have ${current}. Upgrade to add more.`,
     }
   }
-
   return { ok: true }
 }
 

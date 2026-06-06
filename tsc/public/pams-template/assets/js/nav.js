@@ -636,8 +636,9 @@
 
         var pillLabel, text;
         if (tier === 'test') {
+            // First league for any non-comp owner — their free trial slot.
             pillLabel = '★ Trial League';
-            text = 'Built during The Sunday Chronicle preview window — your free trial slot. Site is still under construction; some features may be incomplete.';
+            text = 'Your free trial league. The Sunday Chronicle is still under construction; some features may be incomplete. When the trial ends you can roll this league into your paid plan.';
         } else if (tier === 'udfa') {
             pillLabel = '★ UDFA · Free';
             text = 'Free-tier league. The Sunday Chronicle is still under active construction; some features may be incomplete.';

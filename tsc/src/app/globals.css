@@ -4706,6 +4706,19 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .onb-fab-panel .onb-step-desc { font-size: .72rem; }
 .onb-fab-panel .onb-step-check { width: 22px; height: 22px; font-size: .7rem; }
 .onb-fab-panel .onb-step-cta { font-size: .55rem; padding: .35rem .6rem; }
+/* Embedded SyncButton sits in .onb-step-action and uses .dc-btn, which
+   defaults to chunky 1.5rem padding. In the FAB it overwhelms the row
+   visually, so we shrink padding aggressively and trim font slightly. */
+.onb-fab-panel .onb-step-action .dc-btn {
+    font-size: .55rem;
+    letter-spacing: .15em;
+    padding: .3rem .55rem;
+}
+.onb-fab-panel .onb-step-action p {
+    font-size: .54rem !important;
+    letter-spacing: .08em !important;
+    max-width: 140px !important;
+}
 @media (max-width: 480px) {
     .onb-fab { bottom: .75rem; right: .75rem; left: .75rem; }
     .onb-fab-pill { width: 100%; justify-content: center; }
