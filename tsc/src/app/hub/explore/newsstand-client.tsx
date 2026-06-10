@@ -155,7 +155,7 @@ export function BookmarkStar({
   )
 }
 
-export function LeagueSearch() {
+export function LeagueSearch({ signedIn = true }: { signedIn?: boolean }) {
   const [q, setQ] = useState('')
   const [results, setResults] = useState<SearchResult[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -253,7 +253,12 @@ export function LeagueSearch() {
                     {r.own && ' · yours'}
                   </div>
                 </span>
-                <BookmarkStar slug={r.slug} initial={r.bookmarked} disabled={r.own} />
+                <BookmarkStar
+                  slug={r.slug}
+                  initial={r.bookmarked}
+                  disabled={r.own || !signedIn}
+                  title={!signedIn ? 'Sign in to bookmark' : undefined}
+                />
                 <span className="hub-result-open">Open →</span>
               </a>
             ))

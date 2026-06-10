@@ -1,8 +1,9 @@
 // GET /api/hub/search?q=<text> — Newsstand league search.
-// Returns published almanacs matching by name or slug. Signed-in only
-// (the Clubhouse is members-only); uses the admin client because leagues
-// RLS hides other people's leagues, and "published" is exactly the public
-// gate the almanac route itself uses.
+// Public: it only ever returns PUBLISHED almanacs — the same gate the
+// public almanac route uses — so guests browsing the Clubhouse can search
+// too. Uses the admin client because leagues RLS hides other people's
+// leagues even when published. Signed-in callers additionally get their
+// own bookmark state on each result.
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -11,7 +12,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function GET(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 })
 
   const url = new URL(req.url)
   const q = (url.searchParams.get('q') ?? '').trim().slice(0, 80)
@@ -51,12 +51,16 @@ export async function GET(req: Request) {
   }
 
   // Which of these the caller has already bookmarked (own-scoped RLS read).
-  const { data: bmRows } = await supabase
-    .from('league_bookmarks')
-    .select('league_id')
-    .eq('user_id', user.id)
-    .in('league_id', ids)
-  const bookmarked = new Set((bmRows ?? []).map((b) => b.league_id as string))
+  // Guests have none.
+  const bookmarked = new Set<string>()
+  if (user) {
+    const { data: bmRows } = await supabase
+      .from('league_bookmarks')
+      .select('league_id')
+      .eq('user_id', user.id)
+      .in('league_id', ids)
+    for (const b of bmRows ?? []) bookmarked.add(b.league_id as string)
+  }
 
   return NextResponse.json({
     results: rows.map((l) => {
@@ -69,7 +73,7 @@ export async function GET(req: Request) {
         firstYear: a && a.min !== Infinity ? a.min : null,
         latestYear: a && a.max !== -Infinity ? a.max : null,
         bookmarked: bookmarked.has(l.id as string),
-        own: l.owner_id === user.id,
+        own: !!user && l.owner_id === user.id,
       }
     }),
   })

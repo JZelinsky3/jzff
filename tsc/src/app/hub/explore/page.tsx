@@ -12,7 +12,7 @@ function yearsLabel(l: { firstYear: number | null; latestYear: number | null }) 
   return l.firstYear === l.latestYear ? String(l.firstYear) : `${l.firstYear}–${l.latestYear}`
 }
 
-function ShelfCard({ l, bookmarked, own }: { l: HubShelfLeague; bookmarked: boolean; own: boolean }) {
+function ShelfCard({ l, bookmarked, own, guest }: { l: HubShelfLeague; bookmarked: boolean; own: boolean; guest: boolean }) {
   const years = yearsLabel(l)
   return (
     <a href={`/leagues/${l.slug}/`} className="hub-shelf-card">
@@ -24,7 +24,12 @@ function ShelfCard({ l, bookmarked, own }: { l: HubShelfLeague; bookmarked: bool
               ★ {l.bookmarks}
             </span>
           )}
-          <BookmarkStar slug={l.slug} initial={bookmarked} disabled={own} />
+          <BookmarkStar
+            slug={l.slug}
+            initial={bookmarked}
+            disabled={own || guest}
+            title={guest ? 'Sign in to bookmark' : undefined}
+          />
         </span>
       </div>
       <div className="hub-shelf-name">{l.name}</div>
@@ -107,7 +112,7 @@ export default async function NewsstandPage() {
   return (
     <main>
       <section className="hub-hero">
-        <div className="hub-hero-sup">★ Wing V · Out on the rack ★</div>
+        <div className="hub-hero-sup">★ Wing VI · Out on the rack ★</div>
         <h1 className="hub-hero-title">
           The <em>Newsstand.</em>
         </h1>
@@ -125,7 +130,7 @@ export default async function NewsstandPage() {
       {/* ─── Search ───────────────────────────────────────── */}
       <div className="hub-section" style={{ marginTop: '0.5rem' }}>
         <Reveal>
-          <LeagueSearch />
+          <LeagueSearch signedIn={!!user} />
         </Reveal>
       </div>
 
@@ -140,7 +145,7 @@ export default async function NewsstandPage() {
           <Reveal>
             <div className="hub-shelf-grid">
               {shelves.popular.map((l) => (
-                <ShelfCard key={l.id} l={l} bookmarked={bookmarkedIds.has(l.id)} own={ownIds.has(l.id)} />
+                <ShelfCard key={l.id} l={l} bookmarked={bookmarkedIds.has(l.id)} own={ownIds.has(l.id)} guest={!user} />
               ))}
             </div>
           </Reveal>
@@ -184,7 +189,12 @@ export default async function NewsstandPage() {
                 <div key={l.id} className="hub-shelf-card hub-promo-listing">
                   <div className="hub-shelf-top">
                     <span>{l.platform}</span>
-                    <BookmarkStar slug={l.slug} initial={bookmarkedIds.has(l.id)} disabled={ownIds.has(l.id)} />
+                    <BookmarkStar
+                      slug={l.slug}
+                      initial={bookmarkedIds.has(l.id)}
+                      disabled={ownIds.has(l.id) || !user}
+                      title={!user ? 'Sign in to bookmark' : undefined}
+                    />
                   </div>
                   <a href={`/leagues/${l.slug}/`} className="hub-shelf-name" style={{ textDecoration: 'none', color: 'var(--hb-ink)' }}>
                     {l.name}
@@ -284,16 +294,29 @@ export default async function NewsstandPage() {
           ) : (
             <div className="hub-promote">
               <div>
-                <div className="hub-promote-title">Your league isn&apos;t on the rack <em>yet.</em></div>
+                <div className="hub-promote-title">
+                  {user ? <>Your league isn&apos;t on the rack <em>yet.</em></> : <>Got a league worth <em>reading?</em></>}
+                </div>
                 <p className="hub-promote-body">
                   Publishing puts your almanac on the Newsstand, makes it bookmarkable by any
-                  member, and enters your managers in the Hall of Records. It&apos;s one switch
-                  on the league&apos;s settings page.
+                  member, and enters your managers in the Hall of Records.
+                  {user
+                    ? ' It’s one switch on the league’s settings page.'
+                    : ' Sign in, sync your league, flip the publish switch — then take out an ad right here.'}
                 </p>
               </div>
               <div className="hub-promote-side">
-                <Link href="/dashboard" className="hub-btn">Publish from your library →</Link>
-                <Link href="/dashboard/new" className="hub-btn-ghost">Or start a new archive</Link>
+                {user ? (
+                  <>
+                    <Link href="/dashboard" className="hub-btn">Publish from your library →</Link>
+                    <Link href="/dashboard/new" className="hub-btn-ghost">Or start a new archive</Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login?mode=signup" className="hub-btn">Join the Chronicle →</Link>
+                    <Link href="/login" className="hub-btn-ghost">Sign in</Link>
+                  </>
+                )}
               </div>
             </div>
           )}

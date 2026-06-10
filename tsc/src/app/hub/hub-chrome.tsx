@@ -16,7 +16,8 @@ const TABS = [
   { href: '/hub/whats-new', label: 'The Dispatch', num: 'II' },
   { href: '/hub/numbers', label: 'The Census', num: 'III' },
   { href: '/hub/records', label: 'The Hall', num: 'IV' },
-  { href: '/hub/explore', label: 'The Newsstand', num: 'V' },
+  { href: '/hub/analyzer', label: 'Trade Room', num: 'V' },
+  { href: '/hub/explore', label: 'The Newsstand', num: 'VI' },
 ]
 
 export function HubTabs() {

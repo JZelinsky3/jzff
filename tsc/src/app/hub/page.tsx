@@ -55,9 +55,9 @@ export default async function HubFrontDesk() {
     <main>
       {/* ─── Hero ─────────────────────────────────────────── */}
       <section className="hub-hero">
-        <div className="hub-hero-sup">★ Members Only · Est. 2026 ★</div>
+        <div className="hub-hero-sup">★ The Clubhouse · Est. 2026 ★</div>
         <h1 className="hub-hero-title">
-          Welcome back, <em>{firstName}.</em>
+          {user ? <>Welcome back, <em>{firstName}.</em></> : <>Step inside, <em>stranger.</em></>}
         </h1>
         <p className="hub-hero-sub">
           This is the Clubhouse — the room behind the archives. What&apos;s new on the press,
@@ -65,11 +65,23 @@ export default async function HubFrontDesk() {
           are worth a read.
         </p>
         <div className="hub-hero-meta">
-          {memberSince && <span>Member since {memberSince}</span>}
-          <span>·</span>
-          <span>{ownLeagues.length > 0 ? `${ownLeagues.length}+ league${ownLeagues.length === 1 ? '' : 's'} on file` : 'No leagues yet'}</span>
-          <span>·</span>
-          <span>{bookmarkCount} bookmarked</span>
+          {user ? (
+            <>
+              {memberSince && <span>Member since {memberSince}</span>}
+              <span>·</span>
+              <span>{ownLeagues.length > 0 ? `${ownLeagues.length}+ league${ownLeagues.length === 1 ? '' : 's'} on file` : 'No leagues yet'}</span>
+              <span>·</span>
+              <span>{bookmarkCount} bookmarked</span>
+            </>
+          ) : (
+            <>
+              <span>Viewing as a guest</span>
+              <span>·</span>
+              <Link href="/login" style={{ color: 'var(--hb-gold)', textDecoration: 'none' }}>
+                Sign in to shelve your leagues →
+              </Link>
+            </>
+          )}
         </div>
       </section>
 
@@ -210,14 +222,21 @@ export default async function HubFrontDesk() {
           <Reveal>
             <div className="hub-promote">
               <div>
-                <div className="hub-promote-title">No archives <em>yet.</em></div>
+                <div className="hub-promote-title">
+                  {user ? <>No archives <em>yet.</em></> : <>Pull up a <em>chair.</em></>}
+                </div>
                 <p className="hub-promote-body">
                   The Clubhouse is better with your league in it — every game you sync joins
                   the census, and your managers start chasing the Hall.
+                  {!user && ' Signing in takes a few seconds; the first league is free.'}
                 </p>
               </div>
               <div className="hub-promote-side">
-                <Link href="/dashboard/new" className="hub-btn">Start your first archive →</Link>
+                {user ? (
+                  <Link href="/dashboard/new" className="hub-btn">Start your first archive →</Link>
+                ) : (
+                  <Link href="/login?mode=signup" className="hub-btn">Join the Chronicle →</Link>
+                )}
                 <Link href="/demo/" target="_blank" rel="noopener" className="hub-btn-ghost">Tour the demo</Link>
               </div>
             </div>

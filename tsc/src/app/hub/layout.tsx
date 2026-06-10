@@ -1,14 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import '@/styles/hub.css'
 import { HubTabs, HubThemeToggle } from './hub-chrome'
 
 export const metadata: Metadata = {
   title: 'The Clubhouse',
-  // Members-only room — keep crawlers out of personalized pages.
-  robots: { index: false, follow: false },
+  description:
+    'The Sunday Chronicle clubhouse — what’s new on the press, the network-wide census, the sitewide Hall of Records, and the Newsstand of public league almanacs.',
 }
 
 // Keep this list fresh-ish: it's the slim marquee every Clubhouse page
@@ -28,10 +27,13 @@ const STRIP_ITEMS = [
 // Nothing theme-related renders here, so client-side navigation can't
 // reset it.
 
+// Browsable signed-out: guests see every wing (the data is published-league
+// or anonymous-aggregate anyway) with a Login button where members get the
+// library shortcut. Per-user touches inside the pages degrade gracefully.
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const signedIn = !!user
 
   return (
     <div className="hub-root">
@@ -54,15 +56,21 @@ export default async function HubLayout({ children }: { children: React.ReactNod
 
       <div className="hub-topbar">
         <header className="hub-masthead">
-          <Link href="/dashboard" className="hub-masthead-back" aria-label="Back to your library" title="Your library">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              {/* bookshelf: two spines + one leaning */}
-              <path d="M4 4.5h3.4v15H4z" />
-              <path d="M8.6 7h3.4v12.5H8.6z" />
-              <path d="M13.7 6.2l3.3-1 4.1 13.9-3.3 1z" />
-              <path d="M3 19.5h18.5" />
-            </svg>
-          </Link>
+          {signedIn ? (
+            <Link href="/dashboard" className="hub-masthead-back" aria-label="Back to your library" title="Your library">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                {/* bookshelf: two spines + one leaning */}
+                <path d="M4 4.5h3.4v15H4z" />
+                <path d="M8.6 7h3.4v12.5H8.6z" />
+                <path d="M13.7 6.2l3.3-1 4.1 13.9-3.3 1z" />
+                <path d="M3 19.5h18.5" />
+              </svg>
+            </Link>
+          ) : (
+            <Link href="/login" className="hub-masthead-login">
+              Login
+            </Link>
+          )}
           <div className="hub-masthead-center">
             <div className="hub-masthead-kicker">Vol. II · Members Only</div>
             <div className="hub-masthead-title">The <em>Clubhouse.</em></div>

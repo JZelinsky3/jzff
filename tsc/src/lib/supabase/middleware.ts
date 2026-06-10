@@ -4,7 +4,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Exact-match public paths (the parent landing/auth pages + standalone
 // public sections). Trailing slashes are stripped by the normalization
 // step below before comparison, so list them without trailing slash.
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/old']
+// /hub (the Clubhouse) is browsable signed-out — guests get a Login button
+// in the masthead and a guest view of each wing; write APIs under /api/hub/
+// (promote) enforce auth in their own handlers.
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/old', '/hub']
 // /api/cron/ is reached by Vercel's cron infra (no Supabase session); the
 // route handler itself enforces auth via the CRON_SECRET bearer header.
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request
@@ -24,7 +27,7 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // trades-theme, trade-desk/settings POST, ...) still enforce owner/editor
 // auth inside their own handlers — bypassing the middleware redirect just
 // keeps an unauthenticated GET from being bounced to /login as HTML.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/']
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/hub/', '/api/hub/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
