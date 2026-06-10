@@ -242,9 +242,40 @@ export default async function DashboardPage({
           <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
             Your <strong style={{ color: 'var(--gold)' }}>earliest league</strong> is a free trial — every page, every paid feature, unlocked as a preview of the paid plans.
           </div>
+          {/* Feature-list explanation is verbose; it's the first thing to hide
+              on phones where vertical real-estate is precious. The email
+              follow-up stays visible at every width. */}
           <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.35rem' }}>
-            Additional leagues use the free UDFA feature set (all-time standings, rivalries, and the manager strip). Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub stay locked on UDFA leagues until you upgrade.{' '}
+            <span className="hide-on-mobile">
+              Additional leagues use the free UDFA feature set (all-time standings, rivalries, and the manager strip). Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub stay locked on UDFA leagues until you upgrade.{' '}
+            </span>
             Email <a href="mailto:jzffgames@gmail.com" style={{ color: 'var(--gold)' }}>jzffgames@gmail.com</a> with bugs or suggestions.
+          </div>
+          {/* Hard date the public preview ends + a quiet upgrade CTA, so the
+              UDFA banner doubles as a launch reminder. Flex row so the date
+              sits left and the link sits right at any width; wraps cleanly
+              when phone width can't hold both on one line. */}
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+            justifyContent: 'space-between', gap: '.75rem',
+            marginTop: '.85rem', paddingTop: '.7rem',
+            borderTop: '1px solid rgba(232,200,137,.18)',
+          }}>
+            <span style={{
+              fontFamily: 'var(--mono)', fontSize: '.62rem',
+              letterSpacing: '.22em', textTransform: 'uppercase',
+              color: 'var(--cream-mute)',
+            }}>
+              ★ Free for everyone until{' '}
+              <strong style={{ color: 'var(--gold)' }}>Jun 22, 2026</strong>
+            </span>
+            <Link
+              href="/pricing"
+              className="dc-btn-ghost"
+              style={{ fontSize: '.65rem', padding: '.4rem .85rem' }}
+            >
+              See plans →
+            </Link>
           </div>
         </div>
       )}

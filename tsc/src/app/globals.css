@@ -8186,5 +8186,15 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
         overflow-wrap: anywhere;
         word-break: normal;
     }
+    /* Generic utility for content that desktop has room for and phones
+       don't. Apply to <span>/<div> wrappers around verbose copy that
+       isn't load-bearing for the page's job. */
+    .hide-on-mobile { display: none !important; }
+    /* Top-of-page banners (UDFA / grace / Yahoo) on /dashboard — tighten
+       their horizontal padding so they stop visually competing with the
+       cards beneath them at narrow widths. */
+    .dc-banner {
+        padding: .85rem 1rem !important;
+    }
 }
 
