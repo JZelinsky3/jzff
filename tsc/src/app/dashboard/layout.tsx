@@ -24,7 +24,7 @@ export default async function DashboardLayout({
     {
       label: 'Account',
       entries: [
-        { type: 'link', href: '/account', label: 'Profile & subscription' },
+        { type: 'link', href: '/account', label: 'Profile' },
       ],
     },
     ...(admin

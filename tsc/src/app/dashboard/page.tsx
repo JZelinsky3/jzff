@@ -114,6 +114,12 @@ export default async function DashboardPage({
     !user?.user_metadata?.has_created_league && (leagues?.length ?? 0) === 0
 
   const hasLeague = (leagues?.length ?? 0) > 0
+  // Most recent sync across the shelf, for the hero chip.
+  const latestSyncedAt = (leagues ?? [])
+    .map((l) => l.last_synced_at)
+    .filter((d): d is string => !!d)
+    .sort()
+    .pop()
   const hasSynced = !!leagues?.some((l) => l.last_synced_at)
   const hasPublished = !!leagues?.some((l) => l.published_at)
   const firstUnsyncedSlug = leagues?.find((l) => !l.last_synced_at)?.slug
@@ -162,6 +168,23 @@ export default async function DashboardPage({
         <p className="hero-sub">
           Every league you keep. Open one, or begin a new chronicle below.
         </p>
+        {(hasLeague || bookmarks.length > 0) && (
+          <div className="dc-chip-row">
+            <span className="dc-chip gold">
+              § {leagues?.length ?? 0} {(leagues?.length ?? 0) === 1 ? 'League' : 'Leagues'} on file
+            </span>
+            {latestSyncedAt && (
+              <span className="dc-chip">
+                Last synced {new Date(latestSyncedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </span>
+            )}
+            {bookmarks.length > 0 && (
+              <span className="dc-chip">
+                ★ {bookmarks.length} Bookmarked
+              </span>
+            )}
+          </div>
+        )}
         <div style={{ marginTop: '1.75rem', display: 'flex', gap: '.8rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/dashboard/new" className="dc-btn">+ New archive →</Link>
           <Link href="/hub" className="dc-btn-ghost">★ The Clubhouse</Link>
@@ -420,7 +443,9 @@ function DemoCard() {
       className="card"
       style={{ borderStyle: 'dashed' }}
     >
-      <div className="card-corner">Tour</div>
+      {/* Same gold corner tag as the landing DemoViewer poster — the
+          demo's visual signature (.dv-poster-card-tag in globals.css). */}
+      <div className="dv-poster-card-tag">▶ Demo</div>
       <div className="card-roman">★</div>
       <div className="card-title">
         Demo <em>almanac.</em>

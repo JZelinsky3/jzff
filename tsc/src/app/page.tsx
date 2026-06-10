@@ -1,5 +1,6 @@
 import type { Viewport } from 'next'
 import Link from 'next/link'
+import { MobileSiteMenu } from '@/components/MobileSiteMenu'
 import { SiteFooter } from '@/components/SiteFooter'
 import { ChroniclePages } from '@/components/landing/ChroniclePages'
 import { DemoViewer } from '@/components/landing/DemoViewer'
@@ -73,6 +74,7 @@ export default async function Home() {
           <div className="nav-title lp-nav-title">The Sunday <em>Chronicle.</em></div>
         </div>
         <LandingNav signedIn={signedIn} admin={admin} />
+        <MobileSiteMenu signedIn={signedIn} email={user?.email ?? null} admin={admin} />
       </nav>
 
       {/* ─── HERO ─────────────────────────────────────────────── */}

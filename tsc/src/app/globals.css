@@ -790,6 +790,28 @@ main {
     color: var(--gold);
 }
 
+/* Dashboard hero chips — the Clubhouse's .hub-chip translated to the
+   library's navy/gold palette. Quick at-a-glance stats under the hero
+   sub (leagues on file, last sync, bookmarks). */
+.dc-chip-row {
+    display: flex; flex-wrap: wrap; gap: .5rem;
+    justify-content: center;
+    margin-top: 1.4rem;
+}
+.dc-chip {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .34rem .7rem; border-radius: 2px;
+    border: 1px solid var(--ink-line);
+    color: var(--cream-soft);
+}
+.dc-chip.gold {
+    border-color: var(--gold-deep);
+    color: var(--gold);
+    background: rgba(232, 200, 137, .06);
+}
+
 /* Dashboard cards adapt to the number of children:
    1 child → full width, 2 → 50/50, 3 → thirds, 4+ → caps at 3 columns and
    wraps to the next row. Collapses to 1 column on mobile. */
@@ -7948,3 +7970,154 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 @media (max-width: 540px) {
     .pricing-free-card { padding: 1.75rem 1.4rem; }
 }
+
+/* ============================================================
+   MOBILE SITE MENU — phones only
+   Replaces every page's bespoke right-side nav cluster on mobile
+   with one uniform avatar-trigger dropdown. Hidden on desktop;
+   the existing desktop clusters (.ln-inline, .pricing-nav-right,
+   .nav-drop, .ln-mobile-wrap) keep their look on wide screens
+   and are themselves hidden on mobile so they don't double up.
+   ============================================================ */
+.msm-root {
+    display: none;
+    /* Anchored absolutely inside the page's <nav> so it doesn't have to
+       fit the nav's grid columns — works whether the nav is the masthead
+       1fr/auto/1fr grid, the pricing flex bar, or anything else. */
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    z-index: 60;
+}
+.msm-trigger {
+    display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px;
+    padding: 0; border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    color: var(--gold);
+    cursor: pointer;
+    transition: border-color .15s, background .15s, transform .15s;
+    -webkit-tap-highlight-color: transparent;
+}
+.msm-trigger:active { transform: scale(.96); }
+.msm-root.is-open .msm-trigger {
+    border-color: var(--gold);
+    background: rgba(232,200,137,.14);
+}
+.msm-trigger-initial {
+    font-family: var(--serif);
+    font-size: 1.05rem; line-height: 1;
+    color: var(--gold);
+    font-style: italic;
+    letter-spacing: -.02em;
+    /* Lift the serif initial visually to optical center inside the circle. */
+    transform: translateY(-1px);
+}
+.msm-trigger-icon { color: var(--gold); }
+
+.msm-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(8,12,18,.55);
+    z-index: 55;
+    animation: msm-fade .18s ease-out;
+}
+@keyframes msm-fade {
+    from { opacity: 0 }
+    to   { opacity: 1 }
+}
+
+.msm-panel {
+    position: absolute;
+    top: calc(100% + .55rem);
+    right: 0;
+    z-index: 60;
+    min-width: 240px;
+    max-width: calc(100vw - 1.5rem);
+    background: linear-gradient(180deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--gold-deep);
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 0 24px rgba(232,200,137,.08);
+    overflow: hidden;
+    animation: msm-slide .2s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes msm-slide {
+    from { opacity: 0; transform: translateY(-6px) }
+    to   { opacity: 1; transform: translateY(0)    }
+}
+
+.msm-header {
+    display: flex; align-items: center; gap: .65rem;
+    padding: .85rem 1rem;
+    border-bottom: 1px solid var(--ink-line);
+}
+.msm-header-avatar {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 999px;
+    border: 1px solid var(--gold-deep);
+    background: rgba(232,200,137,.08);
+    color: var(--gold);
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; line-height: 1;
+    flex-shrink: 0;
+    transform: translateY(-1px);
+}
+.msm-header-email {
+    font-family: var(--sans);
+    font-size: .82rem;
+    color: var(--cream);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+}
+
+/* Row form wrapper — needs to lay flat so the Sign-out button
+   still gets the full-width row treatment. */
+.msm-row-form { display: block; }
+.msm-row-form > .msm-row { width: 100%; }
+
+.msm-row {
+    display: block;
+    padding: .95rem 1rem;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--ink-line);
+    color: var(--cream);
+    font-family: var(--sans);
+    font-size: 1rem;
+    line-height: 1.2;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .12s, color .12s;
+    -webkit-tap-highlight-color: transparent;
+}
+.msm-row:last-child { border-bottom: none; }
+.msm-row:active { background: rgba(232,200,137,.10); }
+@media (hover: hover) and (pointer: fine) {
+    .msm-row:hover { background: rgba(232,200,137,.07); color: var(--gold); }
+}
+.msm-row-signout { color: var(--rust); }
+.msm-row-signin  { color: var(--gold); font-weight: 600; }
+
+/* ─── Show only on phones, hide existing desktop clusters ─── */
+@media (max-width: 720px) {
+    .msm-root { display: block; }
+
+    /* Landing's mega-menu inline triggers + its own mobile wrap collapse.
+       The new MobileSiteMenu owns the mobile experience. */
+    .ln-inline { display: none !important; }
+    .ln-mobile-wrap { display: none !important; }
+
+    /* Pricing / Plans / Guides right-side cluster. */
+    .pricing-nav-right { display: none !important; }
+
+    /* Account page's standalone NavDropdown trigger. */
+    nav.nav .nav-drop { display: none !important; }
+}
+
