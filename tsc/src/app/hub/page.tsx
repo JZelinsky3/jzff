@@ -130,9 +130,9 @@ export default async function HubFrontDesk() {
         <div className="hub-section-header">
           <span className="hub-section-num">§ 02 · The rooms</span>
           <span className="hub-section-title">Pick a door —</span>
-          <span className="hub-section-meta">Four wings, one clubhouse</span>
+          <span className="hub-section-meta">Five wings, one clubhouse</span>
         </div>
-        <div className="hub-card-grid">
+        <div className="hub-card-grid hub-doors">
           <Reveal delay={0}>
             <Link href="/hub/whats-new" className="hub-card" style={{ height: '100%' }}>
               <div className="hub-card-corner">Wing II</div>
@@ -170,9 +170,21 @@ export default async function HubFrontDesk() {
             </Link>
           </Reveal>
           <Reveal delay={270}>
-            <Link href="/hub/explore" className="hub-card" style={{ height: '100%' }}>
+            <Link href="/hub/analyzer" className="hub-card" style={{ height: '100%' }}>
               <div className="hub-card-corner">Wing V</div>
               <div className="hub-card-roman">V</div>
+              <div className="hub-card-title">The Trade <em>Room.</em></div>
+              <div className="hub-card-desc">
+                The Trade Analyzer with no league required — name the players, pick the
+                format, get a verdict. Post deals to the board and let the room vote.
+              </div>
+              <div className="hub-card-cta">Take a seat <span className="hub-card-arrow">→</span></div>
+            </Link>
+          </Reveal>
+          <Reveal delay={360}>
+            <Link href="/hub/explore" className="hub-card" style={{ height: '100%' }}>
+              <div className="hub-card-corner">Wing VI</div>
+              <div className="hub-card-roman">VI</div>
               <div className="hub-card-title">The <em>Newsstand.</em></div>
               <div className="hub-card-desc">
                 Browse the public almanacs. Search any league, see what&apos;s most bookmarked,

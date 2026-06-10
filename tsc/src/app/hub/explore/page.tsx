@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getHubShelves, type HubShelfLeague } from '@/lib/hub/data'
 import { Reveal } from '../bits'
-import { BookmarkStar, DemoShelfCard, EmptyShelfHint, LeagueSearch, PromoteForm } from './newsstand-client'
+import { AdEditor, BookmarkStar, DemoShelfCard, EmptyShelfHint, LeagueSearch } from './newsstand-client'
 
 export const metadata = { title: 'The Clubhouse · The Newsstand' }
 
@@ -277,18 +277,17 @@ export default async function NewsstandPage() {
                   promoting a different league replaces your current ad.
                 </p>
               </div>
-              <div className="hub-promo-editors">
-                {ownPublished.slice(0, 4).map((l) => (
-                  <PromoteForm
-                    key={l.id}
-                    leagueId={l.id}
-                    leagueName={l.name}
-                    slug={l.slug}
-                    promoted={!!l.promoted_at}
-                    initialText={l.promo_text ?? ''}
-                    initialLink={l.promo_link ?? ''}
-                  />
-                ))}
+              <div style={{ maxWidth: '560px', marginTop: '1.4rem' }}>
+                <AdEditor
+                  leagues={ownPublished.map((l) => ({
+                    id: l.id as string,
+                    name: l.name as string,
+                    slug: l.slug as string,
+                    promoted: !!l.promoted_at,
+                    text: (l.promo_text as string | null) ?? '',
+                    link: (l.promo_link as string | null) ?? '',
+                  }))}
+                />
               </div>
             </div>
           ) : (

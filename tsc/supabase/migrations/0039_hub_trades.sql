@@ -11,6 +11,10 @@
 --                     board can label "Dynasty · SF · 12-team".
 --   hub_trade_votes — one vote per (trade, user): 'a' | 'fair' | 'b'.
 --
+-- NOTE: applied as-is on 2026-06-10, then superseded the same day —
+-- 0040_hub_trades_ballot.sql swaps the vote scheme to sign/shred and adds
+-- roster_a/roster_b. This file stays frozen to match what ran.
+--
 -- RLS: board is public-readable (the Clubhouse is browsable signed-out);
 -- inserts/votes are own-scoped. The publish API re-runs the analysis
 -- server-side so posted numbers can't be spoofed.

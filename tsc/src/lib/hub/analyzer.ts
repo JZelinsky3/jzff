@@ -15,6 +15,7 @@
 
 import { z } from 'zod'
 import { valuateLeague, type LeagueMode, type PlayerValue } from '@/lib/values'
+import { getPlayersMap } from '@/lib/sleeperPlayers'
 
 // Request schema shared by the analyze + publish routes (route files can
 // only export handlers, so the schema lives here).
@@ -100,6 +101,10 @@ export type HubAnalysis = {
   valuationLabel: string
   sideA: HubSideResult
   sideB: HubSideResult
+  /** Roster mode only — the full hand-entered rosters, resolved, so the
+      docket can show team trades with their context. */
+  rosterAssetsA: HubAsset[] | null
+  rosterAssetsB: HubAsset[] | null
 }
 
 // Raw value rubric (quick mode) — same scale the league analyze-trade
@@ -193,19 +198,26 @@ export async function analyzeHubTrade(args: {
   slots?: HubLineupSlots | null
 }): Promise<HubAnalysis> {
   const { settings } = args
-  const result = await valuateLeague({
-    mode: settings.mode,
-    qbStarters: settings.qbStarters,
-    teamCount: settings.teamCount,
-  })
+  const [result, players] = await Promise.all([
+    valuateLeague({
+      mode: settings.mode,
+      qbStarters: settings.qbStarters,
+      teamCount: settings.teamCount,
+    }),
+    // Identity fallback: the value engine only carries players a provider
+    // has priced — deep-bench guys (the search still offers them) resolve
+    // their name/position from the lean dictionary and trade at 0.
+    getPlayersMap(),
+  ])
 
   const toAsset = (id: string): HubAsset => {
     const v = result.values.get(id)
+    const p = players[id]
     return {
       id,
-      name: v?.name ?? 'Unknown player',
-      position: v?.position ?? '—',
-      team: v?.team ?? null,
+      name: v?.name ?? p?.name ?? 'Unknown player',
+      position: v?.position ?? p?.position ?? '—',
+      team: v?.team ?? p?.team ?? null,
       value: Math.round(v?.value ?? 0),
     }
   }
@@ -261,6 +273,8 @@ export async function analyzeHubTrade(args: {
         verdict: verdictLine(pctB, true),
         starterBefore: starterB.before, starterAfter: starterB.after,
       },
+      rosterAssetsA: rosterA.map(toAsset),
+      rosterAssetsB: rosterB.map(toAsset),
     }
   }
 
@@ -287,5 +301,7 @@ export async function analyzeHubTrade(args: {
       verdict: verdictLine(-deltaPct, false),
       starterBefore: null, starterAfter: null,
     },
+    rosterAssetsA: null,
+    rosterAssetsB: null,
   }
 }

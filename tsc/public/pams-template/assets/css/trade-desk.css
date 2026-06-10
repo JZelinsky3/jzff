@@ -182,9 +182,10 @@
 }
 
 /* ── Inputs ──────────────────────────────────────────────────
-   Native select + number-input with the theme baked in. Avoid
-   appearance reset on selects so the OS dropdown still works on
-   mobile. */
+   Native select + number-input with the theme baked in. Selects get
+   appearance:none — without it Safari paints its own gradient pill and
+   ignores the theme entirely. The OS picker still opens on tap; we
+   redraw the chevron so the control still reads as a dropdown. */
 .td-input, .td-select {
     width: 100%;
     padding: .55rem .7rem;
@@ -195,6 +196,15 @@
     font-family: inherit;
     font-size: .88rem;
     transition: border-color .12s ease;
+}
+select.td-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23a08a64' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right .7rem center;
+    padding-right: 2rem;
+    cursor: pointer;
 }
 .td-input:focus, .td-select:focus {
     outline: none;

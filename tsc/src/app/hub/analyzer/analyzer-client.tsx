@@ -32,6 +32,34 @@ type Analysis = {
 type Slots = { QB: number; RB: number; WR: number; TE: number; FLEX: number; SF: number }
 const DEFAULT_SLOTS: Slots = { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, SF: 0 }
 
+// Position-ordered display: QBs first, then RB/WR/TE — applied to roster
+// and side chip lists as soon as players are added.
+const POS_ORDER: Record<string, number> = { QB: 0, RB: 1, WR: 2, TE: 3 }
+function sortByPosition<T extends { position: string; name: string }>(list: T[]): T[] {
+  return [...list].sort(
+    (a, b) => (POS_ORDER[a.position] ?? 9) - (POS_ORDER[b.position] ?? 9) || a.name.localeCompare(b.name)
+  )
+}
+
+// Sleeper CDN headshot — same source the league Analyzer/Finder use.
+// Hides itself if the CDN has no photo (picks, obscure ids).
+export function Headshot({ id, size = 26 }: { id: string; size?: number }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      className="hub-tr-mug"
+      src={`https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(id)}.jpg`}
+      alt=""
+      width={size}
+      height={size}
+      loading="lazy"
+      onError={(e) => {
+        ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+      }}
+    />
+  )
+}
+
 // ── Player search (debounced, dropdown) ──────────────────────────────────
 function PlayerSearch({
   placeholder,
@@ -117,6 +145,7 @@ function PlayerSearch({
                   setResults([])
                 }}
               >
+                <Headshot id={r.id} size={24} />
                 <span className="hub-tr-pos">{r.position}</span>
                 {r.name}
                 <span className="hub-tr-team">{r.team ?? ''}</span>
@@ -149,6 +178,7 @@ function Chip({
       onClick={onToggle}
       title={onToggle ? (sending ? 'Click to keep (not send)' : 'Click to send in the trade') : undefined}
     >
+      <Headshot id={p.id} size={22} />
       <span className="hub-tr-pos">{p.position}</span>
       {p.name}
       {sending && <span className="hub-tr-chip-flag">sends</span>}
@@ -367,7 +397,7 @@ export function AnalyzerStudio() {
                     }}
                   />
                   <div className="hub-tr-chips">
-                    {roster.map((p) => (
+                    {sortByPosition(roster).map((p) => (
                       <Chip
                         key={p.id}
                         p={p}
@@ -397,7 +427,7 @@ export function AnalyzerStudio() {
                     }}
                   />
                   <div className="hub-tr-chips">
-                    {sidePlayers.map((p) => (
+                    {sortByPosition(sidePlayers).map((p) => (
                       <Chip
                         key={p.id}
                         p={p}
@@ -437,7 +467,12 @@ export function AnalyzerStudio() {
             <div className="hub-tr-callout-line">
               {Math.abs(analysis.deltaPct) < 0.03
                 ? 'Dead even. Shake hands.'
-                : `${analysis.deltaPct > 0 ? 'Side A' : 'Side B'} wins this swap${Math.abs(analysis.deltaPct) >= 0.15 ? ' — comfortably' : ''}.`}
+                : `${analysis.deltaPct > 0 ? 'Side A' : 'Side B'} wins this swap by ${(Math.abs(analysis.deltaPct) * 100).toFixed(1)}%${Math.abs(analysis.deltaPct) >= 0.15 ? ' — comfortably' : ''}.`}
+            </div>
+            <div className="hub-tr-scale">
+              {analysis.usesRosters
+                ? 'Grades = change in your optimal starting lineup · B ±3% · B+ +3% · A− +8% · A +15% · A+ +25%'
+                : 'Grades = raw value received vs sent · B ±2% · B+ +2% · A− +5% · A +12% · A+ +18%'}
             </div>
           </div>
           <div className="hub-tr-result-grid">
@@ -459,6 +494,7 @@ export function AnalyzerStudio() {
                       <span className="hub-tr-flow-lbl">Sends · {mine.total.toLocaleString()}</span>
                       {mine.assets.map((a) => (
                         <div key={a.id} className="hub-tr-row">
+                          <Headshot id={a.id} size={22} />
                           <span className="hub-tr-pos">{a.position}</span>
                           <span className="hub-tr-row-name">{a.name}</span>
                           <span className="hub-tr-row-val">{a.value.toLocaleString()}</span>
@@ -469,6 +505,7 @@ export function AnalyzerStudio() {
                       <span className="hub-tr-flow-lbl">Gets · {theirs.total.toLocaleString()}</span>
                       {theirs.assets.map((a) => (
                         <div key={a.id} className="hub-tr-row">
+                          <Headshot id={a.id} size={22} />
                           <span className="hub-tr-pos">{a.position}</span>
                           <span className="hub-tr-row-name">{a.name}</span>
                           <span className="hub-tr-row-val">{a.value.toLocaleString()}</span>
@@ -486,23 +523,42 @@ export function AnalyzerStudio() {
   )
 }
 
-// ── Board vote bar ────────────────────────────────────────────────────────
-export function VoteBar({
+// ── Board ballot — the Rumor Mill's signature pill switch ────────────────
+// Left end signs the deal (signature, green), right end shreds it
+// (scissors, red). Click an end to vote, click again to retract.
+
+const SIGN_ICON = (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284" />
+    <path d="M3 21h18" />
+  </svg>
+)
+const SHRED_ICON = (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <circle cx="6" cy="6" r="3" />
+    <circle cx="6" cy="18" r="3" />
+    <line x1="20" y1="4" x2="8.12" y2="15.88" />
+    <line x1="14.47" y1="14.48" x2="20" y2="20" />
+    <line x1="8.12" y1="8.12" x2="12" y2="12" />
+  </svg>
+)
+
+export function Ballot({
   tradeId,
   initialCounts,
   initialMine,
   signedIn,
 }: {
   tradeId: string
-  initialCounts: { a: number; fair: number; b: number }
-  initialMine: 'a' | 'fair' | 'b' | null
+  initialCounts: { sign: number; shred: number }
+  initialMine: 'sign' | 'shred' | null
   signedIn: boolean
 }) {
   const [counts, setCounts] = useState(initialCounts)
   const [mine, setMine] = useState(initialMine)
   const [busy, setBusy] = useState(false)
 
-  async function cast(vote: 'a' | 'fair' | 'b') {
+  async function cast(vote: 'sign' | 'shred') {
     if (!signedIn || busy) return
     const next = mine === vote ? null : vote
     const prevMine = mine
@@ -531,31 +587,35 @@ export function VoteBar({
     }
   }
 
-  const total = counts.a + counts.fair + counts.b
-  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0)
-
   return (
-    <div className="hub-tr-votes" title={signedIn ? undefined : 'Sign in to vote'}>
-      {(
-        [
-          ['a', 'Side A'],
-          ['fair', 'Fair'],
-          ['b', 'Side B'],
-        ] as const
-      ).map(([key, label]) => (
+    <div className="hub-ballot-row">
+      <div className="hub-ballot" title={signedIn ? undefined : 'Sign in to vote'}>
         <button
-          key={key}
           type="button"
-          className={`hub-tr-vote${mine === key ? ' on' : ''}`}
-          onClick={() => cast(key)}
+          className="hub-ballot-side sign"
+          aria-pressed={mine === 'sign'}
+          aria-label="Sign it — you'd do this deal"
+          title="Sign it — you'd do this deal"
+          onClick={() => cast('sign')}
           disabled={!signedIn}
-          aria-pressed={mine === key}
         >
-          <span className="hub-tr-vote-lbl">{label}</span>
-          <span className="hub-tr-vote-n">{total > 0 ? `${pct(counts[key])}%` : '—'}</span>
+          {SIGN_ICON}
+          <span className="hub-ballot-n">{counts.sign}</span>
         </button>
-      ))}
-      <span className="hub-tr-vote-total">{total} {total === 1 ? 'vote' : 'votes'}</span>
+        <span className="hub-ballot-divider" aria-hidden />
+        <button
+          type="button"
+          className="hub-ballot-side shred"
+          aria-pressed={mine === 'shred'}
+          aria-label="Shred it — into the bin"
+          title="Shred it — into the bin"
+          onClick={() => cast('shred')}
+          disabled={!signedIn}
+        >
+          {SHRED_ICON}
+          <span className="hub-ballot-n">{counts.shred}</span>
+        </button>
+      </div>
     </div>
   )
 }

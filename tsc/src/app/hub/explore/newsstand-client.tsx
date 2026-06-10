@@ -269,32 +269,45 @@ export function LeagueSearch({ signedIn = true }: { signedIn?: boolean }) {
   )
 }
 
-// Per-league promotion editor for the "Put yours on the rack" panel.
-// Pitch + optional recruiting link → POST /api/hub/promote, then refresh
-// the server-rendered board so the new listing shows immediately.
-export function PromoteForm({
-  leagueId,
-  leagueName,
-  slug,
-  promoted,
-  initialText,
-  initialLink,
-}: {
-  leagueId: string
-  leagueName: string
+// The ad editor for "Put yours on the rack" — ONE form. With multiple
+// published leagues a select menu picks which one the ad is for (the
+// account gets one listing); with a single league the menu collapses to
+// the plain URL row. Pitch + optional recruiting link → POST
+// /api/hub/promote, then refresh the server-rendered board.
+export type AdLeague = {
+  id: string
+  name: string
   slug: string
   promoted: boolean
-  initialText: string
-  initialLink: string
-}) {
+  text: string
+  link: string
+}
+
+export function AdEditor({ leagues }: { leagues: AdLeague[] }) {
   const router = useRouter()
-  const [text, setText] = useState(initialText)
-  const [link, setLink] = useState(initialLink)
+  // Default to the league currently on the board, else the first.
+  const [selectedId, setSelectedId] = useState(
+    () => (leagues.find((l) => l.promoted) ?? leagues[0])?.id ?? ''
+  )
+  const sel = leagues.find((l) => l.id === selectedId) ?? leagues[0]
+  const [text, setText] = useState(sel?.text ?? '')
+  const [link, setLink] = useState(sel?.link ?? '')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
+  if (!sel) return null
+
+  function pick(id: string) {
+    const next = leagues.find((l) => l.id === id)
+    if (!next) return
+    setSelectedId(id)
+    setText(next.text)
+    setLink(next.link)
+    setMsg(null)
+  }
+
   async function submit(action: 'set' | 'clear') {
-    if (busy) return
+    if (busy || !sel) return
     setBusy(true)
     setMsg(null)
     try {
@@ -303,8 +316,8 @@ export function PromoteForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
           action === 'set'
-            ? { leagueId, action, text, link: link.trim() || undefined }
-            : { leagueId, action }
+            ? { leagueId: sel.id, action, text, link: link.trim() || undefined }
+            : { leagueId: sel.id, action }
         ),
       })
       const json = await res.json().catch(() => ({}))
@@ -328,12 +341,28 @@ export function PromoteForm({
   return (
     <div className="hub-promo-card">
       <div className="hub-promo-card-head">
-        <span className="hub-promo-card-name">{leagueName}</span>
-        {promoted && <span className="hub-promo-live">● On the board</span>}
+        {leagues.length > 1 ? (
+          <select
+            className="hub-input"
+            value={selectedId}
+            onChange={(e) => pick(e.target.value)}
+            aria-label="Which league is the ad for?"
+            style={{ maxWidth: '16rem' }}
+          >
+            {leagues.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}{l.promoted ? ' · on the board' : ''}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="hub-promo-card-name">{sel.name}</span>
+        )}
+        {sel.promoted && <span className="hub-promo-live">● On the board</span>}
       </div>
       <div className="hub-copy-row">
-        <span className="hub-copy-url">jzff.online/leagues/{slug}/</span>
-        <CopyLinkButton url={`https://jzff.online/leagues/${slug}/`} />
+        <span className="hub-copy-url">jzff.online/leagues/{sel.slug}/</span>
+        <CopyLinkButton url={`https://jzff.online/leagues/${sel.slug}/`} />
       </div>
       <textarea
         className="hub-textarea"
@@ -353,9 +382,9 @@ export function PromoteForm({
       />
       <div className="hub-promo-card-actions">
         <button className="hub-btn" onClick={() => submit('set')} disabled={busy} style={{ padding: '.6rem 1.1rem' }}>
-          {busy ? 'Working…' : promoted ? 'Update listing' : 'Promote it →'}
+          {busy ? 'Working…' : sel.promoted ? 'Update listing' : 'Promote it →'}
         </button>
-        {promoted && (
+        {sel.promoted && (
           <button className="hub-btn-ghost" onClick={() => submit('clear')} disabled={busy} style={{ padding: '.6rem 1.1rem' }}>
             Take down
           </button>

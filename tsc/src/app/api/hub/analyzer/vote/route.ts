@@ -1,8 +1,9 @@
 // POST /api/hub/analyzer/vote — vote on a posted Trade Room trade.
-//   { tradeId, vote: 'a' | 'fair' | 'b' }  — cast / change a vote
-//   { tradeId, vote: null }                — retract
-// Signed-in only; one vote per (trade, member), enforced by the PK +
-// own-scoped RLS on hub_trade_votes.
+//   { tradeId, vote: 'sign' | 'shred' }  — cast / change a vote
+//   { tradeId, vote: null }              — retract
+// Same ballot semantics as the Rumor Mill: sign = you'd do the deal,
+// shred = into the bin. Signed-in only; one vote per (trade, member),
+// enforced by the PK + own-scoped RLS on hub_trade_votes.
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -10,7 +11,7 @@ import { createClient } from '@/lib/supabase/server'
 
 const Body = z.object({
   tradeId: z.string().uuid(),
-  vote: z.enum(['a', 'fair', 'b']).nullable(),
+  vote: z.enum(['sign', 'shred']).nullable(),
 })
 
 export async function POST(req: Request) {

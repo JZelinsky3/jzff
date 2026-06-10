@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 // Keep this list fresh-ish: it's the slim marquee every Clubhouse page
 // carries. New = shipped; Soon = on the bench warming up.
 const STRIP_ITEMS = [
+  'New · The Trade Room — analyze + post trades, no league required',
   'New · Trade Desk — four rooms: Grader, Analyzer, Finder, Rumor Mill',
   'New · Sunday Live — five-page game-day companion',
   'New · Manager DNA — tendencies + tells, per manager',

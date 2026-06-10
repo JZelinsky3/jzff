@@ -57,6 +57,14 @@ export async function POST(req: Request) {
       uses_rosters: analysis.usesRosters,
       side_a: { assets: analysis.sideA.assets, total: analysis.sideA.total },
       side_b: { assets: analysis.sideB.assets, total: analysis.sideB.total },
+      // Roster context (name/position only — values would go stale) so the
+      // docket can render team trades with the rosters the poster entered.
+      roster_a: analysis.rosterAssetsA
+        ? { players: analysis.rosterAssetsA.map((a) => ({ name: a.name, position: a.position })) }
+        : null,
+      roster_b: analysis.rosterAssetsB
+        ? { players: analysis.rosterAssetsB.map((a) => ({ name: a.name, position: a.position })) }
+        : null,
       delta_pct: Math.round(analysis.deltaPct * 10000) / 10000,
       grade_a: analysis.sideA.grade,
       grade_b: analysis.sideB.grade,

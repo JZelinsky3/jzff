@@ -111,13 +111,20 @@ html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); 
     text-transform: uppercase; color: var(--td-mute);
 }
 .an-picker-select {
-    padding: .65rem .8rem;
+    padding: .65rem 2rem .65rem .8rem;
     background: var(--td-input-bg, #1f160d);
     border: 1px solid var(--td-line);
     border-radius: 3px;
     color: var(--td-text);
     font-family: inherit; font-size: .95rem;
-    appearance: auto;
+    /* appearance:none keeps Safari from drawing its native gradient pill;
+       the chevron is redrawn so the control still reads as a select. */
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23a08a64' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right .7rem center;
+    cursor: pointer;
 }
 .an-picker-select:focus { outline: none; border-color: var(--td-live); }
 .an-pickers-vs {

@@ -9,10 +9,14 @@
 
 .hub-root {
     /* ── Day · "Reading Room" ── */
-    /* Ticker: black band, cream text, gold stars (inverts at night) */
-    --hb-strip-bg:    #11100c;
-    --hb-strip-text:  #f4ebd8;
-    --hb-strip-star:  #e8c889;
+    /* Ticker: gold band in BOTH themes (matches the league almanacs and
+       never blends into the browser chrome) — dark ink text, rust stars. */
+    --hb-strip-bg:    #e8c889;
+    --hb-strip-text:  #14120d;
+    --hb-strip-star:  #a04830;
+    /* Day only: a 1px cream-gold hairline under the ticker's gap, so the
+       band settles into the page instead of floating on bare cream. */
+    --hb-strip-edge:  color-mix(in srgb, #e8c889 75%, #14120d);
 
     --hb-bg:          #f3ead6;
     --hb-bg-soft:     #ece1c6;
@@ -28,6 +32,8 @@
     --hb-gold-wash:   rgba(138, 106, 36, .08);
     --hb-rust:        #a04830;
     --hb-steel:       #44617d;
+    --hb-sign:        #5d7c43;   /* ballot green — signature end */
+    --hb-shred:       #a8503c;   /* ballot red — scissors end */
     --hb-shadow:      rgba(60, 48, 24, .14);
     --hb-plaque:      linear-gradient(165deg, #faf4e6, #efe4c8);
     --hb-glow-a:      rgba(138, 106, 36, .07);
@@ -47,10 +53,9 @@
    flipped by the toggle) so it survives client-side navigation. */
 html[data-hub-theme="night"] .hub-root {
     /* ── Night · draft-history black ── */
-    --hb-strip-bg:    #f4ebd8;
-    --hb-strip-text:  #11100c;
-    --hb-strip-star:  #a04830;
-
+    /* Ticker stays gold (see day tokens) — only the page below flips.
+       No hairline at night; the black gap is separation enough. */
+    --hb-strip-edge:  transparent;
     --hb-bg:          #0d0d0d;
     --hb-bg-soft:     #131313;
     --hb-card:        #1a1a1a;
@@ -65,6 +70,8 @@ html[data-hub-theme="night"] .hub-root {
     --hb-gold-wash:   rgba(232, 200, 137, .08);
     --hb-rust:        #c96a4e;
     --hb-steel:       #6b8aa8;
+    --hb-sign:        #9ec488;
+    --hb-shred:       #cf7a64;
     --hb-shadow:      rgba(0, 0, 0, .55);
     --hb-plaque:      linear-gradient(165deg, #1d1d1d, #141414);
     --hb-glow-a:      rgba(232, 200, 137, .05);
@@ -210,7 +217,16 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     display: flex; align-items: center; overflow: hidden;
     height: 38px;
     background: var(--hb-strip-bg);
-    transition: background .45s ease;
+    /* Leagues-ticker trick: the bottom border is the PAGE bg color, so it
+       reads as a hairline gap rather than a heavy rule. Below it, a 1px
+       cream-gold hairline (day only — transparent at night) settles the
+       band into the page. Box-shadow, not border, so it scrolls away with
+       the ticker instead of sticking to the topbar. */
+    border-bottom: 0px solid var(--hb-bg);
+    box-shadow: 0 1px 0 0 var(--hb-strip-edge);
+    /* Above the sticky topbar (z-index 40), which otherwise paints its
+       background right over the 1px shadow. */
+    position: relative; z-index: 41;
 }
 .hub-strip-track {
     display: flex; gap: 3rem; white-space: nowrap; padding-left: 3rem;
@@ -385,6 +401,21 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
     gap: 1.2rem;
+}
+/* Front-desk doors: five cards as 3 + 2, the second row centered.
+   Six tracks; every card spans two; cards 4 & 5 are pinned off-center. */
+.hub-doors { grid-template-columns: repeat(6, 1fr); }
+.hub-doors > * { grid-column: span 2; }
+.hub-doors > *:nth-child(4) { grid-column: 2 / span 2; }
+.hub-doors > *:nth-child(5) { grid-column: 4 / span 2; }
+@media (max-width: 980px) {
+    .hub-doors { grid-template-columns: 1fr 1fr; }
+    .hub-doors > *, .hub-doors > *:nth-child(4), .hub-doors > *:nth-child(5) { grid-column: auto; }
+    .hub-doors > *:nth-child(5) { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+    .hub-doors { grid-template-columns: 1fr; }
+    .hub-doors > *:nth-child(5) { grid-column: auto; }
 }
 .hub-card {
     position: relative; overflow: hidden;
@@ -967,6 +998,17 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     border-color: var(--hb-gold);
     box-shadow: 0 0 0 3px var(--hb-gold-wash);
 }
+/* Selects: kill the native chrome (Safari renders its own gradient pill
+   otherwise) and draw a consistent chevron. The OS picker still opens. */
+select.hub-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%238a8068' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right .7rem center;
+    padding-right: 2rem;
+    cursor: pointer;
+}
 .hub-promo-card-actions {
     display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
 }
@@ -1026,7 +1068,10 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     font-family: var(--mono); font-size: .52rem; letter-spacing: .16em;
     color: var(--hb-mute); text-transform: uppercase;
 }
-.hub-tr-slot .hub-input { width: 3.6rem; padding: .4rem .5rem; cursor: pointer; }
+.hub-tr-slot .hub-input {
+    width: 4.2rem; padding: .4rem 1.5rem .4rem .55rem; cursor: pointer;
+    background-position: right .45rem center;
+}
 
 .hub-tr-sides {
     display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;
@@ -1124,6 +1169,12 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     font-family: var(--serif); font-style: italic;
     font-size: clamp(1.2rem, 2.4vw, 1.6rem); color: var(--hb-ink);
 }
+.hub-tr-scale {
+    margin-top: .45rem;
+    font-family: var(--mono); font-size: .54rem;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--hb-mute);
+}
 .hub-tr-result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
 .hub-tr-report {
     border: 1px solid var(--hb-line); border-radius: 3px;
@@ -1171,8 +1222,9 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     font-variant-numeric: tabular-nums;
 }
 
-/* ── The docket ── */
-.hub-tr-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 1.2rem; }
+/* ── The docket — capped at 2 columns; cases need the width ── */
+.hub-tr-board { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; }
+@media (max-width: 760px) { .hub-tr-board { grid-template-columns: 1fr; } }
 .hub-tr-case {
     background: var(--hb-card);
     border: 1px solid var(--hb-line);
@@ -1202,38 +1254,79 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
 }
 .hub-tr-case .hub-tr-verdict { font-size: .82rem; }
 
-.hub-tr-votes {
-    display: flex; align-items: center; gap: .5rem;
+/* ── Sign/Shred ballot — the Rumor Mill's pill switch, hub-toned ── */
+.hub-ballot-row {
+    display: flex; justify-content: flex-end;
     padding-top: .8rem;
     border-top: 1px solid var(--hb-line-soft);
 }
-.hub-tr-vote {
-    flex: 1;
-    display: flex; flex-direction: column; align-items: center; gap: .15rem;
-    background: none; cursor: pointer;
-    border: 1px solid var(--hb-line); border-radius: 2px;
-    padding: .45rem .4rem;
-    transition: border-color .2s, background .2s, transform .15s;
+.hub-ballot {
+    display: inline-flex; align-items: stretch;
+    border: 1px solid var(--hb-line);
+    border-radius: 999px;
+    background: var(--hb-bg-soft);
+    overflow: hidden;
 }
-.hub-tr-vote:hover:not(:disabled) { border-color: var(--hb-gold); background: var(--hb-gold-wash); }
-.hub-tr-vote:active:not(:disabled) { transform: scale(.96); }
-.hub-tr-vote:disabled { cursor: default; opacity: .55; }
-.hub-tr-vote.on { border-color: var(--hb-gold); background: var(--hb-gold-wash); }
-.hub-tr-vote-lbl {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .54rem; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--hb-ink-soft);
+.hub-ballot-side {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .42rem .85rem;
+    background: none; border: none; cursor: pointer;
+    font-family: var(--mono);
+    transition: color .15s ease, background .15s ease;
 }
-.hub-tr-vote.on .hub-tr-vote-lbl { color: var(--hb-gold); }
-.hub-tr-vote-n {
-    font-family: var(--serif); font-size: .95rem; color: var(--hb-ink);
+.hub-ballot-side:disabled { cursor: default; opacity: .55; }
+.hub-ballot-side svg { flex-shrink: 0; }
+.hub-ballot-side.sign  { color: var(--hb-sign);  padding-left: 1rem; }
+.hub-ballot-side.shred { color: var(--hb-shred); padding-right: 1rem; }
+.hub-ballot-divider { width: 1px; background: var(--hb-line); }
+.hub-ballot-n {
+    min-width: 1.2em; text-align: center;
+    font-size: .68rem; color: var(--hb-mute);
     font-variant-numeric: tabular-nums;
 }
-.hub-tr-vote-total {
-    font-family: var(--mono); font-size: .54rem; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--hb-mute);
-    margin-left: .3rem; white-space: nowrap;
+.hub-ballot-side:hover:not(:disabled) { background: var(--hb-gold-wash); }
+.hub-ballot-side.sign[aria-pressed="true"]  { background: rgba(120, 160, 90, .16); }
+.hub-ballot-side.shred[aria-pressed="true"] { background: rgba(180, 76, 60, .14); }
+.hub-ballot-side[aria-pressed="true"] .hub-ballot-n { color: inherit; font-weight: 700; }
+
+/* Player mugshots (Sleeper CDN) */
+.hub-tr-mug {
+    flex: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--hb-bg-soft);
+    border: 1px solid var(--hb-line-soft);
 }
+.hub-tr-search-drop .hub-tr-mug { width: 24px; height: 24px; }
+
+/* Roster context on team-trade cards — text only, deliberately quiet */
+.hub-tr-roster-note {
+    margin-top: .45rem; padding-top: .45rem;
+    border-top: 1px dotted var(--hb-line-soft);
+    font-size: .68rem; line-height: 1.7; color: var(--hb-mute);
+}
+.hub-tr-roster-note-lbl {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--hb-gold); margin-bottom: .15rem;
+}
+.hub-tr-roster-note-item { white-space: nowrap; }
+.hub-tr-roster-note-item + .hub-tr-roster-note-item::before { content: ' · '; color: var(--hb-line); }
+.hub-tr-roster-note-item em {
+    font-style: normal; font-family: var(--mono); font-size: .56rem;
+    color: var(--hb-mute);
+}
+
+/* "Personalized grading lives in your league" nudge */
+.hub-tr-upsell {
+    max-width: 640px; margin: 1.3rem auto 0; text-align: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: .92rem; line-height: 1.6; color: var(--hb-mute);
+}
+.hub-tr-upsell a { color: var(--hb-gold); text-decoration: none; }
+.hub-tr-upsell a:hover { text-decoration: underline; }
 
 @media (max-width: 760px) {
     .hub-tr-sides, .hub-tr-result-grid { grid-template-columns: 1fr; }
@@ -1342,7 +1435,10 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     .hub-dna-row-detail { grid-column: 1; margin-top: 0; }
 }
 @media (max-width: 768px) {
-    .hub-masthead { padding: .9rem 1.1rem .75rem; }
+    .hub-masthead { padding: .9rem 1.1rem .55rem; }
+    .hub-tab { padding: .7rem .8rem .65rem; font-size: .56rem; letter-spacing: .14em; gap: .35rem; }
+    .hub-tab::after { left: .8rem; right: .8rem; height: 2px; }
+    .hub-tab-num { font-size: .5rem; }
     .hub-section { padding: 0 1.1rem; margin-top: 2.1rem; }
     .hub-hero { padding: 2.6rem 1.1rem 1.8rem; }
     .hub-dispatch::before { left: .35rem; }
@@ -1355,8 +1451,10 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     .hub-masthead-title { font-size: 1.15rem; }
     .hub-masthead-kicker { font-size: .48rem; letter-spacing: .22em; }
     .hub-theme-btn .hub-theme-lbl { display: none; }
-    .hub-tab { padding: .75rem .7rem .7rem; font-size: .56rem; letter-spacing: .14em; }
-    .hub-tab::after { left: .7rem; right: .7rem; }
+    .hub-tabs { justify-content: flex-start; }
+    .hub-tab { padding: .6rem .55rem .55rem; font-size: .5rem; letter-spacing: .1em; gap: .3rem; }
+    .hub-tab::after { left: .55rem; right: .55rem; height: 2px; }
+    .hub-tab-num { display: none; }
     .hub-strip { height: 34px; }
     .hub-strip-item { font-size: .6rem; letter-spacing: .12em; }
     .hub-stat-grid { grid-template-columns: 1fr 1fr; }

@@ -48,6 +48,15 @@ export const COMING_SOON: DispatchEntry[] = [
 
 export const DISPATCH: DispatchEntry[] = [
   {
+    id: 'trade-room',
+    date: 'Jun 10, 2026',
+    title: 'The Trade Room opens in',
+    titleEm: 'the Clubhouse.',
+    body: 'The Trade Analyzer, unchained from the league: name the players on each side, pick the format (redraft or dynasty, 1-QB or superflex), and the same consensus value engine renders a verdict — add both full rosters and it grades real starting-lineup impact instead. Post the contentious ones to the docket and let the room vote on who won.',
+    status: 'new',
+    tags: [{ label: 'New', tone: 'gold' }, { label: 'Clubhouse' }, { label: 'All members' }],
+  },
+  {
     id: 'trade-desk',
     date: 'Jun 9, 2026',
     title: 'The Trade Desk opens',
