@@ -37,6 +37,19 @@ export function HubTabs() {
   )
 }
 
+// Masthead Login button (guests). Client component so it can carry the
+// CURRENT hub page in the `from` param — the login page uses it for both
+// its back arrow and the post-auth destination, so "back" returns here
+// instead of dumping to the landing page.
+export function HubLoginButton() {
+  const pathname = usePathname()
+  return (
+    <Link href={`/login?from=${encodeURIComponent(pathname || '/hub')}`} className="hub-masthead-login">
+      Login
+    </Link>
+  )
+}
+
 export function HubThemeToggle() {
   function toggle() {
     // Theme lives on <html> (set pre-paint by the root layout's restore

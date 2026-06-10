@@ -27,7 +27,7 @@ export default async function FullDocketPage() {
           <span>{docket.trades.length} posted</span>
           <span>·</span>
           <Link href="/hub/analyzer" style={{ color: 'var(--hb-gold)', textDecoration: 'none' }}>
-            ← Back to the desk
+            ← Back to the Trade Room
           </Link>
         </div>
       </section>

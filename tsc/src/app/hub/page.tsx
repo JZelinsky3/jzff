@@ -77,7 +77,7 @@ export default async function HubFrontDesk() {
             <>
               <span>Viewing as a guest</span>
               <span>·</span>
-              <Link href="/login" style={{ color: 'var(--hb-gold)', textDecoration: 'none' }}>
+              <Link href="/login?from=%2Fhub" style={{ color: 'var(--hb-gold)', textDecoration: 'none' }}>
                 Sign in to shelve your leagues →
               </Link>
             </>
@@ -247,7 +247,7 @@ export default async function HubFrontDesk() {
                 {user ? (
                   <Link href="/dashboard/new" className="hub-btn">Start your first archive →</Link>
                 ) : (
-                  <Link href="/login?mode=signup" className="hub-btn">Join the Chronicle →</Link>
+                  <Link href="/login?mode=signup&from=%2Fhub" className="hub-btn">Join the Chronicle →</Link>
                 )}
                 <Link href="/demo/" target="_blank" rel="noopener" className="hub-btn-ghost">Tour the demo</Link>
               </div>

@@ -47,7 +47,7 @@ export default async function TradeRoomPage() {
           {!signedIn && (
             <>
               <span>·</span>
-              <Link href="/login" style={{ color: 'var(--hb-gold)', textDecoration: 'none' }}>
+              <Link href="/login?from=%2Fhub%2Fanalyzer" style={{ color: 'var(--hb-gold)', textDecoration: 'none' }}>
                 Sign in to analyze →
               </Link>
             </>
@@ -55,10 +55,10 @@ export default async function TradeRoomPage() {
         </div>
       </section>
 
-      {/* ─── §01 The desk ─────────────────────────────────── */}
+      {/* ─── §01 The analyzer ─────────────────────────────── */}
       <div className="hub-section">
         <div className="hub-section-header">
-          <span className="hub-section-num">§ 01 · The desk</span>
+          <span className="hub-section-num">§ 01 · The analyzer</span>
           <span className="hub-section-title">Weigh a deal —</span>
           <span className="hub-section-meta">Quick by names · deeper with rosters</span>
         </div>
@@ -72,14 +72,14 @@ export default async function TradeRoomPage() {
               <div>
                 <div className="hub-promote-title">Members <em>only.</em></div>
                 <p className="hub-promote-body">
-                  The desk is free to use — it just needs a name on the ledger. Sign in,
+                  The analyzer is free to use — it just needs a name on the ledger. Sign in,
                   type two sides of a deal, and the consensus value engine (FantasyCalc,
                   KTC, DynastyProcess, FantasyPros, blended) does the arguing.
                 </p>
               </div>
               <div className="hub-promote-side">
-                <Link href="/login" className="hub-btn">Sign in to the desk →</Link>
-                <Link href="/login?mode=signup" className="hub-btn-ghost">Join the Chronicle</Link>
+                <Link href="/login?from=%2Fhub%2Fanalyzer" className="hub-btn">Sign in to analyze →</Link>
+                <Link href="/login?mode=signup&from=%2Fhub%2Fanalyzer" className="hub-btn-ghost">Join the Chronicle</Link>
               </div>
             </div>
           </Reveal>

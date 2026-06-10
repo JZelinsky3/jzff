@@ -312,8 +312,8 @@ export default async function NewsstandPage() {
                   </>
                 ) : (
                   <>
-                    <Link href="/login?mode=signup" className="hub-btn">Join the Chronicle →</Link>
-                    <Link href="/login" className="hub-btn-ghost">Sign in</Link>
+                    <Link href="/login?mode=signup&from=%2Fhub%2Fexplore" className="hub-btn">Join the Chronicle →</Link>
+                    <Link href="/login?from=%2Fhub%2Fexplore" className="hub-btn-ghost">Sign in</Link>
                   </>
                 )}
               </div>

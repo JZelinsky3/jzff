@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import '@/styles/hub.css'
-import { HubTabs, HubThemeToggle } from './hub-chrome'
+import { HubLoginButton, HubTabs, HubThemeToggle } from './hub-chrome'
 
 export const metadata: Metadata = {
   title: 'The Clubhouse',
@@ -68,9 +68,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
               </svg>
             </Link>
           ) : (
-            <Link href="/login" className="hub-masthead-login">
-              Login
-            </Link>
+            <HubLoginButton />
           )}
           <div className="hub-masthead-center">
             <div className="hub-masthead-kicker">Vol. II · Members Only</div>
