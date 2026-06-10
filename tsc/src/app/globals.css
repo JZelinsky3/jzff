@@ -8165,3 +8165,26 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     }
 }
 
+/* ─── Form / content cards + long inline code on phones ───────
+   .dc-card-static is the form-card wrapper used on /login,
+   /account, /about, /dashboard/new, /league/[slug]/setup, etc.
+   Default padding is generous for desktop (2rem 1.75rem 1.75rem)
+   — at phone widths it eats the form's breathing room. Tighten.
+
+   <code> elements inline in long sentences (the platform URL
+   examples on /dashboard/new and in guide articles) overflow
+   horizontally without `overflow-wrap` because mono spans
+   `sleeper.com/leagues/1234567890123456789/team` have no
+   natural break opportunity. `anywhere` only breaks when the
+   word actually wouldn't fit, so short identifiers stay
+   un-broken. */
+@media (max-width: 720px) {
+    .dc-card-static {
+        padding: 1.4rem 1.1rem 1.2rem;
+    }
+    code {
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+}
+
