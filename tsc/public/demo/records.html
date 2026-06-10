@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Record Book · The Lakeside League</title>

@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Best Coach Board · The Lakeside League</title>
-<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="assets/css/main.css">
 <style>
 /* ============================================================
    BEST COACH BOARD — Coach's Chalkboard
@@ -653,7 +658,7 @@ body::before {
 <body>
 
 <nav id="site-nav" data-page="best-coach" data-chapter="CH. VIII · BEST COACH"></nav>
-<script src="../../assets/js/nav.js"></script>
+<script src="assets/js/nav.js"></script>
 
 <!-- DEMO NOTICE — live-season pages need real-time data -->
 <style>

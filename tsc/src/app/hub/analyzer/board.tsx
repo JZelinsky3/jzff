@@ -126,29 +126,37 @@ export function TradeCase({
           {new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
         </span>
       </div>
+      {/* Framed from the poster's seat: "You receive" lists what side B sends
+          (with YOUR grade — grades score what a side gets), "You send" lists
+          what side A gives up (with the other manager's grade). Voters sign
+          or shred the deal as if they were sitting in the You chair. */}
       <div className="hub-tr-case-sides">
         {(
           [
-            ['Side A', t.side_a, t.grade_a, t.verdict_a, t.roster_a],
-            ['Side B', t.side_b, t.grade_b, t.verdict_b, t.roster_b],
+            ['You receive', t.side_b, t.grade_a, t.verdict_a, t.roster_a, 'Your roster'],
+            ['You send', t.side_a, t.grade_b, t.verdict_b, t.roster_b, 'Their roster'],
           ] as const
-        ).map(([label, side, grade, verdict, roster]) => (
+        ).map(([label, side, grade, verdict, roster, rosterLabel]) => (
           <div key={label} className="hub-tr-case-side">
             <div className="hub-tr-report-head">
-              <span className="hub-tr-side-name">{label} sends</span>
+              <span className="hub-tr-side-name">{label}</span>
               <span className={`hub-tr-grade g-${grade.replace('+', 'p').replace('-', 'm')}`}>{grade}</span>
             </div>
-            {side.assets.map((a) => (
-              <div key={a.id} className="hub-tr-row">
-                <Headshot id={a.id} size={22} />
-                <span className="hub-tr-pos">{a.position}</span>
-                <span className="hub-tr-row-name">{a.name}</span>
-                <span className="hub-tr-row-val">{a.value.toLocaleString()}</span>
-              </div>
-            ))}
-            <div className="hub-tr-case-total">Total {side.total.toLocaleString()}</div>
-            {verdict && <p className="hub-tr-verdict">{verdict}</p>}
-            {t.uses_rosters && <RosterNote label="Their roster" roster={roster} />}
+            <div className="hub-tr-case-rows">
+              {side.assets.map((a) => (
+                <div key={a.id} className="hub-tr-row">
+                  <Headshot id={a.id} size={22} />
+                  <span className="hub-tr-pos">{a.position}</span>
+                  <span className="hub-tr-row-name">{a.name}</span>
+                  <span className="hub-tr-row-val">{a.value.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+            <div className="hub-tr-case-foot">
+              <div className="hub-tr-case-total">Total {side.total.toLocaleString()}</div>
+              {verdict && <p className="hub-tr-verdict">{verdict}</p>}
+              {t.uses_rosters && <RosterNote label={rosterLabel} roster={roster} />}
+            </div>
           </div>
         ))}
       </div>

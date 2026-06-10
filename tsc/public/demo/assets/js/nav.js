@@ -368,6 +368,12 @@
     // dropdown AND the chapter section bar this script renders.
     var style = document.createElement('style');
     style.textContent = [
+        // Demo bookmark star: lives with the back arrow in the left grid
+        // cell, spaced a beat apart so the two controls read separately.
+        '.nav-left-group { display: flex; align-items: center; gap: 1.5rem; justify-self: start; }',
+        '#demo-bookmark-star { display: inline-flex; align-items: center; line-height: 0; opacity: .85; transition: opacity .15s, transform .15s; }',
+        '#demo-bookmark-star:hover { opacity: 1; transform: scale(1.12); }',
+
         '.nav-drop-divider { height: 1px; margin: .55rem .25rem; background: rgba(232,200,137,.15); }',
         '.nav-drop-menu .nav-drop-label:not(:first-child) { margin-top: .15rem; }',
 
@@ -572,9 +578,64 @@
         document.head.appendChild(style);
     }
 
+    // Demo-only: bookmark star in the masthead, a beat to the right of the
+    // back arrow. The demo has no league row in the DB, so the toggle
+    // persists to localStorage ('tsc-demo-bookmark') and the Clubhouse
+    // Newsstand reads the same key to show a Demo card on Your Shelf.
+    // Replaces the old corner ribbon, which read as page chrome rather
+    // than a control. Hub page only, mirroring the real-league left-slot
+    // bookmark.
+    function buildDemoBookmark() {
+        if (!/^\/demo(\/|$)/.test(window.location.pathname)) return;
+        var nav = document.getElementById('site-nav');
+        if (!nav || nav.dataset.page !== 'hub') return;
+        var back = document.getElementById('nav-back-link');
+        if (!back || document.getElementById('demo-bookmark-star')) return;
+
+        var on = false;
+        try { on = localStorage.getItem('tsc-demo-bookmark') === '1'; } catch (e) {}
+
+        var star = document.createElement('a');
+        star.href = '#';
+        star.id = 'demo-bookmark-star';
+        star.setAttribute('role', 'button');
+
+        function paint() {
+            star.setAttribute('aria-pressed', on ? 'true' : 'false');
+            star.setAttribute('aria-label', on ? 'Remove bookmark' : 'Bookmark this league');
+            star.setAttribute('title', on ? 'Remove bookmark' : 'Bookmark this league');
+            star.innerHTML =
+                '<svg viewBox="0 0 24 24" width="20" height="20"' +
+                ' fill="' + (on ? '#e8c889' : 'none') + '"' +
+                ' stroke="#e8c889" stroke-width="1.8" stroke-linejoin="round">' +
+                  '<polygon points="12 2 14.9 8.5 22 9.3 16.7 14 18.2 21 12 17.5 5.8 21 7.3 14 2 9.3 9.1 8.5"/>' +
+                '</svg>';
+        }
+        paint();
+
+        star.addEventListener('click', function (e) {
+            e.preventDefault();
+            on = !on;
+            try {
+                if (on) localStorage.setItem('tsc-demo-bookmark', '1');
+                else localStorage.removeItem('tsc-demo-bookmark');
+            } catch (err) {}
+            paint();
+        });
+
+        // Group the back arrow + star inside the nav's left grid cell so
+        // the masthead keeps its 3-column layout.
+        var wrap = document.createElement('div');
+        wrap.className = 'nav-left-group';
+        back.parentNode.insertBefore(wrap, back);
+        wrap.appendChild(back);
+        wrap.appendChild(star);
+    }
+
     function init() {
         buildDemoStrip();
         buildNav();
+        buildDemoBookmark();
         enhanceAuthLinks();
         wireBookmarkToggle();
     }

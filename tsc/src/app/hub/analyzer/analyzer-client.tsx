@@ -372,7 +372,7 @@ export function AnalyzerStudio() {
       {/* ── The two sides ── */}
       <div className="hub-tr-sides">
         {(['a', 'b'] as const).map((side) => {
-          const label = side === 'a' ? 'Side A' : 'Side B'
+          const label = side === 'a' ? 'You' : 'They'
           const sidePlayers = side === 'a' ? sideA : sideB
           const setSide = side === 'a' ? setSideA : setSideB
           const roster = side === 'a' ? rosterA : rosterB
@@ -383,13 +383,13 @@ export function AnalyzerStudio() {
             <div key={side} className="hub-tr-side">
               <div className="hub-tr-side-head">
                 <span className="hub-tr-side-name">{label}</span>
-                <span className="hub-tr-side-sub">{rosterMode ? 'full roster · click players to send' : 'sends'}</span>
+                <span className="hub-tr-side-sub">{rosterMode ? 'full roster · click players to send' : 'send'}</span>
               </div>
 
               {rosterMode ? (
                 <>
                   <PlayerSearch
-                    placeholder={`Add to ${label}'s roster…`}
+                    placeholder={side === 'a' ? 'Add to your roster…' : 'Add to their roster…'}
                     exclude={allIds}
                     onPick={(p) => {
                       setRoster([...roster, p])
@@ -419,7 +419,7 @@ export function AnalyzerStudio() {
               ) : (
                 <>
                   <PlayerSearch
-                    placeholder={`${label} sends…`}
+                    placeholder={side === 'a' ? 'You send…' : 'They send…'}
                     exclude={allIds}
                     onPick={(p) => {
                       setSide([...sidePlayers, p])
@@ -467,7 +467,7 @@ export function AnalyzerStudio() {
             <div className="hub-tr-callout-line">
               {Math.abs(analysis.deltaPct) < 0.03
                 ? 'Dead even. Shake hands.'
-                : `${analysis.deltaPct > 0 ? 'Side A' : 'Side B'} wins this swap by ${(Math.abs(analysis.deltaPct) * 100).toFixed(1)}%${Math.abs(analysis.deltaPct) >= 0.15 ? ' — comfortably' : ''}.`}
+                : `${analysis.deltaPct > 0 ? 'You win' : 'They win'} this swap by ${(Math.abs(analysis.deltaPct) * 100).toFixed(1)}%${Math.abs(analysis.deltaPct) >= 0.15 ? ' — comfortably' : ''}.`}
             </div>
             <div className="hub-tr-scale">
               {analysis.usesRosters
@@ -476,7 +476,7 @@ export function AnalyzerStudio() {
             </div>
           </div>
           <div className="hub-tr-result-grid">
-            {([['Side A', analysis.sideA, analysis.sideB], ['Side B', analysis.sideB, analysis.sideA]] as const).map(
+            {([['You', analysis.sideA, analysis.sideB], ['They', analysis.sideB, analysis.sideA]] as const).map(
               ([name, mine, theirs]) => (
                 <div key={name} className="hub-tr-report">
                   <div className="hub-tr-report-head">

@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Lakeside League · LSL · Live Demo · The Sunday Chronicle</title>
@@ -2147,16 +2152,17 @@ body {
      data-right-href="standings.html"></nav>
 <script src="assets/js/nav.js"></script>
 
-<!-- BOOKMARK RIBBON — re-enabled on the demo (the nav's left slot is the
-     back arrow here, so the ribbon is the bookmark affordance). The demo
-     has no league row to bookmark, so the click handler persists to
-     localStorage ('tsc-demo-bookmark') and the Clubhouse Newsstand shows
-     a matching Demo card on Your Shelf. -->
+<!-- BOOKMARK RIBBON — vaulted again via [hidden]; the demo bookmark now
+     lives as a star next to the masthead back arrow (see nav.js
+     buildDemoBookmark — same 'tsc-demo-bookmark' localStorage key, the
+     Clubhouse Newsstand still shows a Demo card on Your Shelf). CSS +
+     click handler remain in place; drop the hidden attribute to re-enable. -->
 <button type="button"
         id="dc-bookmark-ribbon"
         class="ribbon-bookmark"
         aria-label="Bookmark this league"
-        aria-pressed="false"></button>
+        aria-pressed="false"
+        hidden></button>
 
 <!-- TRACKBOARD — narrow vertical multi-tab tracker pinned right.
      Live-season news/watch/risers. Hidden until at least one panel

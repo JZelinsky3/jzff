@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Trade Grader · The Lakeside League</title>
-  <link rel="stylesheet" href="../../assets/css/main.css" />
-  <link rel="stylesheet" href="../../assets/css/trades.css" />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" href="assets/css/trades.css" />
 </head>
 <body>
   <div class="site-glow" aria-hidden="true"></div>
 
   <nav id="site-nav" data-page="trades" data-chapter="LIVE · TRADE GRADER"
        data-back-href="live-season/index.html" data-back-label="Back to Live Season"></nav>
-  <script src="../../assets/js/nav.js"></script>
+  <script src="assets/js/nav.js"></script>
 
 <!-- DEMO NOTICE — live-season pages need real-time data -->
 <style>
@@ -79,6 +84,6 @@
 
   </main>
 
-  <script src="../../assets/js/trades.js"></script>
+  <script src="assets/js/trades.js"></script>
 </body>
 </html>

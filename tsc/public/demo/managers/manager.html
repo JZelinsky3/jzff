@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manager Profile · The Lakeside League</title>
-<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="assets/css/main.css">
 <style>
 .profile-header {
     position: relative; z-index: 10;
@@ -328,7 +333,7 @@
      data-back-href="managers/index.html"
      data-title-id="nav-name"
      data-title-href="managers/index.html"></nav>
-<script src="../assets/js/nav.js"></script>
+<script src="assets/js/nav.js"></script>
 
 <div id="profile-body">
     <div class="loading-state">

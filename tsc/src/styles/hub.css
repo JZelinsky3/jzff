@@ -1244,8 +1244,17 @@ select.hub-input {
     font-family: var(--mono); font-size: .56rem;
     letter-spacing: .14em; text-transform: uppercase; color: var(--hb-mute);
 }
-.hub-tr-case-sides { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
-.hub-tr-case-side { display: grid; gap: .35rem; align-content: start; }
+/* Three shared rows (head / asset rows / foot) that each side subgrids
+   into, so the dotted Total rule starts at the same height in both
+   columns even when one side sends fewer players. */
+.hub-tr-case-sides {
+    display: grid; grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: .35rem .9rem;
+}
+.hub-tr-case-side { display: grid; grid-row: 1 / -1; grid-template-rows: subgrid; }
+.hub-tr-case-rows { display: grid; gap: .35rem; align-content: start; }
+.hub-tr-case-foot { display: grid; gap: .35rem; align-content: start; }
 .hub-tr-case-total {
     font-family: var(--mono); font-size: .58rem; letter-spacing: .14em;
     text-transform: uppercase; color: var(--hb-gold);

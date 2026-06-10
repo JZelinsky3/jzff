@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Season · The Lakeside League</title>
-<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="assets/css/main.css">
 <style>
 /* ============================================================
    SEASON DETAIL PAGE
@@ -447,7 +452,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
      data-back-href="seasons/index.html"
      data-title-id="nav-year"
      data-title-href="seasons/index.html"></nav>
-<script src="../assets/js/nav.js"></script>
+<script src="assets/js/nav.js"></script>
 
 <!-- PAGE BODY (rendered by JS) -->
 <div id="page-body">

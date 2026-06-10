@@ -41,7 +41,7 @@
 
   // ── Boot ──────────────────────────────────────────────────────────────────
   async function boot() {
-    var res = await fetch('live-season/pickems/data', { cache: 'no-store' });
+    var res = await fetch('live-season/pickems/data.json', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
 

@@ -57,7 +57,17 @@ export default async function HubFrontDesk() {
       <section className="hub-hero">
         <div className="hub-hero-sup">★ The Clubhouse · Est. 2026 ★</div>
         <h1 className="hub-hero-title">
-          {user ? <>Welcome back, <em>{firstName}.</em></> : <>Step inside, <em>stranger.</em></>}
+          {user ? (
+            <>
+              Welcome back,<br />
+              <em>{firstName}.</em>
+            </>
+          ) : (
+            <>
+              Step inside,<br />
+              <em>stranger.</em>
+            </>
+          )}
         </h1>
         <p className="hub-hero-sub">
           This is the Clubhouse — the room behind the archives. What&apos;s new on the press,

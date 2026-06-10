@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rivalries · The Lakeside League</title>
-<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="assets/css/main.css">
 <style>
 /* ============================================================
    RIVALRIES — Crimson / Charcoal / Noir
@@ -566,7 +571,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
      data-chapter="CH. VI · RIVALRIES"
      data-back-label="← The Hub"
      data-back-href="./index.html"></nav>
-<script src="../assets/js/nav.js"></script>
+<script src="assets/js/nav.js"></script>
 
 <!-- ══════════════════════════════════════════════════
      PAGE HEADER (filled in by JS below)

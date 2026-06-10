@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Matchup Preview · The Lakeside League</title>
-<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="assets/css/main.css">
 <style>
 /* ============================================================
    MATCHUP PREVIEW — Pullman palette
@@ -1190,7 +1195,7 @@ body { background: var(--mp-bg); }
 </div>
 
 <nav id="site-nav" data-page="matchup-preview" data-chapter="CH. VII · MATCHUP PREVIEW"></nav>
-<script src="../../assets/js/nav.js"></script>
+<script src="assets/js/nav.js"></script>
 
 <!-- DEMO NOTICE — live-season pages need real-time data -->
 <style>
@@ -1460,7 +1465,7 @@ body { background: var(--mp-bg); }
         '<div class="mp-marquee-foot">' + h2hLine + '</div>' +
         // Both hrefs are explicit because the document <base> is pinned to
         // /leagues/<slug>/ — bare "?m=…" resolves to the league root and
-        // "../pickems/" walks above the base. Spelling out the full subpath
+        // "live-season/pickems/" walks above the base. Spelling out the full subpath
         // from the base keeps the buttons working from the marquee.
         '<div class="mp-marquee-cta">' +
           '<a class="mp-marquee-btn primary" href="live-season/matchup-preview/?m=' + encodeURIComponent(jumpUid) + '">Open the booking</a>' +
@@ -1806,8 +1811,8 @@ body { background: var(--mp-bg); }
           '<span class="mp-share-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg></span>' +
           '<span class="mp-share-label">Share matchup</span>' +
         '</button>' +
-        '<a class="mp-action-btn primary" href="../pickems/index.html">Open Pick’ems</a>' +
-        '<a class="mp-action-btn" href="../powerrank/index.html">Power Rankings</a>' +
+        '<a class="mp-action-btn primary" href="live-season/pickems/index.html">Open Pick’ems</a>' +
+        '<a class="mp-action-btn" href="live-season/powerrank/index.html">Power Rankings</a>' +
       '</div>';
 
     var shareBtn = document.getElementById('mp-share-desk');

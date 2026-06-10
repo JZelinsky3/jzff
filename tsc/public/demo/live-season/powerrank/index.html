@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Power Rankings · The Lakeside League</title>
-  <link rel="stylesheet" href="../../assets/css/main.css" />
-  <link rel="stylesheet" href="../../assets/css/powerrank.css" />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" href="assets/css/powerrank.css" />
 </head>
 <body>
 
@@ -58,7 +63,7 @@
     <div class="pr-nav-inner">
       <button class="pr-nav-back" onclick="history.back()" aria-label="Go back"><svg viewBox="0 0 8 14" width="9" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 1 1 7 7 13"/></svg></button>
       <div class="pr-nav-center">
-        <a href="./index.html" class="pr-nav-title">Power <em>Rankings.</em></a>
+        <a href="live-season/powerrank/index.html" class="pr-nav-title">Power <em>Rankings.</em></a>
         <div class="pr-nav-kicker">THE LAKESIDE LEAGUE</div>
       </div>
       <span class="pr-nav-auto">AUTO</span>
@@ -175,6 +180,6 @@
     </div>
   </div>
 
-  <script src="../../assets/js/powerrank.js"></script>
+  <script src="assets/js/powerrank.js"></script>
 </body>
 </html>

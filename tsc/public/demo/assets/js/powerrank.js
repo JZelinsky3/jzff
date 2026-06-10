@@ -23,7 +23,7 @@
   // ── Boot ────────────────────────────────────────────────────────────────
   async function boot() {
     bindFormulaPopup()
-    var res = await fetch('live-season/powerrank/data', { cache: 'no-store' })
+    var res = await fetch('live-season/powerrank/data.json', { cache: 'no-store' })
     if (!res.ok) throw new Error('HTTP ' + res.status)
     var data = await res.json()
 
