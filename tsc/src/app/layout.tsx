@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { MobileSiteMenu } from "@/components/MobileSiteMenu";
+import { createClient } from "@/lib/supabase/server";
+import { isSiteAdmin } from "@/lib/siteAdmin";
 // Order matters: globals.css imports tailwindcss; main.css is loaded second
 // so its custom design tokens (--ink, --cream, --gold, body bg) override the
 // Tailwind preflight resets. Bundling both via JS imports lets Next.js stream
@@ -121,11 +124,21 @@ const jsonLd = {
 // never executes client-rendered <script> tags).
 const HUB_THEME_SCRIPT = `try{if(localStorage.getItem('tsc-hub-theme')==='night')document.documentElement.setAttribute('data-hub-theme','night')}catch(e){}`;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Mount the mobile-only site menu once globally so every page (including
+  // ones that don't render their own <nav>: /dashboard, /league/[slug]/*,
+  // /admin) gets the same uniform avatar trigger on phones. Desktop hides
+  // it via CSS; the existing per-page desktop nav clusters stay unchanged.
+  // One auth check per request is cheap relative to a page render.
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const signedIn = !!user;
+  const admin = signedIn ? await isSiteAdmin(user!.id) : false;
+
   return (
     <html
       lang="en"
@@ -144,6 +157,7 @@ export default function RootLayout({
         <div className="site-glow"></div>
         <div className="site-grain"></div>
         {children}
+        <MobileSiteMenu signedIn={signedIn} email={user?.email ?? null} admin={admin} />
         <Analytics />
         <SpeedInsights />
       </body>

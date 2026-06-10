@@ -7981,13 +7981,14 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
    ============================================================ */
 .msm-root {
     display: none;
-    /* Anchored absolutely inside the page's <nav> so it doesn't have to
-       fit the nav's grid columns — works whether the nav is the masthead
-       1fr/auto/1fr grid, the pricing flex bar, or anything else. */
-    position: absolute;
-    top: 50%;
-    right: 1rem;
-    transform: translateY(-50%);
+    /* Fixed to the viewport so the menu works on every page — including
+       ones that don't render a <nav> element (/dashboard, /league/[slug]/*,
+       /admin). The right offset matches the nav's mobile right-padding so
+       on pages that DO have a masthead the trigger sits in the same visual
+       slot the desktop right-cluster would. */
+    position: fixed;
+    top: .75rem;
+    right: .75rem;
     z-index: 60;
 }
 .msm-trigger {
