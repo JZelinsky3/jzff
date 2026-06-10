@@ -2147,14 +2147,16 @@ body {
      data-right-href="standings.html"></nav>
 <script src="assets/js/nav.js"></script>
 
-<!-- BOOKMARK RIBBON — vaulted via [hidden]; CSS + click handler remain
-     in place. Drop the hidden attribute to re-enable. -->
+<!-- BOOKMARK RIBBON — re-enabled on the demo (the nav's left slot is the
+     back arrow here, so the ribbon is the bookmark affordance). The demo
+     has no league row to bookmark, so the click handler persists to
+     localStorage ('tsc-demo-bookmark') and the Clubhouse Newsstand shows
+     a matching Demo card on Your Shelf. -->
 <button type="button"
         id="dc-bookmark-ribbon"
         class="ribbon-bookmark"
         aria-label="Bookmark this league"
-        aria-pressed="false"
-        hidden></button>
+        aria-pressed="false"></button>
 
 <!-- TRACKBOARD — narrow vertical multi-tab tracker pinned right.
      Live-season news/watch/risers. Hidden until at least one panel
@@ -3659,7 +3661,14 @@ body {
     var ribbon = document.getElementById('dc-bookmark-ribbon');
     if (!ribbon) return;
     var dc = (typeof window !== 'undefined' && window.__DC) || {};
-    if (dc.isBookmarked) {
+    // Demo mode: no league row in the DB, so the bookmark lives in
+    // localStorage. The Clubhouse Newsstand reads the same key to show a
+    // Demo card on Your Shelf.
+    var demoLocal = false;
+    if (!dc.slug) {
+      try { demoLocal = localStorage.getItem('tsc-demo-bookmark') === '1'; } catch (e) {}
+    }
+    if (dc.isBookmarked || demoLocal) {
       ribbon.classList.add('is-bookmarked');
       ribbon.setAttribute('aria-pressed', 'true');
       ribbon.setAttribute('aria-label', 'Remove bookmark');
@@ -3680,8 +3689,16 @@ body {
       if (nowBookmarked) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
-      // Persistence: only for signed-in non-commish. Otherwise visual only.
-      if (!dc.isSignedIn || dc.isCommish || !dc.slug) return;
+      // Persistence: demo bookmarks go to localStorage (no league row);
+      // real leagues go to the API for signed-in non-commish viewers.
+      if (!dc.slug) {
+        try {
+          if (nowBookmarked) localStorage.setItem('tsc-demo-bookmark', '1');
+          else localStorage.removeItem('tsc-demo-bookmark');
+        } catch (e) {}
+        return;
+      }
+      if (!dc.isSignedIn || dc.isCommish) return;
       fetch('/api/bookmarks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

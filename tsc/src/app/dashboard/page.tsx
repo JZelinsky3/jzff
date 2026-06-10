@@ -162,8 +162,9 @@ export default async function DashboardPage({
         <p className="hero-sub">
           Every league you keep. Open one, or begin a new chronicle below.
         </p>
-        <div style={{ marginTop: '1.75rem' }}>
+        <div style={{ marginTop: '1.75rem', display: 'flex', gap: '.8rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/dashboard/new" className="dc-btn">+ New archive →</Link>
+          <Link href="/hub" className="dc-btn-ghost">★ The Clubhouse</Link>
         </div>
         {(comp || subActive || isUDFA) && (
           <Link

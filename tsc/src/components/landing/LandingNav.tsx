@@ -91,6 +91,7 @@ function buildSignedIn(admin: boolean): { triggers: Trigger[]; columns: Column[]
       items: [
         { label: 'Your leagues',  href: '/dashboard' },
         { label: 'New chronicle', href: '/dashboard/new' },
+        { label: 'The Clubhouse', href: '/hub' },
         { label: 'Demo league',   href: '/demo/' },
       ],
     },

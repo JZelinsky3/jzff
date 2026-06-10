@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
-  const next = url.searchParams.get('next') ?? '/dashboard'
+  // Default post-auth landing is the Clubhouse (/hub) — the signed-in home.
+  const next = url.searchParams.get('next') ?? '/hub'
 
   if (code) {
     const supabase = await createClient()

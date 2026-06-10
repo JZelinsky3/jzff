@@ -37,7 +37,8 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
       }
       // Hard-navigate so server components on the next page see the new session
       // (a router.push would client-route without rehydrating session state).
-      window.location.assign(next || '/dashboard')
+      // Default landing is the Clubhouse.
+      window.location.assign(next || '/hub')
       return
     }
 
@@ -58,7 +59,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
     if (data.session) {
       // Email confirmation is OFF in this Supabase project — they're signed
       // in immediately.
-      window.location.assign(next || '/dashboard')
+      window.location.assign(next || '/hub')
       return
     }
     setStatus('sent')

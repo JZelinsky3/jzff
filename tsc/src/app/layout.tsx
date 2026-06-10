@@ -112,6 +112,15 @@ const jsonLd = {
   ],
 };
 
+// Clubhouse theme restore. Lives in the ROOT layout (not /hub's) for two
+// reasons: it must run before first paint on hard loads so night-mode
+// readers never flash cream, and the root layout is never re-rendered by
+// client-side navigation — so the script executes exactly once per
+// document and the <html> attribute survives every client-side route
+// change (a script inside /hub's layout re-renders on nav and React
+// never executes client-rendered <script> tags).
+const HUB_THEME_SCRIPT = `try{if(localStorage.getItem('tsc-hub-theme')==='night')document.documentElement.setAttribute('data-hub-theme','night')}catch(e){}`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -121,8 +130,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${serif.variable} ${sans.variable} ${mono.variable}`}
+      // main.css sets scroll-behavior: smooth; Next 16 wants this attribute
+      // so it can suspend smooth-scrolling during route transitions.
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
     >
       <body>
+        <script dangerouslySetInnerHTML={{ __html: HUB_THEME_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

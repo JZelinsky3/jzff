@@ -3625,7 +3625,14 @@ body {
     var ribbon = document.getElementById('dc-bookmark-ribbon');
     if (!ribbon) return;
     var dc = (typeof window !== 'undefined' && window.__DC) || {};
-    if (dc.isBookmarked) {
+    // No __DC.slug means a static snapshot (the /demo/ copy): bookmarks
+    // persist to localStorage there, and the Clubhouse Newsstand reads
+    // the same key to show a Demo card on Your Shelf.
+    var demoLocal = false;
+    if (!dc.slug) {
+      try { demoLocal = localStorage.getItem('tsc-demo-bookmark') === '1'; } catch (e) {}
+    }
+    if (dc.isBookmarked || demoLocal) {
       ribbon.classList.add('is-bookmarked');
       ribbon.setAttribute('aria-pressed', 'true');
       ribbon.setAttribute('aria-label', 'Remove bookmark');
@@ -3646,8 +3653,16 @@ body {
       if (nowBookmarked) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
-      // Persistence: only for signed-in non-commish. Otherwise visual only.
-      if (!dc.isSignedIn || dc.isCommish || !dc.slug) return;
+      // Persistence: static snapshots (demo) go to localStorage; real
+      // leagues go to the API for signed-in non-commish viewers.
+      if (!dc.slug) {
+        try {
+          if (nowBookmarked) localStorage.setItem('tsc-demo-bookmark', '1');
+          else localStorage.removeItem('tsc-demo-bookmark');
+        } catch (e) {}
+        return;
+      }
+      if (!dc.isSignedIn || dc.isCommish) return;
       fetch('/api/bookmarks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

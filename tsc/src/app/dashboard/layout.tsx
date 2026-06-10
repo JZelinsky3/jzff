@@ -18,6 +18,7 @@ export default async function DashboardLayout({
       entries: [
         // Skip "Your leagues" — that's literally this page.
         { type: 'link', href: '/dashboard/new', label: 'New archive' },
+        { type: 'link', href: '/hub', label: 'The Clubhouse' },
       ],
     },
     {

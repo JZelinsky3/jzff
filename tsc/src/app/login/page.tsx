@@ -27,7 +27,7 @@ export default async function LoginPage({
 
   // Post-auth destination: explicit `next` takes priority, then `from` (so a
   // visitor who came from /leagues/jake/ and signed in lands back there), then
-  // /dashboard. The LoginForm uses this string verbatim on success.
+  // the Clubhouse. The LoginForm uses this string verbatim on success.
   const postAuthNext = next || safeFrom || undefined
 
   const supabase = await createClient()
@@ -35,7 +35,7 @@ export default async function LoginPage({
   // Already signed in? Honor the requested post-auth destination too — this
   // covers the case where a user clicks Sign In on an almanac, lands on
   // /login, but is already authenticated from a previous tab/session.
-  if (user) redirect(postAuthNext ?? '/dashboard')
+  if (user) redirect(postAuthNext ?? '/hub')
 
   return (
     <main>
