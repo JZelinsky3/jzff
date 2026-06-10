@@ -635,19 +635,52 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
 /* ============================================================
    HALL FILTERS — "Split the field"
    ============================================================ */
+.hub-filter-head {
+    display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+}
+.hub-filter-toggle {
+    display: inline-flex; align-items: center; gap: .55rem;
+    background: var(--hb-card); cursor: pointer;
+    border: 1px solid var(--hb-line); border-radius: 2px;
+    padding: .6rem 1rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--hb-ink-soft);
+    transition: border-color .2s, color .2s, background .2s;
+}
+.hub-filter-toggle:hover { border-color: var(--hb-gold); color: var(--hb-gold); background: var(--hb-gold-wash); }
+.hub-filter-toggle.open { border-color: var(--hb-gold); color: var(--hb-gold); }
+.hub-filter-caret { display: inline-block; font-size: .8rem; transition: transform .2s; }
+.hub-filter-toggle.open .hub-filter-caret { transform: rotate(90deg); }
+
+/* Lens drawer — 4 columns: Format · Scoring · Passing TDs · Flex on the
+   first row; League size (double-wide so its chips run across) · League
+   type · TE premium on the second. */
 .hub-filter-bar {
-    display: grid; gap: 1rem;
+    display: grid; gap: 1.2rem 1.6rem;
+    grid-template-columns: repeat(4, 1fr);
     background: var(--hb-card);
     border: 1px solid var(--hb-line);
     border-radius: 3px;
     padding: 1.3rem 1.4rem;
+    margin-top: .9rem;
+    animation: hub-rise .3s cubic-bezier(.2,.8,.2,1) both;
 }
-.hub-filter-group { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+.hub-filter-group { display: flex; flex-direction: column; gap: .55rem; }
+.hub-filter-group.is-wide { grid-column: span 2; }
+@media (max-width: 880px) {
+    .hub-filter-bar { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+    .hub-filter-bar { grid-template-columns: 1fr; }
+    .hub-filter-group.is-wide { grid-column: auto; }
+}
 .hub-filter-lbl {
-    flex: 0 0 6.5rem;
     font-family: var(--mono); font-weight: 700;
     font-size: .56rem; letter-spacing: .24em; text-transform: uppercase;
     color: var(--hb-mute);
+    padding-bottom: .35rem;
+    border-bottom: 1px dotted var(--hb-line-soft);
 }
 .hub-filter-chips { display: flex; flex-wrap: wrap; gap: .45rem; }
 .hub-filter-chip {
@@ -693,10 +726,6 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     color: var(--hb-mute);
 }
 .hub-plaque[data-rise] { animation: hub-rise .4s cubic-bezier(.2,.8,.2,1) both; }
-@media (max-width: 640px) {
-    .hub-filter-group { flex-direction: column; gap: .45rem; }
-    .hub-filter-lbl { flex: none; }
-}
 
 /* ============================================================
    NEWSSTAND — search + shelves

@@ -30,6 +30,7 @@ function MiniPlaque({ r, index }: { r: HubRecord; index: number }) {
 }
 
 export function HallSplits({ splits }: { splits: HubHallSplit[] }) {
+  const [open, setOpen] = useState(false)
   const [activeKey, setActiveKey] = useState<string | null>(null)
   const active = splits.find((s) => s.key === activeKey) ?? null
 
@@ -42,31 +43,62 @@ export function HallSplits({ splits }: { splits: HubHallSplit[] }) {
 
   return (
     <div>
-      <div className="hub-filter-bar">
-        {groups.map((g) => (
-          <div key={g.name} className="hub-filter-group">
-            <span className="hub-filter-lbl">{g.name}</span>
-            <div className="hub-filter-chips">
-              {g.items.map((s) => (
-                <button
-                  key={s.key}
-                  className={`hub-filter-chip${activeKey === s.key ? ' active' : ''}`}
-                  onClick={() => setActiveKey(activeKey === s.key ? null : s.key)}
-                  aria-pressed={activeKey === s.key}
-                >
-                  {s.label}
-                  <span className="hub-filter-count">{s.leagues}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+      {/* Collapsed by default — the toggle opens the lens drawer; a chosen
+          lens stays applied (and visible here) when the drawer closes. */}
+      <div className="hub-filter-head">
+        <button
+          className={`hub-filter-toggle${open ? ' open' : ''}`}
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="6" y1="12" x2="18" y2="12" />
+            <line x1="9" y1="18" x2="15" y2="18" />
+          </svg>
+          Filter the wall
+          <span className="hub-filter-caret" aria-hidden>›</span>
+        </button>
+        {active && (
+          <button
+            className="hub-filter-chip active"
+            onClick={() => setActiveKey(null)}
+            title="Clear filter"
+          >
+            {active.group}: {active.label} ✕
+          </button>
+        )}
       </div>
+
+      {open && (
+        <div className="hub-filter-bar">
+          {groups.map((g) => (
+            // League size has the most options — let it span two columns on
+            // the second row so its chips run across instead of stacking.
+            <div key={g.name} className={`hub-filter-group${g.name === 'League size' ? ' is-wide' : ''}`}>
+              <span className="hub-filter-lbl">{g.name}</span>
+              <div className="hub-filter-chips">
+                {g.items.map((s) => (
+                  <button
+                    key={s.key}
+                    className={`hub-filter-chip${activeKey === s.key ? ' active' : ''}`}
+                    onClick={() => setActiveKey(activeKey === s.key ? null : s.key)}
+                    aria-pressed={activeKey === s.key}
+                  >
+                    {s.label}
+                    <span className="hub-filter-count">{s.leagues}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {active === null ? (
         <p className="hub-filter-hint">
-          Pick a lens above — one at a time — and the wall re-hangs itself with records from
-          only those leagues. Counts show how many published leagues qualify.
+          Open the filters and pick a lens — one at a time — and the wall re-hangs itself
+          with records from only those leagues. Counts show how many published leagues qualify.
         </p>
       ) : (
         <div key={active.key}>

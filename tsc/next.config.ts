@@ -5,10 +5,16 @@ import { dirname } from "node:path";
 // Pin the file-tracing root to THIS project. There's a stray lockfile at
 // /Users/jojo/package-lock.json — without this pin Next picks that as root
 // and emits the "inferred your workspace root" warning on every start.
+//
+// LOCAL ONLY: on Vercel the repo root (jzff/) and the app root (tsc/)
+// differ, and pinning the tracing root to the app dir makes the builder
+// look for .next manifests at the wrong level — builds die with
+// "ENOENT: lstat '/vercel/path0/.next/routes-manifest-deterministic.json'".
+// Vercel's builder manages the tracing root itself, so skip the pin there.
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: projectRoot,
+  ...(process.env.VERCEL ? {} : { outputFileTracingRoot: projectRoot }),
 
   // Preserve trailing slashes on subdirectory index requests
   // (/demo/managers/ stays as-is rather than redirecting to /demo/managers).

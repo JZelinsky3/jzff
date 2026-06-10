@@ -20,6 +20,7 @@
 
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { parseSettings } from '@/lib/tradeDesk/settings'
 
 const PAGE = 1000
 // Hard ceiling on paginated scans so a future 10k-league TSC doesn't make
@@ -309,7 +310,7 @@ async function computeHall(): Promise<HubHall> {
 
   const { data: leagueRows } = await admin
     .from('leagues')
-    .select('id, name, slug, platform')
+    .select('id, name, slug, league_type, draft_scoring_profile, trade_desk_settings')
     .not('published_at', 'is', null)
   const leagues = leagueRows ?? []
   if (leagues.length === 0) {
@@ -574,32 +575,65 @@ async function computeHall(): Promise<HubHall> {
   const records = buildRecords(null)
 
   // ── League classification for the split walls ──────────────────────────
-  // Superflex: any lineup in the league's history started 2+ QBs in one
-  // week. weekly_lineups only exists for recently-synced leagues; leagues
-  // with no QB-lineup data default to 1-QB (the common case).
-  const superflexLeagues = new Set<string>()
+  // Sources, in priority order:
+  //   1. Trade Desk settings (commish-confirmed overrides: lineup type,
+  //      PPR variant, flex slots, TE premium)
+  //   2. draft_scoring_profile (PPR/Half × 4/6pt passing TDs — set on the
+  //      draft history page; defaults to ppr_6pt)
+  //   3. Lineup evidence from weekly_lineups (2+ QB starters → superflex;
+  //      FLEX slot counts → flex starters)
+  //   4. leagues.league_type (redraft / keeper / dynasty)
+
+  // Lineup evidence: QB starters (superflex) + FLEX slots per lineup.
+  const superflexDetected = new Set<string>()
+  const flexDetected = new Map<string, number>() // league → typical FLEX starters
   {
-    type QbRow = { season_id: string; week: number; manager_id: string }
-    const qbStarts = new Map<string, number>()
-    for (const ids of chunk(seasonIds, 100)) {
-      const rows = await fetchAll<QbRow>((from, to) =>
-        admin
-          .from('weekly_lineups')
-          .select('season_id, week, manager_id')
-          .in('season_id', ids)
-          .eq('is_starter', true)
-          .eq('position', 'QB')
-          .range(from, to)
-      )
-      for (const r of rows) {
-        const key = `${r.season_id}:${r.week}:${r.manager_id}`
-        qbStarts.set(key, (qbStarts.get(key) ?? 0) + 1)
+    type SlotRow = { season_id: string; week: number; manager_id: string }
+    const countLineups = async (filter: { position?: string; slot?: string }) => {
+      const counts = new Map<string, number>()
+      for (const ids of chunk(seasonIds, 100)) {
+        const rows = await fetchAll<SlotRow>((from, to) => {
+          let q = admin
+            .from('weekly_lineups')
+            .select('season_id, week, manager_id')
+            .in('season_id', ids)
+            .eq('is_starter', true)
+          if (filter.position) q = q.eq('position', filter.position)
+          if (filter.slot) q = q.eq('slot', filter.slot)
+          return q.range(from, to)
+        })
+        for (const r of rows) {
+          const key = `${r.season_id}:${r.week}:${r.manager_id}`
+          counts.set(key, (counts.get(key) ?? 0) + 1)
+        }
       }
+      return counts
     }
+
+    const qbStarts = await countLineups({ position: 'QB' })
     for (const [key, n] of qbStarts) {
       if (n < 2) continue
       const season = seasonById.get(key.split(':')[0])
-      if (season) superflexLeagues.add(season.league_id)
+      if (season) superflexDetected.add(season.league_id)
+    }
+
+    // FLEX per lineup → per-league mode. Lineups with zero FLEX rows
+    // don't appear in the map, so only leagues with FLEX data vote.
+    const flexStarts = await countLineups({ slot: 'FLEX' })
+    const flexVotes = new Map<string, Map<number, number>>()
+    for (const [key, n] of flexStarts) {
+      const season = seasonById.get(key.split(':')[0])
+      if (!season) continue
+      const votes = flexVotes.get(season.league_id) ?? new Map<number, number>()
+      votes.set(n, (votes.get(n) ?? 0) + 1)
+      flexVotes.set(season.league_id, votes)
+    }
+    for (const [leagueId, votes] of flexVotes) {
+      let best = 0, bestN = 0
+      for (const [n, count] of votes) {
+        if (count > bestN || (count === bestN && n > best)) { best = n; bestN = count }
+      }
+      if (best > 0) flexDetected.set(leagueId, best)
     }
   }
 
@@ -627,17 +661,50 @@ async function computeHall(): Promise<HubHall> {
     }
   }
 
+  // Fold every signal into one classification per league.
+  type LeagueClass = {
+    superflex: boolean
+    scoring: 'PPR' | 'HALF' | 'STANDARD'
+    qbTd: 4 | 6
+    flex: number | null
+    tePremium: boolean
+    leagueType: string
+  }
+  const classOf = new Map<string, LeagueClass>()
+  for (const l of leagues) {
+    const id = l.id as string
+    const td = parseSettings(l.trade_desk_settings)
+    const profile = (l.draft_scoring_profile as string | null) ?? 'ppr_6pt'
+    classOf.set(id, {
+      superflex: td.lineupType ? td.lineupType === 'SUPERFLEX' : superflexDetected.has(id),
+      scoring: td.scoringProfile ?? (profile.startsWith('half') ? 'HALF' : 'PPR'),
+      qbTd: profile.endsWith('4pt') ? 4 : 6,
+      flex: td.rosterSlots?.FLEX ?? flexDetected.get(id) ?? null,
+      tePremium: td.tePremium === 'MILD' || td.tePremium === 'FULL',
+      leagueType: (l.league_type as string | null) ?? 'redraft',
+    })
+  }
+  const cls = (id: string) => classOf.get(id)
+
   const splitDefs: { key: string; group: string; label: string; test: (id: string) => boolean }[] = [
-    { key: 'fmt-1qb', group: 'Format', label: '1-QB leagues', test: (id) => !superflexLeagues.has(id) },
-    { key: 'fmt-sf', group: 'Format', label: 'Superflex / 2-QB', test: (id) => superflexLeagues.has(id) },
-    { key: 'pf-sleeper', group: 'Platform', label: 'Sleeper', test: (id) => leagueById.get(id)?.platform === 'sleeper' },
-    { key: 'pf-espn', group: 'Platform', label: 'ESPN', test: (id) => leagueById.get(id)?.platform === 'espn' },
-    { key: 'pf-yahoo', group: 'Platform', label: 'Yahoo', test: (id) => leagueById.get(id)?.platform === 'yahoo' },
-    { key: 'pf-nfl', group: 'Platform', label: 'NFL.com', test: (id) => leagueById.get(id)?.platform === 'nfl' },
-    { key: 'sz-8', group: 'League size', label: '8 teams or fewer', test: (id) => (leagueSize.get(id) ?? 0) > 0 && (leagueSize.get(id) ?? 0) <= 8 },
-    { key: 'sz-10', group: 'League size', label: '9–10 teams', test: (id) => { const n = leagueSize.get(id) ?? 0; return n >= 9 && n <= 10 } },
-    { key: 'sz-12', group: 'League size', label: '11–12 teams', test: (id) => { const n = leagueSize.get(id) ?? 0; return n >= 11 && n <= 12 } },
-    { key: 'sz-14', group: 'League size', label: '13+ teams', test: (id) => (leagueSize.get(id) ?? 0) >= 13 },
+    { key: 'fmt-1qb', group: 'Format', label: '1-QB', test: (id) => !cls(id)?.superflex },
+    { key: 'fmt-sf', group: 'Format', label: 'Superflex / 2-QB', test: (id) => !!cls(id)?.superflex },
+    { key: 'sc-ppr', group: 'Scoring', label: 'Full PPR', test: (id) => cls(id)?.scoring === 'PPR' },
+    { key: 'sc-half', group: 'Scoring', label: 'Half PPR', test: (id) => cls(id)?.scoring === 'HALF' },
+    { key: 'sc-std', group: 'Scoring', label: 'Standard', test: (id) => cls(id)?.scoring === 'STANDARD' },
+    { key: 'td-4', group: 'Passing TDs', label: '4 pt', test: (id) => cls(id)?.qbTd === 4 },
+    { key: 'td-6', group: 'Passing TDs', label: '6 pt', test: (id) => cls(id)?.qbTd === 6 },
+    { key: 'fx-1', group: 'Flex slots', label: '1 flex', test: (id) => cls(id)?.flex === 1 },
+    { key: 'fx-2', group: 'Flex slots', label: '2+ flex', test: (id) => (cls(id)?.flex ?? 0) >= 2 },
+    { key: 'sz-8', group: 'League size', label: '8 or fewer', test: (id) => (leagueSize.get(id) ?? 0) > 0 && (leagueSize.get(id) ?? 0) <= 8 },
+    { key: 'sz-12', group: 'League size', label: '10–12 teams', test: (id) => { const n = leagueSize.get(id) ?? 0; return n >= 9 && n <= 12 } },
+    { key: 'sz-14', group: 'League size', label: '14+ teams', test: (id) => (leagueSize.get(id) ?? 0) >= 13 },
+    { key: 'lt-redraft', group: 'League type', label: 'Redraft', test: (id) => cls(id)?.leagueType === 'redraft' },
+    { key: 'lt-keeper', group: 'League type', label: 'Keeper', test: (id) => cls(id)?.leagueType === 'keeper' },
+    { key: 'lt-dynasty', group: 'League type', label: 'Dynasty', test: (id) => cls(id)?.leagueType === 'dynasty' },
+    // Only the premium bucket — "no TE premium" would just mirror the
+    // full wall. Disappears automatically while no league has it set.
+    { key: 'te-prem', group: 'TE premium', label: 'TE premium', test: (id) => !!cls(id)?.tePremium },
   ]
 
   const splits: HubHallSplit[] = []
@@ -663,7 +730,7 @@ async function computeHall(): Promise<HubHall> {
   }
 }
 
-export const getHubHall = unstable_cache(computeHall, ['hub-hall-v2'], {
+export const getHubHall = unstable_cache(computeHall, ['hub-hall-v3'], {
   revalidate: 3600,
   tags: ['hub-data'],
 })

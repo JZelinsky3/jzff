@@ -119,8 +119,10 @@ export default async function HallPage() {
             >
               Only published leagues are surveyed — private archives never put names on this
               wall. Season records require at least ten games; streaks count playoffs and
-              snap on a tie. Superflex is detected from real lineups (two or more quarterbacks
-              started in a week). The wall re-counts itself every hour.
+              snap on a tie. Format and flex are read from real lineups (two QBs started in a
+              week → superflex); scoring, passing TDs, and TE premium come from each league&apos;s
+              scoring profile and Trade Desk settings — commissioners can correct those any
+              time and the splits follow. The wall re-counts itself every hour.
             </p>
           </div>
         </>
