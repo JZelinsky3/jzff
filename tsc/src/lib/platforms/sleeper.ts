@@ -165,6 +165,19 @@ export type SleeperPlayer = {
   // tiering inside the analyzer.
   search_rank_pos?: number | null
   fantasy_positions?: string[] | null
+  // Cross-platform identifiers. Sleeper ships these on every player row.
+  // We expose them so the analyzer can translate ESPN/Yahoo/NFL.com rosters
+  // back to Sleeper IDs (the canonical key for the value engine).
+  //   • espn_id            → numeric, sometimes a string in the wire payload
+  //   • yahoo_id           → Yahoo numeric playerId (Yahoo's key is `nfl.p.<id>`)
+  //   • gsis_id            → NFL's canonical id, used by NFL.com fantasy rosters
+  //   • fantasy_data_id    → FantasyData.io id, useful as a secondary join
+  //   • rotowire_id        → RotoWire id, kept for completeness
+  espn_id?: string | number | null
+  yahoo_id?: string | number | null
+  gsis_id?: string | null
+  fantasy_data_id?: string | number | null
+  rotowire_id?: string | number | null
 }
 
 export type SleeperBracketMatch = {
@@ -186,7 +199,16 @@ async function getJson<T>(path: string): Promise<T | null> {
   return (await res.json()) as T
 }
 
+// NFL clock from Sleeper — current week + season phase. Not league-scoped.
+export type SleeperState = {
+  week: number
+  display_week?: number
+  season: string
+  season_type: string // 'pre' | 'regular' | 'post' | 'off'
+}
+
 export const sleeper = {
+  state: () => getJson<SleeperState>('/state/nfl'),
   league: (id: string) => getJson<SleeperLeague>(`/league/${id}`),
   users: (id: string) => getJson<SleeperUser[]>(`/league/${id}/users`),
   rosters: (id: string) => getJson<SleeperRoster[]>(`/league/${id}/rosters`),

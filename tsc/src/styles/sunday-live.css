@@ -1,0 +1,269 @@
+/* ============================================================
+   SUNDAY LIVE v2 — companion stylesheet.
+   Imported by src/app/leagues/[slug]/sunday-live/layout.tsx (added
+   in Phase 1). Scoped under .sl-root so it never leaks elsewhere.
+
+   Palette: "Midnight Stadium" — warmer/cinematic than the v1
+   navy. The matching Tailwind color tokens live in globals.css
+   (@theme block) so utilities like bg-sl-stadium / text-sl-ember
+   are available alongside the raw --sl-* aliases here.
+   ============================================================ */
+
+.sl-root {
+  /* Surfaces */
+  --sl-ink:         #07101f;
+  --sl-ink-warm:    #0c172d;
+  --sl-stadium:     #122140;
+  --sl-stadium-hi:  #1a2d52;
+  --sl-edge:        #233b6b;
+  --sl-edge-soft:   #182747;
+  --sl-slate:       #1f3358;
+
+  /* Text */
+  --sl-cream:       #f4ede0;
+  --sl-mute:        #93a3bf;
+  --sl-dim:         #5a6a85;
+
+  /* Signal colors */
+  --sl-signal:      #ff4d4d;   /* LIVE only */
+  --sl-ember:       #d4a849;   /* story moments, gold accents */
+  --sl-ember-glow:  #ffd585;   /* halo on big moments */
+  --sl-cool:        #5fb0d6;   /* opponent / secondary */
+  --sl-green:       #5fd6a0;   /* positive deltas */
+  --sl-violet:      #b58cff;   /* upset alert */
+
+  background:
+    radial-gradient(ellipse 70% 60% at 92% 110%, rgba(212, 168, 73, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 60% at 8% -10%, rgba(95, 176, 214, 0.05) 0%, transparent 55%),
+    linear-gradient(180deg, var(--sl-ink) 0%, var(--sl-ink-warm) 60%, var(--sl-ink) 100%);
+  color: var(--sl-cream);
+  min-height: 100vh;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Make sure the masthead/sticky bars don't fight the global .nav. */
+.sl-root .nav { position: relative; top: auto; z-index: 40; }
+
+/* ── Glass + surfaces ────────────────────────────────────────── */
+.sl-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 38%),
+    linear-gradient(180deg, var(--sl-stadium) 0%, var(--sl-ink-warm) 100%);
+  border: 1px solid var(--sl-edge);
+  border-radius: 4px;
+}
+.sl-card-hi {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 45%),
+    linear-gradient(180deg, var(--sl-stadium-hi) 0%, var(--sl-ink-warm) 100%);
+}
+
+/* Live cards get a static signal-red rim. Motion is reserved for the LIVE pip
+   + score bumps — never an animated box-shadow on tile-sized surfaces. */
+.sl-rim-live {
+  box-shadow: inset 0 0 0 1px rgba(255, 77, 77, 0.20);
+}
+
+/* ── Live pip (only one on-screen at a time — masthead) ──────── */
+.sl-pip {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--sl-signal);
+  box-shadow: 0 0 10px var(--sl-signal);
+  animation: sl-pulse 1.4s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes sl-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.72); }
+}
+
+/* Quarter clock colon blinks like a stadium scoreboard. */
+.sl-clock-sep { animation: sl-blink 1s step-end infinite; }
+@keyframes sl-blink { 50% { opacity: 0.25; } }
+
+/* ── Score bump + delta float ────────────────────────────────── */
+.sl-bump { animation: sl-bump 0.45s ease-out; }
+@keyframes sl-bump {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+.sl-delta {
+  position: absolute; top: 0; left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+  opacity: 0;
+}
+.sl-delta.up   { color: var(--sl-green); }
+.sl-delta.down { color: var(--sl-mute); }
+.sl-delta.is-flash { animation: sl-delta-flash 1.8s ease-out 1; }
+@keyframes sl-delta-flash {
+  0%   { opacity: 0; transform: translate(-50%, 4px); }
+  22%  { opacity: 1; transform: translate(-50%, -16px); }
+  72%  { opacity: 1; transform: translate(-50%, -16px); }
+  100% { opacity: 0; transform: translate(-50%, -18px); }
+}
+
+/* ── Win-probability bar (smooth ease, not spring) ───────────── */
+.sl-wp-track {
+  position: relative;
+  overflow: hidden;
+  background: var(--sl-edge-soft);
+  height: 8px;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sl-wp-fill {
+  position: absolute; inset: 0 auto 0 0;
+  background: linear-gradient(90deg, var(--sl-signal) 0%, #ff8585 100%);
+  box-shadow: 0 0 12px rgba(255, 77, 77, 0.40);
+  transition: width 0.85s cubic-bezier(0.2, 0.7, 0.2, 1);
+  border-radius: 999px;
+}
+.sl-wp-center {
+  position: absolute; top: -2px; bottom: -2px; left: 50%; width: 1px;
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateX(-50%);
+}
+
+/* Sweat Index pill — gradient that warms with stress. */
+.sl-sweat {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.18rem 0.55rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.58rem; letter-spacing: 0.22em; text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid var(--sl-edge);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--sl-cream);
+}
+.sl-sweat[data-tier="hot"]    { color: var(--sl-signal); border-color: rgba(255, 77, 77, 0.4); background: rgba(255, 77, 77, 0.06); }
+.sl-sweat[data-tier="warm"]   { color: var(--sl-ember); border-color: rgba(212, 168, 73, 0.4); background: rgba(212, 168, 73, 0.06); }
+.sl-sweat[data-tier="cool"]   { color: var(--sl-cool); border-color: rgba(95, 176, 214, 0.4); background: rgba(95, 176, 214, 0.06); }
+.sl-sweat[data-tier="cold"]   { color: var(--sl-dim); }
+
+/* ── Pickems badge variants ──────────────────────────────────── */
+.sl-pick {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.18rem 0.55rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.58rem; letter-spacing: 0.22em; text-transform: uppercase;
+  border-radius: 2px;
+  border: 1px solid var(--sl-edge);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--sl-mute);
+}
+.sl-pick[data-variant="coin-flip"]      { color: var(--sl-ember); border-color: rgba(212, 168, 73, 0.4); background: rgba(212, 168, 73, 0.05); }
+.sl-pick[data-variant="upset-alert"]    {
+  color: var(--sl-violet);
+  border-color: rgba(181, 140, 255, 0.5);
+  background: rgba(181, 140, 255, 0.06);
+  animation: sl-pick-pulse 2.6s ease-in-out infinite;
+}
+.sl-pick[data-variant="consensus-cold"] { color: var(--sl-cool); border-color: rgba(95, 176, 214, 0.4); background: rgba(95, 176, 214, 0.05); }
+@keyframes sl-pick-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(181, 140, 255, 0); }
+  50%      { box-shadow: 0 0 16px -4px rgba(181, 140, 255, 0.55); }
+}
+
+/* ── The Wire — color-coded left rule on each row ────────────── */
+.sl-wire-row {
+  position: relative;
+  padding-left: 0.85rem;
+}
+.sl-wire-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0.35rem; bottom: 0.35rem;
+  width: 2px;
+  background: var(--sl-edge);
+  border-radius: 2px;
+}
+.sl-wire-row[data-kind="injury"]::before,
+.sl-wire-row[data-kind="inactive"]::before  { background: var(--sl-signal); }
+.sl-wire-row[data-kind="td"]::before,
+.sl-wire-row[data-kind="fg"]::before        { background: var(--sl-ember); }
+.sl-wire-row[data-kind="big-moment"]::before { background: var(--sl-violet); }
+.sl-wire-row[data-kind="kickoff"]::before,
+.sl-wire-row[data-kind="final"]::before     { background: var(--sl-dim); }
+.sl-wire-row.is-fresh {
+  animation: sl-wire-in 1.1s cubic-bezier(0.2, 0.85, 0.3, 1) 1;
+}
+@keyframes sl-wire-in {
+  0%   { background: rgba(212, 168, 73, 0.10); transform: translateY(-6px); opacity: 0; }
+  100% { background: transparent; transform: translateY(0); opacity: 1; }
+}
+
+/* ── Big Moment "thunk" — used when a new moment slides in ─── */
+.sl-moment-in { animation: sl-moment-in 0.55s cubic-bezier(0.2, 0.85, 0.3, 1) 1; }
+@keyframes sl-moment-in {
+  0%   { transform: translateY(14px); opacity: 0; }
+  60%  { transform: translateY(-2px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ── Ticker — stadium-board cycle ─────────────────────────────
+   Per-scope cycle (enter → hold → scroll → hold → exit) implemented as a
+   single 10s keyframe animation. The horizontal scroll distance is fed in
+   via the --sl-tk-scroll custom property (set inline based on the measured
+   content overflow of the current scope), so wider scopes scroll farther.
+   Animation iterations advance to the next scope (onAnimationIteration). */
+.sl-ticker-row {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  will-change: transform;
+  animation: sl-ticker-cycle 10s linear infinite;
+  --sl-tk-scroll: 0px;
+}
+.sl-ticker-row.is-paused { animation-play-state: paused; }
+@keyframes sl-ticker-cycle {
+  0%    { transform: translate3d(0, 100%, 0); }
+  /* enter (0 → 600ms) */
+  6%    { transform: translate3d(0, 0, 0); }
+  /* hold-entry (600ms → 2100ms) */
+  21%   { transform: translate3d(0, 0, 0); }
+  /* horizontal scroll (2100ms → 8100ms) */
+  81%   { transform: translate3d(var(--sl-tk-scroll), 0, 0); }
+  /* hold-end (8100ms → 9500ms) */
+  95%   { transform: translate3d(var(--sl-tk-scroll), 0, 0); }
+  /* exit upward (9500ms → 10000ms) */
+  100%  { transform: translate3d(var(--sl-tk-scroll), -110%, 0); }
+}
+
+/* Small dot indicators under the ticker — show scope progress + are clickable. */
+.sl-ticker-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--sl-edge);
+  transition: width 0.2s, background 0.2s;
+}
+.sl-ticker-dot.is-active { width: 16px; border-radius: 999px; background: var(--sl-ember); }
+
+/* ── Shimmer placeholder (loading) ───────────────────────────── */
+.sl-shimmer {
+  background: linear-gradient(100deg, rgba(255,255,255,0.02) 30%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 70%);
+  background-size: 200% 100%;
+  animation: sl-shimmer 1.6s linear infinite;
+}
+@keyframes sl-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ── Font helpers (main.css owns @font-face) ─────────────────── */
+.sl-ff-serif { font-family: var(--serif, Georgia, serif); }
+.sl-ff-mono  { font-family: var(--mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
+.sl-tnum     { font-variant-numeric: tabular-nums; }
+
+/* ── Reduced motion — kill loops, keep state changes legible ── */
+@media (prefers-reduced-motion: reduce) {
+  .sl-root *,
+  .sl-pip, .sl-bump, .sl-delta, .sl-wire-row, .sl-moment-in,
+  .sl-ticker-tab-roll, .sl-shimmer, .sl-clock-sep, .sl-pick {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+  .sl-wp-fill { transition: none !important; }
+}

@@ -10,8 +10,8 @@
 // links are surfaced as "pending" rows in the desk's unsupported list so
 // the UI can prompt the user that those platforms aren't wired up yet.
 
-import { unstable_cache } from 'next/cache'
 import { sleeper, type SleeperPlayer, type SleeperRoster, type SleeperUser } from '@/lib/platforms/sleeper'
+import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import { createClient } from '@/lib/supabase/server'
 
 export type DeskPlayer = {
@@ -77,19 +77,12 @@ function isInjuredStatus(s: string | null | undefined): boolean {
   return INJURY_SEVERITY[s] != null
 }
 
-// Cache the full Sleeper /players/nfl dictionary for 6h. It's ~5MB and Sleeper
-// recommends polling at most once per day; 6h is the operational sweet spot
-// for injury freshness without hammering the endpoint.
+// Full Sleeper /players/nfl dictionary. ~16MB of JSON — far over
+// unstable_cache's 2MB entry limit, which hard-errors the response on
+// current Next, so it lives in the shared in-memory cache instead
+// (6h TTL — see sleeperPlayers.ts).
 async function loadSleeperPlayers(): Promise<Record<string, SleeperPlayer>> {
-  const cached = unstable_cache(
-    async () => {
-      const players = await sleeper.playersNfl()
-      return players ?? {}
-    },
-    ['sleeper-players-nfl', 'v1'],
-    { revalidate: 6 * 60 * 60 },
-  )
-  return cached()
+  return getPlayersNflDict()
 }
 
 function playerName(p: SleeperPlayer | undefined, fallbackId: string): string {

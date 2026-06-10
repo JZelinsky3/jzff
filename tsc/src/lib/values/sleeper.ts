@@ -9,8 +9,8 @@
 // Future providers (KTC, FP, ESPN) implement the same ValueSource interface
 // so the orchestrator can swap or blend without touching callers.
 
-import { unstable_cache } from 'next/cache'
-import { sleeper, type SleeperPlayer } from '@/lib/platforms/sleeper'
+import { type SleeperPlayer } from '@/lib/platforms/sleeper'
+import { getPlayersNflDict } from '@/lib/sleeperPlayers'
 import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
 
 const MAX_RANK = 500   // anyone past this rank is treated as ~0 value
@@ -108,13 +108,10 @@ function valueFromPlayer(p: SleeperPlayer, ctx: LeagueValuationContext): number 
 }
 
 async function loadSleeperPlayers(): Promise<Record<string, SleeperPlayer>> {
-  // Shares the 6h cache the Player Desk uses — same upstream call.
-  const cached = unstable_cache(
-    async () => (await sleeper.playersNfl()) ?? {},
-    ['sleeper-players-nfl', 'v1'],
-    { revalidate: 6 * 60 * 60 },
-  )
-  return cached()
+  // Full dict is ~16MB JSON — over unstable_cache's 2MB entry limit, which
+  // hard-errors the response on current Next. Shared in-memory cache
+  // instead (see sleeperPlayers.ts).
+  return getPlayersNflDict()
 }
 
 export const sleeperValueSource: ValueSource = {

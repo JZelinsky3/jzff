@@ -5,7 +5,21 @@
 
 /* Fonts loaded via next/font/google in layout.tsx */
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Semantic-element reset. Zeroes only the elements browsers actually give
+   default margin/padding (headings, paragraphs, lists, body), which is what
+   Tailwind v4's own preflight does. The previous `* { padding: 0 }` zeroed
+   every div + span too, which beat Tailwind padding utilities (`px-3.5`,
+   `py-2`, etc.) on Sunday Live cards because a wildcard selector ties any
+   utility class on specificity and the wildcard rule loaded later. Box-sizing
+   stays universal. */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  body, h1, h2, h3, h4, h5, h6, p, blockquote, figure,
+  ul, ol, dl, dd, fieldset, pre {
+    margin: 0;
+    padding: 0;
+  }
+}
 
 :root {
     /* Palette — Vintage Creamery */

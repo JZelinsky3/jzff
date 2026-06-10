@@ -1,0 +1,628 @@
+/* ============================================================
+   ANALYZER — Trade Desk · Phase 3 builder UI
+   Brown/brass theme; uses trade-desk.css for token tier.
+   ============================================================ */
+
+html, body { background: var(--td-bg, #1a1209); color: var(--td-text, #f5e9c8); }
+
+/* Nav recolor — same family as the hub, but the back link uses a
+   lighter cream so the interior tool pages don't read as a carbon
+   copy of the Trade Desk hub's masthead. */
+.nav { background: rgb(15, 11, 6); border-bottom-color: var(--td-line); }
+.nav-link, .nav-kicker, .nav-drop-btn { color: var(--td-live); }
+.nav-back { color: var(--td-desc); }
+.nav-back:hover { color: var(--td-text); }
+.nav-link:hover, .nav-drop-btn:hover { color: #f3d775; }
+.nav-title em { color: var(--td-text); font-style: italic; }
+:root {
+    --chapbar-bg:     rgb(15, 11, 6);
+    --chapbar-border: var(--td-line);
+    --chapbar-text:   var(--td-mute);
+    --chapbar-active: var(--td-live);
+    --chapbar-line:   var(--td-line);
+    --subrail-active: var(--td-text);
+    --nav-drop-bg:           rgb(15, 11, 6);
+    --nav-drop-border:       var(--td-line);
+    --nav-drop-text:         var(--td-text);
+    --nav-drop-text-hover:   #f3d775;
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.an-wrap { max-width: 1100px; margin: 0 auto; padding: 1.4rem 1rem 5rem; }
+
+/* ── Hero — top padding tuned so sup-to-chapbar gap matches the
+   Live Season hub (~3.5rem total with the wrap's 1.4rem). Finder
+   shares this tier, so the fix lands on both rooms. ─────────── */
+.an-hero { text-align: center; padding: 2.1rem 1rem 2.2rem; }
+.an-hero-sup {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .3em;
+    text-transform: uppercase; color: var(--td-live); margin-bottom: .9rem;
+}
+.an-hero-title {
+    font-family: var(--serif); font-size: clamp(2.4rem, 5.5vw, 4rem);
+    line-height: 1; margin: 0; color: var(--td-text);
+}
+.an-hero-title em { color: var(--td-text-em); font-style: italic; }
+.an-hero-sub {
+    margin: 1.2rem auto 0; max-width: 540px;
+    color: var(--td-desc); font-size: .95rem; line-height: 1.55;
+}
+.an-mode-pill {
+    display: inline-block;
+    margin: 1.4rem auto 0;
+    padding: .4rem .85rem;
+    border: 1px solid var(--td-line);
+    border-radius: 999px;
+    background: var(--td-card);
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--td-live);
+}
+
+/* ── Season indicator ───────────────────────────────────────────
+ * Subtle text under the league-settings pill. Shows "Live" for the
+ * current season; doubles as a year picker (past seasons selectable
+ * via the dropdown but visually quiet). */
+.an-year-picker {
+    display: inline-block;
+    margin: .55rem auto 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+.an-year-select {
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--td-mute);
+    font-family: var(--mono); font-size: .55rem; letter-spacing: .22em;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: center;
+    text-align-last: center;
+}
+.an-year-select:focus { outline: none; color: var(--td-live); }
+.an-year-select:hover { color: var(--td-live); }
+
+/* ── Loading / error states ─────────────────────────────────── */
+.an-state {
+    text-align: center; padding: 2.5rem 1rem;
+    color: var(--td-desc); font-size: .95rem;
+}
+.an-state-error {
+    color: #e8c889;
+    padding: 1rem 1.2rem;
+    background: rgba(212, 169, 76, .08);
+    border: 1px solid rgba(212, 169, 76, .4);
+    border-radius: 4px;
+    max-width: 640px; margin: 0 auto;
+}
+
+/* ── Team pickers ───────────────────────────────────────────── */
+.an-pickers {
+    display: flex; gap: 1rem; align-items: end; justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.6rem;
+}
+.an-picker { display: flex; flex-direction: column; gap: .35rem; min-width: 230px; flex: 1; max-width: 320px; }
+.an-picker-label {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.an-picker-select {
+    padding: .65rem .8rem;
+    background: var(--td-input-bg, #1f160d);
+    border: 1px solid var(--td-line);
+    border-radius: 3px;
+    color: var(--td-text);
+    font-family: inherit; font-size: .95rem;
+    appearance: auto;
+}
+.an-picker-select:focus { outline: none; border-color: var(--td-live); }
+.an-pickers-vs {
+    font-family: var(--mono); font-size: .65rem; letter-spacing: .25em;
+    color: var(--td-mute); padding-bottom: .85rem;
+}
+
+/* ── Sides ──────────────────────────────────────────────────── */
+.an-sides {
+    display: grid; grid-template-columns: 1fr; gap: 1rem;
+    margin-bottom: 1.4rem;
+}
+@media (min-width: 760px) {
+    .an-sides { grid-template-columns: 1fr 1fr; }
+}
+.an-side {
+    background: var(--td-card);
+    border: 1px solid var(--td-line);
+    border-radius: 4px;
+    padding: 1.1rem 1.1rem 1.3rem;
+}
+.an-side-head {
+    display: flex; align-items: baseline; gap: .8rem;
+    margin-bottom: .85rem;
+    padding-bottom: .7rem;
+    border-bottom: 1px solid var(--td-line-soft);
+}
+.an-side-tag {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--td-live);
+}
+.an-side-name {
+    font-family: var(--serif); font-size: 1.05rem;
+    color: var(--td-text); flex: 1; text-align: right;
+}
+
+/* ── Position groups + player rows ──────────────────────────── */
+.an-pos-groups { display: flex; flex-direction: column; gap: 1.1rem; }
+.an-pos-group { display: flex; flex-direction: column; gap: .25rem; }
+.an-pos-label {
+    display: flex; align-items: baseline; justify-content: space-between;
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--td-live);
+    padding: .35rem 0 .5rem;
+    border-bottom: 1px solid var(--td-line-soft);
+    margin-bottom: .2rem;
+}
+.an-pos-count {
+    color: var(--td-mute);
+    font-size: .52rem; letter-spacing: .18em;
+}
+
+.an-rows { display: flex; flex-direction: column; gap: .25rem; }
+.an-row {
+    display: flex; align-items: center; gap: .65rem;
+    padding: .42rem .55rem;
+    background: var(--td-input-bg, #1f160d);
+    border: 1px solid var(--td-line);
+    border-radius: 4px;
+    color: var(--td-desc);
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+    font-family: inherit;
+    text-align: left;
+    width: 100%;
+}
+.an-row:hover { border-color: var(--td-live); color: var(--td-text); }
+.an-row[aria-pressed="true"] {
+    background: rgba(200, 164, 100, .14);
+    border-color: var(--td-live);
+    color: var(--td-text);
+}
+
+/* Starter / FLEX / SF marker — left bar in the row that signals which
+   players actually start in this league's lineup configuration. */
+.an-row[data-slot="starter"] {
+    border-left: 3px solid var(--td-live);
+    padding-left: calc(.55rem - 2px);
+}
+.an-row[data-slot="flex"] {
+    border-left: 3px solid #7fa8bd;   /* steel blue — alt color, same marking */
+    padding-left: calc(.55rem - 2px);
+}
+.an-row[data-slot="sf"] {
+    border-left: 3px solid #b58cff;   /* violet — distinct from FLEX */
+    padding-left: calc(.55rem - 2px);
+}
+.an-row[data-slot="starter"] .an-row-name { color: var(--td-text); }
+.an-row[data-slot="flex"] .an-row-name,
+.an-row[data-slot="sf"] .an-row-name { color: var(--td-text); }
+.an-row-avatar {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--td-line-soft);
+    object-fit: cover;
+    object-position: center top;
+    border: 1px solid var(--td-line);
+}
+.an-row-avatar-fallback {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--td-line-soft);
+    border: 1px solid var(--td-line);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .1em;
+    color: var(--td-mute);
+}
+.an-row-avatar-def {
+    /* DEFs get a brass tint so they stand out from "Sleeper just doesn't
+       have a photo" fallbacks — same bubble shape, different vibe. */
+    background: rgba(200, 164, 100, .12);
+    border-color: var(--td-live);
+    color: var(--td-live);
+    font-size: .55rem; letter-spacing: .12em;
+}
+.an-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .12rem; }
+.an-row-name {
+    font-size: .9rem; line-height: 1.15;
+    color: inherit;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.an-row-meta {
+    display: flex; align-items: center; gap: .45rem;
+    font-family: var(--mono); font-size: .56rem; letter-spacing: .14em;
+    color: var(--td-mute);
+}
+.an-row[aria-pressed="true"] .an-row-meta { color: var(--td-desc); }
+.an-row-team { color: var(--td-mute); }
+.an-row-injury { color: #d4a94c; }
+.an-row-value {
+    flex-shrink: 0;
+    font-family: var(--mono); font-size: .82rem;
+    color: var(--td-live);
+    min-width: 44px; text-align: right;
+}
+.an-row[aria-pressed="true"] .an-row-value { color: #f3d775; }
+.an-row-value-zero { color: var(--td-mute); opacity: .6; }
+
+/* ── Side footer — team total ───────────────────────────────── */
+.an-side-foot {
+    margin-top: .9rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--td-line-soft);
+    display: flex; align-items: baseline; justify-content: space-between;
+    font-family: var(--mono); font-size: .65rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.an-side-foot strong {
+    color: var(--td-text-em); font-weight: 500; font-size: 1rem;
+    letter-spacing: 0;
+}
+
+/* ── Action row ─────────────────────────────────────────────── */
+.an-action {
+    position: sticky; bottom: 0;
+    background: linear-gradient(180deg, rgba(26, 18, 9, 0), var(--td-bg, #1a1209) 38%);
+    padding: 1.2rem 0 .5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+}
+.an-action-summary {
+    flex: 1; min-width: 220px;
+    font-family: var(--mono); font-size: .65rem; letter-spacing: .14em;
+    color: var(--td-desc);
+}
+.an-action-summary strong { color: var(--td-text); font-weight: 500; }
+.an-btn {
+    padding: .75rem 1.4rem;
+    background: var(--td-live);
+    color: var(--td-bg-deep, #15100a);
+    border: 1px solid var(--td-live);
+    border-radius: 3px;
+    font-family: var(--mono); font-size: .68rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+.an-btn:hover { background: #f3d775; border-color: #f3d775; }
+.an-btn[disabled] { opacity: .4; cursor: not-allowed; }
+.an-btn-ghost {
+    background: transparent;
+    color: var(--td-live);
+}
+.an-btn-ghost:hover { background: rgba(200, 164, 100, .07); }
+
+/* ── Result panel ───────────────────────────────────────────── */
+.an-result { margin-top: 2.4rem; }
+.an-result-head {
+    display: flex; align-items: baseline; gap: 1rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1.4rem;
+    border-bottom: 1px solid var(--td-line-soft);
+    flex-wrap: wrap;
+}
+.an-result-sup {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .3em;
+    text-transform: uppercase; color: var(--td-live);
+}
+.an-result-title {
+    font-family: var(--serif); font-size: 1.55rem; line-height: 1;
+    color: var(--td-text); margin: 0;
+}
+.an-result-title em { color: var(--td-text-em); font-style: italic; }
+.an-result-head .an-btn { margin-left: auto; }
+
+.an-result-cards {
+    display: grid; grid-template-columns: 1fr; gap: 1rem;
+    margin-bottom: 1.8rem;
+}
+@media (min-width: 760px) {
+    .an-result-cards { grid-template-columns: 1fr 1fr; }
+}
+.an-result-card {
+    background: var(--td-card);
+    border: 1px solid var(--td-line);
+    border-radius: 4px;
+    padding: 1.3rem 1.3rem 1.5rem;
+    display: flex; flex-direction: column;
+}
+.an-result-card-head {
+    display: flex; align-items: baseline; gap: .8rem;
+    padding-bottom: .7rem;
+    margin-bottom: .9rem;
+    border-bottom: 1px solid var(--td-line-soft);
+}
+.an-result-card-tag {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.an-result-card-name {
+    font-family: var(--serif); font-size: 1.05rem;
+    color: var(--td-text); flex: 1; text-align: right;
+}
+.an-result-grade {
+    font-family: var(--serif); font-size: 3.6rem; line-height: 1;
+    color: var(--td-text-em); font-weight: 700;
+    text-align: center;
+    padding: .5rem 0 .8rem;
+}
+.an-result-grade[data-grade^="A"] { color: #c8a464; }
+.an-result-grade[data-grade^="B"] { color: #d4b78a; }
+.an-result-grade[data-grade^="C"] { color: #c4ad84; }
+.an-result-grade[data-grade^="D"], .an-result-grade[data-grade^="F"] { color: #c75847; }
+.an-result-impact {
+    text-align: center;
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--td-mute);
+    padding: 0 .5rem .9rem;
+}
+.an-result-impact strong { font-size: .85rem; font-weight: 500; letter-spacing: 0; }
+.an-result-impact[data-tone="up"]   strong { color: var(--td-live); }
+.an-result-impact[data-tone="down"] strong { color: #c75847; }
+.an-result-impact[data-tone="flat"] strong { color: var(--td-desc); }
+
+.an-result-verdict {
+    text-align: center;
+    color: var(--td-desc);
+    font-size: .9rem; line-height: 1.5;
+    padding: 0 .5rem 1rem;
+    border-bottom: 1px solid var(--td-line-soft);
+    margin-bottom: 1rem;
+    min-height: 2.6rem;
+}
+.an-result-list {
+    list-style: none; padding: 0; margin: 0 0 1rem;
+    display: flex; flex-direction: column; gap: .4rem;
+    flex: 1;
+}
+.an-result-list-item {
+    display: flex; align-items: baseline; gap: .55rem;
+    font-size: .88rem;
+}
+.an-result-list-pos {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .14em;
+    color: var(--td-mute); min-width: 28px;
+}
+.an-result-list-name { flex: 1; color: var(--td-text); }
+.an-result-list-pct {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .08em;
+    color: var(--td-mute);
+    padding: 1px 5px;
+    border: 1px solid var(--td-line-soft);
+    border-radius: 3px;
+    line-height: 1;
+}
+.an-result-list-val {
+    font-family: var(--mono); font-size: .8rem;
+    color: var(--td-live);
+}
+.an-result-total {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-top: .85rem;
+    border-top: 1px solid var(--td-line-soft);
+    font-family: var(--mono); font-size: .72rem;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--td-mute);
+}
+.an-result-total strong {
+    color: var(--td-text-em); font-weight: 500; font-size: 1rem;
+}
+
+/* ── Value bar ──────────────────────────────────────────────── */
+.an-result-bar {
+    background: var(--td-card);
+    border: 1px solid var(--td-line);
+    border-radius: 4px;
+    padding: 1.2rem 1.3rem;
+    margin-bottom: 1.6rem;
+}
+.an-result-bar-track {
+    display: flex; height: 14px;
+    border-radius: 7px;
+    overflow: hidden;
+    background: var(--td-line-soft);
+}
+.an-result-bar-fill {
+    height: 100%;
+    transition: width .35s ease;
+}
+/* The winner takes the page accent; the loser takes the same red the
+   D/F grades and down-deltas use; dead even goes neutral. Tones are
+   set by analyzer.js per result, so the colors follow the verdict
+   rather than always painting the same side the same color. */
+.an-result-bar-fill[data-tone="win"]  { background: var(--td-live); }
+.an-result-bar-fill[data-tone="lose"] { background: #c75847; }
+.an-result-bar-fill[data-tone="even"] { background: var(--td-mute); }
+.an-result-bar-legend {
+    margin-top: .65rem;
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.an-result-bar-legend strong { color: var(--td-text); font-weight: 500; }
+
+.an-result-note {
+    text-align: center;
+    color: var(--td-mute);
+    font-size: .78rem; line-height: 1.5;
+    padding: 1.2rem 1rem;
+    border-top: 1px dashed var(--td-line-soft);
+}
+.an-result-note em { color: var(--td-desc); font-style: italic; }
+
+/* ── Depth block (footer of each result card) ───────────────── */
+.an-depth-block {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--td-line-soft);
+    display: flex; flex-direction: column; gap: .75rem;
+}
+/* 3-column grid: label | value | arrow.
+   - label column flexes
+   - value column auto-sizes and right-aligns
+   - arrow column is fixed-width so labels + values + arrows line up
+     across every depth row (League Rank, Composite, Proj Points). */
+.an-depth-overall {
+    display: grid;
+    grid-template-columns: 1fr auto 38px;
+    column-gap: .55rem;
+    align-items: baseline;
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.an-depth-overall strong {
+    color: var(--td-text); font-weight: 500; font-size: .85rem;
+    text-align: right;
+}
+.an-depth-overall-arrow {
+    color: var(--td-live);
+    font-size: .7rem;
+    text-align: left;
+}
+.an-depth-overall-arrow[data-tone="down"] { color: #c75847; }
+.an-depth-overall-arrow[data-tone="flat"] { color: var(--td-mute); }
+.an-depth-mvmnt-list {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: .35rem;
+}
+.an-depth-mvmnt {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: .35rem .55rem;
+    background: rgba(200, 164, 100, .04);
+    border: 1px solid var(--td-line-soft);
+    border-radius: 3px;
+    font-family: var(--mono); font-size: .65rem; letter-spacing: .12em;
+}
+.an-depth-mvmnt-pos { color: var(--td-mute); }
+.an-depth-mvmnt-val { color: var(--td-desc); }
+.an-depth-mvmnt-val[data-tone="up"]   { color: var(--td-live); }
+.an-depth-mvmnt-val[data-tone="down"] { color: #c75847; }
+.an-depth-empty {
+    text-align: center;
+    color: var(--td-mute);
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .18em;
+    text-transform: uppercase;
+    padding: .35rem 0;
+}
+
+/* ── Narrative card ─────────────────────────────────────────── */
+.an-narrative {
+    background: var(--td-card);
+    border: 1px solid var(--td-line);
+    border-radius: 4px;
+    padding: 1.4rem 1.5rem 1.5rem;
+    margin-bottom: 1.6rem;
+}
+.an-narrative-head {
+    display: flex; align-items: baseline; gap: .9rem;
+    margin-bottom: .9rem;
+    padding-bottom: .6rem;
+    border-bottom: 1px solid var(--td-line-soft);
+}
+.an-narrative-sup {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .3em;
+    text-transform: uppercase; color: var(--td-live);
+}
+.an-narrative-meta {
+    margin-left: auto;
+    font-family: var(--mono); font-size: .56rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.an-narrative-body {
+    color: var(--td-text);
+    font-size: .98rem; line-height: 1.65;
+    margin: 0;
+}
+.an-narrative-body[data-tone="fallback"] {
+    color: var(--td-mute);
+    font-style: italic;
+}
+
+/* ============================================================
+   DRAFTING ROOM — analyzer-page-only re-skin.
+   Scoped to body[data-trade-desk-room="analyzer"] because the
+   Finder loads this sheet too and re-tokens it sea-green. The
+   Analyzer's hub card is a graph-pad worksheet in blue pencil;
+   this makes the room match the paper: midnight drafting-table
+   blue with a faint graph grid behind everything. Brass literals
+   from the tier above are re-keyed here; semantic colors (injury
+   amber, warn gold, down-red) stay.
+   ============================================================ */
+body[data-trade-desk-room="analyzer"] {
+    --td-bg:           #10151d;
+    --td-card:         #18202b;
+    --td-card-hover:   #1f2a38;
+    --td-line:         #2e4055;
+    --td-line-soft:    #1c2733;
+    --td-mute:         #71849b;
+    --td-text:         #e9f0f7;
+    --td-text-em:      #7fb2e8;
+    --td-desc:         #b4c5d8;
+    --td-live:         #6ea8e0;
+    --td-bg-deep:      #0b0f15;
+    --td-input-bg:     #121a24;
+    --td-input-border: #2e4055;
+    --td-input-focus:  #6ea8e0;
+
+    --chapbar-bg:     rgb(9, 13, 19);
+    --chapbar-border: var(--td-line);
+    --chapbar-text:   var(--td-mute);
+    --chapbar-active: var(--td-live);
+    --chapbar-line:   var(--td-line);
+    --subrail-active: #d4a94c;   /* injury amber — pops on the blue room */
+    --nav-drop-bg:           rgb(9, 13, 19);
+    --nav-drop-border:       var(--td-line);
+    --nav-drop-text:         var(--td-text);
+    --nav-drop-text-hover:   #a8cdf0;
+
+    /* Dot grid, not line grid — full graph lines read busy behind a
+       page this dense. Dots mark the intersections only: still reads
+       as drafting paper, recedes behind content. */
+    background-color: #10151d;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(110, 168, 224, .06) 0%, transparent 60%),
+      radial-gradient(rgba(127, 178, 232, .07) 1px, transparent 1.5px);
+    background-size: 100% 100%, 26px 26px;
+    color: var(--td-text);
+}
+html:has(body[data-trade-desk-room="analyzer"]) { background: #10151d; }
+
+body[data-trade-desk-room="analyzer"] .nav { background: rgb(9, 13, 19); }
+body[data-trade-desk-room="analyzer"] .nav-link:hover,
+body[data-trade-desk-room="analyzer"] .nav-drop-btn:hover { color: #a8cdf0; }
+
+/* Brass constants re-keyed to drafting blue. */
+body[data-trade-desk-room="analyzer"] .an-row[aria-pressed="true"] {
+    background: rgba(110, 168, 224, .13);
+}
+body[data-trade-desk-room="analyzer"] .an-row-avatar-def {
+    background: rgba(110, 168, 224, .12);
+}
+body[data-trade-desk-room="analyzer"] .an-row[aria-pressed="true"] .an-row-value { color: #a8cdf0; }
+body[data-trade-desk-room="analyzer"] .an-btn:hover { background: #a8cdf0; border-color: #a8cdf0; }
+body[data-trade-desk-room="analyzer"] .an-btn-ghost:hover { background: rgba(110, 168, 224, .08); }
+body[data-trade-desk-room="analyzer"] .an-depth-mvmnt { background: rgba(110, 168, 224, .05); }
+
+/* Grades in blue pencil; failing marks stay red ink. */
+body[data-trade-desk-room="analyzer"] .an-result-grade[data-grade^="A"] { color: #8ec1f0; }
+body[data-trade-desk-room="analyzer"] .an-result-grade[data-grade^="B"] { color: #a6c0dd; }
+body[data-trade-desk-room="analyzer"] .an-result-grade[data-grade^="C"] { color: #8fa3ba; }
+
+/* FLEX slot bar — the base tier's steel blue collides with the starter
+   bar now that starters are blue. Warm amber keeps the three slot
+   markers (starter blue / FLEX amber / SF violet) apart at a glance. */
+body[data-trade-desk-room="analyzer"] .an-row[data-slot="flex"] { border-left-color: #d2a960; }

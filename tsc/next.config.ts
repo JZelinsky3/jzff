@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+
+// Pin the file-tracing root to THIS project. There's a stray lockfile at
+// /Users/jojo/package-lock.json — without this pin Next picks that as root
+// and emits the "inferred your workspace root" warning on every start.
+const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: projectRoot,
+
   // Preserve trailing slashes on subdirectory index requests
   // (/demo/managers/ stays as-is rather than redirecting to /demo/managers).
   // Without this, browsers strip the trailing slash and then relative paths
@@ -22,6 +31,10 @@ const nextConfig: NextConfig = {
       { source: '/manager/:slug/feuds/:rest*',         destination: '/manager/:slug/legacy',  permanent: true },
       { source: '/manager/:slug/ledger',               destination: '/manager/:slug/vault',   permanent: true },
       { source: '/manager/:slug/ledger/:rest*',        destination: '/manager/:slug/vault',   permanent: true },
+
+      // Sunday Live promoted out of live-season/ to its own top-level chapter.
+      { source: '/leagues/:slug/live-season/sunday-live',        destination: '/leagues/:slug/sunday-live', permanent: true },
+      { source: '/leagues/:slug/live-season/sunday-live/:rest*', destination: '/leagues/:slug/sunday-live/:rest*', permanent: true },
     ]
   },
 };

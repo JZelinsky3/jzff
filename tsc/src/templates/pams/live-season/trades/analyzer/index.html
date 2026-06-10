@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Analyzer · The Trade Desk · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<link rel="stylesheet" href="/pams-template/assets/css/trade-desk.css">
+<link rel="stylesheet" href="/pams-template/assets/css/analyzer.css">
+</head>
+<body data-trade-desk-room="analyzer">
+<div class="site-glow" aria-hidden="true"></div>
+
+<nav id="site-nav" data-page="trades" data-chapter="LIVE · TRADE DESK · ANALYZER"
+     data-back-href="live-season/trades/" data-back-label="Back to Trade Desk"></nav>
+<script src="/pams-template/assets/js/nav.js"></script>
+
+<main class="an-wrap">
+
+    <header class="an-hero">
+        <div class="an-hero-sup">{{LEAGUE_ABBR}} · The Trade Desk</div>
+        <h1 class="an-hero-title">Trade <em>Analyzer.</em></h1>
+        <p class="an-hero-sub">
+            Propose a trade. We'll value every piece against your league's settings,
+            grade both sides, and tell you who wins.
+        </p>
+        <div id="an-mode-pill" class="an-mode-pill" hidden></div> <br>
+        <label class="an-year-picker">
+            <select id="an-year-select" class="an-year-select">
+                <option value="">Live</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+            </select>
+        </label>
+    </header>
+
+    <section id="an-loading" class="an-state">
+        <svg class="tsc-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+            <g transform="rotate(-45 12 12)">
+                <ellipse cx="12" cy="12" rx="8.5" ry="5.2"/>
+                <path d="M9.7 12h4.6M10.8 10.8v2.4M12 10.8v2.4M13.2 10.8v2.4"/>
+            </g>
+        </svg>
+        <p>Loading league rosters…</p>
+    </section>
+
+    <section id="an-error" class="an-state" hidden>
+        <p class="an-state-error" id="an-error-msg"></p>
+    </section>
+
+    <section id="an-builder" class="an-builder" hidden>
+        <div class="an-pickers">
+            <label class="an-picker">
+                <span class="an-picker-label">Team A</span>
+                <select id="an-team-a" class="an-picker-select"></select>
+            </label>
+            <span class="an-pickers-vs">vs</span>
+            <label class="an-picker">
+                <span class="an-picker-label">Team B</span>
+                <select id="an-team-b" class="an-picker-select"></select>
+            </label>
+        </div>
+
+        <div id="an-sides" class="an-sides" hidden>
+            <div class="an-side" id="an-side-a">
+                <header class="an-side-head">
+                    <div class="an-side-tag" id="an-side-a-tag">Sends</div>
+                    <div class="an-side-name" id="an-side-a-name"></div>
+                </header>
+                <div class="an-pos-groups" id="an-side-a-groups"></div>
+                <div class="an-side-foot" id="an-side-a-foot" hidden>
+                    <span>Roster value</span>
+                    <strong id="an-side-a-total">—</strong>
+                </div>
+            </div>
+            <div class="an-side" id="an-side-b">
+                <header class="an-side-head">
+                    <div class="an-side-tag" id="an-side-b-tag">Receives</div>
+                    <div class="an-side-name" id="an-side-b-name"></div>
+                </header>
+                <div class="an-pos-groups" id="an-side-b-groups"></div>
+                <div class="an-side-foot" id="an-side-b-foot" hidden>
+                    <span>Roster value</span>
+                    <strong id="an-side-b-total">—</strong>
+                </div>
+            </div>
+        </div>
+
+        <div id="an-action" class="an-action" hidden>
+            <div class="an-action-summary" id="an-action-summary"></div>
+            <button type="button" id="an-analyze-btn" class="an-btn" disabled>Analyze Trade</button>
+        </div>
+    </section>
+
+    <section id="an-result" class="an-result" hidden>
+        <div class="an-result-head">
+            <span class="an-result-sup">Analysis</span>
+            <h2 class="an-result-title">Trade <em>Card.</em></h2>
+            <button type="button" id="an-reset-btn" class="an-btn an-btn-ghost">Build Another</button>
+        </div>
+
+        <div class="an-result-cards">
+            <div class="an-result-card" id="an-result-a">
+                <header class="an-result-card-head">
+                    <div class="an-result-card-tag" id="an-result-a-tag">Team A</div>
+                    <div class="an-result-card-name" id="an-result-a-name"></div>
+                </header>
+                <div class="an-result-grade" id="an-result-a-grade">—</div>
+                <div class="an-result-impact" id="an-result-a-impact"></div>
+                <div class="an-result-verdict" id="an-result-a-verdict"></div>
+                <ul class="an-result-list" id="an-result-a-list"></ul>
+                <div class="an-result-total" id="an-result-a-total"></div>
+                <div class="an-depth-block" id="an-result-a-depth"></div>
+            </div>
+            <div class="an-result-card" id="an-result-b">
+                <header class="an-result-card-head">
+                    <div class="an-result-card-tag" id="an-result-b-tag">Team B</div>
+                    <div class="an-result-card-name" id="an-result-b-name"></div>
+                </header>
+                <div class="an-result-grade" id="an-result-b-grade">—</div>
+                <div class="an-result-impact" id="an-result-b-impact"></div>
+                <div class="an-result-verdict" id="an-result-b-verdict"></div>
+                <ul class="an-result-list" id="an-result-b-list"></ul>
+                <div class="an-result-total" id="an-result-b-total"></div>
+                <div class="an-depth-block" id="an-result-b-depth"></div>
+            </div>
+        </div>
+
+        <div class="an-result-bar">
+            <div class="an-result-bar-track">
+                <div class="an-result-bar-fill" id="an-result-bar-a"></div>
+                <div class="an-result-bar-fill" id="an-result-bar-b"></div>
+            </div>
+            <div class="an-result-bar-legend" id="an-result-bar-legend"></div>
+        </div>
+
+        <div class="an-narrative" id="an-narrative" hidden>
+            <div class="an-narrative-head">
+                <span class="an-narrative-sup">Narrative</span>
+                <span class="an-narrative-meta" id="an-narrative-meta"></span>
+            </div>
+            <p class="an-narrative-body" id="an-narrative-body"></p>
+        </div>
+
+        <div class="an-result-note" id="an-result-note" hidden>
+            <em>Win-now context (record, seed, age) lands in the next iteration.</em>
+        </div>
+    </section>
+
+</main>
+
+<script src="/pams-template/assets/js/analyzer.js"></script>
+</body>
+</html>

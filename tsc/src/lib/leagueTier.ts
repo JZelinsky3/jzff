@@ -105,6 +105,8 @@ const UDFA_LOCKED_PAGE_PATTERNS: RegExp[] = [
   // pickems/index.html, etc.) still matches. nav.js then disables the
   // hub's card clicks for UDFA leagues so the entry tiles preview-only.
   /^live-season\/(?!index\.html$).+/,
+  // Sunday Live (paid feature, top-level chapter outside live-season/).
+  /^sunday-live(\/|$)/,
   /^draft(\/|$)/,
   /^records\.html$/,
   // NOTE: seasons/season.html was previously locked, but the per-season

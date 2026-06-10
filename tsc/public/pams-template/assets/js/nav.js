@@ -33,7 +33,7 @@
                 { key: 'powerrank',     label: 'Power Rankings',  path: 'live-season/powerrank/' },
                 { key: 'records-watch', label: 'Records Watch',   path: 'live-season/records-watch/' },
                 { key: 'milestones',    label: 'Milestone Alerts',path: 'live-season/milestones/' },
-                { key: 'trades',        label: 'Trade Grader',    path: 'live-season/trades/' },
+                { key: 'trades',        label: 'The Trade Desk',  path: 'live-season/trades/' },
                 { key: 'manager-dna',   label: 'Manager DNA',     path: 'live-season/manager-dna/' },
             ]
         },
@@ -64,12 +64,33 @@
 
     // Chapter section bar — newspaper-style sub-nav rendered below the
     // masthead. Mirrors the choices in PAGES but FLAT (no sub-groups) and
-    // limited to the top-level chapters readers care about. Live Season
-    // sub-pages (overview, trades) stay in the dropdown.
-    // Pickems + power rankings now collapse into a single 'Live' link that
-    // points at the live-season hub. Any live-season sub-page (overview,
-    // pickems, powerrank, trades) lights up the Live tab as active.
-    var LIVE_SEASON_KEYS = ['live-season', 'matchup-preview', 'pickems', 'powerrank', 'records-watch', 'milestones', 'trades', 'manager-dna'];
+    // limited to the top-level chapters readers care about. Any
+    // live-season sub-page lights up the single 'Live' tab as active,
+    // and pages in that subtree also get the slimmer sub-rail below
+    // (LIVE_SUBRAIL_ITEMS) for lateral moves within the section.
+    var LIVE_SEASON_KEYS = ['live-season', 'matchup-preview', 'pickems', 'powerrank', 'best-coach', 'records-watch', 'milestones', 'trades', 'manager-dna'];
+
+    // Live Season sub-rail — second, slimmer row rendered under the
+    // chapbar on every page in the live-season subtree, so readers can
+    // move laterally between live pages without round-tripping through
+    // the section hub. Pick'ems + Power Rankings ship their own custom
+    // mastheads (pe-nav / pr-nav) so the rail doesn't render THERE, but
+    // they're still reachable FROM it. Sunday Live is intentionally
+    // absent — it lives outside the Live Season section.
+    // Order mirrors the hub's three groups: Weekly Slate (matchups,
+    // powerrank, pick'ems), Watch Desk (records, coach, milestones),
+    // Front Office (trades, DNA) — with Overview leading.
+    var LIVE_SUBRAIL_ITEMS = [
+        { key: 'live-season',     label: 'Overview',      path: 'live-season/' },
+        { key: 'matchup-preview', label: 'Matchups',      path: 'live-season/matchup-preview/' },
+        { key: 'powerrank',       label: 'Power Rank',    path: 'live-season/powerrank/' },
+        { key: 'pickems',         label: "Pick'ems",      path: 'live-season/pickems/' },
+        { key: 'records-watch',   label: 'Records Watch', path: 'live-season/records-watch/' },
+        { key: 'best-coach',      label: 'Best Coach',    path: 'live-season/best-coach/' },
+        { key: 'milestones',      label: 'Milestones',    path: 'live-season/milestones/' },
+        { key: 'trades',          label: 'Trade Desk',    path: 'live-season/trades/' },
+        { key: 'manager-dna',     label: 'DNA',           path: 'live-season/manager-dna/' },
+    ];
     var CHAPBAR_ITEMS = [
         { key: 'hub',         label: 'Home',      path: './' },
         { key: 'standings',   label: 'Standings', path: 'standings.html' },
@@ -122,6 +143,21 @@
                   + '</a>';
         }
         html += '</div>';
+
+        // Live Season sub-rail: second slim row inside the same sticky
+        // container, so it scrolls/locks with the chapbar for free.
+        if (LIVE_SEASON_KEYS.indexOf(currentPage) !== -1) {
+            html += '<div class="nav-subrail"><div class="nav-subrail-track">';
+            for (var j = 0; j < LIVE_SUBRAIL_ITEMS.length; j++) {
+                var sub = LIVE_SUBRAIL_ITEMS[j];
+                var subActive = sub.key === currentPage;
+                html += '<a href="' + root + sub.path + '"'
+                      + ' class="nav-subrail-link' + (subActive ? ' is-active' : '') + '"'
+                      + (subActive ? ' aria-current="page"' : '')
+                      + '>' + sub.label + '</a>';
+            }
+            html += '</div></div>';
+        }
         bar.innerHTML = html;
 
         var nav = document.getElementById('site-nav');
@@ -434,6 +470,57 @@
         '  content: ""; position: absolute; left: 0;',
         '  top: 35%; bottom: 35%; width: 1px;',
         '  background: var(--chapbar-line, var(--ink-line, #2a3645));',
+        '}',
+        // Live Season sub-rail — slimmer second row under the chapbar.
+        // Same track mechanics (centered, scrollable on overflow) but
+        // smaller type, tighter padding, and a recessed background.
+        // Colors route through --subrail-* vars so each page can key
+        // the rail to its SECONDARY accent (the chapbar keeps the
+        // primary); fallbacks chain to the chapbar vars so unthemed
+        // pages still render coherently. The bg/border live on the
+        // full-width .nav-subrail wrapper, not the centered track.
+        '.nav-subrail {',
+        '  background: var(--subrail-bg, rgba(0,0,0,.22));',
+        '  border-top: 1px solid var(--subrail-line, var(--chapbar-line, var(--ink-line, #2a3645)));',
+        '}',
+        '.nav-subrail-track {',
+        '  display: flex; align-items: stretch;',
+        '  justify-content: center;',
+        '  overflow-x: auto; overscroll-behavior-x: contain;',
+        '  scrollbar-width: none;',
+        '  max-width: 1370px; margin: 0 auto;',
+        '  padding: 0 1rem;',
+        '}',
+        '.nav-subrail-track::-webkit-scrollbar { display: none; }',
+        '.nav-subrail-link {',
+        '  flex-shrink: 0; position: relative;',
+        '  color: var(--subrail-text, var(--chapbar-text, var(--cream-mute, #8b8676)));',
+        '  opacity: .8;',
+        '  text-decoration: none;',
+        '  font-family: var(--mono, "JetBrains Mono", monospace);',
+        '  font-weight: 700;',
+        '  font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;',
+        '  padding: .42rem .85rem .5rem;',
+        '  transition: color .15s, opacity .15s;',
+        '  white-space: nowrap;',
+        '}',
+        '.nav-subrail-link:hover { color: var(--subrail-active, var(--chapbar-active, var(--gold, #e8c889))); opacity: 1; }',
+        '.nav-subrail-link.is-active { color: var(--subrail-active, var(--chapbar-active, var(--gold, #e8c889))); opacity: 1; }',
+        '.nav-subrail-link.is-active::after {',
+        '  content: ""; position: absolute;',
+        '  left: .85rem; right: .85rem; bottom: 0;',
+        '  height: 2px; background: var(--subrail-active, var(--chapbar-active, var(--gold, #e8c889)));',
+        '}',
+        '.nav-subrail-link + .nav-subrail-link::before {',
+        '  content: ""; position: absolute; left: 0;',
+        '  top: 30%; bottom: 30%; width: 1px;',
+        '  background: var(--subrail-line, var(--chapbar-line, var(--ink-line, #2a3645)));',
+        '}',
+        '@media (max-width: 640px) {',
+        '  .nav-subrail-track { justify-content: flex-start; padding: 0 .15rem; }',
+        '  .nav-subrail-link { padding: .38rem .55rem .46rem; font-size: .52rem; letter-spacing: .12em; }',
+        '  .nav-subrail-link.is-active::after { left: .55rem; right: .55rem; }',
+        '  .nav-subrail-link + .nav-subrail-link::before { top: 25%; bottom: 25%; }',
         '}',
         // UDFA-locked chapter tab: muted color + lock glyph after the
         // label so the user can see at a glance which chapters need an

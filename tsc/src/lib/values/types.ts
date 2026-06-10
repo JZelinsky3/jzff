@@ -13,6 +13,8 @@ export type ValueProviderId =
   | 'fantasycalc-dynasty'
   | 'fantasycalc-redraft'
   | 'ktc-dynasty'
+  | 'dynastyprocess'
+  | 'fantasypros-dynasty'
   | 'fantasypros-ros'
   | 'espn-ros'
 
@@ -40,8 +42,17 @@ export type PlayerValue = {
   source: ValueProviderId
   // For consensus values: how many sources contributed to this blend, plus
   // their individual values so the UI can show "FC: 8400 · Sleeper: 7200".
+  // `rawValue` is the source's native value before per-position quantile
+  // rescale; `value` is the rescaled value that actually fed the consensus
+  // mean. They differ when the source was remapped onto the anchor's frame.
   sourceCount?: number
-  contributions?: Array<{ provider: ValueProviderId; label: string; value: number }>
+  contributions?: Array<{ provider: ValueProviderId; label: string; value: number; rawValue?: number }>
+  // 1-100. Set by the consensus orchestrator after blending so the UI can
+  // render a badge ("WR · P1") next to each player. LOWER = BETTER —
+  // intentionally inverted from statistical convention to match fantasy
+  // managers' "top 1%" intuition. The best WR is P1, the worst is P100.
+  percentilePosition?: number
+  percentileOverall?: number
 }
 
 export type LeagueValuationContext = {

@@ -1,0 +1,338 @@
+/* ============================================================
+   RUMOR MILL — Trade Desk · autonomous weekly mock trades
+   Set like an actual gossip column out of the league paper:
+   no card boxes — entries run down one narrow ruled column,
+   separated by asterism dividers, each with a mono "No. I"
+   dateline over a serif headline. The deal itself is the only
+   boxed element: a dark ledger inset.
+
+   Loads after trade-desk.css and re-skins its token tier the
+   way finder.css does: the Mill gets its own "scandal sheet"
+   palette — oxblood wine + rose ink — so it doesn't read as a
+   carbon copy of the walnut rooms (hub/analyzer/grader) or the
+   Finder's sea-green map room.
+   ============================================================ */
+
+/* ── Theme tokens (override trade-desk.css) ─────────────────── */
+:root {
+    --td-bg:           #1c0e10;
+    --td-card:         #2c161a;
+    --td-card-hover:   #361b20;
+    --td-line:         #553036;
+    --td-line-soft:    #371d21;
+    --td-mute:         #9c7672;
+    --td-text:         #f7e9dd;
+    --td-text-em:      #e89a7a;
+    --td-desc:         #d6b5a6;
+    --td-live:         #de8a6b;
+    --td-bg-deep:      #140a0b;
+
+    --chapbar-bg:     rgb(17, 8, 9);
+    --chapbar-border: var(--td-line);
+    --chapbar-text:   var(--td-mute);
+    --chapbar-active: var(--td-live);
+    --chapbar-line:   var(--td-line);
+    --subrail-active: #e8c889;   /* gold — distinct from the salmon primary */
+    --nav-drop-bg:           rgb(17, 8, 9);
+    --nav-drop-border:       var(--td-line);
+    --nav-drop-text:         var(--td-text);
+    --nav-drop-text-hover:   #f3ad8d;
+
+    /* Page paper tone — referenced by the asterism mask so the glyphs
+       sit ON the rule instead of behind it. */
+    --rm-paper: #1c0e10;
+}
+
+html, body {
+    background: var(--td-bg);
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(222, 138, 107, .05) 0%, transparent 60%);
+    color: var(--td-text);
+}
+
+.nav { background: rgb(17, 8, 9); border-bottom-color: var(--td-line); }
+.nav-link, .nav-kicker, .nav-drop-btn { color: var(--td-live); }
+.nav-back { color: var(--td-desc); }
+.nav-back:hover { color: var(--td-text); }
+.nav-link:hover, .nav-drop-btn:hover { color: #f3ad8d; }
+.nav-title em { color: var(--td-text); font-style: italic; }
+
+/* ── Layout — narrower than the other rooms (1100px); a single
+   editorial column reads as a column, not a dashboard. ──────── */
+.rm-wrap { max-width: 1090px; margin: 0 auto; padding: 1.4rem 1rem 5rem; }
+
+/* ── Hero — top padding tuned so sup-to-chapbar gap matches the
+   Live Season hub (~3.5rem total with the wrap's 1.4rem). ───── */
+.rm-hero { text-align: center; padding: 2.1rem 1rem 2rem; }
+.rm-hero-sup {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .3em;
+    text-transform: uppercase; color: var(--td-live); margin-bottom: .9rem;
+}
+.rm-hero-title {
+    font-family: var(--serif); font-size: clamp(2.4rem, 5.5vw, 4rem);
+    line-height: 1; margin: 0; color: var(--td-text);
+}
+.rm-hero-title em { color: var(--td-text-em); font-style: italic; }
+.rm-hero-sub {
+    margin: 1.2rem auto 0; max-width: 560px;
+    color: var(--td-desc); font-size: .95rem; line-height: 1.55;
+}
+.rm-stamp {
+    display: inline-flex; align-items: baseline; gap: .6rem;
+    margin-top: 1.4rem;
+    padding: .4rem .85rem;
+    border: 1px solid var(--td-line);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .25);
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--td-live);
+}
+.rm-stamp-dot { color: var(--td-mute); }
+
+/* ── DEV ONLY — remove before release ───────────────────────── */
+.rm-dev-sim {
+    display: inline-flex; align-items: center; gap: .45rem;
+    margin: 1rem auto 0;
+    padding: .4rem .85rem;
+    background: none;
+    border: 1px dashed rgba(232, 200, 137, .45);
+    border-radius: 999px;
+    color: #e8c889;
+    font-family: var(--mono); font-size: .56rem; letter-spacing: .2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+}
+.rm-dev-sim:hover { color: #f3dca8; border-color: rgba(232, 200, 137, .75); }
+.rm-dev-sim[disabled] { opacity: .45; cursor: wait; }
+/* ── end DEV ONLY ───────────────────────────────────────────── */
+
+/* ── States ─────────────────────────────────────────────────── */
+.rm-state {
+    text-align: center; padding: 2.5rem 1rem;
+    color: var(--td-desc); font-size: .95rem; line-height: 1.6;
+}
+.rm-state-sub { color: var(--td-mute); font-size: .8rem; margin-top: .4rem; }
+.rm-state-error {
+    color: #e8c889;
+    padding: 1rem 1.2rem;
+    background: rgba(212, 169, 76, .08);
+    border: 1px solid rgba(212, 169, 76, .4);
+    border-radius: 4px;
+    max-width: 640px; margin: 0 auto;
+}
+
+/* ── The column ──────────────────────────────────────────────
+   Entries are unboxed. A hairline rule closes each one, and an
+   asterism (✶ ✶ ✶) masks the rule's center — classic column-break
+   furniture. The opening entry gets a heavier double rule up top
+   so the column visibly "starts". */
+.rm-column {
+    display: flex; flex-direction: column;
+    border-top: 3px double var(--td-line);
+    margin-top: .6rem;
+}
+
+.rm-item { position: relative; padding: 2.1rem 0 2.4rem; }
+.rm-item:not(:last-child) { border-bottom: 1px solid var(--td-line-soft); }
+.rm-item:not(:last-child)::after {
+    content: '✶ ✶ ✶';
+    position: absolute; left: 50%; bottom: -.6em;
+    transform: translateX(-50%);
+    padding: 0 1rem;
+    background: var(--rm-paper);
+    font-size: .68rem; letter-spacing: .4em;
+    color: var(--td-mute);
+    white-space: nowrap;
+}
+
+/* Dateline row — "No. I" kicker, dashed leader, tag on the right. */
+.rm-item-head {
+    display: flex; align-items: center; gap: .8rem;
+    margin-bottom: .75rem;
+}
+.rm-item-num {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .26em;
+    text-transform: uppercase; color: var(--td-live);
+    white-space: nowrap;
+}
+.rm-item-lead {
+    flex: 1; height: 0;
+    border-top: 1px dashed var(--td-line-soft);
+}
+.rm-tag {
+    padding: .22rem .6rem;
+    border-radius: 2px;
+    font-family: var(--mono); font-size: .55rem; letter-spacing: .2em;
+    text-transform: uppercase;
+    border: 1px solid;
+    white-space: nowrap;
+}
+.rm-tag[data-tag="blockbuster"] { color: #e0a23f; border-color: rgba(224,162,63,.45); }
+.rm-tag[data-tag="win-win"]     { color: #9ec488; border-color: rgba(158,196,136,.4); }
+.rm-tag[data-tag="depth-swap"]  { color: var(--td-mute); border-color: var(--td-line-soft); }
+
+.rm-item-headline {
+    font-family: var(--serif); font-size: clamp(1.5rem, 3.4vw, 2rem);
+    line-height: 1.12; color: var(--td-text);
+    margin: 0 0 .7rem;
+}
+
+.rm-item-blurb {
+    color: var(--td-desc); font-size: .95rem; line-height: 1.7;
+    margin: 0 0 1.2rem;
+    max-width: 76ch;
+}
+
+/* The deal ledger — the one boxed element per entry. Two sides face
+   each other across a big swap glyph above 640px: side B is mirrored
+   (name far right, rows reversed) so the ledger reads as two parties
+   at the same table rather than two stacked lists. */
+.rm-deal {
+    display: grid; grid-template-columns: 1fr; gap: 1rem 1.4rem;
+    padding: 1rem 1.15rem 1.1rem;
+    background: rgba(0, 0, 0, .28);
+    border: 1px solid var(--td-line-soft);
+    border-left: 2px solid rgba(222, 138, 107, .45);
+    border-radius: 3px;
+    margin-bottom: .95rem;
+}
+@media (min-width: 640px) {
+    .rm-deal { grid-template-columns: 1fr auto 1fr; align-items: stretch; }
+}
+.rm-deal-swap {
+    display: none;
+    font-family: var(--serif);
+    font-size: 2.4rem; line-height: 1;
+    color: rgba(222, 138, 107, .5);
+    align-self: center;
+}
+@media (min-width: 640px) { .rm-deal-swap { display: block; } }
+
+.rm-side-name {
+    display: flex; align-items: center; gap: .5rem;
+    font-family: var(--serif); font-size: .98rem; color: var(--td-text);
+    margin-bottom: .55rem;
+}
+.rm-side-avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--td-line);
+    background: var(--td-line-soft);
+}
+.rm-side-sends {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: .3rem;
+}
+.rm-side-sends li {
+    display: flex; align-items: baseline; gap: .5rem;
+    font-size: .88rem; color: var(--td-desc);
+}
+.rm-side-sends .pos {
+    font-family: var(--mono); font-size: .56rem; letter-spacing: .14em;
+    color: var(--td-mute); min-width: 24px;
+}
+.rm-side-sends .name { flex: 1; color: var(--td-text); }
+.rm-side-sends .val { font-family: var(--mono); font-size: .76rem; color: var(--td-live); }
+.rm-side-label {
+    font-family: var(--mono); font-size: .52rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--td-mute);
+    margin-bottom: .3rem;
+}
+
+/* Per-side lineup impact — lives at the bottom of each deal column, so
+   team B's number starts where team B's sends start. margin-top:auto
+   pins both impact lines to the same baseline when one side sends
+   fewer players (the grid stretches the columns equal-height). */
+.rm-side { display: flex; flex-direction: column; }
+.rm-side-sends { margin-bottom: .85rem; }
+.rm-side-impact {
+    margin-top: auto; padding-top: .7rem;
+    border-top: 1px dashed var(--td-line-soft);
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.rm-side-impact strong { font-size: .8rem; font-weight: 500; letter-spacing: 0; }
+.rm-side-impact[data-tone="up"]   strong { color: #9ec488; }
+.rm-side-impact[data-tone="down"] strong { color: #d9604c; }
+.rm-side-impact[data-tone="flat"] strong { color: var(--td-desc); }
+
+/* Side B mirror — name far right, rows reversed (value · name · pos). */
+.rm-side[data-mirror] .rm-side-name { justify-content: flex-end; }
+.rm-side[data-mirror] .rm-side-label { text-align: right; }
+.rm-side[data-mirror] .rm-side-sends li { flex-direction: row-reverse; }
+.rm-side[data-mirror] .rm-side-sends .name { text-align: right; }
+.rm-side[data-mirror] .rm-side-sends .pos { text-align: right; }
+.rm-side[data-mirror] .rm-side-impact { text-align: right; }
+
+/* ── Action row — Analyzer handoff left, Sign/Shred ballots right
+   (vote controls live on the right like every voting system). ── */
+.rm-item-actions {
+    display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+    margin-top: 1.1rem;
+}
+/* The ballot — one pill-shaped switch with two ends. Left end signs
+   the deal (signature, green — same green the page uses for up-impacts
+   and win-win tags), right end cuts it (scissors, oxblood red). Click
+   an end to vote it, click again to take it back. The chosen end fills
+   with its tint; each end shows its own tally. */
+.rm-ballot {
+    display: inline-flex; align-items: stretch;
+    margin-left: auto;
+    border: 1px solid var(--td-line);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .25);
+    overflow: hidden;
+}
+.rm-ballot-side {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .42rem .85rem;
+    background: none; border: none;
+    cursor: pointer;
+    font-family: var(--mono);
+    transition: color .15s ease, background .15s ease;
+}
+.rm-ballot-side svg { width: 18px; height: 18px; flex-shrink: 0; }
+.rm-ballot-side[data-vote="sign"]  { color: #9ec488; padding-left: 1rem; }
+.rm-ballot-side[data-vote="shred"] { color: #b8564a; padding-right: 1rem; }
+.rm-ballot-divider {
+    width: 1px;
+    background: var(--td-line);
+}
+.rm-vote-n {
+    min-width: 1.2em;
+    text-align: center;
+    font-size: .68rem; letter-spacing: 0;
+    color: var(--td-mute);
+}
+.rm-ballot-side:hover { background: rgba(247, 233, 221, .05); }
+.rm-ballot-side[data-vote="sign"][aria-pressed="true"] {
+    color: #c4e3ad;
+    background: rgba(158, 196, 136, .16);
+}
+.rm-ballot-side[data-vote="shred"][aria-pressed="true"] {
+    color: #eb8a75;
+    background: rgba(199, 88, 71, .18);
+}
+.rm-ballot-side[aria-pressed="true"] .rm-vote-n {
+    color: inherit;
+    font-weight: 700;
+}
+.rm-run {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--td-live);
+    text-decoration: none;
+    transition: color .15s ease;
+}
+.rm-run:hover { color: #f3ad8d; }
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.rm-footer {
+    margin-top: 2.6rem; text-align: center;
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--td-mute);
+    line-height: 1.8;
+    padding-top: 1.2rem;
+    border-top: 1px dashed var(--td-line-soft);
+}

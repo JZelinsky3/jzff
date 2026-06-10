@@ -1,0 +1,376 @@
+/* ============================================================
+   FINDER — Trade Desk · trade-search UI
+   Loads after analyzer.css and re-skins its component tier by
+   overriding the --td-* tokens: the Finder gets its own "map
+   room" palette — deep sea-green felt + verdigris brass — so it
+   doesn't read as a carbon copy of the walnut Trade Desk rooms.
+   Finder-specific structure lives under .fd-*.
+   ============================================================ */
+
+/* ── Cross-room handoff link on each deal card ──────────────── */
+.fd-deal-foot {
+    display: flex; justify-content: flex-end;
+    margin-top: .9rem; padding-top: .8rem;
+    border-top: 1px solid var(--td-line-soft);
+}
+.fd-run {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--td-live);
+    text-decoration: none;
+    transition: color .15s ease;
+}
+.fd-run:hover { color: #9fe6d2; }
+
+/* ── Theme tokens (override trade-desk.css + analyzer.css) ──── */
+:root {
+    --td-bg:           #0c1514;
+    --td-card:         #142421;
+    --td-card-hover:   #1a2e2a;
+    --td-line:         #2a4a43;
+    --td-line-soft:    #1b312c;
+    --td-mute:         #6f8d84;
+    --td-text:         #eaf5ef;
+    --td-text-em:      #82d8bf;
+    --td-desc:         #b9d2c8;
+    --td-live:         #5cbda1;
+    --td-bg-deep:      #081110;
+    --td-input-bg:     #0f1b19;
+    --td-input-border: #2a4a43;
+    --td-input-focus:  #5cbda1;
+
+    --chapbar-bg:     rgb(7, 13, 12);
+    --chapbar-border: var(--td-line);
+    --chapbar-text:   var(--td-mute);
+    --chapbar-active: var(--td-live);
+    --chapbar-line:   var(--td-line);
+    --subrail-active: #dcc488;   /* warm sand — distinct from the sea-green primary */
+    --nav-drop-bg:           rgb(7, 13, 12);
+    --nav-drop-border:       var(--td-line);
+    --nav-drop-text:         var(--td-text);
+    --nav-drop-text-hover:   #9fe6d2;
+}
+
+html, body {
+    background: var(--td-bg);
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(92, 189, 161, .05) 0%, transparent 60%);
+    color: var(--td-text);
+}
+
+/* Nav recolor — darker pine over the analyzer.css walnut. */
+.nav { background: rgb(7, 13, 12); border-bottom-color: var(--td-line); }
+.nav-link:hover, .nav-drop-btn:hover { color: #9fe6d2; }
+
+/* Brass constants hardcoded in analyzer.css, re-keyed to verdigris
+   for the handful of components this page actually uses. */
+.an-row[aria-pressed="true"] {
+    background: rgba(92, 189, 161, .13);
+    border-color: var(--td-live);
+}
+.an-row[aria-pressed="true"] .an-row-value { color: #9fe6d2; }
+.an-btn:hover { background: #8fe0c8; border-color: #8fe0c8; }
+.an-btn-ghost:hover { background: rgba(92, 189, 161, .07); }
+
+/* Sticky action bar: backdrop only while actually pinned to the
+   viewport bottom (finder.js flips data-stuck via a sentinel). At its
+   natural spot in the page it's bare — the underlined count is the
+   only emphasis. */
+.an-action {
+    background: none;
+    padding: .9rem 0 .6rem;
+}
+.an-action[data-stuck="true"] {
+    /* No backdrop-filter — the bar is pinned during the page's main
+       scroll, and a live blur there stutters it. .94 alpha covers. */
+    background: rgba(12, 21, 20, .94);
+    border-top: 1px solid var(--td-line-soft);
+}
+.an-action-summary {
+    text-decoration: underline;
+    text-decoration-color: var(--td-live);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 5px;
+}
+
+/* FLEX-slot marker: analyzer.css ships steel blue, which sat oddly on
+   the teal felt — a pale mint-white pops against the card without
+   fighting the teal starter bar. SF keeps its violet. */
+.an-row[data-slot="flex"] { border-left-color: #d6ebe1; }
+
+/* ── Controls ───────────────────────────────────────────────── */
+.fd-controls { margin-bottom: 1.4rem; }
+
+.fd-mode-toggle {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .7rem;
+    max-width: 720px;
+    margin: 0 auto 1.3rem;
+}
+@media (min-width: 640px) {
+    .fd-mode-toggle { grid-template-columns: 1fr 1fr; }
+}
+.fd-mode-btn {
+    display: flex; flex-direction: column; gap: .3rem;
+    padding: .9rem 1rem;
+    background: var(--td-input-bg);
+    border: 1px solid var(--td-line);
+    border-radius: 4px;
+    color: var(--td-desc);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: background .15s ease, border-color .15s ease;
+}
+.fd-mode-btn:hover { border-color: var(--td-live); }
+.fd-mode-btn[aria-selected="true"] {
+    background: rgba(92, 189, 161, .1);
+    border-color: var(--td-live);
+}
+.fd-mode-btn-title {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--td-text);
+}
+.fd-mode-btn[aria-selected="true"] .fd-mode-btn-title { color: var(--td-live); }
+.fd-mode-btn-desc { font-size: .8rem; line-height: 1.4; color: var(--td-mute); }
+
+/* ── Filters row ────────────────────────────────────────────── */
+.fd-filters {
+    display: flex; gap: 1.6rem; flex-wrap: wrap;
+    justify-content: space-between; align-items: flex-start;
+    padding: 1rem 1.4rem;
+    background: var(--td-card);
+    border: 1px solid var(--td-line);
+    border-radius: 4px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+.fd-filter-group {
+    display: flex; flex-direction: column; gap: .45rem;
+    padding: .25rem .9rem;
+}
+/* Pull both groups in from the card edges: extra left pad on the
+   "Improve at" group, extra right pad on "Package size". */
+.fd-filters > .fd-filter-group:first-child { padding-left: 1.3rem; }
+.fd-filter-group-right {
+    align-items: flex-end; text-align: right;
+    padding-right: 1.3rem;
+}
+.fd-filter-label {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.fd-filter-hint {
+    font-size: .68rem; color: var(--td-mute); opacity: .8;
+    max-width: 260px;
+}
+.fd-pos-chips { display: flex; gap: .4rem; }
+.fd-pos-chip {
+    padding: .42rem .8rem;
+    background: var(--td-input-bg);
+    border: 1px solid var(--td-line);
+    border-radius: 999px;
+    color: var(--td-desc);
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .18em;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+.fd-pos-chip:hover { border-color: var(--td-live); color: var(--td-text); }
+.fd-pos-chip[aria-pressed="true"] {
+    background: rgba(92, 189, 161, .16);
+    border-color: var(--td-live);
+    color: var(--td-live);
+}
+.fd-max-side { min-width: 170px; }
+
+/* ── Boards ─────────────────────────────────────────────────── */
+.fd-board { max-width: 720px; margin: 0 auto 1.4rem; }
+.fd-browse {
+    flex: 1; max-width: 320px; margin-left: auto;
+    padding: .45rem .6rem; font-size: .85rem;
+}
+
+/* Selected-targets tray (target mode) — persists while browsing
+   different rosters so cross-team target sets stay visible. */
+.fd-target-tray {
+    display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+    padding: .75rem .9rem;
+    margin-bottom: .8rem;
+    background: rgba(92, 189, 161, .06);
+    border: 1px dashed var(--td-line);
+    border-radius: 4px;
+}
+.fd-target-tray-chips { display: flex; gap: .4rem; flex-wrap: wrap; }
+.fd-target-chip {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .3rem .65rem;
+    background: var(--td-input-bg);
+    border: 1px solid var(--td-live);
+    border-radius: 999px;
+    color: var(--td-text);
+    font-size: .78rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .12s ease;
+}
+.fd-target-chip:hover { background: rgba(199, 88, 71, .14); border-color: #c75847; }
+.fd-target-chip-x { color: var(--td-mute); font-family: var(--mono); font-size: .7rem; }
+.fd-target-chip:hover .fd-target-chip-x { color: #c75847; }
+
+/* ── Results ────────────────────────────────────────────────── */
+.fd-results { margin-top: 2.2rem; }
+.fd-results-empty {
+    max-width: 640px; margin: 0 auto 1.4rem;
+    padding: 1.2rem 1.4rem;
+    background: var(--td-card);
+    border: 1px dashed var(--td-line);
+    border-radius: 4px;
+    color: var(--td-desc);
+    font-size: .9rem; line-height: 1.55;
+    text-align: center;
+}
+
+/* The Board prints two columns on desktop — deal cards are compact
+   enough that a single column left half the page empty. Cards stretch
+   to their grid row's height (no align-items:start) so side-by-side
+   deals match; the impacts block pins to the bottom via margin-top:auto
+   and any slack (one card has variants, its neighbor doesn't) becomes
+   gap above it. */
+.fd-deals { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 900px) {
+    .fd-deals { grid-template-columns: 1fr 1fr; }
+}
+
+.fd-deal {
+    display: flex; flex-direction: column;
+    background: var(--td-card);
+    border: 1px solid var(--td-line);
+    border-radius: 4px;
+    padding: 1.1rem 1.2rem 1.2rem;
+}
+.fd-deal-head {
+    display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap;
+    padding-bottom: .7rem;
+    margin-bottom: .9rem;
+    border-bottom: 1px solid var(--td-line-soft);
+}
+.fd-deal-rank {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; color: var(--td-text-em);
+    min-width: 1.6rem;
+}
+.fd-deal-partner {
+    font-family: var(--serif); font-size: 1.05rem; color: var(--td-text);
+}
+.fd-deal-partner em { color: var(--td-text-em); font-style: italic; }
+.fd-badge {
+    margin-left: auto;
+    padding: .22rem .6rem;
+    border-radius: 999px;
+    font-family: var(--mono); font-size: .55rem; letter-spacing: .2em;
+    text-transform: uppercase;
+    border: 1px solid;
+}
+.fd-badge[data-tier="win-win"]  { color: #9ec488; border-color: rgba(158,196,136,.5); background: rgba(158,196,136,.08); }
+.fd-badge[data-tier="fair"]     { color: var(--td-live); border-color: rgba(92,189,161,.5); background: rgba(92,189,161,.08); }
+.fd-badge[data-tier="longshot"] { color: #c4937f; border-color: rgba(199,88,71,.45); background: rgba(199,88,71,.08); }
+
+.fd-deal-cols {
+    display: grid; grid-template-columns: 1fr; gap: .9rem;
+    margin-bottom: .9rem;
+}
+@media (min-width: 640px) {
+    .fd-deal-cols { grid-template-columns: 1fr 1fr; }
+}
+.fd-deal-col-label {
+    font-family: var(--mono); font-size: .56rem; letter-spacing: .25em;
+    text-transform: uppercase; color: var(--td-mute);
+    padding-bottom: .4rem;
+    margin-bottom: .45rem;
+    border-bottom: 1px solid var(--td-line-soft);
+}
+.fd-deal-col-label strong { color: var(--td-live); font-weight: 500; }
+/* Columns flex so the raw-value line pins to the bottom of both —
+   a 1-player side and a 2-player side print their totals at the same
+   height. */
+.fd-deal-col { display: flex; flex-direction: column; }
+.fd-deal-col .an-result-list { margin-bottom: .4rem; }
+.fd-deal-col-total {
+    margin-top: auto;
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.fd-deal-col-total strong { color: var(--td-text-em); font-weight: 500; }
+
+/* Add-on rows pulled in by a variant pill glow verdigris so the new
+   pieces are obvious against the base deal. */
+.an-result-list-item.fd-added .an-result-list-name { color: var(--td-text-em); }
+.an-result-list-item.fd-added .an-result-list-pos  { color: var(--td-live); }
+
+/* ── Variant pills — "…and they throw in X" expansions ──────── */
+.fd-variants {
+    display: flex; align-items: baseline; gap: .45rem; flex-wrap: wrap;
+    margin-bottom: .9rem;
+}
+.fd-variants-label {
+    font-family: var(--mono); font-size: .54rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.fd-variant-pill {
+    padding: .3rem .7rem;
+    background: var(--td-input-bg);
+    border: 1px dashed var(--td-line);
+    border-radius: 999px;
+    color: var(--td-desc);
+    font-size: .74rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+.fd-variant-pill:hover { border-color: var(--td-live); color: var(--td-text); }
+.fd-variant-pill[aria-pressed="true"] {
+    background: rgba(92, 189, 161, .14);
+    border-style: solid;
+    border-color: var(--td-live);
+    color: var(--td-live);
+}
+
+/* Impacts mirror the Send/Receive grid: "Your lineup" sits under Send,
+   "Their lineup" under Receive on the same line. Column gap matches
+   .fd-deal-cols so the two grids align. */
+.fd-deal-impacts {
+    display: grid; grid-template-columns: 1fr;
+    column-gap: .9rem; row-gap: .55rem;
+    margin-top: auto;
+    padding-top: .8rem;
+    border-top: 1px solid var(--td-line-soft);
+}
+@media (min-width: 640px) {
+    .fd-deal-impacts { grid-template-columns: 1fr 1fr; }
+}
+.fd-impact {
+    display: flex; align-items: baseline; gap: .5rem; flex-wrap: wrap;
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+.fd-impact strong { font-size: .82rem; font-weight: 500; letter-spacing: 0; }
+.fd-impact[data-tone="up"]   strong { color: #9ec488; }
+.fd-impact[data-tone="down"] strong { color: #c75847; }
+.fd-impact[data-tone="flat"] strong { color: var(--td-desc); }
+/* Rank movements drop to their own line under the gain figure instead
+   of running off to the right. */
+.fd-impact-moves {
+    flex-basis: 100%;
+    font-size: .56rem; color: var(--td-mute); letter-spacing: .1em;
+}
+
+.fd-results-note {
+    margin: 1.6rem auto 0; max-width: 640px;
+    text-align: center;
+    color: var(--td-mute);
+    font-size: .78rem; line-height: 1.6;
+    padding-top: 1.1rem;
+    border-top: 1px dashed var(--td-line-soft);
+}
+.fd-results-note em { color: var(--td-desc); font-style: italic; }

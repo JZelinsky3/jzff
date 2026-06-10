@@ -18,7 +18,13 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // `/api/og/` serves Open Graph card images for shareable almanac pages
 // (e.g. rivalry detail). They MUST be reachable without auth — Twitter,
 // Facebook, iMessage, Discord etc. crawl them with no session cookies.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook']
+// `/api/leagues/` covers GET-public reads used by the public almanac pages
+// (Trade Desk Settings drawer for non-commish viewers, Analyzer roster
+// loader, etc.). Write routes inside this prefix (sync, grade-trades,
+// trades-theme, trade-desk/settings POST, ...) still enforce owner/editor
+// auth inside their own handlers — bypassing the middleware redirect just
+// keeps an unauthenticated GET from being bounced to /login as HTML.
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })

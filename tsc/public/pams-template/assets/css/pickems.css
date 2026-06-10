@@ -44,11 +44,12 @@
 
 /* ── Page base ────────────────────────────────────────────────── */
 body {
+  /* No background-attachment: fixed — it repaints every gradient layer
+     across the full viewport on each scroll frame and stutters. */
   background:
     radial-gradient(ellipse at 12% 0%, rgba(255, 61, 139, .10) 0%, transparent 55%),
     radial-gradient(ellipse at 88% 100%, rgba(240, 196, 99, .07) 0%, transparent 55%),
     var(--pk-bg);
-  background-attachment: fixed;
   color: var(--pk-chalk);
   font-family: var(--sans);
   margin: 0;

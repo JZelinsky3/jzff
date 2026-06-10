@@ -1,5 +1,41 @@
 @import "tailwindcss";
 
+/* Pin the content sources. Tailwind v4 auto-detection picks the wrong
+   workspace root when two lockfiles are present (see the `next dev`
+   warning), which causes it to skip bracketed app routes
+   (src/app/leagues/[slug]/**). The explicit globs below force the
+   scanner to traverse those directories on cold dev builds. */
+@source "../";
+@source "../**/*.{ts,tsx,js,jsx,mdx}";
+@source "../app/leagues/[slug]/**/*.{ts,tsx}";
+@source "../styles/sunday-live.css";
+
+/* ============================================================
+   SUNDAY LIVE v2 — "Midnight Stadium" palette wired into
+   Tailwind. The companion page (src/app/leagues/[slug]/sunday-live/**)
+   uses bg-sl-stadium / text-sl-ember / border-sl-edge utilities.
+   Raw --sl-* aliases for hand-written CSS live in
+   src/styles/sunday-live.css (.sl-root).
+   ============================================================ */
+@theme {
+  --color-sl-ink:        #07101f;
+  --color-sl-ink-warm:   #0c172d;
+  --color-sl-stadium:    #122140;
+  --color-sl-stadium-hi: #1a2d52;
+  --color-sl-slate:      #1f3358;
+  --color-sl-edge:       #233b6b;
+  --color-sl-edge-soft:  #182747;
+  --color-sl-cream:      #f4ede0;
+  --color-sl-mute:       #93a3bf;
+  --color-sl-dim:        #5a6a85;
+  --color-sl-signal:     #ff4d4d;
+  --color-sl-ember:      #d4a849;
+  --color-sl-ember-glow: #ffd585;
+  --color-sl-cool:       #5fb0d6;
+  --color-sl-green:      #5fd6a0;
+  --color-sl-violet:     #b58cff;
+}
+
 /*
    Visual system lives in /public/assets/css/main.css.
    This file adds component styles that main.css doesn't cover:
@@ -2653,8 +2689,11 @@ table.career-table tbody tr:hover { background: rgba(46,120,58,.06); }
    RIVALRIES — Crimson / Charcoal / Noir
    ============================================================ */
 
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* NOTE: a duplicate `*, *::before, *::after { padding: 0 }` lived here in the
+   v1 work — an unlayered universal reset that beat every Tailwind padding +
+   margin utility on the React pages (Sunday Live, etc.). The reset that
+   matters now lives in src/styles/main.css inside @layer base, scoped to
+   semantic text elements. Don't reintroduce one here. */
 
 :root {
   --rv-red:        #dc2626;

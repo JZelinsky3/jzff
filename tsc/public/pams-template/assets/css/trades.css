@@ -90,6 +90,11 @@
 .tr-theme-picker {
   display: flex; align-items: center; gap: .9rem; flex-wrap: wrap;
   margin: -1rem 0 2rem;
+  /* Stacking context above the page-head's redrawn bottom border (wire
+     theme draws an ::after line that would otherwise paint over the
+     buttons). */
+  position: relative;
+  z-index: 1;
 }
 .tr-theme-label {
   font-family: var(--mono); font-size: .6rem;
@@ -104,7 +109,11 @@
   font-family: var(--mono); font-weight: 700;
   font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
   padding: .55rem .9rem;
-  background: transparent; border: 1px solid transparent;
+  /* Fallback colors so the four-button row is always visible even if a
+     per-theme rule below misses (e.g. body data-attr not set yet). */
+  background: rgba(245,233,200,.04);
+  color: #c4b694;
+  border: 1px solid rgba(200,164,100,.35);
   border-right-width: 0;
   cursor: pointer; white-space: nowrap;
   transition: background .15s, color .15s, border-color .15s;
@@ -164,6 +173,18 @@ body[data-trades-theme="cards"] .nav-chapbar-link:hover,
 body[data-trades-theme="cards"] .nav-chapbar-link.is-active { color: #c8a464; }
 body[data-trades-theme="cards"] .nav-chapbar-link.is-active::after { background: #c8a464; }
 body[data-trades-theme="cards"] .nav-chapbar-link + .nav-chapbar-link::before { background: #4c3922; }
+/* Live sub-rail under the chapbar — secondary accent is the cream the
+   back link uses (the brass #c8a464 stays the chapbar's primary). */
+body[data-trades-theme="cards"] .nav-subrail { border-top-color: #4c3922; }
+body[data-trades-theme="cards"] .nav-subrail-link { color: #9c8665; }
+body[data-trades-theme="cards"] .nav-subrail-link:hover,
+body[data-trades-theme="cards"] .nav-subrail-link.is-active { color: #f5e9c8; }
+body[data-trades-theme="cards"] .nav-subrail-link.is-active::after { background: #f5e9c8; }
+body[data-trades-theme="cards"] .nav-subrail-link + .nav-subrail-link::before { background: #4c3922; }
+/* Back link sits in cream — distinct from the brass accent the hub uses
+   so the Grader's masthead doesn't read identical to /trades/. */
+body[data-trades-theme="cards"] .nav-back { color: #c4b694; }
+body[data-trades-theme="cards"] .nav-back:hover { color: #f5e9c8; }
 /* Trade card head gets a darker bronze strip so it reads as a header
    instead of blending into the card body. Negative margins break it out
    of the card padding so the strip extends edge-to-edge. */
@@ -173,12 +194,14 @@ body[data-trades-theme="cards"] .tr-card-head {
   padding: .85rem 1.5rem;
   border-bottom: 2px dashed #4c3922;
 }
-/* Theme picker buttons */
+/* Theme picker buttons — inactive bg is bumped up from #322217 to #3d2a1d
+   so the three non-active buttons stand off the body bg (#2a1d11) instead
+   of blending into it. */
 body[data-trades-theme="cards"] .tr-theme-picker { color: #c4b694; }
 body[data-trades-theme="cards"] .tr-theme-btn {
-  border-color: #4c3922; color: #9c8665; background: #322217;
+  border-color: #6b4f30; color: #c4b694; background: #3d2a1d;
 }
-body[data-trades-theme="cards"] .tr-theme-btn:hover:not(.active) { color: #f5e9c8; }
+body[data-trades-theme="cards"] .tr-theme-btn:hover:not(.active) { color: #f5e9c8; background: #4c3623; }
 body[data-trades-theme="cards"] .tr-theme-btn.active {
   background: #f5e9c8; color: #2a1d11; border-color: #f5e9c8;
 }
@@ -411,16 +434,25 @@ body[data-trades-theme="tribunal"] .nav-chapbar-link:hover,
 body[data-trades-theme="tribunal"] .nav-chapbar-link.is-active { color: #c8a464; }
 body[data-trades-theme="tribunal"] .nav-chapbar-link.is-active::after { background: #c8a464; }
 body[data-trades-theme="tribunal"] .nav-chapbar-link + .nav-chapbar-link::before { background: #3a2820; }
+/* Live sub-rail — parchment cream secondary vs the brass primary. */
+body[data-trades-theme="tribunal"] .nav-subrail { border-top-color: #3a2820; }
+body[data-trades-theme="tribunal"] .nav-subrail-link { color: #7e6e58; }
+body[data-trades-theme="tribunal"] .nav-subrail-link:hover,
+body[data-trades-theme="tribunal"] .nav-subrail-link.is-active { color: #ede0c4; }
+body[data-trades-theme="tribunal"] .nav-subrail-link.is-active::after { background: #ede0c4; }
+body[data-trades-theme="tribunal"] .nav-subrail-link + .nav-subrail-link::before { background: #3a2820; }
+body[data-trades-theme="tribunal"] .nav-back { color: #c4b694; }
+body[data-trades-theme="tribunal"] .nav-back:hover { color: #ede0c4; }
 /* Distinct themed strip on each card head */
 body[data-trades-theme="tribunal"] .tr-card-head {
   background: #271d18; color: #c4b694;
 }
-/* Theme picker */
+/* Theme picker — inactive contrast bumped to stand off the body. */
 body[data-trades-theme="tribunal"] .tr-theme-picker { color: #c4b694; }
 body[data-trades-theme="tribunal"] .tr-theme-btn {
-  border-color: #3a2820; color: #7e6e58; background: #1f1714;
+  border-color: #5a3f2e; color: #c4b694; background: #2a1f18;
 }
-body[data-trades-theme="tribunal"] .tr-theme-btn:hover:not(.active) { color: #ede0c4; }
+body[data-trades-theme="tribunal"] .tr-theme-btn:hover:not(.active) { color: #ede0c4; background: #34261c; }
 body[data-trades-theme="tribunal"] .tr-theme-btn.active {
   background: #c8a464; color: #14100d; border-color: #c8a464;
 }
@@ -568,6 +600,15 @@ body[data-trades-theme="wire"] .nav-chapbar-link:hover,
 body[data-trades-theme="wire"] .nav-chapbar-link.is-active { color: #b03830; }
 body[data-trades-theme="wire"] .nav-chapbar-link.is-active::after { background: #b03830; }
 body[data-trades-theme="wire"] .nav-chapbar-link + .nav-chapbar-link::before { background: #c9bea3; }
+/* Live sub-rail — the default translucent-black band over the wire's
+   paper read as off-white, and the gold fallback active was illegible
+   on it. Grey band, ink secondary (the red stays the chapbar's). */
+body[data-trades-theme="wire"] .nav-subrail { background: #e2dfd6; border-top-color: #c9bea3; }
+body[data-trades-theme="wire"] .nav-subrail-link { color: #6b5e44; }
+body[data-trades-theme="wire"] .nav-subrail-link:hover,
+body[data-trades-theme="wire"] .nav-subrail-link.is-active { color: #1a1612; }
+body[data-trades-theme="wire"] .nav-subrail-link.is-active::after { background: #1a1612; }
+body[data-trades-theme="wire"] .nav-subrail-link + .nav-subrail-link::before { background: #c9bea3; }
 /* Wire's masthead text needs to flip dark since the bg is light */
 body[data-trades-theme="wire"] .nav,
 body[data-trades-theme="wire"] .nav .nav-title,
@@ -575,6 +616,8 @@ body[data-trades-theme="wire"] .nav .nav-back,
 body[data-trades-theme="wire"] .nav .nav-link,
 body[data-trades-theme="wire"] .nav .nav-drop-btn { color: #1a1612; }
 body[data-trades-theme="wire"] .nav .nav-title em { color: #b03830; }
+body[data-trades-theme="wire"] .nav .nav-back { color: #6b5e44; }
+body[data-trades-theme="wire"] .nav .nav-back:hover { color: #b03830; }
 /* Card head: cream sub-strip on the white paper. Negative margins extend
    it to card edges past the article padding. */
 body[data-trades-theme="wire"] .tr-card-head {
@@ -584,6 +627,23 @@ body[data-trades-theme="wire"] .tr-card-head {
 }
 /* Theme picker */
 body[data-trades-theme="wire"] .tr-theme-picker { color: #6b5e44; }
+/* The page-head's bottom border runs behind the theme row (the picker
+   has a negative top margin so it sits closer to the title). When the
+   picker is rendered (commish only), suppress the original border on
+   page-head and redraw it via a pseudo that starts a few rem in from
+   the left — past the "Theme" label and into the first button area —
+   so nothing strikes through the label text. :has() lets us key this
+   off the picker actually being present without touching JS. */
+body[data-trades-theme="wire"] .tr-page-head:has(~ #theme-picker .tr-theme-picker) {
+  border-bottom-color: transparent;
+  position: relative;
+}
+body[data-trades-theme="wire"] .tr-page-head:has(~ #theme-picker .tr-theme-picker)::after {
+  content: '';
+  position: absolute;
+  left: 5.5rem; right: 0; bottom: -1px;
+  border-bottom: 1px solid #c9bea3;
+}
 body[data-trades-theme="wire"] .tr-theme-btn {
   border-color: #c9bea3; color: #6b5e44; background: #f6f1e4;
 }
@@ -722,6 +782,15 @@ body[data-trades-theme="floor"] .nav-chapbar-link:hover,
 body[data-trades-theme="floor"] .nav-chapbar-link.is-active { color: #00ff9f; }
 body[data-trades-theme="floor"] .nav-chapbar-link.is-active::after { background: #00ff9f; }
 body[data-trades-theme="floor"] .nav-chapbar-link + .nav-chapbar-link::before { background: #1c2421; }
+/* Live sub-rail — amber CRT secondary vs the neon-green primary. */
+body[data-trades-theme="floor"] .nav-subrail { border-top-color: #1c2421; }
+body[data-trades-theme="floor"] .nav-subrail-link { color: #889084; }
+body[data-trades-theme="floor"] .nav-subrail-link:hover,
+body[data-trades-theme="floor"] .nav-subrail-link.is-active { color: #ffb000; }
+body[data-trades-theme="floor"] .nav-subrail-link.is-active::after { background: #ffb000; }
+body[data-trades-theme="floor"] .nav-subrail-link + .nav-subrail-link::before { background: #1c2421; }
+body[data-trades-theme="floor"] .nav-back { color: #889084; }
+body[data-trades-theme="floor"] .nav-back:hover { color: #c5d4cb; }
 /* Card head already has its own bg in the base block — boosted contrast */
 body[data-trades-theme="floor"] .tr-card-head {
   background: #050707; border-left: 2px solid #00ff9f;

@@ -44,6 +44,7 @@
     --chapbar-text:   var(--ls-mute);
     --chapbar-active: var(--ls-pro);
     --chapbar-line:   var(--ls-line);
+    --subrail-active: var(--ls-live);
 
     --nav-drop-bg:           rgb(15, 24, 20);
     --nav-drop-border:       var(--ls-line);
@@ -137,11 +138,36 @@ body { background: var(--ls-bg); }
 }
 
 /* ── Card grid ───────────────────────────────────────────── */
+/* auto-fit (not auto-fill) so a 3-card group stretches to fill its
+   row instead of leaving a phantom 4th column on wide screens. */
 .ls-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1rem;
 }
+
+/* Group rubric — slim mono label + hairline rule splitting § 01 into
+   themed rows without breaking it into separate sections. */
+.ls-group-label {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    margin: 0 0 .85rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.ls-group-label .ls-group-star { color: var(--ls-live); font-size: .7em; }
+.ls-group-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--ls-line-soft);
+}
+.ls-grid + .ls-group-label { margin-top: 2rem; }
 
 .ls-card {
     display: flex;
@@ -273,7 +299,7 @@ body { background: var(--ls-bg); }
     --card-accent-bar: #7fa8bd;
 }
 
-/* Trade Grader — warm cardroom brown + brass */
+/* Trade Desk — warm cardroom brown + brass */
 .ls-card[data-theme="trades"] {
     --card-bg:         #322217;
     --card-bg-hover:   #3c2a1d;
@@ -775,11 +801,35 @@ body { background: var(--ls-bg); }
             <span class="ls-section-meta">Updated weekly</span>
         </div>
 
+        <div class="ls-group-label"><span class="ls-group-star">★</span> The Weekly Slate</div>
         <div class="ls-grid">
 
             <a href="live-season/matchup-preview/" class="ls-card" data-status="live" data-theme="matchup-preview">
                 <h2 class="ls-card-title">Matchup <em>Preview.</em></h2>
                 <p class="ls-card-desc">Every game this week on a railway departures board. Claim your name to pull the H2H archive, your form, and a kickoff projection.</p>
+                <span class="ls-card-arrow">→</span>
+            </a>
+
+            <a href="live-season/powerrank/" class="ls-card" data-status="live" data-theme="powerrank">
+                <h2 class="ls-card-title">Power <em>Rankings.</em></h2>
+                <p class="ls-card-desc">Auto-calculated each week from record, points for, recent form, and full league history.</p>
+                <span class="ls-card-arrow">→</span>
+            </a>
+
+            <a href="live-season/pickems/" class="ls-card" data-status="live" data-theme="pickems">
+                <h2 class="ls-card-title">Weekly <em>Pick'ems.</em></h2>
+                <p class="ls-card-desc">Pick the winner of every matchup each week. Honor-system identity — claim your name and vote.</p>
+                <span class="ls-card-arrow">→</span>
+            </a>
+
+        </div>
+
+        <div class="ls-group-label"><span class="ls-group-star">★</span> The Watch Desk</div>
+        <div class="ls-grid">
+
+            <a href="live-season/records-watch/" class="ls-card" data-status="live" data-theme="records-watch">
+                <h2 class="ls-card-title">Records <em>Watch.</em></h2>
+                <p class="ls-card-desc">Who's on pace to break a record? Single-season highs, win streaks, and franchise marks — tracked live.</p>
                 <span class="ls-card-arrow">→</span>
             </a>
 
@@ -790,40 +840,21 @@ body { background: var(--ls-bg); }
                 <span class="ls-card-arrow">→</span>
             </a>
 
-            <a href="live-season/pickems/" class="ls-card" data-status="live" data-theme="pickems">
-                <h2 class="ls-card-title">Weekly <em>Pick'ems.</em></h2>
-                <p class="ls-card-desc">Pick the winner of every matchup each week. Honor-system identity — claim your name and vote.</p>
-                <span class="ls-card-arrow">→</span>
-            </a>
-
-            <a href="live-season/powerrank/" class="ls-card" data-status="live" data-theme="powerrank">
-                <h2 class="ls-card-title">Power <em>Rankings.</em></h2>
-                <p class="ls-card-desc">Auto-calculated each week from record, points for, recent form, and full league history.</p>
-                <span class="ls-card-arrow">→</span>
-            </a>
-
-            <a href="live-season/records-watch/" class="ls-card" data-status="live" data-theme="records-watch">
-                <h2 class="ls-card-title">Records <em>Watch.</em></h2>
-                <p class="ls-card-desc">Who's on pace to break a record? Single-season highs, win streaks, and franchise marks — tracked live.</p>
-                <span class="ls-card-arrow">→</span>
-            </a>
-
-            <div class="ls-card" data-status="pro-soon">
-                <span class="ls-card-tier">Veteran</span>
-                <h2 class="ls-card-title">Weekly <em>Recap.</em></h2>
-                <p class="ls-card-desc">An auto-written recap of the week's matchups, blowouts, and grudge games — generated every Tuesday morning.</p>
-            </div>
-
-            <a href="live-season/trades/" class="ls-card" data-status="live" data-theme="trades">
-                <span class="ls-card-tier">Veteran</span>
-                <h2 class="ls-card-title">Trade <em>Grader.</em></h2>
-                <p class="ls-card-desc">Every completed trade for your league, pulled automatically. Grades and 4-week revisits arrive in the next build.</p>
-                <span class="ls-card-arrow">→</span>
-            </a>
-
             <a href="live-season/milestones/" class="ls-card" data-status="live" data-theme="milestones">
                 <h2 class="ls-card-title">Milestone <em>Tracker.</em></h2>
                 <p class="ls-card-desc">An honors-roll feed for every career milestone, streak, and franchise high the moment it happens — right on the page.</p>
+                <span class="ls-card-arrow">→</span>
+            </a>
+
+        </div>
+
+        <div class="ls-group-label"><span class="ls-group-star">★</span> The Front Office</div>
+        <div class="ls-grid">
+
+            <a href="live-season/trades/" class="ls-card" data-status="live" data-theme="trades">
+                <span class="ls-card-tier">Veteran</span>
+                <h2 class="ls-card-title">Trade <em>Desk.</em></h2>
+                <p class="ls-card-desc">Four rooms for working the market — grade the league's real deals, test hypotheticals, hunt trades worth proposing, and argue over the weekly rumor column.</p>
                 <span class="ls-card-arrow">→</span>
             </a>
 
@@ -833,6 +864,12 @@ body { background: var(--ls-bg); }
                 <p class="ls-card-desc">Every transaction, lineup, and draft leaves a trace — sequenced into an archetype per manager. Trade Hawks, Coin-Flippers, Set-and-Forget disciples, more.</p>
                 <span class="ls-card-arrow">→</span>
             </a>
+
+            <div class="ls-card" data-status="pro-soon">
+                <span class="ls-card-tier">Veteran</span>
+                <h2 class="ls-card-title">Weekly <em>Recap.</em></h2>
+                <p class="ls-card-desc">An auto-written recap of the week's matchups, blowouts, and grudge games — generated every Tuesday morning.</p>
+            </div>
 
         </div>
     </section>
