@@ -8153,3 +8153,15 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     }
 }
 
+/* ─── League overview Sync/Publish cards on phones ────────────
+   The Sync + Publish + (Jake-only) Trade Grader cards on
+   /league/[slug] use .dc-card-row. Inline grid wraps them to a
+   single column on phones; this just tightens the padding so the
+   stacked column doesn't feel like 3 separate posters. */
+@media (max-width: 720px) {
+    .dc-card-row {
+        padding: 1rem 1.1rem;
+        gap: .75rem;
+    }
+}
+

@@ -205,11 +205,15 @@ export default async function LeagueOverviewPage({
 
         {/* Row 1 — Sync (left) + Publish (right), equal height via the grid's
             stretch. Each card stretches via .dc-card-row alignItems:stretch,
-            keeping text top-aligned but vertically centering the button. */}
+            keeping text top-aligned but vertically centering the button.
+            minmax uses min(100%, 340px) so on phones (<340px content area)
+            the card shrinks to fit the viewport instead of overflowing — a
+            plain minmax(340px,1fr) refuses to go below 340 and forces a
+            horizontal scroll. */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
             gap: '1.25rem',
             alignItems: 'stretch',
           }}
@@ -300,7 +304,7 @@ export default async function LeagueOverviewPage({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
               gap: '1.25rem',
               marginTop: '.6rem',
             }}
