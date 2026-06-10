@@ -67,6 +67,41 @@ export function MobileSiteMenu({
     ? email.trim().charAt(0).toUpperCase() || '★'
     : null
 
+  // Pages that already render a profile/account icon in the top-left slot
+  // of their nav. On those, the right-side trigger drops the avatar look
+  // and falls back to a hamburger so the user isn't staring at two
+  // profile-circle controls in the same header. /dashboard is currently
+  // the only such page (DashboardNavBackSlot).
+  const leftHasProfileIcon = pathname === '/dashboard' || pathname === '/dashboard/'
+  const showInitial = !!initial && !leftHasProfileIcon
+
+  // Base destinations for the menu. The current page is filtered out so the
+  // menu only shows places you can actually go from here. Sign in / Sign out
+  // are appended after the filter so they always render.
+  const baseItems: { href: string; label: string }[] = signedIn
+    ? [
+        { href: '/dashboard', label: 'Dashboard' },
+        { href: '/hub',       label: 'Clubhouse' },
+        { href: '/account',   label: 'Account'   },
+        { href: '/pricing',   label: 'Pricing'   },
+        { href: '/guides',    label: 'Guides'    },
+        ...(admin ? [{ href: '/admin', label: 'Admin' }] : []),
+      ]
+    : [
+        { href: '/pricing', label: 'Pricing'   },
+        { href: '/guides',  label: 'Guides'    },
+        { href: '/hub',     label: 'Clubhouse' },
+      ]
+
+  // Hide the row whose href matches the page we're on. For /guides and
+  // /pricing the prefix form also catches sub-pages (e.g. /pricing/plans,
+  // /guides/sleeper-league-history) so the menu doesn't offer a redundant
+  // jump to the parent of the page you're already inside.
+  const onPage = (href: string) =>
+    pathname === href ||
+    (href !== '/' && pathname.startsWith(href + '/'))
+  const items = baseItems.filter((i) => !onPage(i.href))
+
   return (
     <div ref={rootRef} className={`msm-root${open ? ' is-open' : ''}`}>
       <button
@@ -76,15 +111,13 @@ export function MobileSiteMenu({
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {initial ? (
+        {showInitial ? (
           <span className="msm-trigger-initial" aria-hidden>{initial}</span>
         ) : (
           <svg
             className="msm-trigger-icon"
             aria-hidden
             viewBox="0 0 20 14"
-            width="18"
-            height="14"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.8"
@@ -108,33 +141,26 @@ export function MobileSiteMenu({
               </div>
             )}
 
+            {items.map((it) => (
+              <Link key={it.href} href={it.href} className="msm-row" role="menuitem">
+                {it.label}
+              </Link>
+            ))}
+
             {signedIn ? (
-              <>
-                <Link href="/dashboard" className="msm-row" role="menuitem">Dashboard</Link>
-                <Link href="/hub"       className="msm-row" role="menuitem">Clubhouse</Link>
-                <Link href="/account"   className="msm-row" role="menuitem">Account</Link>
-                {admin && (
-                  <Link href="/admin" className="msm-row" role="menuitem">Admin</Link>
-                )}
-                <form action="/auth/signout" method="post" className="msm-row-form">
-                  <button
-                    type="submit"
-                    className="msm-row msm-row-signout"
-                    role="menuitem"
-                  >
-                    Sign out
-                  </button>
-                </form>
-              </>
+              <form action="/auth/signout" method="post" className="msm-row-form">
+                <button
+                  type="submit"
+                  className="msm-row msm-row-signout"
+                  role="menuitem"
+                >
+                  Sign out
+                </button>
+              </form>
             ) : (
-              <>
-                <Link href="/pricing" className="msm-row" role="menuitem">Pricing</Link>
-                <Link href="/guides"  className="msm-row" role="menuitem">Guides</Link>
-                <Link href="/hub"     className="msm-row" role="menuitem">Clubhouse</Link>
-                <Link href="/login"   className="msm-row msm-row-signin" role="menuitem">
-                  Sign in
-                </Link>
-              </>
+              <Link href="/login" className="msm-row msm-row-signin" role="menuitem">
+                Sign in
+              </Link>
             )}
           </div>
         </>

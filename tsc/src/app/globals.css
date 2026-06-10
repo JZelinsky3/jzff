@@ -8122,3 +8122,34 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     nav.nav .nav-drop { display: none !important; }
 }
 
+/* ─── Dashboard cards: denser on phones ───────────────────────
+   The shared .card class is tuned for desktop poster-card density —
+   2rem padding, 3rem roman numeral, 1.85rem title — which makes each
+   league card eat ~250px of vertical space and reduces the dashboard
+   to one card per screen on phones. Scope these compressions to the
+   dashboard via .dc-dashboard-grid so other surfaces using .card
+   (the landing's almanac chapters, etc.) keep their original feel.
+   ============================================================ */
+@media (max-width: 720px) {
+    .dc-dashboard-grid > .card,
+    .dc-dashboard-grid > div > .card {
+        padding: 1.15rem 1.1rem 1rem;
+        gap: .5rem;
+    }
+    .dc-dashboard-grid .card-roman   { font-size: 2rem; }
+    .dc-dashboard-grid .card-title   { font-size: 1.4rem; }
+    .dc-dashboard-grid .card-desc    { font-size: .82rem; line-height: 1.45; }
+    .dc-dashboard-grid .card-corner  { font-size: .55rem; top: .85rem; right: 1rem; }
+    .dc-dashboard-grid .card-cta {
+        margin-top: .3rem;
+        padding-top: .55rem;
+        font-size: .64rem;
+    }
+    /* The UDFA tier badge tucked into the league card — shrink it
+       proportionally so it doesn't reclaim the height we just saved. */
+    .dc-dashboard-grid .dc-league-tier {
+        font-size: .54rem;
+        padding: .25rem .5rem;
+    }
+}
+
