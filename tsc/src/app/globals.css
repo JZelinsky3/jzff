@@ -4894,13 +4894,19 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .onb-fab-panel { width: min(360px, calc(100vw - 1.5rem)); }
 }
 
-/* Inset full-width dashboard banners (testing-window notice, grace-period
-   notice) on mobile so they don't go edge-to-edge while every other block on
-   the page sits inside `.section`'s 1.25rem inset. The component sets its own
-   maxWidth + auto-margin inline, so we override the margin with !important. */
+/* Inset full-width dashboard banners (UDFA / grace-period / Yahoo) on
+   mobile so they don't go edge-to-edge — every other block on the page
+   sits inside `.section`'s 1rem–1.25rem inset, and the banners should
+   mirror that. The component sets its own maxWidth + auto-margin
+   inline, so we override the margin with !important.
+
+   Was max-width: 70% which read as a small ~250px card in the middle
+   of a 360px phone with huge dead margins. calc(100% - 2rem) keeps a
+   ~1rem gutter on each side — matches the <=520 .section padding and
+   feels like a proper banner instead of a floating chip. */
 @media (max-width: 640px) {
     .dc-banner {
-        max-width: 70% !important;
+        max-width: calc(100% - 2rem) !important;
         margin-left: auto !important;
         margin-right: auto !important;
     }
