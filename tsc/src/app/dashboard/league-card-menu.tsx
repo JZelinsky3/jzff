@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteLeague } from './actions'
 
-// Small kebab menu floating in the top-right of each league card. Opens a
-// dropdown with a Delete action that requires the user to type the league
-// name in a prompt before firing.
+// Compact ⋯ button rendered as the third control in the card's CTA footer
+// row (after Setup / Archive). Opens an upward dropdown with a Delete action
+// that requires the user to type the league name in a prompt before firing.
 export function LeagueCardMenu({ leagueId, leagueName }: { leagueId: string; leagueName: string }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -57,7 +57,7 @@ export function LeagueCardMenu({ leagueId, leagueName }: { leagueId: string; lea
       ref={ref}
       onClick={stop}
       onKeyDown={stop}
-      style={{ position: 'absolute', bottom: '.6rem', right: '.6rem', zIndex: 2 }}
+      style={{ position: 'relative', display: 'flex', flex: '0 0 auto' }}
     >
       <button
         type="button"
@@ -65,20 +65,7 @@ export function LeagueCardMenu({ leagueId, leagueName }: { leagueId: string; lea
         aria-label="Open league menu"
         aria-haspopup="menu"
         aria-expanded={open}
-        style={{
-          background: 'rgba(0,0,0,.35)',
-          border: '1px solid rgba(255,255,255,.12)',
-          color: 'var(--cream)',
-          width: '1.85rem',
-          height: '1.85rem',
-          borderRadius: '50%',
-          cursor: 'pointer',
-          fontSize: '1.1rem',
-          lineHeight: 1,
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        className="dc-league-cta-btn dc-league-cta-kebab"
       >
         ⋯
       </button>

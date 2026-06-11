@@ -8147,6 +8147,27 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     transition: transform .2s ease;
 }
 .dc-league-cta-btn:hover .card-arrow { transform: translateX(2px); }
+/* Third control in the row: the ⋯ league menu (delete lives inside).
+   Fixed-width and quieter than the gold Setup/Archive pair so it reads
+   as secondary; its dropdown panel anchors here and opens upward. */
+.dc-league-cta-btn.dc-league-cta-kebab {
+    flex: 0 0 auto;
+    min-width: 2.3rem;
+    padding-left: .5rem;
+    padding-right: .5rem;
+    font-size: 1rem;
+    letter-spacing: 0;
+    line-height: 1;
+    color: var(--cream-soft);
+    border-color: var(--ink-line);
+    background: transparent;
+    cursor: pointer;
+}
+.dc-league-cta-btn.dc-league-cta-kebab:hover {
+    background: rgba(255,255,255,.08);
+    color: var(--cream);
+    border-color: var(--ink-line);
+}
 /* Mobile mirrors the compressed card padding from .dc-dashboard-grid. */
 @media (max-width: 720px) {
     .dc-league-cta {
@@ -8158,6 +8179,13 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
         font-size: .58rem;
         padding: .38rem .45rem;
         letter-spacing: .16em;
+    }
+    .dc-league-cta-btn.dc-league-cta-kebab {
+        font-size: .9rem;
+        min-width: 2rem;
+        padding-left: .4rem;
+        padding-right: .4rem;
+        letter-spacing: 0;
     }
 }
 

@@ -394,13 +394,12 @@ export default async function DashboardPage({
           <div className="card-grid dc-dashboard-grid">
             {leagues.map((l) => (
               <div key={l.id} style={{ position: 'relative', display: 'flex', height: '100%' }}>
-                <LeagueCardMenu leagueId={l.id} leagueName={l.name} />
                 {/* Click-area pattern: the parent .card div carries the
                     visual styling but isn't itself a link. An absolutely-
                     positioned Link covers the card so tapping content
                     drops into setup; the .dc-league-cta footer uses a
-                    higher z-index so its two real buttons (Setup /
-                    Archive) intercept their own clicks without nesting
+                    higher z-index so its real controls (Setup / Archive /
+                    ⋯ menu) intercept their own clicks without nesting
                     anchors. */}
                 <div className="card dc-league-card" style={{ flex: 1, height: '100%' }}>
                   <Link
@@ -455,6 +454,7 @@ export default async function DashboardPage({
                         Archive <span className="card-arrow">↗</span>
                       </a>
                     )}
+                    <LeagueCardMenu leagueId={l.id} leagueName={l.name} />
                   </div>
                 </div>
               </div>
