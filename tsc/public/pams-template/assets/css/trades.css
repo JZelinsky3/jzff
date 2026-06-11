@@ -175,7 +175,9 @@ body[data-trades-theme="cards"] .nav-chapbar-link.is-active::after { background:
 body[data-trades-theme="cards"] .nav-chapbar-link + .nav-chapbar-link::before { background: #4c3922; }
 /* Live sub-rail under the chapbar — secondary accent is the cream the
    back link uses (the brass #c8a464 stays the chapbar's primary). */
-body[data-trades-theme="cards"] .nav-subrail { border-top-color: #4c3922; }
+/* Cream lift instead of the default black-.22 band — the darkening
+   read too heavy against the kraft page. */
+body[data-trades-theme="cards"] .nav-subrail { background: rgba(245,233,200,.05); border-top-color: #4c3922; }
 body[data-trades-theme="cards"] .nav-subrail-link { color: #9c8665; }
 body[data-trades-theme="cards"] .nav-subrail-link:hover,
 body[data-trades-theme="cards"] .nav-subrail-link.is-active { color: #f5e9c8; }
@@ -602,8 +604,10 @@ body[data-trades-theme="wire"] .nav-chapbar-link.is-active::after { background: 
 body[data-trades-theme="wire"] .nav-chapbar-link + .nav-chapbar-link::before { background: #c9bea3; }
 /* Live sub-rail — the default translucent-black band over the wire's
    paper read as off-white, and the gold fallback active was illegible
-   on it. Grey band, ink secondary (the red stays the chapbar's). */
-body[data-trades-theme="wire"] .nav-subrail { background: #e2dfd6; border-top-color: #c9bea3; }
+   on it. Bright cream band (a notch lighter than the chapbar's
+   #f6f1e4 — the earlier grey #e2dfd6 read dirty against the paper);
+   ink secondary (the red stays the chapbar's). */
+body[data-trades-theme="wire"] .nav-subrail { background: #faf6ea; border-top-color: #c9bea3; }
 body[data-trades-theme="wire"] .nav-subrail-link { color: #6b5e44; }
 body[data-trades-theme="wire"] .nav-subrail-link:hover,
 body[data-trades-theme="wire"] .nav-subrail-link.is-active { color: #1a1612; }
