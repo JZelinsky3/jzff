@@ -4912,6 +4912,23 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     }
 }
 
+/* Banner typography (UDFA "how it works" / grace-period / plan notices).
+   Desktop sizes match the old inline values; the 720px step takes each
+   tier down ~.1–.15rem so the banners read quieter on phones. Kept as
+   classes (not inline) precisely so the mobile override can exist. */
+.dc-banner-kicker { font-size: .6rem; }
+.dc-banner-lede   { font-size: 1.05rem; }
+.dc-banner-note   { font-size: .85rem; }
+.dc-banner-foot   { font-size: .62rem; }
+.dc-banner-btn    { font-size: .65rem; padding: .4rem .85rem; }
+@media (max-width: 720px) {
+    .dc-banner-kicker { font-size: .5rem; }
+    .dc-banner-lede   { font-size: .9rem; }
+    .dc-banner-note   { font-size: .72rem; }
+    .dc-banner-foot   { font-size: .52rem; }
+    .dc-banner-btn    { font-size: .55rem; padding: .35rem .7rem; }
+}
+
 
 
 /* Landing-only masthead title — uses the full publication name instead

@@ -236,16 +236,16 @@ export default async function DashboardPage({
             borderRadius: '2px',
           }}
         >
-          <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
+          <div className="dc-banner-kicker" style={{ fontFamily: 'var(--mono)', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
             ★ How UDFA works
           </div>
-          <div style={{ fontFamily: 'var(--serif)', fontSize: '.95rem', color: 'var(--cream)' }}>
+          <div className="dc-banner-lede" style={{ fontFamily: 'var(--serif)', color: 'var(--cream)' }}>
             <strong style={{ color: 'var(--gold)' }}>First league</strong> is a free trial — every feature, unlocked as a preview of the paid plans.
           </div>
           {/* Feature-list explanation is verbose; it's the first thing to hide
               on phones where vertical real-estate is precious. The email
               follow-up stays visible at every width. */}
-          <div style={{ opacity: 0.7, fontSize: '.75rem', marginTop: '.35rem' }}>
+          <div className="dc-banner-note" style={{ opacity: 0.7, marginTop: '.35rem' }}>
             <span className="hide-on-mobile">
               Additional leagues use the free UDFA feature set (all-time standings, rivalries, and the manager strip). Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub stay locked on UDFA leagues until you upgrade.{' '}
             </span>
@@ -261,8 +261,8 @@ export default async function DashboardPage({
             marginTop: '.85rem', paddingTop: '.7rem',
             borderTop: '1px solid rgba(232,200,137,.18)',
           }}>
-            <span style={{
-              fontFamily: 'var(--mono)', fontSize: '.62rem',
+            <span className="dc-banner-foot" style={{
+              fontFamily: 'var(--mono)',
               letterSpacing: '.22em', textTransform: 'uppercase',
               color: 'var(--cream-mute)',
             }}>
@@ -272,15 +272,13 @@ export default async function DashboardPage({
             <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
               <Link
                 href="/pricing"
-                className="dc-btn-ghost"
-                style={{ fontSize: '.65rem', padding: '.4rem .85rem' }}
+                className="dc-btn-ghost dc-banner-btn"
               >
                 See plans →
               </Link>
               <Link
                 href="/pricing/plans"
-                className="dc-btn-ghost"
-                style={{ fontSize: '.65rem', padding: '.4rem .85rem' }}
+                className="dc-btn-ghost dc-banner-btn"
                 title="Side-by-side comparison of every feature per plan"
               >
                 Compare →
@@ -304,16 +302,16 @@ export default async function DashboardPage({
           }}
         >
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--rust, #a04830)', marginBottom: '.25rem' }}>
+            <div className="dc-banner-kicker" style={{ fontFamily: 'var(--mono)', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--rust, #a04830)', marginBottom: '.25rem' }}>
               ★ Subscription lapsed
             </div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
+            <div className="dc-banner-lede" style={{ fontFamily: 'var(--serif)', color: 'var(--cream)' }}>
               {leaguesWithGrace.length === 1 ? 'Your league will be' : `Your ${leaguesWithGrace.length} leagues will be`} deleted on{' '}
               <strong style={{ color: 'var(--gold)' }}>
                 {earliestGrace.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
               </strong>.
             </div>
-            <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.25rem' }}>
+            <div className="dc-banner-note" style={{ opacity: 0.7, marginTop: '.25rem' }}>
               Resubscribe before then to keep everything — or export anything you want to save.
             </div>
           </div>
