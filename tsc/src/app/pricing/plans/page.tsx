@@ -145,6 +145,7 @@ export default async function PlansPage() {
                 {TIERS.map((t, i) => {
                   const featured = t === 'tier2'
                   const numeral = ['I', 'II', 'III'][i]
+                  const prev = i > 0 ? TIERS[i - 1] : null
                   return (
                     <div key={t} className={`plans-card${featured ? ' is-featured' : ''}`}>
                       {featured && <div className="plans-card-flag">★ Most popular ★</div>}
@@ -154,11 +155,29 @@ export default async function PlansPage() {
                       <div className="plans-card-leagues">{leagueLine(t)}</div>
 
                       <ul className="plans-feat-list">
+                        {/* Mobile-only summary line (display: none on desktop).
+                            Rows the previous tier already includes collapse
+                            into this on phones so stacked cards stop
+                            repeating the same ten features three times. */}
+                        {prev && (
+                          <li className="plans-feat-inherit">
+                            Everything in {TIER_LABELS[prev].name}, plus —
+                          </li>
+                        )}
                         {FEATURES.map((f) => {
                           const inc = f.included[t]
                           const detail = typeof f.detail === 'function' ? f.detail(t) : f.detail
+                          // Inherited = already included on the previous tier,
+                          // so the mobile view folds it into the line above.
+                          // Function details (Multiple leagues) are per-tier
+                          // and always stay visible.
+                          const inherited =
+                            !!prev && inc && f.included[prev] && typeof f.detail !== 'function'
                           return (
-                            <li key={f.label} className={`plans-feat${inc ? '' : ' is-excluded'}`}>
+                            <li
+                              key={f.label}
+                              className={`plans-feat${inc ? '' : ' is-excluded'}${inherited ? ' is-inherited' : ''}`}
+                            >
                               <span className="plans-feat-mark" aria-hidden="true">
                                 {inc ? '✓' : '—'}
                               </span>

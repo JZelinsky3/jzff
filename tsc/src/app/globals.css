@@ -7749,8 +7749,33 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-size: .95rem;
     max-width: 60ch; margin-inline: auto;
 }
+/* "Everything in <tier>, plus —" summary row. Desktop shows all three
+   full lists side-by-side for true column comparison, so the note is
+   hidden; it only exists for the stacked mobile layout below. */
+.plans-feat-inherit {
+    display: none;
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; line-height: 1.3;
+    color: var(--gold);
+}
 @media (max-width: 860px) {
     .plans-grid { grid-template-columns: 1fr; }
+
+    /* Stacked cards: collapse rows the previous tier already covers into
+       the "Everything in <tier>, plus —" line, and drop description text
+       from excluded rows (their full detail shows on the card where the
+       feature is actually sold). Cuts the page from 3 × 10 verbose rows
+       to 10 + 6 + 2 while keeping every feature discoverable. */
+    .plans-feat.is-inherited { display: none; }
+    .plans-feat-inherit {
+        display: block;
+        padding-bottom: .55rem;
+        border-bottom: 1px dotted var(--ink-line);
+    }
+    .plans-feat.is-excluded .plans-feat-detail { display: none; }
+    /* Free/UDFA card (the page's other tab): same one-line treatment
+       for features it doesn't include. */
+    .pricing-free-mark.is-no + .pricing-free-body .pricing-free-feat-detail { display: none; }
 }
 
 /* Pricing & Plans top-right nav menu. Two-tier hierarchy:
