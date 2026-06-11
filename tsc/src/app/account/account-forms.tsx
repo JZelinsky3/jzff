@@ -58,9 +58,9 @@ export function AccountForms({
         <>
           <div className="section">
             <div className="section-header">
-              <span className="section-num">§ 02 · Backup access</span>
-              <span className="section-title">In case {providerLabel} access is lost —</span>
-              <span className="section-meta">Optional</span>
+              <span className="section-num">§ 02 · Email</span>
+              <span className="section-title">Sign-in address —</span>
+              <span className="section-meta">Via {providerLabel}</span>
             </div>
             <BackupEmailForm primaryEmail={email} initial={backupEmail} providerLabel={providerLabel} />
           </div>
@@ -402,6 +402,9 @@ function BackupEmailForm({
   )
   const [linking, setLinking] = useState(false)
   const [linkErr, setLinkErr] = useState<string | null>(null)
+  // Backup options stay collapsed until the chip is tapped — mobile keeps
+  // the section to a single email row.
+  const [open, setOpen] = useState(false)
 
   // Adds a second OAuth identity to the current user so they can sign in
   // with either provider account. Supabase calls this "manual identity
@@ -421,45 +424,64 @@ function BackupEmailForm({
   return (
     <form action={action} className="dc-card-static dc-form">
       <div className="dc-field">
-        <label className="dc-label">Primary email</label>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.6rem', marginBottom: '.35rem' }}>
+          <label className="dc-label" style={{ marginBottom: 0 }}>Email</label>
+          {/* Backup-access options live behind this chip so the section is
+              one quiet row until the user actually wants them. */}
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            style={{
+              fontFamily: 'var(--mono)', fontWeight: 700,
+              fontSize: '.58rem', letterSpacing: '.18em', textTransform: 'uppercase',
+              color: 'var(--gold)',
+              background: 'transparent',
+              border: '1px solid var(--gold-deep)',
+              borderRadius: '999px',
+              padding: '.25rem .6rem',
+              cursor: 'pointer',
+            }}
+          >
+            {open ? '× Close' : initial ? '✓ Backup' : '+ Backup'}
+          </button>
+        </div>
         <input value={primaryEmail} disabled className="dc-input mono" />
-        <span className="dc-checkbox-hint" style={{ marginTop: '.4rem' }}>
-          Tied to your {providerLabel} account — change it there if needed.
-        </span>
       </div>
-      <div className="dc-field">
-        <label className="dc-label">Backup email</label>
-        <input
-          name="email"
-          type="email"
-          defaultValue={initial}
-          placeholder="you@elsewhere.com"
-          className="dc-input mono"
-        />
-        <span className="dc-checkbox-hint" style={{ marginTop: '.4rem' }}>
-          We&apos;ll only use this if you ever lose access to your {providerLabel} account.
-          Leave blank to clear.
-        </span>
-      </div>
-      <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
-        <button type="submit" disabled={isPending} className="dc-btn">
-          {isPending ? 'Saving…' : 'Save backup email →'}
-        </button>
-        <button
-          type="button"
-          onClick={onLinkAnother}
-          disabled={linking}
-          className="dc-btn-ghost"
-        >
-          {linking ? 'Opening…' : `Link another ${providerLabel} account →`}
-        </button>
-      </div>
-      <span className="dc-checkbox-hint" style={{ marginTop: '.25rem' }}>
-        Linking a second {providerLabel} account lets you sign in with either one — useful if you lose access to the first.
-      </span>
-      {linkErr && <p className="dc-form-error">{linkErr}</p>}
-      {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
-      {state && state.ok && state.message && <p className="dc-form-ok">{state.message}</p>}
+      {open && (
+        <>
+          <div className="dc-field">
+            <label className="dc-label">Backup email</label>
+            <input
+              name="email"
+              type="email"
+              defaultValue={initial}
+              autoFocus
+              placeholder="you@elsewhere.com"
+              className="dc-input mono"
+            />
+            <span className="dc-checkbox-hint" style={{ marginTop: '.4rem' }}>
+              Used only if you lose {providerLabel} access. Blank to clear.
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
+            <button type="submit" disabled={isPending} className="dc-btn">
+              {isPending ? 'Saving…' : 'Save'}
+            </button>
+            <button
+              type="button"
+              onClick={onLinkAnother}
+              disabled={linking}
+              className="dc-btn-ghost"
+            >
+              {linking ? 'Opening…' : `Link another ${providerLabel} account`}
+            </button>
+          </div>
+          {linkErr && <p className="dc-form-error">{linkErr}</p>}
+          {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
+          {state && state.ok && state.message && <p className="dc-form-ok">{state.message}</p>}
+        </>
+      )}
     </form>
   )
 }
@@ -561,8 +583,7 @@ function MarketingForm({ initialOptIn }: { initialOptIn: boolean }) {
         <span>
           Email me about new features and product updates
           <span className="dc-checkbox-hint">
-            Billing-related emails (subscription confirmations, payment failures) always go out — this only covers
-            optional announcements like new platform integrations and product changes.
+            Optional announcements only. Billing emails always send.
           </span>
         </span>
       </label>

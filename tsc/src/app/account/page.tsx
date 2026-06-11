@@ -85,11 +85,10 @@ export default async function AccountPage({
           The <em>Chronicler.</em>
         </h1>
         <p className="hero-sub">
-          Change your email, reset your password, manage what we send you,
-          and (eventually) handle your subscription.
+          Your plan, email, password, and what we send you.
         </p>
         <div className="hero-meta">
-          {user.email} · {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'} on file
+          {user.email}
         </div>
         {memberCode && (
           <div style={{ textAlign: 'center' }}>

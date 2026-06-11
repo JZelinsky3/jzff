@@ -140,7 +140,7 @@ export default async function PricingPage({
                 monthly: TIER_PRICES.tier2.monthly,
                 yearly: TIER_PRICES.tier2.yearly,
                 features: [
-                  'Archive up to 5 leagues',
+                  'Archive up to 3 leagues',
                   'Everything in Rookie',
                   'Run multiple leagues from one account',
                   'Priority on platform integrations',
@@ -155,11 +155,10 @@ export default async function PricingPage({
                 monthly: TIER_PRICES.tier3.monthly,
                 yearly: TIER_PRICES.tier3.yearly,
                 features: [
-                  'Unlimited leagues',
+                  '10 fully customizable leagues',
                   'Everything in Veteran',
                   'Early access to all new features',
                   'First look: Sunday Live, the game-day companion',
-                  'Manager Hub — coming soon',
                 ],
               },
             ]}
