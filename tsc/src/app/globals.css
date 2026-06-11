@@ -8440,6 +8440,62 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     nav.nav .nav-drop { display: none !important; }
 }
 
+/* ─── Mobile shrinking masthead ───────────────────────────────
+   MobileHeaderCollapse (mounted in the root layout) toggles
+   `tsc-hdr-collapsed` on <body>: scrolling down past the header
+   collapses the sticky .nav into a slim title-only rail — kicker
+   folds away, title shrinks, corner controls (back arrow /
+   profile / fixed hamburger) fade out. Any scroll up restores
+   the full header. The class toggles at every width; everything
+   visual is scoped here so desktop never changes. */
+@media (max-width: 720px) {
+    .nav {
+        transition: padding .25s ease;
+    }
+    .nav-kicker {
+        max-height: 1.2em;
+        overflow: hidden;
+        transition: max-height .25s ease, opacity .2s ease, margin-bottom .25s ease;
+    }
+    .nav-title {
+        transition: font-size .25s ease;
+    }
+    .nav .dc-nav-icon,
+    .nav .nav-back,
+    .nav .nav-link {
+        transition: opacity .2s ease;
+    }
+    .msm-root {
+        transition: opacity .2s ease, transform .2s ease;
+    }
+
+    body.tsc-hdr-collapsed .nav {
+        padding-top: .35rem;
+        padding-bottom: .35rem;
+    }
+    body.tsc-hdr-collapsed .nav-kicker {
+        max-height: 0;
+        opacity: 0;
+        margin-bottom: 0;
+    }
+    body.tsc-hdr-collapsed .nav-title {
+        font-size: 1rem;
+    }
+    /* Fade (not display:none) so the rail keeps its grid shape and the
+       controls reappear in place the instant the user scrolls up. */
+    body.tsc-hdr-collapsed .nav .dc-nav-icon,
+    body.tsc-hdr-collapsed .nav .nav-back,
+    body.tsc-hdr-collapsed .nav .nav-link {
+        opacity: 0;
+        pointer-events: none;
+    }
+    body.tsc-hdr-collapsed .msm-root {
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+    }
+}
+
 /* ─── Dashboard cards: denser on phones ───────────────────────
    The shared .card class is tuned for desktop poster-card density —
    2rem padding, 3rem roman numeral, 1.85rem title — which makes each

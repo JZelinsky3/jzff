@@ -3,6 +3,7 @@ import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { MobileSiteMenu } from "@/components/MobileSiteMenu";
+import { MobileHeaderCollapse } from "@/components/MobileHeaderCollapse";
 import { createClient } from "@/lib/supabase/server";
 import { isSiteAdmin } from "@/lib/siteAdmin";
 // Order matters: globals.css imports tailwindcss; main.css is loaded second
@@ -158,6 +159,7 @@ export default async function RootLayout({
         <div className="site-grain"></div>
         {children}
         <MobileSiteMenu signedIn={signedIn} email={user?.email ?? null} admin={admin} />
+        <MobileHeaderCollapse />
         <Analytics />
         <SpeedInsights />
       </body>
