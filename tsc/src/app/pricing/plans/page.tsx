@@ -271,6 +271,18 @@ export default async function PlansPage() {
         />
       </div>
 
+      {/* Mirror of the "Compare all plans" link at the bottom of /pricing —
+          quiet ghost button back to the checkout-ready price cards. */}
+      <div className="section" style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <Link
+          href="/pricing"
+          className="dc-btn-ghost"
+          style={{ fontSize: '.7rem', padding: '.55rem 1.15rem' }}
+        >
+          View pricing
+        </Link>
+      </div>
+
       <SiteFooter />
     </main>
   )

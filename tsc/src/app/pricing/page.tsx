@@ -262,7 +262,7 @@ export default async function PricingPage({
           className="dc-btn-ghost"
           style={{ fontSize: '.7rem', padding: '.55rem 1.15rem' }}
         >
-          Compare every feature side-by-side →
+          Compare all plans
         </Link>
       </div>
 
