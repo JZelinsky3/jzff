@@ -7759,12 +7759,44 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--gold);
 }
 @media (max-width: 860px) {
-    .plans-grid { grid-template-columns: 1fr; }
+    /* Swipeable card carousel — the standard mobile pricing pattern
+       (App Store / SaaS pricing pages). Each card takes ~82% of the
+       viewport so the next card peeks in from the right as a swipe
+       affordance; scroll-snap keeps one card centered at rest. Top
+       padding leaves room for the floating "Most popular" flag, bottom
+       for the card shadow. */
+    .plans-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: .85rem;
+        padding: .85rem 1.1rem 1.25rem;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .plans-grid::-webkit-scrollbar { display: none; }
+    .plans-card {
+        flex: 0 0 min(82vw, 320px);
+        scroll-snap-align: center;
+    }
+    /* Tiny swipe cue above the deck — only meaning on touch layouts. */
+    .plans-paid-view::before {
+        content: '☞ Swipe to compare';
+        display: block;
+        text-align: center;
+        font-family: var(--mono);
+        font-size: .55rem;
+        letter-spacing: .25em;
+        text-transform: uppercase;
+        color: var(--cream-mute);
+        margin-bottom: .15rem;
+    }
+    .plans-foot { padding: 0 1.1rem; }
 
-    /* Stacked cards: collapse rows the previous tier already covers into
+    /* Carousel cards: collapse rows the previous tier already covers into
        the "Everything in <tier>, plus —" line, and drop description text
        from excluded rows (their full detail shows on the card where the
-       feature is actually sold). Cuts the page from 3 × 10 verbose rows
+       feature is actually sold). Cuts the deck from 3 × 10 verbose rows
        to 10 + 6 + 2 while keeping every feature discoverable. */
     .plans-feat.is-inherited { display: none; }
     .plans-feat-inherit {
