@@ -4915,14 +4915,14 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 /* Balance the banner's vertical gaps on mobile. Above it sits the hero
    (2rem bottom padding) + the banner's own 1rem top margin = 3rem; below
    it the next .section only brings its margin-top (2rem at <=768, 1.5rem
-   at <=520). Bottom margin tops the difference up so both gaps read as
-   3rem. !important because the component sets `margin: 1rem auto 0`
-   inline. Desktop keeps zero bottom margin. */
+   at <=520). The in-between elements (fab-only checklist = position:fixed,
+   mode-cards section = display:none on mobile) don't break margin
+   collapsing, so this bottom margin COLLAPSES with the section's
+   margin-top — the gap is max(banner-bottom, section-top), not the sum.
+   Hence the full 3rem here, matching the 3rem above. !important because
+   the component sets `margin: 1rem auto 0` inline. Desktop unchanged. */
 @media (max-width: 768px) {
-    .dc-banner { margin-bottom: 1rem !important; }
-}
-@media (max-width: 520px) {
-    .dc-banner { margin-bottom: 1.5rem !important; }
+    .dc-banner { margin-bottom: 3rem !important; }
 }
 
 /* Banner typography (UDFA "how it works" / grace-period / plan notices).
