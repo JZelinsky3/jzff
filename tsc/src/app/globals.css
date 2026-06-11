@@ -8180,6 +8180,14 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     right: .75rem;
     z-index: 60;
 }
+/* Landing is the only page with the gold ticker ABOVE the masthead, so the
+   top: 1rem tuned for navs that start at the viewport edge lands the trigger
+   on top of the ticker there. Push it down by the ticker's height (38px,
+   34px under the 520px breakpoint in main.css) onto the nav row instead. */
+.msm-root--landing { top: calc(38px + 1rem); }
+@media (max-width: 520px) {
+    .msm-root--landing { top: calc(34px + 1rem); }
+}
 .msm-trigger {
     display: flex; align-items: center; justify-content: center;
     width: 32px; height: 32px;
