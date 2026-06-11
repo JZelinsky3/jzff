@@ -12,6 +12,8 @@ export const config = {
     // HTML file. Without `xml|txt|html` here the unauth middleware was
     // intercepting /sitemap.xml + /robots.txt and bouncing them through
     // /login, so search engines saw the login page instead of the file.
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|xml|txt|html)$).*)',
+    // `webmanifest` keeps the PWA manifest installable — browsers fetch it
+    // credential-less, and a /login bounce breaks home-screen install.
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|xml|txt|html|webmanifest)$).*)',
   ],
 }

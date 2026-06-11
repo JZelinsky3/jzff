@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -82,6 +82,14 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large" },
   },
+  // iOS home-screen install. Modern Safari (16.4+) reads the manifest for
+  // standalone display; these metas keep the app title + status bar right
+  // on older iOS and when installed via the share sheet.
+  appleWebApp: {
+    capable: true,
+    title: "TSC",
+    statusBarStyle: "black-translucent",
+  },
   alternates: { canonical: "https://jzff.online/" },
   // Search engine site verifications. Google uses the HTML file at
   // /public/google2963fe74b5dcc516.html; Bing uses the meta tag injected
@@ -91,6 +99,13 @@ export const metadata: Metadata = {
       "msvalidate.01": "61FE2490BE5D1908387539654B1C10C9",
     },
   },
+};
+
+// Tints the Android/Chrome toolbar (and the installed PWA's title bar) to
+// the site's ink so the chrome blends with the masthead instead of flashing
+// white. Matches theme_color in manifest.ts.
+export const viewport: Viewport = {
+  themeColor: "#0e1620",
 };
 
 const jsonLd = {
