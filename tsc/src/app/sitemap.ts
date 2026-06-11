@@ -11,6 +11,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // /account, /hub/analyzer (interactive tool, nothing to index), and
 // unpublished or setup-placeholder almanacs.
 
+// Without this the sitemap is prerendered once at build time and newly
+// published leagues wouldn't appear until the next deploy. Hourly is plenty.
+export const revalidate = 3600
+
 const BASE = 'https://jzff.online'
 
 // path → [changeFrequency, priority]. Trailing slashes everywhere to match
