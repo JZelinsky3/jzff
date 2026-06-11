@@ -87,8 +87,19 @@ export const PLAN_FEATURES: PlanFeature[] = [
   },
   {
     label: 'Early access',
-    detail:
-      'Every new feature lands on All-Pro first — Sunday Live, the game-day companion, today; the Manager Hub coming soon.',
+    detail: 'Every new feature lands on All-Pro first.',
+    included: { tier1: false, tier2: false, tier3: true },
+    includedFree: false,
+  },
+  {
+    label: 'Sunday Live',
+    detail: 'First look at the live game-day companion.',
+    included: { tier1: false, tier2: false, tier3: true },
+    includedFree: false,
+  },
+  {
+    label: 'Manager Hub',
+    detail: 'Your whole career, every league, one book. Coming soon.',
     included: { tier1: false, tier2: false, tier3: true },
     includedFree: false,
   },

@@ -85,8 +85,17 @@ const FEATURES: Feature[] = [
   },
   {
     label: 'Early access',
-    detail:
-      'Every new feature lands on All-Pro first — Sunday Live, the game-day companion, today; the Manager Hub coming soon.',
+    detail: 'Every new feature lands on All-Pro first.',
+    included: { tier1: false, tier2: false, tier3: true },
+  },
+  {
+    label: 'Sunday Live',
+    detail: 'First look at the live game-day companion.',
+    included: { tier1: false, tier2: false, tier3: true },
+  },
+  {
+    label: 'Manager Hub',
+    detail: 'Your whole career, every league, one book. Coming soon.',
     included: { tier1: false, tier2: false, tier3: true },
   },
 ]
@@ -204,6 +213,19 @@ export default async function PlansPage() {
                 })}
               </div>
 
+              {/* Quiet ghost button back to the checkout-ready price cards —
+                  mirror of the "Compare all plans" link on /pricing, sitting
+                  above the foot note just like its counterpart there. */}
+              <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
+                <Link
+                  href="/pricing"
+                  className="dc-btn-ghost"
+                  style={{ fontSize: '.7rem', padding: '.55rem 1.15rem' }}
+                >
+                  View pricing
+                </Link>
+              </div>
+
               <p className="plans-foot">
                 Same chronicle, different reach. Upgrade or downgrade anytime — leagues over your new
                 plan&apos;s cap stay viewable but go read-only until you reduce or upgrade.
@@ -269,18 +291,6 @@ export default async function PlansPage() {
             </section>
           }
         />
-      </div>
-
-      {/* Mirror of the "Compare all plans" link at the bottom of /pricing —
-          quiet ghost button back to the checkout-ready price cards. */}
-      <div className="section" style={{ textAlign: 'center', marginTop: '2rem' }}>
-        <Link
-          href="/pricing"
-          className="dc-btn-ghost"
-          style={{ fontSize: '.7rem', padding: '.55rem 1.15rem' }}
-        >
-          View pricing
-        </Link>
       </div>
 
       <SiteFooter />

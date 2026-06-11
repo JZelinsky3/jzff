@@ -7768,7 +7768,9 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .plans-foot {
     text-align: center;
-    margin-top: 2rem;
+    /* 1.25rem matches the View-pricing button's top margin so the button
+       sits with equal breathing room above and below. */
+    margin-top: 1.25rem;
     font-family: var(--serif); font-style: italic;
     color: var(--cream-mute);
     font-size: .95rem;
