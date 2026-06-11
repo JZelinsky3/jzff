@@ -240,7 +240,7 @@ export default async function DashboardPage({
             ★ How UDFA works
           </div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
-            Your <strong style={{ color: 'var(--gold)' }}>earliest league</strong> is a free trial — every page, every paid feature, unlocked as a preview of the paid plans.
+            Your <strong style={{ color: 'var(--gold)' }}>earliest league</strong> is a free trial — every feature, unlocked as a preview of the paid plans.
           </div>
           {/* Feature-list explanation is verbose; it's the first thing to hide
               on phones where vertical real-estate is precious. The email
@@ -266,16 +266,26 @@ export default async function DashboardPage({
               letterSpacing: '.22em', textTransform: 'uppercase',
               color: 'var(--cream-mute)',
             }}>
-              ★ Free for everyone until{' '}
+              ★ Testing ends:{' '}
               <strong style={{ color: 'var(--gold)' }}>Jun 22, 2026</strong>
             </span>
-            <Link
-              href="/pricing"
-              className="dc-btn-ghost"
-              style={{ fontSize: '.65rem', padding: '.4rem .85rem' }}
-            >
-              See plans →
-            </Link>
+            <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+              <Link
+                href="/pricing"
+                className="dc-btn-ghost"
+                style={{ fontSize: '.65rem', padding: '.4rem .85rem' }}
+              >
+                See plans →
+              </Link>
+              <Link
+                href="/pricing/plans"
+                className="dc-btn-ghost"
+                style={{ fontSize: '.65rem', padding: '.4rem .85rem' }}
+                title="Side-by-side comparison of every feature per plan"
+              >
+                Compare →
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -323,13 +333,23 @@ export default async function DashboardPage({
         fabOnly
       />
 
-      <div className="section" style={{ paddingTop: '1rem' }}>
+      {/* On mobile this whole section is redundant for non-admins: the
+          Mode I "League Archive" card duplicates the "+ New archive →"
+          button already in the hero above. Non-admins get hide-on-mobile on
+          the section so the strip of padding doesn't linger; admins keep
+          the section visible on mobile but only see Mode II — Mode I
+          itself is always hidden on phones (its destination is one tap
+          away in the hero). */}
+      <div
+        className={`section${siteAdmin ? '' : ' hide-on-mobile'}`}
+        style={{ paddingTop: '1rem' }}
+      >
         {/* ← MANUAL EDIT: change `maxWidth` to widen/narrow the League Archive
             cards row. Larger value (e.g. '1080px') = wider; smaller (e.g. '640px')
             = narrower. Admin sees 2 cards side-by-side so they get a wider
             cap so each card stays readable. */}
         <div className="card-grid dc-dashboard-grid" style={{ maxWidth: siteAdmin ? '880px' : '580px', margin: '0 auto' }}>
-          <Link href="/dashboard/new" className="card" style={{ display: 'block' }}>
+          <Link href="/dashboard/new" className="card hide-on-mobile" style={{ display: 'block' }}>
             <div className="card-corner">Mode I</div>
             <div className="card-roman">§</div>
             <div className="card-title">League <em>Archive.</em></div>

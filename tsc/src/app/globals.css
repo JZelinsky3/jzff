@@ -7994,18 +7994,35 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .msm-trigger {
     display: flex; align-items: center; justify-content: center;
     width: 32px; height: 32px;
-    padding: 0; border: 1px solid var(--gold-deep);
-    border-radius: 999px;
-    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    padding: 0;
     color: var(--gold);
     cursor: pointer;
     transition: border-color .15s, background .15s, transform .15s;
     -webkit-tap-highlight-color: transparent;
 }
 .msm-trigger:active { transform: scale(.96); }
-.msm-root.is-open .msm-trigger {
+
+/* Avatar variant — initial inside a gold-bordered circle. Used on
+   landing where the trigger doubles as an identity badge. */
+.msm-trigger--avatar {
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+}
+.msm-root.is-open .msm-trigger--avatar {
     border-color: var(--gold);
     background: rgba(232,200,137,.14);
+}
+
+/* Hamburger variant — bare three lines, no chrome. Used on every page
+   that isn't about the user's profile, so the trigger reads as a menu
+   control instead of an identity widget. */
+.msm-trigger--hamburger {
+    border: none;
+    background: transparent;
+}
+.msm-root.is-open .msm-trigger--hamburger {
+    color: var(--gold-bright);
 }
 .msm-trigger-initial {
     font-family: var(--serif);
