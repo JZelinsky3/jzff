@@ -8093,6 +8093,49 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--gold-bright);
 }
 
+/* ─── Dashboard league cards: "Live ↗" pill ───────────────────
+   Sits at the top-left of each league card, mirroring the
+   platform badge (.card-corner) at the top-right. Lets the
+   commissioner jump straight to the public almanac in a new
+   tab without having to click into setup first. Only rendered
+   when the league is published. */
+.dc-league-live-pill {
+    position: absolute;
+    top: 1.05rem;
+    left: 1.4rem;
+    z-index: 2;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(232, 200, 137, .08);
+    border: 1px solid var(--gold-deep);
+    border-radius: 2px;
+    padding: .28rem .55rem;
+    text-decoration: none;
+    transition: background .15s, color .15s, border-color .15s;
+    -webkit-tap-highlight-color: transparent;
+}
+.dc-league-live-pill:hover {
+    background: var(--gold);
+    color: var(--ink);
+    border-color: var(--gold);
+}
+/* Compressed dashboard cards on mobile use tighter padding (1.15rem
+   1.1rem 1rem from .dc-dashboard-grid > .card), so the pill needs
+   to move in to match. */
+@media (max-width: 720px) {
+    .dc-league-live-pill {
+        top: .75rem;
+        left: .8rem;
+        font-size: .52rem;
+        padding: .22rem .45rem;
+        letter-spacing: .18em;
+    }
+}
+
 /* Lines rotate into an X when the panel opens — ported from the old
    NavDropdown so the trigger has the same satisfying animated affordance
    it used to. transform-origin: center lets each line spin around its
