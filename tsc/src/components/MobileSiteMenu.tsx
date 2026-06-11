@@ -67,13 +67,12 @@ export function MobileSiteMenu({
     ? email.trim().charAt(0).toUpperCase() || '★'
     : null
 
-  // Pages that already render a profile/account icon in the top-left slot
-  // of their nav. On those, the right-side trigger drops the avatar look
-  // and falls back to a hamburger so the user isn't staring at two
-  // profile-circle controls in the same header. /dashboard is currently
-  // the only such page (DashboardNavBackSlot).
-  const leftHasProfileIcon = pathname === '/dashboard' || pathname === '/dashboard/'
-  const showInitial = !!initial && !leftHasProfileIcon
+  // The initial-circle avatar is reserved for the landing page — that's
+  // where surfacing "you're signed in" doubles as a welcome cue. Every
+  // other surface falls back to a hamburger so the trigger isn't styled
+  // like an identity badge in contexts that aren't about your profile.
+  const isLanding = pathname === '/' || pathname === ''
+  const showInitial = !!initial && isLanding
 
   // Base destinations for the menu. The current page is filtered out so the
   // menu only shows places you can actually go from here. Sign in / Sign out
