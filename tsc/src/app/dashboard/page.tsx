@@ -239,13 +239,13 @@ export default async function DashboardPage({
           <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.25rem' }}>
             ★ How UDFA works
           </div>
-          <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: '.95rem', color: 'var(--cream)' }}>
             <strong style={{ color: 'var(--gold)' }}>First league</strong> is a free trial — every feature, unlocked as a preview of the paid plans.
           </div>
           {/* Feature-list explanation is verbose; it's the first thing to hide
               on phones where vertical real-estate is precious. The email
               follow-up stays visible at every width. */}
-          <div style={{ opacity: 0.7, fontSize: '.85rem', marginTop: '.35rem' }}>
+          <div style={{ opacity: 0.7, fontSize: '.75rem', marginTop: '.35rem' }}>
             <span className="hide-on-mobile">
               Additional leagues use the free UDFA feature set (all-time standings, rivalries, and the manager strip). Pick&apos;ems, Power Rankings, Live Season Hub, and Manager Hub stay locked on UDFA leagues until you upgrade.{' '}
             </span>
