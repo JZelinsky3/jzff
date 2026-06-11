@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Standings · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+.st-head { text-align: center; padding: 1.1rem 0 .9rem; }
+.st-title {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1.05;
+    color: var(--cream);
+}
+.st-title em { font-style: italic; color: var(--gold); }
+.st-sub { margin-top: .35rem; }
+
+/* Ranked rows */
+.st-row { display: block; }
+.st-row-main {
+    display: flex; align-items: center; gap: .7rem;
+    width: 100%;
+    min-height: 52px;
+    padding: .55rem .9rem;
+    background: none; border: none; color: inherit;
+    font: inherit; text-align: left;
+}
+.st-rank {
+    flex: none; width: 1.5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; color: var(--cream-mute);
+    text-align: center;
+}
+.st-row:nth-child(1) .st-rank { color: var(--gold); }
+.st-name {
+    min-width: 0; flex: 1;
+    font-weight: 600; font-size: .95rem;
+}
+.st-name small {
+    display: block;
+    font-weight: 400; font-size: .7rem;
+    color: var(--cream-mute);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.st-rings { flex: none; color: var(--gold); font-size: .7rem; letter-spacing: .08em; }
+.st-val {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .74rem; color: var(--cream-soft);
+    text-align: right;
+}
+.st-row + .st-row { border-top: 1px solid var(--ink-line-soft); }
+.st-row.is-gone .st-name { color: var(--cream-mute); }
+
+/* Expanded detail */
+.st-detail {
+    display: none;
+    padding: 0 .9rem .8rem 3.1rem;
+}
+.st-row.is-open { background: var(--ink-soft); }
+.st-row.is-open .st-detail { display: block; }
+.st-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .4rem;
+    margin-bottom: .6rem;
+}
+.st-detail-cell b {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; color: var(--gold);
+}
+.st-detail-cell span {
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.st-profile-link {
+    display: inline-block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--gold); text-decoration: none;
+}
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="standings" data-chapter="Ch. I · Standings" data-back-href="./"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <header class="st-head">
+        <div class="m-kicker">All-Time Table</div>
+        <h1 class="st-title">Every win, <em>counted.</em></h1>
+        <div class="m-mono st-sub" id="stSub"></div>
+    </header>
+
+    <div class="m-seg" id="sortSeg" style="margin-bottom:.7rem">
+        <button data-sort="wpct" class="is-active">Win %</button>
+        <button data-sort="pf">Points</button>
+        <button data-sort="name">Name</button>
+    </div>
+
+    <div class="m-list" id="rows"><div class="m-empty">Setting the table…</div></div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function num(n, d) {
+        if (n == null || isNaN(n)) return '—';
+        return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
+    }
+
+    var managers = [];
+    var sortKey = 'wpct';
+
+    var grab = function (path) {
+        return fetch(path).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    };
+
+    Promise.all([
+        grab('data/managers_directory.json'),
+        grab('data/league.json'),
+    ]).then(function (res) {
+        var dir = res[0], league = res[1];
+        managers = (dir && dir.managers) || [];
+        if (league) {
+            document.getElementById('stSub').textContent =
+                league.total_seasons + (league.total_seasons === 1 ? ' season · ' : ' seasons · ') +
+                league.total_matchups + ' matchups · est. ' + league.founded;
+        }
+        render();
+    });
+
+    function sorted() {
+        var list = managers.slice();
+        if (sortKey === 'name') {
+            list.sort(function (a, b) { return a.name.localeCompare(b.name); });
+        } else if (sortKey === 'pf') {
+            list.sort(function (a, b) { return b.total_pf - a.total_pf; });
+        } else {
+            list.sort(function (a, b) {
+                return (b.win_pct - a.win_pct) || (b.wins - a.wins) || (b.total_pf - a.total_pf);
+            });
+        }
+        return list;
+    }
+
+    function render() {
+        var box = document.getElementById('rows');
+        if (!managers.length) {
+            box.innerHTML = '<div class="m-empty">No results on file yet.</div>';
+            return;
+        }
+        box.innerHTML = sorted().map(function (m, i) {
+            var val = sortKey === 'pf' ? num(m.total_pf, 0) + ' pf' : esc(m.total_record);
+            var rings = m.championships ? '<span class="st-rings">' + '✦'.repeat(Math.min(m.championships, 4)) + '</span>' : '';
+            return '<div class="st-row' + (m.is_current ? '' : ' is-gone') + '" data-id="' + esc(m.user_id) + '">' +
+                '<button class="st-row-main" aria-expanded="false">' +
+                    '<span class="st-rank">' + (sortKey === 'name' ? '·' : i + 1) + '</span>' +
+                    '<span class="st-name">' + esc(m.name) +
+                        '<small>' + esc(m.team_latest || '') + (m.is_current ? '' : ' · alumni') + '</small></span>' +
+                    rings +
+                    '<span class="st-val">' + val + '</span>' +
+                '</button>' +
+                '<div class="st-detail">' +
+                    '<div class="st-detail-grid">' +
+                        cell((m.win_pct * 100).toFixed(0) + '%', 'Win pct') +
+                        cell(num(m.total_pf, 0), 'Points') +
+                        cell(m.seasons_played, m.seasons_played === 1 ? 'Season' : 'Seasons') +
+                        cell(m.playoff_appearances, 'Playoffs') +
+                    '</div>' +
+                    '<a class="st-profile-link" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">Full profile</a>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    function cell(v, l) {
+        return '<div class="st-detail-cell"><b>' + esc(v) + '</b><span>' + esc(l) + '</span></div>';
+    }
+
+    document.getElementById('sortSeg').addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-sort]');
+        if (!btn) return;
+        sortKey = btn.dataset.sort;
+        this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+        render();
+    });
+
+    document.getElementById('rows').addEventListener('click', function (e) {
+        var main = e.target.closest('.st-row-main');
+        if (!main) return;
+        var row = main.parentNode;
+        var open = row.classList.toggle('is-open');
+        main.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+})();
+</script>
+</body>
+</html>

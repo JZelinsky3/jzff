@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Record Book · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* Trophy-room green accent (mirrors the desktop record book palette) */
+:root { --rec: #8fb89a; --rec-deep: #5f8a6c; }
+body { background: #0d1512; }
+
+.rb-head { text-align: center; padding: 1.1rem 0 .9rem; }
+.rb-title {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1.05;
+    color: var(--cream);
+}
+.rb-title em { font-style: italic; color: var(--rec); }
+
+.rb-seg button.is-active { background: var(--rec); }
+
+.rb-card {
+    background: #131e18;
+    border-color: #24352b;
+}
+.rb-card + .rb-card { margin-top: .55rem; }
+.rb-card-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rec-deep);
+}
+.rb-top {
+    display: flex; align-items: baseline; gap: .65rem;
+    margin-top: .35rem;
+}
+.rb-top-value {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1;
+    color: var(--rec);
+    white-space: nowrap;
+}
+.rb-top-holder { min-width: 0; }
+.rb-top-holder b {
+    display: block;
+    font-family: var(--serif); font-weight: 400;
+    font-size: 1rem; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rb-top-holder small {
+    font-family: var(--mono); font-size: .56rem;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.rb-others {
+    margin-top: .6rem;
+    padding-top: .5rem;
+    border-top: 1px solid #1c2a22;
+}
+.rb-other {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .22rem 0;
+}
+.rb-other-rank { flex: none; font-family: var(--mono); font-size: .58rem; color: var(--cream-mute); width: .9rem; }
+.rb-other-name { min-width: 0; flex: 1; font-size: .8rem; font-weight: 500; color: var(--cream-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-other-val { flex: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--rec); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="records" data-chapter="Ch. V · Record Book" data-back-href="./"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <header class="rb-head">
+        <div class="m-kicker" style="color:var(--rec-deep)">The Trophy Room</div>
+        <h1 class="rb-title">The record <em>book.</em></h1>
+    </header>
+
+    <div class="m-seg rb-seg" id="seg" style="margin-bottom:.7rem">
+        <button data-sec="weekly" class="is-active">Games</button>
+        <button data-sec="season">Seasons</button>
+        <button data-sec="career">Careers</button>
+        <button data-sec="feats">Feats</button>
+    </div>
+
+    <div id="cards"><div class="m-empty">Dusting off the ledgers…</div></div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function num(n, d) {
+        if (n == null || isNaN(n)) return '—';
+        return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
+    }
+
+    var book = null;
+    var section = 'weekly';
+
+    fetch('data/record_book.json')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (data) {
+            book = data && data.full_book;
+            render();
+        });
+
+    // Per-record config: label + how to read value/context out of an entry.
+    function gameCtx(e) {
+        return e.season + ' · W' + e.week + ' · vs ' + (e.opp_owner || '—') + ' · ' + num(e.score) + '–' + num(e.opp_score);
+    }
+    var DEFS = {
+        weekly: [
+            ['highest_single_week_score', 'Highest Score', function (e) { return num(e.score); }, gameCtx],
+            ['lowest_single_week_score', 'Lowest Score', function (e) { return num(e.score); }, gameCtx],
+            ['biggest_blowouts', 'Biggest Blowout', function (e) { return '+' + num(e.margin); }, gameCtx],
+            ['closest_games', 'Closest Game', function (e) { return '+' + num(e.margin, 2); }, gameCtx],
+            ['luckiest_wins', 'Luckiest Win', function (e) { return num(e.score); }, gameCtx],
+            ['unluckiest_losses', 'Unluckiest Loss', function (e) { return num(e.score); }, gameCtx],
+            ['highest_combined_score', 'Highest Combined', function (e) { return num(e.score + e.opp_score); }, gameCtx],
+            ['lowest_combined_score', 'Lowest Combined', function (e) { return num(e.score + e.opp_score); }, gameCtx],
+        ],
+        season: [
+            ['highest_season_pf', 'Most Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
+            ['highest_ppg', 'Best PPG, Season', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.ppg); }, seasonCtx],
+            ['best_reg_season_records', 'Best Record', function (e) { return e.reg_record; }, seasonCtx],
+            ['lowest_season_pf', 'Fewest Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
+            ['highest_single_week_in_season', 'Season High Week', function (e) { return num(e.score != null ? e.score : e.reg_pf); }, seasonCtx],
+            ['lowest_single_week_in_season', 'Season Low Week', function (e) { return num(e.score != null ? e.score : e.reg_pf); }, seasonCtx],
+        ],
+        career: [
+            ['longest_win_streaks', 'Longest Win Streak', function (e) { return e.length + 'W'; }, streakCtx],
+            ['longest_loss_streaks', 'Longest Skid', function (e) { return e.length + 'L'; }, streakCtx],
+            ['most_top_3_finishes', 'Most Podiums', countVal, careerCtx],
+            ['most_playoff_appearances', 'Most Playoff Trips', countVal, careerCtx],
+            ['most_championship_appearances', 'Most Title Games', countVal, careerCtx],
+            ['best_avg_finish', 'Best Avg Finish', function (e) { return num(e.avg_finish != null ? e.avg_finish : e.value); }, careerCtx],
+        ],
+        feats: [
+            ['clutch_5pt', 'Clutch Wins (by <5)', countVal, featCtx, 'clutch'],
+            ['unclutch_5pt', 'Heartbreak Losses (<5)', countVal, featCtx, 'clutch'],
+            ['boom_150', '150-Point Games', countVal, featCtx, 'boom_bust'],
+            ['boom_175', '175-Point Games', countVal, featCtx, 'boom_bust'],
+            ['bust_80', 'Sub-80 Stinkers', countVal, featCtx, 'boom_bust'],
+            ['bust_70', 'Sub-70 Disasters', countVal, featCtx, 'boom_bust'],
+        ],
+    };
+    function countVal(e) { return String(e.count != null ? e.count : (e.value != null ? e.value : '—')); }
+    function seasonCtx(e) { return e.season + ' · ' + (e.team_name || '') + (e.reg_record ? ' · ' + e.reg_record : ''); }
+    function streakCtx(e) {
+        var span = e.start_season === e.end_season
+            ? e.start_season + ' · W' + e.start_week + '–W' + e.end_week
+            : e.start_season + ' W' + e.start_week + ' – ' + e.end_season + ' W' + e.end_week;
+        return span;
+    }
+    function careerCtx(e) { return e.seasons != null ? e.seasons + ' seasons' : ''; }
+    function featCtx(e) {
+        return e.last_year ? 'Last: ' + e.last_year + ' · W' + e.last_week + (e.last_opp_name ? ' vs ' + e.last_opp_name : '') : '';
+    }
+
+    function holderName(e) { return e.owner || e.name || e.holder || '—'; }
+
+    function render() {
+        var box = document.getElementById('cards');
+        if (!book) {
+            box.innerHTML = '<div class="m-empty">The record book is sealed for this league.</div>';
+            return;
+        }
+        var defs = DEFS[section] || [];
+        var html = defs.map(function (def) {
+            var key = def[0], label = def[1], val = def[2], ctx = def[3];
+            var src = book[def[4] || section] || {};
+            var entries = src[key];
+            if (!entries || !entries.length) return '';
+            var top = entries[0];
+            var others = entries.slice(1, 3);
+            return '<div class="m-card rb-card">' +
+                '<div class="rb-card-label">' + esc(label) + '</div>' +
+                '<div class="rb-top">' +
+                    '<span class="rb-top-value">' + esc(val(top)) + '</span>' +
+                    '<span class="rb-top-holder"><b>' + esc(holderName(top)) + '</b>' +
+                        '<small>' + esc(ctx(top) || '') + '</small></span>' +
+                '</div>' +
+                (others.length
+                    ? '<div class="rb-others">' + others.map(function (e, i) {
+                        return '<div class="rb-other">' +
+                            '<span class="rb-other-rank">' + (i + 2) + '</span>' +
+                            '<span class="rb-other-name">' + esc(holderName(e)) + '</span>' +
+                            '<span class="rb-other-val">' + esc(val(e)) + '</span>' +
+                        '</div>';
+                    }).join('') + '</div>'
+                    : '') +
+            '</div>';
+        }).filter(Boolean).join('');
+        box.innerHTML = html || '<div class="m-empty">Nothing in this chapter yet.</div>';
+    }
+
+    document.getElementById('seg').addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-sec]');
+        if (!btn) return;
+        section = btn.dataset.sec;
+        this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+        render();
+    });
+})();
+</script>
+</body>
+</html>

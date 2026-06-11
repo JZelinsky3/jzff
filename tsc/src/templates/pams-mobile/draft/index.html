@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Draft History · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+.dr-head { text-align: center; padding: 1.1rem 0 .9rem; }
+.dr-title {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1.05;
+    color: var(--cream);
+}
+.dr-title em { font-style: italic; color: var(--gold); }
+
+/* Year picker rail */
+.dr-years {
+    display: flex; gap: .45rem;
+    overflow-x: auto;
+    margin: 0 -0.9rem .8rem;
+    padding: .1rem .9rem .35rem;
+    scrollbar-width: none;
+}
+.dr-years::-webkit-scrollbar { display: none; }
+.dr-year-chip {
+    flex: none;
+    padding: .45rem .9rem;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-card);
+    color: var(--cream-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .7rem; letter-spacing: .08em;
+}
+.dr-year-chip.is-active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--ink);
+}
+
+/* First-overall card */
+.dr-first {
+    position: relative; overflow: hidden;
+    background: linear-gradient(150deg, var(--ink-card), var(--ink-soft));
+    margin-bottom: .9rem;
+}
+.dr-first::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.dr-first-player {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    color: var(--cream);
+    margin-top: .2rem;
+}
+.dr-first-player em { font-style: italic; color: var(--gold); }
+
+/* Round groups */
+.dr-round-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 1rem 0 .35rem;
+}
+.dr-pick { min-height: 44px; }
+.dr-pick-no {
+    flex: none; width: 2rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .64rem; color: var(--cream-mute);
+    text-align: center;
+}
+.dr-player { min-width: 0; flex: 1; font-weight: 600; font-size: .88rem; }
+.dr-player small {
+    display: block; font-weight: 400; font-size: .66rem; color: var(--cream-mute);
+}
+.dr-pos {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .08em;
+    padding: .14rem .45rem;
+    border-radius: 4px;
+    border: 1px solid var(--ink-line);
+    color: var(--cream-soft);
+}
+.dr-pos--QB { color: #d68a8a; border-color: #5a3535; }
+.dr-pos--RB { color: #8fb89a; border-color: #34503e; }
+.dr-pos--WR { color: #8aa8c9; border-color: #34455a; }
+.dr-pos--TE { color: var(--gold); border-color: var(--gold-deep); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="draft" data-chapter="Ch. VI · Draft History" data-back-href="./"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <header class="dr-head">
+        <div class="m-kicker">War Room Archives</div>
+        <h1 class="dr-title">Draft <em>history.</em></h1>
+    </header>
+
+    <div class="dr-years" id="years"></div>
+    <div id="board"><div class="m-empty">Unrolling the big board…</div></div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    var grab = function (path) {
+        return fetch(path).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    };
+
+    var years = [];
+    var activeYear = null;
+
+    grab('data/drafts/drafts_directory.json').then(function (dir) {
+        years = ((dir && dir.drafts) || []).map(function (d) { return d.year; }).sort(function (a, b) { return b - a; });
+        if (!years.length) {
+            document.getElementById('board').innerHTML =
+                '<div class="m-empty">No drafts on file for this league.</div>';
+            return;
+        }
+        var fromQuery = parseInt(new URLSearchParams(window.location.search).get('year'), 10);
+        activeYear = years.indexOf(fromQuery) !== -1 ? fromQuery : years[0];
+        renderYears();
+        loadYear(activeYear);
+    });
+
+    function renderYears() {
+        document.getElementById('years').innerHTML = years.map(function (y) {
+            return '<button class="dr-year-chip' + (y === activeYear ? ' is-active' : '') + '" data-year="' + y + '">' + y + '</button>';
+        }).join('');
+    }
+
+    document.getElementById('years').addEventListener('click', function (e) {
+        var chip = e.target.closest('button[data-year]');
+        if (!chip) return;
+        activeYear = parseInt(chip.dataset.year, 10);
+        renderYears();
+        loadYear(activeYear);
+        // Keep the URL shareable without reloading.
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.set('year', String(activeYear));
+            history.replaceState(null, '', url);
+        } catch (_) { /* non-critical */ }
+    });
+
+    function loadYear(year) {
+        document.getElementById('board').innerHTML = '<div class="m-empty">Unrolling the big board…</div>';
+        grab('data/drafts/' + year + '.json').then(function (draft) {
+            var box = document.getElementById('board');
+            var picks = (draft && draft.picks) || [];
+            if (!picks.length) {
+                box.innerHTML = '<div class="m-empty">No picks recorded for ' + year + '.</div>';
+                return;
+            }
+            var first = picks[0];
+            var byRound = {};
+            picks.forEach(function (p) {
+                (byRound[p.round] = byRound[p.round] || []).push(p);
+            });
+            var rounds = Object.keys(byRound).map(Number).sort(function (a, b) { return a - b; });
+
+            var html =
+                '<a class="m-card dr-first" href="managers/manager.html?id=' + encodeURIComponent(first.user_id) + '">' +
+                    '<div class="m-kicker">' + year + ' · First Overall</div>' +
+                    '<div class="dr-first-player"><em>' + esc(first.player_name) + '</em></div>' +
+                    '<div class="m-mono" style="margin-top:.3rem">' +
+                        esc(first.position || '') + (first.nfl_team ? ' · ' + esc(first.nfl_team) : '') +
+                        ' · to ' + esc(first.manager_name) +
+                    '</div>' +
+                '</a>';
+
+            html += rounds.map(function (r) {
+                return '<div class="dr-round-label">Round ' + r + '</div>' +
+                    '<div class="m-list">' +
+                    byRound[r].map(function (p) {
+                        var posCls = /^(QB|RB|WR|TE)$/.test(p.position || '') ? ' dr-pos--' + p.position : '';
+                        return '<a class="m-list-row dr-pick" href="managers/manager.html?id=' + encodeURIComponent(p.user_id) + '">' +
+                            '<span class="dr-pick-no">' + p.overall_pick + '</span>' +
+                            '<span class="dr-player">' + esc(p.player_name) +
+                                '<small>' + esc(p.manager_name) + (p.team_name ? ' · ' + esc(p.team_name) : '') + '</small></span>' +
+                            (p.position ? '<span class="dr-pos' + posCls + '">' + esc(p.position) + (p.nfl_team ? ' · ' + esc(p.nfl_team) : '') + '</span>' : '') +
+                        '</a>';
+                    }).join('') +
+                    '</div>';
+            }).join('');
+
+            box.innerHTML = html;
+        });
+    }
+})();
+</script>
+</body>
+</html>

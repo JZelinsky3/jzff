@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rivalry · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root { --riv: #c96a4a; }
+
+/* Tale of the tape */
+.rd-tape { text-align: center; padding: 1.1rem 0 .4rem; }
+.rd-name {
+    font-family: var(--serif);
+    font-size: 1.45rem; line-height: 1.1;
+    color: var(--cream);
+}
+.rd-name em { font-style: italic; color: var(--riv); }
+.rd-vs {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .6rem;
+    margin-top: .9rem;
+}
+.rd-side { flex: 1; min-width: 0; }
+.rd-side b {
+    display: block;
+    font-family: var(--serif); font-size: 1.3rem; font-weight: 400;
+    color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rd-score {
+    flex: none;
+    font-family: var(--serif);
+    font-size: 2.4rem; line-height: 1;
+    color: var(--riv);
+}
+.rd-leader { margin-top: .45rem; }
+
+/* Comparison rows */
+.rd-cmp {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem .9rem;
+}
+.rd-cmp + .rd-cmp { border-top: 1px solid var(--ink-line-soft); }
+.rd-cmp-a, .rd-cmp-b {
+    font-family: var(--mono); font-weight: 700; font-size: .76rem;
+    color: var(--cream-soft);
+}
+.rd-cmp-a { text-align: left; }
+.rd-cmp-b { text-align: right; }
+.rd-cmp-a.win, .rd-cmp-b.win { color: var(--gold); }
+.rd-cmp-lbl {
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: center;
+}
+
+/* Meeting log */
+.rd-meet-when { flex: none; width: 4.6rem; }
+.rd-meet-when b { display: block; font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--cream-soft); }
+.rd-meet-when small { font-family: var(--mono); font-size: .54rem; color: var(--cream-mute); }
+.rd-meet-res { min-width: 0; flex: 1; font-weight: 600; font-size: .88rem; }
+.rd-meet-res small { display: block; font-weight: 400; font-size: .68rem; color: var(--cream-mute); }
+.rd-meet-margin { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--riv); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="rivalry" data-chapter="Head-to-Head" data-back-href="rivalries/"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <header class="rd-tape" id="tape" hidden>
+        <div class="m-kicker" style="color:var(--riv)" id="rdKicker"></div>
+        <h1 class="rd-name" id="rdName"></h1>
+        <div class="rd-vs">
+            <span class="rd-side" id="sideA"><b></b></span>
+            <span class="rd-score" id="score"></span>
+            <span class="rd-side" id="sideB"><b></b></span>
+        </div>
+        <div class="m-mono rd-leader" id="leaderLine"></div>
+    </header>
+
+    <section class="m-section" id="cmpSection" hidden style="margin-top:1rem">
+        <div class="m-kicker" style="color:var(--riv)">Tale of the Tape</div>
+        <div class="m-list" id="cmp" style="margin-top:.1rem"></div>
+    </section>
+
+    <section class="m-section" id="meetSection" hidden style="margin-bottom:1rem">
+        <div class="m-kicker" style="color:var(--riv)">Recent Meetings</div>
+        <div class="m-list" id="meetings" style="margin-top:.1rem"></div>
+    </section>
+
+    <div class="m-empty" id="emptyMsg" hidden>No rivalry found at this address.</div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function num(n, d) {
+        if (n == null || isNaN(n)) return '—';
+        return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
+    }
+
+    var rivalryId = new URLSearchParams(window.location.search).get('id');
+    if (!rivalryId) {
+        document.getElementById('emptyMsg').hidden = false;
+    } else {
+        fetch('data/rivalries.json')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; })
+            .then(function (data) {
+                var list = (data && data.rivalries) || [];
+                var riv = null;
+                for (var i = 0; i < list.length; i++) {
+                    if (list[i].id === rivalryId) { riv = list[i]; break; }
+                }
+                render(riv);
+            });
+    }
+
+    function render(r) {
+        if (!r) {
+            document.getElementById('emptyMsg').hidden = false;
+            return;
+        }
+        var a = r.manager_a, b = r.manager_b;
+        document.title = a.name + ' vs ' + b.name + ' · {{LEAGUE_NAME}}';
+
+        document.getElementById('tape').hidden = false;
+        document.getElementById('rdKicker').textContent = r.name;
+        document.getElementById('rdName').innerHTML =
+            esc(a.name) + ' <em>vs</em> ' + esc(b.name);
+        document.getElementById('sideA').innerHTML = '<b>' + esc(a.name) + '</b>';
+        document.getElementById('sideB').innerHTML = '<b>' + esc(b.name) + '</b>';
+        document.getElementById('score').textContent =
+            (a.wins || 0) + '–' + (b.wins || 0) + (r.ties_count ? '–' + r.ties_count : '');
+        document.getElementById('leaderLine').textContent = r.is_deadlocked
+            ? 'Dead even after ' + r.total_meetings + (r.total_meetings === 1 ? ' meeting' : ' meetings')
+            : r.leader_name + ' leads · since ' + r.first_meeting_year;
+
+        // Tale of the tape comparison
+        var rows = [
+            ['Series wins', a.wins || 0, b.wins || 0, true],
+            ['Avg points', num(a.avg_ppg), num(b.avg_ppg), true],
+            ['High score', a.high_score ? num(a.high_score.score) : '—', b.high_score ? num(b.high_score.score) : '—', true],
+            ['Regular season', esc(a.reg_record || '—'), esc(b.reg_record || '—'), false],
+            ['Playoffs', esc(a.playoff_record || '—'), esc(b.playoff_record || '—'), false],
+        ];
+        document.getElementById('cmpSection').hidden = false;
+        document.getElementById('cmp').innerHTML = rows.map(function (row) {
+            var label = row[0], va = row[1], vb = row[2], compare = row[3];
+            var aWin = '', bWin = '';
+            if (compare) {
+                var na = parseFloat(String(va).replace(/,/g, '')), nb = parseFloat(String(vb).replace(/,/g, ''));
+                if (!isNaN(na) && !isNaN(nb)) {
+                    if (na > nb) aWin = ' win';
+                    else if (nb > na) bWin = ' win';
+                }
+            }
+            return '<div class="rd-cmp">' +
+                '<span class="rd-cmp-a' + aWin + '">' + va + '</span>' +
+                '<span class="rd-cmp-lbl">' + esc(label) + '</span>' +
+                '<span class="rd-cmp-b' + bWin + '">' + vb + '</span>' +
+            '</div>';
+        }).join('');
+
+        // Recent meetings — last5 is mirrored on both sides; read A's copy and
+        // name the winner from each entry's result.
+        var meets = (a.last5 || []).slice().reverse();
+        if (meets.length) {
+            document.getElementById('meetSection').hidden = false;
+            document.getElementById('meetings').innerHTML = meets.map(function (g) {
+                var winner = g.result === 'W' ? a.name : (g.result === 'L' ? b.name : null);
+                var line = winner ? esc(winner) + ' wins' : 'Tied';
+                return '<div class="m-list-row">' +
+                    '<span class="rd-meet-when"><b>' + g.year + ' · W' + g.week + '</b><small>' + (g.is_playoff ? 'Playoffs' : 'Regular') + '</small></span>' +
+                    '<span class="rd-meet-res">' + line + '</span>' +
+                    (g.margin != null ? '<span class="rd-meet-margin">+' + num(g.margin) + '</span>' : '') +
+                '</div>';
+            }).join('');
+        }
+    }
+})();
+</script>
+</body>
+</html>

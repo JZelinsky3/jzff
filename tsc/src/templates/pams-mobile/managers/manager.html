@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manager · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* Profile header */
+.mp-head {
+    display: flex; align-items: center; gap: .9rem;
+    padding: 1.1rem 0 .9rem;
+}
+.mp-ava {
+    flex: none;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: 1px solid var(--gold-deep);
+    background: var(--ink-card);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif);
+    font-size: 1.7rem; color: var(--gold);
+}
+.mp-name {
+    font-family: var(--serif);
+    font-size: 1.6rem; line-height: 1.05;
+    color: var(--cream);
+}
+.mp-name em { font-style: italic; color: var(--gold); }
+.mp-tagline {
+    font-family: var(--serif); font-style: italic;
+    font-size: .85rem; color: var(--cream-soft);
+    margin-top: .25rem;
+}
+
+/* Championship seals */
+.mp-seals {
+    display: flex; flex-wrap: wrap; gap: .4rem;
+    margin-bottom: .9rem;
+}
+.mp-seal {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .25rem .6rem;
+    border-radius: 999px;
+    border: 1px solid var(--gold-deep);
+    background: rgba(232,200,137,.07);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .14em;
+    color: var(--gold);
+}
+
+/* 3x2 stat grid */
+.mp-stats { grid-template-columns: repeat(3, 1fr); }
+
+/* Season ledger rows */
+.mp-year {
+    flex: none;
+    font-family: var(--serif); font-size: 1.05rem;
+    color: var(--gold);
+    width: 3rem;
+}
+.mp-led-name { min-width: 0; flex: 1; font-weight: 600; font-size: .88rem; }
+.mp-led-name small {
+    display: block; font-weight: 400; font-size: .68rem; color: var(--cream-mute);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mp-led-rank {
+    flex: none;
+    font-family: var(--mono); font-weight: 700; font-size: .62rem;
+    color: var(--cream-mute);
+    text-align: center;
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    padding: .15rem .5rem;
+}
+.mp-led-rank.is-title { border-color: var(--gold-deep); color: var(--gold); }
+.mp-led-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .7rem; color: var(--cream-soft); text-align: right; }
+.mp-led-rec small { display: block; font-weight: 400; font-size: .56rem; color: var(--cream-mute); }
+
+/* H2H rows */
+.mp-h2h-name { min-width: 0; flex: 1; font-weight: 600; font-size: .9rem; }
+.mp-h2h-name small { display: block; font-weight: 400; font-size: .66rem; color: var(--cream-mute); }
+.mp-h2h-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .74rem; }
+.mp-h2h-rec.lead { color: #7da87d; }
+.mp-h2h-rec.trail { color: var(--rust); }
+.mp-h2h-rec.even { color: var(--cream-soft); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="manager" data-chapter="Manager Profile" data-back-href="managers/"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <header class="mp-head" id="head" hidden>
+        <div class="mp-ava" id="ava"></div>
+        <div style="min-width:0">
+            <div class="m-kicker" id="kicker">Manager Profile</div>
+            <h1 class="mp-name" id="name"></h1>
+            <div class="mp-tagline" id="tagline" hidden></div>
+        </div>
+    </header>
+
+    <div class="mp-seals" id="seals"></div>
+
+    <section class="m-statgrid mp-stats" id="statGrid"></section>
+
+    <section class="m-section" id="ledgerSection" hidden>
+        <div class="m-kicker">Season Ledger</div>
+        <div class="m-list" id="ledger" style="margin-top:.1rem"></div>
+    </section>
+
+    <section class="m-section" id="h2hSection" hidden style="margin-bottom:1rem">
+        <div class="m-kicker">Head-to-Head</div>
+        <div class="m-list" id="h2h" style="margin-top:.1rem"></div>
+    </section>
+
+    <div class="m-empty" id="emptyMsg" hidden>No manager found at this address.</div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function num(n, d) {
+        if (n == null || isNaN(n)) return '—';
+        return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
+    }
+
+    var userId = new URLSearchParams(window.location.search).get('id');
+    if (!userId) {
+        document.getElementById('emptyMsg').hidden = false;
+    } else {
+        fetch('data/managers/' + encodeURIComponent(userId) + '.json')
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; })
+            .then(render);
+    }
+
+    function render(m) {
+        if (!m) {
+            document.getElementById('emptyMsg').hidden = false;
+            return;
+        }
+        document.title = m.name + ' · {{LEAGUE_NAME}}';
+        document.getElementById('head').hidden = false;
+        document.getElementById('ava').textContent = (m.name || '?').trim().charAt(0).toUpperCase();
+        document.getElementById('name').innerHTML = '<em>' + esc(m.name) + '</em>';
+        document.getElementById('kicker').textContent =
+            (m.is_current ? 'Active member' : 'Alumni') + ' · ' +
+            m.seasons_played + (m.seasons_played === 1 ? ' season' : ' seasons');
+        if (m.tagline) {
+            var tl = document.getElementById('tagline');
+            tl.hidden = false;
+            tl.textContent = '“' + m.tagline + '”';
+        }
+
+        // Championship seals
+        if (m.championships && (m.championship_seasons || []).length) {
+            document.getElementById('seals').innerHTML = m.championship_seasons.map(function (y) {
+                return '<a class="mp-seal" href="seasons/season.html?year=' + y + '" style="text-decoration:none">✦ ' + y + ' Champion</a>';
+            }).join('');
+        }
+
+        // Stat grid (3×2)
+        var stats = [
+            [esc(m.reg_record || '—'), 'Record'],
+            [m.reg_win_pct != null ? (m.reg_win_pct * 100).toFixed(0) + '%' : '—', 'Win pct'],
+            [num(m.avg_ppg), 'Avg PPG'],
+            [esc(m.playoff_record || '—'), 'Playoffs'],
+            [num(m.high_score), 'High'],
+            [num(m.low_score), 'Low'],
+        ];
+        document.getElementById('statGrid').innerHTML = stats.map(function (s) {
+            return '<div class="m-stat"><div class="m-stat-num" style="font-size:1.05rem">' + s[0] + '</div><div class="m-stat-lbl">' + esc(s[1]) + '</div></div>';
+        }).join('');
+
+        // Season ledger (newest first)
+        var ledger = (m.season_ledger || []).slice().sort(function (a, b) { return b.year - a.year; });
+        if (ledger.length) {
+            document.getElementById('ledgerSection').hidden = false;
+            document.getElementById('ledger').innerHTML = ledger.map(function (s) {
+                var isTitle = s.final_rank === 1;
+                var rank = s.final_rank
+                    ? '<span class="mp-led-rank' + (isTitle ? ' is-title' : '') + '">' + (isTitle ? '✦ 1st' : ordinal(s.final_rank)) + '</span>'
+                    : '';
+                return '<a class="m-list-row" href="seasons/season.html?year=' + s.year + '">' +
+                    '<span class="mp-year">' + s.year + '</span>' +
+                    '<span class="mp-led-name">' + esc(s.team_name || '') + '<small>' + num(s.avg_ppg) + ' ppg</small></span>' +
+                    rank +
+                    '<span class="mp-led-rec">' + esc(s.reg_record || '') + '<small>' + num(s.total_pf, 0) + ' pf</small></span>' +
+                '</a>';
+            }).join('');
+        }
+
+        // Head-to-head, most-played first
+        var h2h = (m.h2h || []).slice().sort(function (a, b) { return (b.total_games || 0) - (a.total_games || 0); });
+        if (h2h.length) {
+            document.getElementById('h2hSection').hidden = false;
+            document.getElementById('h2h').innerHTML = h2h.map(function (o) {
+                var rec = o.total_record || '';
+                var tone = 'even';
+                var parts = rec.split('-').map(Number);
+                if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                    if (parts[0] > parts[1]) tone = 'lead';
+                    else if (parts[0] < parts[1]) tone = 'trail';
+                }
+                return '<a class="m-list-row" href="managers/manager.html?id=' + encodeURIComponent(o.opp_user_id) + '">' +
+                    '<span class="mp-h2h-name">vs ' + esc(o.opp_name) +
+                        '<small>' + (o.total_games || 0) + (o.total_games === 1 ? ' meeting' : ' meetings') + '</small></span>' +
+                    '<span class="mp-h2h-rec ' + tone + '">' + esc(rec) + '</span>' +
+                '</a>';
+            }).join('');
+        }
+    }
+
+    function ordinal(n) {
+        var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+})();
+</script>
+</body>
+</html>

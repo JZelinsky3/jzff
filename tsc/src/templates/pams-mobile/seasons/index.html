@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Seasons · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+.se-head { text-align: center; padding: 1.1rem 0 1rem; }
+.se-title {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1.05;
+    color: var(--cream);
+}
+.se-title em { font-style: italic; color: var(--gold); }
+
+/* Featured (latest complete) season */
+.se-feature {
+    position: relative;
+    background: linear-gradient(150deg, var(--ink-card), var(--ink-soft));
+    overflow: hidden;
+    margin-bottom: .9rem;
+}
+.se-feature::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.se-feature-year {
+    font-family: var(--serif);
+    font-size: 2.6rem; line-height: 1;
+    color: var(--gold);
+}
+.se-feature-champ {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    color: var(--cream);
+    margin-top: .35rem;
+}
+.se-feature-champ em { font-style: italic; color: var(--gold); }
+
+/* Timeline rows */
+.se-year {
+    flex: none;
+    font-family: var(--serif); font-size: 1.15rem;
+    color: var(--gold);
+    width: 3.2rem;
+}
+.se-row-name {
+    min-width: 0; flex: 1;
+    font-weight: 600; font-size: .92rem;
+}
+.se-row-name small {
+    display: block;
+    font-weight: 400; font-size: .7rem;
+    color: var(--cream-mute);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.se-row-rec {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; color: var(--cream-soft);
+}
+.m-chevron { flex: none; color: var(--cream-mute); }
+.se-row-partial small i { font-style: normal; color: var(--gold-deep); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="seasons" data-chapter="Ch. IV · Season Archives" data-back-href="./"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <header class="se-head">
+        <div class="m-kicker">League History</div>
+        <h1 class="se-title">Season <em>archives.</em></h1>
+    </header>
+
+    <div id="feature"></div>
+    <div class="m-list" id="rows"><div class="m-empty">Opening the archives…</div></div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    fetch('data/seasons_directory.json')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (dir) {
+            var seasons = (dir && dir.seasons) || [];
+            var box = document.getElementById('rows');
+            if (!seasons.length) {
+                box.innerHTML = '<div class="m-empty">No completed seasons yet — the first chapter is still being written.</div>';
+                return;
+            }
+            // Newest first; the newest complete season gets the feature card.
+            seasons.sort(function (a, b) { return b.year - a.year; });
+            var featured = null;
+            for (var i = 0; i < seasons.length; i++) {
+                if (seasons[i].has_complete_data) { featured = seasons[i]; break; }
+            }
+            if (featured) {
+                document.getElementById('feature').innerHTML =
+                    '<a class="m-card se-feature" href="seasons/season.html?year=' + featured.year + '">' +
+                        '<div class="m-kicker">Latest Chronicle</div>' +
+                        '<div class="se-feature-year">' + featured.year + '</div>' +
+                        '<div class="se-feature-champ"><em>' + esc(featured.champion_name) + '</em> takes the crown</div>' +
+                        '<div class="m-mono" style="margin-top:.35rem">' +
+                            esc(featured.champion_team_name || '') +
+                            (featured.champion_record ? ' · ' + esc(featured.champion_record) : '') +
+                            ' · ' + featured.total_teams + ' teams' +
+                        '</div>' +
+                    '</a>';
+            }
+            var rest = seasons.filter(function (s) { return s !== featured; });
+            if (!rest.length) {
+                box.remove();
+                return;
+            }
+            box.innerHTML = rest.map(function (s) {
+                var partial = !s.has_complete_data;
+                var sub = partial
+                    ? '<i>Partial records</i>'
+                    : esc(s.champion_team_name || '') + ' · champion';
+                return '<a class="m-list-row se-row' + (partial ? ' se-row-partial' : '') + '" href="seasons/season.html?year=' + s.year + '">' +
+                    '<span class="se-year">' + s.year + '</span>' +
+                    '<span class="se-row-name">' + esc(s.champion_name || '—') + '<small>' + sub + '</small></span>' +
+                    '<span class="se-row-rec">' + esc(s.champion_record || '') + '</span>' +
+                    '<svg class="m-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg>' +
+                '</a>';
+            }).join('');
+        });
+})();
+</script>
+</body>
+</html>

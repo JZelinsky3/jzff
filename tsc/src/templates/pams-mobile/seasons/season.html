@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Season · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* Year hero with prev/next */
+.sn-hero {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .5rem;
+    padding: 1rem 0 .4rem;
+}
+.sn-arrow {
+    flex: none;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold);
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 50%;
+    text-decoration: none;
+}
+.sn-arrow[aria-disabled="true"] { opacity: .25; pointer-events: none; }
+.sn-hero-mid { text-align: center; min-width: 0; }
+.sn-year {
+    font-family: var(--serif);
+    font-size: clamp(3rem, 17vw, 4.2rem);
+    line-height: .95;
+    color: var(--cream);
+}
+.sn-roman {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-top: .25rem;
+}
+
+/* Podium */
+.sn-podium { margin-top: .9rem; }
+.sn-pod-row {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .6rem .9rem;
+    color: inherit; text-decoration: none;
+}
+.sn-pod-row:active { background: var(--ink-soft); }
+.sn-pod-row + .sn-pod-row { border-top: 1px solid var(--ink-line-soft); }
+.sn-pod-medal {
+    flex: none;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-weight: 700; font-size: .72rem;
+    border: 1px solid var(--ink-line);
+    color: var(--cream-soft);
+}
+.sn-pod-row--1 .sn-pod-medal { border-color: var(--gold); color: var(--gold); background: rgba(232,200,137,.08); }
+.sn-pod-name { min-width: 0; flex: 1; font-weight: 600; font-size: .95rem; }
+.sn-pod-row--1 .sn-pod-name { font-family: var(--serif); font-weight: 400; font-size: 1.15rem; }
+.sn-pod-name small {
+    display: block; font-weight: 400; font-size: .7rem; color: var(--cream-mute);
+    font-family: var(--sans);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sn-pod-sub { flex: none; font-family: var(--mono); font-weight: 700; font-size: .7rem; color: var(--cream-soft); }
+
+/* Standings table rows */
+.sn-rank {
+    flex: none; width: 1.5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; color: var(--cream-mute);
+    text-align: center;
+}
+.sn-move {
+    flex: none;
+    font-family: var(--mono); font-size: .58rem;
+    color: var(--cream-mute);
+    width: 2.2rem; text-align: right;
+}
+.sn-move.up { color: #7da87d; }
+.sn-move.down { color: var(--rust); }
+.sn-name { min-width: 0; flex: 1; font-weight: 600; font-size: .92rem; }
+.sn-name small {
+    display: block; font-weight: 400; font-size: .7rem; color: var(--cream-mute);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sn-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--cream-soft); text-align: right; }
+.sn-rec small { display: block; font-weight: 400; font-size: .58rem; color: var(--cream-mute); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="season" data-chapter="Season Archive" data-back-href="seasons/"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <div class="sn-hero">
+        <a class="sn-arrow" id="prevYear" aria-disabled="true" aria-label="Previous season">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14 5 7 12 14 19"/></svg>
+        </a>
+        <div class="sn-hero-mid">
+            <div class="sn-year" id="yearNum">····</div>
+            <div class="sn-roman" id="yearRoman"></div>
+        </div>
+        <a class="sn-arrow" id="nextYear" aria-disabled="true" aria-label="Next season">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 5 17 12 10 19"/></svg>
+        </a>
+    </div>
+
+    <section class="m-statgrid" id="statGrid"></section>
+
+    <section class="m-section" id="podiumSection" hidden>
+        <div class="m-kicker">The Podium</div>
+        <div class="m-list sn-podium" id="podium" style="margin-top:.1rem"></div>
+    </section>
+
+    <section class="m-section" id="standingsSection" hidden style="margin-bottom:1rem">
+        <div class="m-kicker">Final Standings</div>
+        <div class="m-list" id="standings" style="margin-top:.1rem"></div>
+    </section>
+
+    <div class="m-empty" id="emptyMsg" hidden>No records for this season.</div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function num(n, d) {
+        if (n == null || isNaN(n)) return '—';
+        return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
+    }
+    function toRoman(n) {
+        var map = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+        var out = ''; var v = Math.floor(n);
+        for (var i = 0; i < map.length; i++) { while (v >= map[i][0]) { out += map[i][1]; v -= map[i][0]; } }
+        return out;
+    }
+    function mgrHref(uid) {
+        return 'managers/manager.html?id=' + encodeURIComponent(uid);
+    }
+
+    var grab = function (path) {
+        return fetch(path).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    };
+
+    var year = parseInt(new URLSearchParams(window.location.search).get('year'), 10);
+
+    Promise.all([
+        grab('data/seasons_directory.json'),
+    ]).then(function (res) {
+        var dir = res[0];
+        var years = ((dir && dir.seasons) || []).map(function (s) { return s.year; }).sort(function (a, b) { return a - b; });
+        if (!year || isNaN(year)) year = years.length ? years[years.length - 1] : NaN;
+        if (!year || isNaN(year)) {
+            document.getElementById('emptyMsg').hidden = false;
+            return;
+        }
+        renderHero(year, years);
+        grab('data/seasons/' + year + '.json').then(renderSeason);
+    });
+
+    function renderHero(y, years) {
+        document.getElementById('yearNum').textContent = y;
+        document.getElementById('yearRoman').textContent = '★ ' + toRoman(y) + ' ★';
+        document.title = y + ' Season · ' + '{{LEAGUE_NAME}}';
+        var idx = years.indexOf(y);
+        var prev = idx > 0 ? years[idx - 1] : null;
+        var next = idx >= 0 && idx < years.length - 1 ? years[idx + 1] : null;
+        var prevEl = document.getElementById('prevYear');
+        var nextEl = document.getElementById('nextYear');
+        if (prev) { prevEl.setAttribute('href', 'seasons/season.html?year=' + prev); prevEl.removeAttribute('aria-disabled'); }
+        if (next) { nextEl.setAttribute('href', 'seasons/season.html?year=' + next); nextEl.removeAttribute('aria-disabled'); }
+    }
+
+    function renderSeason(s) {
+        if (!s) {
+            document.getElementById('emptyMsg').hidden = false;
+            return;
+        }
+        var standings = s.standings || [];
+
+        // Stat chips: teams, weeks high score, champion PF — keep to what we have.
+        var champ = s.champion || {};
+        var cells = [
+            [s.total_teams || standings.length || '—', 'Teams'],
+            [champ.record ? esc(champ.record) : '—', 'Title Run'],
+            [champ.points_for ? num(champ.points_for, 0) : '—', 'Champ PF'],
+        ];
+        document.getElementById('statGrid').innerHTML = cells.map(function (c) {
+            return '<div class="m-stat"><div class="m-stat-num">' + c[0] + '</div><div class="m-stat-lbl">' + esc(c[1]) + '</div></div>';
+        }).join('');
+
+        // Podium
+        var podium = [
+            [1, s.champion, 'Champion'],
+            [2, s.runner_up, 'Runner-up'],
+            [3, s.third_place, 'Third'],
+        ].filter(function (p) { return p[1] && p[1].owner_name; });
+        if (podium.length) {
+            document.getElementById('podiumSection').hidden = false;
+            document.getElementById('podium').innerHTML = podium.map(function (p) {
+                var place = p[0], m = p[1], label = p[2];
+                return '<a class="sn-pod-row sn-pod-row--' + place + '" href="' + mgrHref(m.owner_user_id) + '">' +
+                    '<span class="sn-pod-medal">' + (place === 1 ? '✦' : place) + '</span>' +
+                    '<span class="sn-pod-name">' + esc(m.owner_name) + '<small>' + esc(m.team_name || '') + '</small></span>' +
+                    '<span class="sn-pod-sub">' + esc(label) + '</span>' +
+                '</a>';
+            }).join('');
+        }
+
+        // Final standings
+        if (standings.length) {
+            document.getElementById('standingsSection').hidden = false;
+            document.getElementById('standings').innerHTML = standings.map(function (t) {
+                var rec = t.wins + '-' + t.losses + (t.ties ? '-' + t.ties : '');
+                var move = '';
+                if (t.reg_season_rank && t.final_rank) {
+                    var diff = t.reg_season_rank - t.final_rank;
+                    if (diff > 0) move = '<span class="sn-move up">▲' + diff + '</span>';
+                    else if (diff < 0) move = '<span class="sn-move down">▼' + (-diff) + '</span>';
+                    else move = '<span class="sn-move">—</span>';
+                }
+                return '<a class="m-list-row" href="' + mgrHref(t.owner_user_id) + '">' +
+                    '<span class="sn-rank">' + t.final_rank + '</span>' +
+                    '<span class="sn-name">' + esc(t.owner_name) + '<small>' + esc(t.team_name || '') + '</small></span>' +
+                    move +
+                    '<span class="sn-rec">' + rec + '<small>' + num(t.points_for, 0) + ' pf</small></span>' +
+                '</a>';
+            }).join('');
+        }
+
+        if (!podium.length && !standings.length) {
+            document.getElementById('emptyMsg').hidden = false;
+        }
+    }
+})();
+</script>
+</body>
+</html>

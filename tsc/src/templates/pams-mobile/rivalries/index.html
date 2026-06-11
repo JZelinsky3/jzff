@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rivalries · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root { --riv: #c96a4a; }
+
+.rv-head { text-align: center; padding: 1.1rem 0 1rem; }
+.rv-title {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1.05;
+    color: var(--cream);
+}
+.rv-title em { font-style: italic; color: var(--riv); }
+
+.rv-card { position: relative; overflow: hidden; }
+.rv-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--riv), transparent);
+}
+.rv-kicker { color: var(--riv); }
+.rv-vs {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .6rem;
+    margin-top: .5rem;
+}
+.rv-side { flex: 1; min-width: 0; text-align: center; }
+.rv-side b {
+    display: block;
+    font-family: var(--serif); font-size: 1.15rem; font-weight: 400;
+    color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rv-side small {
+    font-family: var(--mono); font-size: .58rem;
+    color: var(--cream-mute);
+}
+.rv-mid {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: 1rem; color: var(--riv);
+    letter-spacing: .06em;
+}
+.rv-foot {
+    display: flex; justify-content: space-between; gap: .5rem;
+    margin-top: .65rem;
+    padding-top: .55rem;
+    border-top: 1px solid var(--ink-line-soft);
+}
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="rivalries" data-chapter="Ch. III · Bad Blood" data-back-href="./"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <header class="rv-head">
+        <div class="m-kicker" style="color:var(--riv)">The Society</div>
+        <h1 class="rv-title">The <em>rivalries.</em></h1>
+    </header>
+
+    <div id="cards"><div class="m-empty">Reviewing the tape…</div></div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    fetch('data/rivalries.json')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (data) {
+            var list = (data && data.rivalries) || [];
+            var box = document.getElementById('cards');
+            if (!list.length) {
+                box.innerHTML = '<div class="m-empty">No rivalries on the books yet — give it a few seasons.</div>';
+                return;
+            }
+            box.innerHTML = list.map(function (r) {
+                var mid = r.is_deadlocked ? 'TIED' : esc(r.leader_record);
+                var lead = r.is_deadlocked
+                    ? 'Dead even'
+                    : esc(r.leader_name) + ' leads';
+                var last = r.last_meeting
+                    ? 'Last: ' + r.last_meeting.year + ' · W' + r.last_meeting.week
+                    : 'Since ' + r.first_meeting_year;
+                return '<a class="m-card rv-card" href="rivalries/rivalry.html?id=' + encodeURIComponent(r.id) + '">' +
+                    '<div class="m-kicker rv-kicker">' + esc(r.name) + '</div>' +
+                    '<div class="rv-vs">' +
+                        '<span class="rv-side"><b>' + esc(r.manager_a.name) + '</b><small>' + esc(r.manager_a.reg_record || '') + '</small></span>' +
+                        '<span class="rv-mid">' + mid + '</span>' +
+                        '<span class="rv-side"><b>' + esc(r.manager_b.name) + '</b><small>' + esc(r.manager_b.reg_record || '') + '</small></span>' +
+                    '</div>' +
+                    '<div class="rv-foot">' +
+                        '<span class="m-mono">' + lead + '</span>' +
+                        '<span class="m-mono">' + r.total_meetings + (r.total_meetings === 1 ? ' meeting' : ' meetings') + '</span>' +
+                        '<span class="m-mono">' + last + '</span>' +
+                    '</div>' +
+                '</a>';
+            }).join('');
+        });
+})();
+</script>
+</body>
+</html>
