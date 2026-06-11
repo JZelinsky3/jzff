@@ -123,7 +123,7 @@ export function MobileSiteMenu({
   })
 
   return (
-    <div ref={rootRef} className={`msm-root${open ? ' is-open' : ''}`}>
+    <div ref={rootRef} className={`msm-root${isLanding ? ' msm-root--landing' : ''}${open ? ' is-open' : ''}`}>
       <button
         type="button"
         className={`msm-trigger msm-trigger--${showInitial ? 'avatar' : 'hamburger'}`}
