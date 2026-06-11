@@ -23,6 +23,13 @@ import { resolveLeagueTier, getLockReason, classifyLockedPath } from '@/lib/leag
 import { getUserSubscription, isSubscriptionActive } from '@/lib/stripe'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
+// Mobile-first rebuilds of the same pages. Phones get the file from here when
+// it exists; anything not yet rebuilt falls back to the desktop template, so
+// the tree can fill in page by page without breaking partial coverage.
+const MOBILE_TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams-mobile')
+// 'desktop' | 'mobile' — explicit user choice ("View desktop site" link /
+// switch-back pill). Beats user-agent sniffing in both directions.
+const VIEW_COOKIE = 'dc_view'
 
 type LeagueMeta = {
   id: string
@@ -210,7 +217,19 @@ const PRELOADS_BY_FILE: Record<string, string[]> = {
   ],
 }
 
-function injectBaseTag(html: string, meta: LeagueMeta, file: string): string {
+// Same idea, separate map for the mobile templates — file names collide
+// across the two trees but the pages don't necessarily fetch the same files.
+const MOBILE_PRELOADS_BY_FILE: Record<string, string[]> = {
+  'index.html': [
+    'data/league.json',
+    'data/record_book.json',
+    'data/managers_directory.json',
+    'data/rivalries.json',
+    'data/seasons_directory.json',
+  ],
+}
+
+function injectBaseTag(html: string, meta: LeagueMeta, file: string, servedMobile = false): string {
   // <base> pins relative hrefs to /leagues/<slug>/; favicon link points at
   // the absolute /icon.svg the Next.js root layout serves (templates don't
   // inherit from the layout so they don't get the favicon automatically).
@@ -222,7 +241,7 @@ function injectBaseTag(html: string, meta: LeagueMeta, file: string): string {
   // against /leagues/<slug>/ — otherwise a relative href like
   // data/league.json resolves against the document URL and can hit a path
   // that doesn't exist (e.g. on a sub-route).
-  const preloads = (PRELOADS_BY_FILE[file] ?? [])
+  const preloads = ((servedMobile ? MOBILE_PRELOADS_BY_FILE : PRELOADS_BY_FILE)[file] ?? [])
     .map((href) => `<link rel="preload" as="fetch" crossorigin href="${href}">`)
     .join('\n')
   const tags =
@@ -422,6 +441,47 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   )()
 }
 
+// Phone detection. Chromium ships an explicit client hint; everything else
+// falls back to a deliberately narrow UA regex: iPadOS 13+ presents as
+// Macintosh and Android tablets omit the "Mobile" token, so tablets get the
+// desktop almanac on purpose (the desktop layout works at tablet widths).
+function isMobileUA(req: NextRequest): boolean {
+  // Hint OR regex — a "?0" hint is deliberately NOT trusted as desktop,
+  // because UA-override tools (devtools, headless testing) swap the UA
+  // string without swapping the client hints. Spoofing an iPhone UA should
+  // get you the iPhone site.
+  if (req.headers.get('sec-ch-ua-mobile') === '?1') return true
+  const ua = req.headers.get('user-agent') ?? ''
+  return /\b(iPhone|iPod)\b/.test(ua)
+    || (/\bAndroid\b/.test(ua) && /\bMobile\b/.test(ua))
+    || /\bWindows Phone\b/.test(ua)
+}
+
+type ViewPref = 'mobile' | 'desktop'
+function resolveViewPref(req: NextRequest): ViewPref {
+  const cookie = req.cookies.get(VIEW_COOKIE)?.value
+  if (cookie === 'desktop') return 'desktop'
+  // 'mobile' cookie also lets a desktop browser force the mobile view (testing).
+  if (cookie === 'mobile') return 'mobile'
+  return isMobileUA(req) ? 'mobile' : 'desktop'
+}
+
+// Switch-back affordance for phone users who chose the desktop view: a small
+// fixed pill above the desktop footer chrome. Injected ONLY when the request
+// is from a mobile UA with the desktop cookie set, so desktop-browser
+// responses stay byte-identical. The href must be absolute-path based — the
+// injected <base> would send a relative "?view=mobile" to the league root.
+function injectMobileSwitchPill(html: string, req: NextRequest): string {
+  const target = req.nextUrl.pathname + (req.nextUrl.search ? req.nextUrl.search + '&' : '?') + 'view=mobile'
+  const pill =
+    `<a href="${escapeHtml(target)}" style="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(1rem + env(safe-area-inset-bottom));z-index:80;` +
+    `background:rgb(14,22,32);color:#e8c889;border:1px solid #2a3645;border-radius:999px;padding:.55rem 1.1rem;` +
+    `font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;` +
+    `text-decoration:none;box-shadow:0 4px 18px rgba(0,0,0,.45);">Switch to mobile site</a>`
+  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, `${pill}\n</body>`)
+  return html + pill
+}
+
 // Resolve the request path under /leagues/<slug>/...
 // Returns one of: { kind: 'html', file } | { kind: 'data', file } | null
 function resolveRequest(parts: string[] | undefined): { kind: 'html' | 'data'; file: string } | null {
@@ -520,10 +580,13 @@ function notFoundHtml(slug: string): string {
 </html>`
 }
 
-// Block traversal: only allow paths that stay inside TEMPLATE_ROOT.
-function safeTemplatePath(rel: string): string | null {
-  const target = path.normalize(path.join(TEMPLATE_ROOT, rel))
-  if (!target.startsWith(TEMPLATE_ROOT + path.sep) && target !== TEMPLATE_ROOT) return null
+// Block traversal: only allow paths that stay inside the given template root.
+// The `root + path.sep` prefix check also keeps the sibling roots honest —
+// "…/pams-mobile/x" does not start with "…/pams/" so neither tree can reach
+// into the other.
+function safeTemplatePath(rel: string, root: string): string | null {
+  const target = path.normalize(path.join(root, rel))
+  if (!target.startsWith(root + path.sep) && target !== root) return null
   return target
 }
 
@@ -546,6 +609,25 @@ export async function GET(
 
   const resolved = resolveRequest(parts)
   if (!resolved) return new NextResponse('Not found', { status: 404 })
+
+  // View toggle: any HTML URL with ?view=desktop|mobile sets the preference
+  // cookie and redirects to the same URL with the param stripped (other params
+  // like ?year= survive). Server-side so the cookie is set before the next
+  // render decides which template tree to read.
+  const viewParam = req.nextUrl.searchParams.get('view')
+  if (resolved.kind === 'html' && (viewParam === 'desktop' || viewParam === 'mobile')) {
+    const clean = new URL(req.nextUrl)
+    clean.searchParams.delete('view')
+    const res = NextResponse.redirect(clean, 302)
+    res.cookies.set(VIEW_COOKIE, viewParam, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: 'lax',
+      httpOnly: true,
+    })
+    res.headers.set('Cache-Control', 'no-store')
+    return res
+  }
 
   const meta = await loadLeagueMeta(slug)
   if (!meta) {
@@ -586,16 +668,32 @@ export async function GET(
   const pageLocked = lockKind === 'page'
 
   if (resolved.kind === 'html') {
-    const filePath = safeTemplatePath(resolved.file)
-    if (!filePath) return new NextResponse('Forbidden', { status: 403 })
-    let raw: string
-    try {
-      raw = await fs.readFile(filePath, 'utf-8')
-    } catch {
-      return new NextResponse(notFoundHtml(slug), {
-        status: 404,
-        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
-      })
+    // Mobile fork: phones (or anyone with the mobile cookie) get the template
+    // from pams-mobile/ when it exists; otherwise everyone shares the desktop
+    // file. readFile's failure IS the existence check — no stat round-trip.
+    const viewPref = resolveViewPref(req)
+    let raw: string | null = null
+    let servedMobile = false
+    if (viewPref === 'mobile') {
+      const mobilePath = safeTemplatePath(resolved.file, MOBILE_TEMPLATE_ROOT)
+      if (mobilePath) {
+        try {
+          raw = await fs.readFile(mobilePath, 'utf-8')
+          servedMobile = true
+        } catch { /* no mobile build for this page yet — fall back to desktop */ }
+      }
+    }
+    if (raw === null) {
+      const filePath = safeTemplatePath(resolved.file, TEMPLATE_ROOT)
+      if (!filePath) return new NextResponse('Forbidden', { status: 403 })
+      try {
+        raw = await fs.readFile(filePath, 'utf-8')
+      } catch {
+        return new NextResponse(notFoundHtml(slug), {
+          status: 404,
+          headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+        })
+      }
     }
     // Auth-aware: only the league owner should see the "Manage league /
     // Library" admin links in the public almanac dropdown. Everyone else gets
@@ -630,9 +728,9 @@ export async function GET(
       isSignedIn && Array.isArray(tutorialsMeta['leagues_seen'])
         ? (tutorialsMeta['leagues_seen'] as string[])
         : []
-    const html = await injectDcConfig(
+    let html = await injectDcConfig(
       injectOgTags(
-        injectBaseTag(applyTokens(raw, meta), meta, resolved.file),
+        injectBaseTag(applyTokens(raw, meta), meta, resolved.file, servedMobile),
         meta,
         resolved.file,
         req,
@@ -645,11 +743,21 @@ export async function GET(
       tutorialSeenPages,
       pageLocked,
     )
+    // Phone user who explicitly chose the desktop view: give them a way back.
+    if (!servedMobile && isMobileUA(req) && req.cookies.get(VIEW_COOKIE)?.value === 'desktop') {
+      html = injectMobileSwitchPill(html, req)
+    }
     return new NextResponse(html, {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'private, max-age=60',
+        // Desktop keeps the 60s browser cache. Mobile-UA responses are
+        // no-cache because the dc_view cookie can flip which variant a URL
+        // returns mid-session — a cached copy would serve the wrong tree for
+        // up to a minute after a toggle. (No Vary needed while these stay
+        // `private`; if HTML ever becomes CDN-cacheable, add
+        // `Vary: Sec-CH-UA-Mobile, User-Agent` and rethink the cookie.)
+        'Cache-Control': isMobileUA(req) ? 'private, no-cache' : 'private, max-age=60',
       },
     })
   }
