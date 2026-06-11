@@ -274,14 +274,14 @@ export default async function DashboardPage({
                 href="/pricing"
                 className="dc-btn-ghost dc-banner-btn"
               >
-                Pricing →
+                Pricing
               </Link>
               <Link
                 href="/pricing/plans"
                 className="dc-btn-ghost dc-banner-btn"
                 title="Side-by-side comparison of every feature per plan"
               >
-                Compare →
+                Compare
               </Link>
             </div>
           </div>
@@ -439,7 +439,7 @@ export default async function DashboardPage({
                   )}
                   <div className="dc-league-cta">
                     <Link href={`/league/${l.slug}`} className="dc-league-cta-btn">
-                      Setup <span className="card-arrow">→</span>
+                      Setup
                     </Link>
                     {l.published_at && (
                       <a
