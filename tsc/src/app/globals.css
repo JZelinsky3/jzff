@@ -8205,5 +8205,30 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .card {
         padding: 1.2rem 1.1rem 1rem;
     }
+
+    /* ── /pricing — tier cards ──
+       The three Rookie/Veteran/All-Pro cards collapse to single column at
+       820px already; this just tightens each card so the full stack of
+       three doesn't read as three separate desktop posters on phones.
+       The price digits especially — 2.6rem on desktop is overscaled at
+       phone widths where the card is already full-bleed. */
+    .pricing-grid-3 > .pricing-tier {
+        padding: 1.35rem 1.15rem !important;
+        gap: .75rem !important;
+    }
+    .pricing-tier-price-amount {
+        font-size: 1.95rem !important;
+    }
+
+    /* ── /pricing/plans — compare-plans cards ──
+       Same idea — the .plans-grid already drops to 1 col at 860px, but
+       each card kept desktop padding. The 3rem roman numeral was the
+       biggest single height-eater per card. */
+    .plans-card {
+        padding: 1.4rem 1.15rem 1.2rem;
+    }
+    .plans-card-num {
+        font-size: 2.2rem;
+    }
 }
 

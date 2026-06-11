@@ -113,6 +113,7 @@ export function PricingCards({
           return (
             <div
               key={t.tier}
+              className="pricing-tier"
               style={{
                 position: 'relative',
                 padding: '2rem 1.75rem',
@@ -152,8 +153,8 @@ export function PricingCards({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '.35rem' }}>
-                <span style={{ fontFamily: 'var(--serif)', fontSize: '2.6rem', color: 'var(--gold)' }}>
+              <div className="pricing-tier-price" style={{ display: 'flex', alignItems: 'baseline', gap: '.35rem', flexWrap: 'wrap' }}>
+                <span className="pricing-tier-price-amount" style={{ fontFamily: 'var(--serif)', fontSize: '2.6rem', color: 'var(--gold)' }}>
                   ${(price.amountCents / 100).toFixed(0)}
                 </span>
                 <span style={{ opacity: 0.65, fontSize: '.9rem' }}>{price.perLabel}</span>
