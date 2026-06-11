@@ -4884,9 +4884,14 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
    primary control surfaces there. */
 .onb-fab-panel .onb-step-extra { display: none; }
 @media (max-width: 480px) {
-    .onb-fab { bottom: .75rem; right: .75rem; left: .75rem; }
-    .onb-fab-pill { width: 100%; justify-content: center; }
-    .onb-fab-panel { width: auto; }
+    /* Used to stretch the FAB edge-to-edge along the bottom for thumb
+       reach (left + right both pinned), with the pill at width:100%.
+       New direction: the pill is meant to read as a small chip in the
+       bottom-right corner, not a full-width bar. Reset the stretch so
+       both pill and panel size to content. */
+    .onb-fab { bottom: .75rem; right: .75rem; }
+    .onb-fab-pill { width: auto; justify-content: flex-start; }
+    .onb-fab-panel { width: min(360px, calc(100vw - 1.5rem)); }
 }
 
 /* Inset full-width dashboard banners (testing-window notice, grace-period
