@@ -8554,6 +8554,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
    natural break opportunity. `anywhere` only breaks when the
    word actually wouldn't fit, so short identifiers stay
    un-broken. */
+/* Counterpart to .hide-on-mobile (inside the media query below): hidden
+   on desktop, shown on phones. Wrap the mobile-brief variant of copy
+   whose fuller desktop version wears .hide-on-mobile. */
+.show-on-mobile { display: none; }
 @media (max-width: 720px) {
     .dc-card-static {
         padding: 1.4rem 1.1rem 1.2rem;
@@ -8566,6 +8570,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
        don't. Apply to <span>/<div> wrappers around verbose copy that
        isn't load-bearing for the page's job. */
     .hide-on-mobile { display: none !important; }
+    .show-on-mobile { display: inline !important; }
     /* Top-of-page banners (UDFA / grace / Yahoo) on /dashboard — tighten
        their horizontal padding so they stop visually competing with the
        cards beneath them at narrow widths. */

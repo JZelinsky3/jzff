@@ -461,7 +461,13 @@ function BackupEmailForm({
               className="dc-input mono"
             />
             <span className="dc-checkbox-hint" style={{ marginTop: '.4rem' }}>
-              Used only if you lose {providerLabel} access. Blank to clear.
+              <span className="hide-on-mobile">
+                We&apos;ll only use this if you ever lose access to your {providerLabel} account.
+                Leave blank to clear.
+              </span>
+              <span className="show-on-mobile">
+                Used only if you lose {providerLabel} access. Blank to clear.
+              </span>
             </span>
           </div>
           <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
@@ -583,7 +589,13 @@ function MarketingForm({ initialOptIn }: { initialOptIn: boolean }) {
         <span>
           Email me about new features and product updates
           <span className="dc-checkbox-hint">
-            Optional announcements only. Billing emails always send.
+            <span className="hide-on-mobile">
+              Covers optional announcements like new features and platform integrations.
+              Billing emails (receipts, payment issues) always go out regardless.
+            </span>
+            <span className="show-on-mobile">
+              Optional announcements only. Billing emails always send.
+            </span>
           </span>
         </span>
       </label>
