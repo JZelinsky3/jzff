@@ -4621,6 +4621,74 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .onb-step-action { width: 100%; justify-content: stretch; margin-top: .25rem; }
 }
 
+/* ─── Done-step collapsible body ──────────────────────────────
+   Completed steps render their description inside a <details> so
+   the row collapses to just the title by default and can be tapped
+   to expand. Keeps the checklist short once steps start ticking
+   off. Native <details> means no extra React state to manage. */
+.onb-step-collapse {
+    flex: 1; min-width: 0;
+}
+.onb-step-collapse summary {
+    cursor: pointer;
+    list-style: none;
+    display: inline-flex; align-items: center; gap: .35rem;
+    -webkit-tap-highlight-color: transparent;
+}
+.onb-step-collapse summary::-webkit-details-marker { display: none; }
+.onb-step-collapse summary::after {
+    content: '›';
+    color: var(--cream-mute);
+    font-size: .95em;
+    transition: transform .15s ease;
+    display: inline-block;
+    transform: translateY(-1px);
+}
+.onb-step-collapse[open] summary::after {
+    transform: translateY(-1px) rotate(90deg);
+}
+.onb-step-collapse[open] .onb-step-desc {
+    /* When expanded, push the description into its own line beneath
+       the summary for legibility. */
+    margin-top: .35rem;
+}
+
+/* ─── Mobile compaction for the entire checklist ──────────────
+   Tighter card + tighter step rows + smaller fonts so the inline
+   card on /league/[slug] and the FAB popup both stop dominating
+   the phone viewport. Builds on the existing 640px rule above. */
+@media (max-width: 720px) {
+    .onb-card {
+        margin: 1rem auto 1.5rem;
+        padding: 1.1rem 1rem .9rem;
+    }
+    .onb-title { font-size: 1.3rem; line-height: 1.15; }
+    .onb-subtitle { font-size: .85rem; margin-bottom: .9rem; }
+    .onb-progress { gap: .65rem; margin-bottom: .85rem; }
+    .onb-progress-meta { font-size: .55rem; letter-spacing: .18em; }
+    .onb-steps { gap: .35rem; }
+    .onb-step {
+        padding: .6rem .7rem;
+        gap: .65rem;
+    }
+    .onb-step-check {
+        width: 22px; height: 22px;
+        font-size: .7rem;
+    }
+    .onb-step-label { font-size: .92rem; }
+    .onb-step-desc { font-size: .72rem; line-height: 1.35; }
+    .onb-step-cta {
+        font-size: .58rem; letter-spacing: .18em;
+        padding: .4rem .7rem;
+    }
+
+    /* FAB popup — same treatment so the corner panel doesn't blow
+       up to half the viewport when expanded. */
+    .onb-fab-panel { padding: .85rem .9rem !important; max-width: calc(100vw - 1.5rem) !important; }
+    .onb-fab-title { font-size: .85rem !important; }
+    .onb-fab-kicker { font-size: .52rem !important; letter-spacing: .2em !important; }
+}
+
 /* Public-Almanac billboard. Same family as the rest of the hub's cards
    (rectangle, gold accent) but framed top + bottom with a double rule
    instead of the usual left-edge bar — reads as a marquee/broadside so
@@ -8023,6 +8091,24 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .msm-root.is-open .msm-trigger--hamburger {
     color: var(--gold-bright);
+}
+
+/* Lines rotate into an X when the panel opens — ported from the old
+   NavDropdown so the trigger has the same satisfying animated affordance
+   it used to. transform-origin: center lets each line spin around its
+   midpoint instead of around the SVG's (0,0). */
+.msm-trigger--hamburger .msm-trigger-icon line {
+    transform-origin: center;
+    transition: transform .25s ease, opacity .2s ease;
+}
+.msm-root.is-open .msm-trigger--hamburger .msm-trigger-icon line:nth-child(1) {
+    transform: translateY(5px) rotate(45deg);
+}
+.msm-root.is-open .msm-trigger--hamburger .msm-trigger-icon line:nth-child(2) {
+    opacity: 0;
+}
+.msm-root.is-open .msm-trigger--hamburger .msm-trigger-icon line:nth-child(3) {
+    transform: translateY(-5px) rotate(-45deg);
 }
 .msm-trigger-initial {
     font-family: var(--serif);

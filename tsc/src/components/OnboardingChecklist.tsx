@@ -115,6 +115,10 @@ export function OnboardingChecklist({
     <ol className="onb-steps">
       {steps.map((step, i) => {
         const isNext = step === nextStep
+        // Done steps render as a <details>: the title sits in the
+        // <summary> (always visible, tappable) and the description
+        // collapses by default. Active/next steps keep the original
+        // open layout so the user can see what they still have to do.
         return (
           <li
             key={i}
@@ -123,10 +127,17 @@ export function OnboardingChecklist({
             <span className="onb-step-check" aria-hidden>
               {step.done ? '✓' : i + 1}
             </span>
-            <div className="onb-step-body">
-              <div className="onb-step-label">{step.label}</div>
-              <div className="onb-step-desc">{step.description}</div>
-            </div>
+            {step.done ? (
+              <details className="onb-step-collapse">
+                <summary className="onb-step-label">{step.label}</summary>
+                <div className="onb-step-desc">{step.description}</div>
+              </details>
+            ) : (
+              <div className="onb-step-body">
+                <div className="onb-step-label">{step.label}</div>
+                <div className="onb-step-desc">{step.description}</div>
+              </div>
+            )}
             {!step.done && (
               step.action ? (
                 <div className="onb-step-action">{step.action}</div>
