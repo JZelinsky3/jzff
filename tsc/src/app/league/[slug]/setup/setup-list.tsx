@@ -171,7 +171,10 @@ export function SetupList({
         >
           Clear
         </button>
-        <span style={{ flex: 1, minWidth: '14rem', opacity: 0.6, fontSize: '.8rem' }}>
+        <span
+          className="hide-on-mobile"
+          style={{ flex: 1, minWidth: '14rem', opacity: 0.6, fontSize: '.8rem' }}
+        >
           Pick the keeper after clicking Merge · Delete is permanent (cascades stats)
         </span>
       </div>
@@ -191,7 +194,12 @@ export function SetupList({
               value={keeperId ?? ''}
               onChange={(e) => setKeeperId(e.target.value || null)}
               className="dc-input"
-              style={{ minWidth: '14rem' }}
+              // flex:1 + minWidth:0 lets the select fill the actions row
+              // when there's space but shrink to viewport width on phones,
+              // instead of forcing a 14rem floor that overflows narrow
+              // screens. min-w-0 specifically defeats the implicit min-content
+              // floor flex items have.
+              style={{ flex: '1 1 12rem', minWidth: 0 }}
             >
               {Array.from(selected).map((id) => {
                 const p = profiles.find((p) => p.id === id)
@@ -255,7 +263,7 @@ export function SetupList({
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: '.3rem' }}>
+                <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
                   <button
                     onClick={() => onRename(p)}
                     disabled={busy !== null}

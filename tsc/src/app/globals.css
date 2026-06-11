@@ -8196,5 +8196,14 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     .dc-banner {
         padding: .85rem 1rem !important;
     }
+    /* Generic .card on mobile — the desktop padding (2rem 1.75rem 1.75rem)
+       eats too much vertical space on phones. Lowest-specificity selector
+       so the dashboard's denser .dc-dashboard-grid override still wins,
+       and inline-styled .card uses (e.g. setup-list profile rows) override
+       via specificity. Catches the new-rivalry .card wrapper and any
+       other one-off .card surfaces. */
+    .card {
+        padding: 1.2rem 1.1rem 1rem;
+    }
 }
 
