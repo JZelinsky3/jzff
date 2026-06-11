@@ -72,6 +72,40 @@ export function MobileSiteMenu({
   // other surface falls back to a hamburger so the trigger isn't styled
   // like an identity badge in contexts that aren't about your profile.
   const isLanding = pathname === '/' || pathname === ''
+
+  // Landing has the gold ticker ABOVE its sticky masthead. This trigger is
+  // viewport-fixed (it has to be — pages like /dashboard render no <nav>),
+  // so it can't ride the masthead natively: once the ticker scrolls off and
+  // the sticky nav pins to the top, a static offset leaves the trigger
+  // hovering 38px below the header. Track the ticker's on-screen bottom and
+  // shrink the offset in step, so the trigger stays glued to the nav row at
+  // every scroll position. CSS (.msm-root--landing) supplies the matching
+  // pre-scroll position for SSR/first paint; this refines it from there.
+  useEffect(() => {
+    if (!isLanding) return
+    const el = rootRef.current
+    const ticker = document.querySelector('.ticker')
+    if (!el || !ticker) return
+    let raf = 0
+    const sync = () => {
+      raf = 0
+      const visible = Math.max(0, ticker.getBoundingClientRect().bottom)
+      el.style.top = `calc(${visible}px + 1rem)`
+    }
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(sync)
+    }
+    sync()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      el.style.top = ''
+    }
+  }, [isLanding])
+
   const showInitial = !!initial && isLanding
 
   // Identity header (avatar + email at the top of the panel) only makes
