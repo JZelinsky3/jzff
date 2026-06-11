@@ -1256,6 +1256,13 @@ body {
 .composite.composite-side-left {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
 }
+/* Collapse the side-left variant too. Must live AFTER the rule above (same
+   0-2-0 specificity, media queries add none) — the plain `.composite { 1fr }`
+   in the 960px block higher up loses to it, which left the Spotlight
+   clipping + manager card squeezed into two columns on phones. */
+@media (max-width: 960px) {
+    .composite.composite-side-left { grid-template-columns: 1fr; }
+}
 
 /* ============================================================
    BENCH TRIO — 1 hero record + 3 small records in one row
@@ -1289,14 +1296,20 @@ body {
     max-width: 36ch;
     width: 100%;
 }
+/* Phones: keep the trio side-by-side as one compact stat strip instead of
+   stacking three tall centered rows (that pushed the section past a full
+   screen). Everything shrinks; the mono detail line goes — label + name
+   carry the story and the record book has the rest. */
 @media (max-width: 720px) {
-    .bench-trio { grid-template-columns: 1fr; }
+    .benchmarks { gap: 1.75rem; }
     .bench-trio .stat-row {
-        border-right: none;
-        border-bottom: 1px dotted var(--ink-line);
-        padding: 1.15rem .85rem;
+        gap: .25rem;
+        padding: 1rem .45rem .9rem;
     }
-    .bench-trio .stat-row:last-child { border-bottom: none; }
+    .bench-trio .stat-row-num { font-size: 1.5rem; margin-bottom: .15rem; }
+    .bench-trio .stat-row-label { font-size: .46rem; letter-spacing: .12em; }
+    .bench-trio .stat-row-name { font-size: .76rem; line-height: 1.25; }
+    .bench-trio .stat-row-detail { display: none; }
 }
 
 /* ============================================================
