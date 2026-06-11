@@ -8268,7 +8268,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     top: calc(100% + .55rem);
     right: 0;
     z-index: 60;
-    min-width: 240px;
+    /* Sized down ~15% across the board (width, row padding, type) — the
+       original 240px/1rem-row panel read oversized on phones. Rows keep
+       ~40px height so tap targets stay comfortable. */
+    min-width: 208px;
     max-width: calc(100vw - 1.5rem);
     background: linear-gradient(180deg, var(--ink-card), var(--ink-soft));
     border: 1px solid var(--gold-deep);
@@ -8283,25 +8286,25 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 
 .msm-header {
-    display: flex; align-items: center; gap: .65rem;
-    padding: .85rem 1rem;
+    display: flex; align-items: center; gap: .55rem;
+    padding: .7rem .85rem;
     border-bottom: 1px solid var(--ink-line);
 }
 .msm-header-avatar {
     display: flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px;
+    width: 28px; height: 28px;
     border-radius: 999px;
     border: 1px solid var(--gold-deep);
     background: rgba(232,200,137,.08);
     color: var(--gold);
     font-family: var(--serif); font-style: italic;
-    font-size: .95rem; line-height: 1;
+    font-size: .85rem; line-height: 1;
     flex-shrink: 0;
     transform: translateY(-1px);
 }
 .msm-header-email {
     font-family: var(--sans);
-    font-size: .82rem;
+    font-size: .76rem;
     color: var(--cream);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -8317,13 +8320,13 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 .msm-row {
     display: block;
-    padding: .95rem 1rem;
+    padding: .72rem .85rem;
     background: transparent;
     border: 0;
     border-bottom: 1px solid var(--ink-line);
     color: var(--cream);
     font-family: var(--sans);
-    font-size: 1rem;
+    font-size: .88rem;
     line-height: 1.2;
     text-align: left;
     text-decoration: none;

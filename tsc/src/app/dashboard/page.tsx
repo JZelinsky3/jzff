@@ -274,7 +274,7 @@ export default async function DashboardPage({
                 href="/pricing"
                 className="dc-btn-ghost dc-banner-btn"
               >
-                See plans →
+                Pricing →
               </Link>
               <Link
                 href="/pricing/plans"
