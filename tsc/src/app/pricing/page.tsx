@@ -249,7 +249,22 @@ export default async function PricingPage({
       />
       )}
 
+      {/* Plans is the side-by-side feature comparison — pricing visitors
+          who can't tell the tiers apart from the cards above can jump
+          here to see what each plan includes (or doesn't) row by row.
+          Centered ghost button so it reads as a quiet aside, not a
+          competing primary CTA. */}
       <div className="section" style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <Link
+          href="/pricing/plans"
+          className="dc-btn-ghost"
+          style={{ fontSize: '.7rem', padding: '.55rem 1.15rem' }}
+        >
+          Compare every feature side-by-side →
+        </Link>
+      </div>
+
+      <div className="section" style={{ textAlign: 'center', marginTop: '1.5rem' }}>
         <p style={{ opacity: 0.55, fontSize: '.8rem', lineHeight: 1.6, maxWidth: '38rem', margin: '0 auto' }}>
           All payments processed by <span className="text-gold">Stripe</span>. Prices in USD.
           Your card isn&apos;t charged until the free trial ends — you can cancel any time

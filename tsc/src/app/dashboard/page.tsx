@@ -240,7 +240,7 @@ export default async function DashboardPage({
             ★ How UDFA works
           </div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
-            Your <strong style={{ color: 'var(--gold)' }}>earliest league</strong> is a free trial — every feature, unlocked as a preview of the paid plans.
+            <strong style={{ color: 'var(--gold)' }}>First league</strong> is a free trial — every feature, unlocked as a preview of the paid plans.
           </div>
           {/* Feature-list explanation is verbose; it's the first thing to hide
               on phones where vertical real-estate is precious. The email
@@ -395,27 +395,19 @@ export default async function DashboardPage({
             {leagues.map((l) => (
               <div key={l.id} style={{ position: 'relative', display: 'flex', height: '100%' }}>
                 <LeagueCardMenu leagueId={l.id} leagueName={l.name} />
-                {/* Direct link to the public almanac. Sibling of the parent
-                    Link (not nested) so it doesn't collide with the click
-                    target — clicking the pill opens the live site in a new
-                    tab; clicking anywhere else on the card still drops into
-                    the setup view. Only renders once the almanac is
-                    actually published — otherwise the link would go to a
-                    placeholder. Top-left mirrors the platform badge at
-                    top-right for visual symmetry. */}
-                {l.published_at && (
-                  <a
-                    href={`/leagues/${l.slug}/`}
-                    target="_blank"
-                    rel="noopener"
-                    aria-label={`Open the live almanac for ${l.name}`}
-                    title="Open the live public almanac in a new tab"
-                    className="dc-league-live-pill"
-                  >
-                    Live ↗
-                  </a>
-                )}
-                <Link href={`/league/${l.slug}`} className="card" style={{ flex: 1, height: '100%' }}>
+                {/* Click-area pattern: the parent .card div carries the
+                    visual styling but isn't itself a link. An absolutely-
+                    positioned Link covers the card so tapping content
+                    drops into setup; the .dc-league-cta footer uses a
+                    higher z-index so its two real buttons (Setup /
+                    Archive) intercept their own clicks without nesting
+                    anchors. */}
+                <div className="card dc-league-card" style={{ flex: 1, height: '100%' }}>
+                  <Link
+                    href={`/league/${l.slug}`}
+                    aria-label={`Open setup for ${l.name}`}
+                    className="dc-league-clickarea"
+                  />
                   <div className="card-corner">{l.platform}</div>
                   {/* Tier badge — only on UDFA users' cards. The user's
                       earliest league is their one free trial slot ("Trial
@@ -448,10 +440,23 @@ export default async function DashboardPage({
                       Auto-deletes {new Date(l.grace_period_ends_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                     </div>
                   )}
-                  <div className="card-cta">
-                    Open the archive <span className="card-arrow">→</span>
+                  <div className="dc-league-cta">
+                    <Link href={`/league/${l.slug}`} className="dc-league-cta-btn">
+                      Setup <span className="card-arrow">→</span>
+                    </Link>
+                    {l.published_at && (
+                      <a
+                        href={`/leagues/${l.slug}/`}
+                        target="_blank"
+                        rel="noopener"
+                        className="dc-league-cta-btn"
+                        aria-label={`Open the live almanac for ${l.name}`}
+                      >
+                        Archive <span className="card-arrow">↗</span>
+                      </a>
+                    )}
                   </div>
-                </Link>
+                </div>
               </div>
             ))}
           </div>
