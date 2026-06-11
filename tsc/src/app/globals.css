@@ -8088,9 +8088,11 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
        ones that don't render a <nav> element (/dashboard, /league/[slug]/*,
        /admin). The right offset matches the nav's mobile right-padding so
        on pages that DO have a masthead the trigger sits in the same visual
-       slot the desktop right-cluster would. */
+       slot the desktop right-cluster would. top: 1rem centers the 32px
+       trigger (~32px) on the mobile nav row's midline (~30–36px depending
+       on breakpoint) so it lines up with the left-slot profile/back icon. */
     position: fixed;
-    top: .75rem;
+    top: 1rem;
     right: .75rem;
     z-index: 60;
 }
@@ -8245,7 +8247,9 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     /* Lift the serif initial visually to optical center inside the circle. */
     transform: translateY(-1px);
 }
-.msm-trigger-icon { color: var(--gold); width: 16px; height: 12px; }
+/* 20×14 = the SVG's natural viewBox, and visually paired with the 18px
+   profile icon in the nav's left slot — 16×12 read undersized next to it. */
+.msm-trigger-icon { color: var(--gold); width: 20px; height: 14px; }
 
 .msm-backdrop {
     position: fixed;
