@@ -85,6 +85,13 @@ export const PLAN_FEATURES: PlanFeature[] = [
     included: { tier1: false, tier2: true, tier3: true },
     includedFree: false,
   },
+  {
+    label: 'Early access',
+    detail:
+      'Every new feature lands on All-Pro first — Sunday Live, the game-day companion, today; the Manager Hub coming soon.',
+    included: { tier1: false, tier2: false, tier3: true },
+    includedFree: false,
+  },
 ]
 
 // Static Free-tier blurb for the 'Multiple leagues' row — the per-tier

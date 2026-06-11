@@ -83,6 +83,12 @@ const FEATURES: Feature[] = [
     },
     included: { tier1: false, tier2: true, tier3: true },
   },
+  {
+    label: 'Early access',
+    detail:
+      'Every new feature lands on All-Pro first — Sunday Live, the game-day companion, today; the Manager Hub coming soon.',
+    included: { tier1: false, tier2: false, tier3: true },
+  },
 ]
 
 const TIERS: Tier[] = ['tier1', 'tier2', 'tier3']

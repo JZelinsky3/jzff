@@ -96,11 +96,15 @@ export function PricingCards({
         </div>
       </div>
 
+      {/* Mobile-only cue (display: none on desktop) — the cards below
+          become a horizontal swipe carousel under 820px. */}
+      <div className="pricing-swipe-hint" aria-hidden>☞ Swipe to compare</div>
+
       <div style={{
         display: 'grid',
         // Always 3 columns on desktop so Rookie/Veteran/All-Pro share one row.
-        // Drops to 1 column on narrow screens (mobile) via the media query in
-        // globals.css — see .pricing-grid-3 there.
+        // Becomes a swipeable scroll-snap carousel on narrow screens via the
+        // media query in globals.css — see .pricing-grid-3 there.
         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
         gap: '1.5rem',
         maxWidth: '1140px',

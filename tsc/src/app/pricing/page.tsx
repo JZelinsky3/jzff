@@ -157,7 +157,9 @@ export default async function PricingPage({
                 features: [
                   'Unlimited leagues',
                   'Everything in Veteran',
-                  'First in line for new platform integrations',
+                  'Early access to all new features',
+                  'First look: Sunday Live, the game-day companion',
+                  'Manager Hub — coming soon',
                 ],
               },
             ]}

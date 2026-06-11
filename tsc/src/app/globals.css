@@ -639,11 +639,36 @@ main {
 }
 .dc-input::placeholder { color: var(--cream-mute); }
 
-/* Pricing page: 3 tier cards on one desktop row, stacking on mobile. The
-   inline grid-template-columns sets the desktop layout; this override kicks
-   in below 820px so cards aren't squished to unreadable widths on phones. */
+/* Pricing page: 3 tier cards on one desktop row; below 820px they become
+   a swipeable scroll-snap carousel — same pattern as /pricing/plans
+   (.plans-grid). Cards at ~82vw so the next one peeks in from the right.
+   !important needed where the component sets display/gap inline. */
+.pricing-swipe-hint {
+    display: none;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: .15rem;
+}
 @media (max-width: 820px) {
-    .pricing-grid-3 { grid-template-columns: 1fr !important; }
+    .pricing-grid-3 {
+        display: flex !important;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: .85rem !important;
+        padding: .85rem 1.1rem 1.25rem;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .pricing-grid-3::-webkit-scrollbar { display: none; }
+    .pricing-grid-3 > .pricing-tier {
+        flex: 0 0 min(82vw, 320px);
+        scroll-snap-align: center;
+    }
+    .pricing-swipe-hint { display: block; }
 }
 .dc-checkbox-row {
     display: flex;
