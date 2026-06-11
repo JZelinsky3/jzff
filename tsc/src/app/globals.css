@@ -4798,39 +4798,33 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     from { transform: translateY(8px); opacity: 0; }
     to   { transform: translateY(0);    opacity: 1; }
 }
+/* Minimized FAB — a tiny "Setup X/5" chip in the bottom-right corner.
+   Stripped of the check circle, the up-arrow, and the gap that came
+   with them so the pill no longer reads like a full button bar. The
+   text alone is enough — the box is the affordance. */
 .onb-fab-pill {
-    display: inline-flex; align-items: center; gap: .55rem;
-    padding: .6rem .9rem .6rem .65rem;
+    display: inline-flex; align-items: center;
+    padding: .35rem .6rem;
     background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
     border: 1px solid var(--gold-deep);
+    border-radius: 2px;
     color: var(--cream);
     font-family: var(--mono); font-weight: 700;
-    font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
+    font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
     cursor: pointer;
-    box-shadow: 0 12px 28px rgba(0,0,0,.4), 0 0 18px rgba(232,200,137,.12);
-    transition: transform .15s, box-shadow .15s, border-color .15s;
+    box-shadow: 0 6px 14px rgba(0,0,0,.35);
+    transition: transform .15s, box-shadow .15s, border-color .15s, color .15s;
+    -webkit-tap-highlight-color: transparent;
 }
 .onb-fab-pill:hover {
     transform: translateY(-1px);
     border-color: var(--gold);
-    box-shadow: 0 14px 32px rgba(0,0,0,.45), 0 0 22px rgba(232,200,137,.2);
-}
-.onb-fab-pill-check {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 22px; height: 22px; border-radius: 50%;
-    background: var(--gold); color: var(--ink);
-    font-size: .75rem;
+    color: var(--gold);
 }
 .onb-fab-pill-label strong {
     color: var(--gold);
     font-family: var(--mono);
-    margin-left: .15em;
-}
-.onb-fab-pill-arrow {
-    margin-left: .15rem;
-    color: var(--gold);
-    font-size: .85rem;
-    line-height: 1;
+    margin-left: .2em;
 }
 .onb-fab-panel {
     width: min(360px, calc(100vw - 2.5rem));

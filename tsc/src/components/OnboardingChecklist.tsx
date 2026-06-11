@@ -239,11 +239,9 @@ export function OnboardingChecklist({
               onClick={() => setFabOpen(true)}
               aria-label="Open setup checklist"
             >
-              <span className="onb-fab-pill-check" aria-hidden>✓</span>
               <span className="onb-fab-pill-label">
                 Setup <strong>{doneCount}/{steps.length}</strong>
               </span>
-              <span className="onb-fab-pill-arrow" aria-hidden>↑</span>
             </button>
           )}
         </div>
