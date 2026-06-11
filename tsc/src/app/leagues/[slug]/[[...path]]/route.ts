@@ -481,6 +481,45 @@ function setupPlaceholderHtml(meta: LeagueMeta): string {
 </html>`
 }
 
+// Branded 404 for HTML requests — almanac links get shared in group chats,
+// and a typo'd slug shouldn't land on a stark default error. Mirrors the
+// Corrections Desk styling of the app-router not-found.tsx (route handlers
+// bypass that boundary, so we serve our own document). Data/JSON requests
+// keep their plain-text 404s — the template JS only checks the status.
+function notFoundHtml(slug: string): string {
+  const safeSlug = escapeHtml(slug)
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Edition not found · The Sunday Chronicle</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+</head>
+<body>
+<main>
+  <section class="hero" style="text-align:center;padding:6rem 1.5rem 4rem;">
+    <div class="hero-sup">★ Corrections Desk · No. 404 ★</div>
+    <h1 class="hero-title">This edition <em>doesn't exist.</em></h1>
+    <p class="hero-sub" style="margin-top:1.5rem;">
+      No almanac is printed at this address — the link may have a typo,
+      or the league hasn't published yet.
+    </p>
+    <p style="margin-top:2rem;font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-mute);">
+      /leagues/${safeSlug}/
+    </p>
+    <p style="margin-top:2.5rem;">
+      <a href="/" style="color:var(--gold);">Front page</a>
+      &nbsp;·&nbsp;
+      <a href="/hub/explore/" style="color:var(--gold);">Browse published almanacs</a>
+    </p>
+  </section>
+</main>
+</body>
+</html>`
+}
+
 // Block traversal: only allow paths that stay inside TEMPLATE_ROOT.
 function safeTemplatePath(rel: string): string | null {
   const target = path.normalize(path.join(TEMPLATE_ROOT, rel))
@@ -509,7 +548,15 @@ export async function GET(
   if (!resolved) return new NextResponse('Not found', { status: 404 })
 
   const meta = await loadLeagueMeta(slug)
-  if (!meta) return new NextResponse('League not found', { status: 404 })
+  if (!meta) {
+    if (resolved.kind === 'html') {
+      return new NextResponse(notFoundHtml(slug), {
+        status: 404,
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+      })
+    }
+    return new NextResponse('League not found', { status: 404 })
+  }
 
   // Gate: pre-publish, the public almanac is hidden behind a setup placeholder.
   // Owners reach the management UI via /league/<slug>; non-owners see "in progress".
@@ -545,7 +592,10 @@ export async function GET(
     try {
       raw = await fs.readFile(filePath, 'utf-8')
     } catch {
-      return new NextResponse('Page not found', { status: 404 })
+      return new NextResponse(notFoundHtml(slug), {
+        status: 404,
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+      })
     }
     // Auth-aware: only the league owner should see the "Manage league /
     // Library" admin links in the public almanac dropdown. Everyone else gets
