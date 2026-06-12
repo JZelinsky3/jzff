@@ -65,9 +65,9 @@ body { background: var(--cream); color: var(--ink); }
 .st-col:first-child { text-align: center; }
 .st-col:nth-child(2) { text-align: left; }
 .st-col:nth-child(3) { text-align: center; transform: translateX(1px); }
-/* Active sort: the rust color alone marks it — no arrow, so titles don't
-   shift when the sort moves. */
-.st-col.is-sort { color: var(--rust); }
+/* Active sort: full-strength bold ink against the faded siblings — no
+   arrow, so titles don't shift when the sort moves. */
+.st-col.is-sort { color: var(--ink); font-weight: 800; }
 /* Tapping the active column again flips the order; the underline is the
    only signal — no arrow, nothing shifts. */
 .st-col.is-sort.is-rev {
