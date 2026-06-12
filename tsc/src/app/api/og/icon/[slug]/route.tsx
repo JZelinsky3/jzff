@@ -2,7 +2,7 @@
 // URL: /api/og/icon/<slug>?s=<px>   (default 512; apple-touch-icon uses 180)
 //
 // Rendered as a vintage bookplate so an added-to-home-screen league reads
-// like a real app tile: ink field, double gold frame, ✦ crest, serif-italic
+// like a real app tile: ink field, double gold frame, diamond crest, serif-italic
 // monogram, EST line. Referenced by the apple-touch-icon link and the web
 // app manifest the almanac route injects into every served page.
 
@@ -115,7 +115,18 @@ export async function GET(
             gap: `${10 * u}px`,
           }}
         >
-          <div style={{ display: 'flex', color: gold, fontSize: `${34 * u}px`, fontFamily: 'JetBrains' }}>✦</div>
+          {/* Crest mark — drawn (rotated square) because neither OG font
+              carries the ✦ glyph the site uses elsewhere */}
+          <div
+            style={{
+              display: 'flex',
+              width: `${20 * u}px`,
+              height: `${20 * u}px`,
+              background: gold,
+              transform: 'rotate(45deg)',
+              marginBottom: `${6 * u}px`,
+            }}
+          />
           <div
             style={{
               display: 'flex',

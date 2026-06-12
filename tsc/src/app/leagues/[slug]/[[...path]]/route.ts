@@ -254,9 +254,16 @@ function injectBaseTag(html: string, meta: LeagueMeta, file: string, servedMobil
   const preloads = ((servedMobile ? MOBILE_PRELOADS_BY_FILE : PRELOADS_BY_FILE)[file] ?? [])
     .map((href) => `<link rel="preload" as="fetch" crossorigin href="${href}">`)
     .join('\n')
+  // apple-touch-icon + manifest give "Add to Home Screen" a designed
+  // bookplate tile (ink/gold monogram) and the league's real name instead
+  // of a page screenshot with a letter on it.
   const tags =
     `<base href="/leagues/${meta.slug}/">` +
     `\n<link rel="icon" href="/icon.svg" type="image/svg+xml">` +
+    `\n<link rel="apple-touch-icon" sizes="180x180" href="/api/og/icon/${meta.slug}?s=180">` +
+    `\n<link rel="manifest" href="/api/og/manifest/${meta.slug}">` +
+    `\n<meta name="apple-mobile-web-app-title" content="${safeName}">` +
+    `\n<meta name="theme-color" content="#0e1620">` +
     `\n<meta name="description" content="${description}">` +
     (preloads ? `\n${preloads}` : '')
   if (/<head[^>]*>/i.test(html)) {
