@@ -68,18 +68,19 @@ body { background: var(--cream); color: var(--ink); }
 /* Active sort: the rust color alone marks it — no arrow, so titles don't
    shift when the sort moves. */
 .st-col.is-sort { color: var(--rust); }
-/* Tapping the active column again flips the order; the inverted pill is the
-   only signal (negative margins cancel the padding so nothing shifts). */
+/* Tapping the active column again flips the order; the underline is the
+   only signal — no arrow, nothing shifts. */
 .st-col.is-sort.is-rev {
-    background: var(--rust); color: var(--cream);
-    border-radius: 4px;
-    padding: .15rem .3rem; margin: -.15rem -.3rem;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
 }
-/* Record-view value columns echo the desktop table's tones:
-   reg gold, playoffs deep rust, all-time steel blue. */
-.st-val--reg { color: var(--gold-deep); }
-.st-val--pst { color: #8c3820; }
-.st-val--all { color: #4a6a88; }
+/* Record-view value columns echo the desktop table's tones: reg gold,
+   playoffs deep rust, all-time steel blue. Doubled-up selector outranks
+   the base .st-val color, which is declared later in this sheet. */
+.st-val.st-val--reg { color: var(--gold-deep); }
+.st-val.st-val--pst { color: #8c3820; }
+.st-val.st-val--all { color: #4a6a88; }
 
 /* Rows */
 .st-row { display: block; }
