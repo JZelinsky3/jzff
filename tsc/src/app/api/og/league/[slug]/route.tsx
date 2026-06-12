@@ -64,8 +64,21 @@ function toRoman(n: number): string {
   return out
 }
 
+// Per-chapter stamp for ?page= variants: the shared cover card swaps its
+// subtitle ("The Chronicle · The Standings") and accent so each page's
+// link preview reads as its own chapter rather than a generic cover.
+const CHAPTERS: Record<string, { label: string; accent: string }> = {
+  standings: { label: 'The Standings', accent: '#7fa8bd' },   // steel
+  records: { label: 'The Record Book', accent: '#e8c889' },   // gold
+  managers: { label: 'The Managers', accent: '#e8c889' },     // gold
+  draft: { label: 'The Draft Archive', accent: '#c8a464' },   // brass
+  rivalries: { label: 'The Rivalries', accent: '#c86848' },   // rust
+  seasons: { label: 'The Seasons', accent: '#7fa8bd' },       // steel
+  live: { label: 'The Live Season', accent: '#e8c850' },      // bright gold
+}
+
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
@@ -84,12 +97,19 @@ export async function GET(
   const data = bundle['league.json'] as LeagueFile | undefined
   if (!data) return new Response('No league data', { status: 404 })
 
+  const pageKey = req.nextUrl.searchParams.get('page')
+  const chapter = (pageKey && CHAPTERS[pageKey]) || null
+
   const fonts = await loadFonts()
-  return renderLeagueCard(data, fonts)
+  return renderLeagueCard(data, fonts, chapter)
 }
 
-function renderLeagueCard(d: LeagueFile, fonts: Awaited<ReturnType<typeof loadFonts>>) {
-  const accent = '#e8c889' // editorial gold for the front cover
+function renderLeagueCard(
+  d: LeagueFile,
+  fonts: Awaited<ReturnType<typeof loadFonts>>,
+  chapter: { label: string; accent: string } | null,
+) {
+  const accent = chapter?.accent ?? '#e8c889' // editorial gold for the front cover
   const founded = d.founded ?? d.current_season ?? new Date().getFullYear()
   const currentSeason = d.current_season ?? founded
   const volume = Math.max(1, currentSeason - founded + 1)
@@ -214,7 +234,8 @@ function renderLeagueCard(d: LeagueFile, fonts: Awaited<ReturnType<typeof loadFo
             {tail}
           </div>
 
-          {/* Subtitle: "The Almanac · Volume V" */}
+          {/* Subtitle: "The Chronicle · Volume V" on the front cover, or
+              "The Chronicle · <Chapter>" on per-page variants */}
           <div
             style={{
               marginTop: '22px',
@@ -227,9 +248,9 @@ function renderLeagueCard(d: LeagueFile, fonts: Awaited<ReturnType<typeof loadFo
               color: accent,
             }}
           >
-            <span style={{ display: 'flex' }}>The Almanac</span>
+            <span style={{ display: 'flex' }}>The Chronicle</span>
             <span style={{ display: 'flex', color: '#374151', fontStyle: 'normal' }}>·</span>
-            <span style={{ display: 'flex' }}>Volume {toRoman(volume)}</span>
+            <span style={{ display: 'flex' }}>{chapter ? chapter.label : `Volume ${toRoman(volume)}`}</span>
           </div>
 
           {/* Decorative rule */}

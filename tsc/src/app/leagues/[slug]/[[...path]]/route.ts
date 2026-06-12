@@ -405,16 +405,68 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       description: `The ${year} season of ${meta.name}, chronicled on The Sunday Chronicle.`,
     }
   }
-  // Default: league-level "almanac front cover" for every other public
-  // almanac page. Means any share — landing, standings, records, draft —
-  // gets the league's identity card in the link preview rather than a
-  // generic site-default. Page-specific routes above override this.
-  const url = new URL(`/api/og/league/${meta.slug}`, req.nextUrl.origin).toString()
+  // Every other public almanac page gets the league cover card, stamped
+  // with a per-page chapter label (?page=) so a shared standings link
+  // previews as "The Standings", a records link as "The Record Book", etc.
+  // Unmapped paths fall back to the plain front cover.
+  const chapter = OG_CHAPTERS[file]
+  const url = new URL(
+    `/api/og/league/${meta.slug}${chapter ? `?page=${chapter.page}` : ''}`,
+    req.nextUrl.origin,
+  ).toString()
   return {
     url,
-    title: `${meta.name} · The Almanac`,
-    description: `The full history of ${meta.name} — seasons, champions, rivalries, records — on The Sunday Chronicle.`,
+    title: `${meta.name} · ${chapter?.label ?? 'The Chronicle'}`,
+    description: chapter
+      ? chapter.desc(meta.name)
+      : `The full history of ${meta.name} — seasons, champions, rivalries, records — on The Sunday Chronicle.`,
   }
+}
+
+// File → share-preview chapter. Both template trees use the same file
+// names, so one map covers desktop and mobile. `page` is the query value
+// the OG image route uses to stamp the chapter on the cover card.
+const OG_CHAPTERS: Record<string, { page: string; label: string; desc: (name: string) => string }> = {
+  'standings.html': {
+    page: 'standings',
+    label: 'The Standings',
+    desc: (n) => `All-time standings for ${n} — every win, loss, and point ever scored, ranked.`,
+  },
+  'records.html': {
+    page: 'records',
+    label: 'The Record Book',
+    desc: (n) => `The records of record in ${n} — single-week scorchers, season highs, and career marks.`,
+  },
+  'managers/index.html': {
+    page: 'managers',
+    label: 'The Managers',
+    desc: (n) => `Every manager who's ever run a team in ${n} — careers, trophies, and head-to-head ledgers.`,
+  },
+  'managers/manager.html': {
+    page: 'managers',
+    label: 'The Manager File',
+    desc: (n) => `One manager's complete file from ${n}'s archives — record, rings, rivalries, and tendencies.`,
+  },
+  'draft/index.html': {
+    page: 'draft',
+    label: 'The Draft Archive',
+    desc: (n) => `Every draft in ${n}'s history — round by round, steal by steal, bust by bust.`,
+  },
+  'rivalries/index.html': {
+    page: 'rivalries',
+    label: 'The Rivalries',
+    desc: (n) => `The feuds of ${n} — every grudge match tracked meeting by meeting.`,
+  },
+  'seasons/index.html': {
+    page: 'seasons',
+    label: 'The Seasons',
+    desc: (n) => `Season by season through ${n}'s history — champions, standings, and the stories between.`,
+  },
+  'live-season/index.html': {
+    page: 'live',
+    label: 'The Live Season',
+    desc: (n) => `${n}'s season as it happens — power rankings, pick'ems, records watch, and the trade desk.`,
+  },
 }
 
 // Memoize each league's full JSON bundle. Bust via revalidateTag(`league-<id>`).
