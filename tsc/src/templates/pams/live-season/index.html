@@ -913,6 +913,21 @@ body { background: var(--ls-bg); }
 </main>
 
 <script>
+// Veteran ribbons exist to tell Rookie/free leagues what they're missing.
+// On a league that's already at Veteran or above (comp, trial, or a
+// tier2/tier3 sub) the features are simply on — the badge is noise, so
+// strip it. __DC is injected by the serving route on every page.
+(function () {
+    var dc = window.__DC || {};
+    var vetPlus = dc.leagueTier === 'comp' || dc.leagueTier === 'test'
+        || dc.paidTier === 'tier2' || dc.paidTier === 'tier3';
+    if (!vetPlus) return;
+    var tags = document.querySelectorAll('.ls-card-tier');
+    for (var i = 0; i < tags.length; i++) tags[i].parentNode.removeChild(tags[i]);
+})();
+</script>
+
+<script>
 // ─────────── FORM SHEET — current-season standings tower ───────────
 (function () {
   function esc(s) {

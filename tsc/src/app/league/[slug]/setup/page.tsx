@@ -115,10 +115,12 @@ export default async function SetupPage({
           <span className="section-title">Everyone on file —</span>
           <span className="section-meta">Select 2+ → Merge</span>
         </div>
-        <SetupList leagueId={league.id} slug={slug} profiles={profilesList} />
-        <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+        {/* Confirm sits above the table — on long rosters the button was
+            below the fold and people never found it. */}
+        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
           <MarkReviewedButton leagueId={league.id} reviewedAt={reviewedAt} />
         </div>
+        <SetupList leagueId={league.id} slug={slug} profiles={profilesList} />
       </div>
 
       <SiteFooter />

@@ -5587,7 +5587,11 @@ function buildManagerDna(s: Snapshot): unknown {
     v == null || st.sd === 0 ? 0 : (v - st.mean) / st.sd
 
   // -------- Pick archetype per profile (highest |z| across signals, with tiebreakers) --------
-  type Candidate = { key: string; name: string; tagline: string; blurb: string; strength: number }
+  // `soft` marks a near-miss: the signal cleared ~70% of the archetype's bar
+  // but not the bar itself. Soft candidates never compete in the main pass —
+  // they only exist so a manager headed for The Average Joe has somewhere
+  // better to land when Joe itself gets overstuffed (see the cap pass below).
+  type Candidate = { key: string; name: string; tagline: string; blurb: string; strength: number; soft?: boolean }
   type ProfileBuild = {
     bundle: ProfileBundle
     signals: DnaSignals
@@ -5595,6 +5599,7 @@ function buildManagerDna(s: Snapshot): unknown {
     closeWinRate: number | null
     blowWinRate: number | null
     candidates: Candidate[]
+    soft: Candidate[]
   }
 
   const builds: ProfileBuild[] = []
@@ -5621,13 +5626,14 @@ function buildManagerDna(s: Snapshot): unknown {
     // always won the tiebreak even when a deep QB-anchor manager was much
     // further past their own bar.
     // Trade Hawk / Vault
-    if (signals.trades_per_season != null && z_trade >= 1.0) {
+    if (signals.trades_per_season != null && z_trade >= 0.7) {
       candidates.push({
         key: 'trade_hawk',
         name: 'The Trade Hawk',
         tagline: 'Always on the phone',
         blurb: `Trades at ${signals.trades_per_season.toFixed(1)} deals per season — well above league baseline. The roster is never finished.`,
         strength: z_trade / 1.0,
+        soft: z_trade < 1.0,
       })
     }
     // The Vault — strictly under one trade per season on average. Used to
@@ -5637,7 +5643,7 @@ function buildManagerDna(s: Snapshot): unknown {
     // per season on average is genuinely a hold-the-line drafter.
     if (
       signals.career_seasons >= 2
-      && signals.trades_total < signals.career_seasons
+      && signals.trades_total / signals.career_seasons < 1.35
     ) {
       const tradeRate = (signals.trades_total / signals.career_seasons).toFixed(1)
       candidates.push({
@@ -5650,82 +5656,91 @@ function buildManagerDna(s: Snapshot): unknown {
         // Threshold = 1 trade/season. Headroom = how far below that they
         // actually sit. 0 trades → ∞ in the limit, so cap at 2.0.
         strength: Math.min(2.0, 1 / Math.max(0.25, signals.trades_total / signals.career_seasons)),
+        soft: signals.trades_total >= signals.career_seasons,
       })
     }
     // Optimizer / Reactionary / Set-and-Forget
-    if (signals.efficiency_pct != null && z_eff >= 1.0) {
+    if (signals.efficiency_pct != null && z_eff >= 0.7) {
       candidates.push({
         key: 'the_optimizer',
         name: 'The Optimizer',
         tagline: 'Squeezes every last point',
         blurb: `Career lineup efficiency of ${signals.efficiency_pct.toFixed(1)}% — top of the league at starting the right names.`,
         strength: z_eff / 1.0,
+        soft: z_eff < 1.0,
       })
     }
-    if (signals.lineup_churn_pct != null && z_churn >= 1.2) {
+    if (signals.lineup_churn_pct != null && z_churn >= 0.85) {
       candidates.push({
         key: 'the_tinkerer',
         name: 'The Tinkerer',
         tagline: 'Lineup is never finished',
         blurb: `Swaps ~${signals.lineup_churn_pct.toFixed(0)}% of starters week to week. The roster shifts constantly.`,
         strength: z_churn / 1.2,
+        soft: z_churn < 1.2,
       })
     }
-    if (signals.lineup_churn_pct != null && z_churn <= -1.0 && (signals.efficiency_pct == null || z_eff <= 0.2)) {
+    if (signals.lineup_churn_pct != null && z_churn <= -0.7 && (signals.efficiency_pct == null || z_eff <= 0.2)) {
       candidates.push({
         key: 'set_and_forget',
         name: 'The Set-and-Forget',
         tagline: 'Drafted in August, started in January',
         blurb: `Touches the lineup the least in the league — only ~${(signals.lineup_churn_pct ?? 0).toFixed(0)}% turnover week to week.`,
         strength: Math.abs(z_churn) / 1.0,
+        soft: z_churn > -1.0,
       })
     }
     // Coin Flipper / Steady Hand
-    if (signals.volatility_pct != null && z_vol >= 1.2) {
+    if (signals.volatility_pct != null && z_vol >= 0.85) {
       candidates.push({
         key: 'coin_flipper',
         name: 'The Coin-Flipper',
         tagline: 'Boom one week, bust the next',
         blurb: `Score swings ±${signals.volatility_pct.toFixed(0)}% week to week — most volatile output in the league.`,
         strength: z_vol / 1.2,
+        soft: z_vol < 1.2,
       })
     }
-    if (signals.volatility_pct != null && z_vol <= -1.0) {
+    if (signals.volatility_pct != null && z_vol <= -0.7) {
       candidates.push({
         key: 'steady_hand',
         name: 'The Steady Hand',
         tagline: 'Same number every week',
         blurb: `Lowest week-to-week swing in the league — predictable ${signals.pf_per_game?.toFixed(0) ?? '—'} most Sundays.`,
         strength: Math.abs(z_vol) / 1.0,
+        soft: z_vol > -1.0,
       })
     }
     // Cardiac / Heartbreaker
-    if (closeWinRate != null && signals.close_games >= 6 && closeWinRate >= 0.65) {
+    if (closeWinRate != null && signals.close_games >= 6 && closeWinRate >= 0.55) {
       candidates.push({
         key: 'cardiac_kid',
         name: 'The Cardiac Kid',
         tagline: 'Lives in one-score games',
         blurb: `${signals.close_record.w}–${signals.close_record.l}${signals.close_record.t ? `–${signals.close_record.t}` : ''} in games decided by ≤5 pts. Refuses to lose close.`,
         strength: closeWinRate / 0.65,
+        soft: closeWinRate < 0.65,
       })
     }
-    if (closeWinRate != null && signals.close_games >= 6 && closeWinRate <= 0.35) {
+    if (closeWinRate != null && signals.close_games >= 6 && closeWinRate <= 0.45) {
       candidates.push({
         key: 'heartbreaker',
         name: 'The Heartbreaker',
         tagline: 'Cursed by the photo finish',
         blurb: `${signals.close_record.w}–${signals.close_record.l}${signals.close_record.t ? `–${signals.close_record.t}` : ''} in games decided by ≤5 pts. The margin gods are not friends.`,
         strength: (1 - closeWinRate) / 0.65,
+        soft: closeWinRate > 0.35,
       })
     }
     // Steamroller / Punching Bag
-    if (blowWinRate != null && signals.blowout_games >= 4 && blowWinRate >= 0.70) {
+    if (blowWinRate != null && signals.blowout_games >= 4 && blowWinRate >= 0.55) {
       candidates.push({
         key: 'steamroller',
         name: 'The Steamroller',
         tagline: 'When they win, they win big',
         blurb: `${signals.blowout_record.w}–${signals.blowout_record.l} in ≥30-pt games. No cruise control — pedal stays floored.`,
         strength: blowWinRate / 0.70,
+        soft: blowWinRate < 0.70,
       })
     }
     // Zero-RB / Hog Mollie / Anchor QB / TE Premium
@@ -5736,22 +5751,24 @@ function buildManagerDna(s: Snapshot): unknown {
     // taking a QB top-3 in 71% of drafts. Raised threshold to z ≤ -1.5 with
     // matching strength denominator — Zero-RB now needs roughly z ≤ -2.7 to
     // out-strength an Anchor QB at 71%, which is genuinely WR-first behavior.
-    if (signals.draft_rb_share_pct != null && z_rb <= -1.5 && bundle.first5Picks.length >= 5) {
+    if (signals.draft_rb_share_pct != null && z_rb <= -1.1 && bundle.first5Picks.length >= 5) {
       candidates.push({
         key: 'zero_rb',
         name: 'The Zero-RB Prophet',
         tagline: 'Pass-catchers first, RBs later',
         blurb: `Only ${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — well below the league norm. Believer in the WR-first build.`,
         strength: Math.abs(z_rb) / 1.5,
+        soft: z_rb > -1.5,
       })
     }
-    if (signals.draft_rb_share_pct != null && z_rb >= 1.5 && bundle.first5Picks.length >= 5) {
+    if (signals.draft_rb_share_pct != null && z_rb >= 1.1 && bundle.first5Picks.length >= 5) {
       candidates.push({
         key: 'hog_mollie',
         name: 'The Hog Mollie',
         tagline: 'RBs first, RBs always',
         blurb: `${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — the most run-heavy build in the league.`,
         strength: z_rb / 1.5,
+        soft: z_rb < 1.5,
       })
     }
     // Anchor QB — requires a top-3-round QB in at least 40% of drafts on
@@ -5762,7 +5779,7 @@ function buildManagerDna(s: Snapshot): unknown {
     if (
       signals.draft_qb_early_pct != null
       && signals.total_drafts >= 3
-      && signals.draft_qb_early_pct >= 50
+      && signals.draft_qb_early_pct >= 35
     ) {
       candidates.push({
         key: 'anchor_qb',
@@ -5770,6 +5787,7 @@ function buildManagerDna(s: Snapshot): unknown {
         tagline: 'Locks the position early',
         blurb: `Has reached for a QB inside the first three rounds in ${signals.draft_qb_early_pct.toFixed(0)}% of drafts on file. Refuses to play the streamer's game.`,
         strength: signals.draft_qb_early_pct / 50,  // 50% → 1.0, 100% → 2.0
+        soft: signals.draft_qb_early_pct < 50,
       })
     }
     // TE Premium — same shape as Anchor QB. Bar was originally 25% (too
@@ -5779,7 +5797,7 @@ function buildManagerDna(s: Snapshot): unknown {
     if (
       signals.draft_te_early_pct != null
       && signals.total_drafts >= 3
-      && signals.draft_te_early_pct >= 50
+      && signals.draft_te_early_pct >= 35
     ) {
       candidates.push({
         key: 'te_premium',
@@ -5787,6 +5805,7 @@ function buildManagerDna(s: Snapshot): unknown {
         tagline: 'Pays the elite-TE tax',
         blurb: `Has spent a top-4-round pick on a TE in ${signals.draft_te_early_pct.toFixed(0)}% of drafts on file. Willing to corner the position rather than chase it.`,
         strength: signals.draft_te_early_pct / 50,  // 50% → 1.0, 100% → 2.0
+        soft: signals.draft_te_early_pct < 50,
       })
     }
 
@@ -5798,7 +5817,11 @@ function buildManagerDna(s: Snapshot): unknown {
       if (b.key === 'trade_hawk' && a.key !== 'trade_hawk') return -1
       return b.strength - a.strength
     })
-    builds.push({ bundle, signals, z_eff, z_churn, z_vol, z_rb, z_trade, closeWinRate, blowWinRate, candidates })
+    builds.push({
+      bundle, signals, z_eff, z_churn, z_vol, z_rb, z_trade, closeWinRate, blowWinRate,
+      candidates: candidates.filter((c) => !c.soft),
+      soft: candidates.filter((c) => c.soft),
+    })
   }
 
   // -------- Spread archetypes across the league --------
@@ -5843,11 +5866,44 @@ function buildManagerDna(s: Snapshot): unknown {
     selectedIdx[toReduce[0]]++
   }
 
+  // -------- Cap The Average Joe like any other archetype --------
+  // The spread pass above never counts Average Joe, so when several managers
+  // run out of qualifying candidates at once, Joe quietly collects 4–5 cards
+  // and the page reads as "half the league defies categorization". When 3+
+  // managers land on Joe, promote the ones with the strongest near-miss
+  // candidate (a signal that cleared ~70% of an archetype's bar but not the
+  // bar itself) into that archetype — still respecting the 2-per-archetype
+  // cap — until at most two Joes remain or nobody promotable is left.
+  const softPick = new Map<number, Candidate>()
+  const finalAt = (i: number): Candidate => softPick.get(i) ?? archetypeAt(i)
+  for (let iter = 0; iter < builds.length; iter++) {
+    const joes: number[] = []
+    const holders = new Map<string, number>()
+    for (let i = 0; i < builds.length; i++) {
+      const k = finalAt(i).key
+      if (k === 'the_average_joe') joes.push(i)
+      else holders.set(k, (holders.get(k) ?? 0) + 1)
+    }
+    if (joes.length <= 2) break
+    let best: { i: number; c: Candidate } | null = null
+    for (const i of joes) {
+      // Soft lists are sorted strongest-first; the first uncapped entry is
+      // this manager's best available landing spot.
+      for (const c of builds[i].soft) {
+        if ((holders.get(c.key) ?? 0) >= 2) continue
+        if (!best || c.strength > best.c.strength) best = { i, c }
+        break
+      }
+    }
+    if (!best) break
+    softPick.set(best.i, best.c)
+  }
+
   // -------- Build traits + result rows using the finalized archetype --------
   const result: DnaManager[] = []
   for (let i = 0; i < builds.length; i++) {
     const { bundle, signals, z_eff, z_churn, z_vol, z_rb, z_trade, closeWinRate, blowWinRate } = builds[i]
-    const archetype = archetypeAt(i)
+    const archetype = finalAt(i)
 
     // -------- Build trait chips (gene markers) — secondary archetypes, capped 4 --------
     const traits: DnaTrait[] = []

@@ -45,6 +45,14 @@ export function SetupList({
   const [pickingKeeper, setPickingKeeper] = useState(false)
   const [keeperId, setKeeperId] = useState<string | null>(null)
 
+  // Current members first, alumni (auto-detected + forced) in their own
+  // block below. Profiles arrive alphabetized from the server, so each
+  // group stays alphabetical on its own.
+  const isAlumni = (p: ProfileRow) =>
+    p.is_alumni_override === true || (p.is_alumni_override === null && !p.auto_current)
+  const currentProfiles = profiles.filter((p) => !isAlumni(p))
+  const alumniProfiles = profiles.filter(isAlumni)
+
   function toggleSelect(id: string) {
     const next = new Set(selected)
     if (next.has(id)) next.delete(id)
@@ -226,75 +234,95 @@ export function SetupList({
 
       {err && <p className="dc-form-error" style={{ marginBottom: '.85rem' }}>{err}</p>}
 
+      {profiles.length === 0 && (
+        <div className="dc-empty"><div className="dc-empty-text">No profiles yet — sync a source first.</div></div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))', gap: '.5rem' }}>
-        {profiles.length === 0 && (
-          <div className="dc-empty" style={{ gridColumn: '1 / -1' }}><div className="dc-empty-text">No profiles yet — sync a source first.</div></div>
-        )}
-        {profiles.map((p) => {
-          const isSel = selected.has(p.id)
-          return (
-            <div key={p.id} className="card" style={{ padding: '.45rem .7rem', opacity: p.is_hidden ? 0.55 : 1 }}>
-              <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <input
-                  type="checkbox"
-                  checked={isSel}
-                  onChange={() => toggleSelect(p.id)}
-                  style={{ transform: 'scale(1.15)', cursor: 'pointer' }}
-                />
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: '1rem', display: 'flex', gap: '.5rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
-                    <span>{p.canonical_name}</span>
-                    <span className="text-mono text-cream-mute" style={{ fontSize: '.55rem', letterSpacing: '.18em', textTransform: 'uppercase' }}>
-                      {statusLabel(p)}
-                      {p.managers.length > 1 && <> · {p.managers.length} merged</>}
-                    </span>
-                  </div>
-                  {p.managers.length > 0 && (
-                    <div style={{ marginTop: '.2rem', fontSize: '.7rem', color: 'var(--cream-mute)', display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
-                      {p.managers.map((m, i) => (
-                        <span key={m.id}>
-                          {i > 0 && <span style={{ opacity: 0.4 }}>· </span>}
-                          {m.display_name ?? 'Unknown'}
-                          {m.team_name && m.team_name !== m.display_name && (
-                            <span style={{ opacity: 0.55 }}> ({m.team_name})</span>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => onRename(p)}
-                    disabled={busy !== null}
-                    className="dc-btn-ghost"
-                    style={{ fontSize: '.65rem', padding: '.25rem .55rem' }}
-                  >
-                    Rename
-                  </button>
-                  <button
-                    onClick={() => onCycleAlumni(p)}
-                    disabled={busy !== null}
-                    className="dc-btn-ghost"
-                    style={{ fontSize: '.65rem', padding: '.25rem .55rem' }}
-                    title="Cycle: Auto → Alumni → Current → Auto"
-                  >
-                    {busy === p.id ? '…' : nextStatusAction(p)}
-                  </button>
-                  <button
-                    onClick={() => onToggleHide(p)}
-                    disabled={busy !== null}
-                    className="dc-btn-ghost"
-                    style={{ fontSize: '.65rem', padding: '.25rem .55rem' }}
-                  >
-                    {p.is_hidden ? 'Unhide' : 'Hide'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        {currentProfiles.map(renderCard)}
       </div>
+      {alumniProfiles.length > 0 && (
+        <>
+          {/* Alumni (auto + forced) get their own block under the current
+              roster so the active league reads first and departures don't
+              interleave with it. */}
+          <div style={{ marginTop: '1.5rem', marginBottom: '.6rem', display: 'flex', alignItems: 'baseline', gap: '.6rem' }}>
+            <span className="text-mono text-cream-mute" style={{ fontSize: '.62rem', letterSpacing: '.18em', textTransform: 'uppercase' }}>
+              Alumni
+            </span>
+            <span style={{ opacity: 0.45, fontSize: '.75rem' }}>
+              {alumniProfiles.length} {alumniProfiles.length === 1 ? 'person' : 'people'} no longer in the league
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))', gap: '.5rem' }}>
+            {alumniProfiles.map(renderCard)}
+          </div>
+        </>
+      )}
     </>
   )
+
+  function renderCard(p: ProfileRow) {
+    const isSel = selected.has(p.id)
+    return (
+      <div key={p.id} className="card" style={{ padding: '.45rem .7rem', opacity: p.is_hidden ? 0.55 : 1 }}>
+        <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <input
+            type="checkbox"
+            checked={isSel}
+            onChange={() => toggleSelect(p.id)}
+            style={{ transform: 'scale(1.15)', cursor: 'pointer' }}
+          />
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: '1rem', display: 'flex', gap: '.5rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
+              <span>{p.canonical_name}</span>
+              <span className="text-mono text-cream-mute" style={{ fontSize: '.55rem', letterSpacing: '.18em', textTransform: 'uppercase' }}>
+                {statusLabel(p)}
+                {p.managers.length > 1 && <> · {p.managers.length} merged</>}
+              </span>
+            </div>
+            {p.managers.length > 0 && (
+              <div style={{ marginTop: '.2rem', fontSize: '.7rem', color: 'var(--cream-mute)', display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+                {p.managers.map((m, i) => (
+                  <span key={m.id}>
+                    {i > 0 && <span style={{ opacity: 0.4 }}>· </span>}
+                    {m.display_name ?? 'Unknown'}
+                    {m.team_name && m.team_name !== m.display_name && (
+                      <span style={{ opacity: 0.55 }}> ({m.team_name})</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => onRename(p)}
+              disabled={busy !== null}
+              className="dc-btn-ghost"
+              style={{ fontSize: '.65rem', padding: '.25rem .55rem' }}
+            >
+              Rename
+            </button>
+            <button
+              onClick={() => onCycleAlumni(p)}
+              disabled={busy !== null}
+              className="dc-btn-ghost"
+              style={{ fontSize: '.65rem', padding: '.25rem .55rem' }}
+              title="Cycle: Auto → Alumni → Current → Auto"
+            >
+              {busy === p.id ? '…' : nextStatusAction(p)}
+            </button>
+            <button
+              onClick={() => onToggleHide(p)}
+              disabled={busy !== null}
+              className="dc-btn-ghost"
+              style={{ fontSize: '.65rem', padding: '.25rem .55rem' }}
+            >
+              {p.is_hidden ? 'Unhide' : 'Hide'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 }
