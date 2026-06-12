@@ -64,7 +64,7 @@ body { background: var(--cream); color: var(--ink); }
 }
 .st-col:first-child { text-align: center; }
 .st-col:nth-child(2) { text-align: left; }
-.st-col:nth-child(3) { text-align: center; transform: translateX(3px); }
+.st-col:nth-child(3) { text-align: center; transform: translateX(7px); }
 /* Active sort: full-strength bold ink against the faded siblings — no
    arrow, so titles don't shift when the sort moves. */
 .st-col.is-sort { color: var(--ink); font-weight: 900; }
@@ -83,7 +83,14 @@ body { background: var(--cream); color: var(--ink); }
 .st-val.st-val--all { color: #4a6a88; }
 
 .st-val.st-val--all {
-    align-self: start;
+    align-self: center;
+    position: relative;
+}
+.st-val.st-val--all small {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
 }
 
 /* Rows */
