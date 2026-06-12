@@ -400,6 +400,36 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       description: `A fantasy football rivalry tracked in ${meta.name}'s almanac on The Sunday Chronicle.`,
     }
   }
+  // Manager file: /leagues/<slug>/managers/manager.html?id=<uid>
+  // Gets a personal "manager file" card — name, career strip, rings.
+  // Without ?id= it falls through to the chapter card below.
+  if (file === 'managers/manager.html') {
+    const uid = req.nextUrl.searchParams.get('id')
+    if (uid) {
+      const url = new URL(`/api/og/manager/${meta.slug}/${encodeURIComponent(uid)}`, req.nextUrl.origin).toString()
+      return {
+        url,
+        title: `${meta.name} · The Manager File`,
+        description: `One manager's complete file from ${meta.name}'s archives — record, rings, rivalries, and tendencies.`,
+      }
+    }
+  }
+  // Matchup preview: /leagues/<slug>/live-season/matchup-preview/?m=<uid>
+  // Gets a fight-poster card for that manager's game (no ?m= → Game of
+  // the Week). The image route falls back to an offseason card when no
+  // live week exists, so this link never loses its preview.
+  if (file === 'live-season/matchup-preview/index.html') {
+    const mUid = req.nextUrl.searchParams.get('m')
+    const url = new URL(
+      `/api/og/matchup/${meta.slug}${mUid ? `?m=${encodeURIComponent(mUid)}` : ''}`,
+      req.nextUrl.origin,
+    ).toString()
+    return {
+      url,
+      title: `${meta.name} · This Week's Matchup`,
+      description: `An upcoming head-to-head in ${meta.name} — records, form, projections, and the all-time ledger.`,
+    }
+  }
   // Season detail: /leagues/<slug>/seasons/season.html?year=YYYY
   if (file === 'seasons/season.html') {
     const yearStr = req.nextUrl.searchParams.get('year')
