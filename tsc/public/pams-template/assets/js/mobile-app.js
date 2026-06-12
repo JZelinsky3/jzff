@@ -45,6 +45,21 @@
         milestones: 'live', trades: 'live', 'manager-dna': 'live',
     };
 
+    // Free tier swaps the bar: no Live tab, Managers promoted to its own
+    // tab, History links straight to Seasons (Record Book + Draft History
+    // are paid, filed under More), and everything paid lights More.
+    var UDFA_TAB_OF_PAGE = {
+        hub: 'home',
+        standings: 'standings',
+        seasons: 'history', season: 'history',
+        managers: 'managers', manager: 'managers',
+        records: 'more', draft: 'more',
+        rivalries: 'more', rivalry: 'more',
+        'live-season': 'more', 'matchup-preview': 'more', pickems: 'more',
+        powerrank: 'more', 'best-coach': 'more', 'records-watch': 'more',
+        milestones: 'more', trades: 'more', 'manager-dna': 'more',
+    };
+
     // Chapters that lock on the free tier. KEEP IN SYNC with
     // UDFA_LOCKED_PAGE_PATTERNS in src/lib/leagueTier.ts (and nav.js's
     // UDFA_LOCKED_CHAPTER_KEYS) — this is the badge-only mirror of that list.
@@ -78,6 +93,7 @@
         history: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
         more: '<svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg>',
         live: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/><path d="M8.5 15.5a5 5 0 0 1 0-7"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M15.5 15.5a5 5 0 0 0 0-7"/><path d="M19.1 19.1a10 10 0 0 0 0-14.2"/></svg>',
+        managers: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
         back: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14 5 7 12 14 19"/></svg>',
         star: function (on) {
             return '<svg id="nav-bookmark-svg" width="20" height="20" viewBox="0 0 24 24" fill="' + (on ? '#e8c889' : 'none') + '" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6L12 16.8 6.6 19.7l1.1-6L3.2 9.4l6.1-.8z"/></svg>';
@@ -276,15 +292,28 @@
             + (window.location.search ? window.location.search + '&' : '?')
             + 'view=desktop';
 
+        // Free tier: Managers lives on the tab bar, so the Society group is
+        // just Rivalries — followed by every paid chapter, marked locked, so
+        // the whole catalog is still discoverable from one place.
+        var society = udfa
+            ? '<span class="m-sheet-label">The Society</span>' +
+              sheetRow('rivalries/', 'Rivalries') +
+              '<div class="m-sheet-divider"></div>' +
+              '<span class="m-sheet-label">With a paid plan</span>' +
+              sheetRow('records.html', 'Record Book', { locked: true }) +
+              sheetRow('draft/', 'Draft History', { locked: true }) +
+              sheetRow('live-season/', 'Live Season', { locked: true })
+            : '<span class="m-sheet-label">The Society</span>' +
+              sheetRow('managers/', 'Managers') +
+              sheetRow('rivalries/', 'Rivalries');
+
         var more = document.createElement('dialog');
         more.className = 'm-sheet';
         more.id = 'm-sheet-more';
         more.innerHTML =
             '<div class="m-sheet-handle" aria-hidden></div>' +
             '<div class="m-sheet-title">' + escapeHtml(ctx.name || 'The Almanac') + '</div>' +
-            '<span class="m-sheet-label">The Society</span>' +
-            sheetRow('managers/', 'Managers') +
-            sheetRow('rivalries/', 'Rivalries') +
+            society +
             '<div class="m-sheet-divider"></div>' +
             account +
             '<div class="m-sheet-divider"></div>' +
@@ -379,7 +408,7 @@
         var page = nav.dataset.page || '';
         var chapter = nav.dataset.chapter || '';
         var backHref = nav.dataset.backHref || '';
-        var activeTab = TAB_OF_PAGE[page] || '';
+        var activeTab = (ctx.leagueTier === 'udfa' ? UDFA_TAB_OF_PAGE : TAB_OF_PAGE)[page] || '';
 
         // Title: league name, tail italicized gold (same split as desktop).
         var parts = (ctx.name || 'Archive').trim().split(/\s+/);
@@ -445,12 +474,19 @@
         var tabbar = document.createElement('nav');
         tabbar.className = 'm-tabbar';
         tabbar.setAttribute('aria-label', 'Almanac sections');
-        tabbar.innerHTML =
-            tab('home', 'Home', './') +
-            tab('standings', 'Standings', 'standings.html') +
-            tab('history', 'History', '', true) +
-            tab('live', 'Live', 'live-season/') +
-            tab('more', 'More', '', true);
+        // Free tier: Live (paid) leaves the bar, Managers takes its slot,
+        // and History is a straight link — Seasons is its only free target.
+        tabbar.innerHTML = udfa
+            ? tab('home', 'Home', './') +
+              tab('standings', 'Standings', 'standings.html') +
+              tab('history', 'History', 'seasons/') +
+              tab('managers', 'Managers', 'managers/') +
+              tab('more', 'More', '', true)
+            : tab('home', 'Home', './') +
+              tab('standings', 'Standings', 'standings.html') +
+              tab('history', 'History', '', true) +
+              tab('live', 'Live', 'live-season/') +
+              tab('more', 'More', '', true);
         document.body.appendChild(tabbar);
 
         var sheets = buildSheets(ctx);
@@ -474,6 +510,14 @@
             );
         } catch (e) { /* fall back to /pricing */ }
 
+        // Same chapter in the demo league (/demo/ mirrors the league paths),
+        // so a locked viewer can try the page before paying for it.
+        var demoHref = '/demo/';
+        try {
+            var m = window.location.pathname.match(/^\/leagues\/[^/]+\/(.*)$/);
+            if (m && m[1]) demoHref = '/demo/' + m[1];
+        } catch (e) { /* fall back to the demo hub */ }
+
         var overlay = document.createElement('div');
         overlay.id = 'dc-lock-overlay';
         overlay.className = 'dc-lock-overlay';
@@ -491,6 +535,9 @@
                 '<a class="dc-locked-cta" href="' + backHref + '" target="_top">' +
                     'See plans &amp; upgrade' +
                 '</a>' +
+                '<div>' +
+                    '<a class="dc-locked-ghost" href="' + demoHref + '" target="_top">Try it in the demo league</a>' +
+                '</div>' +
                 '<div>' +
                     '<a class="dc-locked-ghost" href="./" target="_top">← Back to the hub</a>' +
                 '</div>' +

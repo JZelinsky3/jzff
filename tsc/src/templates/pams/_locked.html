@@ -119,10 +119,20 @@
             See plans &amp; upgrade <span>→</span>
         </a>
         <div>
+            <a class="locked-ghost" id="locked-demo-link" href="/demo/" target="_top">Try it in the demo league</a>
+        </div>
+        <div>
             <a class="locked-ghost" href="./" target="_top">← Back to the hub</a>
         </div>
     </div>
 </div>
 
+<script>
+// Deep-link the same chapter in the demo league (/demo/ mirrors league paths).
+(function () {
+    var m = window.location.pathname.match(/^\/leagues\/[^/]+\/(.*)$/);
+    if (m && m[1]) document.getElementById('locked-demo-link').href = '/demo/' + m[1];
+})();
+</script>
 </body>
 </html>
