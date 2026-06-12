@@ -1,27 +1,33 @@
 // Home-screen icon generator for published league sites.
 // URL: /api/og/icon/<slug>?s=<px>   (default 512; apple-touch-icon uses 180)
 //
-// Rendered as a vintage bookplate so an added-to-home-screen league reads
-// like a real app tile: ink field, double gold frame, diamond crest, serif-italic
-// monogram, EST line. Referenced by the apple-touch-icon link and the web
-// app manifest the almanac route injects into every served page.
+// App-tile design: ink field with a warm halo, the league's abbreviation
+// in serif italic split two-tone (front half cream, back half + period in
+// gold — "PA" + "MS."), and a small matching "TSC." wordmark beneath. No
+// border/frame — iOS rounds the corners itself, so a drawn square outline
+// just fights the mask. Referenced by the apple-touch-icon link and the
+// web app manifest the almanac route injects into every served page.
 
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getLeagueBundle } from '@/lib/leagueBundleCache'
 
 export const runtime = 'nodejs'
 
 const FONT_DIR = path.join(process.cwd(), 'public', 'og', 'fonts')
 
-function monogram(name: string): string {
-  const words = (name ?? '').trim().split(/\s+/).filter(Boolean)
-  if (words.length === 0) return '?'
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
-  return words.slice(0, 3).map((w) => w[0]).join('').toUpperCase()
+// Same fallback the almanac route uses for {{LEAGUE_ABBR}} — first letter
+// of each word, so the icon always matches the abbreviation shown on-site.
+function abbreviate(name: string): string {
+  const initials = (name ?? '')
+    .replace(/[^A-Za-z\s]/g, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0]!.toUpperCase())
+    .join('')
+  return initials || (name ?? '?').slice(0, 4).toUpperCase()
 }
 
 export async function GET(
@@ -33,19 +39,12 @@ export async function GET(
   const db = createAdminClient()
   const { data: league } = await db
     .from('leagues')
-    .select('id, name, slug, published_at')
+    .select('id, name, slug, abbreviation, published_at')
     .eq('slug', slug)
     .maybeSingle()
   if (!league || !league.published_at) {
     return new Response('Not found', { status: 404 })
   }
-
-  let founded: number | null = null
-  try {
-    const bundle = await getLeagueBundle(league.id, league.slug)
-    const lf = bundle['league.json'] as { founded?: number | null } | undefined
-    founded = lf?.founded ?? null
-  } catch { /* icon still renders without the EST line */ }
 
   const sParam = Number(req.nextUrl.searchParams.get('s'))
   // Render at a clean square size; home screens downscale fine but icons
@@ -53,17 +52,19 @@ export async function GET(
   const size = Number.isFinite(sParam) ? Math.min(512, Math.max(120, Math.round(sParam))) : 512
   const u = size / 512 // design unit — everything below is sized at 512 and scaled
 
-  const initials = monogram(league.name)
-  const initialsSize =
-    initials.length <= 1 ? 280 : initials.length === 2 ? 220 : 168
+  const abbr = (league.abbreviation?.trim() || abbreviate(league.name)).toUpperCase().slice(0, 6)
+  // Two-tone split: front half cream, back half + trailing period gold
+  // ("PAMS" → "PA" + "MS.", "TSC" → "TS" + "C.").
+  const cut = Math.ceil(abbr.length / 2)
+  const headChars = abbr.slice(0, cut)
+  const tailChars = abbr.slice(cut)
+  const abbrSize =
+    abbr.length <= 2 ? 232 : abbr.length === 3 ? 196 : abbr.length === 4 ? 156 : abbr.length === 5 ? 128 : 108
 
-  const [serifItalic, mono] = await Promise.all([
-    readFile(path.join(FONT_DIR, 'DMSerifDisplay-Italic.ttf')),
-    readFile(path.join(FONT_DIR, 'JetBrainsMono-Bold.ttf')),
-  ])
+  const serifItalic = await readFile(path.join(FONT_DIR, 'DMSerifDisplay-Italic.ttf'))
 
   const gold = '#e8c889'
-  const goldDeep = '#a88a4a'
+  const cream = '#f4ebd8'
   const ink = '#0e1620'
 
   return new ImageResponse(
@@ -73,88 +74,51 @@ export async function GET(
           width: `${size}px`,
           height: `${size}px`,
           display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
           background: ink,
           position: 'relative',
+          fontFamily: 'DMSerif',
         }}
       >
         {/* Warm halo behind the monogram */}
         <div
           style={{
             position: 'absolute',
-            inset: 0,
+            top: 0, left: 0, right: 0, bottom: 0,
             display: 'flex',
-            background: `radial-gradient(circle at 50% 46%, ${gold}26 0%, transparent 62%)`,
+            background: `radial-gradient(circle at 50% 44%, ${gold}2b 0%, transparent 64%)`,
           }}
         />
-        {/* Double bookplate frame */}
+        {/* League abbreviation, two-tone with the trailing period in gold */}
         <div
           style={{
-            position: 'absolute',
-            top: `${28 * u}px`, left: `${28 * u}px`, right: `${28 * u}px`, bottom: `${28 * u}px`,
             display: 'flex',
-            border: `${Math.max(2, 5 * u)}px solid ${goldDeep}`,
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: `${44 * u}px`, left: `${44 * u}px`, right: `${44 * u}px`, bottom: `${44 * u}px`,
-            display: 'flex',
-            border: `${Math.max(1, 2 * u)}px solid ${gold}66`,
-          }}
-        />
-        {/* Crest star, monogram, rule, EST line */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: `${10 * u}px`,
+            alignItems: 'baseline',
+            fontStyle: 'italic',
+            fontSize: `${abbrSize * u}px`,
+            lineHeight: 1,
+            letterSpacing: '-0.02em',
           }}
         >
-          {/* Crest mark — drawn (rotated square) because neither OG font
-              carries the ✦ glyph the site uses elsewhere */}
-          <div
-            style={{
-              display: 'flex',
-              width: `${20 * u}px`,
-              height: `${20 * u}px`,
-              background: gold,
-              transform: 'rotate(45deg)',
-              marginBottom: `${6 * u}px`,
-            }}
-          />
-          <div
-            style={{
-              display: 'flex',
-              fontFamily: 'DMSerif',
-              fontStyle: 'italic',
-              fontSize: `${initialsSize * u}px`,
-              lineHeight: 1,
-              color: gold,
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {initials}
-          </div>
-          <div style={{ display: 'flex', width: `${96 * u}px`, height: `${Math.max(1, 2 * u)}px`, background: `${gold}55` }} />
-          {founded != null && (
-            <div
-              style={{
-                display: 'flex',
-                fontFamily: 'JetBrains',
-                fontWeight: 700,
-                fontSize: `${22 * u}px`,
-                letterSpacing: '0.3em',
-                color: '#837b6a',
-              }}
-            >
-              EST. {founded}
-            </div>
-          )}
+          <span style={{ display: 'flex', color: cream }}>{headChars}</span>
+          <span style={{ display: 'flex', color: gold }}>{tailChars}.</span>
+        </div>
+        {/* Small TSC. wordmark, same treatment, kept quiet */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            fontStyle: 'italic',
+            fontSize: `${42 * u}px`,
+            lineHeight: 1,
+            marginTop: `${30 * u}px`,
+            opacity: 0.55,
+          }}
+        >
+          <span style={{ display: 'flex', color: cream }}>TS</span>
+          <span style={{ display: 'flex', color: gold }}>C.</span>
         </div>
       </div>
     ),
@@ -163,7 +127,6 @@ export async function GET(
       height: size,
       fonts: [
         { name: 'DMSerif', data: serifItalic, style: 'italic' as const, weight: 400 as const },
-        { name: 'JetBrains', data: mono, style: 'normal' as const, weight: 700 as const },
       ],
       headers: {
         'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
