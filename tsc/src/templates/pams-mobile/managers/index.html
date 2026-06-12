@@ -30,24 +30,15 @@
     text-decoration: none; color: inherit;
 }
 .mg-stub {
-    flex: none; width: 70px;
+    flex: none; width: 62px;
     position: relative;
     display: flex; align-items: center; justify-content: center;
     border-right: 1px dashed var(--ink-line);
 }
-.mg-stub::before {
-    content: 'ADMIT ONE';
-    position: absolute; left: 5px; top: 50%;
-    transform: translateY(-50%);
-    writing-mode: vertical-rl;
-    font-family: var(--mono); font-weight: 700;
-    font-size: .38rem; letter-spacing: .24em; text-transform: uppercase;
-    color: var(--cream-mute); opacity: .55;
-}
 /* Punched holes riding the perforation line, filled with the page bg. */
 .mg-ticket::before, .mg-ticket::after {
     content: '';
-    position: absolute; left: 64px;
+    position: absolute; left: 56px;
     width: 12px; height: 12px;
     border-radius: 50%;
     background: var(--ink);

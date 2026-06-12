@@ -9,7 +9,32 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <style>
-:root { --riv: #c96a4a; }
+/* Crimson / Charcoal / Noir — same token re-point as rivalries/index.html
+   so the detail page sits in the same dark room as its chapter. */
+:root {
+    --riv:           #dc2626;
+    --ink:           #0a0a0a;
+    --ink-soft:      #111111;
+    --ink-card:      #111111;
+    --ink-line:      #272727;
+    --ink-line-soft: #1e1e1e;
+    --cream:         #f3f4f6;
+    --cream-soft:    #d1d5db;
+    --cream-mute:    #6b7280;
+    --m-chrome-bg:   #0d0d0d;
+    --m-chrome-bg2:  #101010;
+}
+.m-tab.is-active { color: var(--riv); }
+.m-tab.is-active::before { background: var(--riv); }
+.site-glow {
+    background-image:
+        radial-gradient(circle at 12% 18%, rgba(220, 38, 38, .07) 0%, transparent 48%),
+        radial-gradient(circle at 88% 82%, rgba(220, 38, 38, .04) 0%, transparent 44%);
+}
+.site-grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .45;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+}
 
 /* Tale of the tape */
 .rd-tape { text-align: center; padding: 1.1rem 0 .4rem; }
@@ -73,6 +98,7 @@
 </head>
 <body>
 <div class="site-glow"></div>
+<div class="site-grain" aria-hidden="true"></div>
 
 <nav id="site-nav" data-page="rivalry" data-chapter="Head-to-Head" data-back-href="rivalries/"></nav>
 <script src="/pams-template/assets/js/mobile-app.js"></script>

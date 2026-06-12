@@ -177,12 +177,17 @@
 .dr-r1-pick .m-mono { flex: none; }
 
 /* Loyalty: favorite player + NFL team leanings, one condensed card per manager */
+.dr-loyal-mgr {
+    padding-bottom: .35rem;
+    border-bottom: 1px solid var(--ink-line);
+}
 .dr-loyal-player {
     display: flex; align-items: center; gap: .5rem;
     margin-top: .45rem; min-width: 0;
 }
 .dr-loyal-player .dr-player {
     flex: 0 1 auto;
+    font-size: .78rem;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .dr-loyal-player .m-mono { flex: none; }
@@ -536,7 +541,7 @@
                         }).join(' · ') + '</div>';
                 }).join('');
                 return '<a class="m-card" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
-                    '<div class="dr-r1-mgr">' + esc(m.name) + '</div>' +
+                    '<div class="dr-r1-mgr dr-loyal-mgr">' + esc(m.name) + '</div>' +
                     (favHtml || '<div class="dr-loyal-years m-mono" style="margin-top:.4rem">No picks recorded.</div>') +
                     (teams.length
                         ? '<div class="dr-loyal-teams m-mono">Top NFL teams: ' + esc(teams.join(' · ')) + '</div>'
