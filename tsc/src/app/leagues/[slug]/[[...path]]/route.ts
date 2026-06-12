@@ -227,6 +227,16 @@ const MOBILE_PRELOADS_BY_FILE: Record<string, string[]> = {
     'data/rivalries.json',
     'data/seasons_directory.json',
   ],
+  // Per-page static fetches only — query-dependent files (manager.html?id=,
+  // seasons/<year>.json, drafts/<year>.json) can't be preloaded from here.
+  'standings.html': ['data/managers_directory.json', 'data/league.json'],
+  'records.html': ['data/record_book.json'],
+  'draft/index.html': ['data/drafts/drafts_directory.json'],
+  'managers/index.html': ['data/managers_directory.json'],
+  'rivalries/index.html': ['data/rivalries.json'],
+  'rivalries/rivalry.html': ['data/rivalries.json'],
+  'seasons/index.html': ['data/seasons_directory.json'],
+  'seasons/season.html': ['data/seasons_directory.json'],
 }
 
 function injectBaseTag(html: string, meta: LeagueMeta, file: string, servedMobile = false): string {
@@ -660,12 +670,12 @@ export async function GET(
   // structure without the gated numbers. (The manager DNA + top-perf
   // cards have their own in-place locked variants triggered by the same
   // JSON 404.)
-  const lockReason = await getLockReason(meta.id, meta.owner_id)
-  const lockKind = classifyLockedPath(resolved.file, lockReason)
-  if (lockKind === 'data') {
-    return new NextResponse('Locked', { status: 404 })
-  }
-  const pageLocked = lockKind === 'page'
+  // The lookup is 1–2 Supabase round-trips, so it starts now and each branch
+  // awaits it in parallel with its own I/O (auth lookup / bundle build).
+  const lockReasonPromise = getLockReason(meta.id, meta.owner_id)
+  // Early-return paths below may never await this; keep a rejection from
+  // surfacing as an unhandled error. Awaits still see the real rejection.
+  lockReasonPromise.catch(() => {})
 
   if (resolved.kind === 'html') {
     // Mobile fork: phones (or anyone with the mobile cookie) get the template
@@ -701,7 +711,11 @@ export async function GET(
     // cookie, we drop CDN caching for HTML responses (data/*.json stay
     // CDN-cached since they don't vary by user).
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const [lockReason, { data: { user } }] = await Promise.all([
+      lockReasonPromise,
+      supabase.auth.getUser(),
+    ])
+    const pageLocked = classifyLockedPath(resolved.file, lockReason) === 'page'
     const isCommish = !!user && !!meta.owner_id && user.id === meta.owner_id
     const isSignedIn = !!user
     let isBookmarked = false
@@ -762,8 +776,16 @@ export async function GET(
     })
   }
 
-  // data/<file> — serve from the export bundle
-  const bundle = await getBundle(meta.id, meta.slug)
+  // data/<file> — serve from the export bundle. The bundle build runs in
+  // parallel with the lock lookup: it's per-league shared work that the
+  // page's unlocked data fetches need warm anyway.
+  const [dataLockReason, bundle] = await Promise.all([
+    lockReasonPromise,
+    getBundle(meta.id, meta.slug),
+  ])
+  if (classifyLockedPath(resolved.file, dataLockReason) === 'data') {
+    return new NextResponse('Locked', { status: 404 })
+  }
   const value = bundle[resolved.file]
   if (value === undefined) {
     return new NextResponse('Data not found', { status: 404 })

@@ -86,6 +86,12 @@
 .rb-card.is-open .rb-hint-more { display: none; }
 .rb-card:not(.is-open) .rb-hint-less { display: none; }
 .rb-other-name { min-width: 0; flex: 1; font-size: .8rem; font-weight: 500; color: var(--cream-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-other-name small {
+    display: block;
+    font-family: var(--mono); font-size: .52rem;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
 .rb-other-val { flex: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--rec); }
 </style>
 </head>
@@ -153,11 +159,11 @@
         ],
         season: [
             ['highest_season_pf', 'Most Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
-            ['highest_ppg', 'Best PPG, Season', function (e) { return num(e.avg_ppg); }, seasonCtx],
+            ['highest_ppg', 'Best PPG, Season', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.avg_ppg); }, seasonCtx],
             ['best_reg_season_records', 'Best Record', function (e) { return rec(e.reg_record); }, seasonCtx],
+            ['worst_reg_season_records', 'Worst Record', function (e) { return rec(e.reg_record); }, seasonCtx],
             ['lowest_season_pf', 'Fewest Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
-            ['highest_single_week_in_season', 'Season High Week', function (e) { return num(e.high_week_score); }, weekCtx('high_week_when')],
-            ['lowest_single_week_in_season', 'Season Low Week', function (e) { return num(e.low_week_score); }, weekCtx('low_week_when')],
+            ['most_points_against', 'Most Points Against', function (e) { return num(e.reg_pa, 0); }, seasonCtx],
         ],
         career: [
             ['longest_win_streaks', 'Longest Win Streak', function (e) { return e.length + 'W'; }, streakCtx],
@@ -170,8 +176,10 @@
             ['best_avg_finish', 'Best Avg Finish', function (e) { return num(e.avg_final_rank); }, careerCtx, null, true],
         ],
         feats: [
-            ['clutch_5pt', 'Clutch Wins (by <5)', countVal, featCtx, 'clutch'],
-            ['unclutch_5pt', 'Heartbreak Losses (<5)', countVal, featCtx, 'clutch'],
+            // One-score games merged into a single W–L record per manager,
+            // same as the desktop Clutch column.
+            ['__clutch5', 'One-Score Record (<5 pts)', clutchVal, clutchCtx],
+            ['__clutch1', 'Walk-Off Record (<1 pt)', clutchVal, clutchCtx],
             ['boom_150', '150-Point Games', countVal, featCtx, 'boom_bust'],
             ['boom_175', '175-Point Games', countVal, featCtx, 'boom_bust'],
             ['bust_80', 'Sub-80 Stinkers', countVal, featCtx, 'boom_bust'],
@@ -183,9 +191,6 @@
     // "59-42-0" → "59-42" when there are no ties to show.
     function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
     function seasonCtx(e) { return e.season + ' · ' + (e.team_name || '') + (e.reg_record ? ' · ' + rec(e.reg_record) : ''); }
-    function weekCtx(whenKey) {
-        return function (e) { return e.season + (e[whenKey] ? ' · ' + e[whenKey] : ''); };
-    }
     function streakCtx(e) {
         var span = e.start_season === e.end_season
             ? e.start_season + ' · W' + e.start_week + '–W' + e.end_week
@@ -199,8 +204,63 @@
     function featCtx(e) {
         return e.last_year ? 'Last: ' + e.last_year + ' · W' + e.last_week + (e.last_opp_name ? ' vs ' + e.last_opp_name : '') : '';
     }
+    function clutchVal(e) { return e.wins + '–' + e.losses; }
+    function clutchCtx(e) {
+        return e.last
+            ? 'Last ' + e.last.type + ': ' + e.last.year + ' · W' + e.last.week + (e.last.opp ? ' vs ' + e.last.opp : '')
+            : '';
+    }
+
+    // Merge clutch wins + losses by manager into one W–L row — ported from
+    // the desktop record book so both show the same combined record.
+    function mergeClutch(wins, losses) {
+        var map = {};
+        function ensure(r) {
+            if (!map[r.user_id]) map[r.user_id] = { user_id: r.user_id, name: r.name, wins: 0, losses: 0, last: null };
+            return map[r.user_id];
+        }
+        function take(r, type) {
+            var cur = ensure(r);
+            if (type === 'W') cur.wins = r.count; else cur.losses = r.count;
+            if (r.count > 0) {
+                var stamp = (r.last_year || 0) * 100 + (r.last_week || 0);
+                if (!cur.last || stamp > cur.last.stamp) {
+                    cur.last = { stamp: stamp, type: type, week: r.last_week, year: r.last_year, opp: r.last_opp_name };
+                }
+            }
+        }
+        (wins || []).forEach(function (r) { take(r, 'W'); });
+        (losses || []).forEach(function (r) { take(r, 'L'); });
+        return Object.keys(map).map(function (k) { return map[k]; })
+            .filter(function (r) { return r.wins + r.losses > 0; })
+            .sort(function (a, b) {
+                return (b.wins - a.wins) || (a.losses - b.losses) || a.name.localeCompare(b.name);
+            });
+    }
+
+    function entriesFor(def) {
+        var key = def[0];
+        if (key === '__clutch5') return mergeClutch((book.clutch || {}).clutch_5pt, (book.clutch || {}).unclutch_5pt);
+        if (key === '__clutch1') return mergeClutch((book.clutch || {}).clutch_1pt, (book.clutch || {}).unclutch_1pt);
+        var src = book[def[4] || section] || {};
+        return src[key];
+    }
 
     function holderName(e) { return e.owner || e.name || e.holder || '—'; }
+    function holderNameFor(key, e) {
+        // Both managers matter in a combined-score game.
+        if (key.indexOf('combined_score') !== -1 && e.opp_owner) {
+            return holderName(e) + ' vs ' + e.opp_owner;
+        }
+        return holderName(e);
+    }
+    // Short context shown on every ranked row (the big top entry keeps the
+    // full ctx line): games get "year · Wk", seasons get the year.
+    function rowCtx(e) {
+        if (section === 'weekly') return e.season != null ? e.season + (e.week != null ? ' · Wk ' + e.week : '') : '';
+        if (section === 'season') return e.season != null ? String(e.season) : '';
+        return '';
+    }
 
     function render() {
         var box = document.getElementById('cards');
@@ -211,8 +271,7 @@
         var defs = DEFS[section] || [];
         var html = defs.map(function (def) {
             var key = def[0], label = def[1], val = def[2], ctx = def[3], currentOnly = def[5];
-            var src = book[def[4] || section] || {};
-            var entries = src[key];
+            var entries = entriesFor(def);
             if (!entries || !entries.length) return '';
             if (currentOnly) {
                 entries = entries.filter(function (e) { return e.is_current_member !== false; });
@@ -225,14 +284,16 @@
                 '<div class="rb-card-label">' + esc(label) + '</div>' +
                 '<div class="rb-top">' +
                     '<span class="rb-top-value">' + esc(val(top)) + '</span>' +
-                    '<span class="rb-top-holder"><b>' + esc(holderName(top)) + '</b>' +
+                    '<span class="rb-top-holder"><b>' + esc(holderNameFor(key, top)) + '</b>' +
                         '<small>' + esc(ctx(top) || '') + '</small></span>' +
                 '</div>' +
                 (others.length
                     ? '<div class="rb-others">' + others.map(function (e, i) {
+                        var sub = rowCtx(e);
                         return '<div class="rb-other' + (i >= 2 ? ' rb-extra' : '') + '">' +
                             '<span class="rb-other-rank">' + (i + 2) + '</span>' +
-                            '<span class="rb-other-name">' + esc(holderName(e)) + '</span>' +
+                            '<span class="rb-other-name">' + esc(holderNameFor(key, e)) +
+                                (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
                             '<span class="rb-other-val">' + esc(val(e)) + '</span>' +
                         '</div>';
                     }).join('') + '</div>'
