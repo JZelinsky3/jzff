@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{{LEAGUE_NAME}} · {{LEAGUE_ABBR}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
-
 /* ── Gold ticker — the almanac's identity stripe, kept thin ── */
 .m-ticker {
     background: var(--gold);
@@ -73,7 +74,7 @@
     border-radius: 50%;
     border: 1px solid var(--gold-deep);
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.3rem;
+    color: var(--gold);
     background: rgba(232, 200, 137, .08);
 }
 .m-champ-name {
@@ -122,6 +123,10 @@
 .m-standrow-rings { flex: none; font-size: .68rem; color: var(--gold); letter-spacing: .08em; }
 
 /* ── Record teaser ── */
+#recordCard, .m-riv-fade {
+    transition: opacity .35s ease;
+}
+.is-swapping { opacity: 0; }
 .m-record-value {
     font-family: var(--serif);
     font-size: 2rem; line-height: 1;
@@ -136,7 +141,7 @@
 
 /* ── Managers rail ── */
 .m-mgr-rail {
-    display: flex; gap: .55rem;
+    display: flex; gap: .3rem;
     overflow-x: auto;
     margin: 0 -0.9rem;
     padding: .15rem .9rem .4rem;
@@ -145,21 +150,31 @@
 .m-mgr-rail::-webkit-scrollbar { display: none; }
 .m-mgr-chip {
     flex: none;
-    width: 76px;
+    width: 66px;
     text-align: center;
     text-decoration: none; color: inherit;
 }
 .m-mgr-ava {
+    position: relative;
     width: 52px; height: 52px;
-    margin: 0 auto .35rem;
-    border-radius: 50%;
+    margin: 0 auto .3rem;
+    border-radius: 12px;
     border: 1px solid var(--ink-line);
     background: var(--ink-card);
     display: flex; align-items: center; justify-content: center;
     font-family: var(--serif);
     font-size: 1.2rem; color: var(--gold);
+    overflow: hidden;
 }
-.m-mgr-chip.is-champ .m-mgr-ava { border-color: var(--gold-deep); }
+.m-mgr-ava img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+.m-mgr-chip.is-champ .m-mgr-ava {
+    border-color: var(--gold-deep);
+    box-shadow: 0 0 0 1px var(--gold-deep);
+}
 .m-mgr-chip-name {
     font-size: .68rem; font-weight: 600;
     color: var(--cream-soft);
@@ -223,7 +238,7 @@
     <section class="m-section" id="champSection" hidden>
         <a class="m-card m-champ" id="champCard" href="seasons/">
             <div class="m-champ-row">
-                <div class="m-champ-trophy" aria-hidden="true">🏆</div>
+                <div class="m-champ-trophy" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10v6a5 5 0 0 1-10 0V3z"/><path d="M7 5H4.5a1 1 0 0 0-1 1c0 2.4 1.7 4 3.7 4.3"/><path d="M17 5h2.5a1 1 0 0 1 1 1c0 2.4-1.7 4-3.7 4.3"/><path d="M12 14v3.5"/><path d="M8.5 21h7"/><path d="M9.5 21c0-2 .8-3.5 2.5-3.5s2.5 1.5 2.5 3.5"/></svg></div>
                 <div style="min-width:0">
                     <div class="m-kicker" id="champKicker">Defending Champion</div>
                     <div class="m-champ-name" id="champName"></div>
@@ -308,6 +323,10 @@
         if (n == null || isNaN(n)) return '—';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: 1 });
     }
+    // "59-42-0" → "59-42" when the league has no ties on the books.
+    function fmtRec(r) {
+        return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1');
+    }
 
     var grab = function (path) {
         return fetch(path).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
@@ -372,7 +391,7 @@
         document.getElementById('champName').innerHTML = '<em>' + esc(ch.owner_name) + '</em>';
         document.getElementById('champMeta').textContent = ch.team_name;
         var stats = [
-            [ch.record, 'Record'],
+            [fmtRec(ch.record), 'Record'],
             [num(ch.ppg), 'PPG'],
             [ch.championship_count + '×', 'Titles'],
         ];
@@ -382,7 +401,9 @@
     }
 
     function renderStandings(dir) {
-        var list = (dir && dir.managers) || [];
+        // Alumni stay out of the hub Table — the full standings page files
+        // them in their own section.
+        var list = ((dir && dir.managers) || []).filter(function (m) { return m.is_current; });
         if (!list.length) return;
         var ranked = list.slice().sort(function (a, b) {
             return (b.win_pct - a.win_pct) || (b.wins - a.wins) || (b.total_pf - a.total_pf);
@@ -394,19 +415,34 @@
                 '<span class="m-standrow-rank">' + (i + 1) + '</span>' +
                 '<span class="m-standrow-name">' + esc(m.name) + '<small>' + esc(m.team_latest || '') + '</small></span>' +
                 rings +
-                '<span class="m-standrow-rec">' + esc(m.total_record) + '</span>' +
+                '<span class="m-standrow-rec">' + esc(fmtRec(m.total_record)) + '</span>' +
             '</a>';
         }).join('');
     }
 
     function renderRecord(book) {
-        var rec = book && book.hub_records && book.hub_records[0];
-        if (!rec) return; // UDFA leagues: record_book.json 404s — section stays hidden
+        var recs = (book && book.hub_records) || [];
+        if (!recs.length) return; // UDFA leagues: record_book.json 404s — section stays hidden
         document.getElementById('recordSection').hidden = false;
-        document.getElementById('recordValue').textContent = rec.value;
-        // name/detail come from the export bundle (server-built markup, trusted)
-        document.getElementById('recordName').innerHTML = rec.label + ' — ' + rec.name;
-        document.getElementById('recordDetail').textContent = (rec.detail || '').replace(/<[^>]*>/g, '');
+        var idx = 0;
+        function show(rec) {
+            document.getElementById('recordValue').textContent = rec.value;
+            // name/detail come from the export bundle (server-built markup, trusted)
+            document.getElementById('recordName').innerHTML = rec.label + ' — ' + rec.name;
+            document.getElementById('recordDetail').textContent = (rec.detail || '').replace(/<[^>]*>/g, '');
+        }
+        show(recs[0]);
+        if (recs.length < 2) return;
+        var card = document.getElementById('recordCard');
+        setInterval(function () {
+            if (document.hidden) return;
+            idx = (idx + 1) % recs.length;
+            card.classList.add('is-swapping');
+            setTimeout(function () {
+                show(recs[idx]);
+                card.classList.remove('is-swapping');
+            }, 350);
+        }, 8000);
     }
 
     function renderManagers(dir) {
@@ -417,9 +453,14 @@
         document.getElementById('managersSection').hidden = false;
         document.getElementById('mgrRail').innerHTML = show.map(function (m) {
             var initial = (m.name || '?').trim().charAt(0).toUpperCase();
-            var sub = m.championships ? m.championships + '× champ' : (m.total_record || '');
+            // Real team avatar from the platform when the export has one;
+            // the initial underneath is the fallback if the image 404s.
+            var img = m.avatar
+                ? '<img src="' + esc(m.avatar) + '" alt="" loading="lazy" onerror="this.remove()">'
+                : '';
+            var sub = m.championships ? m.championships + '× champ' : fmtRec(m.total_record || '');
             return '<a class="m-mgr-chip' + (m.championships ? ' is-champ' : '') + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
-                '<div class="m-mgr-ava">' + esc(initial) + '</div>' +
+                '<div class="m-mgr-ava">' + esc(initial) + img + '</div>' +
                 '<div class="m-mgr-chip-name">' + esc(m.name) + '</div>' +
                 '<div class="m-mgr-chip-sub">' + esc(sub) + '</div>' +
             '</a>';
@@ -430,7 +471,10 @@
         var list = (data && data.rivalries) || [];
         if (!list.length) return;
         document.getElementById('rivalrySection').hidden = false;
-        document.getElementById('rivalryCards').innerHTML = list.slice(0, 2).map(function (r) {
+        var box = document.getElementById('rivalryCards');
+        box.className = 'm-riv-fade';
+
+        function card(r) {
             var mid = r.is_deadlocked ? 'TIED' : esc(r.leader_record);
             var sub = r.is_deadlocked
                 ? 'Dead even after ' + r.total_meetings
@@ -444,7 +488,25 @@
                 '</div>' +
                 '<div class="m-mono" style="text-align:center;margin-top:.45rem">' + sub + '</div>' +
             '</a>';
-        }).join('');
+        }
+
+        var start = 0;
+        function show() {
+            var pair = [list[start % list.length]];
+            if (list.length > 1) pair.push(list[(start + 1) % list.length]);
+            box.innerHTML = pair.map(card).join('');
+        }
+        show();
+        if (list.length <= 2) return;
+        setInterval(function () {
+            if (document.hidden) return;
+            start = (start + 2) % list.length;
+            box.classList.add('is-swapping');
+            setTimeout(function () {
+                show();
+                box.classList.remove('is-swapping');
+            }, 350);
+        }, 12000);
     }
 
     function renderSeasons(dir) {

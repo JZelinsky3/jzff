@@ -1196,6 +1196,19 @@ function computeStreaks(
 function buildManagersDirectory(s: Snapshot): unknown {
   const autoCurrent = currentManagerIdSet(s)
 
+  // Most-recent avatar_url across a profile group's identities, newest season
+  // first — same walk as the milestones builder's avatarFor.
+  const directoryAvatar = (g: ProfileGroup): string => {
+    for (let i = s.seasons.length - 1; i >= 0; i--) {
+      const mss = s.managerSeasonsBySeason.get(s.seasons[i].id) ?? []
+      for (const ms of mss) {
+        if (g.managerIds.has(ms.manager_id) && ms.avatar_url) return ms.avatar_url
+      }
+    }
+    for (const m of g.managers) if (m.avatar_url) return m.avatar_url
+    return ''
+  }
+
   const managers = buildProfileGroups(s)
     .filter((g) => !isGroupHidden(g))
     .map((g) => {
@@ -1214,8 +1227,25 @@ function buildManagersDirectory(s: Snapshot): unknown {
           const yb = s.seasons.find((sn) => sn.id === b.season_id)?.year ?? 0
           return yb - ya
         })[0]
+      // Average final finish across completed seasons that have a rank.
+      const liveIds = new Set(s.seasons.filter((sn) => sn.is_live).map((sn) => sn.id))
+      const ranks = allMs
+        .filter((ms) => !liveIds.has(ms.season_id) && ms.final_rank != null)
+        .map((ms) => ms.final_rank as number)
+      const avg_finish = ranks.length
+        ? Math.round((ranks.reduce((a, b) => a + b, 0) / ranks.length) * 10) / 10
+        : null
       const name = groupDisplayName(g)
       return {
+        avatar: directoryAvatar(g),
+        reg_record: recordStr(agg.reg_wins, agg.reg_losses, agg.reg_ties),
+        playoff_record: recordStr(agg.playoff_wins, agg.playoff_losses, agg.playoff_ties),
+        reg_win_pct: (agg.reg_wins + agg.reg_losses + agg.reg_ties) > 0
+          ? round4(agg.reg_wins / (agg.reg_wins + agg.reg_losses + agg.reg_ties))
+          : 0,
+        playoff_wins: agg.playoff_wins,
+        avg_finish,
+        ppg: totalGames > 0 ? Math.round((agg.total_pf_all / totalGames) * 100) / 100 : 0,
         user_id: userId(g.primary),
         name,
         nfl_display_name: g.primary.display_name,

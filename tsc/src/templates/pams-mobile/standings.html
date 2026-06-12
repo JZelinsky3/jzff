@@ -4,85 +4,142 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Standings · {{LEAGUE_NAME}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+/* ── Cream chapter theme — same flip as the desktop standings page:
+      everything below the fixed chrome goes cream, type goes ink. ── */
+body { background: var(--cream); color: var(--ink); }
+.site-glow {
+    background-image:
+        radial-gradient(circle at 15% 12%, rgba(14, 22, 32, .05) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(160, 72, 48, .05) 0%, transparent 50%);
+}
 
 .st-head { text-align: center; padding: 1.1rem 0 .9rem; }
+.st-head .m-kicker { color: var(--rust); }
 .st-title {
     font-family: var(--serif);
     font-size: 1.7rem; line-height: 1.05;
-    color: var(--cream);
+    color: var(--ink);
 }
-.st-title em { font-style: italic; color: var(--gold); }
-.st-sub { margin-top: .35rem; }
+.st-title em { font-style: italic; color: var(--rust); }
+.st-sub { margin-top: .35rem; color: rgba(14, 22, 32, .55); }
 
-/* Ranked rows */
+/* Segmented control on cream */
+.m-seg { background: rgba(14, 22, 32, .06); border-color: rgba(14, 22, 32, .18); }
+.m-seg button { color: rgba(14, 22, 32, .55); }
+.m-seg button.is-active { background: var(--ink); color: var(--cream); }
+
+/* Table card */
+.st-table {
+    background: rgba(255, 252, 244, .65);
+    border: 1px solid rgba(14, 22, 32, .22);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.st-grid {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr) 3.3rem 3.3rem 3.6rem;
+    align-items: center;
+    gap: .35rem;
+    padding: .5rem .65rem;
+}
+
+/* Sortable column header */
+.st-cols {
+    border-bottom: 1px solid var(--ink);
+    background: rgba(14, 22, 32, .05);
+    padding-top: .4rem; padding-bottom: .35rem;
+}
+.st-col {
+    background: none; border: none; padding: 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
+    color: rgba(14, 22, 32, .5);
+    text-align: right;
+    white-space: nowrap;
+}
+.st-col:nth-child(2) { text-align: left; }
+.st-col.is-sort { color: var(--rust); }
+.st-col.is-sort::after { content: ' ▾'; }
+
+/* Rows */
 .st-row { display: block; }
+.st-row + .st-row { border-top: 1px solid rgba(14, 22, 32, .12); }
 .st-row-main {
-    display: flex; align-items: center; gap: .7rem;
     width: 100%;
-    min-height: 52px;
-    padding: .55rem .9rem;
     background: none; border: none; color: inherit;
     font: inherit; text-align: left;
+    min-height: 50px;
 }
 .st-rank {
-    flex: none; width: 1.5rem;
     font-family: var(--mono); font-weight: 700;
-    font-size: .72rem; color: var(--cream-mute);
+    font-size: .68rem; color: rgba(14, 22, 32, .45);
     text-align: center;
 }
-.st-row:nth-child(1) .st-rank { color: var(--gold); }
+.st-row:first-of-type .st-rank { color: var(--rust); }
 .st-name {
-    min-width: 0; flex: 1;
-    font-weight: 600; font-size: .95rem;
+    min-width: 0;
+    font-weight: 600; font-size: .88rem;
+    color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .st-name small {
     display: block;
-    font-weight: 400; font-size: .7rem;
-    color: var(--cream-mute);
+    font-weight: 400; font-size: .66rem;
+    color: rgba(14, 22, 32, .5);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.st-rings { flex: none; color: var(--gold); font-size: .7rem; letter-spacing: .08em; }
+.st-name .st-rings { color: var(--gold-deep); font-size: .62rem; letter-spacing: .06em; margin-left: .25rem; }
 .st-val {
-    flex: none;
     font-family: var(--mono); font-weight: 700;
-    font-size: .74rem; color: var(--cream-soft);
+    font-size: .62rem; color: var(--ink-soft);
     text-align: right;
+    white-space: nowrap;
 }
-.st-row + .st-row { border-top: 1px solid var(--ink-line-soft); }
-.st-row.is-gone .st-name { color: var(--cream-mute); }
+.st-val small { display: block; font-weight: 400; font-size: .5rem; color: rgba(14, 22, 32, .45); }
 
 /* Expanded detail */
-.st-detail {
-    display: none;
-    padding: 0 .9rem .8rem 3.1rem;
-}
-.st-row.is-open { background: var(--ink-soft); }
+.st-detail { display: none; padding: 0 .65rem .75rem 2.5rem; }
+.st-row.is-open { background: rgba(232, 200, 137, .18); }
 .st-row.is-open .st-detail { display: block; }
 .st-detail-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: .4rem;
-    margin-bottom: .6rem;
+    margin-bottom: .55rem;
 }
 .st-detail-cell b {
     display: block;
     font-family: var(--mono); font-weight: 700;
-    font-size: .72rem; color: var(--gold);
+    font-size: .7rem; color: var(--rust);
 }
 .st-detail-cell span {
     font-family: var(--mono);
-    font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--cream-mute);
+    font-size: .48rem; letter-spacing: .1em; text-transform: uppercase;
+    color: rgba(14, 22, 32, .5);
 }
 .st-profile-link {
     display: inline-block;
     font-family: var(--mono); font-weight: 700;
     font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--gold); text-decoration: none;
+    color: var(--rust); text-decoration: none;
 }
+
+/* Alumni — their own table at the bottom, dimmed */
+.st-alumni-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .26em; text-transform: uppercase;
+    color: rgba(14, 22, 32, .45);
+    margin: 1.3rem 0 .35rem;
+}
+.st-alumni .st-name { color: rgba(14, 22, 32, .55); }
+.st-alumni .st-rank { color: rgba(14, 22, 32, .3); }
+
+.m-empty { color: rgba(14, 22, 32, .5); }
 </style>
 </head>
 <body>
@@ -98,13 +155,23 @@
         <div class="m-mono st-sub" id="stSub"></div>
     </header>
 
-    <div class="m-seg" id="sortSeg" style="margin-bottom:.7rem">
-        <button data-sort="wpct" class="is-active">Win %</button>
-        <button data-sort="pf">Points</button>
-        <button data-sort="name">Name</button>
+    <div class="m-seg" id="viewSeg" style="margin-bottom:.7rem">
+        <button data-view="record" class="is-active">Record</button>
+        <button data-view="points">Points</button>
+        <button data-view="career">Career</button>
     </div>
 
-    <div class="m-list" id="rows"><div class="m-empty">Setting the table…</div></div>
+    <div class="st-table">
+        <div class="st-grid st-cols" id="cols"></div>
+        <div id="rows"><div class="m-empty">Setting the table…</div></div>
+    </div>
+
+    <div id="alumniBlock" hidden>
+        <div class="st-alumni-label">Alumni</div>
+        <div class="st-table st-alumni">
+            <div id="alumniRows"></div>
+        </div>
+    </div>
 </main>
 
 <script>
@@ -120,9 +187,52 @@
         if (n == null || isNaN(n)) return '—';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
+    // "59-42-0" → "59-42" when there are no ties to show.
+    function rec(r) {
+        return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1');
+    }
+    function ppgOf(m) {
+        if (m.ppg) return m.ppg;
+        var games = (m.wins || 0) + (m.losses || 0) + (m.ties || 0);
+        return games ? m.total_pf / games : 0;
+    }
 
     var managers = [];
-    var sortKey = 'wpct';
+    var view = 'record';
+    var sortKey = 'all';
+
+    // Per-view column sets: [key, label, comparator, render]
+    var COLS = {
+        record: [
+            ['reg', 'Reg', function (a, b) { return (b.reg_win_pct || 0) - (a.reg_win_pct || 0) || b.total_pf - a.total_pf; },
+                function (m) { return esc(rec(m.reg_record || '')); }],
+            ['pst', 'Playoffs', function (a, b) { return (b.playoff_wins || 0) - (a.playoff_wins || 0) || (b.win_pct - a.win_pct); },
+                function (m) { return esc(rec(m.playoff_record || '0-0')); }],
+            ['all', 'All-Time', function (a, b) { return (b.win_pct - a.win_pct) || (b.wins - a.wins) || (b.total_pf - a.total_pf); },
+                function (m) { return esc(rec(m.total_record)) + '<small>' + (m.win_pct * 100).toFixed(0) + '%</small>'; }],
+        ],
+        points: [
+            ['pf', 'Points', function (a, b) { return b.total_pf - a.total_pf; },
+                function (m) { return num(m.total_pf, 0); }],
+            ['ppg', 'PPG', function (a, b) { return ppgOf(b) - ppgOf(a); },
+                function (m) { return num(ppgOf(m), 1); }],
+            ['all', 'Record', function (a, b) { return (b.win_pct - a.win_pct) || (b.wins - a.wins); },
+                function (m) { return esc(rec(m.total_record)); }],
+        ],
+        career: [
+            ['yrs', 'Seasons', function (a, b) { return b.seasons_played - a.seasons_played || b.win_pct - a.win_pct; },
+                function (m) { return String(m.seasons_played); }],
+            ['plf', 'Playoffs', function (a, b) { return (b.playoff_appearances || 0) - (a.playoff_appearances || 0) || b.win_pct - a.win_pct; },
+                function (m) { return String(m.playoff_appearances || 0) + '×'; }],
+            ['avg', 'Avg Fin', function (a, b) {
+                    var av = a.avg_finish == null ? 99 : a.avg_finish;
+                    var bv = b.avg_finish == null ? 99 : b.avg_finish;
+                    return av - bv;
+                },
+                function (m) { return m.avg_finish == null ? '—' : num(m.avg_finish, 1); }],
+        ],
+    };
+    var DEFAULT_SORT = { record: 'all', points: 'pf', career: 'yrs' };
 
     var grab = function (path) {
         return fetch(path).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
@@ -142,63 +252,90 @@
         render();
     });
 
-    function sorted() {
-        var list = managers.slice();
-        if (sortKey === 'name') {
-            list.sort(function (a, b) { return a.name.localeCompare(b.name); });
-        } else if (sortKey === 'pf') {
-            list.sort(function (a, b) { return b.total_pf - a.total_pf; });
-        } else {
-            list.sort(function (a, b) {
-                return (b.win_pct - a.win_pct) || (b.wins - a.wins) || (b.total_pf - a.total_pf);
-            });
+    function comparatorFor(key) {
+        if (key === 'name') {
+            return function (a, b) { return a.name.localeCompare(b.name); };
         }
-        return list;
+        var cols = COLS[view];
+        for (var i = 0; i < cols.length; i++) {
+            if (cols[i][0] === key) return cols[i][2];
+        }
+        return cols[0][2];
     }
 
     function render() {
+        var cols = COLS[view];
+
+        document.getElementById('cols').innerHTML =
+            '<span class="st-col">Rk</span>' +
+            '<button class="st-col' + (sortKey === 'name' ? ' is-sort' : '') + '" data-key="name">Manager</button>' +
+            cols.map(function (c) {
+                return '<button class="st-col' + (sortKey === c[0] ? ' is-sort' : '') + '" data-key="' + c[0] + '">' + c[1] + '</button>';
+            }).join('');
+
         var box = document.getElementById('rows');
         if (!managers.length) {
             box.innerHTML = '<div class="m-empty">No results on file yet.</div>';
             return;
         }
-        box.innerHTML = sorted().map(function (m, i) {
-            var val = sortKey === 'pf' ? num(m.total_pf, 0) + ' pf' : esc(m.total_record);
-            var rings = m.championships ? '<span class="st-rings">' + '✦'.repeat(Math.min(m.championships, 4)) + '</span>' : '';
-            return '<div class="st-row' + (m.is_current ? '' : ' is-gone') + '" data-id="' + esc(m.user_id) + '">' +
-                '<button class="st-row-main" aria-expanded="false">' +
-                    '<span class="st-rank">' + (sortKey === 'name' ? '·' : i + 1) + '</span>' +
-                    '<span class="st-name">' + esc(m.name) +
-                        '<small>' + esc(m.team_latest || '') + (m.is_current ? '' : ' · alumni') + '</small></span>' +
-                    rings +
-                    '<span class="st-val">' + val + '</span>' +
-                '</button>' +
-                '<div class="st-detail">' +
-                    '<div class="st-detail-grid">' +
-                        cell((m.win_pct * 100).toFixed(0) + '%', 'Win pct') +
-                        cell(num(m.total_pf, 0), 'Points') +
-                        cell(m.seasons_played, m.seasons_played === 1 ? 'Season' : 'Seasons') +
-                        cell(m.playoff_appearances, 'Playoffs') +
-                    '</div>' +
-                    '<a class="st-profile-link" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">Full profile</a>' +
+        var cmp = comparatorFor(sortKey);
+        var current = managers.filter(function (m) { return m.is_current; }).sort(cmp);
+        var alumni = managers.filter(function (m) { return !m.is_current; }).sort(cmp);
+
+        box.innerHTML = current.map(function (m, i) { return row(m, i, cols); }).join('');
+
+        var alumniBlock = document.getElementById('alumniBlock');
+        alumniBlock.hidden = !alumni.length;
+        if (alumni.length) {
+            document.getElementById('alumniRows').innerHTML =
+                alumni.map(function (m, i) { return row(m, i, cols); }).join('');
+        }
+    }
+
+    function row(m, i, cols) {
+        var rings = m.championships
+            ? '<span class="st-rings">' + '✦'.repeat(Math.min(m.championships, 4)) + '</span>'
+            : '';
+        return '<div class="st-row" data-id="' + esc(m.user_id) + '">' +
+            '<button class="st-row-main st-grid" aria-expanded="false">' +
+                '<span class="st-rank">' + (sortKey === 'name' ? '·' : i + 1) + '</span>' +
+                '<span class="st-name">' + esc(m.name) + rings +
+                    '<small>' + esc(m.team_latest || '') + '</small></span>' +
+                cols.map(function (c) { return '<span class="st-val">' + c[3](m) + '</span>'; }).join('') +
+            '</button>' +
+            '<div class="st-detail">' +
+                '<div class="st-detail-grid">' +
+                    cell(rec(m.reg_record || ''), 'Reg season') +
+                    cell(rec(m.playoff_record || '0-0'), 'Playoffs') +
+                    cell(num(ppgOf(m), 1), 'PPG') +
+                    cell(m.avg_finish == null ? '—' : num(m.avg_finish, 1), 'Avg finish') +
                 '</div>' +
-            '</div>';
-        }).join('');
+                '<a class="st-profile-link" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">Full profile</a>' +
+            '</div>' +
+        '</div>';
     }
 
     function cell(v, l) {
         return '<div class="st-detail-cell"><b>' + esc(v) + '</b><span>' + esc(l) + '</span></div>';
     }
 
-    document.getElementById('sortSeg').addEventListener('click', function (e) {
-        var btn = e.target.closest('button[data-sort]');
+    document.getElementById('viewSeg').addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-view]');
         if (!btn) return;
-        sortKey = btn.dataset.sort;
+        view = btn.dataset.view;
+        sortKey = DEFAULT_SORT[view];
         this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
         render();
     });
 
-    document.getElementById('rows').addEventListener('click', function (e) {
+    document.getElementById('cols').addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-key]');
+        if (!btn) return;
+        sortKey = btn.dataset.key;
+        render();
+    });
+
+    document.querySelector('main').addEventListener('click', function (e) {
         var main = e.target.closest('.st-row-main');
         if (!main) return;
         var row = main.parentNode;

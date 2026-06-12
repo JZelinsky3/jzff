@@ -305,9 +305,59 @@
                 e.preventDefault();
                 closeSheet(sheet);
             });
+            wireSheetDrag(sheet);
         });
 
         return { history: history, more: more };
+    }
+
+    // Swipe-down dismissal. Drag starts anywhere in the sheet while its own
+    // scroll is at the top (or always from the handle/title zone); the sheet
+    // follows the finger and releases past the threshold close it. Uses touch
+    // events — the native <dialog> swallows pointercancel on some WebKits.
+    function wireSheetDrag(sheet) {
+        var startY = 0, lastY = 0, lastT = 0, velocity = 0, dragging = false;
+
+        sheet.addEventListener('touchstart', function (e) {
+            if (!e.touches || e.touches.length !== 1) return;
+            // From the body of the sheet only when it isn't scrolled — else
+            // the gesture is the list scrolling back up.
+            if (sheet.scrollTop > 0) return;
+            startY = lastY = e.touches[0].clientY;
+            lastT = e.timeStamp;
+            velocity = 0;
+            dragging = true;
+        }, { passive: true });
+
+        sheet.addEventListener('touchmove', function (e) {
+            if (!dragging || !e.touches || e.touches.length !== 1) return;
+            var y = e.touches[0].clientY;
+            var dy = y - startY;
+            var dt = e.timeStamp - lastT;
+            if (dt > 0) velocity = (y - lastY) / dt; // px per ms, + = downward
+            lastY = y; lastT = e.timeStamp;
+            if (dy <= 0) {
+                // Finger moved up — let the sheet scroll normally.
+                sheet.style.transform = '';
+                return;
+            }
+            // Follow the finger; suppress the scroll so the sheet moves as one.
+            if (e.cancelable) e.preventDefault();
+            sheet.style.transition = 'none';
+            sheet.style.transform = 'translateY(' + dy + 'px)';
+        }, { passive: false });
+
+        function release() {
+            if (!dragging) return;
+            dragging = false;
+            var dy = lastY - startY;
+            sheet.style.transition = '';
+            sheet.style.transform = '';
+            // Close on a meaningful pull (>80px) or a quick flick downward.
+            if (dy > 80 || (dy > 24 && velocity > 0.5)) closeSheet(sheet);
+        }
+        sheet.addEventListener('touchend', release);
+        sheet.addEventListener('touchcancel', release);
     }
 
     function openSheet(sheet) {
@@ -399,8 +449,8 @@
             tab('home', 'Home', './') +
             tab('standings', 'Standings', 'standings.html') +
             tab('history', 'History', '', true) +
-            tab('more', 'More', '', true) +
-            tab('live', 'Live', 'live-season/');
+            tab('live', 'Live', 'live-season/') +
+            tab('more', 'More', '', true);
         document.body.appendChild(tabbar);
 
         var sheets = buildSheets(ctx);

@@ -13,7 +13,7 @@ import { devBundleGet, devBundleSet } from '@/lib/devCache'
 // Keep in sync with the version pinned in the leagues route; bumping either
 // invalidates both, which is what we want — OG images should track template
 // data changes 1:1.
-const BUNDLE_VERSION = 'v71'
+const BUNDLE_VERSION = 'v72'
 
 export function getLeagueBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   if (process.env.NODE_ENV !== 'production') {

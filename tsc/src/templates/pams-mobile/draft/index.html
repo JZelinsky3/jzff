@@ -4,9 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Draft History · {{LEAGUE_NAME}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+/* ── War-room black — the desktop draft chapter's palette. Re-pointing the
+      shared tokens recolors every m-* primitive on this page. ── */
+:root {
+    --ink:           #0d0d0d;
+    --ink-soft:      #131313;
+    --ink-card:      #1a1a1a;
+    --ink-line:      #3e3e3e;
+    --ink-line-soft: #2f2f2f;
+    --cream-mute:    #8a7a60;
+}
+.site-glow {
+    background-image:
+        radial-gradient(circle at 15% 25%, rgba(232,200,137,.06) 0%, transparent 45%),
+        radial-gradient(circle at 85% 75%, rgba(244,217,164,.03) 0%, transparent 50%);
+}
 
 .dr-head { text-align: center; padding: 1.1rem 0 .9rem; }
 .dr-title {
@@ -16,30 +33,53 @@
 }
 .dr-title em { font-style: italic; color: var(--gold); }
 
-/* Year picker rail */
-.dr-years {
-    display: flex; gap: .45rem;
-    overflow-x: auto;
-    margin: 0 -0.9rem .8rem;
-    padding: .1rem .9rem .35rem;
-    scrollbar-width: none;
+/* Controls row: year dropdown + section tabs share one line */
+.dr-controls {
+    display: flex; gap: .5rem;
+    align-items: stretch;
+    margin-bottom: .8rem;
 }
-.dr-years::-webkit-scrollbar { display: none; }
-.dr-year-chip {
-    flex: none;
-    padding: .45rem .9rem;
+.dr-year-wrap { flex: none; position: relative; display: flex; }
+.dr-year-btn {
+    display: flex; align-items: center; gap: .4rem;
+    padding: .5rem .8rem;
     border-radius: 999px;
-    border: 1px solid var(--ink-line);
+    border: 1px solid var(--gold-deep);
     background: var(--ink-card);
+    color: var(--gold);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; letter-spacing: .08em;
+}
+.dr-year-btn svg { transition: transform .15s ease; }
+.dr-year-wrap.is-open .dr-year-btn svg { transform: rotate(180deg); }
+.dr-controls .m-seg { flex: 1; }
+
+/* Year picker panel */
+.dr-year-menu {
+    position: absolute;
+    top: calc(100% + 6px); left: 0;
+    z-index: 30;
+    min-width: 7rem;
+    max-height: 14rem;
+    overflow-y: auto;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.6);
+    display: none;
+}
+.dr-year-wrap.is-open .dr-year-menu { display: block; }
+.dr-year-opt {
+    display: block; width: 100%;
+    padding: .55rem .9rem;
+    background: none; border: none;
     color: var(--cream-soft);
     font-family: var(--mono); font-weight: 700;
-    font-size: .7rem; letter-spacing: .08em;
+    font-size: .72rem; letter-spacing: .08em;
+    text-align: left;
 }
-.dr-year-chip.is-active {
-    background: var(--gold);
-    border-color: var(--gold);
-    color: var(--ink);
-}
+.dr-year-opt + .dr-year-opt { border-top: 1px solid var(--ink-line-soft); }
+.dr-year-opt.is-active { color: var(--gold); background: rgba(232,200,137,.08); }
 
 /* First-overall card */
 .dr-first {
@@ -60,13 +100,38 @@
 }
 .dr-first-player em { font-style: italic; color: var(--gold); }
 
-/* Round groups */
-.dr-round-label {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .56rem; letter-spacing: .26em; text-transform: uppercase;
+/* Round drawers */
+.dr-round { margin-top: .55rem; }
+.dr-round-head {
+    display: flex; align-items: center; gap: .6rem;
+    width: 100%;
+    padding: .65rem .9rem;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 12px;
     color: var(--gold-deep);
-    margin: 1rem 0 .35rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .26em; text-transform: uppercase;
+    text-align: left;
 }
+.dr-round-head .dr-round-n { flex: 1; }
+.dr-round-head .dr-round-count {
+    letter-spacing: .1em;
+    color: var(--cream-mute);
+}
+.dr-round-head svg { flex: none; transition: transform .18s ease; color: var(--cream-mute); }
+.dr-round.is-open .dr-round-head {
+    border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+    border-bottom-color: var(--ink-line-soft);
+}
+.dr-round.is-open .dr-round-head svg { transform: rotate(180deg); }
+.dr-round-body { display: none; }
+.dr-round.is-open .dr-round-body { display: block; }
+.dr-round-body .m-list {
+    border-top: none;
+    border-top-left-radius: 0; border-top-right-radius: 0;
+}
+
 .dr-pick { min-height: 44px; }
 .dr-pick-no {
     flex: none; width: 2rem;
@@ -87,10 +152,29 @@
     border: 1px solid var(--ink-line);
     color: var(--cream-soft);
 }
-.dr-pos--QB { color: #d68a8a; border-color: #5a3535; }
-.dr-pos--RB { color: #8fb89a; border-color: #34503e; }
-.dr-pos--WR { color: #8aa8c9; border-color: #34455a; }
-.dr-pos--TE { color: var(--gold); border-color: var(--gold-deep); }
+.dr-pos--QB { color: #8aaccc; border-color: #344a5a; }
+.dr-pos--RB { color: #6dc28c; border-color: #2f5040; }
+.dr-pos--WR { color: var(--gold); border-color: var(--gold-deep); }
+.dr-pos--TE { color: #c4a3e8; border-color: #4a3a5c; }
+
+/* Round One history (per-manager R1 picks) */
+.dr-r1-mgr { font-weight: 600; font-size: .9rem; }
+.dr-r1-picks { margin-top: .15rem; }
+.dr-r1-pick {
+    display: flex; gap: .55rem; align-items: baseline;
+    font-size: .78rem; color: var(--cream-soft);
+    padding: .18rem 0;
+}
+.dr-r1-pick .m-mono { flex: none; }
+
+/* Draft order history */
+.dr-finish {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .08em;
+    color: var(--cream-mute);
+}
+.dr-finish.is-champ { color: var(--gold); }
 </style>
 </head>
 <body>
@@ -105,7 +189,21 @@
         <h1 class="dr-title">Draft <em>history.</em></h1>
     </header>
 
-    <div class="dr-years" id="years"></div>
+    <div class="dr-controls">
+        <div class="dr-year-wrap" id="yearBtn" hidden>
+            <button class="dr-year-btn" aria-haspopup="true">
+                <span id="yearLabel">—</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="dr-year-menu" id="yearMenu"></div>
+        </div>
+        <div class="m-seg" id="secSeg">
+            <button data-sec="board" class="is-active">Board</button>
+            <button data-sec="r1">Round 1</button>
+            <button data-sec="order">Order</button>
+        </div>
+    </div>
+
     <div id="board"><div class="m-empty">Unrolling the big board…</div></div>
 </main>
 
@@ -118,6 +216,10 @@
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
+    function ord(n) {
+        var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
 
     var grab = function (path) {
         return fetch(path).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
@@ -125,6 +227,13 @@
 
     var years = [];
     var activeYear = null;
+    var section = 'board';
+    var draftCache = {};   // year → draft json (also de-dupes across tabs)
+
+    function loadDraft(year) {
+        if (draftCache[year]) return draftCache[year];
+        return (draftCache[year] = grab('data/drafts/' + year + '.json'));
+    }
 
     grab('data/drafts/drafts_directory.json').then(function (dir) {
         years = ((dir && dir.drafts) || []).map(function (d) { return d.year; }).sort(function (a, b) { return b - a; });
@@ -135,34 +244,63 @@
         }
         var fromQuery = parseInt(new URLSearchParams(window.location.search).get('year'), 10);
         activeYear = years.indexOf(fromQuery) !== -1 ? fromQuery : years[0];
-        renderYears();
-        loadYear(activeYear);
+        buildYearMenu();
+        renderSection();
     });
 
-    function renderYears() {
-        document.getElementById('years').innerHTML = years.map(function (y) {
-            return '<button class="dr-year-chip' + (y === activeYear ? ' is-active' : '') + '" data-year="' + y + '">' + y + '</button>';
+    // ── Year dropdown ────────────────────────────────────────────────────
+    var yearBtn = document.getElementById('yearBtn');
+    function buildYearMenu() {
+        yearBtn.hidden = false;
+        document.getElementById('yearLabel').textContent = activeYear;
+        document.getElementById('yearMenu').innerHTML = years.map(function (y) {
+            return '<button class="dr-year-opt' + (y === activeYear ? ' is-active' : '') + '" data-year="' + y + '">' + y + '</button>';
         }).join('');
     }
-
-    document.getElementById('years').addEventListener('click', function (e) {
-        var chip = e.target.closest('button[data-year]');
-        if (!chip) return;
-        activeYear = parseInt(chip.dataset.year, 10);
-        renderYears();
-        loadYear(activeYear);
-        // Keep the URL shareable without reloading.
-        try {
-            var url = new URL(window.location.href);
-            url.searchParams.set('year', String(activeYear));
-            history.replaceState(null, '', url);
-        } catch (_) { /* non-critical */ }
+    yearBtn.addEventListener('click', function (e) {
+        var opt = e.target.closest('button[data-year]');
+        if (opt) {
+            activeYear = parseInt(opt.dataset.year, 10);
+            buildYearMenu();
+            yearBtn.classList.remove('is-open');
+            renderSection();
+            try {
+                var url = new URL(window.location.href);
+                url.searchParams.set('year', String(activeYear));
+                history.replaceState(null, '', url);
+            } catch (_) { /* non-critical */ }
+            e.stopPropagation();
+            return;
+        }
+        yearBtn.classList.toggle('is-open');
+    });
+    document.addEventListener('click', function (e) {
+        if (!yearBtn.contains(e.target)) yearBtn.classList.remove('is-open');
     });
 
-    function loadYear(year) {
-        document.getElementById('board').innerHTML = '<div class="m-empty">Unrolling the big board…</div>';
-        grab('data/drafts/' + year + '.json').then(function (draft) {
-            var box = document.getElementById('board');
+    // ── Section tabs ─────────────────────────────────────────────────────
+    document.getElementById('secSeg').addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-sec]');
+        if (!btn) return;
+        section = btn.dataset.sec;
+        this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+        // The year picker only steers the board; history tabs span all years.
+        yearBtn.style.visibility = section === 'board' ? '' : 'hidden';
+        renderSection();
+    });
+
+    function renderSection() {
+        if (section === 'board') renderBoard(activeYear);
+        else if (section === 'r1') renderRoundOne();
+        else renderOrder();
+    }
+
+    // ── Board ────────────────────────────────────────────────────────────
+    function renderBoard(year) {
+        var box = document.getElementById('board');
+        box.innerHTML = '<div class="m-empty">Unrolling the big board…</div>';
+        loadDraft(year).then(function (draft) {
+            if (section !== 'board' || year !== activeYear) return; // stale
             var picks = (draft && draft.picks) || [];
             if (!picks.length) {
                 box.innerHTML = '<div class="m-empty">No picks recorded for ' + year + '.</div>';
@@ -185,22 +323,118 @@
                     '</div>' +
                 '</a>';
 
+            // Round 1 ships open; every round is a drawer you can fold away.
             html += rounds.map(function (r) {
-                return '<div class="dr-round-label">Round ' + r + '</div>' +
-                    '<div class="m-list">' +
-                    byRound[r].map(function (p) {
-                        var posCls = /^(QB|RB|WR|TE)$/.test(p.position || '') ? ' dr-pos--' + p.position : '';
-                        return '<a class="m-list-row dr-pick" href="managers/manager.html?id=' + encodeURIComponent(p.user_id) + '">' +
-                            '<span class="dr-pick-no">' + p.overall_pick + '</span>' +
-                            '<span class="dr-player">' + esc(p.player_name) +
-                                '<small>' + esc(p.manager_name) + (p.team_name ? ' · ' + esc(p.team_name) : '') + '</small></span>' +
-                            (p.position ? '<span class="dr-pos' + posCls + '">' + esc(p.position) + (p.nfl_team ? ' · ' + esc(p.nfl_team) : '') + '</span>' : '') +
-                        '</a>';
-                    }).join('') +
-                    '</div>';
+                return '<div class="dr-round' + (r === 1 ? ' is-open' : '') + '">' +
+                    '<button class="dr-round-head" aria-expanded="' + (r === 1 ? 'true' : 'false') + '">' +
+                        '<span class="dr-round-n">Round ' + r + '</span>' +
+                        '<span class="dr-round-count">' + byRound[r].length + ' picks</span>' +
+                        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+                    '</button>' +
+                    '<div class="dr-round-body"><div class="m-list">' +
+                    byRound[r].map(pickRow).join('') +
+                    '</div></div>' +
+                '</div>';
             }).join('');
 
             box.innerHTML = html;
+        });
+    }
+
+    function pickRow(p) {
+        var posCls = /^(QB|RB|WR|TE)$/.test(p.position || '') ? ' dr-pos--' + p.position : '';
+        return '<a class="m-list-row dr-pick" href="managers/manager.html?id=' + encodeURIComponent(p.user_id) + '">' +
+            '<span class="dr-pick-no">' + p.overall_pick + '</span>' +
+            '<span class="dr-player">' + esc(p.player_name) +
+                '<small>' + esc(p.manager_name) + (p.team_name ? ' · ' + esc(p.team_name) : '') + '</small></span>' +
+            (p.position ? '<span class="dr-pos' + posCls + '">' + esc(p.position) + (p.nfl_team ? ' · ' + esc(p.nfl_team) : '') + '</span>' : '') +
+        '</a>';
+    }
+
+    document.getElementById('board').addEventListener('click', function (e) {
+        var head = e.target.closest('.dr-round-head');
+        if (!head) return;
+        var open = head.parentNode.classList.toggle('is-open');
+        head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    function loadAllYears() {
+        return Promise.all(years.map(loadDraft));
+    }
+
+    // ── Round 1 history: every manager's first-round picks, all years ────
+    function renderRoundOne() {
+        var box = document.getElementById('board');
+        box.innerHTML = '<div class="m-empty">Pulling round-one history…</div>';
+        loadAllYears().then(function (drafts) {
+            if (section !== 'r1') return;
+            var byMgr = {};
+            drafts.forEach(function (draft) {
+                if (!draft) return;
+                (draft.picks || []).forEach(function (p) {
+                    if (p.round !== 1 || !p.manager_name) return;
+                    var key = p.user_id || p.manager_name;
+                    (byMgr[key] = byMgr[key] || { name: p.manager_name, user_id: p.user_id, picks: [] })
+                        .picks.push({ year: draft.year, pick: p.round_pick, player: p.player_name, pos: p.position });
+                });
+            });
+            var mgrs = Object.keys(byMgr).map(function (k) { return byMgr[k]; });
+            if (!mgrs.length) {
+                box.innerHTML = '<div class="m-empty">No first-round picks on file.</div>';
+                return;
+            }
+            mgrs.sort(function (a, b) { return a.name.localeCompare(b.name); });
+            box.innerHTML = '<div class="m-kicker" style="margin-bottom:.4rem">R1 picks by manager · all seasons</div>' +
+                mgrs.map(function (m) {
+                    return '<a class="m-card" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+                        '<div class="dr-r1-mgr">' + esc(m.name) + '</div>' +
+                        '<div class="dr-r1-picks">' +
+                        m.picks.sort(function (x, y) { return y.year - x.year; }).map(function (p) {
+                            return '<div class="dr-r1-pick"><span class="m-mono">' + p.year + ' · 1.' +
+                                String(p.pick).padStart(2, '0') + '</span><span>' + esc(p.player) +
+                                (p.pos ? ' <span class="m-mono" style="letter-spacing:.04em">' + esc(p.pos) + '</span>' : '') +
+                                '</span></div>';
+                        }).join('') +
+                        '</div>' +
+                    '</a>';
+                }).join('');
+        });
+    }
+
+    // ── Draft order history: slot order vs. final finish, per year ───────
+    function renderOrder() {
+        var box = document.getElementById('board');
+        box.innerHTML = '<div class="m-empty">Rebuilding the draft order…</div>';
+        loadAllYears().then(function (drafts) {
+            if (section !== 'order') return;
+            var blocks = drafts.filter(Boolean).sort(function (a, b) { return b.year - a.year; }).map(function (draft, di) {
+                var r1 = (draft.picks || []).filter(function (p) { return p.round === 1; });
+                if (!r1.length) return '';
+                var finishes = draft.finishes || {};
+                return '<div class="dr-round' + (di === 0 ? ' is-open' : '') + '">' +
+                    '<button class="dr-round-head" aria-expanded="' + (di === 0 ? 'true' : 'false') + '">' +
+                        '<span class="dr-round-n">' + draft.year + ' Draft Order</span>' +
+                        '<span class="dr-round-count">' + r1.length + ' teams</span>' +
+                        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+                    '</button>' +
+                    '<div class="dr-round-body"><div class="m-list">' +
+                    r1.map(function (p) {
+                        var fin = finishes[p.manager_name];
+                        var finHtml = fin
+                            ? '<span class="dr-finish' + (fin === 1 ? ' is-champ' : '') + '">' +
+                                (fin === 1 ? 'Won title' : 'Fin. ' + ord(fin)) + '</span>'
+                            : '';
+                        return '<a class="m-list-row dr-pick" href="managers/manager.html?id=' + encodeURIComponent(p.user_id) + '">' +
+                            '<span class="dr-pick-no">' + p.round_pick + '</span>' +
+                            '<span class="dr-player">' + esc(p.manager_name) +
+                                '<small>took ' + esc(p.player_name) + '</small></span>' +
+                            finHtml +
+                        '</a>';
+                    }).join('') +
+                    '</div></div>' +
+                '</div>';
+            }).join('');
+            box.innerHTML = blocks || '<div class="m-empty">No draft order on file.</div>';
         });
     }
 })();
