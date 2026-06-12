@@ -2228,6 +2228,7 @@ function buildRecordBook(s: Snapshot): unknown {
     total_record: string
     total_pf: number
     avg_ppg: number
+    reg_ppg: number
     high_week_score: number
     high_week_when: string
     low_week_score: number
@@ -2284,6 +2285,7 @@ function buildRecordBook(s: Snapshot): unknown {
         total_record: recordStr(ms.wins + pl_w, ms.losses + pl_l, ms.ties + pl_t),
         total_pf: round2(total_pf),
         avg_ppg: counted > 0 ? round2(total_pf / counted) : 0,
+        reg_ppg: totalReg > 0 ? round2(Number(ms.points_for) / totalReg) : 0,
         high_week_score: round2(high),
         high_week_when: `W${highWeek} vs ${highOpp}`,
         low_week_score: round2(low),
@@ -2291,12 +2293,21 @@ function buildRecordBook(s: Snapshot): unknown {
       })
     }
   }
-  const highest_season_pf = [...seasonRows].sort((a, b) => b.total_pf - a.total_pf).slice(0, N)
-  const lowest_season_pf = [...seasonRows].sort((a, b) => a.total_pf - b.total_pf).slice(0, N)
+  // Regular-season values throughout — same semantics as the desktop record
+  // book, which sorts season rows by reg_pf / reg PPG / reg win pct.
+  const highest_season_pf = [...seasonRows].sort((a, b) => b.reg_pf - a.reg_pf).slice(0, N)
+  const lowest_season_pf = [...seasonRows].filter((r) => r.reg_pf > 0).sort((a, b) => a.reg_pf - b.reg_pf).slice(0, N)
   const best_reg_season_records = [...seasonRows].sort((a, b) => b.reg_win_pct - a.reg_win_pct || b.reg_pf - a.reg_pf).slice(0, N)
-  const highest_ppg = [...seasonRows].sort((a, b) => b.avg_ppg - a.avg_ppg).slice(0, N)
-  const highest_single_week_in_season = [...seasonRows].sort((a, b) => b.high_week_score - a.high_week_score).slice(0, N)
-  const lowest_single_week_in_season = [...seasonRows].sort((a, b) => a.low_week_score - b.low_week_score).slice(0, N)
+  // Worst record mirrors desktop's "≥ 10 games" floor so partial seasons
+  // can't bottom out the list.
+  const worst_reg_season_records = [...seasonRows]
+    .filter((r) => {
+      const [w, l, t] = r.reg_record.split('-').map(Number)
+      return (w + l + (t || 0)) >= 10
+    })
+    .sort((a, b) => a.reg_win_pct - b.reg_win_pct || a.reg_pf - b.reg_pf).slice(0, N)
+  const highest_ppg = [...seasonRows].sort((a, b) => b.reg_ppg - a.reg_ppg).slice(0, N)
+  const most_points_against = [...seasonRows].sort((a, b) => b.reg_pa - a.reg_pa).slice(0, N)
 
   // Career
   type Streak = {
@@ -2458,9 +2469,9 @@ function buildRecordBook(s: Snapshot): unknown {
         highest_season_pf,
         lowest_season_pf,
         best_reg_season_records,
+        worst_reg_season_records,
         highest_ppg,
-        highest_single_week_in_season,
-        lowest_single_week_in_season,
+        most_points_against,
       },
       career: {
         longest_win_streaks,
