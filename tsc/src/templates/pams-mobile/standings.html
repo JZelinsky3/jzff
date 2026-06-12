@@ -67,13 +67,13 @@ body { background: var(--cream); color: var(--ink); }
 .st-col:nth-child(3) { text-align: center; transform: translateX(1px); }
 /* Active sort: full-strength bold ink against the faded siblings — no
    arrow, so titles don't shift when the sort moves. */
-.st-col.is-sort { color: var(--ink); font-weight: 1000; }
+.st-col.is-sort { color: var(--ink); font-weight: 1200; }
 /* Tapping the active column again flips the order; the underline is the
    only signal — no arrow, nothing shifts. */
 .st-col.is-sort.is-rev {
     text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
 }
 /* Record-view value columns echo the desktop table's tones: reg gold,
    playoffs deep rust, all-time steel blue. Doubled-up selector outranks
