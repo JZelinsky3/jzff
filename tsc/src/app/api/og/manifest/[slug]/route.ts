@@ -38,9 +38,11 @@ export async function GET(
       display: 'standalone',
       background_color: '#0e1620',
       theme_color: '#0e1620',
+      // v= busts the CDN-cached icon whenever the tile design changes —
+      // bump it together with the apple-touch-icon link in the almanac route.
       icons: [
-        { src: `/api/og/icon/${league.slug}?s=192`, sizes: '192x192', type: 'image/png' },
-        { src: `/api/og/icon/${league.slug}?s=512`, sizes: '512x512', type: 'image/png' },
+        { src: `/api/og/icon/${league.slug}?s=192&v=2`, sizes: '192x192', type: 'image/png' },
+        { src: `/api/og/icon/${league.slug}?s=512&v=2`, sizes: '512x512', type: 'image/png' },
       ],
     },
     {

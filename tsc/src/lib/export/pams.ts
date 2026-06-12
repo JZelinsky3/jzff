@@ -84,6 +84,7 @@ type MatchupRow = {
 type DraftRow = {
   id: string
   season_id: string
+  external_id: string | null
   draft_type: string
   rounds: number | null
 }
@@ -257,7 +258,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
       seasonIdList),
     seasonIdList.length === 0 ? Promise.resolve([] as ManagerSeasonRow[]) : selectManagerSeasonsPaged(db, seasonIdList),
     seasonIdList.length === 0 ? Promise.resolve([] as DraftRow[]) : selectAllPaged<DraftRow>(db, 'drafts',
-      'id, season_id, draft_type, rounds',
+      'id, season_id, external_id, draft_type, rounds',
       seasonIdList),
     seasonIdList.length === 0 ? Promise.resolve([] as WeeklyLineupRow[]) : selectAllPaged<WeeklyLineupRow>(db, 'weekly_lineups',
       'season_id, week, manager_id, player_external_id, player_name, position, nfl_team, slot, is_starter, points, proj_points',
@@ -323,7 +324,14 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
 
   const draftsBySeason = new Map<string, DraftRow>()
   for (const d of drafts ?? []) {
-    if (seasonIds.has(d.season_id)) draftsBySeason.set(d.season_id, d)
+    if (!seasonIds.has(d.season_id)) continue
+    // Hand-authored drafts (external_id 'curated-*') outrank whatever the
+    // platform scrape landed for the same season — otherwise query order
+    // decides which draft the almanac shows.
+    const existing = draftsBySeason.get(d.season_id)
+    const isCurated = (row: DraftRow) => String(row.external_id ?? '').startsWith('curated-')
+    if (existing && isCurated(existing) && !isCurated(d)) continue
+    draftsBySeason.set(d.season_id, d)
   }
   const picksByDraft = groupBy(picks ?? [], (p) => p.draft_id)
 

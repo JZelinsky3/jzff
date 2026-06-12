@@ -267,7 +267,9 @@ async function ingestSeason(args: {
   // matchup ids stable (pickems_picks references them via a cascading FK).
   if (stages.matchups) await db.from('manager_seasons').delete().eq('season_id', seasonId)
   // Drafts cascade to draft_picks via FK; delete drafts for the season too.
-  if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId)
+  // Preserve curated drafts (hand-authored imports, external_id 'curated-*')
+  // — same guard sleeper/espn ingests carry.
+  if (stages.drafts) await db.from('drafts').delete().eq('season_id', seasonId).not('external_id', 'like', 'curated-%')
   if (stages.lineups) await db.from('weekly_lineups').delete().eq('season_id', seasonId)
 
   // Fetch all weekly matchups (1..lastPlayoffWeek). NFL serves a page per

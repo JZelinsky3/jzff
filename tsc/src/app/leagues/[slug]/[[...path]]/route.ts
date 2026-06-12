@@ -260,7 +260,7 @@ function injectBaseTag(html: string, meta: LeagueMeta, file: string, servedMobil
   const tags =
     `<base href="/leagues/${meta.slug}/">` +
     `\n<link rel="icon" href="/icon.svg" type="image/svg+xml">` +
-    `\n<link rel="apple-touch-icon" sizes="180x180" href="/api/og/icon/${meta.slug}?s=180">` +
+    `\n<link rel="apple-touch-icon" sizes="180x180" href="/api/og/icon/${meta.slug}?s=180&v=2">` +
     `\n<link rel="manifest" href="/api/og/manifest/${meta.slug}">` +
     `\n<meta name="apple-mobile-web-app-title" content="${safeName}">` +
     `\n<meta name="theme-color" content="#0e1620">` +
@@ -532,7 +532,7 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   // way that the templates need to see immediately — adding a new field,
   // renaming an existing one, etc. Bumping forces unstable_cache to
   // recompute on the next request instead of waiting out the 1h TTL.
-  const BUNDLE_VERSION = 'v73'
+  const BUNDLE_VERSION = 'v74'
   return unstable_cache(
     async () => exportLeague(leagueId, { slug }),
     ['pams-bundle', BUNDLE_VERSION, leagueId, slug],
