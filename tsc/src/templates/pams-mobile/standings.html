@@ -62,9 +62,12 @@ body { background: var(--cream); color: var(--ink); }
     text-align: right;
     white-space: nowrap;
 }
-.st-col:nth-child(2) { text-align: left; }
+.st-col:first-child { text-align: center; }
+.st-col:nth-child(2),
+.st-col:nth-child(3) { text-align: left; }
+/* Active sort: the rust color alone marks it — no arrow, so titles don't
+   shift when the sort moves. */
 .st-col.is-sort { color: var(--rust); }
-.st-col.is-sort::after { content: ' ▾'; }
 
 /* Rows */
 .st-row { display: block; }
@@ -93,7 +96,7 @@ body { background: var(--cream); color: var(--ink); }
     color: rgba(14, 22, 32, .5);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.st-name .st-rings { color: var(--gold-deep); font-size: .62rem; letter-spacing: .06em; margin-left: .25rem; }
+.st-name .st-rings { color: var(--gold-deep); font-size: .74rem; letter-spacing: .06em; margin-left: .25rem; }
 .st-val {
     font-family: var(--mono); font-weight: 700;
     font-size: .62rem; color: var(--ink-soft);
