@@ -18,6 +18,8 @@
     --ink-line:      #3e3e3e;
     --ink-line-soft: #2f2f2f;
     --cream-mute:    #8a7a60;
+    --m-chrome-bg:   rgb(13, 13, 13);
+    --m-chrome-bg2:  #111111;
 }
 .site-glow {
     background-image:
@@ -40,6 +42,7 @@
     margin-bottom: .8rem;
 }
 .dr-year-wrap { flex: none; position: relative; display: flex; }
+.dr-year-wrap[hidden] { display: none; }
 .dr-year-btn {
     display: flex; align-items: center; gap: .4rem;
     padding: .5rem .8rem;
@@ -52,7 +55,11 @@
 }
 .dr-year-btn svg { transition: transform .15s ease; }
 .dr-year-wrap.is-open .dr-year-btn svg { transform: rotate(180deg); }
-.dr-controls .m-seg { flex: 1; }
+/* Tabs flex to fill the row; if more sections land later they overflow
+   into a horizontal scroll instead of squeezing. */
+.dr-controls .m-seg { flex: 1; overflow-x: auto; scrollbar-width: none; }
+.dr-controls .m-seg::-webkit-scrollbar { display: none; }
+.dr-controls .m-seg button { flex: 1 0 auto; padding-left: .7rem; padding-right: .7rem; }
 
 /* Year picker panel */
 .dr-year-menu {
@@ -199,7 +206,7 @@
         </div>
         <div class="m-seg" id="secSeg">
             <button data-sec="board" class="is-active">Board</button>
-            <button data-sec="r1">Round 1</button>
+            <button data-sec="r1">1st Round</button>
             <button data-sec="order">Order</button>
         </div>
     </div>
@@ -284,8 +291,9 @@
         if (!btn) return;
         section = btn.dataset.sec;
         this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
-        // The year picker only steers the board; history tabs span all years.
-        yearBtn.style.visibility = section === 'board' ? '' : 'hidden';
+        // The year picker only steers the board; history tabs span all years,
+        // so it leaves the row entirely and the tabs take the full width.
+        yearBtn.hidden = section !== 'board';
         renderSection();
     });
 
@@ -362,12 +370,27 @@
         return Promise.all(years.map(loadDraft));
     }
 
+    var dirPromise = null;
+    function loadCurrentSet() {
+        if (!dirPromise) {
+            dirPromise = grab('data/managers_directory.json').then(function (dir) {
+                var set = {};
+                (((dir || {}).managers) || []).forEach(function (m) {
+                    if (m.is_current) set[m.user_id] = true;
+                });
+                return set;
+            });
+        }
+        return dirPromise;
+    }
+
     // ── Round 1 history: every manager's first-round picks, all years ────
     function renderRoundOne() {
         var box = document.getElementById('board');
         box.innerHTML = '<div class="m-empty">Pulling round-one history…</div>';
-        loadAllYears().then(function (drafts) {
+        Promise.all([loadAllYears(), loadCurrentSet()]).then(function (res) {
             if (section !== 'r1') return;
+            var drafts = res[0], currentSet = res[1];
             var byMgr = {};
             drafts.forEach(function (draft) {
                 if (!draft) return;
@@ -384,20 +407,31 @@
                 return;
             }
             mgrs.sort(function (a, b) { return a.name.localeCompare(b.name); });
+            var current = mgrs.filter(function (m) { return currentSet[m.user_id]; });
+            var alumni = mgrs.filter(function (m) { return !currentSet[m.user_id]; });
+            // If the directory didn't load, currentSet is empty — show
+            // everyone in the main list rather than filing all under Alumni.
+            if (!current.length) { current = mgrs; alumni = []; }
+
+            function mgrCard(m) {
+                return '<a class="m-card" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+                    '<div class="dr-r1-mgr">' + esc(m.name) + '</div>' +
+                    '<div class="dr-r1-picks">' +
+                    m.picks.sort(function (x, y) { return y.year - x.year; }).map(function (p) {
+                        return '<div class="dr-r1-pick"><span class="m-mono">' + p.year + ' · 1.' +
+                            String(p.pick).padStart(2, '0') + '</span><span>' + esc(p.player) +
+                            (p.pos ? ' <span class="m-mono" style="letter-spacing:.04em">' + esc(p.pos) + '</span>' : '') +
+                            '</span></div>';
+                    }).join('') +
+                    '</div>' +
+                '</a>';
+            }
+
             box.innerHTML = '<div class="m-kicker" style="margin-bottom:.4rem">R1 picks by manager · all seasons</div>' +
-                mgrs.map(function (m) {
-                    return '<a class="m-card" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
-                        '<div class="dr-r1-mgr">' + esc(m.name) + '</div>' +
-                        '<div class="dr-r1-picks">' +
-                        m.picks.sort(function (x, y) { return y.year - x.year; }).map(function (p) {
-                            return '<div class="dr-r1-pick"><span class="m-mono">' + p.year + ' · 1.' +
-                                String(p.pick).padStart(2, '0') + '</span><span>' + esc(p.player) +
-                                (p.pos ? ' <span class="m-mono" style="letter-spacing:.04em">' + esc(p.pos) + '</span>' : '') +
-                                '</span></div>';
-                        }).join('') +
-                        '</div>' +
-                    '</a>';
-                }).join('');
+                current.map(mgrCard).join('') +
+                (alumni.length
+                    ? '<div class="m-kicker" style="margin:1.1rem 0 .4rem">Alumni</div>' + alumni.map(mgrCard).join('')
+                    : '');
         });
     }
 

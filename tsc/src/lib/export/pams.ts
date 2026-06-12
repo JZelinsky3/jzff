@@ -638,6 +638,10 @@ type ManagerGame = {
 
 function asManagerGame(m: MatchupRow, self: string): ManagerGame | null {
   if (m.score_a == null || m.score_b == null) return null
+  // Guard: a manager who isn't in this matchup has no "perspective" on it.
+  // Without this, callers iterating matchupsBySeason silently adopt side B
+  // for every game in the league (which inflated the season record book).
+  if (m.manager_a_id !== self && m.manager_b_id !== self) return null
   const isA = m.manager_a_id === self
   const selfScore = isA ? Number(m.score_a) : Number(m.score_b)
   const oppScore = isA ? Number(m.score_b) : Number(m.score_a)
@@ -2242,8 +2246,13 @@ function buildRecordBook(s: Snapshot): unknown {
       let high = -Infinity, highWeek = 0, highOpp = ''
       let low = Infinity, lowWeek = 0, lowOpp = ''
       let pl_w = 0, pl_l = 0, pl_t = 0, pl_pf = 0, pl_games = 0, total_pf = 0
+      let counted = 0
       for (const g of games) {
+        // Same scope rule as the weekly book / career aggregates:
+        // consolation & placement games don't touch the season's numbers.
+        if (g.is_playoff && !isChampionshipBracketGame(s, g)) continue
         total_pf += g.self_score
+        counted++
         const opp = s.managers.get(g.opp_id)
         const oppName = ownerName(opp)
         if (g.self_score > high) { high = g.self_score; highWeek = g.week; highOpp = oppName }
@@ -2255,6 +2264,7 @@ function buildRecordBook(s: Snapshot): unknown {
           else pl_t++
         }
       }
+      if (counted === 0) continue
       const totalReg = ms.wins + ms.losses + ms.ties
       const selfName = ownerName(m)
       seasonRows.push({
@@ -2273,7 +2283,7 @@ function buildRecordBook(s: Snapshot): unknown {
         playoff_pf: round2(pl_pf),
         total_record: recordStr(ms.wins + pl_w, ms.losses + pl_l, ms.ties + pl_t),
         total_pf: round2(total_pf),
-        avg_ppg: games.length > 0 ? round2(total_pf / games.length) : 0,
+        avg_ppg: counted > 0 ? round2(total_pf / counted) : 0,
         high_week_score: round2(high),
         high_week_when: `W${highWeek} vs ${highOpp}`,
         low_week_score: round2(low),

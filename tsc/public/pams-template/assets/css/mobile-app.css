@@ -32,6 +32,11 @@
 
     --m-appbar-h: 52px;
     --m-tab-h: 58px;
+
+    /* Chrome theming hooks — full-theme chapters (draft black, records green)
+       re-point these so the fixed app bar + tab bar match the page. */
+    --m-chrome-bg:  rgb(14, 22, 32);
+    --m-chrome-bg2: rgb(16, 25, 36);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,7 +67,7 @@ body {
     display: grid;
     grid-template-columns: 44px 1fr 44px;
     align-items: center;
-    background: rgb(14, 22, 32);
+    background: var(--m-chrome-bg);
     border-bottom: 1px solid var(--ink-line);
 }
 .m-appbar-back {
@@ -110,7 +115,7 @@ body {
     grid-template-columns: repeat(5, 1fr);
     height: calc(var(--m-tab-h) + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
-    background: rgb(16, 25, 36);
+    background: var(--m-chrome-bg2);
     border-top: 1px solid var(--ink-line);
 }
 .m-tab {

@@ -134,10 +134,22 @@
 }
 .m-record-name {
     font-family: var(--serif); font-size: 1.02rem;
+    line-height: 1.3;
     color: var(--cream);
     margin-top: .3rem;
+    /* Fixed two-line box so rotating records never change the card height
+       (which shifted the whole page mid-scroll). */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.6em;
 }
 .m-record-name em { font-style: italic; color: var(--gold); }
+#recordDetail {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* ── Managers rail ── */
 .m-mgr-rail {
@@ -207,6 +219,12 @@
 }
 
 /* ── Seasons list ── */
+#seasonsList {
+    /* ~4 rows visible; older seasons scroll inside the card. */
+    max-height: 244px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
 .m-season-year {
     flex: none;
     font-family: var(--serif); font-size: 1.1rem;
@@ -475,7 +493,11 @@
         box.className = 'm-riv-fade';
 
         function card(r) {
-            var mid = r.is_deadlocked ? 'TIED' : esc(r.leader_record);
+            // Head-to-head record oriented to the names as displayed (A–B) —
+            // leader_record is leader-first, which can read backwards here.
+            var mid = (r.manager_a && r.manager_a.wins != null && r.manager_b && r.manager_b.wins != null)
+                ? r.manager_a.wins + '–' + r.manager_b.wins
+                : esc(r.leader_record || '0–0');
             var sub = r.is_deadlocked
                 ? 'Dead even after ' + r.total_meetings
                 : esc(r.leader_name) + ' leads · ' + r.total_meetings + (r.total_meetings === 1 ? ' meeting' : ' meetings');
@@ -512,8 +534,10 @@
     function renderSeasons(dir) {
         var list = (dir && dir.seasons) || [];
         if (!list.length) return;
+        // Newest season on top; the list itself scrolls past the first ~4.
+        list = list.slice().sort(function (a, b) { return b.year - a.year; });
         document.getElementById('seasonsSection').hidden = false;
-        document.getElementById('seasonsList').innerHTML = list.slice(0, 4).map(function (s) {
+        document.getElementById('seasonsList').innerHTML = list.map(function (s) {
             return '<a class="m-list-row" href="seasons/season.html?year=' + s.year + '">' +
                 '<span class="m-season-year">' + s.year + '</span>' +
                 '<span class="m-standrow-name">' + esc(s.champion_name) + '<small>' + esc(s.champion_team_name || '') + ' · champion</small></span>' +
