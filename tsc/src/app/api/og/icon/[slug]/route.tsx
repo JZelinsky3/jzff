@@ -111,7 +111,7 @@ export async function GET(
             display: 'flex',
             alignItems: 'baseline',
             fontStyle: 'italic',
-            fontSize: `${58 * u}px`,
+            fontSize: `${80 * u}px`,
             lineHeight: 1,
             marginTop: `${30 * u}px`,
             opacity: 0.6,
