@@ -64,10 +64,10 @@ body { background: var(--cream); color: var(--ink); }
 }
 .st-col:first-child { text-align: center; }
 .st-col:nth-child(2) { text-align: left; }
-.st-col:nth-child(3) { text-align: center; transform: translateX(1px); }
+.st-col:nth-child(3) { text-align: center; transform: translateX(3px); }
 /* Active sort: full-strength bold ink against the faded siblings — no
    arrow, so titles don't shift when the sort moves. */
-.st-col.is-sort { color: var(--ink); font-weight: bold (900); }
+.st-col.is-sort { color: var(--ink); font-weight: 900; }
 /* Tapping the active column again flips the order; the underline is the
    only signal — no arrow, nothing shifts. */
 .st-col.is-sort.is-rev {
@@ -81,6 +81,10 @@ body { background: var(--cream); color: var(--ink); }
 .st-val.st-val--reg { color: var(--gold-deep); }
 .st-val.st-val--pst { color: #8c3820; }
 .st-val.st-val--all { color: #4a6a88; }
+
+.st-val.st-val--all {
+    align-self: start;
+}
 
 /* Rows */
 .st-row { display: block; }
