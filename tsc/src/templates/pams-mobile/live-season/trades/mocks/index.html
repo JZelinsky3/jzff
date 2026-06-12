@@ -11,9 +11,15 @@
 /* Mobile shell fit-up — the room keeps the desktop's rumor-mill.css +
    rumor-mill.js wholesale (same weekly slate engine + ballots); only
    the chrome swaps to the app shell. */
+/* App bar + tab bar in the scandal sheet's oxblood (mirrors the desktop
+   nav recolor in rumor-mill.css), not the walnut desk. */
 :root {
-    --m-chrome-bg:  rgb(24, 15, 8);
-    --m-chrome-bg2: rgb(28, 18, 10);
+    --m-chrome-bg:  rgb(17, 8, 9);
+    --m-chrome-bg2: rgb(23, 12, 13);
+}
+.m-appbar, .m-tabbar {
+    --ink-line: #371d21; --gold: #de8a6b; --gold-deep: #a8654d;
+    --cream: #f7e9dd; --cream-mute: #9c7672;
 }
 body {
     padding-top: calc(var(--m-appbar-h) + env(safe-area-inset-top));

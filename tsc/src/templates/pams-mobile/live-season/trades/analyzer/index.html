@@ -11,9 +11,15 @@
 /* Mobile shell fit-up — the room keeps the desktop's analyzer.css +
    analyzer.js wholesale (same value engine + grading); only the chrome
    swaps to the app shell. */
+/* App bar + tab bar in the drafting room's midnight blue (mirrors the
+   desktop nav recolor at the foot of analyzer.css), not the walnut desk. */
 :root {
-    --m-chrome-bg:  rgb(24, 15, 8);
-    --m-chrome-bg2: rgb(28, 18, 10);
+    --m-chrome-bg:  rgb(9, 13, 19);
+    --m-chrome-bg2: rgb(13, 19, 27);
+}
+.m-appbar, .m-tabbar {
+    --ink-line: #1c2733; --gold: #6ea8e0; --gold-deep: #4d7eb2;
+    --cream: #e9f0f7; --cream-mute: #71849b;
 }
 body {
     padding-top: calc(var(--m-appbar-h) + env(safe-area-inset-top));

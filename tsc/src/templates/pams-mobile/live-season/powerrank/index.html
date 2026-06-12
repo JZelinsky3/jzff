@@ -296,6 +296,16 @@ body { background: #f0e5c8; color: var(--ink); }
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
+    // Long team names overflow the podium runner cards and the table's name
+    // column. Names past the cap collapse to word initials ("Goliath
+    // National Bank" → "GNB"); long single words get cut instead.
+    function shortTeam(name, max) {
+        name = String(name == null ? '' : name).trim();
+        if (name.length <= max) return name;
+        var words = name.split(/\s+/);
+        if (words.length < 2) return name.slice(0, max - 1) + '…';
+        return words.map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+    }
 
     var state = { data: null, weeks: [], activeWk: null, view: 'overall' };
 
@@ -425,7 +435,7 @@ body { background: #f0e5c8; color: var(--ink); }
                     logoImg(first, 'pd-hero-logo') +
                     '<div class="pd-hero-body">' +
                         '<div class="pd-hero-label">1st Place</div>' +
-                        '<div class="pd-hero-name">' + esc(first.team_name) + '</div>' +
+                        '<div class="pd-hero-name">' + esc(shortTeam(first.team_name, 22)) + '</div>' +
                         '<div class="pd-hero-mgr">' + esc(first.manager) + '</div>' +
                     '</div>' +
                     '<div class="pd-hero-right">' +
@@ -440,7 +450,7 @@ body { background: #f0e5c8; color: var(--ink); }
                 logoImg(t, 'pd-runner-logo') +
                 '<div class="pd-runner-body">' +
                     '<div class="pd-runner-label">' + label + '</div>' +
-                    '<div class="pd-runner-name">' + esc(t.team_name) + '</div>' +
+                    '<div class="pd-runner-name">' + esc(shortTeam(t.team_name, 14)) + '</div>' +
                     '<div class="pd-runner-meta">' + t.wins + '–' + t.losses + ' · ' + t.score.toFixed(1) + ' ' + deltaHTML(t.delta) + '</div>' +
                 '</div>' +
             '</div>';
@@ -461,7 +471,7 @@ body { background: #f0e5c8; color: var(--ink); }
                     '<span class="pr-team">' +
                         logoImg(t, 'pr-logo') +
                         '<span class="pr-team-body">' +
-                            '<span class="pr-team-name">' + esc(t.team_name) + '</span>' +
+                            '<span class="pr-team-name">' + esc(shortTeam(t.team_name, 16)) + '</span>' +
                             '<span class="pr-team-mgr">' + esc(t.manager) + conf + '</span>' +
                         '</span>' +
                     '</span>' +

@@ -145,7 +145,9 @@ body { background: var(--mp-bg); color: var(--mp-cream); }
     margin-bottom: .3rem;
 }
 .bd-spread { color: var(--mp-amber); }
-.bd-spread .fav-mark { color: var(--mp-amber); }
+/* Bigger than the row-top's .5rem mono so it reads as the same star
+   that marks the favored name below it. */
+.bd-spread .fav-mark { color: var(--mp-amber); font-size: .7rem; line-height: 1; }
 .bd-spread.pp { color: var(--mp-mute); }
 .bd-row-teams {
     display: grid;
@@ -497,6 +499,17 @@ button.dk-btn { width: 100%; }
         var v = Number(n);
         return isFinite(v) ? v.toFixed(1) : '—';
     }
+    // Long team names crowd the board's half-width columns and clip the
+    // favorite ★ off the right-hand side. Names past the cap collapse to
+    // word initials ("Goliath National Bank" → "GNB"); long single words
+    // get cut instead.
+    function shortTeam(name, max) {
+        name = String(name == null ? '' : name).trim();
+        if (name.length <= max) return name;
+        var words = name.split(/\s+/);
+        if (words.length < 2) return name.slice(0, max - 1) + '…';
+        return words.map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+    }
 
     fetch('data/matchup_preview.json', { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null; })
@@ -589,13 +602,13 @@ button.dk-btn { width: 100%; }
                 '<div class="mq-grid">' +
                     '<div>' +
                         '<div class="mq-name">' + esc(a.name) + '</div>' +
-                        '<div class="mq-team">' + esc(a.team) + '</div>' +
+                        '<div class="mq-team">' + esc(shortTeam(a.team, 18)) + '</div>' +
                         '<div class="mq-rec">' + esc(a.record) + ' · ' + fmtPts(a.ppgSeason || a.ppg5) + '</div>' +
                     '</div>' +
                     '<div class="mq-vs">vs<small>Train ' + esc(m.train) + '</small></div>' +
                     '<div>' +
                         '<div class="mq-name">' + esc(b.name) + '</div>' +
-                        '<div class="mq-team">' + esc(b.team) + '</div>' +
+                        '<div class="mq-team">' + esc(shortTeam(b.team, 18)) + '</div>' +
                         '<div class="mq-rec">' + esc(b.record) + ' · ' + fmtPts(b.ppgSeason || b.ppg5) + '</div>' +
                     '</div>' +
                 '</div>' +
@@ -631,12 +644,12 @@ button.dk-btn { width: 100%; }
                     '</div>' +
                     '<div class="bd-row-teams">' +
                         '<div class="bd-side">' +
-                            '<div class="bd-side-name">' + aStar + esc(m.a.team) + '</div>' +
+                            '<div class="bd-side-name">' + aStar + esc(shortTeam(m.a.team, 14)) + '</div>' +
                             '<div class="bd-side-rec">' + esc(m.a.record) + '</div>' +
                         '</div>' +
                         '<div class="bd-vs">vs</div>' +
                         '<div class="bd-side right">' +
-                            '<div class="bd-side-name">' + esc(m.b.team) + bStar + '</div>' +
+                            '<div class="bd-side-name">' + esc(shortTeam(m.b.team, 14)) + bStar + '</div>' +
                             '<div class="bd-side-rec">' + esc(m.b.record) + '</div>' +
                         '</div>' +
                     '</div>' +

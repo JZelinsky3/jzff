@@ -40,6 +40,27 @@
   font-family: var(--mono); font-size: .58rem;
   letter-spacing: .22em; text-transform: uppercase;
 }
+/* Long write-ups start folded to three lines (trades.js adds .is-folded
+   past ~240 chars). The toggle inherits each theme's summary color so the
+   one rule serves all four themes. Block, not inline — wire's drop-cap
+   ::first-letter only applies to block containers. */
+.tr-summary-text { display: block; }
+.tr-summary-text.is-folded {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.tr-summary-toggle {
+  display: block;
+  margin-top: .45rem; padding: 0;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--mono); font-weight: 700;
+  font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+  color: inherit; opacity: .6;
+  transition: opacity .15s;
+}
+.tr-summary-toggle:hover { opacity: 1; }
 .tr-tabs {
   display: flex; overflow-x: auto; scrollbar-width: none;
   margin-bottom: 2rem; gap: 0;
@@ -522,7 +543,9 @@ body[data-trades-theme="wire"] .tr-summary {
   font-size: 1rem; line-height: 1.65; color: #3a342b;
   margin-bottom: 1.6rem;
 }
-body[data-trades-theme="wire"] .tr-summary::first-letter {
+/* Drop cap lives on the inner text span now; a floated ::first-letter
+   inside a line-clamped box renders glitchy, so it only shows unfolded. */
+body[data-trades-theme="wire"] .tr-summary-text:not(.is-folded)::first-letter {
   font-family: var(--serif); font-size: 2.6rem; line-height: 1;
   float: left; padding: .15rem .35rem 0 0; color: #b03830; font-weight: 700;
 }
@@ -717,7 +740,7 @@ body[data-trades-theme="floor"] .tr-summary {
   font-size: .82rem; line-height: 1.55; color: #889084;
   font-family: var(--mono);
 }
-body[data-trades-theme="floor"] .tr-summary::before {
+body[data-trades-theme="floor"] .tr-summary-text::before {
   content: '> '; color: #00ff9f; font-weight: 700;
 }
 body[data-trades-theme="floor"] .tr-sides { background: #1c2421; }

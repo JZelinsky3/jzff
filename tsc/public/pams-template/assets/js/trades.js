@@ -188,14 +188,25 @@
     '</div>';
   }
 
+  // Write-ups longer than this start folded to a few lines behind a
+  // More/Less toggle so a wordy grade doesn't push the trade itself
+  // below the fold.
+  var SUMMARY_FOLD_CHARS = 240;
+
   function renderTrade(t, opts) {
     var weekLabel = (t.week != null) ? 'Week ' + t.week : 'Pre-season';
     var sides = (t.sides || []).map(function (s) { return renderSide(s, opts); }).join('');
     var n = (t.sides || []).length;
     var summaryText = (opts && opts.showRevisit && t.revisit_summary) || t.ai_summary || '';
-    var summaryHtml = summaryText
-      ? '<div class="tr-summary">' + escapeHtml(summaryText) + '</div>'
-      : '';
+    var summaryHtml = '';
+    if (summaryText) {
+      var folds = summaryText.length > SUMMARY_FOLD_CHARS;
+      summaryHtml =
+        '<div class="tr-summary">' +
+          '<span class="tr-summary-text' + (folds ? ' is-folded' : '') + '">' + escapeHtml(summaryText) + '</span>' +
+          (folds ? '<button type="button" class="tr-summary-toggle" aria-expanded="false">More ▾</button>' : '') +
+        '</div>';
+    }
     return '<div class="tr-card">' +
       '<div class="tr-card-head">' +
         '<span class="tr-date">' + escapeHtml(fmtDate(t.executed_at)) + '</span>' +
@@ -318,6 +329,18 @@
     if (data.all_verdicts && data.all_verdicts.length) return 'verdicts';
     return 'current';
   }
+
+  // More/Less on folded write-ups — delegated, since tab switches re-render
+  // the whole pane.
+  content.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.tr-summary-toggle') : null;
+    if (!btn) return;
+    var text = btn.parentNode.querySelector('.tr-summary-text');
+    if (!text) return;
+    var open = !text.classList.toggle('is-folded');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? 'Less ▴' : 'More ▾';
+  });
 
   // ── Boot ───────────────────────────────────────────────────────────────
   async function boot() {

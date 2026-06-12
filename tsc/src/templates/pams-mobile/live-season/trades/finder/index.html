@@ -12,9 +12,15 @@
 /* Mobile shell fit-up — the room keeps the desktop's finder.css +
    finder.js wholesale (same dual-mode sweep engine); only the chrome
    swaps to the app shell. */
+/* App bar + tab bar in the map room's deep pine (mirrors the desktop
+   nav recolor in finder.css), not the walnut desk. */
 :root {
-    --m-chrome-bg:  rgb(24, 15, 8);
-    --m-chrome-bg2: rgb(28, 18, 10);
+    --m-chrome-bg:  rgb(7, 13, 12);
+    --m-chrome-bg2: rgb(11, 19, 17);
+}
+.m-appbar, .m-tabbar {
+    --ink-line: #1b312c; --gold: #5cbda1; --gold-deep: #3e8a73;
+    --cream: #eaf5ef; --cream-mute: #6f8d84;
 }
 body {
     padding-top: calc(var(--m-appbar-h) + env(safe-area-inset-top));
