@@ -64,10 +64,22 @@ body { background: var(--cream); color: var(--ink); }
 }
 .st-col:first-child { text-align: center; }
 .st-col:nth-child(2) { text-align: left; }
-.st-col:nth-child(3) { text-align: center; }
+.st-col:nth-child(3) { text-align: center; transform: translateX(1px); }
 /* Active sort: the rust color alone marks it — no arrow, so titles don't
    shift when the sort moves. */
 .st-col.is-sort { color: var(--rust); }
+/* Tapping the active column again flips the order; the inverted pill is the
+   only signal (negative margins cancel the padding so nothing shifts). */
+.st-col.is-sort.is-rev {
+    background: var(--rust); color: var(--cream);
+    border-radius: 4px;
+    padding: .15rem .3rem; margin: -.15rem -.3rem;
+}
+/* Record-view value columns echo the desktop table's tones:
+   reg gold, playoffs deep rust, all-time steel blue. */
+.st-val--reg { color: var(--gold-deep); }
+.st-val--pst { color: #8c3820; }
+.st-val--all { color: #4a6a88; }
 
 /* Rows */
 .st-row { display: block; }
@@ -203,6 +215,7 @@ body { background: var(--cream); color: var(--ink); }
     var managers = [];
     var view = 'record';
     var sortKey = 'all';
+    var sortDir = 1; // 1 = best first; -1 = flipped (second tap on same column)
 
     // Per-view column sets: [key, label, comparator, render]
     var COLS = {
@@ -269,11 +282,15 @@ body { background: var(--cream); color: var(--ink); }
     function render() {
         var cols = COLS[view];
 
+        function colClass(key) {
+            if (sortKey !== key) return '';
+            return ' is-sort' + (sortDir === -1 ? ' is-rev' : '');
+        }
         document.getElementById('cols').innerHTML =
             '<span class="st-col">Rk</span>' +
-            '<button class="st-col' + (sortKey === 'name' ? ' is-sort' : '') + '" data-key="name">Manager</button>' +
+            '<button class="st-col' + colClass('name') + '" data-key="name">Manager</button>' +
             cols.map(function (c) {
-                return '<button class="st-col' + (sortKey === c[0] ? ' is-sort' : '') + '" data-key="' + c[0] + '">' + c[1] + '</button>';
+                return '<button class="st-col' + colClass(c[0]) + '" data-key="' + c[0] + '">' + c[1] + '</button>';
             }).join('');
 
         var box = document.getElementById('rows');
@@ -281,30 +298,36 @@ body { background: var(--cream); color: var(--ink); }
             box.innerHTML = '<div class="m-empty">No results on file yet.</div>';
             return;
         }
-        var cmp = comparatorFor(sortKey);
+        var base = comparatorFor(sortKey);
+        var cmp = sortDir === -1
+            ? function (a, b) { return -base(a, b); }
+            : base;
         var current = managers.filter(function (m) { return m.is_current; }).sort(cmp);
         var alumni = managers.filter(function (m) { return !m.is_current; }).sort(cmp);
 
-        box.innerHTML = current.map(function (m, i) { return row(m, i, cols); }).join('');
+        box.innerHTML = current.map(function (m, i) { return row(m, i, cols, current.length); }).join('');
 
         var alumniBlock = document.getElementById('alumniBlock');
         alumniBlock.hidden = !alumni.length;
         if (alumni.length) {
             document.getElementById('alumniRows').innerHTML =
-                alumni.map(function (m, i) { return row(m, i, cols); }).join('');
+                alumni.map(function (m, i) { return row(m, i, cols, alumni.length); }).join('');
         }
     }
 
-    function row(m, i, cols) {
+    function row(m, i, cols, total) {
+        // Flipped sort keeps each manager's true rank (worst sits on top
+        // showing rank N), so the number always means the same thing.
+        var rank = sortKey === 'name' ? '·' : (sortDir === -1 ? total - i : i + 1);
         var rings = m.championships
             ? '<span class="st-rings">' + '✦'.repeat(Math.min(m.championships, 4)) + '</span>'
             : '';
         return '<div class="st-row" data-id="' + esc(m.user_id) + '">' +
             '<button class="st-row-main st-grid" aria-expanded="false">' +
-                '<span class="st-rank">' + (sortKey === 'name' ? '·' : i + 1) + '</span>' +
+                '<span class="st-rank">' + rank + '</span>' +
                 '<span class="st-name">' + esc(m.name) + rings +
                     '<small>' + esc(m.team_latest || '') + '</small></span>' +
-                cols.map(function (c) { return '<span class="st-val">' + c[3](m) + '</span>'; }).join('') +
+                cols.map(function (c) { return '<span class="st-val st-val--' + c[0] + '">' + c[3](m) + '</span>'; }).join('') +
             '</button>' +
             '<div class="st-detail">' +
                 '<div class="st-detail-grid">' +
@@ -327,6 +350,7 @@ body { background: var(--cream); color: var(--ink); }
         if (!btn) return;
         view = btn.dataset.view;
         sortKey = DEFAULT_SORT[view];
+        sortDir = 1;
         this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
         render();
     });
@@ -334,7 +358,12 @@ body { background: var(--cream); color: var(--ink); }
     document.getElementById('cols').addEventListener('click', function (e) {
         var btn = e.target.closest('button[data-key]');
         if (!btn) return;
-        sortKey = btn.dataset.key;
+        if (sortKey === btn.dataset.key) {
+            sortDir = -sortDir;
+        } else {
+            sortKey = btn.dataset.key;
+            sortDir = 1;
+        }
         render();
     });
 

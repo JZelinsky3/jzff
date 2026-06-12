@@ -2307,6 +2307,9 @@ function buildRecordBook(s: Snapshot): unknown {
     })
     .sort((a, b) => a.reg_win_pct - b.reg_win_pct || a.reg_pf - b.reg_pf).slice(0, N)
   const highest_ppg = [...seasonRows].sort((a, b) => b.reg_ppg - a.reg_ppg).slice(0, N)
+  // Per-game flavor of "fewest points" — fairer across seasons with
+  // different schedule lengths (e.g. 13-game 2019/2020 vs 14-game years).
+  const lowest_ppg = [...seasonRows].filter((r) => r.reg_ppg > 0).sort((a, b) => a.reg_ppg - b.reg_ppg).slice(0, N)
   const most_points_against = [...seasonRows].sort((a, b) => b.reg_pa - a.reg_pa).slice(0, N)
 
   // Career
@@ -2328,6 +2331,9 @@ function buildRecordBook(s: Snapshot): unknown {
     const games = (s.matchupsByManager.get(m.id) ?? [])
       .map((mt) => asManagerGame(mt, m.id))
       .filter((g): g is ManagerGame => g != null)
+      // Consolation / placement games don't extend OR break a streak —
+      // same scope rule as every other stat in the book.
+      .filter((g) => !g.is_playoff || isChampionshipBracketGame(s, g))
       .sort((a, b) => {
         const ya = s.seasons.find((sn) => sn.id === a.season_id)?.year ?? 0
         const yb = s.seasons.find((sn) => sn.id === b.season_id)?.year ?? 0
@@ -2471,6 +2477,7 @@ function buildRecordBook(s: Snapshot): unknown {
         best_reg_season_records,
         worst_reg_season_records,
         highest_ppg,
+        lowest_ppg,
         most_points_against,
       },
       career: {

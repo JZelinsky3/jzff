@@ -93,6 +93,9 @@
     color: var(--cream-mute);
 }
 .rb-other-val { flex: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--rec); }
+/* Combined-score records list both managers; the "vs Opponent" tail reads
+   as context, not a co-holder — smaller and dimmer than the lead name. */
+.rb-vs { font-size: .72em; color: var(--cream-mute); }
 </style>
 </head>
 <body>
@@ -162,7 +165,9 @@
             ['highest_ppg', 'Best PPG, Season', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.avg_ppg); }, seasonCtx],
             ['best_reg_season_records', 'Best Record', function (e) { return rec(e.reg_record); }, seasonCtx],
             ['worst_reg_season_records', 'Worst Record', function (e) { return rec(e.reg_record); }, seasonCtx],
-            ['lowest_season_pf', 'Fewest Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
+            // Per-game, not total — 2019/2020 ran a shorter schedule, so
+            // raw season totals unfairly stack the bottom of this list.
+            ['lowest_ppg', 'Lowest PPG, Season', function (e) { return num(e.reg_ppg); }, seasonCtx],
             ['most_points_against', 'Most Points Against', function (e) { return num(e.reg_pa, 0); }, seasonCtx],
         ],
         career: [
@@ -247,12 +252,13 @@
     }
 
     function holderName(e) { return e.owner || e.name || e.holder || '—'; }
-    function holderNameFor(key, e) {
-        // Both managers matter in a combined-score game.
+    // Returns escaped HTML, not plain text — combined-score games show both
+    // managers, with the opponent demoted to a smaller, dimmer tail.
+    function holderHtmlFor(key, e) {
         if (key.indexOf('combined_score') !== -1 && e.opp_owner) {
-            return holderName(e) + ' vs ' + e.opp_owner;
+            return esc(holderName(e)) + ' <span class="rb-vs">vs ' + esc(e.opp_owner) + '</span>';
         }
-        return holderName(e);
+        return esc(holderName(e));
     }
     // Short context shown on every ranked row (the big top entry keeps the
     // full ctx line): games get "year · Wk", seasons get the year.
@@ -284,7 +290,7 @@
                 '<div class="rb-card-label">' + esc(label) + '</div>' +
                 '<div class="rb-top">' +
                     '<span class="rb-top-value">' + esc(val(top)) + '</span>' +
-                    '<span class="rb-top-holder"><b>' + esc(holderNameFor(key, top)) + '</b>' +
+                    '<span class="rb-top-holder"><b>' + holderHtmlFor(key, top) + '</b>' +
                         '<small>' + esc(ctx(top) || '') + '</small></span>' +
                 '</div>' +
                 (others.length
@@ -292,7 +298,7 @@
                         var sub = rowCtx(e);
                         return '<div class="rb-other' + (i >= 2 ? ' rb-extra' : '') + '">' +
                             '<span class="rb-other-rank">' + (i + 2) + '</span>' +
-                            '<span class="rb-other-name">' + esc(holderNameFor(key, e)) +
+                            '<span class="rb-other-name">' + holderHtmlFor(key, e) +
                                 (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
                             '<span class="rb-other-val">' + esc(val(e)) + '</span>' +
                         '</div>';

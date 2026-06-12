@@ -59,7 +59,9 @@
    into a horizontal scroll instead of squeezing. */
 .dr-controls .m-seg { flex: 1; overflow-x: auto; scrollbar-width: none; }
 .dr-controls .m-seg::-webkit-scrollbar { display: none; }
-.dr-controls .m-seg button { flex: 1 0 auto; padding-left: .7rem; padding-right: .7rem; }
+/* Side padding trimmed so all four tabs fit the full row without scrolling
+   once the year pill leaves; with the pill (board) they may scroll a touch. */
+.dr-controls .m-seg button { flex: 1 0 auto; padding-left: .5rem; padding-right: .5rem; }
 
 /* Year picker panel */
 .dr-year-menu {
@@ -174,6 +176,22 @@
 }
 .dr-r1-pick .m-mono { flex: none; }
 
+/* Loyalty: favorite player + NFL team leanings, one condensed card per manager */
+.dr-loyal-player {
+    display: flex; align-items: center; gap: .5rem;
+    margin-top: .45rem; min-width: 0;
+}
+.dr-loyal-player .dr-player {
+    flex: 0 1 auto;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dr-loyal-player .m-mono { flex: none; }
+.dr-loyal-years { margin-top: .15rem; }
+.dr-loyal-teams {
+    margin-top: .55rem; padding-top: .45rem;
+    border-top: 1px solid var(--ink-line-soft);
+}
+
 /* Draft order history */
 .dr-finish {
     flex: none;
@@ -208,6 +226,7 @@
             <button data-sec="board" class="is-active">Board</button>
             <button data-sec="r1">1st Round</button>
             <button data-sec="order">Order</button>
+            <button data-sec="loyalty">Loyalty</button>
         </div>
     </div>
 
@@ -300,6 +319,7 @@
     function renderSection() {
         if (section === 'board') renderBoard(activeYear);
         else if (section === 'r1') renderRoundOne();
+        else if (section === 'loyalty') renderLoyalty();
         else renderOrder();
     }
 
