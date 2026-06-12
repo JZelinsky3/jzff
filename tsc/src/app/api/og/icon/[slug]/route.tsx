@@ -111,10 +111,10 @@ export async function GET(
             display: 'flex',
             alignItems: 'baseline',
             fontStyle: 'italic',
-            fontSize: `${42 * u}px`,
+            fontSize: `${58 * u}px`,
             lineHeight: 1,
             marginTop: `${30 * u}px`,
-            opacity: 0.55,
+            opacity: 0.6,
           }}
         >
           <span style={{ display: 'flex', color: cream }}>TS</span>
