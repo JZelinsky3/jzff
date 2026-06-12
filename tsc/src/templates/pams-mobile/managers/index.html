@@ -17,8 +17,52 @@
 }
 .mg-title em { font-style: italic; color: var(--gold); }
 
+/* ── Ticket stubs — one admission ticket per member. The stub (avatar side)
+      is split off by a dashed perforation with punched semicircle notches. ── */
+.mg-tickets { display: flex; flex-direction: column; gap: .55rem; margin-top: .35rem; }
+.mg-ticket {
+    position: relative;
+    display: flex; align-items: stretch;
+    background: linear-gradient(135deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    overflow: hidden; /* clips the notch circles into semicircle bites */
+    text-decoration: none; color: inherit;
+}
+.mg-stub {
+    flex: none; width: 70px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    border-right: 1px dashed var(--ink-line);
+}
+.mg-stub::before {
+    content: 'ADMIT ONE';
+    position: absolute; left: 5px; top: 50%;
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .38rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--cream-mute); opacity: .55;
+}
+/* Punched holes riding the perforation line, filled with the page bg. */
+.mg-ticket::before, .mg-ticket::after {
+    content: '';
+    position: absolute; left: 64px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 1px solid var(--ink-line);
+}
+.mg-ticket::before { top: -7px; }
+.mg-ticket::after  { bottom: -7px; }
+.mg-body {
+    flex: 1; min-width: 0; min-height: 58px;
+    display: flex; align-items: center; gap: .6rem;
+    padding: .55rem .8rem .55rem .7rem;
+}
 .mg-ava {
     flex: none;
+    position: relative; overflow: hidden;
     width: 40px; height: 40px;
     border-radius: 50%;
     border: 1px solid var(--ink-line);
@@ -27,7 +71,15 @@
     font-family: var(--serif);
     font-size: 1rem; color: var(--gold);
 }
-.mg-row.is-champ .mg-ava { border-color: var(--gold-deep); background: rgba(232,200,137,.07); }
+.mg-ava img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+.mg-ticket.is-champ { border-color: var(--gold-deep); }
+.mg-ticket.is-champ .mg-stub { border-right-color: rgba(232,200,137,.45); }
+.mg-ticket.is-champ::before, .mg-ticket.is-champ::after { border-color: var(--gold-deep); }
+.mg-ticket.is-champ .mg-ava { border-color: var(--gold-deep); background: rgba(232,200,137,.07); }
 .mg-name { min-width: 0; flex: 1; font-weight: 600; font-size: .95rem; }
 .mg-name small {
     display: block; font-weight: 400; font-size: .7rem; color: var(--cream-mute);
@@ -36,6 +88,7 @@
 .mg-rings { flex: none; color: var(--gold); font-size: .7rem; letter-spacing: .08em; }
 .mg-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--cream-soft); text-align: right; }
 .mg-rec small { display: block; font-weight: 400; font-size: .56rem; color: var(--cream-mute); }
+.mg-alumni { opacity: .82; }
 .mg-alumni .mg-name, .mg-alumni .mg-ava { color: var(--cream-mute); }
 </style>
 </head>
@@ -54,12 +107,12 @@
 
     <section id="currentSection" hidden class="m-section" style="margin-top:0">
         <div class="m-kicker">Current Members</div>
-        <div class="m-list" id="currentList" style="margin-top:.1rem"></div>
+        <div class="mg-tickets" id="currentList"></div>
     </section>
 
     <section id="alumniSection" hidden class="m-section" style="margin-bottom:1rem">
         <div class="m-kicker">Alumni</div>
-        <div class="m-list" id="alumniList" style="margin-top:.1rem"></div>
+        <div class="mg-tickets" id="alumniList"></div>
     </section>
 
     <div class="m-empty" id="emptyMsg" hidden>No managers on file yet.</div>
@@ -106,13 +159,20 @@
 
     function row(m, isAlumni) {
         var initial = (m.name || '?').trim().charAt(0).toUpperCase();
+        // Real team avatar from the platform when the export has one;
+        // the initial underneath is the fallback if the image 404s.
+        var img = m.avatar
+            ? '<img src="' + esc(m.avatar) + '" alt="" loading="lazy" onerror="this.remove()">'
+            : '';
         var rings = m.championships ? '<span class="mg-rings">' + '✦'.repeat(Math.min(m.championships, 4)) + '</span>' : '';
         var tenure = m.seasons_played + (m.seasons_played === 1 ? ' season' : ' seasons');
-        return '<a class="m-list-row mg-row' + (m.championships ? ' is-champ' : '') + (isAlumni ? ' mg-alumni' : '') + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
-            '<span class="mg-ava">' + esc(initial) + '</span>' +
-            '<span class="mg-name">' + esc(m.name) + '<small>' + esc(m.team_latest || '') + ' · ' + tenure + '</small></span>' +
-            rings +
-            '<span class="mg-rec">' + esc(m.total_record) + '<small>' + (m.win_pct * 100).toFixed(0) + '% win</small></span>' +
+        return '<a class="mg-ticket' + (m.championships ? ' is-champ' : '') + (isAlumni ? ' mg-alumni' : '') + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+            '<span class="mg-stub"><span class="mg-ava">' + esc(initial) + img + '</span></span>' +
+            '<span class="mg-body">' +
+                '<span class="mg-name">' + esc(m.name) + '<small>' + esc(m.team_latest || '') + ' · ' + tenure + '</small></span>' +
+                rings +
+                '<span class="mg-rec">' + esc(m.total_record) + '<small>' + (m.win_pct * 100).toFixed(0) + '% win</small></span>' +
+            '</span>' +
         '</a>';
     }
 })();

@@ -455,6 +455,100 @@
         });
     }
 
+    // ── Loyalty: favorite player + NFL team leanings, current managers ───
+    // Condensed port of the desktop Loyalty tab: most-drafted player(s)
+    // per manager (ties broken by earliest avg pick, max 2 shown) plus
+    // their three most-drafted NFL teams.
+    function renderLoyalty() {
+        var box = document.getElementById('board');
+        box.innerHTML = '<div class="m-empty">Checking the receipts…</div>';
+        Promise.all([loadAllYears(), loadCurrentSet()]).then(function (res) {
+            if (section !== 'loyalty') return;
+            var drafts = res[0], currentSet = res[1];
+            var byMgr = {};
+            drafts.forEach(function (draft) {
+                if (!draft) return;
+                (draft.picks || []).forEach(function (p) {
+                    if (!p.manager_name) return;
+                    var key = p.user_id || p.manager_name;
+                    (byMgr[key] = byMgr[key] || { name: p.manager_name, user_id: p.user_id, picks: [] })
+                        .picks.push({
+                            year: draft.year, round: p.round, round_pick: p.round_pick,
+                            overall: p.overall_pick, player: p.player_name,
+                            pos: (p.position || '').toUpperCase(), team: p.nfl_team,
+                        });
+                });
+            });
+            var mgrs = Object.keys(byMgr).map(function (k) { return byMgr[k]; });
+            if (!mgrs.length) {
+                box.innerHTML = '<div class="m-empty">No picks on file.</div>';
+                return;
+            }
+            var current = mgrs.filter(function (m) { return currentSet[m.user_id]; });
+            if (!current.length) current = mgrs;
+            current.sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+            function favs(picks) {
+                var byPlayer = {};
+                picks.forEach(function (p) {
+                    if (!p.player || p.overall == null) return;
+                    (byPlayer[p.player] = byPlayer[p.player] || { name: p.player, pos: p.pos, picks: [] })
+                        .picks.push(p);
+                });
+                var ranked = Object.keys(byPlayer).map(function (n) {
+                    var r = byPlayer[n];
+                    r.count = r.picks.length;
+                    r.avg = r.picks.reduce(function (s, p) { return s + p.overall; }, 0) / r.count;
+                    r.picks.sort(function (a, b) { return a.year - b.year; });
+                    return r;
+                });
+                if (!ranked.length) return [];
+                var max = ranked.reduce(function (mx, r) { return Math.max(mx, r.count); }, 0);
+                return ranked.filter(function (r) { return r.count === max; })
+                    .sort(function (a, b) { return a.avg - b.avg || a.name.localeCompare(b.name); })
+                    .slice(0, 2);
+            }
+            function topTeams(picks) {
+                var counts = {};
+                picks.forEach(function (p) {
+                    var t = String(p.team || '').toUpperCase();
+                    if (t) counts[t] = (counts[t] || 0) + 1;
+                });
+                return Object.keys(counts)
+                    .sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); })
+                    .slice(0, 3)
+                    .map(function (t) { return t + ' ' + counts[t] + '×'; });
+            }
+
+            function card(m) {
+                var teams = topTeams(m.picks);
+                var favHtml = favs(m.picks).map(function (p) {
+                    var avg = p.avg % 1 === 0 ? String(p.avg) : p.avg.toFixed(1);
+                    var posCls = /^(QB|RB|WR|TE)$/.test(p.pos) ? ' dr-pos--' + p.pos : '';
+                    return '<div class="dr-loyal-player">' +
+                            '<span class="dr-player">' + esc(p.name) + '</span>' +
+                            (p.pos ? '<span class="dr-pos' + posCls + '">' + esc(p.pos) + '</span>' : '') +
+                            '<span class="m-mono">' + p.count + '× · avg #' + avg + '</span>' +
+                        '</div>' +
+                        '<div class="dr-loyal-years m-mono">' + p.picks.map(function (pp) {
+                            return pp.year + ' R' + pp.round + '.' +
+                                String(pp.round_pick == null ? '?' : pp.round_pick).padStart(2, '0');
+                        }).join(' · ') + '</div>';
+                }).join('');
+                return '<a class="m-card" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+                    '<div class="dr-r1-mgr">' + esc(m.name) + '</div>' +
+                    (favHtml || '<div class="dr-loyal-years m-mono" style="margin-top:.4rem">No picks recorded.</div>') +
+                    (teams.length
+                        ? '<div class="dr-loyal-teams m-mono">Top NFL teams: ' + esc(teams.join(' · ')) + '</div>'
+                        : '') +
+                '</a>';
+            }
+
+            box.innerHTML = '<div class="m-kicker" style="margin-bottom:.4rem">Most-drafted players & teams · all seasons</div>' +
+                current.map(card).join('');
+        });
+    }
+
     // ── Draft order history: slot order vs. final finish, per year ───────
     function renderOrder() {
         var box = document.getElementById('board');
