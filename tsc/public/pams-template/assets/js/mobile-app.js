@@ -10,9 +10,15 @@
  *   <script src="/pams-template/assets/js/mobile-app.js"></script>
  *
  *   • top app bar    — back button (history-aware), league title, kicker
- *   • bottom tab bar — Home · Standings · History · More · Live
+ *   • bottom tab bar — Home · Standings · History · Live · More; on
+ *                      live-season pages it swaps to the live-mode bar:
+ *                      Home · Live · Week · Desks · More
  *   • History sheet  — Season Archives / Record Book / Draft History
- *   • More sheet     — Managers / Rivalries + account group + view toggle
+ *   • Week sheet     — Matchup Preview / Power Rankings / Pick'ems (live mode)
+ *   • Desks sheet    — Watch Desk + Front Office chapters (live mode)
+ *   • More sheet     — Managers / Rivalries + account group + view toggle;
+ *                      in live mode the Society group becomes an Almanac
+ *                      group so every history chapter stays one tap away
  *   • lock overlay   — UDFA-locked pages (__DC.pageLocked), styles in
  *                      mobile-app.css
  *   • tier strip     — slim variant of nav.js's testing strip
@@ -38,11 +44,22 @@
         records: 'history', draft: 'history',
         managers: 'more', manager: 'more',
         rivalries: 'more', rivalry: 'more',
-        // Live pages are desktop-served for now, but keep the mapping so any
-        // future mobile build lights the right tab automatically.
         'live-season': 'live', 'matchup-preview': 'live', pickems: 'live',
         powerrank: 'live', 'best-coach': 'live', 'records-watch': 'live',
         milestones: 'live', trades: 'live', 'manager-dna': 'live',
+    };
+
+    // Live-season chapter gets its own bar (paid tiers only — UDFA keeps the
+    // standard bar since the whole chapter is locked for it): Home stays,
+    // Live anchors the hub, Week/Desks are sheets over the in-season pages.
+    // Any page in this map renders the live-mode bar; pages still served by
+    // the desktop templates load nav.js instead, so entries here only take
+    // effect once a page has a pams-mobile build.
+    var LIVE_TAB_OF_PAGE = {
+        'live-season': 'live',
+        'matchup-preview': 'week', powerrank: 'week', pickems: 'week',
+        'records-watch': 'desk', 'best-coach': 'desk', milestones: 'desk',
+        trades: 'desk', 'manager-dna': 'desk',
     };
 
     // Free tier swaps the bar: no Live tab, Managers promoted to its own
@@ -94,6 +111,8 @@
         more: '<svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg>',
         live: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/><path d="M8.5 15.5a5 5 0 0 1 0-7"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M15.5 15.5a5 5 0 0 0 0-7"/><path d="M19.1 19.1a10 10 0 0 0 0-14.2"/></svg>',
         managers: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        week: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>',
+        desk: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>',
         back: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14 5 7 12 14 19"/></svg>',
         star: function (on) {
             return '<svg id="nav-bookmark-svg" width="20" height="20" viewBox="0 0 24 24" fill="' + (on ? '#e8c889' : 'none') + '" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6L12 16.8 6.6 19.7l1.1-6L3.2 9.4l6.1-.8z"/></svg>';
@@ -249,7 +268,7 @@
             + escapeHtml(label) + extra + '</a>';
     }
 
-    function buildSheets(ctx) {
+    function buildSheets(ctx, liveMode) {
         var udfa = ctx.leagueTier === 'udfa';
 
         // History sheet — the History tab's targets.
@@ -262,6 +281,35 @@
             sheetRow('seasons/', 'Season Archives') +
             sheetRow('records.html', 'Record Book', { locked: udfa }) +
             sheetRow('draft/', 'Draft History', { locked: udfa });
+
+        // Live-mode sheets — the Week and Desks tabs' targets.
+        var week = null, desk = null;
+        if (liveMode) {
+            week = document.createElement('dialog');
+            week.className = 'm-sheet';
+            week.id = 'm-sheet-week';
+            week.innerHTML =
+                '<div class="m-sheet-handle" aria-hidden></div>' +
+                '<div class="m-sheet-title">The Weekly Slate</div>' +
+                sheetRow('live-season/matchup-preview/', 'Matchup Preview') +
+                sheetRow('live-season/powerrank/', 'Power Rankings') +
+                sheetRow('live-season/pickems/', "Weekly Pick'ems");
+
+            desk = document.createElement('dialog');
+            desk.className = 'm-sheet';
+            desk.id = 'm-sheet-desk';
+            desk.innerHTML =
+                '<div class="m-sheet-handle" aria-hidden></div>' +
+                '<div class="m-sheet-title">Live Season</div>' +
+                '<span class="m-sheet-label">The Watch Desk</span>' +
+                sheetRow('live-season/records-watch/', 'Records Watch') +
+                sheetRow('live-season/best-coach/', 'Best Coach', { sub: 'Veteran' }) +
+                sheetRow('live-season/milestones/', 'Milestone Tracker') +
+                '<div class="m-sheet-divider"></div>' +
+                '<span class="m-sheet-label">The Front Office</span>' +
+                sheetRow('live-season/trades/', 'Trade Desk', { sub: 'Veteran' }) +
+                sheetRow('live-season/manager-dna/', 'Manager DNA', { sub: 'Veteran' });
+        }
 
         // More sheet — Society + account group + view toggle.
         var account = '';
@@ -295,6 +343,8 @@
         // Free tier: Managers lives on the tab bar, so the Society group is
         // just Rivalries — followed by every paid chapter, marked locked, so
         // the whole catalog is still discoverable from one place.
+        // Live mode: the bar trades Standings/History for the in-season
+        // tabs, so More carries the whole almanac instead of just Society.
         var society = udfa
             ? '<span class="m-sheet-label">The Society</span>' +
               sheetRow('rivalries/', 'Rivalries') +
@@ -303,6 +353,14 @@
               sheetRow('records.html', 'Record Book', { locked: true }) +
               sheetRow('draft/', 'Draft History', { locked: true }) +
               sheetRow('live-season/', 'Live Season', { locked: true })
+            : liveMode
+            ? '<span class="m-sheet-label">The Almanac</span>' +
+              sheetRow('standings.html', 'Standings') +
+              sheetRow('seasons/', 'Season Archives') +
+              sheetRow('records.html', 'Record Book') +
+              sheetRow('draft/', 'Draft History') +
+              sheetRow('managers/', 'Managers') +
+              sheetRow('rivalries/', 'Rivalries')
             : '<span class="m-sheet-label">The Society</span>' +
               sheetRow('managers/', 'Managers') +
               sheetRow('rivalries/', 'Rivalries');
@@ -319,10 +377,13 @@
             '<div class="m-sheet-divider"></div>' +
             sheetRow(desktopHref, 'View desktop site');
 
-        document.body.appendChild(history);
-        document.body.appendChild(more);
+        var sheets = { history: history, more: more };
+        if (week) sheets.week = week;
+        if (desk) sheets.desk = desk;
 
-        [history, more].forEach(function (sheet) {
+        Object.keys(sheets).forEach(function (k) {
+            var sheet = sheets[k];
+            document.body.appendChild(sheet);
             // Backdrop tap closes (clicks inside the sheet hit children, not
             // the dialog itself). Link taps close too — navigation is a full
             // page load, but closing first avoids a flash on slow loads.
@@ -337,7 +398,7 @@
             wireSheetDrag(sheet);
         });
 
-        return { history: history, more: more };
+        return sheets;
     }
 
     // Swipe-down dismissal. Drag starts anywhere in the sheet while its own
@@ -408,7 +469,11 @@
         var page = nav.dataset.page || '';
         var chapter = nav.dataset.chapter || '';
         var backHref = nav.dataset.backHref || '';
-        var activeTab = (ctx.leagueTier === 'udfa' ? UDFA_TAB_OF_PAGE : TAB_OF_PAGE)[page] || '';
+        var liveMode = ctx.leagueTier !== 'udfa'
+            && Object.prototype.hasOwnProperty.call(LIVE_TAB_OF_PAGE, page);
+        var activeTab = liveMode
+            ? LIVE_TAB_OF_PAGE[page]
+            : (ctx.leagueTier === 'udfa' ? UDFA_TAB_OF_PAGE : TAB_OF_PAGE)[page] || '';
 
         // Title: league name, tail italicized gold (same split as desktop).
         var parts = (ctx.name || 'Archive').trim().split(/\s+/);
@@ -476,7 +541,15 @@
         tabbar.setAttribute('aria-label', 'Almanac sections');
         // Free tier: Live (paid) leaves the bar, Managers takes its slot,
         // and History is a straight link — Seasons is its only free target.
-        tabbar.innerHTML = udfa
+        // Live-season chapter: Home stays, the almanac tabs hand their slots
+        // to the in-season pages (almanac links move into the More sheet).
+        tabbar.innerHTML = liveMode
+            ? tab('home', 'Home', './') +
+              tab('live', 'Live', 'live-season/') +
+              tab('week', 'Week', '', true) +
+              tab('desk', 'Desks', '', true) +
+              tab('more', 'More', '', true)
+            : udfa
             ? tab('home', 'Home', './') +
               tab('standings', 'Standings', 'standings.html') +
               tab('history', 'History', 'seasons/') +
@@ -489,10 +562,11 @@
               tab('more', 'More', '', true);
         document.body.appendChild(tabbar);
 
-        var sheets = buildSheets(ctx);
+        var sheets = buildSheets(ctx, liveMode);
         tabbar.querySelectorAll('button[data-sheet]').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                openSheet(btn.dataset.sheet === 'history' ? sheets.history : sheets.more);
+                var sheet = sheets[btn.dataset.sheet];
+                if (sheet) openSheet(sheet);
             });
         });
     }

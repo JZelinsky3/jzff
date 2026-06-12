@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Live Season · {{LEAGUE_NAME}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+/* ── Deep moss chapter theme — same family as the desktop live-season
+      hub; the fixed chrome re-points to match. ── */
+:root {
+    --ls-bg:        #15201b;
+    --ls-card:      #1d2a23;
+    --ls-line:      #2e3d34;
+    --ls-line-soft: #22302a;
+    --ls-mute:      #7d8c81;
+    --ls-live:      #d4a94c;   /* warm amber */
+    --ls-pro:       #e8c889;   /* gold = paid tier */
+    --m-chrome-bg:  rgb(15, 24, 20);
+    --m-chrome-bg2: rgb(17, 27, 22);
+}
+body { background: var(--ls-bg); }
+.site-glow {
+    background-image:
+        radial-gradient(circle at 15% 10%, rgba(232, 200, 137, .055) 0%, transparent 50%),
+        radial-gradient(circle at 85% 90%, rgba(106, 154, 110, .04) 0%, transparent 55%);
+}
+
+/* ── Amber ticker — the "live" identity stripe ── */
+.lv-ticker {
+    background: var(--ls-live);
+    color: var(--ls-bg);
+    border-bottom: 2px solid var(--m-chrome-bg);
+    height: 28px;
+    display: flex; align-items: center; overflow: hidden;
+    margin: 0 -0.9rem;
+}
+.lv-ticker-track {
+    display: flex; gap: 2.2rem; white-space: nowrap; padding-left: 2.2rem;
+    animation: lv-ticker-scroll 36s linear infinite;
+}
+.lv-ticker-group { display: flex; gap: 2.2rem; }
+.lv-ticker-item {
+    font-family: var(--mono); font-size: .58rem; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: .5rem;
+}
+.lv-ticker-star { color: #8c3820; }
+@keyframes lv-ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+/* ── Hero ── */
+.lv-head { text-align: center; padding: 1.2rem 0 .3rem; }
+.lv-head .m-kicker { color: var(--ls-live); }
+.lv-title {
+    font-family: var(--serif);
+    font-size: 1.8rem; line-height: 1.05;
+    color: var(--cream);
+}
+.lv-title em { font-style: italic; color: var(--ls-live); }
+.lv-sub { margin-top: .35rem; color: var(--ls-mute); }
+
+/* ── Group label — slim mono rubric + hairline ── */
+.lv-label {
+    display: flex; align-items: center; gap: .7rem;
+    margin: 1.25rem 0 .5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--ls-mute);
+}
+.lv-label .star { color: var(--ls-live); font-size: .85em; }
+.lv-label::after { content: ''; flex: 1; height: 1px; background: var(--ls-line-soft); }
+
+/* ── Feature rows — dense launcher list, one accent per chapter so
+      each row is a miniature preview of its destination page. ── */
+.lv-list {
+    background: var(--ls-card);
+    border: 1px solid var(--ls-line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.lv-row {
+    display: flex; align-items: center; gap: .7rem;
+    min-height: 56px;
+    padding: .55rem .8rem .55rem .65rem;
+    color: inherit; text-decoration: none;
+    border-bottom: 1px solid var(--ls-line-soft);
+}
+.lv-row:last-child { border-bottom: none; }
+a.lv-row:active { background: rgba(232, 200, 137, .05); }
+.lv-bar {
+    flex: none; width: 3px; align-self: stretch;
+    border-radius: 2px;
+    background: var(--lv-accent, var(--ls-live));
+}
+.lv-body { flex: 1; min-width: 0; }
+.lv-row-title {
+    display: block;
+    font-family: var(--serif);
+    font-size: 1.02rem; line-height: 1.15;
+    color: #f4ebd8;
+}
+.lv-row-title em { font-style: italic; color: var(--lv-accent, var(--gold)); }
+.lv-row-desc {
+    display: block;
+    margin-top: .12rem;
+    font-size: .7rem; line-height: 1.35;
+    color: var(--ls-mute);
+}
+.lv-vet {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ls-pro);
+    border: 1px solid rgba(232, 200, 137, .45);
+    border-radius: 3px;
+    padding: 2px 5px;
+}
+.lv-chev { flex: none; display: flex; color: var(--lv-accent, var(--gold)); opacity: .55; }
+.lv-row.is-soon { opacity: .42; filter: saturate(.5); }
+
+/* ── Form sheet — compact timing tower for the current season ── */
+.fs {
+    background: linear-gradient(180deg, var(--ls-card), var(--ls-bg));
+    border: 1px solid var(--ls-line);
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: var(--mono);
+}
+.fs-mast {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: .6rem .8rem;
+    background: var(--m-chrome-bg);
+    border-bottom: 1px solid var(--ls-pro);
+    font-size: .52rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+}
+.fs-mast-title { color: var(--ls-pro); }
+.fs-mast-meta { color: var(--ls-mute); }
+.fs-mast-meta .live-dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--ls-live); border-radius: 50%;
+    margin-right: .4rem;
+    box-shadow: 0 0 6px var(--ls-live);
+    animation: lvPulse 1.6s ease-in-out infinite;
+}
+@keyframes lvPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .45; transform: scale(.85); }
+}
+.fs-head, .fs-row {
+    display: grid;
+    /* POS · MANAGER · FORM · PPG — GB/PT DIFF stay desktop-only. */
+    grid-template-columns: 2.6rem minmax(0, 1fr) auto 2.9rem;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem .8rem;
+}
+.fs-head {
+    background: rgba(0, 0, 0, .25);
+    border-bottom: 1px solid var(--ls-line);
+    font-size: .5rem; font-weight: 700;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ls-mute);
+}
+.fs-head span:last-child { text-align: right; }
+.fs-row {
+    min-height: 46px;
+    border-bottom: 1px solid var(--ls-line-soft);
+    color: #f4ebd8;
+}
+.fs-row:last-child { border-bottom: none; }
+.fs-row.leader { background: rgba(232, 200, 137, .06); }
+.fs-pos { display: flex; align-items: baseline; gap: .3rem; }
+.fs-pos-num {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.25rem; line-height: 1;
+    color: var(--ls-pro);
+}
+.fs-row.leader .fs-pos-num { color: #f4d9a4; }
+.fs-chg { font-size: .5rem; font-weight: 700; }
+.fs-chg.up   { color: #6a9a6e; }
+.fs-chg.down { color: var(--ls-live); }
+.fs-chg.same { color: var(--ls-mute); }
+.fs-name {
+    font-family: var(--sans);
+    font-size: .82rem; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fs-name small {
+    display: block;
+    font-weight: 400; font-size: .62rem;
+    color: var(--ls-mute);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fs-form { display: flex; gap: 2px; }
+.fs-form i {
+    display: flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px;
+    font-weight: 700; font-size: .5rem; font-style: normal;
+}
+.fs-form i.w { background: var(--ls-pro); color: var(--ls-bg); }
+.fs-form i.l { color: var(--ls-live); border: 1px solid var(--ls-live); }
+.fs-form i.t { background: var(--ls-mute); color: var(--ls-bg); }
+.fs-form i.empty { border: 1px dashed var(--ls-line); color: var(--ls-mute); }
+.fs-ppg {
+    font-size: .72rem; font-weight: 700;
+    color: var(--ls-pro);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.lv-foot { margin: 1.6rem 0 .4rem; text-align: center; }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="live-season" data-chapter="Ch. VII · In Season" data-back-href="./"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+
+    <div class="lv-ticker" aria-hidden="true">
+        <div class="lv-ticker-track">
+            <div class="lv-ticker-group">
+                <span class="lv-ticker-item"><span class="lv-ticker-star">★</span> Live · In Season · {{LEAGUE_ABBR}}</span>
+                <span class="lv-ticker-item">Picks · Rankings · Records · Trades</span>
+            </div>
+            <div class="lv-ticker-group">
+                <span class="lv-ticker-item"><span class="lv-ticker-star">★</span> Live · In Season · {{LEAGUE_ABBR}}</span>
+                <span class="lv-ticker-item">Picks · Rankings · Records · Trades</span>
+            </div>
+        </div>
+    </div>
+
+    <header class="lv-head">
+        <div class="m-kicker">{{LEAGUE_ABBR}} · In-Season</div>
+        <h1 class="lv-title">Live <em>Season.</em></h1>
+        <div class="m-mono lv-sub">The almanac is history. This is now.</div>
+    </header>
+
+    <div class="lv-label"><span class="star">★</span> The Weekly Slate</div>
+    <div class="lv-list">
+        <a class="lv-row" href="live-season/matchup-preview/" style="--lv-accent:#e8b047">
+            <span class="lv-bar"></span>
+            <span class="lv-body">
+                <span class="lv-row-title">Matchup <em>Preview.</em></span>
+                <span class="lv-row-desc">This week's board — H2H history, form, projections.</span>
+            </span>
+            <span class="lv-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></span>
+        </a>
+        <a class="lv-row" href="live-season/powerrank/" style="--lv-accent:#d4a94c">
+            <span class="lv-bar"></span>
+            <span class="lv-body">
+                <span class="lv-row-title">Power <em>Rankings.</em></span>
+                <span class="lv-row-desc">Auto-ranked weekly from record, points, and form.</span>
+            </span>
+            <span class="lv-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></span>
+        </a>
+        <a class="lv-row" href="live-season/pickems/" style="--lv-accent:#ff3d8b">
+            <span class="lv-bar"></span>
+            <span class="lv-body">
+                <span class="lv-row-title">Weekly <em>Pick'ems.</em></span>
+                <span class="lv-row-desc">Pick every matchup. Claim your name and vote.</span>
+            </span>
+            <span class="lv-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></span>
+        </a>
+    </div>
+
+    <div class="lv-label"><span class="star">★</span> The Watch Desk</div>
+    <div class="lv-list">
+        <a class="lv-row" href="live-season/records-watch/" style="--lv-accent:#7fa8bd">
+            <span class="lv-bar"></span>
+            <span class="lv-body">
+                <span class="lv-row-title">Records <em>Watch.</em></span>
+                <span class="lv-row-desc">Who's on pace to break a franchise record.</span>
+            </span>
+            <span class="lv-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></span>
+        </a>
+        <a class="lv-row" href="live-season/best-coach/" style="--lv-accent:#e8c850">
+            <span class="lv-bar"></span>
+            <span class="lv-body">
+                <span class="lv-row-title">Best <em>Coach.</em></span>
+                <span class="lv-row-desc">Every lineup graded against its optimal version.</span>
+            </span>
+            <span class="lv-vet">Veteran</span>
+            <span class="lv-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></span>
+        </a>
+        <a class="lv-row" href="live-season/milestones/" style="--lv-accent:#b58cff">
+            <span class="lv-bar"></span>
+            <span class="lv-body">
+                <span class="lv-row-title">Milestone <em>Tracker.</em></span>
+                <span class="lv-row-desc">Career milestones and streaks as they happen.</span>
+            </span>
+            <span class="lv-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></span>
+        </a>
+    </div>
+
+    <div class="lv-label"><span class="star">★</span> The Front Office</div>
+    <div class="lv-list">
+        <a class="lv-row" href="live-season/trades/" style="--lv-accent:#c8a464">
+            <span class="lv-bar"></span>
+            <span class="lv-body">
+                <span class="lv-row-title">Trade <em>Desk.</em></span>
+                <span class="lv-row-desc">Grade real deals, test hypotheticals, work the market.</span>
+            </span>
+            <span class="lv-vet">Veteran</span>
+            <span class="lv-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></span>
+        </a>
+        <a class="lv-row" href="live-season/manager-dna/" style="--lv-accent:#4fd1ff">
+            <span class="lv-bar"></span>
+            <span class="lv-body">
+                <span class="lv-row-title">Manager <em>DNA.</em></span>
+                <span class="lv-row-desc">Every manager sequenced into an archetype.</span>
+            </span>
+            <span class="lv-vet">Veteran</span>
+            <span class="lv-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></span>
+        </a>
+        <div class="lv-row is-soon" style="--lv-accent:#7d8c81">
+            <span class="lv-bar"></span>
+            <span class="lv-body">
+                <span class="lv-row-title">Weekly <em>Recap.</em></span>
+                <span class="lv-row-desc">Auto-written every Tuesday. Coming soon.</span>
+            </span>
+            <span class="lv-vet">Veteran</span>
+        </div>
+    </div>
+
+    <section id="fsSection" hidden>
+        <div class="lv-label"><span class="star">★</span> Current Form</div>
+        <div class="fs" id="fsCard"></div>
+    </section>
+
+    <div class="m-mono lv-foot">{{LEAGUE_ABBR}} · Live Season · {{LEAGUE_FOUNDED_ROMAN}}</div>
+
+</main>
+
+<script>
+// ── Form sheet — compact mobile cut of the desktop hub's timing tower.
+//    Hidden until data/current_form.json resolves with rows (no live or
+//    final season → section never shows).
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function chg(n) {
+        if (n > 0) return '<span class="fs-chg up">▲' + n + '</span>';
+        if (n < 0) return '<span class="fs-chg down">▼' + Math.abs(n) + '</span>';
+        return '<span class="fs-chg same">—</span>';
+    }
+    function pills(form) {
+        // Always 5 slots; missing weeks render as dashed empties so an
+        // early-season sheet still reads as a 5-week window.
+        var out = '';
+        for (var i = 0; i < 5; i++) {
+            var r = form[i];
+            if (r === 'W')      out += '<i class="w">W</i>';
+            else if (r === 'L') out += '<i class="l">L</i>';
+            else if (r === 'T') out += '<i class="t">T</i>';
+            else                out += '<i class="empty">·</i>';
+        }
+        return out;
+    }
+
+    fetch('data/current_form.json', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (data) {
+            if (!data || !data.rows || !data.rows.length) return;
+
+            // Final mode (off-season fallback) re-skins the mast, same as
+            // the desktop hub: no live dot, "{year} Final".
+            var isFinal = !!data.is_final;
+            var mastTitle = isFinal
+                ? '★ ' + (data.year || '') + ' Final ★'
+                : '★ Week ' + (data.week || 0) + ' ★';
+            var mastMeta = isFinal
+                ? 'Final · W' + (data.week || 0)
+                : '<span class="live-dot"></span>' + (data.year || '') + ' season';
+
+            var html =
+                '<div class="fs-mast">' +
+                    '<span class="fs-mast-title">' + mastTitle + '</span>' +
+                    '<span class="fs-mast-meta">' + mastMeta + '</span>' +
+                '</div>' +
+                '<div class="fs-head">' +
+                    '<span>Pos</span><span>Manager</span><span>Form</span><span>PPG</span>' +
+                '</div>';
+
+            html += data.rows.map(function (r, i) {
+                var form = (r.form || []).slice().reverse();
+                var ppg = Number(r.ppg5 || 0);
+                var owner = r.team && r.name && r.team !== r.name ? r.name : '';
+                return '<div class="fs-row' + (i === 0 ? ' leader' : '') + '">' +
+                    '<span class="fs-pos">' +
+                        '<span class="fs-pos-num">' + (r.pos || (i + 1)) + '</span>' +
+                        chg(Number(r.pos_change || 0)) +
+                    '</span>' +
+                    '<span class="fs-name">' + esc(r.team || r.name) +
+                        (owner ? '<small>' + esc(owner) + '</small>' : '') +
+                    '</span>' +
+                    '<span class="fs-form">' + pills(form) + '</span>' +
+                    '<span class="fs-ppg">' + ppg.toFixed(1) + '</span>' +
+                '</div>';
+            }).join('');
+
+            document.getElementById('fsCard').innerHTML = html;
+            document.getElementById('fsSection').hidden = false;
+        });
+})();
+</script>
+</body>
+</html>
