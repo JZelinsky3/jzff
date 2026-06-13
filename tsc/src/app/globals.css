@@ -9264,21 +9264,22 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .mlp-live-tool {
     display: flex;
     align-items: flex-start;
-    gap: .7rem;
+    gap: .45rem;
     padding: .7rem 0;
     border-bottom: 1px solid var(--ink-line);
 }
 .mlp-live-tool:last-child { border-bottom: none; }
 .mlp-live-tool-num {
     flex: none;
-    width: 1.4rem;
+    width: 1.2rem;
     font-family: var(--mono);
     font-weight: 700;
     font-size: .56rem;
     letter-spacing: .08em;
     color: var(--gold);
     opacity: .85;
-    line-height: 1.8;
+    line-height: 1;
+    padding-top: .18rem;
 }
 .mlp-live-tool-body {
     flex: 1;
