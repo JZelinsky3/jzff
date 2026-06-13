@@ -151,7 +151,6 @@ export function MobileLeagueHub({
               <span className="mlh-config-desc">Merge, hide, rename, set alumni</span>
             </span>
             <span className="mlh-config-badge teal">{managerCount}</span>
-            {hasReviewed && <span className="mlh-config-check">✓</span>}
             <span className="mlh-config-arrow">
               <svg viewBox="0 0 8 14" width="7" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 1 7 7 1 13" /></svg>
             </span>

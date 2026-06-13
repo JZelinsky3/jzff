@@ -9777,10 +9777,12 @@ body.tsc-hdr-collapsed .mlh-bar {
     display: flex;
     justify-content: flex-start;
 }
-.mlh-action-btn-wrap .dc-btn {
+.mlh-action-btn-wrap .dc-btn,
+.mlh-action-btn-wrap .dc-btn-ghost {
     font-size: .55rem;
     padding: .42rem .7rem;
     letter-spacing: .14em;
+    border-radius: 8px;
 }
 
 /* ── Configuration list ── */
@@ -9860,11 +9862,6 @@ body.tsc-hdr-collapsed .mlh-bar {
 .mlh-config-badge.sage  { color: #7aad8e; border-color: rgba(107,154,110,.4); background: rgba(107,154,110,.08); }
 .mlh-config-badge.fire  { color: var(--gold); border-color: var(--gold-deep); background: rgba(232,200,137,.06); }
 .mlh-config-badge.ember { color: #d4bc60; border-color: rgba(200,168,48,.4); background: rgba(200,168,48,.08); }
-.mlh-config-check {
-    font-size: .7rem;
-    color: var(--sage, #7fa97f);
-    flex-shrink: 0;
-}
 .mlh-config-arrow {
     color: var(--cream-mute);
     opacity: .35;
@@ -9890,6 +9887,178 @@ body.tsc-hdr-collapsed .mlh-bar {
 }
 .mlh-footer-link:hover { color: var(--gold); }
 .mlh-footer-sep { color: var(--ink-line); }
+
+
+/* ============================================================
+   MOBILE LEAGUE SUB-PAGES  (layout.tsx mobile fork)
+   Shared bar + content styling for /league/[slug]/* sub-routes
+   on phones. The hub page (MobileLeagueHub) has its own bar;
+   :has() hides this one when the hub's .mlh is the direct child.
+   Prefix: mlsub-
+   ============================================================ */
+.mlsub-wrap { min-height: 100dvh; }
+
+/* Hide the sub-page bar when the hub page is rendered */
+.mlsub-wrap:has(> .mlh) > .mlsub-bar { display: none; }
+
+/* Hide the global site menu */
+.mlsub-wrap ~ .msm-root { display: none !important; }
+
+.mlsub-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .75rem 1.1rem;
+    background: rgba(14,22,32,.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ink-line);
+    transition: padding .25s ease;
+}
+body.tsc-hdr-collapsed .mlsub-bar {
+    padding: .45rem 1.1rem;
+}
+.mlsub-bar-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--gold);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.mlsub-bar-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+}
+.mlsub-bar-kicker {
+    font-family: var(--mono);
+    font-size: .42rem;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    line-height: 1;
+}
+.mlsub-bar-name {
+    font-family: var(--serif);
+    font-size: .88rem;
+    color: var(--cream);
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.mlsub-bar-spacer { width: 32px; flex-shrink: 0; }
+
+/* ── Sub-page content adjustments ──
+   Tighten the hero, sections, forms, and cards that every sub-page
+   under /league/[slug]/* renders. These rules only fire inside the
+   mobile layout wrapper so desktop stays untouched. */
+.mlsub-wrap main {
+    min-height: auto;
+}
+.mlsub-wrap .hero {
+    padding: 1rem 1.1rem .8rem !important;
+    text-align: left;
+}
+.mlsub-wrap .hero-sup {
+    font-size: .44rem;
+    text-align: left;
+}
+.mlsub-wrap .hero-title {
+    font-size: clamp(1.5rem, 7vw, 2rem) !important;
+    text-align: left;
+}
+.mlsub-wrap .hero-sub {
+    font-size: .78rem;
+    line-height: 1.45;
+    text-align: left;
+    max-width: none;
+}
+.mlsub-wrap .hero-meta {
+    font-size: .52rem;
+    text-align: left;
+}
+.mlsub-wrap .section {
+    padding-left: .85rem;
+    padding-right: .85rem;
+}
+.mlsub-wrap .section-header {
+    gap: .3rem;
+}
+.mlsub-wrap .section-num {
+    font-size: .44rem;
+}
+.mlsub-wrap .section-title {
+    font-size: .88rem;
+}
+.mlsub-wrap .section-meta {
+    font-size: .44rem;
+}
+.mlsub-wrap .dc-card-static {
+    padding: 1rem .85rem;
+    border-radius: 10px;
+}
+.mlsub-wrap .dc-card-row {
+    padding: .85rem;
+    border-radius: 10px;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: .65rem;
+}
+.mlsub-wrap .dc-card-row::before {
+    border-radius: 10px;
+}
+.mlsub-wrap .dc-form { gap: .85rem; }
+.mlsub-wrap .dc-label { font-size: .48rem; }
+.mlsub-wrap .dc-input,
+.mlsub-wrap .dc-select,
+.mlsub-wrap .dc-textarea {
+    padding: .5rem .6rem;
+    font-size: .82rem;
+    border-radius: 6px;
+}
+.mlsub-wrap .dc-btn {
+    border-radius: 8px;
+    font-size: .55rem;
+    padding: .5rem .75rem;
+}
+.mlsub-wrap .dc-btn-ghost {
+    border-radius: 8px;
+    font-size: .55rem;
+    padding: .42rem .65rem;
+}
+.mlsub-wrap .dc-btn-block { border-radius: 8px; }
+.mlsub-wrap .dc-checkbox-hint { font-size: .65rem; }
+.mlsub-wrap .dc-form-error,
+.mlsub-wrap .dc-form-ok {
+    font-size: .68rem;
+    border-radius: 6px;
+}
+/* TOC rows (rivalries list, etc.) */
+.mlsub-wrap .toc-body {
+    grid-template-columns: 1fr;
+    border-radius: 10px;
+}
+.mlsub-wrap .toc-body::before { display: none; }
+.mlsub-wrap .toc-row {
+    padding: .7rem .8rem;
+}
+.mlsub-wrap .toc-chapter { font-size: .42rem; min-width: 2.5rem; }
+.mlsub-wrap .toc-title { font-size: .88rem; }
+.mlsub-wrap .toc-desc { font-size: .65rem; }
+.mlsub-wrap .toc-badge { font-size: .42rem; padding: .12rem .35rem; }
+/* Hide SiteFooter on mobile sub-pages — the hub has its own footer nav */
+.mlsub-wrap .site-footer { display: none; }
 
 
 /* ============================================================
