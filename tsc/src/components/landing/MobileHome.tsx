@@ -64,7 +64,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
             <span className="mlp-why-pt-icon">★</span>
             <span className="mlp-why-pt-body">
               <span className="mlp-why-pt-title">Designed, not generated</span>
-              <span className="mlp-why-pt-desc">Every page is typeset like a real publication. Champion rolls, draft boards, career dossiers — all designed to look the part.</span>
+              <span className="mlp-why-pt-desc">Every page is laid out like a real publication. Champion rolls, draft boards, career dossiers — all built to look the part.</span>
             </span>
           </div>
           <div className="mlp-why-pt">
@@ -75,7 +75,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
             </span>
           </div>
           <div className="mlp-why-pt">
-            <span className="mlp-why-pt-icon">▸</span>
+            <span className="mlp-why-pt-icon">★</span>
             <span className="mlp-why-pt-body">
               <span className="mlp-why-pt-title">Share with your league</span>
               <span className="mlp-why-pt-desc">Publish a public site anyone in your league can open, argue over, and come back to every week.</span>
@@ -119,24 +119,39 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
             </div>
           </div>
 
-          {/* Records preview — dark/navy */}
+          {/* Records preview — dark/navy, 2-col grid */}
           <div className="mlp-prev">
             <div className="mlp-prev-label">Record Book</div>
-            <div className="mlp-prev-body mlp-prev-dark">
+            <div className="mlp-prev-body mlp-prev-dark mlp-prev-rec-grid">
               <div className="mlp-prev-rec">
                 <span className="mlp-prev-rec-cat">Highest Score</span>
                 <span className="mlp-prev-rec-val">186.4</span>
-                <span className="mlp-prev-rec-who">PAM Slingers · Wk 12, 2022</span>
+                <span className="mlp-prev-rec-who">Slingers · Wk 12, &apos;22</span>
               </div>
               <div className="mlp-prev-rec">
-                <span className="mlp-prev-rec-cat">Longest Win Streak</span>
+                <span className="mlp-prev-rec-cat">Win Streak</span>
                 <span className="mlp-prev-rec-val">11</span>
-                <span className="mlp-prev-rec-who">Tight End Tendency · 2024</span>
+                <span className="mlp-prev-rec-who">Tendency · 2024</span>
               </div>
               <div className="mlp-prev-rec">
-                <span className="mlp-prev-rec-cat">Closest Championship</span>
+                <span className="mlp-prev-rec-cat">Closest Final</span>
                 <span className="mlp-prev-rec-val">0.5 pts</span>
-                <span className="mlp-prev-rec-who">Tendency def. Slingers · 2024</span>
+                <span className="mlp-prev-rec-who">Tendency def. Slingers</span>
+              </div>
+              <div className="mlp-prev-rec">
+                <span className="mlp-prev-rec-cat">Most Titles</span>
+                <span className="mlp-prev-rec-val">3</span>
+                <span className="mlp-prev-rec-who">PAM Slingers</span>
+              </div>
+              <div className="mlp-prev-rec">
+                <span className="mlp-prev-rec-cat">Biggest Blowout</span>
+                <span className="mlp-prev-rec-val">62.1</span>
+                <span className="mlp-prev-rec-who">Dad Bod · Wk 4, &apos;23</span>
+              </div>
+              <div className="mlp-prev-rec">
+                <span className="mlp-prev-rec-cat">Playoff Apps</span>
+                <span className="mlp-prev-rec-val">12</span>
+                <span className="mlp-prev-rec-who">PAM Slingers</span>
               </div>
             </div>
           </div>
@@ -192,24 +207,39 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
 
         <div className="mlp-live-tools">
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-name">Sunday Live</span>
-            <span className="mlp-live-tool-desc">Real-time command center for every matchup, news, and moments as they happen.</span>
+            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-body">
+              <span className="mlp-live-tool-name">Sunday Live</span>
+              <span className="mlp-live-tool-desc">Real-time command center for every matchup, news, and moments as they happen.</span>
+            </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-name">Matchup Preview</span>
-            <span className="mlp-live-tool-desc">Weekly slate with form, all-time H2H, projections, and rivalry weight.</span>
+            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-body">
+              <span className="mlp-live-tool-name">Matchup Preview</span>
+              <span className="mlp-live-tool-desc">Weekly slate with form, all-time H2H, projections, and rivalry weight.</span>
+            </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-name">Best Coach Tracker</span>
-            <span className="mlp-live-tool-desc">Who&apos;s setting the best lineups? Season-long start/sit grading.</span>
+            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-body">
+              <span className="mlp-live-tool-name">Power Rankings</span>
+              <span className="mlp-live-tool-desc">Weekly rankings based on record, points, schedule strength, and recent form.</span>
+            </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-name">Manager DNA</span>
-            <span className="mlp-live-tool-desc">Behavioral profiles — trade hawks, streamers, set-and-forgets — from real data.</span>
+            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-body">
+              <span className="mlp-live-tool-name">Manager DNA</span>
+              <span className="mlp-live-tool-desc">Behavioral profiles — trade hawks, streamers, set-and-forgets — from real data.</span>
+            </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-name">Trade Desk</span>
-            <span className="mlp-live-tool-desc">Grader, analyzer, finder, and rumor mill — four rooms for every angle.</span>
+            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-body">
+              <span className="mlp-live-tool-name">Trade Desk</span>
+              <span className="mlp-live-tool-desc">Grader, analyzer, finder, and rumor mill — four rooms for every angle.</span>
+            </span>
           </div>
         </div>
       </section>
