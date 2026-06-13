@@ -8708,37 +8708,58 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .mlp-hook-title em { color: var(--gold); font-style: italic; }
 
-/* Video card */
-.mlp-video-card {
-    position: relative;
-    width: 100%;
-    max-width: 320px;
-    aspect-ratio: 4 / 5;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid var(--ink-line);
-    background: var(--ink-card);
-    margin-bottom: 1.6rem;
-}
-.mlp-video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.mlp-video-fallback {
-    position: absolute;
-    inset: 0;
+/* Book shelf — a row of season spines */
+.mlp-shelf {
     display: flex;
-    align-items: center;
     justify-content: center;
-    font-size: 3rem;
-    color: var(--gold-deep);
-    opacity: .25;
-    pointer-events: none;
+    gap: 4px;
+    margin-bottom: 1.6rem;
+    perspective: 600px;
 }
-.mlp-video:not([src=""]) + .mlp-video-fallback { display: none; }
+.mlp-spine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 38px;
+    height: 140px;
+    padding: .65rem 0;
+    background: linear-gradient(170deg, var(--ink-card) 0%, #111a24 100%);
+    border: 1px solid var(--ink-line);
+    border-radius: 2px;
+    box-shadow: 2px 4px 12px rgba(0,0,0,.4);
+    transform: rotateY(-2deg);
+}
+.mlp-spine:nth-child(even) {
+    transform: rotateY(2deg);
+    background: linear-gradient(170deg, #1a2532 0%, var(--ink-card) 100%);
+}
+.mlp-spine:first-child {
+    background: linear-gradient(170deg, #2a1f10 0%, #1a1508 100%);
+    border-color: var(--gold-deep);
+}
+.mlp-spine-yr {
+    font-family: var(--mono);
+    font-size: .42rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    color: var(--gold);
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+}
+.mlp-spine-rule {
+    flex: 1;
+    width: 1px;
+    margin: .4rem 0;
+    background: var(--ink-line);
+}
+.mlp-spine:first-child .mlp-spine-rule { background: var(--gold-deep); }
+.mlp-spine-star {
+    font-size: .5rem;
+    color: var(--gold-deep);
+    opacity: .5;
+}
+.mlp-spine:first-child .mlp-spine-star { color: var(--gold); opacity: 1; }
 
 .mlp-hook-ctas {
     width: 100%;

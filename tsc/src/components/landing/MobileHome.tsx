@@ -21,19 +21,14 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
           Ten years of<br />trash talk.<br /><em>One book.</em>
         </h1>
 
-        <div className="mlp-video-card">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="/assets/hero-poster.jpg"
-            src="/assets/hero-loop.mp4"
-            className="mlp-video"
-          />
-          <div className="mlp-video-fallback">
-            <span className="mlp-video-glyph">★</span>
-          </div>
+        <div className="mlp-shelf">
+          {(['2024', '2023', '2022', '2021', '2020', '2019', '2018'] as const).map((yr) => (
+            <div key={yr} className="mlp-spine">
+              <span className="mlp-spine-yr">{yr}</span>
+              <span className="mlp-spine-rule" />
+              <span className="mlp-spine-star">★</span>
+            </div>
+          ))}
         </div>
 
         <div className="mlp-hook-ctas">
