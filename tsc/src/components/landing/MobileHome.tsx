@@ -4,46 +4,94 @@ import { SiteFooter } from '@/components/SiteFooter'
 // Phone-only landing page. Served instead of the desktop tree when the
 // request is from a mobile UA (see src/app/page.tsx + src/lib/viewMode.ts).
 //
-// Deliberately server-rendered with zero bespoke client JS: the heavy
-// desktop client components (ChroniclePages horizontal-scroll rail,
-// HeroClipping rotator, DemoViewer iframe, LandingNav mega-menu, the
-// WelcomePopup) are NOT imported here, so phones download none of them.
-// The global mobile nav (MobileSiteMenu) is already mounted in the root
-// layout and floats its avatar/hamburger trigger over the masthead.
+// NOT a shrunk desktop. Modeled on the per-league mobile site
+// (src/templates/pams-mobile/index.html): a content-forward FEED that
+// surfaces the actual almanac data in mobile-native cards — a real
+// standings snapshot, a champion roll, a swipeable draft strip, a manager
+// dossier, a rivalry scoreboard — each with a "tour it" link to the demo.
+// The visitor SEES the product instead of reading promises about it.
 //
-// Mobile rework rules (see project memory): short copy, dense cards that
-// don't eat the whole viewport, tight consistent spacing, no full-bleed.
+// Sample data is the same hardcoded demo set the desktop ChroniclePages
+// renders, so the two stay in sync. Server-rendered, zero bespoke client JS
+// (the swipeable draft strip is plain CSS overflow). The global
+// MobileSiteMenu (root layout) supplies the nav trigger and anchors to the
+// .ticker we render here.
 
 const TICKER = [
-  'Live Season Hub · Matchup Preview · Best Coach',
-  'Trade Grader · Milestones · Records Watch',
-  'Manager DNA · live-season tells',
+  'Season Archives · Champion Rolls · Draft Boards',
+  'Manager Dossiers · Head-to-head · Rivalries',
   'Free tier — one league, forever',
   'Sleeper · ESPN · Yahoo · NFL.com',
 ]
 
-// Five chapter cards. Same five "pages of the Chronicle" the desktop rail
-// shows, trimmed to a tap target + one-line blurb each.
-const CHAPTERS: { num: string; chapter: string; title: string; em: string; blurb: string; href: string }[] = [
-  { num: 'I',   chapter: 'Season',     title: 'Season',  em: 'Archives.',  blurb: 'Every year walked back — standings, matchups, playoff runs.', href: '/demo/seasons/' },
-  { num: 'II',  chapter: 'Champions',  title: 'Champion', em: 'Rolls.',    blurb: 'Trophy lifters, runner-ups, and the kings who never got there.', href: '/demo/records.html' },
-  { num: 'III', chapter: 'Drafts',     title: 'Draft',   em: 'Boards.',    blurb: 'Round by round, every year. Tap a name, read every season since.', href: '/demo/draft/' },
-  { num: 'IV',  chapter: 'Managers',   title: 'Manager', em: 'Dossiers.',  blurb: 'A page per owner — career record, titles, head-to-head.', href: '/demo/managers/' },
-  { num: 'V',   chapter: 'Rivalries',  title: 'The',     em: 'Rivalries.', blurb: 'Hand-picked feuds with running scoreboards.', href: '/demo/rivalries/' },
+const STANDINGS: [string, string, string, string][] = [
+  ['1', 'Tight End Tendency', '12–2', '1,842.1'],
+  ['2', 'PAM Slingers', '11–3', '1,801.6'],
+  ['3', 'Dad Bod Dynasty', '10–4', '1,755.4'],
+  ['4', 'Pittsburgh Tomlinmen', '9–5', '1,712.0'],
+  ['5', 'Iron Sheik Bombers', '8–6', '1,688.3'],
+]
+
+const CHAMPS: [string, string, string][] = [
+  ['2024', 'Tendency', 'def. Slingers · 142.6–142.1'],
+  ['2023', 'Dad Bod', 'def. Tendency · 138.0–119.4'],
+  ['2022', 'Slingers', 'def. Bombers · 156.3–122.0'],
+  ['2021', 'Slingers', 'def. Tomlinmen · 130.4–128.1'],
+]
+
+const DRAFT: [string, string, string][] = [
+  ['1.01', 'CMC', 'Tendency'],
+  ['1.02', "Ja'Marr", 'Slingers'],
+  ['1.03', 'Bijan', 'Dad Bod'],
+  ['1.04', 'Jefferson', 'Tomlinmen'],
+  ['1.05', 'Lamb', 'Bombers'],
+  ['1.06', 'Chase', 'Bench Mob'],
+  ['1.07', 'Hill', 'Tendency'],
+  ['1.08', 'Ekeler', 'Slingers'],
+]
+
+const DOSSIER: [string, string][] = [
+  ['Titles', '3'],
+  ['Finals', '5'],
+  ['Reg. W%', '.682'],
+  ['Playoffs', '12'],
+  ['All-time PF', '12,144'],
+  ['vs. Tendency', '6–4'],
+]
+
+const RIVALRY_LINES: [string, string][] = [
+  ['2024 · Wk. 14', 'Slingers 132.4–128.7'],
+  ['2023 · QF', 'Dad Bod 121.8–118.5'],
+  ['2023 · Wk. 11', 'Slingers 144.3–99.1'],
 ]
 
 const PLATFORMS: { name: string; status: string; pill: string; klass: string }[] = [
-  { name: 'Sleeper',  status: 'Available', pill: 'Live', klass: '' },
-  { name: 'ESPN',     status: 'Available', pill: 'Live', klass: '' },
-  { name: 'NFL.com',  status: 'Testing',   pill: 'Beta', klass: 'cream' },
-  { name: 'Yahoo',    status: 'Testing',   pill: 'Beta', klass: 'cream' },
+  { name: 'Sleeper', status: 'Available', pill: 'Live', klass: '' },
+  { name: 'ESPN', status: 'Available', pill: 'Live', klass: '' },
+  { name: 'NFL.com', status: 'Testing', pill: 'Beta', klass: 'cream' },
+  { name: 'Yahoo', status: 'Testing', pill: 'Beta', klass: 'cream' },
 ]
+
+function SectionHead({ num, kicker, title, em, href, link }: {
+  num: string; kicker: string; title: string; em: string; href: string; link: string
+}) {
+  return (
+    <div className="mlp-section-head">
+      <div className="mlp-section-headl">
+        <span className="mlp-section-num">{num}</span>
+        <span className="mlp-section-kicker">{kicker}</span>
+        <span className="mlp-section-title">{title} <em>{em}</em></span>
+      </div>
+      <Link href={href} target="_blank" rel="noopener" className="mlp-section-link">{link}</Link>
+    </div>
+  )
+}
 
 export function MobileHome({ signedIn }: { signedIn: boolean }) {
   return (
     <main className="mlp-main">
-      {/* Ticker — reuses the global .ticker styles; the MobileSiteMenu
-          trigger anchors its top offset to this element on the landing. */}
+      {/* Ticker — reuses global .ticker styles; the MobileSiteMenu trigger
+          anchors its offset to this element on the landing. */}
       <div className="ticker">
         <div className="ticker-track">
           <div className="ticker-group">
@@ -59,7 +107,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
         </div>
       </div>
 
-      {/* Masthead. The avatar/hamburger trigger floats top-right (global). */}
+      {/* Masthead — top-right corner left clear for the global menu trigger. */}
       <header className="mlp-mast">
         <div className="mlp-mast-kicker">Vol. II · The League Almanac</div>
         <div className="mlp-mast-title">The Sunday <em>Chronicle.</em></div>
@@ -70,8 +118,8 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
         <div className="mlp-hero-sup">★ JZFF · Est. 2026 ★</div>
         <h1 className="mlp-hero-title">Your league.<br /><em>Bound forever.</em></h1>
         <p className="mlp-hero-sub">
-          An almanac for the history of the league. Bring a league ID and we walk
-          every season back to the beginning.
+          An almanac for the history of the league. Bring a league ID and we walk every
+          season back to the beginning. Here&apos;s what your book holds —
         </p>
         <div className="mlp-ctas">
           {signedIn ? (
@@ -91,71 +139,121 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
           <span className="mlp-dot">·</span>
           <span>No card to start</span>
         </div>
-
-        {/* One static almanac page (the rotating desktop version ships JS;
-            on mobile we print a single representative leaf). */}
-        <article className="mlp-leaf" aria-label="A page from a finished almanac">
-          <div className="mlp-leaf-head">
-            <span>Ch. II · Champion Rolls</span>
-            <span>p. 47</span>
-          </div>
-          <div className="mlp-leaf-orn" aria-hidden="true">
-            <span className="mlp-leaf-rule" />✦<span className="mlp-leaf-rule" />
-          </div>
-          <h3 className="mlp-leaf-title">Champion, <em>2024.</em></h3>
-          <p className="mlp-leaf-lead">Tendency, at last — by a half-point and a Monday-night kicker.</p>
-          <div className="mlp-leaf-feature">
-            <span className="mlp-leaf-feature-lbl">Final</span>
-            <span className="mlp-leaf-feature-val">Tendency 142.6 · Slingers 142.1</span>
-          </div>
-        </article>
       </section>
 
-      {/* §02 · Pages of the Chronicle — vertical card stack */}
+      {/* §01 · Season Archives — a real final-standings snapshot */}
       <section className="mlp-section">
-        <div className="mlp-section-head">
-          <span className="mlp-section-num">§ 02 · The Pages</span>
-          <span className="mlp-section-title">Five pages of the <em>chronicle.</em></span>
+        <SectionHead num="§ 01" kicker="Season Archives" title="The" em="Table." href="/demo/seasons/" link="Tour" />
+        <div className="mlp-card mlp-paper">
+          <div className="mlp-paper-head"><span>Final Standings · 2024</span><span>Wk. 17</span></div>
+          <div className="mlp-stand">
+            {STANDINGS.map(([rk, name, rec, pf]) => (
+              <div key={rk} className="mlp-stand-row">
+                <span className="mlp-stand-rk">{rk}</span>
+                <span className="mlp-stand-name">{name}</span>
+                <span className="mlp-stand-rec">{rec}</span>
+                <span className="mlp-stand-pf">{pf}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mlp-paper-foot">Every season, every matchup — walked back to the beginning.</div>
         </div>
-        <div className="mlp-chapters">
-          {CHAPTERS.map((c) => (
-            <Link key={c.num} href={c.href} target="_blank" rel="noopener" className="mlp-chapter">
-              <span className="mlp-chapter-num">{c.num}</span>
-              <span className="mlp-chapter-body">
-                <span className="mlp-chapter-kicker">Chapter {c.num} · {c.chapter}</span>
-                <span className="mlp-chapter-title">{c.title} <em>{c.em}</em></span>
-                <span className="mlp-chapter-blurb">{c.blurb}</span>
-              </span>
-              <span className="mlp-chapter-arrow" aria-hidden="true">›</span>
-            </Link>
+      </section>
+
+      {/* §02 · Champion Rolls — a real roll of title games */}
+      <section className="mlp-section">
+        <SectionHead num="§ 02" kicker="Champion Rolls" title="The" em="Lifters." href="/demo/records.html" link="Record book" />
+        <div className="mlp-card mlp-paper">
+          <div className="mlp-roll">
+            {CHAMPS.map(([yr, ch, fin]) => (
+              <div key={yr} className="mlp-roll-row">
+                <span className="mlp-roll-yr">{yr}</span>
+                <span className="mlp-roll-body">
+                  <span className="mlp-roll-ch">{ch}</span>
+                  <span className="mlp-roll-fin">{fin}</span>
+                </span>
+                <span className="mlp-roll-trophy" aria-hidden="true">★</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* §03 · Draft Boards — a real swipeable round-1 strip */}
+      <section className="mlp-section">
+        <SectionHead num="§ 03" kicker="Draft Boards" title="Round" em="One." href="/demo/draft/" link="Full board" />
+        <div className="mlp-draft" role="list" aria-label="2024 Round 1 draft board">
+          {DRAFT.map(([pk, ply, mgr]) => (
+            <div key={pk} className="mlp-pick" role="listitem">
+              <span className="mlp-pick-no">{pk}</span>
+              <span className="mlp-pick-name">{ply}</span>
+              <span className="mlp-pick-mgr">{mgr}</span>
+            </div>
           ))}
         </div>
+        <p className="mlp-draft-note">2024 · 10-team · ½ PPR — swipe the board →</p>
       </section>
 
-      {/* §03 · See it live */}
+      {/* §04 · Manager Dossiers — a real career card */}
       <section className="mlp-section">
-        <div className="mlp-section-head">
-          <span className="mlp-section-num">§ 03 · See it live</span>
-          <span className="mlp-section-title">Tour a finished <em>almanac.</em></span>
+        <SectionHead num="§ 04" kicker="Manager Dossiers" title="The" em="Dossier." href="/demo/managers/" link="All managers" />
+        <div className="mlp-card mlp-dossier">
+          <div className="mlp-dossier-head">
+            <span className="mlp-dossier-av" aria-hidden="true">JK</span>
+            <span className="mlp-dossier-id">
+              <span className="mlp-dossier-name">Jake K. <em>· PAM Slingers</em></span>
+              <span className="mlp-dossier-tag">Joined 2018 · Seven seasons</span>
+            </span>
+          </div>
+          <div className="mlp-dossier-stats">
+            {DOSSIER.map(([k, v]) => (
+              <span key={k} className="mlp-dossier-stat">
+                <span className="mlp-dossier-val">{v}</span>
+                <span className="mlp-dossier-lbl">{k}</span>
+              </span>
+            ))}
+          </div>
         </div>
-        <p className="mlp-lede">
-          Walk a real league&apos;s seven-year history — every page populated, every link
-          working. The exact almanac you&apos;ll get for your league.
-        </p>
+      </section>
+
+      {/* §05 · Rivalries — a real running scoreboard */}
+      <section className="mlp-section">
+        <SectionHead num="§ 05" kicker="Bad Blood" title="The" em="Rivalries." href="/demo/rivalries/" link="All rivalries" />
+        <div className="mlp-card mlp-rivalry">
+          <div className="mlp-rivalry-vs">
+            <span className="mlp-rivalry-side">
+              <span className="mlp-rivalry-name">Slingers</span>
+              <span className="mlp-rivalry-rec">9</span>
+            </span>
+            <span className="mlp-rivalry-dash">—</span>
+            <span className="mlp-rivalry-side">
+              <span className="mlp-rivalry-rec">7</span>
+              <span className="mlp-rivalry-name">Dad Bod</span>
+            </span>
+          </div>
+          <div className="mlp-rivalry-meta">16 meetings · since 2018</div>
+          <div className="mlp-rivalry-lines">
+            {RIVALRY_LINES.map(([when, score]) => (
+              <div key={when} className="mlp-rivalry-line"><span>{when}</span><span>{score}</span></div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* §06 · See it live — open the full demo almanac */}
+      <section className="mlp-section">
+        <SectionHead num="§ 06" kicker="See it live" title="The whole" em="book." href="/demo/" link="Open" />
         <a href="/demo/" target="_blank" rel="noopener" className="mlp-demo-card">
           <span className="mlp-demo-tag">▶ Demo</span>
           <span className="mlp-demo-title">Lakeside <em>League.</em></span>
-          <span className="mlp-demo-meta">7 seasons · Sleeper</span>
-          <span className="mlp-demo-cta">Open the demo</span>
+          <span className="mlp-demo-meta">7 seasons · every page populated · Sleeper</span>
+          <span className="mlp-demo-cta">Walk a real league&apos;s history</span>
         </a>
       </section>
 
-      {/* §04 · Platforms */}
+      {/* §07 · Platforms */}
       <section className="mlp-section">
-        <div className="mlp-section-head">
-          <span className="mlp-section-num">§ 04 · Platforms</span>
-          <span className="mlp-section-title">Bring your league <em>from —</em></span>
-        </div>
+        <SectionHead num="§ 07" kicker="Platforms" title="Bring it" em="from —" href="/guides" link="Guides" />
         <div className="mlp-platforms">
           {PLATFORMS.map((p) => (
             <div key={p.name} className="mlp-platform">
@@ -170,13 +268,13 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
         </div>
       </section>
 
-      {/* §05 · Final CTA */}
+      {/* Final CTA */}
       <section className="mlp-final">
         <div className="mlp-final-kicker">★ Last call · Free preview ★</div>
         <h2 className="mlp-final-title">Bind <em>your</em> league.</h2>
         <p className="mlp-final-sub">
-          Pull your seasons in under five minutes. Publish a public almanac your league
-          can read, argue with, and remember.
+          Pull your seasons in under five minutes. Publish a public almanac your league can
+          read, argue with, and remember.
         </p>
         <div className="mlp-ctas">
           {signedIn ? (
@@ -190,8 +288,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
 
       <SiteFooter />
 
-      {/* Escape hatch to the full desktop layout. Routes through /api/view
-          to set the dc_view cookie (Server Components can't set cookies). */}
+      {/* Escape hatch to the desktop layout (sets dc_view cookie via /api/view). */}
       <a className="mlp-viewswitch" href="/api/view/?mode=desktop&to=/">View desktop site</a>
     </main>
   )

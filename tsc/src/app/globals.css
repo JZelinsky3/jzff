@@ -8625,8 +8625,9 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 /* ============================================================
    MOBILE LANDING  (MobileHome.tsx)
    Phone-only landing tree, served by the UA fork in app/page.tsx.
-   Self-contained under .mlp-main so nothing leaks into the desktop
-   layout. Reuses the global .ticker, .dc-btn and .dc-btn-ghost.
+   A content-forward FEED — real sample almanac data in mobile-native
+   cards, modeled on pams-mobile/index.html (NOT a shrunk desktop).
+   Self-contained under .mlp-main; reuses .ticker / .dc-btn / .dc-btn-ghost.
    ============================================================ */
 .mlp-main {
     position: relative;
@@ -8641,7 +8642,6 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     padding: 1.1rem 1.1rem .9rem;
     text-align: center;
     border-bottom: 1px solid var(--ink-line);
-    position: relative;
 }
 .mlp-mast-kicker {
     font-family: var(--mono);
@@ -8683,7 +8683,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-size: .92rem;
     line-height: 1.5;
     color: var(--cream-soft);
-    max-width: 32ch;
+    max-width: 34ch;
     margin-bottom: 1.2rem;
 }
 
@@ -8700,7 +8700,6 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     padding: .95rem 1.2rem;
     font-size: .68rem;
 }
-
 .mlp-hero-meta {
     display: flex;
     flex-wrap: wrap;
@@ -8711,163 +8710,295 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     letter-spacing: .14em;
     text-transform: uppercase;
     color: var(--cream-mute);
-    margin-bottom: 1.6rem;
 }
 .mlp-dot { color: var(--gold-deep); }
 
-/* Static almanac leaf — cream paper card */
-.mlp-leaf {
-    background: var(--cream);
-    color: var(--ink);
-    border: 1px solid var(--gold-deep);
-    border-radius: 2px;
-    padding: 1.1rem 1.2rem 1.3rem;
-    box-shadow: 0 14px 40px rgba(0,0,0,.4);
-}
-.mlp-leaf-head {
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--mono);
-    font-size: .54rem;
-    font-weight: 700;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: var(--gold-deep);
-}
-.mlp-leaf-orn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: .55rem;
-    color: var(--gold-deep);
-    font-size: .8rem;
-    margin: .7rem 0;
-}
-.mlp-leaf-rule { height: 1px; width: 2.4rem; background: var(--gold-deep); opacity: .6; }
-.mlp-leaf-title {
-    font-family: var(--serif);
-    font-size: 1.7rem;
-    line-height: 1.05;
-    text-align: center;
-    margin-bottom: .5rem;
-}
-.mlp-leaf-title em { font-style: italic; }
-.mlp-leaf-lead {
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: .95rem;
-    line-height: 1.4;
-    text-align: center;
-    color: #3a4350;
-    margin-bottom: 1rem;
-}
-.mlp-leaf-feature {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: .8rem;
-    border-top: 1px solid rgba(168,138,74,.4);
-    padding-top: .7rem;
-}
-.mlp-leaf-feature-lbl {
-    font-family: var(--mono);
-    font-size: .54rem;
-    font-weight: 700;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--gold-deep);
-}
-.mlp-leaf-feature-val {
-    font-family: var(--mono);
-    font-size: .66rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    text-align: right;
-    color: var(--ink);
-}
-
-/* Section scaffolding */
-.mlp-section { padding: 2.2rem 1.1rem 0; }
+/* ── Section scaffolding ──────────────────────────────────── */
+.mlp-section { padding: 1.9rem 1.1rem 0; }
 .mlp-section-head {
     display: flex;
-    flex-direction: column;
-    gap: .4rem;
-    margin-bottom: 1.1rem;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: .9rem;
+    margin-bottom: .9rem;
 }
+.mlp-section-headl { display: flex; flex-direction: column; gap: .22rem; min-width: 0; }
 .mlp-section-num {
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+}
+.mlp-section-kicker {
     font-family: var(--mono);
     font-size: .54rem;
     font-weight: 700;
-    letter-spacing: .26em;
+    letter-spacing: .22em;
     text-transform: uppercase;
     color: var(--gold);
 }
 .mlp-section-title {
     font-family: var(--serif);
-    font-size: 1.7rem;
-    line-height: 1.05;
+    font-size: 1.55rem;
+    line-height: 1.02;
     color: var(--cream);
 }
 .mlp-section-title em { color: var(--gold); font-style: italic; }
-.mlp-lede {
-    font-size: .88rem;
-    line-height: 1.5;
-    color: var(--cream-soft);
-    margin-bottom: 1.1rem;
+.mlp-section-link {
+    flex: none;
+    font-family: var(--mono);
+    font-size: .54rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink-line);
+    padding-bottom: .25rem;
+    white-space: nowrap;
 }
 
-/* Chapter cards — dense tap rows */
-.mlp-chapters { display: flex; flex-direction: column; gap: .55rem; }
-.mlp-chapter {
+/* Shared card shells */
+.mlp-card {
+    border-radius: 3px;
+    overflow: hidden;
+}
+.mlp-paper {
+    background: var(--cream);
+    color: var(--ink);
+    border: 1px solid var(--gold-deep);
+    box-shadow: 0 12px 34px rgba(0,0,0,.34);
+}
+.mlp-paper-head {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: .54rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    padding: .8rem .95rem .55rem;
+    border-bottom: 1px solid rgba(168,138,74,.35);
+}
+.mlp-paper-foot {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .82rem;
+    line-height: 1.35;
+    color: #3a4350;
+    padding: .55rem .95rem .85rem;
+    border-top: 1px solid rgba(168,138,74,.25);
+}
+
+/* §01 Standings snapshot */
+.mlp-stand { padding: .35rem .95rem; }
+.mlp-stand-row {
+    display: flex;
+    align-items: baseline;
+    gap: .6rem;
+    padding: .5rem 0;
+    border-bottom: 1px solid rgba(168,138,74,.18);
+}
+.mlp-stand-row:last-child { border-bottom: 0; }
+.mlp-stand-rk {
+    flex: none; width: 1.1rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; color: var(--gold-deep);
+}
+.mlp-stand-name {
+    flex: 1; min-width: 0;
+    font-family: var(--serif);
+    font-size: 1.02rem; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mlp-stand-rec {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; color: var(--ink);
+}
+.mlp-stand-pf {
+    flex: none; width: 3.6rem; text-align: right;
+    font-family: var(--mono); font-size: .7rem;
+    color: #5a6470;
+}
+
+/* §02 Champion roll */
+.mlp-roll { padding: .3rem .95rem .55rem; }
+.mlp-roll-row {
     display: flex;
     align-items: center;
-    gap: .9rem;
+    gap: .8rem;
+    padding: .6rem 0;
+    border-bottom: 1px solid rgba(168,138,74,.18);
+}
+.mlp-roll-row:last-child { border-bottom: 0; }
+.mlp-roll-yr {
+    flex: none;
+    font-family: var(--serif);
+    font-size: 1.25rem; font-style: italic;
+    color: var(--gold-deep);
+    width: 2.6rem;
+}
+.mlp-roll-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem; }
+.mlp-roll-ch {
+    font-family: var(--serif);
+    font-size: 1.05rem; line-height: 1.05;
+    color: var(--ink);
+}
+.mlp-roll-fin {
+    font-family: var(--mono);
+    font-size: .6rem; letter-spacing: .04em;
+    color: #5a6470;
+}
+.mlp-roll-trophy { flex: none; color: var(--gold-deep); font-size: .8rem; }
+
+/* §03 Draft strip — swipeable */
+.mlp-draft {
+    display: flex;
+    gap: .55rem;
+    overflow-x: auto;
+    padding: .15rem .15rem .5rem;
+    margin: 0 -.15rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+}
+.mlp-draft::-webkit-scrollbar { display: none; }
+.mlp-draft { scrollbar-width: none; }
+.mlp-pick {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    width: 6.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
     background: var(--ink-card);
     border: 1px solid var(--ink-line);
     border-radius: 3px;
-    padding: .85rem .95rem;
-    text-decoration: none;
-    transition: border-color .15s, background .15s;
+    padding: .7rem .7rem .75rem;
 }
-.mlp-chapter:active { background: var(--ink-soft); border-color: var(--gold-deep); }
-.mlp-chapter-num {
-    flex: 0 0 auto;
-    font-family: var(--serif);
-    font-size: 1.5rem;
-    font-style: italic;
+.mlp-pick-no {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .08em;
     color: var(--gold);
-    width: 1.6rem;
-    text-align: center;
 }
-.mlp-chapter-body { display: flex; flex-direction: column; gap: .15rem; min-width: 0; flex: 1; }
-.mlp-chapter-kicker {
+.mlp-pick-name {
+    font-family: var(--serif);
+    font-size: 1.12rem; line-height: 1.02;
+    color: var(--cream);
+}
+.mlp-pick-mgr {
     font-family: var(--mono);
-    font-size: .5rem;
-    font-weight: 700;
-    letter-spacing: .2em;
+    font-size: .54rem; letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mlp-draft-note {
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-top: .25rem;
+}
+
+/* §04 Dossier */
+.mlp-dossier {
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    padding: 1rem;
+}
+.mlp-dossier-head { display: flex; align-items: center; gap: .8rem; }
+.mlp-dossier-av {
+    flex: none;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--gold-deep);
+    background: rgba(232,200,137,.08);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif);
+    font-size: 1rem; color: var(--gold);
+}
+.mlp-dossier-id { display: flex; flex-direction: column; gap: .12rem; min-width: 0; }
+.mlp-dossier-name {
+    font-family: var(--serif);
+    font-size: 1.15rem; line-height: 1.05;
+    color: var(--cream);
+}
+.mlp-dossier-name em { font-style: italic; color: var(--gold); font-size: .9rem; }
+.mlp-dossier-tag {
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--cream-mute);
 }
-.mlp-chapter-title {
-    font-family: var(--serif);
-    font-size: 1.1rem;
-    line-height: 1.1;
-    color: var(--cream);
+.mlp-dossier-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .55rem;
+    margin-top: .9rem;
+    padding-top: .85rem;
+    border-top: 1px solid var(--ink-line-soft);
 }
-.mlp-chapter-title em { color: var(--gold); font-style: italic; }
-.mlp-chapter-blurb {
-    font-size: .76rem;
-    line-height: 1.4;
-    color: var(--cream-soft);
+.mlp-dossier-stat { display: flex; flex-direction: column; gap: .12rem; text-align: center; }
+.mlp-dossier-val {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .92rem; color: var(--gold);
 }
-.mlp-chapter-arrow {
-    flex: 0 0 auto;
-    font-family: var(--serif);
-    font-size: 1.4rem;
-    color: var(--gold-deep);
+.mlp-dossier-lbl {
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
 }
 
-/* Demo card */
+/* §05 Rivalry scoreboard */
+.mlp-rivalry {
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    padding: 1.1rem 1rem 1rem;
+    text-align: center;
+}
+.mlp-rivalry-vs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+.mlp-rivalry-side { display: flex; align-items: center; gap: .6rem; }
+.mlp-rivalry-name {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    color: var(--cream);
+}
+.mlp-rivalry-rec {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 1.7rem; color: var(--gold);
+}
+.mlp-rivalry-dash { color: var(--gold-deep); font-family: var(--serif); }
+.mlp-rivalry-meta {
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-top: .5rem;
+    padding-bottom: .8rem;
+    border-bottom: 1px solid var(--ink-line-soft);
+}
+.mlp-rivalry-lines { margin-top: .7rem; display: flex; flex-direction: column; gap: .45rem; }
+.mlp-rivalry-line {
+    display: flex;
+    justify-content: space-between;
+    gap: .8rem;
+    font-family: var(--mono);
+    font-size: .62rem; letter-spacing: .04em;
+    color: var(--cream-soft);
+}
+.mlp-rivalry-line span:first-child { color: var(--cream-mute); }
+
+/* §06 Demo card */
 .mlp-demo-card {
     display: flex;
     flex-direction: column;
@@ -8879,46 +9010,37 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     border-radius: 3px;
     padding: 1.2rem 1.1rem 1.1rem;
     text-decoration: none;
-    box-shadow: 0 12px 34px rgba(0,0,0,.35);
+    box-shadow: 0 12px 34px rgba(0,0,0,.34);
 }
 .mlp-demo-tag {
-    position: absolute;
-    top: .7rem;
-    right: .8rem;
+    position: absolute; top: .7rem; right: .8rem;
     font-family: var(--mono);
-    font-size: .5rem;
-    font-weight: 700;
-    letter-spacing: .14em;
-    text-transform: uppercase;
+    font-size: .5rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
     color: var(--gold-deep);
 }
 .mlp-demo-title {
     font-family: var(--serif);
-    font-size: 1.6rem;
-    line-height: 1.05;
+    font-size: 1.6rem; line-height: 1.05;
 }
 .mlp-demo-title em { font-style: italic; }
 .mlp-demo-meta {
     font-family: var(--mono);
-    font-size: .56rem;
-    font-weight: 700;
-    letter-spacing: .18em;
-    text-transform: uppercase;
+    font-size: .54rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
     color: var(--gold-deep);
 }
 .mlp-demo-cta {
     margin-top: .7rem;
     font-family: var(--mono);
-    font-size: .62rem;
-    font-weight: 700;
-    letter-spacing: .18em;
-    text-transform: uppercase;
+    font-size: .62rem; font-weight: 700;
+    letter-spacing: .16em; text-transform: uppercase;
     color: var(--ink);
     border-top: 1px solid rgba(168,138,74,.4);
     padding-top: .7rem;
 }
 
-/* Platforms */
+/* §07 Platforms */
 .mlp-platforms { display: flex; flex-direction: column; gap: .5rem; }
 .mlp-platform {
     display: flex;
@@ -8938,18 +9060,14 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .mlp-platform-status {
     font-family: var(--mono);
-    font-size: .54rem;
-    font-weight: 700;
-    letter-spacing: .18em;
-    text-transform: uppercase;
+    font-size: .54rem; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase;
     color: var(--cream-mute);
 }
 .mlp-pill {
     font-family: var(--mono);
-    font-size: .5rem;
-    font-weight: 700;
-    letter-spacing: .16em;
-    text-transform: uppercase;
+    font-size: .5rem; font-weight: 700;
+    letter-spacing: .16em; text-transform: uppercase;
     padding: .3rem .55rem;
     border-radius: 999px;
     background: var(--gold);
@@ -8963,7 +9081,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 /* Final CTA */
 .mlp-final {
-    margin: 2.4rem 1.1rem 0;
+    margin: 2.2rem 1.1rem 0;
     background: var(--ink-card);
     border: 1px solid var(--ink-line);
     border-radius: 4px;
@@ -8972,24 +9090,20 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .mlp-final-kicker {
     font-family: var(--mono);
-    font-size: .54rem;
-    font-weight: 700;
-    letter-spacing: .22em;
-    text-transform: uppercase;
+    font-size: .54rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
     color: var(--gold);
     margin-bottom: .7rem;
 }
 .mlp-final-title {
     font-family: var(--serif);
-    font-size: 2.1rem;
-    line-height: 1.05;
+    font-size: 2.1rem; line-height: 1.05;
     color: var(--cream);
     margin-bottom: .7rem;
 }
 .mlp-final-title em { color: var(--gold); font-style: italic; }
 .mlp-final-sub {
-    font-size: .88rem;
-    line-height: 1.5;
+    font-size: .88rem; line-height: 1.5;
     color: var(--cream-soft);
     margin-bottom: 1.3rem;
 }
@@ -9001,10 +9115,8 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     width: max-content;
     margin: 1.6rem auto 0;
     font-family: var(--mono);
-    font-size: .56rem;
-    font-weight: 700;
-    letter-spacing: .2em;
-    text-transform: uppercase;
+    font-size: .56rem; font-weight: 700;
+    letter-spacing: .2em; text-transform: uppercase;
     color: var(--cream-mute);
     text-decoration: none;
     border: 1px solid var(--ink-line);
