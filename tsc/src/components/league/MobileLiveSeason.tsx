@@ -1,5 +1,5 @@
-import { LiveSeasonForm, type SeasonRow } from '@/app/league/[slug]/live/live-form'
-import { SourcePicker, type SourceRow } from '@/app/league/[slug]/live/source-picker'
+import { MobileLiveForm, type SeasonOption } from './MobileLiveForm'
+import { MobileSourcePicker, type SourceOption } from './MobileSourcePicker'
 import { GotwPicker, type GotwWeek } from '@/app/league/[slug]/live/gotw-picker'
 
 export function MobileLiveSeason({
@@ -17,13 +17,13 @@ export function MobileLiveSeason({
   gotwManagers,
 }: {
   leagueId: string
-  seasons: SeasonRow[]
+  seasons: SeasonOption[]
   weekOverride: number | null
   seasonStartDate: string | null
   resolvedWeek: number | null
-  liveSeason: SeasonRow | null
+  liveSeason: SeasonOption | null
   currentWeek: number | null
-  sourceRows: SourceRow[]
+  sourceRows: SourceOption[]
   liveSeasonId: string | null
   gotwWeeks: GotwWeek[]
   gotwMap: Record<string, string>
@@ -47,8 +47,8 @@ export function MobileLiveSeason({
       </div>
 
       <div className="mliv-section">
-        <div className="mliv-section-label">Which year is on?</div>
-        <LiveSeasonForm
+        <div className="mliv-section-label">Active season</div>
+        <MobileLiveForm
           leagueId={leagueId}
           seasons={seasons}
           weekOverride={weekOverride}
@@ -59,13 +59,13 @@ export function MobileLiveSeason({
 
       <div className="mliv-section">
         <div className="mliv-section-label">Live source</div>
-        <div className="mliv-section-desc">The weekly cron re-syncs only the live source.</div>
-        <SourcePicker leagueId={leagueId} sources={sourceRows} />
+        <div className="mliv-section-desc">Weekly cron re-syncs only the live source.</div>
+        <MobileSourcePicker leagueId={leagueId} sources={sourceRows} />
       </div>
 
       <div className="mliv-section">
         <div className="mliv-section-label">Game of the Week</div>
-        <div className="mliv-section-desc">Star one matchup per week for the almanac.</div>
+        <div className="mliv-section-desc">Star one matchup per week.</div>
         {liveSeasonId && gotwWeeks.length > 0 ? (
           <GotwPicker
             leagueId={leagueId}
@@ -76,7 +76,7 @@ export function MobileLiveSeason({
             managers={gotwManagers}
           />
         ) : (
-          <div className="mliv-empty">Pick a live season above to choose Games of the Week.</div>
+          <div className="mliv-card-empty">Pick a live season above first.</div>
         )}
       </div>
     </div>

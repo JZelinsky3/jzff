@@ -25,6 +25,8 @@ export function MobileLeagueHub({
   tierLabel,
   firstYear,
   lastYear,
+  liveYear,
+  liveWeek,
 }: {
   league: LeagueData
   isOwner: boolean
@@ -37,6 +39,8 @@ export function MobileLeagueHub({
   tierLabel: string
   firstYear: number | null
   lastYear: number | null
+  liveYear: number | null
+  liveWeek: number | null
 }) {
   const slug = league.slug
   const yearSpan =
@@ -80,51 +84,49 @@ export function MobileLeagueHub({
         </div>
       </div>
 
-      {/* ── League snapshot ── */}
-      <div className="mlh-snapshot">
-        {yearSpan && (
-          <div className="mlh-snap-item">
-            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="2" width="12" height="12" rx="2" />
-              <line x1="2" y1="6" x2="14" y2="6" />
-              <line x1="6" y1="2" x2="6" y2="6" />
-              <line x1="10" y1="2" x2="10" y2="6" />
+      {/* ── League snapshot card ── */}
+      <div className="mlh-snap-card">
+        <div className="mlh-snap-grid">
+          {yearSpan && (
+            <div className="mlh-snap-cell">
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="12" height="12" rx="2" />
+                <line x1="2" y1="6" x2="14" y2="6" />
+                <line x1="6" y1="2" x2="6" y2="6" />
+                <line x1="10" y1="2" x2="10" y2="6" />
+              </svg>
+              <span>
+                {yearSpan}
+                {leagueAge && leagueAge > 1 && (
+                  <span className="mlh-snap-faint"> ({leagueAge} yrs)</span>
+                )}
+              </span>
+            </div>
+          )}
+          <div className="mlh-snap-cell">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 8h8" /><path d="M6 4l-4 4 4 4" /><path d="M10 4l4 4-4 4" />
             </svg>
-            <span className="mlh-snap-text">
-              {yearSpan}
-              {leagueAge && leagueAge > 1 && (
-                <span className="mlh-snap-sub"> ({leagueAge} yrs)</span>
-              )}
-            </span>
+            <span>{rivalryCount} {rivalryCount === 1 ? 'rivalry' : 'rivalries'}</span>
           </div>
-        )}
-        <div className="mlh-snap-item">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 8h8" />
-            <path d="M6 4l-4 4 4 4" />
-            <path d="M10 4l4 4-4 4" />
-          </svg>
-          <span className="mlh-snap-text">{rivalryCount} {rivalryCount === 1 ? 'rivalry' : 'rivalries'}</span>
-        </div>
-        <div className="mlh-snap-item">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="3" width="12" height="10" rx="1.5" />
-            <line x1="2" y1="7" x2="14" y2="7" />
-            <line x1="6" y1="7" x2="6" y2="13" />
-          </svg>
-          <span className="mlh-snap-text">{sourceCount} {sourceCount === 1 ? 'source' : 'sources'}</span>
-        </div>
-        {league.last_synced_at && (
-          <div className="mlh-snap-item">
-            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="8" cy="8" r="6" />
-              <polyline points="8 4.5 8 8 11 10" />
+          <div className="mlh-snap-cell">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="12" height="10" rx="1.5" />
+              <line x1="2" y1="7" x2="14" y2="7" />
+              <line x1="6" y1="7" x2="6" y2="13" />
             </svg>
-            <span className="mlh-snap-text">
-              Synced {new Date(league.last_synced_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-            </span>
+            <span>{sourceCount} {sourceCount === 1 ? 'source' : 'sources'}</span>
           </div>
-        )}
+          {league.last_synced_at && (
+            <div className="mlh-snap-cell">
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="8" cy="8" r="6" />
+                <polyline points="8 4.5 8 8 11 10" />
+              </svg>
+              <span>Synced {new Date(league.last_synced_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Almanac status card ── */}
@@ -276,6 +278,13 @@ export function MobileLeagueHub({
               <span className="mlh-config-name">Current Season</span>
               <span className="mlh-config-desc">Mark the in-progress year</span>
             </span>
+            {liveYear ? (
+              <span className="mlh-config-badge teal">
+                {liveWeek != null ? `WK ${liveWeek}` : ''} {liveYear}
+              </span>
+            ) : (
+              <span className="mlh-config-badge steel">Off</span>
+            )}
             <span className="mlh-config-arrow">
               <svg viewBox="0 0 8 14" width="7" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 1 7 7 1 13" /></svg>
             </span>

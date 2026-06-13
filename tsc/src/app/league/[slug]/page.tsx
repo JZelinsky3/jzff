@@ -5,6 +5,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { MobileLeagueHub } from '@/components/league/MobileLeagueHub'
 import { createClient } from '@/lib/supabase/server'
 import { resolveLeagueTier, tierBadgeLabel } from '@/lib/leagueTier'
+import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { getViewMode } from '@/lib/viewMode'
 import { SyncButton } from './sync-button'
 import { GradeTradesButton } from './grade-trades-button'
@@ -44,11 +45,14 @@ export default async function LeagueOverviewPage({
       .eq('season.league_id', league.id),
     supabase.from('rivalries').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
     supabase.from('league_sources').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
-    supabase.from('seasons').select('year').eq('league_id', league.id).order('year'),
+    supabase.from('seasons').select('year, is_live, settings').eq('league_id', league.id).order('year'),
   ])
   const years = (yearRows ?? []).map((r) => r.year as number)
   const firstYear = years.length > 0 ? years[0] : null
   const lastYear = years.length > 0 ? years[years.length - 1] : null
+  const liveRow = (yearRows ?? []).find((r) => r.is_live)
+  const liveYear = (liveRow?.year as number) ?? null
+  const liveWeek = liveRow ? resolveCurrentWeek((liveRow.settings ?? {}) as Record<string, unknown>) : null
 
   const words = league.name.trim().split(/\s+/)
   const head = words.slice(0, -1).join(' ')
@@ -70,6 +74,8 @@ export default async function LeagueOverviewPage({
         tierLabel={tierBadgeLabel(tier)}
         firstYear={firstYear}
         lastYear={lastYear}
+        liveYear={liveYear}
+        liveWeek={liveWeek}
       />
     )
   }
