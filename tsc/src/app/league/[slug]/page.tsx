@@ -20,7 +20,7 @@ export default async function LeagueOverviewPage({
 
   const { data: league } = await supabase
     .from('leagues')
-    .select('id, name, slug, last_synced_at, published_at, owner_id, settings')
+    .select('id, name, slug, platform, last_synced_at, published_at, owner_id, settings')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) notFound()

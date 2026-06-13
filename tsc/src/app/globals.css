@@ -9362,6 +9362,336 @@ body.tsc-hdr-collapsed .mprof-bar {
 
 
 /* ============================================================
+   MOBILE LEAGUE HUB  (MobileLeagueHub.tsx)
+   Phone-only league management hub. Prefix: mlh-
+   ============================================================ */
+.mlh {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 1rem;
+    min-height: 100dvh;
+}
+
+/* ── Sticky bar ── */
+.mlh-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .75rem 1.1rem;
+    background: rgba(14,22,32,.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ink-line);
+    transition: padding .25s ease;
+}
+body.tsc-hdr-collapsed .mlh-bar {
+    padding: .45rem 1.1rem;
+}
+.mlh-bar-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--gold);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.mlh-bar-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+}
+.mlh-bar-kicker {
+    font-family: var(--mono);
+    font-size: .42rem;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    line-height: 1;
+}
+.mlh-bar-name {
+    font-family: var(--serif);
+    font-size: .95rem;
+    color: var(--cream);
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.mlh-bar-spacer { width: 32px; flex-shrink: 0; }
+
+/* Hide global site menu on the league hub */
+.mlh ~ .msm-root { display: none !important; }
+
+/* ── Stats row ── */
+.mlh-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .85rem 1.25rem;
+    border-bottom: 1px solid var(--ink-line);
+}
+.mlh-stat {
+    display: flex;
+    flex-direction: column;
+    gap: .05rem;
+}
+.mlh-stat-val {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--cream);
+    line-height: 1;
+}
+.mlh-stat-lbl {
+    font-family: var(--mono);
+    font-size: .44rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlh-tier-pill {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .48rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    padding: .25rem .55rem;
+    white-space: nowrap;
+}
+
+/* ── Almanac status ── */
+.mlh-almanac {
+    padding: .65rem .85rem 0;
+}
+.mlh-almanac-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .75rem .85rem;
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    transition: background .12s;
+}
+.mlh-almanac-link:active {
+    background: rgba(232,200,137,.04);
+}
+.mlh-almanac-left {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+}
+.mlh-almanac-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--cream-mute);
+    flex-shrink: 0;
+}
+.mlh-almanac-dot.live {
+    background: var(--sage, #7fa97f);
+    box-shadow: 0 0 6px rgba(127,169,127,.5);
+}
+.mlh-almanac-info {
+    display: flex;
+    flex-direction: column;
+    gap: .05rem;
+}
+.mlh-almanac-title {
+    font-family: var(--serif);
+    font-size: .9rem;
+    color: var(--cream);
+}
+.mlh-almanac-status {
+    font-family: var(--mono);
+    font-size: .46rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlh-almanac-arrow {
+    color: var(--cream-mute);
+    opacity: .4;
+    flex-shrink: 0;
+}
+
+/* ── Action cards ── */
+.mlh-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .55rem;
+    padding: .65rem .85rem 0;
+}
+.mlh-action-card {
+    display: flex;
+    flex-direction: column;
+    padding: .75rem;
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+}
+.mlh-action-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .3rem;
+}
+.mlh-action-title {
+    font-family: var(--serif);
+    font-size: .9rem;
+    color: var(--cream);
+}
+.mlh-action-meta {
+    font-family: var(--mono);
+    font-size: .44rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlh-action-desc {
+    font-size: .68rem;
+    line-height: 1.4;
+    color: var(--cream-mute);
+    margin-bottom: .6rem;
+    flex: 1;
+}
+.mlh-action-btn-wrap {
+    display: flex;
+    justify-content: flex-start;
+}
+.mlh-action-btn-wrap .dc-btn {
+    font-size: .55rem;
+    padding: .42rem .7rem;
+    letter-spacing: .14em;
+}
+
+/* ── Configuration list ── */
+.mlh-config {
+    padding: 0 .85rem;
+    margin-top: .85rem;
+}
+.mlh-config-head {
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    padding: .4rem .4rem;
+}
+.mlh-config-list {
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.mlh-config-row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .75rem .8rem;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink-line);
+    transition: background .12s;
+}
+.mlh-config-row:last-child { border-bottom: none; }
+.mlh-config-row:active {
+    background: rgba(232,200,137,.04);
+}
+.mlh-config-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(232,200,137,.06);
+    color: var(--gold);
+    flex-shrink: 0;
+}
+.mlh-config-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .05rem;
+}
+.mlh-config-name {
+    font-family: var(--serif);
+    font-size: .88rem;
+    color: var(--cream);
+}
+.mlh-config-desc {
+    font-size: .65rem;
+    color: var(--cream-mute);
+    line-height: 1.3;
+}
+.mlh-config-badge {
+    font-family: var(--mono);
+    font-size: .44rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: .15rem .4rem;
+    border-radius: 999px;
+    border: 1px solid;
+    flex-shrink: 0;
+}
+.mlh-config-badge.teal  { color: #6abdb8; border-color: rgba(90,154,150,.4); background: rgba(90,154,150,.08); }
+.mlh-config-badge.sage  { color: #7aad8e; border-color: rgba(107,154,110,.4); background: rgba(107,154,110,.08); }
+.mlh-config-badge.fire  { color: var(--gold); border-color: var(--gold-deep); background: rgba(232,200,137,.06); }
+.mlh-config-badge.ember { color: #d4bc60; border-color: rgba(200,168,48,.4); background: rgba(200,168,48,.08); }
+.mlh-config-check {
+    font-size: .7rem;
+    color: var(--sage, #7fa97f);
+    flex-shrink: 0;
+}
+.mlh-config-arrow {
+    color: var(--cream-mute);
+    opacity: .35;
+    flex-shrink: 0;
+}
+
+/* ── Footer nav ── */
+.mlh-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    padding: 2rem 1rem 1.5rem;
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+.mlh-footer-link {
+    color: var(--cream-mute);
+    text-decoration: none;
+}
+.mlh-footer-link:hover { color: var(--gold); }
+.mlh-footer-sep { color: var(--ink-line); }
+
+
+/* ============================================================
    MOBILE LANDING  (MobileHome.tsx)
    Phone-only pitch-deck landing. Served by UA fork in app/page.tsx.
    ============================================================ */
