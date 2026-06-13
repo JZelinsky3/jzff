@@ -209,35 +209,35 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
 
         <div className="mlp-live-tools">
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-mark" />
+            <span className="mlp-live-tool-num">I</span>
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Sunday Live</span>
               <span className="mlp-live-tool-desc">Real-time command center for every matchup, news, and moments as they happen.</span>
             </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-mark" />
+            <span className="mlp-live-tool-num">II</span>
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Matchup Preview</span>
               <span className="mlp-live-tool-desc">Weekly slate with form, all-time H2H, projections, and rivalry weight.</span>
             </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-mark" />
+            <span className="mlp-live-tool-num">III</span>
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Power Rankings</span>
               <span className="mlp-live-tool-desc">Weekly rankings based on record, points, schedule strength, and recent form.</span>
             </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-mark" />
+            <span className="mlp-live-tool-num">IV</span>
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Manager DNA</span>
               <span className="mlp-live-tool-desc">Behavioral profiles — trade hawks, streamers, set-and-forgets — from real data.</span>
             </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-mark" />
+            <span className="mlp-live-tool-num">V</span>
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Trade Desk</span>
               <span className="mlp-live-tool-desc">Grader, analyzer, finder, and rumor mill — four rooms for every angle.</span>
