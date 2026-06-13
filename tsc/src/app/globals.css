@@ -8685,7 +8685,7 @@ body.tsc-hdr-collapsed .mlib-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: .85rem 1.1rem;
+    padding: .85rem 1.1rem .85rem 1.25rem;
     border-bottom: 1px solid var(--ink-line);
 }
 .mlib-status-row {
@@ -8841,7 +8841,7 @@ body.tsc-hdr-collapsed .mlib-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: .5rem .25rem;
+    padding: .5rem .25rem .5rem .4rem;
     font-family: var(--mono);
     font-size: .52rem;
     font-weight: 700;
