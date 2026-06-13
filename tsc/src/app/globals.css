@@ -8691,7 +8691,8 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .mlp-screen {
     display: flex;
     flex-direction: column;
-    padding: 0 1.1rem;
+    padding-left: 1.1rem;
+    padding-right: 1.1rem;
 }
 
 /* ── Screen 1 · The Hook ── */
@@ -8914,6 +8915,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     border: 1px solid var(--ink-line);
     border-radius: 4px;
 }
+.mlp-why-pt-icon-share svg { width: 14px; height: 14px; }
 .mlp-why-pt-body { flex: 1; display: flex; flex-direction: column; gap: .15rem; }
 .mlp-why-pt-title {
     font-family: var(--serif);

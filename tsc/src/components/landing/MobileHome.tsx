@@ -75,7 +75,9 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
             </span>
           </div>
           <div className="mlp-why-pt">
-            <span className="mlp-why-pt-icon">★</span>
+            <span className="mlp-why-pt-icon mlp-why-pt-icon-share">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12V14H12V12"/><path d="M8 10V3"/><path d="M5 5.5L8 2.5L11 5.5"/></svg>
+            </span>
             <span className="mlp-why-pt-body">
               <span className="mlp-why-pt-title">Share with your league</span>
               <span className="mlp-why-pt-desc">Publish a public site anyone in your league can open, argue over, and come back to every week.</span>
@@ -207,35 +209,35 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
 
         <div className="mlp-live-tools">
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-mark" />
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Sunday Live</span>
               <span className="mlp-live-tool-desc">Real-time command center for every matchup, news, and moments as they happen.</span>
             </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-mark" />
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Matchup Preview</span>
               <span className="mlp-live-tool-desc">Weekly slate with form, all-time H2H, projections, and rivalry weight.</span>
             </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-mark" />
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Power Rankings</span>
               <span className="mlp-live-tool-desc">Weekly rankings based on record, points, schedule strength, and recent form.</span>
             </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-mark" />
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Manager DNA</span>
               <span className="mlp-live-tool-desc">Behavioral profiles — trade hawks, streamers, set-and-forgets — from real data.</span>
             </span>
           </div>
           <div className="mlp-live-tool">
-            <span className="mlp-live-tool-bullet" />
+            <span className="mlp-live-tool-mark" />
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Trade Desk</span>
               <span className="mlp-live-tool-desc">Grader, analyzer, finder, and rumor mill — four rooms for every angle.</span>
