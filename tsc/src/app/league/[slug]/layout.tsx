@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 import { LeagueBackLink } from './back-link'
 import { AdminNavMenu } from './admin-nav-menu'
 
@@ -28,6 +29,12 @@ export default async function LeagueLayout({
   const words = league.name.trim().split(/\s+/)
   const head = words.slice(0, -1).join(' ')
   const tail = words[words.length - 1] ?? ''
+
+  const mobile = (await getViewMode()) === 'mobile'
+
+  if (mobile) {
+    return <>{children}</>
+  }
 
   return (
     <>

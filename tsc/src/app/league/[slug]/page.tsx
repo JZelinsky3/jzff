@@ -2,8 +2,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OnboardingChecklist, type OnboardingStep } from '@/components/OnboardingChecklist'
 import { SiteFooter } from '@/components/SiteFooter'
+import { MobileLeagueHub } from '@/components/league/MobileLeagueHub'
 import { createClient } from '@/lib/supabase/server'
 import { resolveLeagueTier, tierBadgeLabel } from '@/lib/leagueTier'
+import { getViewMode } from '@/lib/viewMode'
 import { SyncButton } from './sync-button'
 import { GradeTradesButton } from './grade-trades-button'
 import { PublishButton } from './setup/publish-button'
@@ -48,6 +50,22 @@ export default async function LeagueOverviewPage({
   const tail = words[words.length - 1] ?? ''
 
   const tier = await resolveLeagueTier(league.id, league.owner_id ?? null)
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileLeagueHub
+        league={league}
+        isOwner={isOwner}
+        seasonCount={seasonCount ?? 0}
+        managerCount={managerCount ?? 0}
+        matchupCount={matchupCount ?? 0}
+        rivalryCount={rivalryCount ?? 0}
+        sourceCount={sourceCount ?? 0}
+        tier={tier}
+        tierLabel={tierBadgeLabel(tier)}
+      />
+    )
+  }
 
   const hasSources = (sourceCount ?? 0) > 0
   const hasSynced = !!league.last_synced_at
