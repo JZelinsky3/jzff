@@ -9263,9 +9263,9 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .mlp-live-tool {
     display: flex;
-    align-items: flex-start;
+    align-items: baseline;
     gap: .45rem;
-    padding: .7rem 0 .7rem .4rem;
+    padding: .7rem 0 .7rem .5rem;
     border-bottom: 1px solid var(--ink-line);
 }
 .mlp-live-tool:last-child { border-bottom: none; }
@@ -9278,8 +9278,6 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     letter-spacing: .08em;
     color: var(--gold);
     opacity: .85;
-    line-height: 1;
-    padding-top: .35rem;
 }
 .mlp-live-tool-body {
     flex: 1;
