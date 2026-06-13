@@ -9296,7 +9296,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .mlp-close {
     align-items: center;
     text-align: center;
-    padding-top: 1rem;
+    padding-top: 1.8rem;
     padding-bottom: .6rem;
     border-top: 1px solid var(--ink-line);
 }
