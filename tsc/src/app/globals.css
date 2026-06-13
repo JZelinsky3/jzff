@@ -8438,6 +8438,10 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 @media (max-width: 720px) {
     .msm-root { display: block; }
 
+    /* The new pitch-deck mobile landing (.mlp) has its own sticky top bar
+       with Sign in / Library, so the global hamburger is redundant there. */
+    .mlp ~ .msm-root { display: none !important; }
+
     /* Landing's mega-menu inline triggers + its own mobile wrap collapse.
        The new MobileSiteMenu owns the mobile experience. */
     .ln-inline { display: none !important; }
@@ -8624,490 +8628,317 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 /* ============================================================
    MOBILE LANDING  (MobileHome.tsx)
-   Phone-only landing tree, served by the UA fork in app/page.tsx.
-   A content-forward FEED — real sample almanac data in mobile-native
-   cards, modeled on pams-mobile/index.html (NOT a shrunk desktop).
-   Self-contained under .mlp-main; reuses .ticker / .dc-btn / .dc-btn-ghost.
+   Phone-only pitch-deck landing: 4 full-screen cards, video hero,
+   no demo data. Served by the UA fork in app/page.tsx.
    ============================================================ */
-.mlp-main {
+.mlp {
     position: relative;
     z-index: 1;
-    padding-bottom: 3rem;
+    padding-bottom: 2rem;
     overflow-x: hidden;
 }
 
-/* Masthead — leaves the top-right corner clear for the global
-   MobileSiteMenu avatar/hamburger trigger. */
-.mlp-mast {
-    padding: 1.1rem 1.1rem .9rem;
-    text-align: center;
+/* ── Top bar ── */
+.mlp-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .85rem 1.2rem;
+    background: rgba(14,22,32,.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--ink-line);
 }
-.mlp-mast-kicker {
+.mlp-bar-title {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--cream);
+}
+.mlp-bar-title em { color: var(--gold); font-style: italic; }
+.mlp-bar-link {
     font-family: var(--mono);
-    font-size: .54rem;
+    font-size: .6rem;
     font-weight: 700;
-    letter-spacing: .28em;
+    letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--gold);
-    margin-bottom: .35rem;
+    text-decoration: none;
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    padding: .45rem .9rem;
+    transition: border-color .2s;
 }
-.mlp-mast-title {
-    font-family: var(--serif);
-    font-size: 1.55rem;
-    line-height: 1.05;
-    color: var(--cream);
-}
-.mlp-mast-title em { color: var(--gold); font-style: italic; }
+.mlp-bar-link:hover { border-color: var(--gold); }
 
-/* Hero */
-.mlp-hero { padding: 1.6rem 1.1rem .4rem; }
-.mlp-hero-sup {
-    font-family: var(--mono);
-    font-size: .52rem;
-    font-weight: 700;
-    letter-spacing: .26em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
-    margin-bottom: .8rem;
-}
-.mlp-hero-title {
-    font-family: var(--serif);
-    font-size: 2.5rem;
-    line-height: 1.02;
-    color: var(--cream);
-    margin-bottom: .8rem;
-}
-.mlp-hero-title em { color: var(--gold); font-style: italic; }
-.mlp-hero-sub {
-    font-size: .92rem;
-    line-height: 1.5;
-    color: var(--cream-soft);
-    max-width: 34ch;
-    margin-bottom: 1.2rem;
-}
-
-/* Shared CTA stack (hero + final) */
-.mlp-ctas {
+/* ── Screens — each section is roughly viewport-height ── */
+.mlp-screen {
     display: flex;
     flex-direction: column;
-    gap: .6rem;
-    margin-bottom: 1rem;
+    padding: 0 1.3rem;
 }
-.mlp-ctas .dc-btn,
-.mlp-ctas .dc-btn-ghost {
-    width: 100%;
-    padding: .95rem 1.2rem;
-    font-size: .68rem;
-}
-.mlp-hero-meta {
-    display: flex;
-    flex-wrap: wrap;
+
+/* ── Screen 1 · The Hook ── */
+.mlp-hook {
+    min-height: calc(100svh - 52px);
+    justify-content: center;
     align-items: center;
-    gap: .5rem;
+    text-align: center;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+.mlp-hook-kicker {
     font-family: var(--mono);
     font-size: .56rem;
-    letter-spacing: .14em;
+    font-weight: 700;
+    letter-spacing: .3em;
     text-transform: uppercase;
-    color: var(--cream-mute);
-}
-.mlp-dot { color: var(--gold-deep); }
-
-/* ── Section scaffolding ──────────────────────────────────── */
-.mlp-section { padding: 1.9rem 1.1rem 0; }
-.mlp-section-head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: .9rem;
+    color: var(--gold-deep);
     margin-bottom: .9rem;
 }
-.mlp-section-headl { display: flex; flex-direction: column; gap: .22rem; min-width: 0; }
-.mlp-section-num {
-    font-family: var(--mono);
-    font-size: .5rem;
-    font-weight: 700;
-    letter-spacing: .26em;
-    text-transform: uppercase;
-    color: var(--gold-deep);
-}
-.mlp-section-kicker {
-    font-family: var(--mono);
-    font-size: .54rem;
-    font-weight: 700;
-    letter-spacing: .22em;
-    text-transform: uppercase;
-    color: var(--gold);
-}
-.mlp-section-title {
+.mlp-hook-title {
     font-family: var(--serif);
-    font-size: 1.55rem;
-    line-height: 1.02;
+    font-size: clamp(2rem, 9vw, 2.8rem);
+    line-height: 1.06;
     color: var(--cream);
+    margin-bottom: 1.4rem;
 }
-.mlp-section-title em { color: var(--gold); font-style: italic; }
-.mlp-section-link {
-    flex: none;
-    font-family: var(--mono);
-    font-size: .54rem;
-    font-weight: 700;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
-    text-decoration: none;
-    border-bottom: 1px solid var(--ink-line);
-    padding-bottom: .25rem;
-    white-space: nowrap;
-}
+.mlp-hook-title em { color: var(--gold); font-style: italic; }
 
-/* Shared card shells */
-.mlp-card {
-    border-radius: 3px;
+/* Video card */
+.mlp-video-card {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 4 / 5;
+    border-radius: 6px;
     overflow: hidden;
-}
-.mlp-paper {
-    background: var(--cream);
-    color: var(--ink);
-    border: 1px solid var(--gold-deep);
-    box-shadow: 0 12px 34px rgba(0,0,0,.34);
-}
-.mlp-paper-head {
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--mono);
-    font-size: .54rem;
-    font-weight: 700;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: var(--gold-deep);
-    padding: .8rem .95rem .55rem;
-    border-bottom: 1px solid rgba(168,138,74,.35);
-}
-.mlp-paper-foot {
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: .82rem;
-    line-height: 1.35;
-    color: #3a4350;
-    padding: .55rem .95rem .85rem;
-    border-top: 1px solid rgba(168,138,74,.25);
-}
-
-/* §01 Standings snapshot */
-.mlp-stand { padding: .35rem .95rem; }
-.mlp-stand-row {
-    display: flex;
-    align-items: baseline;
-    gap: .6rem;
-    padding: .5rem 0;
-    border-bottom: 1px solid rgba(168,138,74,.18);
-}
-.mlp-stand-row:last-child { border-bottom: 0; }
-.mlp-stand-rk {
-    flex: none; width: 1.1rem;
-    font-family: var(--mono); font-weight: 700;
-    font-size: .72rem; color: var(--gold-deep);
-}
-.mlp-stand-name {
-    flex: 1; min-width: 0;
-    font-family: var(--serif);
-    font-size: 1.02rem; line-height: 1.1;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.mlp-stand-rec {
-    flex: none;
-    font-family: var(--mono); font-weight: 700;
-    font-size: .72rem; color: var(--ink);
-}
-.mlp-stand-pf {
-    flex: none; width: 3.6rem; text-align: right;
-    font-family: var(--mono); font-size: .7rem;
-    color: #5a6470;
-}
-
-/* §02 Champion roll */
-.mlp-roll { padding: .3rem .95rem .55rem; }
-.mlp-roll-row {
-    display: flex;
-    align-items: center;
-    gap: .8rem;
-    padding: .6rem 0;
-    border-bottom: 1px solid rgba(168,138,74,.18);
-}
-.mlp-roll-row:last-child { border-bottom: 0; }
-.mlp-roll-yr {
-    flex: none;
-    font-family: var(--serif);
-    font-size: 1.25rem; font-style: italic;
-    color: var(--gold-deep);
-    width: 2.6rem;
-}
-.mlp-roll-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem; }
-.mlp-roll-ch {
-    font-family: var(--serif);
-    font-size: 1.05rem; line-height: 1.05;
-    color: var(--ink);
-}
-.mlp-roll-fin {
-    font-family: var(--mono);
-    font-size: .6rem; letter-spacing: .04em;
-    color: #5a6470;
-}
-.mlp-roll-trophy { flex: none; color: var(--gold-deep); font-size: .8rem; }
-
-/* §03 Draft strip — swipeable */
-.mlp-draft {
-    display: flex;
-    gap: .55rem;
-    overflow-x: auto;
-    padding: .15rem .15rem .5rem;
-    margin: 0 -.15rem;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-}
-.mlp-draft::-webkit-scrollbar { display: none; }
-.mlp-draft { scrollbar-width: none; }
-.mlp-pick {
-    flex: 0 0 auto;
-    scroll-snap-align: start;
-    width: 6.2rem;
-    display: flex;
-    flex-direction: column;
-    gap: .25rem;
-    background: var(--ink-card);
     border: 1px solid var(--ink-line);
-    border-radius: 3px;
-    padding: .7rem .7rem .75rem;
-}
-.mlp-pick-no {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .58rem; letter-spacing: .08em;
-    color: var(--gold);
-}
-.mlp-pick-name {
-    font-family: var(--serif);
-    font-size: 1.12rem; line-height: 1.02;
-    color: var(--cream);
-}
-.mlp-pick-mgr {
-    font-family: var(--mono);
-    font-size: .54rem; letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.mlp-draft-note {
-    font-family: var(--mono);
-    font-size: .54rem; letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
-    margin-top: .25rem;
-}
-
-/* §04 Dossier */
-.mlp-dossier {
     background: var(--ink-card);
-    border: 1px solid var(--ink-line);
-    padding: 1rem;
+    margin-bottom: 1.6rem;
 }
-.mlp-dossier-head { display: flex; align-items: center; gap: .8rem; }
-.mlp-dossier-av {
-    flex: none;
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    border: 1px solid var(--gold-deep);
-    background: rgba(232,200,137,.08);
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--serif);
-    font-size: 1rem; color: var(--gold);
+.mlp-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
-.mlp-dossier-id { display: flex; flex-direction: column; gap: .12rem; min-width: 0; }
-.mlp-dossier-name {
-    font-family: var(--serif);
-    font-size: 1.15rem; line-height: 1.05;
-    color: var(--cream);
-}
-.mlp-dossier-name em { font-style: italic; color: var(--gold); font-size: .9rem; }
-.mlp-dossier-tag {
-    font-family: var(--mono);
-    font-size: .54rem; letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
-}
-.mlp-dossier-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: .55rem;
-    margin-top: .9rem;
-    padding-top: .85rem;
-    border-top: 1px solid var(--ink-line-soft);
-}
-.mlp-dossier-stat { display: flex; flex-direction: column; gap: .12rem; text-align: center; }
-.mlp-dossier-val {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .92rem; color: var(--gold);
-}
-.mlp-dossier-lbl {
-    font-family: var(--mono);
-    font-size: .5rem; letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
-}
-
-/* §05 Rivalry scoreboard */
-.mlp-rivalry {
-    background: var(--ink-card);
-    border: 1px solid var(--ink-line);
-    padding: 1.1rem 1rem 1rem;
-    text-align: center;
-}
-.mlp-rivalry-vs {
+.mlp-video-fallback {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
+    font-size: 3rem;
+    color: var(--gold-deep);
+    opacity: .25;
+    pointer-events: none;
 }
-.mlp-rivalry-side { display: flex; align-items: center; gap: .6rem; }
-.mlp-rivalry-name {
-    font-family: var(--serif);
-    font-size: 1.15rem;
-    color: var(--cream);
+.mlp-video:not([src=""]) + .mlp-video-fallback { display: none; }
+
+.mlp-hook-ctas {
+    width: 100%;
+    max-width: 320px;
+    margin-bottom: .8rem;
 }
-.mlp-rivalry-rec {
-    font-family: var(--mono); font-weight: 700;
-    font-size: 1.7rem; color: var(--gold);
+.mlp-hook-ctas .dc-btn {
+    padding: 1rem 1.2rem;
+    font-size: .7rem;
 }
-.mlp-rivalry-dash { color: var(--gold-deep); font-family: var(--serif); }
-.mlp-rivalry-meta {
+.mlp-hook-meta {
     font-family: var(--mono);
-    font-size: .54rem; letter-spacing: .16em;
+    font-size: .58rem;
+    font-weight: 700;
+    letter-spacing: .22em;
     text-transform: uppercase;
     color: var(--cream-mute);
-    margin-top: .5rem;
-    padding-bottom: .8rem;
-    border-bottom: 1px solid var(--ink-line-soft);
 }
-.mlp-rivalry-lines { margin-top: .7rem; display: flex; flex-direction: column; gap: .45rem; }
-.mlp-rivalry-line {
-    display: flex;
-    justify-content: space-between;
-    gap: .8rem;
-    font-family: var(--mono);
-    font-size: .62rem; letter-spacing: .04em;
-    color: var(--cream-soft);
-}
-.mlp-rivalry-line span:first-child { color: var(--cream-mute); }
 
-/* §06 Demo card */
-.mlp-demo-card {
+/* ── Screen 2 · The What ── */
+.mlp-what {
+    min-height: 85svh;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    border-top: 1px solid var(--ink-line);
+}
+.mlp-what-title {
+    font-family: var(--serif);
+    font-size: clamp(1.6rem, 7vw, 2.2rem);
+    line-height: 1.15;
+    color: var(--cream);
+    margin-bottom: 2rem;
+}
+.mlp-what-title em { color: var(--gold); font-style: italic; }
+
+.mlp-pillars {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .5rem;
+    width: 100%;
+    max-width: 340px;
+    margin-bottom: 1.8rem;
+}
+.mlp-pillar {
     display: flex;
     flex-direction: column;
-    gap: .35rem;
-    position: relative;
-    background: var(--cream);
-    color: var(--ink);
-    border: 1px solid var(--gold-deep);
-    border-radius: 3px;
-    padding: 1.2rem 1.1rem 1.1rem;
-    text-decoration: none;
-    box-shadow: 0 12px 34px rgba(0,0,0,.34);
-}
-.mlp-demo-tag {
-    position: absolute; top: .7rem; right: .8rem;
-    font-family: var(--mono);
-    font-size: .5rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase;
-    color: var(--gold-deep);
-}
-.mlp-demo-title {
-    font-family: var(--serif);
-    font-size: 1.6rem; line-height: 1.05;
-}
-.mlp-demo-title em { font-style: italic; }
-.mlp-demo-meta {
-    font-family: var(--mono);
-    font-size: .54rem; font-weight: 700;
-    letter-spacing: .12em; text-transform: uppercase;
-    color: var(--gold-deep);
-}
-.mlp-demo-cta {
-    margin-top: .7rem;
-    font-family: var(--mono);
-    font-size: .62rem; font-weight: 700;
-    letter-spacing: .16em; text-transform: uppercase;
-    color: var(--ink);
-    border-top: 1px solid rgba(168,138,74,.4);
-    padding-top: .7rem;
-}
-
-/* §07 Platforms */
-.mlp-platforms { display: flex; flex-direction: column; gap: .5rem; }
-.mlp-platform {
-    display: flex;
     align-items: center;
-    gap: .8rem;
-    background: var(--ink-card);
-    border: 1px solid var(--ink-line);
-    border-radius: 3px;
-    padding: .8rem .95rem;
-}
-.mlp-platform-dot { color: var(--gold); font-size: .6rem; }
-.mlp-platform-body { display: flex; flex-direction: column; gap: .1rem; flex: 1; }
-.mlp-platform-name {
-    font-family: var(--serif);
-    font-size: 1.05rem;
-    color: var(--cream);
-}
-.mlp-platform-status {
-    font-family: var(--mono);
-    font-size: .54rem; font-weight: 700;
-    letter-spacing: .18em; text-transform: uppercase;
-    color: var(--cream-mute);
-}
-.mlp-pill {
-    font-family: var(--mono);
-    font-size: .5rem; font-weight: 700;
-    letter-spacing: .16em; text-transform: uppercase;
-    padding: .3rem .55rem;
-    border-radius: 999px;
-    background: var(--gold);
-    color: var(--ink);
-}
-.mlp-pill.cream {
-    background: transparent;
-    color: var(--cream-soft);
-    border: 1px solid var(--ink-line);
-}
-
-/* Final CTA */
-.mlp-final {
-    margin: 2.2rem 1.1rem 0;
+    gap: .55rem;
+    padding: .9rem .3rem;
     background: var(--ink-card);
     border: 1px solid var(--ink-line);
     border-radius: 4px;
-    padding: 1.8rem 1.3rem;
-    text-align: center;
 }
-.mlp-final-kicker {
-    font-family: var(--mono);
-    font-size: .54rem; font-weight: 700;
-    letter-spacing: .22em; text-transform: uppercase;
+.mlp-pillar-glyph {
+    font-size: 1.3rem;
     color: var(--gold);
-    margin-bottom: .7rem;
+    line-height: 1;
 }
-.mlp-final-title {
-    font-family: var(--serif);
-    font-size: 2.1rem; line-height: 1.05;
-    color: var(--cream);
-    margin-bottom: .7rem;
-}
-.mlp-final-title em { color: var(--gold); font-style: italic; }
-.mlp-final-sub {
-    font-size: .88rem; line-height: 1.5;
+.mlp-pillar-label {
+    font-family: var(--mono);
+    font-size: .48rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
     color: var(--cream-soft);
-    margin-bottom: 1.3rem;
 }
-.mlp-final .mlp-ctas { margin-bottom: 0; }
+
+.mlp-what-sub {
+    font-size: .9rem;
+    line-height: 1.55;
+    color: var(--cream-soft);
+    max-width: 30ch;
+}
+
+/* ── Screen 3 · The Proof ── */
+.mlp-proof {
+    align-items: center;
+    text-align: center;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    border-top: 1px solid var(--ink-line);
+}
+.mlp-proof-kicker {
+    font-family: var(--mono);
+    font-size: .56rem;
+    font-weight: 700;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-bottom: 1.2rem;
+}
+
+.mlp-platforms {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .6rem;
+    margin-bottom: 2.2rem;
+}
+.mlp-plat {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--cream);
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    padding: .55rem 1rem;
+}
+.mlp-plat-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+.mlp-plat-dot.live { background: var(--gold); }
+.mlp-plat-dot.beta { background: var(--cream-mute); }
+
+.mlp-demo-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .4rem;
+    width: 100%;
+    max-width: 320px;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 6px;
+    padding: 1.4rem 1.2rem;
+    text-decoration: none;
+    transition: border-color .2s;
+}
+.mlp-demo-card:hover { border-color: var(--gold-deep); }
+.mlp-demo-badge {
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--gold);
+    padding: .25rem .6rem;
+    border-radius: 999px;
+    margin-bottom: .3rem;
+}
+.mlp-demo-title {
+    font-family: var(--serif);
+    font-size: 1.25rem;
+    line-height: 1.1;
+    color: var(--cream);
+}
+.mlp-demo-meta {
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+
+/* ── Screen 4 · The Close ── */
+.mlp-close {
+    align-items: center;
+    text-align: center;
+    padding-top: 3rem;
+    padding-bottom: 2rem;
+    border-top: 1px solid var(--ink-line);
+}
+.mlp-close-title {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 9vw, 2.6rem);
+    line-height: 1.05;
+    color: var(--cream);
+    margin-bottom: .8rem;
+}
+.mlp-close-title em { color: var(--gold); font-style: italic; }
+.mlp-close-sub {
+    font-size: .9rem;
+    line-height: 1.55;
+    color: var(--cream-soft);
+    max-width: 30ch;
+    margin-bottom: 1.5rem;
+}
+.mlp-close-ctas {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    width: 100%;
+    max-width: 320px;
+}
+.mlp-close-ctas .dc-btn,
+.mlp-close-ctas .dc-btn-ghost {
+    padding: 1rem 1.2rem;
+    font-size: .68rem;
+}
 
 /* View-desktop escape hatch */
 .mlp-viewswitch {
