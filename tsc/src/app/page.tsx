@@ -10,18 +10,20 @@ import { LandingNav } from '@/components/landing/LandingNav'
 // Has to live in its own 'use client' file because `dynamic({ ssr:false })`
 // isn't allowed in Server Components.
 import { WelcomePopupLoader } from '@/components/landing/WelcomePopupLoader'
+import { MobileHome } from '@/components/landing/MobileHome'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+import { getViewMode, isMobileForcingDesktop } from '@/lib/viewMode'
 
-// Render the landing at 0.85× initial zoom on phones. The site's mobile
-// CSS was tuned at a moment when iOS Safari per-site zoom was nudged to
-// 75–85% — most visitors will land at 100% and see a cramped layout
-// without this. 0.85 is the compromise between the user's preferred 75%
-// and the risk of typography that's too small to read. Users can still
-// pinch to zoom in or out.
+// Phones now render the dedicated MobileHome tree (see the fork in Home()),
+// which is laid out for real device widths — so it wants 1:1 scale, not the
+// old 0.85× shrink the desktop-on-mobile layout needed. Desktop browsers
+// ignore initial-scale, so this only affects phones. A phone that forces the
+// desktop view (dc_view=desktop) will see that layout at 1.0 — acceptable for
+// an explicit opt-in. Users can still pinch to zoom.
 export const viewport: Viewport = {
   width: 'device-width',
-  initialScale: 0.85,
+  initialScale: 1,
   maximumScale: 5,
 }
 
@@ -29,7 +31,17 @@ export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const signedIn = !!user
+
+  // Mobile fork: phones (or anyone with the dc_view=mobile cookie) get a
+  // dedicated, lighter tree that never ships the desktop landing's client
+  // JS. Desktop browsers fall through to the full layout below, unchanged.
+  if ((await getViewMode()) === 'mobile') {
+    return <MobileHome signedIn={signedIn} />
+  }
+
   const admin = signedIn ? await isSiteAdmin(user?.id) : false
+  // Phone showing the desktop layout by explicit choice — offer a way back.
+  const showMobileSwitch = await isMobileForcingDesktop()
 
   const tickerItems = [
     'New · Live Season Hub · Matchup Preview · Best Coach Tracker',
@@ -172,6 +184,10 @@ export default async function Home() {
       </div>
 
       <SiteFooter />
+
+      {showMobileSwitch && (
+        <a className="mlp-backpill" href="/api/view/?mode=mobile&to=/">Switch to mobile site</a>
+      )}
     </main>
   )
 }

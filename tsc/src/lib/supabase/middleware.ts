@@ -7,7 +7,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 // /hub (the Clubhouse) is browsable signed-out — guests get a Login button
 // in the masthead and a guest view of each wing; write APIs under /api/hub/
 // (promote) enforce auth in their own handlers.
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/old', '/hub']
+// /api/view is the mobile/desktop view toggle — signed-out visitors on the
+// public landing must be able to flip to the desktop layout, so it can't be
+// behind the auth gate.
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/old', '/hub', '/api/view']
 // /api/cron/ is reached by Vercel's cron infra (no Supabase session); the
 // route handler itself enforces auth via the CRON_SECRET bearer header.
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request

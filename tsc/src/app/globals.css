@@ -8621,3 +8621,416 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     }
 }
 
+
+/* ============================================================
+   MOBILE LANDING  (MobileHome.tsx)
+   Phone-only landing tree, served by the UA fork in app/page.tsx.
+   Self-contained under .mlp-main so nothing leaks into the desktop
+   layout. Reuses the global .ticker, .dc-btn and .dc-btn-ghost.
+   ============================================================ */
+.mlp-main {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 3rem;
+    overflow-x: hidden;
+}
+
+/* Masthead — leaves the top-right corner clear for the global
+   MobileSiteMenu avatar/hamburger trigger. */
+.mlp-mast {
+    padding: 1.1rem 1.1rem .9rem;
+    text-align: center;
+    border-bottom: 1px solid var(--ink-line);
+    position: relative;
+}
+.mlp-mast-kicker {
+    font-family: var(--mono);
+    font-size: .54rem;
+    font-weight: 700;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .35rem;
+}
+.mlp-mast-title {
+    font-family: var(--serif);
+    font-size: 1.55rem;
+    line-height: 1.05;
+    color: var(--cream);
+}
+.mlp-mast-title em { color: var(--gold); font-style: italic; }
+
+/* Hero */
+.mlp-hero { padding: 1.6rem 1.1rem .4rem; }
+.mlp-hero-sup {
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: .8rem;
+}
+.mlp-hero-title {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    line-height: 1.02;
+    color: var(--cream);
+    margin-bottom: .8rem;
+}
+.mlp-hero-title em { color: var(--gold); font-style: italic; }
+.mlp-hero-sub {
+    font-size: .92rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
+    max-width: 32ch;
+    margin-bottom: 1.2rem;
+}
+
+/* Shared CTA stack (hero + final) */
+.mlp-ctas {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    margin-bottom: 1rem;
+}
+.mlp-ctas .dc-btn,
+.mlp-ctas .dc-btn-ghost {
+    width: 100%;
+    padding: .95rem 1.2rem;
+    font-size: .68rem;
+}
+
+.mlp-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    font-family: var(--mono);
+    font-size: .56rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: 1.6rem;
+}
+.mlp-dot { color: var(--gold-deep); }
+
+/* Static almanac leaf — cream paper card */
+.mlp-leaf {
+    background: var(--cream);
+    color: var(--ink);
+    border: 1px solid var(--gold-deep);
+    border-radius: 2px;
+    padding: 1.1rem 1.2rem 1.3rem;
+    box-shadow: 0 14px 40px rgba(0,0,0,.4);
+}
+.mlp-leaf-head {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: .54rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+}
+.mlp-leaf-orn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    color: var(--gold-deep);
+    font-size: .8rem;
+    margin: .7rem 0;
+}
+.mlp-leaf-rule { height: 1px; width: 2.4rem; background: var(--gold-deep); opacity: .6; }
+.mlp-leaf-title {
+    font-family: var(--serif);
+    font-size: 1.7rem;
+    line-height: 1.05;
+    text-align: center;
+    margin-bottom: .5rem;
+}
+.mlp-leaf-title em { font-style: italic; }
+.mlp-leaf-lead {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .95rem;
+    line-height: 1.4;
+    text-align: center;
+    color: #3a4350;
+    margin-bottom: 1rem;
+}
+.mlp-leaf-feature {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .8rem;
+    border-top: 1px solid rgba(168,138,74,.4);
+    padding-top: .7rem;
+}
+.mlp-leaf-feature-lbl {
+    font-family: var(--mono);
+    font-size: .54rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+}
+.mlp-leaf-feature-val {
+    font-family: var(--mono);
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-align: right;
+    color: var(--ink);
+}
+
+/* Section scaffolding */
+.mlp-section { padding: 2.2rem 1.1rem 0; }
+.mlp-section-head {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    margin-bottom: 1.1rem;
+}
+.mlp-section-num {
+    font-family: var(--mono);
+    font-size: .54rem;
+    font-weight: 700;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+.mlp-section-title {
+    font-family: var(--serif);
+    font-size: 1.7rem;
+    line-height: 1.05;
+    color: var(--cream);
+}
+.mlp-section-title em { color: var(--gold); font-style: italic; }
+.mlp-lede {
+    font-size: .88rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
+    margin-bottom: 1.1rem;
+}
+
+/* Chapter cards — dense tap rows */
+.mlp-chapters { display: flex; flex-direction: column; gap: .55rem; }
+.mlp-chapter {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 3px;
+    padding: .85rem .95rem;
+    text-decoration: none;
+    transition: border-color .15s, background .15s;
+}
+.mlp-chapter:active { background: var(--ink-soft); border-color: var(--gold-deep); }
+.mlp-chapter-num {
+    flex: 0 0 auto;
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--gold);
+    width: 1.6rem;
+    text-align: center;
+}
+.mlp-chapter-body { display: flex; flex-direction: column; gap: .15rem; min-width: 0; flex: 1; }
+.mlp-chapter-kicker {
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlp-chapter-title {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    line-height: 1.1;
+    color: var(--cream);
+}
+.mlp-chapter-title em { color: var(--gold); font-style: italic; }
+.mlp-chapter-blurb {
+    font-size: .76rem;
+    line-height: 1.4;
+    color: var(--cream-soft);
+}
+.mlp-chapter-arrow {
+    flex: 0 0 auto;
+    font-family: var(--serif);
+    font-size: 1.4rem;
+    color: var(--gold-deep);
+}
+
+/* Demo card */
+.mlp-demo-card {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    position: relative;
+    background: var(--cream);
+    color: var(--ink);
+    border: 1px solid var(--gold-deep);
+    border-radius: 3px;
+    padding: 1.2rem 1.1rem 1.1rem;
+    text-decoration: none;
+    box-shadow: 0 12px 34px rgba(0,0,0,.35);
+}
+.mlp-demo-tag {
+    position: absolute;
+    top: .7rem;
+    right: .8rem;
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+}
+.mlp-demo-title {
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    line-height: 1.05;
+}
+.mlp-demo-title em { font-style: italic; }
+.mlp-demo-meta {
+    font-family: var(--mono);
+    font-size: .56rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+}
+.mlp-demo-cta {
+    margin-top: .7rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border-top: 1px solid rgba(168,138,74,.4);
+    padding-top: .7rem;
+}
+
+/* Platforms */
+.mlp-platforms { display: flex; flex-direction: column; gap: .5rem; }
+.mlp-platform {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 3px;
+    padding: .8rem .95rem;
+}
+.mlp-platform-dot { color: var(--gold); font-size: .6rem; }
+.mlp-platform-body { display: flex; flex-direction: column; gap: .1rem; flex: 1; }
+.mlp-platform-name {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--cream);
+}
+.mlp-platform-status {
+    font-family: var(--mono);
+    font-size: .54rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlp-pill {
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    padding: .3rem .55rem;
+    border-radius: 999px;
+    background: var(--gold);
+    color: var(--ink);
+}
+.mlp-pill.cream {
+    background: transparent;
+    color: var(--cream-soft);
+    border: 1px solid var(--ink-line);
+}
+
+/* Final CTA */
+.mlp-final {
+    margin: 2.4rem 1.1rem 0;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 4px;
+    padding: 1.8rem 1.3rem;
+    text-align: center;
+}
+.mlp-final-kicker {
+    font-family: var(--mono);
+    font-size: .54rem;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .7rem;
+}
+.mlp-final-title {
+    font-family: var(--serif);
+    font-size: 2.1rem;
+    line-height: 1.05;
+    color: var(--cream);
+    margin-bottom: .7rem;
+}
+.mlp-final-title em { color: var(--gold); font-style: italic; }
+.mlp-final-sub {
+    font-size: .88rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
+    margin-bottom: 1.3rem;
+}
+.mlp-final .mlp-ctas { margin-bottom: 0; }
+
+/* View-desktop escape hatch */
+.mlp-viewswitch {
+    display: block;
+    width: max-content;
+    margin: 1.6rem auto 0;
+    font-family: var(--mono);
+    font-size: .56rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    text-decoration: none;
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    padding: .55rem 1.1rem;
+}
+
+/* "Back to mobile" pill — shown on the desktop landing only when a phone
+   forced the desktop view (see isMobileForcingDesktop). Mirrors the pill the
+   per-league static site injects. */
+.mlp-backpill {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    z-index: 80;
+    background: var(--ink);
+    color: var(--gold);
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    padding: .55rem 1.1rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    text-decoration: none;
+    box-shadow: 0 4px 18px rgba(0,0,0,.45);
+}
