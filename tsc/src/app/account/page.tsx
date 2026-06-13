@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SiteFooter } from '@/components/SiteFooter'
+import { MobileProfile } from '@/components/account/MobileProfile'
 import { createClient } from '@/lib/supabase/server'
 import { getUserSubscription, isCompUser, TIER_LABELS } from '@/lib/stripe'
+import { getViewMode } from '@/lib/viewMode'
 import { AccountForms } from './account-forms'
 import { AccountNavMenu } from './account-nav-menu'
 import { MemberCodeChip } from './member-code-chip'
@@ -63,6 +65,32 @@ export default async function AccountPage({
   // source of truth so we don't re-derive it in the client component.
   const tierLabel = sub ? TIER_LABELS[sub.tier].name : null
   const lifetime = await isCompUser(user.id)
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileProfile
+        email={user.email ?? ''}
+        memberCode={memberCode}
+        marketingOptIn={marketingOptIn}
+        leagueCount={leagueCount}
+        isOAuth={isOAuth}
+        providerLabel={providerLabel}
+        hasPassword={hasPassword}
+        backupEmail={backupEmail}
+        subscription={sub ? {
+          tier: sub.tier,
+          tierLabel: tierLabel!,
+          billingPeriod: sub.billing_period,
+          status: sub.status,
+          trialEndsAt: sub.trial_ends_at,
+          currentPeriodEnd: sub.current_period_end,
+          cancelAtPeriodEnd: sub.cancel_at_period_end,
+        } : null}
+        lifetime={lifetime}
+        justSubscribed={justSubscribed}
+      />
+    )
+  }
 
   return (
     <main>

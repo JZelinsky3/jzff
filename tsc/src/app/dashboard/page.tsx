@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { OnboardingChecklist, type OnboardingStep } from '@/components/OnboardingChecklist'
 import { SiteFooter } from '@/components/SiteFooter'
+import { MobileLibrary } from '@/components/dashboard/MobileLibrary'
 import { createClient } from '@/lib/supabase/server'
 import {
   getUserSubscription,
@@ -10,6 +11,7 @@ import {
   TIER_LIMITS,
 } from '@/lib/stripe'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+import { getViewMode } from '@/lib/viewMode'
 import { LeagueCardMenu } from './league-card-menu'
 
 export default async function DashboardPage({
@@ -133,6 +135,22 @@ export default async function DashboardPage({
   // resolveLeagueTier on the public side.
   const earliestOwnedLeagueId =
     leagues && leagues.length > 0 ? leagues[leagues.length - 1].id : null
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileLibrary
+        leagues={leagues ?? []}
+        bookmarks={bookmarks}
+        isUDFA={isUDFA}
+        earliestOwnedLeagueId={earliestOwnedLeagueId}
+        comp={comp}
+        subActive={subActive}
+        subTierName={subTierName}
+        tier1Limit={tier1Limit}
+        showDemoCard={showDemoCard}
+      />
+    )
+  }
 
   const onboardingSteps: OnboardingStep[] = [
     {

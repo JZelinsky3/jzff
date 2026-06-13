@@ -8627,6 +8627,741 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 
 
 /* ============================================================
+   MOBILE LIBRARY  (MobileLibrary.tsx)
+   Phone-only dashboard/library. Served by UA fork in dashboard/page.tsx.
+   Prefix: mlib-
+   ============================================================ */
+.mlib {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 1rem;
+    min-height: 100dvh;
+}
+
+/* ── Top bar ── */
+.mlib-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .75rem 1.1rem;
+    background: rgba(14,22,32,.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ink-line);
+    transition: padding .25s ease;
+}
+body.tsc-hdr-collapsed .mlib-bar {
+    padding: .45rem 1.1rem;
+}
+.mlib-bar-title {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    line-height: 1;
+    color: var(--cream);
+}
+.mlib-bar-title em { color: var(--gold); font-style: italic; }
+.mlib-bar-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    color: var(--gold);
+    text-decoration: none;
+    transition: border-color .2s;
+}
+.mlib-bar-add:hover { border-color: var(--gold); }
+
+/* Hide the global site menu on the mobile library (has its own nav) */
+.mlib ~ .msm-root { display: none !important; }
+
+/* ── Status strip ── */
+.mlib-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .85rem 1.1rem;
+    border-bottom: 1px solid var(--ink-line);
+}
+.mlib-status-row {
+    display: flex;
+    gap: 1.2rem;
+}
+.mlib-stat {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+}
+.mlib-stat-val {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    color: var(--cream);
+    line-height: 1;
+}
+.mlib-stat-label {
+    font-family: var(--mono);
+    font-size: .48rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlib-tier {
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    padding: .3rem .65rem;
+    white-space: nowrap;
+}
+.mlib-tier-icon { margin-right: .15rem; }
+
+/* ── UDFA explainer ── */
+.mlib-udfa {
+    margin: .65rem .85rem 0;
+    padding: .75rem .85rem;
+    background: rgba(232,200,137,.04);
+    border: 1px solid var(--gold-deep);
+    border-radius: 8px;
+}
+.mlib-udfa-head {
+    display: flex;
+    gap: .45rem;
+    align-items: flex-start;
+    font-size: .78rem;
+    line-height: 1.4;
+    color: var(--cream-soft);
+}
+.mlib-udfa-icon {
+    color: var(--gold);
+    flex-shrink: 0;
+    margin-top: .05rem;
+}
+.mlib-udfa-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: .55rem;
+    padding-top: .5rem;
+    border-top: 1px solid rgba(232,200,137,.12);
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlib-udfa-foot strong { color: var(--gold); }
+.mlib-udfa-link {
+    color: var(--gold);
+    text-decoration: none;
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    padding: .2rem .55rem;
+}
+
+/* ── Quick actions ── */
+.mlib-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .55rem;
+    padding: .85rem 1.1rem;
+}
+.mlib-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .35rem;
+    padding: .7rem .5rem;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    color: var(--cream-soft);
+    text-decoration: none;
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    transition: border-color .15s, background .15s;
+}
+.mlib-action:active {
+    background: rgba(232,200,137,.06);
+    border-color: var(--gold-deep);
+}
+.mlib-action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(232,200,137,.08);
+    color: var(--gold);
+    font-size: .9rem;
+    font-family: var(--serif);
+}
+
+/* ── Empty state ── */
+.mlib-empty {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+}
+.mlib-empty-title {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    color: var(--cream);
+    margin-bottom: .4rem;
+}
+.mlib-empty-desc {
+    font-size: .82rem;
+    color: var(--cream-soft);
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
+    max-width: 28ch;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ── League list ── */
+.mlib-list {
+    padding: 0 .85rem;
+    margin-top: .5rem;
+}
+.mlib-list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .5rem .25rem;
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlib-list-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 .3rem;
+    border-radius: 999px;
+    background: rgba(232,200,137,.1);
+    color: var(--gold);
+    font-size: .5rem;
+    letter-spacing: .1em;
+}
+
+/* ── League card ── */
+.mlib-league {
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    margin-bottom: .45rem;
+    overflow: hidden;
+}
+.mlib-league-link {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .85rem .8rem;
+    color: inherit;
+    text-decoration: none;
+    transition: background .12s;
+}
+.mlib-league-link:active {
+    background: rgba(232,200,137,.04);
+}
+.mlib-league-left {
+    flex-shrink: 0;
+}
+.mlib-league-initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(232,200,137,.08);
+    border: 1px solid var(--gold-deep);
+    color: var(--gold);
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-style: italic;
+    line-height: 1;
+}
+.mlib-league-initial.bm {
+    background: rgba(255,255,255,.04);
+    border-color: var(--ink-line);
+    color: var(--cream-soft);
+}
+.mlib-league-body {
+    flex: 1;
+    min-width: 0;
+}
+.mlib-league-name {
+    font-family: var(--serif);
+    font-size: .95rem;
+    color: var(--cream);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mlib-league-meta {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .15rem;
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlib-league-plat {
+    color: var(--gold-deep);
+}
+.mlib-league-tier {
+    margin-top: .25rem;
+    font-family: var(--mono);
+    font-size: .46rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mlib-league-tier.trial { color: var(--gold); }
+.mlib-league-tier.limited { color: var(--cream-mute); }
+.mlib-league-grace {
+    margin-top: .2rem;
+    font-family: var(--mono);
+    font-size: .46rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--rust, #a04830);
+}
+.mlib-league-arrow {
+    flex-shrink: 0;
+    color: var(--cream-mute);
+    opacity: .4;
+}
+.mlib-league-foot {
+    display: flex;
+    gap: .4rem;
+    padding: 0 .8rem .7rem;
+}
+.mlib-league-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .4rem .5rem;
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    border: 1px solid var(--gold-deep);
+    border-radius: 6px;
+    background: rgba(232,200,137,.03);
+    transition: background .15s;
+}
+.mlib-league-btn:active {
+    background: rgba(232,200,137,.1);
+}
+
+/* ── Demo card ── */
+.mlib-demo {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .85rem .8rem;
+    background: rgba(255,255,255,.02);
+    border: 1px dashed var(--ink-line);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+}
+.mlib-demo:active {
+    background: rgba(232,200,137,.04);
+}
+.mlib-demo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(232,200,137,.08);
+    border: 1px dashed var(--gold-deep);
+    color: var(--gold);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.mlib-demo-body { flex: 1; min-width: 0; }
+.mlib-demo-title {
+    font-family: var(--serif);
+    font-size: .95rem;
+    color: var(--cream);
+}
+.mlib-demo-desc {
+    font-size: .72rem;
+    color: var(--cream-mute);
+    margin-top: .1rem;
+}
+
+/* ── Footer nav ── */
+.mlib-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    padding: 2rem 1rem 1.5rem;
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+.mlib-footer-link {
+    color: var(--cream-mute);
+    text-decoration: none;
+}
+.mlib-footer-link:hover { color: var(--gold); }
+.mlib-footer-sep {
+    color: var(--ink-line);
+}
+
+
+/* ============================================================
+   MOBILE PROFILE  (MobileProfile.tsx)
+   Phone-only account page. Served by UA fork in account/page.tsx.
+   Prefix: mprof-
+   ============================================================ */
+.mprof {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 1rem;
+    min-height: 100dvh;
+}
+
+/* ── Top bar ── */
+.mprof-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .75rem 1.1rem;
+    background: rgba(14,22,32,.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ink-line);
+    transition: padding .25s ease;
+}
+body.tsc-hdr-collapsed .mprof-bar {
+    padding: .45rem 1.1rem;
+}
+.mprof-bar-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--gold);
+    text-decoration: none;
+}
+.mprof-bar-title {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--cream);
+}
+.mprof-bar-spacer { width: 32px; }
+
+/* Hide the global site menu on mobile profile */
+.mprof ~ .msm-root { display: none !important; }
+
+/* ── Identity card ── */
+.mprof-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1.1rem 1rem;
+}
+.mprof-identity-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    background: rgba(232,200,137,.08);
+    border: 1.5px solid var(--gold-deep);
+    color: var(--gold);
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    font-style: italic;
+    line-height: 1;
+    margin-bottom: .6rem;
+}
+.mprof-identity-email {
+    font-family: var(--mono);
+    font-size: .72rem;
+    color: var(--cream-soft);
+    letter-spacing: .04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+/* ── Sections ── */
+.mprof-section {
+    padding: 0 .85rem;
+    margin-top: .85rem;
+}
+.mprof-section-label {
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    padding: 0 .25rem .4rem;
+}
+
+/* ── Cards ── */
+.mprof-card {
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    padding: .85rem;
+}
+.mprof-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+}
+.mprof-card-title {
+    font-family: var(--serif);
+    font-size: .95rem;
+    color: var(--cream);
+}
+.mprof-card-val {
+    font-family: var(--mono);
+    font-size: .75rem;
+    color: var(--cream);
+    letter-spacing: .04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mprof-card-detail {
+    font-size: .75rem;
+    color: var(--cream-soft);
+    line-height: 1.4;
+    margin-top: .25rem;
+}
+.mprof-badge {
+    font-family: var(--mono);
+    font-size: .48rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: .2rem .5rem;
+    flex-shrink: 0;
+}
+.mprof-badge.comp {
+    color: var(--gold);
+    border-color: var(--gold);
+}
+.mprof-badge-btn {
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: transparent;
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    padding: .2rem .55rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.mprof-card-btns {
+    display: flex;
+    gap: .4rem;
+    margin-top: .65rem;
+}
+.mprof-card-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .5rem .6rem;
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--gold);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity .15s;
+}
+.mprof-card-btn:disabled { opacity: .5; }
+.mprof-card-btn.ghost {
+    color: var(--gold);
+    background: transparent;
+    border-color: var(--gold-deep);
+}
+
+/* ── Form fields ── */
+.mprof-field {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    margin-bottom: .6rem;
+}
+.mprof-field-label {
+    font-family: var(--mono);
+    font-size: .48rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mprof-input {
+    width: 100%;
+    padding: .55rem .65rem;
+    font-family: var(--mono);
+    font-size: .78rem;
+    color: var(--cream);
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--ink-line);
+    border-radius: 6px;
+    outline: none;
+    transition: border-color .15s;
+}
+.mprof-input:focus { border-color: var(--gold-deep); }
+.mprof-input:disabled { opacity: .5; }
+.mprof-input::placeholder { color: var(--cream-mute); }
+
+/* ── Toggle row ── */
+.mprof-toggle-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .65rem;
+    cursor: pointer;
+}
+.mprof-toggle-row input[type="checkbox"] {
+    margin-top: .15rem;
+    accent-color: var(--gold);
+    flex-shrink: 0;
+}
+.mprof-toggle-text {
+    font-size: .82rem;
+    color: var(--cream);
+    line-height: 1.4;
+}
+.mprof-toggle-hint {
+    display: block;
+    font-size: .7rem;
+    color: var(--cream-mute);
+    margin-top: .15rem;
+}
+
+/* ── Feedback ── */
+.mprof-err {
+    margin-top: .5rem;
+    padding: .45rem .6rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    color: var(--rust, #d65a3c);
+    background: rgba(160,72,48,.08);
+    border: 1px solid rgba(160,72,48,.3);
+    border-radius: 6px;
+}
+.mprof-ok {
+    margin-top: .5rem;
+    padding: .45rem .6rem;
+    font-family: var(--mono);
+    font-size: .62rem;
+    color: var(--sage, #7fa97f);
+    background: rgba(120,160,90,.06);
+    border: 1px solid rgba(120,160,90,.2);
+    border-radius: 6px;
+}
+
+/* ── Sign out ── */
+.mprof-signout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: .85rem;
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    color: var(--cream-soft);
+    font-family: var(--serif);
+    font-size: .92rem;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+.mprof-signout:active {
+    background: rgba(160,72,48,.06);
+    border-color: rgba(160,72,48,.3);
+}
+.mprof-signout svg { color: var(--cream-mute); }
+
+/* ── Footer nav ── */
+.mprof-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    padding: 2rem 1rem 1.5rem;
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+.mprof-footer-link {
+    color: var(--cream-mute);
+    text-decoration: none;
+}
+.mprof-footer-link:hover { color: var(--gold); }
+.mprof-footer-sep {
+    color: var(--ink-line);
+}
+
+
+/* ============================================================
    MOBILE LANDING  (MobileHome.tsx)
    Phone-only pitch-deck landing. Served by UA fork in app/page.tsx.
    ============================================================ */
