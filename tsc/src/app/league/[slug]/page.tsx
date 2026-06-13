@@ -34,6 +34,7 @@ export default async function LeagueOverviewPage({
     { count: matchupCount },
     { count: rivalryCount },
     { count: sourceCount },
+    { data: yearRows },
   ] = await Promise.all([
     supabase.from('seasons').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
     supabase.from('managers').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
@@ -43,7 +44,11 @@ export default async function LeagueOverviewPage({
       .eq('season.league_id', league.id),
     supabase.from('rivalries').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
     supabase.from('league_sources').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
+    supabase.from('seasons').select('year').eq('league_id', league.id).order('year'),
   ])
+  const years = (yearRows ?? []).map((r) => r.year as number)
+  const firstYear = years.length > 0 ? years[0] : null
+  const lastYear = years.length > 0 ? years[years.length - 1] : null
 
   const words = league.name.trim().split(/\s+/)
   const head = words.slice(0, -1).join(' ')
@@ -63,6 +68,8 @@ export default async function LeagueOverviewPage({
         sourceCount={sourceCount ?? 0}
         tier={tier}
         tierLabel={tierBadgeLabel(tier)}
+        firstYear={firstYear}
+        lastYear={lastYear}
       />
     )
   }

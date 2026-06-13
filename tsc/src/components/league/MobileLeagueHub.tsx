@@ -23,6 +23,8 @@ export function MobileLeagueHub({
   sourceCount,
   tier,
   tierLabel,
+  firstYear,
+  lastYear,
 }: {
   league: LeagueData
   isOwner: boolean
@@ -33,10 +35,18 @@ export function MobileLeagueHub({
   sourceCount: number
   tier: string
   tierLabel: string
+  firstYear: number | null
+  lastYear: number | null
 }) {
   const slug = league.slug
-  const leagueSettings = (league.settings ?? {}) as { members_reviewed_at?: string }
-  const hasReviewed = !!leagueSettings.members_reviewed_at
+  const yearSpan =
+    firstYear && lastYear
+      ? firstYear === lastYear
+        ? String(firstYear)
+        : `${firstYear}--${lastYear}`
+      : null
+  const leagueAge =
+    firstYear && lastYear ? lastYear - firstYear + 1 : null
 
   return (
     <main className="mlh">
@@ -54,7 +64,7 @@ export function MobileLeagueHub({
         <span className="mlh-bar-spacer" />
       </header>
 
-      {/* ── Stats row ── */}
+      {/* ── Big stats ── */}
       <div className="mlh-stats">
         <div className="mlh-stat">
           <span className="mlh-stat-val">{seasonCount}</span>
@@ -68,9 +78,53 @@ export function MobileLeagueHub({
           <span className="mlh-stat-val">{matchupCount}</span>
           <span className="mlh-stat-lbl">Matchups</span>
         </div>
-        <div className="mlh-tier-pill">
-          <span>★</span> {tierLabel}
+      </div>
+
+      {/* ── League snapshot ── */}
+      <div className="mlh-snapshot">
+        {yearSpan && (
+          <div className="mlh-snap-item">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="12" height="12" rx="2" />
+              <line x1="2" y1="6" x2="14" y2="6" />
+              <line x1="6" y1="2" x2="6" y2="6" />
+              <line x1="10" y1="2" x2="10" y2="6" />
+            </svg>
+            <span className="mlh-snap-text">
+              {yearSpan}
+              {leagueAge && leagueAge > 1 && (
+                <span className="mlh-snap-sub"> ({leagueAge} yrs)</span>
+              )}
+            </span>
+          </div>
+        )}
+        <div className="mlh-snap-item">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 8h8" />
+            <path d="M6 4l-4 4 4 4" />
+            <path d="M10 4l4 4-4 4" />
+          </svg>
+          <span className="mlh-snap-text">{rivalryCount} {rivalryCount === 1 ? 'rivalry' : 'rivalries'}</span>
         </div>
+        <div className="mlh-snap-item">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="3" width="12" height="10" rx="1.5" />
+            <line x1="2" y1="7" x2="14" y2="7" />
+            <line x1="6" y1="7" x2="6" y2="13" />
+          </svg>
+          <span className="mlh-snap-text">{sourceCount} {sourceCount === 1 ? 'source' : 'sources'}</span>
+        </div>
+        {league.last_synced_at && (
+          <div className="mlh-snap-item">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="8" cy="8" r="6" />
+              <polyline points="8 4.5 8 8 11 10" />
+            </svg>
+            <span className="mlh-snap-text">
+              Synced {new Date(league.last_synced_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── Almanac status card ── */}
@@ -90,11 +144,14 @@ export function MobileLeagueHub({
               </span>
             </div>
           </div>
-          <span className="mlh-almanac-arrow">
-            <svg viewBox="0 0 8 14" width="8" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 1 7 7 1 13" />
-            </svg>
-          </span>
+          <div className="mlh-almanac-right">
+            <span className="mlh-almanac-tier">{tierLabel}</span>
+            <span className="mlh-almanac-arrow">
+              <svg viewBox="0 0 8 14" width="8" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 1 7 7 1 13" />
+              </svg>
+            </span>
+          </div>
         </a>
       </div>
 
