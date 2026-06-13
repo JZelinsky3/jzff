@@ -9269,12 +9269,11 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     border-bottom: 1px solid var(--ink-line);
 }
 .mlp-live-tool:last-child { border-bottom: none; }
-.mlp-live-tool-bullet {
+.mlp-live-tool-mark {
     flex: none;
-    width: 5px;
-    height: 5px;
-    margin-top: .45rem;
-    border-radius: 50%;
+    width: 10px;
+    height: 1.5px;
+    margin-top: .55rem;
     background: var(--gold);
 }
 .mlp-live-tool-body {
