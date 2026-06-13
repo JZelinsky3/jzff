@@ -8633,11 +8633,11 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .mlp {
     position: relative;
     z-index: 1;
-    padding-bottom: 2rem;
+    padding-bottom: 1rem;
     overflow-x: hidden;
 }
 
-/* ── Top bar ── */
+/* ── Top bar — shrinks on scroll via tsc-hdr-collapsed ── */
 .mlp-bar {
     position: sticky;
     top: 0;
@@ -8650,12 +8650,14 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--ink-line);
+    transition: padding .25s ease;
 }
 .mlp-bar-title {
     font-family: var(--serif);
     font-size: 1.05rem;
     line-height: 1;
     color: var(--cream);
+    transition: font-size .25s ease;
 }
 .mlp-bar-title em { color: var(--gold); font-style: italic; }
 .mlp-bar-link {
@@ -8669,9 +8671,22 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     border: 1px solid var(--ink-line);
     border-radius: 999px;
     padding: .4rem .85rem;
-    transition: border-color .2s;
+    transition: border-color .2s, padding .25s ease, font-size .25s ease;
 }
 .mlp-bar-link:hover { border-color: var(--gold); }
+
+@media (max-width: 720px) {
+    body.tsc-hdr-collapsed .mlp-bar {
+        padding: .45rem 1.1rem;
+    }
+    body.tsc-hdr-collapsed .mlp-bar-title {
+        font-size: .85rem;
+    }
+    body.tsc-hdr-collapsed .mlp-bar-link {
+        font-size: .5rem;
+        padding: .3rem .65rem;
+    }
+}
 
 /* ── Shared screen layout ── */
 .mlp-screen {
@@ -8712,54 +8727,96 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     margin-bottom: 1.2rem;
 }
 
-/* Single book cover */
+/* ── Book cover ── */
 .mlp-book {
     display: flex;
-    width: 180px;
+    width: 200px;
+    height: 270px;
     margin-bottom: 1.4rem;
-    filter: drop-shadow(0 8px 24px rgba(0,0,0,.5));
+    filter: drop-shadow(0 10px 30px rgba(0,0,0,.55));
 }
-.mlp-book-edge {
-    width: 10px;
+.mlp-book-spine {
+    width: 18px;
     flex: none;
-    background: linear-gradient(180deg, #3a2c14, #221808, #3a2c14);
-    border-radius: 2px 0 0 2px;
+    background: linear-gradient(180deg, #3a2c14 0%, #1a1208 40%, #2a1e0e 70%, #3a2c14 100%);
     border: 1px solid #4a3a1e;
     border-right: none;
+    border-radius: 3px 0 0 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.mlp-book-spine::before,
+.mlp-book-spine::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    height: 1px;
+    background: var(--gold-deep);
+    opacity: .4;
+}
+.mlp-book-spine::before { top: 12px; }
+.mlp-book-spine::after { bottom: 12px; }
+.mlp-book-spine-txt {
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    font-family: var(--serif);
+    font-size: .42rem;
+    font-style: italic;
+    letter-spacing: .12em;
+    color: var(--gold-deep);
 }
 .mlp-book-cover {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1.2rem .8rem 1rem;
-    background: linear-gradient(165deg, #1e1608 0%, #12100a 60%, #1a1408 100%);
+    background: linear-gradient(165deg, #1e1608 0%, #100e08 50%, #1a1408 100%);
     border: 1px solid var(--gold-deep);
     border-left: none;
     border-radius: 0 3px 3px 0;
+    position: relative;
+    overflow: hidden;
 }
-.mlp-book-star {
+.mlp-book-cover::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(168,138,74,.2);
+    border-radius: 1px;
+    pointer-events: none;
+}
+.mlp-book-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 1.2rem .8rem;
+}
+.mlp-book-crest {
     color: var(--gold);
-    font-size: .9rem;
-    margin-bottom: .6rem;
+    font-size: 1.2rem;
+    margin-bottom: .5rem;
 }
 .mlp-book-league {
     font-family: var(--serif);
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-style: italic;
     color: var(--gold);
     line-height: 1.1;
     text-align: center;
 }
 .mlp-book-rule {
-    width: 40px;
+    width: 44px;
     height: 1px;
-    background: var(--gold-deep);
-    margin: .6rem 0;
+    background: linear-gradient(90deg, transparent, var(--gold-deep), transparent);
+    margin: .55rem 0;
 }
+.mlp-book-rule-sm { width: 28px; margin: .4rem 0; }
 .mlp-book-vol {
     font-family: var(--mono);
-    font-size: .38rem;
+    font-size: .36rem;
     font-weight: 700;
     letter-spacing: .22em;
     text-transform: uppercase;
@@ -8768,27 +8825,27 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .mlp-book-years {
     font-family: var(--mono);
-    font-size: .44rem;
+    font-size: .42rem;
     font-weight: 700;
     letter-spacing: .12em;
     color: var(--cream-mute);
 }
 .mlp-book-seasons {
     font-family: var(--mono);
-    font-size: .36rem;
+    font-size: .34rem;
     letter-spacing: .14em;
     text-transform: uppercase;
     color: var(--cream-mute);
     opacity: .6;
-    margin-top: .15rem;
+    margin-top: .12rem;
 }
 .mlp-book-ft {
     font-family: var(--serif);
     font-style: italic;
-    font-size: .5rem;
+    font-size: .48rem;
     color: var(--gold-deep);
     margin-top: auto;
-    padding-top: .7rem;
+    padding-top: .5rem;
 }
 
 .mlp-hook-ctas {
@@ -8809,7 +8866,108 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--cream-mute);
 }
 
-/* ── Screen 2 · What's Inside ── */
+/* ── Screen 2 · Why This ── */
+.mlp-why {
+    padding-top: 1.8rem;
+    padding-bottom: 1.6rem;
+    border-top: 1px solid var(--ink-line);
+}
+.mlp-why-kicker {
+    display: block;
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-bottom: .5rem;
+}
+.mlp-why-title {
+    font-family: var(--serif);
+    font-size: clamp(1.5rem, 6.5vw, 2rem);
+    line-height: 1.1;
+    color: var(--cream);
+    margin-bottom: 1.2rem;
+}
+.mlp-why-title em { color: var(--gold); font-style: italic; }
+
+.mlp-why-points {
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+    margin-bottom: 1.4rem;
+}
+.mlp-why-pt {
+    display: flex;
+    gap: .7rem;
+    align-items: flex-start;
+}
+.mlp-why-pt-icon {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .7rem;
+    color: var(--gold);
+    background: rgba(232,200,137,.08);
+    border: 1px solid var(--ink-line);
+    border-radius: 4px;
+}
+.mlp-why-pt-body { flex: 1; display: flex; flex-direction: column; gap: .15rem; }
+.mlp-why-pt-title {
+    font-family: var(--serif);
+    font-size: .95rem;
+    color: var(--cream);
+}
+.mlp-why-pt-desc {
+    font-size: .78rem;
+    line-height: 1.45;
+    color: var(--cream-soft);
+}
+
+.mlp-why-platforms {
+    padding-top: 1rem;
+    border-top: 1px solid var(--ink-line);
+}
+.mlp-why-plat-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-bottom: .6rem;
+}
+.mlp-plat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+}
+.mlp-plat {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-family: var(--serif);
+    font-size: .9rem;
+    color: var(--cream);
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    padding: .4rem .8rem;
+}
+.mlp-plat-dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+}
+.mlp-plat-dot.live { background: var(--gold); }
+.mlp-plat-dot.beta { background: var(--cream-mute); }
+
+/* ── Screen 3 · What's Inside ── */
 .mlp-inside {
     padding-top: 1.8rem;
     padding-bottom: 1.6rem;
@@ -8843,7 +9001,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--cream-soft);
 }
 
-/* Preview cards — product snapshots */
+/* Preview cards */
 .mlp-previews {
     display: flex;
     flex-direction: column;
@@ -8867,7 +9025,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     overflow: hidden;
 }
 
-/* Paper-style preview (standings) */
+/* Paper/cream preview */
 .mlp-prev-paper {
     background: var(--cream);
     color: var(--ink);
@@ -8915,57 +9073,46 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     border-top: 1px solid rgba(168,138,74,.2);
 }
 
-/* Dark-style previews (champs, rivalry, manager) */
+/* Dark/navy preview */
 .mlp-prev-dark {
     background: var(--ink-card);
     border: 1px solid var(--ink-line);
     padding: .6rem .7rem;
 }
 
-/* Champions */
-.mlp-prev-champ {
-    display: flex;
-    align-items: center;
-    gap: .55rem;
-    padding: .35rem 0;
-    border-bottom: 1px solid var(--ink-line-soft);
-}
-.mlp-prev-champ:last-child { border-bottom: none; }
-.mlp-prev-trophy {
-    flex: none;
-    color: var(--gold);
-    font-size: .7rem;
-}
-.mlp-prev-trophy.dim { color: var(--gold-deep); opacity: .5; }
-.mlp-prev-champ-info {
-    flex: 1;
-    min-width: 0;
+/* Records */
+.mlp-prev-rec {
     display: flex;
     flex-direction: column;
-    gap: .08rem;
+    gap: .1rem;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--ink-line-soft);
 }
-.mlp-prev-champ-name {
-    font-family: var(--serif);
-    font-size: .88rem;
-    line-height: 1.05;
-    color: var(--cream);
+.mlp-prev-rec:last-child { border-bottom: none; }
+.mlp-prev-rec-cat {
+    font-family: var(--mono);
+    font-size: .46rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
 }
-.mlp-prev-champ-line {
+.mlp-prev-rec-val {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--gold);
+    line-height: 1;
+}
+.mlp-prev-rec-who {
     font-family: var(--mono);
     font-size: .48rem;
     letter-spacing: .04em;
-    color: var(--cream-mute);
-}
-.mlp-prev-champ-yr {
-    flex: none;
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 1rem;
-    color: var(--gold-deep);
+    color: var(--cream-soft);
 }
 
-/* Rivalry */
-.mlp-prev-rivalry { text-align: center; }
+/* Rivalry (paper variant) */
+.mlp-prev-rivalry { text-align: center; padding: .7rem; }
 .mlp-prev-vs {
     display: flex;
     align-items: center;
@@ -8973,33 +9120,33 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     gap: .6rem;
     font-family: var(--serif);
     font-size: .95rem;
-    color: var(--cream);
 }
+.mlp-prev-paper .mlp-prev-vs { color: var(--ink); }
 .mlp-prev-score {
     font-family: var(--mono);
     font-weight: 700;
     font-size: 1.1rem;
-    color: var(--gold);
+    color: var(--gold-deep);
 }
 .mlp-prev-vs-meta {
     font-family: var(--mono);
     font-size: .46rem;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: var(--cream-mute);
+    color: var(--gold-deep);
     margin: .3rem 0 .5rem;
     padding-bottom: .45rem;
-    border-bottom: 1px solid var(--ink-line-soft);
+    border-bottom: 1px solid rgba(168,138,74,.25);
 }
 .mlp-prev-vs-line {
     display: flex;
     justify-content: space-between;
     font-family: var(--mono);
     font-size: .52rem;
-    color: var(--cream-soft);
     padding: .2rem 0;
 }
-.mlp-prev-vs-line span:first-child { color: var(--cream-mute); }
+.mlp-prev-paper .mlp-prev-vs-line { color: var(--ink); }
+.mlp-prev-paper .mlp-prev-vs-line span:first-child { color: #6a6050; }
 
 /* Manager dossier */
 .mlp-prev-mgr-head {
@@ -9068,13 +9215,13 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--gold);
 }
 
-/* ── Screen 3 · Why This ── */
-.mlp-why {
+/* ── Screen 4 · Live Season ── */
+.mlp-live {
     padding-top: 1.8rem;
     padding-bottom: 1.6rem;
     border-top: 1px solid var(--ink-line);
 }
-.mlp-why-kicker {
+.mlp-live-kicker {
     display: block;
     font-family: var(--mono);
     font-size: .52rem;
@@ -9084,98 +9231,50 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--gold-deep);
     margin-bottom: .5rem;
 }
-.mlp-why-title {
+.mlp-live-title {
     font-family: var(--serif);
     font-size: clamp(1.5rem, 6.5vw, 2rem);
     line-height: 1.1;
     color: var(--cream);
+    margin-bottom: .5rem;
+}
+.mlp-live-title em { color: var(--gold); font-style: italic; }
+.mlp-live-sub {
+    font-size: .82rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
     margin-bottom: 1.2rem;
 }
-.mlp-why-title em { color: var(--gold); font-style: italic; }
-
-.mlp-why-points {
+.mlp-live-tools {
     display: flex;
     flex-direction: column;
-    gap: .8rem;
-    margin-bottom: 1.4rem;
+    gap: 0;
 }
-.mlp-why-pt {
+.mlp-live-tool {
     display: flex;
-    gap: .7rem;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: .15rem;
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--ink-line);
 }
-.mlp-why-pt-icon {
-    flex: none;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: .7rem;
-    color: var(--gold);
-    background: rgba(232,200,137,.08);
-    border: 1px solid var(--ink-line);
-    border-radius: 4px;
-}
-.mlp-why-pt-body { flex: 1; display: flex; flex-direction: column; gap: .15rem; }
-.mlp-why-pt-title {
+.mlp-live-tool:last-child { border-bottom: none; }
+.mlp-live-tool-name {
     font-family: var(--serif);
-    font-size: .95rem;
+    font-size: 1rem;
     color: var(--cream);
 }
-.mlp-why-pt-desc {
+.mlp-live-tool-desc {
     font-size: .78rem;
-    line-height: 1.45;
+    line-height: 1.4;
     color: var(--cream-soft);
 }
 
-/* Platforms row in why section */
-.mlp-why-platforms {
-    padding-top: 1rem;
-    border-top: 1px solid var(--ink-line);
-}
-.mlp-why-plat-label {
-    display: block;
-    font-family: var(--mono);
-    font-size: .5rem;
-    font-weight: 700;
-    letter-spacing: .24em;
-    text-transform: uppercase;
-    color: var(--gold-deep);
-    margin-bottom: .6rem;
-}
-.mlp-plat-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .45rem;
-}
-.mlp-plat {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    font-family: var(--serif);
-    font-size: .9rem;
-    color: var(--cream);
-    background: var(--ink-card);
-    border: 1px solid var(--ink-line);
-    border-radius: 999px;
-    padding: .4rem .8rem;
-}
-.mlp-plat-dot {
-    display: inline-block;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-}
-.mlp-plat-dot.live { background: var(--gold); }
-.mlp-plat-dot.beta { background: var(--cream-mute); }
-
-/* ── Screen 4 · The Close ── */
+/* ── Screen 5 · The Close ── */
 .mlp-close {
     align-items: center;
     text-align: center;
-    padding-top: 1.8rem;
-    padding-bottom: 1.6rem;
+    padding-top: 1rem;
+    padding-bottom: .6rem;
     border-top: 1px solid var(--ink-line);
 }
 .mlp-close-title {
@@ -9191,7 +9290,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     line-height: 1.5;
     color: var(--cream-soft);
     max-width: 30ch;
-    margin-bottom: 1.2rem;
+    margin-bottom: .8rem;
 }
 .mlp-close-ctas {
     display: flex;
@@ -9204,21 +9303,6 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 .mlp-close-ctas .dc-btn-ghost {
     padding: .9rem 1.2rem;
     font-size: .68rem;
-}
-
-/* View-desktop escape hatch */
-.mlp-viewswitch {
-    display: block;
-    width: max-content;
-    margin: 1.6rem auto 0;
-    font-family: var(--mono);
-    font-size: .56rem; font-weight: 700;
-    letter-spacing: .2em; text-transform: uppercase;
-    color: var(--cream-mute);
-    text-decoration: none;
-    border: 1px solid var(--ink-line);
-    border-radius: 999px;
-    padding: .55rem 1.1rem;
 }
 
 /* "Back to mobile" pill — shown on the desktop landing only when a phone
