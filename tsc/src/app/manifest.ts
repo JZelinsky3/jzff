@@ -1,11 +1,11 @@
 import type { MetadataRoute } from 'next'
 
 // PWA manifest — makes "add TSC to your home screen" real for the Sunday
-// Live game-day companion. Icons live in public/icons/: the `any` pair show
-// the two-tone "TSC." wordmark on an ink field with a warm halo and no frame
-// (the OS rounds the corners itself); the `maskable` pair sit the same mark
-// inside the central 80% safe zone so Android's circle/squircle masks never
-// clip it.
+// Live game-day companion. Icons live in public/icons/ and mirror the brand
+// wordmark in public/tsc-logo.svg: "TS" upright cream + "C." italic gold on
+// an ink field, no frame (the OS rounds the corners itself). The `any` pair
+// fill the tile; the `maskable` pair sit the same mark inside the central
+// 80% safe zone so Android's circle/squircle masks never clip it.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'The Sunday Chronicle',
