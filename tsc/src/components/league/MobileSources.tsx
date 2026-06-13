@@ -33,7 +33,7 @@ export function MobileSources({
       </div>
 
       <div className="msrc-hint">
-        One archive can pull from many league IDs. Each source is synced independently.
+        Each source is synced independently. Add more if your league moved between IDs.
       </div>
 
       {sources.length === 0 ? (

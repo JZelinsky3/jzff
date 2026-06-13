@@ -22,11 +22,7 @@ export function MobileSettings({
       <div className="mset-head">
         <span className="mset-title">Settings</span>
       </div>
-
-      <div className="mset-hint">
-        Tweak how your league appears on the public almanac.
-      </div>
-
+      <div className="mset-hint">How your league appears on the public almanac.</div>
       <div className="mset-form">
         <SettingsForm
           leagueId={leagueId}

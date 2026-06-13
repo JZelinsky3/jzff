@@ -42,9 +42,7 @@ export function MobileMembers({
         </div>
       </div>
 
-      <div className="mmem-hint">
-        Select profiles to merge or delete. Tap a name's buttons to rename, toggle alumni, or hide.
-      </div>
+      <div className="mmem-hint">Select 2+ to merge. Tap buttons to rename, toggle status, or hide.</div>
 
       <div className="mmem-list">
         <SetupList leagueId={leagueId} slug={slug} profiles={profiles} />

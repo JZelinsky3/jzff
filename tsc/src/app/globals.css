@@ -10107,33 +10107,33 @@ body.tsc-hdr-collapsed .mlsub-bar {
    Prefix: mmem-
    ============================================================ */
 .mmem {
-    padding: .85rem 1rem 2rem;
+    padding: .65rem .85rem 2rem;
 }
 .mmem-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: .5rem;
-    margin-bottom: .75rem;
+    margin-bottom: .55rem;
 }
 .mmem-head-left {
     display: flex;
     align-items: baseline;
-    gap: .5rem;
+    gap: .4rem;
 }
 .mmem-title {
     font-family: var(--serif);
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     color: var(--cream);
 }
 .mmem-count {
     font-family: var(--mono);
-    font-size: .6rem;
+    font-size: .5rem;
     letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--gold);
     background: rgba(203,166,82,.1);
-    padding: .15rem .45rem;
+    padding: .12rem .4rem;
     border-radius: 20px;
 }
 .mmem-stats {
@@ -10142,51 +10142,93 @@ body.tsc-hdr-collapsed .mlsub-bar {
     background: var(--ink-line);
     border-radius: 10px;
     overflow: hidden;
-    margin-bottom: .85rem;
+    margin-bottom: .55rem;
 }
 .mmem-stat {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: .6rem .25rem;
+    padding: .45rem .2rem;
     background: var(--ink-soft);
 }
 .mmem-stat-val {
     font-family: var(--mono);
-    font-size: 1.1rem;
+    font-size: .95rem;
+    font-weight: 700;
     color: var(--cream);
     line-height: 1;
 }
 .mmem-stat-lbl {
     font-family: var(--mono);
-    font-size: .42rem;
+    font-size: .38rem;
     letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--cream-mute);
-    margin-top: .25rem;
+    margin-top: .2rem;
 }
 .mmem-hint {
-    font-size: .72rem;
-    color: var(--cream-soft);
-    line-height: 1.45;
-    margin-bottom: .85rem;
+    font-size: .62rem;
+    color: var(--cream-mute);
+    margin-bottom: .55rem;
 }
 .mmem-list {
     overflow-x: hidden;
 }
-.mmem .card {
-    border-radius: 10px;
-}
-.mmem .dc-btn,
-.mmem .dc-btn-ghost {
-    border-radius: 8px;
-    font-size: .65rem;
-    padding: .35rem .55rem;
-    min-height: 34px;
-}
 .mmem .hide-on-mobile {
     display: none !important;
+}
+/* ── SetupList toolbar: compact horizontal strip ── */
+.mmem-list > div:first-child {
+    gap: .35rem !important;
+    margin-bottom: .5rem !important;
+}
+.mmem-list .dc-btn {
+    border-radius: 20px;
+    font-size: .52rem !important;
+    padding: .3rem .6rem !important;
+    min-height: 28px;
+    letter-spacing: .06em;
+}
+.mmem-list .dc-btn-ghost {
+    border-radius: 20px;
+    font-size: .52rem !important;
+    padding: .25rem .55rem !important;
+    min-height: 28px;
+    letter-spacing: .06em;
+}
+/* ── Profile cards: compact list items ── */
+.mmem .card {
+    border-radius: 10px;
+    padding: .35rem .55rem !important;
+}
+.mmem .card > div {
+    gap: .4rem !important;
+}
+.mmem .card > div > div:first-of-type {
+    min-width: 0 !important;
+}
+.mmem .card > div > div:last-child {
+    gap: .2rem !important;
+}
+.mmem .card > div > div:last-child .dc-btn-ghost {
+    font-size: .48rem !important;
+    padding: .2rem .4rem !important;
+    min-height: 24px;
+    border-radius: 6px;
+}
+/* Merge keeper picker — compact on mobile */
+.mmem .dc-card-row {
+    padding: .55rem .65rem !important;
+    border-radius: 10px;
+}
+.mmem .dc-card-row .dc-input {
+    font-size: .75rem !important;
+}
+/* Profile grid: single column, tight gap */
+.mmem-list > div[style*="grid"] {
+    grid-template-columns: 1fr !important;
+    gap: .35rem !important;
 }
 
 
@@ -10195,69 +10237,115 @@ body.tsc-hdr-collapsed .mlsub-bar {
    Prefix: msrc-
    ============================================================ */
 .msrc {
-    padding: .85rem 1rem 2rem;
+    padding: .65rem .85rem 2rem;
 }
 .msrc-head {
     display: flex;
     align-items: baseline;
-    gap: .5rem;
-    margin-bottom: .5rem;
+    gap: .4rem;
+    margin-bottom: .35rem;
 }
 .msrc-title {
     font-family: var(--serif);
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     color: var(--cream);
 }
 .msrc-count {
     font-family: var(--mono);
-    font-size: .6rem;
+    font-size: .5rem;
     letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--gold);
     background: rgba(203,166,82,.1);
-    padding: .15rem .45rem;
+    padding: .12rem .4rem;
     border-radius: 20px;
 }
 .msrc-hint {
-    font-size: .72rem;
-    color: var(--cream-soft);
-    line-height: 1.45;
-    margin-bottom: .85rem;
+    font-size: .62rem;
+    color: var(--cream-mute);
+    margin-bottom: .6rem;
 }
 .msrc-empty {
     text-align: center;
     padding: 2rem 1rem;
     font-family: var(--serif);
-    font-size: .95rem;
+    font-size: .9rem;
     color: var(--cream-mute);
 }
 .msrc-list {
     display: flex;
     flex-direction: column;
-    gap: .5rem;
-    margin-bottom: 1.25rem;
+    gap: .45rem;
+    margin-bottom: 1rem;
 }
+/* ── SourceRow card overrides ── */
 .msrc .card {
     border-radius: 10px;
+    padding: .55rem .7rem !important;
 }
-.msrc .dc-btn {
-    border-radius: 8px;
+/* Info section: let it shrink, tighter text */
+.msrc .card > div > div:first-child {
+    min-width: 0 !important;
 }
-.msrc .dc-btn-ghost {
+.msrc .card .card-title {
+    font-size: .9rem !important;
+}
+.msrc .card .card-corner {
+    font-size: .38rem !important;
+    letter-spacing: .22em;
+}
+/* Action column: full width, horizontal button row */
+.msrc .card > div > div:last-child {
+    width: 100% !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: .3rem !important;
+}
+.msrc .card .dc-btn {
+    border-radius: 20px;
+    font-size: .55rem !important;
+    padding: .35rem .7rem !important;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.msrc .card > div > div:last-child > div {
+    display: contents !important;
+}
+.msrc .card .dc-btn-ghost {
+    border-radius: 20px;
+    font-size: .5rem !important;
+    padding: .28rem .5rem !important;
+    flex: 0 1 auto;
+}
+/* Expandable panels (custom sync, settings) */
+.msrc .card > div + div[style*="marginTop"] {
+    padding: .65rem .55rem !important;
     border-radius: 8px;
+    margin-top: .75rem !important;
+}
+.msrc .card .dc-checkbox-row {
+    font-size: .72rem;
+}
+.msrc .card .dc-checkbox-row span {
+    font-size: .68rem;
 }
 .msrc-add {
-    margin-top: 1.25rem;
-    padding-top: 1rem;
+    margin-top: 1rem;
+    padding-top: .75rem;
     border-top: 1px solid var(--ink-line);
 }
 .msrc-add-label {
     font-family: var(--mono);
-    font-size: .48rem;
+    font-size: .42rem;
     letter-spacing: .22em;
     text-transform: uppercase;
     color: var(--gold);
-    margin-bottom: .6rem;
+    margin-bottom: .45rem;
+}
+/* Add source form card */
+.msrc-add .card {
+    border-radius: 10px;
+    padding: .65rem .75rem !important;
 }
 
 
@@ -10379,43 +10467,69 @@ body.tsc-hdr-collapsed .mlsub-bar {
    Prefix: mset-
    ============================================================ */
 .mset {
-    padding: .85rem 1rem 2rem;
+    padding: .65rem .85rem 2rem;
 }
 .mset-head {
-    margin-bottom: .5rem;
+    margin-bottom: .3rem;
 }
 .mset-title {
     font-family: var(--serif);
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     color: var(--cream);
 }
 .mset-hint {
-    font-size: .72rem;
-    color: var(--cream-soft);
-    line-height: 1.45;
-    margin-bottom: 1rem;
+    font-size: .62rem;
+    color: var(--cream-mute);
+    margin-bottom: .65rem;
+}
+.mset-form {
+    background: var(--ink-soft);
+    border: 1px solid var(--ink-line);
+    border-radius: 12px;
+    padding: .75rem .85rem;
 }
 .mset-form .dc-form {
-    gap: .85rem;
+    gap: .7rem;
+}
+.mset-form .dc-field {
+    padding-bottom: .6rem;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.mset-form .dc-field:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 .mset-form .dc-label {
-    font-size: .48rem;
+    font-size: .42rem;
 }
 .mset-form .dc-input,
 .mset-form .dc-select {
-    font-size: .82rem;
-    padding: .55rem .65rem;
+    font-size: .8rem;
+    padding: .5rem .6rem;
     border-radius: 8px;
 }
 .mset-form .dc-btn {
-    border-radius: 8px;
-    padding: .65rem 1rem;
+    border-radius: 10px;
+    padding: .6rem 1rem;
+    font-size: .55rem;
+    margin-top: .35rem;
 }
 .mset-form .dc-checkbox-hint {
-    font-size: .65rem;
+    font-size: .58rem;
+    line-height: 1.4;
 }
 .mset-form details summary {
-    font-size: .65rem;
+    font-size: .58rem;
+}
+/* Calculator inputs */
+.mset-form details input[type="number"] {
+    flex: 0 0 4.5rem !important;
+    font-size: .75rem;
+    padding: .4rem .4rem;
+}
+/* Scoring profile selects */
+.mset-form .dc-field > div[style*="flex"] > div {
+    flex: 1 1 8rem !important;
 }
 
 
@@ -10424,70 +10538,85 @@ body.tsc-hdr-collapsed .mlsub-bar {
    Prefix: mliv-
    ============================================================ */
 .mliv {
-    padding: .85rem 1rem 2rem;
+    padding: .65rem .85rem 2rem;
 }
 .mliv-head {
     display: flex;
     align-items: baseline;
-    gap: .6rem;
-    margin-bottom: .5rem;
+    gap: .5rem;
+    margin-bottom: .3rem;
 }
 .mliv-title {
     font-family: var(--serif);
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     color: var(--cream);
 }
 .mliv-live-pill {
     font-family: var(--mono);
-    font-size: .55rem;
+    font-size: .48rem;
     letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--cream);
     background: rgba(46,180,100,.2);
     border: 1px solid rgba(46,180,100,.35);
-    padding: .2rem .5rem;
+    padding: .15rem .4rem;
     border-radius: 20px;
 }
 .mliv-hint {
-    font-size: .72rem;
-    color: var(--cream-soft);
-    line-height: 1.45;
-    margin-bottom: 1rem;
+    font-size: .62rem;
+    color: var(--cream-mute);
+    margin-bottom: .75rem;
 }
 .mliv-section {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
 }
 .mliv-section-label {
     font-family: var(--mono);
-    font-size: .48rem;
+    font-size: .42rem;
     letter-spacing: .22em;
     text-transform: uppercase;
     color: var(--gold);
-    margin-bottom: .4rem;
+    margin-bottom: .3rem;
 }
 .mliv-section-desc {
-    font-size: .68rem;
+    font-size: .58rem;
     color: var(--cream-mute);
-    margin-bottom: .55rem;
+    margin-bottom: .4rem;
 }
 .mliv .card {
     border-radius: 10px;
+    padding: .65rem .75rem !important;
 }
 .mliv .dc-btn {
-    border-radius: 8px;
+    border-radius: 10px;
+    font-size: .52rem;
 }
 .mliv .dc-select {
     border-radius: 8px;
+    font-size: .8rem;
+}
+.mliv .dc-stack {
+    gap: .3rem !important;
 }
 .mliv .dc-gotw {
     display: flex;
     flex-direction: column;
-    gap: .75rem;
+    gap: .55rem;
+}
+.mliv .dc-gotw aside {
+    padding: .65rem .75rem !important;
+}
+.mliv .dc-gotw aside ul {
+    gap: .2rem !important;
+}
+.mliv .dc-gotw aside li {
+    font-size: .82rem !important;
+    padding: .15rem 0 !important;
 }
 .mliv-empty {
     text-align: center;
-    padding: 1.5rem 1rem;
-    font-size: .82rem;
+    padding: 1.25rem .75rem;
+    font-size: .75rem;
     color: var(--cream-mute);
     border: 1px dashed var(--ink-line);
     border-radius: 10px;
