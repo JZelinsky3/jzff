@@ -9050,6 +9050,207 @@ body.tsc-hdr-collapsed .mlib-bar {
 
 
 /* ============================================================
+   MOBILE NEW ARCHIVE  (MobileNewArchive.tsx)
+   Phone-only /dashboard/new page. Prefix: mnew-
+   ============================================================ */
+.mnew {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 1rem;
+    min-height: 100dvh;
+}
+
+/* ── Top bar ── */
+.mnew-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .75rem 1.1rem;
+    background: rgba(14,22,32,.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ink-line);
+    transition: padding .25s ease;
+}
+body.tsc-hdr-collapsed .mnew-bar {
+    padding: .45rem 1.1rem;
+}
+.mnew-bar-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--gold);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.mnew-bar-title {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--cream);
+}
+.mnew-bar-title em { color: var(--gold); font-style: italic; }
+.mnew-bar-spacer { width: 32px; flex-shrink: 0; }
+
+/* Hide global site menu */
+.mnew ~ .msm-root { display: none !important; }
+
+/* ── Intro ── */
+.mnew-intro {
+    padding: 1rem 1.1rem .5rem;
+}
+.mnew-intro-text {
+    font-size: .82rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
+    margin: 0;
+}
+
+/* ── Body ── */
+.mnew-body {
+    padding: 0 .85rem;
+}
+
+/* ── Form card ── */
+.mnew-form-card {
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    padding: 1rem .85rem;
+}
+.mnew-form-card .dc-form { gap: 1rem; }
+.mnew-form-card .dc-label { font-size: .5rem; }
+.mnew-form-card .dc-input,
+.mnew-form-card .dc-select {
+    padding: .55rem .65rem;
+    font-size: .82rem;
+    border-radius: 6px;
+}
+.mnew-form-card .dc-checkbox-hint { font-size: .68rem; }
+.mnew-form-card .dc-btn {
+    font-size: .58rem;
+    padding: .55rem .8rem;
+    border-radius: 6px;
+}
+.mnew-form-card .dc-btn-block { border-radius: 6px; }
+.mnew-form-card .dc-btn-ghost {
+    font-size: .58rem;
+    padding: .45rem .7rem;
+    border-radius: 6px;
+}
+
+/* ── Gate (upgrade prompt) ── */
+.mnew-gate {
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    padding: 1.2rem 1rem;
+    text-align: center;
+}
+.mnew-gate-kicker {
+    font-family: var(--mono);
+    font-size: .48rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .5rem;
+}
+.mnew-gate-title {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    color: var(--cream);
+    margin-bottom: .35rem;
+}
+.mnew-gate-desc {
+    font-size: .78rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
+    margin-bottom: 1rem;
+}
+.mnew-gate-btns {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+
+/* ── Help accordion ── */
+.mnew-help {
+    margin-top: .75rem;
+}
+.mnew-help-trigger {
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: .5rem .4rem;
+    list-style: none;
+}
+.mnew-help-trigger::-webkit-details-marker { display: none; }
+.mnew-help-trigger::marker { content: ''; }
+.mnew-help-body {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    margin-top: .35rem;
+    padding: .65rem .7rem;
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 8px;
+}
+.mnew-help-item {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    font-size: .72rem;
+    line-height: 1.45;
+    color: var(--cream-soft);
+}
+.mnew-help-item code {
+    font-family: var(--mono);
+    font-size: .65rem;
+    background: var(--ink-soft);
+    padding: .1rem .25rem;
+    border-radius: 2px;
+}
+.mnew-help-plat {
+    font-family: var(--mono);
+    font-size: .46rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+
+/* ── Footer nav ── */
+.mnew-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    padding: 2rem 1rem 1.5rem;
+    font-family: var(--mono);
+    font-size: .52rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+.mnew-footer-link {
+    color: var(--cream-mute);
+    text-decoration: none;
+}
+.mnew-footer-link:hover { color: var(--gold); }
+.mnew-footer-sep { color: var(--ink-line); }
+
+
+/* ============================================================
    MOBILE PROFILE  (MobileProfile.tsx)
    Phone-only account page. Served by UA fork in account/page.tsx.
    Prefix: mprof-
