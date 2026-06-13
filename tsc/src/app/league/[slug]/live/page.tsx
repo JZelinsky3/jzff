@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SiteFooter } from '@/components/SiteFooter'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
+import { MobileLiveSeason } from '@/components/league/MobileLiveSeason'
+import { getViewMode } from '@/lib/viewMode'
 import { LiveSeasonForm, type SeasonRow } from './live-form'
 import { SourcePicker, type SourceRow } from './source-picker'
 import { GotwPicker, type GotwWeek } from './gotw-picker'
@@ -100,6 +102,25 @@ export default async function LiveSeasonPage({
       for (const w of gotwWeeks) for (const m of w.matchups) { nameSet.add(m.managerA); nameSet.add(m.managerB) }
       gotwManagers = [...nameSet].sort((a, b) => a.localeCompare(b))
     }
+  }
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileLiveSeason
+        leagueId={league.id}
+        seasons={rows}
+        weekOverride={weekOverride}
+        seasonStartDate={seasonStartDate}
+        resolvedWeek={currentWeek}
+        liveSeason={liveSeason}
+        currentWeek={currentWeek}
+        sourceRows={sourceRows}
+        liveSeasonId={liveRaw?.id ?? null}
+        gotwWeeks={gotwWeeks}
+        gotwMap={gotwMap}
+        gotwManagers={gotwManagers}
+      />
+    )
   }
 
   return (

@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { MobileSources } from '@/components/league/MobileSources'
+import { getViewMode } from '@/lib/viewMode'
 import { AddSourcePanel } from './add-source-panel'
 import { SourceRow } from './source-row'
 
@@ -83,6 +85,18 @@ export default async function SourcesPage({
     }
     return { ...s, settings: safe, hasCookies }
   })
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileSources
+        leagueId={league.id}
+        slug={slug}
+        sources={sources}
+        syncedRange={syncedRange}
+        yahooConnected={yahooConnected}
+      />
+    )
+  }
 
   return (
     <main>

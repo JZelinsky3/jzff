@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SiteFooter } from '@/components/SiteFooter'
+import { MobileMembers } from '@/components/league/MobileMembers'
+import { getViewMode } from '@/lib/viewMode'
 import { SetupList, type ProfileRow } from './setup-list'
 import { MarkReviewedButton } from './mark-reviewed-button'
 
@@ -87,6 +89,17 @@ export default async function SetupPage({
   }
 
   const profilesList = Array.from(profilesById.values())
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileMembers
+        leagueId={league.id}
+        slug={slug}
+        profiles={profilesList}
+        reviewedAt={reviewedAt}
+      />
+    )
+  }
 
   const words = league.name.trim().split(/\s+/)
   const head = words.slice(0, -1).join(' ')

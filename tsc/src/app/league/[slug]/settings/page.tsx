@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { MobileSettings } from '@/components/league/MobileSettings'
+import { getViewMode } from '@/lib/viewMode'
 import { SettingsForm } from './settings-form'
 
 export default async function SettingsPage({
@@ -49,6 +51,20 @@ export default async function SettingsPage({
     }
   }
   if (!league) notFound()
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileSettings
+        leagueId={league.id}
+        leagueName={league.name}
+        currentSlug={league.slug}
+        currentAbbreviation={league.abbreviation}
+        currentPrizePool={league.prize_pool}
+        currentDraftScoringProfile={league.draft_scoring_profile}
+        savedJustNow={sp.saved === '1'}
+      />
+    )
+  }
 
   return (
     <main>

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { loadManagerNameMap } from '@/lib/managerOptions'
+import { MobileRivalries } from '@/components/league/MobileRivalries'
+import { getViewMode } from '@/lib/viewMode'
 import { deleteRivalry } from './actions'
 
 export default async function RivalriesPage({
@@ -29,6 +31,21 @@ export default async function RivalriesPage({
     // renames + merges land immediately without re-saving the rivalry.
     loadManagerNameMap(supabase, league.id),
   ])
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileRivalries
+        slug={slug}
+        rivalries={(rivalries ?? []).map((r) => ({
+          id: r.id,
+          name: r.name,
+          manager_a_id: r.manager_a_id,
+          manager_b_id: r.manager_b_id,
+        }))}
+        nameOf={nameOf}
+      />
+    )
+  }
 
   async function remove(formData: FormData) {
     'use server'
