@@ -31,16 +31,89 @@ body[data-theme="midnight-press"] .nav {
     background: rgba(13,13,13,.96);
     border-bottom-color: #3e3e3e;
 }
+
+/* Premium gold accent line under nav */
+body[data-theme="midnight-press"] .nav::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 5%, rgba(232,200,137,.35) 30%, rgba(232,200,137,.35) 70%, transparent 95%);
+    pointer-events: none;
+}
+
 body[data-theme="midnight-press"] .site-glow {
     background-image:
-        radial-gradient(circle at 15% 20%, rgba(232,200,137,.04) 0%, transparent 45%),
-        radial-gradient(circle at 85% 80%, rgba(232,200,137,.03) 0%, transparent 50%);
+        radial-gradient(circle at 15% 20%, rgba(232,200,137,.06) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(232,200,137,.04) 0%, transparent 50%);
 }
+
+/* Card upgrades — gold left-border accent, gold hover glow */
+body[data-theme="midnight-press"] .card::before { background: var(--gold); }
+body[data-theme="midnight-press"] .card {
+    border-color: #3e3e3e;
+}
+body[data-theme="midnight-press"] .card:hover {
+    border-color: rgba(232,200,137,.35);
+    box-shadow: 0 20px 50px rgba(0,0,0,.5), 0 0 40px rgba(232,200,137,.06);
+}
+
+/* Stat bars — gold pipe accent */
+body[data-theme="midnight-press"] .stat { border-color: #3e3e3e; }
+body[data-theme="midnight-press"] .stat::before { background: var(--gold); }
+
+/* Section headers — gold rule */
+body[data-theme="midnight-press"] .section-header {
+    border-bottom-color: rgba(232,200,137,.2);
+}
+
+/* Ticket-stub cards (managers) */
+body[data-theme="midnight-press"] .ts-wrap { border-color: #3e3e3e; }
+body[data-theme="midnight-press"] .ts-wrap:hover {
+    border-color: rgba(232,200,137,.35);
+    box-shadow: 0 12px 35px rgba(0,0,0,.5), 0 0 25px rgba(232,200,137,.04);
+}
+
+/* Season entries */
+body[data-theme="midnight-press"] .season-entry { border-bottom-color: #2f2f2f; }
+body[data-theme="midnight-press"] .season-entry:hover { background: rgba(232,200,137,.03); }
+body[data-theme="midnight-press"] .season-entry.featured {
+    background: linear-gradient(135deg, rgba(232,200,137,.04) 0%, transparent 100%);
+    border-bottom-color: #3e3e3e;
+}
+body[data-theme="midnight-press"] .season-entry.featured::before { background: var(--gold); }
+
+/* Footer — subtle gold "em" */
+body[data-theme="midnight-press"] .site-footer { border-top-color: #3e3e3e; }
+
+/* Sort bars */
+body[data-theme="midnight-press"] .sort-bar { border-color: #3e3e3e; }
+body[data-theme="midnight-press"] .sort-option.active {
+    border-color: rgba(232,200,137,.3);
+    background: rgba(232,200,137,.06);
+}
+
+/* DNA CTA card */
+body[data-theme="midnight-press"] .page-dna-cta {
+    border-color: rgba(232,200,137,.2);
+    background: linear-gradient(90deg, rgba(232,200,137,.04), rgba(232,200,137,.02));
+}
+body[data-theme="midnight-press"] .page-dna-cta:hover {
+    border-color: rgba(232,200,137,.4);
+    background: linear-gradient(90deg, rgba(232,200,137,.08), rgba(232,200,137,.04));
+}
+
+/* Dividers */
+body[data-theme="midnight-press"] .divider-dotted { border-top-color: #3e3e3e; }
 
 /* Mobile chrome — black */
 body[data-theme="midnight-press"] .m-appbar {
     background: rgb(13,13,13);
     border-bottom-color: #3e3e3e;
+}
+body[data-theme="midnight-press"] .m-appbar::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 5%, rgba(232,200,137,.3) 30%, rgba(232,200,137,.3) 70%, transparent 95%);
+    pointer-events: none;
 }
 body[data-theme="midnight-press"] .m-tabbar {
     background: rgb(13,13,13);
@@ -57,6 +130,11 @@ body[data-theme="midnight-press"] .m-sheet-row { border-bottom-color: #2f2f2f; }
 body[data-theme="midnight-press"][data-page="standings"] {
     background: #0d0d0d;
     color: #f4ebd8;
+    /* Redefine the cream-context vars the template sets after line 282 */
+    --gold-deep: var(--gold);
+    --cream: #f4ebd8;
+    --cream-soft: #c9c0ad;
+    --cream-mute: #8a7a60;
 }
 body[data-theme="midnight-press"][data-page="standings"] .site-glow {
     display: block;
@@ -84,11 +162,11 @@ body[data-theme="midnight-press"][data-page="standings"] .sort-option.active {
 
 body[data-theme="midnight-press"][data-page="standings"] .standings-wrap {
     background: #1a1a1a;
-    border-color: #3e3e3e;
+    border-color: rgba(232,200,137,.15);
 }
 body[data-theme="midnight-press"][data-page="standings"] table.standings thead {
-    background: #131313;
-    border-bottom-color: #3e3e3e;
+    background: linear-gradient(180deg, #1a1a1a, #131313);
+    border-bottom: 2px solid rgba(232,200,137,.25);
 }
 body[data-theme="midnight-press"][data-page="standings"] table.standings th { color: #8a7a60; }
 body[data-theme="midnight-press"][data-page="standings"] table.standings th:hover { color: #f4ebd8; }
@@ -128,6 +206,13 @@ body[data-theme="midnight-press"][data-page="standings"] .divider-row td {
     border-top-color: #3e3e3e;
     color: #8a7a60;
 }
+body[data-theme="midnight-press"][data-page="standings"] .league-totals {
+    background: #1a1a1a;
+    border-color: rgba(232,200,137,.15);
+}
+body[data-theme="midnight-press"][data-page="standings"] .total-item { border-right-color: #3e3e3e; }
+body[data-theme="midnight-press"][data-page="standings"] .total-label { color: #8a7a60; }
+body[data-theme="midnight-press"][data-page="standings"] .total-value { color: var(--gold); }
 body[data-theme="midnight-press"][data-page="standings"] .legend-strip {
     border-top-color: #3e3e3e;
     background: #131313;
@@ -158,6 +243,13 @@ body[data-theme="midnight-press"][data-page="draft"] {
     --dg-accent: #8a6a24;
     --dg-bright: #6b5020;
     --dg-mute: #7a6e58;
+    /* Redefine root text vars so template var(--cream/gold) refs read dark */
+    --cream: #2c2418;
+    --cream-soft: #4a3c28;
+    --cream-mute: #7a6e58;
+    --gold: #8a6a24;
+    --gold-bright: #6b5020;
+    --gold-deep: #5c4e1a;
     background: var(--dg-bg);
     color: #2c2418;
 }
@@ -167,6 +259,17 @@ body[data-theme="midnight-press"][data-page="draft"] .nav {
     background: rgba(13,13,13,.96);
     border-bottom-color: #3e3e3e;
 }
+body[data-theme="midnight-press"][data-page="draft"] .nav .nav-title,
+body[data-theme="midnight-press"][data-page="draft"] .nav .nav-back,
+body[data-theme="midnight-press"][data-page="draft"] .nav .nav-kicker,
+body[data-theme="midnight-press"][data-page="draft"] .nav .nav-drop-btn {
+    color: initial;
+}
+body[data-theme="midnight-press"][data-page="draft"] .nav .nav-title { color: #f4ebd8; }
+body[data-theme="midnight-press"][data-page="draft"] .nav .nav-title em { color: #e8c889; }
+body[data-theme="midnight-press"][data-page="draft"] .nav .nav-back { color: #e8c889; }
+body[data-theme="midnight-press"][data-page="draft"] .nav .nav-kicker { color: #837b6a; }
+body[data-theme="midnight-press"][data-page="draft"] .nav .nav-drop-btn { color: #e8c889; }
 body[data-theme="midnight-press"][data-page="draft"] .hero-title { color: #2c2418; }
 body[data-theme="midnight-press"][data-page="draft"] .hero-title em { color: #8a6a24; }
 body[data-theme="midnight-press"][data-page="draft"] .hero-sub { color: #4a3c28; }
@@ -202,47 +305,67 @@ body[data-theme="midnight-press"][data-page="draft"] .board-table tbody tr:nth-c
 body[data-theme="midnight-press"][data-page="draft"] .board-table tbody tr:hover .board-mgr-td { background: #f0e8d2; }
 body[data-theme="midnight-press"][data-page="draft"] .site-footer { color: #7a6e58; border-top-color: rgba(44,36,24,.15); }
 body[data-theme="midnight-press"][data-page="draft"] .site-footer em { color: #8a6a24; }
+/* Draft tabs & round1 cells use --cream for text — already overridden above */
+body[data-theme="midnight-press"][data-page="draft"] .draft-tab { color: #7a6e58; }
+body[data-theme="midnight-press"][data-page="draft"] .draft-tab:hover { color: #2c2418; }
+body[data-theme="midnight-press"][data-page="draft"] .draft-tab.active { color: #8a6a24; }
+/* Manager column header on cream bg */
+body[data-theme="midnight-press"][data-page="draft"] .do-mgr { color: #2c2418; }
+body[data-theme="midnight-press"][data-page="draft"] .do-finish-rank { color: #4a3c28; }
+body[data-theme="midnight-press"][data-page="draft"] .do-finish-champ .do-finish-rank { color: #8a6a24; }
+body[data-theme="midnight-press"][data-page="draft"] .do-finish-podium .do-finish-rank { color: #6b5020; }
 
-/* ── Records — green → midnight blue ── */
+/* Mobile draft: appbar stays black */
+body[data-theme="midnight-press"][data-page="draft"] .m-appbar {
+    background: rgb(13,13,13);
+    border-bottom-color: #3e3e3e;
+}
+body[data-theme="midnight-press"][data-page="draft"] .m-appbar,
+body[data-theme="midnight-press"][data-page="draft"] .m-appbar * { color: inherit; }
+body[data-theme="midnight-press"][data-page="draft"] .m-appbar { color: #f4ebd8; }
+body[data-theme="midnight-press"][data-page="draft"] .m-appbar-title em { color: #e8c889; }
+body[data-theme="midnight-press"][data-page="draft"] .m-appbar-kicker { color: #837b6a; }
+body[data-theme="midnight-press"][data-page="draft"] .m-appbar-back { color: #e8c889; }
+
+/* ── Records — green → black/gold (matches MP identity) ── */
 body[data-theme="midnight-press"][data-page="records"] {
-    --rb-bg: #0a1225;
-    --rb-soft: #0d1730;
-    --rb-card: #111c38;
-    --rb-card-hover: #162345;
-    --rb-line: #1e3060;
-    --rb-line-soft: #182850;
-    --rb-mute: #8aaccc;
+    --rb-bg: #0d0d0d;
+    --rb-soft: #131313;
+    --rb-card: #1a1a1a;
+    --rb-card-hover: #222222;
+    --rb-line: #3e3e3e;
+    --rb-line-soft: #2f2f2f;
+    --rb-mute: #8a7a60;
     background: var(--rb-bg);
-    --chapbar-bg: rgb(10, 18, 37);
-    --chapbar-border: #1e3060;
-    --chapbar-text: #8aaccc;
-    --chapbar-line: #1e3060;
-    --nav-drop-bg: rgb(10, 18, 37);
-    --nav-drop-border: #1e3060;
-    --nav-drop-text: #b0c4de;
-    --nav-drop-text-mute: #8aaccc;
-    --nav-drop-hover-bg: rgba(100,140,200,.1);
-    --nav-drop-sub-bg: rgba(0,0,0,.2);
-    --nav-drop-accent-line: rgba(100,140,200,.2);
+    --chapbar-bg: rgb(13,13,13);
+    --chapbar-border: #3e3e3e;
+    --chapbar-text: #c9c0ad;
+    --chapbar-line: #3e3e3e;
+    --nav-drop-bg: rgb(13,13,13);
+    --nav-drop-border: #3e3e3e;
+    --nav-drop-text: #c9c0ad;
+    --nav-drop-text-mute: #8a7a60;
+    --nav-drop-hover-bg: rgba(232,200,137,.07);
+    --nav-drop-sub-bg: rgba(0,0,0,.35);
 }
 body[data-theme="midnight-press"][data-page="records"] .nav {
-    background: rgb(10, 18, 37);
-    border-bottom-color: #1e3060;
+    background: rgb(13,13,13);
+    border-bottom-color: #3e3e3e;
 }
 body[data-theme="midnight-press"][data-page="records"] .site-glow {
     background-image:
-        radial-gradient(circle at 25% 30%, rgba(100,140,200,.07) 0%, transparent 50%),
-        radial-gradient(circle at 75% 70%, rgba(232,200,137,.04) 0%, transparent 50%);
+        radial-gradient(circle at 25% 30%, rgba(232,200,137,.06) 0%, transparent 50%),
+        radial-gradient(circle at 75% 70%, rgba(232,200,137,.03) 0%, transparent 50%);
 }
-body[data-theme="midnight-press"][data-page="records"] .streak-row:hover { background: rgba(100,140,200,.07); }
-body[data-theme="midnight-press"][data-page="records"] .milestone-row:hover { background: rgba(100,140,200,.07); }
+body[data-theme="midnight-press"][data-page="records"] .streak-row:hover { background: rgba(232,200,137,.04); }
+body[data-theme="midnight-press"][data-page="records"] .milestone-row:hover { background: rgba(232,200,137,.04); }
 body[data-theme="midnight-press"][data-page="records"] .m-appbar {
-    background: rgb(10, 18, 37);
-    border-bottom-color: #1e3060;
+    background: rgb(13,13,13);
+    border-bottom-color: #3e3e3e;
 }
 body[data-theme="midnight-press"][data-page="records"] .m-tabbar {
-    background: rgb(10, 18, 37);
-    border-top-color: #1e3060;
+    background: rgb(13,13,13);
+    border-top-color: #3e3e3e;
 }
 
 
@@ -251,25 +374,35 @@ body[data-theme="midnight-press"][data-page="records"] .m-tabbar {
    Warm parchment editorial. The daytime print edition.
    ──────────────────────────────────────────────────────────────── */
 
-/* ── Global — body flips to cream, chrome stays dark ── */
+/* ── Global — body flips to cream, redefine text vars for readability ── */
 body[data-theme="broadsheet"] {
     background: #f4ebd8;
     color: #2c2418;
+    /* Remap the palette so every var(--gold/cream) in templates is readable */
+    --gold: #8a6a24;
+    --gold-bright: #6b5020;
+    --gold-deep: #5c4e1a;
+    --cream: #2c2418;
+    --cream-soft: #4a3c28;
+    --cream-mute: #7a6e58;
+    --ink-card: #faf4e6;
+    --ink-line: rgba(44,36,24,.15);
+    --ink-line-soft: rgba(44,36,24,.10);
 }
 body[data-theme="broadsheet"] .site-glow,
 body[data-theme="broadsheet"] .site-grain { display: none; }
 
-/* Nav stays dark navy */
+/* Nav stays dark navy — needs original light palette, not the remapped vars */
 body[data-theme="broadsheet"] .nav {
     background: rgba(14, 22, 32, .96);
     border-bottom-color: #2a3645;
 }
-body[data-theme="broadsheet"] .nav-back { color: #e8c889; }
-body[data-theme="broadsheet"] .nav-back:hover { color: #f4d9a4; }
-body[data-theme="broadsheet"] .nav-title { color: #f4ebd8; }
-body[data-theme="broadsheet"] .nav-title em { color: #e8c889; }
-body[data-theme="broadsheet"] .nav-kicker { color: #837b6a; }
-body[data-theme="broadsheet"] .nav-drop-btn { color: #e8c889; }
+body[data-theme="broadsheet"] .nav .nav-back { color: #e8c889; }
+body[data-theme="broadsheet"] .nav .nav-back:hover { color: #f4d9a4; }
+body[data-theme="broadsheet"] .nav .nav-title { color: #f4ebd8; }
+body[data-theme="broadsheet"] .nav .nav-title em { color: #e8c889; }
+body[data-theme="broadsheet"] .nav .nav-kicker { color: #837b6a; }
+body[data-theme="broadsheet"] .nav .nav-drop-btn { color: #e8c889; }
 body[data-theme="broadsheet"] {
     --chapbar-bg: rgb(14, 22, 32);
     --chapbar-border: #2a3645;
@@ -278,7 +411,7 @@ body[data-theme="broadsheet"] {
     --chapbar-line: #2a3645;
 }
 
-/* Ticker stays gold/ink */
+/* Ticker stays gold/ink (already uses ink text) */
 body[data-theme="broadsheet"] .ticker {
     background: #e8c889;
     color: #0e1620;
@@ -330,6 +463,22 @@ body[data-theme="broadsheet"] .stat-value { color: #8a6a24; }
 body[data-theme="broadsheet"] .stat-detail { color: #4a3c28; }
 body[data-theme="broadsheet"] .stat-detail strong { color: #2c2418; }
 
+/* Hub stat rows — italic-gold, stat-row-num etc. */
+body[data-theme="broadsheet"] .italic-gold { color: #8a6a24; }
+body[data-theme="broadsheet"] .text-gold { color: #8a6a24; }
+body[data-theme="broadsheet"] .stat-row-num { color: #8a6a24; }
+body[data-theme="broadsheet"] .stat-row-name { color: #2c2418; }
+body[data-theme="broadsheet"] .stat-row-name em { color: #8a6a24; }
+body[data-theme="broadsheet"] .stat-row-detail { color: #7a6e58; }
+body[data-theme="broadsheet"] .hero-stat-value { color: #8a6a24; }
+body[data-theme="broadsheet"] .hero-stat-label { color: #7a6e58; }
+body[data-theme="broadsheet"] .hero-stat-detail { color: #4a3c28; }
+body[data-theme="broadsheet"] .hero-stat-detail strong { color: #2c2418; }
+
+/* Editor's note */
+body[data-theme="broadsheet"] .editor-note-body { color: #4a3c28; }
+body[data-theme="broadsheet"] .editor-note-body strong { color: #2c2418; }
+
 /* Tables (generic .data table) */
 body[data-theme="broadsheet"] .table-wrap {
     background: #faf4e6;
@@ -355,6 +504,8 @@ body[data-theme="broadsheet"] .site-footer {
     border-top-color: rgba(44,36,24,.15);
 }
 body[data-theme="broadsheet"] .site-footer em { color: #8a6a24; }
+/* Inline footer CTA link */
+body[data-theme="broadsheet"] .site-footer a { color: #8a6a24; }
 
 /* Badges */
 body[data-theme="broadsheet"] .badge.live {
@@ -375,11 +526,13 @@ body[data-theme="broadsheet"] .season-entry.featured {
 body[data-theme="broadsheet"] .season-entry.featured::before { background: #8a6a24; }
 body[data-theme="broadsheet"] .season-champ { color: #2c2418; }
 body[data-theme="broadsheet"] .season-badge-champ {
-    color: #0e1620;
+    color: #faf4e6;
     background: #8a6a24;
 }
 body[data-theme="broadsheet"] .season-num { color: #7a6e58; }
 body[data-theme="broadsheet"] .season-year { color: #2c2418; }
+body[data-theme="broadsheet"] .season-detail { color: #7a6e58; }
+body[data-theme="broadsheet"] .season-link { color: #8a6a24; }
 
 /* Manager cards (ticket-stub) */
 body[data-theme="broadsheet"] .ts-wrap {
@@ -396,6 +549,10 @@ body[data-theme="broadsheet"] .ts-team { color: #7a6e58; }
 body[data-theme="broadsheet"] .ts-record { color: #2c2418; }
 body[data-theme="broadsheet"] .ts-stat-label { color: #7a6e58; }
 body[data-theme="broadsheet"] .ts-stat-val { color: #2c2418; }
+body[data-theme="broadsheet"] .ts-stat-val.gold { color: #8a6a24; }
+body[data-theme="broadsheet"] .ts-stub-lbl { color: #8a6a24; }
+body[data-theme="broadsheet"] .ts-stub-num { color: #8a6a24; }
+body[data-theme="broadsheet"] .ts-chip-star { color: #8a6a24; }
 
 /* Sort / filter bars */
 body[data-theme="broadsheet"] .sort-bar {
@@ -418,6 +575,10 @@ body[data-theme="broadsheet"] .page-kicker { color: #8a6a24; }
 body[data-theme="broadsheet"] .page-title { color: #2c2418; }
 body[data-theme="broadsheet"] .page-title em { color: #8a6a24; }
 body[data-theme="broadsheet"] .page-sub { color: #4a3c28; }
+
+/* Former managers section */
+body[data-theme="broadsheet"] .former-title { color: #2c2418; }
+body[data-theme="broadsheet"] .former-title em { color: #8a6a24; }
 
 /* Mobile chrome stays dark navy for Broadsheet */
 body[data-theme="broadsheet"] .m-appbar {
@@ -451,7 +612,12 @@ body[data-theme="broadsheet"] .page-dna-cta:hover {
     background: linear-gradient(90deg, rgba(138,106,36,.12), rgba(138,106,36,.06));
 }
 
-/* ── Standings — already cream; flip totals strip to warm ── */
+/* ── Standings — already cream in default; override the template's own vars ── */
+body[data-theme="broadsheet"][data-page="standings"] {
+    /* Template line 282+ already sets background: var(--cream) and dark text.
+       But Broadsheet remaps --cream to dark, so force the cream bg explicitly. */
+    background: #f4ebd8;
+}
 body[data-theme="broadsheet"][data-page="standings"] .league-totals {
     background: #faf4e6;
     border-color: rgba(44,36,24,.15);
@@ -462,6 +628,18 @@ body[data-theme="broadsheet"][data-page="standings"] .total-item {
 body[data-theme="broadsheet"][data-page="standings"] .total-label { color: #7a6e58; }
 body[data-theme="broadsheet"][data-page="standings"] .total-value { color: #8a6a24; }
 body[data-theme="broadsheet"][data-page="standings"] .loading-state { color: #7a6e58; }
+/* Standings table — template uses hardcoded values for most cells on cream,
+   but chip-badge and legend need the dark amber treatment */
+body[data-theme="broadsheet"][data-page="standings"] .chip-badge {
+    color: #5c3e0e;
+    background: rgba(139,109,56,.14);
+    border-color: rgba(139,109,56,.42);
+}
+body[data-theme="broadsheet"][data-page="standings"] .legend-item span { color: #4a3c28; }
+body[data-theme="broadsheet"][data-page="standings"] .standings-wrap {
+    background: #faf4e6;
+    border-color: rgba(44,36,24,.15);
+}
 
 /* ── Draft — black → warm parchment ── */
 body[data-theme="broadsheet"][data-page="draft"] {
@@ -512,6 +690,13 @@ body[data-theme="broadsheet"][data-page="draft"] .board-table td {
 body[data-theme="broadsheet"][data-page="draft"] .board-table tbody tr:nth-child(odd) .board-mgr-td { background: #faf4e6; }
 body[data-theme="broadsheet"][data-page="draft"] .board-table tbody tr:nth-child(even) .board-mgr-td { background: #ede4cf; }
 body[data-theme="broadsheet"][data-page="draft"] .board-table tbody tr:hover .board-mgr-td { background: #f0e8d2; }
+body[data-theme="broadsheet"][data-page="draft"] .draft-tab { color: #7a6e58; }
+body[data-theme="broadsheet"][data-page="draft"] .draft-tab:hover { color: #2c2418; }
+body[data-theme="broadsheet"][data-page="draft"] .draft-tab.active { color: #8a6a24; }
+body[data-theme="broadsheet"][data-page="draft"] .do-mgr { color: #2c2418; }
+body[data-theme="broadsheet"][data-page="draft"] .do-finish-rank { color: #4a3c28; }
+body[data-theme="broadsheet"][data-page="draft"] .do-finish-champ .do-finish-rank { color: #8a6a24; }
+body[data-theme="broadsheet"][data-page="draft"] .do-finish-podium .do-finish-rank { color: #6b5020; }
 body[data-theme="broadsheet"][data-page="draft"] .site-footer { color: #7a6e58; border-top-color: rgba(44,36,24,.15); }
 body[data-theme="broadsheet"][data-page="draft"] .site-footer em { color: #8a6a24; }
 
@@ -591,39 +776,39 @@ body[data-theme="broadsheet"][data-page="records"] .m-tabbar {
     cursor: pointer;
     font-family: var(--mono, monospace);
     font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--nav-drop-text, var(--cream-soft, #c9c0ad));
+    color: var(--nav-drop-text, #c9c0ad);
     transition: background .15s, color .15s;
     text-align: left; width: 100%;
 }
 .theme-option:hover {
     background: var(--nav-drop-hover-bg, rgba(232,200,137,.07));
-    color: var(--nav-drop-accent, var(--gold, #e8c889));
+    color: var(--nav-drop-accent, #e8c889);
 }
 .theme-option.is-active {
-    color: var(--nav-drop-accent, var(--gold, #e8c889));
+    color: var(--nav-drop-accent, #e8c889);
 }
 .theme-option-dot {
     width: 12px; height: 12px; border-radius: 50%;
-    border: 2px solid var(--nav-drop-text, var(--cream-soft, #c9c0ad));
+    border: 2px solid var(--nav-drop-text, #c9c0ad);
     flex-shrink: 0; position: relative;
     transition: border-color .15s;
 }
 .theme-option.is-active .theme-option-dot {
-    border-color: var(--nav-drop-accent, var(--gold, #e8c889));
+    border-color: var(--nav-drop-accent, #e8c889);
 }
 .theme-option.is-active .theme-option-dot::after {
     content: '';
     position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px;
     border-radius: 50%;
-    background: var(--nav-drop-accent, var(--gold, #e8c889));
+    background: var(--nav-drop-accent, #e8c889);
 }
 .theme-option:hover .theme-option-dot {
-    border-color: var(--nav-drop-accent, var(--gold, #e8c889));
+    border-color: var(--nav-drop-accent, #e8c889);
 }
 .theme-option-name { flex: 1; }
 .theme-option-tier {
     font-size: .55rem; letter-spacing: .18em;
-    color: var(--nav-drop-text-mute, var(--cream-mute, #837b6a));
+    color: var(--nav-drop-text-mute, #837b6a);
     opacity: .7;
 }
 .theme-option.is-locked {
@@ -631,10 +816,10 @@ body[data-theme="broadsheet"][data-page="records"] .m-tabbar {
 }
 .theme-option.is-locked:hover {
     background: none;
-    color: var(--nav-drop-text, var(--cream-soft, #c9c0ad));
+    color: var(--nav-drop-text, #c9c0ad);
 }
 .theme-option.is-locked:hover .theme-option-dot {
-    border-color: var(--nav-drop-text, var(--cream-soft, #c9c0ad));
+    border-color: var(--nav-drop-text, #c9c0ad);
 }
 
 /* Mobile theme picker (in More sheet) */
@@ -643,40 +828,40 @@ body[data-theme="broadsheet"][data-page="records"] .m-tabbar {
     display: block; padding: .3rem 1.1rem;
     font-family: var(--mono, monospace);
     font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
-    color: var(--cream-mute, #837b6a);
+    color: #837b6a;
 }
 .m-theme-option {
     display: flex; align-items: center; gap: .7rem;
     padding: .65rem 1.1rem;
     background: none; border: none;
-    border-bottom: 1px solid var(--ink-line-soft, #1e2937);
+    border-bottom: 1px solid #1e2937;
     cursor: pointer;
     font-family: var(--mono, monospace);
     font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--cream-soft, #c9c0ad);
+    color: #c9c0ad;
     width: 100%; text-align: left;
     transition: color .15s;
 }
 .m-theme-option:last-child { border-bottom: none; }
-.m-theme-option.is-active { color: var(--gold, #e8c889); }
+.m-theme-option.is-active { color: #e8c889; }
 .m-theme-option-dot {
     width: 14px; height: 14px; border-radius: 50%;
-    border: 2px solid var(--cream-soft, #c9c0ad);
+    border: 2px solid #c9c0ad;
     flex-shrink: 0; position: relative;
 }
 .m-theme-option.is-active .m-theme-option-dot {
-    border-color: var(--gold, #e8c889);
+    border-color: #e8c889;
 }
 .m-theme-option.is-active .m-theme-option-dot::after {
     content: '';
     position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px;
     border-radius: 50%;
-    background: var(--gold, #e8c889);
+    background: #e8c889;
 }
+.m-theme-option-name { flex: 1; }
 .m-theme-option-tier {
     margin-left: auto;
     font-size: .55rem; letter-spacing: .18em;
-    color: var(--cream-mute, #837b6a);
+    color: #837b6a;
 }
-.m-theme-option-name { flex: 1; }
 .m-theme-option.is-locked { opacity: .4; cursor: not-allowed; }
