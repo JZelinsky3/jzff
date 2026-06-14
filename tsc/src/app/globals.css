@@ -10506,7 +10506,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
 .msr-btn:active { background: rgba(255,255,255,.12); }
 .msr-btn:disabled { opacity: .3; cursor: default; }
 .msr-btn.primary {
-    background: var(--gold-deep);
+    background: var(--gold);
     border-color: var(--gold);
     color: var(--cream);
     flex: 1;
@@ -10529,7 +10529,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
     padding: .5rem .55rem;
     background: rgba(0,0,0,.15);
     border-radius: 8px;
-    border-left: 2px solid var(--gold-deep);
+    border-left: 2px solid var(--gold);
 }
 .msr-panel-title {
     font-family: var(--mono);
@@ -10967,7 +10967,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
     letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--cream);
-    background: var(--gold-deep);
+    background: var(--gold);
     border: none;
     border-radius: 10px;
     cursor: pointer;
