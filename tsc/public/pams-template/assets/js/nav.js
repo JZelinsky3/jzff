@@ -176,7 +176,39 @@
             isBookmarked: !!dc.isBookmarked,
             managePath: dc.slug ? '/league/' + dc.slug : null,
             libraryPath: '/dashboard',
+            viewerTier: dc.viewerTier || null,
+            leagueTheme: dc.leagueTheme || null,
         };
+    }
+
+    var THEMES = [
+        { id: null,              label: 'Default',        minTier: null },
+        { id: 'broadsheet',      label: 'Broadsheet',     minTier: 'tier2' },
+        { id: 'midnight-press',  label: 'Midnight Press', minTier: 'tier3' },
+    ];
+    var TIER_RANK = { tier1: 1, tier2: 2, tier3: 3, comp: 99 };
+
+    function canUseTier(viewerTier, requiredTier) {
+        if (!requiredTier) return true;
+        if (!viewerTier) return false;
+        return (TIER_RANK[viewerTier] || 0) >= (TIER_RANK[requiredTier] || 0);
+    }
+
+    function setThemeCookie(themeId) {
+        if (themeId) {
+            document.cookie = 'tsc_theme=' + themeId + ';path=/;max-age=31536000;SameSite=Lax';
+        } else {
+            document.cookie = 'tsc_theme=;path=/;max-age=0;SameSite=Lax';
+        }
+    }
+
+    function applyTheme(themeId) {
+        if (themeId) {
+            document.body.setAttribute('data-theme', themeId);
+        } else {
+            document.body.removeAttribute('data-theme');
+        }
+        setThemeCookie(themeId);
     }
 
     function buildNav() {
@@ -260,11 +292,32 @@
                 navLinks;
         }
 
-        // Join the section bodies with dividers only BETWEEN them, never
-        // before the first non-empty section. (Previously each section
-        // shipped its own leading divider, which painted a blank gap at
-        // the top of the dropdown whenever the in-archive list was empty.)
-        var sectionBodies = [dcFooter, visitorCta].filter(function (s) { return !!s; });
+        // Theme picker: only on theme-eligible pages, for signed-in users with a tier
+        var themePicker = '';
+        var themePage = document.body.getAttribute('data-page');
+        if (themePage && ctx.viewerTier) {
+            var activeTheme = ctx.leagueTheme || null;
+            var tierLabels = { tier2: 'Veteran', tier3: 'All-Pro' };
+            themePicker = '<span class="nav-drop-label">Theme</span><div class="theme-picker"><div class="theme-picker-options">';
+            for (var ti = 0; ti < THEMES.length; ti++) {
+                var t = THEMES[ti];
+                var unlocked = canUseTier(ctx.viewerTier, t.minTier);
+                var active = (t.id === activeTheme);
+                var cls = 'theme-option' + (active ? ' is-active' : '') + (!unlocked ? ' is-locked' : '');
+                var tierTag = t.minTier && tierLabels[t.minTier]
+                    ? '<span class="theme-option-tier">' + tierLabels[t.minTier] + '</span>'
+                    : '';
+                themePicker += '<button class="' + cls + '"'
+                    + ' data-theme-id="' + (t.id || '') + '"'
+                    + (unlocked ? '' : ' disabled')
+                    + '><span class="theme-option-dot"></span>'
+                    + '<span class="theme-option-name">' + t.label + '</span>'
+                    + tierTag + '</button>';
+            }
+            themePicker += '</div></div>';
+        }
+
+        var sectionBodies = [dcFooter, visitorCta, themePicker].filter(function (s) { return !!s; });
         var dropBody = sectionBodies.join('<div class="nav-drop-divider"></div>');
 
         var dropMenu = '<div class="nav-drop nav-drop-right" id="nav-drop" style="justify-self:end;margin-left:auto;">'
@@ -625,6 +678,21 @@
             }).catch(function () {
                 if (dropLink && origDropText) dropLink.textContent = origDropText;
             });
+        });
+    }
+
+    function wireThemePicker() {
+        document.addEventListener('click', function (e) {
+            if (!e.target || !e.target.closest) return;
+            var btn = e.target.closest('.theme-option:not(.is-locked)');
+            if (!btn) return;
+            e.preventDefault();
+            var themeId = btn.getAttribute('data-theme-id') || null;
+            applyTheme(themeId);
+            var all = document.querySelectorAll('.theme-option');
+            for (var i = 0; i < all.length; i++) {
+                all[i].classList.toggle('is-active', (all[i].getAttribute('data-theme-id') || null) === themeId);
+            }
         });
     }
 
@@ -1170,6 +1238,7 @@
         buildNav();
         enhanceAuthLinks();
         wireBookmarkToggle();
+        wireThemePicker();
         loadTutorial();
         buildLockOverlay();
         lockLiveSeasonHub();

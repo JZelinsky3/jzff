@@ -94,7 +94,39 @@
             pageLocked: !!dc.pageLocked,
             managePath: dc.slug ? '/league/' + dc.slug : null,
             libraryPath: '/dashboard',
+            viewerTier: dc.viewerTier || null,
+            leagueTheme: dc.leagueTheme || null,
         };
+    }
+
+    var THEMES = [
+        { id: null,              label: 'Default',        minTier: null },
+        { id: 'broadsheet',      label: 'Broadsheet',     minTier: 'tier2' },
+        { id: 'midnight-press',  label: 'Midnight Press', minTier: 'tier3' },
+    ];
+    var TIER_RANK = { tier1: 1, tier2: 2, tier3: 3, comp: 99 };
+
+    function canUseTier(viewerTier, requiredTier) {
+        if (!requiredTier) return true;
+        if (!viewerTier) return false;
+        return (TIER_RANK[viewerTier] || 0) >= (TIER_RANK[requiredTier] || 0);
+    }
+
+    function setThemeCookie(themeId) {
+        if (themeId) {
+            document.cookie = 'tsc_theme=' + themeId + ';path=/;max-age=31536000;SameSite=Lax';
+        } else {
+            document.cookie = 'tsc_theme=;path=/;max-age=0;SameSite=Lax';
+        }
+    }
+
+    function applyTheme(themeId) {
+        if (themeId) {
+            document.body.setAttribute('data-theme', themeId);
+        } else {
+            document.body.removeAttribute('data-theme');
+        }
+        setThemeCookie(themeId);
     }
 
     function escapeHtml(s) {
@@ -257,6 +289,21 @@
         });
     }
 
+    function wireThemePicker() {
+        document.addEventListener('click', function (e) {
+            if (!e.target || !e.target.closest) return;
+            var btn = e.target.closest('.m-theme-option:not(.is-locked)');
+            if (!btn) return;
+            e.preventDefault();
+            var themeId = btn.getAttribute('data-theme-id') || null;
+            applyTheme(themeId);
+            var all = document.querySelectorAll('.m-theme-option');
+            for (var i = 0; i < all.length; i++) {
+                all[i].classList.toggle('is-active', (all[i].getAttribute('data-theme-id') || null) === themeId);
+            }
+        });
+    }
+
     // ── Sheets ──────────────────────────────────────────────────────────
     function sheetRow(href, label, opts) {
         opts = opts || {};
@@ -368,12 +415,39 @@
         var more = document.createElement('dialog');
         more.className = 'm-sheet';
         more.id = 'm-sheet-more';
+        var themePicker = '';
+        var themePage = document.body.getAttribute('data-page');
+        if (themePage && ctx.viewerTier) {
+            var activeTheme = ctx.leagueTheme || null;
+            var tierLabels = { tier2: 'Veteran', tier3: 'All-Pro' };
+            themePicker = '<div class="m-sheet-divider"></div>' +
+                '<span class="m-sheet-label">Theme</span>' +
+                '<div class="m-theme-picker">';
+            for (var ti = 0; ti < THEMES.length; ti++) {
+                var t = THEMES[ti];
+                var unlocked = canUseTier(ctx.viewerTier, t.minTier);
+                var active = (t.id === activeTheme);
+                var cls = 'm-theme-option' + (active ? ' is-active' : '') + (!unlocked ? ' is-locked' : '');
+                var tierTag = t.minTier && tierLabels[t.minTier]
+                    ? '<span class="m-theme-option-tier">' + tierLabels[t.minTier] + '</span>'
+                    : '';
+                themePicker += '<button class="' + cls + '"'
+                    + ' data-theme-id="' + (t.id || '') + '"'
+                    + (unlocked ? '' : ' disabled')
+                    + '><span class="m-theme-option-dot"></span>'
+                    + '<span class="m-theme-option-name">' + t.label + '</span>'
+                    + tierTag + '</button>';
+            }
+            themePicker += '</div>';
+        }
+
         more.innerHTML =
             '<div class="m-sheet-handle" aria-hidden></div>' +
             '<div class="m-sheet-title">' + escapeHtml(ctx.name || 'The Almanac') + '</div>' +
             society +
             '<div class="m-sheet-divider"></div>' +
             account +
+            themePicker +
             '<div class="m-sheet-divider"></div>' +
             sheetRow(desktopHref, 'View desktop site');
 
@@ -672,6 +746,7 @@
         buildLockOverlay();
         enhanceAuthLinks();
         wireBookmarkToggle();
+        wireThemePicker();
     }
 
     if (document.readyState === 'loading') {

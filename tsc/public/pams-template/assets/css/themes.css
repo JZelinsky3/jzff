@@ -572,7 +572,6 @@ body[data-theme="broadsheet"][data-page="records"] .m-tabbar {
 
 .theme-picker {
     padding: .4rem .9rem .7rem;
-    border-top: 1px solid var(--nav-drop-border, var(--ink-line-soft, #1e2937));
 }
 .theme-picker-label {
     display: block;
@@ -679,4 +678,5 @@ body[data-theme="broadsheet"][data-page="records"] .m-tabbar {
     font-size: .55rem; letter-spacing: .18em;
     color: var(--cream-mute, #837b6a);
 }
+.m-theme-option-name { flex: 1; }
 .m-theme-option.is-locked { opacity: .4; cursor: not-allowed; }

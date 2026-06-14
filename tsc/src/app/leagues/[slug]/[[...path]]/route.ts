@@ -854,6 +854,27 @@ export async function GET(
       isSignedIn && Array.isArray(tutorialsMeta['leagues_seen'])
         ? (tutorialsMeta['leagues_seen'] as string[])
         : []
+
+    // Viewer tier for theme gating
+    let viewerTier: Tier | 'comp' | null = null
+    if (user) {
+      if (await isCompUser(user.id)) {
+        viewerTier = 'comp'
+      } else {
+        const sub = await getUserSubscription(user.id)
+        if (isSubscriptionActive(sub) && sub) viewerTier = sub.tier
+      }
+    }
+
+    // Theme from cookie (cosmetic — trusted without server validation)
+    const themeCookie = req.cookies.get(THEME_COOKIE)?.value ?? null
+    const leagueTheme: LeagueTheme | null =
+      themeCookie && (LEAGUE_THEMES as readonly string[]).includes(themeCookie)
+        ? (themeCookie as LeagueTheme)
+        : null
+
+    const themePage = THEME_PAGES[resolved.file] ?? null
+
     let html = await injectDcConfig(
       injectOgTags(
         injectBaseTag(applyTokens(raw, meta), meta, resolved.file, servedMobile),
@@ -868,6 +889,9 @@ export async function GET(
       tutorialDismissed,
       tutorialSeenPages,
       pageLocked,
+      viewerTier,
+      leagueTheme,
+      themePage,
     )
     // Phone user who explicitly chose the desktop view: give them a way back.
     if (!servedMobile && isMobileUA(req) && req.cookies.get(VIEW_COOKIE)?.value === 'desktop') {
