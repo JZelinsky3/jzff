@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/demo-m/">
+<script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Record Book · The Lakeside League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+/* Trophy-room green — full chapter theme. Re-pointing the shared tokens
+   recolors the m-* primitives, the bottom sheets, AND (via the chrome vars)
+   the fixed app bar + tab bar so the whole shell sits in the green room. */
+:root {
+    --rec: #8fb89a; --rec-deep: #5f8a6c;
+    --ink:           #0d1512;
+    --ink-soft:      #101a15;
+    --ink-card:      #131e18;
+    --ink-line:      #24352b;
+    --ink-line-soft: #1c2a22;
+    --m-chrome-bg:   #0e1713;
+    --m-chrome-bg2:  #101a15;
+}
+.m-tab.is-active { color: var(--rec); }
+.m-tab.is-active::before { background: var(--rec); }
+
+.rb-head { text-align: center; padding: 1.1rem 0 .9rem; }
+.rb-title {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1.05;
+    color: var(--cream);
+}
+.rb-title em { font-style: italic; color: var(--rec); }
+
+.rb-seg button.is-active { background: var(--rec); color: #0d1512; }
+
+.rb-card + .rb-card { margin-top: .55rem; }
+.rb-card-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rec-deep);
+}
+.rb-top {
+    display: flex; align-items: baseline; gap: .65rem;
+    margin-top: .35rem;
+}
+.rb-top-value {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1;
+    color: var(--rec);
+    white-space: nowrap;
+}
+.rb-top-holder { min-width: 0; }
+.rb-top-holder b {
+    display: block;
+    font-family: var(--serif); font-weight: 400;
+    font-size: 1rem; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rb-top-holder small {
+    font-family: var(--mono); font-size: .56rem;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.rb-others {
+    margin-top: .6rem;
+    padding-top: .5rem;
+    border-top: 1px solid #1c2a22;
+}
+.rb-other {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .22rem 0;
+}
+.rb-other-rank { flex: none; font-family: var(--mono); font-size: .58rem; color: var(--cream-mute); width: 1.2rem; }
+/* Collapsed: top 3 visible; tap unfolds the rest. */
+.rb-extra { display: none; }
+.rb-card.is-open .rb-extra { display: flex; }
+.rb-expand-hint {
+    margin-top: .5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--rec-deep);
+    text-align: center;
+}
+.rb-card.is-open .rb-hint-more { display: none; }
+.rb-card:not(.is-open) .rb-hint-less { display: none; }
+.rb-other-name { min-width: 0; flex: 1; font-size: .8rem; font-weight: 500; color: var(--cream-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-other-name small {
+    display: block;
+    font-family: var(--mono); font-size: .52rem;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.rb-other-val { flex: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--rec); }
+/* Combined-score records list both managers; the "vs Opponent" tail reads
+   as context, not a co-holder — smaller and dimmer than the lead name. */
+.rb-vs { font-size: .72em; color: var(--cream-mute); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="records" data-chapter="Ch. V · Record Book" data-back-href="./"></nav>
+<script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <header class="rb-head">
+        <div class="m-kicker" style="color:var(--rec-deep)">The Trophy Room</div>
+        <h1 class="rb-title">The Record <em>Book.</em></h1>
+    </header>
+
+    <div class="m-seg rb-seg" id="seg" style="margin-bottom:.7rem">
+        <button data-sec="weekly" class="is-active">Games</button>
+        <button data-sec="season">Seasons</button>
+        <button data-sec="career">Careers</button>
+        <button data-sec="feats">Feats</button>
+    </div>
+
+    <div id="cards"><div class="m-empty">Dusting off the ledgers…</div></div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function num(n, d) {
+        if (n == null || isNaN(n)) return '—';
+        return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
+    }
+
+    var book = null;
+    var section = 'weekly';
+
+    fetch('data/record_book.json')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (data) {
+            book = data && data.full_book;
+            render();
+        });
+
+    // Per-record config: label + how to read value/context out of an entry.
+    function gameCtx(e) {
+        return e.season + ' · W' + e.week + ' · vs ' + (e.opp_owner || '—') + ' · ' + num(e.score) + '–' + num(e.opp_score);
+    }
+    var DEFS = {
+        weekly: [
+            ['highest_single_week_score', 'Highest Score', function (e) { return num(e.score); }, gameCtx],
+            ['lowest_single_week_score', 'Lowest Score', function (e) { return num(e.score); }, gameCtx],
+            ['biggest_blowouts', 'Biggest Blowout', function (e) { return '+' + num(e.margin); }, gameCtx],
+            ['closest_games', 'Closest Game', function (e) { return '+' + num(e.margin, 2); }, gameCtx],
+            ['luckiest_wins', 'Luckiest Win', function (e) { return num(e.score); }, gameCtx],
+            ['unluckiest_losses', 'Unluckiest Loss', function (e) { return num(e.score); }, gameCtx],
+            ['highest_combined_score', 'Highest Combined', function (e) { return num(e.score + e.opp_score); }, gameCtx],
+            ['lowest_combined_score', 'Lowest Combined', function (e) { return num(e.score + e.opp_score); }, gameCtx],
+        ],
+        season: [
+            ['highest_season_pf', 'Most Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
+            ['highest_ppg', 'Best PPG, Season', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.avg_ppg); }, seasonCtx],
+            ['best_reg_season_records', 'Best Record', function (e) { return rec(e.reg_record); }, seasonCtx],
+            ['worst_reg_season_records', 'Worst Record', function (e) { return rec(e.reg_record); }, seasonCtx],
+            // Per-game, not total — 2019/2020 ran a shorter schedule, so
+            // raw season totals unfairly stack the bottom of this list.
+            ['lowest_ppg', 'Lowest PPG, Season', function (e) { return num(e.reg_ppg); }, seasonCtx],
+            ['most_points_against', 'Most Points Against', function (e) { return num(e.reg_pa, 0); }, seasonCtx],
+        ],
+        career: [
+            ['longest_win_streaks', 'Longest Win Streak', function (e) { return e.length + 'W'; }, streakCtx],
+            ['longest_loss_streaks', 'Longest Skid', function (e) { return e.length + 'L'; }, streakCtx],
+            ['most_top_3_finishes', 'Most Podiums', function (e) { return countOf(e, 'top_3_finishes') + '×'; }, careerCtx],
+            ['most_playoff_appearances', 'Most Playoff Trips', function (e) { return countOf(e, 'playoff_appearances') + '×'; }, careerCtx],
+            ['most_championship_appearances', 'Most Title Games', function (e) { return countOf(e, 'championship_appearances') + '×'; }, careerCtx],
+            // Average-based: alumni stay out — frozen careers with fewer
+            // seasons skew the averages (currentOnly flag, applied in render).
+            ['best_avg_finish', 'Best Avg Finish', function (e) { return num(e.avg_final_rank); }, careerCtx, null, true],
+        ],
+        feats: [
+            // One-score games merged into a single W–L record per manager,
+            // same as the desktop Clutch column.
+            ['__clutch5', 'One-Score Record (<5 pts)', clutchVal, clutchCtx],
+            ['__clutch1', 'Walk-Off Record (<1 pt)', clutchVal, clutchCtx],
+            ['boom_150', '150-Point Games', countVal, featCtx, 'boom_bust'],
+            ['boom_175', '175-Point Games', countVal, featCtx, 'boom_bust'],
+            ['bust_80', 'Sub-80 Stinkers', countVal, featCtx, 'boom_bust'],
+            ['bust_70', 'Sub-70 Disasters', countVal, featCtx, 'boom_bust'],
+        ],
+    };
+    function countVal(e) { return String(e.count != null ? e.count : (e.value != null ? e.value : '—')); }
+    function countOf(e, key) { return String(e[key] != null ? e[key] : (e.count != null ? e.count : '—')); }
+    // "59-42-0" → "59-42" when there are no ties to show.
+    function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
+    function seasonCtx(e) { return e.season + ' · ' + (e.team_name || '') + (e.reg_record ? ' · ' + rec(e.reg_record) : ''); }
+    function streakCtx(e) {
+        var span = e.start_season === e.end_season
+            ? e.start_season + ' · W' + e.start_week + '–W' + e.end_week
+            : e.start_season + ' W' + e.start_week + ' – ' + e.end_season + ' W' + e.end_week;
+        return span;
+    }
+    function careerCtx(e) {
+        if (e.seasons_played == null) return '';
+        return e.seasons_played + (e.seasons_played === 1 ? ' season' : ' seasons');
+    }
+    function featCtx(e) {
+        return e.last_year ? 'Last: ' + e.last_year + ' · W' + e.last_week + (e.last_opp_name ? ' vs ' + e.last_opp_name : '') : '';
+    }
+    function clutchVal(e) { return e.wins + '–' + e.losses; }
+    function clutchCtx(e) {
+        return e.last
+            ? 'Last ' + e.last.type + ': ' + e.last.year + ' · W' + e.last.week + (e.last.opp ? ' vs ' + e.last.opp : '')
+            : '';
+    }
+
+    // Merge clutch wins + losses by manager into one W–L row — ported from
+    // the desktop record book so both show the same combined record.
+    function mergeClutch(wins, losses) {
+        var map = {};
+        function ensure(r) {
+            if (!map[r.user_id]) map[r.user_id] = { user_id: r.user_id, name: r.name, wins: 0, losses: 0, last: null };
+            return map[r.user_id];
+        }
+        function take(r, type) {
+            var cur = ensure(r);
+            if (type === 'W') cur.wins = r.count; else cur.losses = r.count;
+            if (r.count > 0) {
+                var stamp = (r.last_year || 0) * 100 + (r.last_week || 0);
+                if (!cur.last || stamp > cur.last.stamp) {
+                    cur.last = { stamp: stamp, type: type, week: r.last_week, year: r.last_year, opp: r.last_opp_name };
+                }
+            }
+        }
+        (wins || []).forEach(function (r) { take(r, 'W'); });
+        (losses || []).forEach(function (r) { take(r, 'L'); });
+        return Object.keys(map).map(function (k) { return map[k]; })
+            .filter(function (r) { return r.wins + r.losses > 0; })
+            .sort(function (a, b) {
+                return (b.wins - a.wins) || (a.losses - b.losses) || a.name.localeCompare(b.name);
+            });
+    }
+
+    function entriesFor(def) {
+        var key = def[0];
+        if (key === '__clutch5') return mergeClutch((book.clutch || {}).clutch_5pt, (book.clutch || {}).unclutch_5pt);
+        if (key === '__clutch1') return mergeClutch((book.clutch || {}).clutch_1pt, (book.clutch || {}).unclutch_1pt);
+        var src = book[def[4] || section] || {};
+        return src[key];
+    }
+
+    function holderName(e) { return e.owner || e.name || e.holder || '—'; }
+    // Returns escaped HTML, not plain text — combined-score games show both
+    // managers, with the opponent demoted to a smaller, dimmer tail.
+    function holderHtmlFor(key, e) {
+        if (key.indexOf('combined_score') !== -1 && e.opp_owner) {
+            return esc(holderName(e)) + ' <span class="rb-vs">vs ' + esc(e.opp_owner) + '</span>';
+        }
+        return esc(holderName(e));
+    }
+    // Short context shown on every ranked row (the big top entry keeps the
+    // full ctx line): games get "year · Wk", seasons get the year.
+    function rowCtx(e) {
+        if (section === 'weekly') return e.season != null ? e.season + (e.week != null ? ' · Wk ' + e.week : '') : '';
+        if (section === 'season') return e.season != null ? String(e.season) : '';
+        return '';
+    }
+
+    function render() {
+        var box = document.getElementById('cards');
+        if (!book) {
+            box.innerHTML = '<div class="m-empty">The record book is sealed for this league.</div>';
+            return;
+        }
+        var defs = DEFS[section] || [];
+        var html = defs.map(function (def) {
+            var key = def[0], label = def[1], val = def[2], ctx = def[3], currentOnly = def[5];
+            var entries = entriesFor(def);
+            if (!entries || !entries.length) return '';
+            if (currentOnly) {
+                entries = entries.filter(function (e) { return e.is_current_member !== false; });
+                if (!entries.length) return '';
+            }
+            var top = entries[0];
+            var others = entries.slice(1);
+            var hasMore = others.length > 2;
+            return '<div class="m-card rb-card' + (hasMore ? ' rb-can-expand' : '') + '">' +
+                '<div class="rb-card-label">' + esc(label) + '</div>' +
+                '<div class="rb-top">' +
+                    '<span class="rb-top-value">' + esc(val(top)) + '</span>' +
+                    '<span class="rb-top-holder"><b>' + holderHtmlFor(key, top) + '</b>' +
+                        '<small>' + esc(ctx(top) || '') + '</small></span>' +
+                '</div>' +
+                (others.length
+                    ? '<div class="rb-others">' + others.map(function (e, i) {
+                        var sub = rowCtx(e);
+                        return '<div class="rb-other' + (i >= 2 ? ' rb-extra' : '') + '">' +
+                            '<span class="rb-other-rank">' + (i + 2) + '</span>' +
+                            '<span class="rb-other-name">' + holderHtmlFor(key, e) +
+                                (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
+                            '<span class="rb-other-val">' + esc(val(e)) + '</span>' +
+                        '</div>';
+                    }).join('') + '</div>'
+                    : '') +
+                (hasMore
+                    ? '<div class="rb-expand-hint">' +
+                        '<span class="rb-hint-more">Show top ' + entries.length + ' ▾</span>' +
+                        '<span class="rb-hint-less">Show less ▴</span>' +
+                      '</div>'
+                    : '') +
+            '</div>';
+        }).filter(Boolean).join('');
+        box.innerHTML = html || '<div class="m-empty">Nothing in this chapter yet.</div>';
+    }
+
+    // Tap a record card to unfold the full top list; tap again to fold it.
+    document.getElementById('cards').addEventListener('click', function (e) {
+        var card = e.target.closest('.rb-can-expand');
+        if (card) card.classList.toggle('is-open');
+    });
+
+    document.getElementById('seg').addEventListener('click', function (e) {
+        var btn = e.target.closest('button[data-sec]');
+        if (!btn) return;
+        section = btn.dataset.sec;
+        this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+        render();
+    });
+})();
+</script>
+</body>
+</html>

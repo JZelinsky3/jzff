@@ -30,7 +30,7 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // trades-theme, trade-desk/settings POST, ...) still enforce owner/editor
 // auth inside their own handlers — bypassing the middleware redirect just
 // keeps an unauthenticated GET from being bounced to /login as HTML.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/hub/', '/api/hub/']
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/hub/', '/api/hub/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })

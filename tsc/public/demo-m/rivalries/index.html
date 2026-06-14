@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/demo-m/">
+<script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rivalries · The Lakeside League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+/* Crimson / Charcoal / Noir — the desktop rivalries theme, ported to the
+   mobile shell. Re-pointing the shared tokens recolors the m-* primitives,
+   the bottom sheets, AND (via the chrome vars) the fixed app bar + tab bar
+   so the whole shell goes noir. */
+:root {
+    --riv:           #dc2626;
+    --ink:           #0a0a0a;
+    --ink-soft:      #111111;
+    --ink-card:      #111111;
+    --ink-line:      #272727;
+    --ink-line-soft: #1e1e1e;
+    --cream:         #f3f4f6;
+    --cream-soft:    #d1d5db;
+    --cream-mute:    #6b7280;
+    --m-chrome-bg:   #0d0d0d;
+    --m-chrome-bg2:  #101010;
+}
+.m-tab.is-active { color: var(--riv); }
+.m-tab.is-active::before { background: var(--riv); }
+.site-glow {
+    background-image:
+        radial-gradient(circle at 12% 18%, rgba(220, 38, 38, .07) 0%, transparent 48%),
+        radial-gradient(circle at 88% 82%, rgba(220, 38, 38, .04) 0%, transparent 44%);
+}
+.site-grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .45;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+}
+
+.rv-head { text-align: center; padding: 1.1rem 0 1rem; }
+.rv-title {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1.05;
+    color: var(--cream);
+}
+.rv-title em { font-style: italic; color: var(--riv); }
+.rv-sub { margin-top: .35rem; }
+
+.rv-card { position: relative; overflow: hidden; }
+.rv-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--riv), transparent);
+}
+.rv-kicker { color: var(--riv); }
+.rv-vs {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .6rem;
+    margin-top: .5rem;
+}
+.rv-side { flex: 1; min-width: 0; text-align: center; }
+.rv-side b {
+    display: block;
+    font-family: var(--serif); font-size: 1.15rem; font-weight: 400;
+    color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rv-side small {
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+/* Series score, oriented left–right to match the two names. */
+.rv-mid {
+    flex: none;
+    font-family: var(--serif);
+    font-size: 1.45rem; line-height: 1;
+    color: var(--riv);
+}
+.rv-foot {
+    display: flex; justify-content: space-between; gap: .5rem;
+    margin-top: .65rem;
+    padding-top: .55rem;
+    border-top: 1px solid var(--ink-line-soft);
+}
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+<div class="site-grain" aria-hidden="true"></div>
+
+<nav id="site-nav" data-page="rivalries" data-chapter="Ch. III · Bad Blood" data-back-href="./"></nav>
+<script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+    <header class="rv-head">
+        <div class="m-kicker" style="color:var(--riv)">Bad Blood</div>
+        <h1 class="rv-title">The <em>Rivalries.</em></h1>
+        <div class="m-mono rv-sub" id="rvSub"></div>
+    </header>
+
+    <div id="cards"><div class="m-empty">Reviewing the tape…</div></div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    fetch('data/rivalries.json')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (data) {
+            var list = (data && data.rivalries) || [];
+            var box = document.getElementById('cards');
+            if (!list.length) {
+                box.innerHTML = '<div class="m-empty">No rivalries on the books yet — give it a few seasons.</div>';
+                return;
+            }
+            document.getElementById('rvSub').textContent =
+                list.length + (list.length === 1 ? ' feud' : ' feuds') + ' on the record';
+            box.innerHTML = list.map(function (r) {
+                var a = r.manager_a || {}, b = r.manager_b || {};
+                // Series score reads left-to-right with the names: A's wins
+                // on A's side, B's on B's — always, even when deadlocked.
+                var mid = (a.wins || 0) + '–' + (b.wins || 0) +
+                    (r.ties_count ? '–' + r.ties_count : '');
+                var lead = r.is_deadlocked
+                    ? 'Dead even'
+                    : esc(r.leader_name) + ' leads';
+                var last = r.last_meeting
+                    ? 'Last: ' + r.last_meeting.year + ' · W' + r.last_meeting.week
+                    : 'Since ' + r.first_meeting_year;
+                function ppg(m) {
+                    return m.avg_ppg == null ? '' : Number(m.avg_ppg).toFixed(1) + ' PPG';
+                }
+                return '<a class="m-card rv-card" href="rivalries/rivalry.html?id=' + encodeURIComponent(r.id) + '">' +
+                    '<div class="m-kicker rv-kicker">' + esc(r.name) + '</div>' +
+                    '<div class="rv-vs">' +
+                        '<span class="rv-side"><b>' + esc(a.name) + '</b><small>' + ppg(a) + '</small></span>' +
+                        '<span class="rv-mid">' + mid + '</span>' +
+                        '<span class="rv-side"><b>' + esc(b.name) + '</b><small>' + ppg(b) + '</small></span>' +
+                    '</div>' +
+                    '<div class="rv-foot">' +
+                        '<span class="m-mono">' + lead + '</span>' +
+                        '<span class="m-mono">' + r.total_meetings + (r.total_meetings === 1 ? ' meeting' : ' meetings') + '</span>' +
+                        '<span class="m-mono">' + last + '</span>' +
+                    '</div>' +
+                '</a>';
+            }).join('');
+        });
+})();
+</script>
+</body>
+</html>

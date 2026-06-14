@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/demo-m/">
+<script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Milestone Tracker · The Lakeside League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+/* ── Gilded plaque theme — dark violet plum + bright violet + bronze,
+      same tokens as the desktop milestones page. ── */
+:root {
+    --ml-bg:         #110a18;
+    --ml-soft:       #160e21;
+    --ml-card:       #1c1428;
+    --ml-line:       #2e2240;
+    --ml-line-soft:  #221934;
+    --ml-mute:       #c2b6d6;
+    --ml-cream:      #f4ebd8;
+    --ml-violet:     #b58cff;
+    --ml-violet-hi:  #cdb1ff;
+    --ml-violet-deep:#7d50d4;
+    --ml-bronze:     #d4a574;
+    --m-chrome-bg:   rgb(17, 10, 24);
+    --m-chrome-bg2:  rgb(20, 12, 28);
+}
+body { background: var(--ml-bg); color: var(--ml-cream); }
+.site-glow {
+    background-image:
+        radial-gradient(circle at 20% 15%, rgba(181, 140, 255, .10) 0%, transparent 50%),
+        radial-gradient(circle at 80% 85%, rgba(212, 165, 116, .07) 0%, transparent 50%);
+}
+
+/* ── Masthead + meter ── */
+.ml-head { text-align: center; padding: 1.1rem 0 .2rem; }
+.ml-head .m-kicker { color: var(--ml-violet); }
+.ml-head .m-kicker .star { color: var(--ml-bronze); margin-right: .3rem; }
+.ml-title { font-family: var(--serif); font-size: 1.8rem; line-height: 1.05; color: var(--ml-cream); }
+.ml-title em { font-style: italic; color: var(--ml-violet-hi); }
+.ml-sub { margin-top: .35rem; color: var(--ml-mute); }
+
+.ml-meter { display: grid; grid-template-columns: repeat(3, 1fr); gap: .45rem; margin-top: .9rem; }
+.ml-meter-stat {
+    background: var(--ml-card);
+    border: 1px solid var(--ml-line);
+    border-radius: 10px;
+    padding: .5rem .3rem .45rem;
+    text-align: center;
+}
+.ml-meter-stat.glow { border-color: var(--ml-violet-deep); box-shadow: 0 0 14px rgba(181, 140, 255, .12); }
+.ml-meter-stat .val { display: block; font-family: var(--serif); font-size: 1.3rem; line-height: 1.1; color: var(--ml-violet-hi); }
+.ml-meter-stat .lbl {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ml-mute);
+    margin-top: .15rem;
+}
+
+/* ── Section label ── */
+.ml-label {
+    display: flex; align-items: baseline; gap: .7rem;
+    margin: 1.4rem 0 .5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--ml-mute);
+}
+.ml-label .t { color: var(--ml-violet); }
+.ml-label::after { content: ''; flex: 1; height: 1px; background: var(--ml-line-soft); align-self: center; }
+
+/* ── Empty / preview states ── */
+.ml-empty {
+    background: var(--ml-soft);
+    border: 1px dashed var(--ml-line);
+    border-radius: 12px;
+    padding: 1.1rem 1rem;
+    text-align: center;
+}
+.ml-empty .glyph { color: var(--ml-violet); font-size: 1.1rem; margin-bottom: .3rem; }
+.ml-empty h3 { font-family: var(--serif); font-weight: 400; font-size: 1.05rem; color: var(--ml-cream); margin-bottom: .3rem; }
+.ml-empty h3 em { font-style: italic; color: var(--ml-violet-hi); }
+.ml-empty p { font-size: .7rem; line-height: 1.45; color: var(--ml-mute); }
+
+.ml-tally { display: grid; gap: .45rem; margin-top: .55rem; }
+.ml-tally-item {
+    background: var(--ml-card);
+    border: 1px solid var(--ml-line);
+    border-radius: 10px;
+    padding: .55rem .7rem;
+}
+.ml-tally-item .cat { font-family: var(--mono); font-weight: 700; font-size: .48rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ml-violet); }
+.ml-tally-item .num { font-family: var(--serif); font-size: .95rem; color: var(--ml-cream); margin-top: .15rem; }
+.ml-tally-item .sub { font-size: .62rem; color: var(--ml-mute); margin-top: .1rem; }
+
+.ml-ladder { display: grid; gap: .45rem; margin-top: .55rem; }
+.ml-ladder-item {
+    background: var(--ml-card);
+    border: 1px solid var(--ml-line);
+    border-radius: 10px;
+    padding: .55rem .7rem;
+}
+.ml-ladder-item .tier { font-family: var(--mono); font-weight: 700; font-size: .48rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ml-bronze); }
+.ml-ladder-item h4 { font-family: var(--serif); font-weight: 400; font-size: .95rem; color: var(--ml-cream); margin: .15rem 0 .1rem; }
+.ml-ladder-item p { font-size: .64rem; line-height: 1.45; color: var(--ml-mute); }
+
+/* ── Crossed — plaque cards ── */
+.ml-crossed-grid { display: grid; gap: .55rem; }
+.ml-crossed {
+    position: relative;
+    background: linear-gradient(160deg, #221837, var(--ml-card));
+    border: 1px solid var(--ml-violet-deep);
+    border-radius: 12px;
+    padding: .8rem .9rem .7rem;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: .2rem .7rem;
+}
+.ml-medal {
+    grid-row: 1 / span 3;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--ml-bronze);
+    background: rgba(212, 165, 116, .08);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif);
+    color: var(--ml-bronze);
+    overflow: hidden;
+}
+.ml-medal img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.ml-crossed .who {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ml-bronze);
+}
+.ml-crossed .name { font-family: var(--serif); font-size: 1.1rem; line-height: 1.1; color: var(--ml-cream); }
+.ml-crossed .name em { font-style: italic; color: var(--ml-violet-hi); }
+.ml-crossed .achievement { font-size: .72rem; line-height: 1.4; color: var(--ml-mute); }
+.ml-crossed .achievement strong, .ml-crossed .achievement b { color: var(--ml-violet-hi); }
+.ml-crossed .stats {
+    grid-column: 1 / -1;
+    margin-top: .4rem;
+    font-family: var(--mono); font-size: .56rem;
+    letter-spacing: .06em;
+    color: var(--ml-violet-hi);
+}
+.ml-crossed .meta {
+    grid-column: 1 / -1;
+    display: flex; justify-content: space-between; gap: .6rem;
+    margin-top: .4rem; padding-top: .4rem;
+    border-top: 1px dashed var(--ml-line);
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ml-mute);
+}
+.ml-crossed-divider {
+    display: flex; align-items: center; gap: .7rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--ml-mute);
+    margin: .2rem 0;
+}
+.ml-crossed-divider::before, .ml-crossed-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--ml-line-soft);
+}
+
+/* ── Approach (imminent / horizon) — stacked category groups ── */
+.ml-approach-cols { display: grid; gap: .7rem; }
+.ml-approach-col-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ml-violet);
+    margin-bottom: .35rem;
+}
+.ml-approach-col-head .count { color: var(--ml-mute); }
+.ml-approach-col-body {
+    background: var(--ml-card);
+    border: 1px solid var(--ml-line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.ml-approach-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: .15rem .6rem;
+    padding: .55rem .75rem .6rem;
+    border-bottom: 1px solid var(--ml-line-soft);
+}
+.ml-approach-row:last-child { border-bottom: none; }
+.ml-approach-row.imminent { border-left: 3px solid var(--ml-violet); }
+.ml-approach-glyph {
+    grid-row: 1 / span 2;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--ml-line);
+    background: var(--ml-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: .8rem;
+    color: var(--ml-violet);
+    overflow: hidden;
+}
+.ml-approach-glyph img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.ml-approach-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; min-width: 0; }
+.ml-approach-name { font-size: .78rem; font-weight: 600; color: var(--ml-cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ml-approach-eta { flex: none; font-family: var(--mono); font-weight: 700; font-size: .62rem; color: var(--ml-violet-hi); }
+.ml-approach-eta .of { font-weight: 400; font-size: .46rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ml-mute); margin-left: .25rem; }
+.ml-approach-copy { font-size: .66rem; line-height: 1.4; color: var(--ml-mute); }
+.ml-approach-copy strong, .ml-approach-copy b { color: var(--ml-cream); }
+.ml-approach-stats { grid-column: 2; margin-top: .25rem; font-family: var(--mono); font-size: .52rem; color: var(--ml-violet-hi); }
+
+.ml-foot { margin: 1.6rem 0 .4rem; text-align: center; color: var(--ml-mute); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="milestones" data-chapter="Live · Milestones" data-back-href="live-season/"></nav>
+<script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+
+    <header class="ml-head">
+        <div class="m-kicker"><span class="star">✦</span>Live · LSL · Honors Roll</div>
+        <h1 class="ml-title">Milestone <em>Tracker.</em></h1>
+        <div class="m-mono ml-sub" id="m-foot">Tracking starts Week 1</div>
+    </header>
+
+    <div class="ml-meter">
+        <div class="ml-meter-stat glow"><span class="val" id="m-week">—</span><span class="lbl">This week</span></div>
+        <div class="ml-meter-stat"><span class="val" id="m-season">—</span><span class="lbl">This season</span></div>
+        <div class="ml-meter-stat"><span class="val" id="m-imminent">—</span><span class="lbl">1 game away</span></div>
+    </div>
+
+    <section>
+        <div class="ml-label"><span class="t">§ 01 · Crossed</span> Just Achieved</div>
+        <div id="crossed-body">
+            <div class="ml-empty">
+                <div class="glyph">✦</div>
+                <h3>The honors roll <em>begins Week 1.</em></h3>
+                <p>Every milestone gets a card the week it's hit — manager, accolade, and the game it happened in.</p>
+            </div>
+            <div class="ml-tally" id="ml-preview">
+                <div class="ml-tally-item">
+                    <div class="cat">Career wins</div>
+                    <div class="num">10 · 25 · 50 · 100 · 200</div>
+                    <div class="sub">tiered win milestones</div>
+                </div>
+                <div class="ml-tally-item">
+                    <div class="cat">Career points</div>
+                    <div class="num">2.5k · 5k · 10k · 25k</div>
+                    <div class="sub">lifetime PF tiers (every 2.5k)</div>
+                </div>
+                <div class="ml-tally-item">
+                    <div class="cat">Streaks</div>
+                    <div class="num">Personal-best win runs</div>
+                    <div class="sub">active streaks past a previous best</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="ml-label"><span class="t">§ 02 · Imminent</span> One Game Away</div>
+        <div id="imminent-body">
+            <div class="ml-empty">
+                <h3>Nothing imminent <em>right now.</em></h3>
+                <p>Managers within a single win, a few hundred points, or one week of a milestone appear here.</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="ml-label"><span class="t">§ 03 · Horizon</span> Within Reach</div>
+        <div id="horizon-body">
+            <div class="ml-empty">
+                <h3>The ladder <em>fills as the season runs.</em></h3>
+                <p>Approaching milestones (2–6 weeks out) collect here, sorted by who's closest.</p>
+            </div>
+            <div class="ml-ladder">
+                <div class="ml-ladder-item">
+                    <div class="tier">Tier · Bronze</div>
+                    <h4>Career wins</h4>
+                    <p>10 through 300 career wins — every tier stamped with the date.</p>
+                </div>
+                <div class="ml-ladder-item">
+                    <div class="tier">Tier · Silver</div>
+                    <h4>Lifetime points</h4>
+                    <p>2,500 to 30,000 career PF — a new mark every 2,500 points.</p>
+                </div>
+                <div class="ml-ladder-item">
+                    <div class="tier">Tier · Gold</div>
+                    <h4>Personal-best streaks</h4>
+                    <p>Active win streaks that pass — or match — a manager's career best.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="m-mono ml-foot">LSL · Honors Roll · MMXIX</div>
+
+</main>
+
+<script>
+// ── Milestone Tracker (mobile) — same data file + section rules as the
+//    desktop page (data/milestones.json). Approach columns stack into
+//    category groups; everything else renders in place of its empty state.
+(function () {
+  'use strict';
+
+  var COL_LABELS = {
+    wins:    'Wins · Games',
+    points:  'Points',
+    streak:  'Streaks'
+  };
+  var COL_KEYS = ['wins', 'points', 'streak'];
+
+  fetch('data/milestones.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (data) {
+      if (!data) return;
+      renderMeter(data.meter || {});
+      if (Array.isArray(data.crossed) && data.crossed.length) renderCrossed(data.crossed);
+      var imm = data.imminent_by_category;
+      if (imm && hasAny(imm)) renderApproachCols('imminent-body', imm, true);
+      var hor = data.horizon_by_category;
+      if (hor && hasAny(hor))  renderApproachCols('horizon-body',  hor, false);
+    });
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function hasAny(byCat) {
+    for (var k in byCat) {
+      if (Array.isArray(byCat[k]) && byCat[k].length) return true;
+    }
+    return false;
+  }
+
+  function renderMeter(m) {
+    if (m.week     != null) $('m-week').textContent     = m.week;
+    if (m.season   != null) $('m-season').textContent   = m.season;
+    if (m.imminent != null) $('m-imminent').textContent = m.imminent;
+    if (m.through) {
+      $('m-foot').textContent = (/^Preseason/i.test(m.through) ? '' : 'Through ') + m.through;
+    }
+  }
+
+  function avatarMarkup(it) {
+    if (it.avatar) {
+      return '<img src="' + esc(it.avatar) + '" alt="" onerror="this.style.opacity=0" />';
+    }
+    return esc(it.glyph || '✦');
+  }
+
+  function renderCrossed(items) {
+    var html = '<div class="ml-crossed-grid">';
+    var prevBucket = null;
+    items.forEach(function (it) {
+      if (prevBucket === 'this' && it.week_bucket === 'last') {
+        html += '<div class="ml-crossed-divider"><span>Last week</span></div>';
+      }
+      prevBucket = it.week_bucket || prevBucket;
+      var metaContent = it.meta_html
+        ? it.meta_html
+        : ('<span>' + esc(it.when || '') + '</span><span>' + esc(it.context || '') + '</span>');
+      html +=
+        '<article class="ml-crossed">' +
+          '<div class="ml-medal">' + avatarMarkup(it) + '</div>' +
+          '<div class="who">' + esc(it.tier || 'Milestone') + '</div>' +
+          '<div class="name">' + (it.name_html || esc(it.name || '—')) + '</div>' +
+          '<div class="achievement">' + (it.achievement_html || esc(it.achievement || '')) + '</div>' +
+          (it.stats_html ? '<div class="stats">' + it.stats_html + '</div>' : '') +
+          '<div class="meta">' + metaContent + '</div>' +
+        '</article>';
+    });
+    html += '</div>';
+    $('crossed-body').innerHTML = html;
+  }
+
+  function renderApproachCols(slot, byCat, imminent) {
+    var keys = COL_KEYS.filter(function (k) {
+      return Array.isArray(byCat[k]) && byCat[k].length;
+    });
+    if (!keys.length) return;
+
+    var html = '<div class="ml-approach-cols">';
+    keys.forEach(function (k) {
+      var items = byCat[k];
+      html +=
+        '<div class="ml-approach-col">' +
+          '<div class="ml-approach-col-head">' +
+            '<span class="lbl">' + esc(COL_LABELS[k] || k) + '</span>' +
+            '<span class="count">' + items.length + '</span>' +
+          '</div>' +
+          '<div class="ml-approach-col-body">';
+      items.forEach(function (it) {
+        html +=
+          '<div class="ml-approach-row' + (imminent ? ' imminent' : '') + '">' +
+            '<div class="ml-approach-glyph">' + avatarMarkup(it) + '</div>' +
+            '<div class="ml-approach-head">' +
+              '<div class="ml-approach-name">' + esc(it.name || '—') + '</div>' +
+              '<div class="ml-approach-eta">' + esc(it.eta || '') +
+                '<span class="of">' + esc(it.eta_unit || 'to go') + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="ml-approach-copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+            (it.stats_html ? '<div class="ml-approach-stats">' + it.stats_html + '</div>' : '') +
+          '</div>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+    $(slot).innerHTML = html;
+  }
+})();
+</script>
+</body>
+</html>

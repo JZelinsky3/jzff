@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/demo-m/">
+<script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matchup Preview · The Lakeside League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+/* ── Pullman chapter theme — forest green + brass + signal amber,
+      same tokens as the desktop matchup-preview page. ── */
+:root {
+    --mp-bg:        #0c1812;
+    --mp-soft:      #102219;
+    --mp-card:      #142a20;
+    --mp-line:      #2a4234;
+    --mp-line-soft: #1c3024;
+    --mp-mute:      #9eb5a2;
+    --mp-cream:     #f4ebd8;
+    --mp-brass:     #c89d5c;
+    --mp-brass-hi:  #e6bb78;
+    --mp-amber:     #e8b047;
+    --mp-green:     #6fa971;
+    --mp-rust:      #b85a3a;
+    --m-chrome-bg:  #0a140f;
+    --m-chrome-bg2: #0d1a13;
+}
+body { background: var(--mp-bg); color: var(--mp-cream); }
+.site-glow {
+    background-image:
+        radial-gradient(circle at 15% 10%, rgba(200, 157, 92, .07) 0%, transparent 50%),
+        radial-gradient(circle at 85% 90%, rgba(111, 169, 113, .05) 0%, transparent 55%);
+}
+
+/* ── Masthead ── */
+.mp-head { text-align: center; padding: 1.1rem 0 .2rem; }
+.mp-head .m-kicker { color: var(--mp-brass); display: inline-flex; align-items: center; gap: .4rem; }
+.lamp {
+    display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--mp-amber);
+    box-shadow: 0 0 6px rgba(232, 176, 71, .55);
+    animation: mpLamp 1.8s ease-in-out infinite;
+}
+@keyframes mpLamp { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+.mp-title {
+    font-family: var(--serif);
+    font-size: 1.8rem; line-height: 1.05;
+    color: var(--mp-cream);
+}
+.mp-title em { font-style: italic; color: var(--mp-brass-hi); }
+.mp-sub { margin-top: .35rem; color: var(--mp-mute); }
+
+/* ── GOTW marquee — compact Main Line card ── */
+.mq {
+    margin-top: .9rem;
+    background: linear-gradient(160deg, #16301f, var(--mp-card));
+    border: 1px solid var(--mp-brass);
+    border-radius: 12px;
+    overflow: hidden;
+    text-align: center;
+}
+.mq-ribbon {
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+    padding: .45rem .6rem;
+    background: var(--mp-brass);
+    color: var(--mp-bg);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .26em; text-transform: uppercase;
+}
+.mq-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: .5rem;
+    padding: .85rem .8rem .5rem;
+}
+.mq-name { font-family: var(--serif); font-size: 1.05rem; line-height: 1.1; color: var(--mp-cream); }
+.mq-team { margin-top: .1rem; font-size: .64rem; color: var(--mp-mute); }
+.mq-rec { margin-top: .2rem; font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .1em; color: var(--mp-brass-hi); }
+.mq-vs {
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; color: var(--mp-mute);
+}
+.mq-vs small {
+    display: block;
+    font-family: var(--mono); font-style: normal; font-weight: 700;
+    font-size: .48rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--mp-brass);
+    margin-top: .15rem;
+}
+.mq-foot {
+    padding: .35rem .8rem .7rem;
+    font-family: var(--mono); font-size: .56rem;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--mp-mute);
+}
+.mq-foot strong { color: var(--mp-amber); }
+.mq-cta {
+    display: block;
+    margin: 0 .8rem .8rem;
+    padding: .6rem;
+    background: var(--mp-brass);
+    color: var(--mp-bg);
+    border-radius: 8px;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+    text-decoration: none;
+}
+.mq-cta:active { background: var(--mp-brass-hi); }
+
+/* ── Departures board — stacked match cards ── */
+.bd { margin-top: .9rem; }
+.bd-mast {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: .55rem .8rem;
+    background: var(--m-chrome-bg);
+    border: 1px solid var(--mp-line);
+    border-bottom: 1px solid var(--mp-brass);
+    border-radius: 12px 12px 0 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
+}
+.bd-mast-title { color: var(--mp-brass-hi); }
+.bd-mast-meta { color: var(--mp-mute); }
+.bd-list {
+    background: var(--mp-card);
+    border: 1px solid var(--mp-line);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+}
+.bd-row {
+    padding: .6rem .8rem .65rem;
+    border-bottom: 1px solid var(--mp-line-soft);
+}
+.bd-row:last-child { border-bottom: none; }
+.bd-row.gotw { background: rgba(232, 176, 71, .07); border-left: 3px solid var(--mp-amber); }
+.bd-row-top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--mp-mute);
+    margin-bottom: .3rem;
+}
+.bd-spread { color: var(--mp-amber); }
+/* Bigger than the row-top's .5rem mono so it reads as the same star
+   that marks the favored name below it. */
+.bd-spread .fav-mark { color: var(--mp-amber); font-size: .7rem; line-height: 1; }
+.bd-spread.pp { color: var(--mp-mute); }
+.bd-row-teams {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: .5rem;
+}
+.bd-side { min-width: 0; }
+.bd-side.right { text-align: right; }
+.bd-side-name {
+    font-weight: 600; font-size: .84rem; color: var(--mp-cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bd-side-name .fav-mark { color: var(--mp-amber); font-size: .7rem; }
+.bd-side-rec {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .08em;
+    color: var(--mp-mute);
+    margin-top: .1rem;
+}
+.bd-vs { font-family: var(--serif); font-style: italic; font-size: .8rem; color: var(--mp-brass); }
+.bd-legend {
+    padding: .5rem .8rem;
+    font-family: var(--mono); font-size: .5rem;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--mp-mute);
+    text-align: center;
+    border-top: 1px solid var(--mp-line-soft);
+}
+.bd-legend .star { color: var(--mp-amber); }
+
+/* ── Conductor — identity picker ── */
+.cond {
+    margin-top: .9rem;
+    background: var(--mp-card);
+    border: 1px solid var(--mp-line);
+    border-radius: 12px;
+    padding: .9rem .9rem 1rem;
+    text-align: center;
+}
+.cond-title { font-family: var(--serif); font-size: 1.15rem; color: var(--mp-cream); }
+.cond-title em { font-style: italic; color: var(--mp-brass-hi); }
+.cond-sub { margin-top: .25rem; margin-bottom: .7rem; font-size: .7rem; line-height: 1.4; color: var(--mp-mute); }
+.cond-row { display: flex; gap: .5rem; }
+.cond-select-wrap { position: relative; flex: 1; min-width: 0; }
+.cond-select-wrap::after {
+    content: '▾';
+    position: absolute; right: .7rem; top: 50%;
+    transform: translateY(-50%);
+    color: var(--mp-brass);
+    pointer-events: none;
+    font-size: .7rem;
+}
+.cond-select {
+    width: 100%;
+    appearance: none; -webkit-appearance: none;
+    background: var(--mp-soft);
+    border: 1px solid var(--mp-line);
+    border-radius: 8px;
+    color: var(--mp-cream);
+    font-family: var(--sans); font-size: .82rem;
+    padding: .65rem 1.8rem .65rem .7rem;
+}
+.cond-go {
+    flex: none;
+    padding: 0 1.1rem;
+    background: var(--mp-brass);
+    border: none; border-radius: 8px;
+    color: var(--mp-bg);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .18em; text-transform: uppercase;
+}
+.cond-go:disabled { opacity: .4; }
+
+/* ── Desk mode — ticket + stat cards ── */
+.dk-back-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: .9rem;
+}
+.dk-back {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--mp-brass);
+    text-decoration: none;
+}
+.dk-back-meta { font-family: var(--mono); font-size: .54rem; letter-spacing: .14em; text-transform: uppercase; color: var(--mp-mute); }
+
+.tk {
+    margin-top: .6rem;
+    background: linear-gradient(160deg, #16301f, var(--mp-card));
+    border: 1px solid var(--mp-brass);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.tk-ribbon {
+    padding: .4rem;
+    background: var(--mp-amber);
+    color: var(--mp-bg);
+    text-align: center;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .24em; text-transform: uppercase;
+}
+.tk-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: .5rem;
+    padding: .9rem .8rem;
+    text-align: center;
+}
+.tk-name { font-family: var(--serif); font-size: 1.1rem; line-height: 1.1; color: var(--mp-cream); }
+.tk-team { margin-top: .12rem; font-size: .64rem; color: var(--mp-mute); }
+.tk-rec { margin-top: .25rem; font-family: var(--mono); font-weight: 700; font-size: .6rem; letter-spacing: .1em; color: var(--mp-brass-hi); }
+.tk-vs { font-family: var(--serif); font-style: italic; font-size: 1rem; color: var(--mp-mute); }
+.tk-vs small {
+    display: block;
+    font-family: var(--mono); font-style: normal; font-weight: 700;
+    font-size: .46rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--mp-brass);
+    margin-top: .15rem;
+    white-space: nowrap;
+}
+
+.dk-card {
+    margin-top: .65rem;
+    background: var(--mp-card);
+    border: 1px solid var(--mp-line);
+    border-radius: 12px;
+    padding: .85rem .9rem .9rem;
+}
+.dk-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--mp-brass);
+    margin-bottom: .25rem;
+}
+.dk-title { font-family: var(--serif); font-size: 1.2rem; color: var(--mp-cream); margin-bottom: .6rem; }
+.dk-title em { font-style: italic; color: var(--mp-brass-hi); }
+
+/* H2H */
+.h2h-big {
+    display: flex; align-items: baseline; justify-content: center; gap: .8rem;
+    font-family: var(--serif);
+    font-size: 2.6rem; line-height: 1;
+    color: var(--mp-cream);
+}
+.h2h-big .dash { color: var(--mp-brass); font-size: 1.6rem; }
+.h2h-meta {
+    margin-top: .4rem;
+    text-align: center;
+    font-family: var(--mono); font-size: .56rem;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--mp-mute);
+}
+.h2h-meta strong { color: var(--mp-brass-hi); }
+.h2h-recent { margin-top: .7rem; border-top: 1px dashed var(--mp-line); padding-top: .55rem; }
+.h2h-recent-h {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--mp-mute);
+    margin-bottom: .35rem;
+}
+.h2h-recent-row {
+    display: grid;
+    grid-template-columns: 3rem 3rem 1fr;
+    gap: .5rem;
+    padding: .3rem 0;
+    font-family: var(--mono); font-size: .68rem;
+    color: var(--mp-cream);
+}
+.h2h-recent-row .yr, .h2h-recent-row .wk { color: var(--mp-mute); font-size: .58rem; align-self: center; }
+.h2h-recent-row .score { text-align: right; font-weight: 700; }
+.h2h-recent-row .score .win { color: var(--mp-green); }
+.h2h-recent-row .score .lose { color: var(--mp-rust); }
+.h2h-empty {
+    margin-top: .6rem;
+    text-align: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: .85rem;
+    color: var(--mp-mute);
+}
+
+/* Forecast bars */
+.pj-row { display: grid; grid-template-columns: minmax(0, 5.2rem) 1fr 2.8rem; gap: .5rem; align-items: center; margin-bottom: .45rem; }
+.pj-name { font-size: .68rem; font-weight: 600; color: var(--mp-cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pj-wrap { height: 10px; background: var(--mp-soft); border: 1px solid var(--mp-line-soft); border-radius: 999px; overflow: hidden; }
+.pj-bar { display: block; height: 100%; background: var(--mp-mute); border-radius: 999px; }
+.pj-bar.fav { background: var(--mp-amber); box-shadow: 0 0 8px rgba(232, 176, 71, .35); }
+.pj-val { font-family: var(--mono); font-weight: 700; font-size: .64rem; color: var(--mp-brass-hi); text-align: right; }
+.pj-spread {
+    margin-top: .35rem;
+    text-align: center;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--mp-amber);
+}
+.pj-spread.pp { color: var(--mp-mute); }
+.pj-foot { margin-top: .35rem; text-align: center; font-size: .7rem; line-height: 1.4; color: var(--mp-mute); }
+.pj-foot strong { color: var(--mp-amber); }
+
+/* Form rows + footers */
+.fm-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .55rem; align-items: center; padding: .35rem 0; }
+.fm-name { font-size: .74rem; font-weight: 600; color: var(--mp-cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fm-pills { display: flex; gap: 2px; }
+.fm-pills i {
+    display: flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px;
+    font-family: var(--mono); font-weight: 700; font-size: .5rem; font-style: normal;
+}
+.fm-pills i.w { background: var(--mp-green); color: var(--mp-bg); }
+.fm-pills i.l { color: var(--mp-rust); border: 1px solid var(--mp-rust); }
+.fm-pills i.t { background: var(--mp-mute); color: var(--mp-bg); }
+.fm-pills i.empty { border: 1px dashed var(--mp-line); color: var(--mp-mute); }
+.fm-ppg { font-family: var(--mono); font-weight: 700; font-size: .62rem; color: var(--mp-brass-hi); }
+.fm-ppg small { font-weight: 400; color: var(--mp-mute); }
+.fm-highs {
+    display: flex; justify-content: space-between; gap: .6rem;
+    margin-top: .55rem; padding-top: .55rem;
+    border-top: 1px dashed var(--mp-line);
+}
+.fm-high { font-family: var(--mono); font-size: .62rem; color: var(--mp-cream); min-width: 0; }
+.fm-high.right { text-align: right; }
+.fm-high .label {
+    display: block;
+    font-weight: 700; font-size: .48rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--mp-mute);
+    margin-bottom: .2rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fm-high strong { color: var(--mp-amber); }
+.streak-chip {
+    display: inline-block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .1em;
+    padding: 2px 7px;
+    border-radius: 3px;
+}
+.streak-chip.w { background: var(--mp-green); color: var(--mp-bg); }
+.streak-chip.none { border: 1px dashed var(--mp-line); color: var(--mp-mute); }
+
+/* Actions */
+.dk-actions { margin-top: .8rem; display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.dk-actions-msg { grid-column: 1 / -1; text-align: center; font-size: .7rem; color: var(--mp-mute); margin-bottom: .1rem; }
+.dk-actions-msg strong { color: var(--mp-amber); }
+.dk-btn {
+    display: flex; align-items: center; justify-content: center; gap: .4rem;
+    padding: .7rem .5rem;
+    border: 1px solid var(--mp-line); border-radius: 8px;
+    background: var(--mp-card);
+    color: var(--mp-brass-hi);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .16em; text-transform: uppercase;
+    text-decoration: none;
+}
+.dk-btn.primary { background: var(--mp-brass); border-color: var(--mp-brass); color: var(--mp-bg); }
+button.dk-btn { width: 100%; }
+
+/* Toast */
+.mp-toast {
+    position: fixed;
+    left: 50%; bottom: calc(var(--m-tab-h) + env(safe-area-inset-bottom) + 1rem);
+    transform: translate(-50%, 200%);
+    background: var(--mp-brass);
+    color: var(--mp-bg);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .16em; text-transform: uppercase;
+    padding: .7rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+    z-index: 230;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .35s cubic-bezier(.2, .7, .3, 1), opacity .25s;
+    white-space: nowrap;
+}
+.mp-toast.is-on { transform: translate(-50%, 0); opacity: 1; }
+
+.mp-foot-line { margin: 1.6rem 0 .4rem; text-align: center; }
+.m-empty { color: var(--mp-mute); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="matchup-preview" data-chapter="Ch. VII · Matchup Preview" data-back-href="live-season/"></nav>
+<script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+
+    <header class="mp-head">
+        <div class="m-kicker"><span class="lamp"></span> LSL · Matchup Preview</div>
+        <h1 class="mp-title" id="mp-title">The <em>Slate.</em></h1>
+        <div class="m-mono mp-sub" id="mp-sub">This week's board</div>
+    </header>
+
+    <!-- HUB MODE -->
+    <section id="mp-hub">
+        <div id="mp-gotw-host" hidden></div>
+        <div class="bd" id="mp-board-host"></div>
+        <div class="cond" id="mp-conductor" hidden>
+            <div class="cond-title">Pull <em>your ticket.</em></div>
+            <p class="cond-sub">Pick your name — we'll pull the H2H ledger, your form, and a projection.</p>
+            <div class="cond-row">
+                <div class="cond-select-wrap">
+                    <select class="cond-select" id="mp-conductor-select" aria-label="Choose your manager">
+                        <option value="">— Choose your name —</option>
+                    </select>
+                </div>
+                <button type="button" class="cond-go" id="mp-conductor-go" disabled>Board</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- DESK MODE -->
+    <section id="mp-desk"></section>
+
+    <div class="m-empty" id="mp-empty" hidden>
+        No live slate — the season hasn't started, or every game this week is in the books.
+    </div>
+
+    <div class="m-mono mp-foot-line">LSL · Departures · MMXIX</div>
+
+    <output class="mp-toast" id="mp-toast" aria-live="polite">Link copied</output>
+
+</main>
+
+<script>
+// ── Matchup Preview (mobile) — same data + projection contract as the
+//    desktop page (data/matchup_preview.json); board + desk re-laid for
+//    one-hand reading. Identity picker shares the desktop's localStorage
+//    key so a choice made on either view carries to the other.
+(function () {
+    'use strict';
+
+    var hubEl     = document.getElementById('mp-hub');
+    var deskEl    = document.getElementById('mp-desk');
+    var emptyEl   = document.getElementById('mp-empty');
+    var boardHost = document.getElementById('mp-board-host');
+    var condEl    = document.getElementById('mp-conductor');
+    var selEl     = document.getElementById('mp-conductor-select');
+    var goBtn     = document.getElementById('mp-conductor-go');
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function fmtPts(n) {
+        var v = Number(n);
+        return isFinite(v) ? v.toFixed(1) : '—';
+    }
+    // Long team names crowd the board's half-width columns and clip the
+    // favorite ★ off the right-hand side. Names past the cap collapse to
+    // word initials ("Goliath National Bank" → "GNB"); long single words
+    // get cut instead.
+    function shortTeam(name, max) {
+        name = String(name == null ? '' : name).trim();
+        if (name.length <= max) return name;
+        var words = name.split(/\s+/);
+        if (words.length < 2) return name.slice(0, max - 1) + '…';
+        return words.map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+    }
+
+    fetch('data/matchup_preview.json', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (data) {
+            if (!data || !data.matchups || !data.matchups.length) {
+                hubEl.hidden = true;
+                emptyEl.hidden = false;
+                return;
+            }
+            var params = new URLSearchParams(window.location.search);
+            var mid = params.get('m');
+            if (mid && findMatchupFor(data, mid)) {
+                renderDesk(data, mid);
+                return;
+            }
+            renderGotw(data);
+            renderBoard(data);
+            renderConductor(data);
+        });
+
+    // ── Share — native sheet first, clipboard fallback, toast either way.
+    function showToast(msg) {
+        var t = document.getElementById('mp-toast');
+        if (!t) return;
+        if (msg) t.textContent = msg;
+        t.classList.add('is-on');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(function () { t.classList.remove('is-on'); }, 2200);
+    }
+    function shareLink(url, title) {
+        if (navigator.share) {
+            navigator.share({ title: title, text: title, url: url })
+                .catch(function () { copyToClipboard(url, title); });
+            return;
+        }
+        copyToClipboard(url, title);
+    }
+    function copyToClipboard(url, title) {
+        var payload = title ? title + ' — ' + url : url;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(payload).then(function () {
+                showToast('Link copied');
+            }, function () {
+                showToast('Couldn’t copy');
+            });
+            return;
+        }
+        try {
+            var ta = document.createElement('textarea');
+            ta.value = payload;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('Link copied');
+        } catch (e) {
+            showToast('Couldn’t copy');
+        }
+    }
+
+    // Same per-league localStorage key as the desktop page, so the picked
+    // identity carries across the two views.
+    function pickerKey() {
+        var base = 'mp_picker';
+        if (window.__DC && window.__DC.id) return base + ':' + window.__DC.id;
+        return base + ':' + (window.location.pathname.split('/')[2] || 'unknown');
+    }
+
+    function renderGotw(data) {
+        var host = document.getElementById('mp-gotw-host');
+        if (!host) return;
+        if (data.gotwIdx == null || !data.matchups[data.gotwIdx]) { host.hidden = true; return; }
+        var m = data.matchups[data.gotwIdx];
+        var a = m.a, b = m.b;
+        var jumpUid = a.uid;
+        try {
+            var saved = localStorage.getItem(pickerKey());
+            if (saved === a.uid || saved === b.uid) jumpUid = saved;
+        } catch (e) { /* ignore */ }
+
+        var h2hLine = m.h2h.meetings > 0
+            ? 'H2H · <strong>' + m.h2h.winsA + '–' + m.h2h.winsB + (m.h2h.ties ? '–' + m.h2h.ties : '') + '</strong> in ' + m.h2h.meetings + ' meeting' + (m.h2h.meetings === 1 ? '' : 's')
+            : 'First meeting on the board.';
+        host.innerHTML =
+            '<div class="mq" aria-label="Featured matchup — The Main Line">' +
+                '<div class="mq-ribbon"><span class="lamp"></span> ★ The Main Line ★ <span class="lamp"></span></div>' +
+                '<div class="mq-grid">' +
+                    '<div>' +
+                        '<div class="mq-name">' + esc(a.name) + '</div>' +
+                        '<div class="mq-team">' + esc(shortTeam(a.team, 18)) + '</div>' +
+                        '<div class="mq-rec">' + esc(a.record) + ' · ' + fmtPts(a.ppgSeason || a.ppg5) + '</div>' +
+                    '</div>' +
+                    '<div class="mq-vs">vs<small>Train ' + esc(m.train) + '</small></div>' +
+                    '<div>' +
+                        '<div class="mq-name">' + esc(b.name) + '</div>' +
+                        '<div class="mq-team">' + esc(shortTeam(b.team, 18)) + '</div>' +
+                        '<div class="mq-rec">' + esc(b.record) + ' · ' + fmtPts(b.ppgSeason || b.ppg5) + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="mq-foot">' + h2hLine + '</div>' +
+                '<a class="mq-cta" href="live-season/matchup-preview/?m=' + encodeURIComponent(jumpUid) + '">Open the booking</a>' +
+            '</div>';
+        host.hidden = false;
+    }
+
+    function renderBoard(data) {
+        document.getElementById('mp-sub').textContent =
+            data.year + ' season · Wk ' + data.week + ' · ' + data.matchups.length +
+            ' game' + (data.matchups.length === 1 ? '' : 's') + (data.pinned ? ' · pinned' : '');
+
+        var html =
+            '<div class="bd-mast">' +
+                '<span class="bd-mast-title">★ Wk ' + esc(data.week) + ' Departures ★</span>' +
+                '<span class="bd-mast-meta">' + esc(data.year) + '</span>' +
+            '</div>' +
+            '<div class="bd-list">';
+        data.matchups.forEach(function (m) {
+            var spreadTxt = m.projected.favorite === 'pp'
+                ? '<span class="bd-spread pp">Pick’em</span>'
+                : '<span class="bd-spread"><span class="fav-mark">★</span> ' +
+                  (m.projected.favorite === 'a' ? '◀' : '▶') + ' by ' + fmtPts(m.projected.spread) + '</span>';
+            var aStar = m.projected.favorite === 'a' ? '<span class="fav-mark">★</span> ' : '';
+            var bStar = m.projected.favorite === 'b' ? ' <span class="fav-mark">★</span>' : '';
+            html +=
+                '<div class="bd-row' + (m.gotw ? ' gotw' : '') + '">' +
+                    '<div class="bd-row-top">' +
+                        '<span>Train ' + esc(m.train) + (m.gotw ? ' · Main Line' : '') + '</span>' +
+                        spreadTxt +
+                    '</div>' +
+                    '<div class="bd-row-teams">' +
+                        '<div class="bd-side">' +
+                            '<div class="bd-side-name">' + aStar + esc(shortTeam(m.a.team, 14)) + '</div>' +
+                            '<div class="bd-side-rec">' + esc(m.a.record) + '</div>' +
+                        '</div>' +
+                        '<div class="bd-vs">vs</div>' +
+                        '<div class="bd-side right">' +
+                            '<div class="bd-side-name">' + esc(shortTeam(m.b.team, 14)) + bStar + '</div>' +
+                            '<div class="bd-side-rec">' + esc(m.b.record) + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+        });
+        html += '<div class="bd-legend"><span class="star">★</span> ◀ / ▶ favored side · last-5 PPG spread</div></div>';
+        boardHost.innerHTML = html;
+    }
+
+    function renderConductor(data) {
+        if (!selEl || !goBtn || !condEl) return;
+        var mgrs = (data.managers || []).slice();
+        if (!mgrs.length) { condEl.hidden = true; return; }
+        var opts = ['<option value="">— Choose your name —</option>'];
+        mgrs.forEach(function (m) {
+            opts.push('<option value="' + esc(m.uid) + '">' + esc(m.name) + ' · ' + esc(m.team) + '</option>');
+        });
+        selEl.innerHTML = opts.join('');
+
+        try {
+            var saved = localStorage.getItem(pickerKey());
+            if (saved && mgrs.some(function (m) { return m.uid === saved; })) {
+                selEl.value = saved;
+                goBtn.disabled = false;
+            }
+        } catch (e) { /* private mode — ignore */ }
+
+        selEl.addEventListener('change', function () {
+            goBtn.disabled = !selEl.value;
+            try { if (selEl.value) localStorage.setItem(pickerKey(), selEl.value); } catch (e) { /* ignore */ }
+        });
+        goBtn.addEventListener('click', function () {
+            if (!selEl.value) return;
+            try { localStorage.setItem(pickerKey(), selEl.value); } catch (e) { /* ignore */ }
+            var url = new URL(window.location.href);
+            url.searchParams.set('m', selEl.value);
+            window.location.href = url.toString();
+        });
+        condEl.hidden = false;
+    }
+
+    function findMatchupFor(data, uid) {
+        for (var i = 0; i < data.matchups.length; i++) {
+            var m = data.matchups[i];
+            if (m.a.uid === uid) return { matchup: m, self: m.a, opp: m.b, side: 'a' };
+            if (m.b.uid === uid) return { matchup: m, self: m.b, opp: m.a, side: 'b' };
+        }
+        return null;
+    }
+
+    function pillsFor(form) {
+        var pills = '';
+        var arr = (form || []).slice(0, 5);
+        while (arr.length < 5) arr.push(null);
+        for (var i = 0; i < arr.length; i++) {
+            var r = arr[i];
+            if (r === 'W')      pills += '<i class="w">W</i>';
+            else if (r === 'L') pills += '<i class="l">L</i>';
+            else if (r === 'T') pills += '<i class="t">T</i>';
+            else                pills += '<i class="empty">·</i>';
+        }
+        return pills;
+    }
+
+    function formRow(side) {
+        return '<div class="fm-row">' +
+                 '<span class="fm-name">' + esc(side.name) + '</span>' +
+                 '<span class="fm-pills">' + pillsFor(side.form) + '</span>' +
+                 '<span class="fm-ppg">' + fmtPts(side.ppg5) + '<small> ppg</small></span>' +
+               '</div>';
+    }
+    function highsFooter(self, opp) {
+        function cell(side, right) {
+            var v = side.seasonHigh
+                ? '<strong>' + fmtPts(side.seasonHigh.pts) + '</strong> Wk ' + esc(side.seasonHigh.week)
+                : 'No games yet';
+            return '<div class="fm-high' + (right ? ' right' : '') + '">' +
+                     '<span class="label">' + esc(side.name) + ' · High</span>' + v +
+                   '</div>';
+        }
+        return '<div class="fm-highs">' + cell(self, false) + cell(opp, true) + '</div>';
+    }
+    function streaksFooter(self, opp) {
+        function chipFor(n) {
+            if (!n) return '<span class="streak-chip none">None yet</span>';
+            return '<span class="streak-chip w">W' + n + '</span>';
+        }
+        function cell(side, right) {
+            return '<div class="fm-high' + (right ? ' right' : '') + '">' +
+                     '<span class="label">' + esc(side.name) + ' · Best run</span>' +
+                     chipFor(side.longestWinStreak || 0) +
+                   '</div>';
+        }
+        return '<div class="fm-highs">' + cell(self, false) + cell(opp, true) + '</div>';
+    }
+
+    function recentRow(r, side) {
+        var selfScore = side === 'a' ? r.scoreA : r.scoreB;
+        var oppScore  = side === 'a' ? r.scoreB : r.scoreA;
+        var selfWon = (side === 'a' && r.winner === 'a') || (side === 'b' && r.winner === 'b');
+        var tied = r.winner === 't';
+        var cls = tied ? '' : (selfWon ? 'win' : 'lose');
+        return '<div class="h2h-recent-row">' +
+                 '<span class="yr">' + esc(r.year) + '</span>' +
+                 '<span class="wk">Wk ' + esc(r.week) + '</span>' +
+                 '<span class="score"><span class="' + cls + '">' + fmtPts(selfScore) + '</span> — ' + fmtPts(oppScore) + '</span>' +
+               '</div>';
+    }
+
+    function renderDesk(data, uid) {
+        var found = findMatchupFor(data, uid);
+        if (!found) return;
+        hubEl.style.display = 'none';
+
+        document.getElementById('mp-title').innerHTML = 'The <em>Booking.</em>';
+        document.getElementById('mp-sub').textContent = 'Your one game from this week’s slate';
+
+        var m = found.matchup, self = found.self, opp = found.opp, side = found.side;
+        var h2h = m.h2h;
+        var selfWins = side === 'a' ? h2h.winsA : h2h.winsB;
+        var oppWins  = side === 'a' ? h2h.winsB : h2h.winsA;
+        var ties = h2h.ties || 0;
+
+        var projSelf = side === 'a' ? m.projected.a : m.projected.b;
+        var projOpp  = side === 'a' ? m.projected.b : m.projected.a;
+        var favSelf = (m.projected.favorite === side);
+        var favOpp  = (m.projected.favorite !== 'pp' && m.projected.favorite !== side);
+        var maxProj = Math.max(projSelf, projOpp, 1);
+        var widthSelf = Math.round((projSelf / maxProj) * 100);
+        var widthOpp  = Math.round((projOpp / maxProj) * 100);
+
+        var h2hRecentHtml;
+        if (h2h.meetings === 0) {
+            h2hRecentHtml = '<div class="h2h-empty">First time on the same platform.</div>';
+        } else {
+            h2hRecentHtml = '<div class="h2h-recent">' +
+                '<div class="h2h-recent-h">Last ' + Math.min(3, h2h.recent.length) + ' meetings</div>';
+            h2h.recent.forEach(function (r) { h2hRecentHtml += recentRow(r, side); });
+            h2hRecentHtml += '</div>';
+        }
+
+        var leader = selfWins > oppWins ? '<strong>' + esc(self.name) + '</strong> leads' :
+                     selfWins < oppWins ? '<strong>' + esc(opp.name) + '</strong> leads' :
+                     'All even';
+
+        var spread = m.projected.spread;
+        var projMsg;
+        if (m.projected.favorite === 'pp') {
+            projMsg = 'A coin flip — neither side has separated.';
+        } else if (favSelf) {
+            projMsg = 'Form has you favored by <strong>' + fmtPts(spread) + '</strong>.';
+        } else {
+            projMsg = '<strong>' + esc(opp.name) + '</strong> is favored by <strong>' + fmtPts(spread) + '</strong> on form.';
+        }
+
+        deskEl.innerHTML =
+            '<div class="dk-back-row">' +
+                '<a class="dk-back" href="live-season/matchup-preview/">← The board</a>' +
+                '<span class="dk-back-meta">Wk ' + esc(data.week) + ' · ' + esc(data.year) + '</span>' +
+            '</div>' +
+
+            '<div class="tk">' +
+                (m.gotw ? '<div class="tk-ribbon">★ The Main Line ★</div>' : '') +
+                '<div class="tk-grid">' +
+                    '<div>' +
+                        '<div class="tk-name">' + esc(self.name) + '</div>' +
+                        '<div class="tk-team">' + esc(self.team) + '</div>' +
+                        '<div class="tk-rec">' + esc(self.record) + '</div>' +
+                    '</div>' +
+                    '<div class="tk-vs">vs<small>Plat ' + esc(m.plat) + ' · Train ' + esc(m.train) + '</small></div>' +
+                    '<div>' +
+                        '<div class="tk-name">' + esc(opp.name) + '</div>' +
+                        '<div class="tk-team">' + esc(opp.team) + '</div>' +
+                        '<div class="tk-rec">' + esc(opp.record) + '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+
+            '<div class="dk-card">' +
+                '<div class="dk-num">§ I · The Archive</div>' +
+                '<div class="dk-title">All-time <em>H2H.</em></div>' +
+                '<div class="h2h-big"><span>' + selfWins + '</span><span class="dash">—</span><span>' + oppWins + '</span></div>' +
+                '<div class="h2h-meta">' +
+                    (h2h.meetings === 0 ? 'No prior meetings' :
+                        esc(h2h.meetings) + ' meeting' + (h2h.meetings === 1 ? '' : 's') +
+                        (ties ? ' · ' + ties + ' tie' + (ties === 1 ? '' : 's') : '') +
+                        ' · ' + leader) +
+                '</div>' +
+                h2hRecentHtml +
+            '</div>' +
+
+            '<div class="dk-card">' +
+                '<div class="dk-num">§ II · The Forecast</div>' +
+                '<div class="dk-title">On <em>form —</em></div>' +
+                '<div class="pj-row">' +
+                    '<span class="pj-name">' + esc(self.name) + '</span>' +
+                    '<span class="pj-wrap"><span class="pj-bar' + (favSelf ? ' fav' : '') + '" style="width:' + widthSelf + '%"></span></span>' +
+                    '<span class="pj-val">' + fmtPts(projSelf) + '</span>' +
+                '</div>' +
+                '<div class="pj-row">' +
+                    '<span class="pj-name">' + esc(opp.name) + '</span>' +
+                    '<span class="pj-wrap"><span class="pj-bar' + (favOpp ? ' fav' : '') + '" style="width:' + widthOpp + '%"></span></span>' +
+                    '<span class="pj-val">' + fmtPts(projOpp) + '</span>' +
+                '</div>' +
+                '<div class="pj-spread' + (m.projected.favorite === 'pp' ? ' pp' : '') + '">' +
+                    (m.projected.favorite === 'pp' ? 'Pick’em' : 'Spread · ' + fmtPts(spread) + ' pts') +
+                '</div>' +
+                '<div class="pj-foot">' + projMsg + '</div>' +
+                streaksFooter(self, opp) +
+            '</div>' +
+
+            '<div class="dk-card">' +
+                '<div class="dk-num">§ III · The Run</div>' +
+                '<div class="dk-title">Last <em>five —</em></div>' +
+                formRow(self) +
+                formRow(opp) +
+                highsFooter(self, opp) +
+            '</div>' +
+
+            '<div class="dk-actions">' +
+                '<div class="dk-actions-msg"><strong>Pick the winner</strong> before kickoff.</div>' +
+                '<a class="dk-btn primary" href="live-season/pickems/">Open Pick’ems</a>' +
+                '<button type="button" class="dk-btn" id="mp-share-desk">Share matchup</button>' +
+            '</div>';
+
+        var shareBtn = document.getElementById('mp-share-desk');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', function () {
+                var title = self.name + ' vs ' + opp.name + ' · Wk ' + data.week + ' · ' + data.year;
+                shareLink(window.location.href, title);
+            });
+        }
+    }
+})();
+</script>
+</body>
+</html>

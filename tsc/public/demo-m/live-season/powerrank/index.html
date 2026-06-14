@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/demo-m/">
+<script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Power Rankings · The Lakeside League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+/* ── Almanac-chart cream chapter — same paper flip as the desktop
+      powerrank page; the fixed chrome stays dark. ── */
+:root {
+    --pr-good: #4a9c5c;
+    --pr-bad:  #c05a4a;
+    --pr-line: rgba(14, 22, 32, .18);
+    --pr-line-soft: rgba(14, 22, 32, .1);
+    --pr-mute: rgba(14, 22, 32, .55);
+}
+body { background: #f0e5c8; color: var(--ink); }
+.site-glow {
+    background-image:
+        radial-gradient(circle at 15% 12%, rgba(14, 22, 32, .05) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(160, 72, 48, .05) 0%, transparent 50%);
+}
+
+.pr-head { text-align: center; padding: 1.1rem 0 .7rem; }
+.pr-head .m-kicker { color: var(--rust); }
+.pr-title { font-family: var(--serif); font-size: 1.7rem; line-height: 1.05; color: var(--ink); }
+.pr-title em { font-style: italic; color: var(--rust); }
+.pr-sub { margin-top: .35rem; color: var(--pr-mute); }
+
+/* Loading / empty */
+.pr-msg { text-align: center; padding: 2.5rem 1rem; }
+.pr-msg h2 { font-family: var(--serif); font-style: italic; font-size: 1.3rem; color: var(--ink); margin-bottom: .4rem; }
+.pr-msg p { font-size: .8rem; color: var(--pr-mute); max-width: 22rem; margin: 0 auto; line-height: 1.45; }
+
+/* Week chips — horizontal scroll rail */
+.pr-weeks {
+    display: flex; gap: .4rem;
+    overflow-x: auto;
+    margin: 0 -0.9rem .6rem;
+    padding: .15rem .9rem;
+    scrollbar-width: none;
+}
+.pr-weeks::-webkit-scrollbar { display: none; }
+.pr-week-tab {
+    flex: none;
+    padding: .42rem .75rem;
+    background: rgba(255, 252, 244, .65);
+    border: 1px solid var(--pr-line);
+    border-radius: 999px;
+    color: var(--pr-mute);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .12em; text-transform: uppercase;
+}
+.pr-week-tab.active { background: var(--ink); border-color: var(--ink); color: var(--cream); }
+
+/* Division view seg */
+.m-seg { background: rgba(14, 22, 32, .06); border-color: var(--pr-line); margin-bottom: .7rem; }
+.m-seg button { color: var(--pr-mute); }
+.m-seg button.is-active { background: var(--ink); color: var(--cream); }
+
+/* Podium */
+.pd-hero {
+    position: relative;
+    background: linear-gradient(150deg, #0e1620, #1a2532);
+    border: 1px solid var(--ink);
+    border-radius: 12px;
+    padding: .9rem 1rem;
+    color: var(--cream);
+    display: flex; align-items: center; gap: .9rem;
+    overflow: hidden;
+}
+.pd-hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.pd-hero-logo { flex: none; width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--gold-deep); object-fit: cover; background: var(--ink-soft); }
+.pd-hero-body { flex: 1; min-width: 0; }
+.pd-hero-label { font-family: var(--mono); font-weight: 700; font-size: .5rem; letter-spacing: .26em; text-transform: uppercase; color: var(--gold); }
+.pd-hero-name { font-family: var(--serif); font-size: 1.25rem; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd-hero-mgr { font-size: .68rem; color: var(--cream-soft); margin-top: .1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd-hero-right { flex: none; text-align: right; }
+.pd-hero-score { font-family: var(--serif); font-size: 1.6rem; color: var(--gold); line-height: 1; }
+.pd-hero-rec { font-family: var(--mono); font-weight: 700; font-size: .58rem; color: var(--cream-mute); margin-top: .25rem; }
+.pd-runners { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .5rem; }
+.pd-runner {
+    background: rgba(255, 252, 244, .65);
+    border: 1px solid var(--pr-line);
+    border-radius: 10px;
+    padding: .55rem .65rem;
+    display: flex; align-items: center; gap: .5rem;
+    min-width: 0;
+}
+.pd-runner-logo { flex: none; width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: rgba(14, 22, 32, .08); }
+.pd-runner-body { min-width: 0; }
+.pd-runner-label { font-family: var(--mono); font-weight: 700; font-size: .46rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rust); }
+.pd-runner-name { font-weight: 600; font-size: .74rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd-runner-meta { font-family: var(--mono); font-weight: 700; font-size: .54rem; color: var(--pr-mute); margin-top: .1rem; }
+
+/* Section label */
+.pr-label {
+    display: flex; align-items: center; gap: .7rem;
+    margin: 1.25rem 0 .5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--pr-mute);
+}
+.pr-label .star { color: var(--rust); font-size: .85em; }
+.pr-label::after { content: ''; flex: 1; height: 1px; background: var(--pr-line-soft); }
+.pr-label .info-btn {
+    flex: none;
+    background: none; border: 1px solid var(--pr-line); border-radius: 50%;
+    width: 20px; height: 20px;
+    color: var(--rust);
+    font-size: .62rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* Rankings table card */
+.pr-table {
+    background: rgba(255, 252, 244, .65);
+    border: 1px solid var(--pr-line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.pr-row { border-bottom: 1px solid var(--pr-line-soft); }
+.pr-row:last-child { border-bottom: none; }
+.pr-row-main {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr) 3rem 3rem;
+    align-items: center;
+    gap: .4rem;
+    padding: .5rem .65rem;
+    background: none; border: none; color: inherit; font: inherit; text-align: left;
+    min-height: 52px;
+}
+.pr-row.top .pr-row-main { background: rgba(232, 200, 137, .16); }
+.pr-rank { display: flex; align-items: baseline; gap: .25rem; }
+.pr-rank-num { font-family: var(--serif); font-style: italic; font-size: 1.2rem; color: var(--ink); }
+.pr-delta { font-family: var(--mono); font-weight: 700; font-size: .52rem; }
+.pr-delta.up { color: var(--pr-good); }
+.pr-delta.down { color: var(--pr-bad); }
+.pr-delta.same { color: var(--pr-mute); }
+.pr-team { min-width: 0; display: flex; align-items: center; gap: .5rem; }
+.pr-logo { flex: none; width: 26px; height: 26px; border-radius: 50%; object-fit: cover; background: rgba(14, 22, 32, .08); }
+.pr-team-body { min-width: 0; }
+.pr-team-name { font-weight: 600; font-size: .8rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-team-mgr { font-size: .62rem; color: var(--pr-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-team-mgr .conf { font-family: var(--mono); font-size: .48rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rust); margin-left: .3rem; }
+.pr-rec { font-family: var(--mono); font-weight: 700; font-size: .6rem; color: var(--pr-mute); text-align: right; }
+.pr-score { font-family: var(--mono); font-weight: 700; font-size: .7rem; color: var(--gold-deep); text-align: right; }
+
+/* Expanded factor bars */
+.pr-detail { display: none; padding: .1rem .65rem .65rem 3rem; }
+.pr-row.is-open { background: rgba(232, 200, 137, .12); }
+.pr-row.is-open .pr-detail { display: block; }
+.fbar-row { display: grid; grid-template-columns: 2.6rem 1fr 2.2rem; gap: .45rem; align-items: center; margin-top: .25rem; }
+.fbar-label { font-family: var(--mono); font-weight: 700; font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pr-mute); }
+.fbar-track { height: 7px; background: rgba(14, 22, 32, .1); border-radius: 999px; overflow: hidden; }
+.fbar-fill { display: block; height: 100%; background: var(--gold-deep); border-radius: 999px; }
+.fbar-val { font-family: var(--mono); font-weight: 700; font-size: .56rem; color: var(--ink); text-align: right; }
+.pr-detail-pf { margin-top: .4rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pr-mute); }
+.pr-detail-pf b { color: var(--ink); }
+
+/* Projections */
+.pj-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) 2.6rem minmax(0, 1fr) 2.4rem;
+    align-items: center;
+    gap: .45rem;
+    padding: .45rem .65rem;
+    border-bottom: 1px solid var(--pr-line-soft);
+    min-height: 44px;
+}
+.pj-row:last-child { border-bottom: none; }
+.pj-name { font-weight: 600; font-size: .74rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pj-wl { font-family: var(--mono); font-weight: 700; font-size: .58rem; color: var(--pr-mute); text-align: center; }
+.pj-bar-wrap { height: 8px; background: rgba(14, 22, 32, .1); border-radius: 999px; overflow: hidden; }
+.pj-bar { display: block; height: 100%; border-radius: 999px; }
+.pj-bar.bar-elite { background: var(--pr-good); }
+.pj-bar.bar-good { background: #7da45c; }
+.pj-bar.bar-mid { background: var(--gold-deep); }
+.pj-bar.bar-low { background: var(--pr-bad); }
+.pj-pct { font-family: var(--mono); font-weight: 700; font-size: .58rem; color: var(--ink); text-align: right; }
+.pj-pct small { display: block; font-weight: 400; font-size: .46rem; letter-spacing: .06em; color: var(--pr-mute); }
+.pj-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) 2.6rem minmax(0, 1fr) 2.4rem;
+    gap: .45rem;
+    padding: .4rem .65rem .3rem;
+    background: rgba(14, 22, 32, .05);
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--pr-mute);
+}
+.pj-head span:nth-child(2) { text-align: center; }
+.pj-head span:last-child { text-align: right; }
+
+/* Formula sheet (native dialog, reuses m-sheet look) */
+.pr-formula-note { font-size: .68rem; line-height: 1.45; color: var(--cream-soft); padding: .2rem 1.25rem .6rem; }
+.pr-factor-row { display: flex; align-items: baseline; gap: .6rem; padding: .3rem 1.25rem; }
+.pr-factor-pts {
+    flex: none; width: 2rem;
+    font-family: var(--serif); font-size: 1.05rem; color: var(--gold);
+    text-align: right;
+}
+.pr-factor-label { flex: none; width: 4.6rem; font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: var(--cream); }
+.pr-factor-note { font-size: .64rem; line-height: 1.35; color: var(--cream-mute); }
+
+.pr-foot { margin: 1.6rem 0 .4rem; text-align: center; color: var(--pr-mute); }
+.m-empty { color: var(--pr-mute); }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="powerrank" data-chapter="Ch. VII · Power Rankings" data-back-href="live-season/"></nav>
+<script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+
+    <header class="pr-head">
+        <div class="m-kicker">LSL · Auto-Calculated</div>
+        <h1 class="pr-title">Power <em>Rankings.</em></h1>
+        <div class="m-mono pr-sub" id="prSub">Updated weekly</div>
+    </header>
+
+    <div class="pr-msg" id="prMessage">
+        <h2>Loading…</h2>
+        <p>Pulling this season's rankings.</p>
+    </div>
+
+    <div id="mainContent" hidden>
+        <div class="pr-weeks" id="weekTabs"></div>
+        <div class="m-seg" id="viewTabs" hidden></div>
+
+        <div id="podium"></div>
+
+        <div class="pr-label" id="rankLabel">
+            <span class="star">★</span>
+            <span id="rankingsTitle">Rankings</span>
+            <button type="button" class="info-btn" id="formulaBtn" aria-label="How scores are calculated">i</button>
+        </div>
+        <div class="pr-table" id="rankBody"></div>
+
+        <section id="projSection" hidden>
+            <div class="pr-label"><span class="star">★</span> Season Outlook · Monte Carlo</div>
+            <div class="pr-table">
+                <div class="pj-head"><span>Manager</span><span>W–L</span><span>Playoffs</span><span>%</span></div>
+                <div id="projBody"></div>
+            </div>
+        </section>
+
+        <div id="confGrid" hidden></div>
+    </div>
+
+    <div class="m-mono pr-foot">LSL · Power Rankings · MMXIX</div>
+
+</main>
+
+<dialog class="m-sheet" id="formulaSheet">
+    <div class="m-sheet-handle" aria-hidden></div>
+    <div class="m-sheet-title">How it's calculated</div>
+    <p class="pr-formula-note">Pre-season uses career history only. History blends out over weeks 1–3 (30% / 20% / 10%), then it's fully in-season from week 4.</p>
+    <span class="m-sheet-label">Pre-Season</span>
+    <div class="pr-factor-row"><span class="pr-factor-pts">20</span><span class="pr-factor-label">Win %</span><span class="pr-factor-note">all-time career win percentage</span></div>
+    <div class="pr-factor-row"><span class="pr-factor-pts">21</span><span class="pr-factor-label">PF Avg</span><span class="pr-factor-note">average points per season, percentile-ranked</span></div>
+    <div class="pr-factor-row"><span class="pr-factor-pts">24</span><span class="pr-factor-label">Recent</span><span class="pr-factor-note">average finish over the last 3 seasons</span></div>
+    <div class="pr-factor-row"><span class="pr-factor-pts">35</span><span class="pr-factor-label">Pedigree</span><span class="pr-factor-note">championships, top-3 finishes, playoff trips</span></div>
+    <div class="m-sheet-divider"></div>
+    <span class="m-sheet-label">In-Season (Week 4+)</span>
+    <div class="pr-factor-row"><span class="pr-factor-pts">33</span><span class="pr-factor-label">Record</span><span class="pr-factor-note">current season win percentage</span></div>
+    <div class="pr-factor-row"><span class="pr-factor-pts">30</span><span class="pr-factor-label">Points For</span><span class="pr-factor-note">percentile rank among this season's teams</span></div>
+    <div class="pr-factor-row"><span class="pr-factor-pts">20</span><span class="pr-factor-label">Form</span><span class="pr-factor-note">win % over your last 3 completed weeks</span></div>
+    <div class="pr-factor-row"><span class="pr-factor-pts">17</span><span class="pr-factor-label">Conference</span><span class="pr-factor-note">rank within your division</span></div>
+    <p class="pr-formula-note">No divisions? Conference is dropped and the rest rescale — Record 40 · Points For 35 · Form 25.</p>
+</dialog>
+
+<script>
+// ── Power Rankings (mobile) — same data endpoint + factor math as the
+//    desktop page (live-season/powerrank/data); podium, table, Monte Carlo
+//    projections, and conference odds re-laid as dense cards. Factor
+//    breakdown bars live behind a tap-to-expand per row.
+(function () {
+    'use strict';
+
+    function byId(id) { return document.getElementById(id); }
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    // Long team names overflow the podium runner cards and the table's name
+    // column. Names past the cap collapse to word initials ("Goliath
+    // National Bank" → "GNB"); long single words get cut instead.
+    function shortTeam(name, max) {
+        name = String(name == null ? '' : name).trim();
+        if (name.length <= max) return name;
+        var words = name.split(/\s+/);
+        if (words.length < 2) return name.slice(0, max - 1) + '…';
+        return words.map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+    }
+
+    var state = { data: null, weeks: [], activeWk: null, view: 'overall' };
+
+    fetch('live-season/powerrank/data', { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(boot)
+        .catch(function (e) { showMessage('Couldn’t load power rankings.', String(e)); });
+
+    function boot(data) {
+        bindFormulaSheet();
+        if (data.status === 'no-live') {
+            return showMessage('No live season', 'Power rankings run during the season. Check back when the commissioner sets a live week.');
+        }
+        if (data.status === 'no-week' || !data.weeks || !data.weeks.length) {
+            return showMessage('Rankings coming Week 1', 'Power rankings appear once the season is live.');
+        }
+        state.data = data;
+        state.weeks = data.weeks;
+        byId('prMessage').hidden = true;
+        byId('mainContent').hidden = false;
+
+        renderWeekTabs();
+        renderViewTabs();
+        state.activeWk = state.weeks[state.weeks.length - 1].id;
+        setActiveWeekTab(state.activeWk);
+        render();
+        // Scroll the rail so the latest (active) week chip is in view.
+        var rail = byId('weekTabs');
+        var act = rail.querySelector('.pr-week-tab.active');
+        if (act) rail.scrollLeft = Math.max(0, act.offsetLeft - rail.clientWidth / 2);
+    }
+
+    function showMessage(title, body) {
+        var m = byId('prMessage');
+        m.hidden = false;
+        m.innerHTML = '<h2>' + esc(title) + '</h2><p>' + esc(body) + '</p>';
+        byId('mainContent').hidden = true;
+    }
+
+    function bindFormulaSheet() {
+        var sheet = byId('formulaSheet');
+        var open = byId('formulaBtn');
+        if (!sheet || !open) return;
+        open.addEventListener('click', function () {
+            sheet.showModal();
+            requestAnimationFrame(function () { sheet.classList.add('is-open'); });
+        });
+        sheet.addEventListener('click', function (e) {
+            if (e.target === sheet) close();
+        });
+        sheet.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
+        function close() {
+            sheet.classList.remove('is-open');
+            setTimeout(function () { if (sheet.open) sheet.close(); }, 220);
+        }
+    }
+
+    function renderWeekTabs() {
+        var c = byId('weekTabs');
+        c.innerHTML = state.weeks.map(function (w) {
+            return '<button class="pr-week-tab" data-id="' + esc(w.id) + '">' + esc(w.label) + '</button>';
+        }).join('');
+        c.addEventListener('click', function (e) {
+            var btn = e.target.closest('.pr-week-tab');
+            if (!btn) return;
+            state.activeWk = btn.dataset.id;
+            setActiveWeekTab(btn.dataset.id);
+            render();
+        });
+    }
+    function setActiveWeekTab(id) {
+        document.querySelectorAll('.pr-week-tab').forEach(function (b) {
+            b.classList.toggle('active', b.dataset.id === id);
+        });
+    }
+
+    function renderViewTabs() {
+        var vt = byId('viewTabs');
+        if (!state.data.hasDivisions) { vt.hidden = true; return; }
+        var divs = state.weeks[0].divisions || [];
+        var btns = ['<button class="is-active" data-view="overall">Overall</button>'];
+        divs.forEach(function (d) {
+            btns.push('<button data-view="' + esc(d.key) + '">' + esc(d.name) + '</button>');
+        });
+        vt.innerHTML = btns.join('');
+        vt.hidden = false;
+        vt.addEventListener('click', function (e) {
+            var btn = e.target.closest('button[data-view]');
+            if (!btn) return;
+            state.view = btn.dataset.view;
+            vt.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+            render();
+        });
+    }
+
+    function render() {
+        var week = state.weeks.find(function (w) { return w.id === state.activeWk; }) || state.weeks[state.weeks.length - 1];
+        var isOverall = state.view === 'overall';
+        var viewDiv = isOverall ? null : (week.divisions || []).find(function (d) { return d.key === state.view; });
+        var teams = isOverall ? week.overall : (viewDiv ? viewDiv.teams : []);
+
+        byId('rankingsTitle').textContent = week.week === 0 ? 'Pre-Season Rankings' : 'Week ' + week.week + ' Rankings';
+        byId('prSub').textContent = week.week === 0 ? 'Career history only' : 'Through week ' + week.week;
+
+        renderPodium(teams.slice(0, 3));
+        renderTable(teams, !isOverall);
+        renderProjections(week.overall);
+        renderConfGrid(week.divisions || []);
+    }
+
+    function logoImg(t, cls) {
+        return '<img class="' + cls + '" src="' + esc(t.logo || '') + '" alt="" onerror="this.style.opacity=0">';
+    }
+    function deltaHTML(delta) {
+        if (!delta || delta === 0) return '<span class="pr-delta same">—</span>';
+        var cls = delta > 0 ? 'up' : 'down';
+        var sym = delta > 0 ? '▲' : '▼';
+        return '<span class="pr-delta ' + cls + '">' + sym + Math.abs(delta) + '</span>';
+    }
+
+    function renderPodium(top3) {
+        var first = top3[0], second = top3[1], third = top3[2];
+        var html = '';
+        if (first) {
+            html +=
+                '<div class="pd-hero">' +
+                    logoImg(first, 'pd-hero-logo') +
+                    '<div class="pd-hero-body">' +
+                        '<div class="pd-hero-label">1st Place</div>' +
+                        '<div class="pd-hero-name">' + esc(shortTeam(first.team_name, 22)) + '</div>' +
+                        '<div class="pd-hero-mgr">' + esc(first.manager) + '</div>' +
+                    '</div>' +
+                    '<div class="pd-hero-right">' +
+                        '<div class="pd-hero-score">' + first.score.toFixed(1) + '</div>' +
+                        '<div class="pd-hero-rec">' + first.wins + '–' + first.losses + ' ' + deltaHTML(first.delta) + '</div>' +
+                    '</div>' +
+                '</div>';
+        }
+        function runner(t, label) {
+            if (!t) return '';
+            return '<div class="pd-runner">' +
+                logoImg(t, 'pd-runner-logo') +
+                '<div class="pd-runner-body">' +
+                    '<div class="pd-runner-label">' + label + '</div>' +
+                    '<div class="pd-runner-name">' + esc(shortTeam(t.team_name, 14)) + '</div>' +
+                    '<div class="pd-runner-meta">' + t.wins + '–' + t.losses + ' · ' + t.score.toFixed(1) + ' ' + deltaHTML(t.delta) + '</div>' +
+                '</div>' +
+            '</div>';
+        }
+        if (second || third) {
+            html += '<div class="pd-runners">' + runner(second, '2nd') + runner(third, '3rd') + '</div>';
+        }
+        byId('podium').innerHTML = html;
+    }
+
+    function renderTable(teams, confView) {
+        byId('rankBody').innerHTML = teams.map(function (t, i) {
+            var rank = confView ? (t.conf_rank != null ? t.conf_rank : i + 1) : t.rank;
+            var conf = t.division_name ? '<span class="conf">' + esc(t.division_name) + '</span>' : '';
+            return '<div class="pr-row' + (rank <= 3 ? ' top' : '') + '">' +
+                '<button class="pr-row-main" aria-expanded="false">' +
+                    '<span class="pr-rank"><span class="pr-rank-num">' + rank + '</span>' + deltaHTML(t.delta) + '</span>' +
+                    '<span class="pr-team">' +
+                        logoImg(t, 'pr-logo') +
+                        '<span class="pr-team-body">' +
+                            '<span class="pr-team-name">' + esc(shortTeam(t.team_name, 16)) + '</span>' +
+                            '<span class="pr-team-mgr">' + esc(t.manager) + conf + '</span>' +
+                        '</span>' +
+                    '</span>' +
+                    '<span class="pr-rec">' + t.wins + '-' + t.losses + '</span>' +
+                    '<span class="pr-score">' + t.score.toFixed(1) + '</span>' +
+                '</button>' +
+                '<div class="pr-detail">' +
+                    buildFactorBars(t.factors) +
+                    '<div class="pr-detail-pf">Points for · <b>' + t.pf.toFixed(1) + '</b></div>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    function buildFactorBars(factors) {
+        if (!factors) return '';
+        var isPre = 'win_pct' in factors;
+        var defs = isPre
+            ? [['win_pct', 'Win%'], ['pf_avg', 'PF'], ['recent', 'Rec3'], ['pedigree', 'Ped']]
+            : [['record', 'Rec'], ['pf', 'PF'], ['form', 'Frm'], ['conf', 'Conf']];
+        var maxes = isPre ? state.data.weights.preseason : state.data.weights.inseason;
+        return defs.map(function (d) {
+            var max = maxes[d[0]] || 0;
+            if (max <= 0) return '';
+            var val = factors[d[0]] || 0;
+            var pct = Math.min(100, (val / max) * 100);
+            return '<div class="fbar-row">' +
+                '<span class="fbar-label">' + d[1] + '</span>' +
+                '<span class="fbar-track"><span class="fbar-fill" style="width:' + pct + '%"></span></span>' +
+                '<span class="fbar-val">' + val.toFixed(1) + '</span>' +
+            '</div>';
+        }).join('');
+    }
+
+    function renderProjections(teams) {
+        var section = byId('projSection');
+        if (!state.data.hasProjections) { section.hidden = true; return; }
+        section.hidden = false;
+        byId('projBody').innerHTML = teams.map(function (t) {
+            var projWL = t.proj_wins != null && t.proj_losses != null ? t.proj_wins + '–' + t.proj_losses : '—';
+            var pp = t.playoff_pct;
+            var barW = pp != null ? Math.min(100, pp) : 0;
+            var barCls = pp >= 60 ? 'bar-elite' : pp >= 50 ? 'bar-good' : pp >= 38 ? 'bar-mid' : 'bar-low';
+            var bye = t.bye_pct != null ? '<small>Bye ' + t.bye_pct + '%</small>' : '';
+            return '<div class="pj-row">' +
+                '<span class="pj-name">' + esc(t.manager) + '</span>' +
+                '<span class="pj-wl">' + projWL + '</span>' +
+                '<span class="pj-bar-wrap"><span class="pj-bar ' + barCls + '" style="width:' + barW + '%"></span></span>' +
+                '<span class="pj-pct">' + (pp != null ? pp + '%' : '—') + bye + '</span>' +
+            '</div>';
+        }).join('');
+    }
+
+    function renderConfGrid(divisions) {
+        var grid = byId('confGrid');
+        if (!state.data.hasDivisions || !state.data.hasProjections || !divisions.length) {
+            grid.hidden = true;
+            return;
+        }
+        grid.hidden = false;
+        grid.innerHTML = divisions.map(function (d) {
+            var sorted = d.teams.slice().sort(function (a, b) { return (b.conf_win_pct || 0) - (a.conf_win_pct || 0); });
+            var rows = sorted.map(function (t, i) {
+                var cp = t.conf_win_pct != null ? t.conf_win_pct : 0;
+                var barCls = cp >= 30 ? 'bar-elite' : cp >= 16 ? 'bar-good' : 'bar-low';
+                return '<div class="pj-row">' +
+                    '<span class="pj-name">' + (i + 1) + '. ' + esc(t.manager) + '</span>' +
+                    '<span class="pj-wl">' + t.score.toFixed(1) + '</span>' +
+                    '<span class="pj-bar-wrap"><span class="pj-bar ' + barCls + '" style="width:' + Math.min(100, cp) + '%"></span></span>' +
+                    '<span class="pj-pct">' + cp + '%</span>' +
+                '</div>';
+            }).join('');
+            return '<section>' +
+                '<div class="pr-label"><span class="star">★</span> ' + esc(d.name) + ' · Title Odds</div>' +
+                '<div class="pr-table">' +
+                    '<div class="pj-head"><span>Manager</span><span>Score</span><span>Win ' + esc(d.name) + '</span><span>%</span></div>' +
+                    rows +
+                '</div>' +
+            '</section>';
+        }).join('');
+    }
+
+    // Tap-to-expand factor breakdowns.
+    document.querySelector('main').addEventListener('click', function (e) {
+        var main = e.target.closest('.pr-row-main');
+        if (!main) return;
+        var row = main.parentNode;
+        var open = row.classList.toggle('is-open');
+        main.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+})();
+</script>
+</body>
+</html>
