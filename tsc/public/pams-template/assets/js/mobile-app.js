@@ -112,21 +112,20 @@
         return (TIER_RANK[viewerTier] || 0) >= (TIER_RANK[requiredTier] || 0);
     }
 
-    function setThemeCookie(themeId) {
-        if (themeId) {
-            document.cookie = 'tsc_theme=' + themeId + ';path=/;max-age=31536000;SameSite=Lax';
-        } else {
-            document.cookie = 'tsc_theme=;path=/;max-age=0;SameSite=Lax';
-        }
-    }
-
     function applyTheme(themeId) {
         if (themeId) {
             document.body.setAttribute('data-theme', themeId);
         } else {
             document.body.removeAttribute('data-theme');
         }
-        setThemeCookie(themeId);
+    }
+
+    function saveTheme(leagueId, themeId) {
+        fetch('/api/leagues/' + leagueId + '/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ theme: themeId }),
+        });
     }
 
     function escapeHtml(s) {
@@ -297,6 +296,8 @@
             e.preventDefault();
             var themeId = btn.getAttribute('data-theme-id') || null;
             applyTheme(themeId);
+            var dc = window.__DC || {};
+            if (dc.id) saveTheme(dc.id, themeId);
             var all = document.querySelectorAll('.m-theme-option');
             for (var i = 0; i < all.length; i++) {
                 all[i].classList.toggle('is-active', (all[i].getAttribute('data-theme-id') || null) === themeId);
@@ -417,7 +418,7 @@
         more.id = 'm-sheet-more';
         var themePicker = '';
         var themePage = document.body.getAttribute('data-page');
-        if (themePage && ctx.viewerTier) {
+        if (themePage && ctx.isCommish && ctx.viewerTier) {
             var activeTheme = ctx.leagueTheme || null;
             var tierLabels = { tier2: 'Veteran', tier3: 'All-Pro' };
             themePicker = '<div class="m-sheet-divider"></div>' +

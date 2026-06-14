@@ -31,7 +31,6 @@ const MOBILE_TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams-
 // switch-back pill). Beats user-agent sniffing in both directions.
 const VIEW_COOKIE = 'dc_view'
 
-const THEME_COOKIE = 'tsc_theme'
 const LEAGUE_THEMES = ['midnight-press', 'broadsheet'] as const
 type LeagueTheme = (typeof LEAGUE_THEMES)[number]
 
@@ -57,6 +56,7 @@ type LeagueMeta = {
   is_udfa: boolean
   created_at: string | null
   trades_theme: 'tribunal' | 'wire' | 'floor' | 'cards'
+  theme: LeagueTheme | null
 }
 
 const VALID_THEMES = ['tribunal', 'wire', 'floor', 'cards'] as const
@@ -73,7 +73,7 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
   const db = createAdminClient()
   const { data: row } = await db
     .from('leagues')
-    .select('id, name, slug, abbreviation, published_at, owner_id, is_udfa, created_at, trades_theme')
+    .select('id, name, slug, abbreviation, published_at, owner_id, is_udfa, created_at, trades_theme, theme')
     .eq('slug', slug)
     .maybeSingle()
   if (!row) return null
@@ -95,6 +95,8 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
     is_udfa: !!row.is_udfa,
     created_at: (row.created_at as string | null) ?? null,
     trades_theme: normalizeTradesTheme(row.trades_theme),
+    theme: typeof row.theme === 'string' && (LEAGUE_THEMES as readonly string[]).includes(row.theme)
+      ? (row.theme as LeagueTheme) : null,
   }
 }
 
@@ -866,13 +868,7 @@ export async function GET(
       }
     }
 
-    // Theme from cookie (cosmetic — trusted without server validation)
-    const themeCookie = req.cookies.get(THEME_COOKIE)?.value ?? null
-    const leagueTheme: LeagueTheme | null =
-      themeCookie && (LEAGUE_THEMES as readonly string[]).includes(themeCookie)
-        ? (themeCookie as LeagueTheme)
-        : null
-
+    const leagueTheme = meta.theme
     const themePage = THEME_PAGES[resolved.file] ?? null
 
     let html = await injectDcConfig(
