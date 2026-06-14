@@ -108,7 +108,7 @@ export function MobileSourceRow({
       })
     } else {
       result = await updateChainSourceSettings({
-        sourceId: source.id, leagueId, platform: source.platform,
+        sourceId: source.id, leagueId, platform: source.platform as 'sleeper' | 'yahoo',
         seasonStart: seasonStart.trim() ? Number(seasonStart) : undefined,
         seasonEnd: seasonEnd.trim() ? Number(seasonEnd) : undefined,
         label: label.trim() || undefined,
