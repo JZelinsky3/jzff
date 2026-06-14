@@ -150,25 +150,27 @@ export function MobileSourceRow({
         <button onClick={onSync} disabled={busy !== null || isPending} className="msr-btn primary">
           {busy === 'syncing' ? 'Syncing...' : 'Sync'}
         </button>
-        <button
-          onClick={() => setExpanded(expanded === 'custom' ? null : 'custom')}
-          disabled={busy !== null || isPending}
-          className={`msr-btn ${expanded === 'custom' ? 'active' : ''}`}
-        >
-          Custom
-        </button>
-        {hasSettings && (
+        <div className="msr-actions-secondary">
           <button
-            onClick={() => setExpanded(expanded === 'settings' ? null : 'settings')}
+            onClick={() => setExpanded(expanded === 'custom' ? null : 'custom')}
             disabled={busy !== null || isPending}
-            className={`msr-btn ${expanded === 'settings' ? 'active' : ''}`}
+            className={`msr-btn ${expanded === 'custom' ? 'active' : ''}`}
           >
-            Settings
+            Custom
           </button>
-        )}
-        <button onClick={onDelete} disabled={busy !== null || isPending} className="msr-btn danger">
-          {busy === 'deleting' ? '...' : 'Remove'}
-        </button>
+          {hasSettings && (
+            <button
+              onClick={() => setExpanded(expanded === 'settings' ? null : 'settings')}
+              disabled={busy !== null || isPending}
+              className={`msr-btn ${expanded === 'settings' ? 'active' : ''}`}
+            >
+              Settings
+            </button>
+          )}
+          <button onClick={onDelete} disabled={busy !== null || isPending} className="msr-btn danger">
+            {busy === 'deleting' ? '...' : 'Remove'}
+          </button>
+        </div>
       </div>
 
       {/* ── Custom sync panel ── */}

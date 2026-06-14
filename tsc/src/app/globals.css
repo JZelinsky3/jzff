@@ -9605,6 +9605,7 @@ body.tsc-hdr-collapsed .mlh-bar {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: .2rem;
     min-width: 0;
     flex: 1;
 }
@@ -9979,6 +9980,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: .2rem;
     min-width: 0;
     flex: 1;
 }
@@ -10409,8 +10411,8 @@ body.tsc-hdr-collapsed .mlsub-bar {
     color: var(--cream-mute);
 }
 .msrc-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: .4rem;
     margin-bottom: 1rem;
 }
@@ -10433,7 +10435,9 @@ body.tsc-hdr-collapsed .mlsub-bar {
     background: var(--ink-soft);
     border: 1px solid var(--ink-line);
     border-radius: 10px;
-    padding: .55rem .65rem;
+    padding: .65rem .7rem .7rem;
+    display: flex;
+    flex-direction: column;
 }
 .msr-head {
     display: flex;
@@ -10483,10 +10487,14 @@ body.tsc-hdr-collapsed .mlsub-bar {
     margin-top: .15rem;
 }
 .msr-actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: .25rem;
     margin-top: .45rem;
-    flex-wrap: wrap;
+}
+.msr-actions-secondary {
+    display: flex;
+    gap: .25rem;
 }
 .msr-btn {
     font-family: var(--mono);
@@ -10509,7 +10517,8 @@ body.tsc-hdr-collapsed .mlsub-bar {
     background: var(--gold);
     border-color: var(--gold);
     color: var(--ink);
-    flex: 1;
+    width: 100%;
+    text-align: center;
 }
 .msr-btn.active {
     border-color: var(--gold);

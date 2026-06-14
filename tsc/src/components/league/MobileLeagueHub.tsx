@@ -49,8 +49,6 @@ export function MobileLeagueHub({
         ? String(firstYear)
         : `${firstYear}--${lastYear}`
       : null
-  const leagueAge =
-    firstYear && lastYear ? lastYear - firstYear + 1 : null
 
   return (
     <main className="mlh">
@@ -95,12 +93,7 @@ export function MobileLeagueHub({
                 <line x1="6" y1="2" x2="6" y2="6" />
                 <line x1="10" y1="2" x2="10" y2="6" />
               </svg>
-              <span>
-                {yearSpan}
-                {leagueAge && leagueAge > 1 && (
-                  <span className="mlh-snap-faint"> ({leagueAge} yrs)</span>
-                )}
-              </span>
+              <span>{yearSpan}</span>
             </div>
           )}
           <div className="mlh-snap-cell">
