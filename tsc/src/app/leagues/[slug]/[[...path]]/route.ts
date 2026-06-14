@@ -73,17 +73,17 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
   const db = createAdminClient()
   const { data: row } = await db
     .from('leagues')
-    .select('id, name, slug, abbreviation, published_at, owner_id, is_udfa, created_at, trades_theme, theme')
+    .select('id, name, slug, abbreviation, published_at, owner_id, is_udfa, created_at, trades_theme')
     .eq('slug', slug)
     .maybeSingle()
   if (!row) return null
-  const { data: firstSeason } = await db
-    .from('seasons')
-    .select('year')
-    .eq('league_id', row.id)
-    .order('year', { ascending: true })
-    .limit(1)
-    .maybeSingle()
+  const [{ data: firstSeason }, themeResult] = await Promise.all([
+    db.from('seasons').select('year').eq('league_id', row.id)
+      .order('year', { ascending: true }).limit(1).maybeSingle(),
+    Promise.resolve(db.from('leagues').select('theme').eq('id', row.id).maybeSingle())
+      .then(r => r.data?.theme).catch(() => null),
+  ])
+  const rawTheme = themeResult as unknown
   return {
     id: row.id,
     name: row.name,
@@ -95,8 +95,8 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
     is_udfa: !!row.is_udfa,
     created_at: (row.created_at as string | null) ?? null,
     trades_theme: normalizeTradesTheme(row.trades_theme),
-    theme: typeof row.theme === 'string' && (LEAGUE_THEMES as readonly string[]).includes(row.theme)
-      ? (row.theme as LeagueTheme) : null,
+    theme: typeof rawTheme === 'string' && (LEAGUE_THEMES as readonly string[]).includes(rawTheme)
+      ? (rawTheme as LeagueTheme) : null,
   }
 }
 
