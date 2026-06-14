@@ -747,7 +747,7 @@
         buildLockOverlay();
         enhanceAuthLinks();
         wireBookmarkToggle();
-        wireThemePicker();
+        // wireThemePicker(); // vaulted — themes not ready yet
     }
 
     if (document.readyState === 'loading') {

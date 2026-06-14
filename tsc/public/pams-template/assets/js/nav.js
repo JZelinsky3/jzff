@@ -1239,7 +1239,7 @@
         buildNav();
         enhanceAuthLinks();
         wireBookmarkToggle();
-        wireThemePicker();
+        // wireThemePicker(); // vaulted — themes not ready yet
         loadTutorial();
         buildLockOverlay();
         lockLiveSeasonHub();

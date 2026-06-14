@@ -868,8 +868,8 @@ export async function GET(
       }
     }
 
-    const leagueTheme = meta.theme
-    const themePage = THEME_PAGES[resolved.file] ?? null
+    const leagueTheme = null as LeagueTheme | null // vaulted — themes not ready yet
+    const themePage = null as string | null // vaulted
 
     let html = await injectDcConfig(
       injectOgTags(
