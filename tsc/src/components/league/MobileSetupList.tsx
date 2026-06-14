@@ -13,18 +13,18 @@ export type ProfileRow = {
   managers: { id: string; display_name: string | null; team_name: string | null; external_id: string | null }[]
 }
 
-function statusLabel(p: ProfileRow): string {
+function statusLabel(p: ProfileRow): string | null {
   if (p.is_hidden) return 'Hidden'
   if (p.is_alumni_override === true) return 'Alumni'
-  if (p.is_alumni_override === false) return 'Current'
-  return p.auto_current ? 'Current' : 'Alumni'
+  if (p.is_alumni_override === false) return 'Forced'
+  return null
 }
 
 function statusVariant(p: ProfileRow): string {
   if (p.is_hidden) return 'muted'
   if (p.is_alumni_override === true) return 'alumni'
-  if (p.is_alumni_override === false) return 'current'
-  return p.auto_current ? 'current' : 'alumni'
+  if (p.is_alumni_override === false) return 'forced'
+  return ''
 }
 
 function nextStatusAction(p: ProfileRow): string {
@@ -121,7 +121,7 @@ export function MobileSetupList({
   }
 
   function onRename(p: ProfileRow) {
-    const next = prompt('Canonical name:', p.canonical_name)
+    const next = prompt('Name:', p.canonical_name)
     if (!next || next.trim() === p.canonical_name) return
     const fd = new FormData()
     fd.set('profileId', p.id)
@@ -153,7 +153,7 @@ export function MobileSetupList({
         <div className="msl-info">
           <div className="msl-name-row">
             <span className="msl-name">{p.canonical_name}</span>
-            <span className={`msl-status ${variant}`}>{statusLabel(p)}</span>
+            {statusLabel(p) && <span className={`msl-status ${variant}`}>{statusLabel(p)}</span>}
           </div>
           {p.managers.length > 0 && (
             <div className="msl-subs">

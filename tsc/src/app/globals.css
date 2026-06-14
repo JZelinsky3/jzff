@@ -10507,7 +10507,8 @@ body.tsc-hdr-collapsed .mlsub-bar {
 .msr-btn:disabled { opacity: .3; cursor: default; }
 .msr-btn.primary {
     background: var(--gold-deep);
-    border-color: var(--gold-deep);
+    border-color: var(--gold);
+    color: var(--cream);
     flex: 1;
 }
 .msr-btn.active {
