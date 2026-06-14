@@ -10188,7 +10188,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
     font-weight: 600;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--cream);
+    color: var(--ink);
     background: rgba(255,255,255,.06);
     border: 1px solid var(--ink-line);
     border-radius: 20px;
@@ -10508,7 +10508,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
 .msr-btn.primary {
     background: var(--gold);
     border-color: var(--gold);
-    color: var(--cream);
+    color: var(--ink);
     flex: 1;
 }
 .msr-btn.active {
@@ -10646,7 +10646,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
     font-size: .6rem;
     letter-spacing: .12em;
     text-transform: uppercase;
-    color: var(--cream);
+    color: var(--ink);
     background: var(--gold);
     padding: .4rem .75rem;
     border-radius: 20px;
@@ -10966,7 +10966,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
     font-weight: 700;
     letter-spacing: .18em;
     text-transform: uppercase;
-    color: var(--cream);
+    color: var(--ink);
     background: var(--gold);
     border: none;
     border-radius: 10px;
@@ -11062,7 +11062,7 @@ body.tsc-hdr-collapsed .mlsub-bar {
     font-weight: 700;
     letter-spacing: .18em;
     text-transform: uppercase;
-    color: var(--cream);
+    color: var(--ink);
     background: var(--gold);
     border: none;
     border-radius: 10px;
