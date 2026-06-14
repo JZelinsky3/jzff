@@ -1,0 +1,682 @@
+/* ============================================================
+   SUBSCRIPTION THEMES — The Sunday Chronicle
+
+   Activated via data-theme="midnight-press|broadsheet" on <body>.
+   Scoped to themed pages via data-page on <body>.
+
+   Midnight Press — All-Pro only (tier3)
+   Broadsheet    — Veteran+ (tier2, tier3)
+   ============================================================ */
+
+/* ────────────────────────────────────────────────────────────────
+   MIDNIGHT PRESS
+   Black-and-gold editorial. The after-hours edition.
+   ──────────────────────────────────────────────────────────────── */
+
+/* ── Global — black replaces navy ── */
+body[data-theme="midnight-press"] {
+    --ink: #0d0d0d;
+    --ink-soft: #131313;
+    --ink-card: #1a1a1a;
+    --ink-line: #3e3e3e;
+    --ink-line-soft: #2f2f2f;
+    --chapbar-bg: rgb(13,13,13);
+    --chapbar-border: #3e3e3e;
+    --chapbar-line: #3e3e3e;
+    --nav-drop-bg: rgb(13,13,13);
+    --nav-drop-border: #3e3e3e;
+    --nav-drop-sub-bg: rgba(0,0,0,.35);
+}
+body[data-theme="midnight-press"] .nav {
+    background: rgba(13,13,13,.96);
+    border-bottom-color: #3e3e3e;
+}
+body[data-theme="midnight-press"] .site-glow {
+    background-image:
+        radial-gradient(circle at 15% 20%, rgba(232,200,137,.04) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(232,200,137,.03) 0%, transparent 50%);
+}
+
+/* Mobile chrome — black */
+body[data-theme="midnight-press"] .m-appbar {
+    background: rgb(13,13,13);
+    border-bottom-color: #3e3e3e;
+}
+body[data-theme="midnight-press"] .m-tabbar {
+    background: rgb(13,13,13);
+    border-top-color: #3e3e3e;
+}
+body[data-theme="midnight-press"] .m-sheet {
+    background: #1a1a1a;
+    border-color: #3e3e3e;
+}
+body[data-theme="midnight-press"] .m-sheet-divider { background: #3e3e3e; }
+body[data-theme="midnight-press"] .m-sheet-row { border-bottom-color: #2f2f2f; }
+
+/* ── Standings — cream flips to black ── */
+body[data-theme="midnight-press"][data-page="standings"] {
+    background: #0d0d0d;
+    color: #f4ebd8;
+}
+body[data-theme="midnight-press"][data-page="standings"] .site-glow {
+    display: block;
+    background-image:
+        radial-gradient(circle at 15% 20%, rgba(232,200,137,.04) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(232,200,137,.03) 0%, transparent 50%);
+}
+body[data-theme="midnight-press"][data-page="standings"] .site-grain { display: block; }
+body[data-theme="midnight-press"][data-page="standings"] .page-kicker { color: var(--gold); }
+body[data-theme="midnight-press"][data-page="standings"] .page-title { color: #f4ebd8; }
+body[data-theme="midnight-press"][data-page="standings"] .page-title em { color: var(--gold); }
+body[data-theme="midnight-press"][data-page="standings"] .page-sub { color: #c9c0ad; }
+
+body[data-theme="midnight-press"][data-page="standings"] .sort-bar {
+    border-color: #3e3e3e;
+}
+body[data-theme="midnight-press"][data-page="standings"] .sort-bar-label { color: #8a7a60; }
+body[data-theme="midnight-press"][data-page="standings"] .sort-option { color: #c9c0ad; }
+body[data-theme="midnight-press"][data-page="standings"] .sort-option:hover { color: #f4ebd8; }
+body[data-theme="midnight-press"][data-page="standings"] .sort-option.active {
+    color: var(--gold);
+    border-color: rgba(232,200,137,.3);
+    background: rgba(232,200,137,.06);
+}
+
+body[data-theme="midnight-press"][data-page="standings"] .standings-wrap {
+    background: #1a1a1a;
+    border-color: #3e3e3e;
+}
+body[data-theme="midnight-press"][data-page="standings"] table.standings thead {
+    background: #131313;
+    border-bottom-color: #3e3e3e;
+}
+body[data-theme="midnight-press"][data-page="standings"] table.standings th { color: #8a7a60; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings th:hover { color: #f4ebd8; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings th.active-sort { color: var(--gold); }
+body[data-theme="midnight-press"][data-page="standings"] table.standings thead tr.col-groups th {
+    color: #8a7a60;
+    border-bottom-color: #3e3e3e;
+}
+body[data-theme="midnight-press"][data-page="standings"] table.standings thead tr.col-groups th.group-reg { color: var(--gold); }
+body[data-theme="midnight-press"][data-page="standings"] table.standings thead tr.col-groups th.group-po { color: #c96a4e; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings thead tr.col-groups th.group-all { color: #6b8aa8; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings td {
+    color: #c9c0ad;
+    border-top-color: #2f2f2f;
+}
+body[data-theme="midnight-press"][data-page="standings"] table.standings td.rank { color: var(--gold); }
+body[data-theme="midnight-press"][data-page="standings"] table.standings td.name-cell a { color: #f4ebd8; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings td.name-cell a:hover { color: var(--gold); }
+body[data-theme="midnight-press"][data-page="standings"] table.standings td.team-cell { color: #8a7a60; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings td.reg-record {
+    color: var(--gold);
+    border-left-color: #3e3e3e;
+}
+body[data-theme="midnight-press"][data-page="standings"] table.standings td.po-record { color: #c96a4e; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings td.all-record {
+    color: #6b8aa8;
+    border-right-color: #3e3e3e;
+}
+body[data-theme="midnight-press"][data-page="standings"] table.standings th.reg-record { border-left-color: #3e3e3e; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings th.all-record { border-right-color: #3e3e3e; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings td.winpct-cell { color: #f4ebd8; }
+body[data-theme="midnight-press"][data-page="standings"] table.standings tbody tr:hover { background: rgba(232,200,137,.03); }
+body[data-theme="midnight-press"][data-page="standings"] table.standings tbody tr.champ-row { background: rgba(232,200,137,.04); }
+body[data-theme="midnight-press"][data-page="standings"] table.standings tbody tr.former-row td.name-cell a { color: #c9c0ad; }
+body[data-theme="midnight-press"][data-page="standings"] .divider-row td {
+    background: #131313;
+    border-top-color: #3e3e3e;
+    color: #8a7a60;
+}
+body[data-theme="midnight-press"][data-page="standings"] .legend-strip {
+    border-top-color: #3e3e3e;
+    background: #131313;
+}
+body[data-theme="midnight-press"][data-page="standings"] .legend-item { color: #8a7a60; }
+body[data-theme="midnight-press"][data-page="standings"] .chip-badge {
+    color: var(--gold);
+    background: rgba(232,200,137,.1);
+    border-color: rgba(232,200,137,.3);
+}
+body[data-theme="midnight-press"][data-page="standings"] .chip-count-zero { color: #8a7a60; }
+body[data-theme="midnight-press"][data-page="standings"] .loading-state { color: #8a7a60; }
+
+/* Mobile standings overrides */
+body[data-theme="midnight-press"][data-page="standings"] .m-appbar {
+    background: rgb(13,13,13);
+    border-bottom-color: #3e3e3e;
+}
+
+/* ── Draft History — black inverts to cream ── */
+body[data-theme="midnight-press"][data-page="draft"] {
+    --dg-bg: #f4ebd8;
+    --dg-soft: #ede4cf;
+    --dg-card: #faf4e6;
+    --dg-card-hover: #f0e8d2;
+    --dg-line: rgba(44,36,24,.18);
+    --dg-line-soft: rgba(44,36,24,.10);
+    --dg-accent: #8a6a24;
+    --dg-bright: #6b5020;
+    --dg-mute: #7a6e58;
+    background: var(--dg-bg);
+    color: #2c2418;
+}
+body[data-theme="midnight-press"][data-page="draft"] .site-glow,
+body[data-theme="midnight-press"][data-page="draft"] .site-grain { display: none; }
+body[data-theme="midnight-press"][data-page="draft"] .nav {
+    background: rgba(13,13,13,.96);
+    border-bottom-color: #3e3e3e;
+}
+body[data-theme="midnight-press"][data-page="draft"] .hero-title { color: #2c2418; }
+body[data-theme="midnight-press"][data-page="draft"] .hero-title em { color: #8a6a24; }
+body[data-theme="midnight-press"][data-page="draft"] .hero-sub { color: #4a3c28; }
+body[data-theme="midnight-press"][data-page="draft"] .hero-sup { color: #8a6a24; }
+body[data-theme="midnight-press"][data-page="draft"] .section-title { color: #2c2418; }
+body[data-theme="midnight-press"][data-page="draft"] .section-num { color: #8a6a24; }
+body[data-theme="midnight-press"][data-page="draft"] .section-header { border-bottom-color: rgba(44,36,24,.2); }
+body[data-theme="midnight-press"][data-page="draft"] .year-tab {
+    border-color: rgba(44,36,24,.18);
+    background: #faf4e6;
+    color: #4a3c28;
+}
+body[data-theme="midnight-press"][data-page="draft"] .year-tab:hover {
+    background: #f0e8d2;
+    color: #2c2418;
+}
+body[data-theme="midnight-press"][data-page="draft"] .year-tab.active {
+    background: #8a6a24;
+    border-color: #8a6a24;
+    color: #faf4e6;
+}
+body[data-theme="midnight-press"][data-page="draft"] .board-table thead th {
+    background: #ede4cf;
+    color: #7a6e58;
+    border-color: rgba(44,36,24,.12);
+}
+body[data-theme="midnight-press"][data-page="draft"] .board-table td {
+    color: #2c2418;
+    border-color: rgba(44,36,24,.10);
+}
+body[data-theme="midnight-press"][data-page="draft"] .board-table tbody tr:nth-child(odd) .board-mgr-td { background: #faf4e6; }
+body[data-theme="midnight-press"][data-page="draft"] .board-table tbody tr:nth-child(even) .board-mgr-td { background: #ede4cf; }
+body[data-theme="midnight-press"][data-page="draft"] .board-table tbody tr:hover .board-mgr-td { background: #f0e8d2; }
+body[data-theme="midnight-press"][data-page="draft"] .site-footer { color: #7a6e58; border-top-color: rgba(44,36,24,.15); }
+body[data-theme="midnight-press"][data-page="draft"] .site-footer em { color: #8a6a24; }
+
+/* ── Records — green → midnight blue ── */
+body[data-theme="midnight-press"][data-page="records"] {
+    --rb-bg: #0a1225;
+    --rb-soft: #0d1730;
+    --rb-card: #111c38;
+    --rb-card-hover: #162345;
+    --rb-line: #1e3060;
+    --rb-line-soft: #182850;
+    --rb-mute: #8aaccc;
+    background: var(--rb-bg);
+    --chapbar-bg: rgb(10, 18, 37);
+    --chapbar-border: #1e3060;
+    --chapbar-text: #8aaccc;
+    --chapbar-line: #1e3060;
+    --nav-drop-bg: rgb(10, 18, 37);
+    --nav-drop-border: #1e3060;
+    --nav-drop-text: #b0c4de;
+    --nav-drop-text-mute: #8aaccc;
+    --nav-drop-hover-bg: rgba(100,140,200,.1);
+    --nav-drop-sub-bg: rgba(0,0,0,.2);
+    --nav-drop-accent-line: rgba(100,140,200,.2);
+}
+body[data-theme="midnight-press"][data-page="records"] .nav {
+    background: rgb(10, 18, 37);
+    border-bottom-color: #1e3060;
+}
+body[data-theme="midnight-press"][data-page="records"] .site-glow {
+    background-image:
+        radial-gradient(circle at 25% 30%, rgba(100,140,200,.07) 0%, transparent 50%),
+        radial-gradient(circle at 75% 70%, rgba(232,200,137,.04) 0%, transparent 50%);
+}
+body[data-theme="midnight-press"][data-page="records"] .streak-row:hover { background: rgba(100,140,200,.07); }
+body[data-theme="midnight-press"][data-page="records"] .milestone-row:hover { background: rgba(100,140,200,.07); }
+body[data-theme="midnight-press"][data-page="records"] .m-appbar {
+    background: rgb(10, 18, 37);
+    border-bottom-color: #1e3060;
+}
+body[data-theme="midnight-press"][data-page="records"] .m-tabbar {
+    background: rgb(10, 18, 37);
+    border-top-color: #1e3060;
+}
+
+
+/* ────────────────────────────────────────────────────────────────
+   BROADSHEET
+   Warm parchment editorial. The daytime print edition.
+   ──────────────────────────────────────────────────────────────── */
+
+/* ── Global — body flips to cream, chrome stays dark ── */
+body[data-theme="broadsheet"] {
+    background: #f4ebd8;
+    color: #2c2418;
+}
+body[data-theme="broadsheet"] .site-glow,
+body[data-theme="broadsheet"] .site-grain { display: none; }
+
+/* Nav stays dark navy */
+body[data-theme="broadsheet"] .nav {
+    background: rgba(14, 22, 32, .96);
+    border-bottom-color: #2a3645;
+}
+body[data-theme="broadsheet"] .nav-back { color: #e8c889; }
+body[data-theme="broadsheet"] .nav-back:hover { color: #f4d9a4; }
+body[data-theme="broadsheet"] .nav-title { color: #f4ebd8; }
+body[data-theme="broadsheet"] .nav-title em { color: #e8c889; }
+body[data-theme="broadsheet"] .nav-kicker { color: #837b6a; }
+body[data-theme="broadsheet"] .nav-drop-btn { color: #e8c889; }
+body[data-theme="broadsheet"] {
+    --chapbar-bg: rgb(14, 22, 32);
+    --chapbar-border: #2a3645;
+    --chapbar-text: #c9c0ad;
+    --chapbar-active: #e8c889;
+    --chapbar-line: #2a3645;
+}
+
+/* Ticker stays gold/ink */
+body[data-theme="broadsheet"] .ticker {
+    background: #e8c889;
+    color: #0e1620;
+}
+body[data-theme="broadsheet"] .ticker-star { color: #a04830; }
+
+/* Hero */
+body[data-theme="broadsheet"] .hero-sup { color: #8a6a24; }
+body[data-theme="broadsheet"] .hero-title { color: #2c2418; }
+body[data-theme="broadsheet"] .hero-title em { color: #8a6a24; }
+body[data-theme="broadsheet"] .hero-sub { color: #4a3c28; }
+body[data-theme="broadsheet"] .hero-meta { color: #7a6e58; }
+
+/* Sections */
+body[data-theme="broadsheet"] .section-header { border-bottom-color: rgba(44,36,24,.2); }
+body[data-theme="broadsheet"] .section-num { color: #8a6a24; }
+body[data-theme="broadsheet"] .section-title { color: #2c2418; }
+body[data-theme="broadsheet"] .section-meta { color: #7a6e58; }
+
+/* Cards */
+body[data-theme="broadsheet"] .card {
+    background: linear-gradient(160deg, #faf4e6, #f4ebd8);
+    border-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"] .card::before { background: #8a6a24; }
+body[data-theme="broadsheet"] .card:hover {
+    border-color: rgba(138,106,36,.4);
+    box-shadow: 0 20px 40px rgba(44,36,24,.15), 0 0 30px rgba(138,106,36,.06);
+}
+body[data-theme="broadsheet"] .card-title { color: #2c2418; }
+body[data-theme="broadsheet"] .card-title em { color: #8a6a24; }
+body[data-theme="broadsheet"] .card-roman { color: #8a6a24; }
+body[data-theme="broadsheet"] .card-desc { color: #4a3c28; }
+body[data-theme="broadsheet"] .card-cta {
+    color: #8a6a24;
+    border-top-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"] .card:hover .card-cta { color: #6b5020; }
+body[data-theme="broadsheet"] .card-corner { color: #8a6a24; }
+
+/* Stat bar */
+body[data-theme="broadsheet"] .stat {
+    background: #faf4e6;
+    border-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"] .stat::before { background: #8a6a24; }
+body[data-theme="broadsheet"] .stat-label { color: #7a6e58; }
+body[data-theme="broadsheet"] .stat-value { color: #8a6a24; }
+body[data-theme="broadsheet"] .stat-detail { color: #4a3c28; }
+body[data-theme="broadsheet"] .stat-detail strong { color: #2c2418; }
+
+/* Tables (generic .data table) */
+body[data-theme="broadsheet"] .table-wrap {
+    background: #faf4e6;
+    border-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"] table.data thead {
+    background: #ede4cf;
+    border-bottom-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"] table.data th { color: #7a6e58; }
+body[data-theme="broadsheet"] table.data td {
+    color: #4a3c28;
+    border-top-color: rgba(44,36,24,.08);
+}
+body[data-theme="broadsheet"] table.data td.name { color: #2c2418; }
+body[data-theme="broadsheet"] table.data td.rank { color: #8a6a24; }
+body[data-theme="broadsheet"] table.data tbody tr:hover { background: rgba(138,106,36,.04); }
+body[data-theme="broadsheet"] table.data tbody tr.highlight { background: rgba(138,106,36,.06); }
+
+/* Footer */
+body[data-theme="broadsheet"] .site-footer {
+    color: #7a6e58;
+    border-top-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"] .site-footer em { color: #8a6a24; }
+
+/* Badges */
+body[data-theme="broadsheet"] .badge.live {
+    background: rgba(138,106,36,.1);
+    color: #8a6a24;
+    border-color: rgba(138,106,36,.3);
+}
+
+/* Season entries */
+body[data-theme="broadsheet"] .season-entry {
+    border-bottom-color: rgba(44,36,24,.1);
+}
+body[data-theme="broadsheet"] .season-entry:hover { background: rgba(138,106,36,.03); }
+body[data-theme="broadsheet"] .season-entry.featured {
+    background: linear-gradient(135deg, rgba(138,106,36,.06) 0%, rgba(138,106,36,.02) 100%);
+    border-bottom-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"] .season-entry.featured::before { background: #8a6a24; }
+body[data-theme="broadsheet"] .season-champ { color: #2c2418; }
+body[data-theme="broadsheet"] .season-badge-champ {
+    color: #0e1620;
+    background: #8a6a24;
+}
+body[data-theme="broadsheet"] .season-num { color: #7a6e58; }
+body[data-theme="broadsheet"] .season-year { color: #2c2418; }
+
+/* Manager cards (ticket-stub) */
+body[data-theme="broadsheet"] .ts-wrap {
+    background: linear-gradient(160deg, #faf4e6, #f4ebd8);
+    border-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"] .ts-wrap:hover {
+    border-color: rgba(138,106,36,.4);
+    box-shadow: 0 12px 30px rgba(44,36,24,.12);
+}
+body[data-theme="broadsheet"] .ts-perf { background: #ede4cf; }
+body[data-theme="broadsheet"] .ts-mgr { color: #8a6a24; }
+body[data-theme="broadsheet"] .ts-team { color: #7a6e58; }
+body[data-theme="broadsheet"] .ts-record { color: #2c2418; }
+body[data-theme="broadsheet"] .ts-stat-label { color: #7a6e58; }
+body[data-theme="broadsheet"] .ts-stat-val { color: #2c2418; }
+
+/* Sort / filter bars */
+body[data-theme="broadsheet"] .sort-bar {
+    border-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"] .sort-bar-label { color: #7a6e58; }
+body[data-theme="broadsheet"] .sort-option { color: #4a3c28; }
+body[data-theme="broadsheet"] .sort-option:hover { color: #2c2418; }
+body[data-theme="broadsheet"] .sort-option.active {
+    color: #8a6a24;
+    border-color: rgba(138,106,36,.4);
+    background: rgba(138,106,36,.08);
+}
+
+/* Dividers */
+body[data-theme="broadsheet"] .divider-dotted { border-top-color: rgba(44,36,24,.15); }
+
+/* Page header (shared by standings, managers, etc.) */
+body[data-theme="broadsheet"] .page-kicker { color: #8a6a24; }
+body[data-theme="broadsheet"] .page-title { color: #2c2418; }
+body[data-theme="broadsheet"] .page-title em { color: #8a6a24; }
+body[data-theme="broadsheet"] .page-sub { color: #4a3c28; }
+
+/* Mobile chrome stays dark navy for Broadsheet */
+body[data-theme="broadsheet"] .m-appbar {
+    background: rgb(14, 22, 32);
+    border-bottom-color: #2a3645;
+    color: #f4ebd8;
+}
+body[data-theme="broadsheet"] .m-appbar-back { color: #e8c889; }
+body[data-theme="broadsheet"] .m-appbar-title { color: #f4ebd8; }
+body[data-theme="broadsheet"] .m-appbar-title em { color: #e8c889; }
+body[data-theme="broadsheet"] .m-appbar-kicker { color: #837b6a; }
+body[data-theme="broadsheet"] .m-tabbar {
+    background: rgb(14, 22, 32);
+    border-top-color: #2a3645;
+}
+body[data-theme="broadsheet"] .m-tab { color: #837b6a; }
+body[data-theme="broadsheet"] .m-tab.is-active { color: #e8c889; }
+body[data-theme="broadsheet"] .m-sheet {
+    background: #0e1620;
+    border-color: #2a3645;
+    color: #f4ebd8;
+}
+
+/* DNA CTA card on managers page */
+body[data-theme="broadsheet"] .page-dna-cta {
+    border-color: rgba(138,106,36,.22);
+    background: linear-gradient(90deg, rgba(138,106,36,.06), rgba(138,106,36,.03));
+}
+body[data-theme="broadsheet"] .page-dna-cta:hover {
+    border-color: rgba(138,106,36,.45);
+    background: linear-gradient(90deg, rgba(138,106,36,.12), rgba(138,106,36,.06));
+}
+
+/* ── Standings — already cream; flip totals strip to warm ── */
+body[data-theme="broadsheet"][data-page="standings"] .league-totals {
+    background: #faf4e6;
+    border-color: rgba(44,36,24,.15);
+}
+body[data-theme="broadsheet"][data-page="standings"] .total-item {
+    border-right-color: rgba(44,36,24,.1);
+}
+body[data-theme="broadsheet"][data-page="standings"] .total-label { color: #7a6e58; }
+body[data-theme="broadsheet"][data-page="standings"] .total-value { color: #8a6a24; }
+body[data-theme="broadsheet"][data-page="standings"] .loading-state { color: #7a6e58; }
+
+/* ── Draft — black → warm parchment ── */
+body[data-theme="broadsheet"][data-page="draft"] {
+    --dg-bg: #f4ebd8;
+    --dg-soft: #ede4cf;
+    --dg-card: #faf4e6;
+    --dg-card-hover: #f0e8d2;
+    --dg-line: rgba(44,36,24,.18);
+    --dg-line-soft: rgba(44,36,24,.10);
+    --dg-accent: #8a6a24;
+    --dg-bright: #6b5020;
+    --dg-mute: #7a6e58;
+    background: var(--dg-bg);
+    color: #2c2418;
+}
+body[data-theme="broadsheet"][data-page="draft"] .site-glow,
+body[data-theme="broadsheet"][data-page="draft"] .site-grain { display: none; }
+body[data-theme="broadsheet"][data-page="draft"] .hero-title { color: #2c2418; }
+body[data-theme="broadsheet"][data-page="draft"] .hero-title em { color: #8a6a24; }
+body[data-theme="broadsheet"][data-page="draft"] .hero-sub { color: #4a3c28; }
+body[data-theme="broadsheet"][data-page="draft"] .hero-sup { color: #8a6a24; }
+body[data-theme="broadsheet"][data-page="draft"] .section-title { color: #2c2418; }
+body[data-theme="broadsheet"][data-page="draft"] .section-num { color: #8a6a24; }
+body[data-theme="broadsheet"][data-page="draft"] .section-header { border-bottom-color: rgba(44,36,24,.2); }
+body[data-theme="broadsheet"][data-page="draft"] .year-tab {
+    border-color: rgba(44,36,24,.18);
+    background: #faf4e6;
+    color: #4a3c28;
+}
+body[data-theme="broadsheet"][data-page="draft"] .year-tab:hover {
+    background: #f0e8d2;
+    color: #2c2418;
+}
+body[data-theme="broadsheet"][data-page="draft"] .year-tab.active {
+    background: #8a6a24;
+    border-color: #8a6a24;
+    color: #faf4e6;
+}
+body[data-theme="broadsheet"][data-page="draft"] .board-table thead th {
+    background: #ede4cf;
+    color: #7a6e58;
+    border-color: rgba(44,36,24,.12);
+}
+body[data-theme="broadsheet"][data-page="draft"] .board-table td {
+    color: #2c2418;
+    border-color: rgba(44,36,24,.10);
+}
+body[data-theme="broadsheet"][data-page="draft"] .board-table tbody tr:nth-child(odd) .board-mgr-td { background: #faf4e6; }
+body[data-theme="broadsheet"][data-page="draft"] .board-table tbody tr:nth-child(even) .board-mgr-td { background: #ede4cf; }
+body[data-theme="broadsheet"][data-page="draft"] .board-table tbody tr:hover .board-mgr-td { background: #f0e8d2; }
+body[data-theme="broadsheet"][data-page="draft"] .site-footer { color: #7a6e58; border-top-color: rgba(44,36,24,.15); }
+body[data-theme="broadsheet"][data-page="draft"] .site-footer em { color: #8a6a24; }
+
+/* ── Records — green → warm sage ── */
+body[data-theme="broadsheet"][data-page="records"] {
+    --rb-bg: #e8e4d4;
+    --rb-soft: #e0dcc8;
+    --rb-card: #f0ece0;
+    --rb-card-hover: #e8e4d4;
+    --rb-line: rgba(60,80,50,.18);
+    --rb-line-soft: rgba(60,80,50,.10);
+    --rb-mute: #6a7a5e;
+    background: var(--rb-bg);
+    color: #2c2418;
+    --chapbar-text: #6a7a5e;
+}
+body[data-theme="broadsheet"][data-page="records"] .nav {
+    background: rgb(11, 26, 15);
+    border-bottom-color: rgba(60,80,50,.25);
+}
+body[data-theme="broadsheet"][data-page="records"] .site-glow {
+    display: block;
+    background-image:
+        radial-gradient(circle at 25% 30%, rgba(100,150,80,.06) 0%, transparent 50%),
+        radial-gradient(circle at 75% 70%, rgba(138,106,36,.04) 0%, transparent 50%);
+}
+body[data-theme="broadsheet"][data-page="records"] .site-grain { display: none; }
+body[data-theme="broadsheet"][data-page="records"] .hero-title { color: #2c2418; }
+body[data-theme="broadsheet"][data-page="records"] .hero-title em { color: #8a6a24; }
+body[data-theme="broadsheet"][data-page="records"] .hero-sub { color: #4a3c28; }
+body[data-theme="broadsheet"][data-page="records"] .hero-sup { color: #8a6a24; }
+body[data-theme="broadsheet"][data-page="records"] .section-title { color: #2c2418; }
+body[data-theme="broadsheet"][data-page="records"] .streak-row:hover { background: rgba(100,150,80,.07); }
+body[data-theme="broadsheet"][data-page="records"] .milestone-row:hover { background: rgba(100,150,80,.07); }
+body[data-theme="broadsheet"][data-page="records"] {
+    --chapbar-bg: rgb(11, 26, 15);
+    --chapbar-border: rgba(60,80,50,.25);
+    --chapbar-line: rgba(60,80,50,.25);
+    --nav-drop-bg: rgb(11, 26, 15);
+    --nav-drop-border: rgba(60,80,50,.3);
+    --nav-drop-text: #cfe2d4;
+    --nav-drop-text-mute: #6a7a5e;
+    --nav-drop-hover-bg: rgba(100,150,80,.1);
+}
+body[data-theme="broadsheet"][data-page="records"] .m-appbar {
+    background: rgb(11, 26, 15);
+    border-bottom-color: rgba(60,80,50,.25);
+}
+body[data-theme="broadsheet"][data-page="records"] .m-tabbar {
+    background: rgb(11, 26, 15);
+    border-top-color: rgba(60,80,50,.25);
+}
+
+
+/* ────────────────────────────────────────────────────────────────
+   THEME PICKER — rendered by nav.js / mobile-app.js
+   ──────────────────────────────────────────────────────────────── */
+
+.theme-picker {
+    padding: .4rem .9rem .7rem;
+    border-top: 1px solid var(--nav-drop-border, var(--ink-line-soft, #1e2937));
+}
+.theme-picker-label {
+    display: block;
+    font-family: var(--mono, monospace);
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--nav-drop-text-mute, var(--cream-mute, #837b6a));
+    margin-bottom: .5rem;
+    padding: .3rem .2rem 0;
+}
+.theme-picker-options {
+    display: flex; flex-direction: column; gap: .15rem;
+}
+.theme-option {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .5rem .35rem;
+    background: none; border: none; border-radius: 2px;
+    cursor: pointer;
+    font-family: var(--mono, monospace);
+    font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--nav-drop-text, var(--cream-soft, #c9c0ad));
+    transition: background .15s, color .15s;
+    text-align: left; width: 100%;
+}
+.theme-option:hover {
+    background: var(--nav-drop-hover-bg, rgba(232,200,137,.07));
+    color: var(--nav-drop-accent, var(--gold, #e8c889));
+}
+.theme-option.is-active {
+    color: var(--nav-drop-accent, var(--gold, #e8c889));
+}
+.theme-option-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid var(--nav-drop-text, var(--cream-soft, #c9c0ad));
+    flex-shrink: 0; position: relative;
+    transition: border-color .15s;
+}
+.theme-option.is-active .theme-option-dot {
+    border-color: var(--nav-drop-accent, var(--gold, #e8c889));
+}
+.theme-option.is-active .theme-option-dot::after {
+    content: '';
+    position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px;
+    border-radius: 50%;
+    background: var(--nav-drop-accent, var(--gold, #e8c889));
+}
+.theme-option:hover .theme-option-dot {
+    border-color: var(--nav-drop-accent, var(--gold, #e8c889));
+}
+.theme-option-name { flex: 1; }
+.theme-option-tier {
+    font-size: .55rem; letter-spacing: .18em;
+    color: var(--nav-drop-text-mute, var(--cream-mute, #837b6a));
+    opacity: .7;
+}
+.theme-option.is-locked {
+    opacity: .45; cursor: not-allowed;
+}
+.theme-option.is-locked:hover {
+    background: none;
+    color: var(--nav-drop-text, var(--cream-soft, #c9c0ad));
+}
+.theme-option.is-locked:hover .theme-option-dot {
+    border-color: var(--nav-drop-text, var(--cream-soft, #c9c0ad));
+}
+
+/* Mobile theme picker (in More sheet) */
+.m-theme-picker { padding: .3rem 0 .2rem; }
+.m-theme-picker-label {
+    display: block; padding: .3rem 1.1rem;
+    font-family: var(--mono, monospace);
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--cream-mute, #837b6a);
+}
+.m-theme-option {
+    display: flex; align-items: center; gap: .7rem;
+    padding: .65rem 1.1rem;
+    background: none; border: none;
+    border-bottom: 1px solid var(--ink-line-soft, #1e2937);
+    cursor: pointer;
+    font-family: var(--mono, monospace);
+    font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cream-soft, #c9c0ad);
+    width: 100%; text-align: left;
+    transition: color .15s;
+}
+.m-theme-option:last-child { border-bottom: none; }
+.m-theme-option.is-active { color: var(--gold, #e8c889); }
+.m-theme-option-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--cream-soft, #c9c0ad);
+    flex-shrink: 0; position: relative;
+}
+.m-theme-option.is-active .m-theme-option-dot {
+    border-color: var(--gold, #e8c889);
+}
+.m-theme-option.is-active .m-theme-option-dot::after {
+    content: '';
+    position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px;
+    border-radius: 50%;
+    background: var(--gold, #e8c889);
+}
+.m-theme-option-tier {
+    margin-left: auto;
+    font-size: .55rem; letter-spacing: .18em;
+    color: var(--cream-mute, #837b6a);
+}
+.m-theme-option.is-locked { opacity: .4; cursor: not-allowed; }

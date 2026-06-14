@@ -20,7 +20,7 @@ import { createClient } from '@/lib/supabase/server'
 import { exportLeague, type ExportBundle } from '@/lib/export/pams'
 import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
 import { resolveLeagueTier, getLockReason, classifyLockedPath } from '@/lib/leagueTier'
-import { getUserSubscription, isSubscriptionActive } from '@/lib/stripe'
+import { getUserSubscription, isSubscriptionActive, isCompUser, type Tier } from '@/lib/stripe'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 // Mobile-first rebuilds of the same pages. Phones get the file from here when
@@ -30,6 +30,21 @@ const MOBILE_TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams-
 // 'desktop' | 'mobile' — explicit user choice ("View desktop site" link /
 // switch-back pill). Beats user-agent sniffing in both directions.
 const VIEW_COOKIE = 'dc_view'
+
+const THEME_COOKIE = 'tsc_theme'
+const LEAGUE_THEMES = ['midnight-press', 'broadsheet'] as const
+type LeagueTheme = (typeof LEAGUE_THEMES)[number]
+
+const THEME_PAGES: Record<string, string> = {
+  'index.html': 'hub',
+  'standings.html': 'standings',
+  'managers/index.html': 'managers',
+  'managers/manager.html': 'manager',
+  'records.html': 'records',
+  'seasons/index.html': 'seasons',
+  'seasons/season.html': 'season',
+  'draft/index.html': 'draft',
+}
 
 type LeagueMeta = {
   id: string
@@ -156,6 +171,9 @@ async function injectDcConfig(
   tutorialDismissed: boolean,
   tutorialSeenPages: string[],
   pageLocked: boolean,
+  viewerTier: Tier | 'comp' | null,
+  leagueTheme: LeagueTheme | null,
+  themePage: string | null,
 ): Promise<string> {
   const leagueTier = await resolveLeagueTier(meta.id, meta.owner_id)
   // Surface the owner's *actual* subscription tier (tier1/2/3) so the
@@ -181,13 +199,17 @@ async function injectDcConfig(
     tradesTheme: meta.trades_theme,
     tutorialDismissed,
     tutorialSeenPages,
+    viewerTier,
+    leagueTheme,
   })};</script>`
   // Stamp the theme as a body data-attribute so theme CSS applies during the
   // first paint without waiting for JS. We only do this when the template
   // actually has a <body> tag (every page does, but defensive).
+  const themeAttr = leagueTheme ? ` data-theme="${leagueTheme}"` : ''
+  const pageAttr = themePage ? ` data-page="${themePage}"` : ''
   if (/<body[^>]*>/.test(html)) {
     return html.replace(/<body(\b[^>]*)?>/, (_m, attrs) =>
-      `<body data-trades-theme="${meta.trades_theme}"${attrs ?? ''}>\n${config}`,
+      `<body data-trades-theme="${meta.trades_theme}"${themeAttr}${pageAttr}${attrs ?? ''}>\n${config}`,
     )
   }
   return config + html
@@ -265,6 +287,7 @@ function injectBaseTag(html: string, meta: LeagueMeta, file: string, servedMobil
     `\n<meta name="apple-mobile-web-app-title" content="${safeName}">` +
     `\n<meta name="theme-color" content="#0e1620">` +
     `\n<meta name="description" content="${description}">` +
+    `\n<link rel="stylesheet" href="/pams-template/assets/css/themes.css">` +
     (preloads ? `\n${preloads}` : '')
   if (/<head[^>]*>/i.test(html)) {
     return html.replace(/<head[^>]*>/i, (m) => `${m}\n${tags}`)
