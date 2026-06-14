@@ -1,4 +1,4 @@
-import { SourceRow } from '@/app/league/[slug]/sources/source-row'
+import { MobileSourceRow } from './MobileSourceRow'
 import { AddSourcePanel } from '@/app/league/[slug]/sources/add-source-panel'
 
 type SourceData = {
@@ -41,7 +41,7 @@ export function MobileSources({
       ) : (
         <div className="msrc-list">
           {sources.map((s) => (
-            <SourceRow
+            <MobileSourceRow
               key={s.id}
               source={s}
               leagueId={leagueId}

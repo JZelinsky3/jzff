@@ -1,5 +1,7 @@
-import { SetupList, type ProfileRow } from '@/app/league/[slug]/setup/setup-list'
+import { MobileSetupList, type ProfileRow } from './MobileSetupList'
 import { MarkReviewedButton } from '@/app/league/[slug]/setup/mark-reviewed-button'
+
+export { type ProfileRow }
 
 export function MobileMembers({
   leagueId,
@@ -42,11 +44,7 @@ export function MobileMembers({
         </div>
       </div>
 
-      <div className="mmem-hint">Select 2+ to merge. Tap buttons to rename, toggle status, or hide.</div>
-
-      <div className="mmem-list">
-        <SetupList leagueId={leagueId} slug={slug} profiles={profiles} />
-      </div>
+      <MobileSetupList leagueId={leagueId} slug={slug} profiles={profiles} />
     </div>
   )
 }
