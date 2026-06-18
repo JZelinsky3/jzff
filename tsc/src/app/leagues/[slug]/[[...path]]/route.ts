@@ -350,10 +350,11 @@ function injectOgTags(html: string, meta: LeagueMeta, file: string, req: NextReq
     ? html.replace(/<head[^>]*>/i, (m) => `${m}\n${tags}`)
     : tags + html
 
-  // Share UI is hidden site-wide for now. Flip back to
-  // `file === 'rivalries/rivalry.html'` to restore the global share button.
-  const skipShareInjection = true
-  if (!skipShareInjection) {
+  // Share UI is opt-in per page. The dialog ships with the floating-pill
+  // button — useful on phones where "Add to Home Screen" hides the
+  // browser share button, and especially on the two pages members are
+  // supposed to share with their league.
+  if (SHARE_BUTTON_FILES.has(file)) {
     const shareBlock = `${shareModuleMarkup()}\n${shareInitScript(ogImage, meta, req)}`
     if (/<\/body>/i.test(out)) {
       out = out.replace(/<\/body>/i, `${shareBlock}\n</body>`)
@@ -364,6 +365,15 @@ function injectOgTags(html: string, meta: LeagueMeta, file: string, req: NextReq
 
   return out
 }
+
+// Pages that get the floating share button. Intentionally narrow: only
+// pages whose value comes from being shared into a league chat (pick'ems
+// pool, weekly matchup). Other almanac pages keep their OG tags but skip
+// the button so the chrome stays calm.
+const SHARE_BUTTON_FILES = new Set<string>([
+  'live/pickems/index.html',
+  'live/matchup-preview/index.html',
+])
 
 type OgImage = { url: string; title: string; description: string; downloadName?: string; shareSub?: string }
 
@@ -466,6 +476,38 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       url,
       title: `${meta.name} · This Week's Matchup`,
       description: `An upcoming head-to-head in ${meta.name} — records, form, projections, and the all-time ledger.`,
+    }
+  }
+  // Pick'ems: /leagues/<slug>/live/pickems/
+  // Leaderboard card — week #, top three pickers' W-L. Falls back to a
+  // "picks are open" card when no week has been decided yet.
+  if (file === 'live/pickems/index.html') {
+    const url = new URL(`/api/og/pickems/${meta.slug}`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · Pick'ems`,
+      description: `${meta.name}'s pick'em pool — every matchup, plus Highest and Lowest scorer. Lock in your picks before kickoff.`,
+    }
+  }
+  // Milestones: /leagues/<slug>/live/milestones/
+  // Features the most recent crossing (or closest imminent chase) plus the
+  // meter strip footer.
+  if (file === 'live/milestones/index.html') {
+    const url = new URL(`/api/og/milestones/${meta.slug}`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · Milestones`,
+      description: `Career milestones across ${meta.name} — what's just crossed, what's on the brink, and what's on the watchlist.`,
+    }
+  }
+  // Records Watch: /leagues/<slug>/live/records-watch/
+  // Features the broken or brink leader plus the meter strip footer.
+  if (file === 'live/records-watch/index.html') {
+    const url = new URL(`/api/og/records-watch/${meta.slug}`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · Records Watch`,
+      description: `Live records watch for ${meta.name} — what's broken, what's on pace, and what's just out of reach.`,
     }
   }
   // Season detail: /leagues/<slug>/seasons/season.html?year=YYYY

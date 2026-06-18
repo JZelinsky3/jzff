@@ -29,6 +29,8 @@ type Side = {
   streak: { kind: 'W' | 'L'; count: number } | null
 }
 
+type RecentMeeting = { year: number; week: number; scoreA: number; scoreB: number; winner: 'a' | 'b' | 't' }
+
 type MatchupCard = {
   a: Side
   b: Side
@@ -38,7 +40,7 @@ type MatchupCard = {
     winsB: number
     ties: number
     lastYear: number | null
-    recent: Array<{ year: number; week: number }>
+    recent: RecentMeeting[]
   }
   projected: { a: number; b: number; spread: number; favorite: 'a' | 'b' | 'pp' }
   gotw: boolean
@@ -120,13 +122,34 @@ function renderMatchupCard(
   const projA = c.projected.a.toFixed(1)
   const projB = c.projected.b.toFixed(1)
 
+  // Format the last-meeting cell with the score so the h2h ledger reads as
+  // a real ledger line, not just a date. Winner-side score leads so it's
+  // visually obvious who took the previous one.
+  const lastMeetingStr = (() => {
+    const r = c.h2h.recent[0]
+    if (!r) return null
+    const a = r.scoreA.toFixed(1)
+    const b = r.scoreB.toFixed(1)
+    const score = r.winner === 'b' ? `${b}—${a}` : `${a}—${b}`
+    return `LAST ${r.year} W${r.week} · ${score}`
+  })()
   const h2hLine = c.h2h.meetings > 0
     ? [
         `ALL-TIME ${c.h2h.winsA}—${c.h2h.winsB}${c.h2h.ties ? `—${c.h2h.ties}` : ''}`,
         `${c.h2h.meetings} MEETING${c.h2h.meetings === 1 ? '' : 'S'}`,
-        c.h2h.recent[0] ? `LAST ${c.h2h.recent[0].year} W${c.h2h.recent[0].week}` : null,
+        lastMeetingStr,
       ].filter(Boolean).join('  ·  ')
     : 'FIRST CAREER MEETING'
+
+  // Favorite/spread badge under PROJ. "PICK 'EM" when within 0.5 pts.
+  // Otherwise call out the favored side by name + the spread in points.
+  const favLine = (() => {
+    const sp = Math.abs(c.projected.spread)
+    if (sp < 0.5) return 'PICK ‘EM'
+    if (c.projected.favorite === 'a') return `${c.a.name.toUpperCase()} FAVORED BY ${sp.toFixed(1)}`
+    if (c.projected.favorite === 'b') return `${c.b.name.toUpperCase()} FAVORED BY ${sp.toFixed(1)}`
+    return null
+  })()
 
   const gridiron = encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
@@ -170,6 +193,20 @@ function renderMatchupCard(
         <span style={{ display: 'flex' }}>{s.ppgSeason ? `${s.ppgSeason.toFixed(1)} PPG` : ''}</span>
         {streakStr(s.streak) && <span style={{ display: 'flex' }}>{streakStr(s.streak)}</span>}
       </div>
+      {s.ppg5 > 0 && Math.abs(s.ppg5 - s.ppgSeason) >= 0.5 && (
+        <div
+          style={{
+            display: 'flex',
+            fontSize: '14px',
+            fontWeight: 700,
+            letterSpacing: '0.28em',
+            color: s.ppg5 > s.ppgSeason ? accent : '#6b7280',
+            textTransform: 'uppercase',
+          }}
+        >
+          L5 · {s.ppg5.toFixed(1)} PPG
+        </div>
+      )}
     </div>
   )
 
@@ -301,6 +338,20 @@ function renderMatchupCard(
             <span style={{ display: 'flex', fontSize: '24px', color: '#6b7280', fontFamily: 'JetBrains', letterSpacing: '0.3em' }}>PROJ</span>
             <span style={{ display: 'flex' }}>{projB}</span>
           </div>
+          {favLine && (
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '13px',
+                fontWeight: 700,
+                letterSpacing: '0.32em',
+                color: accent,
+                textTransform: 'uppercase',
+              }}
+            >
+              {favLine}
+            </div>
+          )}
           <div
             style={{
               display: 'flex',

@@ -22,34 +22,52 @@
   --tsc-share-serif: 'DM Serif Display', Georgia, serif;
 }
 
+/* Floating share pill — bottom-right, above the safe-area inset so PWA users
+   (Add-to-Home-Screen, where the browser share button isn't available) get a
+   clear way to share the page. Desktop renders it at the same corner; the
+   pill scales down on phones via the mobile media query below. */
 .tsc-share-btn {
   position: fixed;
-  top: 76px;
-  right: 18px;
-  z-index: 50;
+  right: calc(1rem + env(safe-area-inset-right));
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  z-index: 60;
   display: inline-flex;
   align-items: center;
   gap: .5rem;
-  background: rgba(17, 17, 17, .85);
-  border: 1px solid var(--tsc-share-line);
-  color: var(--tsc-share-text);
+  background: rgba(14, 22, 32, .92);
+  border: 1px solid var(--tsc-share-gold);
+  color: var(--tsc-share-gold);
   font-family: var(--tsc-share-mono);
-  font-size: .62rem;
+  font-size: .65rem;
+  font-weight: 700;
   letter-spacing: .22em;
   text-transform: uppercase;
-  padding: .55rem .85rem;
-  border-radius: 2px;
+  padding: .7rem 1rem;
+  border-radius: 999px;
   cursor: pointer;
   backdrop-filter: blur(8px);
-  transition: color .15s, border-color .15s, background .15s;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .55);
+  transition: color .15s, border-color .15s, background .15s, transform .15s;
 }
 .tsc-share-btn:hover {
   color: #fff;
   border-color: var(--tsc-share-accent);
   background: var(--tsc-share-accent-dim);
+  transform: translateY(-1px);
 }
-.tsc-share-btn svg { width: 12px; height: 12px; }
+.tsc-share-btn svg { width: 14px; height: 14px; }
 .tsc-share-btn[hidden] { display: none; }
+
+@media (max-width: 640px) {
+  .tsc-share-btn {
+    padding: .65rem .85rem;
+    font-size: .6rem;
+    letter-spacing: .2em;
+    right: calc(.75rem + env(safe-area-inset-right));
+    bottom: calc(.75rem + env(safe-area-inset-bottom));
+  }
+  .tsc-share-btn svg { width: 13px; height: 13px; }
+}
 
 .tsc-share-dialog {
   background: var(--tsc-share-card);
