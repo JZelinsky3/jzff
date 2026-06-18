@@ -6,7 +6,11 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
     <main className="mlp">
       {/* ── Top bar (shrinks on scroll via tsc-hdr-collapsed) ── */}
       <header className="mlp-bar">
-        <span className="mlp-bar-title">The Sunday <em>Chronicle.</em></span>
+        <span className="mlp-bar-title" aria-label="The Sunday Chronicle">
+          <span aria-hidden="true">
+            T<span className="mlp-bar-fade">{'he '}</span>S<span className="mlp-bar-fade">{'unday '}</span><em>C<span className="mlp-bar-fade">hronicle</span>.</em>
+          </span>
+        </span>
         {signedIn ? (
           <Link href="/dashboard" className="mlp-bar-link">Library</Link>
         ) : (

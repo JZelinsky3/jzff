@@ -11113,9 +11113,23 @@ body.tsc-hdr-collapsed .mlsub-bar {
     font-size: 1.05rem;
     line-height: 1;
     color: var(--cream);
+    white-space: nowrap;
     transition: font-size .25s ease;
 }
 .mlp-bar-title em { color: var(--gold); font-style: italic; }
+.mlp-bar-fade {
+    display: inline-block;
+    overflow: hidden;
+    white-space: pre;
+    max-width: 6em;
+    opacity: 1;
+    vertical-align: baseline;
+    transition: max-width .55s cubic-bezier(.7, 0, .2, 1), opacity .3s ease;
+}
+body.tsc-hdr-collapsed .mlp-bar-fade {
+    max-width: 0;
+    opacity: 0;
+}
 .mlp-bar-link {
     font-family: var(--mono);
     font-size: .58rem;
