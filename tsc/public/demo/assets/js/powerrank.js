@@ -2,7 +2,7 @@
 //
 // Ported from the PA Milk Society demo: podium / table / factor-bar /
 // projections rendering kept verbatim so the page looks identical. The data
-// layer is swapped — one fetch of /leagues/<slug>/live-season/powerrank/data returns every
+// layer is swapped — one fetch of /leagues/<slug>/live/powerrank/data returns every
 // week's ranking plus Monte Carlo projections. Division views are dynamic;
 // a league with no divisions hides the view tabs + conference grid.
 
@@ -23,7 +23,7 @@
   // ── Boot ────────────────────────────────────────────────────────────────
   async function boot() {
     bindFormulaPopup()
-    var res = await fetch('live-season/powerrank/data.json', { cache: 'no-store' })
+    var res = await fetch('live/powerrank/data.json', { cache: 'no-store' })
     if (!res.ok) throw new Error('HTTP ' + res.status)
     var data = await res.json()
 

@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
+<script>(function(){var u=navigator.userAgent;if(!(/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u)))return;if(/(?:^|;\s*)dc_view=desktop/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo\//,"/demo-m/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Best Coach Board · The Lakeside League</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+/* ============================================================
+   BEST COACH BOARD — Coach's Chalkboard
+   Deep slate green panel, chalk-white type, soft chalk-yellow
+   accents. No glow, no LED, no LCD digits — handwriting feel
+   via dashed strokes, wavy underlines, and small drift in
+   weights. Distinct from matchup-preview (railway), records
+   (blue), milestones (violet), hub (gold).
+   ============================================================ */
+
+:root {
+    --bc-slate:        #28342f;
+    --bc-slate-deep:   #1f2925;
+    --bc-slate-soft:   #2f3c37;
+    --bc-slate-hi:     #38463f;
+
+    --bc-chalk:        #ece4cc;
+    --bc-chalk-soft:   #c8c0a8;
+    --bc-chalk-dim:    #8a917c;
+    --bc-chalk-mute:   #6b7065;
+
+    --bc-yellow:       #e8c850;     /* primary chalk accent */
+    --bc-yellow-hi:    #f3d775;
+    --bc-yellow-deep:  #a88f30;
+
+    --bc-red:          #d8625a;     /* red chalk — bad coaching */
+    --bc-green:        #88c075;     /* green chalk — perfect lineups */
+    --bc-rust:         #d9905a;     /* orange chalk — middling */
+}
+
+html, body {
+    background:
+        radial-gradient(ellipse at 22% 18%, rgba(255,255,255,.025) 0%, transparent 40%),
+        radial-gradient(ellipse at 78% 80%, rgba(255,255,255,.018) 0%, transparent 45%),
+        var(--bc-slate);
+}
+body {
+    color: var(--bc-chalk);
+    font-family: var(--serif);
+}
+
+/* Chalk dust — fine speckle across the slate, no glow */
+body::before {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(rgba(236,228,204,.035) 1px, transparent 1.5px),
+        radial-gradient(rgba(236,228,204,.022) 1px, transparent 1.5px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+    z-index: 0;
+}
+
+.site-glow { background-image: none; }
+
+/* ── Nav themed slate + chalk yellow ───────────────────────── */
+.nav {
+    background: rgba(31,41,37,.97);
+    border-bottom-color: var(--bc-slate-hi);
+}
+.nav-back, .nav-link { color: var(--bc-yellow); }
+.nav-back:hover, .nav-link:hover { color: var(--bc-yellow-hi); }
+.nav-title em { color: var(--bc-chalk); font-style: italic; }
+.nav-kicker { color: var(--bc-yellow); font-style: italic; }
+.nav-drop-btn { color: var(--bc-yellow); }
+.nav-drop-btn:hover { color: var(--bc-yellow-hi); }
+:root {
+    --chapbar-bg:     rgba(31,41,37,.96);
+    --chapbar-border: var(--bc-slate-hi);
+    --chapbar-text:   var(--bc-chalk-dim);
+    --chapbar-active: var(--bc-yellow);
+    --chapbar-line:   var(--bc-slate-hi);
+
+    --nav-drop-bg:           rgba(31,41,37,.98);
+    --nav-drop-border:       var(--bc-slate-hi);
+    --nav-drop-text:         var(--bc-chalk);
+    --nav-drop-text-mute:    var(--bc-chalk-dim);
+    --nav-drop-accent:       var(--bc-yellow);
+    --nav-drop-hover-bg:     rgba(232,200,80,.10);
+    --nav-drop-sub-bg:       rgba(0,0,0,.18);
+    --nav-drop-accent-line:  rgba(232,200,80,.30);
+}
+
+/* ── Page wrap ─────────────────────────────────────────────── */
+.bc-page {
+    position: relative; z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 1.75rem 1.25rem 4rem;
+}
+
+/* Two-column layout: main content + slim right rail for the perfect-
+   lineup tally. Right rail collapses below the main column on narrow
+   screens so nothing pushes off-screen on mobile. */
+.bc-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-rows: auto auto;
+    column-gap: 2rem;
+    row-gap: 0;
+}
+.bc-standings-wrap { grid-column: 1; grid-row: 1; min-width: 0; }
+.bc-side           { grid-column: 2; grid-row: 1; min-width: 0;
+                     display: flex; flex-direction: column;
+                     justify-content: space-between;
+                     align-self: stretch; }
+.bc-boards-wrap    { grid-column: 1 / -1; grid-row: 2; min-width: 0; }
+
+@media (max-width: 920px) {
+    .bc-layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; column-gap: 0; }
+    .bc-standings-wrap { grid-column: 1; grid-row: 1; }
+    .bc-side           { grid-column: 1; grid-row: 2; }
+    .bc-boards-wrap    { grid-column: 1; grid-row: 3; }
+}
+
+/* ============================================================
+   MASTHEAD — chalked title block
+   "Hand-drawn" frame via dashed border + slight rotation
+   ============================================================ */
+.bc-mast {
+    text-align: center;
+    padding: 1.4rem 1.5rem 1.25rem;
+    margin-bottom: 1.8rem;
+    border: 2px dashed var(--bc-chalk-dim);
+    border-radius: 4px;
+    position: relative;
+    background: var(--bc-slate-soft);
+}
+/* Wavy chalk underline above and below */
+.bc-mast::before,
+.bc-mast::after {
+    content: '';
+    position: absolute;
+    left: 18%; right: 18%;
+    height: 6px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 6'><path d='M0 3 Q 10 0 20 3 T 40 3 T 60 3 T 80 3' stroke='%23e8c850' stroke-width='1.4' fill='none' opacity='.7'/></svg>");
+    background-repeat: repeat-x;
+    background-size: 80px 6px;
+}
+.bc-mast::before { top: -3px; }
+.bc-mast::after  { bottom: -3px; }
+
+.bc-mast-kicker {
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .42em;
+    text-transform: uppercase;
+    color: var(--bc-yellow);
+    margin-bottom: .55rem;
+}
+.bc-mast-kicker .dot {
+    color: var(--bc-chalk-dim);
+    margin: 0 .55rem;
+}
+.bc-mast-league {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+    color: var(--bc-chalk-soft);
+    margin: 0;
+}
+.bc-mast-title {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-style: italic;
+    font-size: clamp(1.7rem, 3.6vw, 2.4rem);
+    letter-spacing: .015em;
+    color: var(--bc-chalk);
+    margin: .25rem 0 .55rem;
+    /* Faint chalk-stroke softening */
+    text-shadow: 0 1px 0 rgba(0,0,0,.25);
+}
+.bc-mast-meta {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--bc-chalk-dim);
+}
+.bc-mast-meta strong {
+    color: var(--bc-yellow);
+    font-weight: 700;
+}
+
+.bc-mode-tag {
+    display: inline-block;
+    margin-top: .65rem;
+    padding: .2rem .6rem;
+    border: 1px dashed var(--bc-yellow-deep);
+    color: var(--bc-yellow);
+    font-family: var(--mono);
+    font-size: .52rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    background: rgba(232,200,80,.08);
+}
+
+/* ============================================================
+   SECTION HEADINGS — chalk-underlined small caps
+   ============================================================ */
+.bc-section-head {
+    display: flex; align-items: baseline; gap: .9rem;
+    margin: 2rem 0 1rem;
+    padding-bottom: .5rem;
+    position: relative;
+}
+.bc-section-head::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 5px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 5'><path d='M0 2.5 Q 12.5 0 25 2.5 T 50 2.5 T 75 2.5 T 100 2.5' stroke='%23ece4cc' stroke-width='1' fill='none' opacity='.32'/></svg>");
+    background-repeat: repeat-x;
+    background-size: 100px 5px;
+}
+.bc-section-num {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--bc-yellow);
+    font-weight: 700;
+}
+.bc-section-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.3rem;
+    color: var(--bc-chalk);
+    margin: 0;
+    font-weight: 600;
+}
+.bc-section-note {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--bc-chalk-mute);
+}
+
+/* ============================================================
+   STANDINGS BOARD — chalked roster table
+   ============================================================ */
+.bc-board {
+    /* Dashed top + bottom strokes evoke chalk-drawn rules */
+    border-top: 2px dashed var(--bc-chalk-dim);
+    border-bottom: 2px dashed var(--bc-chalk-dim);
+}
+.bc-row-head,
+.bc-row {
+    display: grid;
+    grid-template-columns: 3.4rem minmax(0, 1fr) 5rem 5rem 5rem;
+    align-items: baseline;
+    column-gap: 1rem;
+    padding: .55rem .35rem;
+    border-bottom: 1px dotted rgba(236,228,204,.18);
+}
+.bc-row-head {
+    border-bottom: 1px solid var(--bc-chalk-dim);
+    padding: .4rem .35rem;
+}
+.bc-row.is-data {
+    cursor: pointer;
+    transition: background .12s ease;
+}
+.bc-row.is-data:hover {
+    background: rgba(236,228,204,.04);
+}
+.bc-row.is-data.is-open {
+    background: rgba(232,200,80,.06);
+    border-left: 2px solid var(--bc-yellow);
+    padding-left: calc(.35rem - 2px);
+}
+
+.bc-col-head {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--bc-chalk-mute);
+}
+.bc-col-head.num { text-align: right; }
+
+.bc-rank {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .95rem;
+    color: var(--bc-yellow);
+    letter-spacing: .04em;
+}
+.bc-name {
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    color: var(--bc-chalk);
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bc-name .team {
+    display: block;
+    margin-top: .12rem;
+    font-family: var(--mono);
+    font-size: .54rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--bc-chalk-mute);
+    font-weight: 400;
+}
+.bc-num {
+    text-align: right;
+    font-family: var(--serif);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    font-size: 1.02rem;
+    color: var(--bc-chalk-soft);
+}
+.bc-num.is-left {
+    color: var(--bc-rust);
+    font-weight: 600;
+}
+.bc-num.is-left.is-bad   { color: var(--bc-red); }
+.bc-num.is-left.is-clean { color: var(--bc-green); }
+
+/* ============================================================
+   DRILL — chalked weekly grid below open row
+   ============================================================ */
+.bc-drill {
+    grid-column: 1 / -1;
+    margin: 0 -.35rem;
+    padding: 1rem 1.25rem 1.25rem;
+    background:
+        repeating-linear-gradient(0deg, transparent 0 22px, rgba(255,255,255,.02) 22px 23px),
+        var(--bc-slate-deep);
+    border-bottom: 1px dotted rgba(236,228,204,.2);
+    border-top: 1px dotted rgba(236,228,204,.2);
+}
+.bc-drill-cap {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--bc-chalk-dim);
+    margin-bottom: .7rem;
+}
+.bc-drill-cap strong { color: var(--bc-yellow); font-weight: 700; }
+.bc-drill-cap em { font-style: italic; color: var(--bc-red); }
+
+.bc-weeks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: .25rem .65rem;
+    border-top: 1px dashed rgba(236,228,204,.22);
+    padding-top: .65rem;
+}
+.bc-wk {
+    text-align: center;
+    padding: .4rem .25rem .45rem;
+    border-right: 1px dotted rgba(236,228,204,.16);
+}
+.bc-wk:last-child { border-right: 0; }
+.bc-wk-num {
+    font-family: var(--mono);
+    font-size: .5rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--bc-chalk-mute);
+    margin-bottom: .2rem;
+}
+.bc-wk-line {
+    font-family: var(--serif);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    font-size: .9rem;
+    color: var(--bc-chalk);
+}
+.bc-wk-line .sep {
+    color: var(--bc-chalk-mute);
+    margin: 0 .15em;
+    font-style: italic;
+}
+.bc-wk-left {
+    margin-top: .2rem;
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .12em;
+    color: var(--bc-rust);
+    text-transform: uppercase;
+}
+.bc-wk-left.is-bad   { color: var(--bc-red); font-weight: 700; }
+.bc-wk-left.is-clean { color: var(--bc-green); font-style: italic; }
+
+/* ============================================================
+   SIDE BOARDS — Worst + Perfect, two-column
+   ============================================================ */
+.bc-boards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+.bc-mini-head {
+    display: flex; align-items: baseline; gap: .6rem;
+    margin-bottom: .4rem;
+}
+.bc-mini-mark {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    line-height: 1;
+}
+.bc-mini-mark--red   { color: var(--bc-red); }
+.bc-mini-mark--green { color: var(--bc-green); }
+.bc-mini-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--bc-chalk);
+    font-weight: 600;
+}
+.bc-mini-note {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .5rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--bc-chalk-mute);
+}
+
+.bc-shame-wrap {
+    border-top: 2px dashed var(--bc-chalk-dim);
+    border-bottom: 2px dashed var(--bc-chalk-dim);
+    padding: .25rem .35rem;
+}
+.bc-shame {
+    display: block;
+}
+.bc-shame-row {
+    display: grid;
+    grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: .75rem;
+    padding: .5rem .15rem;
+    border-bottom: 1px dotted rgba(236,228,204,.18);
+}
+.bc-shame-row:last-child { border-bottom: 0; }
+.bc-shame-rank {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--bc-yellow);
+}
+.bc-shame-name {
+    font-family: var(--serif);
+    font-size: .95rem;
+    color: var(--bc-chalk);
+    font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bc-shame-meta {
+    margin-top: .15rem;
+    font-family: var(--mono);
+    font-size: .52rem;
+    letter-spacing: .18em;
+    color: var(--bc-chalk-mute);
+    text-transform: uppercase;
+}
+/* When the week of this row is the current/latest scored week, the meta
+   line glows soft yellow so live drama jumps off the page. */
+.bc-shame-row.is-current .bc-shame-meta {
+    color: var(--bc-yellow);
+}
+.bc-shame-row.is-current .bc-shame-meta .bc-current-tag {
+    color: var(--bc-yellow);
+    font-weight: 700;
+}
+.bc-shame-left {
+    font-family: var(--serif);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-align: right;
+}
+.bc-shame-left.is-red   { color: var(--bc-red); }
+.bc-shame-left.is-green { color: var(--bc-green); }
+.bc-shame-left.is-red::before   { content: '−'; margin-right: .1em; opacity: .7; }
+.bc-shame-left.is-green::before { content: ''; }
+
+.bc-shame-empty {
+    padding: 1.25rem .35rem;
+    text-align: center;
+    color: var(--bc-chalk-mute);
+    font-style: italic;
+    font-size: .9rem;
+}
+
+/* ============================================================
+   PERFECT TALLY — slim right-rail accolades column
+   "Who's chalked up the most perfect lineups this season?"
+   ============================================================ */
+.bc-tally {
+    border-top: 2px dashed var(--bc-chalk-dim);
+    border-bottom: 2px dashed var(--bc-chalk-dim);
+    padding: .5rem .55rem .55rem;
+    /* Sized to content. The rail (.bc-side) is align-self:stretch +
+       justify-content:space-between, which floats Perfect Lineups to the
+       top (anchored to the standings header rule via margin-top) and
+       Bench Bombs to the bottom (aligning with the standings' bottom
+       dashed rule). Empty slack falls cleanly between the two panels. */
+    flex: 0 0 auto;
+}
+/* First tally pushed down so its top border aligns with the standings
+   table's top dashed rule (right under the "Manager" header row). */
+.bc-side > .bc-tally:first-child {
+    margin-top: 5.45rem;
+}
+.bc-tally-head {
+    font-family: var(--mono);
+    font-size: .52rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--bc-yellow);
+    margin-bottom: .2rem;
+    text-align: center;
+}
+.bc-tally-head--bomb { color: var(--bc-red); }
+.bc-tally-thresh {
+    color: var(--bc-chalk-mute);
+    margin-left: .25em;
+    font-weight: 400;
+}
+.bc-tally-sub {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .72rem;
+    color: var(--bc-chalk-soft);
+    text-align: center;
+    margin-bottom: .5rem;
+}
+.bc-tally-list {
+    display: flex; flex-direction: column;
+}
+.bc-tally-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: .5rem;
+    padding: .25rem .15rem;
+    border-bottom: 1px dotted rgba(236,228,204,.16);
+}
+.bc-tally-row:last-child { border-bottom: 0; }
+.bc-tally-row.is-leader .bc-tally-name { color: var(--bc-yellow); font-weight: 700; }
+.bc-tally-row.is-leader .bc-tally-num  { color: var(--bc-yellow); }
+/* Bomb tally leader uses red (it's the wrong kind of accolade). */
+.bc-tally--bomb .bc-tally-row.is-leader .bc-tally-name { color: var(--bc-red); }
+.bc-tally--bomb .bc-tally-row.is-leader .bc-tally-num  { color: var(--bc-red); }
+.bc-tally-name {
+    font-family: var(--serif);
+    font-size: .82rem;
+    color: var(--bc-chalk);
+    font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bc-tally-num {
+    font-family: var(--serif);
+    font-variant-numeric: oldstyle-nums tabular-nums;
+    font-size: .95rem;
+    color: var(--bc-green);
+    font-weight: 700;
+}
+.bc-tally--bomb .bc-tally-num { color: var(--bc-red); }
+.bc-tally-num .x {
+    font-family: var(--mono);
+    font-size: .5rem;
+    letter-spacing: .12em;
+    color: var(--bc-chalk-mute);
+    margin-right: .12em;
+    font-weight: 400;
+    text-transform: uppercase;
+}
+.bc-tally-empty {
+    padding: .65rem .35rem;
+    text-align: center;
+    color: var(--bc-chalk-mute);
+    font-style: italic;
+    font-size: .8rem;
+}
+/* Mobile — drop alignment offset, let the rail stack naturally. */
+@media (max-width: 920px) {
+    .bc-side {
+        justify-content: flex-start;
+        gap: 1rem;
+    }
+    .bc-side > .bc-tally:first-child { margin-top: 1.25rem; }
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.bc-empty {
+    margin-top: 2rem;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    border: 2px dashed var(--bc-chalk-dim);
+    border-radius: 4px;
+    background: var(--bc-slate-soft);
+}
+.bc-empty-marquee {
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    color: var(--bc-yellow);
+    margin-bottom: .9rem;
+}
+.bc-empty-msg {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.4rem;
+    color: var(--bc-chalk);
+    margin-bottom: .9rem;
+}
+.bc-empty-body {
+    color: var(--bc-chalk-mute);
+    max-width: 540px;
+    margin: 0 auto;
+    line-height: 1.6;
+    font-size: .92rem;
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+@media (max-width: 720px) {
+    .bc-row-head,
+    .bc-row {
+        grid-template-columns: 2.6rem 1fr 4.2rem 4.2rem;
+        column-gap: .55rem;
+        padding: .45rem .25rem;
+    }
+    .bc-num.is-actual { display: none; }
+    .bc-col-head.is-actual { display: none; }
+    .bc-name { font-size: .9rem; }
+    .bc-num { font-size: .92rem; }
+    .bc-boards { grid-template-columns: 1fr; gap: 1rem; }
+    .bc-weeks { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+}
+</style>
+</head>
+<body>
+
+<nav id="site-nav" data-page="best-coach" data-chapter="CH. VIII · BEST COACH"></nav>
+<script src="assets/js/nav.js"></script>
+
+<!-- DEMO NOTICE — live pages need real-time data -->
+<style>
+.ls-demo-notice {
+    position: relative; z-index: 5;
+    max-width: 980px;
+    margin: 1.25rem auto 0;
+    padding: 1rem 1.25rem;
+    background: rgba(232,200,137,.07);
+    border: 1px solid rgba(232,200,137,.25);
+    border-left: 3px solid #e8c889;
+    border-radius: 2px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: .88rem; line-height: 1.5;
+    color: #f4ebd8;
+    display: flex; flex-wrap: wrap; gap: .9rem;
+    align-items: baseline;
+}
+.ls-demo-notice .ls-demo-pill {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-weight: 700; font-size: .58rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: #15201b; background: #e8c889;
+    padding: .3rem .55rem; border-radius: 2px;
+}
+.ls-demo-notice em { color: #e8c889; font-style: italic; }
+.ls-demo-notice a {
+    color: #e8c889; text-decoration: none;
+    border-bottom: 1px solid rgba(232,200,137,.4);
+}
+.ls-demo-notice a:hover { color: #f4d9a4; }
+</style>
+<div class="ls-demo-notice">
+    <span class="ls-demo-pill">★ Demo only</span>
+    <span>
+        This page runs on <em>live in-season data</em> — current scores,
+        weekly form, milestone tracking, head-to-head matchups. The demo
+        ships with historical data only, so most of the panels below sit
+        idle. Spin up your own league at <a href="/">jzff.online</a>
+        to see this live.
+    </span>
+</div>
+
+
+<main>
+<div class="site-glow"></div>
+
+<div class="bc-page">
+
+    <!-- ──────────────── MASTHEAD (full width above the layout) ──────────────── -->
+    <header class="bc-mast">
+        <div class="bc-mast-kicker">
+            BEST COACH BOARD<span class="dot">·</span>WEEK <span id="bc-week-kicker">—</span>
+        </div>
+        <h1 class="bc-mast-title">Who left points on the bench?</h1>
+        <div class="bc-mast-meta">
+            SEASON <strong id="bc-year">—</strong>
+            &nbsp;·&nbsp; THROUGH WEEK <strong id="bc-week">—</strong>
+            &nbsp;·&nbsp; <span id="bc-tilecount">—</span> MANAGERS GRADED
+        </div>
+        <div><span class="bc-mode-tag" id="bc-mode-tag" hidden>★ Preview · Most recent completed season ★</span></div>
+    </header>
+
+    <div class="bc-layout">
+
+    <!-- ──────────────── STANDINGS (row 1, col 1) ──────────────── -->
+    <section class="bc-standings-wrap">
+        <div class="bc-section-head">
+            <span class="bc-section-num">§ I</span>
+            <h2 class="bc-section-title">Season standings, biggest benchers first.</h2>
+            <span class="bc-section-note">Tap a row for the weekly breakdown</span>
+        </div>
+
+        <div class="bc-board" id="bc-board">
+            <!-- rendered by JS -->
+        </div>
+    </section>
+
+    <!-- ──────────────── RIGHT RAIL (row 1, col 2) — two stacked tallies ──── -->
+    <aside class="bc-side">
+        <div class="bc-tally">
+            <div class="bc-tally-head">★ Perfect Lineups</div>
+            <div class="bc-tally-sub">Who's chalked the most.</div>
+            <div class="bc-tally-list" id="bc-tally">
+                <!-- rendered by JS -->
+            </div>
+        </div>
+        <div class="bc-tally bc-tally--bomb">
+            <div class="bc-tally-head bc-tally-head--bomb">× Bench Bombs <span class="bc-tally-thresh" id="bc-bomb-thresh">30+</span></div>
+            <div class="bc-tally-sub">Most weeks of 30+ stranded.</div>
+            <div class="bc-tally-list" id="bc-bomb">
+                <!-- rendered by JS -->
+            </div>
+        </div>
+    </aside>
+
+    <!-- ──────────────── SIDE BOARDS (row 2, full width) ──────────────── -->
+    <section class="bc-boards-wrap">
+        <div class="bc-section-head">
+            <span class="bc-section-num">§ II</span>
+            <h2 class="bc-section-title">The best and worst slates.</h2>
+            <span class="bc-section-note">Current-week entries in yellow</span>
+        </div>
+
+        <div class="bc-boards">
+            <!-- WORST -->
+            <div class="bc-mini">
+                <div class="bc-mini-head">
+                    <span class="bc-mini-mark bc-mini-mark--red">×</span>
+                    <span class="bc-mini-title">Worst single weeks.</span>
+                    <span class="bc-mini-note">Points stranded</span>
+                </div>
+                <div class="bc-shame-wrap">
+                    <div class="bc-shame" id="bc-shame">
+                        <!-- rendered by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- PERFECT -->
+            <div class="bc-mini">
+                <div class="bc-mini-head">
+                    <span class="bc-mini-mark bc-mini-mark--green">★</span>
+                    <span class="bc-mini-title">Perfect rosters.</span>
+                    <span class="bc-mini-note">Optimal lineups played</span>
+                </div>
+                <div class="bc-shame-wrap">
+                    <div class="bc-shame" id="bc-perfect">
+                        <!-- rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    </div><!-- /.bc-layout -->
+
+</div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    const boardEl = document.getElementById('bc-board');
+    const shameEl = document.getElementById('bc-shame');
+    const perfectEl = document.getElementById('bc-perfect');
+    const tallyEl = document.getElementById('bc-tally');
+    const bombEl = document.getElementById('bc-bomb');
+    const bombThreshEl = document.getElementById('bc-bomb-thresh');
+    const yearEl = document.getElementById('bc-year');
+    const weekEl = document.getElementById('bc-week');
+    const weekKickerEl = document.getElementById('bc-week-kicker');
+    const countEl = document.getElementById('bc-tilecount');
+    const modeTag = document.getElementById('bc-mode-tag');
+
+    function toRoman(n) {
+        if (!Number.isFinite(n) || n <= 0) return '';
+        const numerals = [
+            [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+            [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+            [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+        ];
+        let out = ''; let v = Math.floor(n);
+        for (const [val, sym] of numerals) {
+            while (v >= val) { out += sym; v -= val; }
+        }
+        return out;
+    }
+    function toRomanLower(n) { return toRoman(n).toLowerCase(); }
+
+    function renderEmpty(message) {
+        const page = document.querySelector('.bc-page');
+        page.querySelectorAll('section').forEach(s => s.remove());
+        const empty = document.createElement('section');
+        empty.className = 'bc-empty';
+        empty.innerHTML = `
+            <div class="bc-empty-marquee">— NO DATA ON THE BOARD —</div>
+            <p class="bc-empty-msg">Chalk's not down yet.</p>
+            <p class="bc-empty-body">${message}</p>
+        `;
+        page.appendChild(empty);
+    }
+
+    function leftClass(left, optimal) {
+        if (left == null || optimal == null || optimal <= 0) return '';
+        if (left === 0) return 'is-clean';
+        const pct = (left / optimal) * 100;
+        if (pct >= 15) return 'is-bad';
+        return '';
+    }
+    function weekLeftClass(left, optimal) {
+        if (left == null || optimal == null || optimal <= 0) return '';
+        if (left === 0) return 'is-clean';
+        const pct = (left / optimal) * 100;
+        return pct >= 15 ? 'is-bad' : '';
+    }
+    function fmt(n, digits) {
+        if (n == null || isNaN(n)) return '—';
+        return Number(n).toFixed(digits == null ? 1 : digits);
+    }
+    function escapeHtml(s) {
+        if (s == null) return '';
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    function renderBoard(data) {
+        const head = `
+            <div class="bc-row-head">
+                <div class="bc-col-head">No.</div>
+                <div class="bc-col-head">Manager</div>
+                <div class="bc-col-head num is-actual">Actual</div>
+                <div class="bc-col-head num">Optimal</div>
+                <div class="bc-col-head num">Left</div>
+            </div>
+        `;
+        const ranked = [...data.rankings.by_left_desc];
+        const mgrById = new Map(data.managers.map(m => [m.manager_id, m]));
+        const rowsHtml = ranked.map((rk, idx) => {
+            const m = mgrById.get(rk.manager_id);
+            if (!m) return '';
+            const lcls = leftClass(m.season_left, m.season_optimal);
+            return `
+                <div class="bc-row is-data" data-mgr="${escapeHtml(m.manager_id)}">
+                    <div class="bc-rank">${toRomanLower(idx + 1)}.</div>
+                    <div class="bc-name">${escapeHtml(m.display_name)}<span class="team">${escapeHtml(m.team_name || '')}</span></div>
+                    <div class="bc-num is-actual">${fmt(m.season_actual)}</div>
+                    <div class="bc-num">${fmt(m.season_optimal)}</div>
+                    <div class="bc-num is-left ${lcls}">${fmt(m.season_left)}</div>
+                </div>
+            `;
+        }).join('');
+        boardEl.innerHTML = head + rowsHtml;
+
+        boardEl.addEventListener('click', (e) => {
+            const row = e.target.closest('.bc-row.is-data');
+            if (!row) return;
+            const mid = row.dataset.mgr;
+            const next = row.nextElementSibling;
+            if (next && next.classList.contains('bc-drill') && next.dataset.mgr === mid) {
+                next.remove();
+                row.classList.remove('is-open');
+                return;
+            }
+            boardEl.querySelectorAll('.bc-drill').forEach(d => d.remove());
+            boardEl.querySelectorAll('.bc-row.is-open').forEach(r => r.classList.remove('is-open'));
+            row.classList.add('is-open')
+            const m = mgrById.get(mid);
+            if (!m) return;
+            const drill = document.createElement('div');
+            drill.className = 'bc-drill';
+            drill.dataset.mgr = mid;
+            drill.innerHTML = renderDrill(m);
+            row.parentNode.insertBefore(drill, row.nextSibling);
+        });
+    }
+
+    function renderDrill(m) {
+        if (!m.weeks || m.weeks.length === 0) {
+            return `<div class="bc-drill-cap">No scored weeks yet for <strong>${escapeHtml(m.display_name)}</strong>.</div>`;
+        }
+        const weeks = [...m.weeks].sort((a, b) => a.week - b.week).map(w => {
+            const cls = weekLeftClass(w.left, w.optimal);
+            const label = w.left === 0 ? '★ perfect' : `−${fmt(w.left)} left`;
+            return `
+                <div class="bc-wk">
+                    <div class="bc-wk-num">Wk ${w.week}</div>
+                    <div class="bc-wk-line">${fmt(w.actual)}<span class="sep">/</span>${fmt(w.optimal)}</div>
+                    <div class="bc-wk-left ${cls}">${label}</div>
+                </div>
+            `;
+        }).join('');
+        const worst = m.worst_week;
+        const note = worst && worst.left > 0
+            ? `Worst single week: <em>−${fmt(worst.left)} pts</em> stranded in Week <strong>${worst.week}</strong>.`
+            : `No bench left behind — a perfectly coached season.`;
+        return `
+            <div class="bc-drill-cap">${escapeHtml(m.display_name)} · ${note}</div>
+            <div class="bc-weeks">${weeks}</div>
+        `;
+    }
+
+    // Renders a side-board list (worst or perfect). `cfg.kind` is 'worst' or
+    // 'perfect' and controls the right-side number's color + sign. Rows whose
+    // week matches the current live week get the .is-current treatment so the
+    // most recent slate's drama stays visible up top.
+    function renderSideBoard(el, items, cfg) {
+        if (!items || items.length === 0) {
+            el.innerHTML = `<div class="bc-shame-empty">${cfg.emptyText}</div>`;
+            return;
+        }
+        const currentWeek = cfg.currentWeek;
+        const rows = items.map((w, idx) => {
+            const isCurrent = currentWeek != null && w.week === currentWeek;
+            const weekFrag = isCurrent
+                ? `<span class="bc-current-tag">Wk ${w.week} ★</span>`
+                : `Wk ${w.week}`;
+            const metaTail = cfg.kind === 'perfect'
+                ? `${fmt(w.actual)} pts on the board`
+                : `${fmt(w.actual)} of ${fmt(w.optimal)} possible`;
+            const rightVal = cfg.kind === 'perfect' ? fmt(w.actual) : fmt(w.left);
+            const rightCls = cfg.kind === 'perfect' ? 'is-green' : 'is-red';
+            return `
+                <div class="bc-shame-row ${isCurrent ? 'is-current' : ''}">
+                    <div class="bc-shame-rank">${toRomanLower(idx + 1)}.</div>
+                    <div>
+                        <div class="bc-shame-name">${escapeHtml(w.name)}</div>
+                        <div class="bc-shame-meta">${weekFrag} · ${metaTail}</div>
+                    </div>
+                    <div class="bc-shame-left ${rightCls}">${rightVal}</div>
+                </div>
+            `;
+        }).join('');
+        el.innerHTML = rows;
+    }
+
+    function renderTally(el, counts, emptyText) {
+        if (!el) return;
+        if (!counts || counts.length === 0) {
+            el.innerHTML = `<div class="bc-tally-empty">${emptyText}</div>`;
+            return;
+        }
+        const leaderCount = counts[0].count;
+        const rows = counts.map((c) => `
+            <div class="bc-tally-row ${c.count === leaderCount ? 'is-leader' : ''}">
+                <div class="bc-tally-name">${escapeHtml(c.name)}</div>
+                <div class="bc-tally-num"><span class="x">×</span>${c.count}</div>
+            </div>
+        `).join('');
+        el.innerHTML = rows;
+    }
+
+    fetch('data/best_coach.json', { credentials: 'same-origin' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data || !data.managers || data.managers.length === 0) {
+                renderEmpty('No live season is flagged, and no completed season has weekly lineup data yet. Sync a league to chalk it up.');
+                return;
+            }
+            yearEl.textContent = data.year ?? '—';
+            weekEl.textContent = data.throughWeek ?? '—';
+            if (weekKickerEl) weekKickerEl.textContent = data.throughWeek ?? '—';
+            countEl.textContent = String(data.managers.length);
+            if (data.is_live === false) {
+                modeTag.hidden = false;
+            }
+            renderBoard(data);
+            // Highlight current-week entries only when the season is actually
+            // live — for past-season preview mode, "current week" is just the
+            // last scored week of a closed season, not in-progress drama.
+            const currentWeek = data.is_live ? data.throughWeek : null;
+            renderSideBoard(shameEl, data.worst_weeks, {
+                kind: 'worst',
+                emptyText: 'No benchings worth shaming yet.',
+                currentWeek,
+            });
+            renderSideBoard(perfectEl, data.perfect_weeks, {
+                kind: 'perfect',
+                emptyText: 'No perfect lineups played yet.',
+                currentWeek,
+            });
+            renderTally(tallyEl, data.perfect_counts, 'No perfect lineups yet.');
+            const threshold = data.bench_bomb_threshold ?? 30;
+            if (bombThreshEl) bombThreshEl.textContent = `${threshold}+`;
+            renderTally(bombEl, data.bench_bomb_counts, `No ${threshold}+ pt benchings yet.`);
+        })
+        .catch(err => {
+            console.error('best_coach.json fetch failed', err);
+            renderEmpty('Couldn\'t pull the board down. Try refreshing in a moment.');
+        });
+})();
+</script>
+
+</body>
+</html>

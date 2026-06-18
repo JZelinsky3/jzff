@@ -10,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Lakeside League · LSL · Live Demo · The Sunday Chronicle</title>
-<meta name="description" content="Live demo of The Sunday Chronicle — a real fantasy football league's history rendered as a public almanac. Champions, drafts, rivalries, weekly pick'ems, live-season tools.">
+<meta name="description" content="Live demo of The Sunday Chronicle — a real fantasy football league's history rendered as a public almanac. Champions, drafts, rivalries, weekly pick'ems, live tools.">
 <style>
 /* ============================================================
    THE LAKESIDE LEAGUE — Vintage Creamery Design System
@@ -2410,14 +2410,14 @@ body {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="live-season/index.html" class="toc-row" data-paid-feature>
+        <a href="live/index.html" class="toc-row" data-paid-feature>
             <div class="toc-chapter">Ch. VII</div>
             <div class="toc-title">Live <em>Season.</em></div>
             <div class="toc-arrow">→</div>
         </a>
 
         <script>
-          // Hide the live-season row for UDFA (free) leagues — paid-tier only.
+          // Hide the live row for UDFA (free) leagues — paid-tier only.
           (function () {
             if (window.__DC && window.__DC.isUdfaLeague) {
               document.querySelectorAll('[data-paid-feature]').forEach(function (el) {
@@ -2460,7 +2460,7 @@ body {
         <p class="mailing-blurb">
             <strong>The Sunday Chronicle is live to test now.</strong>
             Drop your email and we'll let you know when new features land —
-            new live-season tools, deeper records, themed redesigns, and
+            new live tools, deeper records, themed redesigns, and
             quarter-by-quarter additions to the almanac.
             <em>Read along as the chronicle grows.</em>
         </p>
@@ -3293,7 +3293,7 @@ body {
       }
     }
 
-    // -- TRACKBOARD (live-season news / watch / risers) --
+    // -- TRACKBOARD (live news / watch / risers) --
     // Pulls from three feeds, all optional:
     //   milestones.json     → News  (recent crossings, jake-only today)
     //   records_watch.json  → Watch (records on the brink, jake-only today)
@@ -3411,14 +3411,14 @@ body {
 
       // Resolve playoff odds in three tiers:
       //   1. data/playoff_odds.json — jake-only frozen W10/2025 preview
-      //   2. live-season/powerrank/data — live Monte Carlo (needs is_live)
+      //   2. live/powerrank/data — live Monte Carlo (needs is_live)
       //   3. Last completed season's top 6 finishers — pre-season fallback
       function resolveOdds() {
         return fetchJson('data/playoff_odds.json').then(function (preview) {
           if (preview && Array.isArray(preview.teams) && preview.teams.length) {
             return { kind: 'projection', teams: preview.teams.slice(0, 7), through_week: preview.through_week, year: preview.year };
           }
-          return fetchJson('live-season/powerrank/data').then(function (live) {
+          return fetchJson('live/powerrank/data').then(function (live) {
             if (live && live.status === 'ok' && Array.isArray(live.weeks) && live.weeks.length) {
               var latest = live.weeks[live.weeks.length - 1];
               if (latest && Array.isArray(latest.overall)) {
@@ -3473,13 +3473,13 @@ body {
         if (newsItems.length) {
           el('dc-tb-news').innerHTML =
             newsItems.map(newsRowHtml).join('') +
-            '<a class="tb-more" href="live-season/milestones/index.html">See all milestones</a>';
+            '<a class="tb-more" href="live/milestones/index.html">See all milestones</a>';
         } else if (milestones) {
           el('dc-tb-news').innerHTML = emptyState(
             '✦',
             'No milestones crossed yet',
             'The first kickoff starts the clock — keep an eye on the imminent column.'
-          ) + '<a class="tb-more" href="live-season/milestones/index.html">See upcoming milestones</a>';
+          ) + '<a class="tb-more" href="live/milestones/index.html">See upcoming milestones</a>';
         }
         if (milestones) available.news = true;
 
@@ -3493,13 +3493,13 @@ body {
         if (watchItems.length) {
           el('dc-tb-watch').innerHTML =
             watchItems.map(watchRowHtml).join('') +
-            '<a class="tb-more" href="live-season/records-watch/index.html">See all records</a>';
+            '<a class="tb-more" href="live/records-watch/index.html">See all records</a>';
         } else if (recordsWatch) {
           el('dc-tb-watch').innerHTML = emptyState(
             '◈',
             'Nothing on the brink',
             'No active pursuit of an all-time mark — check back once results roll in.'
-          ) + '<a class="tb-more" href="live-season/records-watch/index.html">See the full record book</a>';
+          ) + '<a class="tb-more" href="live/records-watch/index.html">See the full record book</a>';
         }
         if (recordsWatch) available.watch = true;
 

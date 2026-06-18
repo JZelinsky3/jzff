@@ -108,7 +108,7 @@
     var ids = function (side) {
       return (side.sends || []).map(function (p) { return p.id; }).join(',');
     };
-    var href = 'live-season/trades/analyzer/' +
+    var href = 'live/trades/analyzer/' +
       '?teamA=' + encodeURIComponent(t.teamA.ownerId) +
       '&teamB=' + encodeURIComponent(t.teamB.ownerId) +
       '&sends=' + encodeURIComponent(ids(t.teamA)) +

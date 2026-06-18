@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
+<script>(function(){var u=navigator.userAgent;if(!(/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u)))return;if(/(?:^|;\s*)dc_view=desktop/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo\//,"/demo-m/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Records Watch · The Lakeside League</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+/* ============================================================
+   RECORDS WATCH — Ember palette
+   Records under threat. Wine base, ember alert accents.
+   ============================================================ */
+
+:root {
+    /* Slightly cooler / more carbon-leaning base than the wine baseline
+       so this page reads as a different terminal-style surface vs the
+       milestone honors roll. */
+    --rw-bg:         #0f0a0c;
+    --rw-soft:       #170f12;
+    --rw-card:       #1d141a;
+    --rw-card-hi:    #281a23;
+    --rw-line:       #3a2128;
+    --rw-line-soft:  #281820;
+    --rw-mute:       #c6a89e;
+    --rw-cream:      #f4ebd8;
+
+    /* Primary accent — blue tracker tone. Variable names still read
+       "ember" so the existing rules don't need touching; the values
+       just swap from alarm-orange to the cool tracker blue. */
+    --rw-ember:      #7fa8bd;
+    --rw-ember-hi:   #a4c4d6;
+    --rw-ember-deep: #4a7d96;
+    --rw-ember-soft: rgba(127,168,189,.16);
+    --rw-ember-glow: rgba(127,168,189,.55);
+
+    /* Sidebar accent — kept on the same blue family but slightly
+       softer so the secondary tracker data still reads distinct. */
+    --rw-steel:      #7fa8bd;
+    --rw-steel-hi:   #a4c4d6;
+    --rw-steel-soft: rgba(127,168,189,.14);
+
+    --rw-gold:       var(--gold);
+    --rw-gold-bright:var(--gold-bright);
+}
+
+body { background: var(--rw-bg); }
+
+.site-glow {
+    background-image:
+        radial-gradient(circle at 18% 22%, rgba(127,168,189,.10) 0%, transparent 50%),
+        radial-gradient(circle at 82% 78%, rgba(232,200,137,.05) 0%, transparent 50%),
+        radial-gradient(circle at 50% 110%, rgba(74,125,150,.12) 0%, transparent 55%);
+}
+
+/* ── Nav + chapbar themed to the page ──────────────────────── */
+.nav { background: rgba(21,10,12,.95); border-bottom-color: var(--rw-line); }
+/* Nav masthead text + back arrow: switch from main.css's gold to ember
+   so the whole header reads as one palette. */
+.nav-back, .nav-link { color: var(--rw-ember); }
+.nav-back:hover, .nav-link:hover { color: var(--rw-ember-hi); }
+.nav-title em { color: var(--rw-cream); }
+.nav-kicker { color: var(--rw-ember); }
+.nav-drop-btn { color: var(--rw-ember); }
+.nav-drop-btn:hover { color: var(--rw-ember-hi); }
+:root {
+    --chapbar-bg:     rgba(21,10,12,.92);
+    --chapbar-border: var(--rw-line);
+    --chapbar-text:   var(--rw-mute);
+    --chapbar-active: var(--rw-ember);
+    --chapbar-line:   var(--rw-line);
+
+    --nav-drop-bg:           rgba(21,10,12,.97);
+    --nav-drop-border:       var(--rw-line);
+    --nav-drop-text:         #efd6cb;
+    --nav-drop-text-mute:    var(--rw-mute);
+    --nav-drop-accent:       var(--rw-ember);
+    --nav-drop-hover-bg:     rgba(127,168,189,.10);
+    --nav-drop-sub-bg:       rgba(0,0,0,.20);
+    --nav-drop-accent-line:  rgba(127,168,189,.30);
+}
+
+/* ── Masthead (newsroom + tracker hybrid) ────────────────────
+   Replaces the centered milestone-style hero with an asymmetric
+   left/right masthead: eyebrow + title + sub on the left,
+   live-status panel with the four meter stats stacked vertically
+   on the right. Carbon-tinted bar across the top with a thin
+   ember rule reads as a "control room" header. */
+.rw-mast-frame {
+    position: relative;
+    background:
+        repeating-linear-gradient(
+            180deg,
+            transparent 0 22px,
+            rgba(127,168,189,.025) 22px 23px
+        ),
+        linear-gradient(180deg, rgba(127,168,189,.05) 0%, transparent 100%),
+        var(--rw-soft);
+    border-bottom: 1px solid var(--rw-line);
+    margin-bottom: 2.5rem;
+}
+.rw-mast {
+    max-width: 1260px;
+    margin: 0 auto;
+    padding: 2.6rem 1.8rem 1.4rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 3rem;
+    align-items: end;
+}
+.rw-mast-left { min-width: 0; }
+.rw-mast-eyebrow {
+    display: inline-flex; align-items: center; gap: .65rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .4em; text-transform: uppercase;
+    color: var(--rw-ember);
+    margin-bottom: 1rem;
+}
+.rw-mast-eyebrow .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--rw-ember);
+    box-shadow: 0 0 10px var(--rw-ember-glow);
+    animation: rw-pulse 1.8s ease-in-out infinite;
+}
+@keyframes rw-pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%     { opacity: .45; transform: scale(.78); }
+}
+.rw-mast-title {
+    /* Back to the serif treatment used by every other page title on
+       the site — only the eyebrow + sub stay mono. */
+    font-family: var(--serif);
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    letter-spacing: -.02em;
+    color: var(--rw-cream);
+    line-height: 1;
+    margin-bottom: .55rem;
+}
+.rw-mast-title em {
+    font-style: italic;
+    color: var(--rw-ember);
+}
+.rw-mast-sub {
+    font-family: var(--mono);
+    font-size: .68rem; letter-spacing: .14em;
+    color: var(--rw-mute);
+    line-height: 1.6;
+    max-width: 38rem;
+    text-transform: uppercase;
+}
+/* Status panel — four stats in a horizontal strip with rule above. */
+.rw-mast-right {
+    display: flex; align-items: stretch; gap: 0;
+    padding: .9rem 0 0;
+    border-top: 1px solid var(--rw-line);
+}
+.rw-mast-stat {
+    display: flex; flex-direction: column; gap: .35rem;
+    padding: 0 1.1rem;
+    border-right: 1px solid var(--rw-line-soft);
+    min-width: 5.5rem;
+}
+.rw-mast-stat:last-of-type { border-right: 0; }
+.rw-mast-stat .lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-mast-stat .val {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 1.6rem;
+    color: var(--rw-cream); line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.rw-mast-stat.alert .val { color: var(--rw-ember); text-shadow: 0 0 14px var(--rw-ember-soft); }
+.rw-mast-stat.steel .val { color: var(--rw-steel-hi); }
+.rw-mast-foot {
+    grid-column: 1 / -1;
+    padding-top: 1.2rem;
+    margin-top: .8rem;
+    border-top: 1px dashed var(--rw-line-soft);
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem; flex-wrap: wrap;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-mast-foot .legend {
+    display: flex; gap: 1.4rem;
+    color: var(--rw-mute);
+}
+.rw-mast-foot .legend span::before {
+    content: '■ ';
+    margin-right: .25rem;
+}
+.rw-mast-foot .legend .l-broken::before  { color: var(--rw-ember); }
+.rw-mast-foot .legend .l-onpace::before  { color: var(--rw-ember-hi); }
+.rw-mast-foot .legend .l-brink::before   { color: var(--rw-steel); }
+.rw-mast-foot .legend .l-missed::before  { color: var(--rw-mute); }
+
+@media (max-width: 880px) {
+    .rw-mast { grid-template-columns: 1fr; gap: 1.4rem; padding: 1.8rem 1.2rem 1rem; }
+    .rw-mast-right { flex-wrap: wrap; gap: .8rem 0; padding-top: 1.2rem; border-top: 1px solid var(--rw-line); }
+    .rw-mast-stat { min-width: 50%; padding: 0 .8rem; }
+    .rw-mast-stat:nth-child(2n) { border-right: 0; }
+}
+
+/* ── Page wrap: asymmetric two-column terminal layout ──────────
+   Big "main" column on the left for the dominant sections
+   (Records Broken LCDs + On the Brink bar blocks). A narrower
+   sidebar on the right hosts compact tables for On Pace and Just
+   Missed so the page reads like a tracker dashboard, not a stack
+   of equal sections. */
+.rw-wrap {
+    max-width: 1260px;
+    margin: 0 auto;
+    padding: 0 1.8rem 5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    column-gap: 2rem;
+    row-gap: 2.5rem;
+    position: relative; z-index: 1;
+}
+.rw-main { min-width: 0; display: flex; flex-direction: column; gap: 2.8rem; }
+.rw-side { min-width: 0; display: flex; flex-direction: column; gap: 1.8rem; }
+
+@media (max-width: 1100px) {
+    .rw-wrap { grid-template-columns: 1fr; }
+    .rw-side { order: 2; }
+}
+
+.rw-section-head {
+    display: flex; align-items: center; gap: .9rem; flex-wrap: wrap;
+    padding: 0 0 .7rem;
+    margin-bottom: 1.3rem;
+    border-bottom: 2px solid var(--rw-line);
+    position: relative;
+}
+.rw-section-head::after {
+    /* Thin ember bar under the section title — that "live channel"
+       feel without needing a background fill. */
+    content: '';
+    position: absolute;
+    left: 0; bottom: -2px;
+    width: 80px;
+    height: 2px;
+    background: var(--rw-ember);
+}
+.rw-side .rw-section-head::after { background: var(--rw-steel); }
+.rw-section-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--rw-ember); flex-shrink: 0;
+}
+.rw-side .rw-section-num { color: var(--rw-steel); }
+.rw-section-title {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 1.05rem; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--rw-cream);
+}
+.rw-section-title em {
+    font-style: normal;
+    color: var(--rw-ember);
+}
+.rw-side .rw-section-title em { color: var(--rw-steel-hi); }
+.rw-section-note {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+
+/* ── On Pace stats cards (no meter) ──────────────────────────
+   The section below Brink, for chasers in the 40-50% range
+   who are building toward the record but aren't close enough
+   to warrant the bar-plot treatment. Two-column compare card
+   instead — chaser stats on the left, holder mark on the right,
+   gap line across the bottom. */
+.rw-onpace-stack {
+    display: flex; flex-direction: column;
+    gap: 1rem;
+}
+.rw-onpace-card {
+    background:
+        linear-gradient(170deg, var(--rw-card) 0%, var(--rw-soft) 100%);
+    border: 1px solid var(--rw-line);
+    border-left: 3px solid var(--rw-ember);
+    padding: 1.2rem 1.4rem 1.1rem;
+    position: relative; overflow: hidden;
+}
+.rw-onpace-head {
+    display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+    padding-bottom: .8rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+}
+.rw-onpace-head .num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em;
+    color: var(--rw-mute);
+}
+.rw-onpace-head .cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .9rem; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--rw-cream);
+    flex: 1; min-width: 0;
+}
+.rw-onpace-head .pct {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .04em;
+    color: var(--rw-ember-hi);
+    font-variant-numeric: tabular-nums;
+}
+.rw-onpace-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.4rem;
+    align-items: stretch;
+}
+.rw-onpace-col { min-width: 0; }
+.rw-onpace-col .col-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-bottom: .5rem;
+}
+.rw-onpace-col .col-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; line-height: 1;
+    color: var(--rw-cream);
+    margin-bottom: .55rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-onpace-col .col-name .col-sub-tag {
+    /* W-L record tucked beside the name (Quickest-to-X items). */
+    font-family: var(--mono); font-weight: 700;
+    font-style: normal;
+    font-size: .58rem; letter-spacing: .08em;
+    color: var(--rw-mute);
+    margin-left: .35rem;
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+}
+.rw-onpace-col .col-val {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 1.05rem; line-height: 1.2;
+    color: var(--rw-cream);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: .25rem;
+}
+.rw-onpace-col .col-sub {
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .04em;
+    color: var(--rw-ember-hi);
+    line-height: 1.4;
+}
+.rw-onpace-col.mark {
+    border-left: 1px solid var(--rw-line-soft);
+    padding-left: 1.4rem;
+}
+.rw-onpace-col.mark .col-sub {
+    color: var(--rw-mute);
+}
+.rw-onpace-foot {
+    padding-top: .9rem;
+    margin-top: 1rem;
+    border-top: 1px dashed var(--rw-line-soft);
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: .8rem; flex-wrap: wrap;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .06em;
+    color: var(--rw-mute);
+}
+.rw-onpace-foot .gap {
+    color: var(--rw-ember-hi);
+}
+
+@media (max-width: 760px) {
+    .rw-onpace-grid { grid-template-columns: 1fr; gap: .8rem; }
+    .rw-onpace-col.mark {
+        border-left: 0;
+        border-top: 1px solid var(--rw-line-soft);
+        padding-left: 0;
+        padding-top: .8rem;
+    }
+}
+
+/* ── Sidebar compact panels ──────────────────────────────────
+   These are visually distinct from the main column: steel-blue
+   accent instead of ember, denser typography, small tile rows
+   stacked vertically. They mark On Pace and Just Missed as the
+   page's "secondary" data, the way a sports terminal would
+   render tracker tables alongside the headline. */
+.rw-side-panel {
+    background:
+        linear-gradient(180deg, rgba(127,168,189,.04) 0%, transparent 60%),
+        var(--rw-card);
+    border: 1px solid var(--rw-line);
+    border-left: 2px solid var(--rw-steel);
+}
+
+/* On Pace sidebar tiles — each row is a stacked mini-card. */
+.rw-side-tile {
+    padding: .85rem 1rem .9rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+}
+.rw-side-tile:last-child { border-bottom: 0; }
+.rw-side-tile-head {
+    display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap;
+    margin-bottom: .45rem;
+}
+.rw-side-tile-head .rank {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .22em;
+    color: var(--rw-steel);
+    font-variant-numeric: tabular-nums;
+}
+.rw-side-tile-head .cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--rw-cream);
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-side-tile-head .flag {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-steel-hi);
+    background: var(--rw-steel-soft);
+    padding: .15rem .35rem .18rem;
+}
+.rw-side-tile-row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: .6rem;
+    margin-bottom: .55rem;
+}
+.rw-side-tile-chaser {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .82rem;
+    color: var(--rw-cream);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    min-width: 0;
+}
+.rw-side-tile-val {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .9rem;
+    color: var(--rw-steel-hi);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    flex-shrink: 0;
+}
+.rw-side-tile-bar {
+    position: relative;
+    height: 4px;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line);
+    margin-bottom: .45rem;
+}
+.rw-side-tile-bar .fill {
+    position: absolute; top: 0; bottom: 0; left: 0;
+    background: linear-gradient(90deg, var(--rw-steel) 0%, var(--rw-steel-hi) 100%);
+    box-shadow: 0 0 6px var(--rw-steel-soft);
+}
+.rw-side-tile-bar .fill.over {
+    background: linear-gradient(90deg, var(--rw-ember-deep) 0%, var(--rw-ember-hi) 100%);
+    box-shadow: 0 0 8px var(--rw-ember-soft);
+}
+.rw-side-tile-foot {
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .08em;
+    color: var(--rw-mute);
+    line-height: 1.5;
+    display: flex; justify-content: space-between; flex-wrap: wrap;
+    gap: .4rem;
+}
+.rw-side-tile-foot .gap {
+    color: var(--rw-steel-hi);
+    font-weight: 700;
+}
+.rw-side-tile-foot .gap.over { color: var(--rw-ember-hi); }
+
+/* Just Missed sidebar rows — give each row more breathing room so
+   they don't feel cramped vertically. Width stays the same. */
+.rw-side-miss {
+    padding: 1.4rem 1.2rem 1.45rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+}
+.rw-side-miss:last-child { border-bottom: 0; }
+.rw-side-miss-head {
+    display: flex; align-items: baseline; gap: .5rem;
+    margin-bottom: .75rem;
+}
+.rw-side-miss-head .rank {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .22em;
+    color: var(--rw-steel);
+}
+.rw-side-miss-head .cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--rw-cream);
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-side-miss-head .pct {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .04em;
+    color: var(--rw-steel-hi);
+    font-variant-numeric: tabular-nums;
+}
+.rw-side-miss-copy {
+    font-family: var(--mono);
+    font-size: .62rem; line-height: 1.85;
+    color: var(--rw-cream);
+    margin-bottom: .7rem;
+}
+.rw-side-miss-copy em {
+    font-style: normal;
+    color: var(--rw-steel-hi);
+    font-weight: 700;
+}
+.rw-side-miss-foot {
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .06em;
+    color: var(--rw-mute);
+    line-height: 1.5;
+    display: flex; justify-content: space-between; gap: .4rem; flex-wrap: wrap;
+}
+
+/* Sidebar empty state — tighter than main column. */
+.rw-side-empty {
+    padding: 1.4rem 1rem;
+    text-align: center;
+    background:
+        repeating-linear-gradient(45deg, transparent 0 6px, rgba(127,168,189,.025) 6px 7px),
+        var(--rw-card);
+    border: 1px dashed var(--rw-line);
+}
+.rw-side-empty h4 {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--rw-cream);
+    margin-bottom: .4rem;
+}
+.rw-side-empty p {
+    font-family: var(--mono);
+    font-size: .55rem; letter-spacing: .04em;
+    color: var(--rw-mute);
+    line-height: 1.6;
+}
+
+/* ── Brink blocks (leaderboard / scoreboard layout) ───────────
+   Each accumulator record gets its OWN full-width horizontal
+   block, not a card in a grid. The mark sits in a wide numeric
+   "scoreboard panel" on the left; a dominant tick-marked bar
+   plot anchors the right side, showing pace as a fill that can
+   extend past the all-time line (overshoot = on pace to break).
+   This is the visual identity for the page — read like a stat
+   board, not like a milestone feed. */
+.rw-blocks {
+    display: flex; flex-direction: column;
+    gap: 1.1rem;
+}
+.rw-block {
+    position: relative; overflow: hidden;
+    background:
+        linear-gradient(160deg, var(--rw-card) 0%, var(--rw-soft) 100%);
+    border: 1px solid var(--rw-line);
+    border-left: 3px solid var(--rw-ember);
+}
+.rw-block::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 100% 0%, var(--rw-ember-soft) 0%, transparent 50%);
+}
+.rw-block-head {
+    display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+    padding: 1rem 1.4rem .9rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+    z-index: 1; position: relative;
+}
+.rw-block-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em;
+    color: var(--rw-mute);
+}
+.rw-block-cat {
+    font-family: var(--serif);
+    font-size: 1.15rem; line-height: 1;
+    color: var(--rw-cream);
+    flex: 1; min-width: 0;
+}
+.rw-block-flag {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .25em; text-transform: uppercase;
+    color: #1a0a0a;
+    background: var(--rw-ember);
+    padding: .35rem .65rem .4rem;
+    box-shadow: 0 0 14px var(--rw-ember-soft);
+}
+
+.rw-block-body {
+    display: grid;
+    grid-template-columns: 175px 1fr;
+    align-items: stretch;
+    z-index: 1; position: relative;
+}
+/* The "mark panel" — the all-time record's big readout on the left. */
+.rw-block-mark {
+    padding: 1.3rem 1.4rem 1.3rem;
+    border-right: 1px solid var(--rw-line-soft);
+    background: rgba(0,0,0,.18);
+    display: flex; flex-direction: column; justify-content: center;
+    gap: .25rem;
+}
+.rw-mark-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--rw-ember);
+}
+.rw-mark-num {
+    font-family: var(--serif);
+    font-size: 2.5rem; line-height: .95;
+    color: var(--rw-cream);
+    margin: .15rem 0 .25rem;
+    /* Tabular numbers so big numerics align across blocks. */
+    font-variant-numeric: tabular-nums;
+}
+.rw-mark-unit {
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-mark-credit {
+    margin-top: .6rem;
+    padding-top: .55rem;
+    border-top: 1px dashed var(--rw-line-soft);
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .04em;
+    color: var(--rw-mute);
+    line-height: 1.5;
+}
+.rw-mark-credit strong { color: var(--rw-cream); font-weight: 700; }
+
+/* The plot — dominant horizontal bar with tick marks + mark line.
+   Extra right padding restores the original track length even though
+   the mark panel shrunk, so the bar reads the same width as before
+   the panel was tightened. */
+.rw-block-plot {
+    padding: 1.3rem 4.1rem 1.2rem 1.4rem;
+    display: flex; flex-direction: column;
+    gap: .6rem;
+    min-width: 0;
+}
+.rw-plot-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: .8rem;
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-plot-head .chaser {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; letter-spacing: 0;
+    text-transform: none;
+    color: var(--rw-cream);
+}
+.rw-plot-head .chaser-sub {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .08em;
+    color: var(--rw-mute);
+    margin-top: .2rem;
+    text-transform: none;
+    font-variant-numeric: tabular-nums;
+}
+.rw-plot-head .pace {
+    /* legacy — no longer rendered; the chaser's value now floats above
+       the bar at its fill endpoint via .rw-plot-label below. */
+    display: none;
+}
+/* Label strip above the track — anchors the chaser's current value at
+   the point on the bar where their fill ends, so the eye reads
+   "3 wins" directly above where the meter sits. */
+.rw-plot-labels {
+    position: relative;
+    height: 1rem;
+    margin-bottom: -.2rem;
+}
+.rw-plot-label {
+    /* Right-aligned to the fill endpoint — the label's right edge sits
+     * directly above where the bar stops, so the text trails the fill
+     * instead of straddling it. */
+    position: absolute;
+    bottom: 0;
+    transform: translateX(-100%);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .04em;
+    color: var(--rw-ember-hi);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-shadow: 0 0 8px var(--rw-ember-soft);
+}
+/* Plot track represents 0 → 120% of the mark; mark line sits at
+   ~83.3%. Fills exceeding 100% extend visibly past the mark line. */
+.rw-plot-track {
+    position: relative;
+    height: 22px;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line);
+}
+.rw-plot-tick {
+    position: absolute; top: 0; bottom: 0;
+    width: 1px;
+    background: var(--rw-line);
+    opacity: .8;
+}
+.rw-plot-mark-line {
+    /* Positioned by JS — defaults to the right edge (mark.left:100%)
+     * but slides inward when the chaser is on pace past the record,
+     * leaving overshoot space on the right between the line and the
+     * projection label. */
+    position: absolute;
+    top: -5px; bottom: -5px;
+    width: 2px;
+    background: var(--rw-ember-hi);
+    box-shadow: 0 0 8px var(--rw-ember-glow);
+    z-index: 2;
+}
+.rw-plot-proj-line {
+    /* Gold vertical line at the right edge of the track for overshoot
+     * layout — marks the chaser's projected end value. Pairs with the
+     * gold .rw-plot-label-proj above the bar. */
+    position: absolute;
+    top: -5px; bottom: -5px;
+    right: 0;
+    width: 2px;
+    background: var(--gold);
+    box-shadow: 0 0 8px rgba(232,200,137,.55);
+    z-index: 2;
+}
+.rw-plot-label-proj {
+    /* Gold "12 wins" label sitting above the bar at the projection
+     * line (right edge), centered ON the line so half the label
+     * extends past the track's right edge — visually pinning the
+     * label to the gold marker below. */
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    transform: translateX(50%);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .04em;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-shadow: 0 0 10px rgba(232,200,137,.35);
+}
+.rw-plot-mark-line .mark-tag {
+    /* Floating label above the line — names the record value when
+     * the line has moved inward (overshoot layout). Hidden in old
+     * layout via JS (not rendered). */
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translate(-50%, -.1rem);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .08em;
+    color: var(--rw-ember-hi);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.rw-plot-fill {
+    position: absolute;
+    top: 2px; bottom: 2px; left: 2px;
+    background: linear-gradient(90deg, var(--rw-ember-deep), var(--rw-ember));
+    box-shadow: 0 0 14px var(--rw-ember-soft);
+    z-index: 1;
+}
+.rw-plot-fill.over {
+    /* Tighter gradient + sharper glow when fill extends past the mark. */
+    background: linear-gradient(90deg, var(--rw-ember), var(--rw-ember-hi));
+    box-shadow: 0 0 22px var(--rw-ember-glow);
+}
+.rw-plot-scale {
+    /* Absolute-positioned labels so each one sits directly under its
+     * corresponding tick / right-edge mark, instead of distributing
+     * via space-between (which never quite aligned with the actual
+     * tick positions in the track above). */
+    position: relative;
+    height: 1rem;
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .15em;
+    color: var(--rw-mute);
+}
+.rw-plot-scale span {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+.rw-plot-scale span.s-start { left: 0; transform: none; }
+.rw-plot-scale span.s-end {
+    /* The record-value label (e.g. "9W", "2500 pts", "15G") — centered
+     * on the mark line at the right edge so half the text extends past
+     * the track, matching the gold projection label treatment. */
+    left: auto;
+    right: 0;
+    transform: translateX(50%);
+    color: var(--rw-ember-hi);
+    font-weight: 700;
+    letter-spacing: .04em;
+    font-size: .58rem;
+}
+.rw-plot-foot {
+    display: flex; flex-wrap: wrap; gap: .8rem; justify-content: space-between;
+    padding-top: .5rem;
+    border-top: 1px dashed var(--rw-line-soft);
+    font-family: var(--mono); font-size: .6rem;
+    letter-spacing: .04em;
+    color: var(--rw-mute);
+}
+.rw-plot-foot strong { color: var(--rw-cream); font-weight: 700; }
+.rw-plot-foot .gap-pos { color: var(--rw-ember-hi); }
+.rw-plot-foot .gap-neg { color: var(--rw-mute); }
+
+@media (max-width: 760px) {
+    .rw-block-body { grid-template-columns: 1fr; }
+    .rw-block-mark { border-right: 0; border-bottom: 1px solid var(--rw-line-soft); }
+    .rw-mark-num { font-size: 2.1rem; }
+}
+
+/* ── Chase: standings-style leaderboard with inline mini-bars ─
+   Reads like an NBA standings table — fixed columns, mono numerics,
+   tiny pace bars inline. Less ornate than Brink but reinforces the
+   scoreboard identity (no more milestone-card vibes). */
+.rw-chase {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+    overflow: hidden;
+}
+.rw-chase-head, .rw-chase-row {
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) 110px 5.5rem;
+    gap: 1rem;
+    align-items: center;
+    padding: .65rem 1.2rem;
+}
+.rw-chase-head {
+    background: var(--rw-soft);
+    border-bottom: 1px solid var(--rw-line);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-chase-row {
+    border-bottom: 1px solid var(--rw-line-soft);
+    padding: .8rem 1.2rem;
+}
+.rw-chase-row:last-child { border-bottom: 0; }
+.rw-chase-row.hot { background: rgba(127,168,189,.06); }
+.rw-chase-rank {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .85rem; color: var(--rw-mute);
+    font-variant-numeric: tabular-nums;
+}
+.rw-chase-row.hot .rw-chase-rank { color: var(--rw-ember); }
+.rw-chase-cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--rw-cream);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-chase-mark {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .8rem; color: var(--rw-cream);
+    font-variant-numeric: tabular-nums;
+}
+.rw-chase-mark .holder {
+    display: block;
+    font-weight: 500;
+    font-size: .5rem; letter-spacing: .14em;
+    color: var(--rw-mute);
+    margin-top: .2rem;
+}
+.rw-chase-chaser {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem;
+    color: var(--rw-cream);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-chase-chaser .at {
+    display: block;
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .14em;
+    color: var(--rw-mute);
+    margin-top: .2rem;
+}
+.rw-chase-bar {
+    position: relative;
+    height: 8px;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line);
+}
+.rw-chase-bar-fill {
+    position: absolute;
+    top: 1px; bottom: 1px; left: 1px;
+    background: linear-gradient(90deg, var(--rw-ember-deep), var(--rw-ember));
+    box-shadow: 0 0 10px var(--rw-ember-soft);
+}
+.rw-chase-gap {
+    text-align: right;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; color: var(--rw-cream);
+    font-variant-numeric: tabular-nums;
+}
+.rw-chase-gap .pct {
+    display: block;
+    font-size: .5rem; font-weight: 500; letter-spacing: .14em;
+    color: var(--rw-mute);
+    margin-top: .2rem;
+}
+
+@media (max-width: 760px) {
+    .rw-chase-head, .rw-chase-row {
+        grid-template-columns: 2rem 1fr 5rem;
+        column-gap: .6rem;
+        row-gap: .35rem;
+    }
+    .rw-chase-head .col-mark, .rw-chase-head .col-chaser, .rw-chase-head .col-bar,
+    .rw-chase-mark, .rw-chase-bar { display: none; }
+    .rw-chase-row { padding: .85rem 1rem; }
+    .rw-chase-cat { font-size: .6rem; }
+    .rw-chase-chaser { font-size: 1rem; }
+}
+
+/* ── Just-missed rows (week-to-week extremes that came close) ── */
+.rw-missed {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+}
+.rw-missed-row {
+    display: grid;
+    grid-template-columns: 9rem 1fr auto;
+    align-items: center; gap: 1.2rem;
+    padding: .95rem 1.2rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+}
+.rw-missed-row:last-child { border-bottom: 0; }
+.rw-missed-flag {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--rw-ember);
+    display: inline-flex; align-items: center; gap: .4rem;
+}
+.rw-missed-flag .pill {
+    display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--rw-ember);
+    box-shadow: 0 0 8px var(--rw-ember-soft);
+}
+.rw-missed-body .cat {
+    font-family: var(--mono); font-size: .54rem;
+    letter-spacing: .24em; text-transform: uppercase;
+    color: var(--rw-mute); margin-bottom: .25rem;
+}
+.rw-missed-body .copy {
+    font-family: var(--serif); font-size: 1.02rem;
+    color: var(--rw-cream); line-height: 1.3;
+}
+.rw-missed-body .copy em { color: var(--rw-ember-hi); font-style: italic; }
+.rw-missed-gap {
+    text-align: right;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .85rem;
+    color: var(--rw-cream); line-height: 1;
+}
+.rw-missed-gap .of {
+    display: block;
+    font-size: .5rem; font-weight: 500;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute); margin-top: .3rem;
+}
+
+/* ── Just Broken: LCD-style scoreboard cards ──────────────────
+   Reads like a digital sports-bar readout: big mono numerics
+   for the new mark, the prior record struck through underneath
+   in dimmed type. Wider than the old card grid so each broken
+   record gets a moment.  */
+.rw-broken-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 1.2rem;
+}
+.rw-broken {
+    position: relative;
+    background:
+        radial-gradient(circle at 30% 0%, rgba(127,168,189,.10) 0%, transparent 55%),
+        linear-gradient(180deg, var(--rw-card) 0%, var(--rw-soft) 100%);
+    border: 1px solid var(--rw-line);
+    border-top: 3px solid var(--rw-ember);
+    padding: 1.4rem 1.5rem 1.3rem;
+    overflow: hidden;
+}
+.rw-broken-badge {
+    /* Dynamic badge — its.flag drives the text so realized crossings can
+     * say "NEW QUICKEST" / "BROKEN" while projections say "ON PACE" /
+     * "WILL BREAK IT", etc. */
+    position: absolute;
+    top: 0; right: 0;
+    background: var(--rw-ember); color: #1a0a0a;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
+    padding: .35rem .65rem .4rem;
+    box-shadow: 0 0 14px var(--rw-ember-soft);
+}
+.rw-broken .cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--rw-ember);
+    margin-bottom: .9rem;
+}
+.rw-broken-readout {
+    /* The LCD readout — large monospace numeric in a recessed panel. */
+    background: rgba(0,0,0,.32);
+    border: 1px solid var(--rw-line);
+    padding: .8rem 1rem .9rem;
+    margin-bottom: .9rem;
+    text-align: center;
+    position: relative;
+    /* faint scanline texture for the digital look */
+    background-image:
+        linear-gradient(rgba(255,255,255,.025) 50%, transparent 50%),
+        linear-gradient(180deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,.45) 100%);
+    background-size: 100% 4px, 100% 100%;
+}
+.rw-broken-readout .num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 2.6rem; line-height: 1;
+    color: var(--rw-ember-hi);
+    text-shadow: 0 0 14px var(--rw-ember-glow);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em;
+    /* keep W-L style suffix inline with the leading number */
+    white-space: nowrap;
+}
+.rw-broken-readout .num .num-trail {
+    font-size: 1.7rem;
+    color: var(--rw-cream);
+    opacity: .6;
+    margin-left: .05em;
+    text-shadow: none;
+}
+.rw-broken-readout .unit {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-top: .45rem;
+}
+/* Quickest-to-X cards: the unit ("games") reads better inline next to
+ * the big number so "16 games" leads and only "pace" drops below. */
+.rw-broken-readout.compact .unit {
+    display: inline-block;
+    font-size: .9rem;
+    letter-spacing: .08em;
+    text-transform: lowercase;
+    margin-top: 0;
+    margin-left: .35rem;
+    vertical-align: baseline;
+}
+.rw-broken-readout .sub {
+    display: block;
+    font-family: var(--mono);
+    font-size: .55rem; letter-spacing: .15em;
+    color: var(--rw-mute);
+    opacity: .75;
+    margin-top: .25rem;
+}
+.rw-broken-readout .copy {
+    margin-top: .65rem;
+    padding-top: .65rem;
+    border-top: 1px dashed var(--rw-line);
+    font-family: var(--serif); font-size: .95rem; line-height: 1.4;
+    color: var(--rw-cream);
+    text-align: left;
+}
+.rw-broken-readout .copy em { color: var(--rw-ember-hi); font-style: italic; }
+.rw-broken-prior {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-top: .65rem;
+    border-top: 1px solid var(--rw-line-soft);
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .12em;
+    color: var(--rw-mute);
+    text-transform: uppercase;
+}
+.rw-broken-prior .prior-line {
+    /* No strikethrough — the "prior" prefix makes the demotion clear
+     * without a line cutting through the holder name. */
+    color: var(--rw-cream);
+    opacity: .75;
+    text-transform: none;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+/* ── Broken: compact "history" cards ──────────────────────────
+   For records that were broken more than 3 weeks ago, the full
+   LCD readout takes up more real estate than the moment warrants
+   — they downgrade to a tighter rail that lists who, what, when.
+   Stacks at the bottom of §01 below the full LCD grid. */
+.rw-broken-history {
+    margin-top: 1.4rem;
+    border-top: 1px dashed var(--rw-line);
+    padding-top: 1rem;
+}
+.rw-broken-history-head {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-bottom: .8rem;
+}
+.rw-broken-history-list {
+    display: flex; flex-direction: column;
+    gap: .5rem;
+}
+.rw-broken-mini {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 1rem;
+    padding: .7rem 1rem;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line-soft);
+    border-left: 2px solid var(--rw-ember);
+}
+.rw-broken-mini .mini-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .9rem;
+    color: var(--rw-ember-hi);
+    font-variant-numeric: tabular-nums;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-broken-mini .mini-num .num-trail {
+    font-size: .65rem;
+    color: var(--rw-cream);
+    opacity: .6;
+    margin-left: .05em;
+}
+.rw-broken-mini .mini-body {
+    min-width: 0;
+}
+.rw-broken-mini .mini-cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-bottom: .15rem;
+}
+.rw-broken-mini .mini-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1rem; line-height: 1.2;
+    color: var(--rw-cream);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rw-broken-mini .mini-when {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .12em;
+    color: var(--rw-mute);
+    text-align: right;
+    white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+    .rw-broken-mini { grid-template-columns: 4rem 1fr; }
+    .rw-broken-mini .mini-when { grid-column: 2; text-align: left; opacity: .75; }
+}
+
+/* ── Intro / empty state ───────────────────────────────────── */
+.rw-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--rw-card);
+    border: 1px dashed var(--rw-line);
+}
+.rw-empty .glyph {
+    font-size: 2.1rem; color: var(--rw-ember);
+    text-shadow: 0 0 22px var(--rw-ember-glow);
+    margin-bottom: .8rem;
+}
+.rw-empty h3 {
+    font-family: var(--serif); font-size: 1.5rem;
+    color: var(--rw-cream); margin-bottom: .55rem;
+}
+.rw-empty h3 em { color: var(--rw-ember); font-style: italic; }
+.rw-empty p {
+    color: var(--rw-mute); max-width: 480px; margin: 0 auto;
+    font-size: .95rem;
+}
+
+/* ── How it works strip ────────────────────────────────────── */
+.rw-how {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+    margin-top: 1.5rem;
+}
+.rw-how-item {
+    padding: 1rem 1.1rem;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line-soft);
+}
+.rw-how-item .step {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .28em; text-transform: uppercase;
+    color: var(--rw-ember); margin-bottom: .55rem;
+}
+.rw-how-item h4 {
+    font-family: var(--serif); font-size: 1.1rem;
+    color: var(--rw-cream); margin-bottom: .35rem;
+}
+.rw-how-item p {
+    color: var(--rw-mute); font-size: .85rem; line-height: 1.45;
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.rw-foot {
+    margin-top: 4rem; text-align: center;
+    font-family: var(--mono); font-size: .6rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute); opacity: .65;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 760px) {
+    .page-header { padding: 2.5rem 1rem 1.5rem; }
+    .rw-meter { padding: .85rem 1rem; gap: 1rem; }
+    .rw-meter-sep { display: none; }
+    .rw-brink-grid { grid-template-columns: 1fr; }
+    .rw-how { grid-template-columns: 1fr; }
+    .rw-section-head { gap: .8rem; }
+}
+</style>
+</head>
+<body>
+<div class="site-glow" aria-hidden="true"></div>
+
+<nav id="site-nav"
+     data-page="records-watch"
+     data-chapter="LIVE · RECORDS WATCH"
+     data-back-href="live/index.html"
+     data-back-label="Back to Live Season"></nav>
+<script src="assets/js/nav.js"></script>
+
+<!-- DEMO NOTICE — live pages need real-time data -->
+<style>
+.ls-demo-notice {
+    position: relative; z-index: 5;
+    max-width: 980px;
+    margin: 1.25rem auto 0;
+    padding: 1rem 1.25rem;
+    background: rgba(232,200,137,.07);
+    border: 1px solid rgba(232,200,137,.25);
+    border-left: 3px solid #e8c889;
+    border-radius: 2px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: .88rem; line-height: 1.5;
+    color: #f4ebd8;
+    display: flex; flex-wrap: wrap; gap: .9rem;
+    align-items: baseline;
+}
+.ls-demo-notice .ls-demo-pill {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-weight: 700; font-size: .58rem;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: #15201b; background: #e8c889;
+    padding: .3rem .55rem; border-radius: 2px;
+}
+.ls-demo-notice em { color: #e8c889; font-style: italic; }
+.ls-demo-notice a {
+    color: #e8c889; text-decoration: none;
+    border-bottom: 1px solid rgba(232,200,137,.4);
+}
+.ls-demo-notice a:hover { color: #f4d9a4; }
+</style>
+<div class="ls-demo-notice">
+    <span class="ls-demo-pill">★ Demo only</span>
+    <span>
+        This page runs on <em>live in-season data</em> — current scores,
+        weekly form, milestone tracking, head-to-head matchups. The demo
+        ships with historical data only, so most of the panels below sit
+        idle. Spin up your own league at <a href="/">jzff.online</a>
+        to see this live.
+    </span>
+</div>
+
+
+<!-- ── Masthead ─────────────────────────────────────────────────
+     Asymmetric left/right: title + sub on the left, four-stat
+     status panel + legend strip on the right. Carbon-tinted band
+     across the top, no more centered milestone-style hero. -->
+<header class="rw-mast-frame">
+    <div class="rw-mast">
+        <div class="rw-mast-left">
+            <div class="rw-mast-eyebrow"><span class="dot"></span>Live tracker · LSL</div>
+            <h1 class="rw-mast-title">Records <em>Watch.</em></h1>
+            <p class="rw-mast-sub">
+                Every all-time mark, every active chaser, every game on the line. Updated each week.
+            </p>
+        </div>
+        <div class="rw-mast-right">
+            <div class="rw-mast-stat alert">
+                <span class="lbl">Broken</span>
+                <span class="val" id="m-broken">—</span>
+            </div>
+            <div class="rw-mast-stat steel">
+                <span class="lbl">Brink</span>
+                <span class="val" id="m-brink">—</span>
+            </div>
+            <div class="rw-mast-stat">
+                <span class="lbl">On pace</span>
+                <span class="val" id="m-onpace">—</span>
+            </div>
+            <div class="rw-mast-stat steel">
+                <span class="lbl">Missed</span>
+                <span class="val" id="m-missed">—</span>
+            </div>
+        </div>
+        <div class="rw-mast-foot">
+            <span id="m-foot">Tracking starts Week 1</span>
+            <span class="legend">
+                <span class="l-broken">Broken</span>
+                <span class="l-onpace">On pace</span>
+                <span class="l-brink">Brink</span>
+                <span class="l-missed">Missed</span>
+            </span>
+        </div>
+    </div>
+</header>
+
+<main class="rw-wrap">
+
+    <!-- ── Main column: §01 Broken, §02 Brink, §03 On Pace. The three
+         sections that need the wider canvas — full-width bar plots and
+         LCD scoreboards. -->
+    <div class="rw-main">
+
+        <section class="rw-section">
+            <div class="rw-section-head">
+                <span class="rw-section-num">§ 01 · Claimed</span>
+                <span class="rw-section-title">Records <em>Broken</em></span>
+                <span class="rw-section-note">Already crossed this season</span>
+            </div>
+            <div id="broken-body">
+                <div class="rw-empty">
+                    <div class="glyph">◈</div>
+                    <h3>No records <em>broken yet.</em></h3>
+                    <p>
+                        A record lands here the moment it's actually surpassed — a new single-week
+                        high, an active streak past the all-time mark, or a Quickest-to-X career
+                        milestone hit in fewer games than the standing record.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="rw-section">
+            <div class="rw-section-head">
+                <span class="rw-section-num">§ 03 · Pursuit</span>
+                <span class="rw-section-title">On the <em>Brink</em></span>
+                <span class="rw-section-note">In striking distance · 65-99% of the mark</span>
+            </div>
+            <div id="brink-body">
+                <div class="rw-empty">
+                    <h3>Nothing in pursuit <em>yet.</em></h3>
+                    <p>
+                        Season accumulators (career wins, points for, streaks) appear here once
+                        a chaser sits at 65% or more of the all-time mark. Biggest threats up top.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="rw-section">
+            <div class="rw-section-head">
+                <span class="rw-section-num">§ 04 · Pace</span>
+                <span class="rw-section-title">On <em>Pace</em></span>
+                <span class="rw-section-note">Projecting past the mark, not crossed yet</span>
+            </div>
+            <div id="onpace-body">
+                <div class="rw-empty">
+                    <h3>Nobody projecting <em>past the mark yet.</em></h3>
+                    <p>
+                        Season-long accumulators (PF pace, wins pace, Quickest-to-X projections)
+                        land here once a manager's pace would push them past an all-time franchise
+                        record — even though the season isn't done yet.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ── Sidebar: secondary tracker. Just Missed only — On Pace is
+         now in the main column with the bar-plot layout. -->
+    <aside class="rw-side">
+
+        <section class="rw-section">
+            <div class="rw-section-head">
+                <span class="rw-section-num">§ 02 · Bolts</span>
+                <span class="rw-section-title">Just <em>Missed</em></span>
+                <span class="rw-section-note">Weekly</span>
+            </div>
+            <div id="missed-body">
+                <div class="rw-side-empty">
+                    <h4>No close calls yet</h4>
+                    <p>
+                        Single-week extremes (high, low, blowout, shootout) that came within
+                        reach of the all-time mark surface here.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </aside>
+
+    <div class="rw-foot" style="grid-column:1/-1;">LSL · Records Tracker · MMXIX</div>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // Records Watch reads its weekly snapshot from /data/records_watch.json.
+  // The exporter is built out separately; until it lands, the page renders
+  // the empty + "how it works" intro states above. When the JSON shows up,
+  // we replace each section in place without a layout shift.
+  // Captured at fetch time so renderBroken can compute weeks-since-break.
+  var records_watch_through = null;
+
+  fetch('data/records_watch.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (data) {
+      if (!data) return;
+      records_watch_through = (data.meter || {}).through || null;
+      renderMeter(data.meter || {});
+      if (Array.isArray(data.broken)      && data.broken.length)      renderBroken('broken-body', data.broken);
+      if (Array.isArray(data.brink)       && data.brink.length)       renderBrink('brink-body', data.brink);
+      if (Array.isArray(data.on_pace)     && data.on_pace.length)     renderOnPace('onpace-body', data.on_pace);
+      if (Array.isArray(data.just_missed) && data.just_missed.length) renderMissed(data.just_missed);
+    });
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  // Shortens record_value strings for the right-edge scale label.
+  // "1623 pts · 116.0 PPG" -> "1623 pts"     (drops anything after ·)
+  // "9 wins"               -> "9W"
+  // "5 losses in a row"    -> "5L"
+  // "22 games"             -> "22G"
+  // anything else stays as-is.
+  function shortRecord(rv) {
+    if (!rv) return '';
+    var primary = String(rv).split('·')[0].trim();
+    primary = primary.replace(/^(\d+)\s+wins?(?:\s+in a row)?$/i, '$1W');
+    primary = primary.replace(/^(\d+)\s+losses(?:\s+in a row)?$/i, '$1L');
+    primary = primary.replace(/^(\d+)\s+games$/i, '$1G');
+    return primary;
+  }
+  function pct(n) {
+    var v = Math.max(0, Math.min(100, Number(n) || 0));
+    return v.toFixed(1).replace(/\.0$/, '') + '%';
+  }
+
+  function renderMeter(m) {
+    if (m.broken      != null) $('m-broken').textContent = m.broken;
+    if (m.on_pace     != null) $('m-onpace').textContent = m.on_pace;
+    if (m.brink       != null) $('m-brink').textContent  = m.brink;
+    if (m.just_missed != null) $('m-missed').textContent = m.just_missed;
+    if (m.through) {
+      // Preseason mode: builder emits "Preseason · {year}". Drop the
+      // "Through" prefix since "Through Preseason" reads wrong.
+      $('m-foot').textContent = (/^Preseason/i.test(m.through) ? '' : 'Through ') + m.through;
+    }
+  }
+
+  // Brink renders a stack of full-width "stat blocks" — each one a
+  // mini scoreboard with the all-time mark on the left and a tick-marked
+  // bar plot on the right. The plot's track represents 0-120% of the
+  // mark, with the MARK line at ~83.3% across so overshoots are visible.
+  function renderBrink(slot, items) {
+    // Two layouts depending on whether the item carries a projection
+    // that beats the record:
+    //   • "overshoot" — projection_numeric > record_numeric: the track
+    //     represents 0 → projection. Mark line slides to
+    //     (record / projection) × 100% so the gap between the line
+    //     and the right edge visualizes how much they'd beat by. The
+    //     right-edge scale label becomes the projected value; the mark
+    //     line itself gets a small floating tag with the actual record.
+    //   • "classic" — no projection (streaks, weekly extremes,
+    //     Quickest) OR projection ≤ record: track is 0 → record, mark
+    //     pinned to the right edge, no projection label.
+    var html = '<div class="rw-blocks">';
+    items.forEach(function (it, idx) {
+      var rawPct = Math.max(0, Math.min(100, Number(it.pct) || 0));
+
+      var rNum = Number(it.record_numeric);
+      var cNum = Number(it.current_numeric);
+      var pNum = Number(it.projection_numeric);
+      var hasNums = isFinite(rNum) && isFinite(cNum) && isFinite(pNum);
+      // Quickest items race on a games-axis (lower = faster), so the
+      // projection sits BEFORE the mark when on pace to beat. Other
+      // pace items race on a value-axis (higher = better), so the
+      // projection extends PAST the mark.
+      var isQuickest = /^Quickest to /.test(it.category || '');
+      var overshoot = hasNums && (isQuickest ? pNum < rNum : pNum > rNum);
+
+      var markPosPct, fillPct, scaleEndLabel, scaleEndStyle, projAboveHtml, projLineHtml;
+      if (overshoot && isQuickest) {
+        // Bar 0 → record_games. Mark pinned at right edge (record),
+        // gold projection line inward at (projection / record) × 100%.
+        markPosPct = 100;
+        var projInsidePct = Math.max(0, Math.min(100, (pNum / rNum) * 100));
+        fillPct = Math.min(100, (cNum / rNum) * 100);
+        scaleEndLabel = shortRecord(it.record_value);
+        scaleEndStyle = '';  // default s-end (right: 0)
+        var projShortQ = it.projection_short || shortRecord(it.record_value);
+        // Gold label centered on the projection line (which sits
+        // inside the track now).
+        projAboveHtml = '<span class="rw-plot-label-proj" ' +
+          'style="right:auto; left:' + projInsidePct.toFixed(2) + '%; transform:translateX(-50%);">' +
+          esc(projShortQ) + '</span>';
+        projLineHtml  = '<div class="rw-plot-proj-line" ' +
+          'style="right:auto; left:' + projInsidePct.toFixed(2) + '%;"></div>';
+      } else if (overshoot) {
+        // Pace overshoot: track 0 → projection. Mark line slides
+        // inward; gold projection line at right edge.
+        markPosPct = (rNum / pNum) * 100;
+        fillPct = Math.min(100, (cNum / pNum) * 100);
+        scaleEndLabel = shortRecord(it.record_value);
+        scaleEndStyle = 'left:' + markPosPct.toFixed(2) + '%; transform:translateX(-50%); right:auto;';
+        var projShort = it.projection_short || shortRecord(it.record_value);
+        projAboveHtml = '<span class="rw-plot-label-proj">' + esc(projShort) + '</span>';
+        projLineHtml  = '<div class="rw-plot-proj-line"></div>';
+      } else {
+        markPosPct = 100;
+        fillPct = rawPct;
+        scaleEndLabel = shortRecord(it.record_value);
+        scaleEndStyle = '';  // default s-end (right: 0)
+        projAboveHtml = '';
+        projLineHtml  = '';
+      }
+
+      // Split record_value into a leading number + unit so the mark panel
+      // can showcase the numeric.  "1623 pts · 116.0 PPG" → "1623" + "pts · 116.0 PPG"
+      var rv = it.record_value || '';
+      var m = rv.match(/^(\d[\d.,]*)\s*(.*)$/);
+      var markNum = m ? m[1] : rv;
+      var markUnit = m ? m[2] : '';
+
+      // Bar label — short version of chaser_value with trailing context
+      // ("active", "through 5G", "in a row", etc.) stripped so the label
+      // floating above the bar reads "3 wins" instead of "3 wins active".
+      var rawLabel = String(it.chaser_value || '');
+      var barLabel = rawLabel
+        .replace(/\s+(active|active streak|in a row|in a row.*)$/i, '')
+        .replace(/\s+through\s+.*/i, '')
+        .trim();
+
+      // Gap reads "positive" when the chaser is projecting past the
+       // mark — i.e. when we're in the overshoot layout. Otherwise the
+       // gap text is the deficit, which renders muted.
+      var gapClass = overshoot ? 'gap-pos' : 'gap-neg';
+
+      html +=
+        '<article class="rw-block">' +
+          '<div class="rw-block-head">' +
+            '<span class="rw-block-num">§ ' + String(idx + 1).padStart(2, '0') + '</span>' +
+            '<span class="rw-block-cat">' + esc(it.category || 'Record') + '</span>' +
+            '<span class="rw-block-flag">' + esc(it.flag || 'On the brink') + '</span>' +
+          '</div>' +
+          '<div class="rw-block-body">' +
+            '<div class="rw-block-mark">' +
+              '<div class="rw-mark-label">The mark</div>' +
+              '<div class="rw-mark-num">' + esc(markNum) + '</div>' +
+              (markUnit ? '<div class="rw-mark-unit">' + esc(markUnit) + '</div>' : '') +
+              // Stack the holder name + when on two lines when the when
+              // string is a streak date range ("W1 – W6 · 2024") — half-
+              // line wraps look bad. For short whens ("2024"), inline.
+              (function () {
+                var hw = String(it.holder_when || '');
+                var stack = hw.indexOf('–') !== -1;
+                return '<div class="rw-mark-credit' + (stack ? ' stack' : '') + '">' +
+                  '<strong>' + esc(it.holder || '—') + '</strong>' +
+                  (hw ? (stack ? '<br>' : ' · ') + esc(hw) : '') +
+                  '</div>';
+              })() +
+            '</div>' +
+            '<div class="rw-block-plot">' +
+              '<div class="rw-plot-head">' +
+                '<div>' +
+                  '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
+                  (it.chaser_sub ? '<span class="chaser-sub">' + esc(it.chaser_sub) + '</span>' : '') +
+                '</div>' +
+              '</div>' +
+              '<div class="rw-plot-labels">' +
+                '<span class="rw-plot-label" style="left:' + fillPct.toFixed(2) + '%">' + esc(barLabel) + '</span>' +
+                projAboveHtml +
+              '</div>' +
+              '<div class="rw-plot-track">' +
+                '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.25).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.50).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.75).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-mark-line" style="left:' + markPosPct.toFixed(2) + '%"></div>' +
+                projLineHtml +
+                '<div class="rw-plot-fill" style="width:calc(' + fillPct.toFixed(2) + '% - 4px)"></div>' +
+              '</div>' +
+              '<div class="rw-plot-scale">' +
+                '<span class="s-start">0</span>' +
+                '<span style="left:' + (markPosPct * 0.25).toFixed(2) + '%">25%</span>' +
+                '<span style="left:' + (markPosPct * 0.50).toFixed(2) + '%">50%</span>' +
+                '<span style="left:' + (markPosPct * 0.75).toFixed(2) + '%">75%</span>' +
+                '<span class="s-end"' + (scaleEndStyle ? ' style="' + scaleEndStyle + '"' : '') + '>' + esc(scaleEndLabel) + '</span>' +
+              '</div>' +
+              '<div class="rw-plot-foot">' +
+                '<span>' + esc(it.chaser_when || '') + '</span>' +
+                '<span class="' + gapClass + '">' + esc(it.gap || '') + '</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</article>';
+    });
+    html += '</div>';
+    var slotEl = $(slot);
+    if (slotEl) slotEl.innerHTML = html;
+  }
+
+  // Parse a "W{n}..." string into the week number — or null if it
+  // doesn't lead with a W{n}. Used for computing weeks-since-break.
+  function weekFromWhen(when) {
+    var m = String(when || '').match(/^W(?:eek\s+)?(\d+)\b/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function weekFromMeter() {
+    if (!records_watch_through) return null;
+    return weekFromWhen(records_watch_through);
+  }
+
+  // Builds the big LCD card markup for one broken/on-pace item.
+  function brokenFullCard(slot, it) {
+    var cv = it.chaser_value || it.record_value || '';
+    var m = cv.match(/^(\d[\d.,]*(?:-\d[\d.,]*)*)\s*(.*)$/);
+    var readNum = m ? m[1] : cv;
+    var readUnit = m ? m[2] : '';
+    var readNumHtml;
+    var dashIdx = readNum.indexOf('-');
+    if (dashIdx > 0) {
+      readNumHtml = esc(readNum.slice(0, dashIdx)) +
+        '<span class="num-trail">' + esc(readNum.slice(dashIdx)) + '</span>';
+    } else {
+      readNumHtml = esc(readNum);
+    }
+    var compact = /^Quickest to /.test(it.category || '');
+    // "W7 · 2025" -> "Week 7 · 2025" for the broken card's bottom-left
+    // date stamp. Other when forms (year-only, etc) flow through.
+    var whenDisplay = String(it.when || '').replace(/^W(\d+)\b/, 'Week $1');
+    return '<article class="rw-broken">' +
+        '<span class="rw-broken-badge">' + esc(it.flag || (slot === 'broken-body' ? 'BROKEN' : 'ON PACE')) + '</span>' +
+        '<div class="cat">' + esc(it.category || '') + '</div>' +
+        '<div class="rw-broken-readout' + (compact ? ' compact' : '') + '">' +
+          '<span class="num">' + readNumHtml + '</span>' +
+          (readUnit ? '<span class="unit">' + esc(readUnit) + '</span>' : '') +
+          (it.readout_sub ? '<span class="sub">' + esc(it.readout_sub) + '</span>' : '') +
+          '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+        '</div>' +
+        '<div class="rw-broken-prior">' +
+          '<span>' + esc(whenDisplay) + '</span>' +
+          '<span class="prior-line">prior · ' + esc(it.previous || '—') + '</span>' +
+        '</div>' +
+      '</article>';
+  }
+
+  // Compact "history" rail row used for broken items that landed more
+  // than 3 weeks ago. Strips the prev-record + opponent detail; keeps
+  // who, what, when. Stacks below the full cards.
+  function brokenMiniRow(it) {
+    var cv = it.chaser_value || it.record_value || '';
+    var m = cv.match(/^(\d[\d.,]*(?:-\d[\d.,]*)*)\s*(.*)$/);
+    var readNum = m ? m[1] : cv;
+    var readUnit = m ? ' ' + m[2] : '';
+    var readNumHtml;
+    var dashIdx = readNum.indexOf('-');
+    if (dashIdx > 0) {
+      readNumHtml = esc(readNum.slice(0, dashIdx)) +
+        '<span class="num-trail">' + esc(readNum.slice(dashIdx)) + '</span>';
+    } else {
+      readNumHtml = esc(readNum);
+    }
+    var whenDisplay = String(it.when || '').replace(/^W(\d+)\b/, 'Week $1');
+    return '<div class="rw-broken-mini">' +
+        '<span class="mini-num">' + readNumHtml + esc(readUnit) + '</span>' +
+        '<div class="mini-body">' +
+          '<div class="mini-cat">' + esc(it.category || '') + '</div>' +
+          '<div class="mini-name">' + esc(it.chaser || '—') + '</div>' +
+        '</div>' +
+        '<div class="mini-when">' + esc(whenDisplay) + '</div>' +
+      '</div>';
+  }
+
+  // Broken / On-Pace cards both use the LCD scoreboard renderer — they
+  // share the same visual treatment but write to different slots.
+  // slot = 'broken-body' for realized crossings, 'onpace-body' for
+  // projections.
+  function renderBroken(slot, items) {
+    var throughWeek = weekFromMeter();
+    // Split into "recent" (full LCD card) vs "history" (compact rail)
+    // for the broken slot. The history rail only applies to actually-
+    // crossed items whose break week is more than 3 weeks behind the
+    // current pulse; on-pace projections always render full.
+    var recent = [], history = [];
+    items.forEach(function (it) {
+      if (slot !== 'broken-body') { recent.push(it); return; }
+      var w = weekFromWhen(it.when);
+      var weeksAgo = (throughWeek != null && w != null) ? (throughWeek - w) : 0;
+      if (weeksAgo > 3) history.push(it);
+      else recent.push(it);
+    });
+
+    var html = '<div class="rw-broken-grid">';
+    recent.forEach(function (it) { html += brokenFullCard(slot, it); });
+    html += '</div>';
+    if (history.length) {
+      html += '<div class="rw-broken-history">' +
+        '<div class="rw-broken-history-head">Earlier this season</div>' +
+        '<div class="rw-broken-history-list">';
+      history.forEach(function (it) { html += brokenMiniRow(it); });
+      html += '</div></div>';
+    }
+    var slotEl = $(slot);
+    if (slotEl) slotEl.innerHTML = html;
+  }
+
+  // On Pace stats card — chaser column + holder column + gap foot. No
+  // bar plot, no meter; that visualization is reserved for Brink. Used
+  // for items in the 40-50% range (early pursuit) that are building
+  // toward the record but aren't close enough to warrant the chart.
+  function renderOnPace(slot, items) {
+    var html = '<div class="rw-onpace-stack">';
+    items.forEach(function (it, idx) {
+      var rawPct = Math.max(0, Math.min(100, Number(it.pct) || 0));
+      // chaser_value holds the chaser's current state ("1614 pts through
+      // 5 Games"); chaser_projection holds the projected end-of-season
+      // value if any ("pace 1850 pts · 138.5 PPG"). Fall back to gap so
+      // streak items (which don't project) still show something.
+      var cv = String(it.chaser_value || '');
+      var projLine = String(it.chaser_projection || it.gap || '');
+      html +=
+        '<article class="rw-onpace-card">' +
+          '<div class="rw-onpace-head">' +
+            '<span class="num">§ ' + String(idx + 1).padStart(2, '0') + '</span>' +
+            '<span class="cat">' + esc(it.category || 'Record') + '</span>' +
+            '<span class="pct">' + pct(rawPct) + '</span>' +
+          '</div>' +
+          '<div class="rw-onpace-grid">' +
+            '<div class="rw-onpace-col chasing">' +
+              '<div class="col-lbl">Chasing</div>' +
+              '<div class="col-name">' + esc(it.chaser || '—') +
+                (it.chaser_sub ? ' <span class="col-sub-tag">' + esc(it.chaser_sub) + '</span>' : '') +
+              '</div>' +
+              '<div class="col-val">' + esc(cv) + '</div>' +
+              '<div class="col-sub">' + esc(projLine) + '</div>' +
+            '</div>' +
+            '<div class="rw-onpace-col mark">' +
+              '<div class="col-lbl">The mark</div>' +
+              '<div class="col-name">' + esc(it.holder || '—') + '</div>' +
+              '<div class="col-val">' + esc(it.record_value || '') + '</div>' +
+              '<div class="col-sub">' + esc(it.holder_when || '') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="rw-onpace-foot">' +
+            '<span>' + esc(it.flag || 'BUILDING') + '</span>' +
+            '<span class="gap">' + esc(it.gap || '') + '</span>' +
+          '</div>' +
+        '</article>';
+    });
+    html += '</div>';
+    var slotEl = $(slot);
+    if (slotEl) slotEl.innerHTML = html;
+  }
+
+  // (Legacy) Sidebar On Pace tile renderer — no longer wired up after
+  // §03 moved to the main column. Kept here in case we need it back.
+  function renderSideOnPace(items) {
+    var html = '<div class="rw-side-panel">';
+    items.forEach(function (it, i) {
+      var raw = Math.max(0, Math.min(140, Number(it.pct) || 0));
+      var fill = Math.min(100, (raw / 120) * 100);
+      var over = raw >= 100;
+      html +=
+        '<div class="rw-side-tile">' +
+          '<div class="rw-side-tile-head">' +
+            '<span class="rank">' + String(i + 1).padStart(2, '0') + '</span>' +
+            '<span class="cat">' + esc(it.category || '') + '</span>' +
+            '<span class="flag">' + esc(it.flag || 'PACE') + '</span>' +
+          '</div>' +
+          '<div class="rw-side-tile-row">' +
+            '<span class="rw-side-tile-chaser">' + esc(it.chaser || '—') + '</span>' +
+            '<span class="rw-side-tile-val">' + esc(it.chaser_value || '') + '</span>' +
+          '</div>' +
+          '<div class="rw-side-tile-bar">' +
+            '<div class="fill' + (over ? ' over' : '') + '" style="width:' + fill.toFixed(2) + '%"></div>' +
+          '</div>' +
+          '<div class="rw-side-tile-foot">' +
+            '<span>vs ' + esc(it.record_value || '—') + ' · ' + esc(it.holder || '') + '</span>' +
+            '<span class="gap' + (over ? ' over' : '') + '">' + esc(it.gap || '') + '</span>' +
+          '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    $('onpace-body').innerHTML = html;
+  }
+
+  // Sidebar Just Missed: even tighter — head row with category +
+  // % of all-time, then copy + foot. No icons / glow.
+  function renderMissed(items) {
+    var html = '<div class="rw-side-panel">';
+    items.forEach(function (it, i) {
+      var raw = Math.max(0, Math.min(120, Number(it.pct) || 0));
+      html +=
+        '<div class="rw-side-miss">' +
+          '<div class="rw-side-miss-head">' +
+            '<span class="rank">' + String(i + 1).padStart(2, '0') + '</span>' +
+            '<span class="cat">' + esc(it.category || '') + '</span>' +
+            '<span class="pct">' + pct(raw) + '</span>' +
+          '</div>' +
+          '<div class="rw-side-miss-copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+          '<div class="rw-side-miss-foot">' +
+            '<span>vs ' + esc(it.record_value || '—') + '</span>' +
+            '<span>' + esc(it.gap || '') + '</span>' +
+          '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    $('missed-body').innerHTML = html;
+  }
+})();
+</script>
+
+</body>
+</html>

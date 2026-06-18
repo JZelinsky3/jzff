@@ -2,7 +2,7 @@
 //
 // Ported from the PA Milk Society demo: matchup-card / week / tally / records
 // rendering is kept verbatim so the page looks identical. Only the data, auth,
-// and submit layers are swapped — data comes from /leagues/<slug>/live-season/pickems/data,
+// and submit layers are swapped — data comes from /leagues/<slug>/live/pickems/data,
 // identity is a no-login profile dropdown, submission POSTs to .../submit.
 
 (function () {
@@ -41,7 +41,7 @@
 
   // ── Boot ──────────────────────────────────────────────────────────────────
   async function boot() {
-    var res = await fetch('live-season/pickems/data', { cache: 'no-store' });
+    var res = await fetch('live/pickems/data', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
 
@@ -423,7 +423,7 @@
       hl: { highest: state.pending.hl.highest, lowest: state.pending.hl.lowest },
     };
     try {
-      var res = await fetch('live-season/pickems/submit/', {
+      var res = await fetch('live/pickems/submit/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

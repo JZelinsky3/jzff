@@ -76,7 +76,7 @@ export function LiveSeasonForm({
         <label style={{ display: 'flex', gap: '.6rem', alignItems: 'center', cursor: 'pointer' }}>
           <input
             type="radio"
-            name="live-season"
+            name="live"
             value=""
             checked={selected === ''}
             onChange={() => setSelected('')}
@@ -90,7 +90,7 @@ export function LiveSeasonForm({
           <label key={s.id} style={{ display: 'flex', gap: '.6rem', alignItems: 'center', cursor: 'pointer' }}>
             <input
               type="radio"
-              name="live-season"
+              name="live"
               value={s.id}
               checked={selected === s.id}
               onChange={() => setSelected(s.id)}

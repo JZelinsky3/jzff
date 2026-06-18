@@ -21,6 +21,7 @@ import { exportLeague, type ExportBundle } from '@/lib/export/pams'
 import { devBundleGet, devBundleSet, devMetaGet, devMetaSet } from '@/lib/devCache'
 import { resolveLeagueTier, getLockReason, classifyLockedPath } from '@/lib/leagueTier'
 import { getUserSubscription, isSubscriptionActive, isCompUser, type Tier } from '@/lib/stripe'
+import { resolveCurrentWeek } from '@/lib/liveSeason'
 
 const TEMPLATE_ROOT = path.join(process.cwd(), 'src', 'templates', 'pams')
 // Mobile-first rebuilds of the same pages. Phones get the file from here when
@@ -57,6 +58,11 @@ type LeagueMeta = {
   created_at: string | null
   trades_theme: 'tribunal' | 'wire' | 'floor' | 'cards'
   theme: LeagueTheme | null
+  // Current NFL week (1–18) when the league has an active live season with
+  // either a manual `current_week` pin or a `season_start_date` set. null
+  // outside the regular season. Used by nav.js to glow the chapbar's Live
+  // tab during in-season weeks.
+  liveWeek: number | null
 }
 
 const VALID_THEMES = ['tribunal', 'wire', 'floor', 'cards'] as const
@@ -77,13 +83,18 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
     .eq('slug', slug)
     .maybeSingle()
   if (!row) return null
-  const [{ data: firstSeason }, themeResult] = await Promise.all([
+  const [{ data: firstSeason }, themeResult, { data: liveSeasonRow }] = await Promise.all([
     db.from('seasons').select('year').eq('league_id', row.id)
       .order('year', { ascending: true }).limit(1).maybeSingle(),
     Promise.resolve(db.from('leagues').select('theme').eq('id', row.id).maybeSingle())
       .then(r => r.data?.theme).catch(() => null),
+    // Live season settings — used to glow the chapbar's Live tab during
+    // the regular season. Returns null when no season is flagged is_live.
+    db.from('seasons').select('settings').eq('league_id', row.id)
+      .eq('is_live', true).maybeSingle(),
   ])
   const rawTheme = themeResult as unknown
+  const liveSeasonSettings = (liveSeasonRow?.settings ?? null) as Record<string, unknown> | null
   return {
     id: row.id,
     name: row.name,
@@ -97,6 +108,7 @@ async function loadLeagueMetaUncached(slug: string): Promise<LeagueMeta | null> 
     trades_theme: normalizeTradesTheme(row.trades_theme),
     theme: typeof rawTheme === 'string' && (LEAGUE_THEMES as readonly string[]).includes(rawTheme)
       ? (rawTheme as LeagueTheme) : null,
+    liveWeek: resolveCurrentWeek(liveSeasonSettings),
   }
 }
 
@@ -203,6 +215,7 @@ async function injectDcConfig(
     tutorialSeenPages,
     viewerTier,
     leagueTheme,
+    liveWeek: meta.liveWeek,
   })};</script>`
   // Stamp the theme as a body data-attribute so theme CSS applies during the
   // first paint without waiting for JS. We only do this when the template
@@ -439,11 +452,11 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       }
     }
   }
-  // Matchup preview: /leagues/<slug>/live-season/matchup-preview/?m=<uid>
+  // Matchup preview: /leagues/<slug>/live/matchup-preview/?m=<uid>
   // Gets a fight-poster card for that manager's game (no ?m= → Game of
   // the Week). The image route falls back to an offseason card when no
   // live week exists, so this link never loses its preview.
-  if (file === 'live-season/matchup-preview/index.html') {
+  if (file === 'live/matchup-preview/index.html') {
     const mUid = req.nextUrl.searchParams.get('m')
     const url = new URL(
       `/api/og/matchup/${meta.slug}${mUid ? `?m=${encodeURIComponent(mUid)}` : ''}`,
@@ -524,7 +537,7 @@ const OG_CHAPTERS: Record<string, { page: string; label: string; desc: (name: st
     label: 'The Seasons',
     desc: (n) => `Season by season through ${n}'s history — champions, standings, and the stories between.`,
   },
-  'live-season/index.html': {
+  'live/index.html': {
     page: 'live',
     label: 'The Live Season',
     desc: (n) => `${n}'s season as it happens — power rankings, pick'ems, records watch, and the trade desk.`,
@@ -537,7 +550,7 @@ const OG_CHAPTERS: Record<string, { page: string; label: string; desc: (name: st
 // data fetches (e.g. draft year tabs) doesn't re-run the full export per file.
 // Dev cache is also busted explicitly by the sync route after each ingest.
 function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
-  // Slug is included alongside leagueId because the jake-only live-season
+  // Slug is included alongside leagueId because the jake-only live
   // previews (records_watch.json, milestones.json) are computed inside
   // exportLeague when slug === 'jake'. Cache key is (leagueId, slug) so a
   // future slug rename rebuilds the bundle without waiting for revalidation.
@@ -720,12 +733,23 @@ export async function GET(
 ): Promise<Response> {
   const { slug, path: parts } = await params
 
-  // Legacy URL redirect: pickems/powerrank moved under /live-season/ as part
+  // Legacy URL redirect: pickems/powerrank moved under /live/ as part
   // of the in-season hub IA. Permanent 301 keeps bookmarks, shares, and any
   // pre-existing back-button history working. Preserves trailing path bits
-  // (e.g. /pickems/data → /live-season/pickems/data) and query string.
+  // (e.g. /pickems/data → /live/pickems/data) and query string.
   if (parts && parts.length > 0 && (parts[0] === 'pickems' || parts[0] === 'powerrank')) {
-    const newPath = ['live-season', ...parts].join('/')
+    const newPath = ['live', ...parts].join('/')
+    const target = new URL(`/leagues/${slug}/${newPath}`, req.url)
+    target.search = req.nextUrl.search
+    return NextResponse.redirect(target, 301)
+  }
+
+  // Legacy URL redirect: /live-season/* renamed to /live/* — shorter URL,
+  // matches the in-product label. Permanent 301 so old bookmarks, shared
+  // links, and OG image caches survive. Preserves the entire trailing path
+  // and any query string.
+  if (parts && parts.length > 0 && parts[0] === 'live-season') {
+    const newPath = ['live', ...parts.slice(1)].join('/')
     const target = new URL(`/leagues/${slug}/${newPath}`, req.url)
     target.search = req.nextUrl.search
     return NextResponse.redirect(target, 301)

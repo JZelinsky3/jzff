@@ -123,34 +123,34 @@ export default function TocPage() {
         <Sub>slideshow intro, then every curated rivalry as an entry card</Sub>
         <Sub>↳ Rivalry page — <Path>/leagues/{`{slug}`}/rivalries/rivalry.html?id={`{rivalryId}`}</Path> — head-to-head splits, verdict, recent meetings, full series log</Sub>
 
-        <Item>Ch. VII · Live Season (hub) — <Path>/leagues/{`{slug}`}/live-season/</Path></Item>
+        <Item>Ch. VII · Live Season (hub) — <Path>/leagues/{`{slug}`}/live/</Path></Item>
         <Sub>paid feature — the in-season homepage with feature cards plus the horizontal &quot;By the Numbers&quot; pager</Sub>
         <Sub>↳ § 01 · This Week — the nine feature cards listed below</Sub>
         <Sub>↳ § 02 · The Charts — Current Form Sheet + The Mileage Matrix (paged)</Sub>
 
-        <ChildItem>Matchup Preview — <Path>/leagues/{`{slug}`}/live-season/matchup-preview/</Path></ChildItem>
+        <ChildItem>Matchup Preview — <Path>/leagues/{`{slug}`}/live/matchup-preview/</Path></ChildItem>
         <ChildSub>every game this week on a railway departures board; claim your name for the H2H archive, your current form, and a kickoff projection</ChildSub>
 
-        <ChildItem>Best Coach Board <Badge tier="Veteran" /> — <Path>/leagues/{`{slug}`}/live-season/best-coach/</Path></ChildItem>
+        <ChildItem>Best Coach Board <Badge tier="Veteran" /> — <Path>/leagues/{`{slug}`}/live/best-coach/</Path></ChildItem>
         <ChildSub>every starting lineup graded against its optimal version; season-long efficiency standings + worst single-week benchings</ChildSub>
 
-        <ChildItem>Weekly Pick&apos;ems — <Path>/leagues/{`{slug}`}/live-season/pickems/</Path></ChildItem>
+        <ChildItem>Weekly Pick&apos;ems — <Path>/leagues/{`{slug}`}/live/pickems/</Path></ChildItem>
         <ChildSub>pick the winner of every matchup each week; honor-system identity (claim your name and vote); Voting Records section below</ChildSub>
-        <ChildSub>↳ Submit endpoint — <Path>/leagues/{`{slug}`}/live-season/pickems/submit</Path></ChildSub>
+        <ChildSub>↳ Submit endpoint — <Path>/leagues/{`{slug}`}/live/pickems/submit</Path></ChildSub>
 
-        <ChildItem>Power Rankings — <Path>/leagues/{`{slug}`}/live-season/powerrank/</Path></ChildItem>
+        <ChildItem>Power Rankings — <Path>/leagues/{`{slug}`}/live/powerrank/</Path></ChildItem>
         <ChildSub>auto-calculated each week from record, points for, recent form, and full league history; includes Season Outlook</ChildSub>
 
-        <ChildItem>Records Watch — <Path>/leagues/{`{slug}`}/live-season/records-watch/</Path></ChildItem>
+        <ChildItem>Records Watch — <Path>/leagues/{`{slug}`}/live/records-watch/</Path></ChildItem>
         <ChildSub>what&apos;s on pace to break — Records Broken · On the Brink · On Pace · Just Missed</ChildSub>
 
-        <ChildItem>Trade Grader <Badge tier="Veteran" /> — <Path>/leagues/{`{slug}`}/live-season/trades/</Path></ChildItem>
+        <ChildItem>Trade Grader <Badge tier="Veteran" /> — <Path>/leagues/{`{slug}`}/live/trades/</Path></ChildItem>
         <ChildSub>every completed trade for your league, auto-pulled; themed per league setting (Tribunal · Wire · Floor · Cards)</ChildSub>
 
-        <ChildItem>Milestone Tracker — <Path>/leagues/{`{slug}`}/live-season/milestones/</Path></ChildItem>
+        <ChildItem>Milestone Tracker — <Path>/leagues/{`{slug}`}/live/milestones/</Path></ChildItem>
         <ChildSub>honors-roll feed — Just Achieved · One Game Away · On the Horizon</ChildSub>
 
-        <ChildItem>Manager DNA <Badge tier="Veteran" /> — <Path>/leagues/{`{slug}`}/live-season/manager-dna/</Path></ChildItem>
+        <ChildItem>Manager DNA <Badge tier="Veteran" /> — <Path>/leagues/{`{slug}`}/live/manager-dna/</Path></ChildItem>
         <ChildSub>every transaction, lineup, and draft pick sequenced into an archetype per manager (Trade Hawks, Coin-Flippers, Set-and-Forget, more)</ChildSub>
 
         <ChildItem>Weekly Recap <Badge tier="Veteran" /> — <i>coming soon</i></ChildItem>

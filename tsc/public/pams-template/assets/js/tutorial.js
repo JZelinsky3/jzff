@@ -3,7 +3,7 @@
  *
  * Behavior:
  *   • Each chapter page (hub, standings, managers, seasons, drafts, records,
- *     rivalries, live-season) has its own self-contained mini-tour that runs
+ *     rivalries, live) has its own self-contained mini-tour that runs
  *     ONCE per user, the first time they land on that page. The tour never
  *     navigates the user — they explore at their own pace, and the next
  *     page's tour fires the next time they land there.
@@ -185,11 +185,11 @@
         ],
 
         // ─────────── LIVE-SEASON HUB ───────────
-        // The masthead menu doesn't actually link to live-season sub-pages
+        // The masthead menu doesn't actually link to live sub-pages
         // (that earlier claim was wrong) — the entrypoints are the cards
         // on this page. Point at .ls-grid so the user clicks the right
         // thing.
-        'live-season': [
+        'live': [
             {
                 placement: 'center',
                 title: 'Chapter VII · In season.',
@@ -198,7 +198,7 @@
             {
                 target: '.ls-grid', placement: 'top',
                 title: 'Pick a tool.',
-                body: "Each card opens a live-season tool: Matchup Preview, Best Coach, Pick'ems, Power Rankings, Records Watch, Milestones, Trade Grader. Use the back arrow on those pages to return here.",
+                body: "Each card opens a live tool: Matchup Preview, Best Coach, Pick'ems, Power Rankings, Records Watch, Milestones, Trade Grader. Use the back arrow on those pages to return here.",
                 isFinal: true,
             },
         ],

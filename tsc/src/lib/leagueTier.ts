@@ -70,7 +70,7 @@ export async function isLeagueLocked(
 // is gated on this league, so the route handler can pick the right
 // pattern list:
 //
-//   'udfa'   → UDFA pattern list (broad — live-season subpages, draft,
+//   'udfa'   → UDFA pattern list (broad — live subpages, draft,
 //              record book). Free-tier league.
 //   'rookie' → Veteran-only pattern list (narrow — best coach, manager
 //              DNA, trade grader). Owner is on the Rookie paid plan,
@@ -100,12 +100,12 @@ export async function getLockReason(
 const UDFA_LOCKED_PAGE_PATTERNS: RegExp[] = [
   // Live-season HUB stays open so UDFA users can see the chapter index,
   // but every page underneath it is locked. Pattern explicitly excludes
-  // `live-season/index.html` (the hub) — every other resolved template
-  // path inside the live-season directory (matchup-preview/index.html,
+  // `live/index.html` (the hub) — every other resolved template
+  // path inside the live directory (matchup-preview/index.html,
   // pickems/index.html, etc.) still matches. nav.js then disables the
   // hub's card clicks for UDFA leagues so the entry tiles preview-only.
-  /^live-season\/(?!index\.html$).+/,
-  // Sunday Live (paid feature, top-level chapter outside live-season/).
+  /^live\/(?!index\.html$).+/,
+  // Sunday Live (paid feature, top-level chapter outside live/).
   /^sunday-live(\/|$)/,
   /^draft(\/|$)/,
   /^records\.html$/,
@@ -138,14 +138,14 @@ const UDFA_LOCKED_DATA_PATTERNS: RegExp[] = [
 ]
 
 // Veteran-only pages — locked for Rookie (tier1) paid subs. The cards
-// for these features carry a "Veteran" ribbon on the live-season hub,
+// for these features carry a "Veteran" ribbon on the live hub,
 // so the hub stays accessible and only the destinations gate. Weekly
 // Recap isn't here because it's not a built page yet (status="pro-soon"
 // on the hub).
 const VETERAN_LOCKED_PAGE_PATTERNS: RegExp[] = [
-  /^live-season\/best-coach(\/|$)/,
-  /^live-season\/manager-dna(\/|$)/,
-  /^live-season\/trades(\/|$)/,
+  /^live\/best-coach(\/|$)/,
+  /^live\/manager-dna(\/|$)/,
+  /^live\/trades(\/|$)/,
 ]
 
 // Data files for the Veteran-only features. 404 these on Rookie so

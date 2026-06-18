@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Records Watch · {{LEAGUE_NAME}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+/* ── Cold-print tracker theme — carbon base + steel blue, same tokens
+      as the desktop records-watch page. ── */
+:root {
+    --rw-bg:        #0f0a0c;
+    --rw-soft:      #170f12;
+    --rw-card:      #1d141a;
+    --rw-line:      #3a2128;
+    --rw-line-soft: #281820;
+    --rw-mute:      #c6a89e;
+    --rw-cream:     #f4ebd8;
+    --rw-ember:     #7fa8bd;
+    --rw-ember-hi:  #a4c4d6;
+    --rw-ember-deep:#4a7d96;
+    --rw-ember-soft:rgba(127, 168, 189, .16);
+    --m-chrome-bg:  rgb(21, 10, 12);
+    --m-chrome-bg2: rgb(24, 13, 16);
+}
+body { background: var(--rw-bg); color: var(--rw-cream); }
+.site-glow {
+    background-image:
+        radial-gradient(circle at 18% 22%, rgba(127, 168, 189, .10) 0%, transparent 50%),
+        radial-gradient(circle at 82% 78%, rgba(232, 200, 137, .05) 0%, transparent 50%);
+}
+
+/* ── Masthead + meter ── */
+.rw-head { text-align: center; padding: 1.1rem 0 .2rem; }
+.rw-head .m-kicker { color: var(--rw-ember); display: inline-flex; align-items: center; gap: .4rem; }
+.rw-head .dot {
+    display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--rw-ember);
+    box-shadow: 0 0 6px rgba(127, 168, 189, .55);
+    animation: rwPulse 1.8s ease-in-out infinite;
+}
+@keyframes rwPulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+.rw-title { font-family: var(--serif); font-size: 1.8rem; line-height: 1.05; color: var(--rw-cream); }
+.rw-title em { font-style: italic; color: var(--rw-ember-hi); }
+.rw-sub { margin-top: .35rem; color: var(--rw-mute); }
+
+.rw-meter { display: grid; grid-template-columns: repeat(4, 1fr); gap: .45rem; margin-top: .9rem; }
+.rw-meter-stat {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+    border-radius: 10px;
+    padding: .5rem .3rem .45rem;
+    text-align: center;
+}
+.rw-meter-stat .val { display: block; font-family: var(--serif); font-size: 1.3rem; line-height: 1.1; color: var(--rw-ember-hi); }
+.rw-meter-stat.alert .val { color: var(--gold); }
+.rw-meter-stat .lbl {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-top: .15rem;
+}
+
+/* ── Section label ── */
+.rw-label {
+    display: flex; align-items: baseline; gap: .7rem;
+    margin: 1.4rem 0 .5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-label .t { color: var(--rw-ember); }
+.rw-label::after { content: ''; flex: 1; height: 1px; background: var(--rw-line-soft); align-self: center; }
+
+/* ── Empty states ── */
+.rw-empty, .rw-side-empty {
+    background: var(--rw-soft);
+    border: 1px dashed var(--rw-line);
+    border-radius: 12px;
+    padding: 1.1rem 1rem;
+    text-align: center;
+}
+.rw-empty .glyph { color: var(--rw-ember); font-size: 1.1rem; margin-bottom: .3rem; }
+.rw-empty h3, .rw-side-empty h4 { font-family: var(--serif); font-weight: 400; font-size: 1.05rem; color: var(--rw-cream); margin-bottom: .3rem; }
+.rw-empty h3 em { font-style: italic; color: var(--rw-ember-hi); }
+.rw-empty p, .rw-side-empty p { font-size: .7rem; line-height: 1.45; color: var(--rw-mute); }
+
+/* ── Broken — LCD scoreboard cards ── */
+.rw-broken-grid { display: grid; gap: .55rem; }
+.rw-broken {
+    position: relative;
+    background: linear-gradient(160deg, #241820, var(--rw-card));
+    border: 1px solid var(--rw-ember-deep);
+    border-radius: 12px;
+    padding: .85rem .9rem .7rem;
+    overflow: hidden;
+}
+.rw-broken-badge {
+    position: absolute; top: .65rem; right: .65rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--rw-bg);
+    background: var(--gold);
+    padding: 2px 7px;
+    border-radius: 3px;
+}
+.rw-broken .cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--rw-ember);
+    margin-bottom: .35rem;
+    padding-right: 4.5rem;
+}
+.rw-broken-readout .num {
+    font-family: var(--serif);
+    font-size: 2.2rem; line-height: 1;
+    color: var(--gold-bright);
+}
+.rw-broken-readout.compact .num { font-size: 1.7rem; }
+.rw-broken-readout .num-trail { font-size: .6em; color: var(--gold); }
+.rw-broken-readout .unit {
+    margin-left: .35rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-broken-readout .sub {
+    display: block;
+    font-family: var(--mono);
+    font-size: .56rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--rw-ember-hi);
+    margin-top: .2rem;
+}
+.rw-broken-readout .copy { margin-top: .4rem; font-size: .72rem; line-height: 1.45; color: var(--rw-mute); }
+.rw-broken-readout .copy strong, .rw-broken-readout .copy b { color: var(--rw-cream); }
+.rw-broken-prior {
+    display: flex; justify-content: space-between; gap: .6rem;
+    margin-top: .55rem; padding-top: .5rem;
+    border-top: 1px dashed var(--rw-line);
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+
+/* Broken history rail */
+.rw-broken-history { margin-top: .7rem; }
+.rw-broken-history-head {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-bottom: .35rem;
+}
+.rw-broken-history-list {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.rw-broken-mini {
+    display: flex; align-items: center; gap: .65rem;
+    padding: .5rem .8rem;
+    border-bottom: 1px solid var(--rw-line-soft);
+    min-height: 44px;
+}
+.rw-broken-mini:last-child { border-bottom: none; }
+.rw-broken-mini .mini-num { flex: none; font-family: var(--serif); font-size: 1rem; color: var(--gold); min-width: 3.2rem; }
+.rw-broken-mini .num-trail { font-size: .7em; color: var(--gold-deep); }
+.rw-broken-mini .mini-body { flex: 1; min-width: 0; }
+.rw-broken-mini .mini-cat { font-family: var(--mono); font-weight: 700; font-size: .46rem; letter-spacing: .14em; text-transform: uppercase; color: var(--rw-ember); }
+.rw-broken-mini .mini-name { font-size: .74rem; font-weight: 600; color: var(--rw-cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rw-broken-mini .mini-when { flex: none; font-family: var(--mono); font-size: .5rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rw-mute); }
+
+/* ── Brink — mark panel + tick-marked bar plot, stacked ── */
+.rw-blocks { display: grid; gap: .55rem; }
+.rw-block {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.rw-block-head {
+    display: flex; align-items: baseline; gap: .55rem;
+    padding: .5rem .8rem;
+    background: var(--rw-soft);
+    border-bottom: 1px solid var(--rw-line-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+}
+.rw-block-num { color: var(--rw-mute); }
+.rw-block-cat { color: var(--rw-ember-hi); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rw-block-flag { color: var(--gold); }
+.rw-block-body { padding: .65rem .8rem .7rem; }
+.rw-block-mark {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .45rem;
+    margin-bottom: .6rem;
+}
+.rw-mark-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-mark-num { font-family: var(--serif); font-size: 1.3rem; line-height: 1; color: var(--rw-cream); }
+.rw-mark-unit { font-family: var(--mono); font-size: .52rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rw-mute); }
+.rw-mark-credit { width: 100%; font-family: var(--mono); font-size: .54rem; letter-spacing: .06em; color: var(--rw-mute); }
+.rw-mark-credit strong { color: var(--rw-ember-hi); font-weight: 700; }
+
+.rw-plot-head { display: flex; align-items: baseline; gap: .4rem; margin-bottom: .85rem; }
+.rw-plot-head .chaser { font-size: .76rem; font-weight: 600; color: var(--rw-cream); }
+.rw-plot-head .chaser-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rw-mute); margin-left: .3rem; }
+.rw-plot-labels { position: relative; height: .85rem; }
+.rw-plot-label {
+    position: absolute; bottom: 0;
+    transform: translateX(-50%);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .06em;
+    color: var(--rw-ember-hi);
+    white-space: nowrap;
+}
+.rw-plot-label-proj {
+    position: absolute; bottom: 0; right: 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .06em;
+    color: var(--gold);
+    white-space: nowrap;
+}
+.rw-plot-track {
+    position: relative;
+    height: 14px;
+    background: var(--rw-soft);
+    border: 1px solid var(--rw-line-soft);
+    border-radius: 4px;
+}
+.rw-plot-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--rw-line-soft); }
+.rw-plot-mark-line {
+    position: absolute; top: -3px; bottom: -3px; width: 2px;
+    background: var(--rw-cream);
+    transform: translateX(-1px);
+}
+.rw-plot-proj-line {
+    position: absolute; top: -3px; bottom: -3px; right: 0; width: 2px;
+    background: var(--gold);
+}
+.rw-plot-fill {
+    position: absolute; top: 2px; bottom: 2px; left: 2px;
+    background: linear-gradient(90deg, var(--rw-ember-deep), var(--rw-ember));
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(127, 168, 189, .35);
+}
+.rw-plot-scale { position: relative; height: .8rem; margin-top: .25rem; }
+.rw-plot-scale span {
+    position: absolute; top: 0;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: .44rem; letter-spacing: .06em;
+    color: var(--rw-mute);
+}
+.rw-plot-scale .s-start { left: 0; transform: none; }
+.rw-plot-scale .s-end { right: 0; transform: none; color: var(--rw-cream); }
+.rw-plot-foot {
+    display: flex; justify-content: space-between; gap: .6rem;
+    margin-top: .3rem;
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-plot-foot .gap-pos { color: var(--gold); }
+.rw-plot-foot .gap-neg { color: var(--rw-mute); }
+
+/* ── On Pace — chaser vs mark columns ── */
+.rw-onpace-stack { display: grid; gap: .55rem; }
+.rw-onpace-card {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.rw-onpace-head {
+    display: flex; align-items: baseline; gap: .55rem;
+    padding: .5rem .8rem;
+    background: var(--rw-soft);
+    border-bottom: 1px solid var(--rw-line-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+}
+.rw-onpace-head .num { color: var(--rw-mute); }
+.rw-onpace-head .cat { color: var(--rw-ember-hi); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rw-onpace-head .pct { color: var(--gold); }
+.rw-onpace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; padding: .65rem .8rem; }
+.rw-onpace-col .col-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--rw-mute);
+    margin-bottom: .2rem;
+}
+.rw-onpace-col.chasing .col-lbl { color: var(--rw-ember); }
+.rw-onpace-col .col-name { font-size: .76rem; font-weight: 600; color: var(--rw-cream); }
+.rw-onpace-col .col-sub-tag { font-family: var(--mono); font-size: .48rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rw-mute); }
+.rw-onpace-col .col-val { font-family: var(--mono); font-weight: 700; font-size: .6rem; color: var(--rw-ember-hi); margin-top: .15rem; }
+.rw-onpace-col.mark .col-val { color: var(--rw-cream); }
+.rw-onpace-col .col-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .04em; color: var(--rw-mute); margin-top: .15rem; }
+.rw-onpace-foot {
+    display: flex; justify-content: space-between; gap: .6rem;
+    padding: .45rem .8rem .55rem;
+    border-top: 1px dashed var(--rw-line-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+.rw-onpace-foot .gap { color: var(--gold); }
+
+/* ── Just Missed ── */
+.rw-side-panel { display: grid; gap: .5rem; }
+.rw-side-miss {
+    background: var(--rw-card);
+    border: 1px solid var(--rw-line);
+    border-radius: 12px;
+    padding: .6rem .8rem .65rem;
+}
+.rw-side-miss-head {
+    display: flex; align-items: baseline; gap: .5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    margin-bottom: .3rem;
+}
+.rw-side-miss-head .rank { color: var(--rw-mute); }
+.rw-side-miss-head .cat { color: var(--rw-ember-hi); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rw-side-miss-head .pct { color: var(--gold); }
+.rw-side-miss-copy { font-size: .7rem; line-height: 1.45; color: var(--rw-mute); }
+.rw-side-miss-copy strong, .rw-side-miss-copy b { color: var(--rw-cream); }
+.rw-side-miss-foot {
+    display: flex; justify-content: space-between; gap: .6rem;
+    margin-top: .4rem;
+    font-family: var(--mono);
+    font-size: .48rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--rw-mute);
+}
+
+.rw-foot { margin: 1.6rem 0 .4rem; text-align: center; }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav" data-page="records-watch" data-chapter="Live · Records Watch" data-back-href="live/"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="m-main">
+
+    <header class="rw-head">
+        <div class="m-kicker"><span class="dot"></span> Live tracker · {{LEAGUE_ABBR}}</div>
+        <h1 class="rw-title">Records <em>Watch.</em></h1>
+        <div class="m-mono rw-sub" id="m-foot">Tracking starts Week 1</div>
+    </header>
+
+    <div class="rw-meter">
+        <div class="rw-meter-stat alert"><span class="val" id="m-broken">—</span><span class="lbl">Broken</span></div>
+        <div class="rw-meter-stat"><span class="val" id="m-brink">—</span><span class="lbl">Brink</span></div>
+        <div class="rw-meter-stat"><span class="val" id="m-onpace">—</span><span class="lbl">On pace</span></div>
+        <div class="rw-meter-stat"><span class="val" id="m-missed">—</span><span class="lbl">Missed</span></div>
+    </div>
+
+    <div class="rw-label"><span class="t">§ 01 · Claimed</span> Records Broken</div>
+    <div id="broken-body">
+        <div class="rw-empty">
+            <div class="glyph">◈</div>
+            <h3>No records <em>broken yet.</em></h3>
+            <p>A record lands here the moment it's surpassed — a new single-week high, a streak past the all-time mark, or a Quickest-to-X hit early.</p>
+        </div>
+    </div>
+
+    <div class="rw-label"><span class="t">§ 02 · Pursuit</span> On the Brink</div>
+    <div id="brink-body">
+        <div class="rw-empty">
+            <h3>Nothing in pursuit <em>yet.</em></h3>
+            <p>Chasers appear here at 65% or more of an all-time mark. Biggest threats up top.</p>
+        </div>
+    </div>
+
+    <div class="rw-label"><span class="t">§ 03 · Pace</span> On Pace</div>
+    <div id="onpace-body">
+        <div class="rw-empty">
+            <h3>Nobody projecting <em>past the mark yet.</em></h3>
+            <p>Season-long accumulators land here once a manager's pace would carry them past a franchise record.</p>
+        </div>
+    </div>
+
+    <div class="rw-label"><span class="t">§ 04 · Bolts</span> Just Missed</div>
+    <div id="missed-body">
+        <div class="rw-side-empty">
+            <h4>No close calls yet</h4>
+            <p>Single-week extremes that came within reach of the all-time mark surface here.</p>
+        </div>
+    </div>
+
+    <div class="m-mono rw-foot">{{LEAGUE_ABBR}} · Records Tracker · {{LEAGUE_FOUNDED_ROMAN}}</div>
+
+</main>
+
+<script>
+// ── Records Watch (mobile) — same data file + render rules as the
+//    desktop page (data/records_watch.json), including the brink plot's
+//    overshoot layouts (value-axis pace vs games-axis Quickest items).
+(function () {
+  'use strict';
+
+  var records_watch_through = null;
+
+  fetch('data/records_watch.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (data) {
+      if (!data) return;
+      records_watch_through = (data.meter || {}).through || null;
+      renderMeter(data.meter || {});
+      if (Array.isArray(data.broken)      && data.broken.length)      renderBroken('broken-body', data.broken);
+      if (Array.isArray(data.brink)       && data.brink.length)       renderBrink('brink-body', data.brink);
+      if (Array.isArray(data.on_pace)     && data.on_pace.length)     renderOnPace('onpace-body', data.on_pace);
+      if (Array.isArray(data.just_missed) && data.just_missed.length) renderMissed(data.just_missed);
+    });
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function shortRecord(rv) {
+    if (!rv) return '';
+    var primary = String(rv).split('·')[0].trim();
+    primary = primary.replace(/^(\d+)\s+wins?(?:\s+in a row)?$/i, '$1W');
+    primary = primary.replace(/^(\d+)\s+losses(?:\s+in a row)?$/i, '$1L');
+    primary = primary.replace(/^(\d+)\s+games$/i, '$1G');
+    return primary;
+  }
+  function pct(n) {
+    var v = Math.max(0, Math.min(100, Number(n) || 0));
+    return v.toFixed(1).replace(/\.0$/, '') + '%';
+  }
+
+  function renderMeter(m) {
+    if (m.broken      != null) $('m-broken').textContent = m.broken;
+    if (m.on_pace     != null) $('m-onpace').textContent = m.on_pace;
+    if (m.brink       != null) $('m-brink').textContent  = m.brink;
+    if (m.just_missed != null) $('m-missed').textContent = m.just_missed;
+    if (m.through) {
+      $('m-foot').textContent = (/^Preseason/i.test(m.through) ? '' : 'Through ') + m.through;
+    }
+  }
+
+  // Brink — same two layouts as desktop: "overshoot" (projection beats
+  // the record; mark line slides inward / projection line appears) and
+  // "classic" (mark pinned to the right edge).
+  function renderBrink(slot, items) {
+    var html = '<div class="rw-blocks">';
+    items.forEach(function (it, idx) {
+      var rawPct = Math.max(0, Math.min(100, Number(it.pct) || 0));
+
+      var rNum = Number(it.record_numeric);
+      var cNum = Number(it.current_numeric);
+      var pNum = Number(it.projection_numeric);
+      var hasNums = isFinite(rNum) && isFinite(cNum) && isFinite(pNum);
+      // Quickest races on a games-axis (lower = faster); other pace items
+      // race on a value-axis (higher = better).
+      var isQuickest = /^Quickest to /.test(it.category || '');
+      var overshoot = hasNums && (isQuickest ? pNum < rNum : pNum > rNum);
+
+      var markPosPct, fillPct, scaleEndLabel, scaleEndStyle, projAboveHtml, projLineHtml;
+      if (overshoot && isQuickest) {
+        markPosPct = 100;
+        var projInsidePct = Math.max(0, Math.min(100, (pNum / rNum) * 100));
+        fillPct = Math.min(100, (cNum / rNum) * 100);
+        scaleEndLabel = shortRecord(it.record_value);
+        scaleEndStyle = '';
+        var projShortQ = it.projection_short || shortRecord(it.record_value);
+        projAboveHtml = '<span class="rw-plot-label-proj" ' +
+          'style="right:auto; left:' + projInsidePct.toFixed(2) + '%; transform:translateX(-50%);">' +
+          esc(projShortQ) + '</span>';
+        projLineHtml = '<div class="rw-plot-proj-line" ' +
+          'style="right:auto; left:' + projInsidePct.toFixed(2) + '%;"></div>';
+      } else if (overshoot) {
+        markPosPct = (rNum / pNum) * 100;
+        fillPct = Math.min(100, (cNum / pNum) * 100);
+        scaleEndLabel = shortRecord(it.record_value);
+        scaleEndStyle = 'left:' + markPosPct.toFixed(2) + '%; transform:translateX(-50%); right:auto;';
+        var projShort = it.projection_short || shortRecord(it.record_value);
+        projAboveHtml = '<span class="rw-plot-label-proj">' + esc(projShort) + '</span>';
+        projLineHtml = '<div class="rw-plot-proj-line"></div>';
+      } else {
+        markPosPct = 100;
+        fillPct = rawPct;
+        scaleEndLabel = shortRecord(it.record_value);
+        scaleEndStyle = '';
+        projAboveHtml = '';
+        projLineHtml = '';
+      }
+
+      var rv = it.record_value || '';
+      var m = rv.match(/^(\d[\d.,]*)\s*(.*)$/);
+      var markNum = m ? m[1] : rv;
+      var markUnit = m ? m[2] : '';
+
+      var rawLabel = String(it.chaser_value || '');
+      var barLabel = rawLabel
+        .replace(/\s+(active|active streak|in a row|in a row.*)$/i, '')
+        .replace(/\s+through\s+.*/i, '')
+        .trim();
+
+      var gapClass = overshoot ? 'gap-pos' : 'gap-neg';
+
+      html +=
+        '<article class="rw-block">' +
+          '<div class="rw-block-head">' +
+            '<span class="rw-block-num">§ ' + String(idx + 1).padStart(2, '0') + '</span>' +
+            '<span class="rw-block-cat">' + esc(it.category || 'Record') + '</span>' +
+            '<span class="rw-block-flag">' + esc(it.flag || 'On the brink') + '</span>' +
+          '</div>' +
+          '<div class="rw-block-body">' +
+            '<div class="rw-block-mark">' +
+              '<span class="rw-mark-label">The mark</span>' +
+              '<span class="rw-mark-num">' + esc(markNum) + '</span>' +
+              (markUnit ? '<span class="rw-mark-unit">' + esc(markUnit) + '</span>' : '') +
+              '<span class="rw-mark-credit"><strong>' + esc(it.holder || '—') + '</strong>' +
+                (it.holder_when ? ' · ' + esc(it.holder_when) : '') + '</span>' +
+            '</div>' +
+            '<div class="rw-block-plot">' +
+              '<div class="rw-plot-head">' +
+                '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
+                (it.chaser_sub ? '<span class="chaser-sub">' + esc(it.chaser_sub) + '</span>' : '') +
+              '</div>' +
+              '<div class="rw-plot-labels">' +
+                '<span class="rw-plot-label" style="left:' + fillPct.toFixed(2) + '%">' + esc(barLabel) + '</span>' +
+                projAboveHtml +
+              '</div>' +
+              '<div class="rw-plot-track">' +
+                '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.25).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.50).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-tick" style="left:' + (markPosPct * 0.75).toFixed(2) + '%"></div>' +
+                '<div class="rw-plot-mark-line" style="left:' + markPosPct.toFixed(2) + '%"></div>' +
+                projLineHtml +
+                '<div class="rw-plot-fill" style="width:calc(' + fillPct.toFixed(2) + '% - 4px)"></div>' +
+              '</div>' +
+              '<div class="rw-plot-scale">' +
+                '<span class="s-start">0</span>' +
+                '<span class="s-end"' + (scaleEndStyle ? ' style="' + scaleEndStyle + '"' : '') + '>' + esc(scaleEndLabel) + '</span>' +
+              '</div>' +
+              '<div class="rw-plot-foot">' +
+                '<span>' + esc(it.chaser_when || '') + '</span>' +
+                '<span class="' + gapClass + '">' + esc(it.gap || '') + '</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</article>';
+    });
+    html += '</div>';
+    var slotEl = $(slot);
+    if (slotEl) slotEl.innerHTML = html;
+  }
+
+  function weekFromWhen(when) {
+    var m = String(when || '').match(/^W(?:eek\s+)?(\d+)\b/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function weekFromMeter() {
+    if (!records_watch_through) return null;
+    return weekFromWhen(records_watch_through);
+  }
+
+  function brokenFullCard(slot, it) {
+    var cv = it.chaser_value || it.record_value || '';
+    var m = cv.match(/^(\d[\d.,]*(?:-\d[\d.,]*)*)\s*(.*)$/);
+    var readNum = m ? m[1] : cv;
+    var readUnit = m ? m[2] : '';
+    var readNumHtml;
+    var dashIdx = readNum.indexOf('-');
+    if (dashIdx > 0) {
+      readNumHtml = esc(readNum.slice(0, dashIdx)) +
+        '<span class="num-trail">' + esc(readNum.slice(dashIdx)) + '</span>';
+    } else {
+      readNumHtml = esc(readNum);
+    }
+    var compact = /^Quickest to /.test(it.category || '');
+    var whenDisplay = String(it.when || '').replace(/^W(\d+)\b/, 'Week $1');
+    return '<article class="rw-broken">' +
+        '<span class="rw-broken-badge">' + esc(it.flag || (slot === 'broken-body' ? 'BROKEN' : 'ON PACE')) + '</span>' +
+        '<div class="cat">' + esc(it.category || '') + '</div>' +
+        '<div class="rw-broken-readout' + (compact ? ' compact' : '') + '">' +
+          '<span class="num">' + readNumHtml + '</span>' +
+          (readUnit ? '<span class="unit">' + esc(readUnit) + '</span>' : '') +
+          (it.readout_sub ? '<span class="sub">' + esc(it.readout_sub) + '</span>' : '') +
+          '<div class="copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+        '</div>' +
+        '<div class="rw-broken-prior">' +
+          '<span>' + esc(whenDisplay) + '</span>' +
+          '<span class="prior-line">prior · ' + esc(it.previous || '—') + '</span>' +
+        '</div>' +
+      '</article>';
+  }
+
+  function brokenMiniRow(it) {
+    var cv = it.chaser_value || it.record_value || '';
+    var m = cv.match(/^(\d[\d.,]*(?:-\d[\d.,]*)*)\s*(.*)$/);
+    var readNum = m ? m[1] : cv;
+    var readUnit = m ? ' ' + m[2] : '';
+    var readNumHtml;
+    var dashIdx = readNum.indexOf('-');
+    if (dashIdx > 0) {
+      readNumHtml = esc(readNum.slice(0, dashIdx)) +
+        '<span class="num-trail">' + esc(readNum.slice(dashIdx)) + '</span>';
+    } else {
+      readNumHtml = esc(readNum);
+    }
+    var whenDisplay = String(it.when || '').replace(/^W(\d+)\b/, 'Week $1');
+    return '<div class="rw-broken-mini">' +
+        '<span class="mini-num">' + readNumHtml + esc(readUnit) + '</span>' +
+        '<div class="mini-body">' +
+          '<div class="mini-cat">' + esc(it.category || '') + '</div>' +
+          '<div class="mini-name">' + esc(it.chaser || '—') + '</div>' +
+        '</div>' +
+        '<div class="mini-when">' + esc(whenDisplay) + '</div>' +
+      '</div>';
+  }
+
+  function renderBroken(slot, items) {
+    var throughWeek = weekFromMeter();
+    var recent = [], history = [];
+    items.forEach(function (it) {
+      if (slot !== 'broken-body') { recent.push(it); return; }
+      var w = weekFromWhen(it.when);
+      var weeksAgo = (throughWeek != null && w != null) ? (throughWeek - w) : 0;
+      if (weeksAgo > 3) history.push(it);
+      else recent.push(it);
+    });
+
+    var html = '<div class="rw-broken-grid">';
+    recent.forEach(function (it) { html += brokenFullCard(slot, it); });
+    html += '</div>';
+    if (history.length) {
+      html += '<div class="rw-broken-history">' +
+        '<div class="rw-broken-history-head">Earlier this season</div>' +
+        '<div class="rw-broken-history-list">';
+      history.forEach(function (it) { html += brokenMiniRow(it); });
+      html += '</div></div>';
+    }
+    var slotEl = $(slot);
+    if (slotEl) slotEl.innerHTML = html;
+  }
+
+  function renderOnPace(slot, items) {
+    var html = '<div class="rw-onpace-stack">';
+    items.forEach(function (it, idx) {
+      var rawPct = Math.max(0, Math.min(100, Number(it.pct) || 0));
+      var cv = String(it.chaser_value || '');
+      var projLine = String(it.chaser_projection || it.gap || '');
+      html +=
+        '<article class="rw-onpace-card">' +
+          '<div class="rw-onpace-head">' +
+            '<span class="num">§ ' + String(idx + 1).padStart(2, '0') + '</span>' +
+            '<span class="cat">' + esc(it.category || 'Record') + '</span>' +
+            '<span class="pct">' + pct(rawPct) + '</span>' +
+          '</div>' +
+          '<div class="rw-onpace-grid">' +
+            '<div class="rw-onpace-col chasing">' +
+              '<div class="col-lbl">Chasing</div>' +
+              '<div class="col-name">' + esc(it.chaser || '—') +
+                (it.chaser_sub ? ' <span class="col-sub-tag">' + esc(it.chaser_sub) + '</span>' : '') +
+              '</div>' +
+              '<div class="col-val">' + esc(cv) + '</div>' +
+              '<div class="col-sub">' + esc(projLine) + '</div>' +
+            '</div>' +
+            '<div class="rw-onpace-col mark">' +
+              '<div class="col-lbl">The mark</div>' +
+              '<div class="col-name">' + esc(it.holder || '—') + '</div>' +
+              '<div class="col-val">' + esc(it.record_value || '') + '</div>' +
+              '<div class="col-sub">' + esc(it.holder_when || '') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="rw-onpace-foot">' +
+            '<span>' + esc(it.flag || 'BUILDING') + '</span>' +
+            '<span class="gap">' + esc(it.gap || '') + '</span>' +
+          '</div>' +
+        '</article>';
+    });
+    html += '</div>';
+    var slotEl = $(slot);
+    if (slotEl) slotEl.innerHTML = html;
+  }
+
+  function renderMissed(items) {
+    var html = '<div class="rw-side-panel">';
+    items.forEach(function (it, i) {
+      var raw = Math.max(0, Math.min(120, Number(it.pct) || 0));
+      html +=
+        '<div class="rw-side-miss">' +
+          '<div class="rw-side-miss-head">' +
+            '<span class="rank">' + String(i + 1).padStart(2, '0') + '</span>' +
+            '<span class="cat">' + esc(it.category || '') + '</span>' +
+            '<span class="pct">' + pct(raw) + '</span>' +
+          '</div>' +
+          '<div class="rw-side-miss-copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
+          '<div class="rw-side-miss-foot">' +
+            '<span>vs ' + esc(it.record_value || '—') + '</span>' +
+            '<span>' + esc(it.gap || '') + '</span>' +
+          '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    $('missed-body').innerHTML = html;
+  }
+})();
+</script>
+</body>
+</html>

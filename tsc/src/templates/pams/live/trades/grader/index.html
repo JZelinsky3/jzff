@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trade Grader · The Trade Desk · {{LEAGUE_NAME}}</title>
+  <link rel="stylesheet" href="/pams-template/assets/css/main.css" />
+  <link rel="stylesheet" href="/pams-template/assets/css/trades.css" />
+</head>
+<body data-trade-desk-room="grader">
+  <div class="site-glow" aria-hidden="true"></div>
+
+  <nav id="site-nav" data-page="trades" data-chapter="LIVE · TRADE DESK · GRADER"
+       data-back-href="live/trades/" data-back-label="Back to Trade Desk"></nav>
+  <script src="/pams-template/assets/js/nav.js"></script>
+
+  <main class="tr-wrap">
+
+    <header class="tr-page-head">
+      <h1 class="tr-page-title">Trade <em>Grader.</em></h1>
+    </header>
+
+    <!-- Commissioner-only theme picker — rendered by trades.js when __DC.isCommish -->
+    <div id="theme-picker"></div>
+
+    <div id="content">
+      <div class="tr-empty">
+        <svg class="tsc-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+            <g transform="rotate(-45 12 12)">
+                <ellipse cx="12" cy="12" rx="8.5" ry="5.2"/>
+                <path d="M9.7 12h4.6M10.8 10.8v2.4M12 10.8v2.4M13.2 10.8v2.4"/>
+            </g>
+        </svg>
+        <h2>Loading…</h2>
+        <p>Pulling completed trades.</p>
+      </div>
+    </div>
+
+    <div class="tr-footer" style="margin-top:3rem;text-align:center;font-family:var(--mono);font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;opacity:.45;">
+      {{LEAGUE_ABBR}} · The Trade Desk · Trade Grader · Every deal marked up
+    </div>
+
+  </main>
+
+  <script src="/pams-template/assets/js/trades.js"></script>
+</body>
+</html>

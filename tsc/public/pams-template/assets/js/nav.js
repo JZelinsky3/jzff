@@ -27,14 +27,14 @@
         {
             isGroup: true, label: 'Live Season',
             items: [
-                { key: 'live-season',     label: 'Overview',         path: 'live-season/' },
-                { key: 'matchup-preview', label: 'Matchup Preview',  path: 'live-season/matchup-preview/' },
-                { key: 'pickems',         label: "Pick'ems",         path: 'live-season/pickems/' },
-                { key: 'powerrank',     label: 'Power Rankings',  path: 'live-season/powerrank/' },
-                { key: 'records-watch', label: 'Records Watch',   path: 'live-season/records-watch/' },
-                { key: 'milestones',    label: 'Milestone Alerts',path: 'live-season/milestones/' },
-                { key: 'trades',        label: 'The Trade Desk',  path: 'live-season/trades/' },
-                { key: 'manager-dna',   label: 'Manager DNA',     path: 'live-season/manager-dna/' },
+                { key: 'live',     label: 'Overview',         path: 'live/' },
+                { key: 'matchup-preview', label: 'Matchup Preview',  path: 'live/matchup-preview/' },
+                { key: 'pickems',         label: "Pick'ems",         path: 'live/pickems/' },
+                { key: 'powerrank',     label: 'Power Rankings',  path: 'live/powerrank/' },
+                { key: 'records-watch', label: 'Records Watch',   path: 'live/records-watch/' },
+                { key: 'milestones',    label: 'Milestone Alerts',path: 'live/milestones/' },
+                { key: 'trades',        label: 'The Trade Desk',  path: 'live/trades/' },
+                { key: 'manager-dna',   label: 'Manager DNA',     path: 'live/manager-dna/' },
             ]
         },
         {
@@ -65,13 +65,13 @@
     // Chapter section bar — newspaper-style sub-nav rendered below the
     // masthead. Mirrors the choices in PAGES but FLAT (no sub-groups) and
     // limited to the top-level chapters readers care about. Any
-    // live-season sub-page lights up the single 'Live' tab as active,
+    // live sub-page lights up the single 'Live' tab as active,
     // and pages in that subtree also get the slimmer sub-rail below
     // (LIVE_SUBRAIL_ITEMS) for lateral moves within the section.
-    var LIVE_SEASON_KEYS = ['live-season', 'matchup-preview', 'pickems', 'powerrank', 'best-coach', 'records-watch', 'milestones', 'trades', 'manager-dna'];
+    var LIVE_SEASON_KEYS = ['live', 'matchup-preview', 'pickems', 'powerrank', 'best-coach', 'records-watch', 'milestones', 'trades', 'manager-dna'];
 
     // Live Season sub-rail — second, slimmer row rendered under the
-    // chapbar on every page in the live-season subtree, so readers can
+    // chapbar on every page in the live subtree, so readers can
     // move laterally between live pages without round-tripping through
     // the section hub. Pick'ems + Power Rankings ship their own custom
     // mastheads (pe-nav / pr-nav) so the rail doesn't render THERE, but
@@ -81,16 +81,20 @@
     // powerrank, pick'ems), Watch Desk (records, coach, milestones),
     // Front Office (trades, DNA) — with Overview leading.
     var LIVE_SUBRAIL_ITEMS = [
-        { key: 'live-season',     label: 'Overview',      path: 'live-season/' },
-        { key: 'matchup-preview', label: 'Matchups',      path: 'live-season/matchup-preview/' },
-        { key: 'powerrank',       label: 'Power Rank',    path: 'live-season/powerrank/' },
-        { key: 'pickems',         label: "Pick'ems",      path: 'live-season/pickems/' },
-        { key: 'records-watch',   label: 'Records Watch', path: 'live-season/records-watch/' },
-        { key: 'best-coach',      label: 'Best Coach',    path: 'live-season/best-coach/' },
-        { key: 'milestones',      label: 'Milestones',    path: 'live-season/milestones/' },
-        { key: 'trades',          label: 'Trade Desk',    path: 'live-season/trades/' },
-        { key: 'manager-dna',     label: 'DNA',           path: 'live-season/manager-dna/' },
+        { key: 'live',     label: 'Overview',      path: 'live/' },
+        { key: 'matchup-preview', label: 'Matchups',      path: 'live/matchup-preview/' },
+        { key: 'powerrank',       label: 'Power Rank',    path: 'live/powerrank/' },
+        { key: 'pickems',         label: "Pick'ems",      path: 'live/pickems/' },
+        { key: 'records-watch',   label: 'Records Watch', path: 'live/records-watch/' },
+        { key: 'best-coach',      label: 'Best Coach',    path: 'live/best-coach/' },
+        { key: 'milestones',      label: 'Milestones',    path: 'live/milestones/' },
+        { key: 'trades',          label: 'Trade Desk',    path: 'live/trades/' },
+        { key: 'manager-dna',     label: 'DNA',           path: 'live/manager-dna/' },
     ];
+    // History-mode chapbar (default). Shown on every non-live page. The
+    // 'live' tab links to /live/ (the new Live Home dashboard) and picks up
+    // a pulsing dot when window.__DC.liveWeek is between 1 and 18 — the
+    // server resolves that from the league's current live season settings.
     var CHAPBAR_ITEMS = [
         { key: 'hub',         label: 'Home',      path: './' },
         { key: 'standings',   label: 'Standings', path: 'standings.html' },
@@ -99,14 +103,45 @@
         { key: 'draft',       label: 'Drafts',    path: 'draft/' },
         { key: 'records',     label: 'Records',   path: 'records.html' },
         { key: 'rivalries',   label: 'Rivalries', path: 'rivalries/' },
-        { key: 'live-season', label: 'Live',      path: 'live-season/' }
+        { key: 'live', label: 'Live',      path: 'live/' }
+    ];
+
+    // Live-mode chapbar. Replaces the history chapbar entirely when the
+    // user is on any page in LIVE_SEASON_KEYS. First item is a "← History"
+    // back link to the league hub (the history landing page); the rest are
+    // the live-season pages, flat — no second rail needed because they
+    // ARE the chapbar in this mode. Exception: the Trade Desk page renders
+    // its own subrail underneath (see TRADE_DESK_SUBRAIL_ITEMS).
+    var LIVE_CHAPBAR_ITEMS = [
+        { key: '__history',       label: 'History',      path: './',                   back: true },
+        { key: 'live',            label: 'Live',         path: 'live/' },
+        { key: 'matchup-preview', label: 'Matchups',     path: 'live/matchup-preview/' },
+        { key: 'powerrank',       label: 'Power Rank',   path: 'live/powerrank/' },
+        { key: 'pickems',         label: "Pick'ems",     path: 'live/pickems/' },
+        { key: 'records-watch',   label: 'Records',      path: 'live/records-watch/' },
+        { key: 'best-coach',      label: 'Coach',        path: 'live/best-coach/' },
+        { key: 'milestones',      label: 'Milestones',   path: 'live/milestones/' },
+        { key: 'trades',          label: 'Trades',       path: 'live/trades/' },
+        { key: 'manager-dna',     label: 'DNA',          path: 'live/manager-dna/' }
+    ];
+
+    // Trade Desk subrail. Every trades subpage shares data-page="trades"
+    // so we match by URL pathname instead of currentPage. Shown only in
+    // live mode while on a /live/trades/... path. Order mirrors the four
+    // top-level tools plus the desk root.
+    var TRADE_DESK_SUBRAIL_ITEMS = [
+        { match: /\/live\/trades\/?$/,         label: 'Desk',     path: 'live/trades/' },
+        { match: /\/live\/trades\/analyzer\//, label: 'Analyzer', path: 'live/trades/analyzer/' },
+        { match: /\/live\/trades\/finder\//,   label: 'Finder',   path: 'live/trades/finder/' },
+        { match: /\/live\/trades\/grader\//,   label: 'Grader',   path: 'live/trades/grader/' },
+        { match: /\/live\/trades\/mocks\//,    label: 'Mocks',    path: 'live/trades/mocks/' }
     ];
 
     // Chapter keys that the UDFA gate locks at the page level. Mirrors
     // UDFA_LOCKED_PAGE_PATTERNS in src/lib/leagueTier.ts — keep them in
     // sync. Tabs in this list get an 'is-locked' class on UDFA leagues
     // so visitors see at a glance which chapters need an upgrade.
-    var UDFA_LOCKED_CHAPTER_KEYS = ['live-season', 'draft', 'records'];
+    var UDFA_LOCKED_CHAPTER_KEYS = ['live', 'draft', 'records'];
 
     function buildChapBar(currentPage, root) {
         // Remove any prior render so multiple buildNav() calls don't stack bars.
@@ -120,37 +155,59 @@
 
         var dc = window.__DC || {};
         var udfa = dc.leagueTier === 'udfa';
+        // Mode split: history (default) vs live. Any live-subtree page swaps
+        // the chapbar contents instead of stacking a subrail underneath, so
+        // the live section reads as its own dedicated mode.
+        var isLiveMode = LIVE_SEASON_KEYS.indexOf(currentPage) !== -1;
+        var items = isLiveMode ? LIVE_CHAPBAR_ITEMS : CHAPBAR_ITEMS;
+        // Glow trigger: server resolves the league's current NFL week from
+        // its live season settings (1–18 during the regular season, null
+        // otherwise). Only relevant in history mode — once you're in live
+        // mode the indicator is redundant.
+        var liveWeek = typeof dc.liveWeek === 'number' ? dc.liveWeek : null;
+        var liveGlow = !isLiveMode && liveWeek !== null && liveWeek >= 1 && liveWeek <= 18;
+        bar.className = 'nav-chapbar' + (isLiveMode ? ' is-live-mode' : '');
 
-        var html = '<div class="nav-chapbar-track">';
-        for (var i = 0; i < CHAPBAR_ITEMS.length; i++) {
-            var item = CHAPBAR_ITEMS[i];
-            // Live tab lights up for the entire live-season subtree
-            // (overview, pickems, powerrank, trades); every other tab
-            // matches its own key exactly.
-            var isActive = item.key === 'live-season'
+        var html = '<div class="nav-chapbar-track' + (isLiveMode ? ' is-live-mode' : '') + '">';
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            // Live-mode active match is exact (currentPage === item.key).
+            // History-mode 'live' tab lights for the whole live subtree —
+            // though in practice that branch never fires here because we
+            // render LIVE_CHAPBAR_ITEMS when in live mode.
+            var isActive = !isLiveMode && item.key === 'live'
                 ? LIVE_SEASON_KEYS.indexOf(currentPage) !== -1
                 : item.key === currentPage;
             var isLocked = udfa && UDFA_LOCKED_CHAPTER_KEYS.indexOf(item.key) !== -1;
+            var isBack = !!item.back;
+            // Live tab pulses its own label gold (instead of carrying a
+            // separate dot) when the league is in regular-season weeks.
+            var hasLivePulse = item.key === 'live' && liveGlow;
             var cls = 'nav-chapbar-link'
                     + (isActive ? ' is-active' : '')
-                    + (isLocked ? ' is-locked' : '');
+                    + (isLocked ? ' is-locked' : '')
+                    + (isBack ? ' is-back' : '')
+                    + (hasLivePulse ? ' has-livepulse' : '');
+            var lockGlyph = isLocked ? ' <span class="nav-chapbar-lock" aria-hidden>✦</span>' : '';
             html += '<a href="' + root + item.path + '"'
                   + ' class="' + cls + '"'
                   + (isActive ? ' aria-current="page"' : '')
                   + (isLocked ? ' title="Locked — upgrade to unlock"' : '')
-                  + '>' + item.label
-                  + (isLocked ? ' <span class="nav-chapbar-lock" aria-hidden>✦</span>' : '')
+                  + (hasLivePulse ? ' title="Week ' + liveWeek + ' is live"' : '')
+                  + '>' + item.label + lockGlyph
                   + '</a>';
         }
         html += '</div>';
 
-        // Live Season sub-rail: second slim row inside the same sticky
-        // container, so it scrolls/locks with the chapbar for free.
-        if (LIVE_SEASON_KEYS.indexOf(currentPage) !== -1) {
+        // Trade Desk subrail — only rendered when the current URL is under
+        // /live/trades/... Every trades page shares data-page="trades", so
+        // the active match has to come from window.location.pathname.
+        if (isLiveMode && currentPage === 'trades') {
+            var pathname = (window.location && window.location.pathname) || '';
             html += '<div class="nav-subrail"><div class="nav-subrail-track">';
-            for (var j = 0; j < LIVE_SUBRAIL_ITEMS.length; j++) {
-                var sub = LIVE_SUBRAIL_ITEMS[j];
-                var subActive = sub.key === currentPage;
+            for (var j = 0; j < TRADE_DESK_SUBRAIL_ITEMS.length; j++) {
+                var sub = TRADE_DESK_SUBRAIL_ITEMS[j];
+                var subActive = sub.match.test(pathname);
                 html += '<a href="' + root + sub.path + '"'
                       + ' class="nav-subrail-link' + (subActive ? ' is-active' : '') + '"'
                       + (subActive ? ' aria-current="page"' : '')
@@ -607,6 +664,50 @@
         '@media (max-width: 380px) {',
         '  .nav-chapbar-link { padding: .4rem .45rem .5rem; font-size: .48rem; letter-spacing: .11em; }',
         '  .nav-chapbar-link.is-active::after { left: .45rem; right: .45rem; }',
+        '}',
+        // Live mode: a faint warm tint on the chapbar background so the
+        // section reads as its own "mode" without screaming. The mode is
+        // also signaled by the contents themselves (different tabs, the
+        // "‹ History" back link) — the tint is just a soft confirmation.
+        '.nav-chapbar.is-live-mode {',
+        '  background: linear-gradient(180deg, rgba(232,200,137,.06), rgba(14,22,32,1));',
+        '}',
+        // "History" back-link tab in live mode. Visually quieter than the
+        // other tabs (muted color) so the live chapters read as the active
+        // block while still keeping the way back one click away.
+        '.nav-chapbar-link.is-back {',
+        '  color: var(--cream-mute, #8b8676);',
+        '  opacity: .85;',
+        '}',
+        '.nav-chapbar-link.is-back:hover { color: var(--gold, #e8c889); opacity: 1; }',
+        // Right-edge separator on the back tab uses the gold accent so
+        // "History" reads as grouped on the left, live chapters as a
+        // block to the right.
+        '.nav-chapbar-link.is-back + .nav-chapbar-link::before {',
+        '  background: var(--chapbar-active, var(--gold, #e8c889));',
+        '  opacity: .35;',
+        '  top: 25%; bottom: 25%;',
+        '}',
+        // Live-pulse — the Live tab\'s own label fades between gold and a
+        // brighter gold whenever window.__DC.liveWeek is between 1 and 18.
+        // No dot, no underline — the color itself signals "season is on".
+        // Hover and active states win over the pulse animation so the tab
+        // still reads as interactive.
+        '.nav-chapbar-link.has-livepulse {',
+        '  color: var(--gold, #e8c889);',
+        '  animation: navLivePulse 2.2s ease-in-out infinite;',
+        '}',
+        '.nav-chapbar-link.has-livepulse:hover,',
+        '.nav-chapbar-link.has-livepulse.is-active {',
+        '  animation: none;',
+        '  color: var(--chapbar-active, var(--gold, #e8c889));',
+        '}',
+        '@keyframes navLivePulse {',
+        '  0%, 100% { color: var(--gold, #e8c889); }',
+        '  50%      { color: var(--gold-bright, #f4d9a4); }',
+        '}',
+        '@media (prefers-reduced-motion: reduce) {',
+        '  .nav-chapbar-link.has-livepulse { animation: none; color: var(--gold, #e8c889); }',
         '}'
     ].join('\n');
     document.head.appendChild(style);
@@ -1167,7 +1268,7 @@
         var isRookie = dc.leagueTier === 'paid' && dc.paidTier === 'tier1';
         if (!isUdfa && !isRookie) return;
         var nav = document.getElementById('site-nav');
-        if (!nav || nav.dataset.page !== 'live-season') return;
+        if (!nav || nav.dataset.page !== 'live') return;
 
         var backHref = '/pricing';
         try {

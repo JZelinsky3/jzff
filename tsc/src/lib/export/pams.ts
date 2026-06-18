@@ -2631,7 +2631,7 @@ export async function exportLeague(
   out['manager_highs.json'] = buildManagerHighs(s)
   out['record_book.json'] = buildRecordBook(s)
   out['rivalries.json'] = buildRivalries(s)
-  // Phase-2 live-season feeds: h2h_matrix is always present (all-time
+  // Phase-2 live feeds: h2h_matrix is always present (all-time
   // data). current_form returns null when no season is is_live — the
   // route handler still serves the JSON; the client treats null as
   // "no current season" and hides the form sheet.
@@ -2723,7 +2723,7 @@ function resolveLiveSnapshotPoint(
 // ============================================================
 // h2h_matrix.json — all-time head-to-head between every pair of
 // profile groups. Drives the "Mileage Matrix" widget on the
-// live-season hub: a vintage road-atlas grid of pairwise W-L
+// live hub: a vintage road-atlas grid of pairwise W-L
 // records and PF. Only regular-season + championship-bracket
 // games count (matches buildLeagueJson's totalMatchups rule).
 // ============================================================
@@ -3101,7 +3101,7 @@ function buildCurrentForm(s: Snapshot): unknown {
 // ============================================================
 // matchup_preview.json — Departures board for the upcoming week
 // plus per-manager preview cards. Drives the Matchup Preview hub
-// on the live-season subtree.
+// on the live subtree.
 //
 // Source-week selection (in order):
 //   1. is_live season + a `current_week` pin in settings → that week.
@@ -3434,7 +3434,7 @@ function buildMatchupPreview(s: Snapshot): unknown {
   }
 }
 
-// Tiny roman-numeral helper local to live-season feeds. The main route
+// Tiny roman-numeral helper local to live feeds. The main route
 // handler already exports one for tokens; we keep a local copy so this
 // builder stays self-contained inside the export bundle pipeline.
 function toRomanLite(n: number): string {
@@ -3455,7 +3455,7 @@ function toRomanLite(n: number): string {
 // ============================================================
 // Live-season previews: records_watch + milestones snapshots
 // Frozen at end of regular-season week N for a chosen year so
-// the live-season templates can be evaluated against real data.
+// the live templates can be evaluated against real data.
 // Currently used only when slug === 'jake' (see exportLeague).
 // ============================================================
 

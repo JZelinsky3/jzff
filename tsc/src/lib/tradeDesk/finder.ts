@@ -1,10 +1,10 @@
 // Trade Desk Finder — candidate-trade generation engine.
 //
 // Shared by two rooms:
-//   • The Finder (live-season/trades/finder/) — user picks their team plus
+//   • The Finder (live/trades/finder/) — user picks their team plus
 //     players to shop (or targets to acquire) and we sweep every other
 //     roster for packages worth proposing.
-//   • The Rumor Mill (live-season/trades/mocks/) — fully autonomous weekly
+//   • The Rumor Mill (live/trades/mocks/) — fully autonomous weekly
 //     mock trades; same math, no user input, seeded by the week key so a
 //     given week renders the same column for everyone.
 //

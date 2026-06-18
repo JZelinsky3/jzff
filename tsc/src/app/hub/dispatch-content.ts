@@ -124,7 +124,7 @@ export const DISPATCH: DispatchEntry[] = [
     date: 'May 2026',
     title: 'Records Watch &',
     titleEm: 'Milestones.',
-    body: 'The live-season hub tracks which franchise records are in danger this week and which round-number milestones are about to fall — so the chase gets called before it happens, not after.',
+    body: 'The live hub tracks which franchise records are in danger this week and which round-number milestones are about to fall — so the chase gets called before it happens, not after.',
     status: 'new',
     tags: [{ label: 'Live season' }],
   },

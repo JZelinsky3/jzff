@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trade Grader · The Trade Desk · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<link rel="stylesheet" href="/pams-template/assets/css/trades.css">
+<style>
+/* Mobile shell fit-up — the room keeps the desktop's trades.css +
+   trades.js wholesale (same theme variants, grading engine, feeds);
+   only the chrome swaps to the app shell. */
+
+/* App bar + tab bar follow the commish's grader theme (the route stamps
+   data-trades-theme on <body>), mirroring the desktop nav recolors in
+   trades.css — not the walnut Trade Desk hub. */
+:root {
+    --m-chrome-bg:  #2a1d11;   /* cards fallback before the attr resolves */
+    --m-chrome-bg2: #322217;
+}
+body[data-trades-theme="cards"] { --m-chrome-bg: #2a1d11; --m-chrome-bg2: #322217; }
+body[data-trades-theme="cards"] .m-appbar,
+body[data-trades-theme="cards"] .m-tabbar {
+    --ink-line: #4c3922; --gold: #c8a464; --gold-deep: #8a6f3a;
+    --cream: #f5e9c8; --cream-mute: #9c8665;
+}
+body[data-trades-theme="tribunal"] { --m-chrome-bg: #14100d; --m-chrome-bg2: #1f1714; }
+body[data-trades-theme="tribunal"] .m-appbar,
+body[data-trades-theme="tribunal"] .m-tabbar {
+    --ink-line: #3a2820; --gold: #c8a464; --gold-deep: #8a6f3a;
+    --cream: #ede0c4; --cream-mute: #7e6e58;
+}
+body[data-trades-theme="wire"] { --m-chrome-bg: #efeae0; --m-chrome-bg2: #f6f1e4; }
+body[data-trades-theme="wire"] .m-appbar,
+body[data-trades-theme="wire"] .m-tabbar {
+    /* Newsprint flips light — ink text, masthead red accent. */
+    --ink-line: #c9bea3; --gold: #b03830; --gold-deep: #8a5a30;
+    --cream: #1a1612; --cream-mute: #6b5e44;
+}
+body[data-trades-theme="floor"] { --m-chrome-bg: #050707; --m-chrome-bg2: #0e1110; }
+body[data-trades-theme="floor"] .m-appbar,
+body[data-trades-theme="floor"] .m-tabbar {
+    --ink-line: #1c2421; --gold: #00ff9f; --gold-deep: #ffb000;
+    --cream: #c5d4cb; --cream-mute: #889084;
+}
+body {
+    padding-top: calc(var(--m-appbar-h) + env(safe-area-inset-top));
+    padding-bottom: calc(var(--m-tab-h) + env(safe-area-inset-bottom) + 12px);
+}
+.tr-wrap { padding-left: .9rem; padding-right: .9rem; }
+
+/* Spinner — lives in main.css on desktop; ported here */
+.tsc-spinner {
+    display: block;
+    width: 38px; height: 38px;
+    margin: 0 auto 1rem;
+    color: var(--td-live, currentColor);
+    animation: tsc-spin 1.1s linear infinite;
+}
+.tsc-spinner[data-size="sm"] {
+    display: inline-block;
+    width: 14px; height: 14px;
+    margin: 0 .45rem -2px 0;
+    color: currentColor;
+}
+@keyframes tsc-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .tsc-spinner { animation: none; }
+}
+</style>
+</head>
+<body data-trade-desk-room="grader">
+<div class="site-glow" aria-hidden="true"></div>
+
+<nav id="site-nav" data-page="trades" data-chapter="Trade Desk · Grader" data-back-href="live/trades/"></nav>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<main class="tr-wrap">
+
+    <header class="tr-page-head">
+        <h1 class="tr-page-title">Trade <em>Grader.</em></h1>
+    </header>
+
+    <!-- Commissioner-only theme picker — rendered by trades.js when __DC.isCommish -->
+    <div id="theme-picker"></div>
+
+    <div id="content">
+        <div class="tr-empty">
+            <svg class="tsc-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+                <g transform="rotate(-45 12 12)">
+                    <ellipse cx="12" cy="12" rx="8.5" ry="5.2"/>
+                    <path d="M9.7 12h4.6M10.8 10.8v2.4M12 10.8v2.4M13.2 10.8v2.4"/>
+                </g>
+            </svg>
+            <h2>Loading…</h2>
+            <p>Pulling completed trades.</p>
+        </div>
+    </div>
+
+    <div class="tr-footer" style="margin-top:2.2rem;text-align:center;font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;opacity:.45;">
+        {{LEAGUE_ABBR}} · Trade Grader · Every deal marked up
+    </div>
+
+</main>
+
+<script src="/pams-template/assets/js/trades.js"></script>
+</body>
+</html>

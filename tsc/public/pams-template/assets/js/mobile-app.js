@@ -11,7 +11,7 @@
  *
  *   • top app bar    — back button (history-aware), league title, kicker
  *   • bottom tab bar — Home · Standings · History · Live · More; on
- *                      live-season pages it swaps to the live-mode bar:
+ *                      live pages it swaps to the live-mode bar:
  *                      Home · Live · Week · Desks · More
  *   • History sheet  — Season Archives / Record Book / Draft History
  *   • Week sheet     — Matchup Preview / Power Rankings / Pick'ems (live mode)
@@ -44,7 +44,7 @@
         records: 'history', draft: 'history',
         managers: 'more', manager: 'more',
         rivalries: 'more', rivalry: 'more',
-        'live-season': 'live', 'matchup-preview': 'live', pickems: 'live',
+        'live': 'live', 'matchup-preview': 'live', pickems: 'live',
         powerrank: 'live', 'best-coach': 'live', 'records-watch': 'live',
         milestones: 'live', trades: 'live', 'manager-dna': 'live',
     };
@@ -56,7 +56,7 @@
     // the desktop templates load nav.js instead, so entries here only take
     // effect once a page has a pams-mobile build.
     var LIVE_TAB_OF_PAGE = {
-        'live-season': 'live',
+        'live': 'live',
         'matchup-preview': 'week', powerrank: 'week', pickems: 'week',
         'records-watch': 'desk', 'best-coach': 'desk', milestones: 'desk',
         trades: 'desk', 'manager-dna': 'desk',
@@ -72,7 +72,7 @@
         managers: 'managers', manager: 'managers',
         records: 'more', draft: 'more',
         rivalries: 'more', rivalry: 'more',
-        'live-season': 'more', 'matchup-preview': 'more', pickems: 'more',
+        'live': 'more', 'matchup-preview': 'more', pickems: 'more',
         powerrank: 'more', 'best-coach': 'more', 'records-watch': 'more',
         milestones: 'more', trades: 'more', 'manager-dna': 'more',
     };
@@ -339,9 +339,9 @@
             week.innerHTML =
                 '<div class="m-sheet-handle" aria-hidden></div>' +
                 '<div class="m-sheet-title">The Weekly Slate</div>' +
-                sheetRow('live-season/matchup-preview/', 'Matchup Preview') +
-                sheetRow('live-season/powerrank/', 'Power Rankings') +
-                sheetRow('live-season/pickems/', "Weekly Pick'ems");
+                sheetRow('live/matchup-preview/', 'Matchup Preview') +
+                sheetRow('live/powerrank/', 'Power Rankings') +
+                sheetRow('live/pickems/', "Weekly Pick'ems");
 
             desk = document.createElement('dialog');
             desk.className = 'm-sheet';
@@ -350,13 +350,13 @@
                 '<div class="m-sheet-handle" aria-hidden></div>' +
                 '<div class="m-sheet-title">Live Season</div>' +
                 '<span class="m-sheet-label">The Watch Desk</span>' +
-                sheetRow('live-season/records-watch/', 'Records Watch') +
-                sheetRow('live-season/best-coach/', 'Best Coach', { sub: 'Veteran' }) +
-                sheetRow('live-season/milestones/', 'Milestone Tracker') +
+                sheetRow('live/records-watch/', 'Records Watch') +
+                sheetRow('live/best-coach/', 'Best Coach', { sub: 'Veteran' }) +
+                sheetRow('live/milestones/', 'Milestone Tracker') +
                 '<div class="m-sheet-divider"></div>' +
                 '<span class="m-sheet-label">The Front Office</span>' +
-                sheetRow('live-season/trades/', 'Trade Desk', { sub: 'Veteran' }) +
-                sheetRow('live-season/manager-dna/', 'Manager DNA', { sub: 'Veteran' });
+                sheetRow('live/trades/', 'Trade Desk', { sub: 'Veteran' }) +
+                sheetRow('live/manager-dna/', 'Manager DNA', { sub: 'Veteran' });
         }
 
         // More sheet — Society + account group + view toggle.
@@ -400,7 +400,7 @@
               '<span class="m-sheet-label">With a paid plan</span>' +
               sheetRow('records.html', 'Record Book', { locked: true }) +
               sheetRow('draft/', 'Draft History', { locked: true }) +
-              sheetRow('live-season/', 'Live Season', { locked: true })
+              sheetRow('live/', 'Live Season', { locked: true })
             : liveMode
             ? '<span class="m-sheet-label">The Almanac</span>' +
               sheetRow('standings.html', 'Standings') +
@@ -620,7 +620,7 @@
         // to the in-season pages (almanac links move into the More sheet).
         tabbar.innerHTML = liveMode
             ? tab('home', 'Home', './') +
-              tab('live', 'Live', 'live-season/') +
+              tab('live', 'Live', 'live/') +
               tab('week', 'Week', '', true) +
               tab('desk', 'Desks', '', true) +
               tab('more', 'More', '', true)
@@ -633,7 +633,7 @@
             : tab('home', 'Home', './') +
               tab('standings', 'Standings', 'standings.html') +
               tab('history', 'History', '', true) +
-              tab('live', 'Live', 'live-season/') +
+              tab('live', 'Live', 'live/') +
               tab('more', 'More', '', true);
         document.body.appendChild(tabbar);
 

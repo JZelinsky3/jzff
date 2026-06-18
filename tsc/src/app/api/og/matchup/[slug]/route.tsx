@@ -1,4 +1,4 @@
-// OG image generator for the live-season matchup preview page.
+// OG image generator for the live matchup preview page.
 // URL: /api/og/matchup/<slug>            → Game of the Week (or first slate game)
 //      /api/og/matchup/<slug>?m=<uid>    → the matchup featuring that manager
 //

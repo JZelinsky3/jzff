@@ -25,7 +25,7 @@ export default function Page() {
     },
     {
       q: "Can I bring in NFL.com league history?",
-      a: "Yes for historical seasons. NFL.com hasn't reopened current-year leagues this cycle, so live-season support is paused, but every past season you played there can be scraped and joined to a newer Sleeper/ESPN source.",
+      a: "Yes for historical seasons. NFL.com hasn't reopened current-year leagues this cycle, so live support is paused, but every past season you played there can be scraped and joined to a newer Sleeper/ESPN source.",
     },
     {
       q: "What about leagues that moved to a platform we don't support yet?",

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/demo-m/">
+<script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pick'ems · The Lakeside League</title>
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<link rel="stylesheet" href="/pams-template/assets/css/pickems.css">
+<style>
+/* ── Mobile shell fit-up. The page keeps the desktop's pickems.css +
+      pickems.js wholesale (same data, submit endpoint, tally math) —
+      these overrides only reconcile it with the app chrome. ── */
+:root {
+    --m-chrome-bg:  #160b1d;
+    --m-chrome-bg2: #1c1026;
+}
+/* mobile-app.css owns the fixed chrome clearance; pickems.css only sets
+   body margin, so re-assert the padding in case of future drift. */
+body {
+    padding-top: calc(var(--m-appbar-h) + env(safe-area-inset-top));
+    padding-bottom: calc(var(--m-tab-h) + env(safe-area-inset-bottom) + 12px);
+}
+.pe-app { padding: .5rem .9rem 2.5rem; }
+
+/* Header block replacing the desktop pe-nav masthead */
+.pk-head { text-align: center; padding: .6rem 0 .9rem; }
+.pk-head .m-kicker { color: var(--pk-magenta); }
+.pk-title { font-family: var(--serif); font-size: 1.7rem; line-height: 1.05; color: var(--pk-chalk); }
+.pk-title em { font-style: italic; color: var(--pk-champagne); }
+
+/* Identity row gains the Records button (lived in the desktop masthead) */
+.pe-auth { flex-wrap: wrap; }
+.pk-records-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--pk-line);
+    border-radius: 2px;
+    color: var(--pk-champagne);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .45rem .7rem;
+}
+
+/* Submit bar rides above the fixed tab bar instead of the viewport edge */
+.pe-submitbar {
+    bottom: calc(var(--m-tab-h) + env(safe-area-inset-bottom));
+    margin: 2rem -0.9rem 0;
+    padding: .8rem .9rem;
+}
+
+/* Records modal must beat the tab bar (z 220) and clear the chrome */
+.records-modal {
+    z-index: 300;
+    padding: calc(var(--m-appbar-h) + env(safe-area-inset-top) + 1rem) 1rem
+             calc(var(--m-tab-h) + env(safe-area-inset-bottom) + 1rem);
+}
+</style>
+</head>
+<body>
+
+<nav id="site-nav" data-page="pickems" data-chapter="Ch. VII · Pick'ems" data-back-href="live/"></nav>
+<script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+
+<div class="pe-app">
+
+    <header class="pk-head">
+        <div class="m-kicker">LSL · The Board</div>
+        <h1 class="pk-title">Weekly <em>Pick'ems.</em></h1>
+    </header>
+
+    <!-- IDENTITY (no login — profile dropdown) + records -->
+    <div class="pe-auth" id="authBox">
+        <div class="pe-login">
+            <select id="profileSelect" class="pe-select" aria-label="Pick your name">
+                <option value="">— pick your name —</option>
+            </select>
+        </div>
+        <div id="whoami" class="pe-pill" hidden></div>
+        <button id="changeUserBtn" class="pe-btn pe-btn-ghost" hidden>Change</button>
+        <button id="recordsBtn" class="pk-records-btn" type="button">Records</button>
+    </div>
+
+    <!-- WEEK TABS -->
+    <div class="pe-tabs" id="weekTabs"></div>
+
+    <!-- WEEK VIEWS -->
+    <main class="pe-weeks" id="weekViews">
+        <div class="pe-preseason"><h2>Loading…</h2><p>Pulling this week's matchups.</p></div>
+    </main>
+
+    <!-- SUBMIT BAR -->
+    <div class="pe-submitbar" id="submitBar">
+        <button id="submitPicks" class="pe-btn" disabled>Submit Picks</button>
+        <span class="pe-submit-hint" id="submitHint">Pick your name to vote</span>
+    </div>
+
+    <footer class="pe-footer">
+        The Lakeside League · one submission per week
+    </footer>
+</div>
+
+<!-- RECORDS MODAL -->
+<div id="recordsModal" class="records-modal" role="dialog" aria-modal="true"
+     aria-labelledby="recordsTitle" hidden>
+    <div class="records-modal-backdrop" data-close="1"></div>
+    <div class="records-modal-content" role="document">
+        <div class="records-modal-header">
+            <h2 id="recordsTitle">Voting Records</h2>
+            <button id="recordsClose" class="records-close" aria-label="Close">×</button>
+        </div>
+        <ol id="recordsList" class="records-list"></ol>
+    </div>
+</div>
+
+<!-- Same select styling shim the desktop shell carries -->
+<style>
+select.pe-select {
+    background: var(--pk-card);
+    border: 1px solid var(--pk-line);
+    color: var(--pk-chalk);
+    padding: .58rem .8rem;
+    font-family: var(--sans);
+    font-size: .85rem;
+    border-radius: 2px;
+    min-width: 170px;
+}
+select.pe-select:focus {
+    outline: none;
+    border-color: var(--pk-magenta);
+    background: var(--pk-card-2);
+    box-shadow: 0 0 0 3px rgba(255, 61, 139, .18);
+}
+</style>
+
+<script src="/pams-template/assets/js/pickems.js"></script>
+</body>
+</html>

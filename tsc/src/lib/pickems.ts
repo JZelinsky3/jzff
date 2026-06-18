@@ -136,7 +136,7 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
     const prevChampMgr = prevSeason?.champion_manager_id ?? null
     const prevChampProfile = (managers ?? []).find((m) => m.id === prevChampMgr)?.profile_id ?? null
     if (prevChampProfile) {
-      // live-season participants
+      // live participants
       const liveMgrIds = new Set<string>()
       for (const m of allMatchups ?? []) {
         liveMgrIds.add(m.manager_a_id)

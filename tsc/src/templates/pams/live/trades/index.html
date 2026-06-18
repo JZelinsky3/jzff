@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Trade Desk · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<link rel="stylesheet" href="/pams-template/assets/css/trade-desk.css">
+<style>
+/* ============================================================
+   TRADE DESK HUB — "the desk itself."
+   The page is a walnut desktop seen from above: lamp glow from
+   the top, vignetted edges, a coffee ring by the masthead. The
+   four rooms are four PAPER OBJECTS lying on the desk, each
+   tinted toward its room's interior palette —
+     I   · the Grader     → a ruled, red-margined graded sheet
+     II  · the Analyzer   → a graph-pad worksheet
+     III · the Finder     → a manila case-file folder (tabbed)
+     IV  · the Rumor Mill → a newsprint clipping (oxblood ink)
+   Each sits slightly askew and straightens when picked up
+   (hover). Settings is a real desk drawer with a brass knob.
+   ============================================================ */
+
+/* Desk-surface tokens. The settings drawer panel (trade-desk.css)
+   reads these too, so they stay in the dark-walnut family. */
+:root {
+    --td-bg:           #261810;
+    --td-card:         #322314;
+    --td-card-hover:   #3f2d1a;
+    --td-line:         #523c25;
+    --td-line-soft:    #3a2a18;
+    --td-mute:         #97805f;
+    --td-text:         #f5e9c8;
+    --td-text-em:      #f0c878;
+    --td-desc:         #c9b08a;
+    --td-live:         #d4a958;
+
+    /* Shared ink set for the paper objects. */
+    --ink:        #3b2a18;
+    --ink-soft:   #5f4a33;
+    --ink-faint:  #7b5f41;
+    --ink-red:    #b5443a;
+    --ink-blue:   #3e639a;
+    --ink-green:  #2e6b5c;
+    --ink-oxblood:#7e2f2c;
+}
+
+/* ── The desktop ───────────────────────────────────────── */
+html, body {
+    background-color: var(--td-bg);
+    color: var(--td-text);
+}
+body {
+    /* No background-attachment: fixed — it forces a full-viewport
+       repaint of all four gradient layers on every scroll frame and
+       visibly stutters. Scrolling layers paint once. */
+    background-image:
+      /* desk-lamp pool from the top */
+      radial-gradient(ellipse 90% 55% at 50% -8%, rgba(240, 200, 120, .11) 0%, transparent 60%),
+      /* vignette toward the bottom edge */
+      radial-gradient(ellipse 120% 60% at 50% 118%, rgba(0, 0, 0, .55) 0%, transparent 62%),
+      /* faint wood-grain streaks */
+      repeating-linear-gradient(93deg, rgba(0, 0, 0, .06) 0px, transparent 2px, transparent 11px),
+      linear-gradient(180deg, #2a1b11 0%, #221409 100%);
+}
+
+/* ── Nav + chapbar — carved from deeper stock than the desktop. */
+.nav { background: rgb(24, 15, 8); border-bottom-color: var(--td-line); }
+.nav-back { color: var(--td-desc); }
+.nav-back:hover { color: var(--td-text); }
+.nav-link { color: var(--td-live); }
+.nav-link:hover { color: #fbeed0; }
+.nav-title em { color: var(--td-text); font-style: italic; }
+.nav-kicker { color: var(--td-live); }
+.nav-drop-btn { color: var(--td-live); }
+.nav-drop-btn:hover { color: #fbeed0; }
+:root {
+    --chapbar-bg:     rgb(24, 15, 8);
+    --chapbar-border: var(--td-line);
+    --chapbar-text:   var(--td-mute);
+    --chapbar-active: var(--td-live);
+    --chapbar-line:   var(--td-line);
+    --subrail-active: var(--td-text);
+    /* Cream lift instead of nav.js's default black-.22 band — the
+       darkening read too heavy against the desk's walnut page. */
+    --subrail-bg:     rgba(245, 233, 200, .05);
+
+    --nav-drop-bg:           rgb(24, 15, 8);
+    --nav-drop-border:       var(--td-line);
+    --nav-drop-text:         var(--td-text);
+    --nav-drop-text-hover:   #fbeed0;
+}
+
+/* ── Page wrap ─────────────────────────────────────────── */
+.td-wrap { max-width: 1100px; margin: 0 auto; padding: 1.4rem 1rem 4rem; }
+
+/* ── Hero — top padding tuned so sup-to-chapbar gap matches the
+   Live Season hub (~3.5rem total with the wrap's 1.4rem). ── */
+.td-hero { position: relative; text-align: center; padding: 2.1rem 1rem 3rem; }
+.td-hero-sup {
+    font-family: var(--mono); font-size: .65rem; letter-spacing: .3em;
+    text-transform: uppercase; color: var(--td-live); margin-bottom: .9rem;
+}
+.td-hero-title {
+    font-family: var(--serif); font-size: clamp(2.6rem, 6vw, 4.6rem);
+    line-height: 1; margin: 0; color: var(--td-text);
+}
+.td-hero-title em { color: var(--td-text-em); font-style: italic; }
+.td-hero-sub {
+    margin: 1.5rem auto 0; max-width: 620px;
+    color: var(--td-desc); font-size: .98rem; line-height: 1.55;
+}
+
+/* Deadline stamp — seasonal pill under the hero sub. Hidden until the
+   status endpoint confirms a real deadline; non-Sleeper leagues and the
+   offseason never show it. */
+.td-deadline {
+    display: inline-flex; align-items: baseline; gap: .6rem;
+    margin-top: 1.4rem;
+    padding: .4rem .9rem;
+    border: 1px solid var(--td-line);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .25);
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--td-live);
+}
+.td-deadline[data-closed] {
+    color: #c75847;
+    border-color: rgba(199, 88, 71, .5);
+}
+
+/* Coffee ring — somebody's been working late at this desk. */
+.td-hero::before {
+    content: '';
+    position: absolute;
+    top: .4rem; right: 6%;
+    width: 108px; height: 94px;
+    border: 7px solid rgba(120, 66, 32, .17);
+    border-radius: 50%;
+    transform: rotate(-9deg);
+    pointer-events: none;
+}
+@media (max-width: 719px) { .td-hero::before { display: none; } }
+
+/* ── Section header ────────────────────────────────────── */
+.td-section-header {
+    display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap;
+    padding: 0 .25rem .9rem; margin-bottom: 1.6rem;
+    border-bottom: 1px solid var(--td-line-soft);
+}
+.td-section-num {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .28em;
+    text-transform: uppercase; color: var(--td-live);
+}
+.td-section-title {
+    font-family: var(--serif); font-size: 1.15rem; color: var(--td-text);
+}
+.td-section-title em { color: var(--td-text-em); font-style: italic; }
+.td-section-meta {
+    margin-left: auto;
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--td-mute);
+}
+
+/* ── Papers on the desk ─────────────────────────────────────
+   Two loose columns rather than a flush grid: each object gets
+   its own tilt + vertical drift so the four read as "strewn",
+   not "templated". Hover picks the paper up — it straightens,
+   lifts, and throws a deeper shadow. */
+.td-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.6rem;
+}
+@media (min-width: 720px) {
+    .td-grid { grid-template-columns: 1fr 1fr; gap: 2rem 1.8rem; }
+    .td-card[data-room="I"]   { transform: rotate(-1.3deg); }
+    .td-card[data-room="II"]  { transform: rotate(1deg);    margin-top: 1.1rem; }
+    .td-card[data-room="III"] { transform: rotate(-.7deg);  margin-top: .5rem; }
+    .td-card[data-room="IV"]  { transform: rotate(1.4deg);  margin-top: -.5rem; }
+}
+@media (max-width: 719px) {
+    .td-card[data-room="I"]   { transform: rotate(-.7deg); }
+    .td-card[data-room="II"]  { transform: rotate(.5deg); }
+    .td-card[data-room="III"] { transform: rotate(-.4deg); margin-top: 1.2rem; }
+    .td-card[data-room="IV"]  { transform: rotate(.7deg); }
+}
+
+.td-card {
+    position: relative;
+    display: flex; flex-direction: column;
+    padding: 1.6rem 1.5rem 1.2rem;
+    border-radius: 2px;
+    text-decoration: none;
+    color: var(--ink);
+    min-height: 215px;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, .4),
+      0 10px 26px rgba(0, 0, 0, .45);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.td-card:hover {
+    transform: rotate(0deg) translateY(-4px);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, .35),
+      0 18px 40px rgba(0, 0, 0, .55);
+    z-index: 2;
+}
+.td-card:focus-visible {
+    outline: 2px solid var(--td-live);
+    outline-offset: 3px;
+}
+
+.td-card-tag {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .28em;
+    text-transform: uppercase;
+    margin-bottom: .7rem;
+}
+.td-card-title {
+    font-family: var(--serif); font-size: 1.75rem; line-height: 1.1;
+    margin: 0 0 .7rem; color: var(--ink);
+}
+.td-card-title em { font-style: italic; }
+.td-card-desc {
+    color: var(--ink-soft); font-size: .92rem; line-height: 1.55;
+    margin: 0 0 1.2rem;
+    max-width: 46ch;
+}
+.td-card-desc em { font-style: normal; font-weight: 600; color: var(--ink); }
+.td-card-foot {
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: .85rem;
+    border-top: 1px solid rgba(60, 40, 20, .25);
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+}
+.td-card-arrow {
+    font-family: var(--mono); font-size: 1.05rem;
+    transition: transform .18s ease;
+}
+.td-card:hover .td-card-arrow { transform: translateX(3px); }
+
+/* Rubber stamp — bottom-right of each paper, one per room. */
+.td-card::after {
+    position: absolute;
+    right: 1.15rem; bottom: 3.3rem;
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .22em;
+    text-transform: uppercase;
+    padding: .32rem .55rem;
+    border: 2px solid currentColor;
+    border-radius: 2px;
+    transform: rotate(-7deg);
+    opacity: .42;
+    pointer-events: none;
+}
+
+/* ── I · The Grader — a marked-up, red-margined ruled sheet. */
+.td-card[data-room="I"] {
+    background:
+      linear-gradient(90deg, transparent 0 2.1rem, rgba(181, 68, 58, .3) 2.1rem calc(2.1rem + 1px), transparent calc(2.1rem + 1px)),
+      repeating-linear-gradient(180deg, transparent 0 25px, rgba(140, 90, 60, .14) 25px 26px),
+      linear-gradient(180deg, #f0e4c8, #e8d9b6);
+}
+.td-card[data-room="I"] .td-card-tag { color: var(--ink-red); }
+.td-card[data-room="I"] .td-card-title em { color: var(--ink-red); }
+.td-card[data-room="I"] .td-card-arrow { color: var(--ink-red); }
+.td-card[data-room="I"]::after { content: 'Graded · A−'; color: var(--ink-red); }
+
+/* ── II · The Analyzer — a graph-pad worksheet, paper cooled toward
+   blueprint so it previews the drafting-room blue the door opens on. */
+.td-card[data-room="II"] {
+    background:
+      repeating-linear-gradient(0deg, transparent 0 17px, rgba(80, 115, 160, .14) 17px 18px),
+      repeating-linear-gradient(90deg, transparent 0 17px, rgba(80, 115, 160, .14) 17px 18px),
+      linear-gradient(180deg, #e7eaee, #dbe1e8);
+}
+.td-card[data-room="II"] .td-card-tag { color: var(--ink-blue); }
+.td-card[data-room="II"] .td-card-title em { color: var(--ink-blue); }
+.td-card[data-room="II"] .td-card-arrow { color: var(--ink-blue); }
+.td-card[data-room="II"]::after { content: 'Who wins?'; color: var(--ink-blue); }
+
+/* ── III · The Finder — a manila case-file folder with a tab.
+   Verdigris ink ties it to the Finder's sea-green map room. */
+.td-card[data-room="III"] {
+    background: linear-gradient(180deg, #dcc08a, #d0b274);
+    border-top-left-radius: 0;
+}
+.td-card[data-room="III"]::before {
+    content: 'Case file · Nº III';
+    position: absolute;
+    top: -1.45rem; left: 0;
+    padding: .34rem .85rem .5rem;
+    background: #dcc08a;
+    border-radius: 3px 3px 0 0;
+    font-family: var(--mono); font-size: .55rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--ink-green);
+    box-shadow: 0 -3px 8px rgba(0, 0, 0, .22);
+}
+.td-card[data-room="III"] .td-card-tag { color: var(--ink-green); }
+.td-card[data-room="III"] .td-card-title em { color: var(--ink-green); }
+.td-card[data-room="III"] .td-card-arrow { color: var(--ink-green); }
+.td-card[data-room="III"]::after { content: 'Sweep active'; color: var(--ink-green); }
+
+/* ── IV · The Rumor Mill — a clipped scrap of the scandal sheet.
+   Double-rule masthead + oxblood ink, matching the Mill's room. */
+.td-card[data-room="IV"] {
+    background: linear-gradient(180deg, #e9dcc2, #dfd0af);
+    border-top: 3px double var(--ink-oxblood);
+}
+.td-card[data-room="IV"] .td-card-tag { color: var(--ink-oxblood); }
+.td-card[data-room="IV"] .td-card-title em { color: var(--ink-oxblood); }
+.td-card[data-room="IV"] .td-card-arrow { color: var(--ink-oxblood); }
+.td-card[data-room="IV"]::after { content: 'Unverified'; color: var(--ink-oxblood); }
+
+/* ── Settings — the desk drawer ─────────────────────────────
+   Overrides the .td-settings-trigger tier from trade-desk.css:
+   a walnut drawer front, beveled, with an etched brass plate. */
+.td-settings-trigger {
+    background: linear-gradient(180deg, #44301b, #33220f);
+    border: 1px solid #5a4226;
+    border-radius: 4px;
+    box-shadow:
+      inset 0 1px 0 rgba(240, 200, 120, .14),
+      inset 0 -7px 14px rgba(0, 0, 0, .32),
+      0 8px 18px rgba(0, 0, 0, .4);
+    padding: 1.4rem 1.5rem;
+}
+.td-settings-trigger:hover {
+    background: linear-gradient(180deg, #4d3720, #3a2812);
+    border-color: #8a6a3e;
+}
+.td-settings-trigger-icon {
+    width: 44px; height: 44px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(240, 200, 120, .16), rgba(240, 200, 120, .05));
+    border: 1px solid #8a6a3e;
+    color: #e8c889;
+    box-shadow:
+      inset 0 1px 0 rgba(240, 200, 120, .18),
+      0 2px 5px rgba(0, 0, 0, .35);
+}
+.td-settings-trigger-title { color: var(--td-text); }
+.td-settings-trigger-title em { color: var(--td-text-em); }
+.td-settings-trigger-desc { color: var(--td-desc); }
+.td-settings-trigger-arrow { color: var(--td-live); }
+
+/* ── Footer ────────────────────────────────────────────── */
+.td-footer {
+    margin-top: 3rem; text-align: center;
+    font-family: var(--mono); font-size: .65rem; letter-spacing: .2em;
+    text-transform: uppercase; opacity: .45;
+}
+</style>
+</head>
+<body data-trade-desk-room="hub">
+<div class="site-glow" aria-hidden="true"></div>
+
+<nav id="site-nav" data-page="trades" data-chapter="LIVE · TRADE DESK"
+     data-back-href="live/" data-back-label="Back to Live Season"></nav>
+<script src="/pams-template/assets/js/nav.js"></script>
+
+<main class="td-wrap">
+
+    <header class="td-hero">
+        <div class="td-hero-sup">{{LEAGUE_ABBR}} · The Trade Desk</div>
+        <h1 class="td-hero-title">The Trade <em>Desk.</em></h1>
+        <p class="td-hero-sub">
+            Four rooms for working the market. The <em style="color:var(--td-text-em);font-style:italic;">Grader</em>
+            marks up every completed trade in {{LEAGUE_ABBR}}. The
+            <em style="color:var(--td-text-em);font-style:italic;">Analyzer</em>
+            takes a hypothetical and tells you who wins. The
+            <em style="color:var(--td-text-em);font-style:italic;">Finder</em>
+            sweeps every roster for deals you should be making. And the
+            <em style="color:var(--td-text-em);font-style:italic;">Rumor Mill</em>
+            invents a fresh slate of mock trades each week for the league to argue
+            about. All four share one value engine calibrated to your scoring.
+        </p>
+        <div class="td-deadline" id="td-deadline" hidden></div>
+    </header>
+
+    <section>
+        <div class="td-section-header">
+            <span class="td-section-num">§ 01 · On the Desk</span>
+            <span class="td-section-title">Pick up a <em>paper —</em></span>
+            <span class="td-section-meta">Veteran tier</span>
+        </div>
+
+        <div class="td-grid">
+
+            <a href="live/trades/grader/" class="td-card" data-room="I">
+                <span class="td-card-tag">Passive feed</span>
+                <h2 class="td-card-title">The <em>Grader.</em></h2>
+                <p class="td-card-desc">Every completed trade in {{LEAGUE_ABBR}}, pulled in automatically and graded the moment it clears. Sit back and watch the league's deals get marked up.</p>
+                <span class="td-card-foot">
+                    <span>Open Grader</span>
+                    <span class="td-card-arrow">→</span>
+                </span>
+            </a>
+
+            <a href="live/trades/analyzer/" class="td-card" data-room="II">
+                <span class="td-card-tag">Hypothetical</span>
+                <h2 class="td-card-title">The <em>Analyzer.</em></h2>
+                <p class="td-card-desc">Propose an offer. The Analyzer values every player, scores positional depth before and after, shows each team's rank movement, and writes the case for and against.</p>
+                <span class="td-card-foot">
+                    <span>Open Analyzer</span>
+                    <span class="td-card-arrow">→</span>
+                </span>
+            </a>
+
+            <a href="live/trades/finder/" class="td-card" data-room="III">
+                <span class="td-card-tag">Search</span>
+                <h2 class="td-card-title">The <em>Finder.</em></h2>
+                <p class="td-card-desc">Pick players to shop — or players to chase — and the Finder sweeps every roster in {{LEAGUE_ABBR}} for trades that actually improve your starting lineup, ranked and ready to propose.</p>
+                <span class="td-card-foot">
+                    <span>Open Finder</span>
+                    <span class="td-card-arrow">→</span>
+                </span>
+            </a>
+
+            <a href="live/trades/mocks/" class="td-card" data-room="IV">
+                <span class="td-card-tag">Autonomous weekly</span>
+                <h2 class="td-card-title">Rumor <em>Mill.</em></h2>
+                <p class="td-card-desc">Nobody proposed these. Every week the desk mocks a fresh slate of trades it thinks should happen in {{LEAGUE_ABBR}} — read the column, argue about it, steal a deal.</p>
+                <span class="td-card-foot">
+                    <span>Open Rumor Mill</span>
+                    <span class="td-card-arrow">→</span>
+                </span>
+            </a>
+
+        </div>
+    </section>
+
+    <section style="margin-top:2.8rem;">
+        <div class="td-section-header">
+            <span class="td-section-num">§ 02 · The Drawer</span>
+            <span class="td-section-title">Calibrate the <em>desk —</em></span>
+            <span class="td-section-meta">Commissioner editable</span>
+        </div>
+
+        <button type="button" class="td-settings-trigger" data-td-settings-open>
+            <span class="td-settings-trigger-icon" aria-hidden="true">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </span>
+            <span class="td-settings-trigger-body">
+                <h3 class="td-settings-trigger-title">Trade Desk <em>Settings.</em></h3>
+                <p class="td-settings-trigger-desc">League mode, scoring profile, TE premium, starting slots, value-source preference. Every commish-editable knob that calibrates how grades are calculated.</p>
+            </span>
+            <span class="td-settings-trigger-arrow">→</span>
+        </button>
+    </section>
+
+    <div class="td-footer">
+        {{LEAGUE_ABBR}} · The Trade Desk · Grader + Analyzer + Finder + Rumor Mill
+    </div>
+
+</main>
+
+<script src="/pams-template/assets/js/trade-desk-settings.js"></script>
+<script>
+// Deadline stamp — in-season only. The endpoint answers { known: false }
+// for non-Sleeper leagues and the offseason, and the stamp stays hidden.
+(function () {
+  var dc = window.__DC || {};
+  if (!dc.id) return;
+  fetch('/api/leagues/' + dc.id + '/trade-desk/status', { credentials: 'same-origin' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (s) {
+      if (!s || !s.known || s.deadlineWeek == null) return;
+      var el = document.getElementById('td-deadline');
+      if (!el) return;
+      if (s.closed) {
+        el.textContent = 'Trade deadline passed — desk closed for the season';
+        el.setAttribute('data-closed', '');
+      } else if (s.phase === 'regular' && s.weeksLeft != null) {
+        el.textContent = 'Trade deadline · Week ' + s.deadlineWeek + ' · ' +
+          (s.weeksLeft === 1 ? 'final week' : s.weeksLeft + ' weeks left');
+      } else {
+        return;
+      }
+      el.hidden = false;
+    })
+    .catch(function () { /* stamp is decorative — fail silent */ });
+})();
+</script>
+</body>
+</html>

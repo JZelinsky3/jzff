@@ -389,7 +389,7 @@
     var ids = function (arr) {
       return (arr || []).map(function (p) { return p.id; }).join(',');
     };
-    var href = 'live-season/trades/analyzer/' +
+    var href = 'live/trades/analyzer/' +
       '?teamA=' + encodeURIComponent(state.team) +
       '&teamB=' + encodeURIComponent(deal.partnerOwnerId) +
       '&sends=' + encodeURIComponent(ids(c.sends)) +

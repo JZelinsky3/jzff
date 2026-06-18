@@ -348,7 +348,7 @@
     // a tier-locked / no-trades response.
     renderThemePicker();
     try {
-      var res = await fetch('live-season/trades/data', { cache: 'no-store' });
+      var res = await fetch('live/trades/data', { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var data = await res.json();
 

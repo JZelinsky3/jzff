@@ -11,7 +11,7 @@ import { isLeagueLocked } from '@/lib/leagueTier'
 
 export const maxDuration = 300
 
-// Vercel Cron — weekly live-season sync. Re-ingests every league_source flagged
+// Vercel Cron — weekly live sync. Re-ingests every league_source flagged
 // is_live (the in-progress season): pulls the finished week's scores and the
 // upcoming week's matchups. History sources are immutable, so they're skipped.
 //
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
   const skipped: Array<{ source: string; league_id: string; reason: string }> = []
   const touchedLeagues = new Set<string>()
 
-  // UDFA leagues don't get cron refreshes — live-season data is a paid
+  // UDFA leagues don't get cron refreshes — live data is a paid
   // feature and we don't want to spend cron budget on free-tier archives
   // that can't display it anyway. Cache the per-league lock result so we
   // only pay the tier lookup once per league per run.
