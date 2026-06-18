@@ -11118,7 +11118,9 @@ body.tsc-hdr-collapsed .mlsub-bar {
 .mlp-bar-title em { color: var(--gold); font-style: italic; }
 .mlp-bar-fade {
     display: inline-block;
-    overflow: hidden;
+    /* `clip` (not `hidden`) keeps the box's baseline on its text — otherwise
+       the surrounding T / S / C inline letters drop below the inline-block. */
+    overflow: clip;
     white-space: pre;
     max-width: 6em;
     opacity: 1;
