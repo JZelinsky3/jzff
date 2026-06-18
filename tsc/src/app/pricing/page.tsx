@@ -1,7 +1,9 @@
+import type { Viewport } from 'next'
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 import {
   TIER_LABELS,
   TIER_LIMITS,
@@ -12,7 +14,15 @@ import {
 } from '@/lib/stripe'
 import { PricingCards } from './pricing-cards'
 import { PricingViewTabs } from './pricing-view-tabs'
+import { MobilePricing } from './MobilePricing'
 import { PLAN_FEATURES, FREE_MULTIPLE_LEAGUES_DETAIL } from '@/lib/planFeatures'
+
+// Mobile pricing renders at 1:1.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+}
 
 const TRIAL_DAYS = Number(process.env.STRIPE_TRIAL_DAYS ?? '10')
 
@@ -44,6 +54,23 @@ export default async function PricingPage({
   const sub = user ? await getUserSubscription(user.id) : null
   const hasActive = isSubscriptionActive(sub)
   const lifetime = !!user && (await isCompUser(user.id))
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobilePricing
+        signedIn={!!user}
+        signedInName={user?.email ?? null}
+        hasActive={hasActive}
+        currentTier={hasActive && sub ? sub.tier : null}
+        currentPeriod={hasActive && sub ? sub.billing_period : null}
+        currentTierName={hasActive && sub ? TIER_LABELS[sub.tier].name : null}
+        lifetime={lifetime}
+        initialView={initialView}
+        trialDays={TRIAL_DAYS}
+        backHref={backHref}
+      />
+    )
+  }
 
   return (
     <main>

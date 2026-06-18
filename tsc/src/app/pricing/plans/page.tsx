@@ -1,11 +1,19 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { TIER_LABELS, TIER_LIMITS, TIER_PRICES, type Tier } from '@/lib/stripe'
+import { getViewMode } from '@/lib/viewMode'
 import { PricingViewTabs } from '../pricing-view-tabs'
+import { MobilePlans } from './MobilePlans'
 import { PLAN_FEATURES, FREE_MULTIPLE_LEAGUES_DETAIL } from '@/lib/planFeatures'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+}
 
 export const metadata: Metadata = {
   title: 'Compare plans — The Sunday Chronicle',
@@ -118,6 +126,11 @@ export default async function PlansPage() {
   // visitor last selected — same source of truth as /pricing.
   const viewCookie = (await cookies()).get('tsc-pricing-view')?.value
   const initialView: 'paid' | 'free' = viewCookie === 'free' ? 'free' : 'paid'
+
+  if ((await getViewMode()) === 'mobile') {
+    return <MobilePlans initialView={initialView} backHref="/pricing" />
+  }
+
   return (
     <main>
       <nav className="nav">

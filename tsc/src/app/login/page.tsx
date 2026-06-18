@@ -1,9 +1,18 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 import { LoginForm } from './login-form'
+import { MobileLogin } from './MobileLogin'
+
+// Mobile auth runs in its own app-style tree — 1:1 scale wanted.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+}
 
 export const metadata: Metadata = {
   title: 'Sign in',
@@ -36,6 +45,10 @@ export default async function LoginPage({
   // covers the case where a user clicks Sign In on an almanac, lands on
   // /login, but is already authenticated from a previous tab/session.
   if (user) redirect(postAuthNext ?? '/hub')
+
+  if ((await getViewMode()) === 'mobile') {
+    return <MobileLogin backHref={backHref} postAuthNext={postAuthNext} initialMode={initialMode} />
+  }
 
   return (
     <main>
