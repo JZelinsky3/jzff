@@ -6,14 +6,14 @@ export const metadata: Metadata = {
   title: "How to archive your Yahoo fantasy league history",
   description:
     "Pull every season your Yahoo fantasy football league has ever played into a clean public almanac — champions, drafts, head-to-head records, rivalries — without screenshots or spreadsheets.",
-  alternates: { canonical: "https://jzff.online/guides/yahoo-league-history/" },
+  alternates: { canonical: "https://thesundaychronicle.app/guides/yahoo-league-history/" },
 }
 
 export default function Page() {
   const faq = faqSchema([
     {
       q: "Can I archive a Yahoo fantasy football league's full history?",
-      a: "Yes. Connect your Yahoo account to The Sunday Chronicle at jzff.online and we walk every season the league has played in Yahoo — pulling champions, drafts, weekly matchups, and standings into a single public almanac. Yahoo support requires a one-time OAuth handshake; after that the import runs the same way as Sleeper or ESPN.",
+      a: "Yes. Connect your Yahoo account to The Sunday Chronicle at thesundaychronicle.app and we walk every season the league has played in Yahoo — pulling champions, drafts, weekly matchups, and standings into a single public almanac. Yahoo support requires a one-time OAuth handshake; after that the import runs the same way as Sleeper or ESPN.",
     },
     {
       q: "Why does Yahoo need OAuth when Sleeper and ESPN don't?",
@@ -47,7 +47,7 @@ export default function Page() {
     >
       <P>
         <strong>Short version:</strong> sign in with Yahoo on The Sunday Chronicle at{" "}
-        <Link href="/" style={{ color: "var(--gold)" }}>jzff.online</Link>, paste your league ID, and we walk every season the league has played in Yahoo and turn the whole history into a public almanac — champions, drafts, every matchup, head-to-head records, and rivalries. The Yahoo step is a standard OAuth handshake; after the first run, refreshes are automatic.
+        <Link href="/" style={{ color: "var(--gold)" }}>thesundaychronicle.app</Link>, paste your league ID, and we walk every season the league has played in Yahoo and turn the whole history into a public almanac — champions, drafts, every matchup, head-to-head records, and rivalries. The Yahoo step is a standard OAuth handshake; after the first run, refreshes are automatic.
       </P>
 
       <H2>Why Yahoo needs a sign-in</H2>
@@ -72,7 +72,7 @@ export default function Page() {
       <P>
         Once the import finishes, the public almanac at{" "}
         <code style={{ background: "var(--ink-soft)", padding: ".1rem .35rem", borderRadius: "2px" }}>
-          jzff.online/leagues/your-league/
+          thesundaychronicle.app/leagues/your-league/
         </code>{" "}
         gives every league member a single URL to bookmark — with:
       </P>

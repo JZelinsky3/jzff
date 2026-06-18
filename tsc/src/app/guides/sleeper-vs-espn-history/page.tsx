@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Sleeper vs ESPN — what each fantasy platform actually saves",
   description:
     "Comparing how Sleeper and ESPN handle fantasy football league history: how far back each goes, what data is exposed, how private leagues differ, and which platform makes archiving easier.",
-  alternates: { canonical: "https://jzff.online/guides/sleeper-vs-espn-history/" },
+  alternates: { canonical: "https://thesundaychronicle.app/guides/sleeper-vs-espn-history/" },
 }
 
 export default function Page() {

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'ESPN cookie grabber — The Sunday Chronicle',
   description:
     "One-click bookmarklet that reads your SWID and espn_s2 cookies from a logged-in fantasy.espn.com tab — no DevTools required.",
-  alternates: { canonical: 'https://jzff.online/tools/espn-cookies/' },
+  alternates: { canonical: 'https://thesundaychronicle.app/tools/espn-cookies/' },
   robots: { index: true, follow: true },
 }
 
@@ -51,7 +51,7 @@ export default function Page() {
   // React strips href="javascript:..." in production. We render the drag-link
   // via dangerouslySetInnerHTML to keep the URL intact. The bookmarklet only
   // executes when the user clicks it on a fantasy.espn.com tab, not on this
-  // page (clicking here would try to read cookies for jzff.online — empty,
+  // page (clicking here would try to read cookies for thesundaychronicle.app — empty,
   // and the alert tells them so).
   const anchorStyle = [
     'display:inline-block',

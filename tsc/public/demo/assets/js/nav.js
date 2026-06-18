@@ -522,7 +522,7 @@
             '<span class="dc-demo-strip-pill">★ Demo</span>' +
             '<span class="dc-demo-strip-text">' +
                 'Live testing is open — spin up your own almanac at ' +
-                '<a href="/" target="_top">jzff.online</a>.' +
+                '<a href="/" target="_top">thesundaychronicle.app</a>.' +
             '</span>';
         document.body.insertBefore(strip, document.body.firstChild);
 

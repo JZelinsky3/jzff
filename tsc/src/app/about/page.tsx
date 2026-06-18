@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "About — Fantasy football league archive built for commissioners",
   description:
     "The Sunday Chronicle turns any fantasy football league's full history into a polished, public-facing almanac. Works with Sleeper, ESPN, and NFL.com.",
-  alternates: { canonical: "https://jzff.online/about/" },
+  alternates: { canonical: "https://thesundaychronicle.app/about/" },
 }
 
 // FAQ schema markup so AI tools + Google parse the Q&A blocks as structured
@@ -52,7 +52,7 @@ const faqJsonLd = {
       name: "Where can I see what the almanac looks like?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Visit jzff.online/demo/ for a fully-populated demo built from a real seven-year fantasy league's history — no signup required.",
+        text: "Visit thesundaychronicle.app/demo/ for a fully-populated demo built from a real seven-year fantasy league's history — no signup required.",
       },
     },
     {
@@ -110,7 +110,7 @@ export default function AboutPage() {
           entire history into a public-facing almanac. Standings, champion rolls,
           season archives, the record book, draft history, manager dossiers, hand-curated
           rivalries, weekly pick&apos;ems, power rankings — all rendered into a
-          single shareable URL like <code>jzff.online/leagues/your-league/</code>.
+          single shareable URL like <code>thesundaychronicle.app/leagues/your-league/</code>.
         </FaqItem>
         <FaqItem q="Who is it for?">
           Fantasy football commissioners running long-standing leagues. Especially
@@ -141,7 +141,7 @@ export default function AboutPage() {
           <Link href="/pricing" style={{ color: "var(--gold)" }}>pricing</Link>.
         </FaqItem>
         <FaqItem q="Can I see what the public almanac looks like before signing up?">
-          Yes — visit <Link href="/demo/" style={{ color: "var(--gold)" }}>jzff.online/demo/</Link>{" "}
+          Yes — visit <Link href="/demo/" style={{ color: "var(--gold)" }}>thesundaychronicle.app/demo/</Link>{" "}
           for a fully-populated demo built from a real seven-year league&apos;s history.
           No signup required.
         </FaqItem>
@@ -168,7 +168,7 @@ export default function AboutPage() {
           with feedback, feature requests, or bugs.
         </FaqItem>
         <FaqItem q="Where can I start?">
-          Visit <Link href="/" style={{ color: "var(--gold)" }}>jzff.online</Link> →
+          Visit <Link href="/" style={{ color: "var(--gold)" }}>thesundaychronicle.app</Link> →
           click Sign Up → paste your league ID. We do the rest.
         </FaqItem>
       </div>

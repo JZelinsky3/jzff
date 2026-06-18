@@ -30,7 +30,7 @@ export function getCredentials(): { clientId: string; clientSecret: string } {
 
 // The redirect URI must match exactly what's configured in the Yahoo app.
 // We accept the request origin so the same code works in dev (localhost) and
-// prod (jzff.online) — both URIs must be registered on the Yahoo side.
+// prod (thesundaychronicle.app) — both URIs must be registered on the Yahoo side.
 export function redirectUriFor(origin: string): string {
   return `${origin}/api/yahoo/callback`
 }

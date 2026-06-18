@@ -15,7 +15,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // published leagues wouldn't appear until the next deploy. Hourly is plenty.
 export const revalidate = 3600
 
-const BASE = 'https://jzff.online'
+const BASE = 'https://thesundaychronicle.app'
 
 // path → [changeFrequency, priority]. Trailing slashes everywhere to match
 // `trailingSlash: true` in next.config.ts so crawlers never eat a 308.
@@ -38,6 +38,8 @@ const STATIC_PAGES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequenc
   ['/hub/records/', 'weekly', 0.6],
   ['/hub/numbers/', 'weekly', 0.5],
   ['/hub/whats-new/', 'weekly', 0.5],
+  ['/privacy/', 'yearly', 0.3],
+  ['/terms/', 'yearly', 0.3],
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

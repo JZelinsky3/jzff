@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: 'Compare plans — The Sunday Chronicle',
   description:
     'Side-by-side comparison of the three Sunday Chronicle plans — Rookie, Veteran, and All-Pro. League counts, weekly recaps, and every other feature, with what each tier includes (or doesn\'t).',
-  alternates: { canonical: 'https://jzff.online/pricing/plans/' },
+  alternates: { canonical: 'https://thesundaychronicle.app/pricing/plans/' },
 }
 
 // Each row in the comparison table = one feature. `included` says which

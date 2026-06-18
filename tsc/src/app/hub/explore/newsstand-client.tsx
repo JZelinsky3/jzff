@@ -361,8 +361,8 @@ export function AdEditor({ leagues }: { leagues: AdLeague[] }) {
         {sel.promoted && <span className="hub-promo-live">● On the board</span>}
       </div>
       <div className="hub-copy-row">
-        <span className="hub-copy-url">jzff.online/leagues/{sel.slug}/</span>
-        <CopyLinkButton url={`https://jzff.online/leagues/${sel.slug}/`} />
+        <span className="hub-copy-url">thesundaychronicle.app/leagues/{sel.slug}/</span>
+        <CopyLinkButton url={`https://thesundaychronicle.app/leagues/${sel.slug}/`} />
       </div>
       <textarea
         className="hub-textarea"

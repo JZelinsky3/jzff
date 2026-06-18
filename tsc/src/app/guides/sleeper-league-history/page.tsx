@@ -6,14 +6,14 @@ export const metadata: Metadata = {
   title: "How to archive your Sleeper league history",
   description:
     "Walk back through every season your Sleeper fantasy football league has ever played. Champions, drafts, matchups, rivalries — pulled from any Sleeper league ID in 30 seconds.",
-  alternates: { canonical: "https://jzff.online/guides/sleeper-league-history/" },
+  alternates: { canonical: "https://thesundaychronicle.app/guides/sleeper-league-history/" },
 }
 
 export default function Page() {
   const faq = faqSchema([
     {
       q: "How do I see my Sleeper league's full history?",
-      a: "Paste your Sleeper league ID into The Sunday Chronicle at jzff.online. We automatically walk Sleeper's previous_league_id chain back through every season the league has existed — pulling champions, drafts, matchups, and standings. No installation, no manual exports.",
+      a: "Paste your Sleeper league ID into The Sunday Chronicle at thesundaychronicle.app. We automatically walk Sleeper's previous_league_id chain back through every season the league has existed — pulling champions, drafts, matchups, and standings. No installation, no manual exports.",
     },
     {
       q: "How far back can you pull Sleeper league history?",
@@ -42,7 +42,7 @@ export default function Page() {
       faqJsonLd={faq}
     >
       <P>
-        <strong>Short version:</strong> paste your Sleeper league ID into The Sunday Chronicle at <Link href="/" style={{ color: "var(--gold)" }}>jzff.online</Link>. We walk Sleeper&apos;s <code>previous_league_id</code> chain back through every season your league has existed and turn the whole history into a public almanac — champions, drafts, every matchup, head-to-head records, and rivalries. No manual exports, no spreadsheets, no installation.
+        <strong>Short version:</strong> paste your Sleeper league ID into The Sunday Chronicle at <Link href="/" style={{ color: "var(--gold)" }}>thesundaychronicle.app</Link>. We walk Sleeper&apos;s <code>previous_league_id</code> chain back through every season your league has existed and turn the whole history into a public almanac — champions, drafts, every matchup, head-to-head records, and rivalries. No manual exports, no spreadsheets, no installation.
       </P>
 
       <H2>Where to find your Sleeper league ID</H2>

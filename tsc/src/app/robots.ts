@@ -28,6 +28,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
       },
     ],
-    sitemap: 'https://jzff.online/sitemap.xml',
+    sitemap: 'https://thesundaychronicle.app/sitemap.xml',
   }
 }

@@ -6,14 +6,14 @@ export const metadata: Metadata = {
   title: "How to archive your NFL.com fantasy league history",
   description:
     "Pull every season your NFL.com fantasy football league has ever played into a clean public almanac — champions, drafts, head-to-head records, rivalries — without screenshots or spreadsheets.",
-  alternates: { canonical: "https://jzff.online/guides/nfl-com-league-history/" },
+  alternates: { canonical: "https://thesundaychronicle.app/guides/nfl-com-league-history/" },
 }
 
 export default function Page() {
   const faq = faqSchema([
     {
       q: "Can I archive an NFL.com fantasy league's full history?",
-      a: "Yes. Paste your NFL.com league ID into The Sunday Chronicle at jzff.online and we walk every season the league has played on NFL.com — pulling champions, drafts, weekly matchups, and standings into a single public almanac. NFL.com exposes league history publicly behind the league ID, so no sign-in is required.",
+      a: "Yes. Paste your NFL.com league ID into The Sunday Chronicle at thesundaychronicle.app and we walk every season the league has played on NFL.com — pulling champions, drafts, weekly matchups, and standings into a single public almanac. NFL.com exposes league history publicly behind the league ID, so no sign-in is required.",
     },
     {
       q: "How far back can NFL.com league history go?",
@@ -47,7 +47,7 @@ export default function Page() {
     >
       <P>
         <strong>Short version:</strong> paste your NFL.com league ID into The Sunday Chronicle at{" "}
-        <Link href="/" style={{ color: "var(--gold)" }}>jzff.online</Link>. We walk every season your league has played on NFL.com and turn the whole history into a public almanac — champions, drafts, every matchup, head-to-head records, and rivalries. No sign-in needed; NFL.com exposes league data publicly behind the league ID.
+        <Link href="/" style={{ color: "var(--gold)" }}>thesundaychronicle.app</Link>. We walk every season your league has played on NFL.com and turn the whole history into a public almanac — champions, drafts, every matchup, head-to-head records, and rivalries. No sign-in needed; NFL.com exposes league data publicly behind the league ID.
       </P>
 
       <H2>Where to find your NFL.com league ID</H2>
@@ -72,7 +72,7 @@ export default function Page() {
       <P>
         Once the import finishes, the public almanac at{" "}
         <code style={{ background: "var(--ink-soft)", padding: ".1rem .35rem", borderRadius: "2px" }}>
-          jzff.online/leagues/your-league/
+          thesundaychronicle.app/leagues/your-league/
         </code>{" "}
         gives every league member a single URL to bookmark — with:
       </P>

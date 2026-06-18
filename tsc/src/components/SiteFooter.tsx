@@ -12,6 +12,11 @@ export function SiteFooter() {
       }}
     >
       <span>The Sunday Chronicle · <em>An almanac, kept faithfully.</em></span>
+      <span style={{ opacity: 0.55, fontSize: '.65rem', letterSpacing: '.18em' }}>
+        <a href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy</a>
+        {' · '}
+        <a href="/terms" style={{ color: 'inherit', textDecoration: 'none' }}>Terms</a>
+      </span>
       <span style={{ opacity: 0.55, fontSize: '.55rem', letterSpacing: '.3em' }}>
         Built by <em style={{ fontStyle: 'italic', color: 'var(--gold)' }}>jzFF</em> · MMXXVI
       </span>

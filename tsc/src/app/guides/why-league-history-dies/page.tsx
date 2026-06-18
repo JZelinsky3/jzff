@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Why fantasy league history dies (and how to save it)",
   description:
     "Long-running fantasy football leagues lose their history to platform changes, lost screenshots, archived group chats, and commissioner turnover. Here's why — and how to keep the story alive.",
-  alternates: { canonical: "https://jzff.online/guides/why-league-history-dies/" },
+  alternates: { canonical: "https://thesundaychronicle.app/guides/why-league-history-dies/" },
 }
 
 export default function Page() {
@@ -77,7 +77,7 @@ export default function Page() {
 
       <H2>What we built</H2>
       <P>
-        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> is a single-purpose SaaS: paste a league ID, get a public almanac. We walk back through every season the platform has data for, render it as editorial chapters (standings, season archives, manager dossiers, record book, draft history, rivalries), and host it at a permanent URL like <code>jzff.online/leagues/your-league/</code>. Multiple platforms can feed one archive — see the <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link>.
+        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> is a single-purpose SaaS: paste a league ID, get a public almanac. We walk back through every season the platform has data for, render it as editorial chapters (standings, season archives, manager dossiers, record book, draft history, rivalries), and host it at a permanent URL like <code>thesundaychronicle.app/leagues/your-league/</code>. Multiple platforms can feed one archive — see the <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link>.
       </P>
       <P>
         It costs $5/month. The decade of league history you&apos;d otherwise lose is worth more than that to a long-running league.

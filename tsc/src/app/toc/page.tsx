@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Table of Contents — every page in The Sunday Chronicle",
   description:
     "Every page, tab, and section across the league management dashboard and the public almanac.",
-  alternates: { canonical: "https://jzff.online/toc/" },
+  alternates: { canonical: "https://thesundaychronicle.app/toc/" },
 }
 
 export default function TocPage() {

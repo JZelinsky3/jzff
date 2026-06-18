@@ -36,9 +36,9 @@ const DESCRIPTION =
   "Turn your fantasy football league's full history into a polished public almanac. Walks Sleeper, ESPN, or NFL.com league IDs back through every season — champions, drafts, rivalries, head-to-head records, weekly pick'ems. Built for commissioners.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://jzff.online"),
+  metadataBase: new URL("https://thesundaychronicle.app"),
   title: {
-    default: "The Sunday Chronicle — Fantasy football league archive",
+    default: "The Sunday Chronicle — Fantasy Football League History & Almanac",
     template: "%s · The Sunday Chronicle",
   },
   description: DESCRIPTION,
@@ -53,11 +53,11 @@ export const metadata: Metadata = {
     "fantasy football record book",
     "fantasy football rivalries",
   ],
-  authors: [{ name: "JZFF", url: "https://jzff.online" }],
+  authors: [{ name: "JZFF", url: "https://thesundaychronicle.app" }],
   creator: "JZFF",
   openGraph: {
     type: "website",
-    url: "https://jzff.online/",
+    url: "https://thesundaychronicle.app/",
     title: "The Sunday Chronicle — Fantasy football league archive for commissioners",
     description: DESCRIPTION,
     siteName: "The Sunday Chronicle",
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "The Sunday Chronicle — Fantasy football league archive",
+    title: "The Sunday Chronicle — Fantasy Football League History & Almanac",
     description: DESCRIPTION,
     images: ["/tsc-logo-1200.png"],
   },
@@ -90,7 +90,7 @@ export const metadata: Metadata = {
     title: "TSC",
     statusBarStyle: "black-translucent",
   },
-  alternates: { canonical: "https://jzff.online/" },
+  alternates: { canonical: "https://thesundaychronicle.app/" },
   // Search engine site verifications. Google uses the HTML file at
   // /public/google2963fe74b5dcc516.html; Bing uses the meta tag injected
   // here. Both can coexist; both improve indexing → AI tool retrieval.
@@ -115,7 +115,7 @@ const jsonLd = {
   applicationCategory: "BusinessApplication",
   applicationSubCategory: "Fantasy Football League Archive",
   operatingSystem: "Web",
-  url: "https://jzff.online/",
+  url: "https://thesundaychronicle.app/",
   description: DESCRIPTION,
   offers: [
     { "@type": "Offer", name: "Rookie",  price: "3",  priceCurrency: "USD", description: "1 league, monthly" },

@@ -5,7 +5,7 @@
 ## What it does
 
 - Imports complete league history (every season, every matchup, every draft pick) from Sleeper, ESPN, or NFL.com using just a league ID
-- Renders an editorial-style public almanac at jzff.online/leagues/<slug>/ with chapters for standings, season archives, the record book, draft history, manager dossiers, and rivalries
+- Renders an editorial-style public almanac at thesundaychronicle.app/leagues/<slug>/ with chapters for standings, season archives, the record book, draft history, manager dossiers, and rivalries
 - Auto-syncs in-season with a weekly cron so the public almanac stays current
 - Live pick'ems and power rankings during the active season
 - Commissioner admin UI for merging cross-platform manager identities, curating rivalries, and configuring divisions
@@ -32,15 +32,15 @@
 
 ## Live demo
 
-[jzff.online/demo/](https://jzff.online/demo/) — a real fantasy league's seven-year history, fully populated, no signup required
+[thesundaychronicle.app/demo/](https://thesundaychronicle.app/demo/) — a real fantasy league's seven-year history, fully populated, no signup required
 
 ## Key URLs
 
-- Home: https://jzff.online/
-- Pricing: https://jzff.online/pricing
-- Sign up: https://jzff.online/login?mode=signup
-- Demo almanac: https://jzff.online/demo/
-- Example live league: https://jzff.online/leagues/pa-milk-society/
+- Home: https://thesundaychronicle.app/
+- Pricing: https://thesundaychronicle.app/pricing
+- Sign up: https://thesundaychronicle.app/login?mode=signup
+- Demo almanac: https://thesundaychronicle.app/demo/
+- Example live league: https://thesundaychronicle.app/leagues/pa-milk-society/
 
 ## Tech
 

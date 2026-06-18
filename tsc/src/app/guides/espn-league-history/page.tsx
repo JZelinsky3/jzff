@@ -6,14 +6,14 @@ export const metadata: Metadata = {
   title: "How to see your ESPN league's full history",
   description:
     "Pull every season of your ESPN fantasy football league into one public almanac. Works for public AND private leagues (with a quick cookie paste). 10+ year leagues fully supported.",
-  alternates: { canonical: "https://jzff.online/guides/espn-league-history/" },
+  alternates: { canonical: "https://thesundaychronicle.app/guides/espn-league-history/" },
 }
 
 export default function Page() {
   const faq = faqSchema([
     {
       q: "How can I see ESPN fantasy league history from years ago?",
-      a: "ESPN keeps every season your league has ever played, but their UI makes it painful to browse. The Sunday Chronicle reads ESPN's league API directly and walks back through every season — including pre-2018 archives where ESPN switched to leagueHistory endpoints. Paste your league ID at jzff.online to get a unified public almanac.",
+      a: "ESPN keeps every season your league has ever played, but their UI makes it painful to browse. The Sunday Chronicle reads ESPN's league API directly and walks back through every season — including pre-2018 archives where ESPN switched to leagueHistory endpoints. Paste your league ID at thesundaychronicle.app to get a unified public almanac.",
     },
     {
       q: "Can The Sunday Chronicle pull data from an ESPN private league?",
@@ -42,7 +42,7 @@ export default function Page() {
       faqJsonLd={faq}
     >
       <P>
-        <strong>Short version:</strong> The Sunday Chronicle reads ESPN&apos;s fantasy API and walks back through every season your league has existed, including pre-2018 archives. Public leagues only need the league ID. Private leagues need two browser cookies (SWID and espn_s2). The result is a unified almanac at <code>jzff.online/leagues/your-league/</code> with every champion, draft, matchup, and head-to-head record.
+        <strong>Short version:</strong> The Sunday Chronicle reads ESPN&apos;s fantasy API and walks back through every season your league has existed, including pre-2018 archives. Public leagues only need the league ID. Private leagues need two browser cookies (SWID and espn_s2). The result is a unified almanac at <code>thesundaychronicle.app/leagues/your-league/</code> with every champion, draft, matchup, and head-to-head record.
       </P>
 
       <H2>Find your ESPN league ID</H2>
@@ -67,7 +67,7 @@ export default function Page() {
       </P>
       <P>
         <strong>Easy mode (recommended):</strong> use our one-click bookmarklet at{' '}
-        <Link href="/tools/espn-cookies/" style={{ color: "var(--gold)" }}>jzff.online/tools/espn-cookies</Link>.
+        <Link href="/tools/espn-cookies/" style={{ color: "var(--gold)" }}>thesundaychronicle.app/tools/espn-cookies</Link>.
         Drag it to your bookmarks bar once; from then on, one click on a logged-in
         fantasy.espn.com tab copies both cookies to your clipboard. No DevTools, no
         third-party extension, ~5 seconds.

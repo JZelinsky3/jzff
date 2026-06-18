@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Moving your fantasy league between platforms — keeping the history",
   description:
     "When a fantasy football league moves from Yahoo to ESPN, ESPN to Sleeper, or anywhere else, the historical data typically gets stranded. Here's how to preserve every season under one unified archive.",
-  alternates: { canonical: "https://jzff.online/guides/migrate-fantasy-league/" },
+  alternates: { canonical: "https://thesundaychronicle.app/guides/migrate-fantasy-league/" },
 }
 
 export default function Page() {
@@ -63,7 +63,7 @@ export default function Page() {
         <li><strong>Sleeper source (2023–present):</strong> imports current + auto-syncs weekly</li>
       </ul>
       <P>
-        The public almanac at <code>jzff.online/leagues/your-league/</code> shows all 10 seasons as one continuous history. Career standings, head-to-head records, and rivalries are computed across all three eras.
+        The public almanac at <code>thesundaychronicle.app/leagues/your-league/</code> shows all 10 seasons as one continuous history. Career standings, head-to-head records, and rivalries are computed across all three eras.
       </P>
 
       <H2>Step-by-step migration</H2>

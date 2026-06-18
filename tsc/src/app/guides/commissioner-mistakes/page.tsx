@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "5 mistakes fantasy commissioners make with league history",
   description:
     "Practical lessons from running long-standing fantasy football leagues — and the recoverable mistakes most commissioners make with documentation, platforms, and league memory.",
-  alternates: { canonical: "https://jzff.online/guides/commissioner-mistakes/" },
+  alternates: { canonical: "https://thesundaychronicle.app/guides/commissioner-mistakes/" },
 }
 
 export default function Page() {

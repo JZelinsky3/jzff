@@ -3,7 +3,7 @@
 //
 // Renders a 1200x630 "book cover" card for the league's almanac. This is
 // the default share image when someone links a league for the first time
-// (e.g. "check out my league on TSC: jzff.online/leagues/<slug>"), so it
+// (e.g. "check out my league on TSC: thesundaychronicle.app/leagues/<slug>"), so it
 // has to read as identity-of-the-league, not as a stat dashboard.
 //
 // CDN-cached per slug; busted only when the league bundle's `league-<id>`

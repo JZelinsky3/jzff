@@ -20,7 +20,7 @@ export function DemoViewer() {
         </div>
         <div className="dv-chrome-url">
           <span className="dv-chrome-lock">●</span>
-          jzff.online<span className="dv-chrome-path">/dashboard</span>
+          thesundaychronicle.app<span className="dv-chrome-path">/dashboard</span>
         </div>
         {loaded && (
           <button

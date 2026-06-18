@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "Guides — Fantasy football league history, archives, and commissioner tools",
   description:
     "Practical guides for fantasy football commissioners — how to archive your league's history from Sleeper, ESPN, or NFL.com, what each platform actually saves, and how to keep your league's story alive after platforms change or commissioners move on.",
-  alternates: { canonical: "https://jzff.online/guides/" },
+  alternates: { canonical: "https://thesundaychronicle.app/guides/" },
 }
 
 const GUIDES = [
