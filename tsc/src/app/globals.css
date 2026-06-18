@@ -11110,11 +11110,10 @@ body.tsc-hdr-collapsed .mlsub-bar {
 }
 .mlp-bar-title {
     font-family: var(--serif);
-    font-size: 1.05rem;
+    font-size: 1.2rem;
     line-height: 1;
     color: var(--cream);
     white-space: nowrap;
-    transition: font-size .25s ease;
 }
 .mlp-bar-title em { color: var(--gold); font-style: italic; }
 .mlp-bar-fade {
@@ -11148,9 +11147,6 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
 @media (max-width: 720px) {
     body.tsc-hdr-collapsed .mlp-bar {
         padding: .45rem 1.1rem;
-    }
-    body.tsc-hdr-collapsed .mlp-bar-title {
-        font-size: .85rem;
     }
     body.tsc-hdr-collapsed .mlp-bar-link {
         font-size: .5rem;

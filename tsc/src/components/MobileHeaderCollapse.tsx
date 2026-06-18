@@ -28,6 +28,11 @@ export function MobileHeaderCollapse() {
     // and always re-expand close to the top.
     const MIN_Y = 90
 
+    // Landing page wants the collapse to "stick" — only re-expand when
+    // the user actually returns to the top of the page, not on every
+    // little upward scroll. Other mobile pages keep the original behavior.
+    const stickyCollapse = pathname === '/'
+
     const onScroll = () => {
       if (ticking) return
       ticking = true
@@ -39,7 +44,7 @@ export function MobileHeaderCollapse() {
           document.body.classList.remove('tsc-hdr-collapsed')
         } else if (dy > DELTA) {
           document.body.classList.add('tsc-hdr-collapsed')
-        } else if (dy < -DELTA) {
+        } else if (dy < -DELTA && !stickyCollapse) {
           document.body.classList.remove('tsc-hdr-collapsed')
         }
         lastY = y
