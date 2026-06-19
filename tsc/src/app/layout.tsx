@@ -64,10 +64,14 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/tsc-logo-1200.png",
+        // Editorial card rendered server-side at /api/og/home — broadsheet
+        // masthead + tagline + feature/platform strips. Sized 1200×630 to
+        // satisfy iMessage / Slack / Discord / X large-card previews. Bump
+        // the ?v= when the design changes if crawlers cache the old one.
+        url: "/api/og/home?v=1",
         width: 1200,
-        height: 1200,
-        alt: "The Sunday Chronicle — TSC.",
+        height: 630,
+        alt: "The Sunday Chronicle — your league's history, archived for good.",
       },
     ],
   },
@@ -75,7 +79,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The Sunday Chronicle — Fantasy Football League History & Almanac",
     description: DESCRIPTION,
-    images: ["/tsc-logo-1200.png"],
+    images: ["/api/og/home?v=1"],
   },
   robots: {
     index: true,
