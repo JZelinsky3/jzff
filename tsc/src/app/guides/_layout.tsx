@@ -193,13 +193,13 @@ export async function GuideShell({
         </div>
       </section>
 
-      <div className="section" style={{ maxWidth: "780px", margin: "0 auto" }}>
+      <div className="section" style={{ maxWidth: "960px", margin: "0 auto" }}>
         <article style={{ color: "var(--cream-soft)", lineHeight: 1.7, fontSize: "1.02rem" }}>
           {children}
         </article>
       </div>
 
-      <div className="section" style={{ maxWidth: "780px", margin: "0 auto" }}>
+      <div className="section" style={{ maxWidth: "960px", margin: "0 auto" }}>
         <div className="dc-card-static">
           <div style={{ fontFamily: "var(--mono)", fontSize: ".6rem", letterSpacing: ".22em", textTransform: "uppercase", color: "var(--gold)", marginBottom: ".5rem" }}>
             ★ Try it
@@ -278,7 +278,9 @@ export function H2({ children }: { children: React.ReactNode }) {
 }
 
 export function P({ children }: { children: React.ReactNode }) {
-  return <p style={{ marginBottom: "1rem" }}>{children}</p>
+  // Cap prose line length even though the article container is wider —
+  // grids and tables get the full width, body paragraphs stay readable.
+  return <p style={{ marginBottom: "1rem", maxWidth: "70ch" }}>{children}</p>
 }
 
 // Locale-stable date formatting so the visible byline doesn't shift

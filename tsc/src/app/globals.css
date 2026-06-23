@@ -5563,7 +5563,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-weight: 600;
 }
 
-.guides-section { padding-top: 1rem; padding-bottom: 1rem; scroll-margin-top: 4rem; }
+.guides-section { padding-top: 2rem; padding-bottom: 3rem; scroll-margin-top: 4rem; }
 .guides-section-blurb {
     max-width: 62ch;
     font-family: var(--serif);
