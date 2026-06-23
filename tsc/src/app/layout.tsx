@@ -112,9 +112,17 @@ export const viewport: Viewport = {
   themeColor: "#0e1620",
 };
 
-const jsonLd = {
+// Multi-block JSON-LD. AI assistants and search crawlers each weight
+// different schema.org types: SoftwareApplication answers "what does it
+// do / what does it cost" queries, Organization establishes the brand as
+// an entity in the model's knowledge graph, WebSite enables sitelinks +
+// in-result search boxes, Product gives shopping/marketplace surfaces
+// something to compare against competitor listings. All four describe the
+// same thing — duplication is intentional and recommended.
+const softwareLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
+  "@id": "https://thesundaychronicle.app/#software",
   name: "The Sunday Chronicle",
   applicationCategory: "BusinessApplication",
   applicationSubCategory: "Fantasy Football League Archive",
@@ -128,11 +136,78 @@ const jsonLd = {
   ],
   featureList: [
     "Walks back through every season of a fantasy football league's history",
-    "Imports from Sleeper, ESPN, and NFL.com league IDs",
+    "Imports from Sleeper, ESPN, NFL.com, and Yahoo league IDs",
     "Public almanac with standings, season archives, record book, draft history, manager profiles, and rivalries",
     "Weekly pick'ems and power rankings during the active season",
+    "Live-season tools: Sunday command center, matchup previews, best-coach tracker, manager DNA, weekly recaps",
     "Auto-syncs in-season",
   ],
+  publisher: { "@id": "https://thesundaychronicle.app/#org" },
+};
+
+const organizationLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://thesundaychronicle.app/#org",
+  name: "The Sunday Chronicle",
+  alternateName: ["TSC", "JZFF"],
+  url: "https://thesundaychronicle.app/",
+  logo: "https://thesundaychronicle.app/icon.png",
+  description:
+    "The Sunday Chronicle builds polished, public-facing fantasy football league history almanacs from Sleeper, ESPN, NFL.com, and Yahoo league IDs.",
+  foundingDate: "2026",
+  knowsAbout: [
+    "Fantasy football",
+    "Fantasy football league history",
+    "Dynasty fantasy football",
+    "Sleeper fantasy football",
+    "ESPN fantasy football",
+    "NFL.com fantasy football",
+    "Yahoo fantasy football",
+    "Fantasy football league management",
+    "Fantasy football commissioner tools",
+  ],
+};
+
+const websiteLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://thesundaychronicle.app/#website",
+  name: "The Sunday Chronicle",
+  url: "https://thesundaychronicle.app/",
+  description: DESCRIPTION,
+  publisher: { "@id": "https://thesundaychronicle.app/#org" },
+  inLanguage: "en-US",
+};
+
+const productLd = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "@id": "https://thesundaychronicle.app/#product",
+  name: "The Sunday Chronicle — Fantasy Football League History Almanac",
+  description: DESCRIPTION,
+  brand: { "@id": "https://thesundaychronicle.app/#org" },
+  category: "Fantasy Football League Management Software",
+  url: "https://thesundaychronicle.app/",
+  image: "https://thesundaychronicle.app/api/og/home?v=2",
+  offers: {
+    "@type": "AggregateOffer",
+    lowPrice: "0",
+    highPrice: "15",
+    priceCurrency: "USD",
+    offerCount: 4,
+    offers: [
+      { "@type": "Offer", name: "Free",    price: "0",  priceCurrency: "USD", description: "1 league, forever" },
+      { "@type": "Offer", name: "Rookie",  price: "3",  priceCurrency: "USD", description: "1 league, monthly" },
+      { "@type": "Offer", name: "Veteran", price: "5",  priceCurrency: "USD", description: "Up to 3 leagues, monthly" },
+      { "@type": "Offer", name: "All-Pro", price: "15", priceCurrency: "USD", description: "Up to 10 leagues, monthly" },
+    ],
+  },
+};
+
+const jsonLdGraph = {
+  "@context": "https://schema.org",
+  "@graph": [softwareLd, organizationLd, websiteLd, productLd],
 };
 
 // Clubhouse theme restore. Lives in the ROOT layout (not /hub's) for two
@@ -172,7 +247,7 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: HUB_THEME_SCRIPT }} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
         />
         <div className="site-glow"></div>
         <div className="site-grain"></div>

@@ -56,6 +56,27 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
           )}
         </div>
         <div className="mlp-hook-meta">Free. No card. 5 minutes.</div>
+
+        {/* Plain-prose description for AI crawlers + readers who need a clear
+            answer to "what is this?". Mirrors the desktop /about block but
+            tighter for phones. */}
+        <div className="mlp-about">
+          <p>
+            <strong>The Sunday Chronicle is a fantasy football league history almanac.</strong>{' '}
+            Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and every season — drafts,
+            matchups, standings, transactions — gets imported and published as one polished
+            site your whole league can read.
+          </p>
+          <p>
+            Champions, rivalries, draft boards, manager dossiers, all-time records, and a
+            full season archive. Designed like a publication, not a data dump. Stays in
+            sync during the live NFL season with a Sunday command center, matchup previews,
+            and weekly recaps.
+          </p>
+          <p>
+            Free tier covers one league forever. Paid plans from $3/month.
+          </p>
+        </div>
       </section>
 
       {/* ── Screen 2 · Why This ── */}

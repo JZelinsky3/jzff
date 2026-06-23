@@ -5429,6 +5429,48 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     color: var(--cream-mute);
 }
 .lp-hero-meta-sep { color: var(--gold-deep); }
+
+/* ─── §01 · About prose block ─────────────────────────────
+   Plain-English description block sitting between the hero and the
+   horizontal-scroll product pages. Exists so AI crawlers can read a
+   self-contained paragraph that defines the product — the rest of the
+   landing is intentionally editorial chrome. Reads as a body-copy
+   essay column so it doesn't compete with the masthead-style hero. */
+.lp-about {
+    position: relative; z-index: 10;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1rem 2rem 2.5rem;
+}
+.lp-about-inner {
+    max-width: 780px;
+    margin: 0 auto;
+}
+.lp-about-prose {
+    font-family: var(--serif);
+    font-size: clamp(1rem, 1.25vw, 1.12rem);
+    line-height: 1.7;
+    color: var(--cream-soft);
+}
+.lp-about-prose p {
+    margin-bottom: 1.1rem;
+}
+.lp-about-prose p:last-child { margin-bottom: 0; }
+.lp-about-prose strong {
+    color: var(--cream);
+    font-weight: 600;
+    font-style: normal;
+}
+.lp-about-link {
+    color: var(--gold);
+    text-decoration: underline;
+    text-decoration-color: rgba(232, 200, 137, .4);
+    text-underline-offset: 2px;
+}
+.lp-about-link:hover {
+    text-decoration-color: var(--gold);
+}
+
 /* ─── HERO CLIPPING / ALMANAC PAGES ───────────────────────── */
 .lp-hero-right {
     position: relative;
@@ -11330,6 +11372,27 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     letter-spacing: .22em;
     text-transform: uppercase;
     color: var(--cream-mute);
+}
+
+/* Plain-prose description block on mobile hook screen — gives AI crawlers
+   and uncertain visitors a clear "what is this?" answer that the
+   masthead/book-cover hero doesn't deliver in quotable form. */
+.mlp-about {
+    margin-top: 1.8rem;
+    padding: 1.2rem 0 0;
+    border-top: 1px solid var(--ink-line);
+    font-family: var(--serif);
+    font-size: .92rem;
+    line-height: 1.6;
+    color: var(--cream-soft);
+    text-align: left;
+}
+.mlp-about p { margin-bottom: .8rem; }
+.mlp-about p:last-child { margin-bottom: 0; }
+.mlp-about strong {
+    color: var(--cream);
+    font-weight: 600;
+    font-style: normal;
 }
 
 /* ── Screen 2 · Why This ── */

@@ -12,6 +12,29 @@ export const metadata: Metadata = {
 }
 
 const GUIDES = [
+  // Category / comparison guides first — these are the discovery entry
+  // points for buyers searching "best fantasy football almanac" etc.
+  {
+    slug: "best-fantasy-football-almanac",
+    title: "Best fantasy football almanac services — 2026 comparison",
+    tagline: "What an almanac is, what to look for, and how the active services stack up — from full archives to recap-only tools.",
+  },
+  {
+    slug: "fantasy-football-league-history-software",
+    title: "Fantasy football league history software — what actually preserves a league",
+    tagline: "The category beyond your host platform's basic history tab — what these tools do, which work cross-platform, and how to pick one.",
+  },
+  {
+    slug: "fantasy-football-league-management-software",
+    title: "Fantasy football league management software — reviews & comparison",
+    tagline: "The host platform plus the third-party tools commissioners actually use. Where each fits in a 2026 league stack.",
+  },
+  {
+    slug: "best-fantasy-football-recap",
+    title: "Best fantasy football recap services — 2026 comparison",
+    tagline: "Weekly recaps compared — designed for league-specific voice vs generic AI prose, archived vs standalone.",
+  },
+  // How-to guides for each platform
   {
     slug: "sleeper-league-history",
     title: "How to archive your Sleeper league history",

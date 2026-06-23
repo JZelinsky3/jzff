@@ -33,6 +33,15 @@ const STATIC_PAGES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequenc
   ['/guides/sleeper-vs-espn-history/', 'monthly', 0.8],
   ['/guides/commissioner-mistakes/', 'monthly', 0.7],
   ['/guides/why-league-history-dies/', 'monthly', 0.7],
+  // Category / comparison pages targeting AI-visibility gap queries:
+  // "best fantasy football almanac", "fantasy football league history
+  // software", "best fantasy football recap services", "fantasy football
+  // league management software reviews". Higher priority than the deeper
+  // guides because they're the discovery entry points for buyers.
+  ['/guides/best-fantasy-football-almanac/', 'monthly', 0.85],
+  ['/guides/fantasy-football-league-history-software/', 'monthly', 0.85],
+  ['/guides/best-fantasy-football-recap/', 'monthly', 0.8],
+  ['/guides/fantasy-football-league-management-software/', 'monthly', 0.85],
   ['/hub/', 'weekly', 0.7],
   ['/hub/explore/', 'weekly', 0.7],
   ['/hub/records/', 'weekly', 0.6],
