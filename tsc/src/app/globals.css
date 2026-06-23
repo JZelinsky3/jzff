@@ -5624,7 +5624,7 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
    override these top/bottom values. The shorthand padding in .section
    declares padding-top: 0 / padding-bottom: 0 under the hood; longhand
    here needs a higher-specificity selector to win the cascade. */
-.section.guides-section { padding-top: 2.5rem; padding-bottom: 2rem; scroll-margin-top: 6.5rem; }
+.section.guides-section { padding-top: 2.5rem; padding-bottom: .5rem; scroll-margin-top: 6.5rem; }
 .guides-section-blurb {
     max-width: 62ch;
     font-family: var(--serif);
