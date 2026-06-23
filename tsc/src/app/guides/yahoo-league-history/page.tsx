@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { GuideShell, faqSchema, H2, P } from "../_layout"
+import { GuideShell, faqSchema, howToSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
   title: "How to archive your Yahoo fantasy league history",
@@ -37,13 +37,51 @@ export default function Page() {
     },
   ])
 
+  const howTo = howToSchema({
+    name: "How to archive Yahoo fantasy football league history",
+    description:
+      "Pull every season of a Yahoo fantasy football league into a single public almanac using The Sunday Chronicle's Yahoo OAuth flow.",
+    totalTime: "PT5M",
+    steps: [
+      {
+        name: "Sign up at The Sunday Chronicle",
+        text: "Go to thesundaychronicle.app and create an account. Free tier covers one league forever.",
+        url: "https://thesundaychronicle.app/login?mode=signup",
+      },
+      {
+        name: "Start a new league and pick Yahoo",
+        text: "On the new-league screen, select Yahoo. You'll be redirected to Yahoo to authorize read access — a one-time OAuth handshake.",
+      },
+      {
+        name: "Authorize via Yahoo sign-in",
+        text: "Sign in with the Yahoo account that owns the league. Grant the requested read scopes. Yahoo redirects you back to The Sunday Chronicle automatically.",
+      },
+      {
+        name: "Pick the league to import",
+        text: "Yahoo returns a list of every league your account owns or plays in. Pick the one to archive.",
+      },
+      {
+        name: "Wait for the full-history walk",
+        text: "Yahoo's API returns every season the league has played. Typical import time: 1–3 minutes depending on league age.",
+      },
+      {
+        name: "Publish your public almanac",
+        text: "Once import finishes, hit Publish. The almanac becomes available at thesundaychronicle.app/leagues/your-slug/.",
+      },
+    ],
+  })
+
   return (
     <GuideShell
       kicker="Yahoo · Full history walk"
       title="How to archive your"
       titleEm="Yahoo league history."
       subtitle="Every season your Yahoo fantasy football league has played — champions, drafts, head-to-head records, rivalries — pulled into a public almanac after a one-time Yahoo sign-in."
+      breadcrumbSlug="yahoo-league-history"
+      datePublished="2026-01-15"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
+      howToJsonLd={howTo}
     >
       <P>
         <strong>Short version:</strong> sign in with Yahoo on The Sunday Chronicle at{" "}

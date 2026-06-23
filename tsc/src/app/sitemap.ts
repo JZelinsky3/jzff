@@ -42,6 +42,33 @@ const STATIC_PAGES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequenc
   ['/guides/fantasy-football-league-history-software/', 'monthly', 0.85],
   ['/guides/best-fantasy-football-recap/', 'monthly', 0.8],
   ['/guides/fantasy-football-league-management-software/', 'monthly', 0.85],
+  // Tool-category gap pages — zero-competitor queries from the AI-visibility
+  // report ("fantasy football trade analysis tools", "milestone tracking",
+  // "manager DNA analysis"). TSC already has these features; the pages
+  // document them in buyer-query shape.
+  ['/guides/fantasy-football-trade-analyzer/', 'monthly', 0.8],
+  ['/guides/fantasy-football-milestone-tracker/', 'monthly', 0.8],
+  ['/guides/fantasy-football-manager-analysis/', 'monthly', 0.8],
+  // Demo subpages. The /demo/ root is the marketing entry, but the chapter
+  // pages contain the bulk of the indexable almanac content — real league
+  // data rendered as HTML. Listing them separately gets each chapter into
+  // Google + the AI training scrapes individually. Test/layout pages
+  // (trade-themes, draft-layouts, tables-demo, vote-icons) are intentionally
+  // excluded — they're internal design experiments, not finished content.
+  ['/demo/standings.html', 'weekly', 0.7],
+  ['/demo/records.html', 'weekly', 0.7],
+  ['/demo/seasons/', 'weekly', 0.7],
+  ['/demo/managers/', 'weekly', 0.7],
+  ['/demo/draft/', 'weekly', 0.7],
+  ['/demo/rivalries/', 'weekly', 0.7],
+  ['/demo/pickems/', 'weekly', 0.6],
+  ['/demo/powerrank/', 'weekly', 0.6],
+  ['/demo/live/', 'weekly', 0.65],
+  ['/demo/live/matchup-preview/', 'weekly', 0.6],
+  ['/demo/live/best-coach/', 'weekly', 0.6],
+  ['/demo/live/records-watch/', 'weekly', 0.6],
+  ['/demo/live/milestones/', 'weekly', 0.6],
+  ['/demo/live/trades/', 'weekly', 0.6],
   ['/hub/', 'weekly', 0.7],
   ['/hub/explore/', 'weekly', 0.7],
   ['/hub/records/', 'weekly', 0.6],

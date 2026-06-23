@@ -39,6 +39,9 @@ export default function Page() {
       title="Best fantasy football recap services —"
       titleEm="a 2026 comparison."
       subtitle="A weekly recap is the one piece of fantasy content that gets read every Tuesday. Here's what separates a good recap service from a generic one, and how the active options stack up."
+      breadcrumbSlug="best-fantasy-football-recap"
+      datePublished="2026-06-22"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
     >
       <P>

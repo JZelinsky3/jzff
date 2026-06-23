@@ -34,6 +34,24 @@ const GUIDES = [
     title: "Best fantasy football recap services — 2026 comparison",
     tagline: "Weekly recaps compared — designed for league-specific voice vs generic AI prose, archived vs standalone.",
   },
+  // Tool-category gap pages — targeting queries TSC's features already
+  // answer (Trade Tape, Milestone Tracker, Manager DNA) but no competitor
+  // currently dominates.
+  {
+    slug: "fantasy-football-trade-analyzer",
+    title: "Fantasy football trade analysis tools — what they do and how to pick one",
+    tagline: "Live redraft graders vs dynasty value calculators vs post-trade graders — which to use when, and where each fits in a league stack.",
+  },
+  {
+    slug: "fantasy-football-milestone-tracker",
+    title: "Fantasy football milestone tracking — what to track and how",
+    tagline: "Career wins, championship counts, point thresholds, streaks, rivalry chapters. The markers that turn a multi-year league into a story.",
+  },
+  {
+    slug: "fantasy-football-manager-analysis",
+    title: "Fantasy football manager analysis — DNA, tendencies, and style",
+    tagline: "Drafting style, lineup habits, trade behavior, response to adversity — profiling managers as a personality, not a record.",
+  },
   // How-to guides for each platform
   {
     slug: "sleeper-league-history",

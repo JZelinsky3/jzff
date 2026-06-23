@@ -39,6 +39,9 @@ export default function Page() {
       title="Best fantasy football almanac services —"
       titleEm="a 2026 comparison."
       subtitle="Almanacs sit between platform standings pages and DIY spreadsheets. This guide explains what to look for and compares the active services so you can pick the one that fits your league."
+      breadcrumbSlug="best-fantasy-football-almanac"
+      datePublished="2026-06-22"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
     >
       <P>

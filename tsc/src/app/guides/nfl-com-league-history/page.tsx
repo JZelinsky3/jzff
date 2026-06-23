@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { GuideShell, faqSchema, H2, P } from "../_layout"
+import { GuideShell, faqSchema, howToSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
   title: "How to archive your NFL.com fantasy league history",
@@ -37,13 +37,47 @@ export default function Page() {
     },
   ])
 
+  const howTo = howToSchema({
+    name: "How to archive NFL.com fantasy football league history",
+    description:
+      "Pull every season of an NFL.com fantasy football league into a single public almanac using The Sunday Chronicle. No sign-in required — NFL.com exposes league data publicly.",
+    totalTime: "PT3M",
+    steps: [
+      {
+        name: "Find your NFL.com league ID",
+        text: "Open your league on fantasy.nfl.com. The URL contains the league ID — usually a 6–8 digit number after /league/ in the path.",
+      },
+      {
+        name: "Sign up at The Sunday Chronicle",
+        text: "Go to thesundaychronicle.app and create an account. Free tier covers one league forever.",
+        url: "https://thesundaychronicle.app/login?mode=signup",
+      },
+      {
+        name: "Paste your NFL.com league ID",
+        text: "On the new-league screen, select NFL.com and paste your league ID. NFL.com exposes league data publicly, so no authentication is required.",
+      },
+      {
+        name: "Wait for the full-history walk",
+        text: "The Sunday Chronicle pulls every season your NFL.com league has played. Typical import time: 1–2 minutes.",
+      },
+      {
+        name: "Publish your public almanac",
+        text: "Once import finishes, hit Publish. The almanac becomes available at thesundaychronicle.app/leagues/your-slug/.",
+      },
+    ],
+  })
+
   return (
     <GuideShell
       kicker="NFL.com · Full history walk"
       title="How to archive your"
       titleEm="NFL.com league history."
       subtitle="Every season your NFL.com fantasy football league has played — champions, drafts, head-to-head records, rivalries — pulled from a single league ID. NFL.com's public league data means no sign-in, no exports."
+      breadcrumbSlug="nfl-com-league-history"
+      datePublished="2026-01-15"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
+      howToJsonLd={howTo}
     >
       <P>
         <strong>Short version:</strong> paste your NFL.com league ID into The Sunday Chronicle at{" "}

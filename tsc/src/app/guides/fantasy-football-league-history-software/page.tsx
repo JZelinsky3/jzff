@@ -39,6 +39,9 @@ export default function Page() {
       title="Fantasy football league history software —"
       titleEm="what actually preserves a league."
       subtitle="The native history views on Sleeper, ESPN, Yahoo, and NFL.com cover the basics. Software that preserves a league — every season, every draft, every matchup, in a form the whole league can read — is a separate category. Here's what it includes and what to use."
+      breadcrumbSlug="fantasy-football-league-history-software"
+      datePublished="2026-06-22"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
     >
       <P>

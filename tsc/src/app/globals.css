@@ -5471,6 +5471,55 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     text-decoration-color: var(--gold);
 }
 
+/* ─── Guide page chrome ───────────────────────────────────
+   Visible breadcrumb + author byline for /guides/*. The structured-data
+   BreadcrumbList and Article schema both mirror this on-page content so
+   Google can verify the schema isn't lying about what readers see. */
+.guide-crumbs {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 1rem 2rem 0;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.guide-crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .55rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.guide-crumbs a {
+    color: var(--cream-soft);
+    text-decoration: none;
+    transition: color .15s ease;
+}
+.guide-crumbs a:hover { color: var(--gold); }
+.guide-crumbs li[aria-current="page"] { color: var(--gold); }
+
+.guide-byline {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .55rem;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.guide-byline a {
+    color: var(--gold);
+    text-decoration: none;
+}
+.guide-byline a:hover { text-decoration: underline; }
+
 /* ─── HERO CLIPPING / ALMANAC PAGES ───────────────────────── */
 .lp-hero-right {
     position: relative;

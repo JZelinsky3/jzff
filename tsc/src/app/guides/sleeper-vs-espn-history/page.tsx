@@ -39,6 +39,9 @@ export default function Page() {
       title="Sleeper vs ESPN —"
       titleEm="what each platform saves."
       subtitle="Side-by-side: how far back you can see, what data you can pull, how private leagues differ, and where each falls short for long-term league archiving."
+      breadcrumbSlug="sleeper-vs-espn-history"
+      datePublished="2026-01-15"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
     >
       <P>

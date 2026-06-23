@@ -39,6 +39,9 @@ export default function Page() {
       title="Fantasy football league management software —"
       titleEm="reviews and comparison."
       subtitle="What the host platforms cover, what they don't, and which third-party tools commissioners actually use to fill the gaps. Honest reviews of the active 2026 options."
+      breadcrumbSlug="fantasy-football-league-management-software"
+      datePublished="2026-06-22"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
     >
       <P>

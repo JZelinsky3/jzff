@@ -39,6 +39,9 @@ export default function Page() {
       title="Moving your league between platforms —"
       titleEm="keeping the history."
       subtitle="Yahoo → ESPN → Sleeper. When commissioners migrate, league history typically dies. Here's how to keep every season alive under one unified archive."
+      breadcrumbSlug="migrate-fantasy-league"
+      datePublished="2026-01-15"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
     >
       <P>

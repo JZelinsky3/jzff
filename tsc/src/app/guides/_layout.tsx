@@ -6,12 +6,32 @@ import { BackButton } from "@/components/BackButton"
 import { SiteFooter } from "@/components/SiteFooter"
 import { createClient } from "@/lib/supabase/server"
 
+// Author entity referenced from Article + Organization schema. Lifting the
+// byline out of the JSX so the structured-data block and the visible byline
+// stay in sync if the author bio ever changes.
+const AUTHOR = {
+  name: "Joey Zelinsky",
+  role: "Fantasy football league commissioner and founder of The Sunday Chronicle",
+  url: "https://thesundaychronicle.app/about/",
+}
+
 export async function GuideShell({
   kicker,
   title,
   titleEm,
   subtitle,
   faqJsonLd,
+  howToJsonLd,
+  // Slug + title for the BreadcrumbList. Defaults derived from the page's
+  // own metadata when not supplied. Passing them explicitly lets callers
+  // override the visible breadcrumb title (e.g. shorter than the <h1>).
+  breadcrumbSlug,
+  breadcrumbTitle,
+  // Article schema timestamps. Caller passes ISO strings so each guide
+  // claims its own publish/update date — important for AI freshness
+  // signals and Google's article-recency weighting.
+  datePublished,
+  dateModified,
   children,
 }: {
   kicker: string
@@ -19,6 +39,11 @@ export async function GuideShell({
   titleEm: string
   subtitle: string
   faqJsonLd?: object
+  howToJsonLd?: object
+  breadcrumbSlug?: string
+  breadcrumbTitle?: string
+  datePublished?: string
+  dateModified?: string
   children: React.ReactNode
 }) {
   // Auth check is server-side so the right-side nav can show "Library"
@@ -26,12 +51,72 @@ export async function GuideShell({
   // component — callers can await this directly in their JSX.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Default the breadcrumb title to the visible <h1> text so callers
+  // don't have to repeat themselves. Strip trailing punctuation /
+  // em-dash that reads naturally inline but looks odd in a breadcrumb.
+  const crumbTitle = (breadcrumbTitle ?? `${title} ${titleEm}`)
+    .replace(/[—\-—.\s]+$/, "")
+    .trim()
+
+  // Composite Article + BreadcrumbList graph. Article schema feeds AI
+  // assistants (Perplexity especially) the author/timestamp/headline they
+  // quote alongside an answer; BreadcrumbList helps Google build sitelinks
+  // and lets AI tools cite the section context. Skip both if the caller
+  // didn't supply a slug — defensive against routes that wrap GuideShell
+  // for non-canonical previews.
+  const articleAndCrumbsLd = breadcrumbSlug
+    ? {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Article",
+            "@id": `https://thesundaychronicle.app/guides/${breadcrumbSlug}/#article`,
+            mainEntityOfPage: `https://thesundaychronicle.app/guides/${breadcrumbSlug}/`,
+            headline: crumbTitle,
+            description: subtitle,
+            author: {
+              "@type": "Person",
+              name: AUTHOR.name,
+              url: AUTHOR.url,
+              jobTitle: AUTHOR.role,
+            },
+            publisher: { "@id": "https://thesundaychronicle.app/#org" },
+            inLanguage: "en-US",
+            isPartOf: { "@id": "https://thesundaychronicle.app/#website" },
+            ...(datePublished ? { datePublished } : {}),
+            ...(dateModified ? { dateModified } : {}),
+          },
+          {
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://thesundaychronicle.app/" },
+              { "@type": "ListItem", position: 2, name: "Guides", item: "https://thesundaychronicle.app/guides/" },
+              { "@type": "ListItem", position: 3, name: crumbTitle, item: `https://thesundaychronicle.app/guides/${breadcrumbSlug}/` },
+            ],
+          },
+        ],
+      }
+    : null
+
   return (
     <main>
+      {articleAndCrumbsLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleAndCrumbsLd) }}
+        />
+      )}
       {faqJsonLd && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
+      {howToJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }}
         />
       )}
       <nav className="nav">
@@ -59,6 +144,21 @@ export async function GuideShell({
         </div>
       </nav>
 
+      {/* Visible breadcrumb. Mirrors the BreadcrumbList JSON-LD so the
+          structured-data assertion is verifiable from the page itself —
+          Google penalizes schema that doesn't match visible content. */}
+      {breadcrumbSlug && (
+        <nav aria-label="Breadcrumb" className="guide-crumbs">
+          <ol>
+            <li><Link href="/">Home</Link></li>
+            <li aria-hidden="true">›</li>
+            <li><Link href="/guides/">Guides</Link></li>
+            <li aria-hidden="true">›</li>
+            <li aria-current="page">{crumbTitle}</li>
+          </ol>
+        </nav>
+      )}
+
       <section className="hero" style={{ paddingTop: "3rem", paddingBottom: "1.5rem" }}>
         <div className="hero-sup">★ {kicker} ★</div>
         <h1 className="hero-title" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}>
@@ -67,6 +167,30 @@ export async function GuideShell({
         <p className="hero-sub" style={{ maxWidth: "62ch", margin: "0 auto" }}>
           {subtitle}
         </p>
+        {/* Author byline + dates. Visible to readers + mirrors the Article
+            schema so the E-E-A-T claim is verifiable on-page, not just in
+            JSON-LD. AI assistants weight bylines + recency. */}
+        <div className="guide-byline">
+          <span>
+            By <Link href={AUTHOR.url}>{AUTHOR.name}</Link>
+          </span>
+          {datePublished && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>
+                Published <time dateTime={datePublished}>{formatDate(datePublished)}</time>
+              </span>
+            </>
+          )}
+          {dateModified && dateModified !== datePublished && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>
+                Updated <time dateTime={dateModified}>{formatDate(dateModified)}</time>
+              </span>
+            </>
+          )}
+        </div>
       </section>
 
       <div className="section" style={{ maxWidth: "780px", margin: "0 auto" }}>
@@ -112,6 +236,33 @@ export function faqSchema(pairs: { q: string; a: string }[]) {
   }
 }
 
+// Build a HowTo JSON-LD object. Eligible for Google's step-by-step rich
+// results and frequently quoted verbatim by AI assistants when answering
+// "how do I…" queries. Each step needs a name + plain-text description;
+// the optional URL anchors deep-link from the structured data into the
+// matching section heading on the page.
+export function howToSchema(opts: {
+  name: string
+  description: string
+  totalTime?: string // ISO 8601 duration, e.g. "PT5M"
+  steps: { name: string; text: string; url?: string }[]
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: opts.name,
+    description: opts.description,
+    ...(opts.totalTime ? { totalTime: opts.totalTime } : {}),
+    step: opts.steps.map((s, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: s.name,
+      text: s.text,
+      ...(s.url ? { url: s.url } : {}),
+    })),
+  }
+}
+
 export function H2({ children }: { children: React.ReactNode }) {
   return (
     <h2 style={{
@@ -128,4 +279,17 @@ export function H2({ children }: { children: React.ReactNode }) {
 
 export function P({ children }: { children: React.ReactNode }) {
   return <p style={{ marginBottom: "1rem" }}>{children}</p>
+}
+
+// Locale-stable date formatting so the visible byline doesn't shift
+// between server and client renders. UTC keeps the rendered string
+// deterministic regardless of where the prerender runs.
+function formatDate(iso: string) {
+  const d = new Date(iso)
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  })
 }

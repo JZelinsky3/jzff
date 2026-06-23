@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { GuideShell, faqSchema, H2, P } from "../_layout"
+import { GuideShell, faqSchema, howToSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
   title: "How to see your ESPN league's full history",
@@ -33,13 +33,51 @@ export default function Page() {
     },
   ])
 
+  const howTo = howToSchema({
+    name: "How to archive ESPN fantasy football league history",
+    description:
+      "Pull every season of an ESPN fantasy football league — public or private — into a single public almanac using The Sunday Chronicle.",
+    totalTime: "PT5M",
+    steps: [
+      {
+        name: "Find your ESPN league ID",
+        text: "Open your league in a browser. The URL looks like fantasy.espn.com/football/league?leagueId=47847 — the number after leagueId= is your league ID.",
+      },
+      {
+        name: "Grab SWID and espn_s2 cookies (private leagues only)",
+        text: "Log into ESPN in a desktop browser. Open DevTools → Application → Cookies → fantasy.espn.com. Copy the SWID and espn_s2 values. Skip this step for public leagues.",
+      },
+      {
+        name: "Sign up at The Sunday Chronicle",
+        text: "Go to thesundaychronicle.app and create an account. The free tier covers one league forever; no credit card needed.",
+        url: "https://thesundaychronicle.app/login?mode=signup",
+      },
+      {
+        name: "Paste your league ID and cookies",
+        text: "On the new-league screen, select ESPN, paste your league ID, and paste the SWID + espn_s2 cookies if your league is private.",
+      },
+      {
+        name: "Wait for the full-history import",
+        text: "The Sunday Chronicle walks every season your league has played — modern API for 2018+ and the legacy archive for pre-2018. Typical import: 30–90 seconds for a 10-year league.",
+      },
+      {
+        name: "Publish your public almanac",
+        text: "Once import finishes, hit Publish. Your league's almanac becomes available at thesundaychronicle.app/leagues/your-slug/ — share that URL with your league.",
+      },
+    ],
+  })
+
   return (
     <GuideShell
       kicker="ESPN · Public + private leagues"
       title="How to see your"
       titleEm="ESPN league's full history."
       subtitle="ESPN saves everything but buries it. Pull every season your league has ever played — even private leagues — into a single public almanac."
+      breadcrumbSlug="espn-league-history"
+      datePublished="2026-01-15"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
+      howToJsonLd={howTo}
     >
       <P>
         <strong>Short version:</strong> The Sunday Chronicle reads ESPN&apos;s fantasy API and walks back through every season your league has existed, including pre-2018 archives. Public leagues only need the league ID. Private leagues need two browser cookies (SWID and espn_s2). The result is a unified almanac at <code>thesundaychronicle.app/leagues/your-league/</code> with every champion, draft, matchup, and head-to-head record.

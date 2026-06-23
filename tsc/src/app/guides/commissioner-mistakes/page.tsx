@@ -31,6 +31,9 @@ export default function Page() {
       title="5 mistakes commissioners make"
       titleEm="with league history."
       subtitle="Practical lessons from running and archiving long-standing fantasy football leagues. Each mistake is recoverable — if you catch it early."
+      breadcrumbSlug="commissioner-mistakes"
+      datePublished="2026-01-15"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
     >
       <P>

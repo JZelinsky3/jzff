@@ -35,6 +35,9 @@ export default function Page() {
       title="Why fantasy league history"
       titleEm="dies (and how to save it)."
       subtitle="Screenshots get lost. Group chats archive. Platforms change. Commissioners move on. A long-running league's story deserves better infrastructure than 'whoever has the longest memory.'"
+      breadcrumbSlug="why-league-history-dies"
+      datePublished="2026-01-15"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
     >
       <P>

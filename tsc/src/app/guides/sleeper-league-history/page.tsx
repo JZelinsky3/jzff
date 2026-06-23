@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { GuideShell, faqSchema, H2, P } from "../_layout"
+import { GuideShell, faqSchema, howToSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
   title: "How to archive your Sleeper league history",
@@ -33,13 +33,47 @@ export default function Page() {
     },
   ])
 
+  const howTo = howToSchema({
+    name: "How to archive Sleeper fantasy football league history",
+    description:
+      "Pull every season of a Sleeper fantasy football league into a single public almanac using The Sunday Chronicle.",
+    totalTime: "PT2M",
+    steps: [
+      {
+        name: "Find your Sleeper league ID",
+        text: "Open your league on sleeper.com. The URL is sleeper.com/leagues/1234567890123456789/team — that 19-digit number is your league ID. In the mobile app, tap settings → Share League to copy a URL containing the same number.",
+      },
+      {
+        name: "Sign up at The Sunday Chronicle",
+        text: "Go to thesundaychronicle.app and create an account. Free tier covers one league forever; no credit card needed.",
+        url: "https://thesundaychronicle.app/login?mode=signup",
+      },
+      {
+        name: "Paste your Sleeper league ID",
+        text: "On the new-league screen, select Sleeper and paste the 19-digit league ID. Sleeper's API is public, so no authentication is required.",
+      },
+      {
+        name: "Wait for the full-history walk",
+        text: "The Sunday Chronicle follows Sleeper's previous_league_id chain back through every season — usually under 60 seconds for a 5–10 year league.",
+      },
+      {
+        name: "Publish your public almanac",
+        text: "Once import finishes, hit Publish. The almanac becomes available at thesundaychronicle.app/leagues/your-slug/ — share that URL with the league.",
+      },
+    ],
+  })
+
   return (
     <GuideShell
       kicker="Sleeper · Full history walk"
       title="How to archive your"
       titleEm="Sleeper league history."
       subtitle="Every season your Sleeper league has played — champions, drafts, head-to-head records, rivalries — pulled from a single league ID in 30 seconds."
+      breadcrumbSlug="sleeper-league-history"
+      datePublished="2026-01-15"
+      dateModified="2026-06-22"
       faqJsonLd={faq}
+      howToJsonLd={howTo}
     >
       <P>
         <strong>Short version:</strong> paste your Sleeper league ID into The Sunday Chronicle at <Link href="/" style={{ color: "var(--gold)" }}>thesundaychronicle.app</Link>. We walk Sleeper&apos;s <code>previous_league_id</code> chain back through every season your league has existed and turn the whole history into a public almanac — champions, drafts, every matchup, head-to-head records, and rivalries. No manual exports, no spreadsheets, no installation.
