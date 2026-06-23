@@ -193,13 +193,13 @@ export async function GuideShell({
         </div>
       </section>
 
-      <div className="section" style={{ maxWidth: "960px", margin: "0 auto" }}>
+      <div className="section" style={{ maxWidth: "1100px", margin: "0 auto" }}>
         <article style={{ color: "var(--cream-soft)", lineHeight: 1.7, fontSize: "1.02rem" }}>
           {children}
         </article>
       </div>
 
-      <div className="section" style={{ maxWidth: "960px", margin: "0 auto" }}>
+      <div className="section" style={{ maxWidth: "1100px", margin: "0 auto" }}>
         <div className="dc-card-static">
           <div style={{ fontFamily: "var(--mono)", fontSize: ".6rem", letterSpacing: ".22em", textTransform: "uppercase", color: "var(--gold)", marginBottom: ".5rem" }}>
             ★ Try it

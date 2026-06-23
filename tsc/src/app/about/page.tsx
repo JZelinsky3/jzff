@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { BackButton } from "@/components/BackButton"
 import { SiteFooter } from "@/components/SiteFooter"
 
 export const metadata: Metadata = {
@@ -74,11 +75,7 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <nav className="nav">
-        <Link href="/" className="dc-nav-icon" aria-label="Back">
-          <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="7 1 1 7 7 13" />
-          </svg>
-        </Link>
+        <BackButton fallbackHref="/" ariaLabel="Back" />
         <div className="nav-center">
           <div className="nav-kicker">About · The Sunday Chronicle</div>
           <div className="nav-title">What <em>this is.</em></div>

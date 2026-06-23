@@ -199,52 +199,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ─── §01.5 · What it is ───────────────────────────────
-          Plain-prose description block. AI crawlers (GPTBot, ClaudeBot,
-          PerplexityBot) read the homepage to learn what the product is,
-          and the rest of this page is intentionally editorial / decorative
-          — there is no other paragraph that defines TSC in quotable form.
-          Keep this in plain English, no flourishes, every sentence
-          self-contained so a model can lift one without context. */}
-      <section className="lp-about" aria-labelledby="what-it-is">
-        <div className="lp-about-inner">
-          <div className="section-header">
-            <span className="section-num">§ 01 · About</span>
-            <span className="section-title" id="what-it-is">What The Sunday Chronicle is —</span>
-            <span className="section-meta">In plain English</span>
-          </div>
-          <div className="lp-about-prose">
-            <p>
-              <strong>The Sunday Chronicle is a fantasy football league history almanac.</strong>{' '}
-              Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and it imports every season the
-              league has ever existed — drafts, weekly matchups, standings, transactions, playoff
-              brackets — then publishes a polished public site your whole league can read at one
-              permanent URL.
-            </p>
-            <p>
-              Most league platforms hide or delete old seasons. Group chats lose the context.
-              Screenshots scatter. The Sunday Chronicle is the record book for a league&apos;s
-              entire history: champions and runners-up, rivalry head-to-heads, draft-by-draft
-              boards, manager career dossiers, all-time records, and a season archive that walks
-              every year back to year one. It is designed like a real publication, not a data
-              dump.
-            </p>
-            <p>
-              During the live NFL season, the same almanac stays in sync: a Sunday command
-              center, matchup previews, best-coach tracking, manager DNA, milestone watches,
-              and weekly recaps update automatically. Commissioners use it as the league&apos;s
-              permanent archive; members use it to argue, remember, and bookmark.
-            </p>
-            <p>
-              The free tier covers one league forever. Paid tiers start at $3/month for a single
-              league and scale to ten leagues at $15/month, all with a 7-day free trial.{' '}
-              <Link href="/about/" className="lp-about-link">Read more about the project</Link>{' '}or{' '}
-              <Link href="/demo/" className="lp-about-link">tour a finished almanac</Link>.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* ─── §02 · Horizontal-scroll Pages of the Chronicle ───── */}
       <ChroniclePages />
 
@@ -300,6 +254,44 @@ export default async function Home() {
           </div>
         </div>
       </div>
+
+      {/* ─── Footer prose — what The Sunday Chronicle is ────────
+          Plain-English description of the product. Lives down here (just
+          above the footer) instead of disrupting the masthead → product
+          → demo flow above; AI crawlers (GPTBot, ClaudeBot, PerplexityBot)
+          still pick it up because it's in the SSR HTML. Stylistically
+          treated as colophon-style fine print, not a marketing section,
+          so users who scroll past it don't feel they hit another pitch. */}
+      <aside className="lp-colophon" aria-labelledby="what-it-is">
+        <div className="lp-colophon-inner">
+          <div className="lp-colophon-kicker">★ Colophon ★</div>
+          <h2 className="lp-colophon-title" id="what-it-is">
+            What <em>The Sunday Chronicle</em> is.
+          </h2>
+          <div className="lp-colophon-prose">
+            <p>
+              <strong>The Sunday Chronicle is a fantasy football league history almanac.</strong>{' '}
+              Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and it imports every season the
+              league has ever existed — drafts, weekly matchups, standings, transactions, playoff
+              brackets — then publishes a polished public site your whole league can read at one
+              permanent URL.
+            </p>
+            <p>
+              Most league platforms hide or delete old seasons. Group chats lose the context.
+              Screenshots scatter. The Sunday Chronicle is the record book for a league&apos;s
+              entire history: champions and runners-up, rivalry head-to-heads, draft-by-draft
+              boards, manager career dossiers, all-time records, and a season archive that walks
+              every year back to year one. Designed like a publication, not a data dump.
+            </p>
+            <p>
+              During the live NFL season, the same almanac stays in sync — Sunday command
+              center, matchup previews, best-coach tracking, manager DNA, milestone watches,
+              weekly recaps — all updated automatically. Free tier covers one league forever.
+              Paid plans from $3/month with a 7-day trial. <Link href="/about/" className="lp-colophon-link">Read more →</Link>
+            </p>
+          </div>
+        </div>
+      </aside>
 
       <SiteFooter />
 

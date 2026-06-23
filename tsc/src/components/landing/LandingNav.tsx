@@ -14,7 +14,7 @@ import { NavDropdown, type DropGroup, type DropEntry, type SubItem } from '@/com
 //   children of a parent link.
 //   Mobile (<720px): collapses to the shared NavDropdown hamburger.
 
-type ColumnKey = 'library' | 'discover' | 'demo' | 'account' | 'get-started'
+type ColumnKey = 'library' | 'discover' | 'pricing' | 'guides' | 'demo' | 'account' | 'get-started'
 
 type Trigger =
   | { kind: 'link'; label: string; href: string; column: ColumnKey; cta?: boolean }
@@ -37,24 +37,45 @@ type Column = {
 
 const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.']
 
-// Discover column groups pricing, about, and the guides hub + sub-guides
-// all in one place. Tiers indented under Pricing give visitors a peek at
-// what each plan offers without leaving the page.
+// Signed-in users get a single combined "Discover" column. Signed-out
+// users see Pricing and Guides as their own separate columns + triggers
+// (see PRICING_ITEMS / GUIDES_ITEMS below) so the marketing nav doesn't
+// bury "Pricing" under a generic "Discover" header.
 const DISCOVER_ITEMS: ColumnItem[] = [
   { label: 'Pricing', href: '/pricing' },
   { label: 'Compare plans', href: '/pricing/plans', indent: true },
   { label: 'About', href: '/about' },
   { label: 'Guides', href: '/guides' },
-  // Platform-guide labels keep only the platform name now — the
-  // 'league history' suffix is redundant once they're listed under
-  // 'Guides'. Commissioner / Migrate sit at the top of the indented
-  // list since they apply to every platform.
   { label: 'Commissioner mistakes',  href: '/guides/commissioner-mistakes',  indent: true },
   { label: 'Migrate fantasy league', href: '/guides/migrate-fantasy-league', indent: true },
   { label: 'Sleeper',                href: '/guides/sleeper-league-history', indent: true },
   { label: 'ESPN',                   href: '/guides/espn-league-history',    indent: true },
   { label: 'Yahoo',                  href: '/guides/yahoo-league-history',   indent: true },
   { label: 'NFL.com',                href: '/guides/nfl-com-league-history', indent: true },
+]
+
+// Pricing column (signed-out only). Small column — three rows. Reads as
+// a buyer's pillar: tiers, plan compare, and the about page that explains
+// what they're paying for.
+const PRICING_ITEMS: ColumnItem[] = [
+  { label: 'Pricing tiers', href: '/pricing' },
+  { label: 'Compare plans', href: '/pricing/plans' },
+  { label: 'About the project', href: '/about' },
+]
+
+// Guides column (signed-out only). Groups the buyer's comparisons + the
+// platform how-tos so a visitor researching tools or setup lands here
+// directly instead of digging through "Discover".
+const GUIDES_ITEMS: ColumnItem[] = [
+  { label: 'All guides', href: '/guides' },
+  { label: 'Best almanac services',     href: '/guides/best-fantasy-football-almanac',           indent: true },
+  { label: 'League management software', href: '/guides/fantasy-football-league-management-software', indent: true },
+  { label: 'Best recap services',       href: '/guides/best-fantasy-football-recap',             indent: true },
+  { label: 'Trade analysis tools',      href: '/guides/fantasy-football-trade-analyzer',         indent: true },
+  { label: 'Set up: Sleeper',           href: '/guides/sleeper-league-history',                  indent: true },
+  { label: 'Set up: ESPN',              href: '/guides/espn-league-history',                     indent: true },
+  { label: 'Set up: Yahoo',             href: '/guides/yahoo-league-history',                    indent: true },
+  { label: 'Set up: NFL.com',           href: '/guides/nfl-com-league-history',                  indent: true },
 ]
 
 // Demo league chapters — listed as indented sub-pages of the "Demo
@@ -103,16 +124,22 @@ function buildSignedIn(admin: boolean): { triggers: Trigger[]; columns: Column[]
 }
 
 function buildSignedOut(): { triggers: Trigger[]; columns: Column[] } {
+  // Signed-out triggers split Pricing and Guides into their own columns
+  // (previously bundled under "Discover"). Reading order: Pricing →
+  // Guides → Demo → Login CTA. Matches the mental model of a visitor
+  // evaluating the product: cost, learn, try, sign up.
   const triggers: Trigger[] = [
-    { kind: 'link',  label: 'Pricing', href: '/pricing', column: 'discover' },
+    { kind: 'group', label: 'Pricing', href: '/pricing', column: 'pricing' },
+    { kind: 'group', label: 'Guides',  href: '/guides',  column: 'guides' },
     { kind: 'group', label: 'Demo',    href: '/demo/',   column: 'demo' },
-    { kind: 'link',  label: 'Login', href: '/login',   column: 'get-started', cta: true },
+    { kind: 'link',  label: 'Login',   href: '/login',   column: 'get-started', cta: true },
   ]
   const columns: Column[] = [
-    { key: 'discover', num: ROMAN[0], label: 'Discover',       items: DISCOVER_ITEMS },
-    { key: 'demo',     num: ROMAN[1], label: 'Demo chronicle', items: DEMO_CHAPTERS },
+    { key: 'pricing', num: ROMAN[0], label: 'Pricing',         items: PRICING_ITEMS },
+    { key: 'guides',  num: ROMAN[1], label: 'Guides',          items: GUIDES_ITEMS },
+    { key: 'demo',    num: ROMAN[2], label: 'Demo chronicle',  items: DEMO_CHAPTERS },
     {
-      key: 'get-started', num: ROMAN[2], label: 'Get started',
+      key: 'get-started', num: ROMAN[3], label: 'Get started',
       items: [
         { label: 'Sign in', href: '/login' },
         { label: 'New chronicle', href: '/login?mode=signup' },
