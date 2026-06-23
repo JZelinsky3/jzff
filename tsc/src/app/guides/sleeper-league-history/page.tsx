@@ -68,7 +68,7 @@ export default function Page() {
       kicker="Sleeper · Full history walk"
       title="How to archive your"
       titleEm="Sleeper league history."
-      subtitle="Every season your Sleeper league has played — champions, drafts, head-to-head records, rivalries — pulled from a single league ID in 30 seconds."
+      subtitle="Every season your Sleeper league has played (champions, drafts, head-to-head records, rivalries) pulled from a single league ID in 30 seconds."
       breadcrumbSlug="sleeper-league-history"
       datePublished="2026-01-15"
       dateModified="2026-06-22"

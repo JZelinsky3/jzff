@@ -76,7 +76,7 @@ export default function Page() {
       kicker="Yahoo · Full history walk"
       title="How to archive your"
       titleEm="Yahoo league history."
-      subtitle="Every season your Yahoo fantasy football league has played — champions, drafts, head-to-head records, rivalries — pulled into a public almanac after a one-time Yahoo sign-in."
+      subtitle="Every season your Yahoo fantasy football league has played (champions, drafts, head-to-head records, rivalries) pulled into a public almanac after a one-time Yahoo sign-in."
       breadcrumbSlug="yahoo-league-history"
       datePublished="2026-01-15"
       dateModified="2026-06-22"

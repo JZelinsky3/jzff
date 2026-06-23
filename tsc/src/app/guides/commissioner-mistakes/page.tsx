@@ -30,7 +30,7 @@ export default function Page() {
       kicker="Editorial · Hard-earned lessons"
       title="5 mistakes commissioners make"
       titleEm="with league history."
-      subtitle="Practical lessons from running and archiving long-standing fantasy football leagues. Each mistake is recoverable — if you catch it early."
+      subtitle="Practical lessons from running and archiving long-standing fantasy football leagues. Each mistake is recoverable if you catch it early."
       breadcrumbSlug="commissioner-mistakes"
       datePublished="2026-01-15"
       dateModified="2026-06-22"

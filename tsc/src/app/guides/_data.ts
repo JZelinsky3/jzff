@@ -32,18 +32,18 @@ export type Section = {
 export const SECTIONS: Section[] = [
   {
     kicker: "Buyer's guides",
-    title: "Compare the active services —",
+    title: "Compare the active services,",
     titleEm: "by category.",
     blurb:
-      "Side-by-side reviews of the tools in each fantasy-football software category. Start here if you're picking what to use.",
+      "Side-by-side reviews of the tools in each fantasy football software category. Start here if you're picking what to use.",
     guides: [
       {
         slug: "best-fantasy-football-almanac",
         title: "Best fantasy football almanac services",
         chip: "Comparison",
-        tagline: "What an almanac is, what to look for, and how the active services stack up — from full archives to recap-only tools.",
+        tagline: "What an almanac is, what to look for, and how the active services stack up, from full archives to recap-only tools.",
         snippet:
-          "The active fantasy football almanac services compared in 2026 — what an almanac actually is, the five things to evaluate, and which tool to use when (The Sunday Chronicle, FantasyPros, FTN Fantasy, recap-only services, DIY).",
+          "The active fantasy football almanac services compared in 2026: what an almanac actually is, the five things to evaluate, and which tool to use when (The Sunday Chronicle, FantasyPros, FTN Fantasy, recap-only services, DIY).",
         searchTerms: [
           "almanac", "yearbook", "record book", "history book",
           "fantasy football archive", "best almanac",
@@ -54,11 +54,11 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "fantasy-football-league-history-software",
-        title: "League history software — what actually preserves a league",
+        title: "League history software that preserves a league",
         chip: "Comparison",
-        tagline: "The category beyond your host platform's basic history tab — what these tools do, which work cross-platform, and how to pick one.",
+        tagline: "The category beyond your host platform's basic history tab. What these tools do, which work cross-platform, and how to pick one.",
         snippet:
-          "Software for tracking fantasy football league history beyond the native platform views. What Sleeper/ESPN/Yahoo/NFL.com expose, what third-party tools add, and how to pick one — including The Sunday Chronicle, custom scripts, and database approaches.",
+          "Software for tracking fantasy football league history beyond the native platform views. What Sleeper, ESPN, Yahoo, and NFL.com expose, what third-party tools add, and how to pick one (The Sunday Chronicle, custom scripts, database approaches).",
         searchTerms: [
           "league history", "league archive", "preservation", "long term",
           "data loss", "platform shutdown", "migration", "data portability",
@@ -68,11 +68,11 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "fantasy-football-league-management-software",
-        title: "League management software — reviews & comparison",
+        title: "League management software, reviewed",
         chip: "Comparison",
         tagline: "The host platform plus the third-party tools commissioners actually use. Where each fits in a 2026 league stack.",
         snippet:
-          "Reviews of fantasy football league management software in 2026. What the host platforms (Sleeper, ESPN, Yahoo, NFL.com) cover, what they don't, and which third-party tools commissioners layer on top — almanac, recaps, dues, draft prep.",
+          "Reviews of fantasy football league management software in 2026. What the host platforms (Sleeper, ESPN, Yahoo, NFL.com) cover, what they don't, and which third-party tools commissioners layer on top: almanac, recaps, dues, draft prep.",
         searchTerms: [
           "league management", "commissioner tools", "manage league",
           "leaguesafe", "dues", "buy-in", "payout", "escrow",
@@ -84,9 +84,9 @@ export const SECTIONS: Section[] = [
         slug: "best-fantasy-football-recap",
         title: "Best fantasy football recap services",
         chip: "Comparison",
-        tagline: "Weekly recaps compared — designed for league-specific voice vs generic AI prose, archived vs standalone.",
+        tagline: "Weekly recaps compared. Designed for league-specific voice vs generic AI prose, archived vs standalone.",
         snippet:
-          "Fantasy football weekly recap services compared — what makes a recap worth reading, how AI-generated narratives differ from designed weekly stories, and which services fit a league that wants the Tuesday-morning email.",
+          "Fantasy football weekly recap services compared: what makes a recap worth reading, how AI-generated narratives differ from designed weekly stories, and which services fit a league that wants the Tuesday-morning email.",
         searchTerms: [
           "recap", "weekly recap", "narrative", "summary",
           "ai recap", "ai generated", "story",
@@ -98,18 +98,18 @@ export const SECTIONS: Section[] = [
   },
   {
     kicker: "Tool deep-dives",
-    title: "Inside the individual tools —",
-    titleEm: "what they do, how to use them.",
+    title: "Inside the individual tools.",
+    titleEm: "What they do, how to use them.",
     blurb:
-      "Feature-by-feature looks at the categories TSC already covers — trade grading, milestone tracking, manager profiling.",
+      "Feature-by-feature looks at the categories TSC already covers: trade grading, milestone tracking, manager profiling.",
     guides: [
       {
         slug: "fantasy-football-trade-analyzer",
-        title: "Trade analysis tools — how to pick one",
+        title: "Trade analysis tools, compared",
         chip: "Feature",
-        tagline: "Live redraft graders vs dynasty value calculators vs post-trade graders — which to use when, and where each fits in a league stack.",
+        tagline: "Live redraft graders vs dynasty value calculators vs post-trade graders. Which to use when, and where each fits in a league stack.",
         snippet:
-          "Fantasy football trade analyzers compared by category — live redraft (FantasyPros), dynasty value (KeepTradeCut, FantasyCalc), and post-trade grading (The Sunday Chronicle Trade Tape). How each works and when to use which.",
+          "Fantasy football trade analyzers compared by category: live redraft (FantasyPros), dynasty value (KeepTradeCut, FantasyCalc), and post-trade grading (The Sunday Chronicle Trade Tape). How each works and when to use which.",
         searchTerms: [
           "trade", "trade analyzer", "trade grader", "trade fairness",
           "keeptradecut", "ktc", "fantasycalc", "trade value",
@@ -119,11 +119,11 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "fantasy-football-milestone-tracker",
-        title: "Milestone tracking — what to track and how",
+        title: "Milestone tracking, what to track and how",
         chip: "Feature",
         tagline: "Career wins, championship counts, point thresholds, streaks, rivalry chapters. The markers that turn a multi-year league into a story.",
         snippet:
-          "Milestone tracking for fantasy football leagues — career wins, championship counts, single-game records, win streaks, rivalry meetings. What's worth tracking, how to automate it from a Sleeper/ESPN league ID.",
+          "Milestone tracking for fantasy football leagues: career wins, championship counts, single-game records, win streaks, rivalry meetings. What's worth tracking, how to automate it from a Sleeper or ESPN league ID.",
         searchTerms: [
           "milestone", "career", "lifetime", "anniversary",
           "100 wins", "championship", "title", "ring",
@@ -133,11 +133,11 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "fantasy-football-manager-analysis",
-        title: "Manager analysis — DNA, tendencies, and style",
+        title: "Manager analysis: DNA, tendencies, and style",
         chip: "Feature",
-        tagline: "Drafting style, lineup habits, trade behavior, response to adversity — profiling managers as a personality, not a record.",
+        tagline: "Drafting style, lineup habits, trade behavior, response to adversity. Profiling managers as a personality, not a record.",
         snippet:
-          "Profiling fantasy football managers by their decision patterns — draft tendencies, lineup-setting style, trade behavior, response to losing streaks. How manager DNA differs from standings and what to do with it.",
+          "Profiling fantasy football managers by their decision patterns: draft tendencies, lineup-setting style, trade behavior, response to losing streaks. How manager DNA differs from standings and what to do with it.",
         searchTerms: [
           "manager", "dna", "tendencies", "style", "profile",
           "drafting style", "set-and-forget", "tinkerer",
@@ -160,7 +160,7 @@ export const SECTIONS: Section[] = [
         chip: "Hub",
         tagline: "The setup overview. Lists every supported host with the steps for each. Start here if you're not sure which guide you need.",
         snippet:
-          "Hub page covering setup for every supported fantasy football platform — Sleeper, ESPN, Yahoo, and NFL.com. Compares each host's setup flow and links to the step-by-step guides.",
+          "Hub page covering setup for every supported fantasy football platform: Sleeper, ESPN, Yahoo, and NFL.com. Compares each host's setup flow and links to the step-by-step guides.",
         searchTerms: [
           "setup", "set up", "set-up", "get started", "install",
           "platforms", "all platforms", "which platform",
@@ -169,11 +169,11 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "sleeper-league-history",
-        title: "Sleeper — archive your league history",
+        title: "Sleeper: archive your league history",
         chip: "How-to",
-        tagline: "Every season, every draft, every champion — pulled from any Sleeper league ID in 30 seconds.",
+        tagline: "Every season, every draft, every champion, pulled from any Sleeper league ID in 30 seconds.",
         snippet:
-          "Step-by-step instructions to archive a Sleeper fantasy football league's full history — finding your league ID, pasting it into The Sunday Chronicle, and publishing the public almanac. No installation, no manual exports.",
+          "Step-by-step instructions to archive a Sleeper fantasy football league's full history: finding your league ID, pasting it into The Sunday Chronicle, and publishing the public almanac. No installation, no manual exports.",
         searchTerms: [
           "sleeper", "sleeper api", "previous_league_id",
           "how to", "setup", "instructions", "walkthrough",
@@ -182,11 +182,11 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "espn-league-history",
-        title: "ESPN — full history (public + private leagues)",
+        title: "ESPN: full history (public + private leagues)",
         chip: "How-to",
-        tagline: "ESPN hides old seasons behind a clunky interface. Here's how to pull every year — including private leagues — into one public almanac.",
+        tagline: "ESPN hides old seasons behind a clunky interface. Here's how to pull every year, including private leagues, into one public almanac.",
         snippet:
-          "Archive an ESPN fantasy football league's full history including private leagues. Finding your league ID, grabbing the SWID and espn_s2 cookies for private leagues, and getting every season — including pre-2018 archives — into one public almanac.",
+          "Archive an ESPN fantasy football league's full history including private leagues. Finding your league ID, grabbing the SWID and espn_s2 cookies for private leagues, and getting every season (including pre-2018 archives) into one public almanac.",
         searchTerms: [
           "espn", "espn fantasy", "swid", "espn_s2", "cookie",
           "private league", "espn league id", "leaguehistory",
@@ -195,7 +195,7 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "yahoo-league-history",
-        title: "Yahoo — archive your fantasy league history",
+        title: "Yahoo: archive your fantasy league history",
         chip: "How-to",
         tagline: "Yahoo needs a one-time OAuth sign-in. After that, every season your league has played comes back as a clean public almanac.",
         snippet:
@@ -208,11 +208,11 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "nfl-com-league-history",
-        title: "NFL.com — archive your league history",
+        title: "NFL.com: archive your league history",
         chip: "How-to",
         tagline: "NFL.com exposes league data publicly behind the league ID. Paste it, no sign-in needed, every season back to the league's founding.",
         snippet:
-          "Archive an NFL.com fantasy football league's full history. NFL.com exposes league data publicly so no sign-in is needed — paste your league ID and every season the league has played gets imported.",
+          "Archive an NFL.com fantasy football league's full history. NFL.com exposes league data publicly so no sign-in is needed. Paste your league ID and every season the league has played gets imported.",
         searchTerms: [
           "nfl.com", "nfl fantasy", "nfl league id",
           "fantasy.nfl.com", "how to", "instructions",
@@ -223,18 +223,18 @@ export const SECTIONS: Section[] = [
   },
   {
     kicker: "Editorial",
-    title: "The case for keeping the league's story —",
+    title: "The case for keeping the league's story.",
     titleEm: "and what gets it wrong.",
     blurb:
       "Long-form reads on why league history dies, how to move between platforms without losing it, and the recurring mistakes commissioners make.",
     guides: [
       {
         slug: "sleeper-vs-espn-history",
-        title: "Sleeper vs ESPN — what each platform actually saves",
+        title: "Sleeper vs ESPN: what each platform actually saves",
         chip: "Comparison",
         tagline: "Side-by-side: how far back you can see, what data you can export, and where each falls short.",
         snippet:
-          "Sleeper vs ESPN compared on what each platform actually saves of your league's history — API surface, historical depth, public vs private league friction, draft data, playoff bracket detection.",
+          "Sleeper vs ESPN compared on what each platform actually saves of your league's history: API surface, historical depth, public vs private league friction, draft data, playoff bracket detection.",
         searchTerms: [
           "sleeper vs espn", "espn vs sleeper", "compare platforms",
           "which platform", "platform comparison",
@@ -243,11 +243,11 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "migrate-fantasy-league",
-        title: "Moving your league between platforms — keeping the history",
+        title: "Moving your league between platforms, keeping the history",
         chip: "How-to",
         tagline: "Yahoo → ESPN → Sleeper. When commissioners migrate, league history dies. Here's how to preserve it.",
         snippet:
-          "How to move a fantasy football league between platforms without losing the history. Yahoo to ESPN to Sleeper migrations covered — preserving every season under one unified archive.",
+          "How to move a fantasy football league between platforms without losing the history. Yahoo to ESPN to Sleeper migrations covered, preserving every season under one unified archive.",
         searchTerms: [
           "migrate", "migration", "switch", "move league",
           "yahoo to espn", "espn to sleeper", "switch platforms",
@@ -261,7 +261,7 @@ export const SECTIONS: Section[] = [
         chip: "Essay",
         tagline: "Screenshots get lost. Group chats archive. Platforms change. A long-running league's story deserves better.",
         snippet:
-          "Why most long-running fantasy football leagues end up with no usable history after 5+ years — screenshots scatter, group chats archive, platforms change, commissioners move on. What to do about it.",
+          "Why most long-running fantasy football leagues end up with no usable history after 5+ years: screenshots scatter, group chats archive, platforms change, commissioners move on. What to do about it.",
         searchTerms: [
           "why", "history dies", "lose history", "data loss",
           "screenshots", "group chat", "old seasons",
@@ -274,7 +274,7 @@ export const SECTIONS: Section[] = [
         chip: "Essay",
         tagline: "Practical lessons from running and archiving long-standing fantasy leagues.",
         snippet:
-          "Five recurring mistakes fantasy football commissioners make with their league's history — and how to recover from each one. Practical lessons from running long-standing dynasty and redraft leagues.",
+          "Five recurring mistakes fantasy football commissioners make with their league's history, and how to recover from each one. Practical lessons from running long-standing dynasty and redraft leagues.",
         searchTerms: [
           "mistakes", "commissioner", "common mistakes",
           "what not to do", "fix",

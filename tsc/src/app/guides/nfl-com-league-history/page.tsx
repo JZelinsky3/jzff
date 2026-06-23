@@ -72,7 +72,7 @@ export default function Page() {
       kicker="NFL.com · Full history walk"
       title="How to archive your"
       titleEm="NFL.com league history."
-      subtitle="Every season your NFL.com fantasy football league has played — champions, drafts, head-to-head records, rivalries — pulled from a single league ID. NFL.com's public league data means no sign-in, no exports."
+      subtitle="Every season your NFL.com fantasy football league has played (champions, drafts, head-to-head records, rivalries) pulled from a single league ID. NFL.com's public league data means no sign-in, no exports."
       breadcrumbSlug="nfl-com-league-history"
       datePublished="2026-01-15"
       dateModified="2026-06-22"

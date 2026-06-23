@@ -72,7 +72,7 @@ export default function Page() {
       kicker="ESPN · Public + private leagues"
       title="How to see your"
       titleEm="ESPN league's full history."
-      subtitle="ESPN saves everything but buries it. Pull every season your league has ever played — even private leagues — into a single public almanac."
+      subtitle="ESPN saves everything but buries it. Pull every season your league has ever played, including private leagues, into a single public almanac."
       breadcrumbSlug="espn-league-history"
       datePublished="2026-01-15"
       dateModified="2026-06-22"
