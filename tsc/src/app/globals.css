@@ -5619,7 +5619,12 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     font-weight: 600;
 }
 
-.guides-section { padding-top: 2.5rem; padding-bottom: 5.5rem; scroll-margin-top: 6.5rem; }
+/* Selector specificity bumped to .section.guides-section so main.css's
+   `.section { padding: 0 2rem }` (loaded after globals.css) doesn't
+   override these top/bottom values. The shorthand padding in .section
+   declares padding-top: 0 / padding-bottom: 0 under the hood; longhand
+   here needs a higher-specificity selector to win the cascade. */
+.section.guides-section { padding-top: 2.5rem; padding-bottom: 5.5rem; scroll-margin-top: 6.5rem; }
 .guides-section-blurb {
     max-width: 62ch;
     font-family: var(--serif);
@@ -8375,25 +8380,24 @@ a.g-decision-pick-name:hover { text-decoration: underline; }
 }
 .ln-mega-grid--cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) 270px; }
 .ln-mega-grid--cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) 270px; }
-/* Subtle de-emphasis on non-focused columns so the hovered trigger's
-   group reads as the "active" section without hiding the others. */
+/* All columns stay fully readable regardless of which trigger is hovered.
+   The focused column still gets a lift + scale so the hovered group reads
+   as "active", but non-focused columns are no longer dimmed — their links
+   were washing out to grey at opacity .55, which made the nav feel
+   half-broken. The brightened num + label on the focused column still
+   provides the visual cue without darkening the rest. */
 .ln-mega-col {
-    transition: opacity .2s ease, transform .25s cubic-bezier(.2, .8, .2, 1);
-    opacity: .55;
+    transition: transform .25s cubic-bezier(.2, .8, .2, 1);
+    opacity: 1;
     transform: translateY(0);
 }
-/* Focused column reacts more visibly to the hovered trigger — bigger
-   lift, slight scale, and the column num + label brighten. The other
-   columns fade further so the contrast reads cleanly. */
 .ln-mega-col.is-focus {
-    opacity: 1;
     transform: translateY(-8px) scale(1.015);
 }
 .ln-mega-col.is-focus .ln-mega-num,
 .ln-mega-col.is-focus .ln-mega-label {
     color: var(--ink);
 }
-.ln-mega:not(:has(.is-focus)) .ln-mega-col { opacity: 1; transform: translateY(0); }
 .ln-mega-num {
     font-family: var(--serif); font-style: italic;
     font-size: 2.4rem; line-height: 1;
