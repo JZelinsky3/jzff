@@ -1,10 +1,11 @@
 // OG image generator for the marketing landing page (https://thesundaychronicle.app).
 // URL: /api/og/home
 //
-// Renders a 1200x630 editorial card: masthead kicker, big serif title, italic
-// subhead, and two strip lines (what you get, what we import from). Designed
-// to be clickable when dropped into a group chat or social post — the goal
-// is to read like the front page of a newspaper, not a generic logo card.
+// Renders a 1200x630 "front page" card: tight masthead bar, a stamped
+// kicker, a punchy headline with a specimen content block (mock champion
+// roll + record line) for visual proof, and a feature/platform footer.
+// Designed to make a chat reader stop scrolling — the goal is "what is
+// this?" not "another logo card."
 //
 // CDN-cached at the edge for a day with a 24h SWR window. Bump the version
 // query in metadata when the design changes if you want crawlers to refetch.
@@ -69,80 +70,176 @@ export async function GET() {
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            background: `radial-gradient(circle at 14% 18%, ${GOLD}30 0%, transparent 50%), radial-gradient(circle at 86% 82%, ${GOLD}18 0%, transparent 50%)`,
+            background: `radial-gradient(circle at 10% 12%, ${GOLD}3a 0%, transparent 46%), radial-gradient(circle at 90% 88%, ${GOLD}1f 0%, transparent 52%)`,
           }}
         />
 
-        {/* Top masthead — vintage broadsheet kicker */}
+        {/* Tight masthead bar — newspaper-style flagline */}
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '34px 56px 0',
-            fontSize: '14px',
-            letterSpacing: '0.4em',
-            color: GOLD,
+            justifyContent: 'space-between',
+            padding: '22px 56px',
+            borderBottom: '1px solid #272727',
+            fontSize: '12px',
+            letterSpacing: '0.42em',
+            color: '#9ca3af',
             textTransform: 'uppercase',
             zIndex: 2,
           }}
         >
+          <span style={{ display: 'flex', color: GOLD }}>★ THE SUNDAY CHRONICLE</span>
           <span style={{ display: 'flex' }}>EST. MMXXVI · VOL. I</span>
-          <span style={{ display: 'flex', color: '#9ca3af', letterSpacing: '0.42em' }}>
-            FOR COMMISSIONERS
-          </span>
+          <span style={{ display: 'flex' }}>FOR COMMISSIONERS</span>
         </div>
 
-        {/* Rules above + below the title */}
+        {/* Hero stamp + headline */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            marginTop: '70px',
-            padding: '0 80px',
-            gap: '14px',
+            padding: '46px 80px 0',
             zIndex: 2,
+            gap: '18px',
           }}
         >
-          <div style={{ display: 'flex', width: '100%', height: '1px', background: '#272727' }} />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              padding: '7px 22px',
+              border: `1.5px solid ${GOLD}aa`,
+              fontSize: '13px',
+              fontWeight: 700,
+              letterSpacing: '0.4em',
+              color: GOLD,
+              textTransform: 'uppercase',
+            }}
+          >
+            <div style={{ display: 'flex', width: '6px', height: '6px', background: GOLD, transform: 'rotate(45deg)' }} />
+            <span style={{ display: 'flex' }}>YOUR LEAGUE&apos;S ALMANAC</span>
+            <div style={{ display: 'flex', width: '6px', height: '6px', background: GOLD, transform: 'rotate(45deg)' }} />
+          </div>
           <div
             style={{
               display: 'flex',
               fontFamily: 'DMSerif',
-              fontSize: '108px',
-              lineHeight: 1,
+              fontSize: '76px',
+              lineHeight: 1.02,
               color: '#f3f4f6',
               textAlign: 'center',
+              maxWidth: '1020px',
             }}
           >
-            The Sunday Chronicle
+            Every champion. Every grudge. Every draft steal.
           </div>
-          <div style={{ display: 'flex', width: '100%', height: '1px', background: '#272727' }} />
         </div>
 
-        {/* Italic subhead — the editorial pull quote */}
+        {/* Specimen "front page" block — mock data lines so readers see what
+            the product actually outputs, not just a logo. */}
         <div
           style={{
             display: 'flex',
-            justifyContent: 'center',
-            marginTop: '28px',
-            padding: '0 100px',
+            margin: '34px 56px 0',
+            border: '1px solid #272727',
+            background: 'rgba(20,20,20,0.55)',
             zIndex: 2,
           }}
         >
+          {/* Left cell — champion roll */}
           <div
             style={{
+              flex: 1,
               display: 'flex',
-              fontFamily: 'DMSerif',
-              fontStyle: 'italic',
-              fontSize: '40px',
-              color: GOLD,
-              lineHeight: 1.2,
-              textAlign: 'center',
+              flexDirection: 'column',
+              padding: '14px 22px',
+              borderRight: '1px solid #272727',
+              gap: '6px',
             }}
           >
-            Your league&apos;s history, archived for good.
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.32em',
+                color: GOLD,
+                textTransform: 'uppercase',
+              }}
+            >
+              ★ CHAMPION ROLL
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontFamily: 'DMSerif', fontSize: '22px', color: '#f3f4f6' }}>
+              <span style={{ display: 'flex', color: '#9ca3af', fontFamily: 'JetBrains', fontSize: '14px' }}>&apos;25</span>
+              <span style={{ display: 'flex' }}>Wright stays</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontFamily: 'DMSerif', fontSize: '22px', color: '#d1d5db' }}>
+              <span style={{ display: 'flex', color: '#9ca3af', fontFamily: 'JetBrains', fontSize: '14px' }}>&apos;24</span>
+              <span style={{ display: 'flex' }}>Holcomb&apos;s third</span>
+            </div>
+          </div>
+          {/* Middle cell — record */}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '14px 22px',
+              borderRight: '1px solid #272727',
+              gap: '6px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.32em',
+                color: GOLD,
+                textTransform: 'uppercase',
+              }}
+            >
+              ✦ RECORD BOOK
+            </div>
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '22px', color: '#f3f4f6' }}>
+              239.4 pts · W7 &apos;23
+            </div>
+            <div style={{ display: 'flex', fontSize: '12px', fontWeight: 700, letterSpacing: '0.22em', color: '#9ca3af', textTransform: 'uppercase' }}>
+              HIGHEST SINGLE WEEK
+            </div>
+          </div>
+          {/* Right cell — rivalry */}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '14px 22px',
+              gap: '6px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.32em',
+                color: GOLD,
+                textTransform: 'uppercase',
+              }}
+            >
+              ✺ RIVALRY
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontFamily: 'DMSerif', fontSize: '22px', color: '#f3f4f6' }}>
+              <span style={{ display: 'flex' }}>21–19</span>
+              <span style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: '13px', color: '#9ca3af', letterSpacing: '0.2em' }}>40 MEETINGS</span>
+            </div>
+            <div style={{ display: 'flex', fontSize: '12px', fontWeight: 700, letterSpacing: '0.22em', color: '#9ca3af', textTransform: 'uppercase' }}>
+              SINCE 2009
+            </div>
           </div>
         </div>
 
@@ -156,7 +253,7 @@ export async function GET() {
             display: 'flex',
             justifyContent: 'center',
             gap: '34px',
-            fontSize: '15px',
+            fontSize: '14px',
             fontWeight: 700,
             letterSpacing: '0.32em',
             color: '#d1d5db',
@@ -164,15 +261,11 @@ export async function GET() {
             zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex' }}>CHAMPIONS</span>
+          <span style={{ display: 'flex' }}>13+ SEASONS, ARCHIVED</span>
           <span style={{ display: 'flex', color: '#4b5563' }}>·</span>
-          <span style={{ display: 'flex' }}>DRAFTS</span>
+          <span style={{ display: 'flex' }}>WEEKLY PICK&apos;EMS</span>
           <span style={{ display: 'flex', color: '#4b5563' }}>·</span>
-          <span style={{ display: 'flex' }}>RIVALRIES</span>
-          <span style={{ display: 'flex', color: '#4b5563' }}>·</span>
-          <span style={{ display: 'flex' }}>RECORDS</span>
-          <span style={{ display: 'flex', color: '#4b5563' }}>·</span>
-          <span style={{ display: 'flex' }}>PICK&apos;EMS</span>
+          <span style={{ display: 'flex' }}>LIVE RECORDS WATCH</span>
         </div>
 
         {/* Bottom platform strip */}
@@ -181,7 +274,7 @@ export async function GET() {
             position: 'absolute',
             left: 56,
             right: 56,
-            bottom: 30,
+            bottom: 28,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',

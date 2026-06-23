@@ -68,7 +68,7 @@ export const metadata: Metadata = {
         // masthead + tagline + feature/platform strips. Sized 1200×630 to
         // satisfy iMessage / Slack / Discord / X large-card previews. Bump
         // the ?v= when the design changes if crawlers cache the old one.
-        url: "/api/og/home?v=1",
+        url: "/api/og/home?v=2",
         width: 1200,
         height: 630,
         alt: "The Sunday Chronicle — your league's history, archived for good.",
@@ -79,7 +79,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The Sunday Chronicle — Fantasy Football League History & Almanac",
     description: DESCRIPTION,
-    images: ["/api/og/home?v=1"],
+    images: ["/api/og/home?v=2"],
   },
   robots: {
     index: true,
