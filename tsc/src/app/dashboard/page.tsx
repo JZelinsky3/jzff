@@ -285,7 +285,7 @@ export default async function DashboardPage({
               color: 'var(--cream-mute)',
             }}>
               ★ Testing ends:{' '}
-              <strong style={{ color: 'var(--gold)' }}>Jun 22, 2026</strong>
+              <strong style={{ color: 'var(--gold)' }}>Jul 20, 2026</strong>
             </span>
             <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
               <Link

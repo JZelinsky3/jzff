@@ -135,7 +135,7 @@ export async function isCompUser(userId: string): Promise<boolean> {
 
 // ─── Testing window ───────────────────────────────────────────────────────
 // Time-limited preview period. Set TESTING_MODE_UNTIL to an ISO date
-// (e.g. "2026-06-22T23:59:59Z") to override. Falls back to TESTING_DEFAULT_UNTIL
+// (e.g. "2026-07-20T23:59:59Z") to override. Falls back to TESTING_DEFAULT_UNTIL
 // below so the banner / trial badge "just work" without env config in dev.
 // While now() < cutoff, any signed-in UDFA (free-tier) user can use the
 // *entire* paid feature set — Pick'ems, Power Rankings, Live Season Hub,
@@ -145,7 +145,7 @@ export async function isCompUser(userId: string): Promise<boolean> {
 //
 // To force the window closed locally, set TESTING_MODE_UNTIL to a past
 // ISO date (or any unparseable string).
-const TESTING_DEFAULT_UNTIL = '2026-06-22T23:59:59Z'
+const TESTING_DEFAULT_UNTIL = '2026-07-20T23:59:59Z'
 
 function resolveTestingCutoff(): Date | null {
   const raw = process.env.TESTING_MODE_UNTIL ?? TESTING_DEFAULT_UNTIL
