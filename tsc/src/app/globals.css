@@ -5520,6 +5520,473 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
 }
 .guide-byline a:hover { text-decoration: underline; }
 
+/* ─── Guides index — card grid + section chrome ──────────
+   The /guides/ index is the entry point for buyers + new commissioners.
+   Replaces a long vertical chapter list with a grouped 2-col card grid
+   so the page reads more like the masthead of a publication than a TOC.
+   Cards reuse the visual language of the homepage product cards but
+   stay tighter — these aren't conversion CTAs, they're index entries. */
+.guides-toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--ink-line);
+    border-bottom: 1px solid var(--ink-line);
+    margin-bottom: 2.25rem;
+}
+.guides-toc-link {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .55rem .95rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--cream-soft);
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.guides-toc-link:hover {
+    color: var(--gold);
+    border-color: var(--ink-line);
+    background: rgba(232, 200, 137, .04);
+}
+.guides-toc-num { color: var(--gold-deep); }
+.guides-toc-label { flex: 1; }
+.guides-toc-count {
+    color: var(--cream-mute);
+    font-weight: 600;
+}
+
+.guides-section { padding-top: 1rem; padding-bottom: 1rem; scroll-margin-top: 4rem; }
+.guides-section-blurb {
+    max-width: 62ch;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.02rem;
+    line-height: 1.55;
+    color: var(--cream-soft);
+    margin: -.75rem 0 1.5rem;
+}
+
+.guides-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.1rem;
+}
+
+.guide-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+    padding: 1.5rem 1.5rem 1.25rem;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--ink-line);
+    text-decoration: none;
+    color: inherit;
+    overflow: hidden;
+    transition: transform .25s cubic-bezier(.2,.8,.2,1),
+                border-color .25s ease,
+                box-shadow .25s ease;
+}
+.guide-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 2px; height: 100%;
+    background: var(--gold);
+    transition: width .25s ease;
+}
+.guide-card:hover {
+    border-color: rgba(232, 200, 137, .4);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, .35);
+    transform: translateY(-2px);
+}
+.guide-card:hover::before { width: 4px; }
+
+.guide-card-chip {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .55rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: .25rem .55rem;
+    border: 1px solid rgba(232, 200, 137, .35);
+}
+.guide-card-title {
+    font-family: var(--serif);
+    font-size: 1.4rem;
+    line-height: 1.15;
+    letter-spacing: -.015em;
+    color: var(--cream);
+}
+.guide-card-desc {
+    font-family: var(--sans);
+    font-size: .88rem;
+    line-height: 1.55;
+    color: var(--cream-soft);
+    flex: 1;
+}
+.guide-card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    margin-top: .25rem;
+    padding-top: .75rem;
+    border-top: 1px solid var(--ink-line);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .65rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+.guide-card-arrow {
+    display: inline-block;
+    transition: transform .2s ease;
+}
+.guide-card:hover .guide-card-arrow { transform: translateX(4px); }
+
+@media (max-width: 640px) {
+    .guides-card-grid { grid-template-columns: 1fr; }
+    .guides-toc-link { flex-basis: 100%; }
+}
+
+/* ─── Guide page comparison primitives (_compare.tsx) ─────
+   Layout vocabulary for the reworked comparison + feature guides.
+   Replaces a long stack of H2 + paragraph sections with scannable
+   surfaces: verdict callout, decision matrix table, tool card grid,
+   pull-quote, two-up split, checklist. Each primitive maps 1:1 to a
+   component exported from src/app/guides/_compare.tsx. */
+
+/* Verdict callout — the "if you only read one thing" block at page top. */
+.g-verdict {
+    margin: 0 0 2.5rem;
+    padding: 1.5rem 1.75rem;
+    background: linear-gradient(160deg, rgba(232, 200, 137, .06), rgba(232, 200, 137, .015));
+    border: 1px solid rgba(232, 200, 137, .25);
+    border-left: 3px solid var(--gold);
+}
+.g-verdict-label {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .65rem;
+}
+.g-verdict-body {
+    font-family: var(--serif);
+    font-size: 1.08rem;
+    line-height: 1.6;
+    color: var(--cream);
+}
+.g-verdict-body p { margin: 0 0 .6rem; }
+.g-verdict-body p:last-child { margin-bottom: 0; }
+.g-verdict-body strong { color: var(--gold-bright); font-weight: 600; }
+
+/* Decision matrix — small table for "if you need X → use Y". */
+.g-matrix-wrap {
+    margin: 1.75rem 0;
+    overflow-x: auto;
+    border: 1px solid var(--ink-line);
+}
+.g-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--sans);
+    font-size: .92rem;
+}
+.g-matrix th {
+    text-align: left;
+    padding: .85rem 1.1rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .58rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: var(--ink-soft);
+    border-bottom: 1px solid var(--ink-line);
+}
+.g-matrix td {
+    padding: .9rem 1.1rem;
+    color: var(--cream-soft);
+    border-bottom: 1px solid var(--ink-line-soft);
+    vertical-align: top;
+    line-height: 1.5;
+}
+.g-matrix tr:last-child td { border-bottom: none; }
+.g-matrix tr:hover td { background: rgba(232, 200, 137, .03); }
+.g-matrix-pick {
+    color: var(--gold);
+    font-weight: 600;
+    text-decoration: none;
+}
+a.g-matrix-pick:hover { text-decoration: underline; }
+.g-matrix-note { color: var(--cream-mute); font-size: .87rem; }
+
+/* Section heading replacement — more visual weight than a bare H2. */
+.g-secthead {
+    margin: 3rem 0 1.5rem;
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--ink-line);
+}
+.g-secthead-kicker {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .58rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .35rem;
+}
+.g-secthead-title {
+    font-family: var(--serif);
+    font-size: clamp(1.55rem, 2.5vw, 2rem);
+    line-height: 1.1;
+    color: var(--cream);
+    margin: 0;
+}
+.g-secthead-blurb {
+    margin: .65rem 0 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.02rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
+    max-width: 62ch;
+}
+
+/* Tool card grid — replaces stacked H2 tool descriptions. */
+.g-tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+.g-tool-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    padding: 1.4rem 1.5rem 1.25rem;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--ink-line);
+    text-decoration: none;
+    color: inherit;
+    overflow: hidden;
+    transition: transform .25s cubic-bezier(.2,.8,.2,1),
+                border-color .25s ease,
+                box-shadow .25s ease;
+}
+.g-tool-card-static {
+    /* Non-link variant — no hover lift, no transform; just a panel. */
+    transition: none;
+}
+.g-tool-card:not(.g-tool-card-static):hover {
+    border-color: rgba(232, 200, 137, .4);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, .3);
+    transform: translateY(-2px);
+}
+.g-tool-card-hl {
+    border-color: rgba(232, 200, 137, .45);
+    background: linear-gradient(160deg, var(--ink-card), rgba(232, 200, 137, .04));
+}
+.g-tool-card-hl::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--gold);
+}
+.g-tool-card-flag {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .55rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: .25rem .55rem;
+    border: 1px solid rgba(232, 200, 137, .4);
+    background: rgba(232, 200, 137, .05);
+}
+.g-tool-card-name {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    line-height: 1.15;
+    color: var(--cream);
+    letter-spacing: -.015em;
+}
+.g-tool-card-bestfor {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+    padding: .55rem .65rem;
+    background: rgba(0, 0, 0, .15);
+    border-left: 2px solid var(--gold-deep);
+}
+.g-tool-card-bestfor-label {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .54rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+.g-tool-card-bestfor-text {
+    font-family: var(--sans);
+    font-size: .85rem;
+    line-height: 1.4;
+    color: var(--cream-soft);
+}
+.g-tool-card-pitch {
+    font-family: var(--sans);
+    font-size: .9rem;
+    line-height: 1.55;
+    color: var(--cream-soft);
+    flex: 1;
+}
+.g-tool-card-pricing {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    padding-top: .55rem;
+    border-top: 1px solid var(--ink-line-soft);
+}
+.g-tool-card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+
+/* Pullquote — single visual statement to anchor the page. */
+.g-pullquote {
+    margin: 2rem 0;
+    padding: 1.4rem 1.75rem 1.25rem;
+    border-top: 1px solid var(--gold-deep);
+    border-bottom: 1px solid var(--gold-deep);
+}
+.g-pullquote blockquote {
+    margin: 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+    line-height: 1.4;
+    color: var(--cream);
+    letter-spacing: -.005em;
+}
+.g-pullquote figcaption {
+    margin-top: .8rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .6rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+
+/* Two-up split — "for X / for Y" parallel framing. */
+.g-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+.g-split-col {
+    padding: 1.2rem 1.35rem;
+    background: var(--ink-soft);
+    border: 1px solid var(--ink-line);
+}
+.g-split-label {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .58rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .6rem;
+}
+.g-split-body {
+    font-family: var(--sans);
+    font-size: .92rem;
+    line-height: 1.55;
+    color: var(--cream-soft);
+}
+.g-split-body p { margin: 0 0 .55rem; }
+.g-split-body p:last-child { margin-bottom: 0; }
+
+/* Checklist — replaces stacked <P><strong>...</strong></P> bullet pattern. */
+.g-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 1.25rem 0;
+    display: grid;
+    gap: .85rem;
+}
+.g-checklist li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .85rem;
+    padding: .85rem 1rem;
+    background: rgba(0, 0, 0, .12);
+    border-left: 2px solid var(--gold-deep);
+}
+.g-checklist-mark {
+    color: var(--gold);
+    font-size: .8rem;
+    line-height: 1.5;
+}
+.g-checklist-title {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: .95rem;
+    color: var(--cream);
+    margin-bottom: .15rem;
+}
+.g-checklist-body {
+    font-family: var(--sans);
+    font-size: .88rem;
+    line-height: 1.5;
+    color: var(--cream-soft);
+}
+
+/* Lede — connective paragraph between visual blocks. */
+.g-lede {
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    line-height: 1.65;
+    color: var(--cream-soft);
+    margin: 1.25rem 0;
+    max-width: 65ch;
+}
+
+@media (max-width: 640px) {
+    .g-split { grid-template-columns: 1fr; }
+    .g-tool-grid { grid-template-columns: 1fr; }
+    .g-verdict { padding: 1.2rem 1.3rem; }
+    .g-pullquote { padding: 1.1rem 1.3rem; }
+}
+
 /* ─── HERO CLIPPING / ALMANAC PAGES ───────────────────────── */
 .lp-hero-right {
     position: relative;

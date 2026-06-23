@@ -7,91 +7,158 @@ import { createClient } from "@/lib/supabase/server"
 export const metadata: Metadata = {
   title: "Guides — Fantasy football league history, archives, and commissioner tools",
   description:
-    "Practical guides for fantasy football commissioners — how to archive your league's history from Sleeper, ESPN, or NFL.com, what each platform actually saves, and how to keep your league's story alive after platforms change or commissioners move on.",
+    "Practical guides for fantasy football commissioners — how to archive your league's history from Sleeper, ESPN, Yahoo, or NFL.com, plus buyer's guides comparing the active league-management, almanac, recap, and trade-analysis tools in 2026.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/" },
 }
 
-const GUIDES = [
-  // Category / comparison guides first — these are the discovery entry
-  // points for buyers searching "best fantasy football almanac" etc.
+// Guides are grouped by intent. The index splits them into sections so a
+// reader landing here can navigate to the right category instead of scrolling
+// a long flat list — comparisons go to buyers, deep-dives go to users
+// evaluating features, how-tos go to commissioners setting up, and editorial
+// goes to readers in offseason mood.
+type Guide = {
+  slug: string
+  title: string
+  tagline: string
+  // Optional accent so each section can show a short noun (the "what this
+  // guide gives you" label) on the card. Kept short — it's a chip, not prose.
+  chip?: string
+}
+
+type Section = {
+  kicker: string
+  title: string
+  titleEm: string
+  blurb: string
+  guides: Guide[]
+}
+
+const SECTIONS: Section[] = [
   {
-    slug: "best-fantasy-football-almanac",
-    title: "Best fantasy football almanac services — 2026 comparison",
-    tagline: "What an almanac is, what to look for, and how the active services stack up — from full archives to recap-only tools.",
+    kicker: "Buyer's guides",
+    title: "Compare the active services —",
+    titleEm: "by category.",
+    blurb:
+      "Side-by-side reviews of the tools in each fantasy-football software category. Start here if you're picking what to use.",
+    guides: [
+      {
+        slug: "best-fantasy-football-almanac",
+        title: "Best fantasy football almanac services",
+        tagline: "What an almanac is, what to look for, and how the active services stack up — from full archives to recap-only tools.",
+        chip: "Comparison",
+      },
+      {
+        slug: "fantasy-football-league-history-software",
+        title: "League history software — what actually preserves a league",
+        tagline: "The category beyond your host platform's basic history tab — what these tools do, which work cross-platform, and how to pick one.",
+        chip: "Comparison",
+      },
+      {
+        slug: "fantasy-football-league-management-software",
+        title: "League management software — reviews & comparison",
+        tagline: "The host platform plus the third-party tools commissioners actually use. Where each fits in a 2026 league stack.",
+        chip: "Comparison",
+      },
+      {
+        slug: "best-fantasy-football-recap",
+        title: "Best fantasy football recap services",
+        tagline: "Weekly recaps compared — designed for league-specific voice vs generic AI prose, archived vs standalone.",
+        chip: "Comparison",
+      },
+    ],
   },
   {
-    slug: "fantasy-football-league-history-software",
-    title: "Fantasy football league history software — what actually preserves a league",
-    tagline: "The category beyond your host platform's basic history tab — what these tools do, which work cross-platform, and how to pick one.",
+    kicker: "Tool deep-dives",
+    title: "Inside the individual tools —",
+    titleEm: "what they do, how to use them.",
+    blurb:
+      "Feature-by-feature looks at the categories TSC already covers — trade grading, milestone tracking, manager profiling.",
+    guides: [
+      {
+        slug: "fantasy-football-trade-analyzer",
+        title: "Trade analysis tools — how to pick one",
+        tagline: "Live redraft graders vs dynasty value calculators vs post-trade graders — which to use when, and where each fits in a league stack.",
+        chip: "Feature",
+      },
+      {
+        slug: "fantasy-football-milestone-tracker",
+        title: "Milestone tracking — what to track and how",
+        tagline: "Career wins, championship counts, point thresholds, streaks, rivalry chapters. The markers that turn a multi-year league into a story.",
+        chip: "Feature",
+      },
+      {
+        slug: "fantasy-football-manager-analysis",
+        title: "Manager analysis — DNA, tendencies, and style",
+        tagline: "Drafting style, lineup habits, trade behavior, response to adversity — profiling managers as a personality, not a record.",
+        chip: "Feature",
+      },
+    ],
   },
   {
-    slug: "fantasy-football-league-management-software",
-    title: "Fantasy football league management software — reviews & comparison",
-    tagline: "The host platform plus the third-party tools commissioners actually use. Where each fits in a 2026 league stack.",
+    kicker: "Platform how-tos",
+    title: "Set up your league —",
+    titleEm: "step by step.",
+    blurb:
+      "Practical walkthroughs for each fantasy host. Find your league ID, paste it, publish.",
+    guides: [
+      {
+        slug: "sleeper-league-history",
+        title: "Sleeper — archive your league history",
+        tagline: "Every season, every draft, every champion — pulled from any Sleeper league ID in 30 seconds.",
+        chip: "How-to",
+      },
+      {
+        slug: "espn-league-history",
+        title: "ESPN — full history (public + private leagues)",
+        tagline: "ESPN hides old seasons behind a clunky interface. Here's how to pull every year — including private leagues — into one public almanac.",
+        chip: "How-to",
+      },
+      {
+        slug: "yahoo-league-history",
+        title: "Yahoo — archive your fantasy league history",
+        tagline: "Yahoo needs a one-time OAuth sign-in. After that, every season your league has played comes back as a clean public almanac.",
+        chip: "How-to",
+      },
+      {
+        slug: "nfl-com-league-history",
+        title: "NFL.com — archive your league history",
+        tagline: "NFL.com exposes league data publicly behind the league ID. Paste it, no sign-in needed, every season back to the league's founding.",
+        chip: "How-to",
+      },
+    ],
   },
   {
-    slug: "best-fantasy-football-recap",
-    title: "Best fantasy football recap services — 2026 comparison",
-    tagline: "Weekly recaps compared — designed for league-specific voice vs generic AI prose, archived vs standalone.",
-  },
-  // Tool-category gap pages — targeting queries TSC's features already
-  // answer (Trade Tape, Milestone Tracker, Manager DNA) but no competitor
-  // currently dominates.
-  {
-    slug: "fantasy-football-trade-analyzer",
-    title: "Fantasy football trade analysis tools — what they do and how to pick one",
-    tagline: "Live redraft graders vs dynasty value calculators vs post-trade graders — which to use when, and where each fits in a league stack.",
-  },
-  {
-    slug: "fantasy-football-milestone-tracker",
-    title: "Fantasy football milestone tracking — what to track and how",
-    tagline: "Career wins, championship counts, point thresholds, streaks, rivalry chapters. The markers that turn a multi-year league into a story.",
-  },
-  {
-    slug: "fantasy-football-manager-analysis",
-    title: "Fantasy football manager analysis — DNA, tendencies, and style",
-    tagline: "Drafting style, lineup habits, trade behavior, response to adversity — profiling managers as a personality, not a record.",
-  },
-  // How-to guides for each platform
-  {
-    slug: "sleeper-league-history",
-    title: "How to archive your Sleeper league history",
-    tagline: "Every season, every draft, every champion — pulled from any Sleeper league ID in 30 seconds.",
-  },
-  {
-    slug: "espn-league-history",
-    title: "How to see your ESPN league's full history (even private leagues)",
-    tagline: "ESPN hides old seasons behind a clunky interface. Here's how to pull every year — including private leagues — into one public almanac.",
-  },
-  {
-    slug: "yahoo-league-history",
-    title: "How to archive your Yahoo fantasy league history",
-    tagline: "Yahoo needs a one-time OAuth sign-in. After that, every season your league has played comes back as a clean public almanac.",
-  },
-  {
-    slug: "nfl-com-league-history",
-    title: "How to archive your NFL.com fantasy league history",
-    tagline: "NFL.com exposes league data publicly behind the league ID. Paste it, no sign-in needed, every season back to the league's founding.",
-  },
-  {
-    slug: "migrate-fantasy-league",
-    title: "Moving your league between platforms — keeping the history",
-    tagline: "Yahoo → ESPN → Sleeper. When commissioners migrate, league history dies. Here's how to preserve it.",
-  },
-  {
-    slug: "why-league-history-dies",
-    title: "Why fantasy league history dies (and how to save it)",
-    tagline: "Screenshots get lost. Group chats archive. Platforms change. A long-running league's story deserves better.",
-  },
-  {
-    slug: "sleeper-vs-espn-history",
-    title: "Sleeper vs ESPN — what each platform actually saves",
-    tagline: "Side-by-side: how far back you can see, what data you can export, and where each falls short.",
-  },
-  {
-    slug: "commissioner-mistakes",
-    title: "The 5 biggest mistakes commissioners make with league history",
-    tagline: "Practical lessons from running and archiving long-standing fantasy leagues.",
+    kicker: "Editorial",
+    title: "The case for keeping the league's story —",
+    titleEm: "and what gets it wrong.",
+    blurb:
+      "Long-form reads on why league history dies, how to move between platforms without losing it, and the recurring mistakes commissioners make.",
+    guides: [
+      {
+        slug: "sleeper-vs-espn-history",
+        title: "Sleeper vs ESPN — what each platform actually saves",
+        tagline: "Side-by-side: how far back you can see, what data you can export, and where each falls short.",
+        chip: "Comparison",
+      },
+      {
+        slug: "migrate-fantasy-league",
+        title: "Moving your league between platforms — keeping the history",
+        tagline: "Yahoo → ESPN → Sleeper. When commissioners migrate, league history dies. Here's how to preserve it.",
+        chip: "How-to",
+      },
+      {
+        slug: "why-league-history-dies",
+        title: "Why fantasy league history dies (and how to save it)",
+        tagline: "Screenshots get lost. Group chats archive. Platforms change. A long-running league's story deserves better.",
+        chip: "Essay",
+      },
+      {
+        slug: "commissioner-mistakes",
+        title: "The 5 biggest mistakes commissioners make",
+        tagline: "Practical lessons from running and archiving long-standing fantasy leagues.",
+        chip: "Essay",
+      },
+    ],
   },
 ]
 
@@ -100,6 +167,7 @@ export default async function GuidesIndex() {
   // for signed-in readers and "Login" for everyone else.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <main>
       <nav className="nav">
@@ -133,28 +201,57 @@ export default async function GuidesIndex() {
           League history, <em>done right.</em>
         </h1>
         <p className="hero-sub" style={{ maxWidth: "62ch", margin: "0 auto" }}>
-          Practical how-tos for fantasy commissioners. Archiving your league&apos;s past, navigating platform differences, and keeping the story alive when seasons end.
+          Practical how-tos, buyer&apos;s comparisons, and the editorial case for keeping your league&apos;s story alive — for fantasy commissioners and the people who read what they publish.
         </p>
       </section>
 
-      <div className="section" style={{ maxWidth: "920px", margin: "0 auto" }}>
-        <div className="toc guides-list">
-          <div className="toc-body">
-            {GUIDES.map((g, i) => (
-              <Link key={g.slug} href={`/guides/${g.slug}/`} className="toc-row">
-                <div className="toc-chapter">Ch. {i + 1}</div>
-                <div className="toc-title-wrap">
-                  <div className="toc-title">{g.title}</div>
-                  <div className="toc-desc">{g.tagline}</div>
-                </div>
-                <div className="toc-arrow">→</div>
+      {/* In-page table of contents — jumps to each category. Renders as a
+          horizontal rail; the cards below carry the visual weight. */}
+      <div className="section" style={{ maxWidth: "1080px", margin: "0 auto", paddingTop: 0 }}>
+        <nav aria-label="Guide categories" className="guides-toc">
+          {SECTIONS.map((s) => (
+            <a key={s.kicker} href={`#${slugify(s.kicker)}`} className="guides-toc-link">
+              <span className="guides-toc-num">·</span>
+              <span className="guides-toc-label">{s.kicker}</span>
+              <span className="guides-toc-count">{s.guides.length}</span>
+            </a>
+          ))}
+        </nav>
+      </div>
+
+      {SECTIONS.map((s) => (
+        <div
+          key={s.kicker}
+          className="section guides-section"
+          id={slugify(s.kicker)}
+          style={{ maxWidth: "1080px", margin: "0 auto" }}
+        >
+          <div className="section-header">
+            <span className="section-num">§ {s.kicker}</span>
+            <span className="section-title">{s.title}</span>
+            <span className="section-meta">{s.titleEm}</span>
+          </div>
+          <p className="guides-section-blurb">{s.blurb}</p>
+          <div className="guides-card-grid">
+            {s.guides.map((g) => (
+              <Link key={g.slug} href={`/guides/${g.slug}/`} className="guide-card">
+                {g.chip && <span className="guide-card-chip">{g.chip}</span>}
+                <div className="guide-card-title">{g.title}</div>
+                <div className="guide-card-desc">{g.tagline}</div>
+                <span className="guide-card-cta">
+                  Read <span className="guide-card-arrow" aria-hidden>→</span>
+                </span>
               </Link>
             ))}
           </div>
         </div>
-      </div>
+      ))}
 
       <SiteFooter />
     </main>
   )
+}
+
+function slugify(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
 }
