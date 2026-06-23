@@ -137,11 +137,12 @@ export async function GET() {
         </div>
 
         {/* Specimen "front page" block — mock data lines so readers see what
-            the product actually outputs, not just a logo. */}
+            the product actually outputs, not just a logo. Cells are sized to
+            fill the body so the card doesn't trail into empty space. */}
         <div
           style={{
             display: 'flex',
-            margin: '34px 56px 0',
+            margin: '36px 56px 0',
             border: '1px solid #272727',
             background: 'rgba(20,20,20,0.55)',
             zIndex: 2,
@@ -153,15 +154,15 @@ export async function GET() {
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              padding: '14px 22px',
+              padding: '22px 26px',
               borderRight: '1px solid #272727',
-              gap: '6px',
+              gap: '10px',
             }}
           >
             <div
               style={{
                 display: 'flex',
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: 700,
                 letterSpacing: '0.32em',
                 color: GOLD,
@@ -170,13 +171,17 @@ export async function GET() {
             >
               ★ CHAMPION ROLL
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontFamily: 'DMSerif', fontSize: '22px', color: '#f3f4f6' }}>
-              <span style={{ display: 'flex', color: '#9ca3af', fontFamily: 'JetBrains', fontSize: '14px' }}>&apos;25</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', fontFamily: 'DMSerif', fontSize: '26px', color: '#f3f4f6' }}>
+              <span style={{ display: 'flex', color: '#9ca3af', fontFamily: 'JetBrains', fontSize: '15px' }}>&apos;25</span>
               <span style={{ display: 'flex' }}>Wright stays</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontFamily: 'DMSerif', fontSize: '22px', color: '#d1d5db' }}>
-              <span style={{ display: 'flex', color: '#9ca3af', fontFamily: 'JetBrains', fontSize: '14px' }}>&apos;24</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', fontFamily: 'DMSerif', fontSize: '24px', color: '#d1d5db' }}>
+              <span style={{ display: 'flex', color: '#9ca3af', fontFamily: 'JetBrains', fontSize: '15px' }}>&apos;24</span>
               <span style={{ display: 'flex' }}>Holcomb&apos;s third</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', fontFamily: 'DMSerif', fontSize: '22px', color: '#9ca3af' }}>
+              <span style={{ display: 'flex', color: '#6b7280', fontFamily: 'JetBrains', fontSize: '15px' }}>&apos;23</span>
+              <span style={{ display: 'flex' }}>Wright again</span>
             </div>
           </div>
           {/* Middle cell — record */}
@@ -185,15 +190,15 @@ export async function GET() {
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              padding: '14px 22px',
+              padding: '22px 26px',
               borderRight: '1px solid #272727',
-              gap: '6px',
+              gap: '10px',
             }}
           >
             <div
               style={{
                 display: 'flex',
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: 700,
                 letterSpacing: '0.32em',
                 color: GOLD,
@@ -202,11 +207,14 @@ export async function GET() {
             >
               ✦ RECORD BOOK
             </div>
-            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '22px', color: '#f3f4f6' }}>
-              239.4 pts · W7 &apos;23
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '34px', color: '#f3f4f6', lineHeight: 1 }}>
+              239.4 pts
             </div>
-            <div style={{ display: 'flex', fontSize: '12px', fontWeight: 700, letterSpacing: '0.22em', color: '#9ca3af', textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', fontSize: '13px', fontWeight: 700, letterSpacing: '0.22em', color: '#9ca3af', textTransform: 'uppercase' }}>
               HIGHEST SINGLE WEEK
+            </div>
+            <div style={{ display: 'flex', fontSize: '13px', fontWeight: 700, letterSpacing: '0.22em', color: '#6b7280', textTransform: 'uppercase' }}>
+              Slingers · W7 &apos;23
             </div>
           </div>
           {/* Right cell — rivalry */}
@@ -215,14 +223,14 @@ export async function GET() {
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              padding: '14px 22px',
-              gap: '6px',
+              padding: '22px 26px',
+              gap: '10px',
             }}
           >
             <div
               style={{
                 display: 'flex',
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: 700,
                 letterSpacing: '0.32em',
                 color: GOLD,
@@ -231,13 +239,42 @@ export async function GET() {
             >
               ✺ RIVALRY
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontFamily: 'DMSerif', fontSize: '22px', color: '#f3f4f6' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', fontFamily: 'DMSerif', fontSize: '30px', color: '#f3f4f6', lineHeight: 1 }}>
               <span style={{ display: 'flex' }}>21–19</span>
-              <span style={{ display: 'flex', fontFamily: 'JetBrains', fontSize: '13px', color: '#9ca3af', letterSpacing: '0.2em' }}>40 MEETINGS</span>
             </div>
-            <div style={{ display: 'flex', fontSize: '12px', fontWeight: 700, letterSpacing: '0.22em', color: '#9ca3af', textTransform: 'uppercase' }}>
-              SINCE 2009
+            <div style={{ display: 'flex', fontSize: '13px', fontWeight: 700, letterSpacing: '0.22em', color: '#9ca3af', textTransform: 'uppercase' }}>
+              40 MEETINGS · SINCE 2009
             </div>
+            <div style={{ display: 'flex', fontSize: '13px', fontWeight: 700, letterSpacing: '0.22em', color: '#6b7280', textTransform: 'uppercase' }}>
+              LAST &apos;24 · 132.4 — 128.7
+            </div>
+          </div>
+        </div>
+
+        {/* Editorial pull-quote — fills the space between the specimen block
+            and the bottom strips with a single load-bearing line. */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '26px',
+            padding: '0 80px',
+            zIndex: 2,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              fontFamily: 'DMSerif',
+              fontStyle: 'italic',
+              fontSize: '24px',
+              color: '#d1d5db',
+              lineHeight: 1.2,
+              textAlign: 'center',
+              maxWidth: '900px',
+            }}
+          >
+            One league ID in. Every season, every champion, every grudge — out.
           </div>
         </div>
 
