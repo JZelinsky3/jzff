@@ -3,7 +3,7 @@ import Link from "next/link"
 import { GuideShell, faqSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "Fantasy football manager analysis — DNA, tendencies, and style tools",
+  title: "Fantasy football manager analysis: DNA, tendencies, and style",
   description:
     "Manager DNA analysis for fantasy football: profiling managers by drafting style, lineup tendencies, trade behavior, and waiver habits. What manager-analysis tools exist, what they reveal, and how The Sunday Chronicle's Manager DNA fits into a league archive.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/fantasy-football-manager-analysis/" },
@@ -36,9 +36,9 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Tools · Manager analysis"
-      title="Fantasy football manager analysis —"
-      titleEm="DNA, tendencies, and style."
-      subtitle="Standings tell you who won. Manager analysis tells you how — drafting style, lineup habits, trade behavior, the tells that separate a steady winner from a lucky one."
+      title="Fantasy football"
+      titleEm="manager analysis."
+      subtitle="Standings tell you who won. Manager analysis tells you how. Drafting style, lineup habits, trade behavior, the tells that separate a steady winner from a lucky one."
       breadcrumbSlug="fantasy-football-manager-analysis"
       datePublished="2026-06-22"
       dateModified="2026-06-22"

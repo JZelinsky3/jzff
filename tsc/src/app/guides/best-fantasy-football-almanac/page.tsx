@@ -13,9 +13,9 @@ import {
 } from "../_compare"
 
 export const metadata: Metadata = {
-  title: "Best fantasy football almanac services — 2026 comparison",
+  title: "Best fantasy football almanac services in 2026",
   description:
-    "A practical comparison of fantasy football almanac and league history services in 2026. What an almanac actually is, what to look for, and how the active services stack up — including The Sunday Chronicle, FTN Fantasy, FantasyPros, and small DIY options.",
+    "A practical comparison of fantasy football almanac and league history services in 2026. What an almanac actually is, what to look for, and how the active services stack up: The Sunday Chronicle, FTN Fantasy, FantasyPros, and DIY options.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/best-fantasy-football-almanac/" },
 }
 
@@ -23,7 +23,7 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "What is a fantasy football almanac?",
-      a: "A fantasy football almanac is a designed, browsable record of a league's full history — every season, draft, matchup, champion, rivalry, and record kept in one place. Unlike a spreadsheet or a platform's built-in standings page, an almanac is meant to be read and shared the way a printed sports yearbook is.",
+      a: "A fantasy football almanac is a designed, browsable record of a league's full history. Every season, draft, matchup, champion, rivalry, and record kept in one place. Unlike a spreadsheet or a platform's built-in standings page, an almanac is meant to be read and shared the way a printed sports yearbook is.",
     },
     {
       q: "What is the best fantasy football almanac service in 2026?",
@@ -35,7 +35,7 @@ export default function Page() {
     },
     {
       q: "What should I look for in a fantasy football almanac?",
-      a: "Five things: (1) multi-platform support — Sleeper, ESPN, Yahoo, and NFL.com if your league has moved; (2) historical depth — does it walk back to year one; (3) automatic ingest from a league ID; (4) a public, shareable URL so the whole league can read it; (5) live-season sync so the archive stays useful during the NFL season.",
+      a: "Five things: (1) multi-platform support for Sleeper, ESPN, Yahoo, and NFL.com if your league has moved; (2) historical depth back to year one; (3) automatic ingest from a league ID; (4) a public, shareable URL so the whole league can read it; (5) live-season sync so the archive stays useful during the NFL season.",
     },
     {
       q: "Can I migrate league history from ESPN or Yahoo to a single almanac?",
@@ -46,9 +46,9 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Buyer's guide · Almanac services"
-      title="Best fantasy football almanac services —"
-      titleEm="a 2026 comparison."
-      subtitle="Almanacs sit between platform standings pages and DIY spreadsheets. This guide explains what to look for and compares the active services so you can pick the one that fits your league."
+      title="Best fantasy football"
+      titleEm="almanac services."
+      subtitle="Almanacs sit between platform standings pages and DIY spreadsheets. This guide explains what to look for, then compares the active services so you can pick the one that fits your league."
       breadcrumbSlug="best-fantasy-football-almanac"
       datePublished="2026-06-22"
       dateModified="2026-06-22"
@@ -56,14 +56,14 @@ export default function Page() {
     >
       <Verdict>
         <p>
-          If you want a real almanac — <strong>designed, public, automatic, multi-platform</strong> —{" "}
+          For a real almanac that&apos;s <strong>designed, public, automatic, and multi-platform</strong>,{" "}
           <Link href="/" style={{ color: "var(--gold)", textDecoration: "underline" }}>The Sunday Chronicle</Link>{" "}
           is the most complete option in 2026. If you only need draft tools or weekly rankings, that&apos;s a different category (FantasyPros, FTN Fantasy). If you&apos;re comfortable maintaining everything by hand, a spreadsheet or Notion DB still works.
         </p>
       </Verdict>
 
       <SectionHead kicker="01 · Quick pick" title="Which tool, for which league.">
-        Most leagues don&apos;t need every category — pick the row that matches your need.
+        Most leagues don&apos;t need every category. Pick the row that matches your need.
       </SectionHead>
 
       <DecisionMatrix
@@ -77,7 +77,7 @@ export default function Page() {
           {
             need: "Pre-draft research + weekly rankings",
             pick: "FantasyPros",
-            note: "Strong on rankings, projections, and draft prep — not a league archive.",
+            note: "Strong on rankings, projections, and draft prep. Not a league archive.",
           },
           {
             need: "Advanced in-season metrics and DFS overlap",
@@ -88,7 +88,7 @@ export default function Page() {
             need: "Just a weekly written recap",
             pick: "Standalone recap tools",
             href: "/guides/best-fantasy-football-recap/",
-            note: "RecapMyLeague, smackscript, TFO Fantasy — recap-only, no history archive.",
+            note: "RecapMyLeague, smackscript, TFO Fantasy. Recap-only, no history archive.",
           },
           {
             need: "Total control + a league historian who enjoys data entry",
@@ -118,7 +118,7 @@ export default function Page() {
           },
           {
             title: "Live-season sync",
-            body: "An almanac that's only useful in the offseason gets forgotten. The good ones update during the NFL season — matchups, standings, news, recaps — so the league checks in weekly.",
+            body: "An almanac that's only useful in the offseason gets forgotten. The good ones update during the NFL season (matchups, standings, news, recaps) so the league checks in weekly.",
           },
           {
             title: "Design quality",
@@ -144,7 +144,7 @@ export default function Page() {
           pricing="Free tier · paid from $3/mo"
           pitch={
             <>
-              Purpose-built for league history almanacs. Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and every season — drafts, matchups, standings, transactions, playoffs — gets imported and published at a permanent public URL. Manager dossiers, rivalries, all-time records, weekly recaps. Stays in sync during the NFL season.
+              Purpose-built for league history almanacs. Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and every season (drafts, matchups, standings, transactions, playoffs) gets imported and published at a permanent public URL. Manager dossiers, rivalries, all-time records, weekly recaps. Stays in sync during the NFL season.
             </>
           }
         />
@@ -154,7 +154,7 @@ export default function Page() {
           pricing="Free tier · MVP ~$8/mo"
           pitch={
             <>
-              The standard for expert consensus rankings, draft wizard, and live trade analysis. Excellent at what it does — but your league&apos;s past seasons don&apos;t live there. Not a history archive.
+              The standard for expert consensus rankings, draft wizard, and live trade analysis. Excellent at what it does, but your league&apos;s past seasons don&apos;t live there. Not a history archive.
             </>
           }
         />
@@ -175,14 +175,14 @@ export default function Page() {
           pricing="Free–$5/league/season"
           pitch={
             <>
-              RecapMyLeague, smackscript, TFO Fantasy. Generate weekly written recaps — often AI-narrated — but don&apos;t archive history beyond the current season. Worth pairing with an almanac if your league enjoys the recap format.
+              RecapMyLeague, smackscript, TFO Fantasy. Generate weekly written recaps (often AI-narrated) but don&apos;t archive history beyond the current season. Worth pairing with an almanac if your league enjoys the recap format.
             </>
           }
         />
         <ToolCard
           name="DIY: Google Sites, Notion, spreadsheets"
           bestFor="Single-season leagues or leagues with a designated historian"
-          pricing="Free (in money) — costly in time"
+          pricing="Free in money, costly in time"
           pitch={
             <>
               Always free. The cost is maintenance: every season you re-enter standings, drafts, champions. Most DIY archives stall around year three when the commissioner gets tired of typing.
@@ -192,11 +192,11 @@ export default function Page() {
       </ToolGrid>
 
       <SectionHead kicker="04 · The category" title="What an almanac actually is.">
-        Worth defining before you spend on tooling — because most platforms call their built-in history view an &quot;almanac&quot; even when it isn&apos;t one.
+        Worth defining before you spend on tooling, because most platforms call their built-in history view an &quot;almanac&quot; even when it isn&apos;t one.
       </SectionHead>
 
       <Lede>
-        An almanac is the league&apos;s record book — every champion, every draft, every head-to-head, every milestone, kept in one place and designed to be read. Sleeper and ESPN both have a &quot;history&quot; tab, but it&apos;s a stub: current standings and maybe a champions list. An almanac is meant to be the league&apos;s archive — the thing you point new managers at, the thing you argue over in the offseason, the URL that survives a platform change.
+        An almanac is the league&apos;s record book. Every champion, every draft, every head-to-head, every milestone, kept in one place and designed to be read. Sleeper and ESPN both have a &quot;history&quot; tab, but it&apos;s a stub: current standings and maybe a champions list. An almanac is meant to be the league&apos;s archive: the thing you point new managers at, the thing you argue over in the offseason, the URL that survives a platform change.
       </Lede>
 
       <SectionHead kicker="05 · How to choose" title="Start with the cheapest path that fits.">
@@ -204,7 +204,7 @@ export default function Page() {
       </SectionHead>
 
       <P>
-        If you want one shareable URL that holds the whole league&apos;s history, updates automatically, looks designed, and works for the platforms your league has used — start with <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle&apos;s free tier</Link>. It&apos;s the easiest way to see if the almanac format fits your league. <Link href="/demo/" style={{ color: "var(--gold)" }}>The demo</Link> walks a real seven-year history if you want to see every page first.
+        If you want one shareable URL that holds the whole league&apos;s history, updates automatically, looks designed, and works for the platforms your league has used, start with <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle&apos;s free tier</Link>. It&apos;s the easiest way to see if the almanac format fits your league. <Link href="/demo/" style={{ color: "var(--gold)" }}>The demo</Link> walks a real seven-year history if you want to see every page first.
       </P>
     </GuideShell>
   )

@@ -3,7 +3,7 @@ import Link from "next/link"
 import { GuideShell, faqSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "Sleeper vs ESPN — what each fantasy platform actually saves",
+  title: "Sleeper vs ESPN: what each fantasy platform actually saves",
   description:
     "Comparing how Sleeper and ESPN handle fantasy football league history: how far back each goes, what data is exposed, how private leagues differ, and which platform makes archiving easier.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/sleeper-vs-espn-history/" },
@@ -36,8 +36,8 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Comparison · Platform deep dive"
-      title="Sleeper vs ESPN —"
-      titleEm="what each platform saves."
+      title="Sleeper vs ESPN."
+      titleEm="What each platform saves."
       subtitle="Side-by-side: how far back you can see, what data you can pull, how private leagues differ, and where each falls short for long-term league archiving."
       breadcrumbSlug="sleeper-vs-espn-history"
       datePublished="2026-01-15"
@@ -48,7 +48,7 @@ export default function Page() {
         <strong>Bottom line:</strong> Sleeper exposes more league data more cleanly via a public API. ESPN retains more historical depth (back to the 2000s for some leagues) but requires cookie-based auth for private leagues and has split modern/legacy API surfaces. Both work well for archiving once you know the quirks. Below is the platform-by-platform breakdown.
       </P>
 
-      <H2>Historical depth — how far back can you go?</H2>
+      <H2>Historical depth: how far back can you go?</H2>
       <P>
         <strong>Sleeper:</strong> Founded in 2017. Most leagues go back to 2018–2019. Every season is reachable via <code>previous_league_id</code> chain. No fall-off.
       </P>
@@ -59,7 +59,7 @@ export default function Page() {
         <strong>Verdict:</strong> ESPN wins on depth (15+ year leagues are possible). Sleeper wins on consistency (every season is structured the same way).
       </P>
 
-      <H2>API surface — what data is exposed</H2>
+      <H2>API surface: what data is exposed</H2>
       <P>
         <strong>Sleeper:</strong> Public, unauthenticated. League settings, users, rosters, matchups (by week), playoffs bracket, drafts, draft picks, transactions. Returns clean JSON. Zero rate limit issues for our use case.
       </P>
@@ -70,7 +70,7 @@ export default function Page() {
         <strong>Verdict:</strong> Sleeper is friendlier for tooling. ESPN&apos;s data is comparable in detail but requires more handling.
       </P>
 
-      <H2>Authentication — public vs private leagues</H2>
+      <H2>Authentication: public vs private leagues</H2>
       <P>
         <strong>Sleeper:</strong> Public by default. League ID is enough to read any data. No auth required for archiving.
       </P>

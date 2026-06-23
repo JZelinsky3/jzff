@@ -3,7 +3,7 @@ import Link from "next/link"
 import { GuideShell, faqSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "Fantasy football milestone tracking — what to track and how",
+  title: "Fantasy football milestone tracking: what to track and how",
   description:
     "Milestone tracking for fantasy football leagues: career wins, championship counts, streaks, point thresholds, and rivalry records. What's worth tracking, how to set up automated tracking, and which tools (The Sunday Chronicle, manual spreadsheets) actually work.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/fantasy-football-milestone-tracker/" },
@@ -36,9 +36,9 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Tools · Milestone tracking"
-      title="Fantasy football milestone tracking —"
-      titleEm="what to track and how."
-      subtitle="Career wins, championship counts, point thresholds, rivalry chapters — milestones turn a multi-year league into a story. Here's what's worth tracking and how to automate it."
+      title="Fantasy football"
+      titleEm="milestone tracking."
+      subtitle="Career wins, championship counts, point thresholds, rivalry chapters. Milestones turn a multi-year league into a story. Here's what's worth tracking and how to automate it."
       breadcrumbSlug="fantasy-football-milestone-tracker"
       datePublished="2026-06-22"
       dateModified="2026-06-22"
@@ -79,7 +79,7 @@ export default function Page() {
         <strong>Head-to-head dominance.</strong> First time a manager takes the all-time series lead against a rival. First sweep. Comebacks from 5-0 down.
       </P>
 
-      <H2>Manual tracking — when it works and when it breaks</H2>
+      <H2>Manual tracking: when it works and when it breaks</H2>
       <P>
         A spreadsheet works for the current season if the commissioner enters data weekly. It breaks when (a) the commissioner gets busy, (b) a manager leaves and ownership changes, (c) the league moves platforms, or (d) the league exceeds three seasons and the historical baseline gets too tedious to backfill.
       </P>

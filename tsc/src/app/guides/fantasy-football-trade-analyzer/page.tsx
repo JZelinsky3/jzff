@@ -3,7 +3,7 @@ import Link from "next/link"
 import { GuideShell, faqSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "Fantasy football trade analysis tools — what they do and how to pick one",
+  title: "Fantasy football trade analysis tools, compared",
   description:
     "Trade analyzer tools for fantasy football compared: how they grade trades, what data they use, and which tools — FantasyPros, KeepTradeCut, FantasyCalc, The Sunday Chronicle Trade Tape — fit redraft vs dynasty vs keeper leagues.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/fantasy-football-trade-analyzer/" },
@@ -36,9 +36,9 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Tools · Trade analysis"
-      title="Fantasy football trade analysis tools —"
-      titleEm="what they do and how to pick one."
-      subtitle="Live trade evaluators, dynasty value calculators, and post-trade graders all live under the 'trade analyzer' umbrella — but they answer different questions. Here's which tool to use when."
+      title="Fantasy football"
+      titleEm="trade analyzers, compared."
+      subtitle="Live trade evaluators, dynasty value calculators, and post-trade graders all live under the same umbrella, but they answer different questions. Here's which tool to use when."
       breadcrumbSlug="fantasy-football-trade-analyzer"
       datePublished="2026-06-22"
       dateModified="2026-06-22"

@@ -3,7 +3,7 @@ import Link from "next/link"
 import { GuideShell, faqSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "Fantasy football league management software — reviews & comparison",
+  title: "Fantasy football league management software in 2026",
   description:
     "Software for running a fantasy football league: where the host platforms (Sleeper, ESPN, Yahoo, NFL.com) end and where third-party tools start. Reviews of the active services for commissioners — The Sunday Chronicle, FantasyPros, and dedicated commissioner tools.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/fantasy-football-league-management-software/" },
@@ -36,8 +36,8 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Reviews · League management software"
-      title="Fantasy football league management software —"
-      titleEm="reviews and comparison."
+      title="League management software,"
+      titleEm="honest reviews."
       subtitle="What the host platforms cover, what they don't, and which third-party tools commissioners actually use to fill the gaps. Honest reviews of the active 2026 options."
       breadcrumbSlug="fantasy-football-league-management-software"
       datePublished="2026-06-22"

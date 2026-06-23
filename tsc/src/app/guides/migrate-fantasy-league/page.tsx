@@ -3,7 +3,7 @@ import Link from "next/link"
 import { GuideShell, faqSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "Moving your fantasy league between platforms — keeping the history",
+  title: "Moving your fantasy league between platforms without losing the history",
   description:
     "When a fantasy football league moves from Yahoo to ESPN, ESPN to Sleeper, or anywhere else, the historical data typically gets stranded. Here's how to preserve every season under one unified archive.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/migrate-fantasy-league/" },
@@ -36,8 +36,8 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Migration · Preserve every season"
-      title="Moving your league between platforms —"
-      titleEm="keeping the history."
+      title="Moving your league between platforms,"
+      titleEm="without losing the history."
       subtitle="Yahoo → ESPN → Sleeper. When commissioners migrate, league history typically dies. Here's how to keep every season alive under one unified archive."
       breadcrumbSlug="migrate-fantasy-league"
       datePublished="2026-01-15"

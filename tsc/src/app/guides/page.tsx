@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { GuideBrowser } from "./_GuideBrowser"
 
 export const metadata: Metadata = {
-  title: "Guides — Fantasy football league history, archives, and commissioner tools",
+  title: "Guides · Fantasy football league history, archives, and commissioner tools",
   description:
     "Practical guides for fantasy football commissioners — how to archive your league's history from Sleeper, ESPN, Yahoo, or NFL.com, plus buyer's guides comparing the active league-management, almanac, recap, and trade-analysis tools in 2026.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/" },

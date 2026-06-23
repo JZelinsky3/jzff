@@ -3,7 +3,7 @@ import Link from "next/link"
 import { GuideShell, faqSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "Best fantasy football recap services — 2026 comparison",
+  title: "Best fantasy football recap services in 2026",
   description:
     "Fantasy football weekly recap services compared: what makes a good recap, how AI-generated recaps differ from designed weekly stories, and which services (The Sunday Chronicle, RecapMyLeague, smackscript, TFO Fantasy) actually fit a long-running league.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/best-fantasy-football-recap/" },
@@ -36,8 +36,8 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Buyer's guide · Weekly recaps"
-      title="Best fantasy football recap services —"
-      titleEm="a 2026 comparison."
+      title="Best fantasy football"
+      titleEm="recap services."
       subtitle="A weekly recap is the one piece of fantasy content that gets read every Tuesday. Here's what separates a good recap service from a generic one, and how the active options stack up."
       breadcrumbSlug="best-fantasy-football-recap"
       datePublished="2026-06-22"

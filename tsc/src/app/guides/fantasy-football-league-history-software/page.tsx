@@ -3,7 +3,7 @@ import Link from "next/link"
 import { GuideShell, faqSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "Fantasy football league history software — tools that actually save your league",
+  title: "Fantasy football league history software in 2026",
   description:
     "Software for tracking fantasy football league history: what the category is, what platforms cover natively, and which third-party tools (The Sunday Chronicle, DIY databases, archive scripts) actually preserve a multi-year league.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/fantasy-football-league-history-software/" },
@@ -36,9 +36,9 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Category overview · League history software"
-      title="Fantasy football league history software —"
-      titleEm="what actually preserves a league."
-      subtitle="The native history views on Sleeper, ESPN, Yahoo, and NFL.com cover the basics. Software that preserves a league — every season, every draft, every matchup, in a form the whole league can read — is a separate category. Here's what it includes and what to use."
+      title="Fantasy football"
+      titleEm="league history software."
+      subtitle="The native history views on Sleeper, ESPN, Yahoo, and NFL.com cover the basics. Software that preserves a league (every season, every draft, every matchup, in a form the whole league can read) is a separate category. Here's what it includes and what to use."
       breadcrumbSlug="fantasy-football-league-history-software"
       datePublished="2026-06-22"
       dateModified="2026-06-22"
