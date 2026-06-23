@@ -74,7 +74,8 @@ export async function GET() {
           }}
         />
 
-        {/* Tight masthead bar — newspaper-style flagline */}
+        {/* Tight masthead bar — newspaper-style flagline. Brand lives in the
+            big serif masthead below; this is just edition metadata. */}
         <div
           style={{
             display: 'flex',
@@ -89,47 +90,44 @@ export async function GET() {
             zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex', color: GOLD }}>★ THE SUNDAY CHRONICLE</span>
-          <span style={{ display: 'flex' }}>EST. MMXXVI · VOL. I</span>
+          <span style={{ display: 'flex', color: GOLD }}>★ EST. MMXXVI</span>
+          <span style={{ display: 'flex' }}>VOL. I · NO. 1</span>
           <span style={{ display: 'flex' }}>FOR COMMISSIONERS</span>
         </div>
 
-        {/* Hero stamp + headline */}
+        {/* Hero masthead — the brand is the visual focal point. Big serif,
+            tight italic pull-quote below it so the tagline supports the name
+            instead of replacing it. */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: '46px 80px 0',
+            padding: '34px 80px 0',
             zIndex: 2,
-            gap: '18px',
+            gap: '12px',
           }}
         >
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              padding: '7px 22px',
-              border: `1.5px solid ${GOLD}aa`,
-              fontSize: '13px',
-              fontWeight: 700,
-              letterSpacing: '0.4em',
-              color: GOLD,
-              textTransform: 'uppercase',
+              fontFamily: 'DMSerif',
+              fontSize: '92px',
+              lineHeight: 1,
+              color: '#f3f4f6',
+              textAlign: 'center',
             }}
           >
-            <div style={{ display: 'flex', width: '6px', height: '6px', background: GOLD, transform: 'rotate(45deg)' }} />
-            <span style={{ display: 'flex' }}>YOUR LEAGUE&apos;S ALMANAC</span>
-            <div style={{ display: 'flex', width: '6px', height: '6px', background: GOLD, transform: 'rotate(45deg)' }} />
+            The Sunday Chronicle
           </div>
           <div
             style={{
               display: 'flex',
               fontFamily: 'DMSerif',
-              fontSize: '76px',
-              lineHeight: 1.02,
-              color: '#f3f4f6',
+              fontStyle: 'italic',
+              fontSize: '34px',
+              color: GOLD,
+              lineHeight: 1.1,
               textAlign: 'center',
               maxWidth: '1020px',
             }}
