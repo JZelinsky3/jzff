@@ -8,10 +8,12 @@ import { createClient } from "@/lib/supabase/server"
 
 // Author entity referenced from Article + Organization schema. Lifting the
 // byline out of the JSX so the structured-data block and the visible byline
-// stay in sync if the author bio ever changes.
+// stay in sync if the author bio ever changes. Identity is the project
+// label (JZFF), not a personal name — personal name is intentionally
+// excluded from the public site.
 const AUTHOR = {
-  name: "Joey Zelinsky",
-  role: "Fantasy football league commissioner and founder of The Sunday Chronicle",
+  name: "JZFF",
+  role: "Independent fantasy football software · The Sunday Chronicle",
   url: "https://thesundaychronicle.app/about/",
 }
 

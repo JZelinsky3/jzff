@@ -149,11 +149,24 @@ export const SECTIONS: Section[] = [
   },
   {
     kicker: "Platform how-tos",
-    title: "Set up your league —",
+    title: "Set up your league,",
     titleEm: "step by step.",
     blurb:
       "Practical walkthroughs for each fantasy host. Find your league ID, paste it, publish.",
     guides: [
+      {
+        slug: "set-up-your-league",
+        title: "Set up your league on any platform",
+        chip: "Hub",
+        tagline: "The setup overview. Lists every supported host with the steps for each. Start here if you're not sure which guide you need.",
+        snippet:
+          "Hub page covering setup for every supported fantasy football platform — Sleeper, ESPN, Yahoo, and NFL.com. Compares each host's setup flow and links to the step-by-step guides.",
+        searchTerms: [
+          "setup", "set up", "set-up", "get started", "install",
+          "platforms", "all platforms", "which platform",
+          "hub", "overview",
+        ],
+      },
       {
         slug: "sleeper-league-history",
         title: "Sleeper — archive your league history",

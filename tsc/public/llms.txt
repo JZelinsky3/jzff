@@ -111,9 +111,9 @@ https://thesundaychronicle.app/demo/
 - Not a host platform — it reads from your existing Sleeper/ESPN/Yahoo/NFL.com league rather than replacing it
 - Not affiliated with Sleeper, ESPN, NFL.com, or Yahoo
 
-## Founder
+## Independent project
 
-Built by Joey Zelinsky (a fantasy football league commissioner) under the JZFF label. Single-developer indie product. Contact: zelinskyjoey18@gmail.com
+Built and maintained under the JZFF label by an active fantasy football league commissioner. Single-developer indie product, not affiliated with Sleeper, ESPN, Yahoo, or NFL.com.
 
 ## Tech
 

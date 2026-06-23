@@ -48,10 +48,9 @@ const DISCOVER_ITEMS: ColumnItem[] = [
   { label: 'Guides', href: '/guides' },
   { label: 'Commissioner mistakes',  href: '/guides/commissioner-mistakes',  indent: true },
   { label: 'Migrate fantasy league', href: '/guides/migrate-fantasy-league', indent: true },
-  { label: 'Sleeper',                href: '/guides/sleeper-league-history', indent: true },
-  { label: 'ESPN',                   href: '/guides/espn-league-history',    indent: true },
-  { label: 'Yahoo',                  href: '/guides/yahoo-league-history',   indent: true },
-  { label: 'NFL.com',                href: '/guides/nfl-com-league-history', indent: true },
+  // Platform how-tos collapsed into a single setup hub to avoid one nav
+  // line per host. The hub at /guides/set-up-your-league/ lists all four.
+  { label: 'Set up your league',     href: '/guides/set-up-your-league',     indent: true },
 ]
 
 // Pricing column (signed-out only). Small column — three rows. Reads as
@@ -63,19 +62,17 @@ const PRICING_ITEMS: ColumnItem[] = [
   { label: 'About the project', href: '/about' },
 ]
 
-// Guides column (signed-out only). Groups the buyer's comparisons + the
-// platform how-tos so a visitor researching tools or setup lands here
-// directly instead of digging through "Discover".
+// Guides column (signed-out only). Groups buyer's comparisons + a single
+// "Set up your league" link that goes to the platform-setup hub (which in
+// turn links to each platform). Avoids cluttering the nav with one line
+// per host when most visitors only need one of them.
 const GUIDES_ITEMS: ColumnItem[] = [
   { label: 'All guides', href: '/guides' },
-  { label: 'Best almanac services',     href: '/guides/best-fantasy-football-almanac',           indent: true },
+  { label: 'Best almanac services',      href: '/guides/best-fantasy-football-almanac',               indent: true },
   { label: 'League management software', href: '/guides/fantasy-football-league-management-software', indent: true },
-  { label: 'Best recap services',       href: '/guides/best-fantasy-football-recap',             indent: true },
-  { label: 'Trade analysis tools',      href: '/guides/fantasy-football-trade-analyzer',         indent: true },
-  { label: 'Set up: Sleeper',           href: '/guides/sleeper-league-history',                  indent: true },
-  { label: 'Set up: ESPN',              href: '/guides/espn-league-history',                     indent: true },
-  { label: 'Set up: Yahoo',             href: '/guides/yahoo-league-history',                    indent: true },
-  { label: 'Set up: NFL.com',           href: '/guides/nfl-com-league-history',                  indent: true },
+  { label: 'Best recap services',        href: '/guides/best-fantasy-football-recap',                 indent: true },
+  { label: 'Trade analysis tools',       href: '/guides/fantasy-football-trade-analyzer',             indent: true },
+  { label: 'Set up your league',         href: '/guides/set-up-your-league',                          indent: true },
 ]
 
 // Demo league chapters — listed as indented sub-pages of the "Demo

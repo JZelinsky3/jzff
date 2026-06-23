@@ -108,7 +108,7 @@ export function GuideBrowser() {
               id="guide-search"
               type="search"
               className="g-search-input"
-              placeholder="Search by problem, tool, or platform — e.g. &quot;espn private league&quot; or &quot;weekly recap&quot;"
+              placeholder="Search by problem, tool, or platform"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoComplete="off"

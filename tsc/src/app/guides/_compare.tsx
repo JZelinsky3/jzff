@@ -22,40 +22,37 @@ export function Verdict({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Decision matrix — a tight table that answers "if you need X → use Y".
-// Better than prose for the "which tool when" question because the eye
-// scans rows in parallel rather than reading sequentially.
+// Decision rows — vertical stack of "if you need X → use Y" cards. Each
+// row leads with the need (the question the reader is asking themselves),
+// the recommended tool in serif gold, and a small note explaining why.
+// Replaces an earlier table layout that felt utilitarian and generic.
 export function DecisionMatrix({
   rows,
 }: {
   rows: { need: string; pick: string; href?: string; note?: string }[]
 }) {
   return (
-    <div className="g-matrix-wrap" role="region" aria-label="Decision matrix">
-      <table className="g-matrix">
-        <thead>
-          <tr>
-            <th>If you need</th>
-            <th>Use</th>
-            <th>Why</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.need}>
-              <td>{r.need}</td>
-              <td>
-                {r.href ? (
-                  <Link href={r.href} className="g-matrix-pick">{r.pick}</Link>
-                ) : (
-                  <span className="g-matrix-pick">{r.pick}</span>
-                )}
-              </td>
-              <td className="g-matrix-note">{r.note}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="g-decisions" role="region" aria-label="Decision matrix">
+      {rows.map((r, i) => (
+        <article key={r.need} className="g-decision">
+          <span className="g-decision-num">{String(i + 1).padStart(2, "0")}</span>
+          <div className="g-decision-body">
+            <div className="g-decision-need">
+              <span className="g-decision-need-label">If you need</span>
+              <span className="g-decision-need-text">{r.need}</span>
+            </div>
+            <div className="g-decision-pick">
+              <span className="g-decision-pick-label">Use</span>
+              {r.href ? (
+                <Link href={r.href} className="g-decision-pick-name">{r.pick}</Link>
+              ) : (
+                <span className="g-decision-pick-name">{r.pick}</span>
+              )}
+            </div>
+            {r.note && <p className="g-decision-note">{r.note}</p>}
+          </div>
+        </article>
+      ))}
     </div>
   )
 }
@@ -108,21 +105,23 @@ export function ToolCard({
 }) {
   const inner = (
     <>
-      {highlight && <span className="g-tool-card-flag">★ Our pick</span>}
-      <div className="g-tool-card-name">{name}</div>
+      <div className="g-tool-card-header">
+        <div className="g-tool-card-name">{name}</div>
+        {highlight && <span className="g-tool-card-flag">Our pick</span>}
+      </div>
       <div className="g-tool-card-bestfor">
-        <span className="g-tool-card-bestfor-label">Best for</span>
+        <span className="g-tool-card-bestfor-label">Best for ·</span>{" "}
         <span className="g-tool-card-bestfor-text">{bestFor}</span>
       </div>
       <div className="g-tool-card-pitch">{pitch}</div>
-      {pricing && (
-        <div className="g-tool-card-pricing">{pricing}</div>
-      )}
-      {href && (
-        <span className="g-tool-card-cta">
-          {external ? "Visit site" : "Read more"} <span aria-hidden>→</span>
-        </span>
-      )}
+      <div className="g-tool-card-footer">
+        {pricing && <span className="g-tool-card-pricing">{pricing}</span>}
+        {href && (
+          <span className="g-tool-card-cta">
+            {external ? "Visit site" : "Read more"} <span aria-hidden>→</span>
+          </span>
+        )}
+      </div>
     </>
   )
 

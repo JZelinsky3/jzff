@@ -49,6 +49,9 @@ const STATIC_PAGES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequenc
   ['/guides/fantasy-football-trade-analyzer/', 'monthly', 0.8],
   ['/guides/fantasy-football-milestone-tracker/', 'monthly', 0.8],
   ['/guides/fantasy-football-manager-analysis/', 'monthly', 0.8],
+  // Platform-setup hub — single landing page that links out to each of
+  // the per-platform how-tos. Replaces the 4 individual nav lines.
+  ['/guides/set-up-your-league/', 'monthly', 0.85],
   // Demo subpages. The /demo/ root is the marketing entry, but the chapter
   // pages contain the bulk of the indexable almanac content — real league
   // data rendered as HTML. Listing them separately gets each chapter into

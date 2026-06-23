@@ -91,11 +91,17 @@ export function HeroClipping() {
 
   return (
     <div className="hc-stack" aria-label="A page from a finished almanac">
-      {/* Single page — content fades when idx changes. The key on the
-          inner content is what triggers React to remount it, which kicks
-          off the CSS fade-in animation cleanly. Outer chrome (border,
-          shadow, seal corner ornament) stays mounted so the card itself
-          never repaints. */}
+      {/* Decorative backdrop pages — peek out behind the active card to
+          give back the "stack of bound pages" depth without the lag from
+          the earlier multi-page-rotation version. Pure CSS, no React state,
+          no animations, never rerendered. Just static offset siblings. */}
+      <div className="hc-backdrop hc-backdrop-1" aria-hidden="true" />
+      <div className="hc-backdrop hc-backdrop-2" aria-hidden="true" />
+
+      {/* Single active page — content fades when idx changes. The key on
+          the inner content is what triggers React to remount it, which
+          kicks off the CSS fade-in animation cleanly. Outer chrome (border,
+          shadow, seal) stays mounted so the card itself never repaints. */}
       <article className="hc-page is-active">
         <div className="hc-page-inner" key={idx}>
           <header className="hc-page-head">
