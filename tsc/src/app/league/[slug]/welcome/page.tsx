@@ -1,7 +1,9 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { loadManagerOptions, loadManagerNameMap } from '@/lib/managerOptions'
+import { getViewMode } from '@/lib/viewMode'
 import type { ProfileRow } from '@/app/league/[slug]/setup/setup-list'
+import { MobileWizard } from '@/components/league/MobileWizard'
 import { Wizard } from './wizard'
 
 // The setup wizard. Brand-new archives get redirected here from
@@ -144,6 +146,33 @@ export default async function WelcomePage({
   }
   const profiles = Array.from(profilesById.values())
   const avatarMap: Record<string, string> = Object.fromEntries(avatarByProfile)
+
+  const wizardProps = {
+    leagueId: league.id,
+    leagueName: league.name,
+    slug,
+    initialSources: sourcesRaw ?? [],
+    initialLastSyncedAt: league.last_synced_at,
+    initialPublishedAt: league.published_at,
+    latestSeason: latestSeason ? { id: latestSeason.id, year: latestSeason.year as number, isLive: !!latestSeason.is_live } : null,
+    existingRivalries: (existingRivalries ?? []).map((r) => ({
+      id: r.id,
+      name: r.name as string | null,
+      aId: r.manager_a_id as string,
+      bId: r.manager_b_id as string,
+      aName: nameMap.get(r.manager_a_id as string) ?? 'Unknown',
+      bName: nameMap.get(r.manager_b_id as string) ?? 'Unknown',
+    })),
+    yahooConnected: !!yahooTok,
+    managers: managers.map((m) => ({ id: m.id, name: m.name })),
+    profiles,
+    avatars: avatarMap,
+    yearRange,
+  }
+
+  if ((await getViewMode()) === 'mobile') {
+    return <MobileWizard {...wizardProps} />
+  }
 
   return (
     <Wizard

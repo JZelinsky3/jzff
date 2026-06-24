@@ -15021,3 +15021,655 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
 .toc-page-body-mobile h1 {
     font-size: 1.4rem !important;
 }
+
+/* ============================================================
+   MOBILE WIZARD  (MobileWizard.tsx)
+   Phone-only league setup wizard. Vocabulary-app pattern:
+   one large question per screen, pill cards, sticky bottom
+   Continue. Prefix: mwiz-.
+   ============================================================ */
+.mwiz {
+    position: relative;
+    z-index: 1;
+    min-height: 100dvh;
+    /* Reserve room for the sticky bottom CTA so the last bit of content
+       isn't ever hidden under the button on small screens. Padding lives
+       on .mwiz-step-body, not here, so the bar+track sit flush at the top. */
+    display: flex;
+    flex-direction: column;
+}
+.mwiz ~ .msm-root { display: none !important; }
+
+/* Top bar — back / progress text / close */
+.mwiz-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: 36px 1fr 36px;
+    align-items: center;
+    gap: .5rem;
+    padding: .7rem 1rem .35rem;
+    background: var(--ink);
+}
+.mwiz-bar-back, .mwiz-bar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: transparent;
+    color: var(--cream);
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0;
+    transition: border-color .2s, color .2s;
+}
+.mwiz-bar-back:hover, .mwiz-bar-close:hover { border-color: var(--gold); color: var(--gold); }
+.mwiz-bar-spacer { width: 32px; height: 32px; }
+.mwiz-bar-progress {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: center;
+}
+
+/* Slim progress track under the bar — single fill that grows step-by-step */
+.mwiz-track {
+    height: 3px;
+    background: var(--ink-line);
+    margin: 0 1rem .25rem;
+    border-radius: 999px;
+    overflow: hidden;
+}
+.mwiz-track-fill {
+    height: 100%;
+    background: var(--gold);
+    transition: width .35s ease;
+}
+
+/* Step shell — title + subtitle + content stack, then sticky CTA */
+.mwiz-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.mwiz-step-body {
+    flex: 1;
+    padding: 2.25rem 1.25rem 7rem;
+}
+.mwiz-title {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 8vw, 2.6rem);
+    line-height: 1.05;
+    color: var(--cream);
+    margin: 0 0 .7rem;
+    letter-spacing: -.01em;
+}
+.mwiz-title em { color: var(--gold); font-style: italic; }
+.mwiz-subtitle {
+    font-family: var(--serif);
+    font-size: .95rem;
+    line-height: 1.5;
+    color: var(--cream-mute);
+    margin: 0 0 1.75rem;
+}
+.mwiz-content {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+/* Sticky bottom CTA */
+.mwiz-cta {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    padding: .9rem 1.25rem 1.25rem;
+    background: linear-gradient(180deg, rgba(14,22,32,0) 0%, var(--ink) 35%);
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    align-items: center;
+}
+.mwiz-cta-hint {
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: center;
+}
+.mwiz-btn, .mwiz-btn-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--gold);
+    background: var(--gold);
+    color: var(--ink-deep, #1c1814);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity .15s, transform .12s;
+}
+.mwiz-btn:active, .mwiz-btn-link:active { transform: scale(.985); }
+.mwiz-btn[disabled] {
+    opacity: .55;
+    cursor: default;
+    background: var(--ink-card);
+    color: var(--cream-mute);
+    border-color: var(--ink-line);
+}
+.mwiz-ghost-link {
+    color: var(--cream-mute);
+    text-decoration: none;
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    text-align: center;
+}
+.mwiz-ghost-link:hover { color: var(--gold); }
+
+/* ── Reusable pieces ── */
+.mwiz-list {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    margin-bottom: .25rem;
+}
+.mwiz-list-more {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    padding: .5rem 0;
+}
+
+/* Pill: source / member entry */
+.mwiz-source-pill {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: .75rem;
+    padding: .85rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-card);
+}
+.mwiz-source-platform {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .2em;
+    color: var(--gold);
+    padding: .15rem .55rem;
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+}
+.mwiz-source-id {
+    font-family: var(--serif);
+    font-size: .92rem;
+    color: var(--cream);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mwiz-source-check {
+    color: var(--gold);
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* Add-X pill — same shape, dashed border to read as an action affordance */
+.mwiz-add-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    width: 100%;
+    padding: 1rem 1rem;
+    border-radius: 999px;
+    border: 1.5px dashed var(--ink-line);
+    background: transparent;
+    color: var(--cream);
+    font-family: var(--serif);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+}
+.mwiz-add-pill:hover { border-color: var(--gold); color: var(--gold); }
+.mwiz-add-plus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.mwiz-ghost-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: .85rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: transparent;
+    color: var(--cream-mute);
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+}
+.mwiz-ghost-pill:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Option (single-select, like the Vocabulary screens) */
+.mwiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+}
+.mwiz-option {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: .75rem;
+    width: 100%;
+    padding: 1.1rem 1.25rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink-line);
+    background: var(--ink-card);
+    color: var(--cream);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+.mwiz-option:active { transform: scale(.99); }
+.mwiz-option.is-active {
+    border-color: var(--gold);
+    border-width: 2px;
+}
+.mwiz-option-label { text-align: left; }
+.mwiz-option-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink);
+    color: var(--gold);
+    font-size: .85rem;
+    line-height: 1;
+}
+.mwiz-option.is-active .mwiz-option-check {
+    background: var(--gold);
+    color: var(--ink-deep, #1c1814);
+    border-color: var(--gold);
+}
+
+/* Form card (expands inside the page when "+ Add" is tapped) */
+.mwiz-form-card {
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 18px;
+    padding: 1rem 1rem 1.1rem;
+}
+.mwiz-field {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    margin-bottom: .85rem;
+}
+.mwiz-field-label {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+.mwiz-select, .mwiz-input {
+    width: 100%;
+    padding: .85rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink);
+    color: var(--cream);
+    font-family: var(--serif);
+    font-size: .98rem;
+    appearance: none;
+}
+.mwiz-select {
+    /* Inline caret so the pill keeps its symmetry */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23e8c889' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.25rem;
+}
+.mwiz-select:focus, .mwiz-input:focus {
+    border-color: var(--gold);
+    outline: none;
+}
+.mwiz-check-row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-family: var(--serif);
+    font-size: .92rem;
+    color: var(--cream);
+    margin-bottom: .85rem;
+}
+.mwiz-check-row input { accent-color: var(--gold); width: 18px; height: 18px; }
+.mwiz-form-actions {
+    display: flex;
+    gap: .55rem;
+    justify-content: flex-end;
+    margin-top: .5rem;
+}
+.mwiz-ghost {
+    background: transparent;
+    border: none;
+    padding: .65rem .85rem;
+    color: var(--cream-mute);
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.mwiz-ghost:hover { color: var(--gold); }
+.mwiz-btn-inline {
+    padding: .65rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--gold);
+    background: var(--gold);
+    color: var(--ink-deep, #1c1814);
+    font-family: var(--serif);
+    font-size: .92rem;
+    cursor: pointer;
+}
+.mwiz-btn-inline[disabled] {
+    opacity: .55;
+    cursor: default;
+}
+.mwiz-err {
+    margin-top: .65rem;
+    padding: .65rem .85rem;
+    border-radius: 12px;
+    background: rgba(160,72,48,.08);
+    border: 1px solid rgba(160,72,48,.35);
+    color: var(--rust, #d49382);
+    font-family: var(--serif);
+    font-size: .88rem;
+}
+
+/* Stats row (members step) */
+.mwiz-stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .75rem;
+    margin-bottom: .25rem;
+}
+.mwiz-stat {
+    padding: .9rem .5rem;
+    border-radius: 14px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-card);
+    text-align: center;
+}
+.mwiz-stat-val {
+    display: block;
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: .25rem;
+}
+.mwiz-stat-label {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+
+/* Rivalry pill — like source-pill but with a delete button on the right */
+.mwiz-rival-pill {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: .75rem;
+    padding: .85rem 1rem .85rem 1.1rem;
+    border-radius: 18px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-card);
+}
+.mwiz-rival-pill.is-new {
+    border-color: var(--gold);
+}
+.mwiz-rival-body { min-width: 0; }
+.mwiz-rival-pair {
+    font-family: var(--serif);
+    font-size: .98rem;
+    color: var(--cream);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mwiz-rival-name {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .12em;
+    color: var(--gold);
+    margin-top: .15rem;
+}
+.mwiz-rival-del {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: transparent;
+    color: var(--cream-mute);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.mwiz-rival-del:hover { color: var(--rust, #d49382); border-color: var(--rust, #d49382); }
+
+/* Sync progress card */
+.mwiz-progress-card {
+    padding: 1rem 1rem 1.1rem;
+    border-radius: 18px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-card);
+}
+.mwiz-progress-card .mwiz-progress-track {
+    height: 4px;
+    background: var(--ink-line);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: .4rem;
+}
+.mwiz-progress-card .mwiz-progress-fill {
+    height: 100%;
+    background: var(--gold);
+    transition: width .35s ease;
+}
+.mwiz-progress-card .mwiz-progress-meta {
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: .65rem;
+}
+.mwiz-sync-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .35rem; }
+.mwiz-sync-row {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem .65rem;
+    border-radius: 999px;
+    background: var(--ink);
+    font-family: var(--serif);
+    font-size: .9rem;
+    color: var(--cream);
+}
+.mwiz-sync-row.state-done { color: var(--cream); }
+.mwiz-sync-row.state-error { color: var(--rust, #d49382); }
+.mwiz-sync-row.state-running { color: var(--gold); }
+.mwiz-sync-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--ink-card);
+    font-size: .8rem;
+    line-height: 1;
+}
+.mwiz-sync-row.state-done .mwiz-sync-icon { background: var(--gold); color: var(--ink-deep, #1c1814); }
+.mwiz-sync-row.state-error .mwiz-sync-icon { background: rgba(160,72,48,.4); color: var(--cream); }
+.mwiz-sync-row.state-running .mwiz-sync-icon { background: var(--gold-deep); color: var(--ink-deep, #1c1814); }
+.mwiz-sync-name {
+    font-family: var(--mono);
+    font-size: .65rem;
+    letter-spacing: .18em;
+}
+.mwiz-sync-state {
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mwiz-warnings { margin-top: .85rem; }
+.mwiz-warnings-toggle {
+    background: transparent;
+    border: 1px solid rgba(232, 200, 137, .35);
+    color: var(--gold);
+    padding: .4rem .75rem;
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.mwiz-warnings-list {
+    list-style: none;
+    padding: .55rem .75rem;
+    margin: .55rem 0 0;
+    background: rgba(232,200,137,.05);
+    border-radius: 10px;
+    font-family: var(--serif);
+    font-size: .82rem;
+    color: var(--cream-soft);
+}
+.mwiz-warnings-list li { margin-bottom: .25rem; }
+
+/* Publish step bits */
+.mwiz-pub-card {
+    padding: 1rem 1.1rem;
+    border-radius: 18px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-card);
+}
+.mwiz-pub-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: .6rem 0;
+    border-bottom: 1px dotted var(--ink-line);
+    font-family: var(--serif);
+    color: var(--cream-soft);
+}
+.mwiz-pub-row:last-child { border-bottom: none; }
+.mwiz-pub-row strong { color: var(--gold); font-family: var(--mono); font-size: .65rem; letter-spacing: .2em; text-transform: uppercase; font-weight: 500; }
+
+.mwiz-success {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: 1.1rem 1.1rem;
+    border-radius: 18px;
+    background: rgba(160,200,120,.06);
+    border: 1px solid rgba(160,200,120,.35);
+    color: var(--cream);
+    font-family: var(--serif);
+    font-size: .95rem;
+}
+.mwiz-success-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: rgba(160,200,120,.85);
+    color: var(--ink-deep, #1c1814);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.mwiz-success code {
+    background: var(--ink-soft);
+    padding: .1rem .4rem;
+    border-radius: 4px;
+    font-size: .82em;
+}
+
+.mwiz-empty {
+    padding: 1.1rem 1.1rem;
+    border-radius: 18px;
+    border: 1px dashed var(--ink-line);
+    background: transparent;
+    color: var(--cream-mute);
+    font-family: var(--serif);
+    font-size: .95rem;
+    text-align: center;
+}
+
+/* Embedded AddSourceForm uses .dc-form-* styles. Soften some defaults
+   that look heavy in the mobile pill form card. */
+.mwiz-form-card .dc-form-row { margin-bottom: .8rem; }
+.mwiz-form-card .dc-label {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .35rem;
+    display: block;
+}
+.mwiz-form-card .dc-input, .mwiz-form-card .dc-select, .mwiz-form-card .dc-textarea {
+    border-radius: 12px;
+    padding: .75rem .9rem;
+}
