@@ -260,8 +260,8 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
 
       {/* ── Screen 4.5 · The Plans (compact) ─── */}
       <section className="mlp-screen mlp-plans">
-        <span className="mlp-plans-kicker">Plans</span>
-        <h2 className="mlp-plans-title">Four <em>tiers.</em></h2>
+        <span className="mlp-plans-kicker">The Plans</span>
+        <h2 className="mlp-plans-title">Broken down into <em>Four tiers.</em></h2>
         <div className="mlp-plans-list">
           <Link href="/pricing" className="mlp-plans-row">
             <span className="mlp-plans-num">0</span>
