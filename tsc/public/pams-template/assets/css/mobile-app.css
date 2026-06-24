@@ -172,7 +172,12 @@ body {
     max-height: calc(100dvh - 4rem);
     margin: 0;
     padding: 0 0 calc(env(safe-area-inset-bottom) + .75rem);
-    background: var(--ink-soft);
+    /* --m-chrome-bg2 is the same color the appbar + tab bar already use,
+       so themed live pages (matchup-preview deep-green, manager-dna purple,
+       trades amber, etc.) get a sheet that visually belongs to the page
+       instead of dropping back to the default navy. Unthemed hub stays the
+       same near-navy default. */
+    background: var(--m-chrome-bg2);
     color: var(--cream);
     border: 1px solid var(--ink-line);
     border-bottom: none;

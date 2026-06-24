@@ -89,11 +89,12 @@ body { background: #f0e5c8; color: var(--ink); }
 .pd-hero-score { font-family: var(--serif); font-size: 1.6rem; color: var(--gold); line-height: 1; }
 .pd-hero-rec { font-family: var(--mono); font-weight: 700; font-size: .58rem; color: var(--cream-mute); margin-top: .25rem; }
 .pd-runners { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .5rem; }
-/* 2nd/3rd cards mirror the 1st-place hero card: gold field (instead of
-   navy) with a darker top stripe so the podium reads as a graded set. */
+/* 2nd/3rd cards mirror the 1st-place hero card: a lighter gold wash
+   (instead of navy) with a soft cream beam at the top so the podium reads
+   as a graded set without the dark beam fighting the warm field. */
 .pd-runner {
     position: relative;
-    background: linear-gradient(150deg, var(--gold), var(--gold-deep));
+    background: linear-gradient(150deg, #f3deae, var(--gold));
     border: 1px solid var(--gold-deep);
     border-radius: 10px;
     padding: .55rem .65rem;
@@ -104,7 +105,7 @@ body { background: #f0e5c8; color: var(--ink); }
 .pd-runner::before {
     content: '';
     position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--ink), transparent);
+    background: linear-gradient(90deg, transparent, var(--cream), transparent);
 }
 .pd-runner-logo { flex: none; width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: rgba(14, 22, 32, .15); border: 1px solid rgba(14, 22, 32, .25); }
 .pd-runner-body { min-width: 0; }
@@ -172,25 +173,23 @@ body { background: #f0e5c8; color: var(--ink); }
 .pr-detail { display: none; padding: .1rem .65rem .65rem 3rem; }
 .pr-row.is-open { background: rgba(232, 200, 137, .12); }
 .pr-row.is-open .pr-detail { display: block; }
-.fbar-row { display: grid; grid-template-columns: 1.35rem 2.6rem 1fr 2.2rem; gap: .4rem; align-items: center; margin-top: .25rem; }
+.fbar-row { display: grid; grid-template-columns: 1.1rem 2.6rem 1fr 2.2rem; gap: .4rem; align-items: center; margin-top: .25rem; }
 .fbar-label { font-family: var(--mono); font-weight: 700; font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pr-mute); }
 .fbar-track { height: 7px; background: rgba(14, 22, 32, .1); border-radius: 999px; overflow: hidden; }
 .fbar-fill { display: block; height: 100%; background: var(--gold-deep); border-radius: 999px; }
 .fbar-val { font-family: var(--mono); font-weight: 700; font-size: .56rem; color: var(--ink); text-align: right; }
-/* Per-factor rank badge: 1 = best in league for that factor, N = worst.
-   Top third green, middle gold, bottom red — same hierarchy readers
-   already see on win/loss deltas, so the colors don't need a legend. */
+/* Per-factor rank: 1 = best in league for that factor, N = worst.
+   Just colored mono text — top third green, middle gold-deep, bottom red.
+   Same hierarchy readers already see on win/loss deltas. */
 .fbar-rank {
-    width: 1.35rem; height: 1.35rem;
-    display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 50%;
     font-family: var(--mono); font-weight: 700;
-    font-size: .54rem;
-    color: #fff;
+    font-size: .62rem;
+    text-align: center;
+    line-height: 1;
 }
-.fbar-rank.good { background: var(--pr-good); }
-.fbar-rank.mid  { background: var(--gold-deep); color: var(--ink); }
-.fbar-rank.bad  { background: var(--pr-bad); }
+.fbar-rank.good { color: var(--pr-good); }
+.fbar-rank.mid  { color: var(--gold-deep); }
+.fbar-rank.bad  { color: var(--pr-bad); }
 .pr-detail-pf { margin-top: .4rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pr-mute); }
 .pr-detail-pf b { color: var(--ink); }
 
