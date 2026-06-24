@@ -9,7 +9,8 @@ import { LandingNav } from '@/components/landing/LandingNav'
 // (eight inline SVGs, multi-slide state machine) off the critical path.
 // Has to live in its own 'use client' file because `dynamic({ ssr:false })`
 // isn't allowed in Server Components.
-import { WelcomePopupLoader } from '@/components/landing/WelcomePopupLoader'
+// Vaulted 2026-06-24 — landing welcome popup hidden, keep import path for easy restore.
+// import { WelcomePopupLoader } from '@/components/landing/WelcomePopupLoader'
 import { MobileHome } from '@/components/landing/MobileHome'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
@@ -130,7 +131,7 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeFaqLd) }}
       />
-      <WelcomePopupLoader signedIn={signedIn} />
+      {/* <WelcomePopupLoader signedIn={signedIn} />  vaulted 2026-06-24 */}
       <div className="ticker">
         <div className="ticker-track">
           <div className="ticker-group">

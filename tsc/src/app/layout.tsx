@@ -109,8 +109,18 @@ export const metadata: Metadata = {
 // Tints the Android/Chrome toolbar (and the installed PWA's title bar) to
 // the site's ink so the chrome blends with the masthead instead of flashing
 // white. Matches theme_color in manifest.ts.
+//
+// width/initialScale default for every page so phones get a real mobile
+// viewport. Without this, pages that don't export their own `viewport`
+// (e.g. /dashboard, /account, /toc, /privacy, /terms, /dashboard/new)
+// fall back to iOS Safari's 980px default — the mobile fork renders, but
+// the whole page is scaled down to fit, so cards look "wide" and text
+// looks tiny. Pages that need a different setting (maximumScale, etc.)
+// can still override by exporting their own `viewport`.
 export const viewport: Viewport = {
   themeColor: "#0e1620",
+  width: "device-width",
+  initialScale: 1,
 };
 
 // Multi-block JSON-LD. AI assistants and search crawlers each weight
