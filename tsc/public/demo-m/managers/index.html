@@ -121,6 +121,8 @@
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
+    // "59-42-0" → "59-42" when the league has no ties on the books.
+    function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
 
     fetch('data/managers_directory.json')
         .then(function (r) { return r.ok ? r.json() : null; })
@@ -165,7 +167,7 @@
             '<span class="mg-body">' +
                 '<span class="mg-name">' + esc(m.name) + '<small>' + esc(m.team_latest || '') + ' · ' + tenure + '</small></span>' +
                 rings +
-                '<span class="mg-rec">' + esc(m.total_record) + '<small>' + (m.win_pct * 100).toFixed(0) + '% win</small></span>' +
+                '<span class="mg-rec">' + esc(rec(m.total_record)) + '<small>' + (m.win_pct * 100).toFixed(0) + '% win</small></span>' +
             '</span>' +
         '</a>';
     }

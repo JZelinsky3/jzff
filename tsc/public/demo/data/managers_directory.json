@@ -19,7 +19,17 @@
         2023
       ],
       "top_three_finishes": 5,
-      "playoff_appearances": 7
+      "playoff_appearances": 7,
+      "reg_record": "69-29-0",
+      "playoff_record": "7-5-0",
+      "reg_win_pct": 0.7041,
+      "playoff_win_pct": 0.5833,
+      "reg_wins": 69,
+      "reg_losses": 29,
+      "playoff_wins": 7,
+      "playoff_losses": 5,
+      "ppg": 125.47,
+      "avg_finish": 2.71
     },
     {
       "user_id": 1002,
@@ -39,7 +49,17 @@
         2021
       ],
       "top_three_finishes": 3,
-      "playoff_appearances": 6
+      "playoff_appearances": 6,
+      "reg_record": "59-39-0",
+      "playoff_record": "4-7-0",
+      "reg_win_pct": 0.602,
+      "playoff_win_pct": 0.3636,
+      "reg_wins": 59,
+      "reg_losses": 39,
+      "playoff_wins": 4,
+      "playoff_losses": 7,
+      "ppg": 123.78,
+      "avg_finish": 3.57
     },
     {
       "user_id": 1003,
@@ -59,7 +79,17 @@
         2022
       ],
       "top_three_finishes": 3,
-      "playoff_appearances": 6
+      "playoff_appearances": 6,
+      "reg_record": "58-40-0",
+      "playoff_record": "8-7-0",
+      "reg_win_pct": 0.5918,
+      "playoff_win_pct": 0.5333,
+      "reg_wins": 58,
+      "reg_losses": 40,
+      "playoff_wins": 8,
+      "playoff_losses": 7,
+      "ppg": 118.52,
+      "avg_finish": 4.0
     },
     {
       "user_id": 1004,
@@ -79,7 +109,17 @@
         2020
       ],
       "top_three_finishes": 2,
-      "playoff_appearances": 4
+      "playoff_appearances": 4,
+      "reg_record": "41-57-0",
+      "playoff_record": "5-3-0",
+      "reg_win_pct": 0.4184,
+      "playoff_win_pct": 0.625,
+      "reg_wins": 41,
+      "reg_losses": 57,
+      "playoff_wins": 5,
+      "playoff_losses": 3,
+      "ppg": 118.65,
+      "avg_finish": 6.43
     },
     {
       "user_id": 1005,
@@ -97,7 +137,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 3
+      "playoff_appearances": 3,
+      "reg_record": "43-55-0",
+      "playoff_record": "1-4-0",
+      "reg_win_pct": 0.4388,
+      "playoff_win_pct": 0.2,
+      "reg_wins": 43,
+      "reg_losses": 55,
+      "playoff_wins": 1,
+      "playoff_losses": 4,
+      "ppg": 112.86,
+      "avg_finish": 7.57
     },
     {
       "user_id": 1006,
@@ -117,7 +167,17 @@
         2024
       ],
       "top_three_finishes": 2,
-      "playoff_appearances": 6
+      "playoff_appearances": 6,
+      "reg_record": "55-43-0",
+      "playoff_record": "7-5-0",
+      "reg_win_pct": 0.5612,
+      "playoff_win_pct": 0.5833,
+      "reg_wins": 55,
+      "reg_losses": 43,
+      "playoff_wins": 7,
+      "playoff_losses": 5,
+      "ppg": 122.87,
+      "avg_finish": 5.0
     },
     {
       "user_id": 1007,
@@ -137,7 +197,17 @@
         2025
       ],
       "top_three_finishes": 5,
-      "playoff_appearances": 6
+      "playoff_appearances": 6,
+      "reg_record": "57-27-0",
+      "playoff_record": "8-6-0",
+      "reg_win_pct": 0.6786,
+      "playoff_win_pct": 0.5714,
+      "reg_wins": 57,
+      "reg_losses": 27,
+      "playoff_wins": 8,
+      "playoff_losses": 6,
+      "ppg": 127.07,
+      "avg_finish": 2.5
     },
     {
       "user_id": 1008,
@@ -155,7 +225,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 1
+      "playoff_appearances": 1,
+      "reg_record": "44-54-0",
+      "playoff_record": "1-2-0",
+      "reg_win_pct": 0.449,
+      "playoff_win_pct": 0.3333,
+      "reg_wins": 44,
+      "reg_losses": 54,
+      "playoff_wins": 1,
+      "playoff_losses": 2,
+      "ppg": 109.04,
+      "avg_finish": 8.43
     },
     {
       "user_id": 1009,
@@ -173,7 +253,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 0
+      "playoff_appearances": 0,
+      "reg_record": "20-50-0",
+      "playoff_record": "0-0-0",
+      "reg_win_pct": 0.2857,
+      "playoff_win_pct": 0,
+      "reg_wins": 20,
+      "reg_losses": 50,
+      "playoff_wins": 0,
+      "playoff_losses": 0,
+      "ppg": 107.37,
+      "avg_finish": 11.4
     },
     {
       "user_id": 1010,
@@ -191,7 +281,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 0
+      "playoff_appearances": 0,
+      "reg_record": "44-54-0",
+      "playoff_record": "0-0-0",
+      "reg_win_pct": 0.449,
+      "playoff_win_pct": 0,
+      "reg_wins": 44,
+      "reg_losses": 54,
+      "playoff_wins": 0,
+      "playoff_losses": 0,
+      "ppg": 110.5,
+      "avg_finish": 8.14
     },
     {
       "user_id": 1011,
@@ -209,7 +309,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 0
+      "playoff_appearances": 0,
+      "reg_record": "39-59-0",
+      "playoff_record": "0-0-0",
+      "reg_win_pct": 0.398,
+      "playoff_win_pct": 0,
+      "reg_wins": 39,
+      "reg_losses": 59,
+      "playoff_wins": 0,
+      "playoff_losses": 0,
+      "ppg": 107.11,
+      "avg_finish": 9.57
     },
     {
       "user_id": 1012,
@@ -227,7 +337,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 1
+      "playoff_appearances": 1,
+      "reg_record": "17-25-0",
+      "playoff_record": "0-1-0",
+      "reg_win_pct": 0.4048,
+      "playoff_win_pct": 0.0,
+      "reg_wins": 17,
+      "reg_losses": 25,
+      "playoff_wins": 0,
+      "playoff_losses": 1,
+      "ppg": 110.3,
+      "avg_finish": 9.0
     },
     {
       "user_id": 1013,
@@ -245,7 +365,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 0
+      "playoff_appearances": 0,
+      "reg_record": "7-21-0",
+      "playoff_record": "0-0-0",
+      "reg_win_pct": 0.25,
+      "playoff_win_pct": 0,
+      "reg_wins": 7,
+      "reg_losses": 21,
+      "playoff_wins": 0,
+      "playoff_losses": 0,
+      "ppg": 98.08,
+      "avg_finish": 13.0
     },
     {
       "user_id": 1014,
@@ -263,7 +393,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 1,
-      "playoff_appearances": 2
+      "playoff_appearances": 2,
+      "reg_record": "22-20-0",
+      "playoff_record": "1-2-0",
+      "reg_win_pct": 0.5238,
+      "playoff_win_pct": 0.3333,
+      "reg_wins": 22,
+      "reg_losses": 20,
+      "playoff_wins": 1,
+      "playoff_losses": 2,
+      "ppg": 118.19,
+      "avg_finish": 6.0
     },
     {
       "user_id": 1015,
@@ -281,7 +421,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 0
+      "playoff_appearances": 0,
+      "reg_record": "7-7-0",
+      "playoff_record": "0-0-0",
+      "reg_win_pct": 0.5,
+      "playoff_win_pct": 0,
+      "reg_wins": 7,
+      "reg_losses": 7,
+      "playoff_wins": 0,
+      "playoff_losses": 0,
+      "ppg": 105.76,
+      "avg_finish": 9.0
     },
     {
       "user_id": 1016,
@@ -299,7 +449,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 0
+      "playoff_appearances": 0,
+      "reg_record": "14-14-0",
+      "playoff_record": "0-0-0",
+      "reg_win_pct": 0.5,
+      "playoff_win_pct": 0,
+      "reg_wins": 14,
+      "reg_losses": 14,
+      "playoff_wins": 0,
+      "playoff_losses": 0,
+      "ppg": 111.31,
+      "avg_finish": 8.0
     },
     {
       "user_id": 1017,
@@ -317,7 +477,17 @@
       "championships": 0,
       "championship_seasons": [],
       "top_three_finishes": 0,
-      "playoff_appearances": 0
+      "playoff_appearances": 0,
+      "reg_record": "6-8-0",
+      "playoff_record": "0-0-0",
+      "reg_win_pct": 0.4286,
+      "playoff_win_pct": 0,
+      "reg_wins": 6,
+      "reg_losses": 8,
+      "playoff_wins": 0,
+      "playoff_losses": 0,
+      "ppg": 109.21,
+      "avg_finish": 12.0
     }
   ]
 }

@@ -94,6 +94,7 @@
 (function () {
     'use strict';
 
+    function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
     function esc(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -124,7 +125,7 @@
                         '<div class="se-feature-champ"><em>' + esc(featured.champion_name) + '</em> takes the crown</div>' +
                         '<div class="m-mono" style="margin-top:.35rem">' +
                             esc(featured.champion_team_name || '') +
-                            (featured.champion_record ? ' · ' + esc(featured.champion_record) : '') +
+                            (featured.champion_record ? ' · ' + esc(rec(featured.champion_record)) : '') +
                             ' · ' + featured.total_teams + ' teams' +
                         '</div>' +
                     '</a>';
@@ -142,7 +143,7 @@
                 return '<a class="m-list-row se-row' + (partial ? ' se-row-partial' : '') + '" href="seasons/season.html?year=' + s.year + '">' +
                     '<span class="se-year">' + s.year + '</span>' +
                     '<span class="se-row-name">' + esc(s.champion_name || '—') + '<small>' + sub + '</small></span>' +
-                    '<span class="se-row-rec">' + esc(s.champion_record || '') + '</span>' +
+                    '<span class="se-row-rec">' + esc(rec(s.champion_record || '')) + '</span>' +
                     '<svg class="m-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg>' +
                 '</a>';
             }).join('');

@@ -143,6 +143,7 @@
         if (n == null || isNaN(n)) return '—';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
+    function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
     function toRoman(n) {
         var map = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
         var out = ''; var v = Math.floor(n);
@@ -197,7 +198,7 @@
         var champ = s.champion || {};
         var cells = [
             [s.total_teams || standings.length || '—', 'Teams'],
-            [champ.record ? esc(champ.record) : '—', 'Title Run'],
+            [champ.record ? esc(rec(champ.record)) : '—', 'Title Run'],
             [champ.points_for ? num(champ.points_for, 0) : '—', 'Champ PF'],
         ];
         document.getElementById('statGrid').innerHTML = cells.map(function (c) {

@@ -144,6 +144,8 @@
         if (n == null || isNaN(n)) return '—';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
+    // "59-42-0" → "59-42" when the league has no ties on the books.
+    function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
 
     var rivalryId = new URLSearchParams(window.location.search).get('id');
     if (!rivalryId) {
@@ -187,8 +189,8 @@
             ['Series wins', a.wins || 0, b.wins || 0, true],
             ['Avg points', num(a.avg_ppg), num(b.avg_ppg), true],
             ['High score', a.high_score ? num(a.high_score.score) : '—', b.high_score ? num(b.high_score.score) : '—', true],
-            ['Regular season', esc(a.reg_record || '—'), esc(b.reg_record || '—'), false],
-            ['Playoffs', esc(a.playoff_record || '—'), esc(b.playoff_record || '—'), false],
+            ['Regular season', esc(rec(a.reg_record) || '—'), esc(rec(b.reg_record) || '—'), false],
+            ['Playoffs', esc(rec(a.playoff_record) || '—'), esc(rec(b.playoff_record) || '—'), false],
         ];
         document.getElementById('cmpSection').hidden = false;
         document.getElementById('cmp').innerHTML = rows.map(function (row) {

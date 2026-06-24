@@ -138,6 +138,8 @@
         if (n == null || isNaN(n)) return '—';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
+    // "59-42-0" → "59-42" when the league has no ties on the books.
+    function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
 
     var userId = new URLSearchParams(window.location.search).get('id');
     if (!userId) {
@@ -176,10 +178,10 @@
 
         // Stat grid (3×2)
         var stats = [
-            [esc(m.reg_record || '—'), 'Record'],
+            [esc(rec(m.reg_record) || '—'), 'Record'],
             [m.reg_win_pct != null ? (m.reg_win_pct * 100).toFixed(0) + '%' : '—', 'Win pct'],
             [num(m.avg_ppg), 'Avg PPG'],
-            [esc(m.playoff_record || '—'), 'Playoffs'],
+            [esc(rec(m.playoff_record) || '—'), 'Playoffs'],
             [num(m.high_score), 'High'],
             [num(m.low_score), 'Low'],
         ];
@@ -200,7 +202,7 @@
                     '<span class="mp-year">' + s.year + '</span>' +
                     '<span class="mp-led-name">' + esc(s.team_name || '') + '<small>' + num(s.avg_ppg) + ' ppg</small></span>' +
                     rank +
-                    '<span class="mp-led-rec">' + esc(s.reg_record || '') + '<small>' + num(s.total_pf, 0) + ' pf</small></span>' +
+                    '<span class="mp-led-rec">' + esc(rec(s.reg_record) || '') + '<small>' + num(s.total_pf, 0) + ' pf</small></span>' +
                 '</a>';
             }).join('');
         }
@@ -210,9 +212,9 @@
         if (h2h.length) {
             document.getElementById('h2hSection').hidden = false;
             document.getElementById('h2h').innerHTML = h2h.map(function (o) {
-                var rec = o.total_record || '';
+                var raw = o.total_record || '';
                 var tone = 'even';
-                var parts = rec.split('-').map(Number);
+                var parts = raw.split('-').map(Number);
                 if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
                     if (parts[0] > parts[1]) tone = 'lead';
                     else if (parts[0] < parts[1]) tone = 'trail';
@@ -220,7 +222,7 @@
                 return '<a class="m-list-row" href="managers/manager.html?id=' + encodeURIComponent(o.opp_user_id) + '">' +
                     '<span class="mp-h2h-name">vs ' + esc(o.opp_name) +
                         '<small>' + (o.total_games || 0) + (o.total_games === 1 ? ' meeting' : ' meetings') + '</small></span>' +
-                    '<span class="mp-h2h-rec ' + tone + '">' + esc(rec) + '</span>' +
+                    '<span class="mp-h2h-rec ' + tone + '">' + esc(rec(raw)) + '</span>' +
                 '</a>';
             }).join('');
         }
