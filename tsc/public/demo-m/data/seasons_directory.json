@@ -5,6 +5,7 @@
       "champion_name": "Marcus",
       "champion_team_name": "Hammer Time",
       "champion_user_id": 1001,
+      "champion_record": "10-4-0",
       "total_teams": 14,
       "has_complete_data": true
     },
@@ -13,6 +14,7 @@
       "champion_name": "Ethan",
       "champion_team_name": "East End",
       "champion_user_id": 1004,
+      "champion_record": "8-6-0",
       "total_teams": 12,
       "has_complete_data": true
     },
@@ -21,6 +23,7 @@
       "champion_name": "Tyler",
       "champion_team_name": "Crosstown Comets",
       "champion_user_id": 1002,
+      "champion_record": "7-7-0",
       "total_teams": 12,
       "has_complete_data": true
     },
@@ -29,6 +32,7 @@
       "champion_name": "Jordan",
       "champion_team_name": "Highland Hawks",
       "champion_user_id": 1003,
+      "champion_record": "8-6-0",
       "total_teams": 12,
       "has_complete_data": true
     },
@@ -37,6 +41,7 @@
       "champion_name": "Marcus",
       "champion_team_name": "Stoneridge Hammers",
       "champion_user_id": 1001,
+      "champion_record": "11-3-0",
       "total_teams": 12,
       "has_complete_data": true
     },
@@ -45,6 +50,7 @@
       "champion_name": "Devin",
       "champion_team_name": "Den of Thieves",
       "champion_user_id": 1006,
+      "champion_record": "8-6-0",
       "total_teams": 12,
       "has_complete_data": true
     },
@@ -53,6 +59,7 @@
       "champion_name": "Cole",
       "champion_team_name": "Cold Front",
       "champion_user_id": 1007,
+      "champion_record": "10-4-0",
       "total_teams": 12,
       "has_complete_data": true
     }

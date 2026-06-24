@@ -20,6 +20,34 @@
 (function () {
     'use strict';
 
+    // ── Demo "Add to Home Screen" tile ──
+    // The static /demo and /demo-m pages aren't served by the almanac route,
+    // so they never get the apple-touch-icon + manifest tags that real
+    // leagues do — iOS falls back to a screenshot tile with a default letter.
+    // Inject the same head tags here, pointing at the icon/manifest API,
+    // which special-cases slug=demo so the tile renders the bookplate design
+    // with a "DEMO." monogram instead of a generic black square.
+    (function installDemoHomeScreenTile() {
+        var dc = window.__DC || {};
+        if (dc.slug !== 'demo') return;
+        if (window.__DC_DEMO_TILE_INSTALLED) return;
+        window.__DC_DEMO_TILE_INSTALLED = true;
+        var head = document.head;
+        function add(tag, attrs) {
+            if (attrs.rel && head.querySelector('link[rel="' + attrs.rel + '"]')) return;
+            if (attrs.name && head.querySelector('meta[name="' + attrs.name + '"]')) return;
+            var el = document.createElement(tag);
+            for (var k in attrs) el.setAttribute(k, attrs[k]);
+            head.appendChild(el);
+        }
+        add('link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/api/og/icon/demo?s=180&v=3' });
+        add('link', { rel: 'manifest', href: '/api/og/manifest/demo' });
+        add('meta', { name: 'apple-mobile-web-app-title', content: 'Demo' });
+        add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
+        add('meta', { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' });
+        add('meta', { name: 'theme-color', content: '#0e1620' });
+    })();
+
     // ── In-archive page registry (relative paths within /leagues/<slug>/) ──
     var PAGES = [
         { key: 'hub',       label: 'Hub',         path: './' },

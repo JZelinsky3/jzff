@@ -22,6 +22,10 @@
     "owner_name": "Cole",
     "owner_user_id": 1007,
     "record": "10-4-0",
-    "points_for": 2138.32
+    "reg_record": "10-4-0",
+    "playoff_record": "2-0-0",
+    "points_for": 2138.32,
+    "ppg": 133.65,
+    "championship_count": 1
   }
 }

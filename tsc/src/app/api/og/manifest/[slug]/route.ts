@@ -12,14 +12,27 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
-  const db = createAdminClient()
-  const { data: league } = await db
-    .from('leagues')
-    .select('id, name, slug, published_at')
-    .eq('slug', slug)
-    .maybeSingle()
-  if (!league || !league.published_at) {
-    return NextResponse.json({ error: 'not found' }, { status: 404 })
+
+  // The static /demo (+ /demo-m) sites aren't in the leagues table — they
+  // serve raw HTML out of /public. Treat slug=demo as a synthetic league so
+  // "Add to Home Screen" on the demo gets a real manifest and matching icon.
+  let league: { name: string; slug: string } | null = null
+  let startUrl: string
+  if (slug === 'demo') {
+    league = { name: 'Demo League', slug: 'demo' }
+    startUrl = '/demo/'
+  } else {
+    const db = createAdminClient()
+    const { data } = await db
+      .from('leagues')
+      .select('id, name, slug, published_at')
+      .eq('slug', slug)
+      .maybeSingle()
+    if (!data || !data.published_at) {
+      return NextResponse.json({ error: 'not found' }, { status: 404 })
+    }
+    league = data
+    startUrl = `/leagues/${data.slug}/`
   }
 
   // short_name shows under the icon — home screens truncate past ~12 chars,
@@ -33,8 +46,8 @@ export async function GET(
     {
       name: league.name,
       short_name: shortName,
-      start_url: `/leagues/${league.slug}/`,
-      scope: `/leagues/${league.slug}/`,
+      start_url: startUrl,
+      scope: startUrl,
       display: 'standalone',
       background_color: '#0e1620',
       theme_color: '#0e1620',

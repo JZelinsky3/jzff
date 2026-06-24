@@ -36,13 +36,23 @@ export async function GET(
 ) {
   const { slug } = await params
 
-  const db = createAdminClient()
-  const { data: league } = await db
-    .from('leagues')
-    .select('id, name, slug, abbreviation, published_at')
-    .eq('slug', slug)
-    .maybeSingle()
-  if (!league || !league.published_at) {
+  // The static /demo and /demo-m sites aren't in the leagues table — they
+  // serve raw HTML out of /public. Treat slug=demo as a synthetic league so
+  // "Add to Home Screen" on the demo gets the same designed bookplate tile
+  // (with a "DEMO." monogram) instead of an iOS-default first-letter tile.
+  let league: { name: string; slug: string; abbreviation: string | null } | null = null
+  if (slug === 'demo') {
+    league = { name: 'Demo League', slug: 'demo', abbreviation: 'DEMO' }
+  } else {
+    const db = createAdminClient()
+    const { data } = await db
+      .from('leagues')
+      .select('id, name, slug, abbreviation, published_at')
+      .eq('slug', slug)
+      .maybeSingle()
+    if (data && data.published_at) league = data
+  }
+  if (!league) {
     return new Response('Not found', { status: 404 })
   }
 
