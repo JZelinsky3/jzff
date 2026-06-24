@@ -15948,3 +15948,56 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     border-radius: 12px;
     padding: .75rem .9rem;
 }
+
+/* Suppress the global mobile site menu on pages that ship their OWN
+   top-right control. Two avatars in the corner = visual overlap. The
+   .mlib/.mnew/.mpg/.mwiz/.mlh/.mlsub-wrap selectors live next to their
+   component blocks above; collected here for the components that ship
+   bespoke top bars without an msm-suppressing CSS namespace of their
+   own. */
+.mpricing ~ .msm-root,
+.mplans ~ .msm-root,
+.mlogin ~ .msm-root {
+    display: none !important;
+}
+
+/* The Clubhouse (no mobile fork) — its masthead carries the bookshelf /
+   login pill on the left and the theme toggle on the right, both in the
+   same area where MobileSiteMenu floats. Hide the MSM trigger so the
+   masthead is the only top-right control on hub pages. Hub layout sets
+   .hub-root on the wrapper. */
+.hub-root ~ .msm-root {
+    display: none !important;
+}
+
+
+/* Phone-forced-desktop escape — rendered in the root layout whenever
+   `isMobileForcingDesktop()` is true, so a mobile user who tapped
+   "View desktop site" on any page can always step back into the
+   mobile tree. Mirrors the per-league .lh-mobile-pill / landing
+   .mlp-backpill. */
+.mview-escape {
+    display: none;
+}
+@media (max-width: 720px) {
+    .mview-escape {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        position: fixed;
+        left: 50%;
+        bottom: 1rem;
+        transform: translateX(-50%);
+        z-index: 9999;
+        padding: .55rem 1rem;
+        border-radius: 999px;
+        background: var(--gold);
+        color: var(--ink-deep, #1c1814);
+        font-family: var(--mono);
+        font-size: .58rem;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        text-decoration: none;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+    }
+}

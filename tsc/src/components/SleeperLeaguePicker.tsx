@@ -153,7 +153,6 @@ export function SleeperLeaguePicker({
     textTransform: 'uppercase',
     textAlign: 'left',
     cursor: 'pointer',
-    textDecoration: 'underline',
   }
 
   if (mode === 'username') {

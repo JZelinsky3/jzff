@@ -514,7 +514,6 @@ const toggleLinkStyle: React.CSSProperties = {
   textTransform: 'uppercase',
   textAlign: 'left',
   cursor: 'pointer',
-  textDecoration: 'underline',
   display: 'block',
 }
 

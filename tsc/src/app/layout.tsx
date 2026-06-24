@@ -6,6 +6,7 @@ import { MobileSiteMenu } from "@/components/MobileSiteMenu";
 import { MobileHeaderCollapse } from "@/components/MobileHeaderCollapse";
 import { createClient } from "@/lib/supabase/server";
 import { isSiteAdmin } from "@/lib/siteAdmin";
+import { isMobileForcingDesktop } from "@/lib/viewMode";
 // Order matters: globals.css imports tailwindcss; main.css is loaded second
 // so its custom design tokens (--ink, --cream, --gold, body bg) override the
 // Tailwind preflight resets. Bundling both via JS imports lets Next.js stream
@@ -233,6 +234,12 @@ export default async function RootLayout({
   const { data: { user } } = await supabase.auth.getUser();
   const signedIn = !!user;
   const admin = signedIn ? await isSiteAdmin(user!.id) : false;
+  // A phone that explicitly opted into the desktop view (dc_view=desktop)
+  // gets a global "Switch back to mobile" pill so they can always escape
+  // — otherwise a single accidental tap on a "View desktop site" link
+  // strands them in the desktop tree on every page until they hand-clear
+  // the cookie.
+  const stuckOnDesktop = await isMobileForcingDesktop();
 
   return (
     <html
@@ -253,6 +260,11 @@ export default async function RootLayout({
         <div className="site-grain"></div>
         {children}
         <MobileSiteMenu signedIn={signedIn} email={user?.email ?? null} admin={admin} />
+        {stuckOnDesktop && (
+          <a className="mview-escape" href="/api/view/?mode=mobile&to=/">
+            ◂ Switch to mobile site
+          </a>
+        )}
         <MobileHeaderCollapse />
         <Analytics />
         <SpeedInsights />
