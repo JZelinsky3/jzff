@@ -45,10 +45,7 @@ export function MobileLogin({
       </section>
 
       <footer className="mlogin-foot">
-        <Link href="/api/view/?mode=desktop&to=/login" className="mlogin-foot-link">
-          View desktop site
-        </Link>
-        <span className="mlogin-foot-sep">·</span>
+        {/* "View desktop site" link removed 2026-06-24 — see MobilePricing. */}
         <Link href="/about" className="mlogin-foot-link">About</Link>
         <span className="mlogin-foot-sep">·</span>
         <Link href="/pricing" className="mlogin-foot-link">Pricing</Link>

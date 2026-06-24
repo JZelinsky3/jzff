@@ -1,9 +1,7 @@
 import Link from 'next/link'
 import { OnboardingChecklist, type OnboardingStep } from '@/components/OnboardingChecklist'
 import { SiteFooter } from '@/components/SiteFooter'
-// MobileLibrary import + getViewMode fork vaulted 2026-06-24 — see fork
-// comment below. Re-add `import { MobileLibrary } from '@/components/dashboard/MobileLibrary'`
-// and `import { getViewMode } from '@/lib/viewMode'` to restore.
+import { MobileLibrary } from '@/components/dashboard/MobileLibrary'
 import { createClient } from '@/lib/supabase/server'
 import {
   getUserSubscription,
@@ -13,6 +11,7 @@ import {
   TIER_LIMITS,
 } from '@/lib/stripe'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+import { getViewMode } from '@/lib/viewMode'
 import { LeagueCardMenu } from './league-card-menu'
 
 export default async function DashboardPage({
@@ -137,25 +136,21 @@ export default async function DashboardPage({
   const earliestOwnedLeagueId =
     leagues && leagues.length > 0 ? leagues[leagues.length - 1].id : null
 
-  // MobileLibrary fork vaulted 2026-06-24 — user preferred the responsive
-  // desktop /dashboard tree on phones (The Archives. hero + Manager Hub
-  // card + big chips) over the compact mlib- utility shell. Keeping the
-  // component file in case we re-add a true mobile design later.
-  // if ((await getViewMode()) === 'mobile') {
-  //   return (
-  //     <MobileLibrary
-  //       leagues={leagues ?? []}
-  //       bookmarks={bookmarks}
-  //       isUDFA={isUDFA}
-  //       earliestOwnedLeagueId={earliestOwnedLeagueId}
-  //       comp={comp}
-  //       subActive={subActive}
-  //       subTierName={subTierName}
-  //       tier1Limit={tier1Limit}
-  //       showDemoCard={showDemoCard}
-  //     />
-  //   )
-  // }
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileLibrary
+        leagues={leagues ?? []}
+        bookmarks={bookmarks}
+        isUDFA={isUDFA}
+        earliestOwnedLeagueId={earliestOwnedLeagueId}
+        comp={comp}
+        subActive={subActive}
+        subTierName={subTierName}
+        tier1Limit={tier1Limit}
+        showDemoCard={showDemoCard}
+      />
+    )
+  }
 
   const onboardingSteps: OnboardingStep[] = [
     {

@@ -181,10 +181,7 @@ export function MobilePlans({
       />
 
       <footer className="mplans-bottom">
-        <Link href="/api/view/?mode=desktop&to=/pricing/plans" className="mplans-bottom-link">
-          View desktop site
-        </Link>
-        <span className="mplans-bottom-sep">·</span>
+        {/* "View desktop site" link removed 2026-06-24 — see MobilePricing. */}
         <Link href="/pricing" className="mplans-bottom-link">Pricing</Link>
         <span className="mplans-bottom-sep">·</span>
         <Link href="/" className="mplans-bottom-link">Home</Link>

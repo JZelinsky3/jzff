@@ -195,10 +195,10 @@ export function MobilePricing({
       </p>
 
       <footer className="mpricing-bottom">
-        <Link href="/api/view/?mode=desktop&to=/pricing" className="mpricing-bottom-link">
-          View desktop site
-        </Link>
-        <span className="mpricing-bottom-sep">·</span>
+        {/* "View desktop site" link removed 2026-06-24 — an accidental tap
+            here was flipping dc_view to desktop and causing /dashboard to
+            render the scaled desktop tree instead of MobileLibrary on the
+            next navigation. */}
         <Link href="/" className="mpricing-bottom-link">Home</Link>
         <span className="mpricing-bottom-sep">·</span>
         <Link href="/about" className="mpricing-bottom-link">About</Link>
