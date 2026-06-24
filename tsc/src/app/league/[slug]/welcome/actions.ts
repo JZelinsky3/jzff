@@ -133,3 +133,28 @@ export async function createRivalryInWizard(
   revalidatePath(`/league/${access.slug}/rivalries`)
   return { ok: true, rivalryName: name ?? undefined }
 }
+
+// Dismiss the "Setup wizard" callout on the league hub. One-way per league —
+// the wizard route itself stays reachable (typed URL, manager-page button on
+// mobile, etc.), but the prominent hub card goes away forever once the owner
+// marks it complete. Stored as a timestamp in leagues.settings JSONB to avoid
+// a schema migration.
+export async function dismissWelcomeCallout(leagueId: string): Promise<Result> {
+  const access = await assertOwner(leagueId)
+  if (!access.ok) return access
+
+  const db = createAdminClient()
+  const { data: row } = await db
+    .from('leagues')
+    .select('settings')
+    .eq('id', leagueId)
+    .maybeSingle()
+  const settings = (row?.settings ?? {}) as Record<string, unknown>
+  if (!settings.wizard_dismissed_at) {
+    settings.wizard_dismissed_at = new Date().toISOString()
+    const { error } = await db.from('leagues').update({ settings }).eq('id', leagueId)
+    if (error) return { ok: false, error: error.message }
+  }
+  revalidatePath(`/league/${access.slug}`)
+  return { ok: true }
+}

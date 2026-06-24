@@ -784,7 +784,6 @@ function StepPublish({
           <div className="wiz-publish-exits">
             <Link href={`/leagues/${slug}/`} className="dc-btn">View public almanac</Link>
             <Link href={`/league/${slug}`} className="dc-btn-ghost">Go to league hub</Link>
-            <Link href={`/league/${slug}/setup`} className="dc-btn-ghost">Open league setup page</Link>
           </div>
         </div>
       )}

@@ -14310,6 +14310,10 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     align-items: flex-end;
     gap: 1rem;
     margin-top: 2rem;
+    /* Trailing space below the footer so the Continue / Back buttons aren't
+       pinned to the viewport edge on long steps — leaves comfortable scroll
+       room and matches the breathing room on other long pages. */
+    margin-bottom: 5rem;
     padding-top: 1.5rem;
     border-top: 1px solid rgba(255, 247, 230, .1);
 }
