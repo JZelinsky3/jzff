@@ -14122,6 +14122,44 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     margin-right: auto;
 }
 
+/* Per-step header — leads each wizard page with a clear, readable
+   description instead of the corner-tucked section-meta style. */
+.wiz-step-header {
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 2px solid var(--dg-line);
+}
+.wiz-step-num {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .6rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .55rem;
+}
+.wiz-step-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(1.75rem, 3.5vw, 2.4rem);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    color: var(--cream);
+    margin: 0 0 .65rem;
+}
+.wiz-step-sub {
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    line-height: 1.55;
+    color: var(--cream-soft);
+    margin: 0;
+    max-width: 62ch;
+}
+@media (max-width: 600px) {
+    .wiz-step-title { font-size: 1.65rem; }
+    .wiz-step-sub { font-size: .95rem; line-height: 1.5; }
+}
+
 .wiz-card {
     background: rgba(255, 247, 230, .04);
     border: 1px solid rgba(255, 247, 230, .15);
@@ -14174,6 +14212,79 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
 }
 
 .wiz-form { margin-bottom: 1.5rem; }
+
+/* Rivalries list — slightly richer than the source list so the delete
+   chip has room, and the "NEW" badge stands out on session adds. */
+.wiz-rival-list {
+    list-style: none;
+    margin: .5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+.wiz-rival-row {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: .55rem .75rem;
+    background: rgba(255, 247, 230, .03);
+    border: 1px solid rgba(255, 247, 230, .08);
+    border-radius: 3px;
+}
+.wiz-rival-row.is-new {
+    background: rgba(232, 200, 137, .08);
+    border-color: rgba(232, 200, 137, .35);
+}
+.wiz-rival-mark {
+    flex-shrink: 0;
+    min-width: 2rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .58rem;
+    letter-spacing: .18em;
+    color: var(--gold);
+    text-align: center;
+}
+.wiz-rival-row.is-new .wiz-rival-mark {
+    background: var(--gold);
+    color: var(--ink);
+    padding: .15rem .35rem;
+    min-width: 0;
+}
+.wiz-rival-body { flex: 1; min-width: 0; }
+.wiz-rival-pair {
+    font-family: var(--serif);
+    font-size: .98rem;
+    color: var(--cream);
+    line-height: 1.25;
+}
+.wiz-rival-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .82rem;
+    color: var(--cream-soft);
+    margin-top: .15rem;
+}
+.wiz-rival-del {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid rgba(255, 247, 230, .15);
+    color: var(--cream-soft);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.wiz-rival-del:hover:not(:disabled) {
+    background: rgba(214, 90, 60, .15);
+    border-color: rgba(214, 90, 60, .5);
+    color: rgba(220, 130, 110, 1);
+}
+.wiz-rival-del:disabled { opacity: .5; cursor: wait; }
 
 .wiz-progress { margin-bottom: 1rem; }
 .wiz-progress-track {
@@ -14490,23 +14601,6 @@ option.wiz-used {
     .setup-wiz-callout-actions { width: 100%; flex-direction: row; }
     .setup-wiz-callout-actions .setup-wiz-callout-cta { flex: 1; }
 }
-
-/* Mobile members — "Run setup wizard" link styled to match other mmem rows */
-.mmem-wiz-link {
-    display: block;
-    text-align: center;
-    padding: .7rem 1rem;
-    background: rgba(255, 247, 230, .04);
-    border: 1px solid rgba(255, 247, 230, .15);
-    border-radius: 4px;
-    color: var(--cream);
-    text-decoration: none;
-    font-family: var(--font-display);
-    font-size: .7rem;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-}
-.mmem-wiz-link:active { background: rgba(255, 247, 230, .08); }
 
 @media (max-width: 600px) {
     .wiz-bar { padding: 0 1rem; }

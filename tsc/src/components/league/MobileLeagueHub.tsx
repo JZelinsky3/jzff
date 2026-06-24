@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { SyncButton } from '@/app/league/[slug]/sync-button'
 import { PublishButton } from '@/app/league/[slug]/setup/publish-button'
+import { SetupWizCallout } from '@/app/league/[slug]/setup-wiz-callout'
 
 type LeagueData = {
   id: string
@@ -123,11 +124,9 @@ export function MobileLeagueHub({
       </div>
 
       {/* ── Setup wizard re-entry (owner only) ── */}
-      {isOwner && (
+      {isOwner && !((league.settings ?? {}) as { wizard_dismissed_at?: string }).wizard_dismissed_at && (
         <div style={{ padding: '0 1rem', marginBottom: '.75rem' }}>
-          <Link href={`/league/${slug}/welcome`} className="mmem-wiz-link">
-            Run setup wizard
-          </Link>
+          <SetupWizCallout leagueId={league.id} slug={slug} />
         </div>
       )}
 

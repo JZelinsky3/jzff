@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { AddSourceForm } from '@/app/league/[slug]/sources/add-source-form'
 import { SetupList, type ProfileRow } from '@/app/league/[slug]/setup/setup-list'
 import { publishLeague } from '@/app/league/[slug]/setup/actions'
-import { setLatestSeasonLive, createRivalryInWizard } from './actions'
+import { setLatestSeasonLive, createRivalryInWizard, deleteRivalryInWizard } from './actions'
 
 type SourceLite = {
   id: string
@@ -485,7 +485,11 @@ function StepMembers({
 // Names that have appeared in any created rivalry this session render greyed
 // so the user can see who they've already used; greyed names stay selectable.
 
-type SessionRivalry = { a: string; b: string; aName: string; bName: string; name: string | null }
+// Stable order-independent key for a manager pair — the same pair always
+// hashes to the same string regardless of which manager was picked first.
+function pairKey(x: string, y: string): string {
+  return [x, y].sort().join('|')
+}
 
 function StepRivalries({
   leagueId,
@@ -500,28 +504,26 @@ function StepRivalries({
   onContinue: () => void
   onBack: () => void
 }) {
-  const [created, setCreated] = useState<SessionRivalry[]>([])
+  const router = useRouter()
   const [a, setA] = useState('')
   const [b, setB] = useState('')
   const [name, setName] = useState('')
   const [autoName, setAutoName] = useState(true)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  // Track ids we added this session so they can render with a "★ NEW" badge
+  // for visual feedback without being a duplicate row. Cleared on remount.
+  const [newIds, setNewIds] = useState<Set<string>>(new Set())
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // "Used" set spans both prior rivalries (from the DB) and any created this
-  // session. Existing-rivalry IDs may not match the wizard's primary-manager
-  // IDs exactly when merges happened after creation, but adding them anyway
-  // covers the common case where they do.
+  // "Used" set covers every rivalry currently on the DB. After add/delete we
+  // call router.refresh() so `existing` is always the source of truth — no
+  // session list to fall out of sync.
   const usedIds = useMemo(() => {
     const s = new Set<string>()
-    for (const r of created) { s.add(r.a); s.add(r.b) }
     for (const r of existing) { s.add(r.aId); s.add(r.bId) }
     return s
-  }, [created, existing])
-
-  function nameOf(id: string): string {
-    return managers.find((m) => m.id === id)?.name ?? '?'
-  }
+  }, [existing])
 
   async function add() {
     if (!a || !b) { setErr('Pick two managers.'); return }
@@ -536,46 +538,63 @@ function StepRivalries({
     })
     setBusy(false)
     if (!r.ok) { setErr(r.error); return }
-    setCreated((prev) => [
-      ...prev,
-      { a, b, aName: nameOf(a), bName: nameOf(b), name: r.rivalryName ?? null },
-    ])
+    // Mark the pair so the freshly-arrived row badges "NEW" — server refresh
+    // brings the row in by id, so the set keys off the pair string.
+    setNewIds((prev) => {
+      const next = new Set(prev)
+      next.add(pairKey(a, b))
+      return next
+    })
     setA(''); setB(''); setName('')
+    router.refresh()
   }
 
-  // Show existing + session rivalries together so leaving the wizard and
-  // coming back still surfaces what's there (previously the count appeared
-  // but the rows didn't).
-  const total = existing.length + created.length
+  async function remove(rivalryId: string) {
+    if (!confirm('Delete this rivalry?')) return
+    setDeletingId(rivalryId); setErr(null)
+    const r = await deleteRivalryInWizard({ leagueId, rivalryId })
+    setDeletingId(null)
+    if (!r.ok) { setErr(r.error); return }
+    router.refresh()
+  }
 
   return (
     <>
       <StepHeader
         num="§ 03"
         title="Pick the feuds"
-        sub="Hand-curated rivalries get their own pages in the public almanac. Pick two managers, name the grudge (or auto-name it)."
+        sub="Hand-curated rivalries get their own pages in the public almanac. Pick two managers, name the grudge (we'll auto-name it from a curated bank if you want)."
       />
 
-      {total > 0 && (
+      {existing.length > 0 && (
         <div className="wiz-card">
           <div className="wiz-card-title">
-            {total} rivalr{total === 1 ? 'y' : 'ies'} on file
+            {existing.length} rivalr{existing.length === 1 ? 'y' : 'ies'} on file
           </div>
-          <ul className="wiz-source-list">
-            {existing.map((r) => (
-              <li key={r.id}>
-                <span className="wiz-source-platform">★</span>
-                <span className="wiz-source-id">{r.aName} vs {r.bName}</span>
-                {r.name && <span className="wiz-source-sync">{r.name}</span>}
-              </li>
-            ))}
-            {created.map((r, i) => (
-              <li key={`new-${i}`}>
-                <span className="wiz-source-platform">★ NEW</span>
-                <span className="wiz-source-id">{r.aName} vs {r.bName}</span>
-                {r.name && <span className="wiz-source-sync">{r.name}</span>}
-              </li>
-            ))}
+          <ul className="wiz-rival-list">
+            {existing.map((r) => {
+              const isNew = newIds.has(pairKey(r.aId, r.bId))
+              const isDeleting = deletingId === r.id
+              return (
+                <li key={r.id} className={`wiz-rival-row ${isNew ? 'is-new' : ''}`}>
+                  <span className="wiz-rival-mark" aria-hidden>{isNew ? 'NEW' : '★'}</span>
+                  <div className="wiz-rival-body">
+                    <div className="wiz-rival-pair">{r.aName} vs {r.bName}</div>
+                    {r.name && <div className="wiz-rival-name">{r.name}</div>}
+                  </div>
+                  <button
+                    type="button"
+                    className="wiz-rival-del"
+                    onClick={() => remove(r.id)}
+                    disabled={isDeleting}
+                    aria-label="Delete rivalry"
+                    title="Delete rivalry"
+                  >
+                    {isDeleting ? '…' : '×'}
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </div>
       )}
@@ -820,11 +839,11 @@ function StepPublish({
 
 function StepHeader({ num, title, sub }: { num: string; title: string; sub: string }) {
   return (
-    <div className="section-header" style={{ marginBottom: '1.25rem' }}>
-      <span className="section-num">{num}</span>
-      <span className="section-title">{title} —</span>
-      <span className="section-meta" style={{ display: 'block', marginTop: '.5rem', maxWidth: '52ch', whiteSpace: 'normal' }}>{sub}</span>
-    </div>
+    <header className="wiz-step-header">
+      <div className="wiz-step-num">{num}</div>
+      <h2 className="wiz-step-title">{title}</h2>
+      <p className="wiz-step-sub">{sub}</p>
+    </header>
   )
 }
 

@@ -130,8 +130,39 @@ export async function createRivalryInWizard(
   })
   if (error) return { ok: false, error: error.message }
 
+  revalidatePath(`/league/${access.slug}/welcome`)
   revalidatePath(`/league/${access.slug}/rivalries`)
   return { ok: true, rivalryName: name ?? undefined }
+}
+
+// Wizard-friendly delete that does its own owner check and refreshes the
+// welcome route. The public deleteRivalry in /rivalries/actions.ts only
+// revalidates the rivalries page and skips auth — fine for that surface,
+// not enough here.
+const DeleteRivalrySchema = z.object({
+  leagueId: z.string().uuid(),
+  rivalryId: z.string().uuid(),
+})
+
+export async function deleteRivalryInWizard(
+  input: z.infer<typeof DeleteRivalrySchema>,
+): Promise<Result> {
+  const parsed = DeleteRivalrySchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: 'Invalid input.' }
+  const access = await assertOwner(parsed.data.leagueId)
+  if (!access.ok) return access
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('rivalries')
+    .delete()
+    .eq('id', parsed.data.rivalryId)
+    .eq('league_id', parsed.data.leagueId)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath(`/league/${access.slug}/welcome`)
+  revalidatePath(`/league/${access.slug}/rivalries`)
+  return { ok: true }
 }
 
 // Dismiss the "Setup wizard" callout on the league hub. One-way per league —
