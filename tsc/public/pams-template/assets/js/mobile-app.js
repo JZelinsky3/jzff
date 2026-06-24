@@ -120,6 +120,7 @@
             isBookmarked: !!dc.isBookmarked,
             leagueTier: dc.leagueTier || '',
             pageLocked: !!dc.pageLocked,
+            liveWeek: dc.liveWeek || null,
             managePath: dc.slug ? '/league/' + dc.slug : null,
             libraryPath: '/dashboard',
             viewerTier: dc.viewerTier || null,
@@ -590,10 +591,16 @@
             : '<span></span>';
 
         // Right slot: bookmark star on the hub for signed-in non-commish
-        // viewers (same rule as desktop's left-slot star).
+        // viewers (same rule as desktop's left-slot star). Live hub gets a
+        // quiet "Wk N" pill instead so the chrome reads as a live screen.
         var right = '<span></span>';
         if (page === 'hub' && ctx.isSignedIn && !ctx.isCommish && ctx.slug) {
             right = '<button class="m-appbar-action" id="nav-bookmark-btn" data-slug="' + escapeHtml(ctx.slug) + '" data-on="' + (ctx.isBookmarked ? '1' : '0') + '" aria-label="' + (ctx.isBookmarked ? 'Remove bookmark' : 'Bookmark this league') + '">' + ICONS.star(ctx.isBookmarked) + '</button>';
+        } else if (page === 'live') {
+            var lw = Number(ctx.liveWeek);
+            if (lw >= 1 && lw <= 18) {
+                right = '<span class="m-appbar-week" aria-label="Current week">Wk ' + lw + '</span>';
+            }
         }
 
         var center = (page === 'hub' ? '<div' : '<a href="./"') + ' class="m-appbar-center">'

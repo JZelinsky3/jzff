@@ -89,19 +89,28 @@ body { background: #f0e5c8; color: var(--ink); }
 .pd-hero-score { font-family: var(--serif); font-size: 1.6rem; color: var(--gold); line-height: 1; }
 .pd-hero-rec { font-family: var(--mono); font-weight: 700; font-size: .58rem; color: var(--cream-mute); margin-top: .25rem; }
 .pd-runners { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .5rem; }
+/* 2nd/3rd cards mirror the 1st-place hero card: gold field (instead of
+   navy) with a darker top stripe so the podium reads as a graded set. */
 .pd-runner {
-    background: rgba(255, 252, 244, .65);
-    border: 1px solid var(--pr-line);
+    position: relative;
+    background: linear-gradient(150deg, var(--gold), var(--gold-deep));
+    border: 1px solid var(--gold-deep);
     border-radius: 10px;
     padding: .55rem .65rem;
     display: flex; align-items: center; gap: .5rem;
     min-width: 0;
+    overflow: hidden;
 }
-.pd-runner-logo { flex: none; width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: rgba(14, 22, 32, .08); }
+.pd-runner::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--ink), transparent);
+}
+.pd-runner-logo { flex: none; width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: rgba(14, 22, 32, .15); border: 1px solid rgba(14, 22, 32, .25); }
 .pd-runner-body { min-width: 0; }
 .pd-runner-label { font-family: var(--mono); font-weight: 700; font-size: .46rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rust); }
 .pd-runner-name { font-weight: 600; font-size: .74rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pd-runner-meta { font-family: var(--mono); font-weight: 700; font-size: .54rem; color: var(--pr-mute); margin-top: .1rem; }
+.pd-runner-meta { font-family: var(--mono); font-weight: 700; font-size: .54rem; color: rgba(14, 22, 32, .72); margin-top: .1rem; }
 
 /* Section label */
 .pr-label {
@@ -150,9 +159,11 @@ body { background: #f0e5c8; color: var(--ink); }
 .pr-delta.same { color: var(--pr-mute); }
 .pr-team { min-width: 0; display: flex; align-items: center; gap: .5rem; }
 .pr-logo { flex: none; width: 26px; height: 26px; border-radius: 50%; object-fit: cover; background: rgba(14, 22, 32, .08); }
-.pr-team-body { min-width: 0; }
+/* Stack team name and manager line vertically — without this they ran into
+   each other on the same line (.62rem manager touching .8rem team name). */
+.pr-team-body { min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
 .pr-team-name { font-weight: 600; font-size: .8rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pr-team-mgr { font-size: .62rem; color: var(--pr-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-team-mgr { font-size: .62rem; color: var(--pr-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .1rem; }
 .pr-team-mgr .conf { font-family: var(--mono); font-size: .48rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rust); margin-left: .3rem; }
 .pr-rec { font-family: var(--mono); font-weight: 700; font-size: .6rem; color: var(--pr-mute); text-align: right; }
 .pr-score { font-family: var(--mono); font-weight: 700; font-size: .7rem; color: var(--gold-deep); text-align: right; }
@@ -161,11 +172,25 @@ body { background: #f0e5c8; color: var(--ink); }
 .pr-detail { display: none; padding: .1rem .65rem .65rem 3rem; }
 .pr-row.is-open { background: rgba(232, 200, 137, .12); }
 .pr-row.is-open .pr-detail { display: block; }
-.fbar-row { display: grid; grid-template-columns: 2.6rem 1fr 2.2rem; gap: .45rem; align-items: center; margin-top: .25rem; }
+.fbar-row { display: grid; grid-template-columns: 1.35rem 2.6rem 1fr 2.2rem; gap: .4rem; align-items: center; margin-top: .25rem; }
 .fbar-label { font-family: var(--mono); font-weight: 700; font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pr-mute); }
 .fbar-track { height: 7px; background: rgba(14, 22, 32, .1); border-radius: 999px; overflow: hidden; }
 .fbar-fill { display: block; height: 100%; background: var(--gold-deep); border-radius: 999px; }
 .fbar-val { font-family: var(--mono); font-weight: 700; font-size: .56rem; color: var(--ink); text-align: right; }
+/* Per-factor rank badge: 1 = best in league for that factor, N = worst.
+   Top third green, middle gold, bottom red — same hierarchy readers
+   already see on win/loss deltas, so the colors don't need a legend. */
+.fbar-rank {
+    width: 1.35rem; height: 1.35rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem;
+    color: #fff;
+}
+.fbar-rank.good { background: var(--pr-good); }
+.fbar-rank.mid  { background: var(--gold-deep); color: var(--ink); }
+.fbar-rank.bad  { background: var(--pr-bad); }
 .pr-detail-pf { margin-top: .4rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pr-mute); }
 .pr-detail-pf b { color: var(--ink); }
 
@@ -465,6 +490,11 @@ body { background: #f0e5c8; color: var(--ink); }
     }
 
     function renderTable(teams, confView) {
+        // Precompute per-factor ranks across ALL teams in this view so the
+        // expanded row can show "this team is #N in PF in the league".
+        // Rank 1 = highest value for that factor; ties resolved by stable
+        // order (sort is stable in modern JS).
+        var factorRanks = computeFactorRanks(teams);
         byId('rankBody').innerHTML = teams.map(function (t, i) {
             var rank = confView ? (t.conf_rank != null ? t.conf_rank : i + 1) : t.rank;
             var conf = t.division_name ? '<span class="conf">' + esc(t.division_name) + '</span>' : '';
@@ -482,14 +512,40 @@ body { background: #f0e5c8; color: var(--ink); }
                     '<span class="pr-score">' + t.score.toFixed(1) + '</span>' +
                 '</button>' +
                 '<div class="pr-detail">' +
-                    buildFactorBars(t.factors) +
+                    buildFactorBars(t.factors, factorRanks[i], teams.length) +
                     '<div class="pr-detail-pf">Points for · <b>' + t.pf.toFixed(1) + '</b></div>' +
                 '</div>' +
             '</div>';
         }).join('');
     }
 
-    function buildFactorBars(factors) {
+    // For each factor key, sort teams by value desc and stamp the resulting
+    // 1..N rank back onto each team's slot. Returns a map keyed by the
+    // team's row index (matches the iteration order in renderTable).
+    function computeFactorRanks(teams) {
+        var ranks = {};
+        if (!teams.length || !teams[0].factors) return ranks;
+        var keys = Object.keys(teams[0].factors);
+        keys.forEach(function (k) {
+            var slots = teams.map(function (t, i) { return { i: i, v: t.factors[k] == null ? -Infinity : t.factors[k] }; });
+            slots.sort(function (a, b) { return b.v - a.v; });
+            slots.forEach(function (s, idx) {
+                ranks[s.i] = ranks[s.i] || {};
+                ranks[s.i][k] = idx + 1;
+            });
+        });
+        return ranks;
+    }
+
+    // Top third = good (green), middle = mid (gold), bottom = bad (red).
+    function rankTone(rank, total) {
+        if (!total) return 'mid';
+        if (rank <= Math.ceil(total / 3)) return 'good';
+        if (rank > total - Math.ceil(total / 3)) return 'bad';
+        return 'mid';
+    }
+
+    function buildFactorBars(factors, ranks, total) {
         if (!factors) return '';
         var isPre = 'win_pct' in factors;
         var defs = isPre
@@ -501,7 +557,12 @@ body { background: #f0e5c8; color: var(--ink); }
             if (max <= 0) return '';
             var val = factors[d[0]] || 0;
             var pct = Math.min(100, (val / max) * 100);
+            var rank = ranks && ranks[d[0]];
+            var rankPill = rank
+                ? '<span class="fbar-rank ' + rankTone(rank, total) + '" aria-label="League rank ' + rank + '">' + rank + '</span>'
+                : '<span></span>';
             return '<div class="fbar-row">' +
+                rankPill +
                 '<span class="fbar-label">' + d[1] + '</span>' +
                 '<span class="fbar-track"><span class="fbar-fill" style="width:' + pct + '%"></span></span>' +
                 '<span class="fbar-val">' + val.toFixed(1) + '</span>' +

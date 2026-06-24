@@ -104,6 +104,20 @@ body {
     color: var(--gold);
     background: none; border: none;
 }
+/* Right-slot week chip — used by the Live hub appbar. Quiet gold pill that
+   reads as a status badge, not a tap target. */
+.m-appbar-week {
+    display: inline-flex; align-items: center;
+    margin-right: 12px;
+    padding: 4px 9px;
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    background: rgba(232, 200, 137, .08);
+    color: var(--gold);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
+    white-space: nowrap;
+}
 
 /* ============================================================
    BOTTOM TAB BAR
