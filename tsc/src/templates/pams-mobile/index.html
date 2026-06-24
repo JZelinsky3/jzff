@@ -9,29 +9,31 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <style>
-/* ── Gold ticker — the almanac's identity stripe, kept thin ── */
-.m-ticker {
+/* ── Status sash — the almanac's identity stripe, kept thin. In-season
+   shows a live pulse + week; off-season collapses to founding/volume. ── */
+.m-sash {
     background: var(--gold);
     color: var(--ink);
     border-bottom: 2px solid var(--ink);
     height: 30px;
-    display: flex; align-items: center; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
     margin: 0 -0.9rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .22em; text-transform: uppercase;
+    gap: .55rem;
+    white-space: nowrap; overflow: hidden;
 }
-.m-ticker-track {
-    display: flex; gap: 2.2rem; white-space: nowrap; padding-left: 2.2rem;
-    animation: m-ticker-scroll 40s linear infinite;
+.m-sash-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--rust);
+    box-shadow: 0 0 0 0 rgba(160, 72, 48, .7);
+    animation: m-sash-pulse 1.8s ease-out infinite;
 }
-.m-ticker-group { display: flex; gap: 2.2rem; }
-.m-ticker-item {
-    font-family: var(--mono); font-size: .6rem; font-weight: 700;
-    letter-spacing: .18em; text-transform: uppercase;
-    display: inline-flex; align-items: center; gap: .5rem;
-}
-.m-ticker-star { color: var(--rust); }
-@keyframes m-ticker-scroll {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
+.m-sash-sep { color: var(--ink); opacity: .35; }
+@keyframes m-sash-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(160, 72, 48, .55); }
+    70%  { box-shadow: 0 0 0 7px rgba(160, 72, 48, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(160, 72, 48, 0); }
 }
 
 /* ── Hero ── */
@@ -242,12 +244,10 @@
 
 <main class="m-main">
 
-    <div class="m-ticker" aria-hidden="true">
-        <div class="m-ticker-track" id="tickerTrack"></div>
-    </div>
+    <div class="m-sash" id="sash" aria-hidden="true"></div>
 
     <header class="m-hero">
-        <div class="m-hero-sup">★ {{LEAGUE_ABBR}} · Founded {{LEAGUE_FOUNDED_ROMAN}} ★</div>
+        <div class="m-hero-sup">★ {{LEAGUE_ABBR}} · Founded {{LEAGUE_FOUNDED}} ★</div>
         <h1 class="m-hero-title">{{LEAGUE_NAME_HEAD}}<br><em>{{LEAGUE_NAME_TAIL}}.</em></h1>
     </header>
 
@@ -358,7 +358,7 @@
         grab('data/seasons_directory.json'),
     ]).then(function (res) {
         var league = res[0], recordBook = res[1], managersDir = res[2], rivalries = res[3], seasonsDir = res[4];
-        renderTicker(league, seasonsDir);
+        renderSash(league, seasonsDir);
         renderStats(league);
         renderChamp(league);
         renderStandings(managersDir);
@@ -368,23 +368,41 @@
         renderSeasons(seasonsDir);
     });
 
-    function renderTicker(league, seasonsDir) {
-        var items = ['{{LEAGUE_NAME_UPPER}}', 'EST. {{LEAGUE_FOUNDED}}'];
-        if (league) {
-            if (league.defending_champion) {
-                items.push(league.defending_champion.owner_name.toUpperCase() + ' · ' + league.defending_champion.year + ' CHAMPION');
+    // Live status sash: in-season pulses with the current week; off-season
+    // collapses to founding + volume number. window.__DC.liveWeek is set
+    // by the route handler when current_season is between 1 and 18.
+    function renderSash(league, seasonsDir) {
+        var sash = document.getElementById('sash');
+        if (!sash) return;
+        var dc = window.__DC || {};
+        var liveWeek = Number(dc.liveWeek);
+        var vol = (seasonsDir && seasonsDir.seasons && seasonsDir.seasons.length) || (league && league.total_seasons) || null;
+        var parts;
+        if (liveWeek >= 1 && liveWeek <= 18) {
+            parts = [
+                '<span class="m-sash-dot" aria-hidden="true"></span>',
+                'Live · Week ' + liveWeek,
+                '<span class="m-sash-sep">·</span>',
+                ((league && league.current_season) || new Date().getFullYear()) + ' Season',
+            ];
+        } else {
+            parts = [
+                (league && league.founded) ? 'Est. ' + league.founded : 'The Almanac',
+            ];
+            if (vol) {
+                parts.push('<span class="m-sash-sep">·</span>');
+                parts.push('Vol. ' + toRoman(vol));
             }
-            items.push(league.total_matchups + ' MATCHUPS PLAYED');
-            items.push(league.current_members_count + ' MANAGERS');
         }
-        if (seasonsDir && seasonsDir.seasons && seasonsDir.seasons.length) {
-            items.push(seasonsDir.seasons.length + ' SEASONS CHRONICLED');
-        }
-        var html = items.map(function (t) {
-            return '<span class="m-ticker-item"><span class="m-ticker-star">★</span> ' + esc(t) + '</span>';
-        }).join('');
-        document.getElementById('tickerTrack').innerHTML =
-            '<div class="m-ticker-group">' + html + '</div><div class="m-ticker-group">' + html + '</div>';
+        sash.innerHTML = parts.join(' ');
+    }
+    // Volume number stays in roman — it's an editorial numbering (Vol. I–VII),
+    // not a year, so readers don't need to decode "what year was that".
+    function toRoman(n) {
+        var map = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+        var out = ''; var v = Math.floor(n || 0);
+        for (var i = 0; i < map.length; i++) { while (v >= map[i][0]) { out += map[i][1]; v -= map[i][0]; } }
+        return out;
     }
 
     function renderStats(league) {

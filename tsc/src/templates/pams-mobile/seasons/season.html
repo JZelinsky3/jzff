@@ -172,9 +172,12 @@
 
     function renderHero(y, years) {
         document.getElementById('yearNum').textContent = y;
-        document.getElementById('yearRoman').textContent = '★ ' + toRoman(y) + ' ★';
         document.title = y + ' Season · ' + '{{LEAGUE_NAME}}';
         var idx = years.indexOf(y);
+        // Volume number = this year's index in the chronicled-seasons list
+        // (Vol. I for the league's first year, etc.). Roman is fine here —
+        // it's editorial numbering, not a year readers need to decode.
+        document.getElementById('yearRoman').textContent = idx >= 0 ? '★ Vol. ' + toRoman(idx + 1) + ' ★' : '';
         var prev = idx > 0 ? years[idx - 1] : null;
         var next = idx >= 0 && idx < years.length - 1 ? years[idx + 1] : null;
         var prevEl = document.getElementById('prevYear');

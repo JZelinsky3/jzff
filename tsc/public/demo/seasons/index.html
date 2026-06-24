@@ -232,7 +232,7 @@
 </div>
 
 <footer class="site-footer">
-    <span>Built by <em>jzFF</em> · LSL · Since MMXIX</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
+    <span>Built by <em>jzFF</em> · LSL · Since 2019</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
 </footer>
 
 
@@ -277,9 +277,12 @@ async function load() {
 
 function render(seasons, latest) {
     populateChrome(seasons);
+    // Volume number = chronological index (Vol. I = league's first season).
+    // Seasons are newest-first here, so we count backwards from total.
+    const total = seasons.length;
     document.getElementById('chronicle-container').innerHTML = `
         <div class="chronicle">
-            ${seasons.map(s => buildEntry(s, s.year === latest)).join('')}
+            ${seasons.map((s, i) => buildEntry(s, s.year === latest, total - i)).join('')}
         </div>`;
 }
 
@@ -308,7 +311,7 @@ function populateChrome(seasons) {
     });
 }
 
-function buildEntry(s, isFeatured) {
+function buildEntry(s, isFeatured, volNum) {
     const badge = isFeatured
         ? `<span class="entry-badge current">★ Reigning Champion</span>`
         : `<span class="entry-badge champ">★ Champion</span>`;
@@ -336,7 +339,7 @@ function buildEntry(s, isFeatured) {
         <a href="seasons/season.html?year=${s.year}" class="season-entry${isFeatured ? ' featured' : ''}">
             <div class="entry-year-col">
                 <div class="entry-year">${s.year}</div>
-                <div class="entry-roman">${toRoman(s.year)}</div>
+                <div class="entry-roman">Vol. ${toRoman(volNum)}</div>
             </div>
 
             <div class="entry-center">
