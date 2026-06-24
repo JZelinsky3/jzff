@@ -17,6 +17,7 @@ type SourceLite = {
 }
 type ManagerLite = { id: string; name: string }
 type LatestSeason = { id: string; year: number; isLive: boolean }
+type ExistingRivalry = { id: string; name: string | null; aId: string; bId: string; aName: string; bName: string }
 
 type Props = {
   leagueId: string
@@ -26,7 +27,7 @@ type Props = {
   initialLastSyncedAt: string | null
   initialPublishedAt: string | null
   latestSeason: LatestSeason | null
-  initialRivalryCount: number
+  existingRivalries: ExistingRivalry[]
   yahooConnected: boolean
   managers: ManagerLite[]
   profiles: ProfileRow[]
@@ -118,7 +119,7 @@ export function Wizard(props: Props) {
           <StepRivalries
             leagueId={props.leagueId}
             managers={props.managers}
-            initialCount={props.initialRivalryCount}
+            existing={props.existingRivalries}
             onContinue={goNext}
             onBack={goBack}
           />
@@ -484,20 +485,22 @@ function StepMembers({
 // Names that have appeared in any created rivalry this session render greyed
 // so the user can see who they've already used; greyed names stay selectable.
 
+type SessionRivalry = { a: string; b: string; aName: string; bName: string; name: string | null }
+
 function StepRivalries({
   leagueId,
   managers,
-  initialCount,
+  existing,
   onContinue,
   onBack,
 }: {
   leagueId: string
   managers: ManagerLite[]
-  initialCount: number
+  existing: ExistingRivalry[]
   onContinue: () => void
   onBack: () => void
 }) {
-  const [created, setCreated] = useState<{ a: string; b: string; name: string | null }[]>([])
+  const [created, setCreated] = useState<SessionRivalry[]>([])
   const [a, setA] = useState('')
   const [b, setB] = useState('')
   const [name, setName] = useState('')
@@ -505,11 +508,16 @@ function StepRivalries({
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
+  // "Used" set spans both prior rivalries (from the DB) and any created this
+  // session. Existing-rivalry IDs may not match the wizard's primary-manager
+  // IDs exactly when merges happened after creation, but adding them anyway
+  // covers the common case where they do.
   const usedIds = useMemo(() => {
     const s = new Set<string>()
     for (const r of created) { s.add(r.a); s.add(r.b) }
+    for (const r of existing) { s.add(r.aId); s.add(r.bId) }
     return s
-  }, [created])
+  }, [created, existing])
 
   function nameOf(id: string): string {
     return managers.find((m) => m.id === id)?.name ?? '?'
@@ -528,9 +536,17 @@ function StepRivalries({
     })
     setBusy(false)
     if (!r.ok) { setErr(r.error); return }
-    setCreated((prev) => [...prev, { a, b, name: r.rivalryName ?? null }])
+    setCreated((prev) => [
+      ...prev,
+      { a, b, aName: nameOf(a), bName: nameOf(b), name: r.rivalryName ?? null },
+    ])
     setA(''); setB(''); setName('')
   }
+
+  // Show existing + session rivalries together so leaving the wizard and
+  // coming back still surfaces what's there (previously the count appeared
+  // but the rows didn't).
+  const total = existing.length + created.length
 
   return (
     <>
@@ -540,23 +556,27 @@ function StepRivalries({
         sub="Hand-curated rivalries get their own pages in the public almanac. Pick two managers, name the grudge (or auto-name it)."
       />
 
-      {(initialCount > 0 || created.length > 0) && (
+      {total > 0 && (
         <div className="wiz-card">
           <div className="wiz-card-title">
-            {created.length + (initialCount > 0 && created.length === 0 ? initialCount : 0)} rivalr{(created.length || initialCount) === 1 ? 'y' : 'ies'}{' '}
-            {initialCount > 0 && created.length === 0 ? 'on file' : 'added this session'}
+            {total} rivalr{total === 1 ? 'y' : 'ies'} on file
           </div>
-          {created.length > 0 && (
-            <ul className="wiz-source-list">
-              {created.map((r, i) => (
-                <li key={i}>
-                  <span className="wiz-source-platform">★</span>
-                  <span className="wiz-source-id">{nameOf(r.a)} vs {nameOf(r.b)}</span>
-                  {r.name && <span className="wiz-source-sync">{r.name}</span>}
-                </li>
-              ))}
-            </ul>
-          )}
+          <ul className="wiz-source-list">
+            {existing.map((r) => (
+              <li key={r.id}>
+                <span className="wiz-source-platform">★</span>
+                <span className="wiz-source-id">{r.aName} vs {r.bName}</span>
+                {r.name && <span className="wiz-source-sync">{r.name}</span>}
+              </li>
+            ))}
+            {created.map((r, i) => (
+              <li key={`new-${i}`}>
+                <span className="wiz-source-platform">★ NEW</span>
+                <span className="wiz-source-id">{r.aName} vs {r.bName}</span>
+                {r.name && <span className="wiz-source-sync">{r.name}</span>}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -783,7 +803,7 @@ function StepPublish({
           </div>
           <div className="wiz-publish-exits">
             <Link href={`/leagues/${slug}/`} className="dc-btn">View public almanac</Link>
-            <Link href={`/league/${slug}`} className="dc-btn-ghost">Go to league hub</Link>
+            <Link href={`/league/${slug}`} className="dc-btn-ghost">Go to league setup</Link>
           </div>
         </div>
       )}

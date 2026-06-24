@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { loadManagerOptions } from '@/lib/managerOptions'
+import { loadManagerOptions, loadManagerNameMap } from '@/lib/managerOptions'
 import type { ProfileRow } from '@/app/league/[slug]/setup/setup-list'
 import { Wizard } from './wizard'
 
@@ -36,9 +36,10 @@ export default async function WelcomePage({
   const [
     { data: sourcesRaw },
     { data: latestSeason },
-    { count: rivalryCount },
+    { data: existingRivalries },
     { data: yahooTok },
     managers,
+    nameMap,
     { data: profileRows },
     { data: managerRows },
     { data: allSeasonRows },
@@ -55,9 +56,16 @@ export default async function WelcomePage({
       .order('year', { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from('rivalries').select('*', { count: 'exact', head: true }).eq('league_id', league.id),
+    supabase
+      .from('rivalries')
+      .select('id, name, manager_a_id, manager_b_id, created_at')
+      .eq('league_id', league.id)
+      .order('created_at'),
     supabase.from('yahoo_tokens').select('user_id').eq('user_id', user.id).maybeSingle(),
     loadManagerOptions(supabase, league.id),
+    // Resolves stored manager.id → canonical profile name (post-merge) so
+    // existing rivalries display the same names you'd see on the public site.
+    loadManagerNameMap(supabase, league.id),
     supabase
       .from('manager_profiles')
       .select('id, canonical_name, is_alumni_override, is_hidden')
@@ -146,7 +154,14 @@ export default async function WelcomePage({
       initialLastSyncedAt={league.last_synced_at}
       initialPublishedAt={league.published_at}
       latestSeason={latestSeason ? { id: latestSeason.id, year: latestSeason.year as number, isLive: !!latestSeason.is_live } : null}
-      initialRivalryCount={rivalryCount ?? 0}
+      existingRivalries={(existingRivalries ?? []).map((r) => ({
+        id: r.id,
+        name: r.name as string | null,
+        aId: r.manager_a_id as string,
+        bId: r.manager_b_id as string,
+        aName: nameMap.get(r.manager_a_id as string) ?? 'Unknown',
+        bName: nameMap.get(r.manager_b_id as string) ?? 'Unknown',
+      }))}
       yahooConnected={!!yahooTok}
       managers={managers.map((m) => ({ id: m.id, name: m.name }))}
       profiles={profiles}
