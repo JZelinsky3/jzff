@@ -315,6 +315,7 @@ function injectBaseTag(html: string, meta: LeagueMeta, file: string, servedMobil
     [1170, 2532, '390px', '844px', 3], // iPhone 12/13/14
     [1080, 2340, '360px', '780px', 3], // iPhone 12/13 mini
     [1125, 2436, '375px', '812px', 3], // iPhone X / XS / 11 Pro
+    [1242, 2688, '414px', '896px', 3], // iPhone XS Max / 11 Pro Max
     [ 828, 1792, '414px', '896px', 2], // iPhone XR / 11
     [1242, 2208, '414px', '736px', 3], // iPhone 6/7/8 Plus
     [ 750, 1334, '375px', '667px', 2], // iPhone 6/7/8 / SE 2/3

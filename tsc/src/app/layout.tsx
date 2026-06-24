@@ -117,6 +117,8 @@ export const metadata: Metadata = {
       { url: "/api/og/splash?w=1080&h=2340&v=1", media: "(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone X / XS / 11 Pro
       { url: "/api/og/splash?w=1125&h=2436&v=1", media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
+      // iPhone XS Max / 11 Pro Max
+      { url: "/api/og/splash?w=1242&h=2688&v=1", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },
       // iPhone XR / 11
       { url: "/api/og/splash?w=828&h=1792&v=1",  media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
       // iPhone 6/7/8 Plus
