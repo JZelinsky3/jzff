@@ -15456,6 +15456,281 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     color: var(--cream-mute);
 }
 
+/* Slim variant — single inline strip instead of three big cards, so the
+   counts don't dominate the screen on the members step. */
+.mwiz-stat-row-slim {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 1rem;
+    padding: .5rem .25rem;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-card);
+}
+.mwiz-stat-slim {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: .4rem;
+    padding: .15rem .25rem;
+    border-right: 1px solid var(--ink-line);
+}
+.mwiz-stat-slim:last-child { border-right: none; }
+.mwiz-stat-slim-val {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--gold);
+    line-height: 1;
+}
+.mwiz-stat-slim-label {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+}
+
+/* ── Members list — full list of profile rows with drawer-based actions */
+.mwiz-mlist {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+}
+.mwiz-mrow {
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: border-color .15s;
+}
+.mwiz-mrow.is-open { border-color: var(--gold-deep); }
+.mwiz-mrow.is-keeper {
+    border-color: var(--gold);
+    border-width: 2px;
+}
+.mwiz-mrow.is-merge-on {
+    border-color: var(--gold);
+}
+.mwiz-mrow.is-merge-off {
+    opacity: .7;
+}
+.mwiz-mrow.is-hidden .mwiz-mrow-name { opacity: .55; }
+
+.mwiz-mrow-head {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: .65rem;
+    width: 100%;
+    padding: .8rem 1rem;
+    background: transparent;
+    border: none;
+    color: var(--cream);
+    text-align: left;
+    cursor: pointer;
+}
+.mwiz-mrow.is-merge-on .mwiz-mrow-head,
+.mwiz-mrow.is-keeper .mwiz-mrow-head,
+.mwiz-mrow.is-merge-off .mwiz-mrow-head {
+    grid-template-columns: 26px 1fr auto;
+}
+.mwiz-mrow-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink-line);
+    background: var(--ink);
+    color: var(--gold);
+    font-size: .8rem;
+    line-height: 1;
+}
+.mwiz-mrow.is-merge-on .mwiz-mrow-check {
+    background: var(--gold);
+    color: var(--ink-deep, #1c1814);
+    border-color: var(--gold);
+}
+.mwiz-mrow.is-keeper .mwiz-mrow-check {
+    background: var(--gold);
+    color: var(--ink-deep, #1c1814);
+    border-color: var(--gold);
+}
+.mwiz-mrow-body {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 0;
+}
+.mwiz-mrow-name {
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--cream);
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mwiz-mrow-team {
+    font-family: var(--mono);
+    font-size: .62rem;
+    letter-spacing: .12em;
+    color: var(--cream-mute);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mwiz-mrow-badge {
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    padding: .2rem .55rem;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+}
+.mwiz-mrow-badge.tone-current { color: var(--gold); }
+.mwiz-mrow-badge.tone-alumni { color: var(--cream-mute); }
+.mwiz-mrow-badge.tone-hidden { color: var(--rust, #d49382); }
+.mwiz-mrow-caret {
+    color: var(--cream-mute);
+    font-size: .8rem;
+    width: 14px;
+    text-align: center;
+}
+
+.mwiz-mrow-drawer {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .4rem;
+    padding: 0 .65rem .65rem;
+}
+.mwiz-mact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .65rem .75rem;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink);
+    color: var(--cream);
+    font-family: var(--serif);
+    font-size: .88rem;
+    cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+}
+.mwiz-mact:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+}
+.mwiz-mact[disabled] { opacity: .55; cursor: default; }
+.mwiz-mact-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 1px solid var(--gold-deep);
+    color: var(--gold);
+    font-size: .75rem;
+    line-height: 1;
+}
+
+/* Mobile setup-wizard callout — sits inside the mobile league hub,
+   replaces the desktop SetupWizCallout's wide horizontal card. */
+.mwc {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+}
+.mwc-row {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    align-items: center;
+    gap: .85rem;
+    padding: .9rem 1rem;
+    border-radius: 18px;
+    border: 1px solid var(--gold-deep);
+    background: linear-gradient(180deg, rgba(232, 200, 137, .07), rgba(232, 200, 137, .02));
+    color: var(--cream);
+    text-decoration: none;
+    transition: border-color .2s, background .2s;
+}
+.mwc-row:active { transform: scale(.995); }
+.mwc-row:hover { border-color: var(--gold); }
+.mwc-spark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--gold);
+    color: var(--ink-deep, #1c1814);
+    font-size: 1.1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.mwc-body {
+    display: flex;
+    flex-direction: column;
+    gap: .12rem;
+    min-width: 0;
+}
+.mwc-kicker {
+    font-family: var(--mono);
+    font-size: .54rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+.mwc-title {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    line-height: 1.15;
+    color: var(--cream);
+}
+.mwc-title em { color: var(--gold); font-style: italic; }
+.mwc-desc {
+    font-family: var(--serif);
+    font-size: .8rem;
+    line-height: 1.4;
+    color: var(--cream-mute);
+    margin-top: .15rem;
+}
+.mwc-chev {
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+}
+.mwc-done {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .35rem .7rem;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: transparent;
+    color: var(--cream-mute);
+    font-family: var(--mono);
+    font-size: .55rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+}
+.mwc-done:hover { border-color: var(--gold); color: var(--gold); }
+.mwc-done[disabled] { opacity: .55; cursor: default; }
+
 /* Rivalry pill — like source-pill but with a delete button on the right */
 .mwiz-rival-pill {
     display: grid;
