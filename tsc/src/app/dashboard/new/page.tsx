@@ -1,10 +1,9 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
-import { MobileNewArchive } from '@/components/dashboard/MobileNewArchive'
+// MobileNewArchive + getViewMode fork vaulted 2026-06-24 — see fork comment below.
 import { createClient } from '@/lib/supabase/server'
 import { canCreateLeague } from '@/lib/stripe'
-import { getViewMode } from '@/lib/viewMode'
 import { AddLeagueForm } from './add-league-form'
 
 export default async function NewLeaguePage() {
@@ -24,18 +23,21 @@ export default async function NewLeaguePage() {
     .maybeSingle()
   const yahooConnected = !!yahooRow
 
-  if ((await getViewMode()) === 'mobile') {
-    return (
-      <MobileNewArchive
-        gateOk={gate.ok}
-        gateReason={gate.ok ? undefined : gate.reason}
-        gateCurrent={gate.ok ? undefined : gate.current}
-        gateLimit={gate.ok ? undefined : gate.limit}
-        gateMessage={gate.ok ? undefined : gate.message}
-        yahooConnected={yahooConnected}
-      />
-    )
-  }
+  // MobileNewArchive fork vaulted 2026-06-24 alongside /dashboard's fork.
+  // Layout now always renders the desktop nav, so MobileNewArchive's own
+  // sticky bar would double-stack. Desktop tree below renders responsively.
+  // if ((await getViewMode()) === 'mobile') {
+  //   return (
+  //     <MobileNewArchive
+  //       gateOk={gate.ok}
+  //       gateReason={gate.ok ? undefined : gate.reason}
+  //       gateCurrent={gate.ok ? undefined : gate.current}
+  //       gateLimit={gate.ok ? undefined : gate.limit}
+  //       gateMessage={gate.ok ? undefined : gate.message}
+  //       yahooConnected={yahooConnected}
+  //     />
+  //   )
+  // }
 
   return (
     <main>

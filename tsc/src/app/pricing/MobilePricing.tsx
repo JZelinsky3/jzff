@@ -34,7 +34,7 @@ export function MobilePricing({
     <main className="mpricing">
       <header className="mpricing-bar">
         <Link href={backHref} className="mpricing-bar-back" aria-label="Back">
-          <svg viewBox="0 0 8 14" width="11" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 8 14" width="10" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="7 1 1 7 7 13" />
           </svg>
         </Link>

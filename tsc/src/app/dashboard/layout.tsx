@@ -1,7 +1,7 @@
 import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
-import { getViewMode } from '@/lib/viewMode'
+// getViewMode fork vaulted 2026-06-24 — see fork comment below.
 import { DashboardNavBackSlot } from './nav-back-slot'
 
 export default async function DashboardLayout({
@@ -9,12 +9,14 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Mobile pages under /dashboard (MobileLibrary, MobileNewArchive) ship
-  // their own sticky top bar + back arrow. Rendering the desktop <nav> on
-  // top of them would stack two chromes and produce a duplicate back arrow.
-  if ((await getViewMode()) === 'mobile') {
-    return <>{children}</>
-  }
+  // Mobile fork vaulted 2026-06-24 — /dashboard now always serves the
+  // desktop tree (which renders responsively on phones), so the nav must
+  // always render too. /dashboard/new still uses MobileNewArchive; that
+  // page hides this nav with its own sticky bar via CSS, so leaving the
+  // nav on doesn't double-stack chrome there.
+  // if ((await getViewMode()) === 'mobile') {
+  //   return <>{children}</>
+  // }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
