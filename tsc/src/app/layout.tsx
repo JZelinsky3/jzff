@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { MobileSiteMenu } from "@/components/MobileSiteMenu";
 import { MobileHeaderCollapse } from "@/components/MobileHeaderCollapse";
+import { MobileViewEscape } from "@/components/MobileViewEscape";
 import { createClient } from "@/lib/supabase/server";
 import { isSiteAdmin } from "@/lib/siteAdmin";
 import { isMobileForcingDesktop } from "@/lib/viewMode";
@@ -270,11 +271,7 @@ export default async function RootLayout({
         <div className="site-grain"></div>
         {children}
         <MobileSiteMenu signedIn={signedIn} email={user?.email ?? null} admin={admin} />
-        {stuckOnDesktop && (
-          <a className="mview-escape" href="/api/view/?mode=mobile&to=/">
-            ◂ Switch to mobile site
-          </a>
-        )}
+        {stuckOnDesktop && <MobileViewEscape />}
         <MobileHeaderCollapse />
         <Analytics />
         <SpeedInsights />
