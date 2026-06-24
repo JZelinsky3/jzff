@@ -655,7 +655,10 @@ body::before {
 }
 .buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, 1fr) instead of 1fr so a long team name can't push its
+     column past 50% — buttons stay equal width so the proportional bar
+     directly below them lines up with the column boundary. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0;
 }
 .vote-btn {

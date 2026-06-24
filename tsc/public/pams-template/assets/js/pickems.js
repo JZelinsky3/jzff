@@ -220,6 +220,26 @@
     if (state.user) loadExistingSubmission(w);
     renderTally(w);
     updateSubmitEnabled();
+    fitVoteNames(grid);
+  }
+
+  // After a week's grid is built, walk every .vote-name and shrink its
+  // font-size 1px at a time until the team name fits inside the button's
+  // 50% column. Without this, long names either ellipsize (looks chopped)
+  // or push the column past 50% (knocks the bar below out of alignment).
+  // 8px floor so a worst-case team name doesn't reduce to dust.
+  function fitVoteNames(grid) {
+    if (!grid) return;
+    var names = grid.querySelectorAll('.vote-name');
+    names.forEach(function (el) {
+      var size = parseFloat(window.getComputedStyle(el).fontSize);
+      var min = 8;
+      var guard = 24; // hard cap so we can't loop forever
+      while (el.scrollWidth > el.clientWidth && size > min && guard-- > 0) {
+        size -= 1;
+        el.style.fontSize = size + 'px';
+      }
+    });
   }
 
   // matchup card — verbatim structure from the demo.
@@ -232,8 +252,11 @@
     function teamBlock(side, team, rec, isAway) {
       var champ = team && team.isChampion ? '<span title="Defending Champion">👑</span>' : '';
       var name = esc(team ? team.name : side);
-      var recHTML = '<span class="record">' + esc(rec) + '</span>';
-      var nameLine = isAway ? (recHTML + ' ' + name + ' ' + champ) : (name + ' ' + champ + ' ' + recHTML);
+      // Record gets its own line below the name so it sits in the same
+      // vertical slot for both sides — the old inline placement
+      // (name + record on home, record + name on away) made the record
+      // jump between top and bottom rows when names wrapped.
+      var recLine = rec ? '<div class="record-line">' + esc(rec) + '</div>' : '';
       var lwk = team && team.last_week_points != null
         ? '<div class="lwk"><span class="lbl">LAST WK</span> <strong>' + team.last_week_points.toFixed(1) + '</strong></div>'
         : '';
@@ -241,7 +264,8 @@
         + '<div class="team" data-team="' + esc(side) + '">'
         +   '<div class="logo">' + (team && team.logo ? '<img src="' + esc(team.logo) + '" alt="' + esc(team.name) + '" loading="lazy">' : '') + '</div>'
         +   '<div class="meta">'
-        +     '<div class="team-name">' + nameLine + '</div>'
+        +     '<div class="team-name">' + name + ' ' + champ + '</div>'
+        +     recLine
         +     '<div class="manager">' + esc(team ? team.manager : '') + '</div>'
         +     lwk
         +   '</div>'
