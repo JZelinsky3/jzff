@@ -14920,9 +14920,12 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     margin-bottom: .5rem;
 }
 
-/* TOC page — desktop. Mobile fork reuses the same content under
-   .toc-body-mobile, which strips the indent so it fits in mpg padding. */
-.toc-body {
+/* /toc page (Table of Contents reference) — desktop. Mobile fork reuses the
+   same content under .toc-page-body-mobile, which strips the indent so it
+   fits in mpg padding. Renamed from .toc-body so it doesn't cascade-clobber
+   the league-hub .toc-body grid (1fr 1fr) — same class name, different
+   purpose; the second definition kept winning and pushed every row right. */
+.toc-page-body {
     padding: 2.5rem 1.5rem 4rem 15%;
     color: var(--cream-soft);
     font-family: var(--serif);
@@ -14930,9 +14933,9 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     line-height: 1.65;
     text-align: left;
 }
-.toc-body-mobile {
+.toc-page-body-mobile {
     padding: 0 !important;
 }
-.toc-body-mobile h1 {
+.toc-page-body-mobile h1 {
     font-size: 1.4rem !important;
 }

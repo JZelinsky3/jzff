@@ -25,7 +25,7 @@ export default async function TocPage() {
         heroTitle="Every"
         heroTitleEm="page."
       >
-        <div className="toc-body toc-body-mobile">
+        <div className="toc-page-body toc-page-body-mobile">
           <TocContent />
         </div>
       </MobilePageShell>
@@ -47,7 +47,7 @@ export default async function TocPage() {
         <span className="dc-nav-icon" aria-hidden style={{ visibility: "hidden" }} />
       </nav>
 
-      <div className="toc-body">
+      <div className="toc-page-body">
         <TocContent />
       </div>
 
