@@ -4,7 +4,9 @@
 import Link from "next/link"
 import { BackButton } from "@/components/BackButton"
 import { SiteFooter } from "@/components/SiteFooter"
+import { MobileGuideShell } from "@/components/guides/MobileGuideShell"
 import { createClient } from "@/lib/supabase/server"
+import { getViewMode } from "@/lib/viewMode"
 
 // Author entity referenced from Article + Organization schema. Lifting the
 // byline out of the JSX so the structured-data block and the visible byline
@@ -100,6 +102,45 @@ export async function GuideShell({
         ],
       }
     : null
+
+  // Phone fork: the desktop chrome (nav grid, wide hero, 1100px article
+  // container) collapses badly on small widths; route through the slim
+  // mobile shell instead. JSON-LD scripts are re-emitted there so SEO
+  // doesn't regress.
+  if ((await getViewMode()) === 'mobile') {
+    const byline = (
+      <>
+        <span>By <Link href={AUTHOR.url}>{AUTHOR.name}</Link></span>
+        {datePublished && (
+          <>
+            {' · '}
+            <span>Published <time dateTime={datePublished}>{formatDate(datePublished)}</time></span>
+          </>
+        )}
+        {dateModified && dateModified !== datePublished && (
+          <>
+            {' · '}
+            <span>Updated <time dateTime={dateModified}>{formatDate(dateModified)}</time></span>
+          </>
+        )}
+      </>
+    )
+    return (
+      <MobileGuideShell
+        kicker={kicker}
+        title={title}
+        titleEm={titleEm}
+        subtitle={subtitle}
+        faqJsonLd={faqJsonLd}
+        howToJsonLd={howToJsonLd}
+        articleAndCrumbsLd={articleAndCrumbsLd}
+        byline={byline}
+        signedIn={!!user}
+      >
+        {children}
+      </MobileGuideShell>
+    )
+  }
 
   return (
     <main>

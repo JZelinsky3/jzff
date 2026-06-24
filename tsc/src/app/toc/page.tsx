@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { SiteFooter } from "@/components/SiteFooter"
+import { MobilePageShell } from "@/components/mobile/MobilePageShell"
+import { createClient } from "@/lib/supabase/server"
+import { getViewMode } from "@/lib/viewMode"
 
 export const metadata: Metadata = {
   title: "Table of Contents — every page in The Sunday Chronicle",
@@ -9,7 +12,26 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://thesundaychronicle.app/toc/" },
 }
 
-export default function TocPage() {
+export default async function TocPage() {
+  if ((await getViewMode()) === "mobile") {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    return (
+      <MobilePageShell
+        backHref="/"
+        barTitle="TOC"
+        signedIn={!!user}
+        kicker="Reference · Table of Contents"
+        heroTitle="Every"
+        heroTitleEm="page."
+      >
+        <div className="toc-body toc-body-mobile">
+          <TocContent />
+        </div>
+      </MobilePageShell>
+    )
+  }
+
   return (
     <main>
       <nav className="nav">
@@ -25,19 +47,18 @@ export default function TocPage() {
         <span className="dc-nav-icon" aria-hidden style={{ visibility: "hidden" }} />
       </nav>
 
-      <div
-        style={{
-          paddingLeft: "15%",
-          paddingRight: "1.5rem",
-          paddingTop: "2.5rem",
-          paddingBottom: "4rem",
-          color: "var(--cream-soft)",
-          fontFamily: "var(--serif)",
-          fontSize: "1.02rem",
-          lineHeight: 1.65,
-          textAlign: "left",
-        }}
-      >
+      <div className="toc-body">
+        <TocContent />
+      </div>
+
+      <SiteFooter />
+    </main>
+  )
+}
+
+function TocContent() {
+  return (
+    <>
         <p style={{ opacity: 0.7, fontSize: ".88rem", marginBottom: "2rem" }}>
           Every page you can click to in The Sunday Chronicle. URLs use{" "}
           <code>{`{slug}`}</code> as a placeholder for the league&apos;s slug.
@@ -199,11 +220,7 @@ export default function TocPage() {
           <Tally label="Trades themes" value="4" />
           <Tally label="Veteran features" value="4" />
         </div>
-
-      </div>
-
-      <SiteFooter />
-    </main>
+    </>
   )
 }
 

@@ -2,6 +2,9 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { BackButton } from "@/components/BackButton"
 import { SiteFooter } from "@/components/SiteFooter"
+import { MobileAbout } from "@/components/about/MobileAbout"
+import { createClient } from "@/lib/supabase/server"
+import { getViewMode } from "@/lib/viewMode"
 
 export const metadata: Metadata = {
   title: "About — Fantasy football league archive built for commissioners",
@@ -67,7 +70,21 @@ const faqJsonLd = {
   ],
 }
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  if ((await getViewMode()) === 'mobile') {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+        <MobileAbout signedIn={!!user} />
+      </>
+    )
+  }
+
   return (
     <main>
       <script

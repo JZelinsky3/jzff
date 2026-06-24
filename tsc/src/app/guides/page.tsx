@@ -2,7 +2,9 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { BackButton } from "@/components/BackButton"
 import { SiteFooter } from "@/components/SiteFooter"
+import { MobileGuides } from "@/components/guides/MobileGuides"
 import { createClient } from "@/lib/supabase/server"
+import { getViewMode } from "@/lib/viewMode"
 import { GuideBrowser } from "./_GuideBrowser"
 
 export const metadata: Metadata = {
@@ -20,6 +22,10 @@ export const metadata: Metadata = {
 export default async function GuidesIndex() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  if ((await getViewMode()) === 'mobile') {
+    return <MobileGuides signedIn={!!user} />
+  }
 
   return (
     <main>

@@ -1,6 +1,7 @@
 import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
+import { getViewMode } from '@/lib/viewMode'
 import { DashboardNavBackSlot } from './nav-back-slot'
 
 export default async function DashboardLayout({
@@ -8,6 +9,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Mobile pages under /dashboard (MobileLibrary, MobileNewArchive) ship
+  // their own sticky top bar + back arrow. Rendering the desktop <nav> on
+  // top of them would stack two chromes and produce a duplicate back arrow.
+  if ((await getViewMode()) === 'mobile') {
+    return <>{children}</>
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const admin = await isSiteAdmin(user?.id)

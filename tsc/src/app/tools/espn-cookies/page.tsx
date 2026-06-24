@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
+import { MobilePageShell } from '@/components/mobile/MobilePageShell'
+import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 
 export const metadata: Metadata = {
   title: 'ESPN cookie grabber — The Sunday Chronicle',
@@ -47,7 +50,7 @@ const SOURCE = `(function () {
   }
 })();`
 
-export default function Page() {
+export default async function Page() {
   // React strips href="javascript:..." in production. We render the drag-link
   // via dangerouslySetInnerHTML to keep the URL intact. The bookmarklet only
   // executes when the user clicks it on a fantasy.espn.com tab, not on this
@@ -67,6 +70,81 @@ export default function Page() {
     'letter-spacing:.02em',
   ].join(';')
   const dragAnchor = `<a style="${anchorStyle}" href="${BOOKMARKLET.replace(/"/g, '&quot;')}" onclick="event.preventDefault(); alert('Drag this link onto your bookmarks bar — don\\'t click it here. It only works when run on fantasy.espn.com.'); return false;">★ Get ESPN cookies</a>`
+
+  if ((await getViewMode()) === 'mobile') {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    return (
+      <MobilePageShell
+        backHref="/dashboard"
+        barTitle="Cookies"
+        signedIn={!!user}
+        kicker="Tool · ESPN private leagues"
+        heroTitle="The"
+        heroTitleEm="Cookie Jar."
+        heroSub="Pulls your SWID + espn_s2 from a signed-in fantasy.espn.com tab. Easiest path: do this once on a desktop browser, then paste into your ESPN league setup here."
+      >
+        <div className="mpg-card" style={{ margin: '0 1.1rem .85rem' }}>
+          <div className="mpg-cta-kicker">★ On mobile</div>
+          <div className="mpg-card-body">
+            Mobile browsers don&apos;t make bookmarklets easy. Quickest path:
+            <ul style={{ marginTop: '.5rem' }}>
+              <li>Open a desktop browser, follow Step 1 + Step 2 below.</li>
+              <li>Or, on iOS Safari / Android Chrome, bookmark any page, then edit the bookmark and replace its URL with the source below.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mpg-card" style={{ margin: '0 1.1rem .85rem' }}>
+          <div className="mpg-cta-kicker">★ Step 1 · Install</div>
+          <div className="mpg-card-body">
+            On a desktop browser, drag this button onto your bookmarks bar:
+            <div
+              style={{ marginTop: '.75rem', textAlign: 'center' }}
+              dangerouslySetInnerHTML={{ __html: dragAnchor }}
+            />
+          </div>
+        </div>
+
+        <div className="mpg-card" style={{ margin: '0 1.1rem .85rem' }}>
+          <div className="mpg-cta-kicker">★ Step 2 · Use</div>
+          <ol className="mpg-card-body" style={{ paddingLeft: '1.2rem' }}>
+            <li>Open <a href="https://fantasy.espn.com/" target="_blank" rel="noopener noreferrer">fantasy.espn.com</a>, signed in.</li>
+            <li>Click <strong>★ Get ESPN cookies</strong> in your bookmarks bar.</li>
+            <li>Both values copy to your clipboard.</li>
+          </ol>
+        </div>
+
+        <div className="mpg-card" style={{ margin: '0 1.1rem .85rem' }}>
+          <div className="mpg-cta-kicker">★ Source</div>
+          <div className="mpg-card-body">
+            <p style={{ marginBottom: '.55rem' }}>
+              No network calls. Reads two cookies, copies them. Browser cookies
+              are domain-scoped — this can only read cookies for whichever site
+              you&apos;re on.
+            </p>
+            <pre style={{
+              background: 'var(--ink-soft, rgba(0,0,0,.25))',
+              padding: '.75rem',
+              borderRadius: '2px',
+              overflowX: 'auto',
+              fontSize: '.7rem',
+              lineHeight: 1.5,
+              fontFamily: 'var(--mono)',
+              color: 'var(--cream)',
+              border: '1px solid var(--ink-line)',
+              margin: 0,
+              whiteSpace: 'pre',
+            }}>{SOURCE}</pre>
+          </div>
+        </div>
+
+        <div style={{ padding: '0 1.1rem', textAlign: 'center', marginTop: '.5rem' }}>
+          <Link href="/dashboard/new/" className="dc-btn">Add an ESPN league</Link>
+        </div>
+      </MobilePageShell>
+    )
+  }
 
   return (
     <main>

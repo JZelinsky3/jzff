@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { canAddCareerLink } from '@/lib/stripe'
+import { getViewMode } from '@/lib/viewMode'
+import { MobileManagerNew } from '@/components/manager/MobileManagerNew'
 import { AddToHubForm } from './pick-self-form'
 
 export default async function NewManagerLeaguePage() {
@@ -28,6 +30,21 @@ export default async function NewManagerLeaguePage() {
     .maybeSingle()
   const backHref = chron ? `/manager/${chron.slug}` : '/dashboard'
   const backLabel = chron ? '← Back to chronicle' : '← Dashboard'
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileManagerNew
+        signedIn={!!user}
+        backHref={backHref}
+        gateOk={gate.ok}
+        gateReason={gate.ok ? undefined : gate.reason}
+        gateCurrent={gate.ok ? undefined : gate.current}
+        gateLimit={gate.ok ? undefined : gate.limit}
+        gateMessage={gate.ok ? undefined : gate.message}
+        yahooConnected={yahooConnected}
+      />
+    )
+  }
 
   return (
     <>
