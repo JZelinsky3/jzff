@@ -149,15 +149,20 @@ function StepShell({
   subtitle,
   children,
   cta,
+  // Set when the step's CTA stack grows (e.g. merge mode adds a hint line
+  // plus a cancel button below the primary). The is-merge variant gives
+  // the body extra bottom runway so the last list item clears the gradient.
+  variant,
 }: {
   title: string
   titleEm?: string
   subtitle: string
   children: React.ReactNode
   cta: React.ReactNode
+  variant?: 'merge'
 }) {
   return (
-    <div className="mwiz-step">
+    <div className={`mwiz-step${variant === 'merge' ? ' is-merge' : ''}`}>
       <div className="mwiz-step-body">
         <h1 className="mwiz-title">
           {title}
@@ -491,7 +496,14 @@ function StepMembers({
     setErr(null)
   }
   function toggleMergeId(id: string) {
-    if (!mergeMode || id === mergeKeeperId) return
+    if (!mergeMode) return
+    // Tap the keeper again to exit merge mode — gives users an obvious
+    // escape that doesn't depend on finding the cancel button below the
+    // CTA. (Tapping any other row toggles its membership as before.)
+    if (id === mergeKeeperId) {
+      cancelMerge()
+      return
+    }
     const next = new Set(mergeIds)
     if (next.has(id)) next.delete(id)
     else next.add(id)
@@ -544,24 +556,35 @@ function StepMembers({
     <StepShell
       title="Review the"
       titleEm="roster."
-      subtitle="Tap a manager to rename, merge, hide, or mark alumni. All optional."
+      subtitle={mergeMode
+        ? `Tap rows to add or remove from the merge. Tap the ★ keeper to cancel.`
+        : `Tap a manager to rename, merge, hide, or mark alumni. All optional.`}
+      variant={mergeMode ? 'merge' : undefined}
       cta={
         mergeMode ? (
           <>
             <div className="mwiz-cta-hint">
-              Merging into <strong style={{ color: 'var(--gold)' }}>{keeper?.canonical_name ?? '?'}</strong> · pick at least 1 more
+              Into <strong style={{ color: 'var(--gold)' }}>{keeper?.canonical_name ?? '?'}</strong>
+              {' · '}pick {mergeIds.size < 2 ? 'at least 1 more' : `${mergeIds.size - 1} other${mergeIds.size - 1 === 1 ? '' : 's'} selected`}
             </div>
-            <button
-              type="button"
-              className="mwiz-btn"
-              onClick={confirmMerge}
-              disabled={mergeIds.size < 2 || busy === 'merge'}
-            >
-              {busy === 'merge' ? 'Merging…' : `Merge ${mergeIds.size}`}
-            </button>
-            <button type="button" className="mwiz-ghost-link" onClick={cancelMerge}>
-              Cancel merge
-            </button>
+            <div className="mwiz-merge-actions">
+              <button
+                type="button"
+                className="mwiz-btn-cancel"
+                onClick={cancelMerge}
+                disabled={busy === 'merge'}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="mwiz-btn"
+                onClick={confirmMerge}
+                disabled={mergeIds.size < 2 || busy === 'merge'}
+              >
+                {busy === 'merge' ? 'Merging…' : `Merge ${mergeIds.size}`}
+              </button>
+            </div>
           </>
         ) : (
           <>

@@ -15101,8 +15101,15 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     flex-direction: column;
 }
 .mwiz-step-body {
+    /* Generous bottom padding so the last item doesn't ever sit under the
+       fixed CTA stack. Merge mode adds a second line of hint text plus a
+       cancel link, so the gradient is taller — the extra runway here means
+       the scrollable list still ends clear of it. */
     flex: 1;
-    padding: 2.25rem 1.25rem 7rem;
+    padding: 2.25rem 1.25rem 9.5rem;
+}
+.mwiz-step.is-merge .mwiz-step-body {
+    padding-bottom: 12rem;
 }
 .mwiz-title {
     font-family: var(--serif);
@@ -15173,6 +15180,37 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     color: var(--cream-mute);
     border-color: var(--ink-line);
 }
+
+/* Two-button merge CTA row: Cancel on the left, Merge X on the right.
+   Cancel reads as a clear escape (rust-tinted ghost) instead of being
+   buried below the primary button as a small link. */
+.mwiz-merge-actions {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .55rem;
+    width: 100%;
+    align-items: stretch;
+}
+.mwiz-merge-actions .mwiz-btn { width: 100%; }
+.mwiz-btn-cancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(160, 72, 48, .55);
+    background: transparent;
+    color: var(--rust, #d49382);
+    font-family: var(--serif);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+}
+.mwiz-btn-cancel:hover {
+    border-color: var(--rust, #d49382);
+    background: rgba(160, 72, 48, .08);
+}
+.mwiz-btn-cancel[disabled] { opacity: .55; cursor: default; }
 .mwiz-ghost-link {
     color: var(--cream-mute);
     text-decoration: none;
@@ -15606,21 +15644,21 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
 .mwiz-mrow-drawer {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: .4rem;
-    padding: 0 .65rem .65rem;
+    gap: .35rem;
+    padding: 0 .55rem .55rem;
 }
 .mwiz-mact {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: .5rem;
-    padding: .65rem .75rem;
+    gap: .4rem;
+    padding: .5rem .65rem;
     border-radius: 999px;
     border: 1px solid var(--ink-line);
     background: var(--ink);
     color: var(--cream);
     font-family: var(--serif);
-    font-size: .88rem;
+    font-size: .78rem;
     cursor: pointer;
     transition: border-color .15s, color .15s, background .15s;
 }
@@ -15633,12 +15671,12 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     border-radius: 999px;
     border: 1px solid var(--gold-deep);
     color: var(--gold);
-    font-size: .75rem;
+    font-size: .68rem;
     line-height: 1;
 }
 
@@ -15651,11 +15689,11 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
 }
 .mwc-row {
     display: grid;
-    grid-template-columns: 32px 1fr auto;
+    grid-template-columns: 24px 1fr auto;
     align-items: center;
-    gap: .85rem;
-    padding: .9rem 1rem;
-    border-radius: 18px;
+    gap: .65rem;
+    padding: .55rem .75rem;
+    border-radius: 999px;
     border: 1px solid var(--gold-deep);
     background: linear-gradient(180deg, rgba(232, 200, 137, .07), rgba(232, 200, 137, .02));
     color: var(--cream);
@@ -15668,62 +15706,60 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     border-radius: 999px;
     background: var(--gold);
     color: var(--ink-deep, #1c1814);
-    font-size: 1.1rem;
+    font-size: .85rem;
     line-height: 1;
     flex-shrink: 0;
 }
 .mwc-body {
     display: flex;
     flex-direction: column;
-    gap: .12rem;
+    gap: .05rem;
     min-width: 0;
+    line-height: 1;
 }
 .mwc-kicker {
     font-family: var(--mono);
-    font-size: .54rem;
-    letter-spacing: .22em;
+    font-size: .5rem;
+    letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--gold);
+    white-space: nowrap;
 }
 .mwc-title {
     font-family: var(--serif);
-    font-size: 1.05rem;
-    line-height: 1.15;
+    font-size: .95rem;
+    line-height: 1.1;
     color: var(--cream);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .mwc-title em { color: var(--gold); font-style: italic; }
-.mwc-desc {
-    font-family: var(--serif);
-    font-size: .8rem;
-    line-height: 1.4;
-    color: var(--cream-mute);
-    margin-top: .15rem;
-}
 .mwc-chev {
     color: var(--gold);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
+    width: 14px;
 }
 .mwc-done {
     align-self: flex-end;
     display: inline-flex;
     align-items: center;
-    gap: .35rem;
-    padding: .35rem .7rem;
+    gap: .3rem;
+    padding: .25rem .6rem;
     border-radius: 999px;
     border: 1px solid var(--ink-line);
     background: transparent;
     color: var(--cream-mute);
     font-family: var(--mono);
-    font-size: .55rem;
-    letter-spacing: .2em;
+    font-size: .5rem;
+    letter-spacing: .18em;
     text-transform: uppercase;
     cursor: pointer;
     transition: border-color .2s, color .2s;

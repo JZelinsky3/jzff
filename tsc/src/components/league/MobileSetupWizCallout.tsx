@@ -44,11 +44,10 @@ export function MobileSetupWizCallout({
         <span className="mwc-spark" aria-hidden>✦</span>
         <span className="mwc-body">
           <span className="mwc-kicker">For commissioners</span>
-          <span className="mwc-title">Setup <em>wizard.</em></span>
-          <span className="mwc-desc">A guided walk through sources, members, rivalries, season, publish.</span>
+          <span className="mwc-title">Setup <em>wizard</em></span>
         </span>
         <span className="mwc-chev" aria-hidden>
-          <svg viewBox="0 0 8 14" width="9" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 8 14" width="8" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="1 1 7 7 1 13" />
           </svg>
         </span>
@@ -60,10 +59,10 @@ export function MobileSetupWizCallout({
         disabled={busy}
         aria-label="Mark setup wizard complete"
       >
-        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="3 8.5 7 12 13 4.5" />
         </svg>
-        <span>Mark done</span>
+        <span>Done</span>
       </button>
     </div>
   )
