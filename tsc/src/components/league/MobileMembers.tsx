@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { MobileSetupList, type ProfileRow } from './MobileSetupList'
 import { MarkReviewedButton } from '@/app/league/[slug]/setup/mark-reviewed-button'
 
@@ -28,12 +27,6 @@ export function MobileMembers({
           <span className="mmem-count">{profiles.length}</span>
         </div>
         <MarkReviewedButton leagueId={leagueId} reviewedAt={reviewedAt} />
-      </div>
-
-      <div style={{ padding: '0 1rem', marginBottom: '.75rem' }}>
-        <Link href={`/league/${slug}/welcome`} className="mmem-wiz-link">
-          Run setup wizard
-        </Link>
       </div>
 
       <div className="mmem-stats">

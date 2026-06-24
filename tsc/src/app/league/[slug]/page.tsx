@@ -108,6 +108,13 @@ export default async function LeagueOverviewPage({
           <span aria-hidden>★</span>
           {tierBadgeLabel(tier)}
         </div>
+        {isOwner && (
+          <div style={{ marginTop: '1.5rem' }}>
+            <Link href={`/league/${slug}/welcome`} className="dc-btn-ghost">
+              Run setup wizard
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* § 01 — Public Almanac BILLBOARD. Wide marquee shape: the only

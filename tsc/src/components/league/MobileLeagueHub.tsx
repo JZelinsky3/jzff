@@ -122,6 +122,15 @@ export function MobileLeagueHub({
         </div>
       </div>
 
+      {/* ── Setup wizard re-entry (owner only) ── */}
+      {isOwner && (
+        <div style={{ padding: '0 1rem', marginBottom: '.75rem' }}>
+          <Link href={`/league/${slug}/welcome`} className="mmem-wiz-link">
+            Run setup wizard
+          </Link>
+        </div>
+      )}
+
       {/* ── Almanac status card ── */}
       <div className="mlh-almanac">
         <a

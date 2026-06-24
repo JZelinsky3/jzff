@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SiteFooter } from '@/components/SiteFooter'
@@ -120,13 +119,6 @@ export default async function SetupPage({
         </p>
         <div className="hero-meta">
           {head} {tail && <em>{tail}.</em>} · {profilesList.length} {profilesList.length === 1 ? 'person' : 'people'}
-        </div>
-        {/* Re-run the guided setup. New archives auto-land in the wizard;
-            existing archives can return any time from here. */}
-        <div style={{ marginTop: '1.75rem' }}>
-          <Link href={`/league/${slug}/welcome`} className="dc-btn-ghost">
-            Run setup wizard
-          </Link>
         </div>
       </section>
 
