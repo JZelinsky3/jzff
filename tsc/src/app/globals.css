@@ -4800,6 +4800,35 @@ table.season-standings tbody tr:hover { background: rgba(232,200,137,.03); }
     background: var(--gold);
     color: var(--ink);
 }
+/* Unpublished variant — same chrome but rendered as a div instead of a
+   link, since the CTA inside is a publish button rather than a navigation. */
+.almanac-billboard-static {
+    cursor: default;
+}
+.almanac-billboard-static:hover {
+    /* Block the link-style lift/glow hover that would otherwise mislead
+       the user into thinking the whole block is clickable. */
+    transform: none;
+    border-left-color: rgba(232, 200, 137, .25);
+    border-right-color: rgba(232, 200, 137, .25);
+    box-shadow: none;
+}
+/* Publish button styled to match the billboard's CTA pill */
+.almanac-billboard-publish {
+    cursor: pointer;
+    background: var(--gold);
+    color: var(--ink);
+    border-color: var(--gold);
+    transition: background .15s, box-shadow .15s, transform .15s;
+}
+.almanac-billboard-publish:hover:not(:disabled) {
+    box-shadow: 0 0 22px rgba(232, 200, 137, .35);
+    transform: translateY(-1px);
+}
+.almanac-billboard-publish:disabled {
+    opacity: .55;
+    cursor: wait;
+}
 @media (max-width: 780px) {
     .almanac-billboard-status { right: 1.25rem; }
     .almanac-billboard-inner {

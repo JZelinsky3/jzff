@@ -9,6 +9,7 @@ import { getViewMode } from '@/lib/viewMode'
 import { SyncButton } from './sync-button'
 import { GradeTradesButton } from './grade-trades-button'
 import { PublishButton } from './setup/publish-button'
+import { BillboardPublishCta } from './billboard-publish-cta'
 
 export default async function LeagueOverviewPage({
   params,
@@ -108,14 +109,31 @@ export default async function LeagueOverviewPage({
           <span aria-hidden>★</span>
           {tierBadgeLabel(tier)}
         </div>
-        {isOwner && (
-          <div style={{ marginTop: '1.5rem' }}>
-            <Link href={`/league/${slug}/welcome`} className="dc-btn-ghost">
-              Run setup wizard
-            </Link>
-          </div>
-        )}
       </section>
+
+      {isOwner && (
+        <Link href={`/league/${slug}/welcome`} className="setup-wiz-callout">
+          <div className="setup-wiz-callout-mark" aria-hidden>
+            <span>✦</span>
+          </div>
+          <div className="setup-wiz-callout-body">
+            <div className="setup-wiz-callout-kicker">★ For commissioners ★</div>
+            <div className="setup-wiz-callout-title">
+              Setup <em>wizard.</em>
+            </div>
+            <div className="setup-wiz-callout-desc">
+              A guided walk through sources, sync, members, rivalries, and publish.
+              Start, skip steps, come back later.
+            </div>
+          </div>
+          <div className="setup-wiz-callout-cta" aria-hidden>
+            <span>Open</span>
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 3 11 8 6 13" />
+            </svg>
+          </div>
+        </Link>
+      )}
 
       {/* § 01 — Public Almanac BILLBOARD. Wide marquee shape: the only
           non-rectangular block on the page (angled clip on both sides)
@@ -128,33 +146,51 @@ export default async function LeagueOverviewPage({
             {league.published_at ? 'Live now' : 'Not yet published'}
           </span>
         </div>
-        <a
-          href={`/leagues/${slug}/`}
-          target="_blank"
-          rel="noopener"
-          className="almanac-billboard"
-        >
-          <span
-            className={`almanac-billboard-status ${league.published_at ? 'live' : 'setup'}`}
+        {/* When published, the billboard is a link to the live site. When
+            not published, it's a static block whose CTA publishes the
+            almanac directly — sending the user to the placeholder page just
+            to bounce back was a pointless detour. */}
+        {league.published_at ? (
+          <a
+            href={`/leagues/${slug}/`}
+            target="_blank"
+            rel="noopener"
+            className="almanac-billboard"
           >
-            {league.published_at ? 'LIVE' : 'SETUP'}
-          </span>
-          <div className="almanac-billboard-rule" aria-hidden />
-          <div className="almanac-billboard-inner">
-            <div className="almanac-billboard-kicker">
-              {league.published_at ? '★ Click to open ★' : '★ Not yet published ★'}
+            <span className="almanac-billboard-status live">LIVE</span>
+            <div className="almanac-billboard-rule" aria-hidden />
+            <div className="almanac-billboard-inner">
+              <div className="almanac-billboard-kicker">★ Click to open ★</div>
+              <div className="almanac-billboard-title">
+                Public <em>Almanac.</em>
+              </div>
+              <div className="almanac-billboard-desc">
+                Standings, season archives, the record book, drafts, manager profiles,
+                rivalries — the whole thing. Opens in a new tab.
+              </div>
+              <span className="almanac-billboard-cta">View site ↗</span>
             </div>
-            <div className="almanac-billboard-title">
-              Public <em>Almanac.</em>
+            <div className="almanac-billboard-rule" aria-hidden />
+          </a>
+        ) : (
+          <div className="almanac-billboard almanac-billboard-static">
+            <span className="almanac-billboard-status setup">SETUP</span>
+            <div className="almanac-billboard-rule" aria-hidden />
+            <div className="almanac-billboard-inner">
+              <div className="almanac-billboard-kicker">★ Not yet published ★</div>
+              <div className="almanac-billboard-title">
+                Public <em>Almanac.</em>
+              </div>
+              <div className="almanac-billboard-desc">
+                One click and your archive goes live at /leagues/{slug}/. Standings,
+                season records, drafts, manager profiles, rivalries — all of it.
+                Reversible any time.
+              </div>
+              {isOwner && <BillboardPublishCta leagueId={league.id} />}
             </div>
-            <div className="almanac-billboard-desc">
-              Standings, season archives, the record book, drafts, manager profiles,
-              rivalries — the whole thing. Opens in a new tab.
-            </div>
-            <span className="almanac-billboard-cta">View site ↗</span>
+            <div className="almanac-billboard-rule" aria-hidden />
           </div>
-          <div className="almanac-billboard-rule" aria-hidden />
-        </a>
+        )}
       </div>
 
       {/* § 02 — Run it. Sync (left) + Publish (right). Grade Trades stacks
