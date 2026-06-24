@@ -125,7 +125,7 @@ export function MobileLeagueHub({
 
       {/* ── Setup wizard re-entry (owner only) ── */}
       {isOwner && !((league.settings ?? {}) as { wizard_dismissed_at?: string }).wizard_dismissed_at && (
-        <div style={{ padding: '0 1rem', marginBottom: '.75rem' }}>
+        <div className="mwc-wrap">
           <MobileSetupWizCallout leagueId={league.id} slug={slug} />
         </div>
       )}

@@ -15102,14 +15102,14 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
 }
 .mwiz-step-body {
     /* Generous bottom padding so the last item doesn't ever sit under the
-       fixed CTA stack. Merge mode adds a second line of hint text plus a
-       cancel link, so the gradient is taller — the extra runway here means
-       the scrollable list still ends clear of it. */
+       fixed CTA stack. Merge mode adds a hint line + a two-button row, so
+       the gradient is taller — the extra runway in is-merge means the
+       scrollable list still ends clear of it. */
     flex: 1;
-    padding: 2.25rem 1.25rem 9.5rem;
+    padding: 2.25rem 1.25rem 8.5rem;
 }
 .mwiz-step.is-merge .mwiz-step-body {
-    padding-bottom: 12rem;
+    padding-bottom: 11rem;
 }
 .mwiz-title {
     font-family: var(--serif);
@@ -15160,13 +15160,13 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     align-items: center;
     justify-content: center;
     width: 100%;
-    padding: 1rem 1.25rem;
+    padding: .75rem 1.1rem;
     border-radius: 999px;
     border: 1px solid var(--gold);
     background: var(--gold);
     color: var(--ink-deep, #1c1814);
     font-family: var(--serif);
-    font-size: 1.05rem;
+    font-size: .95rem;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
@@ -15196,13 +15196,13 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem 1.1rem;
+    padding: .75rem 1rem;
     border-radius: 999px;
     border: 1px solid rgba(160, 72, 48, .55);
     background: transparent;
     color: var(--rust, #d49382);
     font-family: var(--serif);
-    font-size: 1rem;
+    font-size: .9rem;
     cursor: pointer;
     transition: border-color .15s, color .15s, background .15s;
 }
@@ -15682,12 +15682,23 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
 
 /* Mobile setup-wizard callout — sits inside the mobile league hub,
    replaces the desktop SetupWizCallout's wide horizontal card. */
+.mwc-wrap {
+    /* Centered vertically between the snap-card above (no bottom margin)
+       and the almanac card below (no top margin). Horizontal padding
+       matches the snap-card's .85rem side margin so all three rails sit
+       on the same edge. */
+    padding: .9rem .85rem;
+}
 .mwc {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: .45rem;
 }
 .mwc-row {
+    flex: 1 1 auto;
+    /* The pill takes ~85-90% of the available width; the Done button
+       holds the remaining ~12% on the same row. */
+    min-width: 0;
     display: grid;
     grid-template-columns: 24px 1fr auto;
     align-items: center;
@@ -15748,11 +15759,13 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
     width: 14px;
 }
 .mwc-done {
-    align-self: flex-end;
+    /* Same-row companion to .mwc-row. Mirrors the pill's height so the
+       two pieces read as a single control group. */
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     gap: .3rem;
-    padding: .25rem .6rem;
+    padding: .45rem .65rem;
     border-radius: 999px;
     border: 1px solid var(--ink-line);
     background: transparent;
