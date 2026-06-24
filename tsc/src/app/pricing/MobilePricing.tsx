@@ -91,8 +91,9 @@ export function MobilePricing({
                   features: [
                     'Archive 1 league',
                     'Full season history walk',
-                    'Public almanac per league',
                     'Pick&apos;ems + power rankings',
+                    'Records Watch &amp; Milestone Tracker',
+                    'Trade Analyzer',
                     'Weekly cron auto-sync',
                   ],
                 },

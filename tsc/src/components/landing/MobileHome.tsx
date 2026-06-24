@@ -76,14 +76,14 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
             <span className="mlp-why-pt-icon">★</span>
             <span className="mlp-why-pt-body">
               <span className="mlp-why-pt-title">Designed, not generated</span>
-              <span className="mlp-why-pt-desc">Every page is laid out like a real publication. Champion rolls, draft boards, career dossiers — all built to look the part.</span>
+              <span className="mlp-why-pt-desc">Every page is laid out like a real publication. Champion rolls, draft boards, career dossiers. All built to look the part.</span>
             </span>
           </div>
           <div className="mlp-why-pt">
             <span className="mlp-why-pt-icon">◆</span>
             <span className="mlp-why-pt-body">
               <span className="mlp-why-pt-title">5 minutes to build</span>
-              <span className="mlp-why-pt-desc">Paste your league ID. We walk every season automatically — draft picks, matchups, records, all of it.</span>
+              <span className="mlp-why-pt-desc">Paste your league ID. We walk every season automatically: draft picks, matchups, records, all of it.</span>
             </span>
           </div>
           <div className="mlp-why-pt">

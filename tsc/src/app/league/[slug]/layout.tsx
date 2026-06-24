@@ -1,9 +1,9 @@
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { LeagueBackLink } from './back-link'
 import { AdminNavMenu } from './admin-nav-menu'
+import { MobileLeagueBackLink } from './_mobile-back-link'
 
 export default async function LeagueLayout({
   children,
@@ -36,11 +36,7 @@ export default async function LeagueLayout({
     return (
       <div className="mlsub-wrap">
         <header className="mlsub-bar">
-          <Link href={`/league/${slug}`} className="mlsub-bar-back" aria-label="Back to league">
-            <svg viewBox="0 0 8 14" width="10" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="7 1 1 7 7 13" />
-            </svg>
-          </Link>
+          <MobileLeagueBackLink slug={slug} />
           <div className="mlsub-bar-center">
             <span className="mlsub-bar-kicker">{league.platform}</span>
             <span className="mlsub-bar-name">{league.name}</span>
