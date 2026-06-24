@@ -12749,18 +12749,22 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     align-items: center;
     text-align: center;
 }
+/* Match the kicker + title scale used by the other landing sections
+   (.mlp-inside-kicker / .mlp-inside-title, .mlp-live-kicker / .mlp-live-title)
+   so the Plans section reads as a peer, not a louder/smaller outlier. */
 .mlp-plans-kicker {
+    display: block;
     font-family: var(--mono);
-    font-size: .6rem;
+    font-size: .52rem;
     font-weight: 700;
-    letter-spacing: .26em;
+    letter-spacing: .28em;
     text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: .6rem;
+    color: var(--gold-deep);
+    margin-bottom: .5rem;
 }
 .mlp-plans-title {
     font-family: var(--serif);
-    font-size: 2.1rem;
+    font-size: clamp(1.5rem, 6.5vw, 2rem);
     line-height: 1.1;
     color: var(--cream);
     margin: 0 0 1rem;
@@ -12816,10 +12820,29 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     text-align: center;
 }
 .mlp-plans-row.is-featured .mlp-plans-num { color: var(--gold); }
+.mlp-plans-body {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 0;
+}
 .mlp-plans-name {
     font-family: var(--serif);
     font-size: 1.05rem;
     text-align: left;
+    line-height: 1.05;
+}
+.mlp-plans-sub {
+    font-family: var(--mono);
+    font-size: .56rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .mlp-plans-price {
     font-family: var(--mono);
