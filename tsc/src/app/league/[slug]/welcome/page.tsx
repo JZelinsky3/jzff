@@ -41,7 +41,7 @@ export default async function WelcomePage({
     managers,
     { data: profileRows },
     { data: managerRows },
-    { data: latestSeasonForCurrent },
+    { data: allSeasonRows },
   ] = await Promise.all([
     supabase
       .from('league_sources')
@@ -67,15 +67,23 @@ export default async function WelcomePage({
       .from('managers')
       .select('id, profile_id, display_name, team_name, external_id, league_id')
       .eq('league_id', league.id),
-    // Same latest-with-data walk as /setup/page.tsx — gives us the "auto_current"
-    // signal so alumni autodetection matches what the regular Members page shows.
+    // All season rows — used both for the "auto_current" walk (same as
+    // /setup/page.tsx) and to render the league-wide year range on the
+    // sources card. Ordered desc so the first row with data is also the
+    // newest season for the auto-current walk.
     supabase
       .from('seasons')
       .select('id, year')
       .eq('league_id', league.id)
-      .order('year', { ascending: false })
-      .limit(20),
+      .order('year', { ascending: false }),
   ])
+
+  const seasonYears = (allSeasonRows ?? []).map((r) => r.year as number).sort((a, b) => a - b)
+  const yearRange = seasonYears.length === 0
+    ? null
+    : seasonYears[0] === seasonYears[seasonYears.length - 1]
+    ? String(seasonYears[0])
+    : `${seasonYears[0]}–${seasonYears[seasonYears.length - 1]}`
 
   // Stitch profiles + managers, mirroring /league/[slug]/setup/page.tsx so the
   // members step's profile rows have identical shape to the regular setup list.
@@ -91,7 +99,9 @@ export default async function WelcomePage({
     })
   }
   let currentManagerIds = new Set<string>()
-  for (const sn of latestSeasonForCurrent ?? []) {
+  // Walk at most 20 seasons looking for the newest one with manager_seasons
+  // data. Matches the /setup page's auto-current-detection behavior.
+  for (const sn of (allSeasonRows ?? []).slice(0, 20)) {
     const { data: ms } = await supabase
       .from('manager_seasons')
       .select('manager_id')
@@ -128,6 +138,7 @@ export default async function WelcomePage({
       yahooConnected={!!yahooTok}
       managers={managers.map((m) => ({ id: m.id, name: m.name }))}
       profiles={profiles}
+      yearRange={yearRange}
     />
   )
 }

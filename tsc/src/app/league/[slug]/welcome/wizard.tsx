@@ -31,13 +31,13 @@ type Props = {
   yahooConnected: boolean
   managers: ManagerLite[]
   profiles: ProfileRow[]
+  yearRange: string | null
 }
 
-type StepKey = 'sources' | 'sync' | 'members' | 'rivalries' | 'season' | 'publish'
+type StepKey = 'sources' | 'members' | 'rivalries' | 'season' | 'publish'
 
 const STEPS: { key: StepKey; label: string }[] = [
   { key: 'sources', label: 'Sources' },
-  { key: 'sync', label: 'Sync' },
   { key: 'members', label: 'Members' },
   { key: 'rivalries', label: 'Rivalries' },
   { key: 'season', label: 'Season' },
@@ -53,7 +53,8 @@ export function Wizard(props: Props) {
   // which re-renders this component with the updated initialSources prop.
   const sources = props.initialSources
 
-  // Sync state — populated when the step is entered.
+  // Sync state — tracks whether at least one sync has ever completed (so the
+  // sources step's Continue gate can pass) plus whether one ran this session.
   const [hasSynced, setHasSynced] = useState<boolean>(!!props.initialLastSyncedAt)
 
   function goNext() {
@@ -97,16 +98,10 @@ export function Wizard(props: Props) {
             slug={props.slug}
             sources={sources}
             yahooConnected={props.yahooConnected}
-            onContinue={goNext}
-          />
-        )}
-        {step === 'sync' && (
-          <StepSync
-            leagueId={props.leagueId}
+            yearRange={props.yearRange}
             alreadySynced={hasSynced}
             onSynced={() => setHasSynced(true)}
             onContinue={goNext}
-            onBack={goBack}
           />
         )}
         {step === 'members' && (
@@ -180,9 +175,19 @@ function StepBar({ step }: { step: StepKey }) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Step 1 — Sources. Reuses AddSourceForm so the wizard inherits every
-// platform-picker quirk (Yahoo OAuth gating, ESPN cookies, NFL year range,
-// etc.) without duplicating that surface area.
+// Step 1 — Sources + Sync. Two halves on one page: attach league sources
+// (reuses AddSourceForm), then walk each platform via the chunked
+// GET → POST?platform=X sync endpoint. Continue is gated on having ≥1
+// source AND at least one successful sync ever.
+
+type SyncRowState = 'pending' | 'running' | 'done' | 'error'
+type SyncRow = { platform: string; state: SyncRowState; error?: string }
+
+// Brief window after adding a source where the sync button is disabled. The
+// new source's platforms list comes from a server fetch — `router.refresh()`
+// triggers re-render, but the cache-tag revalidation can lag by a moment.
+// Two seconds is enough that GET /api/leagues/[id]/sync sees the new row.
+const POST_ADD_SYNC_DELAY_MS = 2000
 
 function StepSources({
   leagueId,
@@ -190,6 +195,9 @@ function StepSources({
   slug,
   sources,
   yahooConnected,
+  yearRange,
+  alreadySynced,
+  onSynced,
   onContinue,
 }: {
   leagueId: string
@@ -197,122 +205,44 @@ function StepSources({
   slug: string
   sources: SourceLite[]
   yahooConnected: boolean
+  yearRange: string | null
+  alreadySynced: boolean
+  onSynced: () => void
   onContinue: () => void
 }) {
   const router = useRouter()
   const formMountRef = useRef<HTMLDivElement>(null)
   // Form is collapsed by default — most users land here with one source
-  // already attached (from archive creation) and don't need a second. The
-  // "+ Add another source" button below the list opens it on demand.
+  // already attached (from archive creation) and don't need a second.
   const [formOpen, setFormOpen] = useState(false)
 
-  // Same trick as AddSourcePanel: watch for AddSourceForm's success element
-  // and refresh the server data so the count + list update without a full
-  // navigation. AddSourceForm itself calls revalidatePath after insert.
+  // Sync UI state.
+  const [rows, setRows] = useState<SyncRow[]>([])
+  const [phase, setPhase] = useState<'idle' | 'loading' | 'running' | 'done' | 'failed'>('idle')
+  const [warnings, setWarnings] = useState<string[]>([])
+  const [showWarnings, setShowWarnings] = useState(false)
+  // Disabled briefly after adding a source — see POST_ADD_SYNC_DELAY_MS.
+  const [syncCoolingDown, setSyncCoolingDown] = useState(false)
+
+  // Watch AddSourceForm's success element so we can refresh server data
+  // (refetches the sources list) and close the form. Also kicks off the
+  // brief sync-cooldown so the user can't sync into stale platform data.
   useEffect(() => {
     if (!formOpen) return
     const root = formMountRef.current
     if (!root) return
     const obs = new MutationObserver(() => {
       if (root.querySelector('.dc-form-ok')) {
+        setSyncCoolingDown(true)
         router.refresh()
         setFormOpen(false)
+        const t = setTimeout(() => setSyncCoolingDown(false), POST_ADD_SYNC_DELAY_MS)
+        return () => clearTimeout(t)
       }
     })
     obs.observe(root, { childList: true, subtree: true })
     return () => obs.disconnect()
   }, [router, formOpen])
-
-  const hasOne = sources.length > 0
-
-  return (
-    <>
-      <StepHeader
-        num="§ 01"
-        title="Confirm your sources"
-        sub="One archive can pull from many league IDs — useful if your league moved platforms. We added the first one when you created the archive; add more if you need them."
-      />
-
-      {sources.length > 0 && (
-        <div className="wiz-card">
-          <div className="wiz-card-title">{leagueName}</div>
-          <div className="wiz-card-sub" style={{ marginBottom: '.75rem' }}>
-            {sources.length} source{sources.length === 1 ? '' : 's'} attached
-          </div>
-          <ul className="wiz-source-list">
-            {sources.map((s) => (
-              <li key={s.id}>
-                <span className="wiz-source-platform">{s.platform.toUpperCase()}</span>
-                <span className="wiz-source-id">{s.label || s.external_id}</span>
-                {s.last_synced_at && <span className="wiz-source-sync">Synced</span>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {!formOpen ? (
-        <div className="wiz-sync-actions" style={{ marginBottom: '1.5rem' }}>
-          <button
-            type="button"
-            className="dc-btn"
-            onClick={() => setFormOpen(true)}
-          >
-            {hasOne ? '+ Add another source' : '+ Add a source'}
-          </button>
-        </div>
-      ) : (
-        <div ref={formMountRef} className="wiz-form">
-          <div className="card" style={{ paddingBottom: '2rem' }}>
-            <AddSourceForm leagueId={leagueId} slug={slug} yahooConnected={yahooConnected} />
-          </div>
-          <div style={{ marginTop: '.75rem', textAlign: 'right' }}>
-            <button
-              type="button"
-              onClick={() => setFormOpen(false)}
-              className="dc-btn-ghost"
-              style={{ fontSize: '.7rem' }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      <FooterNav
-        primary={{ label: 'Continue', disabled: !hasOne, onClick: onContinue }}
-        primaryHint={hasOne ? undefined : 'Add at least one source to continue'}
-      />
-    </>
-  )
-}
-
-// ───────────────────────────────────────────────────────────────────────────
-// Step 2 — Sync. Uses the chunked GET → POST?platform=X endpoint so per-
-// platform progress can be shown as a checklist with a fill bar. Errors on
-// one platform don't block continuing — the user can re-sync later.
-
-type SyncRowState = 'pending' | 'running' | 'done' | 'error'
-type SyncRow = { platform: string; state: SyncRowState; error?: string }
-
-function StepSync({
-  leagueId,
-  alreadySynced,
-  onSynced,
-  onContinue,
-  onBack,
-}: {
-  leagueId: string
-  alreadySynced: boolean
-  onSynced: () => void
-  onContinue: () => void
-  onBack: () => void
-}) {
-  const [rows, setRows] = useState<SyncRow[]>([])
-  const [phase, setPhase] = useState<'idle' | 'loading' | 'running' | 'done' | 'failed'>('idle')
-  const [warnings, setWarnings] = useState<string[]>([])
-  const [showWarnings, setShowWarnings] = useState(false)
-  const router = useRouter()
 
   async function runSync() {
     setPhase('loading')
@@ -323,15 +253,12 @@ function StepSync({
       const { platforms } = (await listRes.json()) as { platforms: string[] }
       if (!platforms || platforms.length === 0) {
         setPhase('failed')
-        setWarnings(['No sources to sync. Go back and add one first.'])
+        setWarnings(['No sources to sync. Add one first.'])
         return
       }
-      const initial: SyncRow[] = platforms.map((p) => ({ platform: p, state: 'pending' }))
-      setRows(initial)
+      setRows(platforms.map((p) => ({ platform: p, state: 'pending' })))
       setPhase('running')
 
-      // Sequential — the function cap is per-platform, parallel would just
-      // burn more time waiting for the slowest one and provide no real win.
       for (let i = 0; i < platforms.length; i++) {
         const p = platforms[i]
         setRows((prev) => prev.map((r, idx) => idx === i ? { ...r, state: 'running' } : r))
@@ -364,98 +291,159 @@ function StepSync({
   const done = rows.filter((r) => r.state === 'done' || r.state === 'error').length
   const fillPct = total === 0 ? 0 : (done / total) * 100
 
-  // Continue gate: at least one sync must have happened ever (or this run
-  // must have attempted every platform). Errors don't block — the user can
-  // address them on the sources page later.
-  const canContinue = alreadySynced || phase === 'done'
+  const hasOne = sources.length > 0
+  const syncing = phase === 'loading' || phase === 'running'
+  // Continue gate: at least one source AND data on file (either from a
+  // prior sync, or one that just completed this session). Errors don't
+  // block — the user can resync later.
+  const canContinue = hasOne && (alreadySynced || phase === 'done')
 
   return (
     <>
       <StepHeader
-        num="§ 02"
-        title="Pull every season"
-        sub="We walk each source for matchups, drafts, and rosters. Big leagues can take a minute — keep this tab open until each platform ticks off."
+        num="§ 01"
+        title="Sources & sync"
+        sub="One archive can pull from many league IDs. Confirm what's attached, then run the sync to pull every season, draft, and matchup. The first source was added when you created the archive."
       />
 
-      {alreadySynced && phase === 'idle' && (
-        <div className="wiz-card" style={{ borderColor: 'rgba(120,180,120,.4)' }}>
-          <div className="wiz-card-title">Already synced</div>
-          <div className="wiz-card-sub">
-            This league has data on file. You can move on, or re-sync to pick up new seasons / fix gaps.
-          </div>
-        </div>
-      )}
-
-      {phase !== 'idle' && rows.length > 0 && (
+      {/* ── Attached sources ── */}
+      {hasOne && (
         <div className="wiz-card">
-          <div className="wiz-progress">
-            <div className="wiz-progress-track">
-              <div className="wiz-progress-fill" style={{ width: `${fillPct}%` }} />
-            </div>
-            <div className="wiz-progress-meta">{done} of {total} platforms</div>
+          <div className="wiz-card-title">{leagueName}</div>
+          <div className="wiz-card-sub" style={{ marginBottom: '.75rem' }}>
+            {sources.length} source{sources.length === 1 ? '' : 's'} attached
+            {yearRange && <> · {yearRange}</>}
           </div>
-          <ul className="wiz-sync-list">
-            {rows.map((r) => (
-              <li key={r.platform} className={`wiz-sync-row ${r.state}`}>
-                <span className="wiz-sync-icon" aria-hidden>
-                  {r.state === 'done' ? '✓' :
-                   r.state === 'error' ? '!' :
-                   r.state === 'running' ? '·' : ''}
-                </span>
-                <span className="wiz-sync-name">{r.platform.toUpperCase()}</span>
-                <span className="wiz-sync-state">
-                  {r.state === 'pending' && 'Queued'}
-                  {r.state === 'running' && 'Syncing…'}
-                  {r.state === 'done' && 'Done'}
-                  {r.state === 'error' && (r.error || 'Failed')}
-                </span>
+          <ul className="wiz-source-list">
+            {sources.map((s) => (
+              <li key={s.id}>
+                <span className="wiz-source-platform">{s.platform.toUpperCase()}</span>
+                <span className="wiz-source-id">{s.label || s.external_id}</span>
+                {s.last_synced_at && <span className="wiz-source-sync">Synced</span>}
               </li>
             ))}
           </ul>
-
-          {warnings.length > 0 && (
-            <div className="wiz-warnings">
-              <button
-                type="button"
-                className="wiz-warnings-toggle"
-                onClick={() => setShowWarnings((v) => !v)}
-              >
-                {warnings.length} warning{warnings.length === 1 ? '' : 's'} {showWarnings ? '▴' : '▾'}
-              </button>
-              {showWarnings && (
-                <ul className="wiz-warnings-list">
-                  {warnings.map((w, i) => <li key={i}>{w}</li>)}
-                </ul>
-              )}
-            </div>
-          )}
         </div>
       )}
 
-      <div className="wiz-sync-actions">
-        <button
-          type="button"
-          className="dc-btn"
-          onClick={runSync}
-          disabled={phase === 'loading' || phase === 'running'}
-        >
-          {phase === 'loading' || phase === 'running' ? 'Syncing…' :
-           rows.length > 0 ? 'Re-sync' :
-           alreadySynced ? 'Sync again' : 'Start sync'}
-        </button>
-      </div>
+      {/* ── Add another ── */}
+      {!formOpen ? (
+        <div className="wiz-sync-actions" style={{ marginBottom: '1.5rem' }}>
+          <button
+            type="button"
+            className="dc-btn-ghost"
+            onClick={() => setFormOpen(true)}
+          >
+            {hasOne ? '+ Add another source' : '+ Add a source'}
+          </button>
+        </div>
+      ) : (
+        <div ref={formMountRef} className="wiz-form">
+          <div className="card" style={{ paddingBottom: '2rem' }}>
+            <AddSourceForm leagueId={leagueId} slug={slug} yahooConnected={yahooConnected} />
+          </div>
+          <div style={{ marginTop: '.75rem', textAlign: 'right' }}>
+            <button
+              type="button"
+              onClick={() => setFormOpen(false)}
+              className="dc-btn-ghost"
+              style={{ fontSize: '.7rem' }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Sync section ── */}
+      {hasOne && (
+        <>
+          {alreadySynced && phase === 'idle' && (
+            <div className="wiz-card" style={{ borderColor: 'rgba(120,180,120,.4)' }}>
+              <div className="wiz-card-title">Already synced</div>
+              <div className="wiz-card-sub">
+                Data on file. Move on, or re-sync to pull new seasons / fix gaps.
+              </div>
+            </div>
+          )}
+
+          {phase !== 'idle' && rows.length > 0 && (
+            <div className="wiz-card">
+              <div className="wiz-progress">
+                <div className="wiz-progress-track">
+                  <div className="wiz-progress-fill" style={{ width: `${fillPct}%` }} />
+                </div>
+                <div className="wiz-progress-meta">{done} of {total} platforms</div>
+              </div>
+              <ul className="wiz-sync-list">
+                {rows.map((r) => (
+                  <li key={r.platform} className={`wiz-sync-row ${r.state}`}>
+                    <span className="wiz-sync-icon" aria-hidden>
+                      {r.state === 'done' ? '✓' :
+                       r.state === 'error' ? '!' :
+                       r.state === 'running' ? '·' : ''}
+                    </span>
+                    <span className="wiz-sync-name">{r.platform.toUpperCase()}</span>
+                    <span className="wiz-sync-state">
+                      {r.state === 'pending' && 'Queued'}
+                      {r.state === 'running' && 'Syncing…'}
+                      {r.state === 'done' && 'Done'}
+                      {r.state === 'error' && (r.error || 'Failed')}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              {warnings.length > 0 && (
+                <div className="wiz-warnings">
+                  <button
+                    type="button"
+                    className="wiz-warnings-toggle"
+                    onClick={() => setShowWarnings((v) => !v)}
+                  >
+                    {warnings.length} warning{warnings.length === 1 ? '' : 's'} {showWarnings ? '▴' : '▾'}
+                  </button>
+                  {showWarnings && (
+                    <ul className="wiz-warnings-list">
+                      {warnings.map((w, i) => <li key={i}>{w}</li>)}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="wiz-sync-actions">
+            <button
+              type="button"
+              className="dc-btn"
+              onClick={runSync}
+              disabled={syncing || syncCoolingDown}
+              title={syncCoolingDown ? 'Loading the new source into sync…' : undefined}
+            >
+              {syncing ? 'Syncing…' :
+               syncCoolingDown ? 'Preparing…' :
+               rows.length > 0 ? 'Re-sync all' :
+               alreadySynced ? 'Sync again' : 'Sync all sources'}
+            </button>
+          </div>
+        </>
+      )}
 
       <FooterNav
         primary={{ label: 'Continue', disabled: !canContinue, onClick: onContinue }}
-        secondary={{ label: '← Back', onClick: onBack }}
-        primaryHint={canContinue ? undefined : 'Run the sync (or use the already-synced data) to continue'}
+        primaryHint={
+          !hasOne ? 'Add at least one source to continue' :
+          !canContinue ? 'Run the sync to continue' :
+          undefined
+        }
       />
     </>
   )
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Step 3 — Members. Embeds the full SetupList from /setup so merging, hiding,
+// Step 2 — Members. Embeds the full SetupList from /setup so merging, hiding,
 // renaming, alumni overrides all work identically to the standalone page.
 
 function StepMembers({
@@ -474,7 +462,7 @@ function StepMembers({
   return (
     <>
       <StepHeader
-        num="§ 03"
+        num="§ 02"
         title="Review the roster"
         sub="Merge cross-platform identities, hide test/throwaway accounts, mark alumni. All optional — you can polish this any time."
       />
@@ -489,7 +477,7 @@ function StepMembers({
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Step 4 — Rivalries. Inline picker: two manager dropdowns + optional name.
+// Step 3 — Rivalries. Inline picker: two manager dropdowns + optional name.
 // Names that have appeared in any created rivalry this session render greyed
 // so the user can see who they've already used; greyed names stay selectable.
 
@@ -558,7 +546,7 @@ function StepRivalries({
   return (
     <>
       <StepHeader
-        num="§ 04"
+        num="§ 03"
         title="Pick the feuds"
         sub="Hand-curated rivalries get their own pages in the public almanac. Pick two managers, name the grudge (or auto-name it)."
       />
@@ -656,7 +644,7 @@ function StepRivalries({
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Step 5 — Season status. Quick toggle for "is this league mid-season right
+// Step 4 — Season status. Quick toggle for "is this league mid-season right
 // now?" — flips is_live on the most recent season. Full live-season config
 // (current week, start date) still lives on /league/[slug]/live.
 
@@ -694,7 +682,7 @@ function StepSeason({
   return (
     <>
       <StepHeader
-        num="§ 05"
+        num="§ 04"
         title="Live season?"
         sub={latest
           ? `Is the ${latest.year} season currently being played? Flipping this on unlocks the live-season pages.`
@@ -744,7 +732,7 @@ function StepSeason({
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Step 6 — Publish. Calls publishLeague, then offers two exits: jump to the
+// Step 5 — Publish. Calls publishLeague, then offers two exits: jump to the
 // public league hub, or stay in the regular setup page for further editing.
 
 function StepPublish({
@@ -774,7 +762,7 @@ function StepPublish({
   return (
     <>
       <StepHeader
-        num="§ 06"
+        num="§ 05"
         title="Publish the almanac"
         sub="Opens the public read-only site at /leagues/[slug]. You can unpublish any time from the league setup page."
       />
