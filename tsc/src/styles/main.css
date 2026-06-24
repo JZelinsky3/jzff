@@ -525,6 +525,12 @@ table.data tbody tr.highlight {
     color: var(--cream-mute);
 }
 .site-footer em { color: var(--gold); font-style: italic; font-family: var(--serif); }
+/* On phones the full "The Sunday Chronicle · An almanac, kept faithfully."
+   runs long and wraps awkwardly with the .25em letter-spacing. Drop the
+   brand prefix on narrow widths; the tagline still reads as the footer. */
+@media (max-width: 720px) {
+    .site-footer-brand { display: none; }
+}
 
 /* ============================================================
    UTILITIES

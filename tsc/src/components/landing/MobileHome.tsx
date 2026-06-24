@@ -258,6 +258,36 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
         </div>
       </section>
 
+      {/* ── Screen 4.5 · The Plans (compact) ─── */}
+      <section className="mlp-screen mlp-plans">
+        <div className="mlp-plans-kicker">★ Plans</div>
+        <h2 className="mlp-plans-title">Four <em>tiers.</em></h2>
+        <div className="mlp-plans-list">
+          <Link href="/pricing" className="mlp-plans-row">
+            <span className="mlp-plans-num">0</span>
+            <span className="mlp-plans-name">UDFA</span>
+            <span className="mlp-plans-price">Free</span>
+          </Link>
+          <Link href="/pricing" className="mlp-plans-row">
+            <span className="mlp-plans-num">I</span>
+            <span className="mlp-plans-name">Rookie</span>
+            <span className="mlp-plans-price">$3<span className="mlp-plans-per">/mo</span></span>
+          </Link>
+          <Link href="/pricing" className="mlp-plans-row is-featured">
+            <span className="mlp-plans-flag">Most popular</span>
+            <span className="mlp-plans-num">II</span>
+            <span className="mlp-plans-name">Veteran</span>
+            <span className="mlp-plans-price">$5<span className="mlp-plans-per">/mo</span></span>
+          </Link>
+          <Link href="/pricing" className="mlp-plans-row">
+            <span className="mlp-plans-num">III</span>
+            <span className="mlp-plans-name">All-Pro</span>
+            <span className="mlp-plans-price">$15<span className="mlp-plans-per">/mo</span></span>
+          </Link>
+        </div>
+        <Link href="/pricing" className="mlp-plans-more">See all plans</Link>
+      </section>
+
       {/* ── Screen 5 · The Close ── */}
       <section className="mlp-screen mlp-close">
         <h2 className="mlp-close-title">Bind <em>your</em> league.</h2>

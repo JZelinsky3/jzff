@@ -11,7 +11,10 @@ export function SiteFooter() {
         gap: '.4rem',
       }}
     >
-      <span>The Sunday Chronicle · <em>An almanac, kept faithfully.</em></span>
+      <span>
+        <span className="site-footer-brand">The Sunday Chronicle · </span>
+        <em>An almanac, kept faithfully.</em>
+      </span>
       <span style={{ opacity: 0.55, fontSize: '.65rem', letterSpacing: '.18em' }}>
         <a href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy</a>
         {' · '}

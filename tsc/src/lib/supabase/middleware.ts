@@ -10,7 +10,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // /api/view is the mobile/desktop view toggle — signed-out visitors on the
 // public landing must be able to flip to the desktop layout, so it can't be
 // behind the auth gate.
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/old', '/hub', '/api/view']
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/old', '/hub', '/api/view', '/privacy', '/terms']
 // /api/cron/ is reached by Vercel's cron infra (no Supabase session); the
 // route handler itself enforces auth via the CRON_SECRET bearer header.
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request
