@@ -48,10 +48,10 @@ export function Wizard(props: Props) {
   const [step, setStep] = useState<StepKey>('sources')
   const stepIdx = STEPS.findIndex((s) => s.key === step)
 
-  // Sources state mirrors props for the first render, then trails server
-  // refreshes triggered by AddSourceForm's revalidatePath.
-  const [sources, setSources] = useState<SourceLite[]>(props.initialSources)
-  useEffect(() => { setSources(props.initialSources) }, [props.initialSources])
+  // Sources come straight from props — AddSourceForm calls revalidatePath on
+  // insert, then the sources step's router.refresh() pulls fresh server data,
+  // which re-renders this component with the updated initialSources prop.
+  const sources = props.initialSources
 
   // Sync state — populated when the step is entered.
   const [hasSynced, setHasSynced] = useState<boolean>(!!props.initialLastSyncedAt)
@@ -93,6 +93,7 @@ export function Wizard(props: Props) {
         {step === 'sources' && (
           <StepSources
             leagueId={props.leagueId}
+            leagueName={props.leagueName}
             slug={props.slug}
             sources={sources}
             yahooConnected={props.yahooConnected}
@@ -185,12 +186,14 @@ function StepBar({ step }: { step: StepKey }) {
 
 function StepSources({
   leagueId,
+  leagueName,
   slug,
   sources,
   yahooConnected,
   onContinue,
 }: {
   leagueId: string
+  leagueName: string
   slug: string
   sources: SourceLite[]
   yahooConnected: boolean
@@ -198,19 +201,27 @@ function StepSources({
 }) {
   const router = useRouter()
   const formMountRef = useRef<HTMLDivElement>(null)
+  // Form is collapsed by default — most users land here with one source
+  // already attached (from archive creation) and don't need a second. The
+  // "+ Add another source" button below the list opens it on demand.
+  const [formOpen, setFormOpen] = useState(false)
 
   // Same trick as AddSourcePanel: watch for AddSourceForm's success element
   // and refresh the server data so the count + list update without a full
   // navigation. AddSourceForm itself calls revalidatePath after insert.
   useEffect(() => {
+    if (!formOpen) return
     const root = formMountRef.current
     if (!root) return
     const obs = new MutationObserver(() => {
-      if (root.querySelector('.dc-form-ok')) router.refresh()
+      if (root.querySelector('.dc-form-ok')) {
+        router.refresh()
+        setFormOpen(false)
+      }
     })
     obs.observe(root, { childList: true, subtree: true })
     return () => obs.disconnect()
-  }, [router])
+  }, [router, formOpen])
 
   const hasOne = sources.length > 0
 
@@ -218,13 +229,16 @@ function StepSources({
     <>
       <StepHeader
         num="§ 01"
-        title="Add a source"
-        sub="Pick the platform that hosts your league. ESPN, Sleeper, Yahoo, and NFL.com are supported — you can add more after this step."
+        title="Confirm your sources"
+        sub="One archive can pull from many league IDs — useful if your league moved platforms. We added the first one when you created the archive; add more if you need them."
       />
 
       {sources.length > 0 && (
         <div className="wiz-card">
-          <div className="wiz-card-title">{sources.length} source{sources.length === 1 ? '' : 's'} attached</div>
+          <div className="wiz-card-title">{leagueName}</div>
+          <div className="wiz-card-sub" style={{ marginBottom: '.75rem' }}>
+            {sources.length} source{sources.length === 1 ? '' : 's'} attached
+          </div>
           <ul className="wiz-source-list">
             {sources.map((s) => (
               <li key={s.id}>
@@ -237,9 +251,33 @@ function StepSources({
         </div>
       )}
 
-      <div ref={formMountRef} className="wiz-form">
-        <AddSourceForm leagueId={leagueId} slug={slug} yahooConnected={yahooConnected} />
-      </div>
+      {!formOpen ? (
+        <div className="wiz-sync-actions" style={{ marginBottom: '1.5rem' }}>
+          <button
+            type="button"
+            className="dc-btn"
+            onClick={() => setFormOpen(true)}
+          >
+            {hasOne ? '+ Add another source' : '+ Add a source'}
+          </button>
+        </div>
+      ) : (
+        <div ref={formMountRef} className="wiz-form">
+          <div className="card" style={{ paddingBottom: '2rem' }}>
+            <AddSourceForm leagueId={leagueId} slug={slug} yahooConnected={yahooConnected} />
+          </div>
+          <div style={{ marginTop: '.75rem', textAlign: 'right' }}>
+            <button
+              type="button"
+              onClick={() => setFormOpen(false)}
+              className="dc-btn-ghost"
+              style={{ fontSize: '.7rem' }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <FooterNav
         primary={{ label: 'Continue', disabled: !hasOne, onClick: onContinue }}
