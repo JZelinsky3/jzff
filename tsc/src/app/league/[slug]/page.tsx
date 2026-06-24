@@ -10,6 +10,7 @@ import { SyncButton } from './sync-button'
 import { GradeTradesButton } from './grade-trades-button'
 import { PublishButton } from './setup/publish-button'
 import { BillboardPublishCta } from './billboard-publish-cta'
+import { SetupWizCallout } from './setup-wiz-callout'
 
 export default async function LeagueOverviewPage({
   params,
@@ -111,28 +112,8 @@ export default async function LeagueOverviewPage({
         </div>
       </section>
 
-      {isOwner && (
-        <Link href={`/league/${slug}/welcome`} className="setup-wiz-callout">
-          <div className="setup-wiz-callout-mark" aria-hidden>
-            <span>✦</span>
-          </div>
-          <div className="setup-wiz-callout-body">
-            <div className="setup-wiz-callout-kicker">★ For commissioners ★</div>
-            <div className="setup-wiz-callout-title">
-              Setup <em>wizard.</em>
-            </div>
-            <div className="setup-wiz-callout-desc">
-              A guided walk through sources, sync, members, rivalries, and publish.
-              Start, skip steps, come back later.
-            </div>
-          </div>
-          <div className="setup-wiz-callout-cta" aria-hidden>
-            <span>Open</span>
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 3 11 8 6 13" />
-            </svg>
-          </div>
-        </Link>
+      {isOwner && !((league.settings ?? {}) as { wizard_dismissed_at?: string }).wizard_dismissed_at && (
+        <SetupWizCallout leagueId={league.id} slug={slug} />
       )}
 
       {/* § 01 — Public Almanac BILLBOARD. Wide marquee shape: the only

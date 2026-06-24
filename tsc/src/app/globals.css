@@ -14443,6 +14443,40 @@ option.wiz-used {
     background: var(--gold);
     color: var(--ink);
 }
+/* Right-side stack — Open pill on top, small Done chip beneath. */
+.setup-wiz-callout-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .35rem;
+}
+.setup-wiz-callout-done {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .3rem;
+    padding: .25rem .55rem;
+    background: transparent;
+    border: 1px solid rgba(255, 247, 230, .15);
+    color: var(--cream-soft);
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: .55rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.setup-wiz-callout-done:hover:not(:disabled) {
+    background: rgba(120, 180, 120, .12);
+    border-color: rgba(120, 180, 120, .5);
+    color: rgba(180, 220, 180, 1);
+}
+.setup-wiz-callout-done:disabled {
+    opacity: .5;
+    cursor: wait;
+}
 @media (max-width: 640px) {
     .setup-wiz-callout {
         flex-direction: column;
@@ -14453,6 +14487,8 @@ option.wiz-used {
     }
     .setup-wiz-callout-cta { align-self: stretch; justify-content: center; }
     .setup-wiz-callout-desc { max-width: none; }
+    .setup-wiz-callout-actions { width: 100%; flex-direction: row; }
+    .setup-wiz-callout-actions .setup-wiz-callout-cta { flex: 1; }
 }
 
 /* Mobile members — "Run setup wizard" link styled to match other mmem rows */
