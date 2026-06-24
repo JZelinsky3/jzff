@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { AddSourceForm } from '@/app/league/[slug]/sources/add-source-form'
 import { SetupList, type ProfileRow } from '@/app/league/[slug]/setup/setup-list'
-import { createRivalry } from '@/app/league/[slug]/rivalries/actions'
 import { publishLeague } from '@/app/league/[slug]/setup/actions'
-import { setLatestSeasonLive } from './actions'
+import { setLatestSeasonLive, createRivalryInWizard } from './actions'
 
 type SourceLite = {
   id: string
@@ -31,6 +30,7 @@ type Props = {
   yahooConnected: boolean
   managers: ManagerLite[]
   profiles: ProfileRow[]
+  avatars: Record<string, string>
   yearRange: string | null
 }
 
@@ -109,6 +109,7 @@ export function Wizard(props: Props) {
             leagueId={props.leagueId}
             slug={props.slug}
             profiles={props.profiles}
+            avatars={props.avatars}
             onContinue={goNext}
             onBack={goBack}
           />
@@ -450,12 +451,14 @@ function StepMembers({
   leagueId,
   slug,
   profiles,
+  avatars,
   onContinue,
   onBack,
 }: {
   leagueId: string
   slug: string
   profiles: ProfileRow[]
+  avatars: Record<string, string>
   onContinue: () => void
   onBack: () => void
 }) {
@@ -466,7 +469,7 @@ function StepMembers({
         title="Review the roster"
         sub="Merge cross-platform identities, hide test/throwaway accounts, mark alumni. All optional — you can polish this any time."
       />
-      <SetupList leagueId={leagueId} slug={slug} profiles={profiles} />
+      <SetupList leagueId={leagueId} slug={slug} profiles={profiles} avatars={avatars} />
       <FooterNav
         primary={{ label: 'Continue', onClick: onContinue }}
         secondary={{ label: '← Back', onClick: onBack }}
@@ -516,31 +519,17 @@ function StepRivalries({
     if (!a || !b) { setErr('Pick two managers.'); return }
     if (a === b) { setErr('Pick two different managers.'); return }
     setBusy(true); setErr(null)
-    const fd = new FormData()
-    fd.set('leagueId', leagueId)
-    fd.set('managerA', a)
-    fd.set('managerB', b)
-    if (autoName) fd.set('autoName', 'true')
-    else if (name.trim()) fd.set('name', name.trim())
-    try {
-      // createRivalry redirects on success — that throws a NEXT_REDIRECT.
-      // The redirect points at the rivalries page, but we want to stay in
-      // the wizard, so we catch + treat as success (the row is already in
-      // the DB by the time the redirect fires).
-      await createRivalry(null, fd)
-      // If we got here without a throw, the action returned an error result.
-      // Defensive — schema/validation failures fall through this branch.
-    } catch (e) {
-      const msg = (e instanceof Error ? e.message : String(e)) || ''
-      if (!msg.includes('NEXT_REDIRECT')) {
-        setErr(msg || 'Could not create rivalry.')
-        setBusy(false)
-        return
-      }
-    }
-    setCreated((prev) => [...prev, { a, b, name: autoName ? null : (name.trim() || null) }])
-    setA(''); setB(''); setName('')
+    const r = await createRivalryInWizard({
+      leagueId,
+      managerA: a,
+      managerB: b,
+      name: autoName ? undefined : (name.trim() || undefined),
+      autoName,
+    })
     setBusy(false)
+    if (!r.ok) { setErr(r.error); return }
+    setCreated((prev) => [...prev, { a, b, name: r.rivalryName ?? null }])
+    setA(''); setB(''); setName('')
   }
 
   return (

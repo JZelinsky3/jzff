@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { pickRivalryName } from '../rivalries/_lib/nameBank'
 
 type Result = { ok: true } | { ok: false; error: string }
 
@@ -65,4 +66,70 @@ export async function setLatestSeasonLive(input: z.infer<typeof ToggleSchema>): 
   revalidatePath(`/league/${access.slug}`)
   revalidatePath(`/league/${access.slug}/live`)
   return { ok: true }
+}
+
+// Wizard-only: insert a rivalry and return ok/error without redirecting.
+// The public createRivalry in /rivalries/actions.ts redirects to the
+// rivalries page on success — fine for that flow, breaks the wizard since
+// the user is mid-step. Mirrors the same name-bank logic.
+const CreateRivalrySchema = z.object({
+  leagueId: z.string().uuid(),
+  managerA: z.string().uuid(),
+  managerB: z.string().uuid(),
+  name: z.string().trim().optional(),
+  autoName: z.boolean().optional(),
+})
+
+export async function createRivalryInWizard(
+  input: z.infer<typeof CreateRivalrySchema>,
+): Promise<Result & { rivalryName?: string }> {
+  const parsed = CreateRivalrySchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+  const { leagueId, managerA, managerB, autoName } = parsed.data
+  let { name } = parsed.data
+  if (managerA === managerB) return { ok: false, error: 'Pick two different managers.' }
+
+  const access = await assertOwner(leagueId)
+  if (!access.ok) return access
+
+  const supabase = await createClient()
+
+  if (autoName || !name || !name.trim()) {
+    const [{ data: mgrs }, { data: existing }] = await Promise.all([
+      supabase
+        .from('managers')
+        .select('id, display_name, profile:manager_profiles(canonical_name)')
+        .in('id', [managerA, managerB]),
+      supabase.from('rivalries').select('name').eq('league_id', leagueId),
+    ])
+    type Row = {
+      id: string
+      display_name: string | null
+      profile: { canonical_name: string } | { canonical_name: string }[] | null
+    }
+    const nameOf = (mid: string): string => {
+      const row = (mgrs as Row[] | null | undefined)?.find((m) => m.id === mid)
+      if (!row) return 'Unknown'
+      const prof = Array.isArray(row.profile) ? row.profile[0] : row.profile
+      return prof?.canonical_name?.trim() || row.display_name?.trim() || 'Unknown'
+    }
+    const aName = nameOf(managerA)
+    const bName = nameOf(managerB)
+    const taken = new Set(
+      (existing ?? []).map((r) => (r.name ?? '').trim().toLowerCase()),
+    )
+    name = pickRivalryName(managerA, managerB, aName, bName, taken)
+  }
+
+  const { error } = await supabase.from('rivalries').insert({
+    league_id: leagueId,
+    manager_a_id: managerA,
+    manager_b_id: managerB,
+    name,
+    auto_named: !!autoName,
+  })
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath(`/league/${access.slug}/rivalries`)
+  return { ok: true, rivalryName: name ?? undefined }
 }

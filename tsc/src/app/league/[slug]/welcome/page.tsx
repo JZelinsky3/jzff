@@ -65,8 +65,12 @@ export default async function WelcomePage({
       .order('canonical_name'),
     supabase
       .from('managers')
-      .select('id, profile_id, display_name, team_name, external_id, league_id')
-      .eq('league_id', league.id),
+      .select('id, profile_id, display_name, team_name, external_id, league_id, avatar_url, created_at')
+      .eq('league_id', league.id)
+      // Newest first per profile — when we pick the first non-null avatar
+      // below, this preference order makes us favor recent avatars over old
+      // platform avatars that may have changed/disappeared.
+      .order('created_at', { ascending: false }),
     // All season rows — used both for the "auto_current" walk (same as
     // /setup/page.tsx) and to render the league-wide year range on the
     // sources card. Ordered desc so the first row with data is also the
@@ -111,6 +115,10 @@ export default async function WelcomePage({
       break
     }
   }
+  // Per-profile avatar: pick the first non-null among that profile's
+  // managers (manager rows arrive newest-first, so this favors recent
+  // platforms). Wizard-only display; the regular /setup page is untouched.
+  const avatarByProfile = new Map<string, string>()
   for (const m of managerRows ?? []) {
     if (!m.profile_id) continue
     const p = profilesById.get(m.profile_id)
@@ -122,8 +130,12 @@ export default async function WelcomePage({
       external_id: m.external_id,
     })
     if (currentManagerIds.has(m.id)) p.auto_current = true
+    if (m.avatar_url && !avatarByProfile.has(m.profile_id)) {
+      avatarByProfile.set(m.profile_id, m.avatar_url)
+    }
   }
   const profiles = Array.from(profilesById.values())
+  const avatarMap: Record<string, string> = Object.fromEntries(avatarByProfile)
 
   return (
     <Wizard
@@ -138,6 +150,7 @@ export default async function WelcomePage({
       yahooConnected={!!yahooTok}
       managers={managers.map((m) => ({ id: m.id, name: m.name }))}
       profiles={profiles}
+      avatars={avatarMap}
       yearRange={yearRange}
     />
   )

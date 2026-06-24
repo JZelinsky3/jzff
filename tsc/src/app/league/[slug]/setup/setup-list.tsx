@@ -31,10 +31,15 @@ export function SetupList({
   leagueId,
   slug,
   profiles,
+  avatars,
 }: {
   leagueId: string
   slug: string
   profiles: ProfileRow[]
+  // Optional per-profile avatar URLs. When provided, each card renders an
+  // avatar circle next to the canonical name. The regular /setup page omits
+  // this — only the setup wizard's members step passes it through.
+  avatars?: Record<string, string>
 }) {
   void slug
   const router = useRouter()
@@ -263,6 +268,7 @@ export function SetupList({
 
   function renderCard(p: ProfileRow) {
     const isSel = selected.has(p.id)
+    const avatarUrl = avatars?.[p.id]
     return (
       <div key={p.id} className="card" style={{ padding: '.45rem .7rem', opacity: p.is_hidden ? 0.55 : 1 }}>
         <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -272,6 +278,34 @@ export function SetupList({
             onChange={() => toggleSelect(p.id)}
             style={{ transform: 'scale(1.15)', cursor: 'pointer' }}
           />
+          {avatars && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl || '/icon.png'}
+              alt=""
+              width={32}
+              height={32}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                background: 'rgba(255,247,230,.06)',
+                border: '1px solid rgba(255,247,230,.15)',
+                flexShrink: 0,
+                opacity: avatarUrl ? 1 : .35,
+              }}
+              onError={(e) => {
+                // Platform avatar 404s happen — esp. when users leave a
+                // league and their avatar gets purged. Fall back to the
+                // site icon so the layout doesn't go ragged.
+                const t = e.currentTarget
+                if (t.src.endsWith('/icon.png')) return
+                t.src = '/icon.png'
+                t.style.opacity = '.35'
+              }}
+            />
+          )}
           <div style={{ flex: 1, minWidth: '200px' }}>
             <div style={{ fontFamily: 'var(--serif)', fontSize: '1rem', display: 'flex', gap: '.5rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
               <span>{p.canonical_name}</span>

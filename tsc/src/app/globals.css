@@ -14338,6 +14338,119 @@ option.wiz-used {
     color: rgba(255, 247, 230, .45);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Setup wizard callout — desktop hub entry. A small ornate card that sits
+   between the league hero and the §01 billboard. Gold-accented to echo the
+   billboard so it reads as part of the same surface, not a stray link.
+   ───────────────────────────────────────────────────────────────────────── */
+.setup-wiz-callout {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    max-width: 720px;
+    margin: 1.5rem auto 0;
+    padding: 1.1rem 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    background: linear-gradient(135deg,
+        rgba(232, 200, 137, .06) 0%,
+        rgba(232, 200, 137, .02) 55%,
+        rgba(26, 37, 50, .25) 100%);
+    border: 1px solid rgba(232, 200, 137, .22);
+    border-left: 3px solid var(--gold);
+    transition: transform .2s cubic-bezier(.2,.8,.2,1), border-color .2s, box-shadow .2s, background .2s;
+}
+.setup-wiz-callout:hover {
+    transform: translateY(-1px);
+    border-color: var(--gold-deep);
+    border-left-color: var(--gold);
+    box-shadow: 0 10px 26px rgba(0,0,0,.3), 0 0 22px rgba(232,200,137,.1);
+    background: linear-gradient(135deg,
+        rgba(232, 200, 137, .1) 0%,
+        rgba(232, 200, 137, .04) 55%,
+        rgba(26, 37, 50, .25) 100%);
+}
+.setup-wiz-callout-mark {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--gold-deep);
+    background: rgba(232, 200, 137, .08);
+    color: var(--gold);
+    font-size: 1.3rem;
+    font-family: var(--serif);
+    transition: background .2s, color .2s;
+}
+.setup-wiz-callout:hover .setup-wiz-callout-mark {
+    background: var(--gold);
+    color: var(--ink);
+}
+.setup-wiz-callout-body {
+    flex: 1;
+    min-width: 0;
+}
+.setup-wiz-callout-kicker {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .58rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .2rem;
+}
+.setup-wiz-callout-title {
+    font-family: var(--serif);
+    font-size: 1.4rem;
+    line-height: 1.1;
+    color: var(--cream);
+    margin-bottom: .15rem;
+}
+.setup-wiz-callout-title em {
+    font-style: italic;
+    color: var(--gold);
+}
+.setup-wiz-callout-desc {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .85rem;
+    color: var(--cream-soft);
+    line-height: 1.4;
+    max-width: 56ch;
+}
+.setup-wiz-callout-cta {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .55rem .9rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .68rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--gold-deep);
+    transition: background .2s, color .2s;
+}
+.setup-wiz-callout:hover .setup-wiz-callout-cta {
+    background: var(--gold);
+    color: var(--ink);
+}
+@media (max-width: 640px) {
+    .setup-wiz-callout {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .9rem;
+        padding: 1rem 1.1rem;
+        margin: 1.25rem 1rem 0;
+    }
+    .setup-wiz-callout-cta { align-self: stretch; justify-content: center; }
+    .setup-wiz-callout-desc { max-width: none; }
+}
+
 /* Mobile members — "Run setup wizard" link styled to match other mmem rows */
 .mmem-wiz-link {
     display: block;
