@@ -300,13 +300,33 @@ function StepSources({
   // block — the user can resync later.
   const canContinue = hasOne && (alreadySynced || phase === 'done')
 
+  const showAlreadySyncedBadge = alreadySynced && phase === 'idle'
+
   return (
     <>
-      <StepHeader
-        num="§ 01"
-        title="Sources & sync"
-        sub="One archive can pull from many league IDs. Confirm what's attached, then run the sync to pull every season, draft, and matchup. The first source was added when you created the archive."
-      />
+      {/* Header + "Already synced" callout share a row on wider screens so
+          the status sits next to the writeup instead of stacking under the
+          sources list. On phones the flex-wrap drops it to a new line. */}
+      <div className="wiz-step-row">
+        <div className="wiz-step-row-main">
+          <StepHeader
+            num="§ 01"
+            title="Sources & sync"
+            sub="One archive can pull from many league IDs. Confirm what's attached, then run the sync to pull every season, draft, and matchup. The first source was added when you created the archive."
+          />
+        </div>
+        {showAlreadySyncedBadge && (
+          <aside className="wiz-already-synced">
+            <span className="wiz-already-synced-mark" aria-hidden>✓</span>
+            <div>
+              <div className="wiz-already-synced-title">Already synced</div>
+              <div className="wiz-already-synced-sub">
+                Data on file. Move on, or re-sync to pull new seasons.
+              </div>
+            </div>
+          </aside>
+        )}
+      </div>
 
       {/* ── Attached sources ── */}
       {hasOne && (
@@ -360,15 +380,6 @@ function StepSources({
       {/* ── Sync section ── */}
       {hasOne && (
         <>
-          {alreadySynced && phase === 'idle' && (
-            <div className="wiz-card" style={{ borderColor: 'rgba(120,180,120,.4)' }}>
-              <div className="wiz-card-title">Already synced</div>
-              <div className="wiz-card-sub">
-                Data on file. Move on, or re-sync to pull new seasons / fix gaps.
-              </div>
-            </div>
-          )}
-
           {phase !== 'idle' && rows.length > 0 && (
             <div className="wiz-card">
               <div className="wiz-progress">

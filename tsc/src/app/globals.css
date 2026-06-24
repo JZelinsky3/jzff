@@ -14206,9 +14206,91 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     color: var(--cream);
     flex: 1;
 }
+/* "Synced" chip on individual source rows — chip styling so it actually
+   reads at a glance. Sage-green to echo the sage of the wider Already-synced
+   callout. The ✓ glyph is rendered via ::before so the markup stays "Synced". */
 .wiz-source-sync {
-    font-size: .7rem;
-    color: rgba(120, 180, 120, .8);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .25rem .55rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: rgba(150, 220, 160, 1);
+    background: rgba(120, 180, 120, .15);
+    border: 1px solid rgba(120, 180, 120, .45);
+    border-radius: 2px;
+    line-height: 1;
+}
+.wiz-source-sync::before {
+    content: '✓';
+    font-size: .8rem;
+    line-height: 1;
+}
+
+/* Step header + side callout row. Wider screens show them side-by-side so
+   "Already synced" sits next to the writeup; phones drop it below. */
+.wiz-step-row {
+    display: flex;
+    align-items: stretch;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.75rem;
+}
+.wiz-step-row-main {
+    flex: 1 1 360px;
+    min-width: 0;
+}
+.wiz-step-row-main .wiz-step-header {
+    margin-bottom: 0;
+}
+.wiz-already-synced {
+    flex: 0 1 280px;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: 1rem 1.15rem;
+    background: rgba(120, 180, 120, .08);
+    border: 1px solid rgba(120, 180, 120, .4);
+    border-left: 3px solid rgba(150, 220, 160, .9);
+    border-radius: 3px;
+}
+.wiz-already-synced-mark {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(150, 220, 160, .85);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1;
+}
+.wiz-already-synced-title {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .68rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: rgba(170, 230, 180, 1);
+    margin-bottom: .25rem;
+}
+.wiz-already-synced-sub {
+    font-family: var(--serif);
+    font-size: .82rem;
+    line-height: 1.4;
+    color: var(--cream-soft);
+}
+@media (max-width: 720px) {
+    .wiz-already-synced { flex-basis: 100%; }
 }
 
 .wiz-form { margin-bottom: 1.5rem; }
