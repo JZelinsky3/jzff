@@ -275,7 +275,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
             <span className="mlp-plans-num">I</span>
             <span className="mlp-plans-body">
               <span className="mlp-plans-name">Rookie</span>
-              <span className="mlp-plans-sub">1 league &middot; full access</span>
+              <span className="mlp-plans-sub">1 league &middot; core access</span>
             </span>
             <span className="mlp-plans-price">$3<span className="mlp-plans-per">/mo</span></span>
           </Link>
@@ -292,7 +292,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
             <span className="mlp-plans-num">III</span>
             <span className="mlp-plans-body">
               <span className="mlp-plans-name">All-Pro</span>
-              <span className="mlp-plans-sub">Up to 10 leagues &middot; full access</span>
+              <span className="mlp-plans-sub">Up to 10 leagues &middot; early access tier</span>
             </span>
             <span className="mlp-plans-price">$15<span className="mlp-plans-per">/mo</span></span>
           </Link>
