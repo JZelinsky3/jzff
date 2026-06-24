@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { OnboardingChecklist, type OnboardingStep } from '@/components/OnboardingChecklist'
 import { SiteFooter } from '@/components/SiteFooter'
 import { MobileLeagueHub } from '@/components/league/MobileLeagueHub'
 import { createClient } from '@/lib/supabase/server'
@@ -80,67 +79,6 @@ export default async function LeagueOverviewPage({
     )
   }
 
-  const hasSources = (sourceCount ?? 0) > 0
-  const hasSynced = !!league.last_synced_at
-  // "Reviewed members" is an explicit signal: the commissioner either
-  // clicked "Mark reviewed" on /setup or took any member-edit action
-  // (rename, merge, hide, alumni override, delete). Sync alone doesn't
-  // count — managers get created automatically and the commissioner may
-  // still want to merge / hide duplicates.
-  const leagueSettings = (league.settings ?? {}) as { members_reviewed_at?: string }
-  const hasMembers = !!leagueSettings.members_reviewed_at
-  const hasRivalries = (rivalryCount ?? 0) > 0
-  const hasPublished = !!league.published_at
-
-  const leagueOnboardingSteps: OnboardingStep[] = [
-    {
-      label: 'Connect a source',
-      description: 'Sleeper, ESPN, or NFL.com — each source walks its own history.',
-      done: hasSources,
-      href: `/league/${slug}/sources`,
-      cta: 'Add source →',
-    },
-    {
-      label: 'Sync the league',
-      description: 'Pulls every season, draft, and matchup your sources can reach. Stay on this page until it finishes — closing the tab cancels the run.',
-      done: hasSynced,
-      action: (
-        // Wrapper is intentionally a column so the "Add more" link sits
-        // centered under the Sync button. The .onb-step-extra class is
-        // hidden inside the FAB panel — that variant only shows Sync.
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.4rem' }}>
-          <SyncButton leagueId={league.id} />
-          <Link
-            href={`/league/${slug}/sources`}
-            className="dc-btn-ghost onb-step-extra"
-            style={{ fontSize: '.58rem', padding: '.3rem .65rem', letterSpacing: '.18em' }}
-          >
-            + Add more
-          </Link>
-        </div>
-      ),
-    },
-    {
-      label: 'Review members',
-      description: 'Merge cross-platform identities, hide throwaways, set alumni.',
-      done: hasMembers,
-      href: `/league/${slug}/setup`,
-      cta: 'Review →',
-    },
-    {
-      label: 'Curate rivalries',
-      description: 'Hand-pick the feuds that get their own page in the almanac.',
-      done: hasRivalries,
-      href: `/league/${slug}/rivalries`,
-      cta: 'Pick rivals →',
-    },
-    {
-      label: 'Publish the almanac',
-      description: 'Open the gates so visitors can read the public archive.',
-      done: hasPublished,
-    },
-  ]
-
   return (
     <main>
       <section className="hero">
@@ -171,15 +109,6 @@ export default async function LeagueOverviewPage({
           {tierBadgeLabel(tier)}
         </div>
       </section>
-
-      <OnboardingChecklist
-        storageKey={`tsc_onb_league_${league.id}`}
-        kicker="Get this league ready"
-        title="Your"
-        titleEm={`${tail || 'league'} checklist.`}
-        subtitle="Each step ticks itself off as you complete it."
-        steps={leagueOnboardingSteps}
-      />
 
       {/* § 01 — Public Almanac BILLBOARD. Wide marquee shape: the only
           non-rectangular block on the page (angled clip on both sides)

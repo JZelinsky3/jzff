@@ -334,7 +334,11 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
   })
 
   revalidatePath('/dashboard')
-  redirect(`/league/${inserted.slug}`)
+  // First-time landing for brand-new archives. The wizard walks the user
+  // through the rest of setup (more sources, sync, members, rivalries,
+  // season, publish). Subsequent visits go to the regular league hub —
+  // the wizard is rerunnable from /league/[slug]/setup.
+  redirect(`/league/${inserted.slug}/welcome`)
 }
 
 // Returns every NFL league the signed-in user has on their connected Yahoo
