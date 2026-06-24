@@ -6,11 +6,15 @@
 // possible at the OS level), so the design leans into the print/almanac
 // brand: ink field, gold hairline frame, serif wordmark, mono kickers.
 //
-// URL: /api/og/splash?w=1290&h=2796
+// URL: /api/og/splash?w=1290&h=2796&league=PA+Milk+Society
 //
 // Query params:
-//   w  — image width in CSS px (default 1290, iPhone Pro Max)
-//   h  — image height in CSS px (default 2796)
+//   w       — image width in CSS px (default 1290, iPhone Pro Max)
+//   h       — image height in CSS px (default 2796)
+//   league  — optional league name; when present it replaces the generic
+//             "An almanac, kept faithfully." tagline so the splash reads
+//             like "your league's app" instead of generic TSC chrome.
+//             The /leagues/<slug>/ route handler injects this per league.
 //
 // CDN-cached for a year (immutable) — design changes need a new ?v= in
 // the metadata href to bust crawler/iOS caches.
@@ -49,6 +53,10 @@ export async function GET(req: Request) {
   // typography to read; above 1600 wastes bandwidth (no iPhone goes higher).
   const w = Math.min(Math.max(parseInt(url.searchParams.get('w') ?? '1290', 10) || 1290, 600), 1600)
   const h = Math.min(Math.max(parseInt(url.searchParams.get('h') ?? '2796', 10) || 2796, 600), 3200)
+  // Clamp league name length so a goofy 80-character team name can't overflow
+  // the masthead frame or hit a Satori layout edge case. Tested up to ~32 chars.
+  const leagueRaw = url.searchParams.get('league')?.trim() ?? ''
+  const league = leagueRaw.length > 36 ? `${leagueRaw.slice(0, 34).trim()}…` : leagueRaw
 
   // Scale typography off the shorter dimension so portrait/landscape both
   // read at the same visual size. The numbers below were tuned against
@@ -180,24 +188,48 @@ export async function GET(req: Request) {
             }}
           />
 
-          {/* Tagline */}
-          <div
-            style={{
-              marginTop: px(70),
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              fontFamily: 'DMSerif',
-              fontStyle: 'italic',
-              fontSize: px(70),
-              color: CREAM_SOFT,
-              lineHeight: 1.15,
-              textAlign: 'center',
-            }}
-          >
-            <span>An almanac,</span>
-            <span>kept faithfully.</span>
-          </div>
+          {/* Tagline — when a league name is passed, the splash reads as
+              "An almanac of <League Name>" (almanac-of-place binding style).
+              Without a league it falls back to the generic site tagline. */}
+          {league ? (
+            <div
+              style={{
+                marginTop: px(70),
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                fontFamily: 'DMSerif',
+                lineHeight: 1.05,
+                textAlign: 'center',
+                maxWidth: px(900),
+              }}
+            >
+              <span style={{ fontStyle: 'italic', fontSize: px(60), color: CREAM_SOFT }}>
+                An almanac of
+              </span>
+              <span style={{ fontStyle: 'italic', fontSize: px(110), color: GOLD, marginTop: px(18) }}>
+                {league}
+              </span>
+            </div>
+          ) : (
+            <div
+              style={{
+                marginTop: px(70),
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: px(70),
+                color: CREAM_SOFT,
+                lineHeight: 1.15,
+                textAlign: 'center',
+              }}
+            >
+              <span>An almanac,</span>
+              <span>kept faithfully.</span>
+            </div>
+          )}
         </div>
 
         {/* Bottom footer — volume + brand mark */}

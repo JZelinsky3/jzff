@@ -294,14 +294,45 @@ function injectBaseTag(html: string, meta: LeagueMeta, file: string, servedMobil
   // apple-touch-icon + manifest give "Add to Home Screen" a designed
   // bookplate tile (ink/gold monogram) and the league's real name instead
   // of a page screenshot with a letter on it.
+  //
+  // apple-touch-startup-image entries point at the per-league splash so
+  // when a user PWA-installs /leagues/<slug>/, the icon-tap shows a
+  // masthead with their league name ("An almanac of <League>") instead
+  // of an OS-default black screen. One entry per iPhone resolution iOS
+  // needs to match exactly (no scaling). Keep this list in sync with the
+  // root layout's appleWebApp.startupImage and bump SPLASH_V if you
+  // redesign the splash so iOS refetches.
+  const SPLASH_V = '2'
+  const leagueQ = encodeURIComponent(meta.name)
+  const splash = (w: number, h: number) =>
+    `/api/og/splash?w=${w}&h=${h}&league=${leagueQ}&v=${SPLASH_V}`
+  const splashTags = [
+    [1320, 2868, '440px', '956px', 3], // iPhone 16 Pro Max
+    [1206, 2622, '402px', '874px', 3], // iPhone 16 Pro
+    [1290, 2796, '430px', '932px', 3], // iPhone 15/16 Plus, 14/15 Pro Max
+    [1179, 2556, '393px', '852px', 3], // iPhone 14 Pro / 15 / 15 Pro / 16
+    [1284, 2778, '428px', '926px', 3], // iPhone 12/13 Pro Max / 14 Plus
+    [1170, 2532, '390px', '844px', 3], // iPhone 12/13/14
+    [1080, 2340, '360px', '780px', 3], // iPhone 12/13 mini
+    [1125, 2436, '375px', '812px', 3], // iPhone X / XS / 11 Pro
+    [ 828, 1792, '414px', '896px', 2], // iPhone XR / 11
+    [1242, 2208, '414px', '736px', 3], // iPhone 6/7/8 Plus
+    [ 750, 1334, '375px', '667px', 2], // iPhone 6/7/8 / SE 2/3
+    [ 640, 1136, '320px', '568px', 2], // iPhone SE 1st gen
+  ].map(([w, h, dw, dh, dpr]) =>
+    `<link rel="apple-touch-startup-image" href="${splash(w as number, h as number)}" media="(device-width: ${dw}) and (device-height: ${dh}) and (-webkit-device-pixel-ratio: ${dpr}) and (orientation: portrait)">`
+  ).join('\n')
   const tags =
     `<base href="/leagues/${meta.slug}/">` +
     `\n<link rel="icon" href="/icon.svg" type="image/svg+xml">` +
     `\n<link rel="apple-touch-icon" sizes="180x180" href="/api/og/icon/${meta.slug}?s=180&v=3">` +
     `\n<link rel="manifest" href="/api/og/manifest/${meta.slug}">` +
     `\n<meta name="apple-mobile-web-app-title" content="${safeName}">` +
+    `\n<meta name="apple-mobile-web-app-capable" content="yes">` +
+    `\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">` +
     `\n<meta name="theme-color" content="#0e1620">` +
     `\n<meta name="description" content="${description}">` +
+    `\n${splashTags}` +
     `\n<link rel="stylesheet" href="/pams-template/assets/css/themes.css">` +
     (preloads ? `\n${preloads}` : '')
   if (/<head[^>]*>/i.test(html)) {
