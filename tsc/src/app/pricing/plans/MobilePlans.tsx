@@ -7,6 +7,9 @@ type Feature = {
   label: string
   detail: string | ((t: Tier) => string)
   included: Record<Tier, boolean>
+  // Marks a feature as not-yet-shipped. Rendered with a "Coming soon"
+  // pill and reduced opacity regardless of which tier card is showing.
+  comingSoon?: boolean
 }
 
 const FEATURES: Feature[] = [
@@ -17,6 +20,7 @@ const FEATURES: Feature[] = [
   { label: '7-day free trial', detail: 'Every plan. Cancel anytime before the trial ends — no charge.', included: { tier1: true, tier2: true, tier3: true } },
   { label: 'Weekly recaps', detail: "A short written recap of each week's slate, drawn from your league's data.", included: { tier1: false, tier2: true, tier3: true } },
   { label: 'Trade recaps', detail: 'A recap of every trade when it happens, plus a four-week revisit checking how it actually played out.', included: { tier1: false, tier2: true, tier3: true } },
+  { label: 'Full Trade Desk', detail: 'Grader, analyzer, finder, and rumor mill. Every trade lens, unlocked.', included: { tier1: false, tier2: true, tier3: true } },
   { label: 'Manager DNA', detail: 'Every manager auto-classified into an archetype from their actual transactions, lineups, and draft history.', included: { tier1: false, tier2: true, tier3: true } },
   { label: 'Best Coach Board', detail: 'Every starting lineup graded against its optimal version. Season-long efficiency standings.', included: { tier1: false, tier2: true, tier3: true } },
   {
@@ -30,7 +34,7 @@ const FEATURES: Feature[] = [
   },
   { label: 'Early access', detail: 'Every new feature lands on All-Pro first.', included: { tier1: false, tier2: false, tier3: true } },
   { label: 'Sunday Live', detail: 'First look at the live game-day companion.', included: { tier1: false, tier2: false, tier3: true } },
-  { label: 'Manager Hub', detail: 'Your whole career, every league, one book. Coming soon.', included: { tier1: false, tier2: false, tier3: true } },
+  { label: 'Manager Hub', detail: 'Your whole career, every league, one book.', included: { tier1: false, tier2: false, tier3: true }, comingSoon: true },
 ]
 
 const TIERS: Tier[] = ['tier1', 'tier2', 'tier3']
@@ -82,11 +86,15 @@ export function MobilePlans({
         initialView={initialView}
         paid={
           <div className="mplans-paid">
+            <div className="mplans-swipe-hint" aria-hidden>
+              <span className="mplans-swipe-arrow">‹</span>
+              <span>Swipe to compare {TIERS.length} tiers</span>
+              <span className="mplans-swipe-arrow">›</span>
+            </div>
             <div className="mplans-stack">
               {TIERS.map((t, i) => {
                 const featured = t === 'tier2'
                 const numeral = ['I', 'II', 'III'][i]
-                const prev = i > 0 ? TIERS[i - 1] : null
                 return (
                   <div key={t} className={`mplans-card${featured ? ' is-featured' : ''}`}>
                     {featured && <span className="mplans-card-flag">★ Most popular ★</span>}
@@ -95,23 +103,27 @@ export function MobilePlans({
                     <div className="mplans-card-price">{priceLine(t)}</div>
                     <div className="mplans-card-leagues">{leagueLine(t)}</div>
 
+                    {/* Full feature list on every card so the user can swipe
+                        between tiers and see the same rows in the same order
+                        — only the check/dash and the "Coming soon" pill
+                        differ. Mirrors the desktop comparison table. */}
                     <ul className="mplans-feat">
-                      {prev && (
-                        <li className="mplans-feat-inherit">
-                          Everything in {TIER_LABELS[prev].name}, plus —
-                        </li>
-                      )}
                       {FEATURES.map((f) => {
                         const inc = f.included[t]
                         const detail = typeof f.detail === 'function' ? f.detail(t) : f.detail
-                        const inherited =
-                          !!prev && inc && f.included[prev] && typeof f.detail !== 'function'
-                        if (inherited) return null
+                        const classes = [
+                          'mplans-feat-row',
+                          inc ? '' : 'is-excluded',
+                          f.comingSoon ? 'is-coming-soon' : '',
+                        ].filter(Boolean).join(' ')
                         return (
-                          <li key={f.label} className={`mplans-feat-row${inc ? '' : ' is-excluded'}`}>
+                          <li key={f.label} className={classes}>
                             <span className="mplans-feat-mark" aria-hidden>{inc ? '✓' : '—'}</span>
                             <span className="mplans-feat-body">
-                              <span className="mplans-feat-label">{f.label}</span>
+                              <span className="mplans-feat-label">
+                                {f.label}
+                                {f.comingSoon && <span className="mplans-feat-soon">Coming soon</span>}
+                              </span>
                               <span className="mplans-feat-detail">{detail}</span>
                             </span>
                           </li>

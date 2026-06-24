@@ -107,6 +107,7 @@ export function MobilePricing({
                     'Archive up to 3 leagues',
                     'Everything in Rookie',
                     'Run multiple leagues from one account',
+                    'Full Trade Desk access &middot; grader, analyzer, finder, rumor mill',
                     'Priority on platform integrations',
                   ],
                   highlight: true,
@@ -123,6 +124,7 @@ export function MobilePricing({
                     'Everything in Veteran',
                     'Early access to all new features',
                     'First look: Sunday Live',
+                    { label: 'Manager Hub &middot; your whole career, one book', comingSoon: true },
                   ],
                 },
               ]}

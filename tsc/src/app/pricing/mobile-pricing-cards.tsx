@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import type { Tier, BillingPeriod } from '@/lib/stripe'
 
 type Price = { amountCents: number; perLabel: string }
+// Each feature can be a plain HTML string (regular bullet) or an object
+// with a comingSoon flag — the latter renders dimmed with a small badge
+// next to the label so the user knows the feature ships later.
+type Feature = string | { label: string; comingSoon?: boolean }
 type TierCard = {
   tier: Tier
   name: string
@@ -12,7 +16,7 @@ type TierCard = {
   limit: number
   monthly: Price
   yearly: Price
-  features: string[]
+  features: Feature[]
   highlight?: boolean
 }
 
@@ -76,6 +80,12 @@ export function MobilePricingCards({
         ))}
       </div>
 
+      <div className="mpricing-swipe-hint" aria-hidden>
+        <span className="mpricing-swipe-arrow">‹</span>
+        <span>Swipe to compare {tiers.length} tiers</span>
+        <span className="mpricing-swipe-arrow">›</span>
+      </div>
+
       <div className="mpricing-stack">
         {tiers.map((card) => {
           const price = period === 'monthly' ? card.monthly : card.yearly
@@ -104,12 +114,19 @@ export function MobilePricingCards({
                 {card.limit === 1 ? '1 league' : `Up to ${card.limit} leagues`}
               </div>
               <ul className="mpricing-card-feat">
-                {card.features.map((f) => (
-                  <li key={f}>
-                    <span className="mpricing-card-feat-mark" aria-hidden>✓</span>
-                    <span dangerouslySetInnerHTML={{ __html: f }} />
-                  </li>
-                ))}
+                {card.features.map((f) => {
+                  const label = typeof f === 'string' ? f : f.label
+                  const soon = typeof f === 'object' && f.comingSoon
+                  return (
+                    <li key={label} className={soon ? 'is-coming-soon' : undefined}>
+                      <span className="mpricing-card-feat-mark" aria-hidden>✓</span>
+                      <span>
+                        <span dangerouslySetInnerHTML={{ __html: label }} />
+                        {soon && <span className="mpricing-card-feat-soon">Coming soon</span>}
+                      </span>
+                    </li>
+                  )
+                })}
               </ul>
               <button
                 type="button"

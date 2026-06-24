@@ -13585,6 +13585,48 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     font-size: .7rem;
     margin-top: .1rem;
 }
+/* Coming-soon row — dimmed, with an inline pill so the user knows the
+   feature is part of the tier but not shipped yet. */
+.mpricing-card-feat li.is-coming-soon { opacity: .55; }
+.mpricing-card-feat li.is-coming-soon .mpricing-card-feat-mark {
+    background: rgba(255,255,255,.06);
+    color: var(--cream-mute);
+}
+.mpricing-card-feat-soon {
+    display: inline-block;
+    margin-left: .45rem;
+    padding: .12rem .45rem;
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+/* Swipe-to-compare hint above the carousel — purely visual cue, no JS. */
+.mpricing-swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    margin: -.2rem 0 .25rem;
+    font-family: var(--mono);
+    font-size: .55rem;
+    font-weight: 600;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    opacity: .85;
+}
+.mpricing-swipe-arrow {
+    font-size: .9rem;
+    line-height: 1;
+    color: var(--gold);
+}
 .mpricing-card-cta {
     appearance: none;
     display: block;
@@ -14028,6 +14070,47 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     font-size: .8rem;
     line-height: 1.4;
     opacity: .82;
+}
+/* Coming-soon row treatment — dim the whole row a touch and pin a small
+   pill next to the feature label. Applies regardless of which tier card
+   is showing, since "coming soon" is a feature attribute, not a tier one. */
+.mplans-feat-row.is-coming-soon { opacity: .65; }
+.mplans-feat-row.is-coming-soon.is-excluded { opacity: .42; }
+.mplans-feat-soon {
+    display: inline-block;
+    margin-left: .45rem;
+    padding: .12rem .45rem;
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: .5rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+/* Swipe-to-compare hint above the carousel — see .mpricing-swipe-hint for
+   the matching version on the /pricing page. */
+.mplans-swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    margin: -.2rem 0 .25rem;
+    font-family: var(--mono);
+    font-size: .55rem;
+    font-weight: 600;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    opacity: .85;
+}
+.mplans-swipe-arrow {
+    font-size: .9rem;
+    line-height: 1;
+    color: var(--gold);
 }
 
 .mplans-card-cta {
