@@ -13335,8 +13335,44 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     color: var(--gold);
 }
 
-/* Tier card stack */
-.mpricing-stack { display: flex; flex-direction: column; gap: 1rem; }
+/* Tier card stack — horizontal swipe carousel with mandatory snap so a
+   swipe always lands on a full tier, never between two. Each card takes
+   100% of the visible area; the negative-top "Most popular" flag is
+   accommodated with vertical padding on the scroll container. */
+.mpricing-stack {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 1rem 0 1.5rem;
+}
+.mpricing-stack::-webkit-scrollbar { display: none; }
+.mpricing-stack > .mpricing-card {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+}
+/* Hint that more cards exist by leaving room for the swipe indicator */
+.mpricing-swipe-dots {
+    display: flex;
+    justify-content: center;
+    gap: .4rem;
+    margin: .35rem 0 .9rem;
+}
+.mpricing-swipe-dots span {
+    width: 5px; height: 5px;
+    border-radius: 999px;
+    background: var(--ink-line);
+    transition: background .2s, transform .2s;
+}
+.mpricing-swipe-dots span.is-active {
+    background: var(--gold);
+    transform: scale(1.5);
+}
 .mpricing-card {
     position: relative;
     background: rgba(0,0,0,.22);
@@ -13734,7 +13770,41 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
 }
 
 .mplans-paid { padding: 1rem 1.1rem 0; }
-.mplans-stack { display: flex; flex-direction: column; gap: 1rem; }
+/* Tier card stack — horizontal swipe with mandatory snap. See .mpricing-stack
+   for the rationale; same pattern, scoped to /pricing/plans cards. */
+.mplans-stack {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 1rem 0 1.5rem;
+}
+.mplans-stack::-webkit-scrollbar { display: none; }
+.mplans-stack > .mplans-card {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+}
+.mplans-swipe-dots {
+    display: flex;
+    justify-content: center;
+    gap: .4rem;
+    margin: .35rem 0 .9rem;
+}
+.mplans-swipe-dots span {
+    width: 5px; height: 5px;
+    border-radius: 999px;
+    background: var(--ink-line);
+    transition: background .2s, transform .2s;
+}
+.mplans-swipe-dots span.is-active {
+    background: var(--gold);
+    transform: scale(1.5);
+}
 .mplans-card {
     position: relative;
     background: rgba(0,0,0,.22);
