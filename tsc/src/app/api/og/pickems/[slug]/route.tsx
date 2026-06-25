@@ -1,13 +1,14 @@
 // OG image generator for the live pick'ems page.
 // URL: /api/og/pickems/<slug>
 //
-// Renders a 1200x630 leaderboard card for the league's pick'ems pool — week #,
-// the top three pickers with their season record, and a "picks open" prompt
-// when no week has been decided yet. Offseason or UDFA (free) leagues get a
-// quiet fallback so shared links never lose their preview.
+// "After-Hours Sportsbook" — velvet plum surface, hot magenta + champagne
+// neon. Same palette as pickems.css so the share preview reads as a
+// continuation of the page, not a generic dark card. Surfaces the week,
+// a leaderboard of the top three pickers (or a "picks are open" prompt
+// when no week has been decided), and a clear call to action.
 //
-// CDN-cached per slug; busted when the league bundle's `league-<id>` tag is
-// revalidated by sync.
+// CDN-cached per slug; busted when the league bundle's `league-<id>` tag
+// is revalidated by sync.
 
 import { ImageResponse } from 'next/og'
 import { readFile } from 'fs/promises'
@@ -18,6 +19,20 @@ import { getPickemsState } from '@/lib/pickems'
 export const runtime = 'nodejs'
 
 const FONT_DIR = path.join(process.cwd(), 'public', 'og', 'fonts')
+
+// Pickems palette — kept in sync with pickems.css :root tokens.
+const PLUM        = '#160b1d'
+const PLUM_SOFT   = '#1c1026'
+const CARD        = '#241531'
+const CARD_HI     = '#341f44'
+const LINE        = '#3a2549'
+const MAGENTA     = '#ff3d8b'
+const MAGENTA_HI  = '#ff6aa6'
+const MAGENTA_DEEP = '#b8205f'
+const CHAMPAGNE   = '#f0c463'
+const CHAMPAGNE_HI = '#f9d98a'
+const CHALK       = '#f5ecf5'
+const CHALK_MUTE  = '#8e7d9d'
 
 async function loadFonts() {
   const [serif, serifItalic, mono, monoBold] = await Promise.all([
@@ -95,7 +110,42 @@ function buildLeaderboard(state: Extract<Awaited<ReturnType<typeof getPickemsSta
   return rows
 }
 
-const GOLD = '#e8c889'
+// Common background layers (plum gradient + faint diamond grid + corner
+// magenta + champagne glows). Kept on every card so the share preview is
+// instantly recognizable as a pick'ems link.
+function backgroundLayers() {
+  const diamond = encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44"><path d="M22 0 44 22 22 44 0 22Z" fill="none" stroke="${MAGENTA_DEEP}" stroke-opacity="0.18" stroke-width="0.9"/></svg>`
+  )
+  return (
+    <>
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          backgroundImage: `url("data:image/svg+xml;utf8,${diamond}")`,
+          backgroundSize: '44px 44px',
+          opacity: 0.55,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          background:
+            `radial-gradient(circle at 10% 0%, ${MAGENTA}38 0%, transparent 45%),` +
+            `radial-gradient(circle at 92% 100%, ${CHAMPAGNE}26 0%, transparent 50%),` +
+            `radial-gradient(circle at 50% 50%, ${PLUM_SOFT}cc 0%, transparent 70%)`,
+        }}
+      />
+      {/* Neon top + bottom rules — magenta over champagne gradient */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, display: 'flex', background: `linear-gradient(90deg, transparent 0%, ${MAGENTA} 30%, ${CHAMPAGNE} 70%, transparent 100%)` }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, display: 'flex', background: `linear-gradient(90deg, transparent 0%, ${CHAMPAGNE} 30%, ${MAGENTA} 70%, transparent 100%)`, opacity: 0.7 }} />
+    </>
+  )
+}
 
 function renderLeaderboardCard(
   leagueName: string,
@@ -103,9 +153,6 @@ function renderLeaderboardCard(
   rows: Row[],
   fonts: Awaited<ReturnType<typeof loadFonts>>,
 ) {
-  const gridiron = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
-  )
   const hasRows = rows.length > 0
   const top = rows.slice(0, 3)
   const leader = top[0] ?? null
@@ -120,100 +167,88 @@ function renderLeaderboardCard(
           height: '630px',
           display: 'flex',
           flexDirection: 'column',
-          background: '#0a0a0a',
-          color: '#f3f4f6',
+          background: PLUM,
+          color: CHALK,
           fontFamily: 'JetBrains',
           position: 'relative',
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            opacity: 0.5,
-            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            background: `radial-gradient(circle at 12% 18%, ${GOLD}26 0%, transparent 50%), radial-gradient(circle at 88% 88%, ${GOLD}14 0%, transparent 50%)`,
-          }}
-        />
+        {backgroundLayers()}
 
-        {/* Top bar */}
+        {/* Top bar — league + masthead */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '32px 56px 0',
+            padding: '38px 60px 0',
             fontSize: '17px',
-            letterSpacing: '0.3em',
-            color: GOLD,
+            fontWeight: 700,
+            letterSpacing: '0.32em',
+            color: CHAMPAGNE,
             textTransform: 'uppercase',
             zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex' }}>{leagueName.toUpperCase()} · WEEK {currentWeek} PICK&apos;EMS</span>
-          <span style={{ display: 'flex', color: '#9ca3af', letterSpacing: '0.32em' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <span style={{ display: 'flex', width: 10, height: 10, borderRadius: 999, background: MAGENTA, boxShadow: `0 0 18px ${MAGENTA}` }} />
+            {leagueName.toUpperCase()}
+          </span>
+          <span style={{ display: 'flex', color: CHALK_MUTE, letterSpacing: '0.34em' }}>
             THE SUNDAY CHRONICLE
           </span>
         </div>
 
-        {/* Title */}
+        {/* Headline lockup */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            paddingTop: '38px',
+            paddingTop: '34px',
             zIndex: 2,
           }}
         >
           <div
             style={{
               display: 'flex',
-              fontFamily: 'DMSerif',
-              fontSize: '78px',
-              lineHeight: 1,
-              color: '#f3f4f6',
+              fontFamily: 'JetBrains',
+              fontWeight: 700,
+              fontSize: '20px',
+              letterSpacing: '0.42em',
+              color: MAGENTA_HI,
+              textTransform: 'uppercase',
+              marginBottom: '12px',
             }}
           >
-            {hasRows ? 'The Pool' : 'Picks are open.'}
+            ★ WEEK {currentWeek} PICK&apos;EMS ★
           </div>
-          {hasRows && (
-            <div
-              style={{
-                display: 'flex',
-                marginTop: '10px',
-                fontFamily: 'DMSerif',
-                fontStyle: 'italic',
-                fontSize: '26px',
-                color: '#9ca3af',
-              }}
-            >
-              Standings through Week {currentWeek - 1}
-            </div>
-          )}
-          {!hasRows && (
-            <div
-              style={{
-                display: 'flex',
-                marginTop: '10px',
-                fontFamily: 'DMSerif',
-                fontStyle: 'italic',
-                fontSize: '26px',
-                color: '#9ca3af',
-              }}
-            >
-              Lock in your Week {currentWeek} picks before kickoff
-            </div>
-          )}
+          <div
+            style={{
+              display: 'flex',
+              fontFamily: 'DMSerif',
+              fontStyle: 'italic',
+              fontSize: '96px',
+              lineHeight: 1,
+              color: CHALK,
+              textShadow: `0 0 28px ${MAGENTA}66`,
+            }}
+          >
+            {hasRows ? 'The Pool.' : 'Picks are open.'}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              marginTop: '14px',
+              fontFamily: 'DMSerif',
+              fontSize: '28px',
+              color: CHAMPAGNE_HI,
+            }}
+          >
+            {hasRows
+              ? `Standings through Week ${currentWeek - 1}`
+              : `Lock your Week ${currentWeek} picks before kickoff`}
+          </div>
         </div>
 
         {/* Leaderboard */}
@@ -222,8 +257,8 @@ function renderLeaderboardCard(
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '18px',
-              padding: '40px 96px 0',
+              gap: '14px',
+              padding: '36px 110px 0',
               zIndex: 2,
             }}
           >
@@ -235,32 +270,35 @@ function renderLeaderboardCard(
         <div
           style={{
             position: 'absolute',
-            bottom: 28,
-            left: 56,
-            right: 56,
+            bottom: 26,
+            left: 60,
+            right: 60,
             display: 'flex',
             justifyContent: 'space-between',
+            alignItems: 'center',
             fontSize: '15px',
             fontWeight: 700,
-            letterSpacing: '0.28em',
-            color: '#9ca3af',
+            letterSpacing: '0.3em',
+            color: CHALK_MUTE,
             textTransform: 'uppercase',
             zIndex: 2,
           }}
         >
           {hasRows ? (
             <>
-              <span style={{ display: 'flex' }}>
-                LEADER · {leader!.name.toUpperCase()} · {pct}% CORRECT
+              <span style={{ display: 'flex', color: CHAMPAGNE }}>
+                LEADER · {leader!.name.toUpperCase()} · {pct}% RIGHT
               </span>
               <span style={{ display: 'flex' }}>
-                {rows.length} PICKER{rows.length === 1 ? '' : 'S'}
+                {rows.length} PICKER{rows.length === 1 ? '' : 'S'} · NO LOGIN
               </span>
             </>
           ) : (
             <>
-              <span style={{ display: 'flex' }}>EVERY MATCHUP · HIGHEST · LOWEST</span>
-              <span style={{ display: 'flex' }}>NO LOGIN REQUIRED</span>
+              <span style={{ display: 'flex', color: CHAMPAGNE }}>
+                EVERY MATCHUP · HIGHEST · LOWEST
+              </span>
+              <span style={{ display: 'flex' }}>TAP IN · NO LOGIN</span>
             </>
           )}
         </div>
@@ -279,28 +317,38 @@ function renderLeaderboardCard(
 
 function leaderRow(r: Row, idx: number) {
   const place = idx === 0 ? '1ST' : idx === 1 ? '2ND' : '3RD'
-  const accent = idx === 0 ? GOLD : '#d1d5db'
+  const isLead = idx === 0
+  const accent = isLead ? CHAMPAGNE_HI : CHALK
+  const placeColor = isLead ? PLUM : MAGENTA_HI
   return (
     <div
       key={`${r.name}-${idx}`}
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '28px',
+        gap: '26px',
         padding: '14px 26px',
-        border: `1px solid ${idx === 0 ? `${GOLD}88` : '#272727'}`,
-        background: idx === 0 ? `${GOLD}10` : 'rgba(20,20,20,0.55)',
+        border: `1px solid ${isLead ? CHAMPAGNE : LINE}`,
+        background: isLead
+          ? `linear-gradient(90deg, ${MAGENTA_DEEP}66 0%, ${CARD_HI} 70%)`
+          : CARD,
+        boxShadow: isLead ? `0 0 24px ${MAGENTA}40, inset 0 0 0 1px ${MAGENTA}30` : 'none',
       }}
     >
       <div
         style={{
           display: 'flex',
-          width: '64px',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '60px',
+          height: '34px',
+          background: isLead ? CHAMPAGNE : 'transparent',
+          border: isLead ? `1px solid ${CHAMPAGNE_HI}` : `1px solid ${MAGENTA_DEEP}`,
           fontFamily: 'JetBrains',
           fontWeight: 700,
-          fontSize: '20px',
+          fontSize: '17px',
           letterSpacing: '0.22em',
-          color: accent,
+          color: placeColor,
         }}
       >
         {place}
@@ -312,7 +360,8 @@ function leaderRow(r: Row, idx: number) {
           fontFamily: 'DMSerif',
           fontSize: '44px',
           lineHeight: 1,
-          color: '#f3f4f6',
+          color: CHALK,
+          overflow: 'hidden',
         }}
       >
         {r.name}
@@ -320,14 +369,18 @@ function leaderRow(r: Row, idx: number) {
       <div
         style={{
           display: 'flex',
+          alignItems: 'baseline',
+          gap: '4px',
           fontFamily: 'JetBrains',
           fontWeight: 700,
-          fontSize: '30px',
-          letterSpacing: '0.06em',
+          fontSize: '32px',
+          letterSpacing: '0.04em',
           color: accent,
         }}
       >
-        {r.right}<span style={{ display: 'flex', color: '#6b7280' }}>-</span>{r.wrong}
+        <span style={{ display: 'flex' }}>{r.right}</span>
+        <span style={{ display: 'flex', color: CHALK_MUTE, fontSize: '24px' }}>—</span>
+        <span style={{ display: 'flex', color: CHALK_MUTE }}>{r.wrong}</span>
       </div>
     </div>
   )
@@ -337,9 +390,6 @@ function renderQuietCard(
   leagueName: string,
   fonts: Awaited<ReturnType<typeof loadFonts>>,
 ) {
-  const gridiron = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
-  )
   return new ImageResponse(
     (
       <div
@@ -350,45 +400,51 @@ function renderQuietCard(
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0a0a0a',
-          color: '#f3f4f6',
+          background: PLUM,
+          color: CHALK,
           fontFamily: 'JetBrains',
           position: 'relative',
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            opacity: 0.5,
-            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
+        {backgroundLayers()}
         <div
           style={{
             display: 'flex',
-            fontSize: '16px',
+            alignItems: 'center',
+            gap: '14px',
+            fontSize: '17px',
+            fontWeight: 700,
             letterSpacing: '0.4em',
-            color: GOLD,
+            color: CHAMPAGNE,
             textTransform: 'uppercase',
-            marginBottom: '26px',
+            marginBottom: '28px',
+            zIndex: 2,
           }}
         >
+          <span style={{ display: 'flex', width: 10, height: 10, borderRadius: 999, background: MAGENTA, boxShadow: `0 0 18px ${MAGENTA}` }} />
           {leagueName.toUpperCase()} · PICK&apos;EMS
         </div>
-        <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '84px', lineHeight: 1 }}>
+        <div
+          style={{
+            display: 'flex',
+            fontFamily: 'DMSerif',
+            fontStyle: 'italic',
+            fontSize: '96px',
+            lineHeight: 1,
+            zIndex: 2,
+            textShadow: `0 0 28px ${MAGENTA}66`,
+          }}
+        >
           The pool is closed.
         </div>
         <div
           style={{
             display: 'flex',
-            marginTop: '20px',
+            marginTop: '22px',
             fontFamily: 'DMSerif',
-            fontStyle: 'italic',
             fontSize: '28px',
-            color: '#9ca3af',
+            color: CHAMPAGNE_HI,
+            zIndex: 2,
           }}
         >
           Pick&apos;ems opens when the season does — The Sunday Chronicle

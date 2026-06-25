@@ -146,8 +146,12 @@ body::before {
   border-top: 1px solid rgba(240,196,99,.35);
 }
 
-.pe-nav-records {
+.pe-nav-actions {
   justify-self: end;
+  display: inline-flex; align-items: center; gap: .55rem;
+}
+.pe-nav-records,
+.pe-nav-share {
   background: linear-gradient(180deg, rgba(255,61,139,.16), rgba(255,61,139,.06));
   border: 1px solid var(--pk-magenta-deep);
   color: var(--pk-magenta-bright);
@@ -159,12 +163,48 @@ body::before {
   transition: all .15s;
   box-shadow: 0 0 0 0 rgba(255,61,139,.35);
 }
-.pe-nav-records:hover {
+.pe-nav-records:hover,
+.pe-nav-share:hover {
   color: #fff;
   background: var(--pk-magenta);
   border-color: var(--pk-magenta-bright);
   box-shadow: 0 0 18px rgba(255,61,139,.45);
 }
+/* Share is the lower-emphasis sibling — champagne outline so it doesn't
+   fight Records for the eye, but still reads as an action. */
+.pe-nav-share {
+  background: transparent;
+  border-color: rgba(240,196,99,.38);
+  color: var(--pk-champagne);
+  display: inline-flex; align-items: center; gap: .4rem;
+}
+.pe-nav-share svg { display: block; }
+.pe-nav-share:hover {
+  color: var(--pk-bg);
+  background: var(--pk-champagne);
+  border-color: var(--pk-champagne-bright);
+  box-shadow: 0 0 16px rgba(240,196,99,.35);
+}
+
+/* Shared toast — used by share-link clipboard fallback. */
+.pk-toast {
+  position: fixed;
+  left: 50%; bottom: 1.6rem;
+  transform: translate(-50%, 200%);
+  background: var(--pk-magenta);
+  color: #fff;
+  font-family: var(--mono); font-weight: 700;
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+  padding: .75rem 1.15rem;
+  border-radius: 3px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.55), 0 0 24px rgba(255,61,139,.35);
+  z-index: 400;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .35s cubic-bezier(.2,.7,.3,1), opacity .25s;
+  white-space: nowrap;
+}
+.pk-toast.is-on { transform: translate(-50%, 0); opacity: 1; }
 
 /* ══════════════════════════════════════════════════════════════════
    DEMO HINT — neon ticker strip
@@ -1094,7 +1134,10 @@ body::before {
   .pe-nav-back { width: 28px; height: 28px; }
   .pe-nav-title { font-size: 1.25rem; margin-bottom: .35rem; }
   .pe-nav-kicker { font-size: .46rem; letter-spacing: .26em; padding-top: .3rem; }
-  .pe-nav-records { font-size: .5rem; padding: .35rem .55rem; letter-spacing: .16em; }
+  .pe-nav-actions { gap: .35rem; }
+  .pe-nav-records,
+  .pe-nav-share { font-size: .5rem; padding: .35rem .55rem; letter-spacing: .16em; }
+  .pe-nav-share svg { width: 9px; height: 9px; }
 
   .match { padding: 0; }
   /* Per-card header — keep the slate ordinal + Preview link readable

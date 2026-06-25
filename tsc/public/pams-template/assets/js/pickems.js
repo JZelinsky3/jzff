@@ -41,6 +41,11 @@
 
   // ── Boot ──────────────────────────────────────────────────────────────────
   async function boot() {
+    // Share button is wired regardless of pool state — the page URL is
+    // shareable even in the off-season (the OG card renders a "closed"
+    // variant), so users can still grab a link to send.
+    initShareBtn();
+
     var res = await fetch('live/pickems/data', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     var data = await res.json();
@@ -622,11 +627,63 @@
   }
 
   document.addEventListener('click', function (e) {
-    if (e.target.id === 'recordsBtn') { var m = byId('recordsModal'); if (m) m.hidden = false; }
+    if (e.target.closest('#recordsBtn')) { var m = byId('recordsModal'); if (m) m.hidden = false; }
     if (e.target.id === 'recordsClose' || e.target.dataset.close === '1') {
       var rm = byId('recordsModal'); if (rm) rm.hidden = true;
     }
   });
+
+  // ── Share button ──────────────────────────────────────────────
+  // Pops the native share sheet when available (mobile + supported
+  // desktops), otherwise copies the link to the clipboard. Either way,
+  // surfaces a toast so the click registers visibly.
+  function initShareBtn() {
+    var btn = byId('shareBtn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var leagueName = (window.__DC && window.__DC.name) || 'Pick’ems';
+      var wk = state.currentWeekId || (state.weeks[state.weeks.length - 1] || {}).id || '';
+      var title = leagueName + ' · Pick’ems' + (wk ? ' · Wk ' + wk : '');
+      var text  = wk
+        ? 'Lock your Week ' + wk + ' picks before kickoff.'
+        : 'Weekly pick’em pool — no login, one click to vote.';
+      var url   = window.location.href;
+      if (navigator.share) {
+        navigator.share({ title: title, text: text, url: url })
+          .catch(function () { copyShareLink(url, title); });
+        return;
+      }
+      copyShareLink(url, title);
+    });
+  }
+  function copyShareLink(url, title) {
+    var payload = title ? title + ' — ' + url : url;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(payload).then(
+        function () { showPkToast('Link copied'); },
+        function () { showPkToast('Couldn’t copy'); }
+      );
+      return;
+    }
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = payload;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showPkToast('Link copied');
+    } catch (e) { showPkToast('Couldn’t copy'); }
+  }
+  function showPkToast(msg) {
+    var t = byId('pkToast');
+    if (!t) return;
+    if (msg) t.textContent = msg;
+    t.classList.add('is-on');
+    clearTimeout(showPkToast._t);
+    showPkToast._t = setTimeout(function () { t.classList.remove('is-on'); }, 2200);
+  }
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { var m = byId('recordsModal'); if (m) m.hidden = true; }
   });

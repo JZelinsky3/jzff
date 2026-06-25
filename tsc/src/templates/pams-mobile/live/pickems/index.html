@@ -28,10 +28,13 @@ body {
 .pk-title { font-family: var(--serif); font-size: 1.7rem; line-height: 1.05; color: var(--pk-chalk); }
 .pk-title em { font-style: italic; color: var(--pk-champagne); }
 
-/* Identity row gains the Records button (lived in the desktop masthead) */
+/* Identity row gains the Records + Share buttons (lived in the desktop
+   masthead). Share gets a champagne outline so it reads as the secondary
+   action — Records is the primary informational button here. */
 .pe-auth { flex-wrap: wrap; }
-.pk-records-btn {
-    margin-left: auto;
+.pk-action-group { margin-left: auto; display: inline-flex; gap: .4rem; align-items: center; }
+.pk-records-btn,
+.pk-share-btn {
     background: none;
     border: 1px solid var(--pk-line);
     border-radius: 2px;
@@ -39,7 +42,14 @@ body {
     font-family: var(--mono); font-weight: 700;
     font-size: .54rem; letter-spacing: .18em; text-transform: uppercase;
     padding: .45rem .7rem;
+    display: inline-flex; align-items: center; gap: .35rem;
 }
+.pk-share-btn {
+    border-color: rgba(255,61,139,.55);
+    color: var(--pk-magenta-bright);
+}
+.pk-share-btn:active { background: var(--pk-magenta); color: #fff; }
+.pk-share-btn svg { display: block; width: 10px; height: 10px; }
 
 /* Submit bar rides above the fixed tab bar instead of the viewport edge */
 .pe-submitbar {
@@ -54,6 +64,10 @@ body {
     padding: calc(var(--m-appbar-h) + env(safe-area-inset-top) + 1rem) 1rem
              calc(var(--m-tab-h) + env(safe-area-inset-bottom) + 1rem);
 }
+
+/* Share toast rides above the fixed tab bar (default .pk-toast bottom
+   would hide under it). */
+.pk-toast { bottom: calc(var(--m-tab-h) + env(safe-area-inset-bottom) + .9rem); }
 </style>
 </head>
 <body>
@@ -77,8 +91,17 @@ body {
         </div>
         <div id="whoami" class="pe-pill" hidden></div>
         <button id="changeUserBtn" class="pe-btn pe-btn-ghost" hidden>Change</button>
-        <button id="recordsBtn" class="pk-records-btn" type="button">Records</button>
+        <div class="pk-action-group">
+            <button id="shareBtn" class="pk-share-btn" type="button" aria-label="Share the pool">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg>
+                Share
+            </button>
+            <button id="recordsBtn" class="pk-records-btn" type="button">Records</button>
+        </div>
     </div>
+
+    <!-- Toast for share fallback (clipboard confirmation). -->
+    <output id="pkToast" class="pk-toast" aria-live="polite">Link copied</output>
 
     <!-- WEEK TABS -->
     <div class="pe-tabs" id="weekTabs"></div>
