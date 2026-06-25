@@ -145,7 +145,10 @@
       + '<section class="week" data-week="' + esc(w.id) + '">'
       +   '<div class="week-info">' + statusBadge + '</div>'
       +   '<div id="lock-msg-' + esc(w.id) + '" class="week-locked"></div>'
-      +   (w.gameOfWeek ? '<div class="gotw-title">Game of the Week <span class="sub">Matchup spotlight</span></div>' : '')
+      +   /* GOTW header is now rendered inline as the first row of the
+       *  GOTW card itself (see matchHTML), not as a section-level title.
+       *  This keeps the "Game of the Week | Preview →" header aligned to
+       *  the card it belongs to. */
       +   '<div class="pe-grid" id="grid-' + esc(w.id) + '"></div>'
       +   '<div class="hl-card">'
       +     '<div class="hl-row">'
@@ -184,14 +187,18 @@
       });
     }
 
-    // GOTW first.
+    // GOTW first. Preserve the original (1-based) slate order so the
+    // "Matchup II" label on each card matches the league's posted slate,
+    // not the local sort order with GOTW promoted to the top.
+    var slateOrder = {};
+    w.matchups.forEach(function (m, i) { slateOrder[m.id] = i + 1; });
     var order = w.matchups.slice();
     if (w.gameOfWeek) {
       var idx = order.findIndex(function (m) { return m.id === w.gameOfWeek; });
       if (idx > -1) order.unshift(order.splice(idx, 1)[0]);
     }
     grid.innerHTML = order.map(function (m) {
-      return matchHTML(w, m, locked, w.gameOfWeek === m.id);
+      return matchHTML(w, m, locked, w.gameOfWeek === m.id, slateOrder[m.id]);
     }).join('');
 
     if (!grid.dataset.bound) {
@@ -275,8 +282,25 @@
     }
   }
 
+  // Roman numerals for the slate ordinal (Matchup I, II, III…). Editorial
+  // numbering, not a year, so the roman reads as decoration not a riddle.
+  function toRoman(n) {
+    var map = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+    var out = ''; var v = Math.floor(n || 0);
+    for (var i = 0; i < map.length; i++) { while (v >= map[i][0]) { out += map[i][1]; v -= map[i][0]; } }
+    return out;
+  }
+
+  // Per-matchup preview link. Targets the matchup-preview page with the
+  // home team's user id so the desk auto-focuses on this matchup. Past
+  // (locked) weeks still link out — the preview page shows the latest
+  // current-week data for that team, which is still useful context.
+  function previewHref(m) {
+    return 'live/matchup-preview/?m=' + encodeURIComponent(m.home);
+  }
+
   // matchup card — verbatim structure from the demo.
-  function matchHTML(w, m, locked, isGOTW) {
+  function matchHTML(w, m, locked, isGOTW, slateNum) {
     var A = state.teams[m.home];
     var B = state.teams[m.away];
     var recA = w.records ? (w.records[m.home] || '') : '';
@@ -312,27 +336,49 @@
         + '<span class="vs-pts away">' + B.projected_points.toFixed(1) + '</span></div>'
       : '<div class="vs"><span class="vs-mid">vs</span></div>';
 
+    var previewUrl = previewHref(m);
+    // GOTW gets a custom 2-row header (centered "Matchup Spotlight" label
+    // above a "Game of the Week | Preview →" row). Regular matchups get
+    // a single row: "Matchup II" on the left, "Preview →" on the right.
+    var header = isGOTW
+      ? ''
+        + '<header class="match-header is-gotw">'
+        +   '<div class="gotw-spotlight-label">Matchup Spotlight</div>'
+        +   '<div class="gotw-row">'
+        +     '<span class="gotw-main">Game of the Week</span>'
+        +     '<a class="match-preview-link gotw-preview" href="' + previewUrl + '">Preview</a>'
+        +   '</div>'
+        + '</header>'
+      : ''
+        + '<header class="match-header">'
+        +   '<span class="match-num">Matchup ' + (slateNum ? toRoman(slateNum) : '') + '</span>'
+        +   '<a class="match-preview-link" href="' + previewUrl + '">Preview</a>'
+        + '</header>';
+
     return ''
-      + '<div class="match"' + (isGOTW ? ' data-gotw="true"' : '') + ' data-mid="' + esc(m.id) + '">'
-      +   '<div class="match-top">'
-      +     teamBlock(m.home, A, recA, false)
-      +     projCell
-      +     teamBlock(m.away, B, recB, true)
-      +   '</div>'
-      +   '<div class="vote">'
-      +     '<div class="buttons">'
-      +       '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.home) + '">'
-      +         '<span class="vote-name">' + esc(A ? A.name : m.home) + '</span>'
-      +         '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.home) + '">—</span>'
-      +       '</button>'
-      +       '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.away) + '">'
-      +         '<span class="vote-name">' + esc(B ? B.name : m.away) + '</span>'
-      +         '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.away) + '">—</span>'
-      +       '</button>'
+      + '<div class="match-wrap' + (isGOTW ? ' is-gotw-wrap' : '') + '">'
+      +   header
+      +   '<div class="match"' + (isGOTW ? ' data-gotw="true"' : '') + ' data-mid="' + esc(m.id) + '">'
+      +     '<div class="match-top">'
+      +       teamBlock(m.home, A, recA, false)
+      +       projCell
+      +       teamBlock(m.away, B, recB, true)
       +     '</div>'
-      +     '<div class="bar2" id="bar-' + esc(w.id) + '-' + esc(m.id) + '">'
-      +       '<span class="left" id="l-' + esc(w.id) + '-' + esc(m.id) + '"></span>'
-      +       '<span class="right" id="r-' + esc(w.id) + '-' + esc(m.id) + '"></span>'
+      +     '<div class="vote">'
+      +       '<div class="buttons">'
+      +         '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.home) + '">'
+      +           '<span class="vote-name">' + esc(A ? A.name : m.home) + '</span>'
+      +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.home) + '">—</span>'
+      +         '</button>'
+      +         '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.away) + '">'
+      +           '<span class="vote-name">' + esc(B ? B.name : m.away) + '</span>'
+      +           '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.away) + '">—</span>'
+      +         '</button>'
+      +       '</div>'
+      +       '<div class="bar2" id="bar-' + esc(w.id) + '-' + esc(m.id) + '">'
+      +         '<span class="left" id="l-' + esc(w.id) + '-' + esc(m.id) + '"></span>'
+      +         '<span class="right" id="r-' + esc(w.id) + '-' + esc(m.id) + '"></span>'
+      +       '</div>'
       +     '</div>'
       +   '</div>'
       + '</div>';

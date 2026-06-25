@@ -377,29 +377,81 @@ body::before {
   line-height: 1.65;
 }
 
-/* ── Game of the Week heading ─────────────────────────────────── */
-.gotw-title {
+/* ── Per-matchup header (above each card) ─────────────────────
+   Regular matchups: "Matchup II" left, "Preview →" right.
+   GOTW: "Matchup Spotlight" centered above, then "Game of the
+   Week" + Preview link as a 2nd row. Header lives inside the
+   .match-wrap so the slate ordinal and the card stay anchored. */
+.match-wrap {
+  display: flex; flex-direction: column;
+  gap: .35rem;
+}
+.match-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .85rem;
+  padding: 0 .25rem;
+  font-family: var(--mono); font-weight: 700;
+  font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+}
+.match-num {
+  color: var(--pk-champagne);
+}
+.match-preview-link {
+  color: var(--pk-magenta);
+  text-decoration: none;
+  display: inline-flex; align-items: center;
+  gap: .25rem;
+  transition: color .12s;
+}
+.match-preview-link::after {
+  content: '→';
+  font-size: 1.05em;
+}
+.match-preview-link:hover { color: var(--pk-magenta-bright); }
+
+/* GOTW header — 2-row variant. Spotlight label centered up top, the
+   "Game of the Week" + Preview row below it. */
+.match-header.is-gotw {
+  flex-direction: column;
+  gap: .15rem;
+  align-items: stretch;
+  padding: 0;
+}
+.gotw-spotlight-label {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .54rem; letter-spacing: .28em; text-transform: uppercase;
+  color: var(--pk-champagne);
+  text-align: center;
+}
+.gotw-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .85rem;
+  padding: 0 .25rem;
+}
+.gotw-main {
   font-family: var(--serif); font-style: italic;
   font-size: 1.3rem;
   color: var(--pk-magenta-bright);
   letter-spacing: -.01em;
-  margin: .75rem 0 .25rem;
-  display: flex;
-  align-items: baseline;
-  gap: .85rem;
   text-shadow: 0 0 18px rgba(255,61,139,.28);
+  display: inline-flex; align-items: baseline; gap: .5rem;
 }
-.gotw-title::before {
+.gotw-main::before {
   content: "✦";
   color: var(--pk-magenta);
   font-style: normal;
   text-shadow: 0 0 10px rgba(255,61,139,.6);
 }
-.gotw-title .sub {
+.match-preview-link.gotw-preview {
   font-family: var(--mono); font-weight: 700;
-  font-size: .54rem; letter-spacing: .28em; text-transform: uppercase;
+  font-size: .6rem; letter-spacing: .22em; text-transform: uppercase;
   color: var(--pk-champagne);
 }
+.match-preview-link.gotw-preview:hover { color: var(--pk-champagne-bright); }
 
 /* ══════════════════════════════════════════════════════════════════
    MATCHUP CARDS · "ODDSBOARD LED"
@@ -409,7 +461,9 @@ body::before {
 .pe-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  /* Extra room between matchup cards so the new per-card "Matchup II /
+     Preview →" header strip above each card has breathing space. */
+  gap: 1.7rem;
   margin-bottom: 1rem;
 }
 
@@ -500,6 +554,22 @@ body::before {
   box-shadow: inset 0 0 0 1px var(--pk-gotw-amber), inset 0 3px 0 var(--pk-gotw-amber-light);
 }
 .match[data-gotw="true"] .vote-btn:last-child[data-picked="true"] .vote-pct { color: #fff; }
+
+/* GOTW winner override — the default winner styling (champagne text on
+   a faint champagne wash) reads fine on the dark cards but disappears
+   into the cream GOTW background. Use a solid deep-plum field with the
+   gold % so the winner reads as a clear, contrasty badge on cream. */
+.match[data-gotw="true"] .vote-btn[data-winner="true"],
+.match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] {
+  background: #1a0f23;
+  color: #f9d98a;
+  box-shadow: inset 0 0 0 1px #1a0f23, inset 0 3px 0 var(--pk-champagne);
+}
+.match[data-gotw="true"] .vote-btn[data-winner="true"] .vote-pct,
+.match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] .vote-pct {
+  color: #f9d98a;
+  text-shadow: none;
+}
 
 /* Bar2 on cream: keep pink, swap champagne for deep amber */
 .match[data-gotw="true"] .bar2 {
@@ -1016,6 +1086,14 @@ body::before {
   .pe-nav-records { font-size: .5rem; padding: .35rem .55rem; letter-spacing: .16em; }
 
   .match { padding: 0; }
+  /* Per-card header — keep the slate ordinal + Preview link readable
+     without eating too much vertical space on phones. */
+  .match-header { font-size: .48rem; letter-spacing: .18em; padding: 0 .15rem; }
+  .match-preview-link::after { font-size: 1em; }
+  .gotw-spotlight-label { font-size: .46rem; letter-spacing: .22em; }
+  .gotw-main { font-size: 1.05rem; }
+  .match-preview-link.gotw-preview { font-size: .52rem; letter-spacing: .18em; }
+  .match-wrap { gap: .25rem; }
   .match-top { padding: .8rem .65rem .75rem; gap: .4rem; grid-template-columns: 1fr auto 1fr; }
   .team { gap: .4rem; align-items: flex-start; }
   .logo { width: 28px; height: 28px; }
@@ -1062,7 +1140,7 @@ body::before {
   .match[data-gotw="true"] .match-top > .vs {
     grid-area: vs;
     justify-self: center;
-    margin-top: -.25rem;
+    margin-top: -.55rem;
   }
   .match[data-gotw="true"] .logo { width: 38px; height: 38px; }
   .match[data-gotw="true"] .team-name { font-size: .72rem; }
