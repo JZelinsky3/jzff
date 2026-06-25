@@ -145,10 +145,10 @@
       + '<section class="week" data-week="' + esc(w.id) + '">'
       +   '<div class="week-info">' + statusBadge + '</div>'
       +   '<div id="lock-msg-' + esc(w.id) + '" class="week-locked"></div>'
-      +   /* GOTW header is now rendered inline as the first row of the
-       *  GOTW card itself (see matchHTML), not as a section-level title.
-       *  This keeps the "Game of the Week | Preview →" header aligned to
-       *  the card it belongs to. */
+      // GOTW header is now rendered inline as the first row of the GOTW
+      // card itself (see matchHTML), not as a section-level title — keeps
+      // the "Game of the Week | Preview" row anchored to the card it
+      // belongs to.
       +   '<div class="pe-grid" id="grid-' + esc(w.id) + '"></div>'
       +   '<div class="hl-card">'
       +     '<div class="hl-row">'
