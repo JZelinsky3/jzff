@@ -99,14 +99,21 @@
     state.activeWeekId = weekId;
     // CSS gates on data-active="true" specifically — toggleAttribute would set
     // an empty value, so set the explicit string.
+    var activeTab = null;
     document.querySelectorAll('.pe-tab').forEach(function (x) {
-      if (x.dataset.week === weekId) x.setAttribute('data-active', 'true');
+      if (x.dataset.week === weekId) { x.setAttribute('data-active', 'true'); activeTab = x; }
       else x.removeAttribute('data-active');
     });
     document.querySelectorAll('.week').forEach(function (x) {
       if (x.dataset.week === weekId) x.setAttribute('data-active', 'true');
       else x.removeAttribute('data-active');
     });
+    // Center the active week chip in the horizontal scroll strip on mobile.
+    // 'instant' so the initial load doesn't smooth-scroll the user mid-render.
+    if (activeTab && elTabs && elTabs.scrollWidth > elTabs.clientWidth) {
+      var target = activeTab.offsetLeft - (elTabs.clientWidth / 2) + (activeTab.clientWidth / 2);
+      elTabs.scrollTo({ left: Math.max(0, target), behavior: 'instant' });
+    }
     state.pending = { picks: {}, hl: {} };
     var w = weekById(weekId);
     if (w && state.user) loadExistingSubmission(w);

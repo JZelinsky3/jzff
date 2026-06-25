@@ -452,7 +452,7 @@ body::before {
 
 /* Text recolors — dark plum throughout */
 .match[data-gotw="true"] .team-name        { color: #1a0f23; }
-.match[data-gotw="true"] .team-name .record { color: rgba(26,15,35,.5); }
+.match[data-gotw="true"] .record-line      { color: rgba(26,15,35,.5); }
 .match[data-gotw="true"] .manager          { color: rgba(26,15,35,.55); }
 .match[data-gotw="true"] .lwk              { color: rgba(26,15,35,.7); }
 .match[data-gotw="true"] .lwk .lbl         { color: rgba(26,15,35,.55); }
@@ -579,20 +579,17 @@ body::before {
 .team-name.win {
   color: var(--pk-champagne-bright);
 }
-.team-name .record {
-  display: inline-block;
+/* Record on its own row underneath the team name. Was inline inside
+   .team-name with mirrored margins, which moved the record to the top
+   row on one side and bottom row on the other when names wrapped — this
+   keeps it in the same vertical slot regardless of name length. */
+.record-line {
   font-family: var(--mono); font-weight: 700;
-  font-size: .55rem; letter-spacing: .14em;
+  font-size: .56rem; letter-spacing: .14em;
   color: var(--pk-chalk-mute);
-  margin-left: .4rem;
-  vertical-align: middle;
+  line-height: 1.1;
 }
-/* Right team: record sits BEFORE the name, so push it right not left */
-.team[data-team]:last-of-type .team-name .record {
-  margin-left: 0;
-  margin-right: .4rem;
-}
-.team-name.win .record { color: var(--pk-champagne); }
+.team-name.win + .record-line { color: var(--pk-champagne); }
 
 .manager {
   font-family: var(--mono); font-weight: 600;
@@ -988,8 +985,7 @@ body::before {
     text-overflow: clip;
     word-break: break-word;
   }
-  .team-name .record { font-size: .36rem; margin-left: .18rem; white-space: nowrap; }
-  .team[data-team]:last-of-type .team-name .record { margin-left: 0; margin-right: .18rem; }
+  .record-line { font-size: .42rem; letter-spacing: .12em; }
   .manager { font-size: .38rem; letter-spacing: .14em; }
   .lwk { font-size: .38rem; gap: .18rem; }
   .lwk .lbl { font-size: .32rem; letter-spacing: .14em; }
@@ -1001,7 +997,24 @@ body::before {
   .vote-btn { font-size: .58rem; padding: .75rem .65rem; letter-spacing: .1em; gap: .35rem; }
   .vote-pct { font-size: .78rem; }
   .match[data-gotw="true"]::after { font-size: .54rem; letter-spacing: .16em; padding: .28rem .68rem .25rem; top: 8px; }
-  .match[data-gotw="true"] .match-top { padding: 2.4rem .85rem 1.2rem; }
+  /* In the spotlight, drop the central "PPG vs PPG" cell to its own row
+     below the team names so the names get the full top row to spread
+     across, instead of fighting the middle column for horizontal space. */
+  .match[data-gotw="true"] .match-top {
+    padding: 2.4rem .85rem 1.2rem;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "home away"
+      "vs vs";
+    gap: .5rem .4rem;
+  }
+  .match[data-gotw="true"] .match-top > .team[data-team]:first-of-type { grid-area: home; }
+  .match[data-gotw="true"] .match-top > .team[data-team]:last-of-type  { grid-area: away; }
+  .match[data-gotw="true"] .match-top > .vs {
+    grid-area: vs;
+    justify-self: center;
+    margin-top: .35rem;
+  }
   .match[data-gotw="true"] .logo { width: 38px; height: 38px; }
   .match[data-gotw="true"] .team-name { font-size: .72rem; }
   .match[data-gotw="true"] .vs-pts { font-size: .84rem; }
@@ -1025,8 +1038,25 @@ body::before {
 
   .hl-row { grid-template-columns: 1fr; gap: .7rem; }
 
-  .pe-tabs { padding: .4rem; gap: .3rem; }
-  .pe-tab { font-size: .54rem; padding: .4rem .65rem; letter-spacing: .16em; }
+  /* Single horizontal scroll strip instead of wrapping to multiple rows.
+     Before this, all 14–18 weeks rendered stacked at the top of the page,
+     pushing the current week's matchups well below the fold. */
+  .pe-tabs {
+    padding: .4rem;
+    gap: .3rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pe-tabs::-webkit-scrollbar { display: none; }
+  .pe-tab {
+    font-size: .54rem; padding: .4rem .65rem; letter-spacing: .16em;
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    white-space: nowrap;
+  }
 
   .pe-submitbar { margin: 2rem -1rem 0; padding: .8rem 1rem; }
   .pe-submitbar #submitPicks { min-width: 0; flex: 1; max-width: 240px; }
