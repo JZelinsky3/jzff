@@ -1193,7 +1193,17 @@ body::before {
     margin-top: .6rem;
   }
   .match[data-gotw="true"] .logo { width: 38px; height: 38px; }
-  .match[data-gotw="true"] .team-name { font-size: .72rem; }
+  /* Allow GOTW team-name to wrap onto a second line. The middle "auto"
+     column reserves PPG width even when PPG is offset lower, so a long
+     name on a single line gets clipped at the column edge. Wrapping lets
+     it use vertical room instead of trying to push into the middle. */
+  .match[data-gotw="true"] .team-name {
+    font-size: .72rem;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.05;
+    text-overflow: clip;
+  }
   .match[data-gotw="true"] .vs-pts { font-size: .84rem; }
   .match[data-gotw="true"] .vote-btn { padding: 1.05rem .75rem; font-size: .62rem; }
   .bar2 { height: 5px; }

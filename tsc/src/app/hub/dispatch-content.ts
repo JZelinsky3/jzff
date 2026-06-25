@@ -48,6 +48,15 @@ export const COMING_SOON: DispatchEntry[] = [
 
 export const DISPATCH: DispatchEntry[] = [
   {
+    id: 'guides-shelf',
+    date: 'Jun 20, 2026',
+    title: 'A bigger Guides',
+    titleEm: 'shelf.',
+    body: 'New deep-dives on the Trade Analyzer, Milestone Tracker, manager analysis, league-management software, league-history software, the Recap, the Almanac, and a fresh league setup walkthrough. The Guides page itself got a browsable shelf so you can compare and filter instead of scrolling a flat list.',
+    status: 'new',
+    tags: [{ label: 'New', tone: 'gold' }, { label: 'Guides' }],
+  },
+  {
     id: 'mobile-rework',
     date: 'Jun 18, 2026',
     title: 'A mobile rework, top to',

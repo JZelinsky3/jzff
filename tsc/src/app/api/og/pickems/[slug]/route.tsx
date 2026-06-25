@@ -181,57 +181,65 @@ function renderLeaderboardCard(
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '38px 60px 0',
-            fontSize: '17px',
+            padding: '40px 60px 0',
+            fontSize: '23px',
             fontWeight: 700,
-            letterSpacing: '0.32em',
+            letterSpacing: '0.3em',
             color: CHAMPAGNE,
             textTransform: 'uppercase',
             zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <span style={{ display: 'flex', width: 10, height: 10, borderRadius: 999, background: MAGENTA, boxShadow: `0 0 18px ${MAGENTA}` }} />
+          <span style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+            <span style={{ display: 'flex', width: 12, height: 12, borderRadius: 999, background: MAGENTA, boxShadow: `0 0 18px ${MAGENTA}` }} />
             {leagueName.toUpperCase()}
           </span>
-          <span style={{ display: 'flex', color: CHALK_MUTE, letterSpacing: '0.34em' }}>
+          <span style={{ display: 'flex', color: CHALK_MUTE, letterSpacing: '0.32em' }}>
             THE SUNDAY CHRONICLE
           </span>
         </div>
 
-        {/* Headline lockup */}
+        {/* Headline lockup — dropped lower so the card's middle band is
+            the visual anchor instead of the top third. */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            paddingTop: '34px',
+            paddingTop: hasRows ? '70px' : '90px',
             zIndex: 2,
           }}
         >
+          {/* Flex with explicit gaps so letter-spacing doesn't glue
+              "WEEK 9" to "PICK'EMS". */}
           <div
             style={{
               display: 'flex',
+              alignItems: 'center',
+              gap: '20px',
               fontFamily: 'JetBrains',
               fontWeight: 700,
-              fontSize: '20px',
-              letterSpacing: '0.42em',
+              fontSize: '26px',
+              letterSpacing: '0.34em',
               color: MAGENTA_HI,
               textTransform: 'uppercase',
-              marginBottom: '12px',
+              marginBottom: '14px',
             }}
           >
-            ★ WEEK {currentWeek} PICK&apos;EMS ★
+            <span style={{ display: 'flex' }}>★</span>
+            <span style={{ display: 'flex' }}>WEEK {currentWeek}</span>
+            <span style={{ display: 'flex' }}>PICK&apos;EMS</span>
+            <span style={{ display: 'flex' }}>★</span>
           </div>
           <div
             style={{
               display: 'flex',
               fontFamily: 'DMSerif',
               fontStyle: 'italic',
-              fontSize: '96px',
+              fontSize: '124px',
               lineHeight: 1,
               color: CHALK,
-              textShadow: `0 0 28px ${MAGENTA}66`,
+              textShadow: `0 0 32px ${MAGENTA}66`,
             }}
           >
             {hasRows ? 'The Pool.' : 'Picks are open.'}
@@ -239,15 +247,15 @@ function renderLeaderboardCard(
           <div
             style={{
               display: 'flex',
-              marginTop: '14px',
+              marginTop: '20px',
               fontFamily: 'DMSerif',
-              fontSize: '28px',
+              fontSize: '36px',
               color: CHAMPAGNE_HI,
             }}
           >
             {hasRows
               ? `Standings through Week ${currentWeek - 1}`
-              : `Lock your Week ${currentWeek} picks before kickoff`}
+              : 'Lock your picks before Thursday night kickoff'}
           </div>
         </div>
 
@@ -258,7 +266,7 @@ function renderLeaderboardCard(
               display: 'flex',
               flexDirection: 'column',
               gap: '14px',
-              padding: '36px 110px 0',
+              padding: '32px 110px 0',
               zIndex: 2,
             }}
           >
@@ -270,15 +278,15 @@ function renderLeaderboardCard(
         <div
           style={{
             position: 'absolute',
-            bottom: 26,
+            bottom: 28,
             left: 60,
             right: 60,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            fontSize: '15px',
+            fontSize: '20px',
             fontWeight: 700,
-            letterSpacing: '0.3em',
+            letterSpacing: '0.28em',
             color: CHALK_MUTE,
             textTransform: 'uppercase',
             zIndex: 2,
@@ -289,7 +297,7 @@ function renderLeaderboardCard(
               <span style={{ display: 'flex', color: CHAMPAGNE }}>
                 LEADER · {leader!.name.toUpperCase()} · {pct}% RIGHT
               </span>
-              <span style={{ display: 'flex' }}>
+              <span style={{ display: 'flex', textAlign: 'right' }}>
                 {rows.length} PICKER{rows.length === 1 ? '' : 'S'} · NO LOGIN
               </span>
             </>
@@ -298,7 +306,7 @@ function renderLeaderboardCard(
               <span style={{ display: 'flex', color: CHAMPAGNE }}>
                 EVERY MATCHUP · HIGHEST · LOWEST
               </span>
-              <span style={{ display: 'flex' }}>TAP IN · NO LOGIN</span>
+              <span style={{ display: 'flex', textAlign: 'right' }}>TAP IN · NO LOGIN</span>
             </>
           )}
         </div>
@@ -379,7 +387,7 @@ function leaderRow(r: Row, idx: number) {
         }}
       >
         <span style={{ display: 'flex' }}>{r.right}</span>
-        <span style={{ display: 'flex', color: CHALK_MUTE, fontSize: '24px' }}>—</span>
+        <span style={{ display: 'flex', color: CHALK_MUTE, fontSize: '24px' }}>-</span>
         <span style={{ display: 'flex', color: CHALK_MUTE }}>{r.wrong}</span>
       </div>
     </div>
@@ -411,28 +419,30 @@ function renderQuietCard(
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '14px',
-            fontSize: '17px',
+            gap: '20px',
+            fontSize: '23px',
             fontWeight: 700,
-            letterSpacing: '0.4em',
+            letterSpacing: '0.34em',
             color: CHAMPAGNE,
             textTransform: 'uppercase',
-            marginBottom: '28px',
+            marginBottom: '32px',
             zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex', width: 10, height: 10, borderRadius: 999, background: MAGENTA, boxShadow: `0 0 18px ${MAGENTA}` }} />
-          {leagueName.toUpperCase()} · PICK&apos;EMS
+          <span style={{ display: 'flex', width: 12, height: 12, borderRadius: 999, background: MAGENTA, boxShadow: `0 0 18px ${MAGENTA}` }} />
+          <span style={{ display: 'flex' }}>{leagueName.toUpperCase()}</span>
+          <span style={{ display: 'flex' }}>·</span>
+          <span style={{ display: 'flex' }}>PICK&apos;EMS</span>
         </div>
         <div
           style={{
             display: 'flex',
             fontFamily: 'DMSerif',
             fontStyle: 'italic',
-            fontSize: '96px',
+            fontSize: '124px',
             lineHeight: 1,
             zIndex: 2,
-            textShadow: `0 0 28px ${MAGENTA}66`,
+            textShadow: `0 0 32px ${MAGENTA}66`,
           }}
         >
           The pool is closed.
@@ -440,14 +450,14 @@ function renderQuietCard(
         <div
           style={{
             display: 'flex',
-            marginTop: '22px',
+            marginTop: '24px',
             fontFamily: 'DMSerif',
-            fontSize: '28px',
+            fontSize: '36px',
             color: CHAMPAGNE_HI,
             zIndex: 2,
           }}
         >
-          Pick&apos;ems opens when the season does — The Sunday Chronicle
+          Pick&apos;ems opens when the season does
         </div>
       </div>
     ),
