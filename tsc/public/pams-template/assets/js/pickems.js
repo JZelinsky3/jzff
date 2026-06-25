@@ -53,6 +53,14 @@
     }
 
     state.teams       = data.teams || {};
+    // Strip emoji from team names once at load so they're hidden everywhere
+    // — vote buttons, headings, select labels, alts, tooltips. Emojis
+    // wreck horizontal alignment with mono record/manager lines and don't
+    // render consistently across iOS/Android system fonts.
+    Object.keys(state.teams).forEach(function (k) {
+      var t = state.teams[k];
+      if (t && typeof t.name === 'string') t.name = stripEmoji(t.name);
+    });
     state.weeks       = data.weeks || [];
     state.profiles    = data.profiles || [];
     state.submissions = data.submissions || {};
@@ -230,15 +238,18 @@
     fitVoteNames(grid);
   }
 
-  // After a week's grid is built, walk every .vote-name and shrink its
-  // font-size 1px at a time until the team name fits inside the button's
-  // 50% column. Without this, long names either ellipsize (looks chopped)
-  // or push the column past 50% (knocks the bar below out of alignment).
+  // After a week's grid is built, walk every .vote-name and .team-name
+  // and shrink the font-size 1px at a time until the text fits in its
+  // allotted width. For vote buttons this keeps the 50% column boundary
+  // honest. For team names this prevents a long name from wrapping to a
+  // second line on one side — when that happened the other team's name
+  // sat lower (vertical-center alignment), making the card look lopsided.
   // 8px floor so a worst-case team name doesn't reduce to dust.
   function fitVoteNames(grid) {
     if (!grid) return;
-    var names = grid.querySelectorAll('.vote-name');
-    names.forEach(function (el) {
+    var sel = '.vote-name, .team-name';
+    grid.querySelectorAll(sel).forEach(function (el) {
+      el.style.fontSize = ''; // reset prior fit (e.g. on re-hydrate)
       var size = parseFloat(window.getComputedStyle(el).fontSize);
       var min = 8;
       var guard = 24; // hard cap so we can't loop forever
@@ -247,6 +258,21 @@
         el.style.fontSize = size + 'px';
       }
     });
+  }
+
+  // Strip emoji (and other pictographic glyphs) from a string. Used on
+  // team names at load time — emojis fight the mono record/manager line
+  // alignment and render inconsistently across platforms.
+  function stripEmoji(s) {
+    if (!s) return '';
+    try {
+      return s.replace(/\p{Extended_Pictographic}/gu, '').replace(/\s+/g, ' ').trim();
+    } catch (e) {
+      // Older engines without Unicode property escapes — fall back to
+      // the common emoji blocks. Won't catch every codepoint but covers
+      // the standard set teams typically use.
+      return s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}]/gu, '').replace(/\s+/g, ' ').trim();
+    }
   }
 
   // matchup card — verbatim structure from the demo.
