@@ -806,6 +806,49 @@ body::before {
 }
 .hl-card select option { background: var(--pk-card); color: var(--pk-chalk); }
 
+/* High/low reveal — mirrors the picker grid above (2 cols), one column
+   per category, each tied team on its own line. Replaces a single line
+   of comma-joined pills that ran together when ties happened. */
+.hl-reveal-hint {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .54rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--pk-chalk-mute);
+  text-align: center;
+  padding: .4rem 0 .1rem;
+}
+.hl-reveal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: .35rem;
+  padding-top: .65rem;
+  border-top: 1px solid var(--pk-line);
+}
+.hl-reveal-col {
+  display: flex; flex-direction: column;
+  gap: .22rem;
+  min-width: 0;
+}
+.hl-reveal-label {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
+}
+.hl-reveal-col.hi .hl-reveal-label { color: var(--pk-champagne); }
+.hl-reveal-col.lo .hl-reveal-label { color: var(--pk-magenta); }
+.hl-reveal-name {
+  font-family: var(--sans); font-weight: 600;
+  font-size: .85rem;
+  color: var(--pk-chalk);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.hl-reveal-name.is-tbd {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .54rem; letter-spacing: .18em;
+  color: var(--pk-chalk-mute);
+  text-transform: uppercase;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    SUBMIT BAR
    ══════════════════════════════════════════════════════════════════ */
@@ -1043,6 +1086,10 @@ body::before {
   .pe-pill { font-size: .54rem; padding: .3rem .6rem; }
 
   .hl-row { grid-template-columns: 1fr; gap: .7rem; }
+  .hl-reveal-grid { gap: .7rem; padding-top: .55rem; }
+  .hl-reveal-label { font-size: .46rem; letter-spacing: .18em; }
+  .hl-reveal-name { font-size: .74rem; }
+  .hl-reveal-name.is-tbd { font-size: .46rem; letter-spacing: .14em; }
 
   /* Single horizontal scroll strip instead of wrapping to multiple rows.
      Before this, all 14–18 weeks rendered stacked at the top of the page,

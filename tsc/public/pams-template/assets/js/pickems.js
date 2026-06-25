@@ -395,23 +395,49 @@
 
     var hlBox = byId('hl-reveal-' + w.id);
     if (hlBox) {
-      if (w.hlWinners) {
-        var hi = (w.hlWinners.highest || []).map(teamName).join(', ') || 'TBD';
-        var lo = (w.hlWinners.lowest || []).map(teamName).join(', ') || 'TBD';
-        hlBox.innerHTML = '<span class="badge">Highest: ' + esc(hi) + '</span> <span class="badge">Lowest: ' + esc(lo) + '</span>';
-      } else if (reveal) {
-        var hiL = topKeys(hl.highest).map(teamName).join(', ') || 'TBD';
-        var loL = topKeys(hl.lowest).map(teamName).join(', ') || 'TBD';
-        hlBox.innerHTML = '<span class="badge">Highest leader: ' + esc(hiL) + '</span> <span class="badge">Lowest leader: ' + esc(loL) + '</span>';
-      } else {
-        hlBox.innerHTML = '<span class="badge" style="color:var(--pk-chalk-mute)">Reveals once you lock in</span>';
-      }
+      hlBox.innerHTML = renderHLReveal(w, hl, reveal);
     }
 
     applyWinnerMarks(w);
   }
 
   function teamName(id) { return state.teams[id] ? state.teams[id].name : id; }
+
+  // Renders the high/low-scorer panel under the picker selects. Was a
+  // single line of comma-joined pills ("Highest: A, B  Lowest: C") which
+  // ran together when multiple teams tied. New shape: a 2-column card
+  // that mirrors the picker grid above — one column per category, each
+  // team on its own line, color-coded to match the highest/lowest accent.
+  function renderHLReveal(w, hl, reveal) {
+    var hiNames, loNames, hiLabel, loLabel;
+    if (w.hlWinners) {
+      hiNames = (w.hlWinners.highest || []).map(teamName);
+      loNames = (w.hlWinners.lowest || []).map(teamName);
+      hiLabel = 'Highest Scorer';
+      loLabel = 'Lowest Scorer';
+    } else if (reveal) {
+      hiNames = topKeys(hl.highest).map(teamName);
+      loNames = topKeys(hl.lowest).map(teamName);
+      hiLabel = 'Highest · Leader';
+      loLabel = 'Lowest · Leader';
+    } else {
+      return '<div class="hl-reveal-hint">Reveals once you lock in</div>';
+    }
+    function col(klass, label, names) {
+      var safe = names && names.length ? names : null;
+      var rows = safe
+        ? safe.map(function (n) { return '<div class="hl-reveal-name">' + esc(n) + '</div>'; }).join('')
+        : '<div class="hl-reveal-name is-tbd">TBD</div>';
+      return '<div class="hl-reveal-col ' + klass + '">'
+        +   '<div class="hl-reveal-label">' + esc(label) + '</div>'
+        +   rows
+        + '</div>';
+    }
+    return '<div class="hl-reveal-grid">'
+      +    col('hi', hiLabel, hiNames)
+      +    col('lo', loLabel, loNames)
+      +  '</div>';
+  }
 
   // ── Existing submission ─────────────────────────────────────────────────────
   function loadExistingSubmission(w) {
