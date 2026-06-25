@@ -14,6 +14,7 @@ import { resolveCurrentWeek } from '@/lib/liveSeason'
 
 export type PickemsTeam = {
   id: string // manager_id
+  user_id: string | null // external (platform) user id — matches matchup-preview's ?m=<uid>
   name: string // fantasy team name (falls back to manager name)
   manager: string // profile canonical name
   logo: string | null
@@ -103,7 +104,7 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
 
   const { data: managers } = await db
     .from('managers')
-    .select('id, display_name, team_name, avatar_url, profile_id')
+    .select('id, display_name, team_name, avatar_url, profile_id, external_id')
     .eq('league_id', league.id)
 
   const { data: profiles } = await db
@@ -176,6 +177,7 @@ export async function getPickemsState(slug: string): Promise<PickemsState | null
     const s = stats.get(m.id)
     teams[m.id] = {
       id: m.id,
+      user_id: m.external_id ?? null,
       name: m.team_name || (m.profile_id && profileName.get(m.profile_id)) || m.display_name,
       manager: (m.profile_id && profileName.get(m.profile_id)) || m.display_name,
       logo: m.avatar_url ?? null,

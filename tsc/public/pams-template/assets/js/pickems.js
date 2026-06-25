@@ -291,12 +291,18 @@
     return out;
   }
 
-  // Per-matchup preview link. Targets the matchup-preview page with the
-  // home team's user id so the desk auto-focuses on this matchup. Past
-  // (locked) weeks still link out — the preview page shows the latest
-  // current-week data for that team, which is still useful context.
+  // Per-matchup preview link. The matchup-preview desk view keys off the
+  // platform external user id (matches the `uid` in matchup_preview.json),
+  // not the internal manager id we use as `m.home` here — so route through
+  // teams[m.home].user_id. If we don't have a user_id (rare: a manager
+  // without an external mapping), drop the ?m= and let the page land on
+  // the departures board instead of silently 404'ing into hub view.
   function previewHref(m) {
-    return 'live/matchup-preview/?m=' + encodeURIComponent(m.home);
+    var t = state.teams[m.home];
+    var uid = t && t.user_id;
+    return uid
+      ? 'live/matchup-preview/?m=' + encodeURIComponent(uid)
+      : 'live/matchup-preview/';
   }
 
   // matchup card — verbatim structure from the demo.
