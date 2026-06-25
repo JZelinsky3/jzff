@@ -411,19 +411,13 @@ body::before {
 }
 .match-preview-link:hover { color: var(--pk-magenta-bright); }
 
-/* GOTW header — 2-row variant. Spotlight label centered up top, the
-   "Game of the Week" + Preview row below it. */
+/* GOTW header — 2-row variant. "Game of the Week" + Preview on top;
+   "Matchup Spotlight" kicker label sits below, tight against the card. */
 .match-header.is-gotw {
   flex-direction: column;
-  gap: .15rem;
+  gap: .55rem;
   align-items: stretch;
   padding: 0;
-}
-.gotw-spotlight-label {
-  font-family: var(--mono); font-weight: 700;
-  font-size: .54rem; letter-spacing: .28em; text-transform: uppercase;
-  color: var(--pk-champagne);
-  text-align: center;
 }
 .gotw-row {
   display: flex;
@@ -433,7 +427,11 @@ body::before {
   padding: 0 .25rem;
 }
 .gotw-main {
-  font-family: var(--serif); font-style: italic;
+  /* Explicit overrides — .match-header sets font-family: mono, font-weight:
+     700, letter-spacing: .22em, text-transform: uppercase, all of which
+     would clobber the serif italic look intended here. */
+  font-family: var(--serif); font-style: italic; font-weight: 400;
+  text-transform: none;
   font-size: 1.3rem;
   color: var(--pk-magenta-bright);
   letter-spacing: -.01em;
@@ -452,6 +450,15 @@ body::before {
   color: var(--pk-champagne);
 }
 .match-preview-link.gotw-preview:hover { color: var(--pk-champagne-bright); }
+/* Spotlight kicker — sits below the GOTW row, immediately above the
+   card. Bigger and centered to read as a chapter mark for the card. */
+.gotw-spotlight-label {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .72rem; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--pk-champagne);
+  text-align: center;
+  margin-top: -.1rem;
+}
 
 /* ══════════════════════════════════════════════════════════════════
    MATCHUP CARDS · "ODDSBOARD LED"
@@ -555,15 +562,19 @@ body::before {
 }
 .match[data-gotw="true"] .vote-btn:last-child[data-picked="true"] .vote-pct { color: #fff; }
 
-/* GOTW winner override — the default winner styling (champagne text on
-   a faint champagne wash) reads fine on the dark cards but disappears
-   into the cream GOTW background. Use a solid deep-plum field with the
-   gold % so the winner reads as a clear, contrasty badge on cream. */
-.match[data-gotw="true"] .vote-btn[data-winner="true"],
+/* GOTW winner override — solid deep-plum field stays the same on cream
+   (so the winner reads as a clear badge), but the border + top-stripe
+   are recolored to the team's side accent (home pink, away amber) so
+   it's instantly obvious which side won. */
+.match[data-gotw="true"] .vote-btn[data-winner="true"] {
+  background: #1a0f23;
+  color: #f9d98a;
+  box-shadow: inset 0 0 0 2px var(--pk-magenta), inset 0 4px 0 var(--pk-magenta-bright);
+}
 .match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] {
   background: #1a0f23;
   color: #f9d98a;
-  box-shadow: inset 0 0 0 1px #1a0f23, inset 0 3px 0 var(--pk-champagne);
+  box-shadow: inset 0 0 0 2px var(--pk-gotw-amber), inset 0 4px 0 var(--pk-gotw-amber-light);
 }
 .match[data-gotw="true"] .vote-btn[data-winner="true"] .vote-pct,
 .match[data-gotw="true"] .vote-btn:last-child[data-winner="true"] .vote-pct {
@@ -1090,8 +1101,8 @@ body::before {
      without eating too much vertical space on phones. */
   .match-header { font-size: .48rem; letter-spacing: .18em; padding: 0 .15rem; }
   .match-preview-link::after { font-size: 1em; }
-  .gotw-spotlight-label { font-size: .46rem; letter-spacing: .22em; }
-  .gotw-main { font-size: 1.05rem; }
+  .gotw-spotlight-label { font-size: .6rem; letter-spacing: .26em; margin-top: -.05rem; }
+  .gotw-main { font-size: 1.25rem; }
   .match-preview-link.gotw-preview { font-size: .52rem; letter-spacing: .18em; }
   .match-wrap { gap: .25rem; }
   .match-top { padding: .8rem .65rem .75rem; gap: .4rem; grid-template-columns: 1fr auto 1fr; }
@@ -1122,25 +1133,20 @@ body::before {
   .vote-btn { font-size: .58rem; padding: .75rem .65rem; letter-spacing: .1em; gap: .35rem; }
   .vote-pct { font-size: .78rem; }
   .match[data-gotw="true"]::after { font-size: .54rem; letter-spacing: .16em; padding: .28rem .68rem .25rem; top: 8px; }
-  /* In the spotlight, drop the central "PPG vs PPG" cell to its own row
-     below the team names so the names get the full top row to spread
-     across, instead of fighting the middle column for horizontal space.
-     Negative row-gap + negative margin-top lifts the vs row close to the
-     team area so it reads as part of the matchup, not a detached strip. */
+  /* Back to a single-row layout (home | vs | away). Now that team names
+     autofit to a single line, the middle column gets room without
+     squeezing the team blocks — so vs naturally sits at the vertical
+     center of the team row, which falls right around the manager-line
+     height. align-self: center is redundant with the inherited
+     align-items: center on .match-top but kept explicit for clarity. */
   .match[data-gotw="true"] .match-top {
     padding: 2.4rem .85rem 1.2rem;
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "home away"
-      "vs vs";
-    gap: 0 .4rem;
+    grid-template-columns: 1fr auto 1fr;
+    gap: .4rem;
   }
-  .match[data-gotw="true"] .match-top > .team[data-team]:first-of-type { grid-area: home; }
-  .match[data-gotw="true"] .match-top > .team[data-team]:last-of-type  { grid-area: away; }
   .match[data-gotw="true"] .match-top > .vs {
-    grid-area: vs;
+    align-self: center;
     justify-self: center;
-    margin-top: -.55rem;
   }
   .match[data-gotw="true"] .logo { width: 38px; height: 38px; }
   .match[data-gotw="true"] .team-name { font-size: .72rem; }

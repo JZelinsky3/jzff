@@ -337,17 +337,18 @@
       : '<div class="vs"><span class="vs-mid">vs</span></div>';
 
     var previewUrl = previewHref(m);
-    // GOTW gets a custom 2-row header (centered "Matchup Spotlight" label
-    // above a "Game of the Week | Preview →" row). Regular matchups get
-    // a single row: "Matchup II" on the left, "Preview →" on the right.
+    // GOTW gets a custom 2-row header: "Game of the Week | Preview →" up
+    // top, then a bigger "Matchup Spotlight" kicker tight against the
+    // card. Regular matchups get a single row: "Matchup II" left,
+    // "Preview →" right.
     var header = isGOTW
       ? ''
         + '<header class="match-header is-gotw">'
-        +   '<div class="gotw-spotlight-label">Matchup Spotlight</div>'
         +   '<div class="gotw-row">'
         +     '<span class="gotw-main">Game of the Week</span>'
         +     '<a class="match-preview-link gotw-preview" href="' + previewUrl + '">Preview</a>'
         +   '</div>'
+        +   '<div class="gotw-spotlight-label">Matchup Spotlight</div>'
         + '</header>'
       : ''
         + '<header class="match-header">'
