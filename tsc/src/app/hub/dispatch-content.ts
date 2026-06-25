@@ -48,6 +48,15 @@ export const COMING_SOON: DispatchEntry[] = [
 
 export const DISPATCH: DispatchEntry[] = [
   {
+    id: 'mobile-rework',
+    date: 'Jun 18, 2026',
+    title: 'A mobile rework, top to',
+    titleEm: 'bottom.',
+    body: 'Every page on TSC got a phone-native rebuild: landing, Clubhouse, dashboard, league shells, almanac, live season, pricing, guides, the manager and rivalry pages. Simpler chrome, denser cards, one-thumb navigation, and a dedicated mobile tree (separate from desktop) so the small screen never inherits a layout it can’t carry. Open the site on a phone and it should finally feel like one.',
+    status: 'new',
+    tags: [{ label: 'New', tone: 'gold' }, { label: 'Mobile' }, { label: 'Sitewide' }],
+  },
+  {
     id: 'trade-room',
     date: 'Jun 10, 2026',
     title: 'The Trade Room opens in',

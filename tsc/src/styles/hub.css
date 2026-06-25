@@ -173,7 +173,12 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
    TAB RAIL — section navigation
    ============================================================ */
 .hub-tabs {
-    display: flex; justify-content: center; gap: .25rem;
+    display: flex; justify-content: center;
+    /* gap intentionally 0 — divider pips below sit at each tab's left
+       edge, so any gap would render the space-to-right of one label
+       wider than the space-to-left of the next, making the bar look
+       lopsided (esp. on mobile where labels are short). */
+    gap: 0;
     padding: 0 1rem;
     overflow-x: auto;
     scrollbar-width: none;
@@ -190,7 +195,9 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     transition: color .2s;
 }
 .hub-tab-num { color: var(--hb-gold); font-size: .56rem; opacity: .85; }
-/* Divider pips between tabs, like the league chapbar */
+/* Divider pips between tabs, like the league chapbar. Each tab's right
+   padding is mirrored on the next tab's left padding, so a pip at left:0
+   sits at the midpoint of the visual gap between two labels. */
 .hub-tab + .hub-tab::before {
     content: '';
     position: absolute; left: 0; top: 32%; bottom: 32%; width: 1px;
@@ -1340,6 +1347,63 @@ select.hub-input {
 @media (max-width: 760px) {
     .hub-tr-sides, .hub-tr-result-grid { grid-template-columns: 1fr; }
     .hub-tr-roster-toggle { margin-left: 0; }
+}
+
+/* Docket case cards on mobile. The two-column side layout (You receive /
+   You send) was crowding asset names, headshots, and grades into 50% of
+   ~360px and pushing values off-card. Stack the sides, shrink the case
+   chrome, and trim the row densities so it reads as a single column. */
+@media (max-width: 640px) {
+    .hub-tr-case {
+        padding: .9rem .85rem .85rem;
+        gap: .7rem;
+    }
+    .hub-tr-case-head {
+        gap: .2rem .55rem;
+        padding-bottom: .45rem;
+    }
+    .hub-tr-case-meta { font-size: .5rem; letter-spacing: .12em; }
+    .hub-tr-case-sides {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+        gap: .8rem;
+    }
+    /* Subgrid stops applying when we collapse to one column — reset each
+       side to its own block so head/rows/foot stack naturally. */
+    .hub-tr-case-side {
+        display: block;
+        grid-row: auto;
+        grid-template-rows: none;
+        padding-bottom: .7rem;
+        border-bottom: 1px dotted var(--hb-line-soft);
+    }
+    .hub-tr-case-side:last-child {
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .hub-tr-case-rows { gap: .3rem; margin-top: .45rem; }
+    .hub-tr-case-foot { gap: .3rem; margin-top: .4rem; }
+    .hub-tr-row {
+        font-size: .76rem;
+        gap: .4rem;
+        padding: .18rem 0;
+    }
+    .hub-tr-row .hub-tr-mug { width: 18px; height: 18px; }
+    .hub-tr-pos {
+        font-size: .48rem;
+        padding: .1rem .25rem;
+        min-width: 1.75rem;
+    }
+    .hub-tr-row-val { font-size: .62rem; }
+    .hub-tr-side-name { font-size: .68rem; letter-spacing: .14em; }
+    .hub-tr-grade { font-size: .68rem; padding: .15rem .45rem; }
+    .hub-tr-case-total { font-size: .52rem; padding-top: .3rem; }
+    .hub-tr-case .hub-tr-verdict { font-size: .74rem; line-height: 1.45; }
+    .hub-tr-roster-note { font-size: .62rem; line-height: 1.55; }
+    .hub-tr-roster-note-lbl { font-size: .46rem; letter-spacing: .18em; }
+    .hub-tr-roster-note-item em { font-size: .5rem; }
+    .hub-ballot-side { padding: .4rem .7rem; font-size: .7rem; }
+    .hub-ballot-n { font-size: .62rem; }
 }
 
 /* ============================================================
