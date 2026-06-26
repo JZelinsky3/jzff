@@ -278,15 +278,40 @@
       var maxWidth;
       if (isGotwName) {
         var topEl = el.closest('.match-top');
-        maxWidth = topEl ? topEl.clientWidth * 0.62 : el.clientWidth;
+        // Each GOTW name caps at ~46% of card width. Two sides at the
+        // cap leaves ~8% in the middle for the absolutely-positioned
+        // PPG to peek through, and guarantees two long names never run
+        // into each other at the centerline.
+        maxWidth = topEl ? topEl.clientWidth * 0.46 : el.clientWidth;
       } else {
         maxWidth = el.clientWidth;
       }
-      while (el.scrollWidth > maxWidth && size > min && guard-- > 0) {
+      // Measure the rendered text width via canvas instead of
+      // scrollWidth. The GOTW team-name is a flex item with
+      // overflow:visible — scrollWidth on such items can report the
+      // parent's constrained width rather than the natural text width,
+      // so the shrink loop would never trigger and long names would
+      // crash into each other across the centerline.
+      while (measureTextPx(el) > maxWidth && size > min && guard-- > 0) {
         size -= 1;
         el.style.fontSize = size + 'px';
       }
     });
+  }
+
+  // Off-screen canvas-based text measurement. Independent of layout, so
+  // it works on flex items whose box width is constrained even when the
+  // text content overflows visibly.
+  var _measureCanvas = null;
+  function measureTextPx(el) {
+    if (!_measureCanvas) _measureCanvas = document.createElement('canvas');
+    var ctx = _measureCanvas.getContext('2d');
+    var cs = window.getComputedStyle(el);
+    ctx.font = (cs.fontStyle || 'normal') + ' '
+      + (cs.fontWeight || '400') + ' '
+      + cs.fontSize + ' '
+      + cs.fontFamily;
+    return ctx.measureText(el.textContent || '').width;
   }
 
   // Strip emoji (and other pictographic glyphs) from a string. Used on
