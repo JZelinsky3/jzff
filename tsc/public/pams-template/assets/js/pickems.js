@@ -253,10 +253,18 @@
   // After a week's grid is built, walk every .vote-name and .team-name
   // and shrink the font-size 1px at a time until the text fits in its
   // allotted width. For vote buttons this keeps the 50% column boundary
-  // honest. For team names this prevents a long name from wrapping to a
-  // second line on one side — when that happened the other team's name
-  // sat lower (vertical-center alignment), making the card look lopsided.
-  // 8px floor so a worst-case team name doesn't reduce to dust.
+  // honest. For non-GOTW team names this prevents a long name from
+  // wrapping to a second line on one side — when that happened the other
+  // team's name sat lower (vertical-center alignment), making the card
+  // look lopsided. 8px floor so a worst-case team name doesn't reduce
+  // to dust.
+  //
+  // GOTW (mobile) gets a special-case budget: the team-name column has
+  // dropped its width constraint and the PPG floats absolutely at the
+  // card's center, so a name is *allowed* to spill past its own column
+  // and visually ride over PPG. Cap that spill at ~62% of the card width
+  // so the longest names still shrink to fit instead of running off the
+  // card edge.
   function fitVoteNames(grid) {
     if (!grid) return;
     var sel = '.vote-name, .team-name';
@@ -265,7 +273,16 @@
       var size = parseFloat(window.getComputedStyle(el).fontSize);
       var min = 8;
       var guard = 24; // hard cap so we can't loop forever
-      while (el.scrollWidth > el.clientWidth && size > min && guard-- > 0) {
+      var isGotwName = el.classList.contains('team-name')
+        && el.closest('.match[data-gotw="true"]');
+      var maxWidth;
+      if (isGotwName) {
+        var topEl = el.closest('.match-top');
+        maxWidth = topEl ? topEl.clientWidth * 0.62 : el.clientWidth;
+      } else {
+        maxWidth = el.clientWidth;
+      }
+      while (el.scrollWidth > maxWidth && size > min && guard-- > 0) {
         size -= 1;
         el.style.fontSize = size + 'px';
       }

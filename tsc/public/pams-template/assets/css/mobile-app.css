@@ -70,6 +70,15 @@ body {
     background: var(--m-chrome-bg);
     border-bottom: 1px solid var(--ink-line);
 }
+/* The Wk N badge is wider than the 44px action button slot, and its old
+   `margin-right` was pulling it leftward across the center link's hit
+   area — so a tap on the badge was actually hitting the league-home
+   link sitting behind it. Widen the right column only on appbars that
+   carry the week badge, and anchor the badge to the column's right edge
+   so it sits cleanly inside its own cell. */
+.m-appbar:has(.m-appbar-week) {
+    grid-template-columns: 44px 1fr 76px;
+}
 .m-appbar-back {
     width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
@@ -105,11 +114,14 @@ body {
     background: none; border: none;
 }
 /* Right-slot week chip — used by the Live hub appbar. Quiet gold pill that
-   reads as a status badge, not a tap target. */
+   reads as a status badge, not a tap target. justify-self:end pins it to
+   the column's right edge so two-digit weeks ("Wk 18") fit without
+   spilling left into the center link's area. */
 .m-appbar-week {
+    justify-self: end;
     display: inline-flex; align-items: center;
-    margin-right: 12px;
-    padding: 4px 9px;
+    margin-right: 8px;
+    padding: 4px 10px;
     border: 1px solid var(--gold-deep);
     border-radius: 999px;
     background: rgba(232, 200, 137, .08);
@@ -117,6 +129,7 @@ body {
     font-family: var(--mono); font-weight: 700;
     font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
     white-space: nowrap;
+    pointer-events: none; /* purely informational — never a tap target */
 }
 
 /* ============================================================
