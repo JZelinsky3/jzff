@@ -314,7 +314,16 @@
         // into each other at the centerline.
         var maxWidth = topEl ? topEl.clientWidth * 0.46 : 0;
         if (maxWidth > 0) {
-          while (measureTextPx(el) > maxWidth && size > min && guard-- > 0) {
+          // Take max of scrollWidth + canvas measurement. With min-width:0
+          // on the team-name (CSS), the box is now constrained to its
+          // column and scrollWidth reliably reports overflow. Canvas is
+          // kept as a belt-and-suspenders for the brief window before
+          // fonts have loaded (where the text would otherwise be
+          // measured at fallback metrics).
+          var widthOf = function () {
+            return Math.max(el.scrollWidth, el.offsetWidth, measureTextPx(el));
+          };
+          while (widthOf() > maxWidth && size > min && guard-- > 0) {
             size -= 1;
             el.style.fontSize = size + 'px';
           }

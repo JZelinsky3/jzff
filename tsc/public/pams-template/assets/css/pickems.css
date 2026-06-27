@@ -1210,13 +1210,20 @@ body::before {
     text-overflow: clip;
     line-height: 1.15;
     max-width: none;
+    /* min-width:0 so the team-name doesn't force its 1fr grid column to
+       expand past 50% to fit min-content. Without this the columns grow
+       to swallow long names, the two sides collide at center, and the JS
+       font-shrink can't recover because the box is already wider than
+       its column slot. */
+    min-width: 0;
     position: relative;
     z-index: 2;
   }
-  /* Meta column must allow the team-name to spill past its bounds — the
-     default `min-width: 0` keeps the flex column from stretching, and
-     overflow:visible lets the name actually render in the spillover. */
-  .match[data-gotw="true"] .meta { overflow: visible; }
+  /* Same min-width:0 on every flex ancestor so the constraint actually
+     reaches the team-name. overflow:visible lets the rendered text spill
+     past the now-narrow box, riding visually over the centered PPG. */
+  .match[data-gotw="true"] .team { min-width: 0; }
+  .match[data-gotw="true"] .meta { min-width: 0; overflow: visible; }
   .match[data-gotw="true"] .vs-pts { font-size: .84rem; }
   .match[data-gotw="true"] .vote-btn { padding: 1.05rem .75rem; font-size: .62rem; }
   .bar2 { height: 5px; }
