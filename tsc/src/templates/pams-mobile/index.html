@@ -9,19 +9,29 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <style>
-/* ── Status sash — the almanac's identity stripe, kept thin. In-season
-   shows a live pulse + week; off-season collapses to founding/volume. ── */
+/* ── Status ticker — the almanac's identity stripe, scrolling. Same
+   shape as the live-page lv-ticker (two duplicated groups in a track,
+   translateX 0 → -50% loop). In-season pulses with the current week;
+   off-season collapses to founding + volume. Pulled flush against the
+   bottom of the fixed app header — .m-main owns the .9rem top padding,
+   so the ticker neutralizes it with a matching negative margin. ── */
 .m-sash {
     background: var(--gold);
     color: var(--ink);
     border-bottom: 2px solid var(--ink);
     height: 30px;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 -0.9rem;
+    display: flex; align-items: center; overflow: hidden;
+    margin: -.9rem -0.9rem 0;
+}
+.m-sash-track {
+    display: flex; gap: 2.2rem; white-space: nowrap; padding-left: 2.2rem;
+    animation: m-sash-scroll 38s linear infinite;
+}
+.m-sash-group { display: flex; gap: 2.2rem; align-items: center; }
+.m-sash-item {
     font-family: var(--mono); font-weight: 700;
     font-size: .6rem; letter-spacing: .22em; text-transform: uppercase;
-    gap: .55rem;
-    white-space: nowrap; overflow: hidden;
+    display: inline-flex; align-items: center; gap: .55rem;
 }
 .m-sash-dot {
     width: 7px; height: 7px; border-radius: 50%;
@@ -30,6 +40,10 @@
     animation: m-sash-pulse 1.8s ease-out infinite;
 }
 .m-sash-sep { color: var(--ink); opacity: .35; }
+@keyframes m-sash-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
 @keyframes m-sash-pulse {
     0%   { box-shadow: 0 0 0 0 rgba(160, 72, 48, .55); }
     70%  { box-shadow: 0 0 0 7px rgba(160, 72, 48, 0); }
@@ -368,33 +382,38 @@
         renderSeasons(seasonsDir);
     });
 
-    // Live status sash: in-season pulses with the current week; off-season
-    // collapses to founding + volume number. window.__DC.liveWeek is set
-    // by the route handler when current_season is between 1 and 18.
+    // Status ticker: scrolling marquee with league identity. In-season
+    // pulses with the current week; off-season collapses to founding +
+    // volume number. window.__DC.liveWeek is set by the route handler
+    // when current_season is between 1 and 18.
+    //
+    // Two duplicated groups inside a single track so the translateX
+    // 0 → -50% animation loops seamlessly (same trick as the live
+    // page's lv-ticker).
     function renderSash(league, seasonsDir) {
         var sash = document.getElementById('sash');
         if (!sash) return;
         var dc = window.__DC || {};
         var liveWeek = Number(dc.liveWeek);
+        var abbr = (league && league.abbr) || '';
         var vol = (seasonsDir && seasonsDir.seasons && seasonsDir.seasons.length) || (league && league.total_seasons) || null;
-        var parts;
+        var items;
         if (liveWeek >= 1 && liveWeek <= 18) {
-            parts = [
-                '<span class="m-sash-dot" aria-hidden="true"></span>',
-                'Live · Week ' + liveWeek,
-                '<span class="m-sash-sep">·</span>',
-                ((league && league.current_season) || new Date().getFullYear()) + ' Season',
+            var seasonYear = ((league && league.current_season) || new Date().getFullYear()) + ' Season';
+            items = [
+                '<span class="m-sash-item"><span class="m-sash-dot" aria-hidden="true"></span>Live · Week ' + liveWeek + ' <span class="m-sash-sep">·</span> ' + esc(seasonYear) + '</span>',
+                '<span class="m-sash-item">Pickems · Power Rankings · Trade Desk</span>',
             ];
         } else {
-            parts = [
-                (league && league.founded) ? 'Est. ' + league.founded : 'The Almanac',
+            var head = (league && league.founded) ? 'Est. ' + league.founded : 'The Almanac';
+            if (vol) head += ' <span class="m-sash-sep">·</span> Vol. ' + toRoman(vol);
+            items = [
+                '<span class="m-sash-item">' + head + '</span>',
+                '<span class="m-sash-item">' + (abbr ? esc(abbr) + ' · ' : '') + 'Champions · Records · Managers · Rivalries</span>',
             ];
-            if (vol) {
-                parts.push('<span class="m-sash-sep">·</span>');
-                parts.push('Vol. ' + toRoman(vol));
-            }
         }
-        sash.innerHTML = parts.join(' ');
+        var group = '<div class="m-sash-group">' + items.join('') + '</div>';
+        sash.innerHTML = '<div class="m-sash-track">' + group + group + '</div>';
     }
     // Volume number stays in roman — it's an editorial numbering (Vol. I–VII),
     // not a year, so readers don't need to decode "what year was that".
