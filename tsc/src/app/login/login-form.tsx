@@ -134,6 +134,16 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
     const supabase = createClient()
     const redirectTo = new URL('/auth/callback', window.location.origin)
     if (next) redirectTo.searchParams.set('next', next)
+    // OAuth has no form fields, so we round-trip the referral selection
+    // through the redirectTo URL. /auth/callback picks it up and writes to
+    // the profile only if it's still empty there (no overwrites).
+    if (mode === 'signup' && referral) {
+      redirectTo.searchParams.set('ref', referral)
+      const otherTrim = referralOther.trim()
+      if (referral === 'other' && otherTrim) {
+        redirectTo.searchParams.set('ref_other', otherTrim.slice(0, 120))
+      }
+    }
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

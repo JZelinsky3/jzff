@@ -100,6 +100,15 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
     const supabase = createClient()
     const redirectTo = new URL('/auth/callback', window.location.origin)
     if (next) redirectTo.searchParams.set('next', next)
+    // Forward the optional referral choice through OAuth — /auth/callback
+    // applies it after the session exchange, only if the profile is blank.
+    if (mode === 'signup' && referral) {
+      redirectTo.searchParams.set('ref', referral)
+      const otherTrim = referralOther.trim()
+      if (referral === 'other' && otherTrim) {
+        redirectTo.searchParams.set('ref_other', otherTrim.slice(0, 120))
+      }
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: redirectTo.toString() },

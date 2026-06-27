@@ -348,10 +348,10 @@
             '<div class="m-sheet-handle" aria-hidden></div>' +
             '<div class="m-sheet-title">Sign in to <em>bookmark.</em></div>' +
             '<div class="m-sheet-body">' +
-              'Save this league to your library so you can find it again from anywhere.' +
+              'Save this league to your library so you can find it again from anywhere. Free, takes a few seconds.' +
             '</div>' +
-            '<button class="m-sheet-cta" data-href="' + signupHref + '">New chronicle ★ free</button>' +
-            sheetRow(signinHref, 'I already have an account', { attrs: 'data-dc-signin' });
+            '<button class="m-sheet-cta" data-href="' + signupHref + '">Create a free account</button>' +
+            '<a class="m-sheet-link" href="' + signinHref + '" data-dc-signin>Already have an account? Sign in</a>';
         document.body.appendChild(sheet);
         sheet.addEventListener('click', function (e) {
             if (e.target === sheet) closeSheet(sheet);

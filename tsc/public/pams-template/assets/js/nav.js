@@ -887,6 +887,18 @@
             '  background: transparent;',
             '  color: var(--gold, #e8c889);',
             '}',
+            '.dc-bm-link {',
+            '  display: block;',
+            '  margin: .85rem auto 0;',
+            '  background: transparent; border: none;',
+            '  color: var(--cream-soft, #d6c8ac);',
+            '  font-family: var(--mono, ui-monospace, monospace);',
+            '  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;',
+            '  text-decoration: underline; text-underline-offset: 3px;',
+            '  cursor: pointer; padding: .25rem;',
+            '  text-align: center;',
+            '}',
+            '.dc-bm-link:hover { color: var(--gold, #e8c889); }',
             '.dc-bm-close {',
             '  position: absolute; top: .5rem; right: .8rem;',
             '  background: transparent; border: none;',
@@ -941,11 +953,11 @@
         var signupHref = '/login?mode=signup&next=' + encoded + '&from=' + fromEnc;
         openBookmarkModal(
             '<h2 class="dc-bm-title">Sign in to <em>bookmark.</em></h2>' +
-            '<p class="dc-bm-body">Save this league to your library so you can find it again from anywhere.</p>' +
+            '<p class="dc-bm-body">Save this league to your library so you can find it again from anywhere. Free, takes a few seconds.</p>' +
             '<div class="dc-bm-btns">' +
               '<a class="dc-bm-btn" href="' + signupHref + '">Create a free account</a>' +
-              '<a class="dc-bm-btn ghost" href="' + signinHref + '">I already have one</a>' +
-            '</div>'
+            '</div>' +
+            '<a class="dc-bm-link" href="' + signinHref + '">Already have an account? Sign in</a>'
         );
     }
 
