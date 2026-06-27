@@ -95,6 +95,18 @@
     setActive(state.currentWeekId || state.weeks[state.weeks.length - 1].id);
     state.weeks.forEach(function (w) { hydrateWeek(w); });
     renderRecords();
+
+    // Once web fonts have loaded, re-fit the active week — canvas
+    // measureText uses whatever font is currently available, so a
+    // fitVoteNames call that ran with the fallback (system) font would
+    // have measured narrower than the real DM Serif / JetBrains Mono
+    // text and skipped names that actually overflow.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () {
+        var activeGrid = byId('grid-' + state.activeWeekId);
+        if (activeGrid) fitVoteNames(activeGrid);
+      });
+    }
   }
 
   function showMessage(title, body) {
@@ -131,6 +143,16 @@
     var w = weekById(weekId);
     if (w && state.user) loadExistingSubmission(w);
     updateSubmitEnabled();
+    // Re-fit team-names on the now-visible week. At initial hydrate the
+    // non-active weeks are display:none (clientWidth = 0), so the mobile
+    // GOTW shrink loop sees no width budget and skips them. By the time
+    // a tab is clicked OR layout/fonts have settled for the initial
+    // active week, dimensions are real — rAF lets the data-active flip
+    // paint first so getBoundingClient / clientWidth read the new box.
+    var newGrid = byId('grid-' + weekId);
+    if (newGrid) {
+      requestAnimationFrame(function () { fitVoteNames(newGrid); });
+    }
   }
 
   function weekById(id) {
@@ -268,40 +290,49 @@
   function fitVoteNames(grid) {
     if (!grid) return;
     var sel = '.vote-name, .team-name';
+    // Mobile GOTW gets a custom shrink budget — the CSS at ≤640px takes
+    // PPG out of grid flow and lets team-names spill horizontally over
+    // it, so the original "shrink until scrollWidth ≤ clientWidth"
+    // check doesn't apply (the box is unconstrained, scrollWidth is
+    // unreliable on flex items with overflow:visible). At wider
+    // viewports — and for every non-GOTW name on any viewport — the
+    // original behavior stands untouched.
+    var isMobile = window.matchMedia('(max-width: 640px)').matches;
     grid.querySelectorAll(sel).forEach(function (el) {
       el.style.fontSize = ''; // reset prior fit (e.g. on re-hydrate)
       var size = parseFloat(window.getComputedStyle(el).fontSize);
       var min = 8;
       var guard = 24; // hard cap so we can't loop forever
-      var isGotwName = el.classList.contains('team-name')
+      var isMobileGotwName = isMobile
+        && el.classList.contains('team-name')
         && el.closest('.match[data-gotw="true"]');
-      var maxWidth;
-      if (isGotwName) {
+      if (isMobileGotwName) {
         var topEl = el.closest('.match-top');
         // Each GOTW name caps at ~46% of card width. Two sides at the
         // cap leaves ~8% in the middle for the absolutely-positioned
         // PPG to peek through, and guarantees two long names never run
         // into each other at the centerline.
-        maxWidth = topEl ? topEl.clientWidth * 0.46 : el.clientWidth;
+        var maxWidth = topEl ? topEl.clientWidth * 0.46 : 0;
+        if (maxWidth > 0) {
+          while (measureTextPx(el) > maxWidth && size > min && guard-- > 0) {
+            size -= 1;
+            el.style.fontSize = size + 'px';
+          }
+        }
       } else {
-        maxWidth = el.clientWidth;
-      }
-      // Measure the rendered text width via canvas instead of
-      // scrollWidth. The GOTW team-name is a flex item with
-      // overflow:visible — scrollWidth on such items can report the
-      // parent's constrained width rather than the natural text width,
-      // so the shrink loop would never trigger and long names would
-      // crash into each other across the centerline.
-      while (measureTextPx(el) > maxWidth && size > min && guard-- > 0) {
-        size -= 1;
-        el.style.fontSize = size + 'px';
+        // Original behavior (desktop, and non-GOTW everywhere).
+        while (el.scrollWidth > el.clientWidth && size > min && guard-- > 0) {
+          size -= 1;
+          el.style.fontSize = size + 'px';
+        }
       }
     });
   }
 
-  // Off-screen canvas-based text measurement. Independent of layout, so
-  // it works on flex items whose box width is constrained even when the
-  // text content overflows visibly.
+  // Off-screen canvas text measurement, used only by the mobile GOTW
+  // path above. Independent of layout, so it works on flex items whose
+  // box width is constrained even when the text content overflows
+  // visibly.
   var _measureCanvas = null;
   function measureTextPx(el) {
     if (!_measureCanvas) _measureCanvas = document.createElement('canvas');
