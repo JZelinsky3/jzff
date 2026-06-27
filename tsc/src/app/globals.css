@@ -11332,7 +11332,10 @@ body.tsc-hdr-collapsed .mlsub-bar {
    Prefix: msrc-
    ============================================================ */
 .msrc {
-    padding: .65rem .85rem 2rem;
+    padding: .65rem .7rem 2rem;
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow: hidden;
 }
 .msrc-head {
     display: flex;
@@ -11372,7 +11375,9 @@ body.tsc-hdr-collapsed .mlsub-bar {
     grid-template-columns: 1fr 1fr;
     gap: .4rem;
     margin-bottom: 1rem;
+    min-width: 0;
 }
+.msrc-list > * { min-width: 0; }
 .msrc-add {
     margin-top: 1rem;
     padding-top: .75rem;
@@ -11392,9 +11397,12 @@ body.tsc-hdr-collapsed .mlsub-bar {
     background: var(--ink-soft);
     border: 1px solid var(--ink-line);
     border-radius: 10px;
-    padding: .65rem .7rem .7rem;
+    padding: .6rem .55rem .65rem;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 .msr-head {
     display: flex;
@@ -11451,7 +11459,15 @@ body.tsc-hdr-collapsed .mlsub-bar {
 }
 .msr-actions-secondary {
     display: flex;
-    gap: .25rem;
+    gap: .2rem;
+    min-width: 0;
+}
+.msr-actions-secondary .msr-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: .3rem .25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .msr-btn {
     font-family: var(--mono);

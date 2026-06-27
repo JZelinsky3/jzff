@@ -832,3 +832,110 @@ body[data-trades-theme="floor"] .tr-theme-btn:hover:not(.active) { color: #c5d4c
 body[data-trades-theme="floor"] .tr-theme-btn.active {
   background: #00ff9f; color: #050707; border-color: #00ff9f;
 }
+
+/* ============================================================
+   MOBILE  (<= 720px)
+   The grader page is loaded into the mobile shell verbatim, so
+   every structural piece needs a phone-tuned size here. Per-theme
+   tweaks live inline; the theme blocks above use viewport-aware
+   clamp() for titles already, so we mostly compress padding,
+   wrap chrome rows, and pull grade letters down to size.
+   ============================================================ */
+@media (max-width: 720px) {
+  .tr-wrap { padding: .85rem .25rem 3rem; }
+
+  /* Page head — center, shrink, no oversized supplied padding */
+  .tr-page-head { padding-top: 0; padding-bottom: 1rem; margin-bottom: 1rem; }
+  .tr-page-title { font-size: clamp(2rem, 9vw, 2.6rem); line-height: 1.05; }
+  .tr-page-sup { font-size: .54rem !important; letter-spacing: .25em !important; }
+
+  /* Theme picker — single row, scroll horizontally instead of wrapping */
+  .tr-theme-picker {
+    margin: -.4rem 0 1.4rem;
+    gap: .5rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: .25rem;
+  }
+  .tr-theme-picker::-webkit-scrollbar { display: none; }
+  .tr-theme-options { flex-shrink: 0; }
+  .tr-theme-btn { padding: .45rem .65rem; font-size: .54rem; }
+  .tr-theme-label { flex-shrink: 0; }
+
+  /* Tabs — tighter pills */
+  .tr-tabs { margin-bottom: 1.4rem; }
+  .tr-tab { padding: .7rem 1rem; font-size: .58rem; letter-spacing: .2em; }
+
+  /* Sections */
+  .tr-section { margin-bottom: 1.6rem; }
+  .tr-section-head { gap: .5rem .8rem; padding-bottom: .55rem; margin-bottom: .8rem; }
+  .tr-section-num { font-size: .58rem; letter-spacing: .2em; }
+  .tr-section-title { font-size: 1.05rem; line-height: 1.15; flex: 1 1 100%; }
+  .tr-section-meta { font-size: .54rem; letter-spacing: .12em; margin-left: 0; }
+
+  /* Cards */
+  .tr-list { gap: .9rem; }
+  .tr-card-head {
+    gap: .35rem .7rem;
+    padding: .55rem .85rem;
+    font-size: .58rem !important;
+    flex-wrap: wrap;
+  }
+  .tr-plat { margin-left: auto; }
+
+  /* Summary copy */
+  .tr-summary { padding: .85rem .9rem !important; font-size: .78rem !important; line-height: 1.5; }
+  .tr-summary-toggle { font-size: .54rem; letter-spacing: .2em; }
+
+  /* Sides — stack and tighten */
+  .tr-sides { gap: 1px; }
+  .tr-side { padding: .8rem .9rem; gap: .55rem; }
+  .tr-side-avatar { width: 28px; height: 28px; }
+  .tr-side-name { font-size: 1rem !important; line-height: 1.15; }
+  .tr-side-team { font-size: .54rem !important; letter-spacing: .14em !important; }
+  .tr-side-label { font-size: .52rem !important; letter-spacing: .22em !important; }
+
+  /* Assets */
+  .tr-assets { gap: .3rem; }
+  .tr-asset { font-size: .82rem; padding: .3rem .45rem; gap: .4rem; }
+  .tr-asset-pos { font-size: .56rem; min-width: 26px; letter-spacing: .1em; }
+  .tr-asset-team { font-size: .58rem; letter-spacing: .1em; }
+
+  /* Grade badges — shrink the giant letter */
+  .tr-grade { margin-top: .5rem; padding-top: .5rem; gap: .35rem; }
+  .tr-grade-letter { font-size: 1.4rem; }
+  .tr-grade-then { font-size: .9rem; }
+  .tr-grade-row { gap: .4rem; }
+  .tr-grade-pending { font-size: .54rem; letter-spacing: .2em; }
+
+  /* Theme-specific giants — knock back oversized letters/decor */
+  body[data-trades-theme="cards"] .tr-grade-letter,
+  body[data-trades-theme="tribunal"] .tr-grade-letter,
+  body[data-trades-theme="wire"] .tr-grade-letter,
+  body[data-trades-theme="floor"] .tr-grade-letter {
+    font-size: 1.4rem;
+  }
+  body[data-trades-theme="wire"] .tr-grade-letter {
+    width: 48px; height: 48px; font-size: 1.15rem;
+  }
+  body[data-trades-theme="wire"] .tr-grade-then {
+    width: 34px; height: 34px; font-size: .82rem;
+  }
+  body[data-trades-theme="cards"] .tr-card-head,
+  body[data-trades-theme="tribunal"] .tr-card-head {
+    margin-left: 0; margin-right: 0;
+  }
+  body[data-trades-theme="wire"] .tr-card-head {
+    margin: -.85rem -.9rem .85rem;
+    padding: .55rem .9rem;
+  }
+
+  /* Empty / lock states */
+  .tr-empty { padding: 2.2rem .75rem; }
+  .tr-empty h2 { font-size: 1.3rem; }
+  .tr-lock { padding: 2.2rem .75rem 2.5rem; }
+  .tr-lock h2 { font-size: clamp(1.2rem, 5vw, 1.6rem); }
+  .tr-lock p { font-size: .82rem; }
+  .tr-lock-cta { padding: .65rem 1.1rem; font-size: .62rem; }
+}

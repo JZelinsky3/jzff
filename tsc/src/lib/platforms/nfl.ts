@@ -65,6 +65,19 @@ async function fetchHtml(url: string): Promise<string> {
     cache: 'no-store',
   })
   if (!res.ok) throw new Error(`NFL ${url} → HTTP ${res.status}`)
+  // NFL.com 302s unknown/private league URLs straight to fantasy.nfl.com/ —
+  // followed transparently by fetch, leaving us with the marketing homepage
+  // and an "no rows found" downstream parse. Detect the bounce and throw so
+  // the caller surfaces a real error instead of "no owners returned".
+  if (res.redirected) {
+    const final = new URL(res.url)
+    const original = new URL(url)
+    const sameLeague = final.pathname.startsWith(original.pathname.split('?')[0]) ||
+      final.pathname.includes('/league/')
+    if (!sameLeague) {
+      throw new Error(`NFL ${url} → redirected to ${res.url} (league may be private or id wrong)`)
+    }
+  }
   return res.text()
 }
 

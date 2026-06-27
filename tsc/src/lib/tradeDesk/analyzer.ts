@@ -489,16 +489,17 @@ async function loadEspn(header: LeagueHeader): Promise<LoadResult> {
 // ── NFL.com loader ───────────────────────────────────────────────────────
 
 async function loadNfl(header: LeagueHeader): Promise<LoadResult> {
+  const ctx = `nfl league=${header.liveLeagueId} year=${header.seasonYear}`
   let probe: Awaited<ReturnType<typeof nflProbeLeague>>
   let owners: NflOwner[]
   try {
     probe = await nflProbeLeague(header.liveLeagueId, header.seasonYear)
     owners = await nflFetchOwners(header.liveLeagueId, header.seasonYear)
   } catch (e) {
-    return { ok: false, error: { kind: 'nfl-failed', message: e instanceof Error ? e.message : String(e) } }
+    return { ok: false, error: { kind: 'nfl-failed', message: `${ctx}: ${e instanceof Error ? e.message : String(e)}` } }
   }
   if (!probe.ok) {
-    return { ok: false, error: { kind: 'nfl-failed', message: probe.error } }
+    return { ok: false, error: { kind: 'nfl-failed', message: `${ctx}: probe ${probe.error}` } }
   }
 
   // NFL.com probe doesn't surface a current week; default to W17 (the
@@ -508,7 +509,7 @@ async function loadNfl(header: LeagueHeader): Promise<LoadResult> {
   const week = 17
   const teamCount = owners.length
   if (teamCount === 0) {
-    return { ok: false, error: { kind: 'nfl-failed', message: 'no owners returned' } }
+    return { ok: false, error: { kind: 'nfl-failed', message: `${ctx}: no owners returned (probe name="${probe.name}")` } }
   }
 
   // Roster fetches in parallel — gamecenter HTML is the bottleneck.
