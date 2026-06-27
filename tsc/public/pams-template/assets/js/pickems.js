@@ -96,17 +96,28 @@
     state.weeks.forEach(function (w) { hydrateWeek(w); });
     renderRecords();
 
-    // Once web fonts have loaded, re-fit the active week — canvas
-    // measureText uses whatever font is currently available, so a
-    // fitVoteNames call that ran with the fallback (system) font would
-    // have measured narrower than the real DM Serif / JetBrains Mono
-    // text and skipped names that actually overflow.
+    // Re-fit the active week as fonts and layout settle. document.fonts
+    // .ready in practice resolves earlier than the actual paint of the
+    // declared family on this element (especially when fonts are loaded
+    // by a stylesheet whose font-face requests haven't started yet), so
+    // a short staggered retry covers the cases the single-shot doesn't.
+    // 1.5s of taps is plenty for any reasonable font load.
+    retryFitActive();
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function () {
-        var activeGrid = byId('grid-' + state.activeWeekId);
-        if (activeGrid) fitVoteNames(activeGrid);
-      });
+      document.fonts.ready.then(retryFitActive);
     }
+  }
+
+  function retryFitActive() {
+    var attempts = 0;
+    var max = 8;
+    var step = 200;
+    (function tick() {
+      var grid = byId('grid-' + state.activeWeekId);
+      if (grid) fitVoteNames(grid);
+      attempts++;
+      if (attempts < max) setTimeout(tick, step);
+    })();
   }
 
   function showMessage(title, body) {
@@ -314,16 +325,13 @@
         // into each other at the centerline.
         var maxWidth = topEl ? topEl.clientWidth * 0.46 : 0;
         if (maxWidth > 0) {
-          // Take max of scrollWidth + canvas measurement. With min-width:0
-          // on the team-name (CSS), the box is now constrained to its
-          // column and scrollWidth reliably reports overflow. Canvas is
-          // kept as a belt-and-suspenders for the brief window before
-          // fonts have loaded (where the text would otherwise be
-          // measured at fallback metrics).
-          var widthOf = function () {
-            return Math.max(el.scrollWidth, el.offsetWidth, measureTextPx(el));
-          };
-          while (widthOf() > maxWidth && size > min && guard-- > 0) {
+          // Canvas-measured text width is the only reliable signal here:
+          // the box itself is constrained to its 50% column (so
+          // offsetWidth/scrollWidth report the box, not the actual text
+          // length). Canvas returns 0 / fallback metrics while web fonts
+          // are still loading — the retry loop in retryFitActive() will
+          // re-run this once they've painted.
+          while (measureTextPx(el) > maxWidth && size > min && guard-- > 0) {
             size -= 1;
             el.style.fontSize = size + 'px';
           }
