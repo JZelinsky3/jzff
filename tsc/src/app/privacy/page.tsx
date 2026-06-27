@@ -42,9 +42,10 @@ function PrivacyBody() {
         To build your league&apos;s almanac we ingest league, manager, roster,
         matchup, draft, and transaction data from the fantasy platforms you
         connect — Sleeper, ESPN, NFL.com, and Yahoo. For Yahoo we use OAuth and
-        store encrypted access and refresh tokens scoped to your account. For
-        ESPN and NFL.com we accept the cookies you choose to provide so we can
-        read private-league data on your behalf.
+        store the resulting access and refresh tokens, scoped to your account
+        and protected by row-level security plus Supabase&apos;s at-rest disk
+        encryption. For ESPN and NFL.com we accept the cookies you choose to
+        provide so we can read private-league data on your behalf.
       </p>
 
       <h3>Payment information</h3>

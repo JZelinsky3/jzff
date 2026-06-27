@@ -18,13 +18,16 @@ export const maxDuration = 300
 // The current pick'ems week is NOT advanced here — it's derived on read from
 // the season start date (see src/lib/liveSeason.ts), so it advances on its own.
 //
-// Auth: Vercel sends `Authorization: Bearer ${CRON_SECRET}` when CRON_SECRET is set.
+// Auth: Vercel sends `Authorization: Bearer ${CRON_SECRET}`. Fail closed if
+// CRON_SECRET is unset so a missing-env misconfiguration doesn't open the
+// ingest endpoint to anonymous callers.
 export async function GET(req: Request) {
-  if (process.env.CRON_SECRET) {
-    const auth = req.headers.get('authorization')
-    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-    }
+  const secret = process.env.CRON_SECRET
+  if (!secret) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+  if (req.headers.get('authorization') !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
   const db = createAdminClient()

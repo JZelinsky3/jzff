@@ -43,7 +43,10 @@ export async function POST(req: Request) {
       .from('leagues')
       .update({ promoted_at: null, promo_text: null, promo_link: null })
       .eq('id', leagueId)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[hub/promote] clear failed', error)
+      return NextResponse.json({ error: 'Could not clear the listing.' }, { status: 500 })
+    }
     return NextResponse.json({ ok: true })
   }
 
@@ -69,7 +72,10 @@ export async function POST(req: Request) {
     .from('leagues')
     .update({ promoted_at: new Date().toISOString(), promo_text: pitch, promo_link: cleanLink })
     .eq('id', leagueId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[hub/promote] set failed', error)
+    return NextResponse.json({ error: 'Could not update the listing.' }, { status: 500 })
+  }
 
   // One ad slot per account: promoting this league takes down any other
   // listing the user has up. RLS (owner update) scopes the sweep.

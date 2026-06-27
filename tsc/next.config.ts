@@ -23,6 +23,27 @@ const nextConfig: NextConfig = {
   // high, breaking styles + data fetches on subfolder index pages.
   trailingSlash: true,
 
+  // Baseline security headers applied to every response. CSP is intentionally
+  // omitted — several pages use inline <style>/<script> via
+  // dangerouslySetInnerHTML (JSON-LD, the hub theme bootstrap, pricing
+  // feature labels) and a strict CSP would need a per-request nonce wired
+  // through each one. The headers below are the no-regret subset.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { key: 'X-Content-Type-Options',    value: 'nosniff' },
+          { key: 'X-Frame-Options',           value: 'SAMEORIGIN' },
+          { key: 'Referrer-Policy',           value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy',        value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+          { key: 'X-DNS-Prefetch-Control',    value: 'on' },
+        ],
+      },
+    ]
+  },
+
   // Manager Hub chapter consolidation (Phase 7 of the Issues redesign).
   // Four old narrative chapters folded into the new Issues; their data lives
   // in II (Legacy), IV (Seasons), and V (Vault) now. Permanent so bookmarks

@@ -44,7 +44,8 @@ export async function POST(req: Request) {
   try {
     priceId = priceIdFor(tier, period)
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 })
+    console.error('[stripe/checkout] price lookup', err)
+    return NextResponse.json({ error: 'That plan is not available right now.' }, { status: 500 })
   }
 
   // Where the user comes back to after checkout. Honor request origin so
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ url: session.url })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'checkout failed'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[stripe/checkout] session create failed', err)
+    return NextResponse.json({ error: 'Checkout is temporarily unavailable. Try again in a minute.' }, { status: 500 })
   }
 }

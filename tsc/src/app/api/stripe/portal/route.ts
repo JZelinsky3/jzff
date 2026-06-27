@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     })
     return NextResponse.json({ url: session.url })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'portal session failed'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[stripe/portal] session create failed', err)
+    return NextResponse.json({ error: 'Billing portal is temporarily unavailable.' }, { status: 500 })
   }
 }
