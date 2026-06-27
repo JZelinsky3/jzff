@@ -835,107 +835,187 @@ body[data-trades-theme="floor"] .tr-theme-btn.active {
 
 /* ============================================================
    MOBILE  (<= 720px)
-   The grader page is loaded into the mobile shell verbatim, so
-   every structural piece needs a phone-tuned size here. Per-theme
-   tweaks live inline; the theme blocks above use viewport-aware
-   clamp() for titles already, so we mostly compress padding,
-   wrap chrome rows, and pull grade letters down to size.
+   Per-theme rules above use [data-trades-theme] which has class-
+   level specificity (0,2,1). Mobile overrides must match that
+   weight or they lose — every selector here is qualified with
+   body[data-trades-theme] (any theme) so the @media block wins
+   regardless of the active theme. The page is loaded inside the
+   mobile shell as-is, so every structural piece is tuned here.
    ============================================================ */
 @media (max-width: 720px) {
-  .tr-wrap { padding: .85rem .25rem 3rem; }
+  body[data-trades-theme] .tr-wrap { padding: .85rem .55rem 3rem; }
 
-  /* Page head — center, shrink, no oversized supplied padding */
-  .tr-page-head { padding-top: 0; padding-bottom: 1rem; margin-bottom: 1rem; }
-  .tr-page-title { font-size: clamp(2rem, 9vw, 2.6rem); line-height: 1.05; }
-  .tr-page-sup { font-size: .54rem !important; letter-spacing: .25em !important; }
+  /* Page head */
+  body[data-trades-theme] .tr-page-head {
+    padding: 0 0 .9rem !important;
+    margin-bottom: 1rem !important;
+    text-align: left;
+  }
+  body[data-trades-theme] .tr-page-title {
+    font-size: clamp(1.8rem, 8vw, 2.4rem) !important;
+    line-height: 1.05 !important;
+  }
+  body[data-trades-theme] .tr-page-sup {
+    font-size: .5rem !important;
+    letter-spacing: .25em !important;
+    padding: .2rem .55rem !important;
+    margin-bottom: .65rem !important;
+  }
 
-  /* Theme picker — single row, scroll horizontally instead of wrapping */
-  .tr-theme-picker {
-    margin: -.4rem 0 1.4rem;
-    gap: .5rem;
-    flex-wrap: nowrap;
+  /* Theme picker — single horizontal scroll row */
+  body[data-trades-theme] .tr-theme-picker {
+    margin: -.4rem 0 1.3rem !important;
+    gap: .45rem !important;
+    flex-wrap: nowrap !important;
     overflow-x: auto;
     scrollbar-width: none;
     padding-bottom: .25rem;
+    max-width: 100%;
   }
-  .tr-theme-picker::-webkit-scrollbar { display: none; }
-  .tr-theme-options { flex-shrink: 0; }
-  .tr-theme-btn { padding: .45rem .65rem; font-size: .54rem; }
-  .tr-theme-label { flex-shrink: 0; }
+  body[data-trades-theme] .tr-theme-picker::-webkit-scrollbar { display: none; }
+  body[data-trades-theme] .tr-theme-options { flex-shrink: 0; }
+  body[data-trades-theme] .tr-theme-btn {
+    padding: .42rem .6rem !important;
+    font-size: .52rem !important;
+    letter-spacing: .15em !important;
+  }
+  body[data-trades-theme] .tr-theme-label { flex-shrink: 0; }
+  /* Wire's redrawn page-head border (::after) uses an absolute left:5.5rem;
+     reset on mobile so the line doesn't get cropped to nothing. */
+  body[data-trades-theme="wire"] .tr-page-head:has(~ #theme-picker .tr-theme-picker)::after {
+    left: 0;
+  }
 
-  /* Tabs — tighter pills */
-  .tr-tabs { margin-bottom: 1.4rem; }
-  .tr-tab { padding: .7rem 1rem; font-size: .58rem; letter-spacing: .2em; }
+  /* Tabs */
+  body[data-trades-theme] .tr-tabs { margin-bottom: 1.2rem; }
+  body[data-trades-theme] .tr-tab {
+    padding: .65rem .85rem !important;
+    font-size: .56rem !important;
+    letter-spacing: .18em !important;
+  }
 
   /* Sections */
-  .tr-section { margin-bottom: 1.6rem; }
-  .tr-section-head { gap: .5rem .8rem; padding-bottom: .55rem; margin-bottom: .8rem; }
-  .tr-section-num { font-size: .58rem; letter-spacing: .2em; }
-  .tr-section-title { font-size: 1.05rem; line-height: 1.15; flex: 1 1 100%; }
-  .tr-section-meta { font-size: .54rem; letter-spacing: .12em; margin-left: 0; }
-
-  /* Cards */
-  .tr-list { gap: .9rem; }
-  .tr-card-head {
-    gap: .35rem .7rem;
-    padding: .55rem .85rem;
-    font-size: .58rem !important;
-    flex-wrap: wrap;
+  body[data-trades-theme] .tr-section { margin-bottom: 1.5rem; }
+  body[data-trades-theme] .tr-section-head {
+    gap: .4rem .7rem;
+    padding-bottom: .55rem;
+    margin-bottom: .8rem;
   }
-  .tr-plat { margin-left: auto; }
+  body[data-trades-theme] .tr-section-num {
+    font-size: .56rem !important;
+    letter-spacing: .2em !important;
+  }
+  body[data-trades-theme] .tr-section-title {
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+    flex: 1 1 100%;
+  }
+  body[data-trades-theme] .tr-section-meta {
+    font-size: .52rem !important;
+    letter-spacing: .12em !important;
+    margin-left: 0 !important;
+  }
+
+  /* Card body — every theme paints its own padding, override all */
+  body[data-trades-theme] .tr-list { gap: .85rem; }
+  body[data-trades-theme] .tr-card {
+    padding: .9rem 1rem 1rem !important;
+    border-radius: 4px;
+  }
+  body[data-trades-theme] .tr-card-head {
+    gap: .3rem .65rem !important;
+    padding: .5rem .8rem !important;
+    margin: 0 0 .85rem !important;
+    font-size: .55rem !important;
+    letter-spacing: .14em !important;
+    flex-wrap: wrap !important;
+  }
+  body[data-trades-theme] .tr-plat { margin-left: auto !important; }
+  /* Wire & Floor extend card-head past the body padding via negative margins;
+     re-tune for the mobile card padding so the strip still hits both edges. */
+  body[data-trades-theme="wire"] .tr-card-head {
+    margin: -.9rem -1rem .85rem !important;
+    padding: .55rem 1rem !important;
+  }
+  body[data-trades-theme="floor"] .tr-card-head {
+    padding: .5rem .9rem !important;
+  }
 
   /* Summary copy */
-  .tr-summary { padding: .85rem .9rem !important; font-size: .78rem !important; line-height: 1.5; }
-  .tr-summary-toggle { font-size: .54rem; letter-spacing: .2em; }
+  body[data-trades-theme] .tr-summary {
+    padding: .8rem .9rem !important;
+    font-size: .8rem !important;
+    line-height: 1.5 !important;
+    margin-bottom: .9rem !important;
+  }
+  body[data-trades-theme] .tr-summary-toggle {
+    font-size: .52rem !important;
+    letter-spacing: .2em !important;
+  }
 
-  /* Sides — stack and tighten */
-  .tr-sides { gap: 1px; }
-  .tr-side { padding: .8rem .9rem; gap: .55rem; }
-  .tr-side-avatar { width: 28px; height: 28px; }
-  .tr-side-name { font-size: 1rem !important; line-height: 1.15; }
-  .tr-side-team { font-size: .54rem !important; letter-spacing: .14em !important; }
-  .tr-side-label { font-size: .52rem !important; letter-spacing: .22em !important; }
+  /* Sides — single column stack */
+  body[data-trades-theme] .tr-sides { gap: 1px; grid-template-columns: 1fr !important; }
+  body[data-trades-theme] .tr-side {
+    padding: .8rem .9rem !important;
+    gap: .55rem !important;
+  }
+  body[data-trades-theme] .tr-side-avatar { width: 30px !important; height: 30px !important; }
+  body[data-trades-theme] .tr-side-name {
+    font-size: .95rem !important;
+    line-height: 1.15 !important;
+  }
+  body[data-trades-theme] .tr-side-team {
+    font-size: .52rem !important;
+    letter-spacing: .14em !important;
+  }
+  body[data-trades-theme] .tr-side-label {
+    font-size: .5rem !important;
+    letter-spacing: .22em !important;
+  }
 
   /* Assets */
-  .tr-assets { gap: .3rem; }
-  .tr-asset { font-size: .82rem; padding: .3rem .45rem; gap: .4rem; }
-  .tr-asset-pos { font-size: .56rem; min-width: 26px; letter-spacing: .1em; }
-  .tr-asset-team { font-size: .58rem; letter-spacing: .1em; }
-
-  /* Grade badges — shrink the giant letter */
-  .tr-grade { margin-top: .5rem; padding-top: .5rem; gap: .35rem; }
-  .tr-grade-letter { font-size: 1.4rem; }
-  .tr-grade-then { font-size: .9rem; }
-  .tr-grade-row { gap: .4rem; }
-  .tr-grade-pending { font-size: .54rem; letter-spacing: .2em; }
-
-  /* Theme-specific giants — knock back oversized letters/decor */
-  body[data-trades-theme="cards"] .tr-grade-letter,
-  body[data-trades-theme="tribunal"] .tr-grade-letter,
-  body[data-trades-theme="wire"] .tr-grade-letter,
-  body[data-trades-theme="floor"] .tr-grade-letter {
-    font-size: 1.4rem;
+  body[data-trades-theme] .tr-assets { gap: .3rem !important; }
+  body[data-trades-theme] .tr-asset {
+    font-size: .8rem !important;
+    padding: .3rem .5rem !important;
+    gap: .4rem !important;
   }
+  body[data-trades-theme] .tr-asset-pos {
+    font-size: .54rem !important;
+    min-width: 26px !important;
+    letter-spacing: .1em !important;
+  }
+  body[data-trades-theme] .tr-asset-team {
+    font-size: .56rem !important;
+    letter-spacing: .1em !important;
+  }
+
+  /* Grade badges — knock back the giant letter */
+  body[data-trades-theme] .tr-grade {
+    margin-top: .5rem !important;
+    padding-top: .5rem !important;
+    gap: .35rem !important;
+  }
+  body[data-trades-theme] .tr-grade-letter { font-size: 1.4rem !important; }
+  body[data-trades-theme] .tr-grade-then { font-size: .9rem !important; }
+  body[data-trades-theme] .tr-grade-row { gap: .4rem !important; }
+  body[data-trades-theme] .tr-grade-pending {
+    font-size: .52rem !important;
+    letter-spacing: .2em !important;
+  }
+  /* Wire's stamp letter is a hard-sized 64×64; shrink for phones. */
   body[data-trades-theme="wire"] .tr-grade-letter {
-    width: 48px; height: 48px; font-size: 1.15rem;
+    width: 46px !important; height: 46px !important; font-size: 1.1rem !important;
   }
   body[data-trades-theme="wire"] .tr-grade-then {
-    width: 34px; height: 34px; font-size: .82rem;
-  }
-  body[data-trades-theme="cards"] .tr-card-head,
-  body[data-trades-theme="tribunal"] .tr-card-head {
-    margin-left: 0; margin-right: 0;
-  }
-  body[data-trades-theme="wire"] .tr-card-head {
-    margin: -.85rem -.9rem .85rem;
-    padding: .55rem .9rem;
+    width: 32px !important; height: 32px !important; font-size: .8rem !important;
   }
 
   /* Empty / lock states */
-  .tr-empty { padding: 2.2rem .75rem; }
-  .tr-empty h2 { font-size: 1.3rem; }
-  .tr-lock { padding: 2.2rem .75rem 2.5rem; }
-  .tr-lock h2 { font-size: clamp(1.2rem, 5vw, 1.6rem); }
-  .tr-lock p { font-size: .82rem; }
-  .tr-lock-cta { padding: .65rem 1.1rem; font-size: .62rem; }
+  body[data-trades-theme] .tr-empty { padding: 2.2rem .75rem; }
+  body[data-trades-theme] .tr-empty h2 { font-size: 1.3rem !important; }
+  body[data-trades-theme] .tr-lock { padding: 2.2rem .75rem 2.5rem; }
+  body[data-trades-theme] .tr-lock h2 { font-size: clamp(1.2rem, 5vw, 1.6rem) !important; }
+  body[data-trades-theme] .tr-lock p { font-size: .82rem !important; }
+  body[data-trades-theme] .tr-lock-cta { padding: .65rem 1.1rem !important; font-size: .6rem !important; }
 }

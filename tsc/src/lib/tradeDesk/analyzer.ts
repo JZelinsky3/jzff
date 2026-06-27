@@ -203,16 +203,49 @@ async function loadLeagueHeader(
     }>()
   if (!league) return { ok: false, error: { kind: 'not-found' } }
 
-  let seasonQuery = db
+  // Pull all season rows so we can prefer the one that matches the league's
+  // live platform. A league that migrated platforms mid-history has multiple
+  // sources contributing — e.g. NFL.com 2017–2024 then Sleeper 2025+ —
+  // which means the same year can have two rows with differently-shaped
+  // external_ids. Picking "most recent year, any row" would dispatch to
+  // whichever loader the database happened to return first; we want the
+  // live platform's row whenever it's available.
+  const { data: allSeasons } = await db
     .from('seasons')
     .select('year, external_id')
     .eq('league_id', league.id)
-  seasonQuery = opts.year
-    ? seasonQuery.eq('year', opts.year)
-    : seasonQuery.order('year', { ascending: false })
-  const { data: seasonRows } = await seasonQuery.limit(1)
-  const liveLeagueId = seasonRows?.[0]?.external_id as string | undefined
-  const seasonYear = seasonRows?.[0]?.year as number | undefined
+    .order('year', { ascending: false })
+
+  // External_id shape tells us the source platform:
+  //   NFL.com → 4-digit year ("2025") — no per-season id, just the year
+  //   Sleeper → 18–19 digit numeric league id
+  //   Yahoo   → "461.l.123456"
+  //   ESPN    → small numeric league id (1–10 digits)
+  // The only one that collides with a year is NFL.com.
+  const isNflShaped = (extId: string | null) =>
+    !!extId && /^\d{4}$/.test(extId)
+
+  type SeasonRow = { year: number; external_id: string | null }
+  const rows: SeasonRow[] = (allSeasons ?? []) as SeasonRow[]
+
+  let pickedRow: SeasonRow | undefined
+  if (opts.year) {
+    // Year pinned — match the league's live platform when both rows for that
+    // year exist, otherwise take whichever row we have.
+    const yearRows = rows.filter((r) => r.year === opts.year)
+    pickedRow = league.platform === 'nfl'
+      ? yearRows.find((r) => isNflShaped(r.external_id)) ?? yearRows[0]
+      : yearRows.find((r) => !isNflShaped(r.external_id)) ?? yearRows[0]
+  } else {
+    // No year — prefer the most recent row matching the live platform, then
+    // fall back to the most recent row of any platform.
+    pickedRow = league.platform === 'nfl'
+      ? rows.find((r) => isNflShaped(r.external_id)) ?? rows[0]
+      : rows.find((r) => !isNflShaped(r.external_id)) ?? rows[0]
+  }
+
+  const liveLeagueId = pickedRow?.external_id ?? undefined
+  const seasonYear = pickedRow?.year
   if (!liveLeagueId || !seasonYear) return { ok: false, error: { kind: 'no-live-id' } }
 
   // NFL.com ingests store the season YEAR in seasons.external_id (NFL.com
