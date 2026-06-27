@@ -53,7 +53,7 @@ export default async function AccountPage({
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
     getUserSubscription(user.id),
-    supabase.from('profiles').select('member_code').eq('id', user.id).single(),
+    supabase.from('profiles').select('member_code, referral_source, referral_source_other').eq('id', user.id).single(),
   ])
   const navLeagues = (leaguesRes.data ?? []).map((l) => ({
     slug: l.slug as string,
@@ -61,6 +61,8 @@ export default async function AccountPage({
   }))
   const leagueCount = navLeagues.length
   const memberCode = (profileRes.data?.member_code as string | undefined) ?? ''
+  const referralSource = (profileRes.data?.referral_source as string | null | undefined) ?? null
+  const referralOther = (profileRes.data?.referral_source_other as string | null | undefined) ?? ''
   // Provide tier label for the subscription card render; lib export is the
   // source of truth so we don't re-derive it in the client component.
   const tierLabel = sub ? TIER_LABELS[sub.tier].name : null
@@ -88,6 +90,8 @@ export default async function AccountPage({
         } : null}
         lifetime={lifetime}
         justSubscribed={justSubscribed}
+        referralSource={referralSource}
+        referralOther={referralOther}
       />
     )
   }
@@ -144,6 +148,8 @@ export default async function AccountPage({
         } : null}
         lifetime={lifetime}
         justSubscribed={justSubscribed}
+        referralSource={referralSource}
+        referralOther={referralOther}
       />
 
       <SiteFooter />

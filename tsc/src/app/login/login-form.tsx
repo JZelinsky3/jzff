@@ -11,10 +11,14 @@ type Status = 'idle' | 'submitting' | 'sent' | 'error'
 // OAuth is on both tabs — Supabase creates the account on first sign-in
 // either way, so there's no functional difference between "sign in with
 // Google" and "sign up with Google" beyond the button label.
+type ReferralChannel = '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'ai' | 'other'
+
 export function LoginForm({ next, initialMode = 'signin' }: { next?: string; initialMode?: Mode }) {
   const [mode, setMode] = useState<Mode>(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [referral, setReferral] = useState<ReferralChannel>('')
+  const [referralOther, setReferralOther] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
@@ -47,10 +51,19 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
     // click the link the session is null and we can't redirect to /dashboard.
     const redirectTo = new URL('/auth/callback', window.location.origin)
     if (next) redirectTo.searchParams.set('next', next)
+    // Referral fields are optional — only pass them when something is set
+    // so existing user_metadata defaults stay clean for blank submissions.
+    const meta: Record<string, string> = {}
+    if (referral) meta.referral_source = referral
+    const otherTrim = referralOther.trim()
+    if (otherTrim) meta.referral_source_other = otherTrim.slice(0, 120)
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: redirectTo.toString() },
+      options: {
+        emailRedirectTo: redirectTo.toString(),
+        ...(Object.keys(meta).length ? { data: meta } : {}),
+      },
     })
     if (error) {
       setStatus('error'); setError(error.message)
@@ -236,6 +249,39 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
             </button>
           )}
         </div>
+
+        {mode === 'signup' && (
+          <div className="dc-field">
+            <label htmlFor="referral" className="dc-label">
+              Where did you hear about us? <span style={{ opacity: 0.55, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+            </label>
+            <select
+              id="referral"
+              value={referral}
+              onChange={(e) => setReferral(e.target.value as ReferralChannel)}
+              className="dc-input"
+            >
+              <option value="">Prefer not to say</option>
+              <option value="discord">Discord</option>
+              <option value="reddit">Reddit</option>
+              <option value="twitter">Twitter / X</option>
+              <option value="facebook">Facebook</option>
+              <option value="ai">AI (ChatGPT, Claude, etc.)</option>
+              <option value="other">Other</option>
+            </select>
+            {referral === 'other' && (
+              <input
+                type="text"
+                value={referralOther}
+                onChange={(e) => setReferralOther(e.target.value)}
+                placeholder="Tell us where (optional)"
+                maxLength={120}
+                className="dc-input"
+                style={{ marginTop: '.5rem' }}
+              />
+            )}
+          </div>
+        )}
 
         <button type="submit" disabled={submitting} className="dc-btn dc-btn-block">
           {submitting

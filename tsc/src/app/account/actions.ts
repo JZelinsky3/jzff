@@ -127,6 +127,40 @@ export async function updateBackupEmail(_prev: Result | null, formData: FormData
   }
 }
 
+// ─── Referral source (where did you hear about us) ───────────────────────
+// Captured optionally at signup, editable later from /account. Stored on
+// profiles (not user_metadata) so it's queryable from admin. The CHECK
+// constraint on the column enforces the same allow-list as the schema.
+
+const REFERRAL_CHANNELS = ['discord', 'reddit', 'twitter', 'facebook', 'ai', 'other'] as const
+const ReferralSchema = z.object({
+  channel: z.enum(['', ...REFERRAL_CHANNELS]).default(''),
+  other: z.string().trim().max(120, 'Keep it under 120 characters.').default(''),
+})
+
+export async function updateReferralSource(input: z.infer<typeof ReferralSchema>): Promise<Result> {
+  const parsed = ReferralSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input.' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Not signed in.' }
+
+  const channel = parsed.data.channel || null
+  // Only keep the free-form detail when "Other" is chosen — for any other
+  // channel it would just dangle in the column.
+  const other = channel === 'other' && parsed.data.other ? parsed.data.other : null
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ referral_source: channel, referral_source_other: other })
+    .eq('id', user.id)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/account')
+  return { ok: true, message: 'Thanks — saved.' }
+}
+
 // ─── Marketing email opt-in ───────────────────────────────────────────────
 // Stored in user_metadata. Default is opted-IN (treat missing/true as on);
 // only an explicit false counts as opted out. No DB migration needed.

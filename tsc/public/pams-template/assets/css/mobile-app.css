@@ -242,6 +242,32 @@ body {
     margin: .5rem 1.25rem;
 }
 
+/* Sheets that lead with a short explanation + primary CTA — used by the
+   bookmark sign-in prompt and the post-signin "what now" confirmation. */
+.m-sheet-title em { font-family: var(--serif); font-style: italic; color: var(--gold); letter-spacing: 0; }
+.m-sheet-body {
+    padding: .25rem 1.25rem 1rem;
+    color: var(--cream-soft);
+    font-family: var(--serif);
+    font-size: .98rem; line-height: 1.45;
+    text-align: center;
+}
+.m-sheet-cta {
+    display: block;
+    width: calc(100% - 2.5rem);
+    margin: .25rem 1.25rem .75rem;
+    padding: .9rem 1rem;
+    background: var(--gold);
+    color: var(--ink);
+    border: none;
+    border-radius: 999px;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+    text-align: center;
+    cursor: pointer;
+}
+.m-sheet-cta:active { transform: translateY(1px); }
+
 /* ============================================================
    LOCK OVERLAY  (UDFA-locked pages — ported from nav.js)
    ============================================================ */

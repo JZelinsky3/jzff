@@ -3,7 +3,7 @@
 import { useActionState, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient as createBrowserSupabase } from '@/lib/supabase/client'
-import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail } from './actions'
+import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail, updateReferralSource } from './actions'
 
 type Result = { ok: false; error: string } | { ok: true; message?: string } | null
 
@@ -28,6 +28,8 @@ export function AccountForms({
   subscription,
   lifetime,
   justSubscribed,
+  referralSource,
+  referralOther,
 }: {
   email: string
   marketingOptIn: boolean
@@ -39,6 +41,8 @@ export function AccountForms({
   subscription: SubscriptionSummary | null
   lifetime: boolean
   justSubscribed: boolean
+  referralSource: string | null
+  referralOther: string
 }) {
   // Section numbers shift depending on whether the OAuth-branch ("backup email")
   // or the password-branch ("email change + password") is rendered. Just
@@ -113,7 +117,16 @@ export function AccountForms({
 
       <div className="section">
         <div className="section-header">
-          <span className="section-num">§ {isOAuth ? '04' : '05'} · Sign out</span>
+          <span className="section-num">§ {isOAuth ? '04' : '05'} · Referral</span>
+          <span className="section-title">Where did you hear about us? —</span>
+          <span className="section-meta">Optional, helps us know what's working</span>
+        </div>
+        <ReferralForm initialSource={referralSource} initialOther={referralOther} />
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <span className="section-num">§ {isOAuth ? '05' : '06'} · Sign out</span>
           <span className="section-title">See you next time —</span>
           <span className="section-meta">Ends this session</span>
         </div>
@@ -550,6 +563,80 @@ function describeSubscription(s: SubscriptionSummary): {
     detail: 'Open the customer portal for details.',
     badge: null,
   }
+}
+
+// ─── Referral source ──────────────────────────────────────────────────────
+// Editable post-signup. Existing users can fill it in; new users land here
+// with whatever they picked on the signup form. "Other" reveals a 120-char
+// free-form input; switching away clears the detail on save.
+
+const REFERRAL_OPTIONS: { value: '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'ai' | 'other'; label: string }[] = [
+  { value: '',         label: 'Prefer not to say' },
+  { value: 'discord',  label: 'Discord' },
+  { value: 'reddit',   label: 'Reddit' },
+  { value: 'twitter',  label: 'Twitter / X' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'ai',       label: 'AI (ChatGPT, Claude, etc.)' },
+  { value: 'other',    label: 'Other' },
+]
+
+function ReferralForm({ initialSource, initialOther }: { initialSource: string | null; initialOther: string }) {
+  type Channel = (typeof REFERRAL_OPTIONS)[number]['value']
+  const allowed = REFERRAL_OPTIONS.map((o) => o.value) as Channel[]
+  const initial = (initialSource && (allowed as string[]).includes(initialSource) ? initialSource : '') as Channel
+  const [channel, setChannel] = useState<Channel>(initial)
+  const [other, setOther] = useState(initialOther)
+  const [saving, setSaving] = useState(false)
+  const [, startTransition] = useTransition()
+  const [err, setErr] = useState<string | null>(null)
+  const [ok, setOk] = useState<string | null>(null)
+
+  function onSave(e: React.FormEvent) {
+    e.preventDefault()
+    setErr(null); setOk(null); setSaving(true)
+    startTransition(async () => {
+      const r = await updateReferralSource({ channel, other })
+      setSaving(false)
+      if (!r.ok) { setErr(r.error); return }
+      setOk(r.message ?? 'Saved.')
+    })
+  }
+
+  return (
+    <form onSubmit={onSave} className="dc-card-static dc-form">
+      <div className="dc-field">
+        <label htmlFor="account-referral" className="dc-label">Where did you hear about us?</label>
+        <select
+          id="account-referral"
+          value={channel}
+          onChange={(e) => { setChannel(e.target.value as Channel); setOk(null) }}
+          className="dc-input"
+        >
+          {REFERRAL_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        {channel === 'other' && (
+          <input
+            type="text"
+            value={other}
+            onChange={(e) => { setOther(e.target.value); setOk(null) }}
+            placeholder="Tell us where (optional)"
+            maxLength={120}
+            className="dc-input"
+            style={{ marginTop: '.5rem' }}
+          />
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
+        <button type="submit" disabled={saving} className="dc-btn">
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+      {err && <p className="dc-form-error">{err}</p>}
+      {ok && <p className="dc-form-ok">{ok}</p>}
+    </form>
+  )
 }
 
 // ─── Marketing opt-in toggle ──────────────────────────────────────────────

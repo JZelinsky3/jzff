@@ -279,6 +279,13 @@
     }
 
     // ── Bookmark toggle — ported from nav.js (sheet row + app bar star) ──
+    // Three behaviors share this handler:
+    //   • signed-in viewer taps star/row -> POST /api/bookmarks to add/remove
+    //   • signed-out viewer taps left-slot star -> open "Sign in to bookmark"
+    //     prompt sheet (built on demand below). The sheet links to /login with
+    //     a return URL that triggers the post-signin auto-bookmark flow.
+    //   • landing back from that sign-in flow with ?bm_post=1 ->
+    //     wirePostSigninBookmark() picks it up and shows the "what now" sheet.
     function wireBookmarkToggle() {
         document.addEventListener('click', function (e) {
             if (!e.target || !e.target.closest) return;
@@ -288,6 +295,10 @@
             if (!el) return;
             e.preventDefault();
             var slug = el.getAttribute('data-slug');
+            if (navBtn && navBtn.getAttribute('data-signed-in') === '0') {
+                openSigninBookmarkSheet(slug);
+                return;
+            }
             var on = el.getAttribute('data-on') === '1';
             var action = on ? 'remove' : 'add';
             var origText = sheetBtn ? sheetBtn.textContent : null;
@@ -315,6 +326,124 @@
                 if (sheetBtn && origText) sheetBtn.textContent = origText;
             });
         });
+    }
+
+    // Build (lazily) and open a small modal sheet that tells signed-out
+    // viewers what they need to do to bookmark a league. The CTAs route to
+    // /login with `?bm_post=1` stamped on `next`, which our post-signin hook
+    // (wirePostSigninBookmark) detects and uses to perform the bookmark + show
+    // the "what now" sheet once the user is signed in.
+    function openSigninBookmarkSheet(slug) {
+        var existing = document.getElementById('m-sheet-bookmark-signin');
+        if (existing) { openSheet(existing); return; }
+        var here = window.location.pathname;
+        var returnTo = here + (here.indexOf('?') === -1 ? '?' : '&') + 'bm_post=1';
+        var encoded = encodeURIComponent(returnTo);
+        var signinHref = '/login?next=' + encoded + '&from=' + encodeURIComponent(here);
+        var signupHref = '/login?mode=signup&next=' + encoded + '&from=' + encodeURIComponent(here);
+        var sheet = document.createElement('dialog');
+        sheet.className = 'm-sheet';
+        sheet.id = 'm-sheet-bookmark-signin';
+        sheet.innerHTML =
+            '<div class="m-sheet-handle" aria-hidden></div>' +
+            '<div class="m-sheet-title">Sign in to <em>bookmark.</em></div>' +
+            '<div class="m-sheet-body">' +
+              'Save this league to your library so you can find it again from anywhere.' +
+            '</div>' +
+            '<button class="m-sheet-cta" data-href="' + signupHref + '">New chronicle ★ free</button>' +
+            sheetRow(signinHref, 'I already have an account', { attrs: 'data-dc-signin' });
+        document.body.appendChild(sheet);
+        sheet.addEventListener('click', function (e) {
+            if (e.target === sheet) closeSheet(sheet);
+            var cta = e.target.closest && e.target.closest('[data-href]');
+            if (cta) { closeSheet(sheet); window.location.assign(cta.getAttribute('data-href')); return; }
+            if (e.target.closest && e.target.closest('a')) closeSheet(sheet);
+        });
+        sheet.addEventListener('cancel', function (e) { e.preventDefault(); closeSheet(sheet); });
+        wireSheetDrag(sheet);
+        // Stamp the latest "next" onto sign-in links inside the sheet so the
+        // bookmark intent survives the round-trip (enhanceAuthLinks already
+        // ran before this sheet existed).
+        sheet.querySelectorAll('a[data-dc-signin]').forEach(function (a) {
+            var base = a.getAttribute('href') || '/login';
+            var sep = base.indexOf('?') === -1 ? '?' : '&';
+            // The next param was already in the href; we just append the from
+            // for the back-arrow target on the login screen.
+            if (base.indexOf('from=') === -1) a.href = base + sep + 'from=' + encodeURIComponent(here);
+        });
+        openSheet(sheet);
+        // Strip slug param noise — we don't actually need it server-side, the
+        // bookmark slug is the current page's slug, which post-signin reads
+        // from window.__DC again.
+        void slug;
+    }
+
+    // After a signed-out viewer signs in via the bookmark prompt, they land
+    // back on the league hub with ?bm_post=1. Add the bookmark for them, then
+    // show a small "what now" sheet with two options: stay here vs. go to the
+    // library (dashboard). Runs once per pageload, gated on isSignedIn.
+    function wirePostSigninBookmark() {
+        try {
+            var url = new URL(window.location.href);
+            if (url.searchParams.get('bm_post') !== '1') return;
+        } catch (_) { return; }
+        var ctx = dcContext();
+        if (!ctx.slug || !ctx.isSignedIn || ctx.isCommish) {
+            // Clean the param so it doesn't linger across navigation.
+            stripBmPostParam();
+            return;
+        }
+        var doShow = function () { openPostBookmarkSheet(); stripBmPostParam(); };
+        if (ctx.isBookmarked) { doShow(); return; }
+        fetch('/api/bookmarks/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: ctx.slug, action: 'add' }),
+        }).then(function (r) {
+            if (r.ok) {
+                // Reflect the new state on the left-slot star without a reload.
+                var navBtn = document.getElementById('nav-bookmark-btn');
+                if (navBtn) {
+                    navBtn.setAttribute('data-on', '1');
+                    navBtn.setAttribute('aria-label', 'Remove bookmark');
+                    var svg = document.getElementById('nav-bookmark-svg');
+                    if (svg) svg.setAttribute('fill', '#e8c889');
+                }
+            }
+            doShow();
+        }).catch(doShow);
+    }
+
+    function stripBmPostParam() {
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.delete('bm_post');
+            history.replaceState({}, '', url.toString());
+        } catch (_) { /* noop */ }
+    }
+
+    function openPostBookmarkSheet() {
+        var existing = document.getElementById('m-sheet-bookmark-post');
+        if (existing) { openSheet(existing); return; }
+        var sheet = document.createElement('dialog');
+        sheet.className = 'm-sheet';
+        sheet.id = 'm-sheet-bookmark-post';
+        sheet.innerHTML =
+            '<div class="m-sheet-handle" aria-hidden></div>' +
+            '<div class="m-sheet-title">Bookmarked <em>★</em></div>' +
+            '<div class="m-sheet-body">This league is saved to your library. Where to next?</div>' +
+            '<button class="m-sheet-cta" data-action="stay">Return to this league</button>' +
+            sheetRow('/dashboard', 'Go to my library');
+        document.body.appendChild(sheet);
+        sheet.addEventListener('click', function (e) {
+            if (e.target === sheet) closeSheet(sheet);
+            var stay = e.target.closest && e.target.closest('[data-action="stay"]');
+            if (stay) { closeSheet(sheet); return; }
+            if (e.target.closest && e.target.closest('a')) closeSheet(sheet);
+        });
+        sheet.addEventListener('cancel', function (e) { e.preventDefault(); closeSheet(sheet); });
+        wireSheetDrag(sheet);
+        openSheet(sheet);
     }
 
     function wireThemePicker() {
@@ -585,18 +714,38 @@
         var tail = parts[parts.length - 1];
         var nameHTML = (head ? escapeHtml(head) + ' ' : '') + '<em>' + escapeHtml(tail) + '.</em>';
 
-        // Left slot: back button on every page that declares a target.
-        var left = backHref
-            ? '<a class="m-appbar-back" id="m-appbar-back" href="' + escapeHtml(backHref) + '" aria-label="Back">' + ICONS.back + '</a>'
-            : '<span></span>';
+        // Left slot:
+        //   • back button when the page declares a target
+        //   • bookmark star on the league hub for non-commish viewers (mirrors
+        //     desktop nav.js — see "Left slot: back arrow OR bookmark star").
+        //     Signed-out viewers get the same star; tapping it opens a
+        //     sign-in prompt sheet (built lower in this file) instead of
+        //     calling the API.
+        //   • empty otherwise
+        var left;
+        var showBookmark = page === 'hub' && !ctx.isCommish && ctx.slug && !backHref;
+        if (backHref) {
+            left = '<a class="m-appbar-back" id="m-appbar-back" href="' + escapeHtml(backHref) + '" aria-label="Back">' + ICONS.back + '</a>';
+        } else if (showBookmark) {
+            var on = ctx.isBookmarked && ctx.isSignedIn;
+            var bmLabel = !ctx.isSignedIn
+                ? 'Sign in to bookmark'
+                : (on ? 'Remove bookmark' : 'Bookmark this league');
+            left = '<button class="m-appbar-action m-appbar-action-left" id="nav-bookmark-btn"'
+                + ' data-slug="' + escapeHtml(ctx.slug) + '"'
+                + ' data-on="' + (on ? '1' : '0') + '"'
+                + ' data-signed-in="' + (ctx.isSignedIn ? '1' : '0') + '"'
+                + ' aria-label="' + bmLabel + '" title="' + bmLabel + '">'
+                + ICONS.star(on) + '</button>';
+        } else {
+            left = '<span></span>';
+        }
 
-        // Right slot: bookmark star on the hub for signed-in non-commish
-        // viewers (same rule as desktop's left-slot star). Live hub gets a
-        // quiet "Wk N" pill instead so the chrome reads as a live screen.
+        // Right slot: live "Wk N" pill on the live hub. Bookmark star used to
+        // live here for signed-in non-commish viewers — moved to the left
+        // slot to match desktop and to make room for the live week.
         var right = '<span></span>';
-        if (page === 'hub' && ctx.isSignedIn && !ctx.isCommish && ctx.slug) {
-            right = '<button class="m-appbar-action" id="nav-bookmark-btn" data-slug="' + escapeHtml(ctx.slug) + '" data-on="' + (ctx.isBookmarked ? '1' : '0') + '" aria-label="' + (ctx.isBookmarked ? 'Remove bookmark' : 'Bookmark this league') + '">' + ICONS.star(ctx.isBookmarked) + '</button>';
-        } else if (page === 'live') {
+        if (page === 'live') {
             var lw = Number(ctx.liveWeek);
             if (lw >= 1 && lw <= 18) {
                 right = '<span class="m-appbar-week" aria-label="Current week">Wk ' + lw + '</span>';
@@ -782,6 +931,7 @@
         buildLockOverlay();
         enhanceAuthLinks();
         wireBookmarkToggle();
+        wirePostSigninBookmark();
         // wireThemePicker(); // vaulted — themes not ready yet
     }
 

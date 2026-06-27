@@ -4,7 +4,7 @@ import { useActionState, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient as createBrowserSupabase } from '@/lib/supabase/client'
-import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail } from '@/app/account/actions'
+import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail, updateReferralSource } from '@/app/account/actions'
 import { MemberCodeChip } from '@/app/account/member-code-chip'
 
 type Result = { ok: false; error: string } | { ok: true; message?: string } | null
@@ -31,6 +31,8 @@ export function MobileProfile({
   subscription,
   lifetime,
   justSubscribed,
+  referralSource,
+  referralOther,
 }: {
   email: string
   memberCode: string
@@ -43,6 +45,8 @@ export function MobileProfile({
   subscription: SubscriptionSummary | null
   lifetime: boolean
   justSubscribed: boolean
+  referralSource: string | null
+  referralOther: string
 }) {
   return (
     <main className="mprof">
@@ -90,6 +94,9 @@ export function MobileProfile({
 
       {/* ── Communication ── */}
       <MobileMarketingSection initialOptIn={marketingOptIn} />
+
+      {/* ── Referral source ── */}
+      <MobileReferralSection initialSource={referralSource} initialOther={referralOther} />
 
       {/* ── Sign out ── */}
       <div className="mprof-section">
@@ -404,6 +411,76 @@ function MobileMarketingSection({ initialOptIn }: { initialOptIn: boolean }) {
         </label>
         {err && <div className="mprof-err">{err}</div>}
       </div>
+    </div>
+  )
+}
+
+/* ─── Referral source ─── */
+// Same channel list as the signup form. Switching to "Other" reveals a free
+// text field; switching away from it discards the detail on save.
+
+const MOBILE_REFERRAL_OPTIONS: { value: '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'ai' | 'other'; label: string }[] = [
+  { value: '',         label: 'Prefer not to say' },
+  { value: 'discord',  label: 'Discord' },
+  { value: 'reddit',   label: 'Reddit' },
+  { value: 'twitter',  label: 'Twitter / X' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'ai',       label: 'AI (ChatGPT, Claude, etc.)' },
+  { value: 'other',    label: 'Other' },
+]
+
+function MobileReferralSection({ initialSource, initialOther }: { initialSource: string | null; initialOther: string }) {
+  type Channel = (typeof MOBILE_REFERRAL_OPTIONS)[number]['value']
+  const allowed = MOBILE_REFERRAL_OPTIONS.map((o) => o.value) as Channel[]
+  const initial = (initialSource && (allowed as string[]).includes(initialSource) ? initialSource : '') as Channel
+  const [channel, setChannel] = useState<Channel>(initial)
+  const [other, setOther] = useState(initialOther)
+  const [, startTransition] = useTransition()
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [ok, setOk] = useState<string | null>(null)
+
+  function onSave(e: React.FormEvent) {
+    e.preventDefault()
+    setErr(null); setOk(null); setSaving(true)
+    startTransition(async () => {
+      const r = await updateReferralSource({ channel, other })
+      setSaving(false)
+      if (!r.ok) { setErr(r.error); return }
+      setOk(r.message ?? 'Saved.')
+    })
+  }
+
+  return (
+    <div className="mprof-section">
+      <div className="mprof-section-label">Where did you hear about us?</div>
+      <form onSubmit={onSave} className="mprof-card">
+        <select
+          value={channel}
+          onChange={(e) => { setChannel(e.target.value as Channel); setOk(null) }}
+          className="mprof-input"
+        >
+          {MOBILE_REFERRAL_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        {channel === 'other' && (
+          <input
+            type="text"
+            value={other}
+            onChange={(e) => { setOther(e.target.value); setOk(null) }}
+            placeholder="Tell us where (optional)"
+            maxLength={120}
+            className="mprof-input"
+            style={{ marginTop: '.5rem' }}
+          />
+        )}
+        <button type="submit" disabled={saving} className="mprof-card-btn" style={{ marginTop: '.6rem' }}>
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        {err && <div className="mprof-err">{err}</div>}
+        {ok && <div className="mprof-ok">{ok}</div>}
+      </form>
     </div>
   )
 }

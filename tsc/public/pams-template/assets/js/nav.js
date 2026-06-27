@@ -421,11 +421,17 @@
         var leftSlot = '';
         var dataBackHref = nav.dataset.backHref;
         var dataBackLabel = nav.dataset.backLabel;
+        // Hub viewers (signed-in OR out) who aren't the commissioner get the
+        // bookmark star in the left slot. For signed-out viewers, the click
+        // opens a "Sign in to bookmark" modal instead of hitting the API.
         var showBookmark =
-            currentPage === 'hub' && ctx.isSignedIn && !ctx.isCommish && ctx.slug && !dataBackHref;
+            currentPage === 'hub' && !ctx.isCommish && ctx.slug && !dataBackHref;
 
         if (showBookmark) {
-            var isOn = ctx.isBookmarked;
+            var isOn = ctx.isBookmarked && ctx.isSignedIn;
+            var bmLabel = !ctx.isSignedIn
+                ? 'Sign in to bookmark'
+                : (isOn ? 'Remove bookmark' : 'Bookmark this league');
             // Use <a> instead of <button> — even with appearance:none, Safari
             // and some Android browsers leak default button chrome (white
             // bg, focus rings, system gradients). An anchor has none of that.
@@ -434,8 +440,9 @@
             leftSlot =
                 '<a href="#" class="nav-back" id="nav-bookmark-btn" role="button"' +
                 ' data-slug="' + ctx.slug + '" data-on="' + (isOn ? '1' : '0') + '"' +
-                ' aria-label="' + (isOn ? 'Remove bookmark' : 'Bookmark this league') + '"' +
-                ' title="' + (isOn ? 'Remove bookmark' : 'Bookmark this league') + '">' +
+                ' data-signed-in="' + (ctx.isSignedIn ? '1' : '0') + '"' +
+                ' aria-label="' + bmLabel + '"' +
+                ' title="' + bmLabel + '">' +
                   '<svg id="nav-bookmark-svg" viewBox="0 0 24 24" width="22" height="22"' +
                   ' fill="' + (isOn ? '#e8c889' : 'none') + '"' +
                   ' stroke="#e8c889" stroke-width="1.8" stroke-linejoin="round">' +
@@ -777,6 +784,12 @@
             if (!el) return;
             e.preventDefault();
             var slug = el.getAttribute('data-slug');
+            // Left-slot star is the only entry point we render for signed-out
+            // viewers. Route them through the sign-in modal instead of the API.
+            if (navBtn && navBtn.getAttribute('data-signed-in') === '0') {
+                openSigninBookmarkModal(slug);
+                return;
+            }
             var on = el.getAttribute('data-on') === '1';
             var action = on ? 'remove' : 'add';
             var origDropText = dropLink ? dropLink.textContent : null;
@@ -807,6 +820,187 @@
                 if (dropLink && origDropText) dropLink.textContent = origDropText;
             });
         });
+    }
+
+    // ── Bookmark sign-in prompt + post-signin modal ─────────────────────
+    // Signed-out viewers can't add a bookmark directly; clicking the star
+    // pops a small centered modal explaining they need an account, with two
+    // CTAs (Sign in / Create one) pointed at /login. The login URL bundles
+    // `?bm_post=1` onto the return path so when they land back here we know
+    // to auto-bookmark and confirm with the post-signin modal (return-to-
+    // league vs. go-to-library).
+
+    function ensureBookmarkModalStyles() {
+        if (document.getElementById('dc-bm-modal-style')) return;
+        var css = document.createElement('style');
+        css.id = 'dc-bm-modal-style';
+        // Styles are scoped to .dc-bm-* so they can't bleed into pams pages.
+        // The backdrop sits on top of nav (z-index 200) and the lock overlay
+        // (150); 9500 keeps it above the dropdown panels (9000-ish) too.
+        css.textContent = [
+            '.dc-bm-backdrop {',
+            '  position: fixed; inset: 0; z-index: 9500;',
+            '  background: rgba(6, 10, 16, .72);',
+            '  display: flex; align-items: center; justify-content: center;',
+            '  padding: 2rem;',
+            '  opacity: 0; transition: opacity .18s ease;',
+            '}',
+            '.dc-bm-backdrop.is-open { opacity: 1; }',
+            '.dc-bm-modal {',
+            '  width: 100%; max-width: 26rem;',
+            '  background: var(--ink-card, #0f1620);',
+            '  color: var(--cream, #ecdfc7);',
+            '  border: 1px solid var(--ink-line, #21303f);',
+            '  border-radius: 14px;',
+            '  box-shadow: 0 30px 80px rgba(0,0,0,.7);',
+            '  padding: 1.4rem 1.4rem 1.2rem;',
+            '  transform: translateY(8px); transition: transform .18s ease;',
+            '}',
+            '.dc-bm-backdrop.is-open .dc-bm-modal { transform: translateY(0); }',
+            '.dc-bm-title {',
+            '  font-family: var(--serif, Georgia, serif);',
+            '  font-size: 1.45rem; line-height: 1.15;',
+            '  margin: 0 0 .35rem;',
+            '  text-align: center;',
+            '}',
+            '.dc-bm-title em { font-style: italic; color: var(--gold, #e8c889); }',
+            '.dc-bm-body {',
+            '  font-family: var(--serif, Georgia, serif);',
+            '  font-size: 1rem; line-height: 1.5;',
+            '  color: var(--cream-soft, #d6c8ac);',
+            '  text-align: center;',
+            '  margin: 0 0 1.1rem;',
+            '}',
+            '.dc-bm-btns { display: flex; flex-direction: column; gap: .55rem; }',
+            '.dc-bm-btn {',
+            '  display: block; width: 100%;',
+            '  padding: .85rem 1rem;',
+            '  border-radius: 999px;',
+            '  font-family: var(--mono, ui-monospace, monospace); font-weight: 700;',
+            '  font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;',
+            '  text-align: center; text-decoration: none;',
+            '  cursor: pointer;',
+            '  border: 1px solid var(--gold-deep, #b58a3c);',
+            '  background: var(--gold, #e8c889); color: var(--ink, #06090e);',
+            '}',
+            '.dc-bm-btn.ghost {',
+            '  background: transparent;',
+            '  color: var(--gold, #e8c889);',
+            '}',
+            '.dc-bm-close {',
+            '  position: absolute; top: .5rem; right: .8rem;',
+            '  background: transparent; border: none;',
+            '  color: var(--cream-mute, #968976);',
+            '  font-size: 1.4rem; line-height: 1;',
+            '  cursor: pointer; padding: .2rem .4rem;',
+            '}',
+        ].join('\n');
+        document.head.appendChild(css);
+    }
+
+    function openBookmarkModal(innerHTML) {
+        ensureBookmarkModalStyles();
+        // Tear down any prior modal so successive opens don't stack.
+        var prior = document.querySelector('.dc-bm-backdrop');
+        if (prior && prior.parentNode) prior.parentNode.removeChild(prior);
+
+        var backdrop = document.createElement('div');
+        backdrop.className = 'dc-bm-backdrop';
+        backdrop.setAttribute('role', 'dialog');
+        backdrop.setAttribute('aria-modal', 'true');
+        backdrop.innerHTML =
+            '<div class="dc-bm-modal" style="position:relative;">' +
+              '<button type="button" class="dc-bm-close" aria-label="Close">×</button>' +
+              innerHTML +
+            '</div>';
+        document.body.appendChild(backdrop);
+        // Next frame so the transition runs.
+        requestAnimationFrame(function () { backdrop.classList.add('is-open'); });
+
+        function close() {
+            backdrop.classList.remove('is-open');
+            setTimeout(function () { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); }, 200);
+        }
+        backdrop.addEventListener('click', function (e) {
+            if (e.target === backdrop) close();
+            if (e.target.closest && e.target.closest('.dc-bm-close')) close();
+            if (e.target.closest && e.target.closest('[data-bm-close]')) close();
+        });
+        document.addEventListener('keydown', function onKey(ev) {
+            if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
+        });
+        return { close: close, root: backdrop };
+    }
+
+    function openSigninBookmarkModal(_slug) {
+        var here = window.location.pathname;
+        var returnTo = here + (here.indexOf('?') === -1 ? '?' : '&') + 'bm_post=1';
+        var encoded = encodeURIComponent(returnTo);
+        var fromEnc = encodeURIComponent(here);
+        var signinHref = '/login?next=' + encoded + '&from=' + fromEnc;
+        var signupHref = '/login?mode=signup&next=' + encoded + '&from=' + fromEnc;
+        openBookmarkModal(
+            '<h2 class="dc-bm-title">Sign in to <em>bookmark.</em></h2>' +
+            '<p class="dc-bm-body">Save this league to your library so you can find it again from anywhere.</p>' +
+            '<div class="dc-bm-btns">' +
+              '<a class="dc-bm-btn" href="' + signupHref + '">Create a free account</a>' +
+              '<a class="dc-bm-btn ghost" href="' + signinHref + '">I already have one</a>' +
+            '</div>'
+        );
+    }
+
+    function openPostBookmarkModal() {
+        openBookmarkModal(
+            '<h2 class="dc-bm-title">Bookmarked <em>★</em></h2>' +
+            '<p class="dc-bm-body">This league is saved to your library. Where to next?</p>' +
+            '<div class="dc-bm-btns">' +
+              '<button type="button" class="dc-bm-btn" data-bm-close>Return to this league</button>' +
+              '<a class="dc-bm-btn ghost" href="/dashboard">Go to my library</a>' +
+            '</div>'
+        );
+    }
+
+    // Runs once per pageload: if we landed here with ?bm_post=1 AND the
+    // viewer is now signed in (and not the commish, and not already
+    // bookmarked), POST the bookmark and show the post-signin modal.
+    function wirePostSigninBookmark() {
+        try {
+            var url = new URL(window.location.href);
+            if (url.searchParams.get('bm_post') !== '1') return;
+        } catch (_) { return; }
+        var dc = window.__DC || {};
+        if (!dc.slug || !dc.isSignedIn || dc.isCommish) {
+            stripBmPostParam();
+            return;
+        }
+        var done = function () { openPostBookmarkModal(); stripBmPostParam(); };
+        if (dc.isBookmarked) { done(); return; }
+        fetch('/api/bookmarks/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: dc.slug, action: 'add' }),
+        }).then(function (r) {
+            if (r.ok) {
+                // Reflect the new state on the left-slot star without a reload.
+                var navMate = document.getElementById('nav-bookmark-btn');
+                if (navMate) {
+                    navMate.setAttribute('data-on', '1');
+                    navMate.setAttribute('aria-label', 'Remove bookmark');
+                    navMate.setAttribute('title', 'Remove bookmark');
+                    var svg = document.getElementById('nav-bookmark-svg');
+                    if (svg) svg.setAttribute('fill', '#e8c889');
+                }
+            }
+            done();
+        }).catch(done);
+    }
+
+    function stripBmPostParam() {
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.delete('bm_post');
+            history.replaceState({}, '', url.toString());
+        } catch (_) { /* noop */ }
     }
 
     function wireThemePicker() {
@@ -1368,6 +1562,7 @@
         buildNav();
         enhanceAuthLinks();
         wireBookmarkToggle();
+        wirePostSigninBookmark();
         // wireThemePicker(); // vaulted — themes not ready yet
         loadTutorial();
         buildLockOverlay();
