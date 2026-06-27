@@ -1206,10 +1206,10 @@ body::before {
   .match[data-gotw="true"] .team-name {
     font-size: .72rem;
     white-space: nowrap;
-    overflow: visible;
+    overflow: hidden;
     text-overflow: clip;
     line-height: 1.15;
-    max-width: none;
+    max-width: 100%;
     /* min-width:0 so the team-name doesn't force its 1fr grid column to
        expand past 50% to fit min-content. Without this the columns grow
        to swallow long names, the two sides collide at center, and the JS
@@ -1219,11 +1219,12 @@ body::before {
     position: relative;
     z-index: 2;
   }
-  /* Same min-width:0 on every flex ancestor so the constraint actually
-     reaches the team-name. overflow:visible lets the rendered text spill
-     past the now-narrow box, riding visually over the centered PPG. */
+  /* min-width:0 on every flex ancestor so the column-width constraint
+     actually reaches the team-name. Names are now clipped to the column
+     and the JS shrink loop in pickems.js sizes them to fit — no more
+     spilling past center into the opposing side. */
   .match[data-gotw="true"] .team { min-width: 0; }
-  .match[data-gotw="true"] .meta { min-width: 0; overflow: visible; }
+  .match[data-gotw="true"] .meta { min-width: 0; overflow: hidden; }
   .match[data-gotw="true"] .vs-pts { font-size: .84rem; }
   .match[data-gotw="true"] .vote-btn { padding: 1.05rem .75rem; font-size: .62rem; }
   .bar2 { height: 5px; }

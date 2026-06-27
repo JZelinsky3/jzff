@@ -318,12 +318,17 @@
         && el.classList.contains('team-name')
         && el.closest('.match[data-gotw="true"]');
       if (isMobileGotwName) {
-        var topEl = el.closest('.match-top');
-        // Each GOTW name caps at ~46% of card width. Two sides at the
-        // cap leaves ~8% in the middle for the absolutely-positioned
-        // PPG to peek through, and guarantees two long names never run
-        // into each other at the centerline.
-        var maxWidth = topEl ? topEl.clientWidth * 0.46 : 0;
+        // Cap against .meta's actual width (the column slot left after
+        // the logo + flex gap), not a flat % of the whole card. Earlier
+        // versions used `match-top.clientWidth * 0.46` — that measured
+        // text only, while the rendered text actually starts ~58px in
+        // (card padding + logo + gap). Two 46% texts then ran 40+px
+        // past center and collided over the absolutely-positioned PPG.
+        // Using .meta keeps each name inside its own half — text can
+        // still ride the column boundary, but the two sides never
+        // crash into each other at the centerline.
+        var metaEl = el.parentElement; // .meta
+        var maxWidth = metaEl ? metaEl.clientWidth : 0;
         if (maxWidth > 0) {
           // Canvas-measured text width is the only reliable signal here:
           // the box itself is constrained to its 50% column (so
