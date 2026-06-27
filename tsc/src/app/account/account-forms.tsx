@@ -118,8 +118,8 @@ export function AccountForms({
       <div className="section">
         <div className="section-header">
           <span className="section-num">§ {isOAuth ? '04' : '05'} · Referral</span>
-          <span className="section-title">Where did you hear about us? —</span>
-          <span className="section-meta">Optional, helps us know what's working</span>
+          <span className="section-title">Where did you hear about us?</span>
+          <span className="section-meta">Optional, helps us know what works</span>
         </div>
         <ReferralForm initialSource={referralSource} initialOther={referralOther} />
       </div>
