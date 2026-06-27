@@ -36,7 +36,10 @@ body { background: var(--ls-bg); }
     border-bottom: 2px solid var(--m-chrome-bg);
     height: 28px;
     display: flex; align-items: center; overflow: hidden;
-    margin: 0 -0.9rem;
+    /* Cancel .m-main's .9rem top padding so the ticker sits flush
+       against the bottom of the fixed app header. Side bleed keeps it
+       spanning edge-to-edge. */
+    margin: -.9rem -0.9rem 0;
 }
 .lv-ticker-track {
     display: flex; gap: 2.2rem; white-space: nowrap; padding-left: 2.2rem;

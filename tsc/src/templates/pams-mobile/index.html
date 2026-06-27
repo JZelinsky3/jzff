@@ -401,7 +401,7 @@
         if (liveWeek >= 1 && liveWeek <= 18) {
             var seasonYear = ((league && league.current_season) || new Date().getFullYear()) + ' Season';
             items = [
-                '<span class="m-sash-item"><span class="m-sash-dot" aria-hidden="true"></span>Live · Week ' + liveWeek + ' <span class="m-sash-sep">·</span> ' + esc(seasonYear) + '</span>',
+                '<span class="m-sash-item">Live · Week ' + liveWeek + ' <span class="m-sash-sep">·</span> ' + esc(seasonYear) + '</span>',
                 '<span class="m-sash-item">Pickems · Power Rankings · Trade Desk</span>',
             ];
         } else {
