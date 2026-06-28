@@ -67,44 +67,54 @@
     width: 100%; height: 100%;
     object-fit: cover;
 }
-/* All names now use the bright cream (was reserved for any champ before).
-   The reigning-champion gets the gold name + a stronger gold border so
-   the row reads as "this person is wearing the belt right now." Past
-   champions still get the gold avatar ring but their names stay cream
-   — they're members, not the current title-holder. */
+/* Champion adornments restored from the original ticket-stub design:
+   gold border on the ticket, the perforation notches, and the avatar
+   ring. Reigning champion = current title-holder; adds a brighter
+   gold name on top of the champ treatment. */
+.mg-ticket.is-champ { border-color: var(--gold-deep); }
+.mg-ticket.is-champ .mg-stub { border-right-color: rgba(232,200,137,.45); }
+.mg-ticket.is-champ::before, .mg-ticket.is-champ::after { border-color: var(--gold-deep); }
 .mg-ticket.is-champ .mg-ava { border-color: var(--gold-deep); background: rgba(232,200,137,.07); }
 .mg-ticket.is-reigning { border-color: var(--gold); }
 .mg-ticket.is-reigning .mg-stub { border-right-color: rgba(232,200,137,.55); }
 .mg-ticket.is-reigning::before, .mg-ticket.is-reigning::after { border-color: var(--gold); }
 .mg-ticket.is-reigning .mg-ava { border-color: var(--gold); background: rgba(232,200,137,.1); }
 .mg-ticket.is-reigning .mg-name { color: var(--gold); }
+
 .mg-name { min-width: 0; flex: 1; font-weight: 600; font-size: .95rem; color: var(--cream); }
+/* Two-row layout inside the body: name on top, small ("Team · tenure"
+   + championship pills) on the row below. The small is display:block
+   so it always wraps to its own row; pills inline-flex within it. */
 .mg-name small {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    flex-wrap: wrap;
+    display: block;
     font-weight: 400; font-size: .7rem; color: var(--cream-mute);
     margin-top: 2px;
+    line-height: 1.35;
 }
-/* Championship-year pills — sit inline with the "X seasons" tenure line
-   under each name. Small gold pills, one per championship year. */
+.mg-tenure {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+/* Championship-year pills — small gold mono pills, one per year,
+   inline next to the tenure line under the name. */
 .mg-champ-pill {
     display: inline-flex;
     align-items: center;
-    gap: .2rem;
-    padding: 1px 6px;
-    border-radius: 999px;
+    padding: 0 5px;
+    margin-left: .25rem;
+    border-radius: 4px;
     border: 1px solid rgba(232, 200, 137, .35);
-    background: rgba(232, 200, 137, .06);
+    background: rgba(232, 200, 137, .07);
     color: var(--gold);
     font-family: var(--mono);
     font-weight: 700;
-    font-size: .54rem;
-    letter-spacing: .08em;
-    line-height: 1.3;
+    font-size: .52rem;
+    letter-spacing: .06em;
+    line-height: 1.4;
+    vertical-align: 1px;
 }
-.mg-tenure { color: var(--cream-mute); white-space: nowrap; }
 .mg-rings { flex: none; color: var(--gold); font-size: .7rem; letter-spacing: .08em; }
 .mg-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--cream-soft); text-align: right; }
 .mg-rec small { display: block; font-weight: 400; font-size: .56rem; color: var(--cream-mute); }
@@ -187,20 +197,21 @@
         var img = m.avatar
             ? '<img src="' + esc(m.avatar) + '" alt="" loading="lazy" onerror="this.remove()">'
             : '';
-        // Championship year pills — one per title, newest first, capped at
-        // 3 visible (older ones collapse to "+N" so a 6-time champ doesn't
-        // shove the rest of the row off-screen).
+        // Championship year pills — one per title, newest first, capped
+        // at 3 visible (older collapse to "+N" so a 6× champ doesn't push
+        // the row off-screen). No star glyph — the gold pill itself
+        // already carries the championship signal.
         var champYears = (m.championship_seasons || []).slice().sort(function (a, b) { return b - a; });
         var maxPills = 3;
         var pills = champYears.slice(0, maxPills).map(function (y) {
-            return '<span class="mg-champ-pill">✦ ' + esc(y) + '</span>';
+            return '<span class="mg-champ-pill">' + esc(y) + '</span>';
         }).join('');
         if (champYears.length > maxPills) {
             pills += '<span class="mg-champ-pill">+' + (champYears.length - maxPills) + '</span>';
         }
         var tenure = m.seasons_played + (m.seasons_played === 1 ? ' season' : ' seasons');
-        // is-champ: ever won (gives the gold avatar ring).
-        // is-reigning: holds the most recent title (gold name + border).
+        // is-champ: ever won (gives the gold ticket-stub border + avatar ring).
+        // is-reigning: holds the most recent title (adds gold name + brighter border).
         var classes = 'mg-ticket';
         if (m.championships) classes += ' is-champ';
         if (m.is_reigning_champion) classes += ' is-reigning';
@@ -209,10 +220,7 @@
             '<span class="mg-stub"><span class="mg-ava">' + esc(initial) + img + '</span></span>' +
             '<span class="mg-body">' +
                 '<span class="mg-name">' + esc(m.name) +
-                    '<small>' +
-                        '<span class="mg-tenure">' + esc(m.team_latest || '') + ' · ' + tenure + '</span>' +
-                        pills +
-                    '</small>' +
+                    '<small><span class="mg-tenure">' + esc(m.team_latest || '') + ' · ' + tenure + '</span>' + pills + '</small>' +
                 '</span>' +
                 '<span class="mg-rec">' + esc(m.total_record) + '<small>' + (m.win_pct * 100).toFixed(0) + '% win</small></span>' +
             '</span>' +
