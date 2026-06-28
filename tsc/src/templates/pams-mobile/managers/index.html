@@ -82,17 +82,18 @@
 /* .mg-name color rules consolidated below (with !important to win over
    the body's default cream inheritance). */
 
-/* Main top-row name in bright cream so it pops against the card. Bumped
-   one notch warmer than the page's default body cream so the row reads
-   as "this is a person" instead of blending into surrounding mono. */
+/* Active member names render bright cream; alumni stay muted cream so
+   past members are visibly "lower tier" without needing the opacity to
+   carry it. Reigning champion gets the actual saturated amber gold —
+   the default --gold token is so pale it reads as cream too. */
 .mg-name {
     min-width: 0; flex: 1;
     font-weight: 600; font-size: .95rem;
     color: #fbf3e0 !important;
 }
-.mg-ticket.is-reigning .mg-name { color: var(--gold) !important; }
-.mg-alumni .mg-name { color: var(--cream-soft) !important; }
-.mg-alumni.is-reigning .mg-name { color: var(--gold) !important; }
+.mg-alumni .mg-name { color: var(--cream-mute) !important; }
+.mg-ticket.is-reigning .mg-name { color: #f5b840 !important; }
+.mg-alumni.is-reigning .mg-name { color: #f5b840 !important; }
 /* Two-row layout: name on top, small ("Team · tenure" + championship
    pills) below. The small is a flex row so the team name ellipsizes
    while the tenure tail + pills hug the right and never wrap. */
@@ -143,10 +144,12 @@
 .mg-rings { flex: none; color: var(--gold); font-size: .7rem; letter-spacing: .08em; }
 .mg-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--cream-soft); text-align: right; }
 .mg-rec small { display: block; font-weight: 400; font-size: .56rem; color: var(--cream-mute); }
-.mg-alumni { opacity: .82; }
+/* Alumni tickets are slightly dimmed via opacity (still readable, just
+   reads as "past member") — but their NAMES use the same bright cream
+   as active members. The opacity gives a subtle hierarchy without
+   downgrading the name color itself. */
+.mg-alumni { opacity: .85; }
 .mg-alumni .mg-ava { color: var(--cream-mute); }
-/* Alumni .mg-name color is set above with !important (alongside the
-   reigning override) so it wins over the bright cream default. */
 </style>
 </head>
 <body>
