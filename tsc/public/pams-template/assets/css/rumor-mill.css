@@ -336,3 +336,41 @@ html, body {
     padding-top: 1.2rem;
     border-top: 1px dashed var(--td-line-soft);
 }
+
+/* ============================================================
+   MOBILE  (<= 639px)
+   On desktop the deal grid prints two teams side-by-side and the
+   dashed line above each impact reads as parallel scorelines on
+   the two boxes. Stacked single-column, those two intra-side
+   dividers look redundant — the user wants one separator BETWEEN
+   the teams instead.
+   ============================================================ */
+@media (max-width: 639px) {
+  .rm-deal { padding: .85rem .95rem .95rem; gap: .75rem 0; }
+
+  /* Drop the per-impact dashed top-border on mobile. */
+  .rm-side-impact {
+    border-top: none;
+    padding-top: .35rem;
+    margin-top: .55rem;
+  }
+
+  /* Add ONE dashed divider between team A and team B. The
+     .rm-deal-swap glyph sits between them (display:none on mobile),
+     so target the second .rm-side. */
+  .rm-side + .rm-deal-swap + .rm-side,
+  .rm-side + .rm-side {
+    margin-top: .35rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--td-line-soft);
+  }
+
+  /* Tighten the rest of the entry while we're here. */
+  .rm-item { padding: 1.5rem 0 1.8rem; }
+  .rm-item-headline { font-size: clamp(1.25rem, 6vw, 1.55rem); }
+  .rm-item-blurb { font-size: .88rem; line-height: 1.6; margin-bottom: .9rem; }
+  .rm-side-name { font-size: .92rem; }
+  .rm-side-sends li { font-size: .82rem; }
+  .rm-side-impact { font-size: .56rem; letter-spacing: .1em; }
+  .rm-side-impact strong { font-size: .74rem; }
+}

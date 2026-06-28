@@ -96,39 +96,49 @@
   }
 
   /* ── Sections ─────────────────────────────────────── */
-  body[data-trades-theme] .tr-section { margin-bottom: 1.6rem; }
+  body[data-trades-theme] .tr-section { margin-bottom: 1.8rem; }
   body[data-trades-theme] .tr-section-head {
-    gap: .4rem .7rem;
-    padding-bottom: .55rem;
-    margin-bottom: .85rem;
+    display: flex !important;
+    align-items: baseline;
+    gap: .35rem .8rem;
+    padding-bottom: .65rem;
+    margin-bottom: 1rem;
     border-bottom: 1px solid #4c3922 !important;
+    flex-wrap: wrap;
   }
+  /* Pin the num to the top row, push the title to its own row
+     beneath so the serif heading actually reads as a title (it was
+     getting crammed onto one line with the mono kicker before). */
   body[data-trades-theme] .tr-section-num {
     font-family: var(--mono) !important;
-    font-size: .56rem !important;
-    letter-spacing: .22em !important;
-    color: #7d6a52 !important;
-    text-transform: uppercase;
-  }
-  body[data-trades-theme] .tr-section-title {
-    font-family: var(--serif) !important;
-    font-size: 1.05rem !important;
-    color: #f5e9c8 !important;
-    line-height: 1.2 !important;
-    flex: 1 1 100%;
-    font-weight: 400 !important;
-  }
-  body[data-trades-theme] .tr-section-title em {
+    font-weight: 700 !important;
+    font-size: .58rem !important;
+    letter-spacing: .25em !important;
     color: #c8a464 !important;
-    font-style: italic !important;
+    text-transform: uppercase;
+    flex: 1 1 auto;
   }
   body[data-trades-theme] .tr-section-meta {
     font-family: var(--mono) !important;
     font-size: .52rem !important;
-    letter-spacing: .14em !important;
+    letter-spacing: .16em !important;
     color: #7d6a52 !important;
-    margin-left: 0 !important;
+    margin-left: auto !important;
     text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  body[data-trades-theme] .tr-section-title {
+    font-family: var(--serif) !important;
+    font-size: 1.35rem !important;
+    color: #f5e9c8 !important;
+    line-height: 1.15 !important;
+    flex: 1 1 100% !important;
+    font-weight: 400 !important;
+    margin-top: .2rem;
+  }
+  body[data-trades-theme] .tr-section-title em {
+    color: #c8a464 !important;
+    font-style: italic !important;
   }
   body[data-trades-theme] .tr-section-empty {
     background: #1f160d !important;
@@ -141,44 +151,55 @@
   }
 
   /* ── Card ─────────────────────────────────────────── */
-  body[data-trades-theme] .tr-list { gap: .9rem; }
+  /* Bigger gap + shadow so each trade reads as its own card and not
+     a continuous stack. Subtle gold left rule reinforces the
+     "trade boundary" feel — same convention the analyzer's
+     :nth-of-type bar uses on stacked teams. */
+  body[data-trades-theme] .tr-list { gap: 1.25rem; }
   body[data-trades-theme] .tr-card {
     background: #322217 !important;
     border: 1px solid #4c3922 !important;
+    border-left: 3px solid #c8a464 !important;
     border-radius: 4px !important;
     padding: 0 !important;
     overflow: hidden;
     background-image: none !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35), 0 6px 14px rgba(0, 0, 0, .25);
   }
 
-  /* Card head — date / week / season / platform */
+  /* Card head — date / week / season / platform.
+     Bolder dateline strip so the trade boundary is unmistakable
+     and the metadata is more readable. */
   body[data-trades-theme] .tr-card-head {
     display: flex !important;
     flex-wrap: wrap !important;
     align-items: center !important;
-    gap: .4rem .8rem !important;
-    padding: .55rem .85rem !important;
+    gap: .35rem .8rem !important;
+    padding: .65rem .95rem !important;
     margin: 0 !important;
-    background: #2a1d12 !important;
+    background: #1f160d !important;
     border: none !important;
     border-bottom: 1px solid #4c3922 !important;
     font-family: var(--mono) !important;
-    font-size: .54rem !important;
-    letter-spacing: .14em !important;
+    font-weight: 700 !important;
+    font-size: .56rem !important;
+    letter-spacing: .18em !important;
     text-transform: uppercase !important;
     color: #9c8665 !important;
   }
   body[data-trades-theme] .tr-card-head::before,
   body[data-trades-theme] .tr-card-head::after { display: none !important; }
-  body[data-trades-theme] .tr-date { color: #c4ad84 !important; }
-  body[data-trades-theme] .tr-week { color: #c8a464 !important; }
+  body[data-trades-theme] .tr-date { color: #f5e9c8 !important; font-weight: 700 !important; }
+  body[data-trades-theme] .tr-week { color: #c8a464 !important; font-weight: 700 !important; }
   body[data-trades-theme] .tr-plat {
     margin-left: auto !important;
     border: 1px solid #4c3922 !important;
-    padding: 1px 6px !important;
-    border-radius: 2px !important;
+    padding: 2px 7px !important;
+    border-radius: 999px !important;
     color: #c4ad84 !important;
-    background: transparent !important;
+    background: rgba(200, 164, 100, .06) !important;
+    font-size: .5rem !important;
+    letter-spacing: .2em !important;
   }
 
   /* ── Summary ──────────────────────────────────────── */
@@ -204,20 +225,40 @@
   }
 
   /* ── Sides — single-column stack ───────────────────── */
+  /* A trade has 2+ sides. After they collapse to one column we lose
+     the side-by-side visual cue, so paint a tag stripe down each
+     side (gold on the first, sand on the second) and bump the
+     between-sides separator to a heavier dashed line. */
   body[data-trades-theme] .tr-sides {
     display: grid !important;
     grid-template-columns: 1fr !important;
-    gap: 1px !important;
-    background: #4c3922 !important;
+    gap: 0 !important;
+    background: transparent !important;
   }
   body[data-trades-theme] .tr-side {
     background: #322217 !important;
-    padding: .85rem .9rem !important;
+    padding: .9rem .95rem !important;
     gap: .55rem !important;
     border: none !important;
     box-shadow: none !important;
+    position: relative;
   }
-  body[data-trades-theme] .tr-side + .tr-side { border: none !important; }
+  body[data-trades-theme] .tr-side + .tr-side {
+    border: none !important;
+    border-top: 1px dashed #4c3922 !important;
+  }
+  /* Side tag stripe — runs the full height on the left edge */
+  body[data-trades-theme] .tr-side::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(1)::before { background: #c8a464; }
+  body[data-trades-theme] .tr-side:nth-of-type(2)::before { background: #c4ad84; }
+  body[data-trades-theme] .tr-side:nth-of-type(3)::before { background: #a8895c; }
+  /* Slight indent so the tag stripe doesn't clip the avatar */
+  body[data-trades-theme] .tr-side > * { padding-left: .25rem; }
   body[data-trades-theme] .tr-side-head {
     display: flex !important;
     align-items: center !important;
