@@ -82,14 +82,16 @@
 /* .mg-name color rules consolidated below (with !important to win over
    the body's default cream inheritance). */
 
-/* Active member names render bright cream; alumni stay muted cream so
-   past members are visibly "lower tier" without needing the opacity to
-   carry it. Reigning champion gets the actual saturated amber gold —
-   the default --gold token is so pale it reads as cream too. */
+/* Active member names render near-white (#fffaf0, "floral white") so
+   they pop unmistakably against the card — the body's default cream
+   is too close to the bg to read as a distinct highlight. Alumni stay
+   muted cream so past members read as "lower tier." Reigning champion
+   gets a saturated amber gold (the default --gold token is too pale
+   and reads as cream too). */
 .mg-name {
     min-width: 0; flex: 1;
     font-weight: 600; font-size: .95rem;
-    color: #fbf3e0 !important;
+    color: #fffaf0 !important;
 }
 .mg-alumni .mg-name { color: var(--cream-mute) !important; }
 .mg-ticket.is-reigning .mg-name { color: #f5b840 !important; }
