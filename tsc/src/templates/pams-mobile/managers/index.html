@@ -94,8 +94,8 @@
     color: #fffaf0 !important;
 }
 .mg-alumni .mg-name { color: var(--cream-mute) !important; }
-.mg-ticket.is-reigning .mg-name { color: #f5b840 !important; }
-.mg-alumni.is-reigning .mg-name { color: #f5b840 !important; }
+.mg-ticket.is-reigning .mg-name { color: var(--gold) !important; }
+.mg-alumni.is-reigning .mg-name { color: var(--gold) !important; }
 /* Two-row layout: name on top, small ("Team · tenure" + championship
    pills) below. The small is a flex row so the team name ellipsizes
    while the tenure tail + pills hug the right and never wrap. */
@@ -253,7 +253,7 @@
         // when something downstream (cache, an unrelated rule) is
         // suppressing the change.
         var nameColor = m.is_reigning_champion
-            ? '#f5b840'                   // reigning: saturated amber gold
+            ? 'var(--gold)'               // reigning: same gold as the ticket border
             : isAlumni
                 ? 'var(--cream-mute)'     // alumni: muted cream
                 : '#fffaf0';              // active: bright floral white
