@@ -33,28 +33,36 @@
        --tg-c           side C accent (for 3-way trades)
        grade colors:   A green | B gold | C sand | D/F coral
      ──────────────────────────────────────────────────────── */
+  /* Aubergine + copper palette. Distinct from the other Trade Desk
+     rooms which already cover the available cool spectrum:
+       Analyzer  → drafting blue
+       Finder    → sea-green / pine
+       Rumor Mill → maroon + coral
+       Trade Desk → walnut
+     Grader stakes out deep aubergine/plum with warm copper accents,
+     mint and orchid for the side colors. */
   body,
   body[data-trades-theme="cards"],
   body[data-trades-theme="tribunal"],
   body[data-trades-theme="wire"],
   body[data-trades-theme="floor"] {
-    --tg-bg:        #0d1117;
-    --tg-bg-edge:   #11161e;
-    --tg-card:      #161b22;
-    --tg-card-head: #0f1419;
-    --tg-line:      #2d3441;
-    --tg-line-soft: #1f2632;
-    --tg-mute:      #8a96a8;
-    --tg-text:      #e6edf3;
-    --tg-text-em:   #f0c878;
-    --tg-gold:      #d8b15a;
-    --tg-a:         #5cbda1;
-    --tg-b:         #e08b5c;
-    --tg-c:         #c489d6;
+    --tg-bg:        #14101c;
+    --tg-bg-edge:   #1c1626;
+    --tg-card:      #1f1830;
+    --tg-card-head: #161020;
+    --tg-line:      #3a2e50;
+    --tg-line-soft: #261d38;
+    --tg-mute:      #968aa6;
+    --tg-text:      #ede5f5;
+    --tg-text-em:   #e8a26c;
+    --tg-gold:      #d49260;
+    --tg-a:         #7fc7a3;
+    --tg-b:         #c98ed1;
+    --tg-c:         #d4a36e;
 
     background: var(--tg-bg) !important;
     background-image:
-      radial-gradient(ellipse 120% 60% at 50% -10%, rgba(108, 152, 200, .08), transparent 60%),
+      radial-gradient(ellipse 120% 60% at 50% -10%, rgba(232, 162, 108, .08), transparent 60%),
       linear-gradient(180deg, var(--tg-bg-edge) 0%, var(--tg-bg) 30%) !important;
     color: var(--tg-text) !important;
     font-family: var(--serif);
@@ -107,12 +115,13 @@
   }
   /* Title uses Oswald (condensed display sans, news-headline feel) so
      the masthead reads as a ticker rather than the elegant DM Serif
-     used elsewhere. Loaded in the mobile grader template. */
+     used elsewhere. Sized to match Analyzer + Finder headlines on
+     mobile so the four Trade Desk rooms feel proportionate. */
   body[data-trades-theme] .tr-page-title {
     font-family: 'Oswald', var(--serif) !important;
-    font-size: clamp(2.2rem, 10vw, 3rem) !important;
+    font-size: clamp(1.85rem, 8vw, 2.3rem) !important;
     font-weight: 700 !important;
-    line-height: 1 !important;
+    line-height: 1.05 !important;
     color: var(--tg-text) !important;
     text-transform: uppercase !important;
     letter-spacing: -.005em !important;
@@ -267,7 +276,13 @@
     letter-spacing: .22em !important;
   }
 
-  /* ── Summary ─────────────────────────────────────── */
+  /* ── Summary ───────────────────────────────────────
+     Padding tuned so the body text starts at the same X as the
+     section-label dash below and the player asset content rows.
+     All three settle at 1.55rem from the card edge:
+       side padding 1rem  + asset padding .55rem = 1.55rem (assets)
+       side padding 1rem  + label padding .55rem = 1.55rem (dash)
+       summary padding 1.55rem                   = 1.55rem (summary text) */
   body[data-trades-theme] .tr-summary {
     font-family: var(--serif) !important;
     font-style: italic !important;
@@ -275,7 +290,7 @@
     line-height: 1.55 !important;
     color: var(--tg-text) !important;
     background: rgba(216, 177, 90, .03) !important;
-    padding: .95rem 1rem !important;
+    padding: .95rem 1.55rem !important;
     margin: 0 !important;
     border: none !important;
     border-bottom: 1px solid var(--tg-line-soft) !important;
@@ -284,7 +299,7 @@
   body[data-trades-theme] .tr-summary::before {
     content: '“';
     position: absolute;
-    left: .55rem; top: .35rem;
+    left: 1rem; top: .35rem;
     font-family: var(--serif);
     font-size: 1.8rem;
     line-height: 1;
@@ -298,7 +313,11 @@
      bottom. Only style padding; let the base + .is-folded rules
      control display. Mobile shows one more line than desktop
      (4 vs 3) before clamping. */
-  body[data-trades-theme] .tr-summary-text { padding-left: .85rem; }
+  /* The summary's open-quote glyph sits in the .tr-summary padding,
+     not the text — so the text needs no extra left padding. Without
+     this reset the inherited base style pushes the body text past
+     where the section dash starts below. */
+  body[data-trades-theme] .tr-summary-text { padding-left: 0 !important; }
   body[data-trades-theme] .tr-summary-text:not(.is-folded) { display: block; }
   body[data-trades-theme] .tr-summary-text.is-folded { -webkit-line-clamp: 4; }
   body[data-trades-theme] .tr-summary-text::before { content: none !important; }
@@ -409,6 +428,9 @@
     border-radius: 0 !important;
     width: fit-content;
   }
+  body[data-trades-theme] .tr-side-label {
+    padding-left: .55rem;
+  }
   body[data-trades-theme] .tr-side-label::before {
     content: '';
     display: inline-block;
@@ -432,7 +454,7 @@
     background: rgba(255, 255, 255, .025) !important;
     border: 1px solid var(--tg-line-soft) !important;
     border-radius: 4px !important;
-    padding: .4rem .6rem !important;
+    padding: .4rem .55rem !important;
     font-size: .85rem !important;
     color: var(--tg-text) !important;
   }

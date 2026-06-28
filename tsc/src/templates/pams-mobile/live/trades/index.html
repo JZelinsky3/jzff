@@ -33,6 +33,11 @@
     --ink-blue:   #3e639a;
     --ink-green:  #2e6b5c;
     --ink-oxblood:#7e2f2c;
+    /* Trade Grader: aubergine + copper. Plum stripe on the Grader
+       room card, copper emphasis text. Matches the Grader page's
+       new palette so the hub card previews the interior. */
+    --ink-plum:    #5a3a6e;
+    --ink-copper:  #c87d4d;
     --m-chrome-bg:  rgb(24, 15, 8);
     --m-chrome-bg2: rgb(28, 18, 10);
 }
@@ -109,11 +114,11 @@ body {
 
 .td-card[data-room="I"] {
     background:
-      linear-gradient(90deg, transparent 0 1.5rem, rgba(224, 139, 92, .32) 1.5rem calc(1.5rem + 1px), transparent calc(1.5rem + 1px)),
-      repeating-linear-gradient(180deg, transparent 0 21px, rgba(140, 90, 60, .14) 21px 22px),
+      linear-gradient(90deg, transparent 0 1.5rem, rgba(90, 58, 110, .35) 1.5rem calc(1.5rem + 1px), transparent calc(1.5rem + 1px)),
+      repeating-linear-gradient(180deg, transparent 0 21px, rgba(90, 58, 110, .12) 21px 22px),
       linear-gradient(180deg, #f0e4c8, #e8d9b6);
 }
-.td-card[data-room="I"] .td-card-tag, .td-card[data-room="I"] .td-card-title em { color: var(--ink-coral); }
+.td-card[data-room="I"] .td-card-tag, .td-card[data-room="I"] .td-card-title em { color: var(--ink-copper); }
 
 .td-card[data-room="II"] {
     background:

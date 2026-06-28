@@ -37,7 +37,6 @@ import {
 import { resolveStages, type IngestStages } from './stages'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
-import { sleeper } from '@/lib/platforms/sleeper'
 
 export type IngestResult = {
   ok: boolean
@@ -784,17 +783,9 @@ async function ingestSeason(args: {
     return r
   }
 
-  // End-of-season rank stamp. ESPN doesn't expose a clean "league is
-  // complete" flag without an extra view fetch — compare against
-  // Sleeper's NFL clock to decide. Anything older than the current NFL
-  // season is by definition complete; the current season skips rank_now
-  // and relies on the 4-week revisit job once trades age into it.
-  const sleeperClock = await sleeper.state().catch(() => null)
-  const currentNflYear = sleeperClock
-    ? Number(sleeperClock.season)
-    : new Date().getFullYear()
-  const seasonIsComplete = year < currentNflYear
-  const finalRanks = seasonIsComplete ? await ranksForWeek(18) : null
+  // rank_now is owned by the verdict revisit pass (tradeGrader.ts), not
+  // ingest. Old trades show one rank (rank_at_trade); the verdict adds
+  // the second rank when it runs.
 
   let txs: EspnTransaction[] = []
   try {
@@ -907,16 +898,9 @@ async function ingestSeason(args: {
           result.warnings.push(`Season ${year} trade ${externalTradeId}: team ${tid} has no manager mapping; side skipped`)
           continue
         }
-        let stampedAssets = ranks
+        const stampedAssets = ranks
           ? await stampRanks(assets, { ranks, platform: 'espn' })
           : assets
-        if (finalRanks) {
-          stampedAssets = await stampRanks(stampedAssets, {
-            ranks: finalRanks,
-            platform: 'espn',
-            field: 'rank_now',
-          })
-        }
         const { error: sideErr } = await db.from('trade_sides').insert({
           trade_id: tradeRow.id,
           manager_id: managerId,

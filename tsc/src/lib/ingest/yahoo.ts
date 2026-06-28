@@ -29,7 +29,7 @@ import {
   type YahooTeam,
   type YahooLeagueMeta,
 } from '@/lib/platforms/yahoo'
-import { parallelLimit, sleeper as sleeperClient } from '@/lib/platforms/sleeper'
+import { parallelLimit } from '@/lib/platforms/sleeper'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, type IngestStages } from './stages'
@@ -607,14 +607,9 @@ export async function ingestYahooSource(
       return Math.min(17, Math.max(1, Math.floor(daysSince / 7) + 1))
     }
 
-    // Final-of-season ranks (rank_now). Stamped only for completed
-    // seasons — Sleeper's NFL clock tells us the current year.
-    const sleeperClock = await sleeperClient.state().catch(() => null)
-    const currentNflYear = sleeperClock
-      ? Number(sleeperClock.season)
-      : new Date().getFullYear()
-    const seasonIsComplete = year < currentNflYear
-    const finalRanks = seasonIsComplete ? await ranksForWeek(18) : null
+    // rank_now is owned by the verdict revisit pass (tradeGrader.ts),
+    // not ingest. Old trades show one rank (rank_at_trade); the verdict
+    // adds the second rank when it runs.
 
     let yahooTxs: Awaited<ReturnType<typeof getLeagueTransactions>> = []
     try {
@@ -697,16 +692,9 @@ export async function ingestYahooSource(
       for (const [teamKey, assets] of assetsByTeamKey) {
         const managerId = teamKeyToManagerId.get(teamKey)
         if (!managerId) continue
-        let stampedAssets = ranks
+        const stampedAssets = ranks
           ? await stampRanks(assets, { ranks, platform: 'yahoo' })
           : assets
-        if (finalRanks) {
-          stampedAssets = await stampRanks(stampedAssets, {
-            ranks: finalRanks,
-            platform: 'yahoo',
-            field: 'rank_now',
-          })
-        }
         const { error: sideErr } = await db.from('trade_sides').insert({
           trade_id: tradeRow.id,
           manager_id: managerId,
