@@ -333,41 +333,28 @@
   body[data-trades-theme] .tr-side + .tr-side {
     border-top: 1px dashed var(--tg-line) !important;
   }
-  /* No per-side left rail — it stacked under the card's gold rail and
-     read as a confusing color sandwich on the outer card edge. The
-     Side A/B chip + colored avatar ring + asset border-left tints all
-     carry the side accent now without duplicating it as a rail. */
+  /* No per-side decoration on the card edge — earlier passes had a
+     colored rail, then a corner chip, then a colored avatar ring. All
+     three competed visually and the user couldn't read the chip behind
+     the colored elements above it. Single signal now: the section
+     LABEL ("Side A · Received") carries the side accent color, and
+     the asset-row left borders below echo it. Avatar stays neutral.
 
-  /* "SIDE A" / "SIDE B" chip pinned to the top-right corner */
-  body[data-trades-theme] .tr-side::after {
-    position: absolute;
-    top: .8rem; right: .9rem;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .48rem;
-    letter-spacing: .22em;
-    text-transform: uppercase;
-    color: var(--side-accent);
-    background: rgba(255, 255, 255, .03);
-    border: 1px solid var(--side-accent);
-    padding: 2px 7px;
-    border-radius: 999px;
-    opacity: .9;
-  }
-  body[data-trades-theme] .tr-side:nth-of-type(1)::after { content: 'Side A'; }
-  body[data-trades-theme] .tr-side:nth-of-type(2)::after { content: 'Side B'; }
-  body[data-trades-theme] .tr-side:nth-of-type(3)::after { content: 'Side C'; }
+     The label text itself is rendered by trades.js as "Received". We
+     prepend "Side A · " / "Side B · " via ::before so the markup
+     stays unchanged. */
+  body[data-trades-theme] .tr-side::after { content: none !important; }
 
   body[data-trades-theme] .tr-side-head {
     display: flex !important;
     align-items: center !important;
     gap: .7rem !important;
-    padding-right: 4rem; /* leave room for the SIDE A/B chip */
+    padding-right: 0;
   }
   body[data-trades-theme] .tr-side-avatar {
     width: 36px !important; height: 36px !important;
     border-radius: 50% !important;
-    border: 2px solid var(--side-accent) !important;
+    border: 1px solid var(--tg-line) !important;
     background: var(--tg-card-head) !important;
     object-fit: cover !important;
     flex-shrink: 0;
@@ -390,13 +377,36 @@
     text-transform: uppercase !important;
     margin-top: .15rem;
   }
+  /* The side-identity label. trades.js renders just "Received"; we
+     prepend "Side A · " / "Side B · " here so the markup stays
+     unchanged. The whole line picks up the side accent color, which
+     is the only visual signal of which side this is — clean, single
+     source of truth. */
   body[data-trades-theme] .tr-side-label {
     font-family: var(--mono) !important;
     font-weight: 700 !important;
-    font-size: .5rem !important;
-    letter-spacing: .28em !important;
+    font-size: .54rem !important;
+    letter-spacing: .25em !important;
     color: var(--side-accent) !important;
     text-transform: uppercase !important;
+    opacity: 1;
+    display: inline-block;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid var(--side-accent);
+    border-radius: 999px;
+    width: fit-content;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(1) .tr-side-label::before {
+    content: 'Side A · ';
+    opacity: .85;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-label::before {
+    content: 'Side B · ';
+    opacity: .85;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(3) .tr-side-label::before {
+    content: 'Side C · ';
     opacity: .85;
   }
 

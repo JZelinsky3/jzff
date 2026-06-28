@@ -128,9 +128,11 @@
                 document.getElementById('emptyMsg').hidden = false;
                 return;
             }
-            // Most decorated first within each group.
+            // Sort by total wins first — championships are a decorative
+            // signal but raw wins are the truer "who's been the better
+            // manager?" question. Ties broken by win pct, then name.
             managers.sort(function (a, b) {
-                return (b.championships - a.championships) || (b.win_pct - a.win_pct) || a.name.localeCompare(b.name);
+                return (b.wins - a.wins) || (b.win_pct - a.win_pct) || a.name.localeCompare(b.name);
             });
             var current = managers.filter(function (m) { return m.is_current; });
             var alumni = managers.filter(function (m) { return !m.is_current; });
