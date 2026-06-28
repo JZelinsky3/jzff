@@ -1059,13 +1059,27 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
     s.seasons.filter((sn) => sn.is_live).map((sn) => sn.id)
   )
 
+  // ALSO require at least one game played in the season. The is_live flag
+  // alone isn't enough — re-activated leagues sometimes carry a
+  // manager_season row for a brand-new season that hasn't been drafted
+  // yet (is_live = null/false but zero matchups). Counting that inflates
+  // seasons_played by 1.
+  const playedSeasonIds = new Set<string>()
+  for (const mid of g.managerIds) {
+    for (const m of s.matchupsByManager.get(mid) ?? []) {
+      playedSeasonIds.add(m.season_id)
+    }
+  }
+
   // Union manager_seasons across all platform identities in this profile.
   const mss: ManagerSeasonRow[] = []
   for (const mid of g.managerIds) {
     const rows = s.managerSeasonsByManager.get(mid)
     if (rows) {
       for (const r of rows) {
-        if (!liveSeasonIds.has(r.season_id)) mss.push(r)
+        if (liveSeasonIds.has(r.season_id)) continue
+        if (!playedSeasonIds.has(r.season_id)) continue
+        mss.push(r)
       }
     }
   }
@@ -1221,6 +1235,15 @@ function buildManagersDirectory(s: Snapshot): unknown {
     return ''
   }
 
+  // Most recent COMPLETED season + its champion. Used to flag the
+  // reigning-champion profile so the UI can give that one row the gold
+  // name color instead of cream.
+  const completedSeasons = s.seasons.filter((sn) => !sn.is_live)
+  const mostRecentCompleted = completedSeasons.length
+    ? completedSeasons.reduce((a, b) => (a.year >= b.year ? a : b))
+    : null
+  const reigningChampionManagerId = mostRecentCompleted?.champion_manager_id ?? null
+
   const managers = buildProfileGroups(s)
     .filter((g) => !isGroupHidden(g))
     .map((g) => {
@@ -1239,10 +1262,22 @@ function buildManagersDirectory(s: Snapshot): unknown {
           const yb = s.seasons.find((sn) => sn.id === b.season_id)?.year ?? 0
           return yb - ya
         })[0]
-      // Average final finish across completed seasons that have a rank.
+      // Average final finish across COMPLETED seasons that have a final
+      // rank AND at least one game played. Live seasons skip out; so do
+      // re-activated empty seasons with a row but no matchups. avg_finish
+      // never moves mid-season — only completed seasons get folded in.
       const liveIds = new Set(s.seasons.filter((sn) => sn.is_live).map((sn) => sn.id))
+      const playedIds = new Set<string>()
+      for (const mid of g.managerIds) {
+        for (const m of s.matchupsByManager.get(mid) ?? []) playedIds.add(m.season_id)
+      }
       const ranks = allMs
-        .filter((ms) => !liveIds.has(ms.season_id) && ms.final_rank != null)
+        .filter(
+          (ms) =>
+            !liveIds.has(ms.season_id) &&
+            ms.final_rank != null &&
+            playedIds.has(ms.season_id),
+        )
         .map((ms) => ms.final_rank as number)
       const avg_finish = ranks.length
         ? Math.round((ranks.reduce((a, b) => a + b, 0) / ranks.length) * 10) / 10
@@ -1263,6 +1298,9 @@ function buildManagersDirectory(s: Snapshot): unknown {
         nfl_display_name: g.primary.display_name,
         team_latest: lastMs?.team_name ?? g.primary.team_name ?? name,
         is_current: isGroupCurrent(g, autoCurrent),
+        is_reigning_champion:
+          reigningChampionManagerId != null &&
+          g.managerIds.has(reigningChampionManagerId),
         seasons_played: agg.seasons_played,
         wins,
         losses,
@@ -1293,11 +1331,27 @@ function buildManagerFile(s: Snapshot, g: ProfileGroup): unknown {
   // Union manager_seasons across all platform identities in the profile.
   const allMss: ManagerSeasonRow[] = []
   for (const mid of g.managerIds) allMss.push(...(s.managerSeasonsByManager.get(mid) ?? []))
-  const mss = allMss.slice().sort((a, b) => {
-    const ya = s.seasons.find((sn) => sn.id === a.season_id)?.year ?? 0
-    const yb = s.seasons.find((sn) => sn.id === b.season_id)?.year ?? 0
-    return ya - yb
-  })
+
+  // Drop seasons the profile hasn't actually played a game in yet — a
+  // re-activated league or a pre-draft 2026 season can have a
+  // manager_season row on the books without ever showing up in the
+  // matchup ledger. Counting those as "played" inflates seasons_played
+  // and pollutes the season ledger with empty 0-0 rows. A season counts
+  // only once the manager has at least one game registered for it.
+  const playedSeasonIds = new Set<string>()
+  for (const mid of g.managerIds) {
+    for (const m of s.matchupsByManager.get(mid) ?? []) {
+      playedSeasonIds.add(m.season_id)
+    }
+  }
+  const mss = allMss
+    .filter((ms) => playedSeasonIds.has(ms.season_id))
+    .slice()
+    .sort((a, b) => {
+      const ya = s.seasons.find((sn) => sn.id === a.season_id)?.year ?? 0
+      const yb = s.seasons.find((sn) => sn.id === b.season_id)?.year ?? 0
+      return ya - yb
+    })
 
   const totalGames = agg.reg_wins + agg.reg_losses + agg.reg_ties + agg.playoff_wins + agg.playoff_losses + agg.playoff_ties
   const totalReg = agg.reg_wins + agg.reg_losses + agg.reg_ties

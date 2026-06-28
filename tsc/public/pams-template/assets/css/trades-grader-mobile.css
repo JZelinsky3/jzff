@@ -56,7 +56,7 @@
     --tg-text:      #ede5f5;
     --tg-text-em:   #e8a26c;
     --tg-gold:      #d49260;
-    --tg-a:         #7fc7a3;
+    --tg-a:         #9eb280;
     --tg-b:         #c98ed1;
     --tg-c:         #d4a36e;
 
@@ -113,24 +113,26 @@
     width: 18px; height: 1px;
     background: var(--tg-gold);
   }
-  /* Title uses Oswald (condensed display sans, news-headline feel) so
-     the masthead reads as a ticker rather than the elegant DM Serif
-     used elsewhere. Sized to match Analyzer + Finder headlines on
-     mobile so the four Trade Desk rooms feel proportionate. */
+  /* Title uses Playfair Display — high-contrast literary serif with a
+     newsroom/ledger vibe, fits a "desk" feel better than the news-
+     ticker Oswald it replaces. Italic em accent keeps the masthead
+     anchor on the copper accent. Sized to match Analyzer + Finder
+     headlines on mobile so the four Trade Desk rooms feel
+     proportionate. */
   body[data-trades-theme] .tr-page-title {
-    font-family: 'Oswald', var(--serif) !important;
-    font-size: clamp(1.85rem, 8vw, 2.3rem) !important;
+    font-family: 'Playfair Display', var(--serif) !important;
+    font-size: clamp(1.95rem, 8vw, 2.4rem) !important;
     font-weight: 700 !important;
     line-height: 1.05 !important;
     color: var(--tg-text) !important;
-    text-transform: uppercase !important;
-    letter-spacing: -.005em !important;
+    text-transform: none !important;
+    letter-spacing: -.015em !important;
     margin: 0 !important;
   }
   body[data-trades-theme] .tr-page-title em {
     color: var(--tg-text-em) !important;
     font-style: italic !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
   }
 
   /* ── Tabs ─────────────────────────────────────────── */
@@ -300,6 +302,18 @@
     content: '“';
     position: absolute;
     left: 1rem; top: .35rem;
+    font-family: var(--serif);
+    font-size: 1.8rem;
+    line-height: 1;
+    color: var(--tg-gold);
+    opacity: .35;
+  }
+  /* Closing quote sits in the bottom-right gutter, mirroring the
+     opening one. Same opacity + size for visual symmetry. */
+  body[data-trades-theme] .tr-summary::after {
+    content: '”';
+    position: absolute;
+    right: 1rem; bottom: -.1rem;
     font-family: var(--serif);
     font-size: 1.8rem;
     line-height: 1;
