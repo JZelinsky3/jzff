@@ -79,41 +79,53 @@
 .mg-ticket.is-reigning .mg-stub { border-right-color: rgba(232,200,137,.55); }
 .mg-ticket.is-reigning::before, .mg-ticket.is-reigning::after { border-color: var(--gold); }
 .mg-ticket.is-reigning .mg-ava { border-color: var(--gold); background: rgba(232,200,137,.1); }
-.mg-ticket.is-reigning .mg-name { color: var(--gold); }
+/* .mg-name color rules consolidated below (with !important to win over
+   the body's default cream inheritance). */
 
-.mg-name { min-width: 0; flex: 1; font-weight: 600; font-size: .95rem; color: var(--cream); }
-/* Two-row layout inside the body: name on top, small ("Team · tenure"
-   + championship pills) on the row below. The small is display:block
-   so it always wraps to its own row; pills inline-flex within it. */
+/* Main top-row name in bright cream so it pops against the card. Bumped
+   one notch warmer than the page's default body cream so the row reads
+   as "this is a person" instead of blending into surrounding mono. */
+.mg-name {
+    min-width: 0; flex: 1;
+    font-weight: 600; font-size: .95rem;
+    color: #fbf3e0 !important;
+}
+.mg-ticket.is-reigning .mg-name { color: var(--gold) !important; }
+.mg-alumni .mg-name { color: var(--cream-soft) !important; }
+.mg-alumni.is-reigning .mg-name { color: var(--gold) !important; }
+/* Two-row layout: name on top, small ("Team · tenure" + championship
+   pills) below. The small is a flex row so the team name ellipsizes
+   while the tenure tail + pills hug the right and never wrap. */
 .mg-name small {
-    display: block;
+    display: flex;
+    align-items: baseline;
+    gap: 0;
     font-weight: 400; font-size: .7rem; color: var(--cream-mute);
     margin-top: 2px;
     line-height: 1.35;
+    width: 100%;
+    min-width: 0;
 }
-/* Team name (subtitle line) stays in the muted color — the main name
-   above carries the cream/gold treatment. Long team names auto-shrink
-   so the "5 seasons" tenure tail + championship pills don't wrap to a
-   new row. The scaling lives on the .mg-team element itself; the
-   tenure stays at the standard subtitle size. */
 .mg-team {
-    color: inherit;
-    font-size: clamp(.58rem, 2.4vw, .7rem);
-    line-height: 1;
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: .68rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 60%;
-    display: inline-block;
-    vertical-align: baseline;
 }
+/* Tenure tail + pills are pinned to the right side of the line and
+   share `flex: none` so they never compress and never wrap. The team
+   name above shrinks via min-width:0 + ellipsis to make room. */
 .mg-tenure {
-    color: inherit;
+    flex: none;
     white-space: nowrap;
+    margin-left: .15rem;
 }
 /* Championship-year pills — small gold mono pills, one per year,
    inline next to the tenure line under the name. */
 .mg-champ-pill {
+    flex: none;
     display: inline-flex;
     align-items: center;
     padding: 0 5px;
@@ -127,14 +139,14 @@
     font-size: .52rem;
     letter-spacing: .06em;
     line-height: 1.4;
-    vertical-align: 1px;
 }
 .mg-rings { flex: none; color: var(--gold); font-size: .7rem; letter-spacing: .08em; }
 .mg-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--cream-soft); text-align: right; }
 .mg-rec small { display: block; font-weight: 400; font-size: .56rem; color: var(--cream-mute); }
 .mg-alumni { opacity: .82; }
-.mg-alumni .mg-name, .mg-alumni .mg-ava { color: var(--cream-mute); }
-.mg-alumni.is-reigning .mg-name { color: var(--gold); }
+.mg-alumni .mg-ava { color: var(--cream-mute); }
+/* Alumni .mg-name color is set above with !important (alongside the
+   reigning override) so it wins over the bright cream default. */
 </style>
 </head>
 <body>
