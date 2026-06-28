@@ -1244,10 +1244,16 @@ function buildManagersDirectory(s: Snapshot): unknown {
 
   // Most recent COMPLETED season + its champion. Used to flag the
   // reigning-champion profile so the UI can give that one row the gold
-  // name color instead of cream.
-  const completedSeasons = s.seasons.filter((sn) => !sn.is_live)
-  const mostRecentCompleted = completedSeasons.length
-    ? completedSeasons.reduce((a, b) => (a.year >= b.year ? a : b))
+  // name color instead of cream. We require a non-null
+  // champion_manager_id, not just !is_live — Sleeper / NFL leagues
+  // sometimes have a 2026 row that wasn't marked is_live yet but
+  // obviously has no champion. Filtering on champion_manager_id makes
+  // the detection robust to whatever the is_live flag's state is.
+  const championedSeasons = s.seasons.filter(
+    (sn) => sn.champion_manager_id != null,
+  )
+  const mostRecentCompleted = championedSeasons.length
+    ? championedSeasons.reduce((a, b) => (a.year >= b.year ? a : b))
     : null
   const reigningChampionManagerId = mostRecentCompleted?.champion_manager_id ?? null
 
