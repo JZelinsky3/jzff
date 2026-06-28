@@ -16,6 +16,7 @@
 }
 .mp-ava {
     flex: none;
+    position: relative; overflow: hidden;
     width: 64px; height: 64px;
     border-radius: 50%;
     border: 1px solid var(--gold-deep);
@@ -23,6 +24,11 @@
     display: flex; align-items: center; justify-content: center;
     font-family: var(--serif);
     font-size: 1.7rem; color: var(--gold);
+}
+.mp-ava img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
 }
 .mp-name {
     font-family: var(--serif);
@@ -76,7 +82,24 @@
     border-radius: 999px;
     padding: .15rem .5rem;
 }
-.mp-led-rank.is-title { border-color: var(--gold-deep); color: var(--gold); }
+/* Podium tints. Title (1st) keeps the star; silver/bronze get the same
+   pill highlight without the glyph — the colored border + colored text
+   carries the rank. */
+.mp-led-rank.is-title {
+    border-color: var(--gold-deep);
+    color: var(--gold);
+    background: rgba(232, 200, 137, .08);
+}
+.mp-led-rank.is-silver {
+    border-color: rgba(220, 220, 230, .55);
+    color: #d8dce4;
+    background: rgba(220, 220, 230, .08);
+}
+.mp-led-rank.is-bronze {
+    border-color: rgba(205, 130, 80, .55);
+    color: #d89469;
+    background: rgba(205, 130, 80, .08);
+}
 .mp-led-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .7rem; color: var(--cream-soft); text-align: right; }
 .mp-led-rec small { display: block; font-weight: 400; font-size: .56rem; color: var(--cream-mute); }
 
@@ -153,7 +176,13 @@
         }
         document.title = m.name + ' · {{LEAGUE_NAME}}';
         document.getElementById('head').hidden = false;
-        document.getElementById('ava').textContent = (m.name || '?').trim().charAt(0).toUpperCase();
+        // Avatar: platform-pulled image when available, initial fallback
+        // when it's missing or 404s. Same pattern the managers index uses.
+        var initial = (m.name || '?').trim().charAt(0).toUpperCase();
+        var avaImg = m.avatar
+            ? '<img src="' + esc(m.avatar) + '" alt="" loading="lazy" onerror="this.remove()">'
+            : '';
+        document.getElementById('ava').innerHTML = esc(initial) + avaImg;
         document.getElementById('name').innerHTML = '<em>' + esc(m.name) + '</em>';
         document.getElementById('kicker').textContent =
             (m.is_current ? 'Active member' : 'Alumni') + ' · ' +
@@ -189,9 +218,15 @@
         if (ledger.length) {
             document.getElementById('ledgerSection').hidden = false;
             document.getElementById('ledger').innerHTML = ledger.map(function (s) {
-                var isTitle = s.final_rank === 1;
+                // Podium tints: 1st keeps the star + gold, 2nd/3rd get
+                // silver/bronze pill highlight (no star — saved for 1st).
+                var podiumClass = '';
+                if (s.final_rank === 1) podiumClass = ' is-title';
+                else if (s.final_rank === 2) podiumClass = ' is-silver';
+                else if (s.final_rank === 3) podiumClass = ' is-bronze';
+                var rankLabel = s.final_rank === 1 ? '✦ 1st' : ordinal(s.final_rank);
                 var rank = s.final_rank
-                    ? '<span class="mp-led-rank' + (isTitle ? ' is-title' : '') + '">' + (isTitle ? '✦ 1st' : ordinal(s.final_rank)) + '</span>'
+                    ? '<span class="mp-led-rank' + podiumClass + '">' + rankLabel + '</span>'
                     : '';
                 return '<a class="m-list-row" href="seasons/season.html?year=' + s.year + '">' +
                     '<span class="mp-year">' + s.year + '</span>' +

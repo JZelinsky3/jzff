@@ -1426,10 +1426,28 @@ function buildManagerFile(s: Snapshot, g: ProfileGroup): unknown {
 
   const tagline = `${agg.seasons_played} season${agg.seasons_played === 1 ? '' : 's'} of league history. ${agg.championships} championship${agg.championships === 1 ? '' : 's'}.`
 
+  // Most-recent avatar_url across the profile group's identities, newest
+  // season first — same walk as the directory's avatar pick so the
+  // profile page header matches the index card.
+  let avatar = ''
+  for (let i = s.seasons.length - 1; i >= 0 && !avatar; i--) {
+    const mss = s.managerSeasonsBySeason.get(s.seasons[i].id) ?? []
+    for (const ms of mss) {
+      if (g.managerIds.has(ms.manager_id) && ms.avatar_url) {
+        avatar = ms.avatar_url
+        break
+      }
+    }
+  }
+  if (!avatar) {
+    for (const m of g.managers) if (m.avatar_url) { avatar = m.avatar_url; break }
+  }
+
   return {
     user_id: userId(manager),
     name: groupDisplayName(g),
     nfl_display_name: manager.display_name,
+    avatar,
     is_current: isGroupCurrent(g, currentManagerIdSet(s)),
     is_hidden: isGroupHidden(g),
     tagline,
