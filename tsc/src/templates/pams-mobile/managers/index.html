@@ -91,7 +91,16 @@
     margin-top: 2px;
     line-height: 1.35;
 }
+/* Team name pops in cream so it reads as the secondary identity line
+   under each manager's display name. The tenure tail ("· 5 seasons")
+   stays in the muted color to keep the hierarchy. */
+.mg-team {
+    color: var(--cream);
+    font-weight: 500;
+}
+.mg-alumni .mg-team { color: var(--cream-soft); }
 .mg-tenure {
+    color: var(--cream-mute);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -220,7 +229,11 @@
             '<span class="mg-stub"><span class="mg-ava">' + esc(initial) + img + '</span></span>' +
             '<span class="mg-body">' +
                 '<span class="mg-name">' + esc(m.name) +
-                    '<small><span class="mg-tenure">' + esc(m.team_latest || '') + ' · ' + tenure + '</span>' + pills + '</small>' +
+                    '<small>' +
+                        '<span class="mg-team">' + esc(m.team_latest || '') + '</span>' +
+                        '<span class="mg-tenure"> · ' + tenure + '</span>' +
+                        pills +
+                    '</small>' +
                 '</span>' +
                 '<span class="mg-rec">' + esc(m.total_record) + '<small>' + (m.win_pct * 100).toFixed(0) + '% win</small></span>' +
             '</span>' +
