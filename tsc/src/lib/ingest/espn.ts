@@ -35,6 +35,8 @@ import {
   type EspnTransaction,
 } from '@/lib/platforms/espn'
 import { resolveStages, type IngestStages } from './stages'
+import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
+import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 export type IngestResult = {
   ok: boolean
@@ -763,6 +765,24 @@ async function ingestSeason(args: {
   // is one transaction with N items spanning ≥2 distinct teams; we group items
   // by team-as-receiver to build the per-side asset list.
   if (stages.trades) {
+  // Per-(year, week) position-rank cache for trade ingest. ESPN's per-
+  // league scoring rules don't 1:1 to Sleeper's scoring_settings; the
+  // default PPR profile covers most leagues. Per-platform scoring
+  // translation is a follow-up.
+  const ranksByWeek = new Map<number, Awaited<ReturnType<typeof computePositionRanks>>>()
+  async function ranksForWeek(week: number) {
+    let r = ranksByWeek.get(week)
+    if (r) return r
+    try {
+      r = await computePositionRanks({ season: year, throughWeek: week, scoring: DEFAULT_PPR_SCORING })
+    } catch (e) {
+      result.warnings.push(`Season ${year} W${week} ranks: ${e instanceof Error ? e.message : String(e)}`)
+      r = new Map()
+    }
+    ranksByWeek.set(week, r)
+    return r
+  }
+
   let txs: EspnTransaction[] = []
   try {
     txs = await fetchTransactions(String(lg.id), year, auth)
@@ -864,6 +884,9 @@ async function ingestSeason(args: {
       }
 
       await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
+      const weekForRanks = typeof t.scoringPeriodId === 'number' ? t.scoringPeriodId : null
+      const ranks = weekForRanks ? await ranksForWeek(weekForRanks) : null
+
       let sidesInserted = 0
       for (const [tid, assets] of assetsByTeam) {
         const managerId = teamToManagerId(tid)
@@ -871,10 +894,13 @@ async function ingestSeason(args: {
           result.warnings.push(`Season ${year} trade ${externalTradeId}: team ${tid} has no manager mapping; side skipped`)
           continue
         }
+        const stampedAssets = ranks
+          ? await stampRanks(assets, { ranks, platform: 'espn' })
+          : assets
         const { error: sideErr } = await db.from('trade_sides').insert({
           trade_id: tradeRow.id,
           manager_id: managerId,
-          assets,
+          assets: stampedAssets,
         })
         if (sideErr) {
           result.warnings.push(`Season ${year} trade ${externalTradeId} side team ${tid}: ${sideErr.message}`)

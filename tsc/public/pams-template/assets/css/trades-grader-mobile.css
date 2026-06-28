@@ -333,16 +333,12 @@
   body[data-trades-theme] .tr-side + .tr-side {
     border-top: 1px dashed var(--tg-line) !important;
   }
-  /* Colored left rail in the side's accent color */
-  body[data-trades-theme] .tr-side::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--side-accent);
-    opacity: .85;
-  }
-  /* "SIDE A" / "SIDE B" chip pinned to the top-left corner */
+  /* No per-side left rail — it stacked under the card's gold rail and
+     read as a confusing color sandwich on the outer card edge. The
+     Side A/B chip + colored avatar ring + asset border-left tints all
+     carry the side accent now without duplicating it as a rail. */
+
+  /* "SIDE A" / "SIDE B" chip pinned to the top-right corner */
   body[data-trades-theme] .tr-side::after {
     position: absolute;
     top: .8rem; right: .9rem;
@@ -460,6 +456,42 @@
     letter-spacing: .12em !important;
     color: var(--tg-mute) !important;
     text-transform: uppercase;
+  }
+  /* Season-to-date position rank chip — pinned to the right edge of the
+     asset row. Plain text "RB2" for fresh trades, or "RB2 → RB5" for
+     revisited verdicts so the reader can see the rank move during the
+     4-week window. */
+  body[data-trades-theme] .tr-asset-rank {
+    margin-left: auto !important;
+    flex-shrink: 0;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: .25rem !important;
+    font-family: var(--mono) !important;
+    font-weight: 700 !important;
+    font-size: .56rem !important;
+    letter-spacing: .1em !important;
+    color: var(--tg-text-em) !important;
+    background: rgba(216, 177, 90, .08) !important;
+    border: 1px solid rgba(216, 177, 90, .35) !important;
+    padding: 2px 7px !important;
+    border-radius: 999px !important;
+    text-transform: uppercase;
+  }
+  body[data-trades-theme] .tr-asset-rank-revisit {
+    background: rgba(255, 255, 255, .03) !important;
+    border-color: var(--tg-line) !important;
+  }
+  body[data-trades-theme] .tr-asset-rank-then {
+    color: var(--tg-mute) !important;
+    opacity: .85;
+  }
+  body[data-trades-theme] .tr-asset-rank-arrow {
+    color: var(--tg-mute) !important;
+    font-size: .54rem !important;
+  }
+  body[data-trades-theme] .tr-asset-rank-now {
+    color: var(--tg-text-em) !important;
   }
 
   /* ── Grade badges ─────────────────────────────────

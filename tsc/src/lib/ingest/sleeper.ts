@@ -16,6 +16,7 @@ import {
   type SleeperTransaction,
 } from '@/lib/platforms/sleeper'
 import { resolveStages, type IngestStages } from './stages'
+import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 
 export type IngestResult = {
   ok: boolean
@@ -632,6 +633,24 @@ export async function ingestSleeperSource(
       }
     }
 
+    // Per-(season, week) position-rank cache. Multiple trades land in the
+    // same week — refetching stats per trade would be wasteful. Computed
+    // lazily on first hit.
+    const ranksByWeek = new Map<number, Awaited<ReturnType<typeof computePositionRanks>>>()
+    const scoringSettings = lg.scoring_settings ?? {}
+    async function ranksForWeek(week: number) {
+      let r = ranksByWeek.get(week)
+      if (r) return r
+      try {
+        r = await computePositionRanks({ season: year, throughWeek: week, scoring: scoringSettings })
+      } catch (e) {
+        warnings.push(`Season ${year} W${week} ranks: ${e instanceof Error ? e.message : String(e)}`)
+        r = new Map()
+      }
+      ranksByWeek.set(week, r)
+      return r
+    }
+
     for (const t of seasonTrades) {
       // Build assets per roster_id participating in this trade.
       const assetsByRoster = new Map<number, Array<Record<string, unknown>>>()
@@ -712,6 +731,12 @@ export async function ingestSleeperSource(
       // manager_id) to preserve grade history across re-syncs.
       await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
 
+      // Stamp season-to-date position rank on each player asset, scoped
+      // to the trade's week. Trades with no week (rare — pre-season pick
+      // swaps) skip rank stamping; pick/FAAB-only sides still pass through.
+      const weekForRanks = t.week ?? null
+      const ranks = weekForRanks ? await ranksForWeek(weekForRanks) : null
+
       let sidesInserted = 0
       for (const [rid, assets] of assetsByRoster) {
         const managerId = userIdToManagerId(rosterToUserId.get(rid) ?? null)
@@ -719,10 +744,13 @@ export async function ingestSleeperSource(
           warnings.push(`Trade ${t.transaction_id}: roster ${rid} has no manager mapping; side skipped`)
           continue
         }
+        const stamped = ranks
+          ? await stampRanks(assets, { ranks, platform: 'sleeper' })
+          : assets
         const { error: sideErr } = await db.from('trade_sides').insert({
           trade_id: tradeRow.id,
           manager_id: managerId,
-          assets,
+          assets: stamped,
         })
         if (sideErr) {
           warnings.push(`Trade ${t.transaction_id} side r${rid}: ${sideErr.message}`)

@@ -20,7 +20,21 @@ const MAX_TRADES = 100
 const VERDICT_WINDOW_DAYS = 7
 
 export type TradeAsset =
-  | { kind: 'player'; player_id: string; name: string | null; position: string | null; team: string | null }
+  | {
+      kind: 'player'
+      player_id: string
+      name: string | null
+      position: string | null
+      team: string | null
+      // Season-to-date position rank under the league's scoring at the
+      // time the trade was ingested (e.g. "RB2"). Null when ingest
+      // couldn't resolve the player or the trade had no week. See
+      // src/lib/positionRanks.ts.
+      rank_at_trade?: string | null
+      // Same rank computed at the 4-week revisit pass for the verdict
+      // tab's "then → now" comparison.
+      rank_now?: string | null
+    }
   | { kind: 'pick'; season_year: number; round: number; original_owner_manager_id: string | null }
   | { kind: 'faab'; amount: number }
 

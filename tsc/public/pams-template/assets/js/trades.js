@@ -124,10 +124,26 @@
       var pos = a.position || '—';
       var team = a.team ? ' · ' + escapeHtml(a.team) : '';
       var name = a.name || ('Player ' + (a.player_id || ''));
+      // Rank chip: "RB2" at trade time, or "RB2 → RB5" for verdicts. Only
+      // rendered when ingest stamped a rank. Players the rank engine
+      // couldn't resolve (deep bench, kickers/defs in non-scoring leagues)
+      // just show without a chip — silent beats wrong.
+      var rankChip = '';
+      if (a.rank_now && a.rank_at_trade && a.rank_now !== a.rank_at_trade) {
+        rankChip =
+          '<span class="tr-asset-rank tr-asset-rank-revisit">' +
+            '<span class="tr-asset-rank-then">' + escapeHtml(a.rank_at_trade) + '</span>' +
+            '<span class="tr-asset-rank-arrow">→</span>' +
+            '<span class="tr-asset-rank-now">' + escapeHtml(a.rank_now) + '</span>' +
+          '</span>';
+      } else if (a.rank_at_trade) {
+        rankChip = '<span class="tr-asset-rank">' + escapeHtml(a.rank_at_trade) + '</span>';
+      }
       return '<div class="tr-asset kind-player">' +
         '<span class="tr-asset-pos">' + escapeHtml(pos) + '</span>' +
         '<span class="tr-asset-name">' + escapeHtml(name) + '</span>' +
         '<span class="tr-asset-team">' + team + '</span>' +
+        rankChip +
       '</div>';
     }
     if (a.kind === 'pick') {

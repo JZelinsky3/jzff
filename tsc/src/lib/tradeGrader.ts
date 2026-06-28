@@ -18,6 +18,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { groqChatJson, GroqError } from '@/lib/groq'
 import { getSleeperValuesForPlayerIds, type PlayerValue } from '@/lib/playerValues'
 import { sleeper } from '@/lib/platforms/sleeper'
+import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
+import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 const MODEL = 'llama-3.3-70b-versatile'
 
@@ -438,6 +440,37 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
       continue
     }
     revised++
+  }
+
+  // Stamp `rank_now` on each side's player assets — the 4-week verdict
+  // snapshot. computePositionRanks fetches Sleeper weekly stats up to
+  // (trade.week + 4) and ranks within position, same as ingest does for
+  // rank_at_trade. Default PPR scoring is used here regardless of the
+  // league's actual ruleset; matching exact custom scoring is a follow-up
+  // when we surface platform-specific scoring extraction.
+  if (trade.week && season?.year) {
+    const verdictWeek = Math.min(18, Number(trade.week) + 4)
+    const platform = (trade.platform as 'sleeper' | 'espn' | 'yahoo' | 'nfl') ?? 'sleeper'
+    try {
+      const ranks = await computePositionRanks({
+        season: Number(season.year),
+        throughWeek: verdictWeek,
+        scoring: DEFAULT_PPR_SCORING,
+      })
+      for (const s of sides) {
+        const original = (s.assets as Array<Record<string, unknown>>) ?? []
+        const stamped = await stampRanks(original, { ranks, platform, field: 'rank_now' })
+        const { error: stampErr } = await db
+          .from('trade_sides')
+          .update({ assets: stamped })
+          .eq('id', s.id as string)
+        if (stampErr) {
+          warnings.push(`stamp rank_now for side ${s.id}: ${stampErr.message}`)
+        }
+      }
+    } catch (e) {
+      warnings.push(`revisit ranks for trade ${tradeId}: ${e instanceof Error ? e.message : String(e)}`)
+    }
   }
 
   return { trade_id: tradeId, graded_sides: revised, warnings }

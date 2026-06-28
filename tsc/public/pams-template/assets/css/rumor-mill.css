@@ -233,6 +233,18 @@ html, body {
     color: var(--td-mute); min-width: 24px;
 }
 .rm-side-sends .name { flex: 1; color: var(--td-text); }
+.rm-side-sends .rank {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .58rem;
+    letter-spacing: .12em;
+    color: var(--td-text-em);
+    background: rgba(130, 216, 191, .08);
+    border: 1px solid rgba(130, 216, 191, .35);
+    padding: 1px 6px;
+    border-radius: 999px;
+    text-transform: uppercase;
+}
 .rm-side-sends .val { font-family: var(--mono); font-size: .76rem; color: var(--td-live); }
 .rm-side-label {
     font-family: var(--mono); font-size: .52rem; letter-spacing: .22em;

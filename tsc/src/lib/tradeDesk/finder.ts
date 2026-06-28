@@ -54,6 +54,10 @@ export type CandidatePlayer = {
   position: string | null
   team: string | null
   value: number
+  // Season-to-date position rank under PPR scoring (e.g. "RB12"). Stamped
+  // by the mocks route after candidate generation; left null when the
+  // ranker couldn't resolve the player (deep bench, K/DEF in many leagues).
+  rank?: string | null
 }
 
 export type FinderCandidate = {

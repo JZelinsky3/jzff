@@ -82,9 +82,16 @@
       ? '<img class="rm-side-avatar" src="' + escapeHtml(side.avatarUrl) + '" alt="" loading="lazy">'
       : '';
     var rows = (side.sends || []).map(function (p) {
+      // Season-to-date position rank chip — stamped by the mocks route
+      // using current-week Sleeper stats. Omitted when the ranker
+      // couldn't resolve the player (deep bench, off-position).
+      var rankChip = p.rank
+        ? '<span class="rank">' + escapeHtml(p.rank) + '</span>'
+        : '';
       return '<li>' +
         '<span class="pos">' + escapeHtml(p.position || '—') + '</span>' +
         '<span class="name">' + escapeHtml(p.name) + '</span>' +
+        rankChip +
         '<span class="val">' + Math.round(p.value) + '</span>' +
       '</li>';
     }).join('');

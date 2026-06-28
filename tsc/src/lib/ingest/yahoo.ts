@@ -30,6 +30,8 @@ import {
   type YahooLeagueMeta,
 } from '@/lib/platforms/yahoo'
 import { parallelLimit } from '@/lib/platforms/sleeper'
+import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
+import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 import { resolveStages, type IngestStages } from './stages'
 
 export type IngestResult = {
@@ -578,6 +580,33 @@ export async function ingestYahooSource(
     // only successful trades; the parser collapses each into a per-team
     // asset list via destination_team_key.
     if (stages.trades) {
+    // Per-(year, week) rank cache. Yahoo doesn't surface the league-week
+    // for trades so we derive it from executed_at — rough but accurate to
+    // a few days. NFL regular-season weeks start around Labor Day; week 1
+    // is roughly the first 7 days after Sept 1.
+    const ranksByWeek = new Map<number, Awaited<ReturnType<typeof computePositionRanks>>>()
+    async function ranksForWeek(week: number) {
+      let r = ranksByWeek.get(week)
+      if (r) return r
+      try {
+        r = await computePositionRanks({ season: year, throughWeek: week, scoring: DEFAULT_PPR_SCORING })
+      } catch (e) {
+        warnings.push(`Season ${year} W${week} ranks: ${e instanceof Error ? e.message : String(e)}`)
+        r = new Map()
+      }
+      ranksByWeek.set(week, r)
+      return r
+    }
+    function deriveWeek(executedAtIso: string | null): number | null {
+      if (!executedAtIso) return null
+      const ts = Date.parse(executedAtIso)
+      if (!Number.isFinite(ts)) return null
+      const seasonStart = Date.parse(`${year}-09-01T00:00:00Z`)
+      const daysSince = (ts - seasonStart) / 86400000
+      if (daysSince < 0) return null
+      return Math.min(17, Math.max(1, Math.floor(daysSince / 7) + 1))
+    }
+
     let yahooTxs: Awaited<ReturnType<typeof getLeagueTransactions>> = []
     try {
       yahooTxs = await getLeagueTransactions(accessToken, lg.league_key)
@@ -650,14 +679,22 @@ export async function ingestYahooSource(
       }
 
       await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
+      // Yahoo's `ts` is epoch seconds; deriveWeek wants an ISO string.
+      const executedIso = t.ts ? new Date(t.ts * 1000).toISOString() : null
+      const week = deriveWeek(executedIso)
+      const ranks = week ? await ranksForWeek(week) : null
+
       let sidesInserted = 0
       for (const [teamKey, assets] of assetsByTeamKey) {
         const managerId = teamKeyToManagerId.get(teamKey)
         if (!managerId) continue
+        const stampedAssets = ranks
+          ? await stampRanks(assets, { ranks, platform: 'yahoo' })
+          : assets
         const { error: sideErr } = await db.from('trade_sides').insert({
           trade_id: tradeRow.id,
           manager_id: managerId,
-          assets,
+          assets: stampedAssets,
         })
         if (sideErr) {
           warnings.push(`Season ${year} trade ${t.transaction_id} side ${teamKey}: ${sideErr.message}`)

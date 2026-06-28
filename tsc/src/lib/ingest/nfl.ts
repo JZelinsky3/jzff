@@ -17,6 +17,8 @@ import {
   type NflOwner, type NflMatchup, type NflStandingsRow,
 } from '@/lib/platforms/nfl'
 import { resolveStages, type IngestStages } from './stages'
+import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
+import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 export type IngestResult = {
   ok: boolean
@@ -538,6 +540,24 @@ async function ingestSeason(args: {
   // NFL.com renders trades on the transactions history page. The scraper is
   // best-effort; if the markup shifted, we get [] and warn.
   if (stages.trades) {
+  // Per-(season, week) rank cache so trades in the same week reuse one
+  // fetch. NFL.com doesn't surface a Sleeper-style scoring_settings map,
+  // so we fall back to the default PPR profile — a follow-up could pull
+  // the league's actual scoring rules from the NFL.com league page.
+  const ranksByWeek = new Map<number, Awaited<ReturnType<typeof computePositionRanks>>>()
+  async function ranksForWeek(week: number) {
+    let r = ranksByWeek.get(week)
+    if (r) return r
+    try {
+      r = await computePositionRanks({ season: year, throughWeek: week, scoring: DEFAULT_PPR_SCORING })
+    } catch (e) {
+      result.warnings.push(`Season ${year} W${week} ranks: ${e instanceof Error ? e.message : String(e)}`)
+      r = new Map()
+    }
+    ranksByWeek.set(week, r)
+    return r
+  }
+
   try {
     const trades = await fetchTrades(externalLeagueId, year)
     if (trades.length === 0) {
@@ -592,12 +612,19 @@ async function ingestSeason(args: {
         continue
       }
       await db.from('trade_sides').delete().eq('trade_id', tradeRow.id)
+
+      // Stamp season-to-date position rank on each player asset.
+      const ranks = t.week ? await ranksForWeek(t.week) : null
+
       let sidesInserted = 0
       for (const side of sidesWithMgrs) {
+        const stampedAssets = ranks
+          ? await stampRanks(side.assets, { ranks, platform: 'nfl' })
+          : side.assets
         const { error: sideErr } = await db.from('trade_sides').insert({
           trade_id: tradeRow.id,
           manager_id: side.managerId,
-          assets: side.assets,
+          assets: stampedAssets,
         })
         if (sideErr) {
           result.warnings.push(`Season ${year} trade ${t.trade_id} side team ${side.teamId}: ${sideErr.message}`)

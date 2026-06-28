@@ -23,6 +23,9 @@ import { getDeadlineStatus } from '@/lib/tradeDesk/deadline'
 import { generateMockTrades, type MockTrade } from '@/lib/tradeDesk/finder'
 import { valuateLeague } from '@/lib/values'
 import { groqChatJson, GroqError } from '@/lib/groq'
+import { sleeper } from '@/lib/platforms/sleeper'
+import { computePositionRanks } from '@/lib/positionRanks'
+import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 // Roster fetch + valuation + ~1.4k bounded depth sims + one Groq call.
 export const maxDuration = 60
@@ -260,6 +263,38 @@ export async function GET(
     seedKey: `${id}|${weekKey}${reroll ? '|r' + Date.now() : ''}`,
     excludeHashes,
   })
+
+  // Stamp season-to-date position rank on every CandidatePlayer the slate
+  // surfaces. Mocks are autonomous "today" trades, so we use the current
+  // NFL week from Sleeper's clock (one fetch, cached at the platform
+  // level). PPR scoring is the default — translating per-league
+  // scoring_settings into the same engine is a follow-up; for ranks the
+  // signal is close enough.
+  try {
+    const clock = await sleeper.state()
+    const season = Number(data.season) || (clock?.season ? Number(clock.season) : null)
+    const throughWeek =
+      clock && Number(clock.season) === season
+        ? Number(clock.week) || 17
+        : 17
+    if (season && throughWeek >= 1) {
+      const ranks = await computePositionRanks({
+        season,
+        throughWeek,
+        scoring: DEFAULT_PPR_SCORING,
+      })
+      const annotate = (p: { id: string; rank?: string | null }) => {
+        const r = ranks.get(p.id)
+        if (r) p.rank = r
+      }
+      for (const t of trades) {
+        t.teamA.sends.forEach(annotate)
+        t.teamB.sends.forEach(annotate)
+      }
+    }
+  } catch {
+    // Ranks are decorative — fall through if stats fetch hiccups.
+  }
 
   let narrativeSource: MocksPayload['narrativeSource'] = 'fallback'
   if (trades.length > 0) {
