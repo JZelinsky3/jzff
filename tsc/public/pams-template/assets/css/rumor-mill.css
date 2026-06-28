@@ -371,6 +371,20 @@ html, body {
     padding-top: .45rem;
     margin-top: .65rem;
   }
+  /* Team B is data-mirror="true"; on mobile push its impact line to
+     the right edge of the card so the two teams' scoreboards bracket
+     the deal rather than both sitting on the left. */
+  .rm-side[data-mirror="true"] .rm-side-impact {
+    margin-left: auto;
+  }
+  .rm-side[data-mirror="true"] .rm-side-name {
+    justify-content: flex-end;
+  }
+  .rm-side[data-mirror="true"] .rm-side-label,
+  .rm-side[data-mirror="true"] .rm-side-sends li {
+    text-align: right;
+  }
+  .rm-side[data-mirror="true"] .rm-side-sends li { justify-content: flex-end; }
 
   /* Between teams: hairline solid divider so the trade still reads
      as two distinct halves once stacked. */

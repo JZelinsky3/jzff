@@ -75,6 +75,39 @@ async function withVotes(
   return { ...payload, votes }
 }
 
+// Stamp position rank on every CandidatePlayer in a slate. Used by both
+// the fresh-generation and cache-hit paths so old cached payloads still
+// pick up rank pills retroactively. PPR scoring is the default — per-
+// league scoring translation is a follow-up.
+//   • In-season → cumulative rank through the current NFL week.
+//   • Offseason → previous season's FINAL (Wk 18) rank, so the slate
+//     still reads with meaningful context.
+async function stampPositionRanks(trades: MockTrade[]): Promise<void> {
+  try {
+    const clock = await sleeper.state()
+    if (!clock) return
+    const inSeason = clock.season_type === 'regular' || clock.season_type === 'post'
+    const rankSeason = inSeason ? Number(clock.season) : Number(clock.season) - 1
+    const rankWeek = inSeason ? (Number(clock.week) || 17) : 18
+    if (!rankSeason || rankWeek < 1) return
+    const ranks = await computePositionRanks({
+      season: rankSeason,
+      throughWeek: rankWeek,
+      scoring: DEFAULT_PPR_SCORING,
+    })
+    const annotate = (p: { id: string; rank?: string | null }) => {
+      const r = ranks.get(p.id)
+      if (r) p.rank = r
+    }
+    for (const t of trades) {
+      t.teamA.sends.forEach(annotate)
+      t.teamB.sends.forEach(annotate)
+    }
+  } catch {
+    // Ranks are decorative — fall through if stats fetch hiccups.
+  }
+}
+
 // ── Groq copy pass ───────────────────────────────────────────────────────
 
 const BlurbsOut = z.object({
@@ -172,6 +205,11 @@ export async function GET(
       .eq('week_key', weekKey)
       .maybeSingle<{ payload: MocksPayload }>()
     if (existing?.payload && existing.payload.trades.length > 0) {
+      // Re-stamp ranks on cached payloads — older rows were generated
+      // before the rank pipeline existed and have empty rank fields.
+      // The stamp is a single Sleeper stats fetch (cached for an hour),
+      // so doing it per request is cheap.
+      await stampPositionRanks(existing.payload.trades)
       return NextResponse.json(await withVotes(db, id, existing.payload), {
         headers: { 'Cache-Control': 'no-store' },
       })
@@ -264,43 +302,7 @@ export async function GET(
     excludeHashes,
   })
 
-  // Stamp position rank on every CandidatePlayer the slate surfaces.
-  //   • In-season → cumulative rank through the current NFL week.
-  //   • Offseason → previous season's FINAL (Wk 18) rank, so the slate
-  //     still reads with meaningful context instead of empty pills.
-  // PPR scoring is the default — translating per-league scoring_settings
-  // into the same engine is a follow-up; the signal is close enough.
-  try {
-    const clock = await sleeper.state()
-    const inSeason = clock?.season_type === 'regular' || clock?.season_type === 'post'
-    let rankSeason: number | null = null
-    let rankWeek: number | null = null
-    if (inSeason && clock) {
-      rankSeason = Number(clock.season)
-      rankWeek = Number(clock.week) || 17
-    } else if (clock) {
-      // Offseason / preseason — use the season that just ended.
-      rankSeason = Number(clock.season) - 1
-      rankWeek = 18
-    }
-    if (rankSeason && rankWeek && rankWeek >= 1) {
-      const ranks = await computePositionRanks({
-        season: rankSeason,
-        throughWeek: rankWeek,
-        scoring: DEFAULT_PPR_SCORING,
-      })
-      const annotate = (p: { id: string; rank?: string | null }) => {
-        const r = ranks.get(p.id)
-        if (r) p.rank = r
-      }
-      for (const t of trades) {
-        t.teamA.sends.forEach(annotate)
-        t.teamB.sends.forEach(annotate)
-      }
-    }
-  } catch {
-    // Ranks are decorative — fall through if stats fetch hiccups.
-  }
+  await stampPositionRanks(trades)
 
   let narrativeSource: MocksPayload['narrativeSource'] = 'fallback'
   if (trades.length > 0) {
