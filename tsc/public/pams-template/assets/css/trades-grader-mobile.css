@@ -377,11 +377,11 @@
     text-transform: uppercase !important;
     margin-top: .15rem;
   }
-  /* The side-identity label. trades.js renders just "Received"; we
-     prepend "Side A · " / "Side B · " here so the markup stays
-     unchanged. The whole line picks up the side accent color, which
-     is the only visual signal of which side this is — clean, single
-     source of truth. */
+  /* Side-identity label. trades.js renders just "Received"; the prior
+     pill version read as an empty colored strip — too much border,
+     not enough signal. Now it's a short horizontal accent rule
+     followed by the plain "Received" caption, both in the side
+     accent color. Reads as a small tagged section header. */
   body[data-trades-theme] .tr-side-label {
     font-family: var(--mono) !important;
     font-weight: 700 !important;
@@ -390,24 +390,23 @@
     color: var(--side-accent) !important;
     text-transform: uppercase !important;
     opacity: 1;
-    display: inline-block;
-    padding: 4px 8px;
-    background: rgba(255, 255, 255, .03);
-    border: 1px solid var(--side-accent);
-    border-radius: 999px;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: .55rem !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
     width: fit-content;
   }
-  body[data-trades-theme] .tr-side:nth-of-type(1) .tr-side-label::before {
-    content: 'Side A · ';
-    opacity: .85;
-  }
-  body[data-trades-theme] .tr-side:nth-of-type(2) .tr-side-label::before {
-    content: 'Side B · ';
-    opacity: .85;
-  }
-  body[data-trades-theme] .tr-side:nth-of-type(3) .tr-side-label::before {
-    content: 'Side C · ';
-    opacity: .85;
+  body[data-trades-theme] .tr-side-label::before {
+    content: '';
+    display: inline-block;
+    width: 22px;
+    height: 2px;
+    background: var(--side-accent);
+    border-radius: 2px;
+    opacity: .9;
   }
 
   /* ── Assets — clean rows with a position pill + name + team ── */
