@@ -651,6 +651,14 @@ export async function ingestSleeperSource(
       return r
     }
 
+    // Final-of-season ranks (Wk 18 cumulative). For COMPLETED Sleeper
+    // seasons (status === 'complete') we stamp these as rank_now so the
+    // Grader UI's "then → now" arrow shows the player's actual end-of-
+    // season landing spot. Live seasons skip this — rank_now there comes
+    // from the 4-week verdict pass once it fires.
+    const seasonIsComplete = lg.status === 'complete'
+    const finalRanks = seasonIsComplete ? await ranksForWeek(18) : null
+
     for (const t of seasonTrades) {
       // Build assets per roster_id participating in this trade.
       const assetsByRoster = new Map<number, Array<Record<string, unknown>>>()
@@ -744,9 +752,20 @@ export async function ingestSleeperSource(
           warnings.push(`Trade ${t.transaction_id}: roster ${rid} has no manager mapping; side skipped`)
           continue
         }
-        const stamped = ranks
+        // Two-pass stamping: rank_at_trade (this trade's week), then
+        // rank_now (final season rank). Final-rank pass only runs for
+        // completed seasons — live-season verdicts populate rank_now via
+        // the 4-week revisit job instead.
+        let stamped = ranks
           ? await stampRanks(assets, { ranks, platform: 'sleeper' })
           : assets
+        if (finalRanks) {
+          stamped = await stampRanks(stamped, {
+            ranks: finalRanks,
+            platform: 'sleeper',
+            field: 'rank_now',
+          })
+        }
         const { error: sideErr } = await db.from('trade_sides').insert({
           trade_id: tradeRow.id,
           manager_id: managerId,

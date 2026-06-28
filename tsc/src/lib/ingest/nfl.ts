@@ -558,6 +558,11 @@ async function ingestSeason(args: {
     return r
   }
 
+  // NFL.com's /history/<year>/ pages only exist for COMPLETED seasons, so
+  // every trade we ingest here belongs to a finished season — we can
+  // always compute Wk 18 cumulative ranks and stamp them as rank_now.
+  const finalRanks = await ranksForWeek(18)
+
   try {
     const trades = await fetchTrades(externalLeagueId, year)
     if (trades.length === 0) {
@@ -618,9 +623,16 @@ async function ingestSeason(args: {
 
       let sidesInserted = 0
       for (const side of sidesWithMgrs) {
-        const stampedAssets = ranks
+        let stampedAssets = ranks
           ? await stampRanks(side.assets, { ranks, platform: 'nfl' })
           : side.assets
+        // Also stamp end-of-season rank as rank_now. NFL.com ingest is
+        // history-only, so the season is by definition complete here.
+        stampedAssets = await stampRanks(stampedAssets, {
+          ranks: finalRanks,
+          platform: 'nfl',
+          field: 'rank_now',
+        })
         const { error: sideErr } = await db.from('trade_sides').insert({
           trade_id: tradeRow.id,
           manager_id: side.managerId,

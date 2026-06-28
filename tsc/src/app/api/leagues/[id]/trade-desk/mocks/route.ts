@@ -264,23 +264,29 @@ export async function GET(
     excludeHashes,
   })
 
-  // Stamp season-to-date position rank on every CandidatePlayer the slate
-  // surfaces. Mocks are autonomous "today" trades, so we use the current
-  // NFL week from Sleeper's clock (one fetch, cached at the platform
-  // level). PPR scoring is the default — translating per-league
-  // scoring_settings into the same engine is a follow-up; for ranks the
-  // signal is close enough.
+  // Stamp position rank on every CandidatePlayer the slate surfaces.
+  //   • In-season → cumulative rank through the current NFL week.
+  //   • Offseason → previous season's FINAL (Wk 18) rank, so the slate
+  //     still reads with meaningful context instead of empty pills.
+  // PPR scoring is the default — translating per-league scoring_settings
+  // into the same engine is a follow-up; the signal is close enough.
   try {
     const clock = await sleeper.state()
-    const season = Number(data.season) || (clock?.season ? Number(clock.season) : null)
-    const throughWeek =
-      clock && Number(clock.season) === season
-        ? Number(clock.week) || 17
-        : 17
-    if (season && throughWeek >= 1) {
+    const inSeason = clock?.season_type === 'regular' || clock?.season_type === 'post'
+    let rankSeason: number | null = null
+    let rankWeek: number | null = null
+    if (inSeason && clock) {
+      rankSeason = Number(clock.season)
+      rankWeek = Number(clock.week) || 17
+    } else if (clock) {
+      // Offseason / preseason — use the season that just ended.
+      rankSeason = Number(clock.season) - 1
+      rankWeek = 18
+    }
+    if (rankSeason && rankWeek && rankWeek >= 1) {
       const ranks = await computePositionRanks({
-        season,
-        throughWeek,
+        season: rankSeason,
+        throughWeek: rankWeek,
         scoring: DEFAULT_PPR_SCORING,
       })
       const annotate = (p: { id: string; rank?: string | null }) => {
