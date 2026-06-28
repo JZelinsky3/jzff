@@ -10,38 +10,39 @@
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <link rel="stylesheet" href="/pams-template/assets/css/trade-desk.css">
 <style>
-/* ── The desk, seen from a phone. Cool slate canvas matching the
-      Trade Grader's new news-feed palette so the hub doesn't read
-      as a different product when the user pops in. Paper room cards
-      keep their distinct stocks; the masthead + drawer follow the
-      grader's slate tokens. ── */
+/* ── The desk, seen from a phone. Walnut surface + four paper
+      objects, stacked and tightened. The Grader's room card is
+      coral-tinted (its tag + emphasis text) to echo the Trade
+      Grader's coral side-accent — same logical link as the other
+      three room cards have to their interior themes. ── */
 :root {
-    --td-bg:           #0d1117;
-    --td-card:         #161b22;
-    --td-line:         #2d3441;
-    --td-line-soft:    #1f2632;
-    --td-mute:         #8a96a8;
-    --td-text:         #e6edf3;
+    --td-bg:           #261810;
+    --td-card:         #322314;
+    --td-line:         #523c25;
+    --td-line-soft:    #3a2a18;
+    --td-mute:         #97805f;
+    --td-text:         #f5e9c8;
     --td-text-em:      #f0c878;
-    --td-desc:         #b4c0d0;
-    --td-live:         #d8b15a;
-    --ink:        #1c2330;
-    --ink-soft:   #3a4456;
-    --ink-faint:  #5a6478;
+    --td-desc:         #c9b08a;
+    --td-live:         #d4a958;
+    --ink:        #3b2a18;
+    --ink-soft:   #5f4a33;
+    --ink-faint:  #7b5f41;
     --ink-red:    #b5443a;
+    --ink-coral:  #e08b5c;
     --ink-blue:   #3e639a;
     --ink-green:  #2e6b5c;
     --ink-oxblood:#7e2f2c;
-    --m-chrome-bg:  #0a0e13;
-    --m-chrome-bg2: #11161e;
+    --m-chrome-bg:  rgb(24, 15, 8);
+    --m-chrome-bg2: rgb(28, 18, 10);
 }
 body {
     color: var(--td-text);
     background-color: var(--td-bg);
     background-image:
-      radial-gradient(ellipse 90% 55% at 50% -8%, rgba(108, 152, 200, .08) 0%, transparent 60%),
-      repeating-linear-gradient(93deg, rgba(0, 0, 0, .04) 0px, transparent 2px, transparent 11px),
-      linear-gradient(180deg, #11161e 0%, #0d1117 100%);
+      radial-gradient(ellipse 90% 55% at 50% -8%, rgba(240, 200, 120, .11) 0%, transparent 60%),
+      repeating-linear-gradient(93deg, rgba(0, 0, 0, .06) 0px, transparent 2px, transparent 11px),
+      linear-gradient(180deg, #2a1b11 0%, #221409 100%);
 }
 
 .td-head { text-align: center; padding: 1.1rem 0 .3rem; }
@@ -108,11 +109,11 @@ body {
 
 .td-card[data-room="I"] {
     background:
-      linear-gradient(90deg, transparent 0 1.5rem, rgba(181, 68, 58, .3) 1.5rem calc(1.5rem + 1px), transparent calc(1.5rem + 1px)),
+      linear-gradient(90deg, transparent 0 1.5rem, rgba(224, 139, 92, .32) 1.5rem calc(1.5rem + 1px), transparent calc(1.5rem + 1px)),
       repeating-linear-gradient(180deg, transparent 0 21px, rgba(140, 90, 60, .14) 21px 22px),
       linear-gradient(180deg, #f0e4c8, #e8d9b6);
 }
-.td-card[data-room="I"] .td-card-tag, .td-card[data-room="I"] .td-card-title em { color: var(--ink-red); }
+.td-card[data-room="I"] .td-card-tag, .td-card[data-room="I"] .td-card-title em { color: var(--ink-coral); }
 
 .td-card[data-room="II"] {
     background:
@@ -146,16 +147,15 @@ body {
 }
 .td-card[data-room="IV"] .td-card-tag, .td-card[data-room="IV"] .td-card-title em { color: var(--ink-oxblood); }
 
-/* Settings drawer trigger — slate drawer front to match the new
-   masthead palette. Sized to feel roughly proportional to the four
-   room cards above (which are .td-card-title 1.3rem + a short tag/
-   desc). */
+/* Settings drawer trigger — walnut drawer front. Sized to feel
+   roughly proportional to the four room cards above (which are
+   .td-card-title 1.3rem + a short tag/desc). */
 .td-settings-trigger {
-    background: linear-gradient(180deg, #1f2632, #161b22);
-    border: 1px solid #2d3441;
-    border-radius: 6px;
+    background: linear-gradient(180deg, #44301b, #33220f);
+    border: 1px solid #5a4226;
+    border-radius: 4px;
     box-shadow:
-      inset 0 1px 0 rgba(216, 177, 90, .1),
+      inset 0 1px 0 rgba(240, 200, 120, .14),
       inset 0 -6px 12px rgba(0, 0, 0, .3),
       0 6px 14px rgba(0, 0, 0, .35);
     padding: .7rem .85rem;
@@ -164,10 +164,10 @@ body {
 }
 .td-settings-trigger-icon {
     width: 30px; height: 30px;
-    border-radius: 4px;
-    background: linear-gradient(180deg, rgba(216, 177, 90, .16), rgba(216, 177, 90, .04));
-    border: 1px solid rgba(216, 177, 90, .35);
-    color: var(--td-text-em);
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(240, 200, 120, .16), rgba(240, 200, 120, .05));
+    border: 1px solid #8a6a3e;
+    color: #e8c889;
     font-size: .95rem;
 }
 .td-settings-trigger-icon svg { width: 16px; height: 16px; }

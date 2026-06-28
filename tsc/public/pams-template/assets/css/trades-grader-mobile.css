@@ -291,10 +291,16 @@
     color: var(--tg-gold);
     opacity: .35;
   }
-  body[data-trades-theme] .tr-summary-text {
-    display: block !important;
-    padding-left: .85rem;
-  }
+  /* DO NOT set display:block here — the .is-folded clamp needs
+     display:-webkit-box (from trades.css base) to actually clamp.
+     A blanket override here broke the fold, leaving long write-ups
+     showing in full with a non-functional "More" button at the
+     bottom. Only style padding; let the base + .is-folded rules
+     control display. Mobile shows one more line than desktop
+     (4 vs 3) before clamping. */
+  body[data-trades-theme] .tr-summary-text { padding-left: .85rem; }
+  body[data-trades-theme] .tr-summary-text:not(.is-folded) { display: block; }
+  body[data-trades-theme] .tr-summary-text.is-folded { -webkit-line-clamp: 4; }
   body[data-trades-theme] .tr-summary-text::before { content: none !important; }
   body[data-trades-theme] .tr-summary-toggle {
     font-family: var(--mono) !important;
