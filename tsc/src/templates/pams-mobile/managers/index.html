@@ -247,10 +247,20 @@
         if (m.championships) classes += ' is-champ';
         if (m.is_reigning_champion) classes += ' is-reigning';
         if (isAlumni) classes += ' mg-alumni';
+        // Color the big name inline so no external CSS rule can override
+        // it. Inline styles beat class !important on the same element,
+        // so this is the most resilient way to make the cream/gold show
+        // when something downstream (cache, an unrelated rule) is
+        // suppressing the change.
+        var nameColor = m.is_reigning_champion
+            ? '#f5b840'                   // reigning: saturated amber gold
+            : isAlumni
+                ? 'var(--cream-mute)'     // alumni: muted cream
+                : '#fffaf0';              // active: bright floral white
         return '<a class="' + classes + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
             '<span class="mg-stub"><span class="mg-ava">' + esc(initial) + img + '</span></span>' +
             '<span class="mg-body">' +
-                '<span class="mg-name">' + esc(m.name) +
+                '<span class="mg-name" style="color:' + nameColor + '">' + esc(m.name) +
                     '<small>' +
                         '<span class="mg-team">' + esc(m.team_latest || '') + '</span>' +
                         '<span class="mg-tenure"> · ' + tenure + '</span>' +
