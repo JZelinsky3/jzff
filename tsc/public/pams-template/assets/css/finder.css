@@ -374,3 +374,89 @@ html, body {
     border-top: 1px dashed var(--td-line-soft);
 }
 .fd-results-note em { color: var(--td-desc); font-style: italic; }
+
+/* ============================================================
+   MOBILE  (<= 720px)
+   Mode-toggle buttons, deal cards, and variant pills all built
+   for the desktop two-column layout — on a phone they read large
+   and the Send/Receive columns blur together once stacked. Add
+   colored left bars to the deal-cols so the two sides of a trade
+   stay visually distinct, and pull every type size down a notch.
+   ============================================================ */
+@media (max-width: 720px) {
+  /* Mode toggle */
+  .fd-mode-toggle { gap: .55rem; margin-bottom: 1rem; }
+  .fd-mode-btn { padding: .75rem .85rem; gap: .25rem; }
+  .fd-mode-btn-title { font-size: .6rem; letter-spacing: .15em; }
+  .fd-mode-btn-desc { font-size: .72rem; line-height: 1.4; }
+
+  /* Filters card */
+  .fd-filters { padding: .8rem .85rem; gap: .85rem; }
+  .fd-filters > .fd-filter-group:first-child,
+  .fd-filter-group-right { padding-left: 0; padding-right: 0; }
+  .fd-filter-group { padding: .15rem 0; }
+  .fd-filter-label { font-size: .54rem; letter-spacing: .22em; }
+  .fd-filter-hint { font-size: .62rem; }
+  .fd-pos-chips { gap: .3rem; flex-wrap: wrap; }
+  .fd-pos-chip { padding: .35rem .65rem; font-size: .58rem; letter-spacing: .14em; }
+  .fd-max-side { min-width: 0; width: 100%; padding: .5rem .65rem; font-size: .82rem; }
+  .fd-filter-group-right { align-items: stretch; text-align: left; width: 100%; }
+
+  /* Target tray */
+  .fd-target-tray { gap: .55rem; padding: .6rem .75rem; margin-bottom: .65rem; }
+  .fd-target-chip { padding: .25rem .55rem; font-size: .7rem; }
+  .fd-target-chip-x { font-size: .62rem; }
+
+  /* Browse selector */
+  .fd-browse { max-width: 100%; padding: .4rem .55rem; font-size: .82rem; }
+
+  /* Results header */
+  .fd-results { margin-top: 1.5rem; }
+  .fd-results-empty { padding: .95rem 1rem; font-size: .82rem; line-height: 1.5; }
+
+  /* Deals */
+  .fd-deals { gap: .8rem; }
+  .fd-deal { padding: .85rem .9rem 1rem; }
+  .fd-deal-head { gap: .55rem; padding-bottom: .55rem; margin-bottom: .7rem; }
+  .fd-deal-rank { font-size: 1rem; min-width: 1.3rem; }
+  .fd-deal-partner { font-size: .92rem; }
+  .fd-badge { padding: .18rem .5rem; font-size: .5rem; letter-spacing: .16em; }
+
+  /* Two columns of a deal — stack with colored left bars so Send vs
+     Receive stay visually distinct after the grid collapses. */
+  .fd-deal-cols { gap: .65rem; margin-bottom: .7rem; }
+  .fd-deal-col {
+    padding: .55rem .65rem;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, .18);
+  }
+  .fd-deal-col:nth-of-type(1) {
+    border-left: 3px solid var(--td-live);
+    padding-left: calc(.65rem - 2px);
+  }
+  .fd-deal-col:nth-of-type(2) {
+    border-left: 3px solid #c4ad84;
+    padding-left: calc(.65rem - 2px);
+  }
+  .fd-deal-col-label { font-size: .52rem; letter-spacing: .2em; padding-bottom: .3rem; margin-bottom: .35rem; }
+  .fd-deal-col-total { font-size: .54rem; letter-spacing: .12em; }
+  .fd-deal-col-total strong { font-size: .82rem; }
+
+  /* Variants */
+  .fd-variants { gap: .35rem; margin-bottom: .65rem; }
+  .fd-variants-label { font-size: .5rem; letter-spacing: .2em; }
+  .fd-variant-pill { padding: .22rem .55rem; font-size: .66rem; }
+
+  /* Impact summary */
+  .fd-deal-impacts { gap: .45rem; padding-top: .6rem; }
+  .fd-impact { font-size: .58rem; letter-spacing: .1em; gap: .35rem; }
+  .fd-impact strong { font-size: .76rem; }
+  .fd-impact-moves { font-size: .5rem; }
+
+  /* Cross-room handoff link */
+  .fd-deal-foot { margin-top: .65rem; padding-top: .55rem; }
+  .fd-run { font-size: .54rem; letter-spacing: .16em; }
+
+  /* Bottom note */
+  .fd-results-note { font-size: .7rem; line-height: 1.5; padding-top: .85rem; margin-top: 1.2rem; }
+}

@@ -633,3 +633,116 @@ body[data-trade-desk-room="analyzer"] .an-result-grade[data-grade^="C"] { color:
    bar now that starters are blue. Warm amber keeps the three slot
    markers (starter blue / FLEX amber / SF violet) apart at a glance. */
 body[data-trade-desk-room="analyzer"] .an-row[data-slot="flex"] { border-left-color: #d2a960; }
+
+/* ============================================================
+   MOBILE  (<= 720px)
+   Desktop sizes feel oversized on a phone — hero block eats half
+   the first screen, the 3.6rem result grade letter dominates the
+   card, and the two trade sides stacked single-column lose the
+   "send vs receive" visual hierarchy they have in the desktop
+   two-column layout. Tighten everything and reintroduce side
+   differentiation via a colored left bar (gold for the first
+   side, steel-blue for the second).
+   ============================================================ */
+@media (max-width: 720px) {
+  .an-wrap { padding: 1rem .7rem 4rem; }
+
+  /* Hero — kill the giant top block */
+  .an-hero { padding: 1.2rem .25rem 1.4rem; }
+  .an-hero-sup { font-size: .55rem; letter-spacing: .25em; margin-bottom: .65rem; }
+  .an-hero-title { font-size: clamp(1.85rem, 8vw, 2.3rem); line-height: 1.05; }
+  .an-hero-sub { margin-top: .85rem; font-size: .82rem; line-height: 1.5; }
+  .an-mode-pill { margin-top: .9rem; padding: .35rem .7rem; font-size: .52rem; letter-spacing: .2em; }
+  .an-year-picker { margin-top: .45rem; }
+  .an-year-select { font-size: .52rem; letter-spacing: .2em; }
+
+  /* Pickers */
+  .an-pickers { gap: .65rem; margin-bottom: 1.2rem; }
+  .an-picker { min-width: 0; }
+  .an-picker-label { font-size: .54rem; letter-spacing: .22em; }
+  .an-picker-select { padding: .55rem 1.8rem .55rem .7rem; font-size: .88rem; }
+  .an-pickers-vs { font-size: .58rem; padding-bottom: .55rem; }
+
+  /* Sides — single column with clear team distinction */
+  .an-sides { gap: .75rem; margin-bottom: 1rem; }
+  .an-side { padding: .85rem .85rem 1rem; border-radius: 4px; }
+  .an-side:nth-of-type(1) { border-left: 3px solid var(--td-live); }
+  .an-side:nth-of-type(2) { border-left: 3px solid #7fa8bd; }
+  .an-side-head { gap: .55rem; margin-bottom: .65rem; padding-bottom: .55rem; }
+  .an-side-tag { font-size: .54rem; letter-spacing: .22em; }
+  .an-side-name { font-size: .95rem; }
+
+  /* Position groups — tighter */
+  .an-pos-groups { gap: .85rem; }
+  .an-pos-label { font-size: .54rem; letter-spacing: .22em; padding: .25rem 0 .4rem; }
+  .an-pos-count { font-size: .5rem; letter-spacing: .15em; }
+
+  /* Rows — smaller avatars, tighter padding */
+  .an-row { padding: .38rem .5rem; gap: .55rem; }
+  .an-row-avatar,
+  .an-row-avatar-fallback { width: 28px; height: 28px; }
+  .an-row-avatar-fallback { font-size: .52rem; }
+  .an-row-name { font-size: .88rem; }
+  .an-row-meta { font-size: .52rem; gap: .35rem; }
+  .an-row-value { font-size: .74rem; min-width: 38px; }
+
+  .an-side-foot { font-size: .58rem; letter-spacing: .14em; padding-top: .6rem; margin-top: .75rem; }
+  .an-side-foot strong { font-size: .9rem; }
+
+  /* Action row — keep it on one line on narrow */
+  .an-action { padding: .9rem 0 .35rem; gap: .65rem; }
+  .an-action-summary { min-width: 0; font-size: .56rem; letter-spacing: .12em; flex: 1 1 100%; }
+  .an-btn { padding: .65rem 1.1rem; font-size: .6rem; letter-spacing: .2em; }
+
+  /* Result section */
+  .an-result { margin-top: 1.6rem; }
+  .an-result-head { gap: .65rem; padding-bottom: .75rem; margin-bottom: 1rem; }
+  .an-result-sup { font-size: .56rem; letter-spacing: .25em; }
+  .an-result-title { font-size: 1.25rem; }
+  .an-result-cards { gap: .75rem; margin-bottom: 1.2rem; }
+  .an-result-card { padding: 1rem 1rem 1.1rem; }
+  .an-result-card:nth-of-type(1) { border-left: 3px solid var(--td-live); }
+  .an-result-card:nth-of-type(2) { border-left: 3px solid #7fa8bd; }
+  .an-result-card-head { gap: .55rem; padding-bottom: .55rem; margin-bottom: .7rem; }
+  .an-result-card-tag { font-size: .54rem; letter-spacing: .22em; }
+  .an-result-card-name { font-size: .95rem; }
+
+  /* The 3.6rem grade letter is huge on a phone */
+  .an-result-grade { font-size: 2.4rem; padding: .35rem 0 .55rem; }
+  .an-result-impact { font-size: .6rem; letter-spacing: .12em; padding: 0 .3rem .7rem; }
+  .an-result-impact strong { font-size: .75rem; }
+  .an-result-verdict { font-size: .82rem; line-height: 1.5; padding: 0 .25rem .85rem; min-height: 2.2rem; }
+
+  .an-result-list-item { font-size: .82rem; gap: .45rem; }
+  .an-result-list-pos { font-size: .54rem; letter-spacing: .12em; min-width: 26px; }
+  .an-result-list-pct { font-size: .54rem; padding: 1px 4px; }
+  .an-result-list-val { font-size: .72rem; }
+  .an-result-total { font-size: .62rem; letter-spacing: .14em; padding-top: .65rem; }
+  .an-result-total strong { font-size: .88rem; }
+
+  /* Value bar */
+  .an-result-bar { padding: .95rem 1rem; margin-bottom: 1.2rem; }
+  .an-result-bar-track { height: 11px; }
+  .an-result-bar-legend { font-size: .56rem; letter-spacing: .14em; margin-top: .55rem; }
+
+  .an-result-note { font-size: .72rem; line-height: 1.5; padding: 1rem .5rem; }
+
+  /* Depth block */
+  .an-depth-block { margin-top: .85rem; padding-top: .85rem; gap: .55rem; }
+  .an-depth-overall { font-size: .6rem; letter-spacing: .12em; column-gap: .45rem; grid-template-columns: 1fr auto 32px; }
+  .an-depth-overall strong { font-size: .75rem; }
+  .an-depth-overall-arrow { font-size: .62rem; }
+  .an-depth-mvmnt { padding: .3rem .45rem; font-size: .58rem; letter-spacing: .1em; }
+  .an-depth-empty { font-size: .54rem; letter-spacing: .15em; }
+
+  /* Narrative card */
+  .an-narrative { padding: 1.05rem 1rem 1.1rem; margin-bottom: 1.2rem; }
+  .an-narrative-head { gap: .65rem; margin-bottom: .7rem; padding-bottom: .5rem; }
+  .an-narrative-sup { font-size: .56rem; letter-spacing: .25em; }
+  .an-narrative-meta { font-size: .52rem; letter-spacing: .15em; }
+  .an-narrative-body { font-size: .88rem; line-height: 1.6; }
+
+  /* State / loading */
+  .an-state { padding: 1.8rem .75rem; font-size: .85rem; }
+  .an-state-error { padding: .85rem 1rem; font-size: .85rem; }
+}
