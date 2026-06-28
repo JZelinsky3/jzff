@@ -1059,15 +1059,22 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
     s.seasons.filter((sn) => sn.is_live).map((sn) => sn.id)
   )
 
-  // ALSO require at least one game played in the season. The is_live flag
-  // alone isn't enough — re-activated leagues sometimes carry a
-  // manager_season row for a brand-new season that hasn't been drafted
-  // yet (is_live = null/false but zero matchups). Counting that inflates
-  // seasons_played by 1.
+  // ALSO require at least one COMPLETED game (a score recorded) in the
+  // season. The is_live flag alone isn't enough — Sleeper schedules every
+  // matchup row at league creation, so a 2026 season can have 14 weeks
+  // of matchups on the books with score_a/score_b both null long before
+  // any game is actually played. Counting those as "played" inflates
+  // seasons_played by 1. A real game has at least one side's score set.
   const playedSeasonIds = new Set<string>()
   for (const mid of g.managerIds) {
     for (const m of s.matchupsByManager.get(mid) ?? []) {
-      playedSeasonIds.add(m.season_id)
+      // A scheduled-but-unplayed matchup has both scores null. As soon as
+      // either side records a score (even a 0-point dud), the matchup
+      // counts. We treat null/undefined as "unplayed" and any numeric
+      // score as "played."
+      const hasScore =
+        typeof m.score_a === 'number' || typeof m.score_b === 'number'
+      if (hasScore) playedSeasonIds.add(m.season_id)
     }
   }
 
@@ -1269,7 +1276,11 @@ function buildManagersDirectory(s: Snapshot): unknown {
       const liveIds = new Set(s.seasons.filter((sn) => sn.is_live).map((sn) => sn.id))
       const playedIds = new Set<string>()
       for (const mid of g.managerIds) {
-        for (const m of s.matchupsByManager.get(mid) ?? []) playedIds.add(m.season_id)
+        for (const m of s.matchupsByManager.get(mid) ?? []) {
+          const hasScore =
+            typeof m.score_a === 'number' || typeof m.score_b === 'number'
+          if (hasScore) playedIds.add(m.season_id)
+        }
       }
       const ranks = allMs
         .filter(
@@ -1341,7 +1352,9 @@ function buildManagerFile(s: Snapshot, g: ProfileGroup): unknown {
   const playedSeasonIds = new Set<string>()
   for (const mid of g.managerIds) {
     for (const m of s.matchupsByManager.get(mid) ?? []) {
-      playedSeasonIds.add(m.season_id)
+      const hasScore =
+        typeof m.score_a === 'number' || typeof m.score_b === 'number'
+      if (hasScore) playedSeasonIds.add(m.season_id)
     }
   }
   const mss = allMss

@@ -91,20 +91,25 @@
     margin-top: 2px;
     line-height: 1.35;
 }
-/* Team name pops in cream so it reads as the secondary identity line
-   under each manager's display name. The tenure tail ("· 5 seasons")
-   stays in the muted color to keep the hierarchy. */
+/* Team name (subtitle line) stays in the muted color — the main name
+   above carries the cream/gold treatment. Long team names auto-shrink
+   so the "5 seasons" tenure tail + championship pills don't wrap to a
+   new row. The scaling lives on the .mg-team element itself; the
+   tenure stays at the standard subtitle size. */
 .mg-team {
-    color: var(--cream);
-    font-weight: 500;
-}
-.mg-alumni .mg-team { color: var(--cream-soft); }
-.mg-tenure {
-    color: var(--cream-mute);
+    color: inherit;
+    font-size: clamp(.58rem, 2.4vw, .7rem);
+    line-height: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
+    max-width: 60%;
+    display: inline-block;
+    vertical-align: baseline;
+}
+.mg-tenure {
+    color: inherit;
+    white-space: nowrap;
 }
 /* Championship-year pills — small gold mono pills, one per year,
    inline next to the tenure line under the name. */
