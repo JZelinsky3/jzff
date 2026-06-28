@@ -348,21 +348,25 @@ html, body {
 @media (max-width: 639px) {
   .rm-deal { padding: .85rem .95rem .95rem; gap: .75rem 0; }
 
-  /* Drop the per-impact dashed top-border on mobile. */
+  /* Short content-width dashed rule above each impact — sits over
+     the "your lineup +X pts" line and ends where the line ends, not
+     out to the card edge. width: fit-content shrinks the block to
+     its inline content; margin-top:auto still pins it to the column
+     bottom inside the .rm-side flex column. */
   .rm-side-impact {
-    border-top: none;
-    padding-top: .35rem;
-    margin-top: .55rem;
+    width: fit-content;
+    border-top: 1px dashed var(--td-line-soft);
+    padding-top: .45rem;
+    margin-top: .65rem;
   }
 
-  /* Add ONE dashed divider between team A and team B. The
-     .rm-deal-swap glyph sits between them (display:none on mobile),
-     so target the second .rm-side. */
+  /* Between teams: hairline solid divider so the trade still reads
+     as two distinct halves once stacked. */
   .rm-side + .rm-deal-swap + .rm-side,
   .rm-side + .rm-side {
-    margin-top: .35rem;
-    padding-top: 1rem;
-    border-top: 1px dashed var(--td-line-soft);
+    margin-top: .75rem;
+    padding-top: .9rem;
+    border-top: 1px solid var(--td-line-soft);
   }
 
   /* Tighten the rest of the entry while we're here. */

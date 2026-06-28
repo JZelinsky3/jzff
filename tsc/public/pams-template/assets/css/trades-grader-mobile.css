@@ -1,234 +1,317 @@
 /* ============================================================
-   TRADE GRADER — MOBILE OVERRIDE
+   TRADE GRADER — MOBILE OVERRIDE  (complete rework)
    ============================================================
-   The grader desktop ships four themes (cards / tribunal / wire /
-   floor). On phones we strip the theme system entirely and adopt
-   the same brown/brass pams-template palette every other Trade
-   Desk room uses (Mocks / Finder / Analyzer) so the mobile shell
-   is visually consistent.
+   The desktop grader ships four illustrative themes (cards /
+   tribunal / wire / floor). On phones we throw all four out and
+   build a single, purpose-tuned look: cool slate background,
+   sharp typography, and strong A/B side differentiation. The
+   palette is intentionally distinct from the walnut Trade Desk
+   so the grader reads as its own product on mobile — a news
+   ticker for completed deals.
 
-   Loaded LAST in the mobile grader template, so plain class
-   selectors here win on source-order against the theme rules in
-   trades.css.
+   Loaded LAST in the mobile grader template so plain class
+   selectors win on source-order against trades.css.
+   Specificity-locked to body[data-trades-theme] (any theme) so
+   the per-theme rules in trades.css can't bleed through.
    ============================================================ */
 
 @media (max-width: 720px) {
 
-  /* Reset the themed body background — adopt the trade-desk walnut */
+  /* ── Palette ─────────────────────────────────────────────
+       --tg-bg          deep slate canvas
+       --tg-bg-edge     subtle gradient anchor
+       --tg-card        card surface
+       --tg-card-head   card dateline strip (darker)
+       --tg-line        primary border
+       --tg-line-soft   hairline/dotted separators
+       --tg-mute        secondary text + muted captions
+       --tg-text        primary text
+       --tg-text-em     emphasized number / accent text
+       --tg-gold        section accent / key numbers
+       --tg-a           side A accent (cool teal)
+       --tg-b           side B accent (warm coral)
+       --tg-c           side C accent (for 3-way trades)
+       grade colors:   A green | B gold | C sand | D/F coral
+     ──────────────────────────────────────────────────────── */
   body,
   body[data-trades-theme="cards"],
   body[data-trades-theme="tribunal"],
   body[data-trades-theme="wire"],
   body[data-trades-theme="floor"] {
-    background: #15100a;
-    background-image: none;
-    color: #f5e9c8;
+    --tg-bg:        #0d1117;
+    --tg-bg-edge:   #11161e;
+    --tg-card:      #161b22;
+    --tg-card-head: #0f1419;
+    --tg-line:      #2d3441;
+    --tg-line-soft: #1f2632;
+    --tg-mute:      #8a96a8;
+    --tg-text:      #e6edf3;
+    --tg-text-em:   #f0c878;
+    --tg-gold:      #d8b15a;
+    --tg-a:         #5cbda1;
+    --tg-b:         #e08b5c;
+    --tg-c:         #c489d6;
+
+    background: var(--tg-bg) !important;
+    background-image:
+      radial-gradient(ellipse 120% 60% at 50% -10%, rgba(108, 152, 200, .08), transparent 60%),
+      linear-gradient(180deg, var(--tg-bg-edge) 0%, var(--tg-bg) 30%) !important;
+    color: var(--tg-text) !important;
     font-family: var(--serif);
   }
 
-  /* Hide the commissioner theme picker on mobile — themes don't apply here */
+  /* Hide the desktop theme picker on mobile — themes don't apply here */
   body[data-trades-theme] #theme-picker,
-  body[data-trades-theme] .tr-theme-picker {
-    display: none !important;
-  }
+  body[data-trades-theme] .tr-theme-picker { display: none !important; }
 
   /* ── Wrap ─────────────────────────────────────────── */
   body[data-trades-theme] .tr-wrap {
     max-width: 100%;
-    padding: 1rem .9rem 3rem;
+    padding: 1.1rem 1rem 3rem;
   }
 
-  /* ── Page head ────────────────────────────────────── */
+  /* ── Page head ─────────────────────────────────────
+     Minimal masthead — small kicker bar over a strong
+     serif title, hairline accent below. */
   body[data-trades-theme] .tr-page-head {
-    text-align: center;
-    padding: .25rem 0 1.4rem !important;
-    margin-bottom: 1.2rem !important;
-    border-bottom: 1px solid #4c3922 !important;
     background: transparent !important;
-    border: none;
-    border-bottom: 1px solid #4c3922 !important;
+    padding: .3rem 0 1.3rem !important;
+    margin-bottom: 1.4rem !important;
+    border: none !important;
+    border-bottom: 1px solid var(--tg-line) !important;
+    text-align: left !important;
+    position: relative;
   }
   body[data-trades-theme] .tr-page-head::after { display: none !important; }
-  body[data-trades-theme] .tr-page-title {
-    font-family: var(--serif) !important;
-    font-size: clamp(2rem, 8vw, 2.5rem) !important;
-    font-weight: 400 !important;
-    line-height: 1.05 !important;
-    color: #f5e9c8 !important;
-    text-transform: none !important;
-    letter-spacing: -.01em !important;
-  }
-  body[data-trades-theme] .tr-page-title em {
-    color: #c8a464 !important;
-    font-style: italic !important;
-  }
   body[data-trades-theme] .tr-page-sup {
-    display: inline-block !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: .5rem !important;
     font-family: var(--mono) !important;
-    font-size: .54rem !important;
-    letter-spacing: .28em !important;
+    font-size: .52rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .3em !important;
     text-transform: uppercase !important;
-    color: #c8a464 !important;
+    color: var(--tg-gold) !important;
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
-    margin: 0 0 .8rem !important;
+    margin: 0 0 .6rem !important;
     border-radius: 0 !important;
+  }
+  body[data-trades-theme] .tr-page-sup::before {
+    content: '';
+    display: inline-block;
+    width: 18px; height: 1px;
+    background: var(--tg-gold);
+  }
+  body[data-trades-theme] .tr-page-title {
+    font-family: var(--serif) !important;
+    font-size: clamp(2rem, 9vw, 2.6rem) !important;
+    font-weight: 400 !important;
+    line-height: 1 !important;
+    color: var(--tg-text) !important;
+    text-transform: none !important;
+    letter-spacing: -.015em !important;
+    margin: 0 !important;
+  }
+  body[data-trades-theme] .tr-page-title em {
+    color: var(--tg-text-em) !important;
+    font-style: italic !important;
   }
 
   /* ── Tabs ─────────────────────────────────────────── */
   body[data-trades-theme] .tr-tabs {
-    border-bottom: 1px solid #4c3922 !important;
-    margin-bottom: 1.4rem;
+    border-bottom: 1px solid var(--tg-line) !important;
+    margin-bottom: 1.5rem;
     gap: 0;
   }
   body[data-trades-theme] .tr-tab {
     font-family: var(--mono) !important;
     font-size: .58rem !important;
-    letter-spacing: .2em !important;
-    color: #7d6a52 !important;
-    padding: .75rem 1rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .22em !important;
+    color: var(--tg-mute) !important;
+    padding: .8rem 1.05rem !important;
+    border: none !important;
     border-bottom: 2px solid transparent !important;
+    background: transparent !important;
+    text-transform: uppercase;
+    transition: color .15s ease;
   }
+  body[data-trades-theme] .tr-tab:hover { color: var(--tg-text) !important; }
   body[data-trades-theme] .tr-tab.active {
-    color: #c8a464 !important;
-    border-bottom-color: #c8a464 !important;
+    color: var(--tg-text-em) !important;
+    border-bottom-color: var(--tg-text-em) !important;
   }
 
   /* ── Sections ─────────────────────────────────────── */
-  body[data-trades-theme] .tr-section { margin-bottom: 1.8rem; }
+  body[data-trades-theme] .tr-section { margin-bottom: 2rem; }
   body[data-trades-theme] .tr-section-head {
     display: flex !important;
     align-items: baseline;
-    gap: .35rem .8rem;
-    padding-bottom: .65rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid #4c3922 !important;
     flex-wrap: wrap;
+    gap: .3rem .7rem;
+    padding-bottom: .8rem;
+    margin-bottom: 1.1rem;
+    border-bottom: 1px solid var(--tg-line-soft) !important;
   }
-  /* Pin the num to the top row, push the title to its own row
-     beneath so the serif heading actually reads as a title (it was
-     getting crammed onto one line with the mono kicker before). */
   body[data-trades-theme] .tr-section-num {
     font-family: var(--mono) !important;
     font-weight: 700 !important;
-    font-size: .58rem !important;
+    font-size: .56rem !important;
     letter-spacing: .25em !important;
-    color: #c8a464 !important;
+    color: var(--tg-gold) !important;
     text-transform: uppercase;
     flex: 1 1 auto;
   }
   body[data-trades-theme] .tr-section-meta {
     font-family: var(--mono) !important;
-    font-size: .52rem !important;
-    letter-spacing: .16em !important;
-    color: #7d6a52 !important;
+    font-size: .5rem !important;
+    letter-spacing: .18em !important;
+    color: var(--tg-mute) !important;
     margin-left: auto !important;
     text-transform: uppercase;
     flex-shrink: 0;
   }
   body[data-trades-theme] .tr-section-title {
     font-family: var(--serif) !important;
-    font-size: 1.35rem !important;
-    color: #f5e9c8 !important;
-    line-height: 1.15 !important;
+    font-size: 1.55rem !important;
+    color: var(--tg-text) !important;
+    line-height: 1.1 !important;
     flex: 1 1 100% !important;
     font-weight: 400 !important;
-    margin-top: .2rem;
+    margin-top: .35rem !important;
+    letter-spacing: -.01em;
   }
   body[data-trades-theme] .tr-section-title em {
-    color: #c8a464 !important;
+    color: var(--tg-text-em) !important;
     font-style: italic !important;
   }
   body[data-trades-theme] .tr-section-empty {
-    background: #1f160d !important;
-    border: 1px dashed #4c3922 !important;
-    color: #7d6a52 !important;
+    background: var(--tg-card) !important;
+    border: 1px dashed var(--tg-line) !important;
+    color: var(--tg-mute) !important;
     text-align: center;
-    padding: 1.2rem .9rem !important;
-    border-radius: 3px !important;
+    padding: 1.3rem 1rem !important;
+    border-radius: 6px !important;
     font-size: .82rem !important;
   }
 
-  /* ── Card ─────────────────────────────────────────── */
-  /* Bigger gap + shadow so each trade reads as its own card and not
-     a continuous stack. Subtle gold left rule reinforces the
-     "trade boundary" feel — same convention the analyzer's
-     :nth-of-type bar uses on stacked teams. */
-  body[data-trades-theme] .tr-list { gap: 1.25rem; }
+  /* ── Trade card ────────────────────────────────────
+     Larger gap, prominent gold left rail, shadow so
+     each deal reads as its own object on the feed. */
+  body[data-trades-theme] .tr-list { gap: 1.35rem; }
   body[data-trades-theme] .tr-card {
-    background: #322217 !important;
-    border: 1px solid #4c3922 !important;
-    border-left: 3px solid #c8a464 !important;
-    border-radius: 4px !important;
+    background: var(--tg-card) !important;
+    border: 1px solid var(--tg-line) !important;
+    border-left: none !important;
+    border-radius: 8px !important;
     padding: 0 !important;
     overflow: hidden;
     background-image: none !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, .35), 0 6px 14px rgba(0, 0, 0, .25);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, .02) inset,
+      0 4px 14px rgba(0, 0, 0, .35),
+      0 1px 3px rgba(0, 0, 0, .25);
+    position: relative;
+  }
+  body[data-trades-theme] .tr-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--tg-text-em), var(--tg-gold));
   }
 
-  /* Card head — date / week / season / platform.
-     Bolder dateline strip so the trade boundary is unmistakable
-     and the metadata is more readable. */
+  /* Card head — date / week / season / platform */
   body[data-trades-theme] .tr-card-head {
     display: flex !important;
     flex-wrap: wrap !important;
     align-items: center !important;
-    gap: .35rem .8rem !important;
-    padding: .65rem .95rem !important;
+    gap: .35rem .85rem !important;
+    padding: .7rem 1rem !important;
     margin: 0 !important;
-    background: #1f160d !important;
+    background: var(--tg-card-head) !important;
     border: none !important;
-    border-bottom: 1px solid #4c3922 !important;
+    border-bottom: 1px solid var(--tg-line) !important;
     font-family: var(--mono) !important;
     font-weight: 700 !important;
     font-size: .56rem !important;
-    letter-spacing: .18em !important;
+    letter-spacing: .2em !important;
     text-transform: uppercase !important;
-    color: #9c8665 !important;
+    color: var(--tg-mute) !important;
   }
   body[data-trades-theme] .tr-card-head::before,
   body[data-trades-theme] .tr-card-head::after { display: none !important; }
-  body[data-trades-theme] .tr-date { color: #f5e9c8 !important; font-weight: 700 !important; }
-  body[data-trades-theme] .tr-week { color: #c8a464 !important; font-weight: 700 !important; }
+  body[data-trades-theme] .tr-date {
+    color: var(--tg-text) !important;
+    font-weight: 700 !important;
+  }
+  body[data-trades-theme] .tr-week {
+    color: var(--tg-text-em) !important;
+    font-weight: 700 !important;
+  }
   body[data-trades-theme] .tr-plat {
     margin-left: auto !important;
-    border: 1px solid #4c3922 !important;
-    padding: 2px 7px !important;
+    border: 1px solid var(--tg-line) !important;
+    padding: 2px 8px !important;
     border-radius: 999px !important;
-    color: #c4ad84 !important;
-    background: rgba(200, 164, 100, .06) !important;
+    color: var(--tg-mute) !important;
+    background: rgba(216, 177, 90, .04) !important;
     font-size: .5rem !important;
-    letter-spacing: .2em !important;
+    letter-spacing: .22em !important;
   }
 
-  /* ── Summary ──────────────────────────────────────── */
+  /* ── Summary ─────────────────────────────────────── */
   body[data-trades-theme] .tr-summary {
     font-family: var(--serif) !important;
-    font-size: .82rem !important;
+    font-style: italic !important;
+    font-size: .9rem !important;
     line-height: 1.55 !important;
-    color: #ddd0aa !important;
-    background: transparent !important;
-    padding: .85rem .95rem !important;
+    color: var(--tg-text) !important;
+    background: rgba(216, 177, 90, .03) !important;
+    padding: .95rem 1rem !important;
     margin: 0 !important;
     border: none !important;
-    border-bottom: 1px solid #4c3922 !important;
+    border-bottom: 1px solid var(--tg-line-soft) !important;
+    position: relative;
+  }
+  body[data-trades-theme] .tr-summary::before {
+    content: '“';
+    position: absolute;
+    left: .55rem; top: .35rem;
+    font-family: var(--serif);
+    font-size: 1.8rem;
+    line-height: 1;
+    color: var(--tg-gold);
+    opacity: .35;
+  }
+  body[data-trades-theme] .tr-summary-text {
+    display: block !important;
+    padding-left: .85rem;
   }
   body[data-trades-theme] .tr-summary-text::before { content: none !important; }
   body[data-trades-theme] .tr-summary-toggle {
     font-family: var(--mono) !important;
+    font-style: normal !important;
     font-size: .52rem !important;
+    font-weight: 700 !important;
     letter-spacing: .22em !important;
-    color: #c8a464 !important;
-    opacity: .85 !important;
-    margin-top: .5rem !important;
+    color: var(--tg-text-em) !important;
+    opacity: .9 !important;
+    margin-top: .55rem !important;
+    margin-left: .85rem !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    cursor: pointer;
   }
 
-  /* ── Sides — single-column stack ───────────────────── */
-  /* A trade has 2+ sides. After they collapse to one column we lose
-     the side-by-side visual cue, so paint a tag stripe down each
-     side (gold on the first, sand on the second) and bump the
-     between-sides separator to a heavier dashed line. */
+  /* ── Sides — single-column stack with strong A/B/C colored
+       chips. Each side gets its own labeled chip ("SIDE A",
+       "SIDE B") above the manager identity, plus a left rail
+       in the side's color to make the boundary unmissable. */
   body[data-trades-theme] .tr-sides {
     display: grid !important;
     grid-template-columns: 1fr !important;
@@ -236,46 +319,68 @@
     background: transparent !important;
   }
   body[data-trades-theme] .tr-side {
-    background: #322217 !important;
-    padding: .9rem .95rem !important;
-    gap: .55rem !important;
+    background: var(--tg-card) !important;
+    padding: 1rem 1rem 1.05rem !important;
+    gap: .65rem !important;
     border: none !important;
     box-shadow: none !important;
     position: relative;
+    --side-accent: var(--tg-mute);
   }
+  body[data-trades-theme] .tr-side:nth-of-type(1) { --side-accent: var(--tg-a); }
+  body[data-trades-theme] .tr-side:nth-of-type(2) { --side-accent: var(--tg-b); }
+  body[data-trades-theme] .tr-side:nth-of-type(3) { --side-accent: var(--tg-c); }
   body[data-trades-theme] .tr-side + .tr-side {
-    border: none !important;
-    border-top: 1px dashed #4c3922 !important;
+    border-top: 1px dashed var(--tg-line) !important;
   }
-  /* Side tag stripe — runs the full height on the left edge */
+  /* Colored left rail in the side's accent color */
   body[data-trades-theme] .tr-side::before {
     content: '';
     position: absolute;
     left: 0; top: 0; bottom: 0;
-    width: 2px;
+    width: 3px;
+    background: var(--side-accent);
+    opacity: .85;
   }
-  body[data-trades-theme] .tr-side:nth-of-type(1)::before { background: #c8a464; }
-  body[data-trades-theme] .tr-side:nth-of-type(2)::before { background: #c4ad84; }
-  body[data-trades-theme] .tr-side:nth-of-type(3)::before { background: #a8895c; }
-  /* Slight indent so the tag stripe doesn't clip the avatar */
-  body[data-trades-theme] .tr-side > * { padding-left: .25rem; }
+  /* "SIDE A" / "SIDE B" chip pinned to the top-left corner */
+  body[data-trades-theme] .tr-side::after {
+    position: absolute;
+    top: .8rem; right: .9rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .48rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--side-accent);
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid var(--side-accent);
+    padding: 2px 7px;
+    border-radius: 999px;
+    opacity: .9;
+  }
+  body[data-trades-theme] .tr-side:nth-of-type(1)::after { content: 'Side A'; }
+  body[data-trades-theme] .tr-side:nth-of-type(2)::after { content: 'Side B'; }
+  body[data-trades-theme] .tr-side:nth-of-type(3)::after { content: 'Side C'; }
+
   body[data-trades-theme] .tr-side-head {
     display: flex !important;
     align-items: center !important;
-    gap: .6rem !important;
+    gap: .7rem !important;
+    padding-right: 4rem; /* leave room for the SIDE A/B chip */
   }
   body[data-trades-theme] .tr-side-avatar {
-    width: 30px !important; height: 30px !important;
+    width: 36px !important; height: 36px !important;
     border-radius: 50% !important;
-    border: 1px solid #4c3922 !important;
-    background: #1f160d !important;
+    border: 2px solid var(--side-accent) !important;
+    background: var(--tg-card-head) !important;
     object-fit: cover !important;
+    flex-shrink: 0;
   }
   body[data-trades-theme] .tr-side-name {
     font-family: var(--serif) !important;
-    font-size: .95rem !important;
+    font-size: 1.02rem !important;
     line-height: 1.15 !important;
-    color: #f5e9c8 !important;
+    color: var(--tg-text) !important;
     font-weight: 400 !important;
     text-transform: none !important;
     letter-spacing: 0 !important;
@@ -283,173 +388,236 @@
   body[data-trades-theme] .tr-side-team {
     font-family: var(--mono) !important;
     font-size: .52rem !important;
-    letter-spacing: .16em !important;
-    color: #7d6a52 !important;
+    font-weight: 700 !important;
+    letter-spacing: .18em !important;
+    color: var(--tg-mute) !important;
     text-transform: uppercase !important;
+    margin-top: .15rem;
   }
   body[data-trades-theme] .tr-side-label {
     font-family: var(--mono) !important;
+    font-weight: 700 !important;
     font-size: .5rem !important;
-    letter-spacing: .25em !important;
-    color: #7d6a52 !important;
+    letter-spacing: .28em !important;
+    color: var(--side-accent) !important;
     text-transform: uppercase !important;
+    opacity: .85;
   }
 
-  /* ── Assets ───────────────────────────────────────── */
+  /* ── Assets — clean rows with a position pill + name + team ── */
   body[data-trades-theme] .tr-assets {
     display: flex !important;
     flex-direction: column !important;
-    gap: .3rem !important;
+    gap: .35rem !important;
   }
   body[data-trades-theme] .tr-asset {
     display: flex !important;
-    align-items: baseline !important;
-    gap: .45rem !important;
-    background: #1f160d !important;
-    border: none !important;
-    border-left: 2px solid #4c3922 !important;
-    border-radius: 2px !important;
-    padding: .35rem .55rem !important;
-    font-size: .82rem !important;
-    color: #f5e9c8 !important;
+    align-items: center !important;
+    gap: .5rem !important;
+    background: rgba(255, 255, 255, .025) !important;
+    border: 1px solid var(--tg-line-soft) !important;
+    border-radius: 4px !important;
+    padding: .4rem .6rem !important;
+    font-size: .85rem !important;
+    color: var(--tg-text) !important;
   }
-  body[data-trades-theme] .tr-asset.kind-pick { border-left-color: #c8a464 !important; }
-  body[data-trades-theme] .tr-asset.kind-faab { border-left-color: #7d6a52 !important; }
+  body[data-trades-theme] .tr-asset.kind-player {
+    border-left: 2px solid var(--side-accent) !important;
+  }
+  body[data-trades-theme] .tr-asset.kind-pick {
+    border-left: 2px solid var(--tg-gold) !important;
+    background: rgba(216, 177, 90, .04) !important;
+  }
+  body[data-trades-theme] .tr-asset.kind-faab {
+    border-left: 2px solid var(--tg-mute) !important;
+  }
   body[data-trades-theme] .tr-asset-pos {
     font-family: var(--mono) !important;
-    font-size: .55rem !important;
-    letter-spacing: .12em !important;
-    color: #c8a464 !important;
-    min-width: 28px !important;
+    font-weight: 700 !important;
+    font-size: .54rem !important;
+    letter-spacing: .14em !important;
+    color: var(--side-accent) !important;
+    background: rgba(255, 255, 255, .04);
+    padding: 2px 5px;
+    border-radius: 3px;
+    min-width: 30px !important;
+    text-align: center;
     text-transform: uppercase !important;
   }
+  body[data-trades-theme] .tr-asset.kind-pick .tr-asset-pos {
+    color: var(--tg-gold) !important;
+  }
   body[data-trades-theme] .tr-asset-name {
-    color: #f5e9c8 !important;
+    color: var(--tg-text) !important;
     font-family: var(--serif) !important;
+    flex: 1;
+    min-width: 0;
   }
   body[data-trades-theme] .tr-asset-team {
     font-family: var(--mono) !important;
-    font-size: .56rem !important;
-    letter-spacing: .1em !important;
-    color: #7d6a52 !important;
+    font-size: .58rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .12em !important;
+    color: var(--tg-mute) !important;
+    text-transform: uppercase;
   }
 
-  /* ── Grade badges ─────────────────────────────────── */
+  /* ── Grade badges ─────────────────────────────────
+     A circular pill at the bottom of each side, colored
+     by the grade tier. Stands out as the verdict. */
   body[data-trades-theme] .tr-grade {
-    margin-top: .6rem !important;
-    padding-top: .55rem !important;
-    border-top: 1px solid #4c3922 !important;
+    margin-top: .8rem !important;
+    padding-top: .75rem !important;
+    border-top: 1px solid var(--tg-line-soft) !important;
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     gap: .65rem !important;
   }
-  body[data-trades-theme] .tr-grade::before,
+  body[data-trades-theme] .tr-grade::before { content: 'Grade'; }
+  body[data-trades-theme] .tr-grade::before {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .5rem;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--tg-mute);
+    margin-right: auto;
+  }
   body[data-trades-theme] .tr-grade::after { content: none !important; }
   body[data-trades-theme] .tr-grade-letter {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: auto !important; height: auto !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+    width: 44px !important; height: 44px !important;
+    background: rgba(216, 177, 90, .08) !important;
+    border: 1.5px solid var(--tg-gold) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .3) !important;
     transform: none !important;
     font-family: var(--serif) !important;
     font-weight: 700 !important;
-    font-size: 1.4rem !important;
+    font-size: 1.35rem !important;
     line-height: 1 !important;
-    color: #c8a464 !important;
+    color: var(--tg-gold) !important;
     letter-spacing: 0 !important;
   }
-  body[data-trades-theme] .tr-grade-letter.g-a { color: #b8d690 !important; }
-  body[data-trades-theme] .tr-grade-letter.g-b { color: #c8a464 !important; }
-  body[data-trades-theme] .tr-grade-letter.g-c { color: #c4ad84 !important; }
-  body[data-trades-theme] .tr-grade-letter.g-d { color: #d6907e !important; }
+  body[data-trades-theme] .tr-grade-letter.g-a {
+    color: #79c285 !important;
+    border-color: #79c285 !important;
+    background: rgba(121, 194, 133, .1) !important;
+  }
+  body[data-trades-theme] .tr-grade-letter.g-b {
+    color: #d4a94c !important;
+    border-color: #d4a94c !important;
+    background: rgba(212, 169, 76, .1) !important;
+  }
+  body[data-trades-theme] .tr-grade-letter.g-c {
+    color: #c4ad84 !important;
+    border-color: #c4ad84 !important;
+    background: rgba(196, 173, 132, .1) !important;
+  }
+  body[data-trades-theme] .tr-grade-letter.g-d {
+    color: #e0816e !important;
+    border-color: #e0816e !important;
+    background: rgba(224, 129, 110, .1) !important;
+  }
+  /* Revisit row — the "then → now" comparison stays inline */
   body[data-trades-theme] .tr-grade-then {
-    font-size: 1rem !important;
-    width: auto !important; height: auto !important;
+    width: 34px !important; height: 34px !important;
     opacity: .55 !important;
+    font-size: 1rem !important;
   }
   body[data-trades-theme] .tr-grade-arrow {
-    color: #7d6a52 !important;
+    color: var(--tg-mute) !important;
     font-size: .9rem !important;
   }
+  body[data-trades-theme] .tr-grade-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: .45rem !important;
+  }
   body[data-trades-theme] .tr-grade-pending {
-    margin-top: .55rem !important;
-    padding-top: .55rem !important;
-    border-top: 1px solid #4c3922 !important;
+    margin-top: .8rem !important;
+    padding-top: .75rem !important;
+    border-top: 1px solid var(--tg-line-soft) !important;
     font-family: var(--mono) !important;
-    font-size: .54rem !important;
-    letter-spacing: .22em !important;
+    font-weight: 700 !important;
+    font-size: .52rem !important;
+    letter-spacing: .26em !important;
     text-transform: uppercase !important;
-    color: #7d6a52 !important;
+    color: var(--tg-mute) !important;
     background: transparent !important;
   }
 
   /* ── Empty / lock states ──────────────────────────── */
   body[data-trades-theme] .tr-empty {
     text-align: center !important;
-    padding: 2.4rem .9rem !important;
-    color: #c4ad84 !important;
+    padding: 2.6rem 1rem !important;
+    color: var(--tg-mute) !important;
     background: transparent !important;
   }
   body[data-trades-theme] .tr-empty h2 {
     font-family: var(--serif) !important;
-    font-size: 1.3rem !important;
-    color: #f5e9c8 !important;
-    margin-bottom: .55rem !important;
+    font-size: 1.4rem !important;
+    color: var(--tg-text) !important;
+    margin-bottom: .6rem !important;
     font-weight: 400 !important;
   }
   body[data-trades-theme] .tr-empty p {
-    font-size: .82rem !important;
-    line-height: 1.5 !important;
-    color: #c4ad84 !important;
+    font-size: .85rem !important;
+    line-height: 1.55 !important;
+    color: var(--tg-mute) !important;
+    max-width: 22rem;
+    margin: 0 auto;
   }
   body[data-trades-theme] .tr-lock {
     text-align: center !important;
-    background: #322217 !important;
-    border: 1px solid #4c3922 !important;
-    padding: 2.2rem 1rem 2.4rem !important;
-    border-radius: 4px !important;
+    background: var(--tg-card) !important;
+    border: 1px solid var(--tg-line) !important;
+    padding: 2.4rem 1.1rem 2.6rem !important;
+    border-radius: 8px !important;
   }
   body[data-trades-theme] .tr-lock-icon {
-    color: #c8a464 !important;
-    font-size: 2.2rem !important;
+    color: var(--tg-text-em) !important;
+    font-size: 2.4rem !important;
     letter-spacing: .3em !important;
-    margin-bottom: .9rem !important;
+    margin-bottom: .95rem !important;
   }
   body[data-trades-theme] .tr-lock h2 {
     font-family: var(--serif) !important;
-    font-size: clamp(1.2rem, 5vw, 1.6rem) !important;
-    color: #f5e9c8 !important;
-    margin-bottom: .8rem !important;
+    font-size: clamp(1.3rem, 5vw, 1.7rem) !important;
+    color: var(--tg-text) !important;
+    margin-bottom: .85rem !important;
     font-weight: 400 !important;
   }
   body[data-trades-theme] .tr-lock h2 em {
-    color: #c8a464 !important; font-style: italic !important;
+    color: var(--tg-text-em) !important;
+    font-style: italic !important;
   }
   body[data-trades-theme] .tr-lock p {
-    color: #c4ad84 !important;
-    font-size: .82rem !important;
-    line-height: 1.5 !important;
+    color: var(--tg-mute) !important;
+    font-size: .85rem !important;
+    line-height: 1.55 !important;
     max-width: 26rem !important;
-    margin: 0 auto 1.2rem !important;
+    margin: 0 auto 1.3rem !important;
   }
   body[data-trades-theme] .tr-lock-cta {
     display: inline-block !important;
-    background: #c8a464 !important;
-    color: #15100a !important;
+    background: var(--tg-text-em) !important;
+    color: #1a1208 !important;
     border: none !important;
-    padding: .6rem 1.1rem !important;
-    border-radius: 2px !important;
+    padding: .7rem 1.25rem !important;
+    border-radius: 999px !important;
     font-family: var(--mono) !important;
+    font-weight: 700 !important;
     font-size: .6rem !important;
-    letter-spacing: .22em !important;
+    letter-spacing: .25em !important;
     text-transform: uppercase !important;
     text-decoration: none !important;
+    box-shadow: 0 2px 6px rgba(216, 177, 90, .25);
   }
 
   /* ── Spinner color anchor ─────────────────────────── */
-  body[data-trades-theme] .tsc-spinner { color: #c8a464; }
+  body[data-trades-theme] .tsc-spinner { color: var(--tg-text-em) !important; }
 }

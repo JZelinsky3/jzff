@@ -8,19 +8,21 @@
 <link rel="stylesheet" href="/pams-template/assets/css/trades.css">
 <link rel="stylesheet" href="/pams-template/assets/css/trades-grader-mobile.css">
 <style>
-/* Mobile shell — the grader desktop ships 4 themes (cards / tribunal /
-   wire / floor); on phones we drop the theme system and adopt the same
-   walnut pams-template look every other Trade Desk room uses. App-bar
-   + tab-bar pick the walnut palette regardless of which theme the
-   commish chose (the desktop theme picker is hidden on mobile via
-   trades-grader-mobile.css). */
+/* Mobile shell — the grader desktop ships 4 themes; on phones we
+   drop the theme system and build a single purpose-tuned look in
+   trades-grader-mobile.css (cool slate palette, news-feed cards,
+   strong A/B side chips). App-bar + tab-bar pick the matching
+   slate chrome here so the masthead doesn't fight the page. */
 :root {
-    --m-chrome-bg:  #15100a;
-    --m-chrome-bg2: #1f160d;
+    --m-chrome-bg:  #0a0e13;
+    --m-chrome-bg2: #11161e;
 }
 .m-appbar, .m-tabbar {
-    --ink-line: #4c3922; --gold: #c8a464; --gold-deep: #8a6f3a;
-    --cream: #f5e9c8; --cream-mute: #9c8665;
+    --ink-line: #2d3441;
+    --gold: #f0c878;
+    --gold-deep: #d8b15a;
+    --cream: #e6edf3;
+    --cream-mute: #8a96a8;
 }
 body {
     padding-top: calc(var(--m-appbar-h) + env(safe-area-inset-top));
@@ -32,7 +34,7 @@ body {
     display: block;
     width: 38px; height: 38px;
     margin: 0 auto 1rem;
-    color: var(--td-live, currentColor);
+    color: #f0c878;
     animation: tsc-spin 1.1s linear infinite;
 }
 .tsc-spinner[data-size="sm"] {
