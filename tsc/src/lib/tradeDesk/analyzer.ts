@@ -191,7 +191,7 @@ async function loadLeagueHeader(
   const db = createAdminClient()
   const { data: league } = await db
     .from('leagues')
-    .select('id, name, slug, platform, owner_id, trade_desk_settings')
+    .select('id, name, slug, platform, owner_id, external_id, trade_desk_settings')
     .eq(opts.lookupBy, leagueIdOrSlug)
     .maybeSingle<{
       id: string
@@ -199,6 +199,7 @@ async function loadLeagueHeader(
       slug: string
       platform: string
       owner_id: string
+      external_id: string
       trade_desk_settings: unknown
     }>()
   if (!league) return { ok: false, error: { kind: 'not-found' } }
@@ -254,6 +255,9 @@ async function loadLeagueHeader(
   // it in and dispatch to the NFL loader. Keying off the row shape (not
   // leagues.platform) also covers leagues that migrated platforms
   // mid-history: a now-Sleeper league's 2025 NFL.com season still loads.
+  // Legacy NFL leagues created before the multi-source schema have no
+  // league_sources row; fall back to leagues.external_id, which holds the
+  // NFL.com league id for those.
   let platform = league.platform
   let resolvedLeagueId = liveLeagueId
   if (/^\d{4}$/.test(liveLeagueId) && Number(liveLeagueId) === seasonYear) {
@@ -263,9 +267,19 @@ async function loadLeagueHeader(
       .eq('league_id', league.id)
       .eq('platform', 'nfl')
       .maybeSingle<{ external_id: string }>()
-    if (src?.external_id) {
+    const nflLeagueId = src?.external_id
+      ?? (league.platform === 'nfl' && !/^\d{4}$/.test(league.external_id)
+          ? league.external_id
+          : undefined)
+    if (nflLeagueId) {
       platform = 'nfl'
-      resolvedLeagueId = src.external_id
+      resolvedLeagueId = nflLeagueId
+    } else if (league.platform === 'nfl') {
+      // Last-ditch: platform says nfl but every lookup gave us a year-shaped
+      // id. Refuse rather than hitting NFL.com with "/league/2025/..." which
+      // bounces straight to the homepage and confuses the caller with a
+      // "no owners returned" downstream parse.
+      return { ok: false, error: { kind: 'nfl-failed', message: `league ${league.id} has no NFL.com league id stored (leagues.external_id=${league.external_id}, no nfl league_sources row)` } }
     }
   }
 

@@ -6,48 +6,26 @@
 <title>Trade Grader · The Trade Desk · {{LEAGUE_NAME}}</title>
 <link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
 <link rel="stylesheet" href="/pams-template/assets/css/trades.css">
+<link rel="stylesheet" href="/pams-template/assets/css/trades-grader-mobile.css">
 <style>
-/* Mobile shell fit-up — the room keeps the desktop's trades.css +
-   trades.js wholesale (same theme variants, grading engine, feeds);
-   only the chrome swaps to the app shell. */
-
-/* App bar + tab bar follow the commish's grader theme (the route stamps
-   data-trades-theme on <body>), mirroring the desktop nav recolors in
-   trades.css — not the walnut Trade Desk hub. */
+/* Mobile shell — the grader desktop ships 4 themes (cards / tribunal /
+   wire / floor); on phones we drop the theme system and adopt the same
+   walnut pams-template look every other Trade Desk room uses. App-bar
+   + tab-bar pick the walnut palette regardless of which theme the
+   commish chose (the desktop theme picker is hidden on mobile via
+   trades-grader-mobile.css). */
 :root {
-    --m-chrome-bg:  #2a1d11;   /* cards fallback before the attr resolves */
-    --m-chrome-bg2: #322217;
+    --m-chrome-bg:  #15100a;
+    --m-chrome-bg2: #1f160d;
 }
-body[data-trades-theme="cards"] { --m-chrome-bg: #2a1d11; --m-chrome-bg2: #322217; }
-body[data-trades-theme="cards"] .m-appbar,
-body[data-trades-theme="cards"] .m-tabbar {
+.m-appbar, .m-tabbar {
     --ink-line: #4c3922; --gold: #c8a464; --gold-deep: #8a6f3a;
     --cream: #f5e9c8; --cream-mute: #9c8665;
-}
-body[data-trades-theme="tribunal"] { --m-chrome-bg: #14100d; --m-chrome-bg2: #1f1714; }
-body[data-trades-theme="tribunal"] .m-appbar,
-body[data-trades-theme="tribunal"] .m-tabbar {
-    --ink-line: #3a2820; --gold: #c8a464; --gold-deep: #8a6f3a;
-    --cream: #ede0c4; --cream-mute: #7e6e58;
-}
-body[data-trades-theme="wire"] { --m-chrome-bg: #efeae0; --m-chrome-bg2: #f6f1e4; }
-body[data-trades-theme="wire"] .m-appbar,
-body[data-trades-theme="wire"] .m-tabbar {
-    /* Newsprint flips light — ink text, masthead red accent. */
-    --ink-line: #c9bea3; --gold: #b03830; --gold-deep: #8a5a30;
-    --cream: #1a1612; --cream-mute: #6b5e44;
-}
-body[data-trades-theme="floor"] { --m-chrome-bg: #050707; --m-chrome-bg2: #0e1110; }
-body[data-trades-theme="floor"] .m-appbar,
-body[data-trades-theme="floor"] .m-tabbar {
-    --ink-line: #1c2421; --gold: #00ff9f; --gold-deep: #ffb000;
-    --cream: #c5d4cb; --cream-mute: #889084;
 }
 body {
     padding-top: calc(var(--m-appbar-h) + env(safe-area-inset-top));
     padding-bottom: calc(var(--m-tab-h) + env(safe-area-inset-bottom) + 12px);
 }
-.tr-wrap { padding-left: .9rem; padding-right: .9rem; }
 
 /* Spinner — lives in main.css on desktop; ported here */
 .tsc-spinner {
