@@ -507,10 +507,47 @@ function latestSeasonWithData(s: Snapshot): SeasonRow | undefined {
   return undefined
 }
 
+// "Current members" of the league. Naively this is "everyone in the most
+// recent season with manager_seasons rows," but that breaks during offseason
+// and mid-draft windows: as soon as ONE row lands for the next season (e.g.
+// a pre-draft Sleeper sync that picked up the commissioner alone), the
+// latest-with-data walk picks that skeleton season and flags everyone else
+// as alumni until a full re-sync.
+//
+// Defense: anchor on the latest season whose roster is at least half of the
+// league's typical (max-seen) roster — that's the most recent "real" season.
+// Then UNION in any seasons newer than the anchor so brand-new joiners in
+// an in-progress draft still count as current the moment they land.
 function currentManagerIdSet(s: Snapshot): Set<string> {
-  const sn = latestSeasonWithData(s)
-  if (!sn) return new Set()
-  return new Set((s.managerSeasonsBySeason.get(sn.id) ?? []).map((r) => r.manager_id))
+  if (s.seasons.length === 0) return new Set()
+  let maxRoster = 0
+  for (const sn of s.seasons) {
+    const n = (s.managerSeasonsBySeason.get(sn.id) ?? []).length
+    if (n > maxRoster) maxRoster = n
+  }
+  if (maxRoster === 0) return new Set()
+  const threshold = Math.ceil(maxRoster / 2)
+  let anchorIdx = -1
+  for (let i = s.seasons.length - 1; i >= 0; i--) {
+    const n = (s.managerSeasonsBySeason.get(s.seasons[i].id) ?? []).length
+    if (n >= threshold) { anchorIdx = i; break }
+  }
+  if (anchorIdx === -1) {
+    // No season meets the threshold (single-season league still seeding).
+    // Fall back to the older "latest with any data" behavior.
+    for (let i = s.seasons.length - 1; i >= 0; i--) {
+      const ms = s.managerSeasonsBySeason.get(s.seasons[i].id) ?? []
+      if (ms.length > 0) return new Set(ms.map((r) => r.manager_id))
+    }
+    return new Set()
+  }
+  const out = new Set<string>()
+  for (let i = anchorIdx; i < s.seasons.length; i++) {
+    for (const r of s.managerSeasonsBySeason.get(s.seasons[i].id) ?? []) {
+      out.add(r.manager_id)
+    }
+  }
+  return out
 }
 
 // Is this a championship-bracket playoff game (vs a consolation / placement game)?
