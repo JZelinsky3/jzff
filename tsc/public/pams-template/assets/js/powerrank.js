@@ -207,7 +207,7 @@
     var isPre = 'win_pct' in factors
     var defs = isPre
       ? [['win_pct', 'Win%'], ['pf_avg', 'PF'], ['recent', 'Rec3'], ['pedigree', 'Ped']]
-      : [['record', 'Rec'], ['pf', 'PF'], ['form', 'Frm'], ['conf', 'Conf']]
+      : [['record', 'Rec·SOS'], ['pf', 'PF'], ['form', 'Frm'], ['top_half', 'Top½'], ['conf', 'Conf']]
     var maxes = isPre ? state.data.weights.preseason : state.data.weights.inseason
     return '<div class="factor-bars">' + defs.map(function (d) {
       var key = d[0], label = d[1]

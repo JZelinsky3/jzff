@@ -1,14 +1,27 @@
-// Power rankings for the live season.
+// Power rankings for the live season — v2 formula.
 //
 // A ranking snapshot is computed for the preseason (week 0) and after each
 // completed week. Each team gets a 0–100 score from a weighted formula:
 //
-//   Preseason (pure career history):
-//     Win% 20 · PF Avg 21 · Recent 24 · Pedigree 35
+//   Preseason (career history, weeks 0–3, blended out):
+//     Win% 22 · PF Avg 22 · Recent 24 · Pedigree 32
 //   In-season (week 4+):
-//     Record 33 · Points For 30 · Form 20 · Conference 17
-//     (no divisions → Record 40 · PF 35 · Form 25 · Conf 0)
-//   Weeks 1–3 blend the preseason score out: 30% / 20% / 10%, then 0%.
+//     Record-SOS 23 · PF 27 · Form 20 · Conference 12 · Top-Half 18
+//     (no divisions → Record-SOS 27 · PF 30 · Form 23 · Top-Half 20)
+//   Weeks 0–3 blend preseason out smoothly: 100/75/50/25/0 instead of the
+//   old 30/20/10 step.
+//
+// v2 improvements over v1:
+// - Record-SOS: win% multiplied by 0.85 + 0.30 × avg-opponent-PF-percentile.
+//   Round-robin leagues already have low SOS variance, so the multiplier
+//   only nudges ±15%.
+// - PF uses PPG (bye-week aware) percentile, not raw season PF.
+// - Form combines W/L AND margin: 60% result + 40% point-diff percentile,
+//   over the last 3 weeks weighted .5/.3/.2.
+// - Top-Half Rate: % of weeks the team's score beat that week's league
+//   median. Schedule-independent measure of real strength.
+// - Smooth preseason slide: pedigree contribution fades to zero by week 4
+//   instead of snapping off.
 //
 // Everything derives from manager_seasons (career) + the live season's
 // matchups (in-season) — no extra ingest. Monte Carlo projections are added
@@ -19,16 +32,17 @@ import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { simulateSeason } from '@/lib/powerSim'
 
 export type PowerFactors = {
-  // preseason
+  // preseason (weeks 0–3, blended down)
   win_pct?: number
   pf_avg?: number
   recent?: number
   pedigree?: number
-  // in-season
-  record?: number
-  pf?: number
-  form?: number
-  conf?: number
+  // in-season (weeks 1+, blended up)
+  record?: number   // SOS-adjusted win%
+  pf?: number       // PPG percentile (bye-aware)
+  form?: number     // 60% W/L + 40% point-diff percentile, last 3 weighted .5/.3/.2
+  conf?: number     // div win% (zero when no divisions)
+  top_half?: number // share of weeks scored above weekly league median
 }
 
 export type PowerTeam = {
@@ -79,11 +93,15 @@ export type PowerRankings =
       weeks: PowerWeek[]
     }
 
-const PRESEASON_W = { win_pct: 20, pf_avg: 21, recent: 24, pedigree: 35 }
-const INSEASON_DIV_W = { record: 33, pf: 30, form: 20, conf: 17 }
-const INSEASON_NODIV_W = { record: 40, pf: 35, form: 25, conf: 0 }
-// Share of the preseason (history) score still mixed in, by week.
-const HISTORY_BLEND: Record<number, number> = { 1: 0.3, 2: 0.2, 3: 0.1 }
+const PRESEASON_W = { win_pct: 22, pf_avg: 22, recent: 24, pedigree: 32 }
+const INSEASON_DIV_W   = { record: 23, pf: 27, form: 20, conf: 12, top_half: 18 }
+const INSEASON_NODIV_W = { record: 27, pf: 30, form: 23, conf: 0,  top_half: 20 }
+// Preseason history blend: linear ramp from 1.0 → 0 across weeks 0–4.
+// Replaces v1's 30/20/10 step so the pedigree term fades smoothly instead
+// of snapping off at week 4.
+function preseasonBlend(throughWeek: number): number {
+  return Math.max(0, (4 - throughWeek) / 4)
+}
 
 // Percentile of `value` within `pool`: fraction below + half the ties. 0–1.
 function percentile(value: number, pool: number[]): number {
@@ -268,12 +286,15 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
   const inSeasonW = hasDivisions ? INSEASON_DIV_W : INSEASON_NODIV_W
 
   function snapshot(throughWeek: number): PowerTeam[] {
-    // Season aggregates from scored matchups up to `throughWeek`.
-    type Agg = { w: number; l: number; pf: number; pa: number; weekResults: { week: number; win: 0 | 0.5 | 1 }[] }
+    // Season aggregates from scored matchups up to `throughWeek`. We track
+    // the full game list (score / opp score / opp id) so SOS, margin-form,
+    // and top-half rate can derive from it.
+    type Game = { week: number; result: 0 | 0.5 | 1; score: number; oppScore: number; oppId: string }
+    type Agg = { w: number; l: number; pf: number; pa: number; games: Game[] }
     const agg = new Map<string, Agg>()
     const ensureAgg = (id: string): Agg => {
       let a = agg.get(id)
-      if (!a) { a = { w: 0, l: 0, pf: 0, pa: 0, weekResults: [] }; agg.set(id, a) }
+      if (!a) { a = { w: 0, l: 0, pf: 0, pa: 0, games: [] }; agg.set(id, a) }
       return a
     }
     for (const b of bases) ensureAgg(b.teamId)
@@ -286,13 +307,51 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         const b = ensureAgg(g.manager_b_id)
         a.pf += sa; a.pa += sb
         b.pf += sb; b.pa += sa
-        if (sa > sb) { a.w++; b.l++; a.weekResults.push({ week: w, win: 1 }); b.weekResults.push({ week: w, win: 0 }) }
-        else if (sb > sa) { b.w++; a.l++; a.weekResults.push({ week: w, win: 0 }); b.weekResults.push({ week: w, win: 1 }) }
-        else { a.weekResults.push({ week: w, win: 0.5 }); b.weekResults.push({ week: w, win: 0.5 }) }
+        const resultA: 0 | 0.5 | 1 = sa > sb ? 1 : sa < sb ? 0 : 0.5
+        const resultB: 0 | 0.5 | 1 = sb > sa ? 1 : sb < sa ? 0 : 0.5
+        if (resultA === 1) { a.w++; b.l++ }
+        else if (resultB === 1) { b.w++; a.l++ }
+        a.games.push({ week: w, result: resultA, score: sa, oppScore: sb, oppId: g.manager_b_id })
+        b.games.push({ week: w, result: resultB, score: sb, oppScore: sa, oppId: g.manager_a_id })
       }
     }
 
+    // Per-team season totals — needed both for the PF factor and as the
+    // SOS pool (each opponent's PF percentile is read from this).
     const seasonPfPool = bases.map((b) => agg.get(b.teamId)!.pf)
+
+    // Bye-aware PPG pool for the PF factor.
+    const ppgPool = bases.map((b) => {
+      const a = agg.get(b.teamId)!
+      const games = a.w + a.l
+      return games > 0 ? a.pf / games : 0
+    })
+
+    // League-wide margin pool — used to percentile a single game's
+    // point-differential for the Form factor.
+    const marginPool: number[] = []
+    for (const b of bases) {
+      for (const g of agg.get(b.teamId)!.games) marginPool.push(g.score - g.oppScore)
+    }
+
+    // League weekly medians — Top-Half rate counts the weeks a team
+    // scored above the median of that week's scores (including its own).
+    const weeklyMedian = new Map<number, number>()
+    for (let wk = 1; wk <= throughWeek; wk++) {
+      const scores: number[] = []
+      for (const g of byWeek.get(wk) ?? []) {
+        if (g.score_a == null || g.score_b == null) continue
+        scores.push(Number(g.score_a))
+        scores.push(Number(g.score_b))
+      }
+      if (scores.length === 0) continue
+      scores.sort((x, y) => x - y)
+      const mid = scores.length / 2
+      weeklyMedian.set(
+        wk,
+        Number.isInteger(mid) ? (scores[mid - 1]! + scores[mid]!) / 2 : scores[Math.floor(mid)]!,
+      )
+    }
 
     // Division rank (by season win%, then PF) for the conference factor.
     const divRank = new Map<string, { rank: number; size: number }>()
@@ -316,12 +375,13 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
       }
     }
 
-    const blend = throughWeek === 0 ? 1 : HISTORY_BLEND[throughWeek] ?? 0
+    const blend = preseasonBlend(throughWeek)
 
     const teams: Omit<PowerTeam, 'rank' | 'delta'>[] = bases.map((b) => {
       const a = agg.get(b.teamId)!
       const games = a.w + a.l
       const winPct = games > 0 ? a.w / games : 0
+      const ppg = games > 0 ? a.pf / games : 0
 
       // Preseason factors.
       const preFactors: PowerFactors = {
@@ -332,19 +392,64 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
       }
       const preScore = (preFactors.win_pct ?? 0) + (preFactors.pf_avg ?? 0) + (preFactors.recent ?? 0) + (preFactors.pedigree ?? 0)
 
-      // Form: win% over the last 3 completed weeks.
-      const last3 = [...a.weekResults].sort((x, y) => y.week - x.week).slice(0, 3)
-      const formPct = last3.length > 0 ? last3.reduce((s, r) => s + r.win, 0) / last3.length : 0
+      // Record-SOS: scale season win% by avg opponent PF percentile.
+      // Multiplier ranges 0.85 (faced the basement) → 1.15 (faced the
+      // contenders); capped at 1.0 so the factor stays in [0, max].
+      let sosMult = 1.0
+      if (a.games.length > 0) {
+        let sum = 0
+        for (const g of a.games) {
+          const oppAgg = agg.get(g.oppId)
+          sum += oppAgg ? percentile(oppAgg.pf, seasonPfPool) : 0.5
+        }
+        const avgSos = sum / a.games.length
+        sosMult = 0.85 + 0.30 * avgSos
+      }
+      const recordSos = Math.min(1, winPct * sosMult)
+
+      // Form: last 3 games weighted .5/.3/.2, each scored 60% W/L + 40%
+      // point-diff percentile. Empty → 0; partial (1–2 games) renormalizes
+      // by the weight actually consumed.
+      const last3 = [...a.games].sort((x, y) => y.week - x.week).slice(0, 3)
+      const formWeights = [0.5, 0.3, 0.2]
+      let formNum = 0
+      let formDen = 0
+      for (let i = 0; i < last3.length; i++) {
+        const g = last3[i]!
+        const w = formWeights[i] ?? 0
+        const marginPct = percentile(g.score - g.oppScore, marginPool)
+        formNum += w * (0.6 * g.result + 0.4 * marginPct)
+        formDen += w
+      }
+      const formPct = formDen > 0 ? formNum / formDen : 0
+
+      // Top-Half rate: share of weeks scored strictly above the league
+      // weekly median (ties count as half — same convention as percentile).
+      let topHalfRate = 0
+      if (a.games.length > 0) {
+        let credit = 0
+        for (const g of a.games) {
+          const m = weeklyMedian.get(g.week)
+          if (m == null) continue
+          if (g.score > m) credit += 1
+          else if (g.score === m) credit += 0.5
+        }
+        topHalfRate = credit / a.games.length
+      }
+
       const dr = divRank.get(b.teamId)
       const confNorm = dr && dr.size > 1 ? (dr.size - dr.rank) / (dr.size - 1) : 0
 
       const inFactors: PowerFactors = {
-        record: winPct * inSeasonW.record,
-        pf: percentile(a.pf, seasonPfPool) * inSeasonW.pf,
+        record: recordSos * inSeasonW.record,
+        pf: percentile(ppg, ppgPool) * inSeasonW.pf,
         form: formPct * inSeasonW.form,
         conf: confNorm * inSeasonW.conf,
+        top_half: topHalfRate * inSeasonW.top_half,
       }
-      const inScore = (inFactors.record ?? 0) + (inFactors.pf ?? 0) + (inFactors.form ?? 0) + (inFactors.conf ?? 0)
+      const inScore =
+        (inFactors.record ?? 0) + (inFactors.pf ?? 0) + (inFactors.form ?? 0) +
+        (inFactors.conf ?? 0) + (inFactors.top_half ?? 0)
 
       const score = blend * preScore + (1 - blend) * inScore
       const factors = throughWeek === 0 ? preFactors : inFactors
