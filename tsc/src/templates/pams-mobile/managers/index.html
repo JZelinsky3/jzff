@@ -79,23 +79,16 @@
 .mg-ticket.is-reigning .mg-stub { border-right-color: rgba(232,200,137,.55); }
 .mg-ticket.is-reigning::before, .mg-ticket.is-reigning::after { border-color: var(--gold); }
 .mg-ticket.is-reigning .mg-ava { border-color: var(--gold); background: rgba(232,200,137,.1); }
-/* .mg-name color rules consolidated below (with !important to win over
-   the body's default cream inheritance). */
-
-/* Active member names render near-white (#fffaf0, "floral white") so
-   they pop unmistakably against the card — the body's default cream
-   is too close to the bg to read as a distinct highlight. Alumni stay
-   muted cream so past members read as "lower tier." Reigning champion
-   gets a saturated amber gold (the default --gold token is too pale
-   and reads as cream too). */
+/* Name color is scoped by the section the row is in, not by per-row
+   classes — the JS already splits managers into #currentList vs
+   #alumniList based on is_current, so the section IS the signal. */
 .mg-name {
     min-width: 0; flex: 1;
     font-weight: 600; font-size: .95rem;
-    color: #f4ebd8 !important;
 }
-.mg-alumni .mg-name { color: var(--cream-mute) !important; }
-.mg-ticket.is-reigning .mg-name { color: var(--gold) !important; }
-.mg-alumni.is-reigning .mg-name { color: var(--gold) !important; }
+#currentList .mg-name { color: #f4ebd8; }
+#alumniList  .mg-name { color: var(--cream-mute); }
+.mg-ticket.is-reigning .mg-name { color: var(--gold); }
 /* Two-row layout: name on top, small ("Team · tenure" + championship
    pills) below. The small is a flex row so the team name ellipsizes
    while the tenure tail + pills hug the right and never wrap. */
@@ -247,20 +240,10 @@
         if (m.championships) classes += ' is-champ';
         if (m.is_reigning_champion) classes += ' is-reigning';
         if (isAlumni) classes += ' mg-alumni';
-        // Color the big name inline so no external CSS rule can override
-        // it. Inline styles beat class !important on the same element,
-        // so this is the most resilient way to make the cream/gold show
-        // when something downstream (cache, an unrelated rule) is
-        // suppressing the change.
-        var nameColor = m.is_reigning_champion
-            ? 'var(--gold)'               // reigning: same gold as the ticket border
-            : isAlumni
-                ? 'var(--cream-mute)'     // alumni: muted cream
-                : '#f4ebd8';              // active: site cream
         return '<a class="' + classes + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
             '<span class="mg-stub"><span class="mg-ava">' + esc(initial) + img + '</span></span>' +
             '<span class="mg-body">' +
-                '<span class="mg-name" style="color:' + nameColor + '">' + esc(m.name) +
+                '<span class="mg-name">' + esc(m.name) +
                     '<small>' +
                         '<span class="mg-team">' + esc(m.team_latest || '') + '</span>' +
                         '<span class="mg-tenure"> · ' + tenure + '</span>' +
