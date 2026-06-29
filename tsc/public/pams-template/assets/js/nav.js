@@ -884,9 +884,11 @@
             '  background: var(--gold, #e8c889); color: var(--ink, #06090e);',
             '}',
             '.dc-bm-btn.ghost {',
-            '  background: transparent;',
+            '  background: rgba(232, 200, 137, .08);',
             '  color: var(--gold, #e8c889);',
+            '  border-color: var(--gold-deep, #b58a3c);',
             '}',
+            '.dc-bm-btn.ghost:hover { background: rgba(232, 200, 137, .14); }',
             '.dc-bm-link {',
             '  display: block;',
             '  margin: .85rem auto 0;',
@@ -962,16 +964,12 @@
     }
 
     function openPostBookmarkModal() {
-        // Both options are equal-weight follow-ups (stay vs. go), so render
-        // them as twin primary buttons rather than primary + ghost. The ghost
-        // styling reads as a secondary fallback, which fits the pre-signin
-        // "already have an account" link but not this fork.
         openBookmarkModal(
             '<h2 class="dc-bm-title">Bookmarked <em>★</em></h2>' +
             '<p class="dc-bm-body">This league is saved to your library. Where to next?</p>' +
             '<div class="dc-bm-btns">' +
-              '<a class="dc-bm-btn" href="/dashboard">Go to my library</a>' +
-              '<button type="button" class="dc-bm-btn" data-bm-close>Stay on this league</button>' +
+              '<button type="button" class="dc-bm-btn" data-bm-close>Return to this league</button>' +
+              '<a class="dc-bm-btn ghost" href="/dashboard">Go to my library</a>' +
             '</div>'
         );
     }

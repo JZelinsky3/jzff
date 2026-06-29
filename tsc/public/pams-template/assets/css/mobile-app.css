@@ -268,10 +268,11 @@ body {
 }
 .m-sheet-cta:active { transform: translateY(1px); }
 .m-sheet-cta.ghost {
-    background: transparent;
+    background: rgba(232, 200, 137, .08);
     color: var(--gold);
     border: 1px solid var(--gold-deep);
 }
+.m-sheet-cta.ghost:active { background: rgba(232, 200, 137, .14); }
 /* Anchors styled as CTAs keep the same look across visited state. */
 a.m-sheet-cta { text-decoration: none; }
 .m-sheet-link {

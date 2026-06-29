@@ -91,9 +91,9 @@
 .mg-name {
     min-width: 0; flex: 1;
     font-weight: 600; font-size: .95rem;
-    color: #fffaf0 !important;
+    color: #f4ebd8 !important;
 }
-.mg-name { color: #f4ebd8 !important; }
+.mg-alumni .mg-name { color: var(--cream-mute) !important; }
 .mg-ticket.is-reigning .mg-name { color: var(--gold) !important; }
 .mg-alumni.is-reigning .mg-name { color: var(--gold) !important; }
 /* Two-row layout: name on top, small ("Team · tenure" + championship
@@ -240,7 +240,7 @@
         if (champYears.length > maxPills) {
             pills += '<span class="mg-champ-pill">+' + (champYears.length - maxPills) + '</span>';
         }
-        var tenure = m.seasons_played + (m.seasons_played === 1 ? ' season' : ' seasons');
+        var tenure = m.seasons_played + ' yrs';
         // is-champ: ever won (gives the gold ticket-stub border + avatar ring).
         // is-reigning: holds the most recent title (adds gold name + brighter border).
         var classes = 'mg-ticket';
@@ -254,7 +254,9 @@
         // suppressing the change.
         var nameColor = m.is_reigning_champion
             ? 'var(--gold)'               // reigning: same gold as the ticket border
-            : '#f4ebd8';                  // everyone else: site cream
+            : isAlumni
+                ? 'var(--cream-mute)'     // alumni: muted cream
+                : '#f4ebd8';              // active: site cream
         return '<a class="' + classes + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
             '<span class="mg-stub"><span class="mg-ava">' + esc(initial) + img + '</span></span>' +
             '<span class="mg-body">' +
