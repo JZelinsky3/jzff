@@ -924,6 +924,14 @@
         document.body.insertBefore(strip, document.body.firstChild);
     }
 
+    // Expose sheet helpers so page-level scripts (powerrank, etc.) can
+    // adopt the same swipe-to-dismiss + open/close transitions as the
+    // shell-built sheets without re-implementing them.
+    window.__MA = window.__MA || {};
+    window.__MA.wireSheetDrag = wireSheetDrag;
+    window.__MA.openSheet = openSheet;
+    window.__MA.closeSheet = closeSheet;
+
     // ── Init ────────────────────────────────────────────────────────────
     // Progress bar first — synchronously, before any template fetch fires.
     installProgressBar();
