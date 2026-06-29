@@ -20,6 +20,11 @@
 /* ── Ticket stubs — one admission ticket per member. The stub (avatar side)
       is split off by a dashed perforation with punched semicircle notches. ── */
 .mg-tickets { display: flex; flex-direction: column; gap: .55rem; margin-top: .35rem; }
+/* Inherit color from the row so the browser's default visited-link
+   styling doesn't recolor a row you've tapped before — without this,
+   on mobile the last-tapped manager row reads as "brighter" than the
+   rest because of the UA's :visited default. */
+.mg-ticket, .mg-ticket:visited, .mg-ticket:hover, .mg-ticket:active { color: inherit; }
 .mg-ticket {
     position: relative;
     display: flex; align-items: stretch;
@@ -88,7 +93,8 @@
 }
 #currentList .mg-name { color: #f4ebd8; }
 #alumniList  .mg-name { color: var(--cream-mute); }
-.mg-ticket.is-reigning .mg-name { color: var(--gold); }
+/* !important so reigning beats the higher-specificity section-id rules above. */
+.mg-ticket.is-reigning .mg-name { color: var(--gold) !important; }
 /* Two-row layout: name on top, small ("Team · tenure" + championship
    pills) below. The small is a flex row so the team name ellipsizes
    while the tenure tail + pills hug the right and never wrap. */
