@@ -428,12 +428,16 @@
         var sheet = document.createElement('dialog');
         sheet.className = 'm-sheet';
         sheet.id = 'm-sheet-bookmark-post';
+        // Both follow-ups are equal-weight choices, so render the library
+        // link as a proper CTA (not a sheetRow — that read as the old
+        // not-signed-in list style) and the "stay" action as a quiet ghost
+        // CTA underneath.
         sheet.innerHTML =
             '<div class="m-sheet-handle" aria-hidden></div>' +
             '<div class="m-sheet-title">Bookmarked <em>★</em></div>' +
             '<div class="m-sheet-body">This league is saved to your library. Where to next?</div>' +
-            '<button class="m-sheet-cta" data-action="stay">Return to this league</button>' +
-            sheetRow('/dashboard', 'Go to my library');
+            '<a class="m-sheet-cta" href="/dashboard">Go to my library</a>' +
+            '<button class="m-sheet-cta ghost" data-action="stay">Stay on this league</button>';
         document.body.appendChild(sheet);
         sheet.addEventListener('click', function (e) {
             if (e.target === sheet) closeSheet(sheet);

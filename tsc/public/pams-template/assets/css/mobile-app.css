@@ -267,6 +267,13 @@ body {
     cursor: pointer;
 }
 .m-sheet-cta:active { transform: translateY(1px); }
+.m-sheet-cta.ghost {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold-deep);
+}
+/* Anchors styled as CTAs keep the same look across visited state. */
+a.m-sheet-cta { text-decoration: none; }
 .m-sheet-link {
     display: block;
     margin: .25rem auto .5rem;
