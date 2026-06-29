@@ -179,13 +179,26 @@ export async function mountGoogleSignInButton(
 
   parent.innerHTML = ''
   const measured = parent.clientWidth
-  window.google!.accounts.id.renderButton(parent, {
-    type: 'standard',
-    theme: 'outline',
-    size: 'large',
-    text: 'continue_with',
-    shape: 'rectangular',
-    logo_alignment: 'left',
-    width: measured > 0 ? Math.min(400, Math.max(240, measured)) : 320,
-  })
+  const width = measured > 0 ? Math.min(400, Math.max(240, measured)) : 320
+
+  // Render two stacked GIS buttons (outline + filled_black) and cross-fade
+  // between them on parent :hover via CSS. Same nonce, same callback —
+  // either click triggers the same sign-in flow.
+  const outlineSlot = document.createElement('div')
+  outlineSlot.className = 'dc-gis-btn dc-gis-btn-outline'
+  const filledSlot = document.createElement('div')
+  filledSlot.className = 'dc-gis-btn dc-gis-btn-filled'
+  parent.appendChild(outlineSlot)
+  parent.appendChild(filledSlot)
+
+  const common = {
+    type: 'standard' as const,
+    size: 'large' as const,
+    text: 'continue_with' as const,
+    shape: 'rectangular' as const,
+    logo_alignment: 'left' as const,
+    width,
+  }
+  window.google!.accounts.id.renderButton(outlineSlot, { ...common, theme: 'outline' })
+  window.google!.accounts.id.renderButton(filledSlot, { ...common, theme: 'filled_black' })
 }
