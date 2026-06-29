@@ -510,6 +510,18 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       description: `An upcoming head-to-head in ${meta.name} — records, form, projections, and the all-time ledger.`,
     }
   }
+  // Power Rankings: /leagues/<slug>/live/powerrank/
+  // Cream-paper podium card — week, top three power-ranked teams with
+  // records and PR scores. Falls back to a "board is set" card when no
+  // live week has been scored yet.
+  if (file === 'live/powerrank/index.html') {
+    const url = new URL(`/api/og/powerrank/${meta.slug}`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · Power Rankings`,
+      description: `${meta.name}'s power rankings — auto-calculated weekly from record, points for, form, and conference standing.`,
+    }
+  }
   // Pick'ems: /leagues/<slug>/live/pickems/
   // Leaderboard card — week #, top three pickers' W-L. Falls back to a
   // "picks are open" card when no week has been decided yet.

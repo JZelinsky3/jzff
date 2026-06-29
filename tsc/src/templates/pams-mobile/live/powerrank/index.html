@@ -25,11 +25,42 @@ body { background: #f0e5c8; color: var(--ink); }
         radial-gradient(circle at 85% 85%, rgba(160, 72, 48, .05) 0%, transparent 50%);
 }
 
-.pr-head { text-align: center; padding: 1.1rem 0 .7rem; }
+.pr-head { text-align: center; padding: 1.1rem 0 .7rem; position: relative; }
 .pr-head .m-kicker { color: var(--rust); }
 .pr-title { font-family: var(--serif); font-size: 1.7rem; line-height: 1.05; color: var(--ink); }
 .pr-title em { font-style: italic; color: var(--rust); }
 .pr-sub { margin-top: .35rem; color: var(--pr-mute); }
+
+/* Subtle share pill — top-right of the header, mirrors the (i) info icon's
+   weight so it doesn't fight the title. Same .pr-share-btn used for the
+   toast fallback when navigator.share is missing. */
+.pr-share-btn {
+    position: absolute; top: 1.05rem; right: 0;
+    background: rgba(255, 252, 244, .65);
+    border: 1px solid var(--pr-line);
+    border-radius: 999px;
+    color: var(--rust);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .42rem .7rem;
+    display: inline-flex; align-items: center; gap: .3rem;
+}
+.pr-share-btn svg { display: block; width: 9px; height: 9px; }
+.pr-share-btn:active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+.pr-toast {
+    position: fixed;
+    left: 50%; transform: translateX(-50%);
+    bottom: calc(env(safe-area-inset-bottom) + 1.3rem);
+    background: var(--ink); color: var(--cream);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
+    padding: .55rem .9rem;
+    border-radius: 999px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .18s ease-out;
+    z-index: 200;
+}
+.pr-toast.is-on { opacity: 1; }
 
 /* Loading / empty */
 .pr-msg { text-align: center; padding: 2.5rem 1rem; }
@@ -253,7 +284,12 @@ body { background: #f0e5c8; color: var(--ink); }
         <div class="m-kicker">{{LEAGUE_ABBR}} · Auto-Calculated</div>
         <h1 class="pr-title">Power <em>Rankings.</em></h1>
         <div class="m-mono pr-sub" id="prSub">Updated weekly</div>
+        <button type="button" class="pr-share-btn" id="shareBtn" aria-label="Share these rankings" hidden>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg>
+            Share
+        </button>
     </header>
+    <output id="prToast" class="pr-toast" aria-live="polite">Link copied</output>
 
     <div class="pr-msg" id="prMessage">
         <h2>Loading…</h2>
@@ -320,15 +356,51 @@ body { background: #f0e5c8; color: var(--ink); }
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
-    // Long team names overflow the podium runner cards and the table's name
-    // column. Names past the cap collapse to word initials ("Goliath
-    // National Bank" → "GNB"); long single words get cut instead.
-    function shortTeam(name, max) {
+    // Initials for fallback when even the min font size won't fit. Single-word
+    // names get a 6-char head+ellipsis instead of a useless one-letter "abbr".
+    function abbrevTeam(name) {
         name = String(name == null ? '' : name).trim();
-        if (name.length <= max) return name;
-        var words = name.split(/\s+/);
-        if (words.length < 2) return name.slice(0, max - 1) + '…';
-        return words.map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+        var words = name.split(/\s+/).filter(Boolean);
+        if (words.length > 1) {
+            return words.map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+        }
+        return name.length > 7 ? name.slice(0, 6) + '…' : name;
+    }
+    // Shrink-to-fit. Try full name at the CSS-defined max font, step down
+    // by .5px until either (a) it fits, or (b) we hit minPx — at which
+    // point we swap to initials at the original max size. Keeps short
+    // names crisp, long names readable, and very long names clean.
+    function fitTeamName(el, minPx) {
+        if (!el) return;
+        var full = el.getAttribute('data-name');
+        if (full == null) return;
+        el.style.fontSize = '';
+        el.textContent = full;
+        if (el.scrollWidth <= el.clientWidth) return;
+        var maxPx = parseFloat(window.getComputedStyle(el).fontSize) || 14;
+        var size = maxPx;
+        var floor = Math.min(minPx, maxPx - 0.5);
+        while (el.scrollWidth > el.clientWidth && size > floor) {
+            size -= 0.5;
+            el.style.fontSize = size + 'px';
+        }
+        if (el.scrollWidth > el.clientWidth) {
+            el.style.fontSize = '';
+            el.textContent = abbrevTeam(full);
+        }
+    }
+    function fitAllTeamNames() {
+        // (selector, minPx) pairs — minimums set so type stays legible on
+        // a 320px viewport. Hero leads at 20px / floors at 13px; the runner
+        // cards and table rows have less room so they floor a touch lower.
+        var pairs = [
+            ['.pd-hero-name', 13],
+            ['.pd-runner-name', 9.5],
+            ['.pr-team-name', 10],
+        ];
+        pairs.forEach(function (p) {
+            document.querySelectorAll(p[0]).forEach(function (el) { fitTeamName(el, p[1]); });
+        });
     }
 
     var state = { data: null, weeks: [], activeWk: null, view: 'overall' };
@@ -340,6 +412,7 @@ body { background: #f0e5c8; color: var(--ink); }
 
     function boot(data) {
         bindFormulaSheet();
+        bindShareBtn();
         if (data.status === 'no-live') {
             return showMessage('No live season', 'Power rankings run during the season. Check back when the commissioner sets a live week.');
         }
@@ -438,6 +511,9 @@ body { background: #f0e5c8; color: var(--ink); }
         renderTable(teams, !isOverall);
         renderProjections(week.overall);
         renderConfGrid(week.divisions || []);
+        // Shrink-to-fit runs after the DOM swap settles, otherwise the
+        // measurements come from a 0-width container during init.
+        requestAnimationFrame(fitAllTeamNames);
     }
 
     function logoImg(t, cls) {
@@ -459,7 +535,7 @@ body { background: #f0e5c8; color: var(--ink); }
                     logoImg(first, 'pd-hero-logo') +
                     '<div class="pd-hero-body">' +
                         '<div class="pd-hero-label">1st Place</div>' +
-                        '<div class="pd-hero-name">' + esc(shortTeam(first.team_name, 22)) + '</div>' +
+                        '<div class="pd-hero-name" data-name="' + esc(first.team_name) + '">' + esc(first.team_name) + '</div>' +
                         '<div class="pd-hero-mgr">' + esc(first.manager) + '</div>' +
                     '</div>' +
                     '<div class="pd-hero-right">' +
@@ -474,7 +550,7 @@ body { background: #f0e5c8; color: var(--ink); }
                 logoImg(t, 'pd-runner-logo') +
                 '<div class="pd-runner-body">' +
                     '<div class="pd-runner-label">' + label + '</div>' +
-                    '<div class="pd-runner-name">' + esc(shortTeam(t.team_name, 14)) + '</div>' +
+                    '<div class="pd-runner-name" data-name="' + esc(t.team_name) + '">' + esc(t.team_name) + '</div>' +
                     '<div class="pd-runner-meta">' + t.wins + '–' + t.losses + ' · ' + t.score.toFixed(1) + ' ' + deltaHTML(t.delta) + '</div>' +
                 '</div>' +
             '</div>';
@@ -500,7 +576,7 @@ body { background: #f0e5c8; color: var(--ink); }
                     '<span class="pr-team">' +
                         logoImg(t, 'pr-logo') +
                         '<span class="pr-team-body">' +
-                            '<span class="pr-team-name">' + esc(shortTeam(t.team_name, 16)) + '</span>' +
+                            '<span class="pr-team-name" data-name="' + esc(t.team_name) + '">' + esc(t.team_name) + '</span>' +
                             '<span class="pr-team-mgr">' + esc(t.manager) + conf + '</span>' +
                         '</span>' +
                     '</span>' +
@@ -613,6 +689,69 @@ body { background: #f0e5c8; color: var(--ink); }
             '</section>';
         }).join('');
     }
+
+    // Share button: native share sheet → clipboard fallback → toast.
+    // The OG image at /api/og/powerrank/<slug> is what actually renders
+    // as the preview card when the URL is pasted; this just surfaces the
+    // share affordance on-page.
+    function bindShareBtn() {
+        var btn = byId('shareBtn');
+        if (!btn) return;
+        btn.hidden = false;
+        btn.addEventListener('click', function () {
+            var leagueName = (window.__DC && window.__DC.name) || 'Power Rankings';
+            var week = state.weeks.find(function (w) { return w.id === state.activeWk; });
+            var wkLabel = week && week.week > 0 ? 'Week ' + week.week : 'Preseason';
+            var title = leagueName + ' · Power Rankings · ' + wkLabel;
+            var leader = week && week.overall && week.overall[0];
+            var text = leader
+                ? wkLabel + ' · ' + leader.team_name + ' leads at ' + leader.score.toFixed(1)
+                : leagueName + ' power rankings';
+            var url = window.location.href;
+            if (navigator.share) {
+                navigator.share({ title: title, text: text, url: url })
+                    .catch(function () { copyShareLink(url, title); });
+                return;
+            }
+            copyShareLink(url, title);
+        });
+    }
+    function copyShareLink(url, title) {
+        var payload = title ? title + ' — ' + url : url;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(payload).then(
+                function () { showToast('Link copied'); },
+                function () { showToast('Couldn’t copy'); }
+            );
+            return;
+        }
+        try {
+            var ta = document.createElement('textarea');
+            ta.value = payload;
+            ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('Link copied');
+        } catch (e) { showToast('Couldn’t copy'); }
+    }
+    function showToast(msg) {
+        var t = byId('prToast');
+        if (!t) return;
+        if (msg) t.textContent = msg;
+        t.classList.add('is-on');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(function () { t.classList.remove('is-on'); }, 2200);
+    }
+
+    // Re-fit on viewport resize / orientation change so a sideways flip
+    // doesn't leave names rendered at the wrong size.
+    var refitT = 0;
+    window.addEventListener('resize', function () {
+        clearTimeout(refitT);
+        refitT = setTimeout(fitAllTeamNames, 120);
+    });
 
     // Tap-to-expand factor breakdowns.
     document.querySelector('main').addEventListener('click', function (e) {
