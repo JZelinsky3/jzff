@@ -25,28 +25,15 @@ body { background: #f0e5c8; color: var(--ink); }
         radial-gradient(circle at 85% 85%, rgba(160, 72, 48, .05) 0%, transparent 50%);
 }
 
-.pr-head { text-align: center; padding: 1.1rem 0 .7rem; position: relative; }
+.pr-head { text-align: center; padding: 1.1rem 0 .7rem; }
 .pr-head .m-kicker { color: var(--rust); }
 .pr-title { font-family: var(--serif); font-size: 1.7rem; line-height: 1.05; color: var(--ink); }
 .pr-title em { font-style: italic; color: var(--rust); }
 .pr-sub { margin-top: .35rem; color: var(--pr-mute); }
 
-/* Subtle share pill — top-right corner of the header, sitting in the
-   gutter above the kicker so the league slug + title stay centered. Tight
-   padding + small mono lets it read as a utility chip, not a CTA. */
-.pr-share-btn {
-    position: absolute; top: .25rem; right: 0;
-    background: rgba(255, 252, 244, .65);
-    border: 1px solid var(--pr-line);
-    border-radius: 999px;
-    color: var(--rust);
-    font-family: var(--mono); font-weight: 700;
-    font-size: .46rem; letter-spacing: .18em; text-transform: uppercase;
-    padding: .32rem .55rem;
-    display: inline-flex; align-items: center; gap: .28rem;
-}
-.pr-share-btn svg { display: block; width: 8px; height: 8px; }
-.pr-share-btn:active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+/* Share button lives in the chrome app bar's right slot (injected via
+   __MA.setAppbarRight) — same float as the live hub's "Wk N" pill, so
+   the league title stays centered. Toast still belongs to the page. */
 .pr-toast {
     position: fixed;
     left: 50%; transform: translateX(-50%);
@@ -313,10 +300,6 @@ body { background: #f0e5c8; color: var(--ink); }
         <div class="m-kicker">{{LEAGUE_ABBR}} · Auto-Calculated</div>
         <h1 class="pr-title">Power <em>Rankings.</em></h1>
         <div class="m-mono pr-sub" id="prSub">Updated weekly</div>
-        <button type="button" class="pr-share-btn" id="shareBtn" aria-label="Share these rankings" hidden>
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg>
-            Share
-        </button>
     </header>
     <output id="prToast" class="pr-toast" aria-live="polite">Link copied</output>
 
@@ -801,14 +784,18 @@ body { background: #f0e5c8; color: var(--ink); }
     }
 
     // Share button: native share sheet → clipboard fallback → toast.
-    // The OG image at /api/og/powerrank/<slug> is what actually renders
-    // as the preview card when the URL is pasted; this just surfaces the
-    // share affordance on-page.
+    // Mounted in the chrome app bar's right slot (same float as the live
+    // hub's "Wk N" pill) via __MA.setAppbarRight, so the on-page header
+    // stays clean and the league title remains centered. The OG image at
+    // /api/og/powerrank/<slug> renders the preview when the URL is pasted.
     function bindShareBtn() {
-        var btn = byId('shareBtn');
-        if (!btn) return;
-        btn.hidden = false;
-        btn.addEventListener('click', function () {
+        if (!window.__MA || !window.__MA.setAppbarRight) return;
+        var html =
+            '<button type="button" class="m-appbar-share" aria-label="Share these rankings">' +
+                '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg>' +
+                'Share' +
+            '</button>';
+        window.__MA.setAppbarRight(html, function () {
             var leagueName = (window.__DC && window.__DC.name) || 'Power Rankings';
             var week = state.weeks.find(function (w) { return w.id === state.activeWk; });
             var wkLabel = week && week.week > 0 ? 'Week ' + week.week : 'Preseason';

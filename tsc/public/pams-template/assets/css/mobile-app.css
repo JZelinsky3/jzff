@@ -127,6 +127,30 @@ body {
     white-space: nowrap;
     pointer-events: none;
 }
+/* Same floating right-slot as the Wk N pill, but tappable. Used by
+   __MA.setAppbarRight() — currently the powerrank Share button. */
+.m-appbar-right-slot {
+    position: absolute;
+    right: max(8px, env(safe-area-inset-right));
+    top: 50%;
+    transform: translateY(-50%);
+    margin-top: calc(env(safe-area-inset-top) / 2);
+}
+.m-appbar-share {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    background: rgba(232, 200, 137, .08);
+    color: var(--gold);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .14em; text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.m-appbar-share svg { display: block; width: 9px; height: 9px; }
+.m-appbar-share:active { background: var(--gold); color: var(--ink); }
 
 /* ============================================================
    BOTTOM TAB BAR
