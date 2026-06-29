@@ -181,7 +181,7 @@ export async function mountGoogleSignInButton(
   const measured = parent.clientWidth
   window.google!.accounts.id.renderButton(parent, {
     type: 'standard',
-    theme: 'filled_black',
+    theme: 'outline',
     size: 'large',
     text: 'continue_with',
     shape: 'rectangular',
