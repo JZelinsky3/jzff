@@ -931,6 +931,26 @@
     window.__MA.wireSheetDrag = wireSheetDrag;
     window.__MA.openSheet = openSheet;
     window.__MA.closeSheet = closeSheet;
+    // Mount a custom right-side element on the chrome app bar — same slot
+    // the live hub uses for its "Wk N" pill. Floats absolutely so the
+    // centered league title isn't pushed off-axis. Re-applies after
+    // DOMContentLoaded if the bar isn't built yet.
+    window.__MA.setAppbarRight = function (html, onClick) {
+        function apply() {
+            var bar = document.querySelector('.m-appbar');
+            if (!bar) return false;
+            var prev = bar.querySelector('.m-appbar-right-slot');
+            if (prev) prev.remove();
+            var wrap = document.createElement('span');
+            wrap.className = 'm-appbar-right-slot';
+            wrap.innerHTML = html;
+            if (onClick) wrap.addEventListener('click', onClick);
+            bar.appendChild(wrap);
+            return true;
+        }
+        if (apply()) return;
+        document.addEventListener('DOMContentLoaded', apply, { once: true });
+    };
 
     // ── Init ────────────────────────────────────────────────────────────
     // Progress bar first — synchronously, before any template fetch fires.
