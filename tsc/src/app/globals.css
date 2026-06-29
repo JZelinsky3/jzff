@@ -13238,13 +13238,15 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     position: relative;
     width: 100%;
     min-height: 44px;
+    border-radius: 4px;
     opacity: 0;
     animation: dc-gis-fade-in .35s ease forwards;
     animation-delay: .15s;
-    transition: transform .18s ease;
+    transition: transform .18s ease, box-shadow .18s ease;
 }
 .dc-gis-mount:hover {
     transform: translateY(-1px);
+    box-shadow: 0 0 0 1.5px var(--gold), 0 6px 18px rgba(212, 175, 55, .22);
 }
 .dc-gis-mount .dc-gis-btn {
     position: absolute;
@@ -13252,7 +13254,7 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: opacity .18s ease;
+    transition: opacity .18s ease, filter .18s ease;
 }
 .dc-gis-mount .dc-gis-btn-filled {
     opacity: 0;
@@ -13265,6 +13267,11 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
 .dc-gis-mount:hover .dc-gis-btn-filled {
     opacity: 1;
     pointer-events: auto;
+    /* Tints the colorful Google "G" toward gold without touching the
+       black background or white text (both achromatic, unaffected by
+       hue-rotate). The G keeps enough multi-color signal to read as
+       Google's mark but takes on a warmer, TSC-aligned hue. */
+    filter: sepia(.45) hue-rotate(-15deg) saturate(1.4);
 }
 @keyframes dc-gis-fade-in {
     to { opacity: 1; }
