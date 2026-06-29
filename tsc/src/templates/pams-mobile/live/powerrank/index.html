@@ -31,21 +31,21 @@ body { background: #f0e5c8; color: var(--ink); }
 .pr-title em { font-style: italic; color: var(--rust); }
 .pr-sub { margin-top: .35rem; color: var(--pr-mute); }
 
-/* Subtle share pill — top-right of the header, mirrors the (i) info icon's
-   weight so it doesn't fight the title. Same .pr-share-btn used for the
-   toast fallback when navigator.share is missing. */
+/* Subtle share pill — top-right corner of the header, sitting in the
+   gutter above the kicker so the league slug + title stay centered. Tight
+   padding + small mono lets it read as a utility chip, not a CTA. */
 .pr-share-btn {
-    position: absolute; top: 1.05rem; right: 0;
+    position: absolute; top: .25rem; right: 0;
     background: rgba(255, 252, 244, .65);
     border: 1px solid var(--pr-line);
     border-radius: 999px;
     color: var(--rust);
     font-family: var(--mono); font-weight: 700;
-    font-size: .5rem; letter-spacing: .18em; text-transform: uppercase;
-    padding: .42rem .7rem;
-    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: .46rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .32rem .55rem;
+    display: inline-flex; align-items: center; gap: .28rem;
 }
-.pr-share-btn svg { display: block; width: 9px; height: 9px; }
+.pr-share-btn svg { display: block; width: 8px; height: 8px; }
 .pr-share-btn:active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
 .pr-toast {
     position: fixed;
@@ -586,7 +586,11 @@ body { background: #f0e5c8; color: var(--ink); }
                 '</button>' +
                 '<div class="pr-detail">' +
                     buildFactorBars(t.factors, factorRanks[i], teams.length) +
-                    '<div class="pr-detail-pf">Points for · <b>' + t.pf.toFixed(1) + '</b></div>' +
+                    '<div class="pr-detail-pf">Points for · <b>' + t.pf.toFixed(1) + '</b>' +
+                        (t.wins + t.losses > 0
+                            ? ' · <b>' + (t.pf / (t.wins + t.losses)).toFixed(1) + '</b> ppg'
+                            : '') +
+                    '</div>' +
                 '</div>' +
             '</div>';
         }).join('');

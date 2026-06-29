@@ -166,13 +166,14 @@ function renderPodiumCard(
           </span>
         </div>
 
-        {/* Headline lockup */}
+        {/* Headline lockup — week tag promoted, "Power Rankings." pulled
+            in so the podium gets the vertical room it needs. */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            paddingTop: '52px',
+            paddingTop: '22px',
             zIndex: 2,
           }}
         >
@@ -180,14 +181,14 @@ function renderPodiumCard(
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '20px',
+              gap: '22px',
               fontFamily: 'JetBrains',
               fontWeight: 700,
-              fontSize: '26px',
-              letterSpacing: '0.34em',
+              fontSize: '34px',
+              letterSpacing: '0.32em',
               color: BLACK,
               textTransform: 'uppercase',
-              marginBottom: '10px',
+              marginBottom: '6px',
             }}
           >
             <span style={{ display: 'flex' }}>★</span>
@@ -200,7 +201,7 @@ function renderPodiumCard(
             style={{
               display: 'flex',
               fontFamily: 'DMSerif',
-              fontSize: '108px',
+              fontSize: '78px',
               lineHeight: 1,
               color: INK,
             }}
@@ -215,8 +216,8 @@ function renderPodiumCard(
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
-            padding: '32px 90px 0',
+            gap: '10px',
+            padding: '24px 90px 0',
             zIndex: 2,
           }}
         >
@@ -271,7 +272,7 @@ function podiumRow(r: Row, idx: number) {
         display: 'flex',
         alignItems: 'center',
         gap: '24px',
-        padding: '14px 26px',
+        padding: '12px 26px',
         border: `1px solid ${isLead ? INK : INK_LINE}`,
         background: isLead
           ? `linear-gradient(90deg, ${INK} 0%, ${INK_SOFT} 100%)`
