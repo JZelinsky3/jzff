@@ -358,6 +358,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
       {isGoogleClientConfigured() ? (
         <div
           ref={googleMountRef}
+          className="dc-gis-mount"
           style={{ display: 'flex', justifyContent: 'center', minHeight: '44px' }}
         />
       ) : (

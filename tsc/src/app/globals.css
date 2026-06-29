@@ -13228,6 +13228,27 @@ body.tsc-hdr-collapsed .mlp-bar-fade {
 .mlogin-google:hover { border-color: var(--gold); }
 .mlogin-google:disabled { opacity: .55; cursor: default; }
 
+/* GIS (Google Identity Services) rendered-button wrapper. The button
+   itself lives in an iframe Google owns, so we can't style the chrome
+   directly — but a wrapper :hover gives the same gold-glow affordance
+   the rest of the auth surface uses, and an entry fade smooths the brief
+   delay between page paint and GIS finishing its iframe handshake. */
+.dc-gis-mount {
+    border-radius: 4px;
+    padding: 2px;
+    transition: box-shadow .18s ease, transform .18s ease;
+    opacity: 0;
+    animation: dc-gis-fade-in .35s ease forwards;
+    animation-delay: .15s;
+}
+.dc-gis-mount:hover {
+    box-shadow: 0 0 0 1px var(--gold), 0 6px 18px rgba(212, 175, 55, .18);
+    transform: translateY(-1px);
+}
+@keyframes dc-gis-fade-in {
+    to { opacity: 1; }
+}
+
 .mlogin-magic {
     appearance: none;
     width: 100%;

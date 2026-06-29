@@ -275,7 +275,7 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
       {isGoogleClientConfigured() ? (
         <div
           ref={googleMountRef}
-          className="mlogin-google-mount"
+          className="mlogin-google-mount dc-gis-mount"
           style={{ display: 'flex', justifyContent: 'center', minHeight: '44px' }}
         />
       ) : (
