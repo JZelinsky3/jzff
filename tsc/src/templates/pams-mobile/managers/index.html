@@ -93,7 +93,7 @@
     font-weight: 600; font-size: .95rem;
     color: #fffaf0 !important;
 }
-.mg-alumni .mg-name { color: var(--cream-mute) !important; }
+.mg-name { color: #f4ebd8 !important; }
 .mg-ticket.is-reigning .mg-name { color: var(--gold) !important; }
 .mg-alumni.is-reigning .mg-name { color: var(--gold) !important; }
 /* Two-row layout: name on top, small ("Team · tenure" + championship
@@ -254,9 +254,7 @@
         // suppressing the change.
         var nameColor = m.is_reigning_champion
             ? 'var(--gold)'               // reigning: same gold as the ticket border
-            : isAlumni
-                ? 'var(--cream-mute)'     // alumni: muted cream
-                : '#fffaf0';              // active: bright floral white
+            : '#f4ebd8';                  // everyone else: site cream
         return '<a class="' + classes + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
             '<span class="mg-stub"><span class="mg-ava">' + esc(initial) + img + '</span></span>' +
             '<span class="mg-body">' +
