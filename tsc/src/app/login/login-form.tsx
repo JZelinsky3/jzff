@@ -1,7 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import {
+  isGoogleClientConfigured,
+  mountGoogleSignInButton,
+  type GoogleSignInOptions,
+} from '@/lib/auth/google'
 
 type Mode = 'signin' | 'signup'
 type Status = 'idle' | 'submitting' | 'sent' | 'error'
@@ -124,11 +129,41 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
     setInfo(`Password reset link sent to ${email}. Click it, then change your password from your account page.`)
   }
 
-  // ─── Google OAuth ────────────────────────────────────────────────────────
-  // Supabase handles the round-trip to Google's consent screen. On return
-  // the user lands at /auth/callback which exchanges the code for a session.
-  // signInWithOAuth navigates the browser away on success, so we only reach
-  // the post-call code path on a setup error (e.g. provider not configured).
+  // ─── Google — GIS (preferred) ────────────────────────────────────────────
+  // Renders the official Google button via Google Identity Services and
+  // exchanges the ID token directly with Supabase. Google's consent screen
+  // shows this site's domain instead of the raw Supabase project URL.
+  //
+  // Falls back to the legacy OAuth redirect (onGoogleOAuth below) when
+  // NEXT_PUBLIC_GOOGLE_CLIENT_ID isn't configured.
+  const googleMountRef = useRef<HTMLDivElement | null>(null)
+  const optionsRef = useRef<GoogleSignInOptions>({})
+  optionsRef.current = {
+    next,
+    referral: mode === 'signup' ? (referral || undefined) : undefined,
+    referralOther: mode === 'signup' && referral === 'other' ? referralOther : undefined,
+  }
+  useEffect(() => {
+    if (!isGoogleClientConfigured()) return
+    const parent = googleMountRef.current
+    if (!parent) return
+    let cancelled = false
+    mountGoogleSignInButton(parent, () => optionsRef.current, {
+      onSubmitting: () => { if (!cancelled) { reset(); setStatus('submitting') } },
+      onError: (e) => { if (!cancelled) { setStatus('error'); setError(e.message) } },
+    }).catch((e: Error) => {
+      if (!cancelled) { setStatus('error'); setError(e.message) }
+    })
+    return () => { cancelled = true }
+    // Intentionally empty deps — the button is mounted once and reads
+    // referral/next/mode through optionsRef on each callback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ─── Google OAuth (legacy fallback) ──────────────────────────────────────
+  // Used only when NEXT_PUBLIC_GOOGLE_CLIENT_ID is unset. Supabase handles
+  // the round-trip to Google's consent screen; on return the user lands at
+  // /auth/callback which exchanges the code for a session.
   async function onGoogle() {
     reset(); setStatus('submitting')
     const supabase = createClient()
@@ -319,17 +354,24 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
         <span style={{ flex: 1, height: '1px', background: 'var(--ink-line)' }} />
       </div>
 
-      {/* Google */}
-      <button
-        type="button"
-        onClick={onGoogle}
-        disabled={submitting}
-        className="dc-btn-ghost dc-btn-block"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.65rem' }}
-      >
-        <GoogleIcon />
-        <span>Continue with Google</span>
-      </button>
+      {/* Google — GIS rendered button when configured, legacy OAuth button otherwise */}
+      {isGoogleClientConfigured() ? (
+        <div
+          ref={googleMountRef}
+          style={{ display: 'flex', justifyContent: 'center', minHeight: '44px' }}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={onGoogle}
+          disabled={submitting}
+          className="dc-btn-ghost dc-btn-block"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.65rem' }}
+        >
+          <GoogleIcon />
+          <span>Continue with Google</span>
+        </button>
+      )}
 
       {/* Magic link — sign-in tab only */}
       {mode === 'signin' && (

@@ -1,7 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import {
+  isGoogleClientConfigured,
+  mountGoogleSignInButton,
+  type GoogleSignInOptions,
+} from '@/lib/auth/google'
 
 type Mode = 'signin' | 'signup'
 type Status = 'idle' | 'submitting' | 'sent' | 'error'
@@ -95,13 +100,38 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
     setInfo(`Password reset link sent to ${email}. Tap it, then change your password from your account page.`)
   }
 
+  // ─── Google — GIS (preferred) ────────────────────────────────────────────
+  // See src/lib/auth/google.ts. Renders the official Google button so the
+  // consent screen shows this site's domain instead of the Supabase URL.
+  // Falls back to onGoogle() below when NEXT_PUBLIC_GOOGLE_CLIENT_ID is unset.
+  const googleMountRef = useRef<HTMLDivElement | null>(null)
+  const optionsRef = useRef<GoogleSignInOptions>({})
+  optionsRef.current = {
+    next,
+    referral: mode === 'signup' ? (referral || undefined) : undefined,
+    referralOther: mode === 'signup' && referral === 'other' ? referralOther : undefined,
+  }
+  useEffect(() => {
+    if (!isGoogleClientConfigured()) return
+    const parent = googleMountRef.current
+    if (!parent) return
+    let cancelled = false
+    mountGoogleSignInButton(parent, () => optionsRef.current, {
+      onSubmitting: () => { if (!cancelled) { reset(); setStatus('submitting') } },
+      onError: (e) => { if (!cancelled) { setStatus('error'); setError(e.message) } },
+    }).catch((e: Error) => {
+      if (!cancelled) { setStatus('error'); setError(e.message) }
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Legacy OAuth fallback (used only when GIS client ID is unconfigured).
   async function onGoogle() {
     reset(); setStatus('submitting')
     const supabase = createClient()
     const redirectTo = new URL('/auth/callback', window.location.origin)
     if (next) redirectTo.searchParams.set('next', next)
-    // Forward the optional referral choice through OAuth — /auth/callback
-    // applies it after the session exchange, only if the profile is blank.
     if (mode === 'signup' && referral) {
       redirectTo.searchParams.set('ref', referral)
       const otherTrim = referralOther.trim()
@@ -242,15 +272,23 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
         <span /><span className="mlogin-or-txt">or</span><span />
       </div>
 
-      <button
-        type="button"
-        onClick={onGoogle}
-        disabled={submitting}
-        className="mlogin-google"
-      >
-        <GoogleIcon />
-        <span>Continue with Google</span>
-      </button>
+      {isGoogleClientConfigured() ? (
+        <div
+          ref={googleMountRef}
+          className="mlogin-google-mount"
+          style={{ display: 'flex', justifyContent: 'center', minHeight: '44px' }}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={onGoogle}
+          disabled={submitting}
+          className="mlogin-google"
+        >
+          <GoogleIcon />
+          <span>Continue with Google</span>
+        </button>
+      )}
 
       {mode === 'signin' && (
         <button
