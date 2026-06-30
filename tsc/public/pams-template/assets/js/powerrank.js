@@ -208,7 +208,13 @@
     var defs = isPre
       ? [['win_pct', 'Win%'], ['pf_avg', 'PF'], ['recent', 'Rec3'], ['pedigree', 'Ped']]
       : [['record', 'Rec·SOS'], ['pf', 'PF'], ['form', 'Frm'], ['top_half', 'Top½'], ['conf', 'Conf']]
-    var maxes = isPre ? state.data.weights.preseason : state.data.weights.inseason
+    // In-season maxes vary by week (form/conf phase in across W1–3). Read
+    // them off the active snapshot; fall back to canonical W4+ for older
+    // payloads that didn't ship per-week weights.
+    var activeWeek = state.weeks.find(function (w) { return w.id === state.activeWk })
+    var maxes = isPre
+      ? state.data.weights.preseason
+      : (activeWeek && activeWeek.inseasonWeights) || state.data.weights.inseason
     return '<div class="factor-bars">' + defs.map(function (d) {
       var key = d[0], label = d[1]
       var max = maxes[key] || 0

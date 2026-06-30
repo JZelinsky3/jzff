@@ -8,8 +8,10 @@
 //   In-season (week 4+):
 //     Record-SOS 23 · PF 27 · Form 20 · Conference 12 · Top-Half 18
 //     (no divisions → Record-SOS 27 · PF 30 · Form 23 · Top-Half 20)
-//   Weeks 0–3 blend preseason out smoothly: 100/75/50/25/0 instead of the
-//   old 30/20/10 step.
+//   Weeks 1–3 use reduced in-season factor sets so the preseason history
+//   can fill the gap (history weight 30 / 20 / 10). Form is excluded
+//   until week 4 (with <3 games it's identical to Record); Conf joins at
+//   week 3 for division leagues only.
 //
 // v2 improvements over v1:
 // - Record-SOS: win% multiplied by 0.85 + 0.30 × avg-opponent-PF-percentile.
@@ -73,6 +75,10 @@ export type PowerWeek = {
   id: string // "preseason" | "1" | "2" ...
   week: number // 0 = preseason
   label: string
+  // In-season factor max-points used for this snapshot. Varies week 1–3 (form
+  // / conf phased in) and matches INSEASON_*_W from week 4 on. The UI uses
+  // this to size the factor bars and to hide bars whose max is 0.
+  inseasonWeights: Record<string, number>
   overall: PowerTeam[]
   // one entry per division, in division order
   divisions: { key: string; name: string; teams: PowerTeam[] }[]
@@ -93,14 +99,45 @@ export type PowerRankings =
       weeks: PowerWeek[]
     }
 
+type InSeasonW = { record: number; pf: number; form: number; conf: number; top_half: number }
+
 const PRESEASON_W = { win_pct: 22, pf_avg: 22, recent: 24, pedigree: 32 }
-const INSEASON_DIV_W   = { record: 23, pf: 27, form: 20, conf: 12, top_half: 18 }
-const INSEASON_NODIV_W = { record: 27, pf: 30, form: 23, conf: 0,  top_half: 20 }
-// Preseason history blend: linear ramp from 1.0 → 0 across weeks 0–4.
-// Replaces v1's 30/20/10 step so the pedigree term fades smoothly instead
-// of snapping off at week 4.
+// Week 4+ canonical weights — sum to 100. Earlier weeks use reduced subsets
+// (form excluded until week 4; conf joins at week 3 for div leagues) and
+// the remainder is filled by preseason history (see preseasonBlend).
+const INSEASON_DIV_W   : InSeasonW = { record: 23, pf: 27, form: 20, conf: 12, top_half: 18 }
+const INSEASON_NODIV_W : InSeasonW = { record: 27, pf: 30, form: 23, conf: 0,  top_half: 20 }
+// Sums: 70 / 80 / 90 — the gap to 100 is filled by preseasonBlend.
+const INSEASON_DIV_W1  : InSeasonW = { record: 23, pf: 27, form: 0,  conf: 0,  top_half: 20 }
+const INSEASON_DIV_W2  : InSeasonW = { record: 27, pf: 32, form: 0,  conf: 0,  top_half: 21 }
+const INSEASON_DIV_W3  : InSeasonW = { record: 29, pf: 32, form: 0,  conf: 7,  top_half: 22 }
+const INSEASON_NODIV_W1: InSeasonW = { record: 23, pf: 27, form: 0,  conf: 0,  top_half: 20 }
+const INSEASON_NODIV_W2: InSeasonW = { record: 27, pf: 32, form: 0,  conf: 0,  top_half: 21 }
+const INSEASON_NODIV_W3: InSeasonW = { record: 30, pf: 35, form: 0,  conf: 0,  top_half: 25 }
+const INSEASON_ZERO    : InSeasonW = { record: 0,  pf: 0,  form: 0,  conf: 0,  top_half: 0 }
+
+function inSeasonWeightsFor(throughWeek: number, hasDivisions: boolean): InSeasonW {
+  if (throughWeek <= 0) return INSEASON_ZERO
+  if (hasDivisions) {
+    if (throughWeek === 1) return INSEASON_DIV_W1
+    if (throughWeek === 2) return INSEASON_DIV_W2
+    if (throughWeek === 3) return INSEASON_DIV_W3
+    return INSEASON_DIV_W
+  }
+  if (throughWeek === 1) return INSEASON_NODIV_W1
+  if (throughWeek === 2) return INSEASON_NODIV_W2
+  if (throughWeek === 3) return INSEASON_NODIV_W3
+  return INSEASON_NODIV_W
+}
+
+// Preseason history weight by week: 1.0 / 0.30 / 0.20 / 0.10 / 0.
+// Pairs with inSeasonWeightsFor so the two sources always sum to 100.
 function preseasonBlend(throughWeek: number): number {
-  return Math.max(0, (4 - throughWeek) / 4)
+  if (throughWeek <= 0) return 1.0
+  if (throughWeek === 1) return 0.30
+  if (throughWeek === 2) return 0.20
+  if (throughWeek === 3) return 0.10
+  return 0.0
 }
 
 // Percentile of `value` within `pool`: fraction below + half the ties. 0–1.
@@ -283,9 +320,12 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
   }
 
   // ── Compute one snapshot (week N; 0 = preseason) ─────────────────────────
-  const inSeasonW = hasDivisions ? INSEASON_DIV_W : INSEASON_NODIV_W
 
   function snapshot(throughWeek: number): PowerTeam[] {
+    // Per-week weight set: subsets in W1–3 (form / conf phased in), full
+    // canonical at W4+. Used both to weight factor contributions and to
+    // shape inFactors so the UI can hide bars for inactive factors.
+    const inSeasonW = inSeasonWeightsFor(throughWeek, hasDivisions)
     // Season aggregates from scored matchups up to `throughWeek`. We track
     // the full game list (score / opp score / opp id) so SOS, margin-form,
     // and top-half rate can derive from it.
@@ -451,7 +491,9 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         (inFactors.record ?? 0) + (inFactors.pf ?? 0) + (inFactors.form ?? 0) +
         (inFactors.conf ?? 0) + (inFactors.top_half ?? 0)
 
-      const score = blend * preScore + (1 - blend) * inScore
+      // Per-week inSeasonW sums to (100 × (1 − blend)), so adding the
+      // history contribution gives a 0–100 score without rescaling.
+      const score = blend * preScore + inScore
       const factors = throughWeek === 0 ? preFactors : inFactors
 
       return {
@@ -504,6 +546,7 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
       id: w === 0 ? 'preseason' : String(w),
       week: w,
       label: w === 0 ? 'Pre-Season' : `Week ${w}`,
+      inseasonWeights: inSeasonWeightsFor(w, hasDivisions) as unknown as Record<string, number>,
       overall: teams,
       divisions,
     }
@@ -587,7 +630,9 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
     currentWeek,
     hasDivisions,
     hasProjections,
-    weights: { preseason: PRESEASON_W, inseason: inSeasonW },
+    // Canonical W4+ in-season maxes for fallback/UI labels. Per-snapshot
+    // weights live on each PowerWeek as `inseasonWeights`.
+    weights: { preseason: PRESEASON_W, inseason: hasDivisions ? INSEASON_DIV_W : INSEASON_NODIV_W },
     weeks,
   }
 }
