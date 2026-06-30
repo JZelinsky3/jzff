@@ -2573,6 +2573,8 @@ function buildRecordBook(s: Snapshot): unknown {
     is_current_member: boolean
     seasons_played: number
     championship_appearances: number
+    championships_won: number
+    championship_years: number[]
     top_3_finishes: number
     playoff_appearances: number
     perfect_reg_seasons: string
@@ -2599,6 +2601,12 @@ function buildRecordBook(s: Snapshot): unknown {
       return (season.champion_manager_id != null && g.managerIds.has(season.champion_manager_id))
           || (season.runner_up_manager_id != null && g.managerIds.has(season.runner_up_manager_id))
     }).length
+    // Championships actually WON (not just title-game appearances). Collect the
+    // years so the record book can show when each crown came.
+    const championshipYears = mss.filter((r) => {
+      const season = s.seasons.find((sn) => sn.id === r.season_id)
+      return !!season && season.champion_manager_id != null && g.managerIds.has(season.champion_manager_id)
+    }).map((r) => s.seasons.find((sn) => sn.id === r.season_id)!.year).sort((a, b) => a - b)
     const top3 = mss.filter((r) => r.final_rank != null && r.final_rank <= 3).length
     let playoffAppearances = 0
     const perfectYears: number[] = []
@@ -2626,6 +2634,8 @@ function buildRecordBook(s: Snapshot): unknown {
       is_current_member: isGroupCurrent(g, autoCurrentRecords),
       seasons_played: mss.length,
       championship_appearances: championshipAppearances,
+      championships_won: championshipYears.length,
+      championship_years: championshipYears,
       top_3_finishes: top3,
       playoff_appearances: playoffAppearances,
       perfect_reg_seasons: perfectYears.join(', '),
@@ -2652,6 +2662,18 @@ function buildRecordBook(s: Snapshot): unknown {
   const best_avg_finish = [...careerRows].filter((r) => r.avg_final_rank > 0 && r.is_current_member).sort((a, b) => a.avg_final_rank - b.avg_final_rank)
   const most_playoff_appearances = keepIfCounts([...careerRows], (r) => r.playoff_appearances).sort((a, b) => b.playoff_appearances - a.playoff_appearances).slice(0, N)
   const most_championship_appearances = keepIfCounts([...careerRows], (r) => r.championship_appearances).sort((a, b) => b.championship_appearances - a.championship_appearances).slice(0, N)
+  // Most titles WON. Ties break by who reached that total first — the manager
+  // whose latest crown came earliest "got there first" (their Nth title year is
+  // the max of their championship years).
+  const lastTitleYear = (r: CareerRow): number => r.championship_years.length ? r.championship_years[r.championship_years.length - 1] : Infinity
+  const most_championships = keepIfCounts([...careerRows], (r) => r.championships_won)
+    .sort((a, b) => b.championships_won - a.championships_won || lastTitleYear(a) - lastTitleYear(b) || a.owner.localeCompare(b.owner))
+    .slice(0, N)
+  // The wall of shame: current managers who have never finished top 3. Omitted
+  // entirely when everyone in the league owns at least one podium.
+  const no_podiums = [...careerRows]
+    .filter((r) => r.is_current_member && r.top_3_finishes === 0)
+    .sort((a, b) => b.seasons_played - a.seasons_played || a.owner.localeCompare(b.owner))
 
   const hub_records = buildHubRecords({
     highest_single_week_score, biggest_blowouts, longest_win_streaks, longest_loss_streaks,
@@ -2684,7 +2706,9 @@ function buildRecordBook(s: Snapshot): unknown {
       career: {
         longest_win_streaks,
         longest_loss_streaks,
+        most_championships,
         most_top_3_finishes,
+        no_podiums,
         best_avg_finish,
         most_playoff_appearances,
         most_championship_appearances,

@@ -224,6 +224,42 @@
 /* Combined-score records list both managers; the "vs Opponent" tail reads
    as context, not a co-holder — smaller and dimmer than the lead name. */
 .rb-vs { font-size: .72em; color: var(--cream-mute); }
+
+/* ── Grouped swipe rails ───────────────────────────────────────── */
+/* Related records are bundled into a horizontal carousel: swipe sideways
+   between the pair/set, scroll down between groups. */
+.rb-group { margin-bottom: 1.4rem; }
+.rb-group-head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 .15rem .5rem; }
+.rb-group-title { font-family: var(--serif); font-size: 1.2rem; color: var(--cream); }
+.rb-group-hint { font-family: var(--mono); font-weight: 700; font-size: .5rem; letter-spacing: .16em; text-transform: uppercase; color: var(--rec-deep); }
+.rb-rail { display: flex; gap: .7rem; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding: .15rem .15rem .3rem; scrollbar-width: none; align-items: flex-start; }
+.rb-rail::-webkit-scrollbar { display: none; }
+.rb-slide { flex: 0 0 89%; scroll-snap-align: center; }
+.rb-rail.is-solo .rb-slide { flex: 0 0 100%; }
+.rb-dots { display: flex; gap: .35rem; justify-content: center; margin-top: .5rem; }
+.rb-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-line); transition: width .2s, background .2s; }
+.rb-dot.on { background: var(--rec); width: 15px; border-radius: 3px; }
+
+/* ── Careers: podium ───────────────────────────────────────────── */
+.rb-podium { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .5rem; align-items: end; margin-top: .7rem; }
+.rb-step { border: 1px solid var(--ink-line); border-radius: 12px 12px 0 0; padding: .6rem .35rem .65rem; text-align: center; background: linear-gradient(180deg, var(--ink-card), var(--ink-soft)); }
+.rb-step-medal { font-family: var(--mono); font-weight: 700; font-size: .5rem; letter-spacing: .12em; }
+.rb-step-name { font-family: var(--serif); font-size: .9rem; color: var(--cream-soft); margin-top: .2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-step-val { font-family: var(--mono); font-weight: 700; font-size: 1.05rem; color: var(--rec); margin-top: .15rem; }
+.rb-step-sub { font-family: var(--mono); font-size: .44rem; letter-spacing: .03em; color: var(--cream-mute); margin-top: .25rem; line-height: 1.35; }
+.rb-s1 { border-color: #d9b441; border-top: 3px solid #d9b441; padding-bottom: 1.4rem; }
+.rb-s1 .rb-step-medal { color: #d9b441; } .rb-s1 .rb-step-name { font-size: 1rem; color: var(--cream); }
+.rb-s2 { border-color: #9fb2c2; border-top: 3px solid #9fb2c2; padding-bottom: .95rem; } .rb-s2 .rb-step-medal { color: #9fb2c2; }
+.rb-s3 { border-color: #c08a5a; border-top: 3px solid #c08a5a; padding-bottom: .55rem; } .rb-s3 .rb-step-medal { color: #c08a5a; }
+/* Ranks 4-10 unfold below the podium with extra air above them. */
+.rb-pod-more { margin-top: .95rem; padding-top: .7rem; border-top: 1px solid var(--ink-line-soft); display: none; }
+.rb-card.is-open .rb-pod-more { display: block; }
+
+/* ── Careers: no-podiums roll ──────────────────────────────────── */
+.rb-nopod-note { margin-top: .45rem; font-family: var(--mono); font-size: .52rem; letter-spacing: .04em; color: var(--cream-mute); }
+.rb-nopod-list { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+.rb-nopod-chip { font-family: var(--serif); font-size: .92rem; color: var(--cream-soft); background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 999px; padding: .25rem .65rem; }
+.rb-nopod-chip small { font-family: var(--mono); font-size: .5rem; letter-spacing: .04em; text-transform: uppercase; color: var(--cream-mute); margin-left: .35rem; }
 </style>
 </head>
 <body>
@@ -308,7 +344,9 @@
         career: [
             ['longest_win_streaks', 'Longest Win Streak', function (e) { return e.length + 'W'; }, streakCtx],
             ['longest_loss_streaks', 'Longest Skid', function (e) { return e.length + 'L'; }, streakCtx],
+            ['most_championships', 'Most Championships', function (e) { return countOf(e, 'championships_won') + '×'; }, champCtx],
             ['most_top_3_finishes', 'Most Podiums', function (e) { return countOf(e, 'top_3_finishes') + '×'; }, careerCtx],
+            ['no_podiums', 'No Podiums', null, null],
             ['most_playoff_appearances', 'Most Playoff Trips', function (e) { return countOf(e, 'playoff_appearances') + '×'; }, careerCtx],
             ['most_championship_appearances', 'Most Title Games', function (e) { return countOf(e, 'championship_appearances') + '×'; }, careerCtx],
             // Best avg finish is active-members-only (the builder filters
@@ -383,6 +421,12 @@
         if (e.seasons_played == null) return '';
         return e.seasons_played + (e.seasons_played === 1 ? ' season' : ' seasons');
     }
+    // Championship years won — the "when" behind the crown count.
+    function champCtx(e) {
+        return (e.championship_years && e.championship_years.length)
+            ? e.championship_years.join(' · ')
+            : careerCtx(e);
+    }
     function featCtx(e) {
         return e.last_year ? 'Last: ' + e.last_year + ' · W' + e.last_week + (e.last_opp_name ? ' vs ' + e.last_opp_name : '') : '';
     }
@@ -449,11 +493,14 @@
     // `idx` is the record's position in the tab — drives the ledger number
     // and promotes the first record to the chapter headline.
     function cardShell(label, hasMore, total, inner, idx) {
-        var lead = idx === 0;
-        var n = (idx + 1 < 10 ? '0' : '') + (idx + 1);
+        // idx == null → rail card (no ledger number / headline tag; the group
+        // header carries the structure instead).
+        var hasIdx = idx != null;
+        var lead = hasIdx && idx === 0;
+        var n = hasIdx ? (idx + 1 < 10 ? '0' : '') + (idx + 1) : '';
         return '<div class="m-card rb-card' + (lead ? ' rb-lead' : '') + (hasMore ? ' rb-can-expand' : '') + '">' +
             '<div class="rb-card-head">' +
-                '<span class="rb-idx">' + n + '</span>' +
+                (hasIdx ? '<span class="rb-idx">' + n + '</span>' : '') +
                 '<div class="rb-card-label">' + esc(label) + '</div>' +
                 (lead ? '<span class="rb-lead-tag">Headline</span>' : '') +
             '</div>' +
@@ -588,41 +635,168 @@
         return cardShell(label, others.length > 2, entries.length, gameHero(key, top, val) + rest, idx);
     }
 
+    // ── Careers → podium ─────────────────────────────────────────
+    // Top 3 on a gold/silver/bronze podium; ranks 4-10 unfold beneath.
+    function renderPodium(key, label, val, ctx, entries) {
+        function stepSub(e) {
+            return (key === 'most_championships' && e.championship_years && e.championship_years.length)
+                ? e.championship_years.join(' · ') : '';
+        }
+        function step(e, cls, medal) {
+            if (!e) return '<div class="rb-step ' + cls + '"><div class="rb-step-medal">' + medal + '</div><div class="rb-step-name">—</div></div>';
+            var sub = stepSub(e);
+            return '<div class="rb-step ' + cls + '">' +
+                '<div class="rb-step-medal">' + medal + '</div>' +
+                '<div class="rb-step-name">' + holderHtmlFor(key, e) + '</div>' +
+                '<div class="rb-step-val">' + esc(val(e)) + '</div>' +
+                (sub ? '<div class="rb-step-sub">' + esc(sub) + '</div>' : '') +
+            '</div>';
+        }
+        var podium = '<div class="rb-podium">' +
+            step(entries[1], 'rb-s2', '2ND') +
+            step(entries[0], 'rb-s1', '1ST') +
+            step(entries[2], 'rb-s3', '3RD') +
+        '</div>';
+        var rest = entries.slice(3);
+        var more = rest.length
+            ? '<div class="rb-others rb-pod-more">' + rest.map(function (e, i) {
+                var sub = ctx ? ctx(e) : '';
+                return '<div class="rb-other">' +
+                    '<span class="rb-other-rank">' + (i + 4) + '</span>' +
+                    '<span class="rb-other-name">' + holderHtmlFor(key, e) +
+                        (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
+                    '<span class="rb-other-val">' + esc(val(e)) + '</span>' +
+                '</div>';
+            }).join('') + '</div>'
+            : '';
+        var hasMore = rest.length > 0;
+        return '<div class="m-card rb-card' + (hasMore ? ' rb-can-expand' : '') + '">' +
+            '<div class="rb-card-head"><div class="rb-card-label">' + esc(label) + '</div></div>' +
+            podium + more +
+            (hasMore
+                ? '<div class="rb-expand-hint">' +
+                    '<span class="rb-hint-more">Show top ' + Math.min(entries.length, 10) + ' ▾</span>' +
+                    '<span class="rb-hint-less">Show less ▴</span>' +
+                  '</div>'
+                : '') +
+        '</div>';
+    }
+
+    // ── Careers → the podium-less roll (managers with zero top-3s) ─
+    function renderNoPodium(label, entries) {
+        var chips = entries.map(function (e) {
+            var sp = e.seasons_played != null
+                ? '<small>' + e.seasons_played + (e.seasons_played === 1 ? ' yr' : ' yrs') + '</small>' : '';
+            return '<span class="rb-nopod-chip">' + esc(holderName(e)) + sp + '</span>';
+        }).join('');
+        return '<div class="m-card rb-card">' +
+            '<div class="rb-card-head"><div class="rb-card-label">' + esc(label) + '</div></div>' +
+            '<div class="rb-nopod-note">Still chasing a top-3 finish.</div>' +
+            '<div class="rb-nopod-list">' + chips + '</div>' +
+        '</div>';
+    }
+
+    // Render one record into a (rail) card, picking the right card style.
+    function renderCard(sec, def, entries) {
+        var key = def[0], label = def[1], val = def[2], ctx = def[3];
+        if (sec === 'weekly') return renderGameTickets(key, label, val, ctx, entries, null);
+        if (sec === 'season') {
+            if (key === 'best_reg_season_records' || key === 'worst_reg_season_records' || key === 'lowest_ppg')
+                return renderStandard(key, label, val, ctx, entries, null);
+            return renderSeasonBars(key, label, val, ctx, entries, null);
+        }
+        if (sec === 'career') {
+            if (key === 'no_podiums') return renderNoPodium(label, entries);
+            return renderPodium(key, label, val, ctx, entries);
+        }
+        return renderStandard(key, label, val, ctx, entries, null);
+    }
+
+    // Related records bundled into swipe groups (Feats stays a plain list).
+    var GROUPS = {
+        weekly: [
+            { title: 'Scores',   keys: ['highest_single_week_score', 'lowest_single_week_score'] },
+            { title: 'Margins',  keys: ['biggest_blowouts', 'closest_games'] },
+            { title: 'Luck',     keys: ['luckiest_wins', 'unluckiest_losses'] },
+            { title: 'Combined', keys: ['highest_combined_score', 'lowest_combined_score'] },
+        ],
+        season: [
+            { title: 'Points',       keys: ['highest_season_pf', 'highest_total_season_pf', 'most_points_against'] },
+            { title: 'Scoring Rate', keys: ['highest_ppg', 'lowest_ppg'] },
+            { title: 'Win & Loss',   keys: ['best_reg_season_records', 'worst_reg_season_records'] },
+        ],
+        career: [
+            { title: 'Streaks',          keys: ['longest_win_streaks', 'longest_loss_streaks'] },
+            { title: 'Titles & Podiums', keys: ['most_championships', 'most_top_3_finishes', 'no_podiums'] },
+            { title: 'Appearances',      keys: ['most_playoff_appearances', 'most_championship_appearances', 'best_avg_finish'] },
+        ],
+    };
+    var DEF_BY_KEY = {};
+    Object.keys(DEFS).forEach(function (sec) {
+        DEF_BY_KEY[sec] = {};
+        DEFS[sec].forEach(function (d) { DEF_BY_KEY[sec][d[0]] = d; });
+    });
+
     function render() {
         var box = document.getElementById('cards');
         if (!book) {
             box.innerHTML = '<div class="m-empty">The record book is sealed for this league.</div>';
             return;
         }
-        var defs = DEFS[section] || [];
-        // Resolve entries first and drop the empty records, so the ledger
-        // numbering is sequential (01, 02, …) and the headline lands on the
-        // first record that actually has data.
-        var cards = defs.map(function (def) {
-            var currentOnly = def[5];
-            var entries = entriesFor(def);
-            if (!entries || !entries.length) return null;
-            if (currentOnly) {
-                entries = entries.filter(function (e) { return e.is_current_member !== false; });
-                if (!entries.length) return null;
-            }
-            return { def: def, entries: entries };
-        }).filter(Boolean);
+        // Feats stays a plain vertical list (the only un-grouped chapter).
+        if (section === 'feats') { renderFeats(box); return; }
 
-        var html = cards.map(function (item, idx) {
-            var def = item.def, entries = item.entries;
-            var key = def[0], label = def[1], val = def[2], ctx = def[3];
-            // Bars suit the points races; W–L records and the lowest-PPG list
-            // read better as the plain card, so they keep the original look.
-            if (section === 'season') {
-                if (key === 'best_reg_season_records' || key === 'worst_reg_season_records' || key === 'lowest_ppg')
-                    return renderStandard(key, label, val, ctx, entries, idx);
-                return renderSeasonBars(key, label, val, ctx, entries, idx);
-            }
-            if (section === 'weekly') return renderGameTickets(key, label, val, ctx, entries, idx);
-            return renderStandard(key, label, val, ctx, entries, idx);
+        var groups = GROUPS[section] || [];
+        var html = groups.map(function (g, gi) {
+            var slides = g.keys.map(function (key) {
+                var def = DEF_BY_KEY[section][key];
+                if (!def) return '';
+                var entries = entriesFor(def);
+                if (!entries || !entries.length) return '';
+                return '<div class="rb-slide">' + renderCard(section, def, entries) + '</div>';
+            }).filter(Boolean);
+            if (!slides.length) return '';
+            var solo = slides.length === 1;
+            var dots = solo ? '' : '<div class="rb-dots">' + slides.map(function (_, i) {
+                return '<span class="rb-dot' + (i === 0 ? ' on' : '') + '"></span>';
+            }).join('') + '</div>';
+            return '<section class="rb-group">' +
+                '<div class="rb-group-head"><span class="rb-group-title">' + esc(g.title) + '</span>' +
+                    (solo ? '' : '<span class="rb-group-hint">Swipe ›</span>') + '</div>' +
+                '<div class="rb-rail' + (solo ? ' is-solo' : '') + '">' + slides.join('') + '</div>' +
+                dots +
+            '</section>';
         }).join('');
         box.innerHTML = html || '<div class="m-empty">Nothing in this chapter yet.</div>';
+        wireRails();
+    }
+
+    // Feats — unchanged plain card list with the ledger numbering.
+    function renderFeats(box) {
+        var cards = DEFS.feats.map(function (def) {
+            var entries = entriesFor(def);
+            return (entries && entries.length) ? { def: def, entries: entries } : null;
+        }).filter(Boolean);
+        var html = cards.map(function (item, idx) {
+            var def = item.def;
+            return renderStandard(def[0], def[1], def[2], def[3], item.entries, idx);
+        }).join('');
+        box.innerHTML = html || '<div class="m-empty">Nothing in this chapter yet.</div>';
+    }
+
+    // Keep the position dots in sync as each rail is swiped.
+    function wireRails() {
+        document.querySelectorAll('.rb-rail').forEach(function (rail) {
+            var dots = rail.parentNode.querySelector('.rb-dots');
+            if (!dots) return;
+            rail.addEventListener('scroll', function () {
+                var slide = rail.querySelector('.rb-slide');
+                if (!slide) return;
+                var step = slide.offsetWidth + 11; // slide width + ~.7rem gap
+                var idx = Math.round(rail.scrollLeft / step);
+                dots.querySelectorAll('.rb-dot').forEach(function (d, i) { d.classList.toggle('on', i === idx); });
+            }, { passive: true });
+        });
     }
 
     // Tap a record card to unfold the full top list; tap again to fold it.
