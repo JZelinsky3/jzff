@@ -9,7 +9,7 @@
 //     Record-SOS 23 · PF 27 · Form 20 · Conference 12 · Top-Half 18
 //     (no divisions → Record-SOS 27 · PF 30 · Form 23 · Top-Half 20)
 //   Weeks 1–3 use reduced in-season factor sets so the preseason history
-//   can fill the gap (history weight 30 / 20 / 10). Form is excluded
+//   can fill the gap (history weight 40 / 25 / 10). Form is excluded
 //   until week 4 (with <3 games it's identical to Record); Conf joins at
 //   week 3 for division leagues only.
 //
@@ -62,6 +62,11 @@ export type PowerTeam = {
   score: number
   delta: number // rank change vs the previous snapshot (+ = moved up)
   factors: PowerFactors
+  // Pre-season carryover contribution for W1–3 only: each preseason factor
+  // multiplied by the active blend (0.30 / 0.20 / 0.10), so values are in
+  // the same "points contributed" units as `factors`. Omitted in W0 (where
+  // `factors` IS the preseason set) and W4+ (no carryover).
+  preseasonFactors?: PowerFactors
   conf_rank?: number
   // Monte Carlo projections — attached when a remaining schedule exists.
   proj_wins?: number
@@ -79,6 +84,10 @@ export type PowerWeek = {
   // / conf phased in) and matches INSEASON_*_W from week 4 on. The UI uses
   // this to size the factor bars and to hide bars whose max is 0.
   inseasonWeights: Record<string, number>
+  // Pre-season carryover factor max-points for W1–3 (each PRESEASON_W key
+  // scaled by the blend), so the UI can size carryover bars. Omitted in
+  // W0 and W4+.
+  preseasonWeights?: Record<string, number>
   overall: PowerTeam[]
   // one entry per division, in division order
   divisions: { key: string; name: string; teams: PowerTeam[] }[]
@@ -107,12 +116,12 @@ const PRESEASON_W = { win_pct: 22, pf_avg: 22, recent: 24, pedigree: 32 }
 // the remainder is filled by preseason history (see preseasonBlend).
 const INSEASON_DIV_W   : InSeasonW = { record: 23, pf: 27, form: 20, conf: 12, top_half: 18 }
 const INSEASON_NODIV_W : InSeasonW = { record: 27, pf: 30, form: 23, conf: 0,  top_half: 20 }
-// Sums: 70 / 80 / 90 — the gap to 100 is filled by preseasonBlend.
-const INSEASON_DIV_W1  : InSeasonW = { record: 23, pf: 27, form: 0,  conf: 0,  top_half: 20 }
-const INSEASON_DIV_W2  : InSeasonW = { record: 27, pf: 32, form: 0,  conf: 0,  top_half: 21 }
+// Sums: 60 / 75 / 90 — the gap to 100 is filled by preseasonBlend.
+const INSEASON_DIV_W1  : InSeasonW = { record: 20, pf: 22, form: 0,  conf: 0,  top_half: 18 }
+const INSEASON_DIV_W2  : InSeasonW = { record: 25, pf: 30, form: 0,  conf: 0,  top_half: 20 }
 const INSEASON_DIV_W3  : InSeasonW = { record: 29, pf: 32, form: 0,  conf: 7,  top_half: 22 }
-const INSEASON_NODIV_W1: InSeasonW = { record: 23, pf: 27, form: 0,  conf: 0,  top_half: 20 }
-const INSEASON_NODIV_W2: InSeasonW = { record: 27, pf: 32, form: 0,  conf: 0,  top_half: 21 }
+const INSEASON_NODIV_W1: InSeasonW = { record: 20, pf: 22, form: 0,  conf: 0,  top_half: 18 }
+const INSEASON_NODIV_W2: InSeasonW = { record: 25, pf: 30, form: 0,  conf: 0,  top_half: 20 }
 const INSEASON_NODIV_W3: InSeasonW = { record: 30, pf: 35, form: 0,  conf: 0,  top_half: 25 }
 const INSEASON_ZERO    : InSeasonW = { record: 0,  pf: 0,  form: 0,  conf: 0,  top_half: 0 }
 
@@ -130,12 +139,12 @@ function inSeasonWeightsFor(throughWeek: number, hasDivisions: boolean): InSeaso
   return INSEASON_NODIV_W
 }
 
-// Preseason history weight by week: 1.0 / 0.30 / 0.20 / 0.10 / 0.
+// Preseason history weight by week: 1.0 / 0.40 / 0.25 / 0.10 / 0.
 // Pairs with inSeasonWeightsFor so the two sources always sum to 100.
 function preseasonBlend(throughWeek: number): number {
   if (throughWeek <= 0) return 1.0
-  if (throughWeek === 1) return 0.30
-  if (throughWeek === 2) return 0.20
+  if (throughWeek === 1) return 0.40
+  if (throughWeek === 2) return 0.25
   if (throughWeek === 3) return 0.10
   return 0.0
 }
@@ -496,6 +505,20 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
       const score = blend * preScore + inScore
       const factors = throughWeek === 0 ? preFactors : inFactors
 
+      // For W1–3, expose the preseason factors scaled by `blend` so the UI
+      // can show carryover contributions in the same "points" units as the
+      // in-season bars. Skipped at W0 (factors already IS preseason) and
+      // W4+ (no carryover).
+      const showCarryover = throughWeek >= 1 && throughWeek <= 3
+      const preseasonFactors: PowerFactors | undefined = showCarryover
+        ? {
+            win_pct: (preFactors.win_pct ?? 0) * blend,
+            pf_avg: (preFactors.pf_avg ?? 0) * blend,
+            recent: (preFactors.recent ?? 0) * blend,
+            pedigree: (preFactors.pedigree ?? 0) * blend,
+          }
+        : undefined
+
       return {
         team_id: b.teamId,
         team_name: b.teamName,
@@ -511,6 +534,11 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         factors: Object.fromEntries(
           Object.entries(factors).map(([k, v]) => [k, Math.round((v as number) * 100) / 100]),
         ),
+        preseasonFactors: preseasonFactors
+          ? Object.fromEntries(
+              Object.entries(preseasonFactors).map(([k, v]) => [k, Math.round((v as number) * 100) / 100]),
+            )
+          : undefined,
         conf_rank: dr?.rank,
       }
     })
@@ -542,11 +570,21 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
             .map((t, j) => ({ ...t, conf_rank: j + 1 })),
         }))
       : []
+    const wkBlend = preseasonBlend(w)
+    const preseasonWeights = w >= 1 && w <= 3
+      ? {
+          win_pct: Math.round(PRESEASON_W.win_pct * wkBlend * 100) / 100,
+          pf_avg: Math.round(PRESEASON_W.pf_avg * wkBlend * 100) / 100,
+          recent: Math.round(PRESEASON_W.recent * wkBlend * 100) / 100,
+          pedigree: Math.round(PRESEASON_W.pedigree * wkBlend * 100) / 100,
+        }
+      : undefined
     return {
       id: w === 0 ? 'preseason' : String(w),
       week: w,
       label: w === 0 ? 'Pre-Season' : `Week ${w}`,
       inseasonWeights: inSeasonWeightsFor(w, hasDivisions) as unknown as Record<string, number>,
+      preseasonWeights,
       overall: teams,
       divisions,
     }

@@ -353,6 +353,11 @@ body {
 .fbar-track  { flex: 1; height: 4px; background: rgba(255,255,255,.07); border-radius: 2px; overflow: hidden; }
 .fbar-fill   { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--gold), var(--rust)); }
 .fbar-val    { font-size: 7px; color: var(--cream-mute); font-family: var(--mono); width: 22px; }
+/* Pre-season carryover (W1–3 only) — dimmer fill so it reads as history. */
+.factor-bars-pre { margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,.10); display: flex; flex-direction: column; gap: 2px; }
+.factor-bars-pre .fbar-fill { background: rgba(220, 200, 160, .35); }
+.fbar-pre-head { font-size: 7px; letter-spacing: .08em; text-transform: uppercase; color: var(--cream-mute); font-family: var(--mono); margin-bottom: 1px; }
+.fbar-pre-head b { color: var(--cream-soft); }
 
 /* ── Projection table columns ── */
 .proj-wl-cell {

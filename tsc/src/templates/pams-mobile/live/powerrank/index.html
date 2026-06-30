@@ -216,6 +216,9 @@ body { background: #f0e5c8; color: var(--ink); }
 .fbar-rank.bad  { color: var(--pr-bad); }
 .pr-detail-pf { margin-top: .4rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pr-mute); }
 .pr-detail-pf b { color: var(--ink); }
+.pr-pre-header { margin-top: .55rem; padding-top: .35rem; border-top: 1px dashed rgba(14, 22, 32, .14); font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pr-mute); }
+.pr-pre-header b { color: var(--ink); }
+.fbar-row.fbar-row-pre .fbar-fill { background: rgba(14, 22, 32, .35); }
 
 /* Projections */
 .pj-row {
@@ -339,7 +342,7 @@ body { background: #f0e5c8; color: var(--ink); }
 <dialog class="m-sheet" id="formulaSheet">
     <div class="m-sheet-handle" aria-hidden></div>
     <div class="m-sheet-title">How it's calculated</div>
-    <p class="pr-formula-note">Pre-season uses career history only. History fades out over weeks 1–3 (30% / 20% / 10%), then it's fully in-season from week 4. In weeks 1–3 the in-season factor set is reduced: Form joins at week 4 (with under 3 games it's identical to Record), and Conference joins at week 3 for division leagues.</p>
+    <p class="pr-formula-note">Pre-season uses career history only. History fades out over weeks 1–3 (40% / 25% / 10%), then it's fully in-season from week 4. In weeks 1–3 the in-season factor set is reduced: Form joins at week 4 (with under 3 games it's identical to Record), and Conference joins at week 3 for division leagues.</p>
 
     <details class="pr-formula-section" id="prSecPre">
         <summary><span class="m-sheet-label">Pre-Season (Weeks 0–3)</span></summary>
@@ -628,6 +631,7 @@ body { background: #f0e5c8; color: var(--ink); }
                 '</button>' +
                 '<div class="pr-detail">' +
                     buildFactorBars(t.factors, factorRanks[i], teams.length, prevFactors[t.team_id]) +
+                    buildPreseasonBars(t.preseasonFactors) +
                     '<div class="pr-detail-pf">Points for · <b>' + t.pf.toFixed(1) + '</b>' +
                         (t.wins + t.losses > 0
                             ? ' · <b>' + (t.pf / (t.wins + t.losses)).toFixed(1) + '</b> ppg'
@@ -699,6 +703,38 @@ body { background: #f0e5c8; color: var(--ink); }
         if (rank <= Math.ceil(total / 3)) return 'good';
         if (rank > total - Math.ceil(total / 3)) return 'bad';
         return 'mid';
+    }
+
+    // Pre-season carryover bars (W1–3 only). No per-factor ranks or WoW —
+    // the carryover values are constant per team across the season, so
+    // movement noise would be misleading. Bars share fbar-* styles but a
+    // dimmer fill so they read as "history, not this season."
+    function buildPreseasonBars(preFactors) {
+        if (!preFactors) return '';
+        var activeWeek = state.weeks.find(function (w) { return w.id === state.activeWk; });
+        var maxes = activeWeek && activeWeek.preseasonWeights;
+        if (!maxes) return '';
+        var defs = [['win_pct', 'Win%'], ['pf_avg', 'PF'], ['recent', 'Rec3'], ['pedigree', 'Ped']];
+        var sum = 0, maxSum = 0;
+        defs.forEach(function (d) {
+            sum += preFactors[d[0]] || 0;
+            maxSum += maxes[d[0]] || 0;
+        });
+        var header = '<div class="pr-pre-header">Pre-season carryover · <b>' + sum.toFixed(1) + '</b> / ' + maxSum.toFixed(0) + ' pts</div>';
+        var rows = defs.map(function (d) {
+            var max = maxes[d[0]] || 0;
+            if (max <= 0) return '';
+            var val = preFactors[d[0]] || 0;
+            var pct = Math.min(100, (val / max) * 100);
+            return '<div class="fbar-row fbar-row-pre">' +
+                '<span></span>' +
+                '<span class="fbar-label">' + d[1] + '</span>' +
+                '<span class="fbar-track"><span class="fbar-fill" style="width:' + pct + '%"></span></span>' +
+                '<span class="fbar-val">' + val.toFixed(1) + '</span>' +
+                '<span></span>' +
+            '</div>';
+        }).join('');
+        return header + rows;
     }
 
     function buildFactorBars(factors, ranks, total, prev) {

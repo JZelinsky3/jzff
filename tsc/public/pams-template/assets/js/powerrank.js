@@ -197,9 +197,39 @@
         + '<td class="col-record rec-cell">' + t.wins + '-' + t.losses + '</td>'
         + '<td class="col-pf pf-cell">' + t.pf.toFixed(1) + '</td>'
         + '<td class="col-score score-cell">' + t.score.toFixed(1) + '</td>'
-        + '<td class="col-bars">' + buildFactorBars(t.factors) + '</td>'
+        + '<td class="col-bars">' + buildFactorBars(t.factors) + buildPreseasonBars(t.preseasonFactors) + '</td>'
         + '</tr>'
     }).join('')
+  }
+
+  // Pre-season carryover bars (W1–3 only). Shows the same career-history
+  // factors as the preseason snapshot, scaled by the active blend so the
+  // values are in "points contributed to this week's score" units. Header
+  // shows the total carryover contribution.
+  function buildPreseasonBars(preFactors) {
+    if (!preFactors) return ''
+    var activeWeek = state.weeks.find(function (w) { return w.id === state.activeWk })
+    var maxes = activeWeek && activeWeek.preseasonWeights
+    if (!maxes) return ''
+    var defs = [['win_pct', 'Win%'], ['pf_avg', 'PF'], ['recent', 'Rec3'], ['pedigree', 'Ped']]
+    var sum = 0, maxSum = 0
+    defs.forEach(function (d) { sum += preFactors[d[0]] || 0; maxSum += maxes[d[0]] || 0 })
+    if (maxSum <= 0) return ''
+    var rows = defs.map(function (d) {
+      var max = maxes[d[0]] || 0
+      if (max <= 0) return ''
+      var val = preFactors[d[0]] || 0
+      var pct = Math.min(100, (val / max) * 100)
+      return '<div class="fbar-row">'
+        + '<span class="fbar-label">' + d[1] + '</span>'
+        + '<div class="fbar-track"><div class="fbar-fill" style="width:' + pct + '%"></div></div>'
+        + '<span class="fbar-val">' + val.toFixed(1) + '</span>'
+        + '</div>'
+    }).join('')
+    return '<div class="factor-bars-pre">'
+      + '<div class="fbar-pre-head">Pre-season · <b>' + sum.toFixed(1) + '</b> / ' + maxSum.toFixed(0) + '</div>'
+      + rows
+      + '</div>'
   }
 
   function buildFactorBars(factors) {
