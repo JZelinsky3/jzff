@@ -1188,45 +1188,24 @@ body { background: var(--ls-bg); }
     .ticker-track { animation: none; }
 }
 
-/* ── Second rail — live-section sub-nav under the chapbar ────────
-   Demo-only design element. nav.js renders the chapbar (site
-   chapters, "Live" active); the slim rail beneath lists the live
-   pages and keys to the section's gold accent. */
-.nav-subrail {
-    background: rgba(0,0,0,.24);
-    border-top: 1px solid var(--ls-line-soft, #22302a);
+/* ── Live-mode chapbar — matches the real site's Live Season rail ──
+   The base .nav-chapbar / .nav-chapbar-link styles come from nav.js;
+   these are the live-mode add-ons: a faint warm tint on the bar, a
+   muted "History" back tab on the left, and a gold separator setting
+   it off from the live chapters. Tints are keyed to the hub's moss
+   palette instead of nav.js's default navy. Demo-only for now. */
+.nav-chapbar.is-live-mode {
+    background: linear-gradient(180deg, rgba(232,200,137,.06), var(--chapbar-bg, rgb(15, 24, 20)));
 }
-.nav-subrail-track {
-    display: flex; align-items: stretch; justify-content: center;
-    overflow-x: auto; overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    max-width: 1370px; margin: 0 auto; padding: 0 1rem;
+.nav-chapbar-link.is-back {
+    color: var(--ls-mute, #8b8676);
+    opacity: .85;
 }
-.nav-subrail-track::-webkit-scrollbar { display: none; }
-.nav-subrail-link {
-    flex-shrink: 0; position: relative;
-    color: var(--ls-mute, #7d8c81); opacity: .85;
-    text-decoration: none;
-    font-family: var(--mono, 'JetBrains Mono', monospace); font-weight: 700;
-    font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;
-    padding: .42rem .85rem .5rem;
-    transition: color .15s, opacity .15s;
-    white-space: nowrap;
-}
-.nav-subrail-link:hover { color: var(--ls-live, #d4a94c); opacity: 1; }
-.nav-subrail-link.is-active { color: var(--ls-live, #d4a94c); opacity: 1; }
-.nav-subrail-link.is-active::after {
-    content: ''; position: absolute; left: .85rem; right: .85rem; bottom: 0;
-    height: 2px; background: var(--ls-live, #d4a94c);
-}
-.nav-subrail-link + .nav-subrail-link::before {
-    content: ''; position: absolute; left: 0; top: 30%; bottom: 30%; width: 1px;
-    background: var(--ls-line, #2e3d34);
-}
-@media (max-width: 640px) {
-    .nav-subrail-track { justify-content: flex-start; padding: 0 .15rem; }
-    .nav-subrail-link { padding: .38rem .55rem .46rem; font-size: .52rem; letter-spacing: .12em; }
-    .nav-subrail-link.is-active::after { left: .55rem; right: .55rem; }
+.nav-chapbar-link.is-back:hover { color: var(--ls-pro, #e8c889); opacity: 1; }
+.nav-chapbar-link.is-back + .nav-chapbar-link::before {
+    background: var(--chapbar-active, var(--ls-pro, #e8c889));
+    opacity: .35;
+    top: 25%; bottom: 25%;
 }
 </style>
 </head>
@@ -2172,40 +2151,48 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
 </script>
 
 <script>
-// ── Second rail (demo design) ───────────────────────────────────
-// nav.js builds the chapbar (site chapters) on DOMContentLoaded; this
-// runs after it and appends a slim live-section rail INSIDE the sticky
-// chapbar so the two rails travel together. Links resolve against the
-// page's <base href="/demo/">.
+// ── Live Season rail (demo design) ──────────────────────────────
+// The demo's nav.js is an older build that only knows the history
+// chapbar (site chapters). The real site swaps in a dedicated
+// live-mode rail on live pages. Here we reproduce that rail on the
+// hub: after nav.js builds its chapbar, we replace its contents with
+// the live-mode design — a muted "History" back tab, then the live
+// chapters, with "Live" active. Links resolve against <base href="/demo/">.
 (function () {
   var ITEMS = [
-    ['Overview',      'live/',                 true],
-    ['Matchups',      'live/matchup-preview/', false],
-    ['Power Rank',    'live/powerrank/',       false],
-    ["Pick'ems",      'live/pickems/',         false],
-    ['Records Watch', 'live/records-watch/',   false],
-    ['Best Coach',    'live/best-coach/',      false],
-    ['Milestones',    'live/milestones/',      false],
-    ['Trade Desk',    'live/trades/',          false]
+    ['History',    './',                    'back'],
+    ['Live',       'live/',                 'active'],
+    ['Matchups',   'live/matchup-preview/', ''],
+    ['Power Rank', 'live/powerrank/',       ''],
+    ["Pick'ems",   'live/pickems/',         ''],
+    ['Records',    'live/records-watch/',   ''],
+    ['Coach',      'live/best-coach/',      ''],
+    ['Milestones', 'live/milestones/',      ''],
+    ['Trades',     'live/trades/',          ''],
+    ['DNA',        'live/manager-dna/',     '']
   ];
-  function addSubrail() {
+  function liveRail() {
     var bar = document.getElementById('nav-chapbar');
-    if (!bar || bar.querySelector('.nav-subrail')) return;
-    var html = '<div class="nav-subrail"><div class="nav-subrail-track">';
+    if (!bar || bar.classList.contains('is-live-mode')) return;
+    bar.className = 'nav-chapbar is-live-mode';
+    var html = '<div class="nav-chapbar-track is-live-mode">';
     for (var i = 0; i < ITEMS.length; i++) {
-      html += '<a class="nav-subrail-link' + (ITEMS[i][2] ? ' is-active' : '') + '"'
-            + ' href="' + ITEMS[i][1] + '"'
-            + (ITEMS[i][2] ? ' aria-current="page"' : '')
-            + '>' + ITEMS[i][0] + '</a>';
+      var label = ITEMS[i][0], path = ITEMS[i][1], state = ITEMS[i][2];
+      var cls = 'nav-chapbar-link'
+              + (state === 'active' ? ' is-active' : '')
+              + (state === 'back' ? ' is-back' : '');
+      html += '<a class="' + cls + '" href="' + path + '"'
+            + (state === 'active' ? ' aria-current="page"' : '')
+            + '>' + label + '</a>';
     }
-    html += '</div></div>';
-    bar.insertAdjacentHTML('beforeend', html);
+    html += '</div>';
+    bar.innerHTML = html;
   }
   // nav.js registers its DOMContentLoaded handler before this one (its
-  // <script> is earlier in the DOM), so by the time addSubrail fires the
-  // chapbar already exists.
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addSubrail);
-  else addSubrail();
+  // <script> is earlier in the DOM), so the chapbar already exists when
+  // liveRail runs and we replace it in the same tick (no visible flash).
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', liveRail);
+  else liveRail();
 })();
 </script>
 
