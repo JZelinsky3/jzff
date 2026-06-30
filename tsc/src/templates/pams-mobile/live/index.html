@@ -198,6 +198,9 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
     font-size: .82rem; font-weight: 600;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Team line scales down to fit its column (fitFsNames in JS); ellipsis
+   only kicks in once it bottoms out at the readable floor font-size. */
+.fs-team { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fs-name small {
     display: block;
     font-weight: 400; font-size: .62rem;
@@ -428,7 +431,7 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
                         '<span class="fs-pos-num">' + (r.pos || (i + 1)) + '</span>' +
                         chg(Number(r.pos_change || 0)) +
                     '</span>' +
-                    '<span class="fs-name">' + esc(r.team || r.name) +
+                    '<span class="fs-name"><span class="fs-team">' + esc(r.team || r.name) + '</span>' +
                         (owner ? '<small>' + esc(owner) + '</small>' : '') +
                     '</span>' +
                     '<span class="fs-form">' + pills(form) + '</span>' +
@@ -438,7 +441,32 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 
             document.getElementById('fsCard').innerHTML = html;
             document.getElementById('fsSection').hidden = false;
+            fitFsNames();
         });
+
+    // Shrink each team name until it fits its column, down to a readable
+    // floor — long names scale instead of immediately truncating, and the
+    // CSS ellipsis only takes over once a name is too long even at the floor.
+    function fitFsNames() {
+        var BASE = 0.82, FLOOR = 0.6, STEP = 0.02;
+        requestAnimationFrame(function () {
+            document.querySelectorAll('#fsCard .fs-team').forEach(function (el) {
+                var size = BASE;
+                el.style.fontSize = size + 'rem';
+                var guard = 0;
+                while (el.scrollWidth > el.clientWidth && size > FLOOR && guard < 24) {
+                    size = Math.round((size - STEP) * 100) / 100;
+                    el.style.fontSize = size + 'rem';
+                    guard++;
+                }
+            });
+        });
+    }
+    var fitTimer;
+    window.addEventListener('resize', function () {
+        clearTimeout(fitTimer);
+        fitTimer = setTimeout(fitFsNames, 150);
+    });
 })();
 </script>
 </body>

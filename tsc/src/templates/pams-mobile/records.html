@@ -77,7 +77,8 @@
 .rb-card.rb-lead::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
     border-radius: 12px 12px 0 0;
-    background: linear-gradient(90deg, var(--rec), transparent 75%);
+    /* even strip across the full top edge (was fading out to the right) */
+    background: var(--rec);
 }
 .rb-card.rb-lead .rb-idx,
 .rb-card.rb-lead .rb-card-label { color: var(--rec); }
@@ -182,7 +183,9 @@
     font-family: var(--mono); font-size: .56rem;
     letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute);
 }
-.rb-hero-val { flex: none; font-family: var(--serif); font-size: 2.6rem; line-height: .85; color: var(--rec); text-align: right; }
+.rb-hero-val { flex: none; font-family: var(--serif); font-size: 2.6rem; line-height: .85; color: var(--rec); text-align: right; font-variant-numeric: tabular-nums; }
+/* Marquee bar under the leader (Lowest PPG only — see renderSeasonBars). */
+.rb-hero-track { margin-top: .55rem; height: 6px; }
 .rb-hero-val.has-sub { display: inline-flex; flex-direction: column; align-items: flex-end; }
 .rb-hero-val small {
     font-family: var(--mono); font-weight: 600;
@@ -207,7 +210,7 @@
 .rb-bar-fill { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--rec-deep), var(--rec)); }
 .rb-bar-row.is-lead .rb-bar-fill { background: linear-gradient(90deg, var(--rec), #d2ead8); }
 .rb-bar-sub { display: block; font-family: var(--mono); font-size: .5rem; letter-spacing: .08em; text-transform: uppercase; color: var(--cream-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rb-bar-val { flex: none; font-family: var(--serif); font-size: 1.05rem; line-height: 1; color: var(--rec); text-align: right; }
+.rb-bar-val { flex: none; font-family: var(--serif); font-size: 1.05rem; line-height: 1; color: var(--rec); text-align: right; font-variant-numeric: tabular-nums; }
 .rb-bar-val.has-sub { display: inline-flex; flex-direction: column; align-items: flex-end; }
 .rb-bar-row.is-lead .rb-bar-val { font-size: 1.3rem; }
 .rb-bar-val small { font-family: var(--mono); font-weight: 600; font-size: .46rem; letter-spacing: .05em; text-transform: uppercase; color: var(--cream-mute); margin-top: 2px; }
@@ -302,7 +305,11 @@
     }
     function num(n, d) {
         if (n == null || isNaN(n)) return '—';
-        return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
+        // Fixed precision (min == max) so a whole number still prints its
+        // trailing .0 — keeps the PPG / score columns vertically aligned
+        // instead of integers rendering narrower than decimals.
+        var fd = d == null ? 1 : d;
+        return Number(n).toLocaleString('en-US', { minimumFractionDigits: fd, maximumFractionDigits: fd });
     }
 
     var book = null;
@@ -335,17 +342,17 @@
             // Headline number on the right carries its rate beneath it:
             // reg PPG for the season title, games-played for the full-season
             // title (see valExtra). Context line stays season + team + record.
-            ['highest_season_pf', 'Most Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
+            ['highest_season_pf', 'Most Points', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
             // Full-season variant folds in championship-bracket playoff
             // points so deep title runs sit alongside the regular-season
             // ledger; games-played rides next to the total.
             ['highest_total_season_pf', 'Most Points, Full Season', function (e) { return num(e.total_pf, 0); }, seasonCtx],
-            ['highest_ppg', 'Highest PPG, Season', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.avg_ppg); }, seasonCtx],
+            ['highest_ppg', 'Highest PPG', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.avg_ppg); }, seasonCtx],
             ['best_reg_season_records', 'Best Record', function (e) { return rec(e.reg_record); }, seasonCtx],
             ['worst_reg_season_records', 'Worst Record', function (e) { return rec(e.reg_record); }, seasonCtx],
             // Per-game, not total: 2019/2020 ran a shorter schedule, so raw
             // season totals unfairly stack the bottom of this list.
-            ['lowest_ppg', 'Lowest PPG, Season', function (e) { return num(e.reg_ppg); }, seasonCtx],
+            ['lowest_ppg', 'Lowest PPG', function (e) { return num(e.reg_ppg); }, seasonCtx],
             ['most_points_against', 'Most Points Against', function (e) { return num(e.reg_pa, 0); }, seasonCtx],
         ],
         career: [
@@ -575,15 +582,21 @@
         if (key === 'best_reg_season_records' || key === 'worst_reg_season_records') return e.reg_win_pct || 0;
         return e.reg_pf || 0;
     }
-    function renderSeasonBars(key, label, val, ctx, entries, idx, noBar) {
-        var max = 0;
-        entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
+    function renderSeasonBars(key, label, val, ctx, entries, idx, opts) {
+        opts = opts || {};
+        // Bars are normally anchored to this list's own max. opts.externalMax
+        // overrides that with a league-wide basis — Lowest PPG anchors to the
+        // best PPG in the league so a low number reads as a short bar instead
+        // of filling up as the score drops.
+        var max = opts.externalMax || 0;
+        if (!max) entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
 
-        // #1 becomes the marquee — big serif value, holder as headline,
-        // full season context, and a maxed-out bar that anchors the list.
+        // #1 becomes the marquee — big serif value, holder as headline, full
+        // season context. The leader normally gets no bar (against its own
+        // list max it would always be full = no info), but opts.heroBar gives
+        // it one when the basis is league-wide and the leader sits below it.
         var lead = entries[0];
-        // No bar on the leader — it would always be full, so it carries no
-        // information. The bars start at rank 2 where the spread is visible.
+        var heroW = (opts.heroBar && max > 0) ? Math.max(8, (seasonBasis(key, lead) / max) * 100) : null;
         var hero =
             '<div class="rb-hero">' +
                 '<div class="rb-hero-top">' +
@@ -591,6 +604,7 @@
                         '<small>' + esc(ctx(lead) || '') + '</small></span>' +
                     valHtml('rb-hero-val', val(lead), key, lead) +
                 '</div>' +
+                (heroW != null ? '<span class="rb-bar-track rb-hero-track"><span class="rb-bar-fill" style="width:' + heroW.toFixed(1) + '%"></span></span>' : '') +
             '</div>';
 
         // Ranks 2+ stay as proportional bars; 2–3 visible, rest fold away.
@@ -602,7 +616,7 @@
                 '<span class="rb-bar-rank">' + rank + '</span>' +
                 '<span class="rb-bar-main">' +
                     '<span class="rb-bar-name">' + holderHtmlFor(key, e) + seasonNameExtra(key, e) + '</span>' +
-                    (noBar ? '' : '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>') +
+                    '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>' +
                     '<span class="rb-bar-sub">' + esc(ctx(e) || '') + '</span>' +
                 '</span>' +
                 '<span class="rb-bar-val' + (ex.below ? ' has-sub' : '') + '">' + esc(val(e)) +
@@ -670,7 +684,10 @@
                 '<div class="rb-step-medal">' + medal + '</div>' +
                 '<div class="rb-step-name">' + holderHtmlFor(key, e) + '</div>' +
                 '<div class="rb-step-val">' + esc(val(e)) + '</div>' +
-                (sub ? '<div class="rb-step-sub">' + esc(sub) + '</div>' : '') +
+                // Always render the sub line (placeholder when a podium has no
+                // years) so podiums with and without years share one height and
+                // every podium card in the rail lines up.
+                '<div class="rb-step-sub">' + (sub ? esc(sub) : '&nbsp;') + '</div>' +
             '</div>';
         }
         var podium = '<div class="rb-podium">' +
@@ -722,13 +739,17 @@
         var key = def[0], label = def[1], val = def[2], ctx = def[3];
         if (sec === 'weekly') return renderGameTickets(key, label, val, ctx, entries, null);
         if (sec === 'season') {
-            // Win/Loss records use the plain card. Lowest PPG keeps the bar-less
-            // hero+rows layout so it matches Highest PPG's height in the rail
-            // (a real bar there is misleading — it fills up as the score drops).
+            // Win/Loss records use the plain card.
             if (key === 'best_reg_season_records' || key === 'worst_reg_season_records')
                 return renderStandard(key, label, val, ctx, entries, null);
-            if (key === 'lowest_ppg')
-                return renderSeasonBars(key, label, val, ctx, entries, null, true);
+            // Lowest PPG bars anchor to the league's best PPG (the Highest PPG
+            // leader), so the worst season reads as a short bar and the card
+            // matches Highest PPG's height in the rail. Hero gets a bar too.
+            if (key === 'lowest_ppg') {
+                var hp = (book.season && book.season.highest_ppg) || [];
+                var leagueMaxPpg = hp.length ? seasonBasis('highest_ppg', hp[0]) : 0;
+                return renderSeasonBars(key, label, val, ctx, entries, null, { externalMax: leagueMaxPpg, heroBar: true });
+            }
             return renderSeasonBars(key, label, val, ctx, entries, null);
         }
         if (sec === 'career') {
@@ -751,11 +772,11 @@
         ],
         season: [
             { title: 'Points',       keys: ['highest_season_pf', 'highest_total_season_pf', 'most_points_against'] },
-            { title: 'Scoring Rate', keys: ['highest_ppg', 'lowest_ppg'] },
+            { title: 'PPG', keys: ['highest_ppg', 'lowest_ppg'] },
             { title: 'Records',      keys: ['best_reg_season_records', 'worst_reg_season_records'] },
         ],
         career: [
-            { title: 'Titles & Podiums', keys: ['most_championships', 'most_top_3_finishes', 'no_podiums'] },
+            { title: 'Hardware', keys: ['most_championships', 'most_top_3_finishes', 'no_podiums'] },
             { title: 'Appearances',      keys: ['most_playoff_appearances', 'most_championship_appearances', 'best_avg_finish'] },
             { title: 'Streaks',          keys: ['longest_win_streaks', 'longest_loss_streaks'] },
         ],

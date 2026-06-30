@@ -93,8 +93,11 @@
 }
 #currentList .mg-name { color: #f4ebd8; }
 #alumniList  .mg-name { color: var(--cream-mute); }
-/* !important so reigning beats the higher-specificity section-id rules above. */
-.mg-ticket.is-reigning .mg-name { color: var(--gold) !important; }
+/* !important so reigning beats the higher-specificity section-id rules above.
+   Name uses --gold-bright (not --gold) on purpose: the 1px border reads
+   brighter than text of the identical hex, so the slightly lighter token
+   makes the name visually match the gold border instead of looking duller. */
+.mg-ticket.is-reigning .mg-name { color: var(--gold-bright) !important; }
 /* Two-row layout: name on top, small ("Team · tenure" + championship
    pills) below. The small is a flex row so the team name ellipsizes
    while the tenure tail + pills hug the right and never wrap. */
@@ -239,7 +242,7 @@
         if (champYears.length > maxPills) {
             pills += '<span class="mg-champ-pill">+' + (champYears.length - maxPills) + '</span>';
         }
-        var tenure = m.seasons_played + ' yrs';
+        var tenure = m.seasons_played + ' szns';
         // is-champ: ever won (gives the gold ticket-stub border + avatar ring).
         // is-reigning: holds the most recent title (adds gold name + brighter border).
         var classes = 'mg-ticket';
