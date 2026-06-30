@@ -2419,10 +2419,19 @@ function buildRecordBook(s: Snapshot): unknown {
       let low = Infinity, lowWeek = 0, lowOpp = ''
       let pl_w = 0, pl_l = 0, pl_t = 0, pl_pf = 0, pl_games = 0, total_pf = 0
       let counted = 0
-      for (const g of games) {
-        // Same scope rule as the weekly book / career aggregates:
-        // consolation & placement games don't touch the season's numbers.
-        if (g.is_playoff && !isChampionshipBracketGame(s, g)) continue
+      // Full-season points follow the championship bracket: one loss ends the
+      // run, so games played after it (the 3rd-place game, which the semifinal
+      // losers play) don't count. Regular-season games always count, so walk
+      // games in week order and only gate the playoff side.
+      let eliminated = false
+      const orderedGames = [...games].sort((a, b) => a.week - b.week)
+      for (const g of orderedGames) {
+        if (g.is_playoff) {
+          // Consolation & placement games never count toward the season total.
+          if (!isChampionshipBracketGame(s, g)) continue
+          // Already knocked out of the bracket — stop counting (no 3rd-place game).
+          if (eliminated) continue
+        }
         total_pf += g.self_score
         counted++
         const opp = s.managers.get(g.opp_id)
@@ -2432,7 +2441,7 @@ function buildRecordBook(s: Snapshot): unknown {
         if (g.is_playoff) {
           pl_games++; pl_pf += g.self_score
           if (g.result === 'W') pl_w++
-          else if (g.result === 'L') pl_l++
+          else if (g.result === 'L') { pl_l++; eliminated = true }
           else pl_t++
         }
       }

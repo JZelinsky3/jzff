@@ -37,12 +37,44 @@
 
 .rb-seg button.is-active { background: var(--rec); color: #0d1512; }
 
+.rb-card { position: relative; }
 .rb-card + .rb-card { margin-top: .55rem; }
+/* Numbered-ledger header: every record carries its position in the chapter,
+   so the stack reads as ordered entries instead of identical tiles. */
+.rb-card-head { display: flex; align-items: center; gap: .55rem; margin-bottom: .1rem; }
+.rb-idx {
+    flex: none;
+    font-family: var(--serif); font-size: 1.05rem; line-height: 1;
+    color: var(--rec-deep); font-variant-numeric: tabular-nums;
+}
 .rb-card-label {
     font-family: var(--mono); font-weight: 700;
     font-size: .54rem; letter-spacing: .22em; text-transform: uppercase;
     color: var(--rec-deep);
 }
+.rb-card-head .rb-card-label { flex: 1; min-width: 0; }
+/* The #1 record of each tab is the chapter's headline — accent rule, brighter
+   number + label, and a small tag set it apart as the showpiece. */
+.rb-lead-tag {
+    flex: none; margin-left: auto;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .16em; text-transform: uppercase;
+    color: #0d1512; background: var(--rec);
+    padding: .14rem .42rem; border-radius: 999px;
+}
+.rb-card.rb-lead {
+    border-color: var(--rec-deep);
+    background:
+        linear-gradient(180deg, rgba(143, 184, 154, .07), transparent 55%),
+        var(--ink-card);
+}
+.rb-card.rb-lead::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(90deg, var(--rec), transparent 75%);
+}
+.rb-card.rb-lead .rb-idx,
+.rb-card.rb-lead .rb-card-label { color: var(--rec); }
 .rb-top {
     display: flex; align-items: baseline; gap: .65rem;
     margin-top: .35rem;
@@ -146,8 +178,6 @@
     color: var(--cream-mute); margin-top: 4px;
 }
 .rb-hero-val .rb-val-g { font-size: .4rem; vertical-align: .42em; margin-left: 5px; }
-.rb-hero-bar { display: block; height: 7px; margin-top: .55rem; border-radius: 4px; background: var(--ink-line-soft); overflow: hidden; }
-.rb-hero-bar span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--rec), #d2ead8); }
 .rb-hero + .rb-bars { margin-top: .65rem; padding-top: .6rem; border-top: 1px solid var(--ink-line-soft); }
 
 /* ── Seasons: leaderboard bars ─────────────────────────────────── */
@@ -316,7 +346,10 @@
             var g = e.total_games != null
                 ? e.total_games
                 : (e.reg_record ? recGames(e.reg_record) : 0) + (e.playoff_games || 0);
-            return { inline: g ? g + 'g' : '' };
+            // Full-season PPG (over all counted games) sits under the total,
+            // mirroring the other point titles; games-played rides inline.
+            var tppg = e.avg_ppg != null ? e.avg_ppg : (g > 0 && e.total_pf != null ? e.total_pf / g : null);
+            return { inline: g ? g + 'g' : '', below: tppg != null ? num(tppg) + ' ppg' : '' };
         }
         return {};
     }
@@ -407,9 +440,17 @@
     }
 
     // Shared card wrapper + expand hint used by every section variant.
-    function cardShell(label, hasMore, total, inner) {
-        return '<div class="m-card rb-card' + (hasMore ? ' rb-can-expand' : '') + '">' +
-            '<div class="rb-card-label">' + esc(label) + '</div>' +
+    // `idx` is the record's position in the tab — drives the ledger number
+    // and promotes the first record to the chapter headline.
+    function cardShell(label, hasMore, total, inner, idx) {
+        var lead = idx === 0;
+        var n = (idx + 1 < 10 ? '0' : '') + (idx + 1);
+        return '<div class="m-card rb-card' + (lead ? ' rb-lead' : '') + (hasMore ? ' rb-can-expand' : '') + '">' +
+            '<div class="rb-card-head">' +
+                '<span class="rb-idx">' + n + '</span>' +
+                '<div class="rb-card-label">' + esc(label) + '</div>' +
+                (lead ? '<span class="rb-lead-tag">Headline</span>' : '') +
+            '</div>' +
             inner +
             (hasMore
                 ? '<div class="rb-expand-hint">' +
@@ -421,7 +462,7 @@
     }
 
     // ── Standard card — Careers + Feats keep the original look ────
-    function renderStandard(key, label, val, ctx, entries) {
+    function renderStandard(key, label, val, ctx, entries, idx) {
         var top = entries[0];
         var others = entries.slice(1);
         var inner =
@@ -441,7 +482,7 @@
                     '</div>';
                 }).join('') + '</div>'
                 : '');
-        return cardShell(label, others.length > 2, entries.length, inner);
+        return cardShell(label, others.length > 2, entries.length, inner, idx);
     }
 
     // ── Seasons → leaderboard bars ───────────────────────────────
@@ -454,13 +495,15 @@
         if (key === 'best_reg_season_records' || key === 'worst_reg_season_records') return e.reg_win_pct || 0;
         return e.reg_pf || 0;
     }
-    function renderSeasonBars(key, label, val, ctx, entries) {
+    function renderSeasonBars(key, label, val, ctx, entries, idx) {
         var max = 0;
         entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
 
         // #1 becomes the marquee — big serif value, holder as headline,
         // full season context, and a maxed-out bar that anchors the list.
         var lead = entries[0];
+        // No bar on the leader — it would always be full, so it carries no
+        // information. The bars start at rank 2 where the spread is visible.
         var hero =
             '<div class="rb-hero">' +
                 '<div class="rb-hero-top">' +
@@ -468,7 +511,6 @@
                         '<small>' + esc(ctx(lead) || '') + '</small></span>' +
                     valHtml('rb-hero-val', val(lead), key, lead) +
                 '</div>' +
-                '<span class="rb-hero-bar"><span style="width:100%"></span></span>' +
             '</div>';
 
         // Ranks 2+ stay as proportional bars; 2–3 visible, rest fold away.
@@ -491,7 +533,7 @@
         }).join('');
 
         var inner = hero + (rows ? '<div class="rb-bars">' + rows + '</div>' : '');
-        return cardShell(label, entries.length > 3, entries.length, inner);
+        return cardShell(label, entries.length > 3, entries.length, inner, idx);
     }
 
     // ── Games → marquee scorecard ────────────────────────────────
@@ -518,7 +560,7 @@
             '</div>' +
         '</div>';
     }
-    function renderGameTickets(key, label, val, ctx, entries) {
+    function renderGameTickets(key, label, val, ctx, entries, idx) {
         var top = entries[0];
         var others = entries.slice(1);
         var rest = others.length
@@ -531,7 +573,7 @@
                 '</div>';
             }).join('') + '</div>'
             : '';
-        return cardShell(label, others.length > 2, entries.length, gameHero(key, top, val) + rest);
+        return cardShell(label, others.length > 2, entries.length, gameHero(key, top, val) + rest, idx);
     }
 
     function render() {
@@ -541,24 +583,33 @@
             return;
         }
         var defs = DEFS[section] || [];
-        var html = defs.map(function (def) {
-            var key = def[0], label = def[1], val = def[2], ctx = def[3], currentOnly = def[5];
+        // Resolve entries first and drop the empty records, so the ledger
+        // numbering is sequential (01, 02, …) and the headline lands on the
+        // first record that actually has data.
+        var cards = defs.map(function (def) {
+            var currentOnly = def[5];
             var entries = entriesFor(def);
-            if (!entries || !entries.length) return '';
+            if (!entries || !entries.length) return null;
             if (currentOnly) {
                 entries = entries.filter(function (e) { return e.is_current_member !== false; });
-                if (!entries.length) return '';
+                if (!entries.length) return null;
             }
-            // Bars suit the points races; W–L records read better as the
-            // plain card, so they keep the original look.
+            return { def: def, entries: entries };
+        }).filter(Boolean);
+
+        var html = cards.map(function (item, idx) {
+            var def = item.def, entries = item.entries;
+            var key = def[0], label = def[1], val = def[2], ctx = def[3];
+            // Bars suit the points races; W–L records and the lowest-PPG list
+            // read better as the plain card, so they keep the original look.
             if (section === 'season') {
-                if (key === 'best_reg_season_records' || key === 'worst_reg_season_records')
-                    return renderStandard(key, label, val, ctx, entries);
-                return renderSeasonBars(key, label, val, ctx, entries);
+                if (key === 'best_reg_season_records' || key === 'worst_reg_season_records' || key === 'lowest_ppg')
+                    return renderStandard(key, label, val, ctx, entries, idx);
+                return renderSeasonBars(key, label, val, ctx, entries, idx);
             }
-            if (section === 'weekly') return renderGameTickets(key, label, val, ctx, entries);
-            return renderStandard(key, label, val, ctx, entries);
-        }).filter(Boolean).join('');
+            if (section === 'weekly') return renderGameTickets(key, label, val, ctx, entries, idx);
+            return renderStandard(key, label, val, ctx, entries, idx);
+        }).join('');
         box.innerHTML = html || '<div class="m-empty">Nothing in this chapter yet.</div>';
     }
 
