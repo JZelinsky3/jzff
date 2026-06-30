@@ -5204,27 +5204,46 @@ function buildBestCoach(s: Snapshot): unknown {
   const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
   const managerToGroup = buildManagerToGroup(groups)
 
-  // Consolation-game lookup: (manager, week) pairs where the matchup is a
-  // playoff placement game (neither participant finished top-4). Managers
-  // have nothing to play for, so a week-16 bench bomb from someone in the
-  // 7th-place game shouldn't count against their coaching record.
-  const consolationKeys = new Set<string>()
+  // Championship-bracket keys: (manager, week) pairs where the manager
+  // played a real championship-bracket game (round 1, semis, 3rd-place, or
+  // final). Once we hit playoff weeks, ONLY these lineups count toward
+  // best-coach. Two failure modes the old filter missed:
+  //   1. Sleeper / ESPN sometimes leave non-playoff teams without any
+  //      matchup row in weeks 15-16 (they sit out). No matchup means no
+  //      consolation key, so their lineups were silently included even
+  //      though those weeks were meaningless.
+  //   2. NFL.com schedules every team in playoff weeks as a consolation
+  //      bracket. Some platforms flag those as is_playoff = true, some
+  //      don't, so a pure consolation-by-rank filter wasn't catching them
+  //      consistently.
+  // Walking the season's playoff window and demanding a championship-
+  // bracket matchup catches both cases.
+  const playoffWeeks = liveSeason.playoff_weeks ?? []
+  const settings = (liveSeason.settings ?? {}) as Record<string, unknown>
+  const startSetting = settings.playoff_week_start
+  const playoffWeekStart = playoffWeeks.length > 0
+    ? Math.min(...playoffWeeks)
+    : (typeof startSetting === 'number' && startSetting > 0 ? startSetting : Infinity)
+  const championshipKeys = new Set<string>()
   for (const m of s.matchupsBySeason.get(liveSeason.id) ?? []) {
     if (!m.is_playoff) continue
     const game = asManagerGame(m, m.manager_a_id)
-    if (game && !isChampionshipBracketGame(s, game)) {
-      consolationKeys.add(`${m.manager_a_id}|${m.week}`)
-      consolationKeys.add(`${m.manager_b_id}|${m.week}`)
+    if (game && isChampionshipBracketGame(s, game)) {
+      championshipKeys.add(`${m.manager_a_id}|${m.week}`)
+      championshipKeys.add(`${m.manager_b_id}|${m.week}`)
     }
   }
 
-  // Bucket rows by manager → week → players.
+  // Bucket rows by manager -> week -> players.
   type WeekBucket = { starters: WeeklyLineupRow[]; all: WeeklyLineupRow[] }
   const byMgr = new Map<string, Map<number, WeekBucket>>()
   let maxWeek = 0
   for (const r of rows) {
     if (!managerToGroup.has(r.manager_id)) continue
-    if (consolationKeys.has(`${r.manager_id}|${r.week}`)) continue
+    // Past the playoff window, only championship-bracket participants
+    // contribute. Everyone else is in consolation, sitting out, or in a
+    // toilet bowl that doesn't belong in a coaching ledger.
+    if (r.week >= playoffWeekStart && !championshipKeys.has(`${r.manager_id}|${r.week}`)) continue
     if (r.week > maxWeek) maxWeek = r.week
     let weeks = byMgr.get(r.manager_id)
     if (!weeks) { weeks = new Map(); byMgr.set(r.manager_id, weeks) }
