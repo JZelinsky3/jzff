@@ -9,35 +9,51 @@
 <script>(function(){var u=navigator.userAgent;if(!(/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u)))return;if(/(?:^|;\s*)dc_view=desktop/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo\//,"/demo-m/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Season · The Lakeside League</title>
+<title>Live · The Lakeside League</title>
 <link rel="stylesheet" href="assets/css/main.css">
+<script>window.__DC={liveWeek:8,slug:'demo',name:'The Lakeside League'};</script>
 <style>
 /* ============================================================
-   LIVE SEASON HUB — in-season launcher
-   Cards for every "during the season" feature. The almanac is
-   timeless; this is where the noise lives.
+   LIVE HOME — in-season dashboard. Not a launcher; a live
+   command surface. Five sections, each with its own visual
+   language so the page reads as a hand-laid issue, not a
+   uniform stack.
    ============================================================ */
 
 :root {
-    /* Deep moss canvas — reading-room green with brass-gold accents.
-       Distinct from draft history's flat near-black, warm enough to
-       pair with the multi-color themed cards (brass, magenta, steel,
-       violet all sit comfortably on this base). */
+    /* Deep moss canvas — same family as the old launcher so the
+       chrome reads continuously when moving between live pages. */
     --ls-bg:         #15201b;
     --ls-card:       #1d2a23;
     --ls-card-hover: #26342c;
     --ls-line:       #2e3d34;
     --ls-line-soft:  #22302a;
     --ls-mute:       #7d8c81;
-    --ls-live:       #d4a94c;   /* warm amber accents */
+    --ls-live:       #d4a94c;
     --ls-soon:       #7d8c81;
-    --ls-pro:        #e8c889;   /* gold = paid tier */
-    --ls-matrix-red: #c75847;   /* mileage matrix accent — deep signal red */
+    --ls-pro:        #e8c889;
+    --ls-amber:      #e8b047;
+    --ls-magenta:    #ff3d8b;
+    --ls-violet:     #b58cff;
+    --ls-steel:      #7fa8bd;
+    --ls-cardroom:   #c8a464;
+
+    /* Live-hub accent rotation — one cohesive, moss-friendly family so
+       cards can vary without dragging each destination page's own brand
+       color (magenta, violet, steel-blue…) onto this canvas. Cards pick
+       from these so no two neighbors read the same. */
+    --ac-gold:   #d8b25a;
+    --ac-sage:   #8fbf93;
+    --ac-bronze: #c8a464;
+    --ac-rust:   #cf9163;
+    --ac-teal:   #6fa6a0;
+    --ac-amber:  #e0a544;
 }
 
-/* ── Nav + chapbar — darker moss with brass accents, same family as
-   the canvas so the masthead reads as carved from the same wood. */
-.nav { background: rgba(15,24,20,.96); border-bottom-color: var(--ls-line); }
+/* Nav + chapbar — same wood family as the launcher so the masthead
+   reads as carved from the same block. The chapbar mode-switch lives
+   in nav.js; these vars only style the bar. */
+.nav { background: rgb(15, 24, 20); border-bottom-color: var(--ls-line); }
 .nav-back, .nav-link { color: var(--ls-pro); }
 .nav-back:hover, .nav-link:hover { color: var(--gold-bright, #f3d775); }
 .nav-title em { color: var(--cream); font-style: italic; }
@@ -45,13 +61,14 @@
 .nav-drop-btn { color: var(--ls-pro); }
 .nav-drop-btn:hover { color: var(--gold-bright, #f3d775); }
 :root {
-    --chapbar-bg:     rgba(15,24,20,.94);
+    --chapbar-bg:     rgb(15, 24, 20);
     --chapbar-border: var(--ls-line);
     --chapbar-text:   var(--ls-mute);
     --chapbar-active: var(--ls-pro);
     --chapbar-line:   var(--ls-line);
+    --subrail-active: var(--ls-live);
 
-    --nav-drop-bg:           rgba(15,24,20,.98);
+    --nav-drop-bg:           rgb(15, 24, 20);
     --nav-drop-border:       var(--ls-line);
     --nav-drop-text:         var(--cream);
     --nav-drop-text-mute:    var(--ls-mute);
@@ -69,659 +86,1106 @@ body { background: var(--ls-bg); }
         radial-gradient(ellipse at 85% 90%, rgba(106, 154, 110, .04) 0%, transparent 55%);
 }
 
-.ls-wrap {
+.dash-wrap {
     position: relative; z-index: 1;
-    max-width: 1100px;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 3rem 1.5rem 5rem;
+    padding: 2.4rem 1.5rem 5rem;
 }
 
-/* ── Hero ─────────────────────────────────────────────────── */
-.ls-hero {
-    text-align: center;
-    padding: .5rem 1rem 3rem;
+/* ── Hero ──────────────────────────────────────────────────── */
+.dash-hero {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 1rem;
+    padding: .5rem 0 1.6rem;
     border-bottom: 1px solid var(--ls-line-soft);
-    margin-bottom: 3rem;
+    margin-bottom: 2.6rem;
 }
-.ls-hero-sup {
+.dash-hero-sup {
     font-family: var(--mono);
-    font-size: .72rem;
+    font-size: .68rem;
     letter-spacing: .28em;
     text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 1rem;
+    color: var(--ls-pro);
+    margin-bottom: .85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
 }
-.ls-hero-title {
+.dash-hero-pill {
+    display: inline-flex; align-items: center; gap: .42rem;
+    padding: .26rem .62rem .3rem;
+    border: 1px solid var(--ls-live);
+    border-radius: 999px;
+    color: var(--ls-live);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+    background: rgba(212,169,76,.08);
+}
+.dash-hero-pill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ls-live);
+    box-shadow: 0 0 8px var(--ls-live);
+    animation: livePulse 1.6s ease-in-out infinite;
+}
+.dash-hero-pill.off { color: var(--ls-mute); border-color: var(--ls-line); background: transparent; }
+.dash-hero-pill.off .dot { background: var(--ls-mute); box-shadow: none; animation: none; }
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .45; transform: scale(.85); }
+}
+.dash-hero-title {
     font-family: var(--serif);
-    font-size: clamp(2.4rem, 6vw, 4rem);
-    line-height: 1.05;
+    font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+    line-height: 1.02;
     color: var(--cream);
-    margin: 0 0 1rem;
+    margin: 0;
 }
-.ls-hero-title em {
-    font-style: italic;
-    color: var(--gold);
+.dash-hero-title em { font-style: italic; color: var(--gold); }
+.dash-hero-meta {
+    font-family: var(--mono);
+    font-size: .65rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: right;
 }
-.ls-hero-sub {
-    max-width: 38rem;
-    margin: 0 auto;
-    color: var(--cream-soft);
-    font-size: 1.02rem;
-    line-height: 1.55;
+.dash-hero-meta div + div { margin-top: .35rem; }
+@media (max-width: 640px) {
+    .dash-hero { grid-template-columns: 1fr; }
+    .dash-hero-meta { text-align: left; }
 }
 
-/* ── Section header ──────────────────────────────────────── */
-.ls-section-header {
+/* ── Section header ────────────────────────────────────────── */
+.dash-section { margin-bottom: 3.2rem; }
+.dash-section-head {
     display: flex;
     align-items: baseline;
     gap: .9rem;
-    padding-bottom: .9rem;
-    margin-bottom: 1.5rem;
+    padding-bottom: .85rem;
+    margin-bottom: 1.4rem;
     border-bottom: 1px solid var(--ls-line-soft);
     flex-wrap: wrap;
 }
-.ls-section-num {
+.dash-section-num {
     font-family: var(--mono);
-    font-size: .68rem;
-    letter-spacing: .25em;
+    font-size: .66rem;
+    letter-spacing: .26em;
     text-transform: uppercase;
     color: var(--gold);
 }
-.ls-section-title {
+.dash-section-title {
     font-family: var(--serif);
-    font-size: 1.5rem;
+    font-size: 1.45rem;
     color: var(--cream);
 }
-.ls-section-title em { color: var(--gold); font-style: italic; }
-.ls-section-meta {
+.dash-section-title em { color: var(--gold); font-style: italic; }
+.dash-section-meta {
     margin-left: auto;
     font-family: var(--mono);
-    font-size: .68rem;
-    letter-spacing: .15em;
+    font-size: .62rem;
+    letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--cream-mute);
 }
 
-/* ── Card grid ───────────────────────────────────────────── */
-.ls-grid {
+/* ============================================================
+   § 01 — THE PULSE: snapshot row (mini standings + form + power)
+   ============================================================ */
+.dash-snapshot {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.1rem;
+}
+@media (max-width: 980px) { .dash-snapshot { grid-template-columns: 1fr; } }
+
+.snap-card {
+    background: var(--ls-card);
+    border: 1px solid var(--ls-line);
+    border-radius: 3px;
+    padding: 1.05rem 1.1rem 1.1rem;
+    display: flex; flex-direction: column;
+    min-height: 320px;
+    position: relative;
+}
+.snap-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: var(--snap-accent, var(--ls-pro));
+    border-radius: 3px 3px 0 0;
+}
+.snap-card[data-snap="standings"]  { --snap-accent: var(--ac-gold); }
+.snap-card[data-snap="form"]       { --snap-accent: var(--ac-sage); }
+.snap-card[data-snap="powerrank"]  { --snap-accent: var(--ac-teal); }
+
+.snap-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: .85rem;
+    padding-bottom: .65rem;
+    border-bottom: 1px solid var(--ls-line-soft);
+}
+.snap-title {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    color: var(--cream);
+}
+.snap-title em { color: var(--snap-accent, var(--gold)); font-style: italic; }
+.snap-kicker {
+    font-family: var(--mono);
+    font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
 }
 
-.ls-card {
+/* Mini table — shared by Standings + Power Rank. Form gets its own
+   pillared layout below but uses the same row HEIGHT so all three
+   snapshot cards bottom-align cleanly with one row per manager. */
+.snap-table {
+    flex: 1;
+    /* flex column (gap:0) so podium-row vertical margins DON'T collapse —
+       must match the .snap-form-rows behavior below or the form card
+       ends up taller than the other two snapshot cards. */
     display: flex;
     flex-direction: column;
-    padding: 1.4rem 1.4rem 1.2rem;
+    gap: 0;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: .78rem;
+    color: var(--cream-soft);
+}
+.snap-table .snap-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: .65rem;
+    height: 30px;
+    padding: 0 .15rem;
+    border-bottom: 1px dashed rgba(232,200,137,.08);
+}
+.snap-table .snap-row:last-child { border-bottom: 0; }
+.snap-table .snap-row.leader .snap-pos { color: var(--snap-accent); font-weight: 700; }
+
+/* ── Podium treatment for the top 3 rows ────────────────────
+   Stair-stepped row heights so the gold row reads as "biggest"
+   while every card still bottom-aligns (rank 1 = 40px, 2 = 35px,
+   3 = 32px, 4+ = 30px across ALL three snapshot cards). Color
+   overrides the per-card accent for top 3 so the podium is the
+   visual hierarchy, not the card-specific brand. */
+:root {
+    --podium-gold:   #e6c879;
+    --podium-silver: #c2cace;
+    --podium-bronze: #cf9a64;
+}
+/* Inlaid medals — rather than a loud brushed-metal plate that fights the
+   moss-green table, the top 3 rows get a soft tinted wash plus a thin
+   left medal rule. The tint fades out to the right so the row still reads
+   as table data, just gently lit. Stair-stepped heights preserve the
+   #1 > #2 > #3 podium hierarchy; everything bottom-aligns with the
+   non-podium rows below. */
+.snap-row, .snap-form-row { position: relative; }
+.snap-row > *, .snap-form-row > * { position: relative; z-index: 1; }
+
+.snap-row.podium-1, .snap-form-row.podium-1,
+.snap-row.podium-2, .snap-form-row.podium-2,
+.snap-row.podium-3, .snap-form-row.podium-3 {
+    border-bottom-color: transparent;
+    background: transparent;
+}
+
+.snap-row.podium-1, .snap-form-row.podium-1 {
+    height: 38px;
+    margin: 3px 0 2px;
+    font-size: .9rem;
+}
+.snap-row.podium-2, .snap-form-row.podium-2 {
+    height: 34px;
+    margin: 2px 0;
+    font-size: .82rem;
+}
+.snap-row.podium-3, .snap-form-row.podium-3 {
+    height: 31px;
+    margin: 2px 0 4px;
+    font-size: .79rem;
+}
+
+/* Wash ::before — a translucent left-to-right fade in the medal color
+   with a 3px medal rule pinned to the left edge and a faint full
+   outline. Low alpha so it layers onto moss green instead of sitting on
+   top of it like a sticker. Extends just a touch past the row so the
+   rule clears the card's inner padding. */
+.snap-row.podium-1::before, .snap-form-row.podium-1::before,
+.snap-row.podium-2::before, .snap-form-row.podium-2::before,
+.snap-row.podium-3::before, .snap-form-row.podium-3::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: -6px; right: -6px;
+    z-index: 0;
+    border-radius: 4px;
+    background: var(--medal-wash);
+    box-shadow:
+        inset 3px 0 0 var(--medal),
+        inset 0 0 0 1px var(--medal-edge);
+}
+.snap-row.podium-1::before, .snap-form-row.podium-1::before {
+    --medal: var(--podium-gold);
+    --medal-wash: linear-gradient(90deg, rgba(230,200,121,.22), rgba(230,200,121,.06) 65%, transparent);
+    --medal-edge: rgba(230,200,121,.20);
+}
+.snap-row.podium-2::before, .snap-form-row.podium-2::before {
+    --medal: var(--podium-silver);
+    --medal-wash: linear-gradient(90deg, rgba(194,202,206,.16), rgba(194,202,206,.05) 65%, transparent);
+    --medal-edge: rgba(194,202,206,.16);
+}
+/* Bronze — pulled toward antique copper so it reads clearly third, not
+   a duller gold. */
+.snap-row.podium-3::before, .snap-form-row.podium-3::before {
+    --medal: var(--podium-bronze);
+    --medal-wash: linear-gradient(90deg, rgba(207,154,100,.18), rgba(207,154,100,.05) 65%, transparent);
+    --medal-edge: rgba(207,154,100,.18);
+}
+
+/* The position number wears the medal color; the name + value stay light
+   so the row keeps reading as a table line, not a trophy. */
+.snap-row.podium-1 .snap-pos, .snap-form-row.podium-1 .snap-pos { color: var(--podium-gold); font-weight: 700; }
+.snap-row.podium-2 .snap-pos, .snap-form-row.podium-2 .snap-pos { color: var(--podium-silver); font-weight: 700; }
+.snap-row.podium-3 .snap-pos, .snap-form-row.podium-3 .snap-pos { color: var(--podium-bronze); font-weight: 700; }
+
+/* Name picks up its own medal color so the top 3 read as a set. */
+.snap-row.podium-1 .snap-name, .snap-form-row.podium-1 .snap-name { color: var(--podium-gold);   font-weight: 600; }
+.snap-row.podium-2 .snap-name, .snap-form-row.podium-2 .snap-name { color: var(--podium-silver); font-weight: 600; }
+.snap-row.podium-3 .snap-name, .snap-form-row.podium-3 .snap-name { color: var(--podium-bronze); font-weight: 600; }
+
+/* Delta arrows keep the normal light up/down treatment (the wash is dark
+   now, so the old dark-on-metal colors are gone). Slight size bump on the
+   leader so its ↑/↓ tracks with the bigger row text. */
+.snap-row.podium-1 .snap-delta { font-size: .9em; margin-left: .5rem; font-weight: 700; }
+.snap-row.podium-2 .snap-delta { font-size: .82em; margin-left: .45rem; font-weight: 700; }
+.snap-row.podium-3 .snap-delta { font-size: .8em;  margin-left: .42rem; font-weight: 700; }
+.snap-pos { color: var(--ls-mute); font-variant-numeric: tabular-nums; }
+.snap-name { color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.snap-val  { color: var(--snap-accent); font-variant-numeric: tabular-nums; font-weight: 700; }
+.snap-delta {
+    display: inline-block;
+    margin-left: .35rem;
+    font-size: .68em;
+    vertical-align: .05em;
+}
+.snap-delta.up   { color: #6a9a6e; }
+.snap-delta.down { color: #c75847; }
+.snap-delta.same { color: var(--ls-mute); }
+
+/* Mini form sheet — 5-pill row + PPG-over-last-5 per manager. Row
+   height + dashed divider match the .snap-row siblings exactly so the
+   three snapshot cards bottom-align across the grid. */
+.snap-form-rows { flex: 1; display: flex; flex-direction: column; gap: 0; padding-top: 0; }
+.snap-form-row {
+    display: grid;
+    grid-template-columns: 22px 1fr auto auto;
+    align-items: center;
+    gap: .55rem;
+    height: 30px;
+    border-bottom: 1px dashed rgba(232,200,137,.08);
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: .76rem;
+}
+.snap-form-row:last-child { border-bottom: 0; }
+.snap-form-row .snap-pos { color: var(--ls-mute); }
+.snap-form-row .snap-name {
+    color: var(--cream); font-size: .8rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    min-width: 0;
+}
+.snap-form-row .snap-ppg {
+    color: var(--ls-amber);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 38px; text-align: right;
+}
+.snap-pills { display: inline-flex; gap: 3px; }
+.snap-pills i {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border-radius: 2px;
+    font-style: normal;
+    font-size: .55rem; font-weight: 700;
+    text-align: center; line-height: 16px;
+    letter-spacing: 0;
+}
+.snap-pills i.w { background: rgba(106,154,110,.85); color: #0e1a14; }
+.snap-pills i.l { background: rgba(199,88,71,.78); color: #1a0e08; }
+.snap-pills i.t { background: rgba(232,200,137,.5); color: #1a1408; }
+.snap-pills i.e { background: transparent; border: 1px dashed var(--ls-line); color: var(--ls-mute); line-height: 14px; }
+
+.snap-foot {
+    margin-top: .85rem;
+    padding-top: .65rem;
+    border-top: 1px solid var(--ls-line-soft);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.snap-link {
+    font-family: var(--mono);
+    font-size: .58rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--snap-accent);
+    text-decoration: none;
+    opacity: .85;
+    transition: opacity .15s, transform .15s;
+}
+.snap-link:hover { opacity: 1; transform: translateX(2px); }
+.snap-empty {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: var(--ls-mute); font-size: .82rem;
+    font-style: italic; text-align: center; padding: 2rem .5rem;
+}
+
+/* ============================================================
+   § 02 — THIS WEEK: GOTW + matchup preview + pickems + rumor mill
+   GOTW is the feature; the three quick cards live in a sidebar.
+   ============================================================ */
+.dash-weekly {
+    display: grid;
+    /* GOTW narrower than the stack so the three weekly cards have room to
+       stand out. Was 1.55:1, now 1:1.15 — the cards now read as the main
+       call to action and GOTW as the feature article. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 1.1rem;
+}
+@media (max-width: 920px) { .dash-weekly { grid-template-columns: 1fr; } }
+
+.gotw-card {
+    background:
+        radial-gradient(ellipse at 80% 0%, rgba(232,176,71,.10), transparent 60%),
+        linear-gradient(180deg, #142a20, #1a3326);
+    border: 1px solid #2a4234;
+    border-radius: 3px;
+    padding: 1.4rem 1.5rem 1.5rem;
+    position: relative;
+    display: flex; flex-direction: column;
+    min-height: 380px;
+}
+.gotw-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: #c89d5c;
+    border-radius: 3px 3px 0 0;
+}
+.gotw-kicker {
+    font-family: var(--mono);
+    font-size: .6rem; font-weight: 700;
+    letter-spacing: .26em; text-transform: uppercase;
+    color: #e8b047;
+    margin-bottom: .9rem;
+    display: inline-flex; align-items: center; gap: .5rem;
+}
+.gotw-kicker .star { color: #e8b047; }
+.gotw-headline {
+    font-family: var(--serif);
+    font-size: 1.85rem;
+    line-height: 1.1;
+    color: #f4ebd8;
+    margin: 0 0 1rem;
+}
+.gotw-headline em { color: #e6bb78; font-style: italic; }
+/* Heads row — Team A | vs. | Team B as one inline trio. No vertical
+   line between them; the italic "vs." carries the separation. */
+.gotw-heads {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.1rem;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+.gotw-head { min-width: 0; }
+.gotw-head.right { text-align: right; }
+.gotw-head-vs {
+    align-self: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.5rem;
+    color: #c89d5c;
+    opacity: .75;
+    margin-top: .1rem;
+}
+.gotw-side-name {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    line-height: 1.15;
+    color: #f4ebd8;
+    margin: 0 0 .2rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gotw-side-owner {
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .2em; text-transform: uppercase;
+    color: #9eb5a2;
+    margin-bottom: .25rem;
+}
+.gotw-side-record {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .85rem; color: #e6bb78;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Stats — flat 3-col table: Team A value (left-aligned) · stat label
+   (centered) · Team B value (right-aligned). No internal dividers; the
+   centered labels are the visual spine. */
+.gotw-stats {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: .55rem 1.2rem;
+    padding: .9rem 0 .9rem;
+    margin-bottom: 0;
+    border-top: 1px dashed rgba(200,157,92,.22);
+    border-bottom: 1px dashed rgba(200,157,92,.22);
+    align-items: center;
+}
+.gotw-stat-a, .gotw-stat-b {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .85rem;
+    color: #f4ebd8;
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+}
+.gotw-stat-a { text-align: left; }
+.gotw-stat-b { text-align: right; }
+.gotw-stat-label {
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .22em; text-transform: uppercase;
+    color: #9eb5a2;
+    text-align: center;
+    white-space: nowrap;
+}
+/* Form-pill sizing inside the stats — narrower than the snapshot form
+   card so they fit the GOTW slot. */
+.gotw-stats .snap-pills { gap: 2px; display: inline-flex; }
+.gotw-stats .snap-pills i { width: 14px; height: 14px; font-size: .5rem; line-height: 14px; }
+.gotw-stat-b .snap-pills { justify-content: flex-end; }
+
+/* H2H block — centered record + title, flanked by each side's avg PPG
+   when they've played each other. PPG slots stay quiet (smaller, muted
+   gold) so the bold record reads as the spotlight. */
+.gotw-h2h-block {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.1rem;
+    align-items: center;
+    padding: .45rem 0 .8rem;
+    margin-bottom: .55rem;
+    border-bottom: 1px dashed rgba(200,157,92,.22);
+}
+.gotw-h2h-side { text-align: center; min-width: 0; }
+.gotw-h2h-side-label {
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
+    color: #9eb5a2;
+    margin-bottom: .25rem;
+}
+.gotw-h2h-side-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .92rem;
+    color: #e6bb78;
+    font-variant-numeric: tabular-nums;
+}
+.gotw-h2h-center { text-align: center; min-width: 0; }
+.gotw-h2h-title {
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .26em; text-transform: uppercase;
+    color: #c89d5c;
+    margin-bottom: .35rem;
+}
+.gotw-h2h-record {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #e6bb78;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+.gotw-h2h-note-center {
+    text-align: center;
+    margin: 0 0 .9rem;
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .18em; text-transform: uppercase;
+    color: #9eb5a2; opacity: .7;
+}
+.gotw-blurb {
+    color: #c8d4cb;
+    font-size: .92rem;
+    line-height: 1.55;
+    flex: 1;
+}
+.gotw-cta {
+    margin-top: 1rem;
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: .6rem; font-weight: 700;
+    letter-spacing: .24em; text-transform: uppercase;
+    color: #e8b047;
+    text-decoration: none;
+    border: 1px solid #c89d5c;
+    padding: .55rem 1rem;
+    border-radius: 2px;
+    transition: background .15s, color .15s;
+}
+.gotw-cta:hover { background: rgba(232,176,71,.12); color: #f4d685; }
+
+.weekly-stack {
+    display: flex; flex-direction: column;
+    gap: 1.1rem;
+}
+/* Weekly-quick cards — the actionable checklist column. Each card is a
+   wrapper div holding an <a> body and a <button> skip control; the click
+   on the body marks the card "viewed" (the user opened the destination),
+   the skip button toggles "skipped". State persists per league per
+   week in localStorage. */
+.weekly-quick {
+    background: var(--ls-card);
+    border: 1px solid var(--quick-accent);
+    border-radius: 3px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: background .15s, transform .15s, opacity .15s, border-color .15s;
+    /* Outer accent — slightly thicker than the snap cards so the checklist
+       reads as the primary CTA cluster on the page. */
+    box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset;
+}
+.weekly-quick::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 4px;
+    background: var(--quick-accent);
+    border-radius: 3px 3px 0 0;
+}
+.weekly-quick[data-quick="matchups"] { --quick-accent: var(--ac-rust); }
+.weekly-quick[data-quick="pickems"]  { --quick-accent: var(--ac-teal); }
+.weekly-quick[data-quick="rumor"]    { --quick-accent: var(--ac-gold); }
+
+.weekly-quick:hover {
+    background: var(--ls-card-hover);
+    transform: translateY(-1px);
+}
+.weekly-quick[data-status="viewed"]  { opacity: .72; }
+.weekly-quick[data-status="skipped"] { opacity: .5; }
+.weekly-quick[data-status="skipped"] .weekly-quick-body { filter: saturate(.65); }
+
+.weekly-quick-body {
+    display: block;
+    padding: 1.35rem 1.4rem 1.05rem;
+    color: inherit;
+    text-decoration: none;
+    flex: 1;
+}
+.weekly-quick-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .85rem;
+    margin-bottom: .85rem;
+}
+.weekly-quick-kicker {
+    font-family: var(--mono);
+    font-size: .58rem; font-weight: 700;
+    letter-spacing: .24em; text-transform: uppercase;
+    color: var(--quick-accent);
+}
+/* Status pip — chip-shaped indicator next to the kicker. */
+.weekly-quick-status {
+    display: inline-flex; align-items: center; gap: .42rem;
+    padding: .26rem .55rem .3rem;
+    font-family: var(--mono);
+    font-size: .52rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--quick-accent);
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    background: rgba(0,0,0,.18);
+    white-space: nowrap;
+}
+.weekly-quick-status .status-pip {
+    width: 7px; height: 7px;
+    border-radius: 1px;
+    background: currentColor;
+    display: inline-block;
+}
+.weekly-quick[data-status="viewed"] .weekly-quick-status {
+    color: #6a9a6e;
+}
+.weekly-quick[data-status="viewed"] .weekly-quick-status .status-pip {
+    background: transparent;
+    border: none;
+    width: auto; height: auto;
+    font-family: var(--serif);
+    font-size: .95rem; font-style: normal;
+    line-height: 1;
+    margin-top: -.1em;
+}
+.weekly-quick[data-status="skipped"] .weekly-quick-status {
+    color: var(--cream-mute);
+}
+.weekly-quick-title {
+    font-family: var(--serif);
+    font-size: 1.3rem; color: var(--cream);
+    margin: 0 0 .45rem;
+    line-height: 1.15;
+}
+.weekly-quick-title em { font-style: italic; color: var(--quick-accent); }
+.weekly-quick-desc {
+    color: var(--cream-soft);
+    font-size: .88rem; line-height: 1.5;
+    margin: 0;
+}
+.weekly-quick-foot {
+    border-top: 1px dashed rgba(255,255,255,.07);
+    padding: .55rem .9rem .6rem;
+    display: flex; justify-content: flex-end;
+}
+.weekly-quick-skip {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: .54rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+    opacity: .7;
+    padding: .35rem .55rem;
+    transition: color .15s, opacity .15s;
+}
+.weekly-quick-skip:hover { opacity: 1; color: var(--quick-accent); }
+.weekly-quick[data-status="skipped"] .weekly-quick-skip {
+    color: var(--quick-accent);
+    opacity: .95;
+}
+
+/* ============================================================
+   § 03 — THE WATCH: records + milestones split, best-coach strip
+   ============================================================ */
+.dash-watch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.1rem;
+}
+@media (max-width: 920px) { .dash-watch { grid-template-columns: 1fr; } }
+
+.watch-pane {
+    background: var(--ls-card);
+    border: 1px solid var(--ls-line);
+    border-radius: 3px;
+    padding: 1.1rem 1.2rem 1.2rem;
+    position: relative;
+    display: flex; flex-direction: column;
+}
+.watch-pane::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: var(--watch-accent);
+    border-radius: 3px 3px 0 0;
+}
+.watch-pane[data-watch="records"]    { --watch-accent: var(--ac-gold); --ls-card: #1e2119; border-color: #343a26; background: #1e2119; }
+.watch-pane[data-watch="milestones"] { --watch-accent: var(--ac-teal); --ls-card: #15211d; border-color: #27392f; background: #15211d; }
+
+.watch-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: .65rem; margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.watch-title {
+    font-family: var(--serif); font-size: 1.2rem; color: var(--cream);
+}
+.watch-title em { color: var(--watch-accent); font-style: italic; }
+.watch-kicker {
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+
+.watch-group { margin-bottom: 1.1rem; }
+.watch-group:last-of-type { margin-bottom: 0; }
+.watch-group-label {
+    font-family: var(--mono);
+    font-size: .54rem; font-weight: 700;
+    letter-spacing: .26em; text-transform: uppercase;
+    color: var(--watch-accent);
+    margin-bottom: .65rem;
+    display: inline-flex; align-items: center; gap: .45rem;
+}
+.watch-group-label::before {
+    content: ''; display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--watch-accent);
+}
+.watch-group-label.broken::before { background: #6a9a6e; }
+.watch-group-label.broken { color: #6a9a6e; }
+
+.watch-list { display: flex; flex-direction: column; gap: .55rem; }
+.watch-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: .8rem;
+    padding: .6rem .75rem;
+    background: rgba(0,0,0,.18);
+    border: 1px solid rgba(255,255,255,.03);
+    border-radius: 2px;
+}
+.watch-row-main { min-width: 0; }
+.watch-row-mgr {
+    font-family: var(--serif);
+    color: var(--cream);
+    font-size: .92rem;
+    line-height: 1.2;
+    margin-bottom: .15rem;
+}
+.watch-row-mgr em { color: var(--watch-accent); font-style: italic; }
+.watch-row-detail {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem; letter-spacing: .05em;
+    color: var(--cream-mute);
+}
+.watch-row-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem; font-weight: 700;
+    color: var(--watch-accent);
+    align-self: center;
+    text-align: right;
+    white-space: nowrap;
+}
+.watch-empty {
+    color: var(--ls-mute); font-size: .8rem;
+    font-style: italic; padding: .6rem .25rem;
+}
+.watch-foot {
+    margin-top: 1rem; padding-top: .8rem;
+    border-top: 1px dashed rgba(255,255,255,.06);
+    text-align: right;
+}
+.watch-link {
+    font-family: var(--mono);
+    font-size: .56rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--watch-accent);
+    text-decoration: none;
+    opacity: .8;
+}
+.watch-link:hover { opacity: 1; }
+
+.coach-strip {
+    margin-top: 1.1rem;
+    background:
+        repeating-linear-gradient(90deg, transparent 0 23px, rgba(232,200,80,.025) 23px 24px),
+        linear-gradient(180deg, #28342f, #1f2a25);
+    border: 1px solid #38463f;
+    border-radius: 3px;
+    padding: 1rem 1.2rem 1.05rem;
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1.2rem;
+}
+.coach-strip::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: #e8c850;
+    border-radius: 3px 3px 0 0;
+}
+.coach-badge {
+    font-family: var(--mono);
+    font-size: .56rem; font-weight: 700;
+    letter-spacing: .24em; text-transform: uppercase;
+    color: #e8c850;
+    border: 1px solid #e8c850;
+    padding: .35rem .65rem;
+    border-radius: 2px;
+}
+.coach-body { min-width: 0; }
+.coach-headline {
+    font-family: var(--serif);
+    color: #ece4cc;
+    font-size: 1.05rem;
+    margin: 0 0 .25rem;
+}
+.coach-headline em { color: #e8c850; font-style: italic; }
+.coach-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .68rem;
+    color: #c8c0a8;
+}
+.coach-link {
+    font-family: var(--mono);
+    font-size: .58rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: #e8c850;
+    text-decoration: none;
+    border: 1px solid rgba(232,200,80,.4);
+    padding: .55rem .9rem;
+    border-radius: 2px;
+    transition: background .15s;
+}
+.coach-link:hover { background: rgba(232,200,80,.12); }
+@media (max-width: 640px) {
+    .coach-strip { grid-template-columns: 1fr; gap: .6rem; }
+    .coach-link { justify-self: start; }
+}
+
+/* ============================================================
+   § 04 — TRADE DESK: recent trades + tool CTAs
+   ============================================================ */
+.dash-trades {
+    /* Moss-green canvas like the rest of the hub (was a brown leather
+       panel that fought the page); the warm gold accents + cream text
+       below keep the cardroom identity. */
+    background:
+        repeating-linear-gradient(45deg, transparent 0 16px, rgba(200,164,100,.022) 16px 17px),
+        linear-gradient(180deg, #1d2a22, #16201a);
+    border: 1px solid #2e3d34;
+    border-radius: 3px;
+    padding: 1.5rem 1.6rem 1.7rem;
+    position: relative;
+}
+.dash-trades::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: var(--ls-cardroom);
+    border-radius: 3px 3px 0 0;
+}
+.trades-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    flex-wrap: wrap;
+    padding-bottom: .85rem; margin-bottom: 1.2rem;
+    border-bottom: 1px solid rgba(200,164,100,.18);
+    gap: .85rem;
+}
+.trades-title {
+    font-family: var(--serif); font-size: 1.35rem; color: #f5e9c8;
+}
+.trades-title em { color: var(--ls-cardroom); font-style: italic; }
+.trades-kicker {
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+    color: #c4ad84;
+}
+
+/* Recent trades grid — up to 4 trades, 2 columns. The first row spans
+   both columns when the count is odd (1 or 3) so the layout reads as
+   a feature card on top + a pair below. With 2 or 4 trades the grid
+   is a clean 2x1 or 2x2. Collapses to one column on narrow widths. */
+.trades-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.trades-list[data-count="1"] .trade-row,
+.trades-list[data-count="3"] .trade-row:first-child {
+    grid-column: 1 / -1;
+}
+@media (max-width: 720px) {
+    .trades-list { grid-template-columns: 1fr; }
+    .trades-list[data-count="3"] .trade-row:first-child { grid-column: auto; }
+}
+.trade-row {
+    background: rgba(0,0,0,.22);
+    border: 1px solid #2a3a2f;
+    border-radius: 3px;
+    padding: 1rem 1.1rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .7rem;
+}
+.trade-row-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: .8rem; flex-wrap: wrap;
+}
+.trade-row-date {
+    font-family: var(--mono);
+    font-size: .56rem; letter-spacing: .2em; text-transform: uppercase;
+    color: #b89b6e;
+}
+.trade-row-grade {
+    font-family: var(--mono);
+    font-size: .56rem; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+    padding: .22rem .55rem;
+    border-radius: 2px;
+    border: 1px solid currentColor;
+}
+.trade-row-grade.win  { color: #6a9a6e; }
+.trade-row-grade.fair { color: var(--ls-cardroom); }
+.trade-row-grade.loss { color: #c75847; }
+.trade-row-teams {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: .85rem; align-items: start;
+}
+.trade-side { min-width: 0; }
+.trade-side.right { text-align: right; }
+/* Visual hierarchy inverted from the platform default: players acquired
+   are the headline (big serif), manager is the byline (small muted
+   mono caps) underneath. Who got moved is the news; who got them is
+   the credit. */
+.trade-side-players {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: #f5e9c8;
+    line-height: 1.35;
+}
+.trade-side-players div + div { margin-top: .15rem; }
+.trade-side-mgr {
+    font-family: var(--mono);
+    font-size: .56rem;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--ls-cardroom);
+    opacity: .85;
+    margin-top: .55rem;
+    line-height: 1.3;
+}
+.trade-arrows {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ls-cardroom);
+    opacity: .8;
+    align-self: center;
+}
+.trade-row-write {
+    color: #d4c39e;
+    font-size: .82rem;
+    line-height: 1.55;
+    font-style: italic;
+    padding-top: .65rem;
+    border-top: 1px dashed rgba(200,164,100,.18);
+}
+.trades-empty {
+    color: #9c876a; font-size: .86rem;
+    font-style: italic;
+    padding: 1.6rem .5rem;
+    text-align: center;
+    border: 1px dashed rgba(200,164,100,.18);
+    border-radius: 3px;
+    margin-bottom: 1.4rem;
+}
+
+.trades-cta-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .9rem;
+}
+@media (max-width: 640px) { .trades-cta-row { grid-template-columns: 1fr; } }
+/* Trade desk CTAs — distinct from the recent-trades parent panel
+   (which is warm cardroom brown) so the two action cards POP off the
+   surrounding section. Each CTA gets its own accent via data-cta:
+   analyzer = steel-blue (analytical), finder = violet (discovery). */
+.trades-cta {
+    display: flex; flex-direction: column;
+    padding: 1.1rem 1.25rem 1.15rem;
+    background: var(--cta-bg, rgba(0,0,0,.28));
+    border: 1px solid var(--cta-border, #3d2c1a);
+    border-radius: 3px;
     color: inherit;
     text-decoration: none;
     transition: background .15s, border-color .15s, transform .15s;
     position: relative;
-    min-height: 175px;
-    /* Default (untouched-by-theme) palette — every variable below is
-       overridable per data-theme so themed cards become miniature
-       previews of their destination page. */
-    --card-bg:         var(--ls-card);
-    --card-bg-hover:   var(--ls-card-hover);
-    --card-border:     var(--ls-line);
-    --card-border-hi:  var(--gold-deep);
-    --card-title:      var(--cream);
-    --card-title-em:   var(--gold);
-    --card-desc:       var(--cream-soft);
-    --card-status:     var(--ls-live);
-    --card-status-dot: var(--ls-live);
-    --card-arrow:      var(--gold);
-    --card-accent-bar: transparent;
-
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 3px;
 }
-/* Optional thin signature bar at the top edge — themed cards turn this on. */
-.ls-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--card-accent-bar);
+.trades-cta::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: var(--cta-accent, var(--ls-cardroom));
     border-radius: 3px 3px 0 0;
-    pointer-events: none;
 }
-.ls-card[href]:hover {
-    background: var(--card-bg-hover);
-    border-color: var(--card-border-hi);
+.trades-cta:hover {
+    background: var(--cta-bg-hover, rgba(200,164,100,.06));
+    border-color: var(--cta-accent, var(--ls-cardroom));
     transform: translateY(-1px);
 }
-
-/* Per-card color overrides on the title/desc/status/arrow. Scoped under
-   .ls-card so they only apply once the card has a data-theme attribute. */
-.ls-card .ls-card-title    { color: var(--card-title); }
-.ls-card .ls-card-title em { color: var(--card-title-em); }
-.ls-card .ls-card-desc     { color: var(--card-desc); }
-.ls-card .ls-card-arrow    { color: var(--card-arrow); }
-.ls-card[data-status="live"] .ls-card-status { color: var(--card-status); }
-.ls-card[data-status="live"] .ls-card-dot    { background: var(--card-status-dot); }
-
-/* ── PER-PAGE THEMES (POC: matchup-preview + best-coach) ──────────── */
-
-/* Matchup Preview — Pullman railway, forest green + brass + amber lamp */
-.ls-card[data-theme="matchup-preview"] {
-    --card-bg:         #142a20;
-    --card-bg-hover:   #1a3528;
-    --card-border:     #2a4234;
-    --card-border-hi:  #c89d5c;
-    --card-title:      #f4ebd8;
-    --card-title-em:   #e6bb78;
-    --card-desc:       #9eb5a2;
-    --card-status:     #e8b047;       /* signal amber */
-    --card-status-dot: #e8b047;
-    --card-arrow:      #c89d5c;
-    --card-accent-bar: #c89d5c;
+.trades-cta[data-cta="analyzer"] {
+    --cta-accent:    var(--ac-sage);   /* sage — analytical */
+    --cta-bg:        #16201a;
+    --cta-bg-hover:  #1c2a22;
+    --cta-border:    #2a3a2f;
 }
-
-/* Best Coach — Coach's chalkboard, slate green + chalk yellow */
-.ls-card[data-theme="best-coach"] {
-    --card-bg:         #28342f;
-    --card-bg-hover:   #2f3c37;
-    --card-border:     #38463f;
-    --card-border-hi:  #e8c850;
-    --card-title:      #ece4cc;
-    --card-title-em:   #e8c850;
-    --card-desc:       #c8c0a8;
-    --card-status:     #e8c850;
-    --card-status-dot: #e8c850;
-    --card-arrow:      #e8c850;
-    --card-accent-bar: #e8c850;
+.trades-cta[data-cta="finder"] {
+    --cta-accent:    var(--ac-gold);   /* gold — discovery */
+    --cta-bg:        #211c12;
+    --cta-bg-hover:  #2a2418;
+    --cta-border:    #3d3320;
 }
-
-/* Weekly Pick'ems — deep plum + neon magenta + champagne accent */
-.ls-card[data-theme="pickems"] {
-    --card-bg:         #241531;
-    --card-bg-hover:   #2c1a3b;
-    --card-border:     #3a2549;
-    --card-border-hi:  #ff3d8b;
-    --card-title:      #f5ecf5;
-    --card-title-em:   #f0c463;       /* champagne — for the GOTW echo */
-    --card-desc:       #cdb9d6;
-    --card-status:     #ff3d8b;       /* magenta marquee */
-    --card-status-dot: #ff3d8b;
-    --card-arrow:      #ff3d8b;
-    --card-accent-bar: #ff3d8b;
-}
-
-/* Power Rankings — warm cream paper + saddle brown gold (almanac chart) */
-.ls-card[data-theme="powerrank"] {
-    --card-bg:         #1a1814;
-    --card-bg-hover:   #221f19;
-    --card-border:     #2e2920;
-    --card-border-hi:  #8b6d38;
-    --card-title:      #f0e5c8;
-    --card-title-em:   #d4a94c;
-    --card-desc:       #bfae8c;
-    --card-status:     #d4a94c;
-    --card-status-dot: #d4a94c;
-    --card-arrow:      #d4a94c;
-    --card-accent-bar: #d4a94c;
-}
-
-/* Records Watch — dark burgundy + steel blue (cold-print ledger) */
-.ls-card[data-theme="records-watch"] {
-    --card-bg:         #1d141a;
-    --card-bg-hover:   #261b22;
-    --card-border:     #3a2128;
-    --card-border-hi:  #7fa8bd;
-    --card-title:      #f4ebd8;
-    --card-title-em:   #a4c4d6;       /* steel-hi */
-    --card-desc:       #c6a89e;
-    --card-status:     #7fa8bd;       /* steel blue */
-    --card-status-dot: #7fa8bd;
-    --card-arrow:      #7fa8bd;
-    --card-accent-bar: #7fa8bd;
-}
-
-/* Trade Grader — warm cardroom brown + brass */
-.ls-card[data-theme="trades"] {
-    --card-bg:         #322217;
-    --card-bg-hover:   #3c2a1d;
-    --card-border:     #4c3922;
-    --card-border-hi:  #c8a464;
-    --card-title:      #f5e9c8;
-    --card-title-em:   #c8a464;
-    --card-desc:       #c4ad84;
-    --card-status:     #c8a464;
-    --card-status-dot: #c8a464;
-    --card-arrow:      #c8a464;
-    --card-accent-bar: #c8a464;
-}
-
-/* Milestones — dark violet plum + bright violet (gilded plaque) */
-.ls-card[data-theme="milestones"] {
-    --card-bg:         #1c1428;
-    --card-bg-hover:   #24193400;     /* placeholder; overridden below */
-    --card-bg-hover:   #251a34;
-    --card-border:     #2e2240;
-    --card-border-hi:  #b58cff;
-    --card-title:      #f4ebd8;
-    --card-title-em:   #cdb1ff;
-    --card-desc:       #c2b6d6;
-    --card-status:     #b58cff;
-    --card-status-dot: #b58cff;
-    --card-arrow:      #b58cff;
-    --card-accent-bar: #b58cff;
-}
-
-/* Coming-soon cards: more aggressively greyed out so themed live cards
-   pop and unfinished features visibly recede. */
-.ls-card[data-status="soon"],
-.ls-card[data-status="pro-soon"] {
-    opacity: .42;
-    filter: saturate(.4);
-}
-.ls-card[data-status="soon"],
-.ls-card[data-status="pro-soon"] {
-    cursor: default;
-    opacity: .72;
-}
-.ls-card[data-status="soon"]:hover,
-.ls-card[data-status="pro-soon"]:hover {
-    transform: none;
-    border-color: var(--ls-line);
-    background: var(--ls-card);
-}
-
-.ls-card-status {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
+.trades-cta-label {
     font-family: var(--mono);
-    font-size: .62rem;
+    font-size: .56rem; font-weight: 700;
+    letter-spacing: .26em; text-transform: uppercase;
+    color: var(--cta-accent, var(--ls-cardroom));
+    margin-bottom: .55rem;
+}
+.trades-cta-title {
+    font-family: var(--serif);
+    font-size: 1.1rem; color: #f5e9c8;
+    margin-bottom: .3rem;
+}
+.trades-cta-title em { font-style: italic; color: var(--cta-accent, var(--ls-cardroom)); }
+.trades-cta-desc {
+    font-size: .82rem; color: #c8c0a8; line-height: 1.5;
+}
+
+/* ── Skeleton + loading states ──────────────────────────────── */
+.dash-skel {
+    flex: 1;
+    background: linear-gradient(90deg, rgba(255,255,255,.02), rgba(255,255,255,.05), rgba(255,255,255,.02));
+    background-size: 200% 100%;
+    animation: dashShimmer 1.4s linear infinite;
+    border-radius: 3px;
+    min-height: 100px;
+}
+@keyframes dashShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Foot ─────────────────────────────────────────────────── */
+.dash-foot {
+    margin-top: 3.5rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .64rem;
     letter-spacing: .22em;
     text-transform: uppercase;
     color: var(--cream-mute);
-    margin-bottom: .9rem;
-}
-.ls-card-dot {
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-}
-.ls-card[data-status="live"] .ls-card-status { color: var(--ls-live); }
-.ls-card[data-status="soon"] .ls-card-status { color: var(--ls-soon); }
-.ls-card[data-status="pro-soon"] .ls-card-status { color: var(--ls-pro); }
-.ls-card[data-status="pro-soon"] .ls-card-dot { background: var(--ls-pro); }
-
-.ls-card-title {
-    font-family: var(--serif);
-    font-size: 1.45rem;
-    line-height: 1.15;
-    color: var(--cream);
-    margin: 0 0 .5rem;
-}
-.ls-card-title em { font-style: italic; color: var(--gold); }
-.ls-card-desc {
-    color: var(--cream-soft);
-    font-size: .9rem;
-    line-height: 1.45;
-    flex: 1;
-}
-.ls-card-arrow {
-    position: absolute;
-    right: 1.1rem; bottom: .9rem;
-    color: var(--gold);
-    font-size: 1.1rem;
-    opacity: .6;
-    transition: opacity .15s, transform .15s;
-}
-.ls-card[href]:hover .ls-card-arrow {
-    opacity: 1;
-    transform: translateX(2px);
-}
-.ls-card[data-status="soon"] .ls-card-arrow,
-.ls-card[data-status="pro-soon"] .ls-card-arrow { display: none; }
-
-/* Optional tier ribbon on the top-right of paid cards */
-.ls-card-tier {
-    position: absolute;
-    top: 1rem; right: 1rem;
-    font-family: var(--mono);
-    font-size: .58rem;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--ls-pro);
-    border: 1px solid var(--ls-pro);
-    padding: 2px 6px;
-    border-radius: 2px;
-    opacity: .85;
 }
 
-/* ============================================================
-   LS-PAGES — Form Sheet + Mileage Matrix as a horizontal pager.
-   One unified section header; each chart is its own snap page
-   with a small title strip, side arrows, and dot indicators so
-   readers know there's a second chart to swipe to.
-   ============================================================ */
-.ls-pages { position: relative; margin-top: 1.5rem; }
-.ls-pages-header { margin-top: 5rem; margin-bottom: 1.5rem; }
-@media (max-width: 1100px) {
-    .ls-pages-header { margin-top: 3.5rem; }
-}
-.ls-split {
-    display: flex;
-    gap: 2.5rem;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    align-items: start;
-    padding-bottom: 1rem;
-    scrollbar-width: thin;
-    scrollbar-color: var(--gold-deep) transparent;
-}
-.ls-split::-webkit-scrollbar { height: 8px; }
-.ls-split::-webkit-scrollbar-thumb { background: var(--gold-deep); border-radius: 4px; }
-.ls-split::-webkit-scrollbar-track { background: transparent; }
-.ls-split > section {
-    flex: 0 0 100%;
-    min-width: 0;
-    scroll-snap-align: start;
-}
-.ls-split #ls-matrix-host { overflow-x: auto; }
-.ls-page-title {
-    font-family: var(--serif); font-style: italic; font-weight: 400;
-    color: var(--gold);
-    font-size: 1.1rem;
-    letter-spacing: .01em;
-    margin-bottom: .85rem;
-}
-/* Pager cluster on the right of the header — mirrors the .cp- pattern
-   used by the Chronicle Pages component (dots + arrows + counter). */
-.ls-pages-bar {
-    margin-left: auto;
-    display: flex; align-items: center; gap: 1.25rem;
-    flex-wrap: wrap;
-}
-.ls-pages-dots { display: flex; gap: .4rem; padding: 0; margin: 0; }
-.ls-pages-dot {
-    width: 28px; height: 3px;
-    background: var(--ls-line);
-    border: none; padding: 0; cursor: pointer;
-    transition: background .25s ease;
-}
-.ls-pages-dot:hover { background: var(--gold-deep); }
-.ls-pages-dot.is-active { background: var(--gold); }
-.ls-pages-arrows { display: flex; align-items: center; gap: .55rem; }
-.ls-pages-arrow {
-    width: 32px; height: 32px;
-    background: transparent;
-    border: 1px solid var(--ls-line);
-    color: var(--gold);
-    font-family: var(--serif);
-    font-size: 1.3rem; line-height: 1;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: background .2s, border-color .2s, color .2s, opacity .2s;
-    display: flex; align-items: center; justify-content: center;
-    padding: 0 0 3px;
-}
-.ls-pages-arrow:hover:not(:disabled) {
-    background: rgba(232,200,137,.08);
-    border-color: var(--gold-deep);
-    color: var(--gold-bright);
-}
-.ls-pages-arrow:disabled { opacity: .3; cursor: not-allowed; }
-.ls-pages-counter {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .68rem; letter-spacing: .2em;
-    color: var(--cream);
-    min-width: 56px; text-align: center;
-}
-.ls-pages-counter span { color: var(--ls-mute); font-weight: 500; }
-@media (max-width: 640px) {
-    .ls-pages-bar { width: 100%; justify-content: space-between; gap: .75rem; }
+@media (prefers-reduced-motion: reduce) {
+    .dash-hero-pill .dot { animation: none; }
+    .dash-skel { animation: none; }
 }
 
-/* ============================================================
-   FORM SHEET — F1 timing tower for the current season.
-   Hidden when no season is currently is_live (current_form
-   returns null). Built from current_form.json.
-   ============================================================ */
-.form-sheet {
-    background:
-        repeating-linear-gradient(180deg, transparent 0 41px, rgba(232,200,137,.02) 41px 42px),
-        linear-gradient(180deg, var(--ls-card), var(--ls-bg));
-    border: 1px solid var(--ls-line);
-    font-family: 'JetBrains Mono', 'SF Mono', monospace;
-    overflow: hidden;
-}
-.form-mast {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: .85rem 1.25rem;
-    background: var(--ls-bg);
-    border-bottom: 1px solid var(--ls-pro);
-    font-size: .6rem; letter-spacing: .28em; text-transform: uppercase;
-}
-.form-mast-title { color: var(--ls-pro); font-weight: 700; }
-.form-mast-meta { color: var(--ls-mute); }
-.form-mast-meta .live-dot {
-    display: inline-block; width: 6px; height: 6px;
-    background: var(--ls-live); border-radius: 50%;
-    margin-right: .4rem;
-    box-shadow: 0 0 6px var(--ls-live);
-    animation: livePulse 1.6s ease-in-out infinite;
-}
-@keyframes livePulse {
-    0%,100% { opacity: 1; transform: scale(1); }
-    50% { opacity: .45; transform: scale(.85); }
-}
-.form-head, .form-row {
-    display: grid;
-    /* POS · MANAGER · FORM · PPG · GB · PT DIFF.
-       Last three columns are left-aligned so the value baseline matches
-       the header label baseline. */
-    grid-template-columns: 60px 1.4fr 1fr 60px 60px 70px;
-    align-items: center;
-    gap: 1rem;
-    padding: 0 1.25rem;
-}
-.form-head {
-    height: 30px;
-    background: rgba(0,0,0,.25);
+/* ── Ticker (carried over from launcher) ────────────────────── */
+.ticker {
+    background: rgb(11, 18, 14);
     border-bottom: 1px solid var(--ls-line);
-    font-weight: 700;
-    font-size: .56rem; letter-spacing: .22em; text-transform: uppercase;
-    color: var(--ls-mute);
-}
-.form-row {
-    height: 42px;
-    border-bottom: 1px solid var(--ls-line-soft);
-    font-size: .82rem;
-    color: #f4ebd8;
-    transition: background .15s;
-}
-.form-row:last-child { border-bottom: none; }
-.form-row:hover { background: rgba(232,200,137,.04); }
-.form-row.leader { background: rgba(232,200,137,.06); }
-.form-pos { display: flex; align-items: baseline; gap: .45rem; }
-.form-pos-num {
-    font-family: 'DM Serif Display', Georgia, serif;
-    font-style: italic;
-    font-size: 1.55rem; line-height: 1;
-    color: var(--ls-pro);
-}
-.form-row.leader .form-pos-num { color: #f4d9a4; }
-.form-pos-chg { font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
-.form-pos-chg.up   { color: #6a9a6e; }
-.form-pos-chg.down { color: var(--ls-live); }
-.form-pos-chg.same { color: var(--ls-mute); }
-.form-name {
-    color: #f4ebd8;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    font-size: .82rem;
-}
-.form-name em {
-    font-family: 'DM Serif Display', Georgia, serif; font-style: italic;
-    color: var(--ls-mute); font-size: .9em; letter-spacing: 0;
-}
-.form-form { display: flex; gap: 3px; }
-.form-form i {
-    display: flex; align-items: center; justify-content: center;
-    width: 18px; height: 18px;
-    font-family: 'JetBrains Mono', 'SF Mono', monospace;
-    font-weight: 700; font-size: .54rem; font-style: normal;
-}
-.form-form i.w { background: var(--ls-pro); color: var(--ls-bg); }
-.form-form i.l { background: transparent; color: var(--ls-live); border: 1px solid var(--ls-live); }
-.form-form i.t { background: var(--ls-soon); color: var(--ls-bg); }
-.form-form i.empty { background: transparent; border: 1px dashed var(--ls-line); }
-.form-pts {
-    font-variant-numeric: tabular-nums;
-    text-align: left; color: var(--ls-pro); font-weight: 700; font-size: .82rem;
-}
-.form-gb { color: var(--ls-mute); font-size: .72rem; text-align: left; font-variant-numeric: tabular-nums; font-weight: 700; }
-.form-gb.up   { color: #6a9a6e; }   /* above the playoff line: negative GB */
-.form-gb.down { color: var(--ls-live); } /* below the line */
-.form-gb.same { color: var(--ls-mute); } /* cutoff seed itself */
-.form-ptd { font-size: .72rem; font-weight: 700; text-align: left; font-variant-numeric: tabular-nums; }
-.form-ptd.up   { color: #6a9a6e; }
-.form-ptd.down { color: var(--ls-live); }
-.form-ptd.same { color: var(--ls-mute); }
-@media (max-width: 720px) {
-    .form-head, .form-row {
-        /* Mobile: drop FORM + GB to fit POS · MANAGER · PPG · PT DIFF
-           cleanly. The PPG/PT DIFF baseline stays left-aligned. */
-        grid-template-columns: 44px 1fr 60px 70px;
-        gap: .6rem; padding: 0 .85rem;
-    }
-    .form-head span:nth-child(3),
-    .form-head span:nth-child(5),
-    .form-row .form-form,
-    .form-row .form-gb { display: none; }
-}
-
-/* ============================================================
-   MILEAGE MATRIX — vintage atlas-style head-to-head grid.
-   All-time data, always present once any matchups exist.
-   ============================================================ */
-.matrix-wrap {
-    overflow-x: auto;
-    background: #f4ebd8;
-    color: var(--ls-bg);
-    padding: 1.5rem;
-    border: 1px solid var(--ls-bg);
-    box-shadow:
-        4px 4px 0 rgba(0,0,0,.15),
-        inset 0 0 0 4px #f4ebd8,
-        inset 0 0 0 5px var(--ls-live);
+    overflow: hidden;
     position: relative;
 }
-.matrix-wrap::before {
-    content: '';
-    position: absolute;
-    inset: 12px;
-    border: 1px solid rgba(160,72,48,.4);
-    pointer-events: none;
+.ticker-track {
+    display: flex;
+    width: max-content;
+    animation: tickerScroll 50s linear infinite;
 }
-.matrix-title {
-    text-align: center;
-    font-family: 'DM Serif Display', Georgia, serif; font-style: italic;
-    color: var(--ls-matrix-red);
-    font-size: 1.05rem;
-    margin-bottom: 1rem;
-    padding-bottom: .65rem;
-    border-bottom: 1px solid rgba(160,72,48,.5);
-    letter-spacing: .02em;
+.ticker-group {
+    display: flex; flex-shrink: 0;
+    padding: .55rem 0;
 }
-.matrix-title-sub {
-    display: block;
-    font-family: 'JetBrains Mono', 'SF Mono', monospace; font-style: normal;
-    font-size: .55rem; letter-spacing: .25em;
-    color: rgba(0,0,0,.55); margin-top: .25rem;
-    text-transform: uppercase;
-}
-.matrix {
-    display: grid;
-    gap: 0;
-    font-family: 'JetBrains Mono', 'SF Mono', monospace;
-    font-size: .68rem;
-    color: var(--ls-bg);
-    /* grid-template-columns set inline by JS based on manager count */
-}
-.matrix-cell {
-    border-right: 1px solid rgba(199,88,71,.28);
-    border-bottom: 1px solid rgba(199,88,71,.28);
-    padding: .55rem .55rem;
-    text-align: center;
-    line-height: 1.1;
-    height: 44px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-}
-.matrix-cell.row-label, .matrix-cell.col-label {
-    background: rgba(199,88,71,.07);
-    font-weight: 700; letter-spacing: .15em;
-    color: var(--ls-matrix-red);
-    font-size: .58rem; text-transform: uppercase;
-}
-.matrix-cell.col-label { border-bottom: 2px solid var(--ls-matrix-red); }
-.matrix-cell.row-label {
-    border-right: 2px solid var(--ls-matrix-red);
-    /* Push the team name in from BOTH sides so it never collides with the
-       y-axis red border, and never butts right up against the left wall. */
-    text-align: left;
-    padding-left: .35rem;
-    padding-right: .8rem;
-    align-items: flex-start;
-    overflow: hidden;
-}
-.matrix-cell.corner {
-    background: transparent;
-    border-right: 2px solid var(--ls-matrix-red);
-    border-bottom: 2px solid var(--ls-matrix-red);
-}
-.matrix-cell.diag {
-    background: rgba(0,0,0,.05);
-    color: rgba(0,0,0,.35);
-    font-family: 'DM Serif Display', Georgia, serif; font-style: italic;
-    font-size: 1.1rem;
-}
-.matrix-cell.empty { background: rgba(199,88,71,.04); }
-.matrix-cell.h2h {
-    color: #1a0e08;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-}
-.matrix-cell.h2h .matrix-pf {
-    font-family: 'JetBrains Mono', 'SF Mono', monospace; font-weight: 400;
-    font-size: .52rem; color: rgba(0,0,0,.5);
-    margin-top: 2px; letter-spacing: .08em;
-}
-.matrix-cell.h2h.dom  { background: rgba(106,154,110,.18); }
-.matrix-cell.h2h.lose { background: rgba(199,88,71,.12); }
-.matrix-legend {
-    margin-top: 1rem;
-    display: flex; gap: 1.25rem; justify-content: center;
-    font-family: 'JetBrains Mono', 'SF Mono', monospace; font-size: .55rem;
-    letter-spacing: .18em; text-transform: uppercase;
-    color: rgba(0,0,0,.55);
-    flex-wrap: wrap;
-}
-.matrix-legend span { display: inline-flex; align-items: center; gap: .35rem; }
-.matrix-legend i { width: 10px; height: 10px; display: inline-block; }
-.matrix-legend i.dom { background: rgba(106,154,110,.55); }
-.matrix-legend i.lose { background: rgba(199,88,71,.45); }
-.matrix-legend i.neut { background: rgba(0,0,0,.08); border: 1px solid rgba(0,0,0,.2); }
-
-.ls-foot {
-    margin-top: 3rem;
-    text-align: center;
+.ticker-item {
     font-family: var(--mono);
-    font-size: .68rem;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
+    font-size: .58rem; font-weight: 700;
+    letter-spacing: .26em; text-transform: uppercase;
+    color: var(--ls-mute);
+    padding: 0 2.2rem;
+    border-right: 1px solid var(--ls-line);
+    white-space: nowrap;
 }
-
-@media (max-width: 600px) {
-    .ls-wrap { padding: 1.5rem 1rem 3rem; }
-    .ls-hero { padding: 1rem .5rem 2rem; margin-bottom: 2rem; }
+.ticker-star { color: var(--ls-live); margin-right: .55rem; }
+@keyframes tickerScroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ticker-track { animation: none; }
 }
 </style>
 </head>
@@ -733,440 +1197,936 @@ body { background: var(--ls-bg); }
     <div class="ticker-track">
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> LIVE · IN SEASON · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item">CURRENT FORM · POWER RANKS · PICK&apos;EMS</span>
-            <span class="ticker-item">RECORDS WATCH · MILESTONE ALERTS</span>
+            <span class="ticker-item">STANDINGS · FORM · POWER RANK</span>
+            <span class="ticker-item">RECORDS WATCH · MILESTONES · TRADE DESK</span>
         </div>
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> LIVE · IN SEASON · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item">CURRENT FORM · POWER RANKS · PICK&apos;EMS</span>
-            <span class="ticker-item">RECORDS WATCH · MILESTONE ALERTS</span>
+            <span class="ticker-item">STANDINGS · FORM · POWER RANK</span>
+            <span class="ticker-item">RECORDS WATCH · MILESTONES · TRADE DESK</span>
         </div>
     </div>
 </div>
 
-<nav id="site-nav" data-page="live" data-chapter="CH. VII · IN SEASON"></nav>
+<nav id="site-nav" data-page="live" data-chapter="LIVE · LSL"></nav>
 <script src="assets/js/nav.js"></script>
 
-<!-- DEMO NOTICE — live pages need real-time data -->
-<style>
-.ls-demo-notice {
-    position: relative; z-index: 5;
-    max-width: 980px;
-    margin: 1.25rem auto 0;
-    padding: 1rem 1.25rem;
-    background: rgba(232,200,137,.07);
-    border: 1px solid rgba(232,200,137,.25);
-    border-left: 3px solid #e8c889;
-    border-radius: 2px;
-    font-family: 'Inter', system-ui, sans-serif;
-    font-size: .88rem; line-height: 1.5;
-    color: #f4ebd8;
-    display: flex; flex-wrap: wrap; gap: .9rem;
-    align-items: baseline;
-}
-.ls-demo-notice .ls-demo-pill {
-    font-family: 'JetBrains Mono', 'SF Mono', monospace;
-    font-weight: 700; font-size: .58rem;
-    letter-spacing: .22em; text-transform: uppercase;
-    color: #15201b; background: #e8c889;
-    padding: .3rem .55rem; border-radius: 2px;
-}
-.ls-demo-notice em { color: #e8c889; font-style: italic; }
-.ls-demo-notice a {
-    color: #e8c889; text-decoration: none;
-    border-bottom: 1px solid rgba(232,200,137,.4);
-}
-.ls-demo-notice a:hover { color: #f4d9a4; }
-</style>
-<div class="ls-demo-notice">
-    <span class="ls-demo-pill">★ Demo only</span>
-    <span>
-        This page runs on <em>live in-season data</em> — current scores,
-        weekly form, milestone tracking, head-to-head matchups. The demo
-        ships with historical data only, so most of the panels below sit
-        idle. Spin up your own league at <a href="/">thesundaychronicle.app</a>
-        to see this live.
-    </span>
-</div>
+<main class="dash-wrap">
 
-
-<main class="ls-wrap">
-
-    <header class="ls-hero">
-        <div class="ls-hero-sup">LSL · In-Season</div>
-        <h1 class="ls-hero-title">Live <em>Season.</em></h1>
-        <p class="ls-hero-sub">
-            Everything that happens during the season — picks, rankings, records on the
-            line, trades, and the weekly story of LSL. The almanac is for
-            history. This is for right now.
-        </p>
+    <!-- HERO -->
+    <header class="dash-hero">
+        <div>
+            <div class="dash-hero-sup">
+                <span class="dash-hero-pill" id="dash-week-pill"><span class="dot"></span><span id="dash-week-label">Live</span></span>
+                <span>LSL · Live Home</span>
+            </div>
+            <h1 class="dash-hero-title">This <em>Week</em> in LSL.</h1>
+        </div>
+        <div class="dash-hero-meta">
+            <div id="dash-meta-line-1">Updated continuously</div>
+            <div id="dash-meta-line-2">Last sync · ··</div>
+        </div>
     </header>
 
-    <section>
-        <div class="ls-section-header">
-            <span class="ls-section-num">§ 01 · This Week</span>
-            <span class="ls-section-title">In-season <em>features —</em></span>
-            <span class="ls-section-meta">Updated weekly</span>
+    <!-- § 01 · THE PULSE -->
+    <section class="dash-section">
+        <div class="dash-section-head">
+            <span class="dash-section-num">§ 01 · The Pulse</span>
+            <span class="dash-section-title">A read on <em>right now —</em></span>
+            <span class="dash-section-meta">Standings · Form · Power</span>
         </div>
+        <div class="dash-snapshot">
 
-        <div class="ls-grid">
+            <article class="snap-card" data-snap="standings">
+                <div class="snap-head">
+                    <div class="snap-title">Standings <em>top</em></div>
+                    <div class="snap-kicker">Live</div>
+                </div>
+                <div id="snap-standings" class="snap-table">
+                    <div class="dash-skel"></div>
+                </div>
+                <div class="snap-foot">
+                    <span class="snap-kicker" id="snap-standings-meta">··</span>
+                    <a class="snap-link" href="standings.html">Full standings</a>
+                </div>
+            </article>
 
-            <a class="ls-card" data-status="live" data-theme="matchup-preview">
-                <h2 class="ls-card-title">Matchup <em>Preview.</em></h2>
-                <p class="ls-card-desc">Every game this week on a railway departures board. Claim your name to pull the H2H archive, your form, and a kickoff projection.</p>
-            </a>
+            <article class="snap-card" data-snap="form">
+                <div class="snap-head">
+                    <div class="snap-title">Form <em>sheet</em></div>
+                    <div class="snap-kicker">Last 5</div>
+                </div>
+                <div id="snap-form" class="snap-form-rows">
+                    <div class="dash-skel"></div>
+                </div>
+                <div class="snap-foot">
+                    <span class="snap-kicker" id="snap-form-meta">··</span>
+                </div>
+            </article>
 
-            <a class="ls-card" data-status="live" data-theme="best-coach">
-                <h2 class="ls-card-title">Best <em>Coach.</em></h2>
-                <p class="ls-card-desc">Every starting lineup graded against its optimal version. Season-long efficiency standings and a running list of the worst single-week benchings.</p>
-            </a>
-
-            <a class="ls-card" data-status="live" data-theme="pickems">
-                <h2 class="ls-card-title">Weekly <em>Pick'ems.</em></h2>
-                <p class="ls-card-desc">Pick the winner of every matchup each week. Honor-system identity — claim your name and vote.</p>
-            </a>
-
-            <a class="ls-card" data-status="live" data-theme="powerrank">
-                <h2 class="ls-card-title">Power <em>Rankings.</em></h2>
-                <p class="ls-card-desc">Auto-calculated each week from record, points for, recent form, and full league history.</p>
-            </a>
-
-            <a class="ls-card" data-status="live" data-theme="records-watch">
-                <h2 class="ls-card-title">Records <em>Watch.</em></h2>
-                <p class="ls-card-desc">Who's on pace to break a record? Single-season highs, win streaks, and franchise marks — tracked live.</p>
-            </a>
-
-            <div class="ls-card" data-status="pro-soon">
-                <span class="ls-card-tier">Veteran</span>
-                <h2 class="ls-card-title">Weekly <em>Recap.</em></h2>
-                <p class="ls-card-desc">An auto-written recap of the week's matchups, blowouts, and grudge games — generated every Tuesday morning.</p>
-            </div>
-
-            <a class="ls-card" data-status="live" data-theme="trades">
-                <span class="ls-card-tier">Veteran</span>
-                <h2 class="ls-card-title">Trade <em>Grader.</em></h2>
-                <p class="ls-card-desc">Every completed trade for your league, pulled automatically. Grades and 4-week revisits arrive in the next build.</p>
-            </a>
-
-            <a class="ls-card" data-status="live" data-theme="milestones">
-                <h2 class="ls-card-title">Milestone <em>Tracker.</em></h2>
-                <p class="ls-card-desc">An honors-roll feed for every career milestone, streak, and franchise high the moment it happens — right on the page.</p>
-            </a>
+            <article class="snap-card" data-snap="powerrank">
+                <div class="snap-head">
+                    <div class="snap-title">Power <em>rank</em></div>
+                    <div class="snap-kicker">Wk movement</div>
+                </div>
+                <div id="snap-powerrank" class="snap-table">
+                    <div class="dash-skel"></div>
+                </div>
+                <div class="snap-foot">
+                    <span class="snap-kicker" id="snap-powerrank-meta">··</span>
+                    <a class="snap-link" href="live/powerrank/">Full power rank</a>
+                </div>
+            </article>
 
         </div>
     </section>
 
-    <!-- § 02 · The Numbers — Form Sheet + Mileage Matrix as a horizontal pager -->
-    <div id="ls-pages-wrap" hidden>
-        <div class="ls-section-header ls-pages-header">
-            <span class="ls-section-num">§ 02 · The CHARTS</span>
-            <span class="ls-section-title">By the <em>numbers —</em></span>
-            <div class="ls-pages-bar" id="ls-pages-bar">
-                <div class="ls-pages-dots" id="ls-pages-dots" role="tablist" aria-label="Chart selector"></div>
-                <div class="ls-pages-arrows" aria-label="Page navigation">
-                    <button type="button" class="ls-pages-arrow" id="ls-pages-prev" aria-label="Previous chart" disabled>‹</button>
-                    <span class="ls-pages-counter" id="ls-pages-counter">01<span> / 01</span></span>
-                    <button type="button" class="ls-pages-arrow" id="ls-pages-next" aria-label="Next chart">›</button>
+    <!-- § 02 · THIS WEEK -->
+    <section class="dash-section">
+        <div class="dash-section-head">
+            <span class="dash-section-num">§ 02 · This Week</span>
+            <span class="dash-section-title">Featured <em>games &amp; voices —</em></span>
+            <span class="dash-section-meta">GOTW · Matchups · Pick'ems · Mill</span>
+        </div>
+        <div class="dash-weekly">
+
+            <article class="gotw-card" id="gotw-card">
+                <div class="gotw-kicker"><span class="star">★</span> Game of the Week</div>
+                <h2 class="gotw-headline" id="gotw-headline">The <em>game</em> to watch.</h2>
+
+                <div class="gotw-heads">
+                    <div class="gotw-head">
+                        <div class="gotw-side-name"   id="gotw-a-name">··</div>
+                        <div class="gotw-side-owner"  id="gotw-a-owner">··</div>
+                        <div class="gotw-side-record" id="gotw-a-record">··</div>
+                    </div>
+                    <div class="gotw-head-vs" aria-hidden="true">vs.</div>
+                    <div class="gotw-head right">
+                        <div class="gotw-side-name"   id="gotw-b-name">··</div>
+                        <div class="gotw-side-owner"  id="gotw-b-owner">··</div>
+                        <div class="gotw-side-record" id="gotw-b-record">··</div>
+                    </div>
+                </div>
+
+                <div class="gotw-stats">
+                    <div class="gotw-stat-a" id="gotw-a-form">··</div>
+                    <div class="gotw-stat-label">Form L5</div>
+                    <div class="gotw-stat-b" id="gotw-b-form">··</div>
+
+                    <div class="gotw-stat-a" id="gotw-a-ppg5">··</div>
+                    <div class="gotw-stat-label">PPG L5</div>
+                    <div class="gotw-stat-b" id="gotw-b-ppg5">··</div>
+
+                    <div class="gotw-stat-a" id="gotw-a-proj">··</div>
+                    <div class="gotw-stat-label">Projected</div>
+                    <div class="gotw-stat-b" id="gotw-b-proj">··</div>
+
+                    <div class="gotw-stat-a" id="gotw-a-streak">··</div>
+                    <div class="gotw-stat-label">Streak</div>
+                    <div class="gotw-stat-b" id="gotw-b-streak">··</div>
+
+                    <div class="gotw-stat-a" id="gotw-a-shigh">··</div>
+                    <div class="gotw-stat-label">Season high</div>
+                    <div class="gotw-stat-b" id="gotw-b-shigh">··</div>
+                </div>
+
+                <div class="gotw-h2h-block">
+                    <div class="gotw-h2h-side">
+                        <div class="gotw-h2h-side-label">Avg PPG</div>
+                        <div class="gotw-h2h-side-val" id="gotw-a-h2h-ppg">—</div>
+                    </div>
+                    <div class="gotw-h2h-center">
+                        <div class="gotw-h2h-title">All-time H2H</div>
+                        <div class="gotw-h2h-record" id="gotw-h2h">0–0</div>
+                    </div>
+                    <div class="gotw-h2h-side">
+                        <div class="gotw-h2h-side-label">Avg PPG</div>
+                        <div class="gotw-h2h-side-val" id="gotw-b-h2h-ppg">—</div>
+                    </div>
+                </div>
+                <div class="gotw-h2h-note-center" id="gotw-h2h-note"></div>
+
+                <p class="gotw-blurb" id="gotw-blurb">Loading this week's marquee matchup…</p>
+                <a class="gotw-cta" href="live/matchup-preview/">Open matchup preview</a>
+            </article>
+
+            <div class="weekly-stack">
+                <div class="weekly-quick" data-quick="matchups" data-quick-key="matchups" data-status="todo">
+                    <a class="weekly-quick-body" href="live/matchup-preview/">
+                        <div class="weekly-quick-head">
+                            <div class="weekly-quick-kicker">All Matchups</div>
+                            <div class="weekly-quick-status"><span class="status-pip"></span><span class="status-label">Incomplete</span></div>
+                        </div>
+                        <h3 class="weekly-quick-title">Matchup <em>preview</em></h3>
+                        <p class="weekly-quick-desc">Every game this week with H2H archive, form, and a kickoff projection.</p>
+                    </a>
+                    <div class="weekly-quick-foot">
+                        <button class="weekly-quick-skip" type="button" data-action="skip">Skip this week</button>
+                    </div>
+                </div>
+                <div class="weekly-quick" data-quick="pickems" data-quick-key="pickems" data-status="todo">
+                    <a class="weekly-quick-body" href="live/pickems/">
+                        <div class="weekly-quick-head">
+                            <div class="weekly-quick-kicker">Weekly Pick'ems</div>
+                            <div class="weekly-quick-status"><span class="status-pip"></span><span class="status-label">Incomplete</span></div>
+                        </div>
+                        <h3 class="weekly-quick-title">Make your <em>picks</em></h3>
+                        <p class="weekly-quick-desc">Pick the winner of every matchup. Honor-system — claim your name and vote.</p>
+                    </a>
+                    <div class="weekly-quick-foot">
+                        <button class="weekly-quick-skip" type="button" data-action="skip">Skip this week</button>
+                    </div>
+                </div>
+                <div class="weekly-quick" data-quick="rumor" data-quick-key="rumor" data-status="todo">
+                    <a class="weekly-quick-body" href="live/trades/mocks/">
+                        <div class="weekly-quick-head">
+                            <div class="weekly-quick-kicker">The Rumor Mill</div>
+                            <div class="weekly-quick-status"><span class="status-pip"></span><span class="status-label">Incomplete</span></div>
+                        </div>
+                        <h3 class="weekly-quick-title">This week's <em>rumors</em></h3>
+                        <p class="weekly-quick-desc">Hypothetical trades the desk is floating. Sign it or shred it.</p>
+                    </a>
+                    <div class="weekly-quick-foot">
+                        <button class="weekly-quick-skip" type="button" data-action="skip">Skip this week</button>
+                    </div>
                 </div>
             </div>
+
+        </div>
+    </section>
+
+    <!-- § 03 · THE WATCH -->
+    <section class="dash-section">
+        <div class="dash-section-head">
+            <span class="dash-section-num">§ 03 · The Watch</span>
+            <span class="dash-section-title">Records, milestones, <em>coaching —</em></span>
+            <span class="dash-section-meta">Just broken · One away</span>
+        </div>
+        <div class="dash-watch">
+
+            <article class="watch-pane" data-watch="records">
+                <div class="watch-head">
+                    <div class="watch-title">Records <em>watch</em></div>
+                    <div class="watch-kicker">Single-season &amp; career</div>
+                </div>
+
+                <div class="watch-group">
+                    <div class="watch-group-label broken">Just broken</div>
+                    <div class="watch-list" id="records-broken"><div class="watch-empty">Loading…</div></div>
+                </div>
+                <div class="watch-group">
+                    <div class="watch-group-label">One game away</div>
+                    <div class="watch-list" id="records-close"><div class="watch-empty">Loading…</div></div>
+                </div>
+
+                <div class="watch-foot">
+                    <a class="watch-link" href="live/records-watch/">Full records watch</a>
+                </div>
+            </article>
+
+            <article class="watch-pane" data-watch="milestones">
+                <div class="watch-head">
+                    <div class="watch-title">Milestone <em>tracker</em></div>
+                    <div class="watch-kicker">Career &amp; franchise marks</div>
+                </div>
+
+                <div class="watch-group">
+                    <div class="watch-group-label broken">Recently achieved</div>
+                    <div class="watch-list" id="milestones-broken"><div class="watch-empty">Loading…</div></div>
+                </div>
+                <div class="watch-group">
+                    <div class="watch-group-label">One game away</div>
+                    <div class="watch-list" id="milestones-close"><div class="watch-empty">Loading…</div></div>
+                </div>
+
+                <div class="watch-foot">
+                    <a class="watch-link" href="live/milestones/">Full milestone tracker</a>
+                </div>
+            </article>
+
         </div>
 
-        <div class="ls-pages" id="ls-pages">
-            <div class="ls-split" id="ls-split">
-                <section id="ls-form-section" data-page-label="Current Form Sheet" hidden>
-                    <h3 class="ls-page-title">Current Form Sheet</h3>
-                    <div class="form-sheet" id="ls-form-sheet">
-                        <!-- populated by JS -->
-                    </div>
-                </section>
-
-                <section id="ls-matrix-section" data-page-label="The Mileage Matrix" hidden>
-                    <h3 class="ls-page-title">The Mileage Matrix</h3>
-                    <div id="ls-matrix-host">
-                        <!-- populated by JS -->
-                    </div>
-                </section>
+        <div class="coach-strip" id="coach-strip">
+            <div class="coach-badge">Best Coach</div>
+            <div class="coach-body">
+                <div class="coach-headline" id="coach-headline">Loading this week's <em>top coach…</em></div>
+                <div class="coach-sub" id="coach-sub">··</div>
             </div>
+            <a class="coach-link" href="live/best-coach/">Coach standings</a>
         </div>
-    </div>
+    </section>
 
-    <div class="ls-foot">LSL · Live Season · 2019</div>
+    <!-- § 04 · TRADE DESK -->
+    <section class="dash-section">
+        <div class="dash-section-head">
+            <span class="dash-section-num">§ 04 · Trade Desk</span>
+            <span class="dash-section-title">Recent <em>deals &amp; tools —</em></span>
+            <span class="dash-section-meta">League trades · Analyzer · Finder</span>
+        </div>
+
+        <article class="dash-trades">
+            <div class="trades-head">
+                <div class="trades-title">Recent <em>league trades</em></div>
+                <div class="trades-kicker" id="trades-kicker">Latest 3</div>
+            </div>
+
+            <div class="trades-list" id="trades-list">
+                <div class="dash-skel" style="min-height:140px"></div>
+            </div>
+
+            <div class="trades-cta-row">
+                <a class="trades-cta" data-cta="analyzer" href="live/trades/analyzer/">
+                    <div class="trades-cta-label">Test a deal</div>
+                    <div class="trades-cta-title">Trade <em>analyzer</em></div>
+                    <div class="trades-cta-desc">Drop in any deal — get a grade, fairness curve, and a write-up.</div>
+                </a>
+                <a class="trades-cta" data-cta="finder" href="live/trades/finder/">
+                    <div class="trades-cta-label">Hunt for deals</div>
+                    <div class="trades-cta-title">Trade <em>finder</em></div>
+                    <div class="trades-cta-desc">Surface trade ideas that help your team — sorted by mutual fit.</div>
+                </a>
+            </div>
+        </article>
+    </section>
+
+    <div class="dash-foot">LSL · Live · 2019</div>
 
 </main>
 
 <script>
-// ─────────── FORM SHEET — current-season standings tower ───────────
-(function () {
-  function esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
-  function pcChg(n) {
-    if (n > 0)  return '<span class="form-pos-chg up">▲' + n + '</span>';
-    if (n < 0)  return '<span class="form-pos-chg down">▼' + Math.abs(n) + '</span>';
-    return '<span class="form-pos-chg same">—</span>';
-  }
-  function pillsFor(form) {
-    // Always render 5 pill slots; missing weeks show as dashed empty pills
-    // so the "season just started" framing reads visually.
-    var pills = '';
-    for (var i = 0; i < 5; i++) {
-      var r = form[i];
-      if (r === 'W')      pills += '<i class="w">W</i>';
-      else if (r === 'L') pills += '<i class="l">L</i>';
-      else if (r === 'T') pills += '<i class="t">T</i>';
-      else                pills += '<i class="empty">·</i>';
-    }
-    return pills;
-  }
-
-  fetch('data/current_form.json', { cache: 'no-store' })
+// ───────────────── shared helpers ─────────────────
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function jget(url) {
+  return fetch(url, { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.json() : null; })
-    .catch(function () { return null; })
-    .then(function (data) {
-      if (!data || !data.rows || !data.rows.length) return;
-      var section = document.getElementById('ls-form-section');
-      var sheet = document.getElementById('ls-form-sheet');
-      if (!section || !sheet) return;
+    .catch(function () { return null; });
+}
+function clampList(arr, n) { return (arr || []).slice(0, n); }
 
-      // Final mode (off-season fallback) re-skins the mast: title becomes
-      // "{year} Final ★", meta drops the green live-dot and reads
-      // "Final · W{N}". Live mode keeps the in-season framing.
-      var isFinal = !!data.is_final;
-      var mastTitle = isFinal
-        ? '★ ' + (data.year || '') + ' Final ★'
-        : '★ Standings · Week ' + (data.week || 0) + ' ★';
-      var mastMeta = isFinal
-        ? 'Final · W' + (data.week || 0)
-        : '<span class="live-dot"></span>' + (data.year || '') + ' season';
-      var html =
-        '<div class="form-mast">' +
-          '<span class="form-mast-title">' + mastTitle + '</span>' +
-          '<span class="form-mast-meta">' + mastMeta + '</span>' +
-        '</div>' +
-        '<div class="form-head">' +
-          '<span>POS</span><span>MANAGER</span><span>FORM</span>' +
-          '<span>PPG</span><span>GB</span><span>PT DIFF</span>' +
-        '</div>';
-      html += data.rows.map(function (r, i) {
-        var leaderCls = i === 0 ? ' leader' : '';
-        // Reverse form so the most recent week reads left-to-right newest
-        var form = (r.form || []).slice().reverse();
-        // GB = games-back from the playoff cutoff seed (computed server-
-        // side). Negative = above the line, positive = below. Show "—" for
-        // the cutoff row itself so the line in the standings is visible.
-        var gb = Number(r.gb || 0);
-        var gbCls = gb < 0 ? 'up' : gb > 0 ? 'down' : 'same';
-        var gbTxt = gb === 0 ? '—' : (gb > 0 ? '+' : '') + gb.toFixed(1);
-        // PT DIFF = point differential over the last-5 window (PF − PA).
-        var ptd = Number(r.pt_diff_5 || 0);
-        var ptdCls = ptd > 0 ? 'up' : ptd < 0 ? 'down' : 'same';
-        var ptdTxt = (ptd > 0 ? '+' : '') + ptd.toFixed(1);
-        var ppg = Number(r.ppg5 || 0);
-        // Name + owner: render the team name as the primary, owner as the em-tag.
-        return '<div class="form-row' + leaderCls + '">' +
-                 '<span class="form-pos">' +
-                   '<span class="form-pos-num">' + (r.pos || (i + 1)) + '</span>' +
-                   pcChg(Number(r.pos_change || 0)) +
-                 '</span>' +
-                 '<span class="form-name">' + esc(r.team || r.name) +
-                   (r.team && r.name && r.team !== r.name ? ' <em>· ' + esc(r.name) + '</em>' : '') +
-                 '</span>' +
-                 '<span class="form-form">' + pillsFor(form) + '</span>' +
-                 '<span class="form-pts">' + ppg.toFixed(1) + '</span>' +
-                 '<span class="form-gb ' + gbCls + '">' + gbTxt + '</span>' +
-                 '<span class="form-ptd ' + ptdCls + '">' + ptdTxt + '</span>' +
+// ───────────────── HERO · week pill ─────────────────
+(function () {
+  var dc = window.__DC || {};
+  var pill = document.getElementById('dash-week-pill');
+  var label = document.getElementById('dash-week-label');
+  if (!pill || !label) return;
+  var wk = typeof dc.liveWeek === 'number' ? dc.liveWeek : null;
+  if (wk && wk >= 1 && wk <= 18) {
+    label.textContent = 'Week ' + wk + ' · Live';
+  } else {
+    pill.classList.add('off');
+    label.textContent = 'Offseason';
+  }
+})();
+
+// ───────────────── § 01 · STANDINGS snapshot ─────────────────
+(function () {
+  jget('data/current_form.json').then(function (data) {
+    var host = document.getElementById('snap-standings');
+    var meta = document.getElementById('snap-standings-meta');
+    if (!host) return;
+    if (!data || !data.rows || !data.rows.length) {
+      host.innerHTML = '<div class="snap-empty">Standings are quiet — check back once the season opens.</div>';
+      if (meta) meta.textContent = '';
+      return;
+    }
+    host.innerHTML = data.rows.map(function (r, i) {
+      var name = r.team || r.name || '—';
+      var rec  = (r.wins || 0) + '-' + (r.losses || 0) + ((r.ties || 0) > 0 ? '-' + r.ties : '');
+      var podium = i < 3 ? ' podium-' + (i + 1) : (i === 0 ? ' leader' : '');
+      return '<div class="snap-row' + podium + '">' +
+               '<span class="snap-pos">' + (r.pos || (i + 1)) + '.</span>' +
+               '<span class="snap-name">' + escHtml(name) + '</span>' +
+               '<span class="snap-val">' + rec + '</span>' +
+             '</div>';
+    }).join('');
+    if (meta) meta.textContent = (data.is_final ? 'Final · ' : 'Week ') + (data.week || '') + ' · ' + (data.year || '');
+  });
+})();
+
+// ───────────────── § 01 · FORM snapshot ─────────────────
+(function () {
+  jget('data/current_form.json').then(function (data) {
+    var host = document.getElementById('snap-form');
+    var meta = document.getElementById('snap-form-meta');
+    if (!host) return;
+    if (!data || !data.rows || !data.rows.length) {
+      host.innerHTML = '<div class="snap-empty">Form sheet wakes up at Week 1.</div>';
+      if (meta) meta.textContent = '';
+      return;
+    }
+    // Re-sort the form rows: wins over last 5 desc, ties broken by ppg5
+    // (or ppg fallback) desc. The server returns rows in standings order,
+    // which doesn't reflect "current form" — a 4-1 last-5 with a losing
+    // overall record deserves the top of THIS card.
+    function winsInLast5(r) {
+      var arr = r.form || [];
+      var n = 0;
+      for (var i = 0; i < arr.length && i < 5; i++) if (arr[i] === 'W') n++;
+      return n;
+    }
+    function ppgOf(r) {
+      return (typeof r.ppg5 === 'number') ? r.ppg5
+           : (typeof r.ppg  === 'number') ? r.ppg : 0;
+    }
+    var sortedRows = data.rows.slice().sort(function (a, b) {
+      var dw = winsInLast5(b) - winsInLast5(a);
+      if (dw !== 0) return dw;
+      return ppgOf(b) - ppgOf(a);
+    });
+
+    host.innerHTML = sortedRows.map(function (r, idx) {
+      var name = r.team || r.name || '—';
+      // Form arrays come oldest-first; reverse so the most recent week
+      // reads left in the pill strip (matches the standings page).
+      var form = (r.form || []).slice().reverse();
+      var pills = '';
+      for (var i = 0; i < 5; i++) {
+        var v = form[i];
+        if (v === 'W')      pills += '<i class="w">W</i>';
+        else if (v === 'L') pills += '<i class="l">L</i>';
+        else if (v === 'T') pills += '<i class="t">T</i>';
+        else                pills += '<i class="e">·</i>';
+      }
+      var ppg = (typeof r.ppg5 === 'number') ? r.ppg5.toFixed(1)
+              : (typeof r.ppg  === 'number') ? r.ppg.toFixed(1) : '—';
+      var podium = idx < 3 ? ' podium-' + (idx + 1) : '';
+      return '<div class="snap-form-row' + podium + '">' +
+               '<span class="snap-pos">' + (idx + 1) + '.</span>' +
+               '<span class="snap-name">' + escHtml(name) + '</span>' +
+               '<span class="snap-pills">' + pills + '</span>' +
+               '<span class="snap-ppg">' + ppg + '</span>' +
+             '</div>';
+    }).join('');
+    if (meta) meta.textContent = 'Last 5 · PPG';
+  });
+})();
+
+// ───────────────── § 01 · POWER RANK snapshot ─────────────────
+// Shape (live/powerrank/data):
+//   { status: 'ok'|'no-live'|'no-week', year, currentWeek, hasDivisions,
+//     weeks: [{ id, week, label, overall: PowerTeam[], divisions: [...] }] }
+//   PowerTeam: { rank, team_name, manager, wins, losses, score, delta, ... }
+// Use the latest weekly snapshot (last entry in weeks[]).
+(function () {
+  jget('live/powerrank/data.json').then(function (data) {
+    var host = document.getElementById('snap-powerrank');
+    var meta = document.getElementById('snap-powerrank-meta');
+    if (!host) return;
+    if (!data || data.status !== 'ok' || !data.weeks || !data.weeks.length) {
+      host.innerHTML = '<div class="snap-empty">Power rankings rebuild after each week\'s slate.</div>';
+      if (meta) meta.textContent = '';
+      return;
+    }
+    var latest = data.weeks[data.weeks.length - 1];
+    var teams = (latest && latest.overall) || [];
+    if (!teams.length) {
+      host.innerHTML = '<div class="snap-empty">No power rankings yet for this week.</div>';
+      if (meta) meta.textContent = '';
+      return;
+    }
+    host.innerHTML = teams.map(function (r, idx) {
+      var name = r.team_name || r.manager || '—';
+      var d = typeof r.delta === 'number' ? r.delta : 0;
+      var deltaCls = d > 0 ? 'up' : d < 0 ? 'down' : 'same';
+      var deltaTxt = d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + Math.abs(d) : '—';
+      var score = (typeof r.score === 'number') ? r.score.toFixed(1) : '';
+      var podium = idx < 3 ? ' podium-' + (idx + 1) : '';
+      return '<div class="snap-row' + podium + '">' +
+               '<span class="snap-pos">' + r.rank + '.</span>' +
+               '<span class="snap-name">' + escHtml(name) +
+                 ' <span class="snap-delta ' + deltaCls + '">' + deltaTxt + '</span>' +
+               '</span>' +
+               '<span class="snap-val">' + escHtml(score) + '</span>' +
+             '</div>';
+    }).join('');
+    // Kicker shows the active formula components instead of a generic
+    // "Wk movement" label — matches the formula popup on the full power
+    // rank page. Preseason and in-season use different weight buckets;
+    // in-season w/ divisions includes Conference.
+    var formula;
+    if (latest.week === 0 || /pre/i.test(latest.id || '')) {
+      formula = 'Win % · PF · Recent · Pedigree';
+    } else if (data.hasDivisions) {
+      formula = 'Record · PF · Form · Conf';
+    } else {
+      formula = 'Record · PF · Form';
+    }
+    if (meta) meta.textContent = formula;
+  });
+})();
+
+// ───────────────── § 02 · GAME OF THE WEEK ─────────────────
+// Shape (matchup_preview.json):
+//   { year, week, gotwIdx, matchups: [{ a, b, h2h, projected, gotw }] }
+//   a/b: { name, team, abbr, record, form, ppg5, ppgSeason, streak, ... }
+//   projected: { a, b, spread, favorite: 'a'|'b'|'pp' }
+//   h2h: { wins_a, wins_b, ties, recent[] }
+// Pick the gotw matchup explicitly (gotwIdx), fall back to first card.
+(function () {
+  jget('data/matchup_preview.json').then(function (data) {
+    if (!data || !data.matchups || !data.matchups.length) {
+      var gc = document.getElementById('gotw-card');
+      if (gc) gc.innerHTML =
+        '<div class="gotw-kicker"><span class="star">\u2605</span> Game of the Week</div>' +
+        '<h2 class="gotw-headline">The <em>marquee</em> posts at kickoff.</h2>' +
+        '<p class="gotw-blurb">Once the slate locks, the headline matchup lands here with form, projections, and the all-time head-to-head.</p>' +
+        '<a class="gotw-cta" href="live/matchup-preview/">Open matchup preview</a>';
+      return;
+    }
+    var idx = (typeof data.gotwIdx === 'number') ? data.gotwIdx : 0;
+    var m = data.matchups[idx] || data.matchups[0];
+    if (!m || !m.a || !m.b) return;
+
+    var a = m.a, b = m.b;
+    var proj = m.projected || {};
+    var h2h  = m.h2h || {};
+    function set(id, val) { var el = document.getElementById(id); if (el && val != null) el.textContent = val; }
+    function setHtml(id, val) { var el = document.getElementById(id); if (el && val != null) el.innerHTML = val; }
+
+    set('gotw-a-name',   a.team || a.name || '—');
+    set('gotw-a-owner',  a.name || '');
+    set('gotw-a-record', a.record || '');
+    set('gotw-b-name',   b.team || b.name || '—');
+    set('gotw-b-owner',  b.name || '');
+    set('gotw-b-record', b.record || '');
+
+    // Headline: derive from the favorite + spread.
+    var headline;
+    if (data.gotwIdx == null) {
+      headline = 'This week\'s <em>marquee</em>.';
+    } else if (proj.favorite === 'pp') {
+      headline = 'A true <em>pick\'em</em>.';
+    } else {
+      var fav = proj.favorite === 'a' ? (a.name || a.team) : (b.name || b.team);
+      var sprd = typeof proj.spread === 'number' ? proj.spread.toFixed(1) : '';
+      headline = '<em>' + escHtml(fav || '—') + '</em> favored by ' + sprd + '.';
+    }
+    setHtml('gotw-headline', headline);
+
+    // Per-side stats — each scouting card lists Form / PPG / Proj /
+    // Streak / Season High for its own team. No more shared meta grid.
+    function pillsFor(form) {
+      var out = '';
+      var arr = (form || []).slice(0, 5);
+      for (var i = 0; i < 5; i++) {
+        var v = arr[i];
+        if (v === 'W')      out += '<i class="w">W</i>';
+        else if (v === 'L') out += '<i class="l">L</i>';
+        else if (v === 'T') out += '<i class="t">T</i>';
+        else                out += '<i class="e">·</i>';
+      }
+      return '<span class="snap-pills">' + out + '</span>';
+    }
+    function streakStr(s) {
+      if (!s || !s.kind || !s.count) return '—';
+      return s.count + s.kind;
+    }
+    function shighStr(sh) {
+      if (!sh || typeof sh.pts !== 'number') return '—';
+      return sh.pts.toFixed(1) + ' (W' + sh.week + ')';
+    }
+    function fillSide(prefix, side, projVal) {
+      setHtml(prefix + '-form', pillsFor(side.form));
+      set(prefix + '-ppg5',  (typeof side.ppg5 === 'number') ? side.ppg5.toFixed(1) : '—');
+      set(prefix + '-proj',  (projVal != null) ? Number(projVal).toFixed(1) : '—');
+      set(prefix + '-streak', streakStr(side.streak));
+      set(prefix + '-shigh',  shighStr(side.seasonHigh));
+    }
+    fillSide('gotw-a', a, proj.a);
+    fillSide('gotw-b', b, proj.b);
+
+    // All-time H2H block. Never-played pairings show 0–0 (fresh
+    // ledger), and the "meetings on the books" note only renders
+    // when meetings actually exist. Avg PPG slots flanking the
+    // record are each side's total PF in the series ÷ meetings.
+    var wA = (h2h && h2h.wins_a) || 0;
+    var wB = (h2h && h2h.wins_b) || 0;
+    var ties = (h2h && h2h.ties) || 0;
+    var totalMeetings = wA + wB + ties;
+    var hLine = wA + '–' + wB + (ties > 0 ? '–' + ties : '');
+    set('gotw-h2h', hLine);
+
+    if (totalMeetings > 0 && h2h) {
+      var pfA = typeof h2h.pfA === 'number' ? h2h.pfA : 0;
+      var pfB = typeof h2h.pfB === 'number' ? h2h.pfB : 0;
+      set('gotw-a-h2h-ppg', (pfA / totalMeetings).toFixed(1));
+      set('gotw-b-h2h-ppg', (pfB / totalMeetings).toFixed(1));
+    } else {
+      set('gotw-a-h2h-ppg', '—');
+      set('gotw-b-h2h-ppg', '—');
+    }
+
+    var note = '';
+    if (totalMeetings > 0 && h2h && h2h.recent && h2h.recent.length) {
+      note = 'last ' + h2h.recent.length + ' meetings on the books';
+    } else if (totalMeetings === 0) {
+      note = 'first ever meeting';
+    }
+    set('gotw-h2h-note', note);
+
+    // Blurb — pulled below the stats. Lighter touch since the per-side
+    // cards are doing the heavy lifting now.
+    var bits = [];
+    if (a.streak && a.streak.kind === 'W' && a.streak.count >= 3) {
+      bits.push(escHtml(a.name) + ' riding ' + a.streak.count + 'W');
+    }
+    if (b.streak && b.streak.kind === 'W' && b.streak.count >= 3) {
+      bits.push(escHtml(b.name) + ' riding ' + b.streak.count + 'W');
+    }
+    setHtml('gotw-blurb', bits.length ? bits.join(' · ') + '.' : 'The matchup the desk is watching this week.');
+  });
+})();
+
+// ───────────────── § 03 · RECORDS WATCH ─────────────────
+// Shape (records_watch.json):
+//   { meter, broken[], on_pace[], brink[], just_missed[] }
+//   item: { category, pct(0-100), realized, flag, copy_html, holder, chaser,
+//           record_value, gap, ... }
+// Use copy_html (already wraps the manager name in <em>) so the prose
+// matches the full Records Watch page; pct is 0-100 so don't multiply.
+(function () {
+  jget('data/records_watch.json').then(function (data) {
+    var brokenHost = document.getElementById('records-broken');
+    var closeHost  = document.getElementById('records-close');
+    if (!brokenHost || !closeHost) return;
+
+    function render(rows, host, emptyMsg) {
+      if (!rows || !rows.length) {
+        host.innerHTML = '<div class="watch-empty">' + emptyMsg + '</div>';
+        return;
+      }
+      host.innerHTML = rows.slice(0, 4).map(function (r) {
+        var pct = typeof r.pct === 'number' ? Math.round(r.pct) + '%' : '';
+        var cat = r.category || r.flag || '';
+        // Trim trailing "(123.4 vs 56.7 Opponent)" tail from the copy on
+        // the dashboard only — the full Records Watch page keeps the
+        // breakdown, but it runs too long for the teaser rows here.
+        var copy = (r.copy_html || '').replace(/\s*\([^)]*\)\s*$/, '');
+        if (!copy) copy = escHtml(r.holder || r.chaser || '—');
+        return '<div class="watch-row">' +
+                 '<div class="watch-row-main">' +
+                   '<div class="watch-row-mgr">' + copy + '</div>' +
+                   '<div class="watch-row-detail">' + escHtml(cat) +
+                     (r.gap ? ' · ' + escHtml(r.gap) : '') + '</div>' +
+                 '</div>' +
+                 '<div class="watch-row-pct">' + (r.realized ? '✓' : pct) + '</div>' +
                '</div>';
       }).join('');
-      sheet.innerHTML = html;
-      section.hidden = false;
-      if (window.lsPagesReveal) window.lsPagesReveal();
-    });
-})();
-
-// ─────────── MILEAGE MATRIX — all-time H2H grid ───────────
-(function () {
-  function esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
-  fetch('data/h2h_matrix.json', { cache: 'no-store' })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .catch(function () { return null; })
-    .then(function (data) {
-      if (!data || !data.managers || data.managers.length < 2) return;
-      var section = document.getElementById('ls-matrix-section');
-      var host = document.getElementById('ls-matrix-host');
-      if (!section || !host) return;
-
-      // Each cell is keyed by sorted uid pair "uidLeft|uidRight" where
-      // uidLeft < uidRight lexicographically. wins_a is the left side's
-      // wins. Walk the managers list once to render rows + cells.
-      var mgrs = data.managers;
-      var cells = data.cells || {};
-      var labelWidth = 110; // matches matrix-cell.row-label intrinsic width
-      // Columns flex-fill the container via minmax(MIN, 1fr): small leagues
-      // (8 teams) stretch each cell wider, large leagues (16+) compress to
-      // the min and scroll horizontally. Min stays high enough to keep the
-      // "W-L\nPF" two-line cell readable.
-      var colMin = mgrs.length <= 10 ? 64 : 56;
-      host.innerHTML =
-        '<div class="matrix-wrap">' +
-          '<div class="matrix-title">All-Time Head to Head' +
-            '<span class="matrix-title-sub">THE LAKESIDE LEAGUE · By the Books</span>' +
-          '</div>' +
-          '<div class="matrix" style="grid-template-columns: ' + labelWidth + 'px repeat(' + mgrs.length + ', minmax(' + colMin + 'px, 1fr));">' +
-            // Header row: corner + abbr cols
-            '<div class="matrix-cell corner">&nbsp;</div>' +
-            mgrs.map(function (m) {
-              return '<div class="matrix-cell col-label">' + esc(m.abbr || '—') + '</div>';
-            }).join('') +
-            // Body rows: row label, then cells for cols left-to-right
-            mgrs.map(function (rowMgr, rowIdx) {
-              var rowCells = '<div class="matrix-cell row-label">' + esc(rowMgr.name) + '</div>';
-              mgrs.forEach(function (colMgr, colIdx) {
-                if (rowIdx === colIdx) {
-                  rowCells += '<div class="matrix-cell diag">—</div>';
-                  return;
-                }
-                if (colIdx > rowIdx) {
-                  // Upper triangle: empty (matrix is symmetric)
-                  rowCells += '<div class="matrix-cell empty"></div>';
-                  return;
-                }
-                // Lower triangle: look up the cell
-                var a = rowMgr.user_id; var b = colMgr.user_id;
-                var key = a < b ? (a + '|' + b) : (b + '|' + a);
-                var cell = cells[key];
-                if (!cell) {
-                  rowCells += '<div class="matrix-cell empty"></div>';
-                  return;
-                }
-                // wins_a is left side (the lexicographically-smaller uid).
-                // Orient to row's perspective: rowWins/colWins.
-                var aIsRow = a < b;
-                var rowWins = aIsRow ? cell.wins_a : cell.wins_b;
-                var colWins = aIsRow ? cell.wins_b : cell.wins_a;
-                var diff = rowWins - colWins;
-                var pf = aIsRow ? cell.pf_a : cell.pf_b;
-                var dom = diff >= 3 ? ' dom' : diff <= -3 ? ' lose' : '';
-                rowCells +=
-                  '<div class="matrix-cell h2h' + dom + '">' +
-                    rowWins + '–' + colWins +
-                    '<span class="matrix-pf">' + Math.round(pf).toLocaleString() + ' PF</span>' +
-                  '</div>';
-              });
-              return rowCells;
-            }).join('') +
-          '</div>' +
-          '<div class="matrix-legend">' +
-            '<span><i class="dom"></i> Dominant ≥ +3</span>' +
-            '<span><i class="neut"></i> Even ±2</span>' +
-            '<span><i class="lose"></i> Losing ≥ −3</span>' +
-          '</div>' +
-        '</div>';
-
-      section.hidden = false;
-      if (window.lsPagesReveal) window.lsPagesReveal();
-    });
-})();
-
-// ─────────── LS-PAGES — pager (dots + arrows + counter) for the
-//             Form Sheet + Mileage Matrix horizontal scroller.
-(function () {
-  var wrap     = document.getElementById('ls-pages-wrap');
-  var bar      = document.getElementById('ls-pages-bar');
-  var scroller = document.getElementById('ls-split');
-  var prevBtn  = document.getElementById('ls-pages-prev');
-  var nextBtn  = document.getElementById('ls-pages-next');
-  var dotsHost = document.getElementById('ls-pages-dots');
-  var counter  = document.getElementById('ls-pages-counter');
-  if (!wrap || !scroller || !dotsHost || !counter) return;
-
-  function pad(n) { return n < 10 ? '0' + n : '' + n; }
-
-  function visibleSections() {
-    return Array.from(scroller.querySelectorAll(':scope > section'))
-      .filter(function (s) { return !s.hidden; });
-  }
-
-  function activeIndex() {
-    var secs = visibleSections();
-    if (!secs.length) return 0;
-    var x = scroller.scrollLeft;
-    var best = 0, bestDist = Infinity;
-    secs.forEach(function (s, i) {
-      var d = Math.abs(s.offsetLeft - x);
-      if (d < bestDist) { bestDist = d; best = i; }
-    });
-    return best;
-  }
-
-  function goTo(i) {
-    var secs = visibleSections();
-    if (!secs.length) return;
-    var clamped = Math.max(0, Math.min(secs.length - 1, i));
-    scroller.scrollTo({ left: secs[clamped].offsetLeft, behavior: 'smooth' });
-  }
-
-  function renderDots() {
-    var secs = visibleSections();
-    dotsHost.innerHTML = '';
-    secs.forEach(function (s, i) {
-      var d = document.createElement('button');
-      d.type = 'button';
-      d.className = 'ls-pages-dot';
-      d.setAttribute('role', 'tab');
-      d.setAttribute('aria-selected', 'false');
-      d.setAttribute('aria-label', s.dataset.pageLabel || ('Chart ' + (i + 1)));
-      d.addEventListener('click', function () { goTo(i); });
-      dotsHost.appendChild(d);
-    });
-  }
-
-  function update() {
-    var secs = visibleSections();
-    var solo = secs.length < 2;
-    var i = activeIndex();
-    if (prevBtn) prevBtn.disabled = solo || i <= 0;
-    if (nextBtn) nextBtn.disabled = solo || i >= secs.length - 1;
-    if (bar) bar.hidden = secs.length === 0;
-    counter.innerHTML = pad(secs.length ? i + 1 : 0) + '<span> / ' + pad(secs.length) + '</span>';
-    Array.from(dotsHost.children).forEach(function (d, di) {
-      var on = di === i;
-      d.classList.toggle('is-active', on);
-      d.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
-  }
-
-  var didInit = false;
-  window.lsPagesReveal = function () {
-    if (!visibleSections().length) return;
-    wrap.hidden = false;
-    renderDots();
-    // When the second section appears, scroll-snap can land the scroller
-    // on the newer page. Force the first page on initial reveal so we
-    // always boot on the Form Sheet (or whichever is page 1).
-    if (!didInit) {
-      var first = visibleSections()[0];
-      if (first) scroller.scrollLeft = first.offsetLeft;
-      didInit = true;
     }
-    update();
-  };
 
-  if (prevBtn) prevBtn.addEventListener('click', function () { goTo(activeIndex() - 1); });
-  if (nextBtn) nextBtn.addEventListener('click', function () { goTo(activeIndex() + 1); });
+    if (!data) {
+      brokenHost.innerHTML = '<div class="watch-empty">No records data yet.</div>';
+      closeHost.innerHTML  = '<div class="watch-empty">No records data yet.</div>';
+      return;
+    }
+    render(data.broken || [], brokenHost, 'Nothing broken yet this season.');
+    render(data.brink  || [], closeHost,  'Nobody on the brink right now.');
+  });
+})();
 
-  var raf = 0;
-  scroller.addEventListener('scroll', function () {
-    if (raf) return;
-    raf = requestAnimationFrame(function () { raf = 0; update(); });
-  }, { passive: true });
+// ───────────────── § 03 · MILESTONES ─────────────────
+// Shape (milestones.json):
+//   { meter, crossed[], imminent_by_category: { wins, points, streak },
+//     horizon_by_category: { ... } }
+//   crossed item: { glyph, category, name, copy_html, stats_html, when, week_bucket }
+//   imminent item: { glyph, category, name, copy_html, stats_html, eta, eta_unit, sort }
+// Flatten imminent across all three categories, sort by sort asc (smallest gap first).
+(function () {
+  jget('data/milestones.json').then(function (data) {
+    var brokenHost = document.getElementById('milestones-broken');
+    var closeHost  = document.getElementById('milestones-close');
+    if (!brokenHost || !closeHost) return;
 
-  window.addEventListener('resize', update);
+    function renderRow(r) {
+      // Imminent copy_html omits the manager name (e.g. "1 win from 30th")
+      // because the full milestones page shows the name in an avatar
+      // header above the row. The dashboard doesn't have that header, so
+      // we prepend the name + " · " here. Stats_html is dropped on the
+      // dashboard — it's a sub-detail block that runs long; the category
+      // tag + eta on the right already carries the context.
+      var rightCol = r.eta ? (r.eta + (r.eta_unit ? ' ' + r.eta_unit : '')) : '✓';
+      var name = r.name || '—';
+      // Strip "personal-best" / "personal best" → "best" for the dashboard
+      // teaser only; the full Milestones page keeps the longer phrasing.
+      var copy = (r.copy_html || '').replace(/personal[-\s]+best/gi, 'best');
+      copy = '<em>' + escHtml(name) + '</em> · ' + copy;
+      return '<div class="watch-row">' +
+               '<div class="watch-row-main">' +
+                 '<div class="watch-row-mgr">' + copy + '</div>' +
+                 '<div class="watch-row-detail">' + escHtml(r.category || '') + '</div>' +
+               '</div>' +
+               '<div class="watch-row-pct">' + rightCol + '</div>' +
+             '</div>';
+    }
+    function render(rows, host, emptyMsg) {
+      if (!rows || !rows.length) {
+        host.innerHTML = '<div class="watch-empty">' + emptyMsg + '</div>';
+        return;
+      }
+      host.innerHTML = rows.slice(0, 4).map(renderRow).join('');
+    }
+
+    if (!data) {
+      brokenHost.innerHTML = '<div class="watch-empty">No milestone data yet.</div>';
+      closeHost.innerHTML  = '<div class="watch-empty">No milestone data yet.</div>';
+      return;
+    }
+    var crossed = data.crossed || [];
+    var imminentBuckets = data.imminent_by_category || {};
+    var imminent = []
+      .concat(imminentBuckets.wins   || [])
+      .concat(imminentBuckets.points || [])
+      .concat(imminentBuckets.streak || []);
+    imminent.sort(function (a, b) {
+      var sa = typeof a.sort === 'number' ? a.sort : 1e9;
+      var sb = typeof b.sort === 'number' ? b.sort : 1e9;
+      return sa - sb;
+    });
+
+    render(crossed, brokenHost, 'No milestones crossed in the last two weeks.');
+    render(imminent, closeHost, 'Nobody within reach yet.');
+  });
+})();
+
+// ───────────────── § 03 · BEST COACH strip ─────────────────
+// Shape (best_coach.json):
+//   { year, throughWeek, is_live, managers[],
+//     rankings: { by_efficiency_desc: [{ rank, name, efficiency_pct }], by_left_desc: [...] },
+//     worst_weeks, perfect_weeks, ... }
+// efficiency_pct is already 0-100.
+(function () {
+  jget('data/best_coach.json').then(function (data) {
+    var head = document.getElementById('coach-headline');
+    var sub  = document.getElementById('coach-sub');
+    if (!head || !sub) return;
+    if (!data) {
+      head.innerHTML = 'Coaching grades arrive after <em>each week</em>.';
+      sub.textContent = '';
+      return;
+    }
+    var top = data.rankings && data.rankings.by_efficiency_desc && data.rankings.by_efficiency_desc[0];
+    if (!top) {
+      head.innerHTML = 'No coaching standings yet — check back after Sunday.';
+      sub.textContent = '';
+      return;
+    }
+    var pctNum = typeof top.efficiency_pct === 'number' ? top.efficiency_pct : null;
+    var pctStr = pctNum != null ? pctNum.toFixed(1) + '%' : '';
+    // Try to surface season actual/optimal totals from the full manager
+    // record (top.name matches managers[].display_name).
+    var mgrRow = (data.managers || []).find(function (m) { return m.display_name === top.name; });
+    var pf = (mgrRow && typeof mgrRow.season_actual === 'number' && typeof mgrRow.season_optimal === 'number')
+           ? mgrRow.season_actual.toFixed(1) + ' / ' + mgrRow.season_optimal.toFixed(1)
+           : '';
+    head.innerHTML = '<em>' + escHtml(top.name || '—') + '</em> leads the coaching board' +
+                     (pctStr ? ' at <em>' + pctStr + '</em>' : '') + '.';
+    sub.textContent = pf ? ('Actual / optimal · ' + pf) :
+                      (data.throughWeek ? ('Through W' + data.throughWeek) : '');
+  });
+})();
+
+// ───────────────── § 04 · RECENT TRADES ─────────────────
+// Shape (live/trades/data):
+//   { status: 'ok' | 'no-trades' | 'tier-locked' | ...,
+//     current_trades[], current_verdicts[], past_trades[], all_verdicts[] }
+//   TradePublic: { id, platform, season_year, week, executed_at, ai_summary,
+//                  sides: [{ side_id, manager: { display_name, team_name },
+//                            assets: [{ kind, name, position, team }],
+//                            grade, revisit_grade }] }
+// Combine current+past for the "recent" feed; sort by executed_at desc.
+(function () {
+  jget('live/trades/data.json').then(function (data) {
+    var host = document.getElementById('trades-list');
+    var meta = document.getElementById('trades-kicker');
+    if (!host) return;
+    if (!data) {
+      host.innerHTML = '<div class="trades-empty">Trades feed unavailable.</div>';
+      return;
+    }
+    if (data.status === 'tier-locked') {
+      host.innerHTML = '<div class="trades-empty">Trade desk is a Veteran-tier feature.</div>';
+      if (meta) meta.textContent = '';
+      return;
+    }
+    if (data.status === 'no-trades') {
+      host.innerHTML = '<div class="trades-empty">The market\'s been quiet — no trades on the books.</div>';
+      if (meta) meta.textContent = '';
+      return;
+    }
+    var all = []
+      .concat(data.current_trades || [])
+      .concat(data.past_trades || []);
+    if (!all.length) {
+      host.innerHTML = '<div class="trades-empty">The market\'s been quiet — no trades on the books.</div>';
+      if (meta) meta.textContent = '';
+      return;
+    }
+    all.sort(function (a, b) {
+      var da = Date.parse(a.executed_at || '') || 0;
+      var db = Date.parse(b.executed_at || '') || 0;
+      return db - da;
+    });
+    var rows = all.slice(0, 4);
+    if (meta) meta.textContent = 'Latest ' + rows.length;
+    // data-count drives the grid spanning rules in CSS — 1 / 3 trade
+    // counts give the first row a full-width feature treatment.
+    host.setAttribute('data-count', String(rows.length));
+
+    function fmtAssets(assets) {
+      if (!assets || !assets.length) return '<span style="opacity:.5">—</span>';
+      // Stack each asset on its own line; position tag overrides the
+      // serif parent with mono so it reads as a typographic caption
+      // next to the bigger serif player name.
+      return assets.slice(0, 5).map(function (a) {
+        var line;
+        if (a.kind === 'player')   line = escHtml(a.name || '—') + (a.position ? ' <span style="font-family:var(--mono);opacity:.6;font-size:.6em;letter-spacing:.1em;vertical-align:.15em">' + escHtml(a.position) + '</span>' : '');
+        else if (a.kind === 'pick') line = escHtml(a.season_year + ' R' + a.round + ' pick');
+        else if (a.kind === 'faab') line = '$' + (a.amount || 0) + ' FAAB';
+        else                        line = '—';
+        return '<div>' + line + '</div>';
+      }).join('');
+    }
+    function fmtDate(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    function sideMgrName(side) {
+      if (!side || !side.manager) return '—';
+      return side.manager.display_name || side.manager.team_name || '—';
+    }
+
+    host.innerHTML = rows.map(function (t) {
+      var sideA = (t.sides && t.sides[0]) || null;
+      var sideB = (t.sides && t.sides[1]) || null;
+      var grade = (sideA && sideA.grade) || '';
+      var gradeCls = /A|win|good|favor/i.test(grade) ? 'win'
+                  : /F|loss|bad|fleece/i.test(grade) ? 'loss'
+                  : 'fair';
+      var gradeLabel = grade ? String(grade) : 'Pending';
+      var write = t.ai_summary || '';
+      return '<div class="trade-row">' +
+               '<div class="trade-row-head">' +
+                 '<span class="trade-row-date">' + escHtml(fmtDate(t.executed_at)) +
+                   (t.week ? ' · W' + t.week : '') + '</span>' +
+                 '<span class="trade-row-grade ' + gradeCls + '">' + escHtml(gradeLabel) + '</span>' +
+               '</div>' +
+               '<div class="trade-row-teams">' +
+                 '<div class="trade-side">' +
+                   '<div class="trade-side-players">' + fmtAssets(sideA && sideA.assets) + '</div>' +
+                   '<div class="trade-side-mgr">to ' + escHtml(sideMgrName(sideA)) + '</div>' +
+                 '</div>' +
+                 '<div class="trade-arrows">⇄</div>' +
+                 '<div class="trade-side right">' +
+                   '<div class="trade-side-players">' + fmtAssets(sideB && sideB.assets) + '</div>' +
+                   '<div class="trade-side-mgr">to ' + escHtml(sideMgrName(sideB)) + '</div>' +
+                 '</div>' +
+               '</div>' +
+               (write ? '<div class="trade-row-write">' + escHtml(write) + '</div>' : '') +
+             '</div>';
+    }).join('');
+  });
+})();
+
+// ───────────────── § 02 · WEEKLY CHECKLIST state ─────────────────
+// Per-league, per-week localStorage so each manager's checkmarks survive
+// reloads without a server round-trip. State resets automatically when
+// liveWeek changes (key includes the week number); off-season uses an
+// "off" bucket so the controls still work even when no week is live.
+(function () {
+  var dc = window.__DC || {};
+  var slug = dc.slug || 'unknown';
+  var wk = (typeof dc.liveWeek === 'number' && dc.liveWeek >= 1 && dc.liveWeek <= 18)
+    ? dc.liveWeek : 'off';
+  var STORAGE_KEY = 'tsc.live.weekly.' + slug + '.wk' + wk;
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+  function saveState(state) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  var cards = Array.prototype.slice.call(
+    document.querySelectorAll('.weekly-quick[data-quick-key]')
+  );
+  if (!cards.length) return;
+  var state = loadState();
+
+  function render() {
+    cards.forEach(function (card) {
+      var key = card.dataset.quickKey;
+      var status = state[key] || 'todo';
+      card.setAttribute('data-status', status);
+      var lbl = card.querySelector('.status-label');
+      var pip = card.querySelector('.status-pip');
+      if (lbl) lbl.textContent = status === 'viewed' ? 'Viewed'
+                              : status === 'skipped' ? 'Skipped'
+                              : 'Incomplete';
+      // The pip becomes a serif checkmark in the viewed state.
+      if (pip) pip.textContent = status === 'viewed' ? '✓' : '';
+      var skip = card.querySelector('[data-action="skip"]');
+      if (skip) skip.textContent = status === 'skipped' ? 'Unskip' : 'Skip this week';
+    });
+  }
+
+  cards.forEach(function (card) {
+    var key = card.dataset.quickKey;
+    var body = card.querySelector('.weekly-quick-body');
+    var skip = card.querySelector('[data-action="skip"]');
+
+    if (body) {
+      // mousedown fires before navigation so the write lands even when the
+      // page is about to unload. click is the keyboard / a11y fallback.
+      var markViewed = function () {
+        if (state[key] !== 'viewed') {
+          state[key] = 'viewed';
+          saveState(state);
+        }
+      };
+      body.addEventListener('mousedown', markViewed);
+      body.addEventListener('click', markViewed);
+    }
+    if (skip) {
+      skip.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        state[key] = state[key] === 'skipped' ? 'todo' : 'skipped';
+        saveState(state);
+        render();
+      });
+    }
+  });
+
+  render();
+})();
+
+// ───────────────── HERO meta · last sync ─────────────────
+(function () {
+  jget('data/league.json').then(function (data) {
+    var line = document.getElementById('dash-meta-line-2');
+    if (!line || !data) return;
+    var last = data.last_synced_at || data.updated_at || data.synced_at;
+    if (!last) { line.textContent = ''; return; }
+    var d = new Date(last);
+    if (isNaN(d.getTime())) { line.textContent = ''; return; }
+    var diffMs = Date.now() - d.getTime();
+    var mins = Math.round(diffMs / 60000);
+    var phrase;
+    if (mins < 2) phrase = 'just now';
+    else if (mins < 60) phrase = mins + ' min ago';
+    else if (mins < 1440) phrase = Math.round(mins / 60) + ' hr ago';
+    else phrase = Math.round(mins / 1440) + ' d ago';
+    line.textContent = 'Last sync · ' + phrase;
+  });
 })();
 </script>
 

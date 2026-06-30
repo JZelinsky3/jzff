@@ -343,11 +343,10 @@ body { background: var(--ls-bg); }
 .snap-row.podium-2 .snap-pos, .snap-form-row.podium-2 .snap-pos { color: var(--podium-silver); font-weight: 700; }
 .snap-row.podium-3 .snap-pos, .snap-form-row.podium-3 .snap-pos { color: var(--podium-bronze); font-weight: 700; }
 
-.snap-row.podium-1 .snap-name, .snap-row.podium-2 .snap-name, .snap-row.podium-3 .snap-name,
-.snap-form-row.podium-1 .snap-name, .snap-form-row.podium-2 .snap-name, .snap-form-row.podium-3 .snap-name {
-    color: var(--cream);
-    font-weight: 600;
-}
+/* Name picks up its own medal color so the top 3 read as a set. */
+.snap-row.podium-1 .snap-name, .snap-form-row.podium-1 .snap-name { color: var(--podium-gold);   font-weight: 600; }
+.snap-row.podium-2 .snap-name, .snap-form-row.podium-2 .snap-name { color: var(--podium-silver); font-weight: 600; }
+.snap-row.podium-3 .snap-name, .snap-form-row.podium-3 .snap-name { color: var(--podium-bronze); font-weight: 600; }
 
 /* Delta arrows keep the normal light up/down treatment (the wash is dark
    now, so the old dark-on-metal colors are gone). Slight size bump on the
@@ -922,10 +921,13 @@ body { background: var(--ls-bg); }
    § 04 — TRADE DESK: recent trades + tool CTAs
    ============================================================ */
 .dash-trades {
+    /* Moss-green canvas like the rest of the hub (was a brown leather
+       panel that fought the page); the warm gold accents + cream text
+       below keep the cardroom identity. */
     background:
-        repeating-linear-gradient(45deg, transparent 0 16px, rgba(200,164,100,.018) 16px 17px),
-        linear-gradient(180deg, #322217, #28190f);
-    border: 1px solid #4c3922;
+        repeating-linear-gradient(45deg, transparent 0 16px, rgba(200,164,100,.022) 16px 17px),
+        linear-gradient(180deg, #1d2a22, #16201a);
+    border: 1px solid #2e3d34;
     border-radius: 3px;
     padding: 1.5rem 1.6rem 1.7rem;
     position: relative;
@@ -973,7 +975,7 @@ body { background: var(--ls-bg); }
 }
 .trade-row {
     background: rgba(0,0,0,.22);
-    border: 1px solid #3d2c1a;
+    border: 1px solid #2a3a2f;
     border-radius: 3px;
     padding: 1rem 1.1rem;
     display: grid;
