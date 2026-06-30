@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grouped Carousel · Record Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+:root{
+    --rec:#8fb89a; --rec-deep:#5f8a6c;
+    --ink:#0d1512; --ink-soft:#101a15; --ink-card:#131e18;
+    --ink-line:#24352b; --ink-line-soft:#1c2a22;
+    --m-chrome-bg:#0e1713; --m-chrome-bg2:#101a15;
+}
+body{ background:var(--ink); }
+.lp-main{ padding:1rem .9rem 4rem; max-width:520px; margin:0 auto; }
+.lp-head{ text-align:center; padding:.4rem 0 .9rem; }
+.lp-head .m-kicker{ color:var(--rec-deep); }
+.lp-title{ font-family:var(--serif); font-size:1.6rem; color:var(--cream); }
+.lp-title em{ font-style:italic; color:var(--rec); }
+.lp-note{ font-family:var(--mono); font-size:.6rem; color:var(--cream-mute); margin-top:.5rem; line-height:1.5; }
+
+/* ── Group + horizontal rail (pricing-style swipe) ─────────────── */
+.grp{ margin-bottom:1.5rem; }
+.grp-head{ display:flex; align-items:baseline; justify-content:space-between; margin:0 .2rem .5rem; }
+.grp-title{ font-family:var(--serif); font-size:1.2rem; color:var(--cream); }
+.grp-title em{ font-style:italic; color:var(--rec); }
+.grp-hint{ font-family:var(--mono); font-weight:700; font-size:.5rem; letter-spacing:.16em; text-transform:uppercase; color:var(--rec-deep); }
+.rail{ display:flex; gap:.7rem; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; padding:.15rem .2rem .3rem; scrollbar-width:none; }
+.rail::-webkit-scrollbar{ display:none; }
+.slide{ flex:0 0 89%; scroll-snap-align:center; }
+.dots{ display:flex; gap:.35rem; justify-content:center; margin-top:.55rem; }
+.dot{ width:5px; height:5px; border-radius:50%; background:var(--ink-line); transition:width .2s, background .2s; }
+.dot.on{ background:var(--rec); width:15px; border-radius:3px; }
+
+/* ── Card internals (same bar style as the real book) ──────────── */
+.rb-card{ height:100%; }
+.rb-card-label{ font-family:var(--mono); font-weight:700; font-size:.54rem; letter-spacing:.22em; text-transform:uppercase; color:var(--rec-deep); }
+.rb-hero{ margin-top:.5rem; }
+.rb-hero-top{ display:flex; align-items:flex-end; justify-content:space-between; gap:.7rem; }
+.rb-hero-who{ min-width:0; }
+.rb-hero-who b{ display:block; font-family:var(--serif); font-weight:400; font-size:1.3rem; line-height:1.04; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rb-hero-who small{ font-family:var(--mono); font-size:.54rem; letter-spacing:.1em; text-transform:uppercase; color:var(--cream-mute); }
+.rb-name-g{ font-style:normal; font-family:var(--mono); font-weight:700; font-size:.46rem; color:var(--cream-mute); margin-left:1px; }
+.rb-hero-val{ flex:none; font-family:var(--serif); font-size:2.3rem; line-height:.85; color:var(--rec); text-align:right; }
+.rb-hero-val.has-sub{ display:inline-flex; flex-direction:column; align-items:flex-end; }
+.rb-hero-val small{ font-family:var(--mono); font-weight:600; font-size:.5rem; letter-spacing:.06em; text-transform:uppercase; color:var(--cream-mute); margin-top:4px; }
+.rb-hero+.rb-bars{ margin-top:.6rem; padding-top:.55rem; border-top:1px solid var(--ink-line-soft); }
+.rb-bars{ display:flex; flex-direction:column; gap:.5rem; }
+.rb-bar-row{ display:grid; grid-template-columns:1.1rem 1fr auto; align-items:center; column-gap:.55rem; }
+.rb-bar-rank{ align-self:start; padding-top:.12rem; font-family:var(--mono); font-size:.56rem; color:var(--cream-mute); }
+.rb-bar-main{ min-width:0; }
+.rb-bar-name{ display:block; font-size:.82rem; font-weight:500; color:var(--cream-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rb-bar-track{ display:block; height:5px; margin:4px 0 3px; border-radius:3px; background:var(--ink-line-soft); overflow:hidden; }
+.rb-bar-fill{ display:block; height:100%; border-radius:3px; background:linear-gradient(90deg, var(--rec-deep), var(--rec)); }
+.rb-bar-sub{ display:block; font-family:var(--mono); font-size:.5rem; letter-spacing:.08em; text-transform:uppercase; color:var(--cream-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rb-bar-val{ font-family:var(--serif); font-size:1.05rem; line-height:1; color:var(--rec); text-align:right; }
+.rb-bar-val.has-sub{ display:inline-flex; flex-direction:column; align-items:flex-end; }
+.rb-bar-val small{ font-family:var(--mono); font-weight:600; font-size:.46rem; color:var(--cream-mute); margin-top:2px; }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+<main class="lp-main">
+    <header class="lp-head">
+        <div class="m-kicker">Layout Sandbox</div>
+        <h1 class="lp-title">Grouped <em>swipe.</em></h1>
+        <div class="lp-note">Seasons records bundled by theme.<br>Swipe sideways inside a group; scroll down between groups.</div>
+    </header>
+    <div id="stage"><div class="m-empty">Loading…</div></div>
+</main>
+
+<script>
+(function(){
+    'use strict';
+    function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+    function num(n,d){if(n==null||isNaN(n))return '—';return Number(n).toLocaleString('en-US',{maximumFractionDigits:d==null?1:d});}
+    function rec(r){return String(r==null?'':r).replace(/^(\d+-\d+)-0$/,'$1');}
+    function ctx(e){return e.season+' · '+(e.team_name||'')+(e.reg_record?' · '+rec(e.reg_record):'');}
+
+    // Per-record config: value, the numeric basis for the bar, optional ppg sub.
+    var CFG={
+        highest_season_pf:        {label:'Most Points, Season', val:function(e){return num(e.reg_pf,0);}, basis:function(e){return e.reg_pf||0;}, sub:function(e){return e.reg_ppg!=null?num(e.reg_ppg)+' ppg':'';}},
+        highest_total_season_pf:  {label:'Most Points, Full Season', val:function(e){return num(e.reg_pf,0);}, basis:function(e){return e.reg_pf||0;}, sub:function(e){return e.reg_ppg!=null?num(e.reg_ppg)+' ppg':'';}, games:true},
+        most_points_against:      {label:'Most Points Against', val:function(e){return num(e.reg_pa,0);}, basis:function(e){return e.reg_pa||0;}, sub:function(e){return e.reg_pa_ppg!=null?num(e.reg_pa_ppg)+' ppg':(e.reg_record?num(e.reg_pa/(function(r){var p=String(r).split('-').map(Number);return (p[0]||0)+(p[1]||0)+(p[2]||0);})(e.reg_record))+' ppg':'');}},
+        highest_ppg:              {label:'Best PPG, Season', val:function(e){return num(e.reg_ppg);}, basis:function(e){return e.reg_ppg||0;}},
+        lowest_ppg:               {label:'Lowest PPG, Season', val:function(e){return num(e.reg_ppg);}, basis:function(e){return e.reg_ppg||0;}},
+        best_reg_season_records:  {label:'Best Record', val:function(e){return rec(e.reg_record);}, basis:function(e){return e.reg_win_pct||0;}},
+        worst_reg_season_records: {label:'Worst Record', val:function(e){return rec(e.reg_record);}, basis:function(e){return e.reg_win_pct||0;}},
+    };
+
+    var GROUPS=[
+        {title:'Points', keys:['highest_season_pf','highest_total_season_pf','most_points_against']},
+        {title:'Scoring Rate', keys:['highest_ppg','lowest_ppg']},
+        {title:'Win &amp; Loss', keys:['best_reg_season_records','worst_reg_season_records']},
+    ];
+
+    fetch('data/record_book.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    .then(function(data){
+        var S=(data&&data.full_book&&data.full_book.season)||{};
+        // demo data has no full-season list — clone the season-PF one as a stand-in
+        if(!S.highest_total_season_pf && S.highest_season_pf){
+            S.highest_total_season_pf=S.highest_season_pf.map(function(e){
+                var c={}; for(var k in e) c[k]=e[k]; c.total_games=(function(r){var p=String(r).split('-').map(Number);return (p[0]||0)+(p[1]||0)+(p[2]||0);})(e.reg_record)+2; return c;
+            });
+        }
+
+        function card(key, entries){
+            var cf=CFG[key];
+            var max=0; entries.forEach(function(e){var b=cf.basis(e); if(b>max)max=b;});
+            var lead=entries[0];
+            var sub=cf.sub?cf.sub(lead):'';
+            var gtag=cf.games&&lead.total_games!=null?' <i class="rb-name-g">'+lead.total_games+'g</i>':'';
+            var hero='<div class="rb-hero"><div class="rb-hero-top">'+
+                '<span class="rb-hero-who"><b>'+esc(lead.owner||lead.name||'—')+'</b>'+gtag+
+                    '<small>'+esc(ctx(lead))+'</small></span>'+
+                '<span class="rb-hero-val'+(sub?' has-sub':'')+'">'+esc(cf.val(lead))+(sub?'<small>'+esc(sub)+'</small>':'')+'</span>'+
+                '</div></div>';
+            var rows=entries.slice(1,4).map(function(e,i){
+                var w=max>0?Math.max(8,(cf.basis(e)/max)*100):0;
+                var s=cf.sub?cf.sub(e):'';
+                return '<div class="rb-bar-row">'+
+                    '<span class="rb-bar-rank">'+(i+2)+'</span>'+
+                    '<span class="rb-bar-main">'+
+                        '<span class="rb-bar-name">'+esc(e.owner||e.name||'—')+'</span>'+
+                        '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:'+w.toFixed(1)+'%"></span></span>'+
+                        '<span class="rb-bar-sub">'+esc(e.season)+'</span>'+
+                    '</span>'+
+                    '<span class="rb-bar-val'+(s?' has-sub':'')+'">'+esc(cf.val(e))+(s?'<small>'+esc(s)+'</small>':'')+'</span>'+
+                '</div>';
+            }).join('');
+            return '<div class="m-card rb-card">'+
+                '<div class="rb-card-label">'+esc(cf.label)+'</div>'+hero+
+                (rows?'<div class="rb-bars">'+rows+'</div>':'')+
+            '</div>';
+        }
+
+        var html=GROUPS.map(function(g,gi){
+            var slides=g.keys.map(function(key){
+                var entries=S[key];
+                if(!entries||!entries.length) return '';
+                return '<div class="slide">'+card(key,entries)+'</div>';
+            }).filter(Boolean);
+            var n=slides.length;
+            var dots=''; for(var i=0;i<n;i++) dots+='<span class="dot'+(i===0?' on':'')+'"></span>';
+            return '<div class="grp"><div class="grp-head">'+
+                '<div class="grp-title">'+g.title+'</div>'+
+                '<div class="grp-hint">Swipe ›</div></div>'+
+                '<div class="rail" data-group="'+gi+'">'+slides.join('')+'</div>'+
+                '<div class="dots" data-group="'+gi+'">'+dots+'</div>'+
+            '</div>';
+        }).join('');
+        document.getElementById('stage').innerHTML=html;
+
+        // sync dots to swipe position
+        document.querySelectorAll('.rail').forEach(function(rail){
+            var dots=document.querySelector('.dots[data-group="'+rail.dataset.group+'"]');
+            rail.addEventListener('scroll',function(){
+                var slideW=rail.querySelector('.slide').offsetWidth+12;
+                var idx=Math.round(rail.scrollLeft/slideW);
+                dots.querySelectorAll('.dot').forEach(function(d,i){d.classList.toggle('on',i===idx);});
+            },{passive:true});
+        });
+    });
+})();
+</script>
+</body>
+</html>
