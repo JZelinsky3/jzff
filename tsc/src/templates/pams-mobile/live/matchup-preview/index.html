@@ -370,7 +370,7 @@ body { background: var(--mp-bg); color: var(--mp-cream); }
 
 /* Form rows + footers */
 .fm-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .55rem; align-items: center; padding: .35rem 0; }
-.fm-name { font-size: .74rem; font-weight: 600; color: var(--mp-cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fm-name { font-size: .64rem; font-weight: 600; color: var(--mp-cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fm-pills { display: flex; gap: 2px; }
 .fm-pills i {
     display: flex; align-items: center; justify-content: center;
@@ -769,7 +769,7 @@ button.dk-btn { width: 100%; }
         }
         function cell(side, right) {
             return '<div class="fm-high' + (right ? ' right' : '') + '">' +
-                     '<span class="label">' + esc(side.name) + ' · Best run</span>' +
+                     '<span class="label">' + esc(side.name) + ' · Hot streak</span>' +
                      chipFor(side.longestWinStreak || 0) +
                    '</div>';
         }
@@ -830,7 +830,7 @@ button.dk-btn { width: 100%; }
         if (m.projected.favorite === 'pp') {
             projMsg = 'A coin flip — neither side has separated.';
         } else if (favSelf) {
-            projMsg = 'Form has you favored by <strong>' + fmtPts(spread) + '</strong>.';
+            projMsg = '<strong>' + esc(self.name) + '</strong> is favored by <strong>' + fmtPts(spread) + '</strong> on form.';
         } else {
             projMsg = '<strong>' + esc(opp.name) + '</strong> is favored by <strong>' + fmtPts(spread) + '</strong> on form.';
         }

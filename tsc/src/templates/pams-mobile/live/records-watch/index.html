@@ -137,6 +137,16 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 }
 .rw-broken-readout .copy { margin-top: .4rem; font-size: .72rem; line-height: 1.45; color: var(--rw-mute); }
 .rw-broken-readout .copy strong, .rw-broken-readout .copy b { color: var(--rw-cream); }
+/* The chaser name is wrapped in <em> inside copy_html. Lift it out of the
+   body-text size so the eye lands on WHO broke or chased the mark before
+   reading the surrounding context. */
+.rw-broken-readout .copy em {
+    font-style: italic;
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--rw-cream);
+}
 .rw-broken-prior {
     display: flex; justify-content: space-between; gap: .6rem;
     margin-top: .55rem; padding-top: .5rem;

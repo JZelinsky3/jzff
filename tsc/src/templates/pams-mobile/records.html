@@ -161,12 +161,18 @@
             ['lowest_combined_score', 'Lowest Combined', function (e) { return num(e.score + e.opp_score); }, gameCtx],
         ],
         season: [
-            ['highest_season_pf', 'Most Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
+            // Regular-season totals show season + team + record + PPG so the
+            // headline number has its rate context inline.
+            ['highest_season_pf', 'Most Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtxWithReg],
+            // Full-season variant folds in championship-bracket playoff
+            // points so deep title runs sit alongside the regular-season
+            // ledger. PPG here covers every counted game.
+            ['highest_total_season_pf', 'Most Points, Full Season', function (e) { return num(e.total_pf, 0); }, seasonCtxWithTotal],
             ['highest_ppg', 'Best PPG, Season', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.avg_ppg); }, seasonCtx],
             ['best_reg_season_records', 'Best Record', function (e) { return rec(e.reg_record); }, seasonCtx],
             ['worst_reg_season_records', 'Worst Record', function (e) { return rec(e.reg_record); }, seasonCtx],
-            // Per-game, not total — 2019/2020 ran a shorter schedule, so
-            // raw season totals unfairly stack the bottom of this list.
+            // Per-game, not total: 2019/2020 ran a shorter schedule, so raw
+            // season totals unfairly stack the bottom of this list.
             ['lowest_ppg', 'Lowest PPG, Season', function (e) { return num(e.reg_ppg); }, seasonCtx],
             ['most_points_against', 'Most Points Against', function (e) { return num(e.reg_pa, 0); }, seasonCtx],
         ],
@@ -176,9 +182,10 @@
             ['most_top_3_finishes', 'Most Podiums', function (e) { return countOf(e, 'top_3_finishes') + '×'; }, careerCtx],
             ['most_playoff_appearances', 'Most Playoff Trips', function (e) { return countOf(e, 'playoff_appearances') + '×'; }, careerCtx],
             ['most_championship_appearances', 'Most Title Games', function (e) { return countOf(e, 'championship_appearances') + '×'; }, careerCtx],
-            // Average-based: alumni stay out — frozen careers with fewer
-            // seasons skew the averages (currentOnly flag, applied in render).
-            ['best_avg_finish', 'Best Avg Finish', function (e) { return num(e.avg_final_rank); }, careerCtx, null, true],
+            // Best avg finish ranks every profile group, current + alumni,
+            // so the page shows the full league ladder instead of trimming
+            // to active members only.
+            ['best_avg_finish', 'Best Avg Finish', function (e) { return num(e.avg_final_rank); }, careerCtx],
         ],
         feats: [
             // One-score games merged into a single W–L record per manager,
@@ -196,6 +203,26 @@
     // "59-42-0" → "59-42" when there are no ties to show.
     function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
     function seasonCtx(e) { return e.season + ' · ' + (e.team_name || '') + (e.reg_record ? ' · ' + rec(e.reg_record) : ''); }
+    // Show PPG inline next to the season total so the headline number has
+    // its rate context without forcing readers to cross-reference the PPG
+    // card below. reg variant uses regular-season points only; total uses
+    // every counted game (regular plus championship-bracket playoff).
+    function seasonCtxWithReg(e) {
+        var base = seasonCtx(e);
+        return e.reg_ppg != null ? base + ' · ' + num(e.reg_ppg) + ' ppg' : base;
+    }
+    function seasonCtxWithTotal(e) {
+        var games = (e.reg_record ? recGames(e.reg_record) : 0) + (e.playoff_games || 0);
+        var ppg = games > 0 ? e.total_pf / games : null;
+        var base = seasonCtx(e);
+        var tail = ppg != null ? ' · ' + num(ppg) + ' ppg' : '';
+        if (e.playoff_games) tail += ' · ' + games + 'g';
+        return base + tail;
+    }
+    function recGames(r) {
+        var p = String(r).split('-').map(Number);
+        return (p[0] || 0) + (p[1] || 0) + (p[2] || 0);
+    }
     function streakCtx(e) {
         var span = e.start_season === e.end_season
             ? e.start_season + ' · W' + e.start_week + '–W' + e.end_week

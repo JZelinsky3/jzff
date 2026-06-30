@@ -92,7 +92,11 @@
 .rd-meet-when b { display: block; font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--cream-soft); }
 .rd-meet-when small { font-family: var(--mono); font-size: .54rem; color: var(--cream-mute); }
 .rd-meet-res { min-width: 0; flex: 1; font-weight: 600; font-size: .88rem; }
-.rd-meet-res small { display: block; font-weight: 400; font-size: .68rem; color: var(--cream-mute); }
+.rd-meet-res small {
+    display: block; font-weight: 400; font-size: .62rem;
+    font-family: var(--mono); letter-spacing: .08em;
+    color: var(--cream-mute);
+}
 .rd-meet-margin { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--riv); }
 </style>
 </head>
@@ -205,17 +209,32 @@
             '</div>';
         }).join('');
 
-        // Recent meetings — last5 is mirrored on both sides; read A's copy and
-        // name the winner from each entry's result.
+        // Recent meetings: last5 is mirrored on both sides, read A's copy and
+        // name the winner from each entry's result. Each row also shows the
+        // head-to-head record as it stood AFTER that game, so the series
+        // arc is legible without doing math. Computed by walking backward
+        // from the current (a.wins, b.wins, ties) state and stripping each
+        // newest game's contribution.
         var meets = (a.last5 || []).slice().reverse();
         if (meets.length) {
             document.getElementById('meetSection').hidden = false;
-            document.getElementById('meetings').innerHTML = meets.map(function (g) {
+            var runA = a.wins || 0;
+            var runB = b.wins || 0;
+            var runT = r.ties_count || 0;
+            var withRecord = meets.map(function (g) {
+                var after = runA + '-' + runB + (runT ? '-' + runT : '');
+                if (g.result === 'W') runA = Math.max(0, runA - 1);
+                else if (g.result === 'L') runB = Math.max(0, runB - 1);
+                else if (g.result === 'T') runT = Math.max(0, runT - 1);
+                return { g: g, after: after };
+            });
+            document.getElementById('meetings').innerHTML = withRecord.map(function (entry) {
+                var g = entry.g;
                 var winner = g.result === 'W' ? a.name : (g.result === 'L' ? b.name : null);
                 var line = winner ? esc(winner) + ' wins' : 'Tied';
                 return '<div class="m-list-row">' +
                     '<span class="rd-meet-when"><b>' + g.year + ' · W' + g.week + '</b><small>' + (g.is_playoff ? 'Playoffs' : 'Regular') + '</small></span>' +
-                    '<span class="rd-meet-res">' + line + '</span>' +
+                    '<span class="rd-meet-res">' + line + '<small>Series ' + esc(entry.after) + '</small></span>' +
                     (g.margin != null ? '<span class="rd-meet-margin">+' + num(g.margin) + '</span>' : '') +
                 '</div>';
             }).join('');

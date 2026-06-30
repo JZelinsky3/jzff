@@ -765,24 +765,15 @@
         bar.innerHTML = left + center + right;
         nav.parentNode.replaceChild(bar, nav);
 
-        // Back behavior (ported heuristic from nav.js): plain tap with a
-        // same-origin, different-URL referrer → history.back(); otherwise
-        // follow the declared href.
-        var backLink = document.getElementById('m-appbar-back');
-        if (backLink) {
-            backLink.addEventListener('click', function (e) {
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                var ref = document.referrer;
-                if (!ref) return;
-                try {
-                    var refUrl = new URL(ref);
-                    if (refUrl.origin !== window.location.origin) return;
-                    if (refUrl.href === window.location.href) return;
-                    e.preventDefault();
-                    history.back();
-                } catch (_) { /* follow href */ }
-            });
-        }
+        // Back behavior: always follow the declared href. Previously we
+        // history.back()'d when the referrer was same-origin and different
+        // from the current URL, but that surfaced the wrong page when
+        // readers navigated sideways between siblings (seasons/2021 ->
+        // seasons/2022 -> back would land on 2021 instead of the season
+        // archive index). The href is what the page author chose as the
+        // canonical parent, so honor it on every tap.
+        // Anchor default behavior already handles plain clicks, modifier
+        // keys, and middle-click; no JS needed.
 
         // Tab bar.
         var udfa = ctx.leagueTier === 'udfa';

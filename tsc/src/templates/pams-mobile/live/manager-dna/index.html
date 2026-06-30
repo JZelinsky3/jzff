@@ -376,31 +376,31 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
         <div class="dna-legend-grid">
             <div class="dna-legend-item">
                 <div class="dna-legend-name">EFF · Lineup Efficiency</div>
-                <div class="dna-legend-desc">% of optimal lineup actually started · Sleeper / ESPN / Yahoo only</div>
+                <div class="dna-legend-desc">Points your starters actually scored as a percent of the points your best possible lineup would have scored. 100% means you started the optimal lineup every week. Needs weekly starter / bench data, so Sleeper, ESPN, and Yahoo only.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">CHURN · Weekly Turnover</div>
-                <div class="dna-legend-desc">% of starters changed vs prior week · Sleeper / ESPN / Yahoo only</div>
+                <div class="dna-legend-desc">Average share of your starting lineup that swaps from one week to the next. High churn means you are juggling matchups and waiver claims; low churn means you set it and forget it. Sleeper, ESPN, and Yahoo only.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">VOL · Score Volatility</div>
-                <div class="dna-legend-desc">Std-dev as % of mean weekly PF</div>
+                <div class="dna-legend-desc">How much your weekly point totals swing around your own average, expressed as a percent. Low VOL is a steady scorer; high VOL is boom or bust week to week.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">TRADE · Trade Volume</div>
-                <div class="dna-legend-desc">Completed trades per season</div>
+                <div class="dna-legend-desc">Completed trades per season across your career, blocked ones do not count. Captures how active you are on the trade block, not whether your trades worked out.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">MARGIN · Avg Margin</div>
-                <div class="dna-legend-desc">Average margin of victory or defeat, points/game</div>
+                <div class="dna-legend-desc">Average points per game between your score and your opponent. Positive means your wins tend to be bigger than your losses, negative means you get blown out more than you blow others out. Regular season only.</div>
             </div>
             <div class="dna-legend-item">
                 <div class="dna-legend-name">CLUTCH · Close-Game Win %</div>
-                <div class="dna-legend-desc">Win rate in games decided by ≤5 points</div>
+                <div class="dna-legend-desc">Your win rate in games decided by 5 points or fewer. Anything over 50% says you find a way in nail biters; under 50% says the close ones tend to slip away.</div>
             </div>
         </div>
         <div class="dna-legend-foot">
-            NFL.com leagues fall back to Margin and Clutch — NFL's archive doesn't preserve per-week starters, so Eff and Churn can't be derived.
+            NFL.com leagues only have access to Margin and Clutch. NFL's archive doesn't preserve per-week starters or bench scores, so Lineup Efficiency and Weekly Turnover can't be calculated. Trade Volume falls back to whatever transactions NFL did keep.
         </div>
     </section>
 
