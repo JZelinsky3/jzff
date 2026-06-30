@@ -910,12 +910,20 @@ body::before {
   color: var(--pk-champagne);
 }
 .hl-card select {
-  background: var(--pk-bg-soft);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: var(--pk-bg-soft);
+  /* appearance:none + redrawn chevron so Safari matches Chrome instead of
+     drawing its native pill + system font. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23c9b6d6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right .55rem center;
   border: 1px solid var(--pk-line);
   color: var(--pk-chalk);
   font-family: var(--sans);
   font-size: .85rem;
-  padding: .5rem .6rem;
+  padding: .5rem 1.7rem .5rem .6rem;
   border-radius: 2px;
   cursor: pointer;
   transition: border-color .15s, box-shadow .15s;
