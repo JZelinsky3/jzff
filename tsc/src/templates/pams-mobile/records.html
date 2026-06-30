@@ -120,9 +120,40 @@
 }
 .rb-other-val .rb-val-g { font-size: .44rem; vertical-align: .1em; margin-left: 4px; }
 
+/* ── Seasons: marquee leader ───────────────────────────────────── */
+/* The #1 season is pulled out as an oversized editorial block so it
+   reads as the headline, not just the top row of a list. */
+.rb-hero { margin-top: .5rem; }
+.rb-hero-top { display: flex; align-items: flex-end; justify-content: space-between; gap: .8rem; }
+.rb-hero-who { min-width: 0; }
+.rb-hero-who b {
+    display: block;
+    font-family: var(--serif); font-weight: 400;
+    font-size: 1.4rem; line-height: 1.04; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rb-hero-who small {
+    font-family: var(--mono); font-size: .56rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute);
+}
+.rb-hero-val { flex: none; font-family: var(--serif); font-size: 2.6rem; line-height: .85; color: var(--rec); text-align: right; }
+.rb-hero-val.has-sub { display: inline-flex; flex-direction: column; align-items: flex-end; }
+.rb-hero-val small {
+    font-family: var(--mono); font-weight: 600;
+    font-size: .52rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--cream-mute); margin-top: 4px;
+}
+.rb-hero-val .rb-val-g { font-size: .4rem; vertical-align: .42em; margin-left: 5px; }
+.rb-hero-bar { display: block; height: 7px; margin-top: .55rem; border-radius: 4px; background: var(--ink-line-soft); overflow: hidden; }
+.rb-hero-bar span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--rec), #d2ead8); }
+.rb-hero + .rb-bars { margin-top: .65rem; padding-top: .6rem; border-top: 1px solid var(--ink-line-soft); }
+
 /* ── Seasons: leaderboard bars ─────────────────────────────────── */
 .rb-bars { margin-top: .5rem; display: flex; flex-direction: column; gap: .55rem; }
 .rb-bar-row { display: grid; grid-template-columns: 1.1rem 1fr auto; align-items: center; column-gap: .55rem; }
+/* `.rb-bar-row` is defined after `.rb-extra`, so it would otherwise win the
+   cascade and leave the extras visible — re-hide them at matching specificity. */
+.rb-bar-row.rb-extra { display: none; }
 .rb-card.is-open .rb-bar-row.rb-extra { display: grid; }
 .rb-bar-rank { align-self: start; padding-top: .12rem; font-family: var(--mono); font-size: .56rem; color: var(--cream-mute); }
 .rb-bar-main { min-width: 0; }
@@ -138,20 +169,20 @@
 .rb-bar-val small { font-family: var(--mono); font-weight: 600; font-size: .46rem; letter-spacing: .05em; text-transform: uppercase; color: var(--cream-mute); margin-top: 2px; }
 .rb-bar-val .rb-val-g { font-size: .44rem; vertical-align: .12em; margin-left: 4px; }
 
-/* ── Games: scorecard tickets ──────────────────────────────────── */
-.rb-ticket {
-    margin-top: .5rem;
-    border: 1px solid var(--ink-line); border-radius: 10px;
-    background: linear-gradient(180deg, var(--ink-card), var(--ink-soft));
-    padding: .6rem .8rem .55rem;
-}
-.rb-ticket-head { font-family: var(--mono); font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rec-deep); margin-bottom: .4rem; }
-.rb-ticket-line { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; padding: .14rem 0; }
-.rb-ticket-name { font-family: var(--serif); font-size: 1rem; color: var(--cream-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rb-ticket-score { flex: none; font-family: var(--mono); font-weight: 700; font-size: .88rem; color: var(--cream-mute); }
-.rb-ticket-line.is-win .rb-ticket-name { color: var(--cream); }
-.rb-ticket-line.is-win .rb-ticket-score { color: var(--rec); }
-.rb-ticket-foot { margin-top: .42rem; padding-top: .42rem; border-top: 1px dashed var(--ink-line); text-align: right; font-family: var(--serif); font-size: 1.2rem; color: var(--rec); }
+/* ── Games: marquee scorecard ──────────────────────────────────── */
+/* The leader is a compact stub: the headline stat sits big on the left
+   (score, or +margin for blowout/closest), the mini boxscore rides to
+   its right — far less vertical room than the old stacked ticket. */
+.rb-ghero { margin-top: .5rem; display: flex; align-items: center; gap: .85rem; }
+.rb-gstat { flex: none; min-width: 3.4rem; font-family: var(--serif); font-size: 2.4rem; line-height: .85; color: var(--rec); }
+.rb-gstat small { display: block; font-family: var(--mono); font-weight: 600; font-size: .48rem; letter-spacing: .14em; text-transform: uppercase; color: var(--rec-deep); margin-top: 5px; }
+.rb-gcard { flex: 1; min-width: 0; border-left: 1px solid var(--ink-line); padding-left: .85rem; }
+.rb-gline { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding: .1rem 0; }
+.rb-gline-name { font-family: var(--serif); font-size: .98rem; color: var(--cream-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-gline-score { flex: none; font-family: var(--mono); font-weight: 700; font-size: .84rem; color: var(--cream-mute); }
+.rb-gline.is-win .rb-gline-name { color: var(--cream); }
+.rb-gline.is-win .rb-gline-score { color: var(--rec); }
+.rb-gstamp { margin-top: .32rem; font-family: var(--mono); font-size: .5rem; letter-spacing: .16em; text-transform: uppercase; color: var(--rec-deep); }
 /* Combined-score records list both managers; the "vs Opponent" tail reads
    as context, not a co-holder — smaller and dimmer than the lead name. */
 .rb-vs { font-size: .72em; color: var(--cream-mute); }
@@ -269,7 +300,16 @@
     function valExtra(key, e) {
         if (section !== 'season') return {};
         if (key === 'highest_season_pf')   return { below: e.reg_ppg    != null ? num(e.reg_ppg)    + ' ppg' : '' };
-        if (key === 'most_points_against') return { below: e.reg_pa_ppg != null ? num(e.reg_pa_ppg) + ' ppg' : '' };
+        if (key === 'most_points_against') {
+            // Prefer the precomputed PA-per-game; fall back to reg_pa over
+            // games played so the rate always shows under the total.
+            var paPpg = e.reg_pa_ppg;
+            if (paPpg == null && e.reg_pa != null && e.reg_record) {
+                var g = recGames(e.reg_record);
+                if (g > 0) paPpg = e.reg_pa / g;
+            }
+            return { below: paPpg != null ? num(paPpg) + ' ppg' : '' };
+        }
         if (key === 'highest_total_season_pf') {
             var g = e.total_games != null
                 ? e.total_games
@@ -415,11 +455,27 @@
     function renderSeasonBars(key, label, val, ctx, entries) {
         var max = 0;
         entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
-        var rows = entries.map(function (e, i) {
+
+        // #1 becomes the marquee — big serif value, holder as headline,
+        // full season context, and a maxed-out bar that anchors the list.
+        var lead = entries[0];
+        var hero =
+            '<div class="rb-hero">' +
+                '<div class="rb-hero-top">' +
+                    '<span class="rb-hero-who"><b>' + holderHtmlFor(key, lead) + '</b>' +
+                        '<small>' + esc(ctx(lead) || '') + '</small></span>' +
+                    valHtml('rb-hero-val', val(lead), key, lead) +
+                '</div>' +
+                '<span class="rb-hero-bar"><span style="width:100%"></span></span>' +
+            '</div>';
+
+        // Ranks 2+ stay as proportional bars; 2–3 visible, rest fold away.
+        var rows = entries.slice(1).map(function (e, i) {
+            var rank = i + 2;
             var w = max > 0 ? Math.max(8, (seasonBasis(key, e) / max) * 100) : 0;
             var ex = valExtra(key, e);
-            return '<div class="rb-bar-row' + (i >= 3 ? ' rb-extra' : '') + (i === 0 ? ' is-lead' : '') + '">' +
-                '<span class="rb-bar-rank">' + (i + 1) + '</span>' +
+            return '<div class="rb-bar-row' + (rank > 3 ? ' rb-extra' : '') + '">' +
+                '<span class="rb-bar-rank">' + rank + '</span>' +
                 '<span class="rb-bar-main">' +
                     '<span class="rb-bar-name">' + holderHtmlFor(key, e) + '</span>' +
                     '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>' +
@@ -431,25 +487,33 @@
                 '</span>' +
             '</div>';
         }).join('');
-        return cardShell(label, entries.length > 3, entries.length, '<div class="rb-bars">' + rows + '</div>');
+
+        var inner = hero + (rows ? '<div class="rb-bars">' + rows + '</div>' : '');
+        return cardShell(label, entries.length > 3, entries.length, inner);
     }
 
-    // ── Games → scorecard tickets ────────────────────────────────
-    // The leader renders as a mini boxscore; the rest stay as compact
-    // ranked rows beneath it.
-    function gameTicket(key, e, val) {
+    // ── Games → marquee scorecard ────────────────────────────────
+    // The leader is a compact stub: headline stat on the left, mini
+    // boxscore on the right. Margin records get a "Margin" tag under the
+    // stat so the +number reads as the gap, not a score.
+    function gameHero(key, e, val) {
         var aWin = (e.score || 0) >= (e.opp_score || 0);
-        return '<div class="rb-ticket">' +
-            '<div class="rb-ticket-head">' + esc(e.season + ' · Week ' + e.week) + '</div>' +
-            '<div class="rb-ticket-line' + (aWin ? ' is-win' : '') + '">' +
-                '<span class="rb-ticket-name">' + esc(e.owner || '—') + '</span>' +
-                '<span class="rb-ticket-score">' + num(e.score) + '</span>' +
+        var statTag = (key.indexOf('blowout') !== -1 || key.indexOf('closest') !== -1) ? 'Margin'
+            : (key.indexOf('combined') !== -1 ? 'Combined' : '');
+        return '<div class="rb-ghero">' +
+            '<span class="rb-gstat">' + esc(val(e)) +
+                (statTag ? '<small>' + statTag + '</small>' : '') + '</span>' +
+            '<div class="rb-gcard">' +
+                '<div class="rb-gline' + (aWin ? ' is-win' : '') + '">' +
+                    '<span class="rb-gline-name">' + esc(e.owner || '—') + '</span>' +
+                    '<span class="rb-gline-score">' + num(e.score) + '</span>' +
+                '</div>' +
+                '<div class="rb-gline' + (!aWin ? ' is-win' : '') + '">' +
+                    '<span class="rb-gline-name">' + esc(e.opp_owner || '—') + '</span>' +
+                    '<span class="rb-gline-score">' + num(e.opp_score) + '</span>' +
+                '</div>' +
+                '<div class="rb-gstamp">' + esc(e.season + ' · Week ' + e.week) + '</div>' +
             '</div>' +
-            '<div class="rb-ticket-line' + (!aWin ? ' is-win' : '') + '">' +
-                '<span class="rb-ticket-name">' + esc(e.opp_owner || '—') + '</span>' +
-                '<span class="rb-ticket-score">' + num(e.opp_score) + '</span>' +
-            '</div>' +
-            '<div class="rb-ticket-foot">' + esc(val(e)) + '</div>' +
         '</div>';
     }
     function renderGameTickets(key, label, val, ctx, entries) {
@@ -465,7 +529,7 @@
                 '</div>';
             }).join('') + '</div>'
             : '';
-        return cardShell(label, others.length > 2, entries.length, gameTicket(key, top, val) + rest);
+        return cardShell(label, others.length > 2, entries.length, gameHero(key, top, val) + rest);
     }
 
     function render() {
@@ -483,7 +547,13 @@
                 entries = entries.filter(function (e) { return e.is_current_member !== false; });
                 if (!entries.length) return '';
             }
-            if (section === 'season') return renderSeasonBars(key, label, val, ctx, entries);
+            // Bars suit the points races; W–L records read better as the
+            // plain card, so they keep the original look.
+            if (section === 'season') {
+                if (key === 'best_reg_season_records' || key === 'worst_reg_season_records')
+                    return renderStandard(key, label, val, ctx, entries);
+                return renderSeasonBars(key, label, val, ctx, entries);
+            }
             if (section === 'weekly') return renderGameTickets(key, label, val, ctx, entries);
             return renderStandard(key, label, val, ctx, entries);
         }).filter(Boolean).join('');
