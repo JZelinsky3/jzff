@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Layout Preview · Record Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+:root{
+    --rec:#8fb89a; --rec-deep:#5f8a6c;
+    --ink:#0d1512; --ink-soft:#101a15; --ink-card:#131e18;
+    --ink-line:#24352b; --ink-line-soft:#1c2a22;
+    --m-chrome-bg:#0e1713; --m-chrome-bg2:#101a15;
+}
+body{ background:var(--ink); }
+.lp-main{ padding:1rem .9rem 4rem; max-width:520px; margin:0 auto; }
+.lp-head{ text-align:center; padding:.4rem 0 1rem; }
+.lp-head .m-kicker{ color:var(--rec-deep); }
+.lp-title{ font-family:var(--serif); font-size:1.6rem; color:var(--cream); }
+.lp-title em{ font-style:italic; color:var(--rec); }
+.lp-note{ font-family:var(--mono); font-size:.6rem; color:var(--cream-mute); margin-top:.5rem; line-height:1.5; }
+
+/* Concept banner separating each option */
+.lp-band{ margin:1.8rem 0 .9rem; padding:.5rem .8rem; border-left:3px solid var(--rec); background:linear-gradient(90deg, rgba(143,184,154,.1), transparent); }
+.lp-band b{ display:block; font-family:var(--serif); font-size:1.15rem; color:var(--cream); }
+.lp-band span{ font-family:var(--mono); font-size:.56rem; letter-spacing:.04em; color:var(--cream-mute); }
+
+.lp-label{ font-family:var(--mono); font-weight:700; font-size:.52rem; letter-spacing:.2em; text-transform:uppercase; color:var(--rec-deep); }
+.lp-holder{ font-family:var(--serif); color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lp-sub{ font-family:var(--mono); font-size:.52rem; letter-spacing:.08em; text-transform:uppercase; color:var(--cream-mute); }
+.lp-val{ font-family:var(--serif); color:var(--rec); line-height:.9; }
+
+/* ============== CONCEPT A — MOSAIC (feature + varied tiles) ====== */
+.A-feature{ position:relative; border:1px solid var(--rec-deep); border-radius:14px; padding:1rem; margin-bottom:.6rem;
+    background:linear-gradient(160deg, rgba(143,184,154,.12), transparent 60%), var(--ink-card); overflow:hidden; }
+.A-feature .lp-val{ font-size:3.4rem; }
+.A-feature .lp-holder{ font-size:1.5rem; margin-top:.2rem; }
+.A-grid{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; grid-auto-rows:auto; }
+.A-tile{ border:1px solid var(--ink-line); border-radius:14px; padding:.75rem; background:var(--ink-card); display:flex; flex-direction:column; }
+.A-tile.tall{ grid-row:span 2; }
+.A-tile .lp-val{ font-size:2rem; margin-top:.35rem; }
+.A-tile .lp-holder{ font-size:.95rem; margin-top:.15rem; }
+.A-mini{ margin-top:.6rem; padding-top:.5rem; border-top:1px solid var(--ink-line-soft); display:flex; flex-direction:column; gap:.35rem; }
+.A-mini-row{ display:flex; justify-content:space-between; gap:.5rem; font-size:.72rem; }
+.A-mini-row span:first-child{ color:var(--cream-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.A-mini-row span:last-child{ font-family:var(--mono); font-weight:700; color:var(--rec); flex:none; }
+
+/* ============== CONCEPT B — HERO + UNIFORM GRID ================= */
+.B-hero{ border:1px solid var(--rec-deep); border-radius:14px; padding:1rem; margin-bottom:.6rem; text-align:center;
+    background:linear-gradient(180deg, rgba(143,184,154,.1), transparent), var(--ink-card); }
+.B-hero .lp-val{ font-size:3rem; }
+.B-hero .lp-holder{ font-size:1.3rem; margin-top:.25rem; }
+.B-grid{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+.B-tile{ border:1px solid var(--ink-line); border-radius:14px; padding:.75rem; background:var(--ink-card); text-align:center; }
+.B-tile .lp-val{ font-size:1.9rem; margin:.3rem 0 .1rem; }
+.B-tile .lp-holder{ font-size:.92rem; }
+
+/* ============== CONCEPT C — PER-TAB CUSTOM (podium + tiles) ===== */
+.C-podium{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; align-items:end; margin-bottom:.8rem; }
+.C-step{ border:1px solid var(--ink-line); border-radius:12px 12px 0 0; padding:.7rem .4rem .8rem; text-align:center; background:linear-gradient(180deg, var(--ink-card), var(--ink-soft)); }
+.C-step .lp-holder{ font-size:.9rem; }
+.C-step .lp-val{ font-family:var(--mono); font-weight:700; font-size:1.05rem; margin-top:.2rem; }
+.C-medal{ font-family:var(--mono); font-weight:700; font-size:.56rem; letter-spacing:.14em; }
+.C-1{ border-color:#d9b441; border-top:3px solid #d9b441; padding-bottom:1.6rem; }
+.C-1 .lp-holder{ font-size:1.05rem; color:var(--cream); }
+.C-1 .C-medal{ color:#d9b441; }
+.C-2{ border-color:#9fb2c2; border-top:3px solid #9fb2c2; padding-bottom:1.1rem; }
+.C-2 .C-medal{ color:#9fb2c2; }
+.C-3{ border-color:#c08a5a; border-top:3px solid #c08a5a; padding-bottom:.7rem; }
+.C-3 .C-medal{ color:#c08a5a; }
+.C-podium-cap{ text-align:center; font-family:var(--mono); font-size:.5rem; letter-spacing:.16em; text-transform:uppercase; color:var(--rec-deep); margin-bottom:.5rem; }
+.C-strip{ display:flex; flex-direction:column; gap:.45rem; }
+.C-row{ display:flex; align-items:center; gap:.7rem; border:1px solid var(--ink-line); border-radius:12px; padding:.55rem .8rem; background:var(--ink-card); }
+.C-row .lp-label{ flex:1; }
+.C-row .lp-holder{ font-size:.95rem; flex:1; }
+.C-row .lp-val{ font-family:var(--mono); font-weight:700; font-size:1.15rem; flex:none; }
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+<main class="lp-main">
+    <header class="lp-head">
+        <div class="m-kicker">Layout Sandbox</div>
+        <h1 class="lp-title">Three <em>arrangements.</em></h1>
+        <div class="lp-note">Same Careers records, three page layouts.<br>Scroll all three, then tell me a number.</div>
+    </header>
+    <div id="stage"><div class="m-empty">Loading…</div></div>
+</main>
+
+<script>
+(function(){
+    'use strict';
+    function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+    function num(n,d){if(n==null||isNaN(n))return '—';return Number(n).toLocaleString('en-US',{maximumFractionDigits:d==null?1:d});}
+
+    fetch('data/record_book.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    .then(function(data){
+        var c=(data&&data.full_book&&data.full_book.career)||{};
+        // Normalize the six career records into {label, holder, val, sub, list}
+        function pick(key,label,valf,subf){
+            var arr=c[key]||[];
+            return {
+                label:label,
+                rows:arr.slice(0,3).map(function(e){return {name:e.owner||e.name||'—', val:valf(e), sub:subf?subf(e):''};}),
+            };
+        }
+        var seasons=function(e){return e.seasons_played?e.seasons_played+(e.seasons_played===1?' season':' seasons'):'';};
+        var recs=[
+            pick('most_top_3_finishes','Most Podiums',function(e){return (e.top_3_finishes!=null?e.top_3_finishes:e.count)+'×';},seasons),
+            pick('longest_win_streaks','Longest Win Streak',function(e){return e.length+'W';},function(e){return e.start_season+' · W'+e.start_week+'–W'+e.end_week;}),
+            pick('most_playoff_appearances','Most Playoff Trips',function(e){return (e.playoff_appearances!=null?e.playoff_appearances:e.count)+'×';},seasons),
+            pick('most_championship_appearances','Most Title Games',function(e){return (e.championship_appearances!=null?e.championship_appearances:e.count)+'×';},seasons),
+            pick('longest_loss_streaks','Longest Skid',function(e){return e.length+'L';},function(e){return e.start_season+' · W'+e.start_week+'–W'+e.end_week;}),
+            pick('best_avg_finish','Best Avg Finish',function(e){return num(e.avg_final_rank);},seasons),
+        ].filter(function(r){return r.rows.length;});
+
+        function lead(r){return r.rows[0]||{name:'—',val:'—',sub:''};}
+
+        // ---- Concept A: mosaic ----
+        function conceptA(){
+            var f=recs[0], L=lead(f);
+            var html='<div class="A-feature">'+
+                '<div class="lp-label">'+esc(f.label)+'</div>'+
+                '<div class="lp-val">'+esc(L.val)+'</div>'+
+                '<div class="lp-holder">'+esc(L.name)+'</div>'+
+                (L.sub?'<div class="lp-sub">'+esc(L.sub)+'</div>':'')+
+            '</div><div class="A-grid">';
+            recs.slice(1).forEach(function(r,i){
+                var l=lead(r);
+                var tall=(i===0); // first tile tall, shows a mini top-3 list
+                html+='<div class="A-tile'+(tall?' tall':'')+'">'+
+                    '<div class="lp-label">'+esc(r.label)+'</div>'+
+                    '<div class="lp-val">'+esc(l.val)+'</div>'+
+                    '<div class="lp-holder">'+esc(l.name)+'</div>'+
+                    (l.sub?'<div class="lp-sub">'+esc(l.sub)+'</div>':'')+
+                    (tall?'<div class="A-mini">'+r.rows.map(function(x,j){return '<div class="A-mini-row"><span>'+(j+1)+'. '+esc(x.name)+'</span><span>'+esc(x.val)+'</span></div>';}).join('')+'</div>':'')+
+                '</div>';
+            });
+            return html+'</div>';
+        }
+
+        // ---- Concept B: hero + uniform grid ----
+        function conceptB(){
+            var f=recs[0], L=lead(f);
+            var html='<div class="B-hero">'+
+                '<div class="lp-label">'+esc(f.label)+'</div>'+
+                '<div class="lp-val">'+esc(L.val)+'</div>'+
+                '<div class="lp-holder">'+esc(L.name)+'</div>'+
+                (L.sub?'<div class="lp-sub">'+esc(L.sub)+'</div>':'')+
+            '</div><div class="B-grid">';
+            recs.slice(1).forEach(function(r){
+                var l=lead(r);
+                html+='<div class="B-tile">'+
+                    '<div class="lp-label">'+esc(r.label)+'</div>'+
+                    '<div class="lp-val">'+esc(l.val)+'</div>'+
+                    '<div class="lp-holder">'+esc(l.name)+'</div>'+
+                    (l.sub?'<div class="lp-sub">'+esc(l.sub)+'</div>':'')+
+                '</div>';
+            });
+            return html+'</div>';
+        }
+
+        // ---- Concept C: per-tab custom (podium for #1 record + stat rows) ----
+        function conceptC(){
+            var f=recs[0];
+            var r=f.rows;
+            var g=r[0]||{name:'—',val:''}, s=r[1]||{name:'—',val:''}, b=r[2]||{name:'—',val:''};
+            var html='<div class="C-podium-cap">'+esc(f.label)+'</div>'+
+            '<div class="C-podium">'+
+                '<div class="C-step C-2"><div class="C-medal">2ND</div><div class="lp-holder">'+esc(s.name)+'</div><div class="lp-val">'+esc(s.val)+'</div></div>'+
+                '<div class="C-step C-1"><div class="C-medal">1ST</div><div class="lp-holder">'+esc(g.name)+'</div><div class="lp-val">'+esc(g.val)+'</div></div>'+
+                '<div class="C-step C-3"><div class="C-medal">3RD</div><div class="lp-holder">'+esc(b.name)+'</div><div class="lp-val">'+esc(b.val)+'</div></div>'+
+            '</div><div class="C-strip">';
+            recs.slice(1).forEach(function(rr){
+                var l=lead(rr);
+                html+='<div class="C-row">'+
+                    '<div><div class="lp-label">'+esc(rr.label)+'</div><div class="lp-holder">'+esc(l.name)+'</div></div>'+
+                    '<div class="lp-val">'+esc(l.val)+'</div>'+
+                '</div>';
+            });
+            return html+'</div>';
+        }
+
+        function band(n,name,desc){return '<div class="lp-band"><b>Concept '+n+' · '+name+'</b><span>'+desc+'</span></div>';}
+        document.getElementById('stage').innerHTML=
+            band('1','Mosaic','Big feature + varied tile sizes (one tall with a mini list)')+conceptA()+
+            band('2','Hero + uniform grid','One hero, even 2-up tiles below')+conceptB()+
+            band('3','Per-tab custom','Medal podium for the headline record + stat rows')+conceptC();
+    });
+})();
+</script>
+</body>
+</html>

@@ -103,6 +103,12 @@
     color: var(--cream-mute);
     margin-left: 5px; vertical-align: .34em;
 }
+.rb-name-g {
+    font-style: normal;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--cream-mute); margin-left: 1px;
+}
 .rb-top-holder { min-width: 0; }
 .rb-top-holder b {
     display: block;
@@ -343,13 +349,13 @@
             return { below: paPpg != null ? num(paPpg) + ' ppg' : '' };
         }
         if (key === 'highest_total_season_pf') {
+            // Full-season PPG sits under the total like the other point titles.
+            // Games-played moves up next to the name (see seasonNameExtra).
             var g = e.total_games != null
                 ? e.total_games
                 : (e.reg_record ? recGames(e.reg_record) : 0) + (e.playoff_games || 0);
-            // Full-season PPG (over all counted games) sits under the total,
-            // mirroring the other point titles; games-played rides inline.
             var tppg = e.avg_ppg != null ? e.avg_ppg : (g > 0 && e.total_pf != null ? e.total_pf / g : null);
-            return { inline: g ? g + 'g' : '', below: tppg != null ? num(tppg) + ' ppg' : '' };
+            return { below: tppg != null ? num(tppg) + ' ppg' : '' };
         }
         return {};
     }
@@ -488,6 +494,12 @@
     // ── Seasons → leaderboard bars ───────────────────────────────
     // Bar width is proportional to a numeric basis per record (PF, PPG,
     // PA, or win% for the record-title lists), anchored to the list max.
+    // Games-played tag that rides next to the holder name on the full-season
+    // points title (same size/color as the old inline tag, just relocated).
+    function seasonNameExtra(key, e) {
+        if (key !== 'highest_total_season_pf' || e.total_games == null) return '';
+        return ' <i class="rb-name-g">' + e.total_games + 'g</i>';
+    }
     function seasonBasis(key, e) {
         if (key === 'highest_total_season_pf') return e.total_pf || 0;
         if (key === 'highest_ppg' || key === 'lowest_ppg') return e.reg_ppg || 0;
@@ -507,7 +519,7 @@
         var hero =
             '<div class="rb-hero">' +
                 '<div class="rb-hero-top">' +
-                    '<span class="rb-hero-who"><b>' + holderHtmlFor(key, lead) + '</b>' +
+                    '<span class="rb-hero-who"><b>' + holderHtmlFor(key, lead) + seasonNameExtra(key, lead) + '</b>' +
                         '<small>' + esc(ctx(lead) || '') + '</small></span>' +
                     valHtml('rb-hero-val', val(lead), key, lead) +
                 '</div>' +
@@ -521,7 +533,7 @@
             return '<div class="rb-bar-row' + (rank > 3 ? ' rb-extra' : '') + '">' +
                 '<span class="rb-bar-rank">' + rank + '</span>' +
                 '<span class="rb-bar-main">' +
-                    '<span class="rb-bar-name">' + holderHtmlFor(key, e) + '</span>' +
+                    '<span class="rb-bar-name">' + holderHtmlFor(key, e) + seasonNameExtra(key, e) + '</span>' +
                     '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>' +
                     '<span class="rb-bar-sub">' + esc(ctx(e) || '') + '</span>' +
                 '</span>' +
