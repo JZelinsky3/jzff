@@ -2397,6 +2397,9 @@ function buildRecordBook(s: Snapshot): unknown {
     total_pf: number
     avg_ppg: number
     reg_ppg: number
+    reg_games: number
+    total_games: number
+    reg_pa_ppg: number
     high_week_score: number
     high_week_when: string
     low_week_score: number
@@ -2454,6 +2457,13 @@ function buildRecordBook(s: Snapshot): unknown {
         total_pf: round2(total_pf),
         avg_ppg: counted > 0 ? round2(total_pf / counted) : 0,
         reg_ppg: totalReg > 0 ? round2(Number(ms.points_for) / totalReg) : 0,
+        // Game counts + PA-per-game so the record book can show a rate
+        // beside/below each season total (reg games for the PF/PA titles,
+        // total games — reg + championship-bracket playoff — for the
+        // full-season point title).
+        reg_games: totalReg,
+        total_games: counted,
+        reg_pa_ppg: totalReg > 0 ? round2(Number(ms.points_against) / totalReg) : 0,
         high_week_score: round2(high),
         high_week_when: `W${highWeek} vs ${highOpp}`,
         low_week_score: round2(low),
@@ -2620,14 +2630,19 @@ function buildRecordBook(s: Snapshot): unknown {
       longest_loss_streak_when: myLoss ? `W${myLoss.start_week} ${myLoss.start_season} → W${myLoss.end_week} ${myLoss.end_season}` : '',
     }
   })
-  const most_top_3_finishes = [...careerRows].sort((a, b) => b.top_3_finishes - a.top_3_finishes).slice(0, N)
-  // best_avg_finish: include every profile group (current + alumni) so the
-  // ledger reads as a true career ranking. The page renders the full list;
-  // partial-season alumni stay in because comparing 1-season cameos against
-  // 8-season veterans is still useful context.
-  const best_avg_finish = [...careerRows].filter((r) => r.avg_final_rank > 0).sort((a, b) => a.avg_final_rank - b.avg_final_rank)
-  const most_playoff_appearances = [...careerRows].sort((a, b) => b.playoff_appearances - a.playoff_appearances).slice(0, N)
-  const most_championship_appearances = [...careerRows].sort((a, b) => b.championship_appearances - a.championship_appearances).slice(0, N)
+  // Alumni only earn a slot in these career-count ledgers if they actually
+  // posted the stat. A former manager sitting at 0 podiums / 0 playoff trips
+  // / 0 title games is noise — an active manager (even at 0) takes the seat
+  // instead. Current members always stay; alumni need a non-zero count.
+  const keepIfCounts = <T extends { is_current_member: boolean }>(rows: T[], val: (r: T) => number): T[] =>
+    rows.filter((r) => r.is_current_member || val(r) > 0)
+  const most_top_3_finishes = keepIfCounts([...careerRows], (r) => r.top_3_finishes).sort((a, b) => b.top_3_finishes - a.top_3_finishes).slice(0, N)
+  // best_avg_finish: active members only. The league wants to see where its
+  // CURRENT managers stand against each other, not have one-season alumni
+  // cameos crowd the ladder.
+  const best_avg_finish = [...careerRows].filter((r) => r.avg_final_rank > 0 && r.is_current_member).sort((a, b) => a.avg_final_rank - b.avg_final_rank)
+  const most_playoff_appearances = keepIfCounts([...careerRows], (r) => r.playoff_appearances).sort((a, b) => b.playoff_appearances - a.playoff_appearances).slice(0, N)
+  const most_championship_appearances = keepIfCounts([...careerRows], (r) => r.championship_appearances).sort((a, b) => b.championship_appearances - a.championship_appearances).slice(0, N)
 
   const hub_records = buildHubRecords({
     highest_single_week_score, biggest_blowouts, longest_win_streaks, longest_loss_streaks,

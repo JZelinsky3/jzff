@@ -51,6 +51,24 @@
     color: var(--rec);
     white-space: nowrap;
 }
+/* When a value carries a stacked rate (PPG), let it become a little column
+   so the small line sits directly under the number. */
+.rb-top-value.has-sub { display: inline-flex; flex-direction: column; align-items: flex-start; }
+.rb-top-value small {
+    font-family: var(--mono); font-weight: 600;
+    font-size: .5rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-top: 3px;
+}
+/* Inline tag riding next to a number (games-played on the full-season
+   total). Raised to sit against the big serif figure's baseline. */
+.rb-val-g {
+    font-style: normal;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-left: 5px; vertical-align: .34em;
+}
 .rb-top-holder { min-width: 0; }
 .rb-top-holder b {
     display: block;
@@ -93,6 +111,14 @@
     color: var(--cream-mute);
 }
 .rb-other-val { flex: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--rec); }
+.rb-other-val.has-sub { display: inline-flex; flex-direction: column; align-items: flex-end; line-height: 1.05; }
+.rb-other-val small {
+    font-family: var(--mono); font-weight: 600;
+    font-size: .46rem; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-top: 2px;
+}
+.rb-other-val .rb-val-g { font-size: .44rem; vertical-align: .1em; margin-left: 4px; }
 /* Combined-score records list both managers; the "vs Opponent" tail reads
    as context, not a co-holder — smaller and dimmer than the lead name. */
 .rb-vs { font-size: .72em; color: var(--cream-mute); }
@@ -161,13 +187,14 @@
             ['lowest_combined_score', 'Lowest Combined', function (e) { return num(e.score + e.opp_score); }, gameCtx],
         ],
         season: [
-            // Regular-season totals show season + team + record + PPG so the
-            // headline number has its rate context inline.
-            ['highest_season_pf', 'Most Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtxWithReg],
+            // Headline number on the right carries its rate beneath it:
+            // reg PPG for the season title, games-played for the full-season
+            // title (see valExtra). Context line stays season + team + record.
+            ['highest_season_pf', 'Most Points, Season', function (e) { return num(e.reg_pf, 0); }, seasonCtx],
             // Full-season variant folds in championship-bracket playoff
             // points so deep title runs sit alongside the regular-season
-            // ledger. PPG here covers every counted game.
-            ['highest_total_season_pf', 'Most Points, Full Season', function (e) { return num(e.total_pf, 0); }, seasonCtxWithTotal],
+            // ledger; games-played rides next to the total.
+            ['highest_total_season_pf', 'Most Points, Full Season', function (e) { return num(e.total_pf, 0); }, seasonCtx],
             ['highest_ppg', 'Best PPG, Season', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.avg_ppg); }, seasonCtx],
             ['best_reg_season_records', 'Best Record', function (e) { return rec(e.reg_record); }, seasonCtx],
             ['worst_reg_season_records', 'Worst Record', function (e) { return rec(e.reg_record); }, seasonCtx],
@@ -182,9 +209,8 @@
             ['most_top_3_finishes', 'Most Podiums', function (e) { return countOf(e, 'top_3_finishes') + '×'; }, careerCtx],
             ['most_playoff_appearances', 'Most Playoff Trips', function (e) { return countOf(e, 'playoff_appearances') + '×'; }, careerCtx],
             ['most_championship_appearances', 'Most Title Games', function (e) { return countOf(e, 'championship_appearances') + '×'; }, careerCtx],
-            // Best avg finish ranks every profile group, current + alumni,
-            // so the page shows the full league ladder instead of trimming
-            // to active members only.
+            // Best avg finish is active-members-only (the builder filters
+            // alumni out) so it reads as "where the current league stands".
             ['best_avg_finish', 'Best Avg Finish', function (e) { return num(e.avg_final_rank); }, careerCtx],
         ],
         feats: [
@@ -203,21 +229,31 @@
     // "59-42-0" → "59-42" when there are no ties to show.
     function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
     function seasonCtx(e) { return e.season + ' · ' + (e.team_name || '') + (e.reg_record ? ' · ' + rec(e.reg_record) : ''); }
-    // Show PPG inline next to the season total so the headline number has
-    // its rate context without forcing readers to cross-reference the PPG
-    // card below. reg variant uses regular-season points only; total uses
-    // every counted game (regular plus championship-bracket playoff).
-    function seasonCtxWithReg(e) {
-        var base = seasonCtx(e);
-        return e.reg_ppg != null ? base + ' · ' + num(e.reg_ppg) + ' ppg' : base;
+    // Secondary stat shown ON the value (right side), mirroring how each
+    // name carries a small year/season tag beneath it. `below` stacks under
+    // the number (PPG); `inline` sits next to it (games-played). Applies to
+    // every ranked row, not just the leader.
+    function valExtra(key, e) {
+        if (section !== 'season') return {};
+        if (key === 'highest_season_pf')   return { below: e.reg_ppg    != null ? num(e.reg_ppg)    + ' ppg' : '' };
+        if (key === 'most_points_against') return { below: e.reg_pa_ppg != null ? num(e.reg_pa_ppg) + ' ppg' : '' };
+        if (key === 'highest_total_season_pf') {
+            var g = e.total_games != null
+                ? e.total_games
+                : (e.reg_record ? recGames(e.reg_record) : 0) + (e.playoff_games || 0);
+            return { inline: g ? g + 'g' : '' };
+        }
+        return {};
     }
-    function seasonCtxWithTotal(e) {
-        var games = (e.reg_record ? recGames(e.reg_record) : 0) + (e.playoff_games || 0);
-        var ppg = games > 0 ? e.total_pf / games : null;
-        var base = seasonCtx(e);
-        var tail = ppg != null ? ' · ' + num(ppg) + ' ppg' : '';
-        if (e.playoff_games) tail += ' · ' + games + 'g';
-        return base + tail;
+    // Builds the inner HTML of a value cell: the main number, an optional
+    // inline tag (games), and an optional stacked sub-line (ppg).
+    function valHtml(cls, mainText, key, e) {
+        var ex = valExtra(key, e);
+        return '<span class="' + cls + (ex.below ? ' has-sub' : '') + '">' +
+            esc(mainText) +
+            (ex.inline ? '<i class="rb-val-g">' + esc(ex.inline) + '</i>' : '') +
+            (ex.below ? '<small>' + esc(ex.below) + '</small>' : '') +
+            '</span>';
     }
     function recGames(r) {
         var p = String(r).split('-').map(Number);
@@ -316,7 +352,7 @@
             return '<div class="m-card rb-card' + (hasMore ? ' rb-can-expand' : '') + '">' +
                 '<div class="rb-card-label">' + esc(label) + '</div>' +
                 '<div class="rb-top">' +
-                    '<span class="rb-top-value">' + esc(val(top)) + '</span>' +
+                    valHtml('rb-top-value', val(top), key, top) +
                     '<span class="rb-top-holder"><b>' + holderHtmlFor(key, top) + '</b>' +
                         '<small>' + esc(ctx(top) || '') + '</small></span>' +
                 '</div>' +
@@ -327,7 +363,7 @@
                             '<span class="rb-other-rank">' + (i + 2) + '</span>' +
                             '<span class="rb-other-name">' + holderHtmlFor(key, e) +
                                 (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
-                            '<span class="rb-other-val">' + esc(val(e)) + '</span>' +
+                            valHtml('rb-other-val', val(e), key, e) +
                         '</div>';
                     }).join('') + '</div>'
                     : '') +
