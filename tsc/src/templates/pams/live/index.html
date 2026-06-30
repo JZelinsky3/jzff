@@ -30,6 +30,17 @@
     --ls-violet:     #b58cff;
     --ls-steel:      #7fa8bd;
     --ls-cardroom:   #c8a464;
+
+    /* Live-hub accent rotation — one cohesive, moss-friendly family so
+       cards can vary without dragging each destination page's own brand
+       color (magenta, violet, steel-blue…) onto this canvas. Cards pick
+       from these so no two neighbors read the same. */
+    --ac-gold:   #d8b25a;
+    --ac-sage:   #8fbf93;
+    --ac-bronze: #c8a464;
+    --ac-rust:   #cf9163;
+    --ac-teal:   #6fa6a0;
+    --ac-amber:  #e0a544;
 }
 
 /* Nav + chapbar — same wood family as the launcher so the masthead
@@ -198,9 +209,9 @@ body { background: var(--ls-bg); }
     background: var(--snap-accent, var(--ls-pro));
     border-radius: 3px 3px 0 0;
 }
-.snap-card[data-snap="standings"]  { --snap-accent: var(--ls-pro); }
-.snap-card[data-snap="form"]       { --snap-accent: var(--ls-amber); }
-.snap-card[data-snap="powerrank"]  { --snap-accent: var(--ls-cardroom); }
+.snap-card[data-snap="standings"]  { --snap-accent: var(--ac-gold); }
+.snap-card[data-snap="form"]       { --snap-accent: var(--ac-sage); }
+.snap-card[data-snap="powerrank"]  { --snap-accent: var(--ac-teal); }
 
 .snap-head {
     display: flex; align-items: baseline; justify-content: space-between;
@@ -254,19 +265,16 @@ body { background: var(--ls-bg); }
    overrides the per-card accent for top 3 so the podium is the
    visual hierarchy, not the card-specific brand. */
 :root {
-    --podium-gold:   #f0d27a;
-    --podium-silver: #c8d0d6;
-    --podium-bronze: #d49764;
+    --podium-gold:   #e6c879;
+    --podium-silver: #c2cace;
+    --podium-bronze: #cf9a64;
 }
-/* Metallic nameplates — each plate is a ::before pseudo-element that
-   extends BEYOND the row's normal width on both sides (gold furthest,
-   silver less, bronze a hair). The row's own content sits on top with
-   z-index so the engraved text reads on the metal. Vertical margins
-   give the medals breathing room between each other and from the
-   non-podium rows below.
-   Gradient direction is 180deg (top→bottom) for the brushed-metal
-   look: a bright crown highlight near the top, mid-tone body, dark
-   foot — same idiom as polished award plates. */
+/* Inlaid medals — rather than a loud brushed-metal plate that fights the
+   moss-green table, the top 3 rows get a soft tinted wash plus a thin
+   left medal rule. The tint fades out to the right so the row still reads
+   as table data, just gently lit. Stair-stepped heights preserve the
+   #1 > #2 > #3 podium hierarchy; everything bottom-aligns with the
+   non-podium rows below. */
 .snap-row, .snap-form-row { position: relative; }
 .snap-row > *, .snap-form-row > * { position: relative; z-index: 1; }
 
@@ -278,126 +286,75 @@ body { background: var(--ls-bg); }
 }
 
 .snap-row.podium-1, .snap-form-row.podium-1 {
-    height: 40px;
-    margin: 4px 0 3px;
-    font-size: .92rem;
+    height: 38px;
+    margin: 3px 0 2px;
+    font-size: .9rem;
 }
 .snap-row.podium-2, .snap-form-row.podium-2 {
-    height: 35px;
-    margin: 3px 0;
+    height: 34px;
+    margin: 2px 0;
     font-size: .82rem;
 }
 .snap-row.podium-3, .snap-form-row.podium-3 {
-    height: 32px;
-    margin: 3px 0 5px;
-    font-size: .78rem;
+    height: 31px;
+    margin: 2px 0 4px;
+    font-size: .79rem;
 }
 
-/* Plate ::before — absolute, extends past the row's natural box on
-   both sides. Gold pushes out the furthest, silver less, bronze just
-   a touch. Subtle bevel via inset shadows; soft outer glow ties the
-   plate into the moss-green card background. */
+/* Wash ::before — a translucent left-to-right fade in the medal color
+   with a 3px medal rule pinned to the left edge and a faint full
+   outline. Low alpha so it layers onto moss green instead of sitting on
+   top of it like a sticker. Extends just a touch past the row so the
+   rule clears the card's inner padding. */
 .snap-row.podium-1::before, .snap-form-row.podium-1::before,
 .snap-row.podium-2::before, .snap-form-row.podium-2::before,
 .snap-row.podium-3::before, .snap-form-row.podium-3::before {
     content: '';
     position: absolute;
-    top: 0; bottom: 0;
+    top: 0; bottom: 0; left: -6px; right: -6px;
     z-index: 0;
-    border-radius: 3px;
-}
-
-.snap-row.podium-1::before, .snap-form-row.podium-1::before {
-    left: -14px; right: -14px;
-    background:
-        linear-gradient(180deg,
-            #ecc566 0%,
-            #f7dc8a 22%,
-            #fff6cc 50%,
-            #f0cd6e 78%,
-            #d0a247 100%);
+    border-radius: 4px;
+    background: var(--medal-wash);
     box-shadow:
-        0 1px 0 rgba(255,250,210,.6) inset,
-        0 -1px 0 rgba(80,55,10,.22) inset,
-        0 0 0 1px rgba(180,135,38,.5),
-        0 3px 12px rgba(232,185,65,.18);
+        inset 3px 0 0 var(--medal),
+        inset 0 0 0 1px var(--medal-edge);
+}
+.snap-row.podium-1::before, .snap-form-row.podium-1::before {
+    --medal: var(--podium-gold);
+    --medal-wash: linear-gradient(90deg, rgba(230,200,121,.22), rgba(230,200,121,.06) 65%, transparent);
+    --medal-edge: rgba(230,200,121,.20);
 }
 .snap-row.podium-2::before, .snap-form-row.podium-2::before {
-    left: -9px; right: -9px;
-    background:
-        linear-gradient(180deg,
-            #bcc4cb 0%,
-            #d6dde2 22%,
-            #f2f5f7 50%,
-            #d2d9de 78%,
-            #a3abb2 100%);
-    box-shadow:
-        0 1px 0 rgba(248,250,252,.6) inset,
-        0 -1px 0 rgba(40,48,55,.18) inset,
-        0 0 0 1px rgba(130,138,146,.5),
-        0 2px 9px rgba(192,200,207,.12);
+    --medal: var(--podium-silver);
+    --medal-wash: linear-gradient(90deg, rgba(194,202,206,.16), rgba(194,202,206,.05) 65%, transparent);
+    --medal-edge: rgba(194,202,206,.16);
 }
-/* Bronze — pulled off the gold/yellow axis toward muted antique
-   bronze. More brown-body, less amber-shine, so it's clearly the
-   third place medal rather than a duller copy of the gold plate. */
+/* Bronze — pulled toward antique copper so it reads clearly third, not
+   a duller gold. */
 .snap-row.podium-3::before, .snap-form-row.podium-3::before {
-    left: -4px; right: -4px;
-    background:
-        linear-gradient(180deg,
-            #b58656 0%,
-            #c89465 22%,
-            #d6a578 50%,
-            #b5824a 78%,
-            #845722 100%);
-    box-shadow:
-        0 1px 0 rgba(232,200,170,.5) inset,
-        0 -1px 0 rgba(50,32,10,.16) inset,
-        0 0 0 1px rgba(120,88,42,.5),
-        0 2px 9px rgba(170,124,72,.14);
+    --medal: var(--podium-bronze);
+    --medal-wash: linear-gradient(90deg, rgba(207,154,100,.18), rgba(207,154,100,.05) 65%, transparent);
+    --medal-edge: rgba(207,154,100,.18);
 }
 
-/* Engraved-text colors — dark, high-weight, sit on the metallic plate. */
-.snap-row.podium-1 .snap-pos, .snap-row.podium-1 .snap-name,
-.snap-row.podium-1 .snap-val,
-.snap-form-row.podium-1 .snap-pos, .snap-form-row.podium-1 .snap-name,
-.snap-form-row.podium-1 .snap-ppg {
-    color: #2a1f08;
-    font-weight: 700;
-    text-shadow: 0 1px 0 rgba(255,240,200,.35);
-}
-.snap-row.podium-2 .snap-pos, .snap-row.podium-2 .snap-name,
-.snap-row.podium-2 .snap-val,
-.snap-form-row.podium-2 .snap-pos, .snap-form-row.podium-2 .snap-name,
-.snap-form-row.podium-2 .snap-ppg {
-    color: #1c2128;
-    font-weight: 700;
-    text-shadow: 0 1px 0 rgba(245,250,255,.4);
-}
-.snap-row.podium-3 .snap-pos, .snap-row.podium-3 .snap-name,
-.snap-row.podium-3 .snap-val,
-.snap-form-row.podium-3 .snap-pos, .snap-form-row.podium-3 .snap-name,
-.snap-form-row.podium-3 .snap-ppg {
-    color: #2e1408;
-    font-weight: 700;
-    text-shadow: 0 1px 0 rgba(245,210,180,.32);
+/* The position number wears the medal color; the name + value stay light
+   so the row keeps reading as a table line, not a trophy. */
+.snap-row.podium-1 .snap-pos, .snap-form-row.podium-1 .snap-pos { color: var(--podium-gold); font-weight: 700; }
+.snap-row.podium-2 .snap-pos, .snap-form-row.podium-2 .snap-pos { color: var(--podium-silver); font-weight: 700; }
+.snap-row.podium-3 .snap-pos, .snap-form-row.podium-3 .snap-pos { color: var(--podium-bronze); font-weight: 700; }
+
+.snap-row.podium-1 .snap-name, .snap-row.podium-2 .snap-name, .snap-row.podium-3 .snap-name,
+.snap-form-row.podium-1 .snap-name, .snap-form-row.podium-2 .snap-name, .snap-form-row.podium-3 .snap-name {
+    color: var(--cream);
+    font-weight: 600;
 }
 
-/* Delta arrows stay visible against the metallic backgrounds. Bumped
-   up in size on podium rows so the ↑/↓ reads at a glance — the
-   medal text is bigger, so the arrows should track. */
-.snap-row.podium-1 .snap-delta { font-size: .92em; margin-left: .55rem; font-weight: 700; }
-.snap-row.podium-2 .snap-delta { font-size: .85em; margin-left: .5rem;  font-weight: 700; }
-.snap-row.podium-3 .snap-delta { font-size: .82em; margin-left: .45rem; font-weight: 700; }
-
-.snap-row.podium-1 .snap-delta.up   { color: #244d22; }
-.snap-row.podium-1 .snap-delta.down { color: #5e120c; }
-.snap-row.podium-1 .snap-delta.same { color: rgba(42,31,8,.5); }
-.snap-row.podium-2 .snap-delta.up   { color: #234d23; }
-.snap-row.podium-2 .snap-delta.down { color: #5e120c; }
-.snap-row.podium-2 .snap-delta.same { color: rgba(28,33,40,.55); }
-.snap-row.podium-3 .snap-delta.up   { color: #234d23; }
-.snap-row.podium-3 .snap-delta.down { color: #5e120c; }
-.snap-row.podium-3 .snap-delta.same { color: rgba(46,20,8,.5); }
+/* Delta arrows keep the normal light up/down treatment (the wash is dark
+   now, so the old dark-on-metal colors are gone). Slight size bump on the
+   leader so its ↑/↓ tracks with the bigger row text. */
+.snap-row.podium-1 .snap-delta { font-size: .9em; margin-left: .5rem; font-weight: 700; }
+.snap-row.podium-2 .snap-delta { font-size: .82em; margin-left: .45rem; font-weight: 700; }
+.snap-row.podium-3 .snap-delta { font-size: .8em;  margin-left: .42rem; font-weight: 700; }
 .snap-pos { color: var(--ls-mute); font-variant-numeric: tabular-nums; }
 .snap-name { color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .snap-val  { color: var(--snap-accent); font-variant-numeric: tabular-nums; font-weight: 700; }
@@ -692,9 +649,9 @@ body { background: var(--ls-bg); }
     background: var(--quick-accent);
     border-radius: 3px 3px 0 0;
 }
-.weekly-quick[data-quick="matchups"] { --quick-accent: #c89d5c; }
-.weekly-quick[data-quick="pickems"]  { --quick-accent: #ff3d8b; }
-.weekly-quick[data-quick="rumor"]    { --quick-accent: #c8a464; }
+.weekly-quick[data-quick="matchups"] { --quick-accent: var(--ac-rust); }
+.weekly-quick[data-quick="pickems"]  { --quick-accent: var(--ac-teal); }
+.weekly-quick[data-quick="rumor"]    { --quick-accent: var(--ac-gold); }
 
 .weekly-quick:hover {
     background: var(--ls-card-hover);
@@ -815,8 +772,8 @@ body { background: var(--ls-bg); }
     background: var(--watch-accent);
     border-radius: 3px 3px 0 0;
 }
-.watch-pane[data-watch="records"]    { --watch-accent: var(--ls-steel); --ls-card: #1d141a; border-color: #3a2128; background: #1d141a; }
-.watch-pane[data-watch="milestones"] { --watch-accent: var(--ls-violet); --ls-card: #1c1428; border-color: #2e2240; background: #1c1428; }
+.watch-pane[data-watch="records"]    { --watch-accent: var(--ac-gold); --ls-card: #1e2119; border-color: #343a26; background: #1e2119; }
+.watch-pane[data-watch="milestones"] { --watch-accent: var(--ac-teal); --ls-card: #15211d; border-color: #27392f; background: #15211d; }
 
 .watch-head {
     display: flex; justify-content: space-between; align-items: baseline;
@@ -1130,16 +1087,16 @@ body { background: var(--ls-bg); }
     transform: translateY(-1px);
 }
 .trades-cta[data-cta="analyzer"] {
-    --cta-accent:    #7fa8bd;       /* steel blue — analytical */
-    --cta-bg:        #131c22;
-    --cta-bg-hover:  #1a2630;
-    --cta-border:    #243341;
+    --cta-accent:    var(--ac-sage);   /* sage — analytical */
+    --cta-bg:        #16201a;
+    --cta-bg-hover:  #1c2a22;
+    --cta-border:    #2a3a2f;
 }
 .trades-cta[data-cta="finder"] {
-    --cta-accent:    #b58cff;       /* violet — discovery */
-    --cta-bg:        #1a142a;
-    --cta-bg-hover:  #221b37;
-    --cta-border:    #2e2240;
+    --cta-accent:    var(--ac-gold);   /* gold — discovery */
+    --cta-bg:        #211c12;
+    --cta-bg-hover:  #2a2418;
+    --cta-border:    #3d3320;
 }
 .trades-cta-label {
     font-family: var(--mono);
