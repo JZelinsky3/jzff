@@ -121,7 +121,10 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
     color: var(--ls-pro);
     border: 1px solid rgba(232, 200, 137, .45);
     border-radius: 3px;
-    padding: 3px 4px;
+    /* Top-heavy padding optically centers the all-caps text — caps leave
+       more empty space below the baseline than above, so symmetric padding
+       reads as "text sitting high". */
+    padding: 4px 4px 2px;
 }
 .lv-chev { flex: none; display: flex; color: var(--lv-accent, var(--gold)); opacity: .55; }
 .lv-row.is-soon { opacity: .42; filter: saturate(.5); }
