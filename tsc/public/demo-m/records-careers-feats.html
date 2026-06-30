@@ -31,7 +31,7 @@ body{ background:var(--ink); }
 .val{ font-family:var(--serif); color:var(--rec); line-height:.9; }
 .expand-hint{ margin-top:.55rem; text-align:center; font-family:var(--mono); font-weight:700; font-size:.52rem; letter-spacing:.18em; text-transform:uppercase; color:var(--rec-deep); cursor:pointer; }
 
-/* small ranked rows (top 2-3 + the hidden 4-10) */
+/* ranked rows + the expanding 4-10 block (CSS grid height transition) */
 .row{ display:flex; align-items:center; gap:.55rem; padding:.2rem 0; }
 .row .rk{ flex:none; width:1.1rem; font-family:var(--mono); font-size:.56rem; color:var(--cream-mute); }
 .row .nm{ flex:1; min-width:0; font-size:.8rem; color:var(--cream-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -43,41 +43,39 @@ body{ background:var(--ink); }
 .hint-shut{ display:none; }
 .is-open .hint-shut{ display:inline; }
 
-/* ============ FEATS — MOSAIC ============ */
+/* ============ FEATS — MOSAIC (varied tiles) ============ */
 .mz-feature{ border:1px solid var(--rec-deep); border-radius:14px; padding:.9rem; margin-bottom:.6rem;
     background:linear-gradient(160deg, rgba(143,184,154,.12), transparent 60%), var(--ink-card); }
 .mz-feature .val{ font-size:3rem; }
 .mz-feature .who{ font-size:1.35rem; }
-.mz-grid{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; grid-auto-flow:dense; align-items:start; }
+.mz-grid{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; align-items:start; }
 .mz-tile{ border:1px solid var(--ink-line); border-radius:14px; padding:.7rem .75rem; background:var(--ink-card); }
 .mz-tile.is-open{ grid-column:1 / -1; border-color:var(--rec-deep); }
-.mz-tile .val{ font-size:1.7rem; margin:.3rem 0 .1rem; }
-.mz-tile .who{ font-size:.92rem; }
-.mz-lead{ display:flex; align-items:flex-end; justify-content:space-between; gap:.5rem; }
+.mz-tile .val{ font-size:1.7rem; }
+.mz-lead{ display:flex; align-items:flex-end; justify-content:space-between; gap:.5rem; margin-top:.35rem; }
 .mz-lead .who{ font-size:1rem; }
+/* short tiles (leader-only) get a touch more vertical centering so the
+   shorter card doesn't read as broken next to its taller row-mate */
+.mz-tile.short{ display:flex; flex-direction:column; justify-content:center; }
+.mz-tile.short .sub{ margin-top:.3rem; }
 .mz-rows{ margin-top:.5rem; padding-top:.45rem; border-top:1px solid var(--ink-line-soft); }
 
-/* ============ CAREERS — PODIUM ============ */
+/* ============ CAREERS — PODIUM PER STAT ============ */
+.pd-card{ border:1px solid var(--ink-line); border-radius:16px; padding:.85rem .9rem .9rem; margin-bottom:.7rem; background:var(--ink-card); }
+.pd-card:first-of-type{ border-color:var(--rec-deep); background:linear-gradient(180deg, rgba(143,184,154,.09), transparent 55%), var(--ink-card); }
 .pd-cap{ text-align:center; }
 .pd-cap .lbl{ font-size:.56rem; }
-.pd-card{ border:1px solid var(--rec-deep); border-radius:16px; padding:1rem .9rem .9rem; margin-bottom:.7rem;
-    background:linear-gradient(180deg, rgba(143,184,154,.09), transparent 55%), var(--ink-card); }
 .podium{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; align-items:end; margin-top:.7rem; }
 .step{ border:1px solid var(--ink-line); border-radius:12px 12px 0 0; padding:.65rem .35rem .7rem; text-align:center; background:linear-gradient(180deg, var(--ink-card), var(--ink-soft)); }
 .step .medal{ font-family:var(--mono); font-weight:700; font-size:.52rem; letter-spacing:.12em; }
-.step .who{ font-size:.92rem; margin-top:.2rem; }
-.step .vl{ font-family:var(--mono); font-weight:700; font-size:1.1rem; color:var(--rec); margin-top:.15rem; }
+.step .who{ font-size:.9rem; margin-top:.2rem; }
+.step .vl{ font-family:var(--mono); font-weight:700; font-size:1.05rem; color:var(--rec); margin-top:.15rem; }
 .s1{ border-color:#d9b441; border-top:3px solid #d9b441; padding-bottom:1.5rem; }
-.s1 .medal{ color:#d9b441; } .s1 .who{ font-size:1.05rem; color:var(--cream); }
+.s1 .medal{ color:#d9b441; } .s1 .who{ font-size:1rem; color:var(--cream); }
 .s2{ border-color:#9fb2c2; border-top:3px solid #9fb2c2; padding-bottom:1rem; } .s2 .medal{ color:#9fb2c2; }
 .s3{ border-color:#c08a5a; border-top:3px solid #c08a5a; padding-bottom:.6rem; } .s3 .medal{ color:#c08a5a; }
-
-/* standard career cards beneath the podium */
-.cc{ border:1px solid var(--ink-line); border-radius:14px; padding:.75rem .85rem; background:var(--ink-card); margin-bottom:.55rem; }
-.cc-top{ display:flex; align-items:baseline; justify-content:space-between; gap:.6rem; margin-top:.3rem; }
-.cc-top .val{ font-size:1.7rem; }
-.cc-top .who{ font-size:1rem; text-align:right; }
-.cc-rows{ margin-top:.5rem; padding-top:.45rem; border-top:1px solid var(--ink-line-soft); }
+/* extra air between the podium base and the 4th-place list when expanded */
+.pd-card .more > div{ padding-top:1rem; margin-top:.6rem; border-top:1px solid var(--ink-line-soft); }
 </style>
 </head>
 <body>
@@ -86,7 +84,7 @@ body{ background:var(--ink); }
     <header class="lp-head">
         <div class="m-kicker">Layout Sandbox</div>
         <h1 class="lp-title">Mosaic &amp; <em>podium.</em></h1>
-        <div class="lp-note">Tap any card to expand top 3 → full top 10.<br>Tap again to close.</div>
+        <div class="lp-note">Tap any card to expand to the full top 10.<br>Mosaic tiles now vary (some show a list, some just the leader).</div>
     </header>
     <div id="stage"><div class="m-empty">Loading…</div></div>
 </main>
@@ -95,16 +93,17 @@ body{ background:var(--ink); }
 (function(){
     'use strict';
     function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+    function num(n,d){if(n==null||isNaN(n))return '—';return Number(n).toLocaleString('en-US',{maximumFractionDigits:d==null?1:d});}
 
     function mergeClutch(wins, losses){
         var map={};
-        function ensure(r){ if(!map[r.user_id]) map[r.user_id]={user_id:r.user_id,name:r.owner||r.name,wins:0,losses:0}; return map[r.user_id]; }
+        function ensure(r){ if(!map[r.user_id]) map[r.user_id]={user_id:r.user_id,name:r.owner||r.name,wins:0,losses:0,sp:r.seasons_played||999}; return map[r.user_id]; }
         (wins||[]).forEach(function(r){ ensure(r).wins=r.count; });
         (losses||[]).forEach(function(r){ ensure(r).losses=r.count; });
         return Object.keys(map).map(function(k){return map[k];})
             .filter(function(r){return r.wins+r.losses>0;})
-            .sort(function(a,b){return (b.wins-a.wins)||(a.losses-b.losses);})
-            .map(function(r){return {owner:r.name, _val:r.wins+'–'+r.losses};});
+            .sort(function(a,b){return (b.wins-a.wins)||(a.losses-b.losses)||(a.sp-b.sp);})
+            .map(function(r){return {name:r.name, val:r.wins+'–'+r.losses, sub:''};});
     }
 
     fetch('data/record_book.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
@@ -112,15 +111,21 @@ body{ background:var(--ink); }
         var fb=data&&data.full_book; if(!fb){document.getElementById('stage').innerHTML='<div class="m-empty">No data.</div>';return;}
         var bb=fb.boom_bust||{}, cl=fb.clutch||{}, ca=fb.career||{};
 
-        // ---- normalize records into {label, rows:[{name,val,sub}]} ----
-        function feat(arr,label,unit){ return {label:label, rows:(arr||[]).slice(0,10).map(function(e){return {name:e.owner||e.name, val:String(e.count!=null?e.count:e.value), sub:e.last_year?'last '+e.last_year:''};}), unit:unit}; }
+        // Tie rule (demo proxy): tie on the headline number -> fewest seasons
+        // played wins. (In the real builder we'd break first on "who did it
+        // earliest", then seasons, mirrored here by seasons only.)
+        function feat(arr,label){
+            var rows=(arr||[]).map(function(e){return {name:e.owner||e.name, val:String(e.count!=null?e.count:e.value), n:(e.count!=null?e.count:e.value), sp:e.seasons_played||999, sub:e.last_year?'last seen '+e.last_year:''};});
+            rows.sort(function(a,b){return (b.n-a.n)||(a.sp-b.sp);});
+            return {label:label, rows:rows.slice(0,10)};
+        }
         var feats=[
-            feat(bb.boom_150,'150-Point Games','games'),
-            feat(bb.boom_175,'175-Point Games','games'),
-            feat(bb.bust_80,'Sub-80 Stinkers','games'),
-            feat(bb.bust_70,'Sub-70 Disasters','games'),
-            {label:'One-Score Record (<5)', rows:mergeClutch(cl.clutch_5pt,cl.unclutch_5pt).slice(0,10).map(function(r){return {name:r.owner,val:r._val,sub:''};}), unit:''},
-            {label:'Walk-Off Record (<1)', rows:mergeClutch(cl.clutch_1pt,cl.unclutch_1pt).slice(0,10).map(function(r){return {name:r.owner,val:r._val,sub:''};}), unit:''},
+            feat(bb.boom_150,'150-Point Games'),
+            feat(bb.boom_175,'175-Point Games'),
+            feat(bb.bust_80,'Sub-80 Stinkers'),
+            feat(bb.bust_70,'Sub-70 Disasters'),
+            {label:'One-Score Record (<5)', rows:mergeClutch(cl.clutch_5pt,cl.unclutch_5pt).slice(0,10)},
+            {label:'Walk-Off Record (<1)', rows:mergeClutch(cl.clutch_1pt,cl.unclutch_1pt).slice(0,10)},
         ].filter(function(f){return f.rows.length;});
 
         function rowsHtml(rows, from, to){
@@ -134,7 +139,8 @@ body{ background:var(--ink); }
                 '<div class="expand-hint"><span class="hint-open">Show top '+Math.min(rows.length,10)+' ▾</span><span class="hint-shut">Show less ▴</span></div>';
         }
 
-        // ---- FEATS mosaic ----
+        // ---- FEATS mosaic: feature + grid; even tiles = top-3 list (tall),
+        //      odd tiles = leader-only (short). All expand to top 10. ----
         function mosaic(){
             var f=feats[0], L=f.rows[0];
             var html='<div class="mz-feature card-x" data-x>'+
@@ -144,34 +150,38 @@ body{ background:var(--ink); }
                 '<div class="mz-rows">'+rowsHtml(f.rows,1,3)+'</div>'+
                 expandBlock(f.rows)+
             '</div><div class="mz-grid">';
-            feats.slice(1).forEach(function(r){
+            feats.slice(1).forEach(function(r,gi){
                 var l=r.rows[0];
-                html+='<div class="mz-tile card-x" data-x>'+
+                var tall=(gi%2===0);
+                html+='<div class="mz-tile card-x '+(tall?'tall':'short')+'" data-x style="order:'+gi+'">'+
                     '<div class="lbl">'+esc(r.label)+'</div>'+
                     '<div class="mz-lead"><span class="who">'+esc(l.name)+'</span><span class="val">'+esc(l.val)+'</span></div>'+
-                    '<div class="mz-rows">'+rowsHtml(r.rows,1,3)+'</div>'+
+                    (tall ? '<div class="mz-rows">'+rowsHtml(r.rows,1,3)+'</div>' : (l.sub?'<div class="sub">'+esc(l.sub)+'</div>':''))+
                     expandBlock(r.rows)+
                 '</div>';
             });
             return html+'</div>';
         }
 
-        // ---- CAREERS ----
-        function careerRec(key,label,valf){
-            var arr=(ca[key]||[]).slice(0,10).map(function(e){return {name:e.owner||e.name, val:valf(e)};});
-            return {label:label, rows:arr};
+        // ---- CAREERS: a podium for EVERY stat ----
+        function careerRec(key,label,valf,numf,lower){
+            var arr=(ca[key]||[]).map(function(e){return {name:e.owner||e.name, val:valf(e), n:numf(e), sp:(e.seasons_played!=null?e.seasons_played:999)};});
+            arr.sort(function(a,b){ var d=lower?(a.n-b.n):(b.n-a.n); return d || (a.sp-b.sp); });
+            return {label:label, rows:arr.slice(0,10)};
         }
-        var seasons=function(e){return e.seasons_played+(e.seasons_played===1?' szn':' szns');};
-        var podiumRec=careerRec('most_top_3_finishes','Most Podiums',function(e){return String(e.top_3_finishes!=null?e.top_3_finishes:e.count)+'×';});
-        var others=[
-            careerRec('most_playoff_appearances','Most Playoff Trips',function(e){return String(e.playoff_appearances!=null?e.playoff_appearances:e.count)+'×';}),
-            careerRec('longest_win_streaks','Longest Win Streak',function(e){return e.length+'W';}),
+        var careers=[
+            careerRec('most_top_3_finishes','Most Podiums',function(e){return String(e.top_3_finishes!=null?e.top_3_finishes:e.count)+'×';},function(e){return e.top_3_finishes!=null?e.top_3_finishes:e.count;}),
+            careerRec('most_playoff_appearances','Most Playoff Trips',function(e){return String(e.playoff_appearances!=null?e.playoff_appearances:e.count)+'×';},function(e){return e.playoff_appearances!=null?e.playoff_appearances:e.count;}),
+            careerRec('most_championship_appearances','Most Title Games',function(e){return String(e.championship_appearances!=null?e.championship_appearances:e.count)+'×';},function(e){return e.championship_appearances!=null?e.championship_appearances:e.count;}),
+            careerRec('longest_win_streaks','Longest Win Streak',function(e){return e.length+'W';},function(e){return e.length;}),
+            careerRec('longest_loss_streaks','Longest Skid',function(e){return e.length+'L';},function(e){return e.length;}),
+            careerRec('best_avg_finish','Best Avg Finish',function(e){return num(e.avg_final_rank);},function(e){return e.avg_final_rank;},true),
         ].filter(function(r){return r.rows.length;});
 
-        function podium(){
-            var r=podiumRec.rows, g=r[0]||{}, s=r[1]||{}, b=r[2]||{};
-            var html='<div class="pd-card card-x" data-x>'+
-                '<div class="pd-cap"><div class="lbl">'+esc(podiumRec.label)+'</div></div>'+
+        function podiumCard(rec){
+            var r=rec.rows, g=r[0]||{}, s=r[1]||{}, b=r[2]||{};
+            return '<div class="pd-card card-x" data-x>'+
+                '<div class="pd-cap"><div class="lbl">'+esc(rec.label)+'</div></div>'+
                 '<div class="podium">'+
                     '<div class="step s2"><div class="medal">2ND</div><div class="who">'+esc(s.name||'—')+'</div><div class="vl">'+esc(s.val||'')+'</div></div>'+
                     '<div class="step s1"><div class="medal">1ST</div><div class="who">'+esc(g.name||'—')+'</div><div class="vl">'+esc(g.val||'')+'</div></div>'+
@@ -179,25 +189,27 @@ body{ background:var(--ink); }
                 '</div>'+
                 expandBlock(r)+
             '</div>';
-            others.forEach(function(rr){
-                var l=rr.rows[0];
-                html+='<div class="cc card-x" data-x>'+
-                    '<div class="lbl">'+esc(rr.label)+'</div>'+
-                    '<div class="cc-top"><span class="val">'+esc(l.val)+'</span><span class="who">'+esc(l.name)+'</span></div>'+
-                    '<div class="cc-rows">'+rowsHtml(rr.rows,1,3)+'</div>'+
-                    expandBlock(rr.rows)+
-                '</div>';
-            });
-            return html;
         }
 
         document.getElementById('stage').innerHTML=
-            '<div class="lp-band"><b>Feats · Mosaic</b><span>Big feature + tile grid. Tap a tile → it opens full-width to top 10.</span></div>'+mosaic()+
-            '<div class="lp-band"><b>Careers · Podium</b><span>Headline record on a podium; tap to unfold ranks 4–10. Others as cards.</span></div>'+podium();
+            '<div class="lp-band"><b>Feats · Mosaic</b><span>Feature + varied tiles. Tap a tile → full-width to top 10 (now opens in its own row).</span></div>'+mosaic()+
+            '<div class="lp-band"><b>Careers · Podium per stat</b><span>Every record gets its own podium; tap to unfold ranks 4–10.</span></div>'+
+            careers.map(podiumCard).join('');
 
-        // tap to expand any card
+        // Keep the mosaic expand symmetric: when a right-column tile opens, swap
+        // its order with its left row-mate so IT leads the row (full width) and
+        // the left card drops below — same as opening a left-column tile.
+        function relayout(grid){
+            var tiles=[].slice.call(grid.children);
+            tiles.forEach(function(t,i){ t.style.order=i; });
+            tiles.forEach(function(t,i){
+                if(i%2===1 && t.classList.contains('is-open')){ t.style.order=i-1; tiles[i-1].style.order=i; }
+            });
+        }
         document.getElementById('stage').addEventListener('click',function(e){
-            var c=e.target.closest('[data-x]'); if(c) c.classList.toggle('is-open');
+            var c=e.target.closest('[data-x]'); if(!c) return;
+            c.classList.toggle('is-open');
+            var grid=c.closest('.mz-grid'); if(grid) relayout(grid);
         });
     });
 })();
