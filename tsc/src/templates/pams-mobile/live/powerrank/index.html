@@ -680,17 +680,17 @@ body { background: #f0e5c8; color: var(--ink); }
         return map;
     }
 
-    // % change from prev → curr. Skips the chrome when either side is
-    // missing or prev is too small for the ratio to mean anything.
+    // Absolute point delta from prev → curr. Easier to read than a %
+    // when factor maxes vary (a 3 pt move on PF means the same thing
+    // whether the team was at 10 or 30). Skips the chrome when either
+    // side is missing.
     function wowHTML(curr, prev) {
         if (curr == null || prev == null) return '<span class="fbar-wow flat"></span>';
-        if (prev < 0.5) return '<span class="fbar-wow flat"></span>';
-        var pct = ((curr - prev) / prev) * 100;
-        if (Math.abs(pct) < 0.5) return '<span class="fbar-wow flat">±0%</span>';
-        var capped = Math.max(-99, Math.min(99, pct));
-        var cls = capped > 0 ? 'up' : 'down';
-        var sign = capped > 0 ? '+' : '−';
-        return '<span class="fbar-wow ' + cls + '">' + sign + Math.abs(capped).toFixed(0) + '%</span>';
+        var diff = curr - prev;
+        if (Math.abs(diff) < 0.05) return '<span class="fbar-wow flat">±0.0</span>';
+        var cls = diff > 0 ? 'up' : 'down';
+        var sign = diff > 0 ? '+' : '−';
+        return '<span class="fbar-wow ' + cls + '">' + sign + Math.abs(diff).toFixed(1) + '</span>';
     }
 
     // Top third = good (green), middle = mid (gold), bottom = bad (red).
