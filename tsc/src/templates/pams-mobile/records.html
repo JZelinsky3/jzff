@@ -119,6 +119,39 @@
     margin-top: 2px;
 }
 .rb-other-val .rb-val-g { font-size: .44rem; vertical-align: .1em; margin-left: 4px; }
+
+/* ── Seasons: leaderboard bars ─────────────────────────────────── */
+.rb-bars { margin-top: .5rem; display: flex; flex-direction: column; gap: .55rem; }
+.rb-bar-row { display: grid; grid-template-columns: 1.1rem 1fr auto; align-items: center; column-gap: .55rem; }
+.rb-card.is-open .rb-bar-row.rb-extra { display: grid; }
+.rb-bar-rank { align-self: start; padding-top: .12rem; font-family: var(--mono); font-size: .56rem; color: var(--cream-mute); }
+.rb-bar-main { min-width: 0; }
+.rb-bar-name { display: block; font-size: .82rem; font-weight: 500; color: var(--cream-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-bar-row.is-lead .rb-bar-name { color: var(--cream); font-weight: 600; }
+.rb-bar-track { display: block; height: 5px; margin: 4px 0 3px; border-radius: 3px; background: var(--ink-line-soft); overflow: hidden; }
+.rb-bar-fill { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--rec-deep), var(--rec)); }
+.rb-bar-row.is-lead .rb-bar-fill { background: linear-gradient(90deg, var(--rec), #d2ead8); }
+.rb-bar-sub { display: block; font-family: var(--mono); font-size: .5rem; letter-spacing: .08em; text-transform: uppercase; color: var(--cream-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-bar-val { flex: none; font-family: var(--serif); font-size: 1.05rem; line-height: 1; color: var(--rec); text-align: right; }
+.rb-bar-val.has-sub { display: inline-flex; flex-direction: column; align-items: flex-end; }
+.rb-bar-row.is-lead .rb-bar-val { font-size: 1.3rem; }
+.rb-bar-val small { font-family: var(--mono); font-weight: 600; font-size: .46rem; letter-spacing: .05em; text-transform: uppercase; color: var(--cream-mute); margin-top: 2px; }
+.rb-bar-val .rb-val-g { font-size: .44rem; vertical-align: .12em; margin-left: 4px; }
+
+/* ── Games: scorecard tickets ──────────────────────────────────── */
+.rb-ticket {
+    margin-top: .5rem;
+    border: 1px solid var(--ink-line); border-radius: 10px;
+    background: linear-gradient(180deg, var(--ink-card), var(--ink-soft));
+    padding: .6rem .8rem .55rem;
+}
+.rb-ticket-head { font-family: var(--mono); font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rec-deep); margin-bottom: .4rem; }
+.rb-ticket-line { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; padding: .14rem 0; }
+.rb-ticket-name { font-family: var(--serif); font-size: 1rem; color: var(--cream-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-ticket-score { flex: none; font-family: var(--mono); font-weight: 700; font-size: .88rem; color: var(--cream-mute); }
+.rb-ticket-line.is-win .rb-ticket-name { color: var(--cream); }
+.rb-ticket-line.is-win .rb-ticket-score { color: var(--rec); }
+.rb-ticket-foot { margin-top: .42rem; padding-top: .42rem; border-top: 1px dashed var(--ink-line); text-align: right; font-family: var(--serif); font-size: 1.2rem; color: var(--rec); }
 /* Combined-score records list both managers; the "vs Opponent" tail reads
    as context, not a co-holder — smaller and dimmer than the lead name. */
 .rb-vs { font-size: .72em; color: var(--cream-mute); }
@@ -331,6 +364,110 @@
         return '';
     }
 
+    // Shared card wrapper + expand hint used by every section variant.
+    function cardShell(label, hasMore, total, inner) {
+        return '<div class="m-card rb-card' + (hasMore ? ' rb-can-expand' : '') + '">' +
+            '<div class="rb-card-label">' + esc(label) + '</div>' +
+            inner +
+            (hasMore
+                ? '<div class="rb-expand-hint">' +
+                    '<span class="rb-hint-more">Show top ' + total + ' ▾</span>' +
+                    '<span class="rb-hint-less">Show less ▴</span>' +
+                  '</div>'
+                : '') +
+        '</div>';
+    }
+
+    // ── Standard card — Careers + Feats keep the original look ────
+    function renderStandard(key, label, val, ctx, entries) {
+        var top = entries[0];
+        var others = entries.slice(1);
+        var inner =
+            '<div class="rb-top">' +
+                valHtml('rb-top-value', val(top), key, top) +
+                '<span class="rb-top-holder"><b>' + holderHtmlFor(key, top) + '</b>' +
+                    '<small>' + esc(ctx(top) || '') + '</small></span>' +
+            '</div>' +
+            (others.length
+                ? '<div class="rb-others">' + others.map(function (e, i) {
+                    var sub = rowCtx(e);
+                    return '<div class="rb-other' + (i >= 2 ? ' rb-extra' : '') + '">' +
+                        '<span class="rb-other-rank">' + (i + 2) + '</span>' +
+                        '<span class="rb-other-name">' + holderHtmlFor(key, e) +
+                            (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
+                        valHtml('rb-other-val', val(e), key, e) +
+                    '</div>';
+                }).join('') + '</div>'
+                : '');
+        return cardShell(label, others.length > 2, entries.length, inner);
+    }
+
+    // ── Seasons → leaderboard bars ───────────────────────────────
+    // Bar width is proportional to a numeric basis per record (PF, PPG,
+    // PA, or win% for the record-title lists), anchored to the list max.
+    function seasonBasis(key, e) {
+        if (key === 'highest_total_season_pf') return e.total_pf || 0;
+        if (key === 'highest_ppg' || key === 'lowest_ppg') return e.reg_ppg || 0;
+        if (key === 'most_points_against') return e.reg_pa || 0;
+        if (key === 'best_reg_season_records' || key === 'worst_reg_season_records') return e.reg_win_pct || 0;
+        return e.reg_pf || 0;
+    }
+    function renderSeasonBars(key, label, val, ctx, entries) {
+        var max = 0;
+        entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
+        var rows = entries.map(function (e, i) {
+            var w = max > 0 ? Math.max(8, (seasonBasis(key, e) / max) * 100) : 0;
+            var ex = valExtra(key, e);
+            return '<div class="rb-bar-row' + (i >= 3 ? ' rb-extra' : '') + (i === 0 ? ' is-lead' : '') + '">' +
+                '<span class="rb-bar-rank">' + (i + 1) + '</span>' +
+                '<span class="rb-bar-main">' +
+                    '<span class="rb-bar-name">' + holderHtmlFor(key, e) + '</span>' +
+                    '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>' +
+                    '<span class="rb-bar-sub">' + esc(ctx(e) || '') + '</span>' +
+                '</span>' +
+                '<span class="rb-bar-val' + (ex.below ? ' has-sub' : '') + '">' + esc(val(e)) +
+                    (ex.inline ? '<i class="rb-val-g">' + esc(ex.inline) + '</i>' : '') +
+                    (ex.below ? '<small>' + esc(ex.below) + '</small>' : '') +
+                '</span>' +
+            '</div>';
+        }).join('');
+        return cardShell(label, entries.length > 3, entries.length, '<div class="rb-bars">' + rows + '</div>');
+    }
+
+    // ── Games → scorecard tickets ────────────────────────────────
+    // The leader renders as a mini boxscore; the rest stay as compact
+    // ranked rows beneath it.
+    function gameTicket(key, e, val) {
+        var aWin = (e.score || 0) >= (e.opp_score || 0);
+        return '<div class="rb-ticket">' +
+            '<div class="rb-ticket-head">' + esc(e.season + ' · Week ' + e.week) + '</div>' +
+            '<div class="rb-ticket-line' + (aWin ? ' is-win' : '') + '">' +
+                '<span class="rb-ticket-name">' + esc(e.owner || '—') + '</span>' +
+                '<span class="rb-ticket-score">' + num(e.score) + '</span>' +
+            '</div>' +
+            '<div class="rb-ticket-line' + (!aWin ? ' is-win' : '') + '">' +
+                '<span class="rb-ticket-name">' + esc(e.opp_owner || '—') + '</span>' +
+                '<span class="rb-ticket-score">' + num(e.opp_score) + '</span>' +
+            '</div>' +
+            '<div class="rb-ticket-foot">' + esc(val(e)) + '</div>' +
+        '</div>';
+    }
+    function renderGameTickets(key, label, val, ctx, entries) {
+        var top = entries[0];
+        var others = entries.slice(1);
+        var rest = others.length
+            ? '<div class="rb-others">' + others.map(function (e, i) {
+                return '<div class="rb-other' + (i >= 2 ? ' rb-extra' : '') + '">' +
+                    '<span class="rb-other-rank">' + (i + 2) + '</span>' +
+                    '<span class="rb-other-name">' + holderHtmlFor(key, e) +
+                        '<small>' + esc(e.season + ' · Wk ' + e.week) + '</small></span>' +
+                    '<span class="rb-other-val">' + esc(val(e)) + '</span>' +
+                '</div>';
+            }).join('') + '</div>'
+            : '';
+        return cardShell(label, others.length > 2, entries.length, gameTicket(key, top, val) + rest);
+    }
+
     function render() {
         var box = document.getElementById('cards');
         if (!book) {
@@ -346,34 +483,9 @@
                 entries = entries.filter(function (e) { return e.is_current_member !== false; });
                 if (!entries.length) return '';
             }
-            var top = entries[0];
-            var others = entries.slice(1);
-            var hasMore = others.length > 2;
-            return '<div class="m-card rb-card' + (hasMore ? ' rb-can-expand' : '') + '">' +
-                '<div class="rb-card-label">' + esc(label) + '</div>' +
-                '<div class="rb-top">' +
-                    valHtml('rb-top-value', val(top), key, top) +
-                    '<span class="rb-top-holder"><b>' + holderHtmlFor(key, top) + '</b>' +
-                        '<small>' + esc(ctx(top) || '') + '</small></span>' +
-                '</div>' +
-                (others.length
-                    ? '<div class="rb-others">' + others.map(function (e, i) {
-                        var sub = rowCtx(e);
-                        return '<div class="rb-other' + (i >= 2 ? ' rb-extra' : '') + '">' +
-                            '<span class="rb-other-rank">' + (i + 2) + '</span>' +
-                            '<span class="rb-other-name">' + holderHtmlFor(key, e) +
-                                (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
-                            valHtml('rb-other-val', val(e), key, e) +
-                        '</div>';
-                    }).join('') + '</div>'
-                    : '') +
-                (hasMore
-                    ? '<div class="rb-expand-hint">' +
-                        '<span class="rb-hint-more">Show top ' + entries.length + ' ▾</span>' +
-                        '<span class="rb-hint-less">Show less ▴</span>' +
-                      '</div>'
-                    : '') +
-            '</div>';
+            if (section === 'season') return renderSeasonBars(key, label, val, ctx, entries);
+            if (section === 'weekly') return renderGameTickets(key, label, val, ctx, entries);
+            return renderStandard(key, label, val, ctx, entries);
         }).filter(Boolean).join('');
         box.innerHTML = html || '<div class="m-empty">Nothing in this chapter yet.</div>';
     }
