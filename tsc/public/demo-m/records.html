@@ -23,7 +23,13 @@
     --ink-line-soft: #1c2a22;
     --m-chrome-bg:   #0e1713;
     --m-chrome-bg2:  #101a15;
+    /* Good/bad title tints — muted gold + dusty clay so they read as
+       positive/negative without fighting the trophy-room green. */
+    --good: #d4b14e;
+    --bad:  #cd6f5f;
 }
+.rb-card-label.is-good { color: var(--good); }
+.rb-card-label.is-bad  { color: var(--bad); }
 .m-tab.is-active { color: var(--rec); }
 .m-tab.is-active::before { background: var(--rec); }
 
@@ -64,6 +70,8 @@
 }
 .rb-card.rb-lead {
     border-color: var(--rec-deep);
+    /* clip the accent rule to the rounded corners so it can't poke out */
+    overflow: hidden;
     background:
         linear-gradient(180deg, rgba(143, 184, 154, .07), transparent 55%),
         var(--ink-card);
@@ -256,10 +264,11 @@
 .rb-card.is-open .rb-pod-more { display: block; }
 
 /* ── Careers: no-podiums roll ──────────────────────────────────── */
-.rb-nopod-note { margin-top: .45rem; font-family: var(--mono); font-size: .52rem; letter-spacing: .04em; color: var(--cream-mute); }
-.rb-nopod-list { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
-.rb-nopod-chip { font-family: var(--serif); font-size: .92rem; color: var(--cream-soft); background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 999px; padding: .25rem .65rem; }
-.rb-nopod-chip small { font-family: var(--mono); font-size: .5rem; letter-spacing: .04em; text-transform: uppercase; color: var(--cream-mute); margin-left: .35rem; }
+.rb-nopod-note { margin-top: .5rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .04em; color: var(--cream-mute); }
+/* Sized to sit about as tall as the podium cards it shares a rail with. */
+.rb-nopod-list { display: flex; flex-wrap: wrap; align-content: flex-start; gap: .5rem; margin-top: .8rem; min-height: 7rem; }
+.rb-nopod-chip { font-family: var(--serif); font-size: 1.05rem; color: var(--cream-soft); background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 999px; padding: .4rem .85rem; }
+.rb-nopod-chip small { font-family: var(--mono); font-size: .52rem; letter-spacing: .04em; text-transform: uppercase; color: var(--cream-mute); margin-left: .4rem; }
 </style>
 </head>
 <body>
@@ -333,7 +342,7 @@
             // points so deep title runs sit alongside the regular-season
             // ledger; games-played rides next to the total.
             ['highest_total_season_pf', 'Most Points, Full Season', function (e) { return num(e.total_pf, 0); }, seasonCtx],
-            ['highest_ppg', 'Best PPG, Season', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.avg_ppg); }, seasonCtx],
+            ['highest_ppg', 'Highest PPG, Season', function (e) { return num(e.reg_ppg != null ? e.reg_ppg : e.avg_ppg); }, seasonCtx],
             ['best_reg_season_records', 'Best Record', function (e) { return rec(e.reg_record); }, seasonCtx],
             ['worst_reg_season_records', 'Worst Record', function (e) { return rec(e.reg_record); }, seasonCtx],
             // Per-game, not total: 2019/2020 ran a shorter schedule, so raw
@@ -364,6 +373,20 @@
             ['bust_70', 'Sub-70 Disasters', countVal, featCtx, 'boom_bust'],
         ],
     };
+    // Good/bad tone for the card title (Games + Seasons only). Drives the
+    // gold/clay label color; everything unlisted stays neutral green.
+    var TONE_GOOD = {
+        highest_single_week_score: 1, biggest_blowouts: 1, luckiest_wins: 1, highest_combined_score: 1,
+        highest_season_pf: 1, highest_total_season_pf: 1, highest_ppg: 1, best_reg_season_records: 1,
+    };
+    var TONE_BAD = {
+        lowest_single_week_score: 1, unluckiest_losses: 1, lowest_combined_score: 1,
+        most_points_against: 1, lowest_ppg: 1, worst_reg_season_records: 1,
+    };
+    function toneFor(key) {
+        if (section !== 'weekly' && section !== 'season') return '';
+        return TONE_GOOD[key] ? 'is-good' : (TONE_BAD[key] ? 'is-bad' : '');
+    }
     function countVal(e) { return String(e.count != null ? e.count : (e.value != null ? e.value : '—')); }
     function countOf(e, key) { return String(e[key] != null ? e[key] : (e.count != null ? e.count : '—')); }
     // "59-42-0" → "59-42" when there are no ties to show.
@@ -492,7 +515,7 @@
     // Shared card wrapper + expand hint used by every section variant.
     // `idx` is the record's position in the tab — drives the ledger number
     // and promotes the first record to the chapter headline.
-    function cardShell(label, hasMore, total, inner, idx) {
+    function cardShell(label, hasMore, total, inner, idx, tone) {
         // idx == null → rail card (no ledger number / headline tag; the group
         // header carries the structure instead).
         var hasIdx = idx != null;
@@ -501,7 +524,7 @@
         return '<div class="m-card rb-card' + (lead ? ' rb-lead' : '') + (hasMore ? ' rb-can-expand' : '') + '">' +
             '<div class="rb-card-head">' +
                 (hasIdx ? '<span class="rb-idx">' + n + '</span>' : '') +
-                '<div class="rb-card-label">' + esc(label) + '</div>' +
+                '<div class="rb-card-label' + (tone ? ' ' + tone : '') + '">' + esc(label) + '</div>' +
                 (lead ? '<span class="rb-lead-tag">Headline</span>' : '') +
             '</div>' +
             inner +
@@ -535,7 +558,7 @@
                     '</div>';
                 }).join('') + '</div>'
                 : '');
-        return cardShell(label, others.length > 2, entries.length, inner, idx);
+        return cardShell(label, others.length > 2, entries.length, inner, idx, toneFor(key));
     }
 
     // ── Seasons → leaderboard bars ───────────────────────────────
@@ -554,7 +577,7 @@
         if (key === 'best_reg_season_records' || key === 'worst_reg_season_records') return e.reg_win_pct || 0;
         return e.reg_pf || 0;
     }
-    function renderSeasonBars(key, label, val, ctx, entries, idx) {
+    function renderSeasonBars(key, label, val, ctx, entries, idx, noBar) {
         var max = 0;
         entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
 
@@ -581,7 +604,7 @@
                 '<span class="rb-bar-rank">' + rank + '</span>' +
                 '<span class="rb-bar-main">' +
                     '<span class="rb-bar-name">' + holderHtmlFor(key, e) + seasonNameExtra(key, e) + '</span>' +
-                    '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>' +
+                    (noBar ? '' : '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>') +
                     '<span class="rb-bar-sub">' + esc(ctx(e) || '') + '</span>' +
                 '</span>' +
                 '<span class="rb-bar-val' + (ex.below ? ' has-sub' : '') + '">' + esc(val(e)) +
@@ -592,7 +615,7 @@
         }).join('');
 
         var inner = hero + (rows ? '<div class="rb-bars">' + rows + '</div>' : '');
-        return cardShell(label, entries.length > 3, entries.length, inner, idx);
+        return cardShell(label, entries.length > 3, entries.length, inner, idx, toneFor(key));
     }
 
     // ── Games → marquee scorecard ────────────────────────────────
@@ -632,7 +655,7 @@
                 '</div>';
             }).join('') + '</div>'
             : '';
-        return cardShell(label, others.length > 2, entries.length, gameHero(key, top, val) + rest, idx);
+        return cardShell(label, others.length > 2, entries.length, gameHero(key, top, val) + rest, idx, toneFor(key));
     }
 
     // ── Careers → podium ─────────────────────────────────────────
@@ -701,12 +724,20 @@
         var key = def[0], label = def[1], val = def[2], ctx = def[3];
         if (sec === 'weekly') return renderGameTickets(key, label, val, ctx, entries, null);
         if (sec === 'season') {
-            if (key === 'best_reg_season_records' || key === 'worst_reg_season_records' || key === 'lowest_ppg')
+            // Win/Loss records use the plain card. Lowest PPG keeps the bar-less
+            // hero+rows layout so it matches Highest PPG's height in the rail
+            // (a real bar there is misleading — it fills up as the score drops).
+            if (key === 'best_reg_season_records' || key === 'worst_reg_season_records')
                 return renderStandard(key, label, val, ctx, entries, null);
+            if (key === 'lowest_ppg')
+                return renderSeasonBars(key, label, val, ctx, entries, null, true);
             return renderSeasonBars(key, label, val, ctx, entries, null);
         }
         if (sec === 'career') {
             if (key === 'no_podiums') return renderNoPodium(label, entries);
+            // Streaks read fine as a plain card — no podium needed.
+            if (key === 'longest_win_streaks' || key === 'longest_loss_streaks')
+                return renderStandard(key, label, val, ctx, entries, null);
             return renderPodium(key, label, val, ctx, entries);
         }
         return renderStandard(key, label, val, ctx, entries, null);
@@ -723,12 +754,12 @@
         season: [
             { title: 'Points',       keys: ['highest_season_pf', 'highest_total_season_pf', 'most_points_against'] },
             { title: 'Scoring Rate', keys: ['highest_ppg', 'lowest_ppg'] },
-            { title: 'Win & Loss',   keys: ['best_reg_season_records', 'worst_reg_season_records'] },
+            { title: 'Records',      keys: ['best_reg_season_records', 'worst_reg_season_records'] },
         ],
         career: [
-            { title: 'Streaks',          keys: ['longest_win_streaks', 'longest_loss_streaks'] },
             { title: 'Titles & Podiums', keys: ['most_championships', 'most_top_3_finishes', 'no_podiums'] },
             { title: 'Appearances',      keys: ['most_playoff_appearances', 'most_championship_appearances', 'best_avg_finish'] },
+            { title: 'Streaks',          keys: ['longest_win_streaks', 'longest_loss_streaks'] },
         ],
     };
     var DEF_BY_KEY = {};

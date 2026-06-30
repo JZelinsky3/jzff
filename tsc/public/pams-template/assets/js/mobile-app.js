@@ -705,6 +705,11 @@
         var page = nav.dataset.page || '';
         var chapter = nav.dataset.chapter || '';
         var backHref = nav.dataset.backHref || '';
+        // Opt-in: pages reachable from many entry points (e.g. a manager
+        // profile, linked from records, seasons, rivalries, DNA…) prefer
+        // returning to wherever the reader actually came from instead of the
+        // single declared parent. Set data-back-smart="1" to enable.
+        var smartBack = nav.dataset.backSmart === '1';
         var liveMode = ctx.leagueTier !== 'udfa'
             && Object.prototype.hasOwnProperty.call(LIVE_TAB_OF_PAGE, page);
         var activeTab = liveMode
@@ -765,15 +770,37 @@
         bar.innerHTML = left + center + right;
         nav.parentNode.replaceChild(bar, nav);
 
-        // Back behavior: always follow the declared href. Previously we
-        // history.back()'d when the referrer was same-origin and different
-        // from the current URL, but that surfaced the wrong page when
-        // readers navigated sideways between siblings (seasons/2021 ->
-        // seasons/2022 -> back would land on 2021 instead of the season
-        // archive index). The href is what the page author chose as the
-        // canonical parent, so honor it on every tap.
-        // Anchor default behavior already handles plain clicks, modifier
-        // keys, and middle-click; no JS needed.
+        // Back behavior: by default follow the declared href. We used to
+        // history.back() everywhere when the referrer was same-origin, but
+        // that surfaced the wrong page when readers navigated sideways
+        // between siblings (seasons/2021 -> seasons/2022 -> back would land
+        // on 2021 instead of the season archive index). The href is the
+        // canonical parent, so plain pages honor it on every tap.
+        //
+        // smartBack pages opt back into referrer-aware behavior: a manager
+        // profile is reached from many places (records, seasons, rivalries,
+        // DNA…), so "back" should return to that page, not always the
+        // managers index. We only intercept when we genuinely arrived from
+        // another page on this site; fresh loads, external links, and
+        // same-URL referrers fall through to the declared href. The anchor's
+        // own default still handles modifier keys and middle-click.
+        if (backHref && smartBack) {
+            var backEl = bar.querySelector('#m-appbar-back');
+            if (backEl) {
+                backEl.addEventListener('click', function (e) {
+                    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                    var ref = document.referrer;
+                    if (!ref) return;
+                    try {
+                        var r = new URL(ref);
+                        if (r.origin === location.origin && r.href !== location.href && history.length > 1) {
+                            e.preventDefault();
+                            history.back();
+                        }
+                    } catch (_) { /* malformed referrer -> fall through to href */ }
+                });
+            }
+        }
 
         // Tab bar.
         var udfa = ctx.leagueTier === 'udfa';
