@@ -126,6 +126,11 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
        reads as "text sitting high". */
     padding: 4px 4px 2px;
 }
+/* Demo only — veteran badges are hidden here for now. They belong on
+   Rookie-tier subscription leagues (to show what an upgrade unlocks);
+   the template keeps them. To bring them back on the demo, delete this
+   one rule. */
+.lv-vet { display: none; }
 .lv-chev { flex: none; display: flex; color: var(--lv-accent, var(--gold)); opacity: .55; }
 .lv-row.is-soon { opacity: .42; filter: saturate(.5); }
 
