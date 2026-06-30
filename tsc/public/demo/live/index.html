@@ -1187,6 +1187,47 @@ body { background: var(--ls-bg); }
 @media (prefers-reduced-motion: reduce) {
     .ticker-track { animation: none; }
 }
+
+/* ── Second rail — live-section sub-nav under the chapbar ────────
+   Demo-only design element. nav.js renders the chapbar (site
+   chapters, "Live" active); the slim rail beneath lists the live
+   pages and keys to the section's gold accent. */
+.nav-subrail {
+    background: rgba(0,0,0,.24);
+    border-top: 1px solid var(--ls-line-soft, #22302a);
+}
+.nav-subrail-track {
+    display: flex; align-items: stretch; justify-content: center;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    max-width: 1370px; margin: 0 auto; padding: 0 1rem;
+}
+.nav-subrail-track::-webkit-scrollbar { display: none; }
+.nav-subrail-link {
+    flex-shrink: 0; position: relative;
+    color: var(--ls-mute, #7d8c81); opacity: .85;
+    text-decoration: none;
+    font-family: var(--mono, 'JetBrains Mono', monospace); font-weight: 700;
+    font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;
+    padding: .42rem .85rem .5rem;
+    transition: color .15s, opacity .15s;
+    white-space: nowrap;
+}
+.nav-subrail-link:hover { color: var(--ls-live, #d4a94c); opacity: 1; }
+.nav-subrail-link.is-active { color: var(--ls-live, #d4a94c); opacity: 1; }
+.nav-subrail-link.is-active::after {
+    content: ''; position: absolute; left: .85rem; right: .85rem; bottom: 0;
+    height: 2px; background: var(--ls-live, #d4a94c);
+}
+.nav-subrail-link + .nav-subrail-link::before {
+    content: ''; position: absolute; left: 0; top: 30%; bottom: 30%; width: 1px;
+    background: var(--ls-line, #2e3d34);
+}
+@media (max-width: 640px) {
+    .nav-subrail-track { justify-content: flex-start; padding: 0 .15rem; }
+    .nav-subrail-link { padding: .38rem .55rem .46rem; font-size: .52rem; letter-spacing: .12em; }
+    .nav-subrail-link.is-active::after { left: .55rem; right: .55rem; }
+}
 </style>
 </head>
 <body>
@@ -2127,6 +2168,44 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
     else phrase = Math.round(mins / 1440) + ' d ago';
     line.textContent = 'Last sync · ' + phrase;
   });
+})();
+</script>
+
+<script>
+// ── Second rail (demo design) ───────────────────────────────────
+// nav.js builds the chapbar (site chapters) on DOMContentLoaded; this
+// runs after it and appends a slim live-section rail INSIDE the sticky
+// chapbar so the two rails travel together. Links resolve against the
+// page's <base href="/demo/">.
+(function () {
+  var ITEMS = [
+    ['Overview',      'live/',                 true],
+    ['Matchups',      'live/matchup-preview/', false],
+    ['Power Rank',    'live/powerrank/',       false],
+    ["Pick'ems",      'live/pickems/',         false],
+    ['Records Watch', 'live/records-watch/',   false],
+    ['Best Coach',    'live/best-coach/',      false],
+    ['Milestones',    'live/milestones/',      false],
+    ['Trade Desk',    'live/trades/',          false]
+  ];
+  function addSubrail() {
+    var bar = document.getElementById('nav-chapbar');
+    if (!bar || bar.querySelector('.nav-subrail')) return;
+    var html = '<div class="nav-subrail"><div class="nav-subrail-track">';
+    for (var i = 0; i < ITEMS.length; i++) {
+      html += '<a class="nav-subrail-link' + (ITEMS[i][2] ? ' is-active' : '') + '"'
+            + ' href="' + ITEMS[i][1] + '"'
+            + (ITEMS[i][2] ? ' aria-current="page"' : '')
+            + '>' + ITEMS[i][0] + '</a>';
+    }
+    html += '</div></div>';
+    bar.insertAdjacentHTML('beforeend', html);
+  }
+  // nav.js registers its DOMContentLoaded handler before this one (its
+  // <script> is earlier in the DOM), so by the time addSubrail fires the
+  // chapbar already exists.
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addSubrail);
+  else addSubrail();
 })();
 </script>
 
