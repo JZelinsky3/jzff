@@ -45,6 +45,9 @@ export type PowerFactors = {
   form?: number     // 60% W/L + 40% point-diff percentile, last 3 weighted .5/.3/.2
   conf?: number     // div win% (zero when no divisions)
   top_half?: number // share of weeks scored above weekly league median
+  // W1–3 only: total preseason carryover (sum of the 4 history factors,
+  // each scaled by the active blend). Rendered as one summary bar.
+  lore?: number
 }
 
 export type PowerTeam = {
@@ -62,11 +65,6 @@ export type PowerTeam = {
   score: number
   delta: number // rank change vs the previous snapshot (+ = moved up)
   factors: PowerFactors
-  // Pre-season carryover contribution for W1–3 only: each preseason factor
-  // multiplied by the active blend (0.30 / 0.20 / 0.10), so values are in
-  // the same "points contributed" units as `factors`. Omitted in W0 (where
-  // `factors` IS the preseason set) and W4+ (no carryover).
-  preseasonFactors?: PowerFactors
   conf_rank?: number
   // Monte Carlo projections — attached when a remaining schedule exists.
   proj_wins?: number
@@ -81,13 +79,9 @@ export type PowerWeek = {
   week: number // 0 = preseason
   label: string
   // In-season factor max-points used for this snapshot. Varies week 1–3 (form
-  // / conf phased in) and matches INSEASON_*_W from week 4 on. The UI uses
-  // this to size the factor bars and to hide bars whose max is 0.
+  // / conf phased in, lore present) and matches INSEASON_*_W from week 4 on.
+  // The UI uses this to size the factor bars and to hide bars whose max is 0.
   inseasonWeights: Record<string, number>
-  // Pre-season carryover factor max-points for W1–3 (each PRESEASON_W key
-  // scaled by the blend), so the UI can size carryover bars. Omitted in
-  // W0 and W4+.
-  preseasonWeights?: Record<string, number>
   overall: PowerTeam[]
   // one entry per division, in division order
   divisions: { key: string; name: string; teams: PowerTeam[] }[]
@@ -503,21 +497,17 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
       // Per-week inSeasonW sums to (100 × (1 − blend)), so adding the
       // history contribution gives a 0–100 score without rescaling.
       const score = blend * preScore + inScore
-      const factors = throughWeek === 0 ? preFactors : inFactors
 
-      // For W1–3, expose the preseason factors scaled by `blend` so the UI
-      // can show carryover contributions in the same "points" units as the
-      // in-season bars. Skipped at W0 (factors already IS preseason) and
-      // W4+ (no carryover).
+      // For W1–3, surface the preseason carryover as a single synthetic
+      // factor `lore` (sum of the 4 history components, each scaled by
+      // blend) so the UI shows one summary bar instead of four. The bar's
+      // max is `100 × blend` (added to inSeasonW in the per-week weights).
       const showCarryover = throughWeek >= 1 && throughWeek <= 3
-      const preseasonFactors: PowerFactors | undefined = showCarryover
-        ? {
-            win_pct: (preFactors.win_pct ?? 0) * blend,
-            pf_avg: (preFactors.pf_avg ?? 0) * blend,
-            recent: (preFactors.recent ?? 0) * blend,
-            pedigree: (preFactors.pedigree ?? 0) * blend,
-          }
-        : undefined
+      const factors: PowerFactors = throughWeek === 0
+        ? preFactors
+        : showCarryover
+          ? { ...inFactors, lore: preScore * blend }
+          : inFactors
 
       return {
         team_id: b.teamId,
@@ -534,11 +524,6 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         factors: Object.fromEntries(
           Object.entries(factors).map(([k, v]) => [k, Math.round((v as number) * 100) / 100]),
         ),
-        preseasonFactors: preseasonFactors
-          ? Object.fromEntries(
-              Object.entries(preseasonFactors).map(([k, v]) => [k, Math.round((v as number) * 100) / 100]),
-            )
-          : undefined,
         conf_rank: dr?.rank,
       }
     })
@@ -571,20 +556,17 @@ export async function getPowerRankings(slug: string): Promise<PowerRankings | nu
         }))
       : []
     const wkBlend = preseasonBlend(w)
-    const preseasonWeights = w >= 1 && w <= 3
-      ? {
-          win_pct: Math.round(PRESEASON_W.win_pct * wkBlend * 100) / 100,
-          pf_avg: Math.round(PRESEASON_W.pf_avg * wkBlend * 100) / 100,
-          recent: Math.round(PRESEASON_W.recent * wkBlend * 100) / 100,
-          pedigree: Math.round(PRESEASON_W.pedigree * wkBlend * 100) / 100,
-        }
-      : undefined
+    const baseWeights = inSeasonWeightsFor(w, hasDivisions) as unknown as Record<string, number>
+    // For W1–3, expose the lore bar's max (100 × blend) so the UI can
+    // size it alongside the in-season bars.
+    const inseasonWeights = w >= 1 && w <= 3
+      ? { ...baseWeights, lore: Math.round(100 * wkBlend * 100) / 100 }
+      : baseWeights
     return {
       id: w === 0 ? 'preseason' : String(w),
       week: w,
       label: w === 0 ? 'Pre-Season' : `Week ${w}`,
-      inseasonWeights: inSeasonWeightsFor(w, hasDivisions) as unknown as Record<string, number>,
-      preseasonWeights,
+      inseasonWeights,
       overall: teams,
       divisions,
     }
