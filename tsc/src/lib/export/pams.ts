@@ -4139,6 +4139,10 @@ function buildLiveSeasonPreviews(
   if (throughWeek >= 5) {
     const winsPaceTop = seasonByMgr
       .filter((m) => m.regGames.length > 0)
+      // Drop anyone who can no longer reach the mark: even winning out, their
+      // best-case win total (current wins + games left) falls short. A record
+      // that's mathematically out of reach shouldn't sit in the watch.
+      .filter((m) => m.regWins + Math.max(0, regSeasonLen - m.regGames.length) >= mostRegWins.val)
       .map((m) => ({ m, proj: (m.regWins / m.regGames.length) * regSeasonLen }))
       .sort((a, b) => b.proj - a.proj)[0]
     if (winsPaceTop && mostRegWins.val > 0) {
@@ -4175,6 +4179,10 @@ function buildLiveSeasonPreviews(
     // ── Regular-season LOSSES pace
     const lossPaceTop = seasonByMgr
       .filter((m) => m.regGames.length > 0)
+      // Same reachability gate as wins: even losing out, their worst-case
+      // loss total must still be able to reach the mark, or the record is
+      // out of reach and doesn't belong in the watch.
+      .filter((m) => m.regLosses + Math.max(0, regSeasonLen - m.regGames.length) >= mostRegLoss.val)
       .map((m) => ({ m, proj: (m.regLosses / m.regGames.length) * regSeasonLen }))
       .sort((a, b) => b.proj - a.proj)[0]
     if (lossPaceTop && mostRegLoss.val > 0) {
@@ -4207,10 +4215,16 @@ function buildLiveSeasonPreviews(
     }
   }
 
+  // A live streak only earns a spot on the watch once it's genuinely close
+  // to the all-time mark. Halfway there (e.g. 4 of 8) isn't hard or close,
+  // so it stays off the board entirely; at 65%+ it surfaces straight into
+  // Brink (the on-pace band doesn't apply — you can't "project" a streak).
+  const STREAK_MIN_PCT = 65
+
   // ── Active win streak vs all-time longest
   const liveWin = seasonByMgr.filter((m) => m.activeStreak.type === 'W' && m.activeStreak.len > 0)
     .sort((a, b) => b.activeStreak.len - a.activeStreak.len)[0]
-  if (liveWin && allWinStreak.len > 0) {
+  if (liveWin && allWinStreak.len > 0 && (liveWin.activeStreak.len / allWinStreak.len) * 100 >= STREAK_MIN_PCT) {
     const v = liveWin.activeStreak.len, r = allWinStreak.len, pct = (v / r) * 100
     accumItems.push({
       category: 'Longest Win Streak',
@@ -4232,7 +4246,7 @@ function buildLiveSeasonPreviews(
   // ── Active loss streak vs all-time longest
   const liveLoss = seasonByMgr.filter((m) => m.activeStreak.type === 'L' && m.activeStreak.len > 0)
     .sort((a, b) => b.activeStreak.len - a.activeStreak.len)[0]
-  if (liveLoss && allLossStreak.len > 0) {
+  if (liveLoss && allLossStreak.len > 0 && (liveLoss.activeStreak.len / allLossStreak.len) * 100 >= STREAK_MIN_PCT) {
     const v = liveLoss.activeStreak.len, r = allLossStreak.len, pct = (v / r) * 100
     accumItems.push({
       category: 'Longest Losing Skid',

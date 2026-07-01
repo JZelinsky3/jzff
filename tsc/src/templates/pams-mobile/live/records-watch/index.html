@@ -218,9 +218,14 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 .rw-mark-credit { width: 100%; font-family: var(--mono); font-size: .54rem; letter-spacing: .06em; color: var(--rw-mute); }
 .rw-mark-credit strong { color: var(--rw-ember-hi); font-weight: 700; }
 
-.rw-plot-head { display: flex; align-items: baseline; gap: .4rem; margin-bottom: .85rem; }
-.rw-plot-head .chaser { font-size: .76rem; font-weight: 600; color: var(--rw-cream); }
-.rw-plot-head .chaser-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rw-mute); margin-left: .3rem; }
+/* The chaser is the whole story of the card, so it gets a tiny "Chasing"
+   kicker + an oversized serif name — big enough to read as the subject at
+   a glance and to tell it apart from the mark holder credited just above.
+   The old .85rem margin left an absurd gap above the bar; tightened. */
+.rw-plot-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .45rem; margin-bottom: .4rem; }
+.rw-plot-head .chaser-lbl { flex: 0 0 100%; font-family: var(--mono); font-weight: 700; font-size: .46rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rw-ember); }
+.rw-plot-head .chaser { font-family: var(--serif); font-size: 1.2rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); }
+.rw-plot-head .chaser-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rw-mute); margin-left: .1rem; }
 .rw-plot-labels { position: relative; height: .85rem; }
 .rw-plot-label {
     position: absolute; bottom: 0;
@@ -308,6 +313,10 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 }
 .rw-onpace-col.chasing .col-lbl { color: var(--rw-ember); }
 .rw-onpace-col .col-name { font-size: .76rem; font-weight: 600; color: var(--rw-cream); }
+/* Chaser gets the oversized serif treatment so it reads as the subject,
+   not just the left half of a two-up grid. */
+.rw-onpace-col.chasing .col-name { font-family: var(--serif); font-size: 1.15rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); }
+.rw-onpace-col.chasing .col-name .col-sub-tag { display: block; margin-top: .1rem; }
 .rw-onpace-col .col-sub-tag { font-family: var(--mono); font-size: .48rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rw-mute); }
 .rw-onpace-col .col-val { font-family: var(--mono); font-weight: 700; font-size: .6rem; color: var(--rw-ember-hi); margin-top: .15rem; }
 .rw-onpace-col.mark .col-val { color: var(--rw-cream); }
@@ -521,6 +530,15 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 
       var gapClass = overshoot ? 'gap-pos' : 'gap-neg';
 
+      // The readout that rides above the fill is centred on the fill's end
+      // by default. Near the top of the track that centring pushes the text
+      // off the right edge of the card, so once the fill is well past
+      // halfway we pin the label to the right edge and right-align it. In
+      // overshoot layouts the projection label already owns the right edge,
+      // so those keep the centred position.
+      var labelStyle = 'left:' + fillPct.toFixed(2) + '%; transform:translateX(-50%);';
+      if (!overshoot && fillPct >= 60) labelStyle = 'right:0; left:auto; transform:none;';
+
       html +=
         '<article class="rw-block">' +
           '<div class="rw-block-head">' +
@@ -538,11 +556,12 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
             '</div>' +
             '<div class="rw-block-plot">' +
               '<div class="rw-plot-head">' +
+                '<span class="chaser-lbl">Chasing</span>' +
                 '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
                 (it.chaser_sub ? '<span class="chaser-sub">' + esc(it.chaser_sub) + '</span>' : '') +
               '</div>' +
               '<div class="rw-plot-labels">' +
-                '<span class="rw-plot-label" style="left:' + fillPct.toFixed(2) + '%">' + esc(barLabel) + '</span>' +
+                '<span class="rw-plot-label" style="' + labelStyle + '">' + esc(barLabel) + '</span>' +
                 projAboveHtml +
               '</div>' +
               '<div class="rw-plot-track">' +
