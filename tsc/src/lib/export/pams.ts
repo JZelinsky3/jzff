@@ -4955,7 +4955,7 @@ function buildLiveSeasonPreviews(
     if (winsTo != null && winsTo - c.winsAfter === 1) {
       // Imminent ETAs use % progress to match the horizon column's
       // treatment — keeps the right edge from echoing the left copy.
-      const progress = Math.round((c.winsAfter / winsTo) * 100)
+      const progress = Math.floor((c.winsAfter / winsTo) * 100)
       imminent.wins.push({
         glyph: '✦', category: 'wins', name: c.name, avatar: c.avatar,
         copy_html: `<em>1</em> win from <em>${ordinal(winsTo)}</em>`,
@@ -4968,7 +4968,9 @@ function buildLiveSeasonPreviews(
     const pfTo = nextTierAhead(c.pfAfter, pfTiers)
     if (pfTo != null && pfTo - c.pfAfter <= 150) {
       const gap = Math.round(pfTo - c.pfAfter)
-      const progress = Math.round((c.pfAfter / pfTo) * 100)
+      // Floor, not round, so an in-progress chase never reads 100% before the
+      // tier is actually crossed (e.g. 54 pts from 12,500 shows 99%, not 100%).
+      const progress = Math.floor((c.pfAfter / pfTo) * 100)
       imminent.points.push({
         glyph: '★', category: 'points', name: c.name, avatar: c.avatar,
         copy_html: `<em>${gap}</em> pts from <em>${pfTo.toLocaleString()}</em>`,
@@ -4980,7 +4982,7 @@ function buildLiveSeasonPreviews(
     // Streak imminent: one win from beating the manager's own personal best
     if (c.activeStreak.type === 'W' && c.careerLongestWinStreak > 0 && c.activeStreak.len === c.careerLongestWinStreak) {
       const target = c.careerLongestWinStreak + 1
-      const progress = Math.round((c.activeStreak.len / target) * 100)
+      const progress = Math.floor((c.activeStreak.len / target) * 100)
       imminent.streak.push({
         glyph: '✺', category: 'streak', name: c.name, avatar: c.avatar,
         copy_html: `one win from a new personal-best <em>${target}-game win</em> streak`,
@@ -4993,7 +4995,7 @@ function buildLiveSeasonPreviews(
     // ── Horizon (2-8 wins out, 150-800 PF out; streak chases personal best)
     if (winsTo != null) {
       const gap = winsTo - c.winsAfter
-      const progress = Math.round((c.winsAfter / winsTo) * 100)
+      const progress = Math.floor((c.winsAfter / winsTo) * 100)
       // Gap caps at 8 wins so deep-season tiers (e.g. 75W) don't
       // start tracking from 40W. Progress floor at 50% so small
       // tiers (e.g. 10W) don't surface a chaser at 3 wins (30%).
@@ -5032,7 +5034,7 @@ function buildLiveSeasonPreviews(
     ) {
       const target = c.careerLongestWinStreak + 1
       const gap = target - c.activeStreak.len
-      const progress = Math.round((c.activeStreak.len / target) * 100)
+      const progress = Math.floor((c.activeStreak.len / target) * 100)
       horizon.streak.push({
         glyph: '✺', category: 'streak', name: c.name, avatar: c.avatar,
         copy_html: `<em>${gap}</em> wins shy of a <em>${target}-game win</em> streak`,
