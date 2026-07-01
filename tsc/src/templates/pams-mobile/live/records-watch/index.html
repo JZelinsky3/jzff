@@ -204,33 +204,31 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 .rw-block-cat { color: var(--rw-ember-hi); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rw-block-flag { color: var(--gold); }
 .rw-block-body { padding: .65rem .8rem .7rem; }
-/* Mark info is pushed to the right so it reads as the reference the chaser
-   is climbing toward, and leaves the left column open for the bigger chaser
-   name below. */
+/* Top row: the chaser owns the left as the oversized headline, the mark is
+   tucked to the right as the reference they're climbing toward. */
+.rw-block-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; margin-bottom: .2rem; }
 .rw-block-mark {
+    flex: 0 0 auto;
     display: flex; flex-wrap: wrap; justify-content: flex-end;
-    align-items: baseline; gap: .15rem .45rem;
-    margin-bottom: .6rem; text-align: right;
+    align-items: baseline; gap: .1rem .4rem; text-align: right;
 }
 .rw-mark-label {
     font-family: var(--mono); font-weight: 700;
     font-size: .48rem; letter-spacing: .16em; text-transform: uppercase;
     color: var(--rw-mute);
 }
-.rw-mark-num { font-family: var(--serif); font-size: 1.3rem; line-height: 1; color: var(--rw-cream); }
+.rw-mark-num { font-family: var(--serif); font-size: 1.2rem; line-height: 1; color: var(--rw-cream); }
 .rw-mark-unit { font-family: var(--mono); font-size: .52rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rw-mute); }
 .rw-mark-credit { width: 100%; font-family: var(--mono); font-size: .54rem; letter-spacing: .06em; color: var(--rw-mute); }
 .rw-mark-credit strong { color: var(--rw-ember-hi); font-weight: 700; }
 
-/* The chaser is the whole story of the card, so it gets a tiny "Chasing"
-   kicker + an oversized serif name — big enough to read as the subject at
-   a glance and to tell it apart from the mark holder credited just above.
-   The old .85rem margin left an absurd gap above the bar; tightened. */
-.rw-plot-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .45rem; margin-bottom: .4rem; }
-.rw-plot-head .chaser-lbl { flex: 0 0 100%; font-family: var(--mono); font-weight: 700; font-size: .46rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rw-ember); }
-.rw-plot-head .chaser { font-family: var(--serif); font-size: 1.2rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); }
+/* The chaser is the whole story of the card: a tiny "Chasing" kicker over an
+   oversized serif name, planted top-left as the headline. */
+.rw-plot-head { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: .05rem .45rem; }
+.rw-plot-head .chaser-lbl { flex: 0 0 100%; font-family: var(--mono); font-weight: 700; font-size: .48rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rw-ember); }
+.rw-plot-head .chaser { font-family: var(--serif); font-size: 1.7rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); }
 .rw-plot-head .chaser-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rw-mute); margin-left: .1rem; }
-.rw-plot-labels { position: relative; height: .85rem; margin-bottom: .3rem; }
+.rw-plot-labels { position: relative; height: .72rem; margin-bottom: .3rem; }
 .rw-plot-label {
     position: absolute; bottom: 0;
     transform: translateX(-50%);
@@ -315,7 +313,7 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
     color: var(--rw-mute);
     margin-bottom: .2rem;
 }
-.rw-onpace-col.chasing .col-lbl { color: var(--rw-ember); }
+.rw-onpace-col.chasing .col-lbl { color: var(--rw-ember); margin-bottom: .05rem; }
 .rw-onpace-col .col-name { font-size: .76rem; font-weight: 600; color: var(--rw-cream); }
 /* Chaser gets the oversized serif treatment so it reads as the subject,
    not just the left half of a two-up grid. */
@@ -554,19 +552,21 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
             '<span class="rw-block-flag">' + esc(it.flag || 'On the brink') + '</span>' +
           '</div>' +
           '<div class="rw-block-body">' +
-            '<div class="rw-block-mark">' +
-              '<span class="rw-mark-label">The mark</span>' +
-              '<span class="rw-mark-num">' + esc(markNum) + '</span>' +
-              (markUnit ? '<span class="rw-mark-unit">' + esc(markUnit) + '</span>' : '') +
-              '<span class="rw-mark-credit"><strong>' + esc(it.holder || '—') + '</strong>' +
-                (it.holder_when ? ' · ' + esc(it.holder_when) : '') + '</span>' +
-            '</div>' +
-            '<div class="rw-block-plot">' +
+            '<div class="rw-block-top">' +
               '<div class="rw-plot-head">' +
                 '<span class="chaser-lbl">Chasing</span>' +
                 '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
                 (it.chaser_sub ? '<span class="chaser-sub">' + esc(it.chaser_sub) + '</span>' : '') +
               '</div>' +
+              '<div class="rw-block-mark">' +
+                '<span class="rw-mark-label">The mark</span>' +
+                '<span class="rw-mark-num">' + esc(markNum) + '</span>' +
+                (markUnit ? '<span class="rw-mark-unit">' + esc(markUnit) + '</span>' : '') +
+                '<span class="rw-mark-credit"><strong>' + esc(it.holder || '—') + '</strong>' +
+                  (it.holder_when ? ' · ' + esc(it.holder_when) : '') + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="rw-block-plot">' +
               '<div class="rw-plot-labels">' +
                 '<span class="rw-plot-label" style="' + labelStyle + '">' + esc(barLabel) + '</span>' +
                 projAboveHtml +
