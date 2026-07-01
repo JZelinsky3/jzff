@@ -63,6 +63,29 @@
         add('meta', { name: 'theme-color', content: '#0e1620' });
     })();
 
+    // ── PWA install prompt capture ──
+    // Chrome/Android fire `beforeinstallprompt` when the league PWA is
+    // installable (real leagues get the manifest + apple-touch-icon tags from
+    // the almanac route). We stash the event so the More sheet's "Add to Home
+    // Screen" row can trigger the native prompt on demand. iOS never fires it,
+    // so that path falls back to a short instructions sheet instead.
+    var deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+    });
+    window.addEventListener('appinstalled', function () {
+        deferredInstallPrompt = null;
+        var row = document.getElementById('dc-a2hs-btn');
+        if (row) row.style.display = 'none';
+    });
+    // True when the page is already running as an installed app — no point
+    // offering "Add to Home Screen" there.
+    function isInstalledStandalone() {
+        return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+            || window.navigator.standalone === true;
+    }
+
     // ── Tab registry ────────────────────────────────────────────────────
     // data-page → which tab lights up. Pages without an entry light nothing.
     var TAB_OF_PAGE = {
@@ -326,6 +349,65 @@
                 if (sheetBtn && origText) sheetBtn.textContent = origText;
             });
         });
+    }
+
+    // Wire the More sheet's "Add to Home Screen" row. Delegated off document
+    // (the sheet is appended after init, same pattern as the bookmark toggle).
+    // Android/Chrome: replay the stashed beforeinstallprompt so the browser
+    // shows its native install dialog. iOS / anything without a stashed prompt:
+    // open a short instructions sheet, since Safari exposes no install API.
+    function wireInstallPrompt() {
+        document.addEventListener('click', function (e) {
+            if (!e.target || !e.target.closest) return;
+            var btn = e.target.closest('#dc-a2hs-btn');
+            if (!btn) return;
+            e.preventDefault();
+            if (deferredInstallPrompt) {
+                var dp = deferredInstallPrompt;
+                deferredInstallPrompt = null;
+                dp.prompt();
+                dp.userChoice.then(function (choice) {
+                    // Declined → let them try again later by restoring the row.
+                    if (choice && choice.outcome === 'accepted') {
+                        btn.style.display = 'none';
+                    } else {
+                        deferredInstallPrompt = dp;
+                    }
+                }).catch(function () { deferredInstallPrompt = dp; });
+                return;
+            }
+            openInstallHelpSheet();
+        });
+    }
+
+    // Manual "Add to Home Screen" steps for browsers with no install API
+    // (iOS Safari, and Android sessions where the native prompt isn't ready).
+    function openInstallHelpSheet() {
+        var existing = document.getElementById('m-sheet-a2hs-help');
+        if (existing) { openSheet(existing); return; }
+        var ua = navigator.userAgent || '';
+        var isIOS = /iphone|ipad|ipod/i.test(ua)
+            || (/Macintosh/.test(ua) && 'ontouchend' in document);
+        var steps = isIOS
+            ? 'Tap the <strong>Share</strong> icon in the toolbar, then choose '
+              + '<strong>Add to Home Screen</strong> and tap <strong>Add</strong>.'
+            : 'Open your browser menu <strong>(⋮)</strong>, then choose '
+              + '<strong>Add to Home screen</strong> (or <strong>Install app</strong>) and confirm.';
+        var sheet = document.createElement('dialog');
+        sheet.className = 'm-sheet';
+        sheet.id = 'm-sheet-a2hs-help';
+        sheet.innerHTML =
+            '<div class="m-sheet-handle" aria-hidden></div>' +
+            '<div class="m-sheet-title">Add to <em>Home Screen.</em></div>' +
+            '<div class="m-sheet-body">' + steps + '</div>' +
+            '<button class="m-sheet-cta" data-close>Got it</button>';
+        document.body.appendChild(sheet);
+        sheet.addEventListener('click', function (e) {
+            if (e.target === sheet || (e.target.closest && e.target.closest('[data-close]'))) closeSheet(sheet);
+        });
+        sheet.addEventListener('cancel', function (e) { e.preventDefault(); closeSheet(sheet); });
+        wireSheetDrag(sheet);
+        openSheet(sheet);
     }
 
     // Build (lazily) and open a small modal sheet that tells signed-out
@@ -603,6 +685,14 @@
             themePicker += '</div>';
         }
 
+        // "Add to Home Screen" — hidden once the app is already installed.
+        // The click handler (wireInstallPrompt) fires the native prompt on
+        // Android or shows manual steps on iOS.
+        var installRow = isInstalledStandalone()
+            ? ''
+            : '<button class="m-sheet-row" id="dc-a2hs-btn" type="button">'
+                + 'Add to Home Screen<span class="m-sheet-sub">App</span></button>';
+
         more.innerHTML =
             '<div class="m-sheet-handle" aria-hidden></div>' +
             '<div class="m-sheet-title">' + escapeHtml(ctx.name || 'The Almanac') + '</div>' +
@@ -611,6 +701,7 @@
             account +
             themePicker +
             '<div class="m-sheet-divider"></div>' +
+            installRow +
             sheetRow(desktopHref, 'View desktop site');
 
         var sheets = { history: history, more: more };
@@ -981,6 +1072,7 @@
         enhanceAuthLinks();
         wireBookmarkToggle();
         wirePostSigninBookmark();
+        wireInstallPrompt();
         // wireThemePicker(); // vaulted — themes not ready yet
     }
 
