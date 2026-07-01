@@ -448,7 +448,7 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
     // floor — long names scale instead of immediately truncating, and the
     // CSS ellipsis only takes over once a name is too long even at the floor.
     function fitFsNames() {
-        var BASE = 0.82, FLOOR = 0.6, STEP = 0.02;
+        var BASE = 0.82, FLOOR = 0.44, STEP = 0.02;
         requestAnimationFrame(function () {
             document.querySelectorAll('#fsCard .fs-team').forEach(function (el) {
                 var size = BASE;

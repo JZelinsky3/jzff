@@ -184,8 +184,10 @@
     letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute);
 }
 .rb-hero-val { flex: none; font-family: var(--serif); font-size: 2.6rem; line-height: .85; color: var(--rec); text-align: right; font-variant-numeric: tabular-nums; }
-/* Marquee bar under the leader (Lowest PPG only — see renderSeasonBars). */
-.rb-hero-track { margin-top: .55rem; height: 6px; }
+/* Lowest PPG "gap below league best" chip (replaces the bar — see renderSeasonBars). */
+.rb-hero-gap { margin-top: .5rem; }
+.rb-gap { display: inline-flex; align-items: baseline; gap: 4px; margin: 4px 0 3px; font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .02em; color: var(--bad); }
+.rb-gap i { font-style: normal; font-weight: 600; font-size: .44rem; letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute); }
 .rb-hero-val.has-sub { display: inline-flex; flex-direction: column; align-items: flex-end; }
 .rb-hero-val small {
     font-family: var(--mono); font-weight: 600;
@@ -266,10 +268,13 @@
 
 /* ── Careers: no-podiums roll ──────────────────────────────────── */
 .rb-nopod-note { margin-top: .5rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .04em; color: var(--cream-mute); }
-/* Sized to sit about as tall as the podium cards it shares a rail with. */
-.rb-nopod-list { display: flex; flex-wrap: wrap; align-content: flex-start; gap: .5rem; margin-top: .8rem; min-height: 7rem; }
-.rb-nopod-chip { font-family: var(--serif); font-size: 1.05rem; color: var(--cream-soft); background: var(--ink-soft); border: 1px solid var(--ink-line); border-radius: 999px; padding: .4rem .85rem; }
-.rb-nopod-chip small { font-family: var(--mono); font-size: .52rem; letter-spacing: .04em; text-transform: uppercase; color: var(--cream-mute); margin-left: .4rem; }
+.rb-nopod-rows { display: flex; flex-direction: column; margin-top: .7rem; }
+.rb-nopod-row { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; padding: .5rem .1rem; border-bottom: 1px solid var(--ink-line-soft); }
+.rb-nopod-row:last-child { border-bottom: none; }
+.rb-nopod-name { min-width: 0; font-family: var(--serif); font-size: 1rem; color: var(--cream-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-nopod-name small { font-family: var(--mono); font-size: .5rem; letter-spacing: .05em; text-transform: uppercase; color: var(--cream-mute); margin-left: .45rem; }
+.rb-nopod-best { flex: none; font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute); }
+.rb-nopod-best b { font-weight: 700; font-size: .82rem; letter-spacing: 0; color: var(--rec); margin-left: .3rem; }
 </style>
 </head>
 <body>
@@ -310,6 +315,12 @@
         // instead of integers rendering narrower than decimals.
         var fd = d == null ? 1 : d;
         return Number(n).toLocaleString('en-US', { minimumFractionDigits: fd, maximumFractionDigits: fd });
+    }
+    function ord(n) {
+        if (n == null || isNaN(n)) return '—';
+        n = Math.round(n);
+        var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
     }
 
     var book = null;
@@ -505,7 +516,11 @@
     // managers, with the opponent demoted to a smaller, dimmer tail.
     function holderHtmlFor(key, e) {
         if (key.indexOf('combined_score') !== -1 && e.opp_owner) {
-            return esc(holderName(e)) + ' <span class="rb-vs">vs ' + esc(e.opp_owner) + '</span>';
+            // Winner (higher score) leads the "A vs B" pairing.
+            var oppWon = (e.opp_score || 0) > (e.score || 0);
+            var a = oppWon ? e.opp_owner : holderName(e);
+            var b = oppWon ? holderName(e) : e.opp_owner;
+            return esc(a) + ' <span class="rb-vs">vs ' + esc(b) + '</span>';
         }
         return esc(holderName(e));
     }
@@ -584,19 +599,27 @@
     }
     function renderSeasonBars(key, label, val, ctx, entries, idx, opts) {
         opts = opts || {};
-        // Bars are normally anchored to this list's own max. opts.externalMax
-        // overrides that with a league-wide basis — Lowest PPG anchors to the
-        // best PPG in the league so a low number reads as a short bar instead
-        // of filling up as the score drops.
-        var max = opts.externalMax || 0;
-        if (!max) entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
+        // opts.gap = { best } swaps the proportional bar for a "gap below the
+        // league's best PPG" chip on every row (Lowest PPG — a bar there read
+        // backwards, since the worst season would score the shortest bar).
+        var gap = opts.gap || null;
+        var max = 0;
+        if (!gap) entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
 
-        // #1 becomes the marquee — big serif value, holder as headline, full
-        // season context. The leader normally gets no bar (against its own
-        // list max it would always be full = no info), but opts.heroBar gives
-        // it one when the basis is league-wide and the leader sits below it.
+        function gapChip(e) {
+            var d = gap.best - seasonBasis(key, e);
+            return '<span class="rb-gap">−' + num(d) + '<i>vs best</i></span>';
+        }
+        function barTrack(e) {
+            var w = max > 0 ? Math.max(8, (seasonBasis(key, e) / max) * 100) : 0;
+            return '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>';
+        }
+
+        // #1 is the marquee — big serif value, holder as headline, full season
+        // context. It gets no bar (against the list max it would always be
+        // full); in gap mode it carries its own gap chip so the card keeps an
+        // even height with Highest PPG next to it.
         var lead = entries[0];
-        var heroW = (opts.heroBar && max > 0) ? Math.max(8, (seasonBasis(key, lead) / max) * 100) : null;
         var hero =
             '<div class="rb-hero">' +
                 '<div class="rb-hero-top">' +
@@ -604,19 +627,18 @@
                         '<small>' + esc(ctx(lead) || '') + '</small></span>' +
                     valHtml('rb-hero-val', val(lead), key, lead) +
                 '</div>' +
-                (heroW != null ? '<span class="rb-bar-track rb-hero-track"><span class="rb-bar-fill" style="width:' + heroW.toFixed(1) + '%"></span></span>' : '') +
+                (gap ? '<div class="rb-hero-gap">' + gapChip(lead) + '</div>' : '') +
             '</div>';
 
-        // Ranks 2+ stay as proportional bars; 2–3 visible, rest fold away.
+        // Ranks 2+ stay as proportional bars (or gap chips); 2–3 visible, rest fold away.
         var rows = entries.slice(1).map(function (e, i) {
             var rank = i + 2;
-            var w = max > 0 ? Math.max(8, (seasonBasis(key, e) / max) * 100) : 0;
             var ex = valExtra(key, e);
             return '<div class="rb-bar-row' + (rank > 3 ? ' rb-extra' : '') + '">' +
                 '<span class="rb-bar-rank">' + rank + '</span>' +
                 '<span class="rb-bar-main">' +
                     '<span class="rb-bar-name">' + holderHtmlFor(key, e) + seasonNameExtra(key, e) + '</span>' +
-                    '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>' +
+                    (gap ? gapChip(e) : barTrack(e)) +
                     '<span class="rb-bar-sub">' + esc(ctx(e) || '') + '</span>' +
                 '</span>' +
                 '<span class="rb-bar-val' + (ex.below ? ' has-sub' : '') + '">' + esc(val(e)) +
@@ -635,20 +657,35 @@
     // boxscore on the right. Margin records get a "Margin" tag under the
     // stat so the +number reads as the gap, not a score.
     function gameHero(key, e, val) {
-        var aWin = (e.score || 0) >= (e.opp_score || 0);
+        var isCombined = key.indexOf('combined') !== -1;
+        var isLowest = key === 'lowest_single_week_score';
         var statTag = (key.indexOf('blowout') !== -1 || key.indexOf('closest') !== -1) ? 'Margin'
-            : (key.indexOf('combined') !== -1 ? 'Combined' : '');
+            : (isCombined ? 'Combined' : '');
+
+        // Line order: combined games have no single protagonist, so the higher
+        // score sits on top. Every other record keeps its holder (e.owner)
+        // first — including Lowest Score, where the holder is the low scorer.
+        var swap = isCombined && (e.opp_score || 0) > (e.score || 0);
+        var n1 = swap ? e.opp_owner : e.owner;
+        var s1 = swap ? e.opp_score : e.score;
+        var n2 = swap ? e.owner : e.opp_owner;
+        var s2 = swap ? e.score : e.opp_score;
+
+        // Emphasis: normally the winner, but a Lowest Score record celebrates
+        // its holder (the low scorer on line 1) even though they lost.
+        var hi1 = isLowest ? true : ((s1 || 0) >= (s2 || 0));
+
         return '<div class="rb-ghero">' +
             '<span class="rb-gstat">' + esc(val(e)) +
                 (statTag ? '<small>' + statTag + '</small>' : '') + '</span>' +
             '<div class="rb-gcard">' +
-                '<div class="rb-gline' + (aWin ? ' is-win' : '') + '">' +
-                    '<span class="rb-gline-name">' + esc(e.owner || '—') + '</span>' +
-                    '<span class="rb-gline-score">' + num(e.score) + '</span>' +
+                '<div class="rb-gline' + (hi1 ? ' is-win' : '') + '">' +
+                    '<span class="rb-gline-name">' + esc(n1 || '—') + '</span>' +
+                    '<span class="rb-gline-score">' + num(s1) + '</span>' +
                 '</div>' +
-                '<div class="rb-gline' + (!aWin ? ' is-win' : '') + '">' +
-                    '<span class="rb-gline-name">' + esc(e.opp_owner || '—') + '</span>' +
-                    '<span class="rb-gline-score">' + num(e.opp_score) + '</span>' +
+                '<div class="rb-gline' + (!hi1 ? ' is-win' : '') + '">' +
+                    '<span class="rb-gline-name">' + esc(n2 || '—') + '</span>' +
+                    '<span class="rb-gline-score">' + num(s2) + '</span>' +
                 '</div>' +
                 '<div class="rb-gstamp">' + esc(e.season + ' · Week ' + e.week) + '</div>' +
             '</div>' +
@@ -722,15 +759,25 @@
 
     // ── Careers → the podium-less roll (managers with zero top-3s) ─
     function renderNoPodium(label, entries) {
-        var chips = entries.map(function (e) {
+        // Worst "best finish" on top — someone whose peak is 10th sits above
+        // someone who's reached 6th, so the list reads furthest-from-a-podium
+        // down to knocking-on-the-door.
+        var rows = entries.slice().sort(function (a, b) {
+            return (b.best_finish || 0) - (a.best_finish || 0)
+                || (b.seasons_played || 0) - (a.seasons_played || 0)
+                || holderName(a).localeCompare(holderName(b));
+        }).map(function (e) {
             var sp = e.seasons_played != null
-                ? '<small>' + e.seasons_played + (e.seasons_played === 1 ? ' yr' : ' yrs') + '</small>' : '';
-            return '<span class="rb-nopod-chip">' + esc(holderName(e)) + sp + '</span>';
+                ? '<small>' + e.seasons_played + (e.seasons_played === 1 ? ' szn' : ' szns') + '</small>' : '';
+            return '<div class="rb-nopod-row">' +
+                '<span class="rb-nopod-name">' + esc(holderName(e)) + sp + '</span>' +
+                '<span class="rb-nopod-best">Best <b>' + (e.best_finish ? ord(e.best_finish) : '—') + '</b></span>' +
+            '</div>';
         }).join('');
         return '<div class="m-card rb-card">' +
             '<div class="rb-card-head"><div class="rb-card-label">' + esc(label) + '</div></div>' +
             '<div class="rb-nopod-note">Still chasing a top-3 finish.</div>' +
-            '<div class="rb-nopod-list">' + chips + '</div>' +
+            '<div class="rb-nopod-rows">' + rows + '</div>' +
         '</div>';
     }
 
@@ -742,13 +789,13 @@
             // Win/Loss records use the plain card.
             if (key === 'best_reg_season_records' || key === 'worst_reg_season_records')
                 return renderStandard(key, label, val, ctx, entries, null);
-            // Lowest PPG bars anchor to the league's best PPG (the Highest PPG
-            // leader), so the worst season reads as a short bar and the card
-            // matches Highest PPG's height in the rail. Hero gets a bar too.
+            // Lowest PPG swaps bars for a "gap below the league's best PPG"
+            // chip on each row — a bar read backwards (worst season = shortest
+            // bar), and this keeps the card level with Highest PPG in the rail.
             if (key === 'lowest_ppg') {
                 var hp = (book.season && book.season.highest_ppg) || [];
-                var leagueMaxPpg = hp.length ? seasonBasis('highest_ppg', hp[0]) : 0;
-                return renderSeasonBars(key, label, val, ctx, entries, null, { externalMax: leagueMaxPpg, heroBar: true });
+                var leagueBestPpg = hp.length ? seasonBasis('highest_ppg', hp[0]) : 0;
+                return renderSeasonBars(key, label, val, ctx, entries, null, { gap: { best: leagueBestPpg } });
             }
             return renderSeasonBars(key, label, val, ctx, entries, null);
         }
@@ -772,7 +819,7 @@
         ],
         season: [
             { title: 'Points',       keys: ['highest_season_pf', 'highest_total_season_pf', 'most_points_against'] },
-            { title: 'PPG', keys: ['highest_ppg', 'lowest_ppg'] },
+            { title: 'PPG Leaders', keys: ['highest_ppg', 'lowest_ppg'] },
             { title: 'Records',      keys: ['best_reg_season_records', 'worst_reg_season_records'] },
         ],
         career: [

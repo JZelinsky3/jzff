@@ -2508,6 +2508,7 @@
           "user_id": 1005,
           "top_3_finishes": 0,
           "seasons_played": 7,
+          "best_finish": 4,
           "is_current_member": true
         },
         {
@@ -2515,6 +2516,7 @@
           "user_id": 1011,
           "top_3_finishes": 0,
           "seasons_played": 4,
+          "best_finish": 10,
           "is_current_member": true
         },
         {
@@ -2522,6 +2524,7 @@
           "user_id": 1012,
           "top_3_finishes": 0,
           "seasons_played": 2,
+          "best_finish": 6,
           "is_current_member": true
         }
       ]
