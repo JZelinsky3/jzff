@@ -4215,18 +4215,18 @@ function buildLiveSeasonPreviews(
     }
   }
 
-  // A live streak only earns a spot on the watch once it's genuinely close
-  // to the all-time mark. Halfway there (e.g. 4 of 8) isn't hard or close,
-  // so it stays off the board entirely; at 65%+ it surfaces straight into
-  // Brink (the on-pace band doesn't apply — you can't "project" a streak).
-  const STREAK_MIN_PCT = 65
+  // Streaks read as "close to the mark," not "projected past it," so they
+  // ride their own thresholds (see STREAK_ONPACE/STREAK_BRINK in the bucket
+  // step below) instead of the pace bands. Tag them here so the bucketer can
+  // tell a streak from a projecting accumulator.
+  const streakItems = new Set<WatchItem>()
 
   // ── Active win streak vs all-time longest
   const liveWin = seasonByMgr.filter((m) => m.activeStreak.type === 'W' && m.activeStreak.len > 0)
     .sort((a, b) => b.activeStreak.len - a.activeStreak.len)[0]
-  if (liveWin && allWinStreak.len > 0 && (liveWin.activeStreak.len / allWinStreak.len) * 100 >= STREAK_MIN_PCT) {
+  if (liveWin && allWinStreak.len > 0) {
     const v = liveWin.activeStreak.len, r = allWinStreak.len, pct = (v / r) * 100
-    accumItems.push({
+    const winStreakItem: WatchItem = {
       category: 'Longest Win Streak',
       pct,
       realized: v > r,
@@ -4240,15 +4240,17 @@ function buildLiveSeasonPreviews(
       copy_html: `<em>${escTxt(liveWin.name)}</em> on a ${v}-game win streak`,
       when: `W${throughWeek} · ${year}`,
       previous: `${r} wins · ${nameOf(allWinStreak.mid)}`,
-    })
+    }
+    accumItems.push(winStreakItem)
+    streakItems.add(winStreakItem)
   }
 
   // ── Active loss streak vs all-time longest
   const liveLoss = seasonByMgr.filter((m) => m.activeStreak.type === 'L' && m.activeStreak.len > 0)
     .sort((a, b) => b.activeStreak.len - a.activeStreak.len)[0]
-  if (liveLoss && allLossStreak.len > 0 && (liveLoss.activeStreak.len / allLossStreak.len) * 100 >= STREAK_MIN_PCT) {
+  if (liveLoss && allLossStreak.len > 0) {
     const v = liveLoss.activeStreak.len, r = allLossStreak.len, pct = (v / r) * 100
-    accumItems.push({
+    const lossStreakItem: WatchItem = {
       category: 'Longest Losing Skid',
       pct,
       realized: v > r,
@@ -4262,7 +4264,9 @@ function buildLiveSeasonPreviews(
       copy_html: `<em>${escTxt(liveLoss.name)}</em> has dropped ${v} straight`,
       when: `W${throughWeek} · ${year}`,
       previous: `${r} losses · ${nameOf(allLossStreak.mid)}`,
-    })
+    }
+    accumItems.push(lossStreakItem)
+    streakItems.add(lossStreakItem)
   }
 
   // ── QUICKEST TO X: career milestone-crossing speed records.
@@ -4645,8 +4649,16 @@ function buildLiveSeasonPreviews(
   // bar-plot treatment yet.
   const BRINK_THRESHOLD  = 65  // ≥ this with no overshoot → Brink (with meter)
   const ONPACE_THRESHOLD = 40  // ≥ this and < brink → On Pace (stats only)
+  // Streaks race their own bands, keyed off a nominal 8-game mark: On Pace
+  // once you're 5 of 8 (62.5%), Brink once you're 6.5 of 8 (81.25%). Shorter
+  // or longer all-time streaks scale by the same percentages.
+  const STREAK_ONPACE_THRESHOLD = (5 / 8) * 100    // 62.5
+  const STREAK_BRINK_THRESHOLD  = (6.5 / 8) * 100  // 81.25
 
   for (const it of accumItems) {
+    const isStreak = streakItems.has(it)
+    const brinkAt  = isStreak ? STREAK_BRINK_THRESHOLD  : BRINK_THRESHOLD
+    const onPaceAt = isStreak ? STREAK_ONPACE_THRESHOLD : ONPACE_THRESHOLD
     if (it.pct >= 100 && it.realized) {
       // Past tense: the item is broken, the flag should read that way.
       // Without this override, the build-time flag (e.g. "WILL BREAK IT")
@@ -4659,8 +4671,8 @@ function buildLiveSeasonPreviews(
       // flagFor returns at exactly 100%.
       it.flag = 'TIED THE MARK'
       brink.push(it)
-    } else if (it.pct >= BRINK_THRESHOLD) brink.push(it)
-    else if (it.pct >= ONPACE_THRESHOLD) onPace.push(it)
+    } else if (it.pct >= brinkAt) brink.push(it)
+    else if (it.pct >= onPaceAt) onPace.push(it)
   }
   for (const it of justMissedItems) {
     if (it.realized) {
