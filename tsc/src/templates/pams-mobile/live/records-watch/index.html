@@ -204,9 +204,13 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 .rw-block-cat { color: var(--rw-ember-hi); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rw-block-flag { color: var(--gold); }
 .rw-block-body { padding: .65rem .8rem .7rem; }
+/* Mark info is pushed to the right so it reads as the reference the chaser
+   is climbing toward, and leaves the left column open for the bigger chaser
+   name below. */
 .rw-block-mark {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .45rem;
-    margin-bottom: .6rem;
+    display: flex; flex-wrap: wrap; justify-content: flex-end;
+    align-items: baseline; gap: .15rem .45rem;
+    margin-bottom: .6rem; text-align: right;
 }
 .rw-mark-label {
     font-family: var(--mono); font-weight: 700;
@@ -226,7 +230,7 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 .rw-plot-head .chaser-lbl { flex: 0 0 100%; font-family: var(--mono); font-weight: 700; font-size: .46rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rw-ember); }
 .rw-plot-head .chaser { font-family: var(--serif); font-size: 1.2rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); }
 .rw-plot-head .chaser-sub { font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rw-mute); margin-left: .1rem; }
-.rw-plot-labels { position: relative; height: .85rem; }
+.rw-plot-labels { position: relative; height: .85rem; margin-bottom: .3rem; }
 .rw-plot-label {
     position: absolute; bottom: 0;
     transform: translateX(-50%);
@@ -315,8 +319,11 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
 .rw-onpace-col .col-name { font-size: .76rem; font-weight: 600; color: var(--rw-cream); }
 /* Chaser gets the oversized serif treatment so it reads as the subject,
    not just the left half of a two-up grid. */
-.rw-onpace-col.chasing .col-name { font-family: var(--serif); font-size: 1.15rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); }
+.rw-onpace-col.chasing .col-name { font-family: var(--serif); font-size: 1.15rem; line-height: 1.05; font-weight: 400; color: var(--rw-cream); margin-bottom: .15rem; }
 .rw-onpace-col.chasing .col-name .col-sub-tag { display: block; margin-top: .1rem; }
+/* The active streak / running total is the live number, so give it a bit
+   more weight than the mark side. The "to tie" gap below stays small. */
+.rw-onpace-col.chasing .col-val { font-size: .78rem; }
 .rw-onpace-col .col-sub-tag { font-family: var(--mono); font-size: .48rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rw-mute); }
 .rw-onpace-col .col-val { font-family: var(--mono); font-weight: 700; font-size: .6rem; color: var(--rw-ember-hi); margin-top: .15rem; }
 .rw-onpace-col.mark .col-val { color: var(--rw-cream); }
