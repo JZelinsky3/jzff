@@ -184,10 +184,10 @@
     letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute);
 }
 .rb-hero-val { flex: none; font-family: var(--serif); font-size: 2.6rem; line-height: .85; color: var(--rec); text-align: right; font-variant-numeric: tabular-nums; }
-/* Lowest PPG "gap below league best" chip (replaces the bar — see renderSeasonBars). */
-.rb-hero-gap { margin-top: .5rem; }
-.rb-gap { display: inline-flex; align-items: baseline; gap: 4px; margin: 4px 0 3px; font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .02em; color: var(--bad); }
-.rb-gap i { font-style: normal; font-weight: 600; font-size: .44rem; letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute); }
+/* Lowest PPG has no bars — bigger names + more line spacing hold the collapsed
+   card level with Highest PPG (which gets its height from the bars). */
+.rb-bars-bare { gap: 1.25rem; }
+.rb-bars-bare .rb-bar-name { font-size: .96rem; }
 .rb-hero-val.has-sub { display: inline-flex; flex-direction: column; align-items: flex-end; }
 .rb-hero-val small {
     font-family: var(--mono); font-weight: 600;
@@ -269,9 +269,9 @@
 /* ── Careers: no-podiums roll ──────────────────────────────────── */
 .rb-nopod-note { margin-top: .5rem; font-family: var(--mono); font-size: .54rem; letter-spacing: .04em; color: var(--cream-mute); }
 .rb-nopod-rows { display: flex; flex-direction: column; margin-top: .7rem; }
-.rb-nopod-row { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; padding: .5rem .1rem; border-bottom: 1px solid var(--ink-line-soft); }
+.rb-nopod-row { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; padding: .4rem .1rem; border-bottom: 1px solid var(--ink-line-soft); }
 .rb-nopod-row:last-child { border-bottom: none; }
-.rb-nopod-name { min-width: 0; font-family: var(--serif); font-size: 1rem; color: var(--cream-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-nopod-name { min-width: 0; font-family: var(--serif); font-size: .88rem; color: var(--cream-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rb-nopod-name small { font-family: var(--mono); font-size: .5rem; letter-spacing: .05em; text-transform: uppercase; color: var(--cream-mute); margin-left: .45rem; }
 .rb-nopod-best { flex: none; font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute); }
 .rb-nopod-best b { font-weight: 700; font-size: .82rem; letter-spacing: 0; color: var(--rec); margin-left: .3rem; }
@@ -599,26 +599,21 @@
     }
     function renderSeasonBars(key, label, val, ctx, entries, idx, opts) {
         opts = opts || {};
-        // opts.gap = { best } swaps the proportional bar for a "gap below the
-        // league's best PPG" chip on every row (Lowest PPG — a bar there read
-        // backwards, since the worst season would score the shortest bar).
-        var gap = opts.gap || null;
+        // opts.bare drops the proportional bar entirely (Lowest PPG — a bar
+        // there read backwards, worst season = shortest bar). Its rows lean on
+        // larger names + extra line spacing (.rb-bars-bare) so the collapsed
+        // card stays level with Highest PPG, which gets its height from bars.
+        var bare = !!opts.bare;
         var max = 0;
-        if (!gap) entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
+        if (!bare) entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
 
-        function gapChip(e) {
-            var d = gap.best - seasonBasis(key, e);
-            return '<span class="rb-gap">−' + num(d) + '<i>vs best</i></span>';
-        }
         function barTrack(e) {
             var w = max > 0 ? Math.max(8, (seasonBasis(key, e) / max) * 100) : 0;
             return '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>';
         }
 
         // #1 is the marquee — big serif value, holder as headline, full season
-        // context. It gets no bar (against the list max it would always be
-        // full); in gap mode it carries its own gap chip so the card keeps an
-        // even height with Highest PPG next to it.
+        // context. No bar (against the list max it would always be full).
         var lead = entries[0];
         var hero =
             '<div class="rb-hero">' +
@@ -627,10 +622,9 @@
                         '<small>' + esc(ctx(lead) || '') + '</small></span>' +
                     valHtml('rb-hero-val', val(lead), key, lead) +
                 '</div>' +
-                (gap ? '<div class="rb-hero-gap">' + gapChip(lead) + '</div>' : '') +
             '</div>';
 
-        // Ranks 2+ stay as proportional bars (or gap chips); 2–3 visible, rest fold away.
+        // Ranks 2+ get a proportional bar (or nothing in bare mode); 2–3 visible, rest fold away.
         var rows = entries.slice(1).map(function (e, i) {
             var rank = i + 2;
             var ex = valExtra(key, e);
@@ -638,7 +632,7 @@
                 '<span class="rb-bar-rank">' + rank + '</span>' +
                 '<span class="rb-bar-main">' +
                     '<span class="rb-bar-name">' + holderHtmlFor(key, e) + seasonNameExtra(key, e) + '</span>' +
-                    (gap ? gapChip(e) : barTrack(e)) +
+                    (bare ? '' : barTrack(e)) +
                     '<span class="rb-bar-sub">' + esc(ctx(e) || '') + '</span>' +
                 '</span>' +
                 '<span class="rb-bar-val' + (ex.below ? ' has-sub' : '') + '">' + esc(val(e)) +
@@ -648,7 +642,7 @@
             '</div>';
         }).join('');
 
-        var inner = hero + (rows ? '<div class="rb-bars">' + rows + '</div>' : '');
+        var inner = hero + (rows ? '<div class="rb-bars' + (bare ? ' rb-bars-bare' : '') + '">' + rows + '</div>' : '');
         return cardShell(label, entries.length > 3, entries.length, inner, idx, toneFor(key));
     }
 
@@ -789,14 +783,11 @@
             // Win/Loss records use the plain card.
             if (key === 'best_reg_season_records' || key === 'worst_reg_season_records')
                 return renderStandard(key, label, val, ctx, entries, null);
-            // Lowest PPG swaps bars for a "gap below the league's best PPG"
-            // chip on each row — a bar read backwards (worst season = shortest
-            // bar), and this keeps the card level with Highest PPG in the rail.
-            if (key === 'lowest_ppg') {
-                var hp = (book.season && book.season.highest_ppg) || [];
-                var leagueBestPpg = hp.length ? seasonBasis('highest_ppg', hp[0]) : 0;
-                return renderSeasonBars(key, label, val, ctx, entries, null, { gap: { best: leagueBestPpg } });
-            }
+            // Lowest PPG drops the bar (it read backwards — worst season =
+            // shortest bar). Bigger names + line spacing keep it level with
+            // Highest PPG when collapsed. See .rb-bars-bare.
+            if (key === 'lowest_ppg')
+                return renderSeasonBars(key, label, val, ctx, entries, null, { bare: true });
             return renderSeasonBars(key, label, val, ctx, entries, null);
         }
         if (sec === 'career') {

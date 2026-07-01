@@ -441,31 +441,37 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 
             document.getElementById('fsCard').innerHTML = html;
             document.getElementById('fsSection').hidden = false;
-            fitFsNames();
+            scheduleFit();
         });
 
-    // Shrink each team name until it fits its column, down to a readable
-    // floor — long names scale instead of immediately truncating, and the
-    // CSS ellipsis only takes over once a name is too long even at the floor.
+    // Shrink each team name until it fits its column, down to a readable floor
+    // — long names scale instead of truncating, and the CSS ellipsis only
+    // takes over once a name is too long even at the floor. Resets to BASE
+    // first so it's safe to re-run (after fonts load, on resize).
     function fitFsNames() {
-        var BASE = 0.82, FLOOR = 0.44, STEP = 0.02;
-        requestAnimationFrame(function () {
-            document.querySelectorAll('#fsCard .fs-team').forEach(function (el) {
-                var size = BASE;
+        var BASE = 0.82, FLOOR = 0.4, STEP = 0.02;
+        document.querySelectorAll('#fsCard .fs-team').forEach(function (el) {
+            var size = BASE;
+            el.style.fontSize = size + 'rem';
+            var guard = 0;
+            while (el.scrollWidth > el.clientWidth + 1 && size > FLOOR && guard < 24) {
+                size = Math.round((size - STEP) * 100) / 100;
                 el.style.fontSize = size + 'rem';
-                var guard = 0;
-                while (el.scrollWidth > el.clientWidth && size > FLOOR && guard < 24) {
-                    size = Math.round((size - STEP) * 100) / 100;
-                    el.style.fontSize = size + 'rem';
-                    guard++;
-                }
-            });
+                guard++;
+            }
         });
+    }
+    function scheduleFit() {
+        requestAnimationFrame(fitFsNames);
+        // The first pass measures with fallback-font metrics (narrower), so a
+        // long name "fits" and never shrinks — then the real webfont swaps in
+        // wider and truncates. Re-measure once fonts are actually ready.
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitFsNames);
     }
     var fitTimer;
     window.addEventListener('resize', function () {
         clearTimeout(fitTimer);
-        fitTimer = setTimeout(fitFsNames, 150);
+        fitTimer = setTimeout(scheduleFit, 150);
     });
 })();
 </script>
