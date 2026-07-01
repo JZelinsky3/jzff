@@ -336,7 +336,7 @@ body { background: #f0e5c8; color: var(--ink); }
 
     var state = { data: null, weeks: [], activeWk: null, view: 'overall' };
 
-    fetch('live/powerrank/data', { cache: 'no-store' })
+    fetch('live/powerrank/data.json', { cache: 'no-store' })
         .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(boot)
         .catch(function (e) { showMessage('Couldn’t load power rankings.', String(e)); });

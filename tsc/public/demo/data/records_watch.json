@@ -1,0 +1,147 @@
+{
+  "meter": {
+    "through": "Week 8",
+    "broken": 3,
+    "on_pace": 4,
+    "brink": 2,
+    "just_missed": 2
+  },
+  "broken": [
+    {
+      "flag": "BROKEN",
+      "category": "Most points, single week",
+      "chaser": "Tyler \u00b7 Crosstown Comets",
+      "chaser_value": "168.4 pts",
+      "readout_sub": "Crosstown Comets",
+      "when": "W6",
+      "previous": "161.2 \u00b7 Noah (2024)",
+      "copy": "Tyler torched the slate for a new single-week league high."
+    },
+    {
+      "flag": "BROKEN",
+      "category": "Widest margin of victory",
+      "chaser": "Adam \u00b7 Avalanche",
+      "chaser_value": "71.6 pts",
+      "readout_sub": "Avalanche over Cold Front",
+      "when": "W4",
+      "previous": "64.9 \u00b7 Ryan (2023)",
+      "copy": "A 71-point beatdown erases the old blowout mark."
+    },
+    {
+      "flag": "BROKEN",
+      "category": "Best start (W1-W7)",
+      "chaser": "Noah \u00b7 Northern Lights",
+      "chaser_value": "6-1",
+      "readout_sub": "Northern Lights",
+      "when": "W3",
+      "previous": "5-2 \u00b7 multiple",
+      "copy": "Noah's 6-1 opening is the fastest start on record."
+    }
+  ],
+  "brink": [
+    {
+      "category": "Longest win streak",
+      "flag": "On the brink",
+      "pct": 83.0,
+      "record_numeric": 6,
+      "current_numeric": 5,
+      "projection_numeric": 7,
+      "record_value": "6 wins",
+      "chaser_value": "5 wins in a row",
+      "chaser": "Noah \u00b7 Northern Lights",
+      "chaser_sub": "Northern Lights",
+      "holder": "Ryan",
+      "holder_when": "2023",
+      "chaser_when": "active",
+      "gap": "1 to tie",
+      "projection_short": "7W"
+    },
+    {
+      "category": "Most points, season",
+      "flag": "On the brink",
+      "pct": 78.0,
+      "record_numeric": 1512.0,
+      "current_numeric": 983.8,
+      "projection_numeric": 1548.0,
+      "record_value": "1512.0 pts",
+      "chaser_value": "983.8 pts",
+      "chaser": "Tyler \u00b7 Crosstown Comets",
+      "chaser_sub": "Crosstown Comets",
+      "holder": "Adam",
+      "holder_when": "2024",
+      "chaser_when": "through W7",
+      "gap": "on pace +36",
+      "projection_short": "1548"
+    }
+  ],
+  "on_pace": [
+    {
+      "category": "Highest PPG, season",
+      "flag": "BUILDING",
+      "pct": 71.0,
+      "chaser_value": "140.5 ppg",
+      "chaser_projection": "proj 141.0 ppg",
+      "chaser": "Tyler \u00b7 Crosstown Comets",
+      "chaser_sub": "Crosstown Comets",
+      "holder": "Adam",
+      "record_value": "138.9 ppg",
+      "holder_when": "2024",
+      "gap": "+1.6 ahead"
+    },
+    {
+      "category": "Most 150-pt weeks",
+      "flag": "BUILDING",
+      "pct": 66.0,
+      "chaser_value": "3 weeks",
+      "chaser_projection": "proj 5 weeks",
+      "chaser": "Adam \u00b7 Avalanche",
+      "chaser_sub": "Avalanche",
+      "holder": "Noah",
+      "record_value": "4 weeks",
+      "holder_when": "2022",
+      "gap": "1 to tie"
+    },
+    {
+      "category": "Fewest points against",
+      "flag": "BUILDING",
+      "pct": 58.0,
+      "chaser_value": "742.1 PA",
+      "chaser_projection": "proj 1055 PA",
+      "chaser": "Jordan \u00b7 Highland Hawks",
+      "chaser_sub": "Highland Hawks",
+      "holder": "Ryan",
+      "record_value": "1071 PA",
+      "holder_when": "2023",
+      "gap": "under pace"
+    },
+    {
+      "category": "Best win %, season",
+      "flag": "BUILDING",
+      "pct": 62.0,
+      "chaser_value": ".857",
+      "chaser_projection": "proj .786",
+      "chaser": "Noah \u00b7 Northern Lights",
+      "chaser_sub": "Northern Lights",
+      "holder": "Ryan",
+      "record_value": ".857",
+      "holder_when": "2023",
+      "gap": "tied at top"
+    }
+  ],
+  "just_missed": [
+    {
+      "category": "Comeback of the year",
+      "pct": 96.0,
+      "record_value": "48.2 pt deficit",
+      "copy": "Devin clawed back from 44 down before falling 2 short.",
+      "gap": "-2.0"
+    },
+    {
+      "category": "Lowest winning score",
+      "pct": 92.0,
+      "record_value": "81.4 pts",
+      "copy": "Cole won on 83.9 \u2014 a whisker above the ugliest-win mark.",
+      "gap": "+2.5"
+    }
+  ]
+}
