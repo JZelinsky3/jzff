@@ -166,10 +166,10 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 .fs-head, .fs-row {
     display: grid;
     /* POS · MANAGER · FORM · PPG — GB/PT DIFF stay desktop-only. */
-    grid-template-columns: 2.6rem minmax(0, 1fr) auto 2.9rem;
+    grid-template-columns: 2.2rem minmax(0, 1fr) auto 2.5rem;
     align-items: center;
-    gap: .5rem;
-    padding: .4rem .8rem;
+    gap: .4rem;
+    padding: .34rem .7rem;
 }
 .fs-head {
     background: rgba(0, 0, 0, .25);
@@ -180,7 +180,7 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 }
 .fs-head span:last-child { text-align: right; }
 .fs-row {
-    min-height: 46px;
+    min-height: 38px;
     border-bottom: 1px solid var(--ls-line-soft);
     color: #f4ebd8;
 }
@@ -189,7 +189,7 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 .fs-pos { display: flex; align-items: baseline; gap: .3rem; }
 .fs-pos-num {
     font-family: var(--serif); font-style: italic;
-    font-size: 1.25rem; line-height: 1;
+    font-size: 1.05rem; line-height: 1;
     color: var(--ls-pro);
 }
 .fs-row.leader .fs-pos-num { color: #f4d9a4; }
@@ -199,27 +199,27 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
 .fs-chg.same { color: var(--ls-mute); }
 .fs-name {
     font-family: var(--sans);
-    font-size: .82rem; font-weight: 600;
+    font-size: .74rem; font-weight: 600;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .fs-name small {
     display: block;
-    font-weight: 400; font-size: .62rem;
+    font-weight: 400; font-size: .56rem;
     color: var(--ls-mute);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .fs-form { display: flex; gap: 2px; }
 .fs-form i {
     display: flex; align-items: center; justify-content: center;
-    width: 15px; height: 15px;
-    font-weight: 700; font-size: .5rem; font-style: normal;
+    width: 13px; height: 13px;
+    font-weight: 700; font-size: .46rem; font-style: normal;
 }
 .fs-form i.w { background: var(--ls-pro); color: var(--ls-bg); }
 .fs-form i.l { color: var(--ls-live); border: 1px solid var(--ls-live); }
 .fs-form i.t { background: var(--ls-mute); color: var(--ls-bg); }
 .fs-form i.empty { border: 1px dashed var(--ls-line); color: var(--ls-mute); }
 .fs-ppg {
-    font-size: .72rem; font-weight: 700;
+    font-size: .66rem; font-weight: 700;
     color: var(--ls-pro);
     text-align: right;
     font-variant-numeric: tabular-nums;
