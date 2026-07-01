@@ -236,8 +236,11 @@
 
 /* ── Seasons list ── */
 #seasonsList {
-    /* ~4 rows visible; older seasons scroll inside the card. */
-    max-height: 244px;
+    /* ~5 full rows visible; older seasons scroll inside the card. Sized to a
+       whole row count so the last visible season shows its year too, not a
+       half-clipped row. Fewer seasons just make the card shorter (max-height
+       only caps — it never pads out). */
+    max-height: 268px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
