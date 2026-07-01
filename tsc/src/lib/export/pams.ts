@@ -2502,13 +2502,6 @@ function buildRecordBook(s: Snapshot): unknown {
   // different schedule lengths (e.g. 13-game 2019/2020 vs 14-game years).
   const lowest_ppg = [...seasonRows].filter((r) => r.reg_ppg > 0).sort((a, b) => a.reg_ppg - b.reg_ppg).slice(0, N)
   const most_points_against = [...seasonRows].sort((a, b) => b.reg_pa - a.reg_pa).slice(0, N)
-  // League-wide regular-season scoring baseline: the mean reg PPG across every
-  // completed team-season. Drives the "vs league avg" bars on Lowest PPG in the
-  // mobile record book.
-  const ppgSeasons = seasonRows.filter((r) => r.reg_ppg > 0)
-  const league_avg_ppg = ppgSeasons.length > 0
-    ? round2(ppgSeasons.reduce((sum, r) => sum + r.reg_ppg, 0) / ppgSeasons.length)
-    : 0
 
   // Career
   type Streak = {
@@ -2709,7 +2702,6 @@ function buildRecordBook(s: Snapshot): unknown {
         highest_ppg,
         lowest_ppg,
         most_points_against,
-        league_avg_ppg,
       },
       career: {
         longest_win_streaks,

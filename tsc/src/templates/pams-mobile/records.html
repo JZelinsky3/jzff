@@ -184,14 +184,6 @@
     letter-spacing: .1em; text-transform: uppercase; color: var(--cream-mute);
 }
 .rb-hero-val { flex: none; font-family: var(--serif); font-size: 2.6rem; line-height: .85; color: var(--rec); text-align: right; font-variant-numeric: tabular-nums; }
-/* Caption under a bar group that states the bars' reference (Lowest PPG's
-   "vs league avg"). */
-.rb-bars-cap {
-    margin-top: .5rem;
-    font-family: var(--mono); font-weight: 600;
-    font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--cream-mute);
-}
 .rb-hero-val.has-sub { display: inline-flex; flex-direction: column; align-items: flex-end; }
 .rb-hero-val small {
     font-family: var(--mono); font-weight: 600;
@@ -603,18 +595,20 @@
     }
     function renderSeasonBars(key, label, val, ctx, entries, idx, opts) {
         opts = opts || {};
-        // opts.avgBasis anchors every bar to a fixed reference (the league's
-        // average PPG) instead of the list's own max — used by Lowest PPG so
-        // the fill reads as "share of a typical season," not rank within the
-        // bottom 10. Falls back to the list max when no basis is supplied.
-        var avgBasis = Number(opts.avgBasis) || 0;
+        // Bars always measure "how close to the #1 record." Normally #1 is the
+        // list max, so fill = value / max (Highest PPG etc.). opts.mirror flips
+        // it for records where #1 is the *smallest* value (Lowest PPG): fill =
+        // #1 / value, so the worst season is a full bar and higher-scoring
+        // seasons taper off — the exact mirror of the Highest card.
+        var mirror = !!opts.mirror;
+        var lead0 = seasonBasis(key, entries[0]);
         var max = 0;
-        if (!avgBasis) entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
+        if (!mirror) entries.forEach(function (e) { var b = seasonBasis(key, e); if (b > max) max = b; });
 
         function barTrack(e) {
-            var w;
-            if (avgBasis > 0) w = Math.max(8, Math.min(100, (seasonBasis(key, e) / avgBasis) * 100));
-            else w = max > 0 ? Math.max(8, (seasonBasis(key, e) / max) * 100) : 0;
+            var b = seasonBasis(key, e), w;
+            if (mirror) w = b > 0 ? Math.max(8, Math.min(100, (lead0 / b) * 100)) : 0;
+            else w = max > 0 ? Math.max(8, (b / max) * 100) : 0;
             return '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:' + w.toFixed(1) + '%"></span></span>';
         }
 
@@ -648,12 +642,7 @@
             '</div>';
         }).join('');
 
-        // A caption spells out what the bars are measured against, so the fill
-        // isn't just a mystery proportion.
-        var cap = avgBasis > 0
-            ? '<div class="rb-bars-cap">Bars vs league avg · ' + num(avgBasis) + ' ppg</div>'
-            : '';
-        var inner = hero + (rows ? '<div class="rb-bars">' + rows + '</div>' + cap : '');
+        var inner = hero + (rows ? '<div class="rb-bars">' + rows + '</div>' : '');
         return cardShell(label, entries.length > 3, entries.length, inner, idx, toneFor(key));
     }
 
@@ -794,12 +783,11 @@
             // Win/Loss records use the plain card.
             if (key === 'best_reg_season_records' || key === 'worst_reg_season_records')
                 return renderStandard(key, label, val, ctx, entries, null);
-            // Lowest PPG bars measure each season against the league's all-time
-            // average PPG (not the list max) — the fill shows how far short of a
-            // typical season the team fell.
+            // Lowest PPG mirrors the Highest card: #1 (the lowest season) is the
+            // full bar and higher-scoring seasons taper off, so the fill reads
+            // as "how close to the record low."
             if (key === 'lowest_ppg')
-                return renderSeasonBars(key, label, val, ctx, entries, null,
-                    { avgBasis: (book.season || {}).league_avg_ppg || 0 });
+                return renderSeasonBars(key, label, val, ctx, entries, null, { mirror: true });
             return renderSeasonBars(key, label, val, ctx, entries, null);
         }
         if (sec === 'career') {
