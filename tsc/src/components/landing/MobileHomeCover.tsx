@@ -194,7 +194,7 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
             <div className={s.bookCover}>
               <div className={s.bookInner}>
                 <span className={s.bookCrest}>★</span>
-                <span className={s.bookLeague}>Your League</span>
+                <span className={s.bookLeague}>The Sunday Chronicle</span>
                 <span className={s.bookRule} />
                 <span className={s.bookVol}>The Complete History</span>
                 <span className={s.bookYears}>2018-2024</span>
@@ -357,34 +357,30 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
         </div>
       </section>
 
-      {/* ── The Clubhouse clipping ────────────────────────────── */}
+      {/* ── The Clubhouse — members' plaque, styled after the hub's
+             night reading-room (engraved frame, brass, shine sweep) ── */}
       <section className={s.section}>
-        <Link href="/hub/" className={s.clubClip}>
-          <span className={s.clubTape} aria-hidden="true" />
-          <span className={s.clubHead}>
-            <span>From the site desk</span>
-            <span>Open to all</span>
-          </span>
+        <Link href="/hub/" className={s.club}>
+          <span className={s.clubShine} aria-hidden="true" />
+          <span className={s.clubCrest} aria-hidden="true">★</span>
+          <span className={s.clubKicker}>Members&apos; entrance · Est. 2026</span>
           <span className={s.clubTitle}>
             The <em>Clubhouse.</em>
           </span>
-          <span className={s.clubSub}>
-            The site&apos;s common room. Every league on the Chronicle, one
-            door.
-          </span>
-          <span className={s.clubList}>
-            <span className={s.clubItem}>
-              <span className={s.clubStar} aria-hidden="true">✦</span>
-              Site-wide records and numbers
+          <span className={s.clubSub}>The room behind the archives.</span>
+          <span className={s.clubRule} aria-hidden="true">✦</span>
+          <span className={s.clubRooms}>
+            <span className={s.clubRoom}>
+              <b>The Wire</b>
+              Site-wide numbers across every league we keep
             </span>
-            <span className={s.clubItem}>
-              <span className={s.clubStar} aria-hidden="true">✦</span>
-              Explore public leagues
+            <span className={s.clubRoom}>
+              <b>The Hall</b>
+              The records, and who holds them
             </span>
-            <span className={s.clubItem}>
-              <span className={s.clubStar} aria-hidden="true">✦</span>
-              Trade Analyzer, no league required
-              <span className={s.clubFree}>Free</span>
+            <span className={s.clubRoom}>
+              <b>The Analyzer</b>
+              Free trade verdicts, no league required
             </span>
           </span>
           <span className={s.clubBtn}>Step inside</span>

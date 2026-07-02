@@ -705,112 +705,156 @@
     color: var(--cream-mute);
 }
 
-/* ── The Clubhouse clipping — cream paper scrap, lightly tilted
-      like something torn out and pinned to the page ───────────── */
-.clubClip {
+/* ── The Clubhouse — members' plaque. Borrowed from the hub's night
+      reading-room: near-black brass plaque, engraved inner frame,
+      periodic shine sweep. Deliberately darker than the page's navy
+      cards so it reads as a different room. ─────────────────────── */
+.club {
     position: relative;
     display: flex;
     flex-direction: column;
-    margin-top: .6rem; /* room for the tape to poke above the paper */
-    padding: 1.2rem 1.2rem 1.25rem;
-    background: linear-gradient(160deg, #f9f2e0 0%, #f4ebd8 60%, #ecdfc4 100%);
+    align-items: center;
+    text-align: center;
+    padding: 1.7rem 1.2rem 1.4rem;
+    background:
+        radial-gradient(120% 80% at 50% 0%, rgba(232, 200, 137, .09) 0%, transparent 55%),
+        linear-gradient(165deg, #1d1d1d, #121212);
+    border: 1px solid var(--gold-deep);
     border-radius: 4px;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, .45);
-    transform: rotate(-1.2deg);
-    color: var(--ink);
+    overflow: hidden;
     text-decoration: none;
+    color: var(--cream);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
 }
-.clubClip:active { transform: rotate(-1.2deg) scale(.985); }
-/* Gold washi tape pinning the clipping to the page */
-.clubTape {
+.club::before {
+    /* engraved inner frame, same trick as the hub's record plaques */
+    content: '';
     position: absolute;
-    top: -11px;
-    left: 50%;
-    width: 104px;
-    height: 24px;
-    margin-left: -52px;
-    background: rgba(232, 200, 137, .8);
-    border-left: 1px dashed rgba(14, 22, 32, .25);
-    border-right: 1px dashed rgba(14, 22, 32, .25);
-    transform: rotate(-2.5deg);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, .18);
+    inset: 7px;
+    pointer-events: none;
+    border: 1px solid rgba(232, 200, 137, .18);
+    border-radius: 2px;
 }
-.clubHead {
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .52rem;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--rust);
+.club:active { transform: scale(.985); }
+/* Periodic shine sweep — the hub does this on hover; phones get it on a
+   slow loop instead. */
+.clubShine {
+    position: absolute;
+    top: -60%;
+    bottom: -60%;
+    left: -30%;
+    width: 34%;
+    background: linear-gradient(105deg, transparent, rgba(232, 200, 137, .1), transparent);
+    transform: translateX(-140%) rotate(8deg);
+    animation: clubShine 7s ease-in-out infinite;
+    pointer-events: none;
 }
-.clubTitle {
-    margin-top: .55rem;
-    font-family: var(--serif);
-    font-size: 1.65rem;
-    line-height: 1.05;
-    letter-spacing: -.015em;
-    color: var(--ink);
+@keyframes clubShine {
+    0%, 55%   { transform: translateX(-140%) rotate(8deg); }
+    80%, 100% { transform: translateX(440%) rotate(8deg); }
 }
-.clubTitle em { font-style: italic; }
-.clubSub {
-    margin-top: .45rem;
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: .9rem;
-    line-height: 1.45;
-    color: rgba(14, 22, 32, .72);
+@media (prefers-reduced-motion: reduce) {
+    .clubShine { animation: none; }
 }
-.clubList {
-    display: flex;
-    flex-direction: column;
-    margin-top: .75rem;
-    border-top: 1px solid rgba(14, 22, 32, .25);
-}
-.clubItem {
+.clubCrest {
     display: flex;
     align-items: center;
-    gap: .55rem;
-    padding: .5rem .1rem;
-    border-bottom: 1px dotted rgba(14, 22, 32, .3);
-    font-size: .82rem;
-    font-weight: 500;
-    color: var(--ink);
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--gold-deep);
+    border-radius: 50%;
+    background: rgba(232, 200, 137, .08);
+    color: var(--gold);
+    font-size: 1.05rem;
+    margin-bottom: .8rem;
 }
-.clubItem:last-child { border-bottom: none; }
-.clubStar {
-    flex: none;
-    font-size: .6rem;
-    color: var(--rust);
-}
-.clubFree {
-    flex: none;
-    margin-left: auto;
-    padding: .16rem .5rem;
-    background: var(--rust);
-    color: #f4ebd8;
-    border-radius: 999px;
+.clubKicker {
     font-family: var(--mono);
     font-weight: 700;
-    font-size: .5rem;
-    letter-spacing: .18em;
+    font-size: .54rem;
+    letter-spacing: .3em;
     text-transform: uppercase;
+    color: var(--gold-deep);
+}
+.clubTitle {
+    margin-top: .45rem;
+    font-family: var(--serif);
+    font-size: 1.9rem;
+    line-height: 1.05;
+    letter-spacing: -.015em;
+    color: var(--cream);
+}
+.clubTitle em { font-style: italic; color: var(--gold); }
+.clubSub {
+    margin-top: .4rem;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .95rem;
+    color: var(--cream-soft);
+}
+.clubRule {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    width: 100%;
+    margin: 1rem 0 .2rem;
+    font-size: .55rem;
+    color: var(--gold-deep);
+}
+.clubRule::before,
+.clubRule::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(232, 200, 137, .3));
+}
+.clubRule::after {
+    background: linear-gradient(90deg, rgba(232, 200, 137, .3), transparent);
+}
+.clubRooms {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+.clubRoom {
+    display: block;
+    padding: .6rem 0;
+    border-bottom: 1px solid rgba(232, 200, 137, .1);
+    font-size: .76rem;
+    line-height: 1.4;
+    color: var(--cream-mute);
+}
+.clubRoom:last-child { border-bottom: none; }
+.clubRoom b {
+    display: block;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.02rem;
+    color: var(--gold);
+    margin-bottom: .1rem;
 }
 .clubBtn {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: .9rem;
-    min-height: 44px;
-    background: var(--ink);
-    color: var(--gold);
+    width: 100%;
+    max-width: 300px;
+    margin-top: 1rem;
+    min-height: 46px;
+    border: 1px solid var(--gold);
     border-radius: 999px;
+    background: rgba(232, 200, 137, .06);
+    color: var(--gold);
     font-family: var(--mono);
     font-weight: 700;
-    font-size: .62rem;
-    letter-spacing: .2em;
+    font-size: .64rem;
+    letter-spacing: .22em;
     text-transform: uppercase;
+}
+.club:active .clubBtn {
+    background: var(--gold);
+    color: #121212;
 }
 
 /* ── Pricing teaser ───────────────────────────────────────── */
