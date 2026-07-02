@@ -155,14 +155,93 @@
     letter-spacing: .12em;
     color: var(--gold-deep);
 }
-.bookCover {
+/* Block of bound pages behind the front cover. Perspective lives here so
+   the cover's rotateY reads as a hinge at the spine. */
+.bookBody {
+    position: relative;
     flex: 1;
+    perspective: 900px;
+}
+
+/* The printed first page, revealed when the cover swings open. */
+.bookPage {
+    position: absolute;
+    inset: 2px 2px 2px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem .8rem;
+    background: linear-gradient(165deg, #f7efdc 0%, #efe3c9 100%);
+    border-radius: 0 3px 3px 0;
+    overflow: hidden;
+}
+/* Gutter shadow along the spine edge so the page looks bound, not printed
+   flat to the box. Invisible while the cover is closed. */
+.bookPage::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 14px;
+    background: linear-gradient(90deg, rgba(14, 22, 32, .28), transparent);
+    pointer-events: none;
+}
+.bookPageKicker {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .38rem;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--rust);
+}
+.bookPageTitle {
+    margin-top: .3rem;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .95rem;
+    color: var(--ink);
+}
+/* Faux body text — thin ink lines standing in for print. */
+.bookPageLines {
+    width: 72%;
+    height: 58px;
+    margin-top: .7rem;
+    background: repeating-linear-gradient(
+        180deg,
+        rgba(14, 22, 32, .32) 0 1px,
+        transparent 1px 7px
+    );
+}
+.bookPageNum {
+    margin-top: .8rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .38rem;
+    letter-spacing: .2em;
+    color: rgba(14, 22, 32, .5);
+}
+
+.bookCover {
+    position: absolute;
+    inset: 0;
     background: linear-gradient(165deg, #1e1608 0%, #100e08 50%, #1a1408 100%);
     border: 1px solid var(--gold-deep);
     border-left: none;
     border-radius: 0 3px 3px 0;
-    position: relative;
     overflow: hidden;
+    transform-origin: left center;
+    animation: bookPeek 9s ease-in-out infinite;
+    will-change: transform;
+}
+/* Closed most of the cycle; cracks open at the spine for ~1.5s, then
+   settles shut. Starts closed so first paint is the finished cover. */
+@keyframes bookPeek {
+    0%, 58%   { transform: rotateY(0deg); }
+    68%, 78%  { transform: rotateY(-38deg); }
+    88%, 100% { transform: rotateY(0deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .bookCover { animation: none; }
 }
 .bookCover::before {
     content: '';

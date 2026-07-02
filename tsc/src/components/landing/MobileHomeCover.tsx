@@ -178,20 +178,30 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
           chronicle your whole league can read.
         </p>
 
+        {/* The cover swings open at the spine every few seconds (CSS-only)
+            to peek at a printed first page, then settles closed. */}
         <div className={s.book} aria-hidden="true">
           <div className={s.bookSpine}>
             <span className={s.bookSpineTxt}>Chronicle</span>
           </div>
-          <div className={s.bookCover}>
-            <div className={s.bookInner}>
-              <span className={s.bookCrest}>★</span>
-              <span className={s.bookLeague}>Your League</span>
-              <span className={s.bookRule} />
-              <span className={s.bookVol}>The Complete History</span>
-              <span className={s.bookYears}>2018-2024</span>
-              <span className={s.bookSeasons}>Seven Seasons</span>
-              <span className={`${s.bookRule} ${s.bookRuleSm}`} />
-              <span className={s.bookFt}>The Sunday Chronicle</span>
+          <div className={s.bookBody}>
+            <div className={s.bookPage}>
+              <span className={s.bookPageKicker}>Chapter I</span>
+              <span className={s.bookPageTitle}>Opening Day.</span>
+              <span className={s.bookPageLines} />
+              <span className={s.bookPageNum}>p. 1</span>
+            </div>
+            <div className={s.bookCover}>
+              <div className={s.bookInner}>
+                <span className={s.bookCrest}>★</span>
+                <span className={s.bookLeague}>Your League</span>
+                <span className={s.bookRule} />
+                <span className={s.bookVol}>The Complete History</span>
+                <span className={s.bookYears}>2018-2024</span>
+                <span className={s.bookSeasons}>Seven Seasons</span>
+                <span className={`${s.bookRule} ${s.bookRuleSm}`} />
+                <span className={s.bookFt}>The Sunday Chronicle</span>
+              </div>
             </div>
           </div>
         </div>
