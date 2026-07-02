@@ -33,11 +33,11 @@ const CHAPTERS: {
   },
   {
     numeral: 'II',
-    title: 'Champions',
-    blurb: 'Trophy lifters, runners-up, and the kings who never got there.',
+    title: 'Records',
+    blurb: 'Every mark that still stands. Highs, streaks, and heartbreaks.',
     href: '/demo/records.html',
     icon: (
-      <path d="M7 3h10v6a5 5 0 0 1-10 0V3z M7 5H4.5a1 1 0 0 0-1 1c0 2.4 1.7 4 3.7 4.3 M17 5h2.5a1 1 0 0 1 1 1c0 2.4-1.7 4-3.7 4.3 M12 14v3.5 M8.5 21h7" />
+      <path d="M5 20v-8 M12 20V5 M19 20v-11 M3 20h18" />
     ),
   },
   {
@@ -71,7 +71,7 @@ const CHAPTERS: {
     numeral: 'VI',
     title: 'Live Season',
     blurb: 'Synced every Sunday. Previews, best-coach, manager DNA.',
-    href: '/demo/',
+    href: '/demo/live/',
     icon: (
       <path d="M5 9a10 10 0 0 1 14 0 M8 12.5a6 6 0 0 1 8 0 M12 17h.01" />
     ),
