@@ -27,6 +27,16 @@ const GOLD = '#e8c889'
 const GOLD_DEEP = '#a88a4a'
 const RUST = '#a04830'
 
+// The DM Serif / JetBrains TTFs in public/og/fonts don't carry U+2605, so a
+// literal ★ renders as tofu. Draw the star as an inline SVG instead.
+function Star({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6L12 2z" />
+    </svg>
+  )
+}
+
 async function loadFonts() {
   const [serif, serifItalic, mono, monoBold] = await Promise.all([
     readFile(path.join(FONT_DIR, 'DMSerifDisplay-Regular.ttf')),
@@ -88,9 +98,9 @@ export async function GET() {
                 color: GOLD,
               }}
             >
-              <span style={{ display: 'flex' }}>★</span>
+              <Star size={16} color={GOLD} />
               <span style={{ display: 'flex' }}>The League Almanac · Est. 2026</span>
-              <span style={{ display: 'flex' }}>★</span>
+              <Star size={16} color={GOLD} />
             </div>
 
             <div
@@ -131,16 +141,17 @@ export async function GET() {
             <div
               style={{
                 display: 'flex',
+                flexDirection: 'column',
                 fontFamily: 'DMSerif',
                 fontStyle: 'italic',
-                fontSize: '33px',
-                lineHeight: 1.25,
+                fontSize: '34px',
+                lineHeight: 1.3,
                 color: CREAM_SOFT,
                 marginTop: '24px',
-                maxWidth: '560px',
               }}
             >
-              Your league&apos;s history. Bound in one book.
+              <span style={{ display: 'flex' }}>Your league&apos;s history.</span>
+              <span style={{ display: 'flex' }}>Bound in one book.</span>
             </div>
 
             <div
@@ -231,7 +242,9 @@ export async function GET() {
                     borderRadius: '2px',
                   }}
                 />
-                <div style={{ display: 'flex', color: GOLD, fontSize: '30px', marginTop: '10px' }}>★</div>
+                <div style={{ display: 'flex', marginTop: '10px' }}>
+                  <Star size={30} color={GOLD} />
+                </div>
                 <div
                   style={{
                     display: 'flex',

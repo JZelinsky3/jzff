@@ -360,6 +360,7 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
       {/* ── The Clubhouse clipping ────────────────────────────── */}
       <section className={s.section}>
         <Link href="/hub/" className={s.clubClip}>
+          <span className={s.clubTape} aria-hidden="true" />
           <span className={s.clubHead}>
             <span>From the site desk</span>
             <span>Open to all</span>
@@ -368,10 +369,25 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
             The <em>Clubhouse.</em>
           </span>
           <span className={s.clubSub}>
-            Site-wide records, live stats, and league discovery. See what
-            every chronicle on the site is up to.
+            The site&apos;s common room. Every league on the Chronicle, one
+            door.
           </span>
-          <span className={s.clubCta}>Step inside</span>
+          <span className={s.clubList}>
+            <span className={s.clubItem}>
+              <span className={s.clubStar} aria-hidden="true">✦</span>
+              Site-wide records and numbers
+            </span>
+            <span className={s.clubItem}>
+              <span className={s.clubStar} aria-hidden="true">✦</span>
+              Explore public leagues
+            </span>
+            <span className={s.clubItem}>
+              <span className={s.clubStar} aria-hidden="true">✦</span>
+              Trade Analyzer, no league required
+              <span className={s.clubFree}>Free</span>
+            </span>
+          </span>
+          <span className={s.clubBtn}>Step inside</span>
         </Link>
       </section>
 

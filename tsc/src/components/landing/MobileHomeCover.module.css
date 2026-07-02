@@ -708,9 +708,11 @@
 /* ── The Clubhouse clipping — cream paper scrap, lightly tilted
       like something torn out and pinned to the page ───────────── */
 .clubClip {
+    position: relative;
     display: flex;
     flex-direction: column;
-    padding: 1.1rem 1.2rem 1.15rem;
+    margin-top: .6rem; /* room for the tape to poke above the paper */
+    padding: 1.2rem 1.2rem 1.25rem;
     background: linear-gradient(160deg, #f9f2e0 0%, #f4ebd8 60%, #ecdfc4 100%);
     border-radius: 4px;
     box-shadow: 0 14px 34px rgba(0, 0, 0, .45);
@@ -719,6 +721,20 @@
     text-decoration: none;
 }
 .clubClip:active { transform: rotate(-1.2deg) scale(.985); }
+/* Gold washi tape pinning the clipping to the page */
+.clubTape {
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    width: 104px;
+    height: 24px;
+    margin-left: -52px;
+    background: rgba(232, 200, 137, .8);
+    border-left: 1px dashed rgba(14, 22, 32, .25);
+    border-right: 1px dashed rgba(14, 22, 32, .25);
+    transform: rotate(-2.5deg);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .18);
+}
 .clubHead {
     display: flex;
     justify-content: space-between;
@@ -746,16 +762,55 @@
     line-height: 1.45;
     color: rgba(14, 22, 32, .72);
 }
-.clubCta {
+.clubList {
+    display: flex;
+    flex-direction: column;
     margin-top: .75rem;
+    border-top: 1px solid rgba(14, 22, 32, .25);
+}
+.clubItem {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .5rem .1rem;
+    border-bottom: 1px dotted rgba(14, 22, 32, .3);
+    font-size: .82rem;
+    font-weight: 500;
+    color: var(--ink);
+}
+.clubItem:last-child { border-bottom: none; }
+.clubStar {
+    flex: none;
+    font-size: .6rem;
+    color: var(--rust);
+}
+.clubFree {
+    flex: none;
+    margin-left: auto;
+    padding: .16rem .5rem;
+    background: var(--rust);
+    color: #f4ebd8;
+    border-radius: 999px;
     font-family: var(--mono);
     font-weight: 700;
-    font-size: .58rem;
+    font-size: .5rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+.clubBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: .9rem;
+    min-height: 44px;
+    background: var(--ink);
+    color: var(--gold);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .62rem;
     letter-spacing: .2em;
     text-transform: uppercase;
-    color: var(--ink);
-    text-decoration: underline;
-    text-underline-offset: 4px;
 }
 
 /* ── Pricing teaser ───────────────────────────────────────── */
