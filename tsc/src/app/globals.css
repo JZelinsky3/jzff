@@ -9396,8 +9396,11 @@ a.g-decision-pick-name:hover { text-decoration: underline; }
     .msm-root { display: block; }
 
     /* The new pitch-deck mobile landing (.mlp) has its own sticky top bar
-       with Sign in / Library, so the global hamburger is redundant there. */
+       with Sign in / Library, so the global hamburger is redundant there.
+       Same for its successor, the Newsstand Cover landing (.mhc —
+       MobileHomeCover.tsx), which ports that bar. */
     .mlp ~ .msm-root { display: none !important; }
+    .mhc ~ .msm-root { display: none !important; }
 
     /* Landing's mega-menu inline triggers + its own mobile wrap collapse.
        The new MobileSiteMenu owns the mobile experience. */

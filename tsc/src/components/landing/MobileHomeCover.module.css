@@ -1,16 +1,19 @@
 /* ============================================================
-   MOBILE LANDING v2 — "The Newsstand Cover"
+   MOBILE LANDING v2 — "The Newsstand Cover" (post-mix revision)
    Scoped module so nothing collides with the old mlp- tree or
    the global msm- menu. Dark ink = app chrome; the product is
-   always shown as printed cream paper.
+   shown as printed cream paper.
+
+   Top bar collapse rides the global `tsc-hdr-collapsed` body
+   class set by MobileHeaderCollapse (sticky-collapse on '/').
    ============================================================ */
 
 .main {
     position: relative;
     z-index: 1;
     min-height: 100dvh;
-    /* Clear the fixed bottom dock (incl. home indicator). */
-    padding-bottom: calc(86px + env(safe-area-inset-bottom));
+    /* Clear the bottom dock when it's visible. */
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
     background:
         radial-gradient(120% 46% at 50% -4%, rgba(232, 200, 137, .13) 0%, transparent 62%),
         linear-gradient(180deg, #0a1119 0%, var(--ink) 34%);
@@ -19,273 +22,245 @@
     overflow-x: clip;
 }
 
-/* ── Identity sash ──────────────────────────────────────────
-   38px / 34px heights are load-bearing: .msm-root--landing in
-   globals.css offsets the fixed menu trigger by exactly this. */
-.sash {
-    height: 38px;
+/* ── Top bar — collapsing title, ported from the old mlp-bar ── */
+.bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
     display: flex;
     align-items: center;
-    overflow: hidden;
-    background: var(--gold);
-    color: var(--ink);
-    border-bottom: 2px solid #0a1119;
+    justify-content: space-between;
+    padding: .75rem 1.1rem;
+    background: rgba(14, 22, 32, .92);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ink-line);
+    transition: padding .25s ease;
 }
-@media (max-width: 520px) {
-    .sash { height: 34px; }
-}
-.sashTrack {
-    display: flex;
-    gap: 2.4rem;
-    white-space: nowrap;
-    padding-left: 2.4rem;
-    animation: sashScroll 40s linear infinite;
-}
-.sashGroup {
-    display: flex;
-    gap: 2.4rem;
-    align-items: center;
-}
-.sashItem {
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .6rem;
-    letter-spacing: .22em;
-    text-transform: uppercase;
-    display: inline-flex;
-    align-items: center;
-    gap: .55rem;
-}
-.sashStar { font-size: .55rem; }
-@keyframes sashScroll {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
-}
-@media (prefers-reduced-motion: reduce) {
-    .sashTrack { animation: none; }
-}
-
-/* ── Masthead ─────────────────────────────────────────────── */
-.masthead {
-    text-align: center;
-    padding: .8rem 3.4rem .7rem;
-    border-bottom: 1px solid var(--ink-line-soft);
-}
-.mastKicker {
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .52rem;
-    letter-spacing: .3em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
-}
-.mastTitle {
+.barTitle {
     font-family: var(--serif);
-    font-size: 1.3rem;
-    line-height: 1.15;
+    font-size: 1.2rem;
+    line-height: 1;
     color: var(--cream);
+    white-space: nowrap;
 }
-.mastTitle em { font-style: italic; color: var(--gold); }
+.barTitle em { color: var(--gold); font-style: italic; }
+.barFade {
+    /* Stays inline (no inline-block!) so T / S / C sit on the normal text
+       baseline. Animating font-size → 0 collapses the letters' width and
+       visibility together, producing the slide without the baseline drop. */
+    font-size: inherit;
+    opacity: 1;
+    transition: font-size .55s cubic-bezier(.7, 0, .2, 1), opacity .3s ease;
+}
+:global(body.tsc-hdr-collapsed) .barFade {
+    font-size: 0;
+    opacity: 0;
+}
+.barLink {
+    font-family: var(--mono);
+    font-size: .58rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    padding: .4rem .85rem;
+    transition: border-color .2s, padding .25s ease, font-size .25s ease;
+}
+.barLink:active { border-color: var(--gold); }
+:global(body.tsc-hdr-collapsed) .bar {
+    padding: .45rem 1.1rem;
+}
+:global(body.tsc-hdr-collapsed) .barLink {
+    font-size: .5rem;
+    padding: .3rem .65rem;
+}
 
-/* ── Cover hero ───────────────────────────────────────────── */
-.hero {
+/* ── The Hook — book-cover hero (ported from mlp-hook/mlp-book) ── */
+.hook {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    padding: 1.9rem 1.1rem 0;
+    padding: 1.8rem 1.1rem 0;
     max-width: 560px;
     margin: 0 auto;
 }
-.heroSup {
+.hookKicker {
     font-family: var(--mono);
+    font-size: .52rem;
     font-weight: 700;
-    font-size: .56rem;
-    letter-spacing: .28em;
+    letter-spacing: .3em;
     text-transform: uppercase;
     color: var(--gold-deep);
     margin-bottom: .7rem;
 }
-.heroTitle {
+.hookTitle {
     font-family: var(--serif);
     font-weight: 400;
-    font-size: clamp(2.5rem, 12.5vw, 3.3rem);
-    line-height: 1.02;
-    letter-spacing: -.02em;
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
+    line-height: 1.08;
     color: var(--cream);
+    margin-bottom: .6rem;
 }
-.heroTitle em { font-style: italic; color: var(--gold); }
-.heroSub {
-    margin: 1rem auto 0;
-    max-width: 30ch;
-    font-family: var(--serif);
-    font-size: 1.06rem;
+.hookTitle em { color: var(--gold); font-style: italic; }
+.hookSub {
+    font-size: .85rem;
     line-height: 1.5;
     color: var(--cream-soft);
+    max-width: 30ch;
+    margin-bottom: 1.2rem;
 }
-.heroMeta {
-    margin-top: .8rem;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .56rem;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
-    display: flex;
-    justify-content: center;
-    gap: .55rem;
-}
-.heroMetaSep { color: var(--gold-deep); }
 
-/* ── Cycling paper clipping ───────────────────────────────── */
-.clipWrap {
-    position: relative;
-    display: block;
-    margin: 2rem auto 0;
-    max-width: 340px;
-    text-decoration: none;
-    transform: rotate(-1.4deg);
-}
-.clipWrap:active .clipStack { transform: scale(.985); }
-.clipShadow1,
-.clipShadow2 {
-    position: absolute;
-    inset: 0 0 2.2rem;
-    border-radius: 4px;
-    background: #d9cdb2;
-    transform: rotate(2.4deg) translate(5px, 4px);
-}
-.clipShadow2 {
-    background: #c6b995;
-    transform: rotate(-2.6deg) translate(-5px, 7px);
-}
-.clipStack {
-    position: relative;
-    display: grid;
-    background: linear-gradient(160deg, #f9f2e0 0%, #f4ebd8 60%, #ecdfc4 100%);
-    border-radius: 4px;
-    box-shadow: 0 18px 44px rgba(0, 0, 0, .55);
-    transition: transform .15s ease;
-}
-.clip {
-    grid-area: 1 / 1;
+.book {
     display: flex;
-    flex-direction: column;
-    padding: 1.15rem 1.2rem 1.3rem;
-    text-align: left;
-    color: var(--ink);
-    opacity: 0;
-    animation: clipCycle 24s infinite;
+    width: 200px;
+    height: 270px;
+    margin-bottom: 1.4rem;
+    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, .55));
 }
-.clip:nth-child(2) { animation-delay: 8s; }
-.clip:nth-child(3) { animation-delay: 16s; }
-@keyframes clipCycle {
-    0%    { opacity: 0; visibility: visible; }
-    3%    { opacity: 1; }
-    33.3% { opacity: 1; }
-    37%   { opacity: 0; }
-    100%  { opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-    .clip { animation: none; }
-    .clip:first-child { opacity: 1; }
-}
-.clipHead {
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .52rem;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--rust);
-}
-.clipRule {
+.bookSpine {
+    width: 18px;
+    flex: none;
+    background: linear-gradient(180deg, #3a2c14 0%, #1a1208 40%, #2a1e0e 70%, #3a2c14 100%);
+    border: 1px solid #4a3a1e;
+    border-right: none;
+    border-radius: 3px 0 0 3px;
     display: flex;
     align-items: center;
-    gap: .6rem;
-    margin: .6rem 0 .65rem;
-    font-size: .55rem;
+    justify-content: center;
+    position: relative;
+}
+.bookSpine::before,
+.bookSpine::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    height: 1px;
+    background: var(--gold-deep);
+    opacity: .4;
+}
+.bookSpine::before { top: 12px; }
+.bookSpine::after { bottom: 12px; }
+.bookSpineTxt {
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    font-family: var(--serif);
+    font-size: .42rem;
+    font-style: italic;
+    letter-spacing: .12em;
     color: var(--gold-deep);
 }
-.clipRule::before,
-.clipRule::after {
-    content: '';
+.bookCover {
     flex: 1;
-    height: 1px;
-    background: rgba(14, 22, 32, .25);
+    background: linear-gradient(165deg, #1e1608 0%, #100e08 50%, #1a1408 100%);
+    border: 1px solid var(--gold-deep);
+    border-left: none;
+    border-radius: 0 3px 3px 0;
+    position: relative;
+    overflow: hidden;
 }
-.clipTitle {
+.bookCover::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(168, 138, 74, .2);
+    border-radius: 1px;
+    pointer-events: none;
+}
+.bookInner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 1.2rem .8rem;
+}
+.bookCrest {
+    color: var(--gold);
+    font-size: 1.2rem;
+    margin-bottom: .5rem;
+}
+.bookLeague {
     font-family: var(--serif);
-    font-size: 1.7rem;
-    line-height: 1.05;
-    letter-spacing: -.015em;
-    color: var(--ink);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--gold);
+    line-height: 1.1;
+    text-align: center;
 }
-.clipTitle em { font-style: italic; }
-.clipLine {
-    margin-top: .65rem;
+.bookRule {
+    width: 44px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-deep), transparent);
+    margin: .55rem 0;
+}
+.bookRuleSm { width: 28px; margin: .4rem 0; }
+.bookVol {
+    font-family: var(--mono);
+    font-size: .36rem;
+    font-weight: 700;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-bottom: .2rem;
+}
+.bookYears {
+    font-family: var(--mono);
+    font-size: .42rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--cream-mute);
+}
+.bookSeasons {
+    font-family: var(--mono);
+    font-size: .34rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    opacity: .6;
+    margin-top: .12rem;
+}
+.bookFt {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .48rem;
+    color: var(--gold-deep);
+    margin-top: auto;
+    padding-top: .5rem;
+}
+
+.hookBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 300px;
+    min-height: 48px;
+    background: var(--gold);
+    color: var(--ink);
+    border-radius: 999px;
+    text-decoration: none;
     font-family: var(--mono);
     font-weight: 700;
     font-size: .68rem;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--ink);
-    padding: .35rem .55rem;
-    border: 1px solid rgba(14, 22, 32, .3);
-    border-radius: 3px;
-    align-self: flex-start;
-    background: rgba(232, 200, 137, .25);
-}
-.clipSub {
-    margin-top: .6rem;
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: .88rem;
-    line-height: 1.45;
-    color: rgba(14, 22, 32, .72);
-}
-.clipSeal {
-    grid-area: 1 / 1;
-    justify-self: end;
-    align-self: start;
-    margin: -.7rem -.6rem 0 0;
-    width: 62px;
-    height: 62px;
-    border-radius: 50%;
-    border: 2px solid var(--rust);
-    color: var(--rust);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .48rem;
     letter-spacing: .18em;
     text-transform: uppercase;
-    line-height: 1.5;
-    transform: rotate(12deg);
-    background: rgba(244, 235, 216, .85);
-    z-index: 2;
-    pointer-events: none;
 }
-.clipCaption {
-    display: block;
-    margin-top: .8rem;
-    text-align: center;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .54rem;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: var(--cream-mute);
-    transform: rotate(1.4deg); /* counter the wrap tilt */
-}
+.hookBtn:active { transform: translateY(1px); }
 
 /* ── Stat strip ───────────────────────────────────────────── */
 .statStrip {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: .5rem;
-    margin-top: 1.6rem;
+    margin-top: 1.1rem;
+    width: 100%;
 }
 .stat {
     background: rgba(26, 37, 50, .65);
@@ -441,18 +416,22 @@
     color: var(--gold);
 }
 
-/* ── A page, in print ─────────────────────────────────────── */
+/* ── A page, in print — framed so it reads as a bound page,
+      not a section running off the screen edges ─────────────── */
 .paper {
-    margin-top: 2.4rem;
+    width: calc(100% - 2.2rem);
+    max-width: 560px;
+    margin: 2.4rem auto 0;
     background: linear-gradient(175deg, #f9f2e0 0%, #f4ebd8 55%, #eee1c8 100%);
-    border-top: 3px solid var(--gold-deep);
-    border-bottom: 3px solid var(--gold-deep);
+    border: 1px solid var(--gold-deep);
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-radius: 8px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, .4);
     color: var(--ink);
 }
 .paperInner {
-    max-width: 560px;
-    margin: 0 auto;
-    padding: 1.8rem 1.3rem 1.9rem;
+    padding: 1.7rem 1.2rem 1.8rem;
     text-align: center;
 }
 .paperMast {
@@ -766,7 +745,7 @@
 }
 .finalBtn:active { transform: translateY(1px); }
 
-/* ── Colophon + footer ────────────────────────────────────── */
+/* ── Colophon — native <details>, two lines + More/Hide ───── */
 .colophon {
     max-width: 560px;
     margin: 2.1rem auto 0;
@@ -775,8 +754,33 @@
     line-height: 1.6;
     color: var(--cream-mute);
 }
-.colophon strong { color: var(--cream-soft); font-weight: 600; }
+.coloDetails p { margin-top: .45rem; }
+.coloSummary {
+    list-style: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.coloSummary::-webkit-details-marker { display: none; }
+.coloSummary strong {
+    color: var(--cream-soft);
+    font-weight: 600;
+}
+.coloToggle {
+    margin-left: .45rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .56rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+}
+.coloToggle::after { content: 'More'; }
+.coloDetails[open] .coloToggle::after { content: 'Hide'; }
 
+/* ── Footer ───────────────────────────────────────────────── */
 .footer {
     max-width: 560px;
     margin: 1.6rem auto 0;
@@ -827,7 +831,8 @@
     color: var(--cream-mute);
 }
 
-/* ── Persistent action dock ───────────────────────────────── */
+/* ── Bottom action dock — hidden near top, slim while reading
+      down, full on any upward scroll ─────────────────────────── */
 .dock {
     position: fixed;
     left: 0;
@@ -835,40 +840,28 @@
     bottom: 0;
     z-index: 55; /* below the global msm menu (60) */
     display: flex;
-    gap: .55rem;
-    padding: .65rem .9rem calc(.65rem + env(safe-area-inset-bottom));
+    gap: .5rem;
+    padding: .5rem .9rem calc(.5rem + env(safe-area-inset-bottom));
     background: rgba(10, 17, 25, .82);
     -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     border-top: 1px solid var(--ink-line);
+    transition: transform .3s ease, padding .25s ease;
+}
+.dockHidden {
+    transform: translateY(110%);
+}
+.dockSlim {
+    padding: .35rem .9rem calc(.3rem + env(safe-area-inset-bottom));
 }
 .dockPrimary {
     flex: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 50px;
+    min-height: 44px;
     background: var(--gold);
     color: var(--ink);
-    border-radius: 999px;
-    text-decoration: none;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: .68rem;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-.dockPrimary:active { transform: translateY(1px); }
-.dockGhost {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 50px;
-    background: rgba(232, 200, 137, .08);
-    color: var(--gold);
-    border: 1px solid var(--gold-deep);
     border-radius: 999px;
     text-decoration: none;
     font-family: var(--mono);
@@ -877,5 +870,31 @@
     letter-spacing: .16em;
     text-transform: uppercase;
     white-space: nowrap;
+    transition: min-height .25s ease, font-size .25s ease;
+}
+.dockPrimary:active { transform: translateY(1px); }
+.dockGhost {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    background: rgba(232, 200, 137, .08);
+    color: var(--gold);
+    border: 1px solid var(--gold-deep);
+    border-radius: 999px;
+    text-decoration: none;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .6rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: min-height .25s ease, font-size .25s ease;
 }
 .dockGhost:active { background: rgba(232, 200, 137, .16); }
+.dockSlim .dockPrimary,
+.dockSlim .dockGhost {
+    min-height: 34px;
+    font-size: .56rem;
+}

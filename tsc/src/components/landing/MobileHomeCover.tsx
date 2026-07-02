@@ -1,51 +1,19 @@
 import Link from 'next/link'
 import s from './MobileHomeCover.module.css'
+import { MobileHomeDock } from './MobileHomeDock'
 
-// Mobile landing v2 — "The Newsstand Cover".
+// Mobile landing v2 — "The Newsstand Cover" (revised after compare-and-mix
+// with the previous MobileHome).
 //
-// Design thesis: the dark ink is the app's chrome; the PRODUCT is printed
-// paper. So the almanac itself always appears as cream paper clippings
-// (hero clipping, the in-print standings page), while everything around it
-// behaves like a native app: scrolling identity sash, swipeable chapters
-// rail, persistent bottom action dock.
+// Kept from v1: dark ink as app chrome, printed cream paper as the product
+// (the framed "in print" standings page), the swipeable chapters rail, and
+// the bottom action dock. Adopted from the old MobileHome: the sticky
+// collapsing top bar (T·S·C. letter-collapse via the global
+// MobileHeaderCollapse body class) and the book-cover hero. The hero paper
+// clippings were cut — too big at phone widths.
 //
-// Ships zero client JS — the sash marquee and the cycling hero clipping are
-// pure CSS animations, the chapters rail is CSS scroll-snap. Server
-// component all the way down.
-
-const SASH_ITEMS = [
-  'Est. 2026 · Vol. II',
-  'Sleeper · ESPN · NFL.com · Yahoo',
-  'One league free, forever',
-  'Live season tools included',
-]
-
-// Hero clippings — three vignettes from the demo league (same stories the
-// desktop HeroClipping rotates through), printed as paper scraps. Cycled
-// by CSS animation, 8s per clipping.
-const CLIPPINGS = [
-  {
-    chapter: 'Ch. II · Champion Rolls',
-    page: 'p. 47',
-    title: ['Champion,', '2024.'],
-    line: 'Tendency 142.6 · Slingers 142.1',
-    sub: 'Decided by a Monday-night kicker. The book records the result, not the heartbreak.',
-  },
-  {
-    chapter: 'Ch. III · Record Book',
-    page: 'p. 112',
-    title: ['Single-week', 'high.'],
-    line: '198.4 · Dad Bod · Wk 9, 2022',
-    sub: 'The league high-water mark, kept in print so the argument can rest.',
-  },
-  {
-    chapter: 'Ch. V · Rivalries',
-    page: 'p. 184',
-    title: ['Slingers vs.', 'Dad Bod.'],
-    line: '9 to 7 · 16 meetings',
-    sub: 'Every Sunday they ruined for each other, with a running scoreboard.',
-  },
-]
+// The dock is the only client JS on the page (scroll-direction shrink);
+// everything else is server-rendered with CSS-only behavior.
 
 const CHAPTERS: {
   numeral: string
@@ -119,9 +87,9 @@ const STANDINGS: [string, string, string, string][] = [
   ['6', 'Bench Mob', '7-7', '1,640.9'],
 ]
 
-// Same FAQPage JSON-LD the desktop landing ships. Google indexes mobile-first,
-// so the mobile tree is the version crawlers actually read — the schema has
-// to live here too or category queries lose it.
+// Same FAQPage JSON-LD the desktop landing ships. Google indexes mobile-first
+// (Googlebot smartphone UA gets served THIS tree by the getViewMode fork), so
+// the schema has to live here too or category queries lose it.
 const FAQ_LD = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -164,92 +132,72 @@ const FAQ_LD = {
 export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
   const primaryHref = signedIn ? '/dashboard' : '/login?mode=signup'
   const primaryLabel = signedIn ? 'Open your library' : 'Start your archive'
-  const secondaryHref = signedIn ? '/dashboard/new' : '/demo/'
-  const secondaryLabel = signedIn ? 'Add a league' : 'Demo'
 
   return (
-    <main className={s.main}>
+    // The bare `mhc` class exists only for the globals.css sibling rule that
+    // hides the global hamburger (this bar carries its own Sign in pill).
+    <main className={`mhc ${s.main}`}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_LD) }}
       />
 
-      {/* Identity sash. Height (38px / 34px under 520px) is load-bearing:
-          the global .msm-root--landing menu trigger offsets itself by
-          exactly this much to land on the masthead row. */}
-      <div className={s.sash} aria-hidden="true">
-        <div className={s.sashTrack}>
-          {[0, 1].map((g) => (
-            <div key={g} className={s.sashGroup}>
-              {SASH_ITEMS.map((item, i) => (
-                <span key={i} className={s.sashItem}>
-                  <span className={s.sashStar}>★</span> {item}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <header className={s.masthead}>
-        <div className={s.mastKicker}>Vol. II · The League Almanac</div>
-        <div className={s.mastTitle}>
-          The Sunday <em>Chronicle.</em>
-        </div>
+      {/* ── Top bar — title letters collapse to T·S·C. on scroll via the
+             global MobileHeaderCollapse body class ─────────────────── */}
+      <header className={s.bar}>
+        <span className={s.barTitle} aria-label="The Sunday Chronicle">
+          <span aria-hidden="true">
+            T<span className={s.barFade}>{'he '}</span>S
+            <span className={s.barFade}>{'unday '}</span>
+            <em>
+              C<span className={s.barFade}>hronicle</span>.
+            </em>
+          </span>
+        </span>
+        {signedIn ? (
+          <Link href="/dashboard" className={s.barLink}>
+            Library
+          </Link>
+        ) : (
+          <Link href="/login" className={s.barLink}>
+            Sign in
+          </Link>
+        )}
       </header>
 
-      {/* ── Cover ─────────────────────────────────────────────── */}
-      <section className={s.hero}>
-        <div className={s.heroSup}>★ Fantasy football, bound in print ★</div>
-        <h1 className={s.heroTitle}>
-          Your league.
+      {/* ── The Hook — book-cover hero ────────────────────────── */}
+      <section className={s.hook}>
+        <div className={s.hookKicker}>The League Chronicle</div>
+        <h1 className={s.hookTitle}>
+          Your league&apos;s history.
           <br />
-          <em>Bound forever.</em>
+          <em>Bound in one book.</em>
         </h1>
-        <p className={s.heroSub}>
-          Paste a league ID. Every season your league has ever played comes
-          back as one public almanac.
+        <p className={s.hookSub}>
+          One league ID. Every season walked back to the beginning. A designed
+          chronicle your whole league can read.
         </p>
-        <div className={s.heroMeta}>
-          <span>Free until the 2026 season</span>
-          <span className={s.heroMetaSep}>·</span>
-          <span>No card to start</span>
+
+        <div className={s.book} aria-hidden="true">
+          <div className={s.bookSpine}>
+            <span className={s.bookSpineTxt}>Chronicle</span>
+          </div>
+          <div className={s.bookCover}>
+            <div className={s.bookInner}>
+              <span className={s.bookCrest}>★</span>
+              <span className={s.bookLeague}>Your League</span>
+              <span className={s.bookRule} />
+              <span className={s.bookVol}>The Complete History</span>
+              <span className={s.bookYears}>2018-2024</span>
+              <span className={s.bookSeasons}>Seven Seasons</span>
+              <span className={`${s.bookRule} ${s.bookRuleSm}`} />
+              <span className={s.bookFt}>The Sunday Chronicle</span>
+            </div>
+          </div>
         </div>
 
-        {/* Cycling paper clipping. Whole stack links to the demo. */}
-        <Link
-          href="/demo/"
-          target="_blank"
-          rel="noopener"
-          className={s.clipWrap}
-          aria-label="Pages from a finished almanac. Opens the demo league."
-        >
-          <span className={s.clipShadow1} aria-hidden="true" />
-          <span className={s.clipShadow2} aria-hidden="true" />
-          <span className={s.clipStack}>
-            {CLIPPINGS.map((c, i) => (
-              <span key={i} className={s.clip}>
-                <span className={s.clipHead}>
-                  <span>{c.chapter}</span>
-                  <span>{c.page}</span>
-                </span>
-                <span className={s.clipRule} aria-hidden="true">
-                  ✦
-                </span>
-                <span className={s.clipTitle}>
-                  {c.title[0]} <em>{c.title[1]}</em>
-                </span>
-                <span className={s.clipLine}>{c.line}</span>
-                <span className={s.clipSub}>{c.sub}</span>
-              </span>
-            ))}
-            <span className={s.clipSeal} aria-hidden="true">
-              Demo
-              <br />
-              Vol. VII
-            </span>
-          </span>
-          <span className={s.clipCaption}>From a real seven-year league · tap to open</span>
+        <Link href={primaryHref} className={s.hookBtn}>
+          {primaryLabel}
         </Link>
 
         <div className={s.statStrip}>
@@ -304,7 +252,7 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
               <span className={s.railChap}>Chapter {ch.numeral}</span>
               <span className={s.railTitle}>{ch.title}</span>
               <span className={s.railBlurb}>{ch.blurb}</span>
-              <span className={s.railCta}>Open in the demo</span>
+              <span className={s.railCta}>View</span>
             </Link>
           ))}
         </div>
@@ -447,16 +395,29 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
         </div>
       </section>
 
-      {/* ── Colophon + footer ─────────────────────────────────── */}
+      {/* ── Colophon (collapsed) + footer ─────────────────────────
+          The full prose stays in the SSR HTML for crawlers (Google indexes
+          the mobile tree and reads closed <details> content); readers see
+          two lines and a More toggle. No JS — native disclosure element. */}
       <aside className={s.colophon}>
-        <p>
-          <strong>The Sunday Chronicle is a fantasy football league history
-          almanac.</strong>{' '}
-          Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and it imports
-          every season the league has ever existed, then publishes a polished
-          public site at one permanent URL. During the NFL season the same
-          almanac stays in sync automatically.
-        </p>
+        <details className={s.coloDetails}>
+          <summary className={s.coloSummary}>
+            <strong>
+              The Sunday Chronicle is a fantasy football league history
+              almanac.
+            </strong>
+            <span className={s.coloToggle} aria-hidden="true" />
+          </summary>
+          <p>
+            Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and it imports
+            every season the league has ever existed, then publishes a
+            polished public site at one permanent URL. During the NFL season
+            the same almanac stays in sync automatically: matchup previews,
+            best-coach tracking, manager DNA, milestone watches, weekly
+            recaps. One league is free forever; paid plans start at $3 a
+            month with a 7-day trial.
+          </p>
+        </details>
       </aside>
 
       <footer className={s.footer}>
@@ -484,19 +445,7 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
         <div className={s.footFine}>© 2026 The Sunday Chronicle · JZFF</div>
       </footer>
 
-      {/* ── Persistent action dock ────────────────────────────── */}
-      <div className={s.dock}>
-        <Link href={primaryHref} className={s.dockPrimary}>
-          {primaryLabel}
-        </Link>
-        <Link
-          href={secondaryHref}
-          className={s.dockGhost}
-          {...(!signedIn ? { target: '_blank', rel: 'noopener' } : {})}
-        >
-          {secondaryLabel}
-        </Link>
-      </div>
+      <MobileHomeDock signedIn={signedIn} />
     </main>
   )
 }
