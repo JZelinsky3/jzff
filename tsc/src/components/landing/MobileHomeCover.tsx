@@ -291,7 +291,7 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
             Walk the full demo
           </Link>
           <div className={s.paperCaption}>
-            Every page populated, every link working. No signup.
+            A real league&apos;s seven seasons, cover to cover. No signup.
           </div>
         </div>
       </section>
@@ -355,6 +355,24 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
             <span className={s.platStatus}>Beta</span>
           </div>
         </div>
+      </section>
+
+      {/* ── The Clubhouse clipping ────────────────────────────── */}
+      <section className={s.section}>
+        <Link href="/hub/" className={s.clubClip}>
+          <span className={s.clubHead}>
+            <span>From the site desk</span>
+            <span>Open to all</span>
+          </span>
+          <span className={s.clubTitle}>
+            The <em>Clubhouse.</em>
+          </span>
+          <span className={s.clubSub}>
+            Site-wide records, live stats, and league discovery. See what
+            every chronicle on the site is up to.
+          </span>
+          <span className={s.clubCta}>Step inside</span>
+        </Link>
       </section>
 
       {/* ── Pricing teaser ────────────────────────────────────── */}

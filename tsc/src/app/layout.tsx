@@ -70,7 +70,7 @@ export const metadata: Metadata = {
         // masthead + tagline + feature/platform strips. Sized 1200×630 to
         // satisfy iMessage / Slack / Discord / X large-card previews. Bump
         // the ?v= when the design changes if crawlers cache the old one.
-        url: "/api/og/home?v=4",
+        url: "/api/og/home?v=5",
         width: 1200,
         height: 630,
         alt: "The Sunday Chronicle — your league's history, archived for good.",
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "The Sunday Chronicle — Fantasy Football League History & Almanac",
     description: DESCRIPTION,
-    images: ["/api/og/home?v=4"],
+    images: ["/api/og/home?v=5"],
   },
   robots: {
     index: true,
@@ -234,7 +234,7 @@ const productLd = {
   brand: { "@id": "https://thesundaychronicle.app/#org" },
   category: "Fantasy Football League Management Software",
   url: "https://thesundaychronicle.app/",
-  image: "https://thesundaychronicle.app/api/og/home?v=4",
+  image: "https://thesundaychronicle.app/api/og/home?v=5",
   offers: {
     "@type": "AggregateOffer",
     lowPrice: "0",

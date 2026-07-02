@@ -427,6 +427,9 @@
     /* Bleed to the viewport edge so half of the next card peeks in. */
     margin: 0 -1.1rem;
     padding: .2rem 1.1rem .8rem;
+    /* Snap positions must respect the inline padding — without this the
+       snapport is the raw viewport edge, so cards land flush left. */
+    scroll-padding: 0 1.1rem;
     scrollbar-width: none;
 }
 .rail::-webkit-scrollbar { display: none; }
@@ -700,6 +703,59 @@
     letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--cream-mute);
+}
+
+/* ── The Clubhouse clipping — cream paper scrap, lightly tilted
+      like something torn out and pinned to the page ───────────── */
+.clubClip {
+    display: flex;
+    flex-direction: column;
+    padding: 1.1rem 1.2rem 1.15rem;
+    background: linear-gradient(160deg, #f9f2e0 0%, #f4ebd8 60%, #ecdfc4 100%);
+    border-radius: 4px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .45);
+    transform: rotate(-1.2deg);
+    color: var(--ink);
+    text-decoration: none;
+}
+.clubClip:active { transform: rotate(-1.2deg) scale(.985); }
+.clubHead {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .52rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--rust);
+}
+.clubTitle {
+    margin-top: .55rem;
+    font-family: var(--serif);
+    font-size: 1.65rem;
+    line-height: 1.05;
+    letter-spacing: -.015em;
+    color: var(--ink);
+}
+.clubTitle em { font-style: italic; }
+.clubSub {
+    margin-top: .45rem;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .9rem;
+    line-height: 1.45;
+    color: rgba(14, 22, 32, .72);
+}
+.clubCta {
+    margin-top: .75rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: .58rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 4px;
 }
 
 /* ── Pricing teaser ───────────────────────────────────────── */

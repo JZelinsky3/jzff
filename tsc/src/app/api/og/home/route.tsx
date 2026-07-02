@@ -1,14 +1,14 @@
 // OG image generator for the marketing landing page (https://thesundaychronicle.app).
 // URL: /api/og/home
 //
-// Renders a 1200x630 "front page" card: tight masthead bar, a stamped
-// kicker, a punchy headline with a specimen content block (mock champion
-// roll + record line) for visual proof, and a feature/platform footer.
-// Designed to make a chat reader stop scrolling — the goal is "what is
-// this?" not "another logo card."
+// Renders a 1200x630 editorial card: gold sash strips top and bottom, the
+// masthead + tagline on the left, and the league book itself (leather
+// cover, gold emboss, cream page peeking out, rust volume seal) on the
+// right. No stats, no specimen data — the brand and the object. Palette is
+// the site's Vintage Creamery navy/cream/gold/rust rather than flat black.
 //
 // CDN-cached at the edge for a day with a 24h SWR window. Bump the version
-// query in metadata when the design changes if you want crawlers to refetch.
+// query in metadata when the design changes so crawlers refetch.
 
 import { ImageResponse } from 'next/og'
 import { readFile } from 'fs/promises'
@@ -17,8 +17,15 @@ import path from 'path'
 export const runtime = 'nodejs'
 
 const FONT_DIR = path.join(process.cwd(), 'public', 'og', 'fonts')
+
+const INK = '#0e1620'
+const INK_DEEP = '#0a1119'
+const INK_SOFT = '#16202c'
+const CREAM = '#f4ebd8'
+const CREAM_SOFT = '#c9c0ad'
 const GOLD = '#e8c889'
-const INK = '#0a0a0a'
+const GOLD_DEEP = '#a88a4a'
+const RUST = '#a04830'
 
 async function loadFonts() {
   const [serif, serifItalic, mono, monoBold] = await Promise.all([
@@ -37,9 +44,6 @@ async function loadFonts() {
 
 export async function GET() {
   const fonts = await loadFonts()
-  const gridiron = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`,
-  )
 
   return new ImageResponse(
     (
@@ -49,282 +53,290 @@ export async function GET() {
           height: '630px',
           display: 'flex',
           flexDirection: 'column',
-          background: INK,
-          color: '#f3f4f6',
+          background: `linear-gradient(155deg, ${INK_DEEP} 0%, ${INK} 48%, ${INK_SOFT} 100%)`,
+          color: CREAM,
           fontFamily: 'JetBrains',
           position: 'relative',
         }}
       >
+        {/* Warm glows — gold behind the masthead, rust under the book. */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            opacity: 0.5,
-            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            background: `radial-gradient(circle at 10% 12%, ${GOLD}3a 0%, transparent 46%), radial-gradient(circle at 90% 88%, ${GOLD}1f 0%, transparent 52%)`,
+            background: `radial-gradient(circle at 24% 30%, ${GOLD}30 0%, transparent 48%), radial-gradient(circle at 86% 82%, ${RUST}2e 0%, transparent 46%)`,
           }}
         />
 
-        {/* Tight masthead bar — newspaper-style flagline. Brand lives in the
-            big serif masthead below; this is just edition metadata. */}
+        {/* Gold sash strips — the site's identity stripe, top and bottom. */}
+        <div style={{ display: 'flex', height: '14px', background: GOLD }} />
+
+        {/* Body */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 0 0 84px' }}>
+          {/* Left — masthead + tagline */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '30px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                fontSize: '17px',
+                fontWeight: 700,
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                color: GOLD,
+              }}
+            >
+              <span style={{ display: 'flex' }}>★</span>
+              <span style={{ display: 'flex' }}>The League Almanac · Est. 2026</span>
+              <span style={{ display: 'flex' }}>★</span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontSize: '96px',
+                lineHeight: 1.02,
+                color: CREAM,
+                marginTop: '26px',
+              }}
+            >
+              The Sunday
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '96px',
+                lineHeight: 1.02,
+                color: GOLD,
+              }}
+            >
+              Chronicle.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: '120px',
+                height: '3px',
+                background: `linear-gradient(90deg, ${GOLD_DEEP}, transparent)`,
+                marginTop: '30px',
+              }}
+            />
+
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '33px',
+                lineHeight: 1.25,
+                color: CREAM_SOFT,
+                marginTop: '24px',
+                maxWidth: '560px',
+              }}
+            >
+              Your league&apos;s history. Bound in one book.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '16px',
+                fontWeight: 700,
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+                color: CREAM_SOFT,
+                marginTop: '34px',
+              }}
+            >
+              Sleeper · ESPN · NFL.com · Yahoo
+            </div>
+          </div>
+
+          {/* Right — the book, tilted, with a cream page slipping out. */}
+          <div
+            style={{
+              display: 'flex',
+              width: '430px',
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+            }}
+          >
+            {/* Cream page peeking out from behind the cover */}
+            <div
+              style={{
+                position: 'absolute',
+                display: 'flex',
+                width: '290px',
+                height: '404px',
+                background: `linear-gradient(165deg, #f7efdc 0%, #eee1c8 100%)`,
+                borderRadius: '4px',
+                transform: 'rotate(9deg) translateX(38px)',
+                boxShadow: '0 18px 50px rgba(0,0,0,0.5)',
+              }}
+            />
+
+            {/* The book: spine + cover */}
+            <div
+              style={{
+                display: 'flex',
+                transform: 'rotate(3deg)',
+                boxShadow: '0 26px 70px rgba(0,0,0,0.65)',
+                borderRadius: '6px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  width: '26px',
+                  height: '420px',
+                  background: 'linear-gradient(180deg, #3a2c14 0%, #1a1208 40%, #2a1e0e 70%, #3a2c14 100%)',
+                  border: `1px solid #4a3a1e`,
+                  borderRight: 'none',
+                  borderRadius: '6px 0 0 6px',
+                }}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: '304px',
+                  height: '420px',
+                  background: 'linear-gradient(165deg, #1e1608 0%, #100e08 50%, #1a1408 100%)',
+                  border: `2px solid ${GOLD_DEEP}`,
+                  borderLeft: 'none',
+                  borderRadius: '0 6px 6px 0',
+                  padding: '34px 26px 26px',
+                  position: 'relative',
+                }}
+              >
+                {/* Inner frame line */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    right: '10px',
+                    bottom: '10px',
+                    display: 'flex',
+                    border: `1px solid ${GOLD_DEEP}55`,
+                    borderRadius: '2px',
+                  }}
+                />
+                <div style={{ display: 'flex', color: GOLD, fontSize: '30px', marginTop: '10px' }}>★</div>
+                <div
+                  style={{
+                    display: 'flex',
+                    fontFamily: 'DMSerif',
+                    fontStyle: 'italic',
+                    fontSize: '40px',
+                    color: GOLD,
+                    marginTop: '14px',
+                  }}
+                >
+                  Your League
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    width: '90px',
+                    height: '2px',
+                    background: `linear-gradient(90deg, transparent, ${GOLD_DEEP}, transparent)`,
+                    marginTop: '18px',
+                  }}
+                />
+                <div
+                  style={{
+                    display: 'flex',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    letterSpacing: '0.3em',
+                    textTransform: 'uppercase',
+                    color: GOLD_DEEP,
+                    marginTop: '20px',
+                  }}
+                >
+                  The Complete History
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    letterSpacing: '0.18em',
+                    color: CREAM_SOFT,
+                    marginTop: '10px',
+                  }}
+                >
+                  2018-2024
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    fontFamily: 'DMSerif',
+                    fontStyle: 'italic',
+                    fontSize: '17px',
+                    color: GOLD_DEEP,
+                    marginTop: 'auto',
+                  }}
+                >
+                  The Sunday Chronicle
+                </div>
+              </div>
+            </div>
+
+            {/* Rust volume seal overlapping the cover corner */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '76px',
+                right: '30px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '92px',
+                height: '92px',
+                borderRadius: '92px',
+                border: `3px solid ${RUST}`,
+                background: `${CREAM}e6`,
+                color: RUST,
+                fontSize: '14px',
+                fontWeight: 700,
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                transform: 'rotate(12deg)',
+              }}
+            >
+              Vol. II
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom strip — domain on gold, mirrors the top sash. */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '22px 56px',
-            borderBottom: '1px solid #272727',
-            fontSize: '12px',
-            letterSpacing: '0.42em',
-            color: '#9ca3af',
-            textTransform: 'uppercase',
-            zIndex: 2,
-          }}
-        >
-          <span style={{ display: 'flex', color: GOLD }}>★ EST. MMXXVI</span>
-          <span style={{ display: 'flex' }}>VOL. I · NO. 1</span>
-          <span style={{ display: 'flex' }}>FOR COMMISSIONERS</span>
-        </div>
-
-        {/* Hero masthead — the brand is the visual focal point. Big serif,
-            tight italic pull-quote below it so the tagline supports the name
-            instead of replacing it. */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '34px 80px 0',
-            zIndex: 2,
-            gap: '12px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              fontFamily: 'DMSerif',
-              fontSize: '92px',
-              lineHeight: 1,
-              color: '#f3f4f6',
-              textAlign: 'center',
-            }}
-          >
-            The Sunday Chronicle
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              fontFamily: 'DMSerif',
-              fontStyle: 'italic',
-              fontSize: '34px',
-              color: GOLD,
-              lineHeight: 1.1,
-              textAlign: 'center',
-              maxWidth: '1020px',
-            }}
-          >
-            Every champion. Every grudge. Every draft steal.
-          </div>
-        </div>
-
-        {/* Specimen "front page" block — mock data lines so readers see what
-            the product actually outputs, not just a logo. Cells are sized to
-            fill the body so the card doesn't trail into empty space. */}
-        <div
-          style={{
-            display: 'flex',
-            margin: '36px 56px 0',
-            border: '1px solid #272727',
-            background: 'rgba(20,20,20,0.55)',
-            zIndex: 2,
-          }}
-        >
-          {/* Left cell — champion roll */}
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              padding: '22px 26px',
-              borderRight: '1px solid #272727',
-              gap: '10px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                fontSize: '12px',
-                fontWeight: 700,
-                letterSpacing: '0.32em',
-                color: GOLD,
-                textTransform: 'uppercase',
-              }}
-            >
-              ★ CHAMPION ROLL
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', fontFamily: 'DMSerif', fontSize: '26px', color: '#f3f4f6' }}>
-              <span style={{ display: 'flex', color: '#9ca3af', fontFamily: 'JetBrains', fontSize: '15px' }}>&apos;25</span>
-              <span style={{ display: 'flex' }}>Wright stays</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', fontFamily: 'DMSerif', fontSize: '24px', color: '#d1d5db' }}>
-              <span style={{ display: 'flex', color: '#9ca3af', fontFamily: 'JetBrains', fontSize: '15px' }}>&apos;24</span>
-              <span style={{ display: 'flex' }}>Holcomb&apos;s third</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', fontFamily: 'DMSerif', fontSize: '22px', color: '#9ca3af' }}>
-              <span style={{ display: 'flex', color: '#6b7280', fontFamily: 'JetBrains', fontSize: '15px' }}>&apos;23</span>
-              <span style={{ display: 'flex' }}>Wright again</span>
-            </div>
-          </div>
-          {/* Middle cell — record */}
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              padding: '22px 26px',
-              borderRight: '1px solid #272727',
-              gap: '10px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                fontSize: '12px',
-                fontWeight: 700,
-                letterSpacing: '0.32em',
-                color: GOLD,
-                textTransform: 'uppercase',
-              }}
-            >
-              ✦ RECORD BOOK
-            </div>
-            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '34px', color: '#f3f4f6', lineHeight: 1 }}>
-              239.4 pts
-            </div>
-            <div style={{ display: 'flex', fontSize: '13px', fontWeight: 700, letterSpacing: '0.22em', color: '#9ca3af', textTransform: 'uppercase' }}>
-              HIGHEST SINGLE WEEK
-            </div>
-            <div style={{ display: 'flex', fontSize: '13px', fontWeight: 700, letterSpacing: '0.22em', color: '#6b7280', textTransform: 'uppercase' }}>
-              Slingers · W7 &apos;23
-            </div>
-          </div>
-          {/* Right cell — rivalry */}
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              padding: '22px 26px',
-              gap: '10px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                fontSize: '12px',
-                fontWeight: 700,
-                letterSpacing: '0.32em',
-                color: GOLD,
-                textTransform: 'uppercase',
-              }}
-            >
-              ✺ RIVALRY
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', fontFamily: 'DMSerif', fontSize: '30px', color: '#f3f4f6', lineHeight: 1 }}>
-              <span style={{ display: 'flex' }}>21–19</span>
-            </div>
-            <div style={{ display: 'flex', fontSize: '13px', fontWeight: 700, letterSpacing: '0.22em', color: '#9ca3af', textTransform: 'uppercase' }}>
-              40 MEETINGS · SINCE 2009
-            </div>
-            <div style={{ display: 'flex', fontSize: '13px', fontWeight: 700, letterSpacing: '0.22em', color: '#6b7280', textTransform: 'uppercase' }}>
-              LAST &apos;24 · 132.4 — 128.7
-            </div>
-          </div>
-        </div>
-
-        {/* Editorial pull-quote — fills the space between the specimen block
-            and the bottom strips with a single load-bearing line. */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '26px',
-            padding: '0 80px',
-            zIndex: 2,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              fontFamily: 'DMSerif',
-              fontStyle: 'italic',
-              fontSize: '24px',
-              color: '#d1d5db',
-              lineHeight: 1.2,
-              textAlign: 'center',
-              maxWidth: '900px',
-            }}
-          >
-            One league ID in. Every season, every champion, every grudge — out.
-          </div>
-        </div>
-
-        {/* Feature strip */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 56,
-            right: 56,
-            bottom: 76,
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '34px',
-            fontSize: '14px',
-            fontWeight: 700,
-            letterSpacing: '0.32em',
-            color: '#d1d5db',
-            textTransform: 'uppercase',
-            zIndex: 2,
-          }}
-        >
-          <span style={{ display: 'flex' }}>13+ SEASONS, ARCHIVED</span>
-          <span style={{ display: 'flex', color: '#4b5563' }}>·</span>
-          <span style={{ display: 'flex' }}>WEEKLY PICK&apos;EMS</span>
-          <span style={{ display: 'flex', color: '#4b5563' }}>·</span>
-          <span style={{ display: 'flex' }}>LIVE RECORDS WATCH</span>
-        </div>
-
-        {/* Bottom platform strip */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 56,
-            right: 56,
-            bottom: 28,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingTop: '14px',
-            borderTop: '1px solid #272727',
-            fontSize: '13px',
+            padding: '12px 84px',
+            background: GOLD,
+            color: INK,
+            fontSize: '15px',
             fontWeight: 700,
             letterSpacing: '0.3em',
-            color: '#9ca3af',
             textTransform: 'uppercase',
-            zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex' }}>SLEEPER · ESPN · NFL.COM · YAHOO</span>
-          <span style={{ display: 'flex', color: GOLD }}>THESUNDAYCHRONICLE.APP</span>
+          <span style={{ display: 'flex' }}>Free to start · One league free forever</span>
+          <span style={{ display: 'flex' }}>thesundaychronicle.app</span>
         </div>
       </div>
     ),
