@@ -11,7 +11,10 @@ import { LandingNav } from '@/components/landing/LandingNav'
 // isn't allowed in Server Components.
 // Vaulted 2026-06-24 — landing welcome popup hidden, keep import path for easy restore.
 // import { WelcomePopupLoader } from '@/components/landing/WelcomePopupLoader'
-import { MobileHome } from '@/components/landing/MobileHome'
+// Previous mobile landing — kept for comparison while the Cover design is
+// evaluated. Swap the render in Home() back to <MobileHome /> to restore.
+// import { MobileHome } from '@/components/landing/MobileHome'
+import { MobileHomeCover } from '@/components/landing/MobileHomeCover'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { getViewMode, isMobileForcingDesktop } from '@/lib/viewMode'
@@ -37,7 +40,7 @@ export default async function Home() {
   // dedicated, lighter tree that never ships the desktop landing's client
   // JS. Desktop browsers fall through to the full layout below, unchanged.
   if ((await getViewMode()) === 'mobile') {
-    return <MobileHome signedIn={signedIn} />
+    return <MobileHomeCover signedIn={signedIn} />
   }
 
   const admin = signedIn ? await isSiteAdmin(user?.id) : false
