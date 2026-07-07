@@ -65,7 +65,7 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
       return
     }
     setStatus('sent')
-    setInfo(`Confirm your email — we sent a verification link to ${email}.`)
+    setInfo(`Confirm your email. We sent a verification link to ${email}.`)
   }
 
   async function onMagicLink() {
@@ -79,7 +79,7 @@ export function MobileLoginForm({ next, initialMode = 'signin' }: { next?: strin
     })
     if (error) { setStatus('error'); setError(error.message); return }
     setStatus('sent')
-    setInfo(`Check your inbox — a magic link is on its way to ${email}.`)
+    setInfo(`Check your inbox. A magic link is on its way to ${email}.`)
   }
 
   async function onForgotPassword() {

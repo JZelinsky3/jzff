@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
@@ -53,11 +53,7 @@ export default async function LoginPage({
   return (
     <main>
       <nav className="nav">
-        <Link href={backHref} className="dc-nav-icon" aria-label="Back">
-          <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="7 1 1 7 7 13" />
-          </svg>
-        </Link>
+        <BackButton fallbackHref={backHref} ariaLabel="Back" />
         <div className="nav-center">
           <div className="nav-kicker">Sign in</div>
           <div className="nav-title">The <em>Library.</em></div>

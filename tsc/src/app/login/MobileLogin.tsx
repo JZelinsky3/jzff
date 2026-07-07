@@ -14,7 +14,7 @@ export function MobileLogin({
   initialMode: 'signin' | 'signup'
 }) {
   const titleCopy = initialMode === 'signup'
-    ? { sup: '★ Start your archive ★', head: 'Open your', em: 'library.', sub: "Make an account in seconds — we'll walk every season for you." }
+    ? { sup: '★ Start your archive ★', head: 'Open your', em: 'library.', sub: "Make an account in seconds. We'll walk every season for you." }
     : { sup: '★ Welcome back ★', head: 'Open your', em: 'library.', sub: 'Sign in to your archive. A few seconds and you’re back in.' }
 
   return (
@@ -30,9 +30,6 @@ export function MobileLogin({
       </header>
 
       <section className="mlogin-hero">
-        <div className="mlogin-crest" aria-hidden>
-          <span className="mlogin-crest-star">★</span>
-        </div>
         <div className="mlogin-sup">{titleCopy.sup}</div>
         <h1 className="mlogin-title">
           {titleCopy.head}<br /><em>{titleCopy.em}</em>

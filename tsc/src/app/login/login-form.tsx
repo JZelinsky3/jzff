@@ -81,7 +81,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
       return
     }
     setStatus('sent')
-    setInfo(`Confirm your email — we sent a verification link to ${email}.`)
+    setInfo(`Confirm your email. We sent a verification link to ${email}.`)
   }
 
   // ─── Magic link (sign-in tab fallback) ───────────────────────────────────
@@ -100,7 +100,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
       return
     }
     setStatus('sent')
-    setInfo(`Check your inbox — a magic link is on its way to ${email}.`)
+    setInfo(`Check your inbox. A magic link is on its way to ${email}.`)
   }
 
   // ─── Password reset ──────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
         <div className="card-title" style={{ marginTop: '1rem' }}>Check your <em>inbox.</em></div>
         <p className="card-desc" style={{ marginTop: '.75rem' }}>{info}</p>
         <button type="button" onClick={reset} className="dc-btn-ghost" style={{ marginTop: '1.5rem' }}>
-          ← Back
+          Back
         </button>
       </div>
     )
@@ -331,7 +331,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
         <button type="submit" disabled={submitting} className="dc-btn dc-btn-block">
           {submitting
             ? (mode === 'signin' ? 'Signing in…' : 'Creating account…')
-            : (mode === 'signin' ? 'Sign in →' : 'Create account →')}
+            : (mode === 'signin' ? 'Sign in' : 'Create account')}
         </button>
 
         {error && <p className="dc-form-error">{error}</p>}
@@ -396,7 +396,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
           }}
           title={!email ? 'Enter your email above first' : undefined}
         >
-          Send me a magic link instead →
+          Send me a magic link instead
         </button>
       )}
     </div>

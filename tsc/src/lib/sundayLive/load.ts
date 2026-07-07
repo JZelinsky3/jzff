@@ -7,16 +7,20 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
-import { sleeper } from '@/lib/platforms/sleeper'
+import { sleeper, parseDivisionInfo } from '@/lib/platforms/sleeper'
 import { fetchScoreboard, fetchNflNews, normTeam, type NflGame, type NflArticle } from '@/lib/nflLive'
-import type { LoadOptions, LoadResult, Platform, SlLeague, SlMatchup, SlNflGame, SlSide, WireEvent, InactiveAlert, StackUnit, TickerBoard, TickerEntry, TickerScope } from './types'
+import type { LoadOptions, LoadResult, Platform, SlLeague, SlMatchup, SlNewsItem, SlNflGame, SlSide, WireEvent, InactiveAlert, StackUnit, TickerBoard, TickerEntry, TickerScope } from './types'
 import { platformFor, type PlatformLeagueRef } from './platforms'
+import { simulateDemo, synthesizeDemoPickems } from './demoSim'
 import { winProbA, deriveProgress } from './wp'
 import { sweatIndex } from './sweat'
 import { detectMoments } from './moments'
 import { readLatestFrame, writeFrame } from './snapshots'
 import { attachPickems } from './pickems'
 import { buildPowerPulse } from './powerPulse'
+import { getSeasonContext, type SlSeasonContext } from './seasonContext'
+import { buildStorylines } from './storylines'
+import { buildShowcaseFrame } from './showcase'
 
 const POLL_MS = 30 * 1000
 
@@ -29,12 +33,26 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
     .maybeSingle()
   if (!leagueRow) return { ok: false, reason: 'League not found' }
 
-  const { data: seasonRow } = await db
+  let { data: seasonRow } = await db
     .from('seasons')
     .select('external_id, year, settings')
     .eq('league_id', leagueRow.id)
     .eq('is_live', true)
     .maybeSingle()
+
+  // Demo replays a past season; platforms (Sleeper) mint a new external league
+  // id every year, so resolve the demo year's own season row. Falls back to
+  // the live row if that year was never ingested.
+  if (opts.demo) {
+    const { data: demoSeason } = await db
+      .from('seasons')
+      .select('external_id, year, settings')
+      .eq('league_id', leagueRow.id)
+      .eq('year', opts.demo.year)
+      .maybeSingle()
+    if (demoSeason?.external_id) seasonRow = demoSeason
+  }
+
   if (!seasonRow) {
     return { ok: false, reason: 'No live season configured for this league.' }
   }
@@ -49,11 +67,46 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
   const externalLeagueId = seasonRow.external_id as string | null
   if (!externalLeagueId) return { ok: false, reason: 'Live league id missing.' }
 
+  // Season context for the storyline engine. Kicked off now, raced at the
+  // point of use: a warm cache resolves instantly, a cold one must never hold
+  // the poll hostage (game-state rules run fine without it). page.tsx calls
+  // the same getter at SSR time so polls are normally warm.
+  const seasonCtxPromise: Promise<SlSeasonContext | null> = getSeasonContext(
+    leagueRow.id as string,
+    slug,
+    leagueRow.platform as string,
+    externalLeagueId,
+    year,
+    week,
+  ).catch(() => null)
+
   // Roster positions are needed to label starter slots. Sleeper-only for now.
+  // Demo mode tolerates a dead external id (pre-Sleeper history rows carry
+  // placeholder ids); the showcase fallback below takes over.
   let rosterPositions: string[] = []
+  let playoffSpots: number | null = null
+  let divisions: SlLeague['league']['divisions'] = null
   if (leagueRow.platform === 'sleeper') {
-    const lg = await sleeper.league(externalLeagueId)
+    const lg = opts.demo
+      ? await sleeper.league(externalLeagueId).catch(() => null)
+      : await sleeper.league(externalLeagueId)
     rosterPositions = ((lg as unknown as { roster_positions?: string[] })?.roster_positions ?? [])
+    // League format for the scenario machine: playoff spots straight from
+    // settings; divisions need the rosters for the rosterId -> division map.
+    const spots = Number(lg?.settings?.playoff_teams)
+    playoffSpots = Number.isFinite(spots) && spots > 0 ? spots : null
+    const divInfo = lg ? parseDivisionInfo(lg) : { count: 0, names: [] }
+    if (divInfo.count > 1) {
+      const rosters = await sleeper.rosters(externalLeagueId).catch(() => null)
+      if (rosters) {
+        const byRosterId: Record<number, number> = {}
+        for (const r of rosters) {
+          const d = Number(r.settings?.division)
+          if (Number.isFinite(d) && d >= 1 && d <= divInfo.count) byRosterId[r.roster_id] = d
+        }
+        if (Object.keys(byRosterId).length > 0) divisions = { names: divInfo.names, byRosterId }
+      }
+    }
   }
 
   const ref: PlatformLeagueRef = {
@@ -64,7 +117,23 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
     week,
     rosterPositions,
   }
-  const frame = await platformFor(leagueRow.platform as Platform).fetchFrame(ref)
+  let frame = opts.demo
+    ? await platformFor(leagueRow.platform as Platform)
+        .fetchFrame(ref)
+        .catch(() => ({ supported: false as const, reason: 'Demo replay unavailable from the platform.' }))
+    : await platformFor(leagueRow.platform as Platform).fetchFrame(ref)
+
+  // Showcase fallback: a demo request for a week the platform can't replay
+  // (NFL.com history, ESPN/Yahoo, pre-Sleeper eras) gets a synthetic Sunday
+  // built from the league's real managers + real NFL stat lines for that week.
+  let isShowcase = false
+  if (!frame.supported && opts.demo) {
+    const sc = await buildShowcaseFrame(leagueRow.id as string, year, week).catch(() => null)
+    if (sc) {
+      frame = sc
+      isShowcase = true
+    }
+  }
   if (!frame.supported) {
     return { ok: false, reason: frame.reason }
   }
@@ -75,8 +144,19 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
     fetchNflNews().catch(() => ({ articles: [] as NflArticle[], fetchedAt: new Date().toISOString() })),
   ])
 
+  // Demo rewind: a finished historical week plus an offseason scoreboard reads
+  // all-final/all-pre; the simulator rewinds it to the requested progress and
+  // synthesizes game states + a scoreboard. Real live path never enters here.
+  let sides = frame.sides
+  let rawGames = scoreboard.games
+  if (opts.demo) {
+    const sim = simulateDemo(frame.sides, opts.demo)
+    sides = sim.sides
+    rawGames = sim.games
+  }
+
   // Sunday progress: fraction of starters whose games are not pre-game.
-  const allStarters = frame.sides.flatMap((s) => s.players.filter((p) => p.isStarter))
+  const allStarters = sides.flatMap((s) => s.players.filter((p) => p.isStarter))
   const finishedStarters = allStarters.filter((p) => p.game?.state === 'final').length
   const liveStarters = allStarters.filter((p) => p.game?.state === 'live').length
   const progress = opts.demo
@@ -85,7 +165,7 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
 
   // Pair sides into matchups.
   const sidesByMatchup = new Map<number, SlSide[]>()
-  for (const s of frame.sides) {
+  for (const s of sides) {
     const mid = frame.rosterIdToMatchup[s.rosterId]
     if (mid == null) continue
     const list = sidesByMatchup.get(mid) ?? []
@@ -137,12 +217,18 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
   // Attach pickems badges (silent no-op if no pickems data or name match miss).
   await attachPickems(slug, matchups).catch(() => undefined)
 
+  // Demo frames replay weeks the pickems system has no ballots for; fabricate
+  // a seeded electorate so the ballot surfaces render. Live path never enters.
+  if (opts.demo) {
+    synthesizeDemoPickems(matchups, `${slug}:${opts.demo.year}:${opts.demo.week}`)
+  }
+
   // Top-5 power pulse — silent no-op if rankings unavailable.
   const powerPulse = await buildPowerPulse(slug, matchups).catch(() => [])
 
   // NFL game strip with rostered-player annotations.
   const rosteredByTeam = new Map<string, { onField: string[]; redZone: string[] }>()
-  for (const s of frame.sides) {
+  for (const s of sides) {
     for (const p of s.players) {
       if (!p.isStarter || !p.team) continue
       const slot = rosteredByTeam.get(p.team) ?? { onField: [], redZone: [] }
@@ -151,7 +237,7 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
       rosteredByTeam.set(p.team, slot)
     }
   }
-  const nflGames: SlNflGame[] = scoreboard.games.map((g) => {
+  const nflGames: SlNflGame[] = rawGames.map((g) => {
     const annotsHome = rosteredByTeam.get(g.home.abbr ?? '') ?? { onField: [], redZone: [] }
     const annotsAway = rosteredByTeam.get(g.away.abbr ?? '') ?? { onField: [], redZone: [] }
     const onField = [...annotsHome.onField, ...annotsAway.onField]
@@ -163,6 +249,8 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
       date: g.date,
       homeAbbr: g.home.abbr,
       awayAbbr: g.away.abbr,
+      homeColor: g.home.color,
+      awayColor: g.away.color,
       homeFull: g.home.name,
       awayFull: g.away.name,
       homeScore: g.home.score,
@@ -182,13 +270,16 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
 
   // Wire — current poll only; load.ts persists no event history (snapshot diff
   // in moments.ts handles cross-poll continuity).
-  const wire = buildWire(matchups, nflGames, news.articles, frame.sides)
+  const wire = buildWire(matchups, nflGames, news.articles, sides)
 
   // Ticker top performers.
-  const ticker = buildTicker(frame.sides)
+  const ticker = buildTicker(sides)
 
   // Inactives radar.
-  const inactives = buildInactives(frame.sides)
+  const inactives = buildInactives(sides)
+
+  // News rail: league-tagged articles first.
+  const newsRail = buildNews(news.articles, sides)
 
   // League-wide stacks across every matchup.
   const stacks = matchups.flatMap((m) => m.stack).sort((a, b) => b.combined - a.combined).slice(0, 6)
@@ -206,6 +297,8 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
       year,
       liveQuality: frame.liveQuality,
       phase,
+      playoffSpots,
+      divisions,
     },
     matchups,
     nflGames,
@@ -215,17 +308,42 @@ export async function loadSundayLive(slug: string, opts: LoadOptions = {}): Prom
     inactives,
     stacks,
     powerPulse,
+    news: newsRail,
+    storylines: [],         // populated by the producer engine (storylines.ts)
+    wpBounds: {},           // populated below once the previous frame is read
     halftimeReport: null,
     meta: {
       fetchedAt: new Date().toISOString(),
       pollMs: POLL_MS,
       demo: opts.demo ?? null,
+      showcase: isShowcase || undefined,
     },
   }
 
   // Big Moments — diff against the last persisted frame.
   const prevFrame = await readLatestFrame(leagueRow.id as string, year, week).catch(() => null)
   draftFrame.moments = detectMoments(draftFrame, prevFrame, wire)
+
+  // Session-long WP extremes per matchup, carried frame to frame through
+  // snapshots (frames persisted before this field existed lack it: ?? {}).
+  const prevPayload: SlLeague | null = prevFrame?.payload ?? null
+  const wpBounds: SlLeague['wpBounds'] = { ...(prevPayload?.wpBounds ?? {}) }
+  for (const m of matchups) {
+    const key = String(m.matchupId)
+    const prev = wpBounds[key]
+    wpBounds[key] = prev
+      ? { min: Math.min(prev.min, m.a.wp), max: Math.max(prev.max, m.a.wp) }
+      : { min: m.a.wp, max: m.a.wp }
+  }
+  draftFrame.wpBounds = wpBounds
+
+  // Producer voice. A slow/cold season context forfeits only the history
+  // rules; the frame always ships on time.
+  const seasonCtx = await Promise.race([
+    seasonCtxPromise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+  ])
+  draftFrame.storylines = buildStorylines(draftFrame, prevPayload, seasonCtx, progress)
 
   // Persist (debounced) unless caller asked to skip.
   if (!opts.noSnapshot && !opts.demo) {
@@ -350,7 +468,7 @@ const normName = (s: string) =>
   s.toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim()
 
 function buildTicker(sides: SlSide[]): TickerBoard {
-  type Row = TickerEntry & { _pos: string | null; _started: boolean }
+  type Row = TickerEntry & { _pos: string | null; _started: boolean; _played: boolean }
   const all: Row[] = []
   for (const s of sides) {
     for (const p of s.players) {
@@ -367,10 +485,16 @@ function buildTicker(sides: SlSide[]): TickerBoard {
         freeAgent: false,
         _pos: p.position,
         _started: p.isStarter,
+        // A goose egg only counts against you once your game has started.
+        _played: p.game != null && p.game.state !== 'pre',
       })
     }
   }
   const overall = topBy(all, () => true)
+  // Dud boards only indict players who were EXPECTED to produce and whose
+  // game is underway; a 2-point kicker handcuff is not a dud, a 2-point
+  // projected-14 WR1 in the fourth quarter is.
+  const dud = (pos: string) => (r: Row) => r._started && r._played && r._pos === pos && r.points - r.projDelta >= 6
   const board: TickerBoard = {
     all: overall,
     qb:    topBy(all, (r) => r._pos === 'QB'),
@@ -379,8 +503,13 @@ function buildTicker(sides: SlSide[]): TickerBoard {
     te:    topBy(all, (r) => r._pos === 'TE'),
     k:     topBy(all, (r) => r._pos === 'K'),
     def:   topBy(all, (r) => r._pos === 'DEF'),
-    bench: topBy(all, (r) => !r._started),
-    duds:  topBy(all, (r) => r._started, true),
+    bench: topBy(all, (r) => !r._started && r._played),
+    boom:  all.filter((r) => r._started && r._played).sort((x, y) => y.projDelta - x.projDelta).slice(0, 30).map((r, i) => ({ ...r, rank: i + 1 })),
+    duds:  topBy(all, (r) => r._started && r._played, true),
+    'duds-qb': topBy(all, dud('QB'), true),
+    'duds-rb': topBy(all, dud('RB'), true),
+    'duds-wr': topBy(all, dud('WR'), true),
+    'duds-te': topBy(all, dud('TE'), true),
   }
   for (const key of Object.keys(board) as TickerScope[]) {
     board[key] = board[key].map((r) => ({
@@ -404,6 +533,29 @@ function buildTicker(sides: SlSide[]): TickerBoard {
     const out = arr.filter(pred).sort((x, y) => asc ? x.points - y.points : y.points - x.points).slice(0, 30)
     return out.map((r, i) => ({ ...r, rank: i + 1 }))
   }
+}
+
+function buildNews(articles: NflArticle[], sides: SlSide[]): SlNewsItem[] {
+  const rosterByName = new Map<string, { player: string; owner: string }>()
+  for (const s of sides) {
+    for (const p of s.players) rosterByName.set(normName(p.name), { player: p.name, owner: s.ownerName })
+  }
+  const items: SlNewsItem[] = articles
+    .filter((a) => !a.premium && a.headline)
+    .map((a) => {
+      const hit = a.athletes.map((n) => rosterByName.get(normName(n))).find((x) => x != null) ?? null
+      return {
+        id: a.id,
+        headline: a.headline,
+        description: a.description,
+        published: a.published,
+        link: a.link,
+        image: a.image,
+        leagueTag: hit ? { playerName: hit.player, ownerName: hit.owner } : null,
+      }
+    })
+  items.sort((a, b) => Number(b.leagueTag != null) - Number(a.leagueTag != null) || b.published.localeCompare(a.published))
+  return items.slice(0, 8)
 }
 
 function buildInactives(sides: SlSide[]): InactiveAlert[] {

@@ -1,0 +1,1088 @@
+/* "The Drive" landing concept. Night game under the lights: dark turf,
+   chalk paint, box-score paper, stamped verdicts. Hard rectangles only,
+   no border-radius, offset hard shadows instead of soft glows. */
+
+.gameday {
+  --turf: #0c2119;
+  --turf-deep: #081a13;
+  --chalk: #f2eee1;
+  --chalk-dim: rgba(242, 238, 225, 0.62);
+  --paint: rgba(242, 238, 225, 0.85);
+  --gold: #d9a92c;
+  --gold-soft: #e6c15e;
+  --flag-red: #b3402e;
+  --paper: #f4f0e3;
+  --manila: #e9ddbe;
+  --ink: #17150f;
+  --cond: var(--font-oswald), 'Arial Narrow', sans-serif;
+  --mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --serif: var(--font-dm-serif), Georgia, serif;
+
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.022) 0 140px,
+      rgba(0, 0, 0, 0.05) 140px 280px
+    ),
+    var(--turf);
+  color: var(--chalk);
+  font-family: var(--cond);
+  min-height: 100vh;
+  overflow-x: clip;
+}
+
+.gameday a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------ top bar */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+  background: #0b0b09;
+  border-bottom: 3px solid var(--gold);
+  padding: 0 22px 0 0;
+}
+
+.bug {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bugMark {
+  display: grid;
+  place-items: center;
+  padding: 14px 16px;
+  background: var(--gold);
+  color: #0b0b09;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+}
+
+.bugName {
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  color: var(--chalk);
+}
+
+.topLinks {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-left: auto;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  color: var(--chalk-dim);
+}
+
+.topLinks a:hover {
+  color: var(--gold-soft);
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topSignIn {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  color: var(--chalk);
+  border-bottom: 2px solid transparent;
+}
+
+.topSignIn:hover {
+  border-bottom-color: var(--gold);
+}
+
+.topCta {
+  align-self: center;
+  padding: 9px 16px;
+  background: var(--gold);
+  color: #0b0b09;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  border: 2px solid var(--gold);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.topCta:hover {
+  background: transparent;
+  color: var(--gold-soft);
+}
+
+/* ------------------------------------------------------------ buttons */
+
+.btnSolid,
+.btnOutline,
+.btnChalk {
+  display: inline-block;
+  padding: 15px 26px;
+  text-transform: uppercase;
+  font-family: var(--cond);
+  font-weight: 600;
+  font-size: 0.92rem;
+  letter-spacing: 0.14em;
+  border: 2px solid var(--chalk);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease,
+    color 0.15s ease;
+}
+
+.btnSolid {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #171204;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.55);
+}
+
+.btnSolid:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.55);
+}
+
+.btnOutline {
+  color: var(--chalk);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+}
+
+.btnOutline:hover {
+  background: var(--chalk);
+  color: var(--turf-deep);
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.btnChalk {
+  padding: 12px 20px;
+  font-size: 0.82rem;
+  color: var(--gold-soft);
+  border-color: var(--gold);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.4);
+}
+
+.btnChalk:hover {
+  background: var(--gold);
+  color: #171204;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* --------------------------------------------------------------- hero */
+
+.hero {
+  position: relative;
+  min-height: calc(100vh - 51px);
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* painted yard lines rushing toward the goal line, plus stadium glow */
+.heroField {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(90% 60% at 50% 0%, rgba(242, 238, 225, 0.1) 0%, transparent 55%);
+}
+
+.heroField::before {
+  content: '';
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  bottom: -12%;
+  height: 78%;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(242, 238, 225, 0.16) 0 3px,
+    transparent 3px 96px
+  );
+  transform: perspective(520px) rotateX(58deg);
+  transform-origin: bottom center;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 45%);
+}
+
+.heroField::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 100% at 50% 40%, transparent 45%, rgba(4, 8, 6, 0.7) 100%);
+}
+
+.heroInner {
+  max-width: 900px;
+  padding: 90px 48px 120px;
+}
+
+.heroChip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 30px;
+}
+
+.chipBox {
+  padding: 6px 12px;
+  background: var(--flag-red);
+  color: var(--paper);
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+}
+
+.chipText {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.heroTitle {
+  margin: 0 0 10px;
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: clamp(2.7rem, 6.2vw, 5.1rem);
+  line-height: 0.98;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: var(--chalk);
+  max-width: 15ch;
+}
+
+.heroScript {
+  margin: 0 0 26px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.5rem, 2.8vw, 2.3rem);
+  color: var(--gold-soft);
+}
+
+.heroBody {
+  max-width: 52ch;
+  margin: 0 0 36px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--chalk-dim);
+}
+
+.heroCtas {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.heroFine {
+  margin: 22px 0 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--chalk-dim);
+}
+
+/* the painted "20" in the hero corner, like turf numbers */
+.heroYard {
+  position: absolute;
+  right: 40px;
+  bottom: 26px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  color: transparent;
+  -webkit-text-stroke: 2px rgba(242, 238, 225, 0.34);
+  letter-spacing: 0.06em;
+  user-select: none;
+}
+
+.heroYardArrow {
+  font-size: 1.4rem;
+  color: rgba(242, 238, 225, 0.34);
+  -webkit-text-stroke: 0;
+}
+
+/* ------------------------------------------------------------ the drive */
+
+.drive {
+  position: relative;
+}
+
+.down {
+  position: relative;
+  padding: 30px 48px 110px;
+}
+
+.downGrid {
+  max-width: 1140px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 70px;
+  align-items: center;
+}
+
+.orderFirst {
+  order: -1;
+}
+
+.downLead {
+  max-width: 46ch;
+}
+
+.downTag {
+  display: inline-block;
+  margin: 0 0 18px;
+  padding: 5px 10px;
+  border: 1px solid rgba(242, 238, 225, 0.35);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.downTitle {
+  margin: 0 0 16px;
+  font-weight: 700;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.downBody {
+  margin: 0 0 28px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  color: var(--chalk-dim);
+}
+
+/* yard-line section divider */
+.yardLine {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin: 0 0 80px;
+  user-select: none;
+}
+
+.yardRule {
+  flex: 1;
+  height: 3px;
+  background: rgba(242, 238, 225, 0.22);
+  box-shadow: 0 12px 0 rgba(242, 238, 225, 0.07), 0 -12px 0 rgba(242, 238, 225, 0.07);
+}
+
+.yardNum {
+  font-weight: 700;
+  font-size: 2rem;
+  letter-spacing: 0.1em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(242, 238, 225, 0.3);
+}
+
+.yardNumRight {
+  order: 3;
+}
+
+.yardFlip {
+  transform: scaleY(-1);
+}
+
+.yardStar {
+  order: 2;
+  color: rgba(217, 169, 44, 0.55);
+  font-size: 1.3rem;
+}
+
+/* ---------------------------------------------------------- chalk play */
+
+.playCard {
+  position: relative;
+  margin: 0;
+  padding: 22px 24px 14px;
+  background: #10281e;
+  border: 2px solid rgba(242, 238, 225, 0.28);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.4);
+  transform: rotate(0.6deg);
+}
+
+.playCardHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.playSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chalkLine {
+  stroke: var(--chalk-dim);
+  stroke-width: 2;
+  stroke-dasharray: 10 6;
+}
+
+.chalkO {
+  fill: none;
+  stroke: var(--paint);
+  stroke-width: 2.4;
+}
+
+.chalkOStar {
+  fill: none;
+  stroke: var(--gold-soft);
+  stroke-width: 2.8;
+}
+
+.chalkX line {
+  stroke: var(--chalk-dim);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.chalkRoute {
+  fill: none;
+  stroke: var(--gold-soft);
+  stroke-width: 2.6;
+  stroke-dasharray: 9 7;
+  stroke-linecap: round;
+}
+
+.chalkRouteHead {
+  fill: none;
+  stroke: var(--gold-soft);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chalkNote {
+  fill: var(--chalk);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+}
+
+/* ----------------------------------------------------------- box score */
+
+.boxScore {
+  position: relative;
+  margin: 0;
+  padding: 24px 26px 30px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.4);
+  transform: rotate(-0.7deg);
+}
+
+/* strip of tape holding the sheet to the page */
+.boxScore::before,
+.scout::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 110px;
+  height: 24px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: rgba(242, 238, 225, 0.32);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.boxHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 6px;
+  border-bottom: 3px double var(--ink);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.boxTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+
+.boxTable td {
+  padding: 9px 6px;
+  border-bottom: 1px solid rgba(23, 21, 15, 0.18);
+}
+
+.boxTable td:last-child {
+  text-align: right;
+  color: rgba(23, 21, 15, 0.6);
+  font-size: 0.72rem;
+}
+
+.boxNum {
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- stamps */
+
+.stamp {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  padding: 5px 12px;
+  border: 3px double currentColor;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.24em;
+  transform: rotate(-7deg);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.stampGold {
+  color: #8a6a12;
+}
+
+.stampRed {
+  color: var(--flag-red);
+  right: 20px;
+  bottom: 16px;
+  transform: rotate(5deg);
+}
+
+.stampInk {
+  color: rgba(23, 21, 15, 0.75);
+}
+
+/* -------------------------------------------------------- tale of tape */
+
+.tape {
+  position: relative;
+  margin: 0;
+  padding: 26px 30px 34px;
+  background: #0b0b09;
+  border: 2px solid rgba(242, 238, 225, 0.3);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45);
+  transform: rotate(0.5deg);
+}
+
+.tapeHead {
+  margin-bottom: 18px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.tapeRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(242, 238, 225, 0.18);
+}
+
+.tapeSide {
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+}
+
+.tapeVs {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--gold-soft);
+}
+
+.tapeStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 26px;
+  margin: 0;
+}
+
+.tapeStats dt {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  margin-bottom: 3px;
+}
+
+.tapeStats dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.06rem;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------ scouting report */
+
+.scout {
+  position: relative;
+  margin: 0;
+  padding: 24px 28px 34px;
+  background: var(--manila);
+  color: var(--ink);
+  border: 2px solid rgba(23, 21, 15, 0.75);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.4);
+  transform: rotate(0.8deg);
+}
+
+.scoutHead {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid rgba(23, 21, 15, 0.65);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.scoutBody p {
+  margin: 0 0 12px;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.scoutKey {
+  display: inline-block;
+  min-width: 96px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: rgba(23, 21, 15, 0.6);
+}
+
+/* -------------------------------------------------------- 2-min drill */
+
+.drill {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.drill .downTag {
+  border-color: var(--flag-red);
+  color: var(--paper);
+  background: var(--flag-red);
+}
+
+.drill .downBody {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 52ch;
+}
+
+.liveBug {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 30px;
+  padding: 12px 18px;
+  background: #0b0b09;
+  border: 2px solid rgba(242, 238, 225, 0.3);
+  border-left: 6px solid var(--flag-red);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  background: var(--flag-red);
+  animation: liveBlink 1.6s steps(2, start) infinite;
+}
+
+@keyframes liveBlink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.liveLabel {
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--flag-red);
+  font-weight: 700;
+}
+
+.liveScore {
+  font-weight: 700;
+}
+
+.liveSep {
+  color: var(--chalk-dim);
+}
+
+.liveMeta {
+  color: var(--gold-soft);
+}
+
+/* ------------------------------------------------------------ end zone */
+
+.endzone {
+  position: relative;
+  padding: 130px 48px;
+  background: #123325;
+  border-top: 4px solid var(--paint);
+  border-bottom: 4px solid var(--paint);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.endzoneStripes {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(242, 238, 225, 0.05) 0 34px,
+    transparent 34px 68px
+  );
+}
+
+.endzoneInner {
+  max-width: 780px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.endzoneWord {
+  margin: 0 0 18px;
+  font-weight: 700;
+  font-size: clamp(3.4rem, 9vw, 7rem);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: transparent;
+  -webkit-text-stroke: 3px var(--paint);
+}
+
+.endzoneBody {
+  max-width: 50ch;
+  margin: 0 auto 40px;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--chalk-dim);
+}
+
+.endzone .heroCtas {
+  justify-content: center;
+}
+
+/* ------------------------------------------------------------ game book */
+
+.gameBook {
+  padding: 110px 48px 90px;
+}
+
+.gameBookHead {
+  max-width: 900px;
+  margin: 0 auto 40px;
+}
+
+.gameBookHead h2 {
+  margin: 0 0 8px;
+  font-weight: 700;
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  text-transform: uppercase;
+}
+
+.gameBookHead p {
+  margin: 0;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  color: var(--chalk-dim);
+  font-size: 0.95rem;
+}
+
+.gameBookTable {
+  max-width: 900px;
+  margin: 0 auto;
+  border: 2px solid rgba(242, 238, 225, 0.35);
+  border-bottom: none;
+}
+
+.gameBookRow {
+  display: grid;
+  grid-template-columns: 190px 1fr auto;
+  align-items: baseline;
+  gap: 20px;
+  padding: 17px 22px;
+  border-bottom: 2px solid rgba(242, 238, 225, 0.35);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.gameBookRow:hover {
+  background: var(--chalk);
+  color: var(--turf-deep);
+}
+
+.gameBookCol {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 1.05rem;
+}
+
+.gameBookLine {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--chalk-dim);
+}
+
+.gameBookRow:hover .gameBookLine {
+  color: rgba(8, 26, 19, 0.65);
+}
+
+.gameBookGo {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.gameBookRow:hover .gameBookGo {
+  color: var(--turf-deep);
+}
+
+.partners {
+  max-width: 900px;
+  margin: 34px auto 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+/* ------------------------------------------------------------ post-game */
+
+.postgame {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+  padding: 22px 48px;
+  background: #0b0b09;
+  border-top: 3px solid var(--gold);
+}
+
+.finalBox {
+  padding: 6px 14px;
+  border: 2px solid var(--chalk);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  font-size: 0.74rem;
+}
+
+.postLinks {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--chalk-dim);
+}
+
+.postLinks a:hover {
+  color: var(--gold-soft);
+}
+
+.postMark {
+  margin-left: auto;
+  font-family: var(--serif);
+  font-size: 0.92rem;
+  color: var(--chalk-dim);
+}
+
+/* -------------------------------------------------------- scorebug HUD */
+
+.hud {
+  position: fixed;
+  left: 22px;
+  bottom: 22px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  background: #0b0b09;
+  border: 2px solid rgba(242, 238, 225, 0.4);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
+}
+
+.hudOn {
+  opacity: 1;
+  transform: none;
+}
+
+.hudBrand {
+  padding: 9px 12px;
+  background: var(--gold);
+  color: #0b0b09;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+
+.hudDown {
+  padding: 9px 14px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-right: 1px solid rgba(242, 238, 225, 0.25);
+}
+
+.hudSpot {
+  padding: 9px 14px;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.hudChain {
+  position: relative;
+  width: 90px;
+  height: 6px;
+  margin: 0 14px;
+  background: rgba(242, 238, 225, 0.18);
+}
+
+.hudChainFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--gold);
+}
+
+/* ------------------------------------------------ reveal + motion prefs */
+
+.gameday [data-reveal] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.revealed {
+  opacity: 1 !important;
+  transform: translateY(0) rotate(var(--tilt, 0deg)) !important;
+}
+
+/* keep the hand-placed tilts after reveal */
+.playCard {
+  --tilt: 0.6deg;
+}
+.boxScore {
+  --tilt: -0.7deg;
+}
+.tape {
+  --tilt: 0.5deg;
+}
+.scout {
+  --tilt: 0.8deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameday [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .liveDot {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------- narrow */
+
+@media (max-width: 980px) {
+  .downGrid {
+    grid-template-columns: 1fr;
+    gap: 44px;
+  }
+  .orderFirst {
+    order: 0;
+  }
+  .topLinks {
+    display: none;
+  }
+  .bugName {
+    display: none;
+  }
+  .heroInner,
+  .down,
+  .gameBook,
+  .endzone {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+  .postgame {
+    padding: 20px 22px;
+  }
+  .heroYard {
+    right: 16px;
+  }
+  .gameBookRow {
+    grid-template-columns: 1fr auto;
+  }
+  .gameBookLine {
+    display: none;
+  }
+  .hud {
+    left: 12px;
+    bottom: 12px;
+  }
+  .hudSpot {
+    display: none;
+  }
+}

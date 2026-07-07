@@ -86,7 +86,7 @@ export async function updatePassword(_prev: Result | null, formData: FormData): 
 
   return {
     ok: true,
-    message: hadPassword ? 'Password updated.' : 'Password set — you can now sign in with email + password.',
+    message: hadPassword ? 'Password updated.' : 'Password set. You can now sign in with email + password.',
   }
 }
 
@@ -158,7 +158,7 @@ export async function updateReferralSource(input: z.infer<typeof ReferralSchema>
   if (error) return { ok: false, error: error.message }
 
   revalidatePath('/account')
-  return { ok: true, message: 'Thanks — saved.' }
+  return { ok: true, message: 'Thanks, saved.' }
 }
 
 // ─── Marketing email opt-in ───────────────────────────────────────────────

@@ -1,50 +1,46 @@
-// Display helpers — pure functions, safe to call in render.
+// Shared formatting for the broadcast. One place so every panel renders
+// numbers identically (one decimal, no trailing .0, tabular everywhere).
 
-export function fmtScore(n: number): string {
-  return Number(n ?? 0).toFixed(1)
+export function fmtPts(n: number): string {
+  const r = Math.round(n * 10) / 10
+  return Number.isInteger(r) ? String(r) : r.toFixed(1)
 }
 
-export function fmtProj(n: number): string {
-  return `proj ${Number(n ?? 0).toFixed(1)}`
+// Signed delta for proj +/- chips: "+4.2" / "-3.1" / "0".
+export function fmtDelta(n: number): string {
+  const r = Math.round(n * 10) / 10
+  if (r === 0) return '0'
+  return r > 0 ? `+${fmtPts(r)}` : fmtPts(r)
 }
 
-export function fmtPct(n: number): string {
-  if (!Number.isFinite(n)) return '—'
-  return `${Math.round(n * 100)}%`
+export function fmtPct(p: number): string {
+  return `${Math.round(p * 100)}%`
 }
 
-// "5m ago" / "12s ago" — small mono timestamp for the wire + status strip.
-export function fmtSince(iso: string | null): string {
-  if (!iso) return '—'
-  const ms = Date.now() - Date.parse(iso)
-  if (!Number.isFinite(ms) || ms < 0) return 'just now'
-  const sec = Math.floor(ms / 1000)
-  if (sec < 60) return `${sec}s ago`
-  const min = Math.floor(sec / 60)
-  if (min < 60) return `${min}m ago`
-  const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr}h ago`
-  return `${Math.floor(hr / 24)}d ago`
-}
-
-// Quarter clock as "Q3 4:18" — already shaped by the platform layer, this is
-// just a defensive null guard.
-export function fmtClock(s: string | null): string {
-  if (!s) return '—'
-  return s
-}
-
-// Sweat → tier label that data-tier on .sl-sweat keys off of.
-export function sweatTier(n: number): 'hot' | 'warm' | 'cool' | 'cold' {
-  if (n >= 75) return 'hot'
-  if (n >= 50) return 'warm'
-  if (n >= 25) return 'cool'
-  return 'cold'
-}
-
-// Player initials for the avatar fallback circle.
-export function initials(name: string): string {
+// "Jamarr Chase" -> "J. Chase" for tight rows.
+export function shortName(name: string): string {
   const parts = name.trim().split(/\s+/)
-  if (parts.length === 1) return (parts[0]?.[0] ?? '?').toUpperCase()
-  return ((parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '')).toUpperCase()
+  if (parts.length < 2) return name
+  return `${parts[0][0]}. ${parts.slice(1).join(' ')}`
+}
+
+// Seconds since an ISO timestamp, rendered "12s" / "3m" / "1h 4m".
+export function fmtSince(iso: string, now: number = Date.now()): string {
+  const secs = Math.max(0, Math.floor((now - Date.parse(iso)) / 1000))
+  if (secs < 60) return `${secs}s`
+  const mins = Math.floor(secs / 60)
+  if (mins < 60) return `${mins}m`
+  const h = Math.floor(mins / 60)
+  return `${h}h ${mins % 60}m`
+}
+
+// Kickoff hour label from an ISO date, in ET.
+export function fmtKickoff(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/New_York',
+  })
 }

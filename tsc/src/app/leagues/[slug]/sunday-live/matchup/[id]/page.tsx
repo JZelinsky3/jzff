@@ -1,40 +1,20 @@
-// Matchup booth — drill-down view of one matchup. Same access gate, same demo
-// parsing, same SSR-first pattern as the hub. Reuses the hub's data endpoint
-// for polling so we don't have a parallel /matchup/[id]/data route to keep in
-// sync.
+// One game's own page: the room for members who came to watch their matchup
+// and nothing else. Same access gate and loader as the desk (the engine
+// builds league frames, not matchup frames), but the render is scoped to the
+// two teams. Old permalinks shared in league chats land here and just work.
 
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { loadSundayLive } from '@/lib/sundayLive/load'
 import { getSlAccess } from '@/lib/sundayLive/access'
-import { SlShell } from '../../_components/SlShell'
-import { SlLocked } from '../../_components/SlLocked'
-import { EmptyState } from '../../_components/EmptyState'
-import { BoothBoard } from '../../_components/booth/BoothBoard'
-import type { Demo } from '../../_lib/useSundayLivePoll'
+import { getSeasonContext, buildWeekContext, type SlWeekContext } from '@/lib/sundayLive/seasonContext'
+import { GameRoom } from '../../_components/game/GameRoom'
+import { LockedGate } from '../../_components/chrome/LockedGate'
+import { parseDemo, demoQuery, type SP } from '../../_lib/demoParam'
 
 export const dynamic = 'force-dynamic'
 
-type SP = Record<string, string | string[] | undefined>
-
-function first(v: string | string[] | undefined): string | undefined {
-  return Array.isArray(v) ? v[0] : v
-}
-
-function parseDemo(sp: SP): Demo | null {
-  const raw = first(sp.demoWeek)
-  if (!raw) return null
-  const m = /^(\d{4})-(\d{1,2})$/.exec(raw.trim())
-  if (!m) return null
-  const year = Number(m[1])
-  const week = Number(m[2])
-  if (!Number.isFinite(year) || !Number.isFinite(week) || week < 1 || week > 25) return null
-  let progress = 0.5
-  const p = first(sp.progress)
-  if (p != null && Number.isFinite(Number(p))) progress = Math.max(0, Math.min(1, Number(p)))
-  return { year, week, progress }
-}
-
-export default async function Page({
+export default async function GamePage({
   params,
   searchParams,
 }: {
@@ -43,34 +23,52 @@ export default async function Page({
 }) {
   const { slug, id } = await params
   const sp = await searchParams
-  const matchupId = Number(id)
-  if (!Number.isFinite(matchupId)) notFound()
 
   const access = await getSlAccess(slug)
   if (!access.ok) notFound()
-  if (access.locked) return <SlLocked meta={access.meta} />
+  if (access.locked) return <LockedGate meta={access.meta} />
 
   const demo = parseDemo(sp)
-  const result = await loadSundayLive(slug, { demo: demo ?? undefined })
+  const result = await loadSundayLive(slug, { demo: demo ?? undefined, noSnapshot: true })
+  if (!result.ok) redirect(`/leagues/${slug}/sunday-live/${demoQuery(demo)}`)
 
-  if (!result.ok) {
-    return (
-      <SlShell meta={access.meta}>
-        <EmptyState kicker="Broadcast unavailable" title={result.reason}>
-          The board refreshes on its own — try again in a moment.
-        </EmptyState>
-      </SlShell>
-    )
+  const frame = result.league
+  const matchupId = Number(id)
+  if (!Number.isFinite(matchupId) || !frame.matchups.some((m) => m.matchupId === matchupId)) {
+    redirect(`/leagues/${slug}/sunday-live/${demoQuery(demo)}`)
+  }
+
+  // Same cached week context the desk warms; a cold one just means the room
+  // opens without records/series/form until the next visit.
+  let weekContext: SlWeekContext | null = null
+  const { data: ctxSeason } = await createAdminClient()
+    .from('seasons')
+    .select('external_id')
+    .eq('league_id', access.leagueId)
+    .eq('year', frame.league.year)
+    .maybeSingle()
+  if (ctxSeason?.external_id) {
+    const ctx = await Promise.race([
+      getSeasonContext(
+        access.leagueId,
+        slug,
+        frame.league.platform,
+        ctxSeason.external_id as string,
+        frame.league.year,
+        frame.league.week,
+      ).catch(() => null),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+    ])
+    if (ctx) weekContext = buildWeekContext(frame, ctx)
   }
 
   return (
-    <SlShell meta={access.meta} liveQuality={result.league.league.liveQuality}>
-      <BoothBoard
-        slug={slug}
-        matchupId={matchupId}
-        initial={result.league}
-        initialDemo={demo}
-      />
-    </SlShell>
+    <GameRoom
+      slug={slug}
+      initialFrame={frame}
+      initialDemo={demo}
+      matchupId={matchupId}
+      weekContext={weekContext}
+    />
   )
 }

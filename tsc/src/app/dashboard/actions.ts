@@ -37,7 +37,7 @@ export async function deleteLeague(input: z.infer<typeof DeleteSchema>): Promise
   if (!league) return { ok: false, error: 'League not found.' }
   if (league.owner_id !== user.id) return { ok: false, error: 'Only the league owner can delete it.' }
   if (confirmName.toLowerCase() !== league.name.trim().toLowerCase()) {
-    return { ok: false, error: 'League name didn’t match — delete cancelled.' }
+    return { ok: false, error: 'League name didn’t match. Delete cancelled.' }
   }
 
   const db = createAdminClient()

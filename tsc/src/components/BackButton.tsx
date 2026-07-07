@@ -1,13 +1,17 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type React from 'react'
+import { readNavStack, writeNavStack } from '@/components/NavTracker'
 
-// Back arrow that prefers `history.back()` when the visitor arrived from
-// another page on the same site (the typical "go back where I came from"
-// expectation), and falls through to the declared href on direct loads,
-// external referrers, and middle/cmd-click — those still want a real
-// navigation, not a no-op.
+// Back arrow that returns to the actual previous page. Resolution order:
+//   1. The NavTracker visit stack (deterministic; survives races where a
+//      fast click fires before the router commits the history entry, and
+//      ignores forward-entry pollution in session history).
+//   2. history.back() when the session has somewhere to go.
+//   3. The declared fallback href (direct loads, external referrers,
+//      middle/cmd-click, JS not yet hydrated).
 
 export function BackButton({
   fallbackHref,
@@ -16,15 +20,27 @@ export function BackButton({
   fallbackHref: string
   ariaLabel?: string
 }) {
+  const router = useRouter()
+
   const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
     if (typeof window === 'undefined') return
-    // history.length > 1 means there's somewhere in the session history
-    // to go back to. Works both for direct loads with a referrer AND for
-    // Next.js App-Router client-side navigation — App Router pushState
-    // extends session history but never updates document.referrer, so a
-    // referrer-only check (the old logic) was bailing and letting the
-    // fallback href win on every internal SPA hop.
+
+    // Use the live location, not React state: during a pending navigation
+    // the rendered page and the committed URL can disagree, and the URL is
+    // what the stack + history operate on.
+    const current = window.location.pathname
+    const stack = readNavStack()
+    while (stack.length > 0 && stack[stack.length - 1] === current) stack.pop()
+    const target = stack.pop()
+
+    if (target && target !== current) {
+      e.preventDefault()
+      writeNavStack(stack)
+      router.push(target)
+      return
+    }
+
     if (window.history.length > 1) {
       e.preventDefault()
       window.history.back()

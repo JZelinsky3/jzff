@@ -1,9 +1,11 @@
 'use client'
 
 import { useActionState, useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient as createBrowserSupabase } from '@/lib/supabase/client'
 import { updateEmail, updatePassword, updateMarketingOptIn, updateBackupEmail, updateReferralSource } from './actions'
+import { MemberCodeChip } from './member-code-chip'
 
 type Result = { ok: false; error: string } | { ok: true; message?: string } | null
 
@@ -19,6 +21,8 @@ type SubscriptionSummary = {
 
 export function AccountForms({
   email,
+  memberCode,
+  memberSince,
   marketingOptIn,
   leagueCount,
   isOAuth,
@@ -32,6 +36,8 @@ export function AccountForms({
   referralOther,
 }: {
   email: string
+  memberCode: string
+  memberSince: string
   marketingOptIn: boolean
   leagueCount: number
   isOAuth: boolean
@@ -44,89 +50,141 @@ export function AccountForms({
   referralSource: string | null
   referralOther: string
 }) {
-  // Section numbers shift depending on whether the OAuth-branch ("backup email")
-  // or the password-branch ("email change + password") is rendered. Just
-  // compute them inline so the headings always read 01, 02, 03... in order.
+  // The credential card is the account. Plan / email / password are rows
+  // on the card; tapping one opens its form in a drawer inside the card.
+  // Only one drawer at a time. Fresh checkout lands with the plan drawer
+  // open so the "subscription started" note is visible immediately.
+  type Panel = 'plan' | 'email' | 'password'
+  const [panel, setPanel] = useState<Panel | null>(justSubscribed ? 'plan' : null)
+  function toggle(p: Panel) {
+    setPanel((v) => (v === p ? null : p))
+  }
+
+  const planValue = lifetime
+    ? 'Lifetime · Comp'
+    : subscription
+      ? describeSubscription(subscription).title
+      : 'No subscription'
+  const sealTier = lifetime ? 'Comp' : subscription?.tierLabel ?? 'No plan'
+
   return (
     <>
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 01 · Subscription</span>
-          <span className="section-title">Your plan —</span>
-          <span className="section-meta">Coming soon</span>
+      <div className="acct-pass acct-pass-xl" role="group" aria-label="Your membership card">
+        <div className="acct-pass-head">
+          <span className="acct-pass-star" aria-hidden>★</span>
+          <span className="acct-pass-brand">The Sunday <em>Chronicle.</em></span>
+          <span className="acct-pass-star" aria-hidden>★</span>
         </div>
-        <SubscriptionCard leagueCount={leagueCount} subscription={subscription} lifetime={lifetime} justSubscribed={justSubscribed} />
+        <div className="acct-pass-kicker">Reader&apos;s credential</div>
+
+        <div className="acct-pass-body">
+          <div className="acct-pass-rows">
+            <button
+              type="button"
+              className={`acct-pass-row is-action${panel === 'plan' ? ' is-open' : ''}`}
+              onClick={() => toggle('plan')}
+              aria-expanded={panel === 'plan'}
+            >
+              <span>Plan</span>
+              <strong>{planValue}</strong>
+              {!lifetime && <span className="acct-pass-chip">{panel === 'plan' ? 'Close' : 'Manage'}</span>}
+            </button>
+            <button
+              type="button"
+              className={`acct-pass-row is-action${panel === 'email' ? ' is-open' : ''}`}
+              onClick={() => toggle('email')}
+              aria-expanded={panel === 'email'}
+            >
+              <span>Member</span>
+              <strong className="acct-pass-email">{email}</strong>
+              <span className="acct-pass-chip">
+                {panel === 'email' ? 'Close' : isOAuth ? 'Backup' : 'Change'}
+              </span>
+            </button>
+            {!isOAuth && (
+              <button
+                type="button"
+                className={`acct-pass-row is-action${panel === 'password' ? ' is-open' : ''}`}
+                onClick={() => toggle('password')}
+                aria-expanded={panel === 'password'}
+              >
+                <span>Password</span>
+                <strong>{hasPassword ? 'Set' : 'Not set (magic links)'}</strong>
+                <span className="acct-pass-chip">
+                  {panel === 'password' ? 'Close' : hasPassword ? 'Change' : 'Set'}
+                </span>
+              </button>
+            )}
+            <div className="acct-pass-row">
+              <span>Since</span>
+              <strong>{memberSince}</strong>
+            </div>
+            <div className="acct-pass-row">
+              <span>Leagues</span>
+              <strong>{leagueCount} on file</strong>
+            </div>
+            {isOAuth && (
+              <div className="acct-pass-row">
+                <span>Signs in</span>
+                <strong>Via {providerLabel}</strong>
+              </div>
+            )}
+          </div>
+          <div className="acct-pass-seal" aria-hidden>
+            <span className="acct-pass-seal-ring">
+              <span className="acct-pass-seal-star">★</span>
+            </span>
+            <span className="acct-pass-seal-tier">{sealTier}</span>
+          </div>
+        </div>
+
+        {/* Drawer: the active row's form, opened inside the card. */}
+        <div className={`acct-pass-drawer${panel ? ' is-open' : ''}`}>
+          <div className="acct-pass-drawer-inner">
+            {panel === 'plan' && (
+              <PlanPanel
+                leagueCount={leagueCount}
+                subscription={subscription}
+                lifetime={lifetime}
+                justSubscribed={justSubscribed}
+              />
+            )}
+            {panel === 'email' && (
+              isOAuth
+                ? <BackupEmailForm primaryEmail={email} initial={backupEmail} providerLabel={providerLabel} startOpen />
+                : <EmailForm currentEmail={email} startEditing />
+            )}
+            {panel === 'password' && <PasswordForm hasPassword={hasPassword} startEditing />}
+          </div>
+        </div>
+
+        <div className="acct-pass-foot">
+          {memberCode ? <MemberCodeChip code={memberCode} /> : <span>Valid Sundays &amp; every other day too</span>}
+        </div>
       </div>
 
-      {isOAuth ? (
-        <>
-          <div className="section">
-            <div className="section-header">
-              <span className="section-num">§ 02 · Email</span>
-              <span className="section-title">Sign-in address —</span>
-              <span className="section-meta">Via {providerLabel}</span>
-            </div>
-            <BackupEmailForm primaryEmail={email} initial={backupEmail} providerLabel={providerLabel} />
-          </div>
-
-          <div className="section">
-            <div className="section-header">
-              <span className="section-num">§ 03 · Communication</span>
-              <span className="section-title">What we send you —</span>
-              <span className="section-meta">Off by default for billing</span>
-            </div>
-            <MarketingForm initialOptIn={marketingOptIn} />
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="dc-account-pair">
-            <div className="section dc-account-col">
-              <div className="section-header">
-                <span className="section-num">§ 02 · Email</span>
-                <span className="section-title">Sign-in address —</span>
-                <span className="section-meta">Magic links go here</span>
-              </div>
-              <EmailForm currentEmail={email} />
-            </div>
-
-            <div className="section dc-account-col">
-              <div className="section-header">
-                <span className="section-num">§ 03 · Password</span>
-                <span className="section-title">
-                  {hasPassword ? 'Password —' : 'Set a password —'}
-                </span>
-                <span className="section-meta">
-                  {hasPassword ? '8 character minimum' : 'So you can sign in without a magic link'}
-                </span>
-              </div>
-              <PasswordForm hasPassword={hasPassword} />
-            </div>
-          </div>
-
-          <div className="section">
-            <div className="section-header">
-              <span className="section-num">§ 04 · Communication</span>
-              <span className="section-title">What we send you —</span>
-              <span className="section-meta">Off by default for billing</span>
-            </div>
-            <MarketingForm initialOptIn={marketingOptIn} />
-          </div>
-        </>
-      )}
-
       <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ {isOAuth ? '04' : '05'} · Referral</span>
-          <span className="section-title">Where did you hear about us?</span>
-          <span className="section-meta">Optional, helps us know what works</span>
+        <div className="acct-two-col">
+          <div>
+            <div className="section-header">
+              <span className="section-num">§ 01 · Communication</span>
+              <span className="section-title">What we send you —</span>
+            </div>
+            <MarketingForm initialOptIn={marketingOptIn} email={email} />
+          </div>
+          <div>
+            <div className="section-header">
+              <span className="section-num">§ 02 · Referral</span>
+              <span className="section-title">Where you heard of us —</span>
+            </div>
+            <ReferralForm initialSource={referralSource} initialOther={referralOther} />
+          </div>
         </div>
-        <ReferralForm initialSource={referralSource} initialOther={referralOther} />
       </div>
 
       <div className="section">
         <div className="section-header">
-          <span className="section-num">§ {isOAuth ? '05' : '06'} · Sign out</span>
+          <span className="section-num">§ 03 · Sign out</span>
           <span className="section-title">See you next time —</span>
           <span className="section-meta">Ends this session</span>
         </div>
@@ -137,10 +195,83 @@ export function AccountForms({
               {isOAuth ? `Signed in via ${providerLabel}. ` : ''}You&apos;ll be redirected to the homepage.
             </div>
           </div>
-          <button type="submit" className="dc-btn-ghost">Sign out →</button>
+          <button type="submit" className="dc-btn-ghost">Sign out</button>
         </form>
       </div>
     </>
+  )
+}
+
+// ─── Plan panel ───────────────────────────────────────────────────────────
+// The plan drawer always shows all three tiers so a subscriber can window-
+// shop an upgrade; the tier they're on is stamped "Yours" with its button
+// dimmed out. Status/portal controls render above the grid when there's a
+// subscription (or comp) to manage.
+
+const PLAN_TIERS: { id: SubscriptionSummary['tier']; name: string; mo: number; yr: number; leagues: string }[] = [
+  { id: 'tier1', name: 'Rookie', mo: 3, yr: 15, leagues: '1 league' },
+  { id: 'tier2', name: 'Veteran', mo: 5, yr: 25, leagues: 'Up to 3 leagues' },
+  { id: 'tier3', name: 'All-Pro', mo: 15, yr: 50, leagues: 'Up to 10 leagues' },
+]
+
+function PlanPanel({
+  leagueCount,
+  subscription,
+  lifetime,
+  justSubscribed,
+}: {
+  leagueCount: number
+  subscription: SubscriptionSummary | null
+  lifetime: boolean
+  justSubscribed: boolean
+}) {
+  // Only stamp a "current" tier while the subscription is actually in
+  // force; a canceled sub shouldn't block re-picking the same tier.
+  const currentTier = subscription && subscription.status !== 'canceled' ? subscription.tier : null
+
+  return (
+    <div>
+      {(subscription || lifetime) ? (
+        <SubscriptionCard
+          leagueCount={leagueCount}
+          subscription={subscription}
+          lifetime={lifetime}
+          justSubscribed={justSubscribed}
+        />
+      ) : (
+        <p style={{ fontSize: '.88rem', color: 'var(--cream-soft)', margin: '0 0 .35rem', lineHeight: 1.6 }}>
+          No active plan. You have {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'} on file;
+          pick a tier below to keep adding. Every plan starts with a 7-day free trial.
+        </p>
+      )}
+
+      <div className="acct-plans">
+        {PLAN_TIERS.map((t) => {
+          const yours = currentTier === t.id
+          return (
+            <div key={t.id} className={`acct-plan${yours ? ' is-current' : ''}`}>
+              {yours && <span className="acct-plan-stamp">★ Yours</span>}
+              <span className="acct-plan-tier">{t.name}</span>
+              <span className="acct-plan-price">${t.mo}<span>/mo</span></span>
+              <span className="acct-plan-alt">or ${t.yr} a year</span>
+              <span className="acct-plan-leagues">{t.leagues}</span>
+              {yours ? (
+                <span className="acct-plan-btn is-yours" aria-hidden>Subscribed</span>
+              ) : (
+                <Link href="/pricing" className="acct-plan-btn">
+                  {lifetime ? 'View' : currentTier ? 'Switch' : 'Start trial'}
+                </Link>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {lifetime && (
+        <p style={{ fontSize: '.74rem', color: 'var(--cream-mute)', margin: '.7rem 0 0', textAlign: 'center' }}>
+          You&apos;re comped, so these are here for window-shopping only.
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -171,7 +302,7 @@ function SubscriptionCard({
     const body = await res.json()
     setOpening(false)
     if (!res.ok || !body?.url) {
-      setErr(body?.error ?? 'Could not open portal — try again in a moment.')
+      setErr(body?.error ?? 'Could not open the portal. Try again in a moment.')
       return
     }
     window.location.assign(body.url)
@@ -200,7 +331,7 @@ function SubscriptionCard({
             </span>
           </div>
           <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem', lineHeight: 1.5 }}>
-            You have unlimited access — no billing, no tier limits, no expiration.
+            You have unlimited access. No billing, no tier limits, no expiration.
           </div>
           <div style={{ opacity: 0.55, fontSize: '.75rem', marginTop: '.6rem' }}>
             {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'} on file.
@@ -217,14 +348,14 @@ function SubscriptionCard({
         <div style={{ flex: 1, minWidth: '14rem' }}>
           <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>No subscription</div>
           <div style={{ opacity: 0.65, fontSize: '.85rem', marginTop: '.35rem', lineHeight: 1.5 }}>
-            You need an active plan to create new leagues. Start a free trial — your card isn&apos;t charged until the trial ends.
+            You need an active plan to create new leagues. Start a free trial; your card isn&apos;t charged until the trial ends.
           </div>
           <div style={{ opacity: 0.55, fontSize: '.75rem', marginTop: '.6rem' }}>
             You currently have {leagueCount} {leagueCount === 1 ? 'league' : 'leagues'} on file.
           </div>
         </div>
         <button type="button" onClick={() => router.push('/pricing')} className="dc-btn">
-          View pricing →
+          View pricing
         </button>
       </div>
     )
@@ -260,17 +391,14 @@ function SubscriptionCard({
         </div>
         {justSubscribed && (
           <div className="dc-form-ok" style={{ marginTop: '.6rem' }}>
-            Subscription started — welcome aboard.
+            Subscription started. Welcome aboard.
           </div>
         )}
         {err && <p className="dc-form-error" style={{ marginTop: '.6rem' }}>{err}</p>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem', alignItems: 'flex-end' }}>
         <button type="button" onClick={openPortal} disabled={opening} className="dc-btn">
-          {opening ? 'Opening…' : 'Manage subscription →'}
-        </button>
-        <button type="button" onClick={() => router.push('/pricing')} className="dc-btn-ghost">
-          Compare plans
+          {opening ? 'Opening…' : 'Manage subscription'}
         </button>
       </div>
     </div>
@@ -279,12 +407,12 @@ function SubscriptionCard({
 
 // ─── Email form ───────────────────────────────────────────────────────────
 
-function EmailForm({ currentEmail }: { currentEmail: string }) {
+function EmailForm({ currentEmail, startEditing = false }: { currentEmail: string; startEditing?: boolean }) {
   const [state, action, isPending] = useActionState<Result, FormData>(
     updateEmail as (prev: Result, fd: FormData) => Promise<Result>,
     null
   )
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(startEditing)
   if (!editing) {
     return (
       <div className="dc-card-static dc-form">
@@ -293,7 +421,7 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
           <input value={currentEmail} disabled className="dc-input mono" />
         </div>
         <button type="button" className="dc-btn-ghost" onClick={() => setEditing(true)}>
-          Change email →
+          Change email
         </button>
       </div>
     )
@@ -317,7 +445,7 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
       </div>
       <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
         <button type="submit" disabled={isPending} className="dc-btn">
-          {isPending ? 'Sending…' : 'Send confirmation links →'}
+          {isPending ? 'Sending…' : 'Send confirmation links'}
         </button>
         <button type="button" className="dc-btn-ghost" onClick={() => setEditing(false)}>
           Cancel
@@ -333,25 +461,25 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
 // hasPassword=false drops the "Current password" field — magic-link-only
 // accounts have never had a password, so the first submit acts as set-initial.
 
-function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
+function PasswordForm({ hasPassword, startEditing = false }: { hasPassword: boolean; startEditing?: boolean }) {
   const [state, action, isPending] = useActionState<Result, FormData>(
     updatePassword as (prev: Result, fd: FormData) => Promise<Result>,
     null
   )
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(startEditing)
   if (!editing) {
     return (
       <div className="dc-card-static dc-form">
         <div className="dc-field">
           <label className="dc-label">Status</label>
           <input
-            value={hasPassword ? 'Password is set' : 'No password — magic links only'}
+            value={hasPassword ? 'Password is set' : 'No password (magic links only)'}
             disabled
             className="dc-input mono"
           />
         </div>
         <button type="button" className="dc-btn-ghost" onClick={() => setEditing(true)}>
-          {hasPassword ? 'Change password →' : 'Set password →'}
+          {hasPassword ? 'Change password' : 'Set password'}
         </button>
       </div>
     )
@@ -386,7 +514,7 @@ function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
         <button type="submit" disabled={isPending} className="dc-btn">
           {isPending
             ? (hasPassword ? 'Updating…' : 'Setting…')
-            : (hasPassword ? 'Update password →' : 'Set password →')}
+            : (hasPassword ? 'Update password' : 'Set password')}
         </button>
         <button type="button" className="dc-btn-ghost" onClick={() => setEditing(false)}>
           Cancel
@@ -404,10 +532,12 @@ function BackupEmailForm({
   primaryEmail,
   initial,
   providerLabel,
+  startOpen = false,
 }: {
   primaryEmail: string
   initial: string
   providerLabel: string
+  startOpen?: boolean
 }) {
   const [state, action, isPending] = useActionState<Result, FormData>(
     updateBackupEmail as (prev: Result, fd: FormData) => Promise<Result>,
@@ -417,7 +547,7 @@ function BackupEmailForm({
   const [linkErr, setLinkErr] = useState<string | null>(null)
   // Backup options stay collapsed until the chip is tapped — mobile keeps
   // the section to a single email row.
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(startOpen)
 
   // Adds a second OAuth identity to the current user so they can sign in
   // with either provider account. Supabase calls this "manual identity
@@ -532,8 +662,8 @@ function describeSubscription(s: SubscriptionSummary): {
     return {
       title: `${s.tierLabel} · canceling`,
       detail: periodEnd
-        ? `Active until ${periodEnd.toLocaleDateString()} — won't renew.`
-        : `Active until end of period — won't renew.`,
+        ? `Active until ${periodEnd.toLocaleDateString()}. Won't renew.`
+        : `Active until the end of the period. Won't renew.`,
       badge: { text: 'Canceling', color: 'var(--rust, #d65a3c)' },
     }
   }
@@ -628,7 +758,9 @@ function ReferralForm({ initialSource, initialOther }: { initialSource: string |
           />
         )}
       </div>
-      <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
+      {/* marginTop auto: with the two-col cards stretched to equal height,
+          the save row rides the card's foot line instead of floating mid-card. */}
+      <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginTop: 'auto' }}>
         <button type="submit" disabled={saving} className="dc-btn">
           {saving ? 'Saving…' : 'Save'}
         </button>
@@ -641,7 +773,7 @@ function ReferralForm({ initialSource, initialOther }: { initialSource: string |
 
 // ─── Marketing opt-in toggle ──────────────────────────────────────────────
 
-function MarketingForm({ initialOptIn }: { initialOptIn: boolean }) {
+function MarketingForm({ initialOptIn, email }: { initialOptIn: boolean; email: string }) {
   const router = useRouter()
   const [optIn, setOptIn] = useState(initialOptIn)
   const [, startTransition] = useTransition()
@@ -687,6 +819,20 @@ function MarketingForm({ initialOptIn }: { initialOptIn: boolean }) {
         </span>
       </label>
       {err && <p className="dc-form-error" style={{ marginTop: '.85rem' }}>{err}</p>}
+      {/* Mailing ledger: live status rows that carry the card to the same
+          foot line as the Referral card next to it. */}
+      <div className="acct-mail-lines" aria-live="polite">
+        <div className="acct-mail-line">
+          <span>Status</span>
+          <span className="acct-mail-dots" aria-hidden />
+          <strong className={optIn ? 'is-on' : undefined}>{optIn ? 'Subscribed' : 'Opted out'}</strong>
+        </div>
+        <div className="acct-mail-line">
+          <span>Delivers to</span>
+          <span className="acct-mail-dots" aria-hidden />
+          <strong>{email}</strong>
+        </div>
+      </div>
     </div>
   )
 }

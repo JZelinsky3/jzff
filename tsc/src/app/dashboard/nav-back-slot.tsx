@@ -4,20 +4,23 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 // Left slot of the dashboard nav. On /dashboard itself there's no "back" to
-// go to — that's the root of the signed-in app — so we put a profile icon
-// here that jumps to /account. On any sub-page like /dashboard/new, render
-// a back arrow pointing to /dashboard instead.
+// go to — that's the root of the signed-in app — so the slot carries a
+// miniature membership card that links to /account: seal ring, member
+// kicker, dotted signature line, and it lifts off the nav like a card
+// being picked up. On any sub-page like /dashboard/new, render a back
+// arrow pointing to /dashboard instead.
 export function DashboardNavBackSlot() {
   const pathname = usePathname() ?? ''
   const isRoot = pathname === '/dashboard' || pathname === '/dashboard/'
 
   if (isRoot) {
     return (
-      <Link href="/account" className="dc-nav-icon" aria-label="Account">
-        <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <circle cx="8" cy="5.5" r="2.7" />
-          <path d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5" />
-        </svg>
+      <Link href="/account" className="lib-mini-card" aria-label="Your account">
+        <span className="lib-mini-card-seal" aria-hidden>★</span>
+        <span className="lib-mini-card-text">
+          <span className="lib-mini-card-kicker">TSC · Member</span>
+          <span className="lib-mini-card-sig" aria-hidden />
+        </span>
       </Link>
     )
   }

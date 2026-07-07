@@ -197,8 +197,8 @@ export function MobileHomeCover({ signedIn }: { signedIn: boolean }) {
                 <span className={s.bookLeague}>The Sunday Chronicle</span>
                 <span className={s.bookRule} />
                 <span className={s.bookVol}>The Complete History</span>
-                <span className={s.bookYears}>2018-2024</span>
-                <span className={s.bookSeasons}>Seven Seasons</span>
+                <span className={s.bookYears}>2018-2025</span>
+                <span className={s.bookSeasons}>Eight Seasons</span>
                 <span className={`${s.bookRule} ${s.bookRuleSm}`} />
                 <span className={s.bookFt}>The Sunday Chronicle</span>
               </div>

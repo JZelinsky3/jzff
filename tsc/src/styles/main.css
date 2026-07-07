@@ -295,6 +295,26 @@ a.nav-title { text-decoration: none; color: var(--cream); }
     font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
     color: var(--cream-mute);
 }
+/* Newspaper dateline: a hairline-ruled mono strip under the hero for
+   signed-in pages (dashboard, account). Facts separated by · like a
+   masthead dateline; strong = the gold figure inside a segment. */
+.hero-dateline {
+    display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+    gap: .45rem .9rem;
+    margin: 1.6rem auto 0;
+    padding: .55rem 1rem;
+    max-width: 620px;
+    border-top: 1px solid var(--ink-line);
+    border-bottom: 1px solid var(--ink-line);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.hero-dateline strong { color: var(--gold); font-weight: 700; }
+.hero-dateline-sep { color: var(--gold-deep); }
+@media (max-width: 600px) {
+    .hero-dateline { font-size: .52rem; letter-spacing: .16em; gap: .35rem .7rem; }
+}
 
 /* ============================================================
    SECTIONS

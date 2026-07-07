@@ -18,7 +18,7 @@ export function MobileAbout({ signedIn }: { signedIn: boolean }) {
         A SaaS that takes any fantasy football league ID and turns the
         league&apos;s entire history into a public-facing almanac. Standings,
         champion rolls, season archives, the record book, draft history,
-        manager dossiers, rivalries, weekly pick&apos;ems, power rankings —
+        manager dossiers, rivalries, weekly pick&apos;ems, power rankings,
         all rendered into a single shareable URL like{' '}
         <code>thesundaychronicle.app/leagues/your-league/</code>.
       </Faq>
@@ -37,13 +37,13 @@ export function MobileAbout({ signedIn }: { signedIn: boolean }) {
 
       <div className="mpg-section-head">§ 02 · Pricing</div>
       <Faq q="How much does it cost?">
-        <strong>Rookie</strong> — $3/mo, 1 league. <strong>Veteran</strong> —
-        $5/mo, up to 3 leagues. <strong>All-Pro</strong> — $15/mo, up to 10
+        <strong>Rookie</strong> is $3/mo for 1 league. <strong>Veteran</strong> is
+        $5/mo for up to 3 leagues. <strong>All-Pro</strong> is $15/mo for up to 10
         leagues. Every plan has a 7-day free trial. See{' '}
         <Link href="/pricing">pricing</Link>.
       </Faq>
       <Faq q="Can I see what the almanac looks like?">
-        Yes — visit <Link href="/demo/">/demo/</Link> for a fully-populated
+        Yes. Visit <Link href="/demo/">/demo/</Link> for a fully-populated
         demo built from a real seven-year league&apos;s history. No signup
         required.
       </Faq>
@@ -55,13 +55,13 @@ export function MobileAbout({ signedIn }: { signedIn: boolean }) {
 
       <div className="mpg-section-head">§ 03 · The team</div>
       <Faq q="Who built it?">
-        Built and maintained by JZFF — a long-time fantasy commissioner who
+        Built and maintained by JZFF, a long-time fantasy commissioner who
         got tired of league history living scattered across screenshots and
         group chats. Reach out at{' '}
         <a href="mailto:jzffgames@gmail.com">jzffgames@gmail.com</a>.
       </Faq>
       <Faq q="Where can I start?">
-        Visit <Link href="/">the home page</Link> → sign up → paste your
+        Head to <Link href="/">the home page</Link>, sign up, and paste your
         league ID. We do the rest.
       </Faq>
 

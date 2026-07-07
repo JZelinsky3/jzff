@@ -5,7 +5,7 @@ import { MobileNewArchive } from '@/components/dashboard/MobileNewArchive'
 import { createClient } from '@/lib/supabase/server'
 import { canCreateLeague } from '@/lib/stripe'
 import { getViewMode } from '@/lib/viewMode'
-import { AddLeagueForm } from './add-league-form'
+import { NewArchiveStudio } from './new-archive-studio'
 
 export default async function NewLeaguePage() {
   const supabase = await createClient()
@@ -45,25 +45,42 @@ export default async function NewLeaguePage() {
           Begin a <em>chronicle.</em>
         </h1>
         <p className="hero-sub">
-          Pick your platform, paste your league ID. We&apos;ll walk back through every season we can find
-          from that ID — you can add more sources later if your league lived under several.
+          Choose your press, locate the manuscript, and write the title page. We&apos;ll walk back
+          through every season we can find and bind it all into one volume.
         </p>
       </section>
 
-      <div className="section" style={{ maxWidth: '560px' }}>
+      <div className="section" style={{ maxWidth: gate.ok ? '1120px' : '560px' }}>
         {gate.ok ? (
-          <div className="dc-card-static">
-            <AddLeagueForm yahooConnected={yahooConnected} />
-          </div>
+          <NewArchiveStudio yahooConnected={yahooConnected}>
+            <LeagueIdHelp />
+            <div style={{ marginTop: '2rem' }}>
+              <Link href="/dashboard" className="dc-btn-ghost">Back to library</Link>
+            </div>
+          </NewArchiveStudio>
         ) : (
-          <UpgradePrompt
-            reason={gate.reason}
-            current={gate.current}
-            limit={gate.limit}
-            message={gate.message}
-          />
+          <>
+            <UpgradePrompt
+              reason={gate.reason}
+              current={gate.current}
+              limit={gate.limit}
+              message={gate.message}
+            />
+            <LeagueIdHelp />
+            <div style={{ marginTop: '2rem' }}>
+              <Link href="/dashboard" className="dc-btn-ghost">Back to library</Link>
+            </div>
+          </>
         )}
+      </div>
 
+      <SiteFooter />
+    </main>
+  )
+}
+
+function LeagueIdHelp() {
+  return (
         <details style={{ marginTop: '1.5rem', color: 'var(--cream-soft)' }}>
           <summary style={{ cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: '.7rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)' }}>
             Where do I find my league ID?
@@ -75,32 +92,24 @@ export default async function NewLeaguePage() {
               <code style={{ background: 'var(--ink-soft)', padding: '.15rem .4rem', borderRadius: '2px', fontSize: '.78rem' }}>
                 sleeper.com/leagues/<em>1234567890123456789</em>/team
               </code>
-              {' '}— that long number is your league ID.
+              {' '}and that long number is your league ID.
             </p>
             <p style={{ marginBottom: '.6rem' }}>
               <strong style={{ color: 'var(--gold)' }}>ESPN:</strong> from any league page, the URL contains{' '}
               <code style={{ background: 'var(--ink-soft)', padding: '.15rem .4rem', borderRadius: '2px', fontSize: '.78rem' }}>
                 fantasy.espn.com/football/league?leagueId=<em>47847</em>
               </code>
-              {' '}— that number is it. Private leagues also need SWID + espn_s2 cookies (DevTools → Application → Cookies → fantasy.espn.com).
+              {' '}and that number is it. Private leagues also need SWID + espn_s2 cookies (DevTools → Application → Cookies → fantasy.espn.com).
             </p>
             <p style={{ marginBottom: 0 }}>
               <strong style={{ color: 'var(--gold)' }}>NFL.com:</strong> open the league. The URL is{' '}
               <code style={{ background: 'var(--ink-soft)', padding: '.15rem .4rem', borderRadius: '2px', fontSize: '.78rem' }}>
                 fantasy.nfl.com/league/<em>7528632</em>
               </code>
-              {' '}— that number is it. League must be set to public; historical only for now (NFL.com hasn&apos;t reopened live leagues this year).
+              {' '}and that number is it. League must be set to public; historical only for now (NFL.com hasn&apos;t reopened live leagues this year).
             </p>
           </div>
         </details>
-
-        <div style={{ marginTop: '2rem' }}>
-          <Link href="/dashboard" className="dc-btn-ghost">← Back to library</Link>
-        </div>
-      </div>
-
-      <SiteFooter />
-    </main>
   )
 }
 
@@ -131,7 +140,7 @@ function UpgradePrompt({
       </p>
       <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
         <Link href="/pricing" className="dc-btn">
-          {isLimit ? 'Upgrade to Tier 2 →' : 'See pricing →'}
+          {isLimit ? 'Upgrade to Tier 2' : 'See pricing'}
         </Link>
         {isLimit && (
           <Link href="/account" className="dc-btn-ghost">Manage subscription</Link>

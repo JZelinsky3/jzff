@@ -71,6 +71,11 @@ export type PickemsBadge = {
   variant: 'split' | 'coin-flip' | 'upset-alert' | 'consensus-cold'
   // For upset alert: the underdog is currently leading
   underdogLeading?: boolean
+  // Who voted which way (picker display names), when the source knows.
+  // Picks lock at kickoff, so the client only reveals names once the
+  // matchup is underway.
+  votersA?: string[]
+  votersB?: string[]
 }
 
 // ── Stacks ───────────────────────────────────────────────────────────────────
@@ -91,6 +96,8 @@ export type SlNflGame = {
   date: string               // ISO kickoff time — drives time-window grouping
   homeAbbr: string | null
   awayAbbr: string | null
+  homeColor: string | null   // ESPN team hex ("#013369") — channel/strip tinting
+  awayColor: string | null
   homeFull: string           // full team name for the games page
   awayFull: string
   homeScore: number
@@ -150,7 +157,12 @@ export type Moment = {
 
 // ── Bottom ticker top-performers ─────────────────────────────────────────────
 
-export type TickerScope = 'all' | 'qb' | 'rb' | 'wr' | 'te' | 'k' | 'def' | 'bench' | 'duds'
+export type TickerScope =
+  | 'all' | 'qb' | 'rb' | 'wr' | 'te' | 'k' | 'def'
+  | 'bench'            // best players left on benches
+  | 'boom'             // biggest positive projDelta among starters
+  | 'duds'             // lowest-scoring starters, all positions
+  | 'duds-qb' | 'duds-rb' | 'duds-wr' | 'duds-te'
 
 export type TickerEntry = {
   rank: number               // 1..10
@@ -170,6 +182,51 @@ export type TickerEntry = {
 }
 
 export type TickerBoard = Record<TickerScope, TickerEntry[]>
+
+// ── News rail ────────────────────────────────────────────────────────────────
+
+export type SlNewsItem = {
+  id: string
+  headline: string
+  description: string
+  published: string          // ISO
+  link: string | null
+  image: string | null
+  // Set when the article names a player rostered in this league.
+  leagueTag: { playerName: string; ownerName: string } | null
+}
+
+// ── Storylines (producer voice) ──────────────────────────────────────────────
+
+export type StorylineKind =
+  // game-state
+  | 'nailbiter' | 'comeback' | 'blowout' | 'upset-alert' | 'earthquake'
+  | 'photo-finish' | 'win-sealed'
+  // player
+  | 'monster-game' | 'milestone-watch' | 'rank-overtake' | 'dud-alert'
+  | 'bench-regret' | 'redzone-stakes' | 'man-down' | 'free-agent-taunt'
+  // transaction-revenge
+  | 'revenge-game' | 'new-arrival' | 'drop-regret' | 'trade-scoreboard'
+  // history
+  | 'grudge-match' | 'season-high-watch' | 'streak-story'
+  // league-context
+  | 'top-two-collide' | 'throne-shakes'
+
+export type StorylineCategory = 'game' | 'player' | 'revenge' | 'history' | 'league'
+
+export type Storyline = {
+  // Deterministic: `${kind}:${year}-${week}:${refKey}[:bucket]`. Re-emitted
+  // every poll while the condition holds; the client keys on id so nothing
+  // re-animates.
+  id: string
+  kind: StorylineKind
+  category: StorylineCategory
+  severity: number           // 0..100 after modifiers
+  headline: string           // punchy broadcast line; no emojis, no em-dashes
+  subline: string | null
+  refs: { matchupId?: number; rosterIds?: number[]; playerIds?: string[] }
+  firstSeenAt: string        // carried forward from the previous frame when the id matches
+}
 
 // ── Inactives radar ──────────────────────────────────────────────────────────
 
@@ -207,6 +264,11 @@ export type SlLeague = {
     liveQuality: LiveQuality
     // If we're between Sundays / off-week, surfaces this in chrome:
     phase: 'pre-kickoff' | 'live' | 'finished' | 'idle'
+    // League format read from platform settings (Sleeper only for now).
+    // The scenario machine draws THE CUT at playoffSpots and tags division
+    // leaders when the league runs divisions. Both null when unknown.
+    playoffSpots?: number | null
+    divisions?: { names: string[]; byRosterId: Record<number, number> } | null
   }
   matchups: SlMatchup[]
   nflGames: SlNflGame[]
@@ -216,6 +278,12 @@ export type SlLeague = {
   inactives: InactiveAlert[]
   stacks: StackUnit[]        // top stacks across the entire league
   powerPulse: PowerPulseRow[] // top-5 by current power ranking + live result
+  news: SlNewsItem[]         // ESPN news rail; league-tagged articles first
+  storylines: Storyline[]    // producer voice; built by storylines.ts (cap 24)
+  // Session-long WP extremes for side A per matchupId, carried frame to frame
+  // through snapshots. Powers the comeback storyline (needs the day's floor,
+  // not just the last poll).
+  wpBounds: Record<string, { min: number; max: number }>
   // Set by load.ts on first frame only; nullable so polls don't keep regenerating.
   // Phase 5 will populate this.
   halftimeReport: string | null
@@ -224,6 +292,9 @@ export type SlLeague = {
     fetchedAt: string        // ISO; the moment this frame was built
     pollMs: number           // recommended poll interval
     demo: { year: number; week: number; progress: number } | null
+    // Demo built by the showcase fabricator (real managers + real NFL stat
+    // lines, synthetic rosters) because the platform can't replay the week.
+    showcase?: boolean
   }
 }
 

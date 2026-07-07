@@ -13,7 +13,41 @@ import {
 
 type SlugStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
 
-export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
+// Live snapshot of the form, reported upward so the desktop "binding
+// press" rail (new-archive-studio.tsx) can typeset the book cover and
+// tick the progress ledger as the user works. Optional — the mobile
+// tree renders the form without a listener.
+export type ArchiveDraft = {
+  platform: 'sleeper' | 'nfl' | 'espn' | 'yahoo'
+  externalId: string
+  name: string
+  slug: string
+  slugStatus: SlugStatus
+  abbreviation: string
+  divisionCount: number
+  divisionTerm: 'conference' | 'division'
+  divisionNames: string[]
+  leagueFound: boolean
+}
+
+const PLATFORM_PLATES: {
+  key: 'sleeper' | 'nfl' | 'espn' | 'yahoo'
+  name: string
+  sub: string
+}[] = [
+  { key: 'sleeper', name: 'Sleeper', sub: 'Username or ID' },
+  { key: 'nfl', name: 'NFL.com', sub: 'League ID' },
+  { key: 'espn', name: 'ESPN', sub: 'League ID' },
+  { key: 'yahoo', name: 'Yahoo', sub: 'Connect · Beta' },
+]
+
+export function AddLeagueForm({
+  yahooConnected,
+  onDraftChange,
+}: {
+  yahooConnected: boolean
+  onDraftChange?: (draft: ArchiveDraft) => void
+}) {
   const [state, formAction, isPending] = useActionState(addLeague, null)
 
   const [platform, setPlatform] = useState<'sleeper' | 'nfl' | 'espn' | 'yahoo'>('sleeper')
@@ -90,6 +124,31 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
 
   const slugBlocked = slugStatus === 'taken' || slugStatus === 'invalid' || slugStatus === 'checking' || slugStatus === 'idle'
 
+  // Report the working draft to the binding-press rail. Sleeper/Yahoo count
+  // as "found" once a preview loads; NFL/ESPN have no preview step, so any
+  // plausible ID counts.
+  useEffect(() => {
+    if (!onDraftChange) return
+    onDraftChange({
+      platform,
+      externalId,
+      name: customName,
+      slug: customSlug,
+      slugStatus,
+      abbreviation,
+      divisionCount,
+      divisionTerm,
+      divisionNames,
+      leagueFound:
+        platform === 'sleeper' || platform === 'yahoo'
+          ? previewMsg?.tone === 'ok'
+          : externalId.trim().length >= 3,
+    })
+  }, [
+    onDraftChange, platform, externalId, customName, customSlug, slugStatus,
+    abbreviation, divisionCount, divisionTerm, divisionNames, previewMsg,
+  ])
+
   function handleSlugChange(v: string) {
     setSlugTouched(true)
     // Restrict input to slug-safe chars as the user types so they don't end
@@ -144,7 +203,7 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
       </div>
       <span className="dc-checkbox-hint">
         {slugStatus === 'available' && 'Available.'}
-        {slugStatus === 'taken' && 'That URL is already taken — pick another.'}
+        {slugStatus === 'taken' && 'That URL is already taken. Pick another.'}
         {slugStatus === 'invalid' && 'Use letters, numbers, and dashes.'}
         {slugStatus === 'checking' && 'Checking…'}
         {slugStatus === 'idle' && 'Auto-filled from your league name. Edit if you like.'}
@@ -226,25 +285,28 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
 
   return (
     <form action={formAction} className="dc-form">
-      <div className="dc-field">
-        <label htmlFor="platform" className="dc-label">Platform</label>
-        <select
-          id="platform"
-          name="platform"
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value as typeof platform)}
-          className="dc-select"
-        >
-          <option value="sleeper">Sleeper</option>
-          <option value="nfl">NFL.com</option>
-          <option value="espn">ESPN</option>
-          <option value="yahoo">Yahoo (beta — connect required)</option>
-        </select>
-      </div>
+      <Chapter num="§" title="Choose the press">
+        <input type="hidden" name="platform" value={platform} />
+        <div className="dc-plat-grid" role="group" aria-label="Platform">
+          {PLATFORM_PLATES.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              aria-pressed={platform === p.key}
+              className={`dc-plat${platform === p.key ? ' is-on' : ''}`}
+              onClick={() => setPlatform(p.key)}
+            >
+              <span className="dc-plat-name">{p.name}</span>
+              <span className="dc-plat-sub">{p.sub}</span>
+            </button>
+          ))}
+        </div>
+      </Chapter>
 
       {platform === 'yahoo' ? (
         <>
           {!yahooConnected ? (
+            <Chapter num="Ch. I" title="Locate the manuscript">
             <div className="dc-field">
               <div style={{ padding: '1rem 1.1rem', background: 'var(--ink-soft)', borderRadius: '4px' }}>
                 <div style={{ fontFamily: 'var(--mono)', fontSize: '.6rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '.45rem' }}>
@@ -252,19 +314,21 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                 </div>
                 <p style={{ margin: 0, lineHeight: 1.55, color: 'var(--cream)' }}>
                   Yahoo requires you to log in once so we can read your leagues. We only get
-                  read access — no roster moves, no posting.
+                  read access, no roster moves, no posting.
                 </p>
                 <a
                   href="/api/yahoo/authorize"
                   className="dc-btn"
                   style={{ marginTop: '.85rem', display: 'inline-block' }}
                 >
-                  Connect Yahoo →
+                  Connect Yahoo
                 </a>
               </div>
             </div>
+            </Chapter>
           ) : (
             <>
+              <Chapter num="Ch. I" title="Locate the manuscript">
               <div className="dc-field">
                 <label className="dc-label">Pick your Yahoo league</label>
                 <input type="hidden" name="externalId" value={pickedYahooKey ?? ''} />
@@ -282,7 +346,7 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                 )}
                 {yahooLeagues && yahooLeagues.length > 0 && (
                   <span className="dc-checkbox-hint">
-                    Deduped by Yahoo&apos;s renew chain — each league appears once at its
+                    Deduped by Yahoo&apos;s renew chain, so each league appears once at its
                     most-recent season. Walk-history covers the rest.
                   </span>
                 )}
@@ -345,7 +409,9 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                   </p>
                 )}
               </div>
+              </Chapter>
 
+              <Chapter num="Ch. II" title="The title page">
               <div className="dc-field">
                 <label htmlFor="customName" className="dc-label">League name (optional)</label>
                 <input
@@ -360,7 +426,9 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
               </div>
 
               {slugField}
+              </Chapter>
 
+              <Chapter num="Ch. III" title="Set the type">
               <div className="dc-field">
                 <label htmlFor="draftScoringProfile" className="dc-label">Draft scoring profile</label>
                 <input type="hidden" name="draftScoringProfile" value={draftScoringProfile} />
@@ -381,6 +449,7 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                   </div>
                 </div>
               </div>
+              </Chapter>
 
               <input type="hidden" name="divisionCount" value={divisionCount} />
               <input type="hidden" name="divisionTerm" value={divisionTerm} />
@@ -390,31 +459,34 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
               <input type="hidden" name="abbreviation" value={abbreviation} />
 
               <p className="dc-checkbox-hint" style={{ marginTop: '.25rem' }}>
-                Once your archive is created, history sync for Yahoo runs from the league page
-                — we&apos;ll pull every season your league chain can reach.
+                Once your archive is created, history sync for Yahoo runs from the league page.
+                We&apos;ll pull every season your league chain can reach.
               </p>
 
+              <Chapter num="✦" title="The binding">
               <button
                 type="submit"
                 disabled={isPending || !pickedYahooKey || slugBlocked}
                 className="dc-btn dc-btn-block"
               >
                 {isPending
-                  ? 'Validating…'
+                  ? 'Binding…'
                   : !pickedYahooKey
                   ? 'Pick a league first'
                   : slugStatus === 'taken'
                   ? 'Change the URL to continue'
                   : slugStatus === 'invalid'
                   ? 'Enter a valid URL'
-                  : 'Create archive →'}
+                  : 'Bind this volume'}
               </button>
               {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
+              </Chapter>
             </>
           )}
         </>
       ) : (
       <>
+      <Chapter num="Ch. I" title="Locate the manuscript">
       {platform === 'sleeper' ? (
         <>
           <SleeperLeaguePicker
@@ -454,7 +526,9 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
           )}
         </div>
       )}
+      </Chapter>
 
+      <Chapter num="Ch. II" title="The title page">
       <div className="dc-field">
         <label htmlFor="customName" className="dc-label">League name (optional)</label>
         <input
@@ -470,6 +544,25 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
 
       {slugField}
 
+      <div className="dc-field">
+        <label htmlFor="abbreviation" className="dc-label">Abbreviation (optional)</label>
+        <input
+          id="abbreviation"
+          name="abbreviation"
+          maxLength={16}
+          value={abbreviation}
+          onChange={(e) => setAbbreviation(e.target.value.toUpperCase())}
+          placeholder={customName ? customName.split(/\s+/).map((w) => w[0]?.toUpperCase() ?? '').join('').slice(0, 6) : 'PAMS, TBSL, etc.'}
+          className="dc-input mono"
+          style={{ textTransform: 'uppercase' }}
+        />
+        <span className="dc-checkbox-hint">
+          Short label used on the public almanac. Leave blank to use initials.
+        </span>
+      </div>
+      </Chapter>
+
+      <Chapter num="Ch. III" title="Set the chapters">
       <div className="dc-field">
         <label className="dc-label">Draft scoring profile</label>
         <input type="hidden" name="draftScoringProfile" value={draftScoringProfile} />
@@ -503,23 +596,6 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
         </span>
       </div>
 
-      <div className="dc-field">
-        <label htmlFor="abbreviation" className="dc-label">Abbreviation (optional)</label>
-        <input
-          id="abbreviation"
-          name="abbreviation"
-          maxLength={16}
-          value={abbreviation}
-          onChange={(e) => setAbbreviation(e.target.value.toUpperCase())}
-          placeholder={customName ? customName.split(/\s+/).map((w) => w[0]?.toUpperCase() ?? '').join('').slice(0, 6) : 'PAMS, TBSL, etc.'}
-          className="dc-input mono"
-          style={{ textTransform: 'uppercase' }}
-        />
-        <span className="dc-checkbox-hint">
-          Short label used on the public almanac. Leave blank to use initials.
-        </span>
-      </div>
-
       {platform === 'nfl' && (
         <>
           <div className="dc-field">
@@ -535,7 +611,7 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                 className="dc-input mono"
                 style={{ flex: '0 0 6.5rem', textAlign: 'center' }}
               />
-              <span style={{ opacity: 0.6 }}>through</span>
+              <span style={{ color: 'var(--cream-mute)', fontWeight: 500, fontFamily: 'var(--mono)', fontSize: '.85rem' }}>through</span>
               <input
                 name="seasonEnd"
                 type="number"
@@ -605,7 +681,7 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
                 className="dc-input mono"
                 style={{ flex: '0 0 6.5rem', textAlign: 'center' }}
               />
-              <span style={{ opacity: 0.6 }}>through</span>
+              <span style={{ color: 'var(--cream-mute)', fontWeight: 500, fontFamily: 'var(--mono)', fontSize: '.85rem' }}>through</span>
               <input
                 name="seasonEnd"
                 type="number"
@@ -636,7 +712,7 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
               This is a private league
               <span className="dc-checkbox-hint">
                 Required if ESPN asks you to sign in when visiting the league URL.
-                Cookies expire periodically — you can refresh them later from the league&apos;s sources page.
+                Cookies expire periodically. You can refresh them later from the league&apos;s sources page.
               </span>
             </span>
           </label>
@@ -727,24 +803,52 @@ export function AddLeagueForm({ yahooConnected }: { yahooConnected: boolean }) {
           </div>
         </div>
       )}
+      </Chapter>
 
+      <Chapter num="✦" title="The binding">
       <button
         type="submit"
         disabled={isPending || slugBlocked}
         className="dc-btn dc-btn-block"
       >
         {isPending
-          ? 'Validating…'
+          ? 'Binding…'
           : slugStatus === 'taken'
           ? 'Change the URL to continue'
           : slugStatus === 'invalid'
           ? 'Enter a valid URL'
-          : 'Create archive →'}
+          : 'Bind this volume'}
       </button>
 
       {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
+      </Chapter>
       </>
       )}
     </form>
+  )
+}
+
+// Book-themed section wrapper: a chapter heading (numeral, italic title,
+// double rule) over a stack of fields. Renders fine on the dark mobile
+// card too — the paper-manuscript look comes from .dc-press-page on the
+// desktop wrapper, not from these classes.
+function Chapter({
+  num,
+  title,
+  children,
+}: {
+  num: string
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="dc-msc">
+      <header className="dc-msc-head">
+        <span className="dc-msc-num">{num}</span>
+        <span className="dc-msc-title">{title}</span>
+        <span className="dc-msc-rule" aria-hidden />
+      </header>
+      <div className="dc-msc-body">{children}</div>
+    </section>
   )
 }

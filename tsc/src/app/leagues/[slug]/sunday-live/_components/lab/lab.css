@@ -1,0 +1,50 @@
+/* ============================================================
+   SUNDAY LIVE LAB — concept-bench styles.
+   Everything prefixed lab- and loaded only by LabApp, so nothing
+   leaks into the production desk. Reads the .sl-root palette vars.
+   The CRT wall styles graduated to sunday-live.css (sl-crt,
+   sl-phosphor, sl-wall-grid) when the command center became the desk.
+   ============================================================ */
+
+/* ── Teletype wire ─────────────────────────────────────────── */
+
+.lab-paper {
+  position: relative;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #f0e7d1, #e5d9ba);
+  color: #2a2318;
+  box-shadow:
+    inset 0 0 70px rgba(120, 90, 40, 0.28),
+    0 14px 28px -14px rgba(0, 0, 0, 0.85);
+}
+/* Sprocket holes down the feed edges */
+.lab-paper::before,
+.lab-paper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  pointer-events: none;
+  background: radial-gradient(circle 3px at 4px 13px, rgba(42, 35, 24, 0.22) 45%, transparent 50%) 0 0 / 8px 26px repeat-y;
+}
+.lab-paper::before { left: 8px; }
+.lab-paper::after  { right: 8px; }
+
+.lab-caret {
+  display: inline-block;
+  width: 0.62em;
+  height: 1.05em;
+  vertical-align: text-bottom;
+  background: #2a2318;
+  animation: lab-blink 1s steps(1) infinite;
+}
+@keyframes lab-blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-caret {
+    animation: none !important;
+  }
+}

@@ -21,20 +21,34 @@ export async function attachPickems(slug: string, matchups: SlMatchup[]): Promis
   const wk = state.weeks.find((w) => String(w.week) === state.currentWeekId || w.is_current)
   if (!wk) return
 
-  // Vote tally per pickems matchup_id.
-  type Tally = { aVotes: number; bVotes: number; managerAId: string; managerBId: string }
+  // Vote tally per pickems matchup_id, keeping who voted which way.
+  type Tally = {
+    aVotes: number
+    bVotes: number
+    managerAId: string
+    managerBId: string
+    aNames: string[]
+    bNames: string[]
+  }
   const tallies = new Map<string, Tally>()
   for (const m of wk.matchups) {
-    tallies.set(m.id, { aVotes: 0, bVotes: 0, managerAId: m.home, managerBId: m.away })
+    tallies.set(m.id, { aVotes: 0, bVotes: 0, managerAId: m.home, managerBId: m.away, aNames: [], bNames: [] })
   }
-  for (const byWeek of Object.values(state.submissions)) {
+  const nameByProfile = new Map(state.profiles.map((p) => [p.profileId, p.name]))
+  for (const [profileId, byWeek] of Object.entries(state.submissions)) {
     const sub = byWeek[wk.id]
     if (!sub) continue
+    const voter = nameByProfile.get(profileId) ?? null
     for (const [mid, picked] of Object.entries(sub.picks)) {
       const t = tallies.get(mid)
       if (!t) continue
-      if (picked === t.managerAId) t.aVotes++
-      else if (picked === t.managerBId) t.bVotes++
+      if (picked === t.managerAId) {
+        t.aVotes++
+        if (voter) t.aNames.push(voter)
+      } else if (picked === t.managerBId) {
+        t.bVotes++
+        if (voter) t.bNames.push(voter)
+      }
     }
   }
 
@@ -64,10 +78,14 @@ export async function attachPickems(slug: string, matchups: SlMatchup[]): Promis
       ? (found.tally.aVotes / total) * 100
       : (found.tally.bVotes / total) * 100
     sm.pickems = decideVariant(pctA, total, sm)
+    sm.pickems.votersA = aMatchesPickemsHome ? found.tally.aNames : found.tally.bNames
+    sm.pickems.votersB = aMatchesPickemsHome ? found.tally.bNames : found.tally.aNames
   }
 }
 
-function decideVariant(pctA: number, totalVotes: number, m: SlMatchup): PickemsBadge {
+// Exported for the demo synthesizer, which fabricates ballots but wants the
+// exact same variant rules.
+export function decideVariant(pctA: number, totalVotes: number, m: SlMatchup): PickemsBadge {
   const winningSide: 'a' | 'b' | null =
     m.a.score > m.b.score ? 'a' : m.b.score > m.a.score ? 'b' : null
   const consensusSide = pctA >= 50 ? 'a' : 'b'

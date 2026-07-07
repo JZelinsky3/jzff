@@ -521,7 +521,7 @@ function describeSubscription(s: SubscriptionSummary): {
   if (s.status === 'past_due') {
     return {
       title: `${s.tierLabel}`,
-      detail: 'Payment failed — update your method.',
+      detail: 'Payment failed. Update your method.',
       badge: { text: 'Past due', color: 'var(--rust, #d65a3c)' },
     }
   }

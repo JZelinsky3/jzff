@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { MobileProfile } from '@/components/account/MobileProfile'
 import { createClient } from '@/lib/supabase/server'
@@ -7,7 +7,6 @@ import { getUserSubscription, isCompUser, TIER_LABELS } from '@/lib/stripe'
 import { getViewMode } from '@/lib/viewMode'
 import { AccountForms } from './account-forms'
 import { AccountNavMenu } from './account-nav-menu'
-import { MemberCodeChip } from './member-code-chip'
 
 export default async function AccountPage({
   searchParams,
@@ -99,11 +98,7 @@ export default async function AccountPage({
   return (
     <main>
       <nav className="nav">
-        <Link href="/dashboard" className="dc-nav-icon" aria-label="Back to your library">
-          <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="7 1 1 7 7 13" />
-          </svg>
-        </Link>
+        <BackButton fallbackHref="/dashboard" ariaLabel="Back to your library" />
         <div className="nav-center">
           <div className="nav-kicker">Account</div>
           <div className="nav-title">Your <em>profile.</em></div>
@@ -117,20 +112,14 @@ export default async function AccountPage({
           The <em>Chronicler.</em>
         </h1>
         <p className="hero-sub">
-          Your plan, email, password, and what we send you.
+          Your plan, email, password, and what we send you. All of it lives on the card.
         </p>
-        <div className="hero-meta">
-          {user.email}
-        </div>
-        {memberCode && (
-          <div style={{ textAlign: 'center' }}>
-            <MemberCodeChip code={memberCode} />
-          </div>
-        )}
       </section>
 
       <AccountForms
         email={user.email ?? ''}
+        memberCode={memberCode}
+        memberSince={new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         marketingOptIn={marketingOptIn}
         leagueCount={leagueCount}
         isOAuth={isOAuth}

@@ -143,7 +143,7 @@ export function OnboardingChecklist({
                 <div className="onb-step-action">{step.action}</div>
               ) : step.href ? (
                 <Link href={step.href} className="onb-step-cta">
-                  {step.cta ?? 'Go →'}
+                  {step.cta ?? 'Go'}
                 </Link>
               ) : null
             )}

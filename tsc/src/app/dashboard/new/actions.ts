@@ -179,7 +179,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
       return {
         ok: false,
         error:
-          'Server is missing SUPABASE_SERVICE_ROLE_KEY — profile row cannot be created. Set the env var and redeploy.',
+          'Server is missing SUPABASE_SERVICE_ROLE_KEY, so the profile row cannot be created. Set the env var and redeploy.',
       }
     }
     const { createAdminClient } = await import('@/lib/supabase/admin')

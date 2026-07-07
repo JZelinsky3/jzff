@@ -12,6 +12,8 @@ import {
 } from '@/lib/stripe'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
+import { Bookshelf } from './bookshelf'
+import { CollapsedSection } from './collapsed-section'
 import { LeagueCardMenu } from './league-card-menu'
 
 export default async function DashboardPage({
@@ -116,6 +118,13 @@ export default async function DashboardPage({
     !user?.user_metadata?.has_created_league && (leagues?.length ?? 0) === 0
 
   const hasLeague = (leagues?.length ?? 0) > 0
+  // Plan capacity drives the blacked-out placeholder spines on the shelf:
+  // comp reads as the top tier, paid plans use their real limit, UDFA gets
+  // the single trial slot. The preview caps at five spines total; once the
+  // user shelves five real volumes the placeholders retire entirely.
+  const shelfSlots = comp ? TIER_LIMITS.tier3 : subActive && sub ? TIER_LIMITS[sub.tier] : tier1Limit
+  const ownedCount = leagues?.length ?? 0
+  const shelfPlaceholders = ownedCount >= 5 ? 0 : Math.max(0, Math.min(shelfSlots, 5) - ownedCount)
   // Most recent sync across the shelf, for the hero chip.
   const latestSyncedAt = (leagues ?? [])
     .map((l) => l.last_synced_at)
@@ -155,30 +164,30 @@ export default async function DashboardPage({
   const onboardingSteps: OnboardingStep[] = [
     {
       label: 'Create your first league',
-      description: 'Pick a platform, paste your league ID — we walk the history for you.',
+      description: 'Pick a platform, paste your league ID. We walk the history for you.',
       done: hasLeague,
       href: '/dashboard/new',
-      cta: 'Add league →',
+      cta: 'Add league',
     },
     {
       label: 'Sync your data',
       description: 'Pull every season your sources can reach. Drafts, matchups, standings.',
       done: hasSynced,
       href: targetSlug ? `/league/${targetSlug}` : '/dashboard/new',
-      cta: 'Sync now →',
+      cta: 'Sync now',
     },
     {
       label: 'Publish your almanac',
       description: 'Flip the switch to open your public archive at /leagues/<slug>/.',
       done: hasPublished,
       href: targetSlug ? `/league/${targetSlug}` : '/dashboard/new',
-      cta: 'Publish →',
+      cta: 'Publish',
     },
   ]
 
   return (
     <main>
-      <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '2rem' }}>
+      <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.25rem' }}>
         <div className="hero-sup">★ Your Library ★</div>
         <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
           The <em>Archives.</em>
@@ -187,24 +196,22 @@ export default async function DashboardPage({
           Every league you keep. Open one, or begin a new chronicle below.
         </p>
         {(hasLeague || bookmarks.length > 0) && (
-          <div className="dc-chip-row">
-            <span className="dc-chip gold">
-              § {leagues?.length ?? 0} {(leagues?.length ?? 0) === 1 ? 'League' : 'Leagues'} on file
+          <div className="hero-dateline">
+            <span>
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </span>
             {latestSyncedAt && (
-              <span className="dc-chip">
-                Last synced {new Date(latestSyncedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-              </span>
-            )}
-            {bookmarks.length > 0 && (
-              <span className="dc-chip">
-                ★ {bookmarks.length} Bookmarked
-              </span>
+              <>
+                <span className="hero-dateline-sep" aria-hidden>·</span>
+                <span>
+                  Last synced <strong>{new Date(latestSyncedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</strong>
+                </span>
+              </>
             )}
           </div>
         )}
         <div style={{ marginTop: '1.75rem', display: 'flex', gap: '.8rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/dashboard/new" className="dc-btn">+ New archive →</Link>
+          <Link href="/dashboard/new" className="dc-btn">+ New archive</Link>
           <Link href="/hub" className="dc-btn-ghost">★ The Clubhouse</Link>
         </div>
         {(comp || subActive || isUDFA) && (
@@ -258,7 +265,7 @@ export default async function DashboardPage({
             ★ How UDFA works
           </div>
           <div className="dc-banner-lede" style={{ fontFamily: 'var(--serif)', color: 'var(--cream)' }}>
-            <strong style={{ color: 'var(--gold)' }}>First league</strong> is a free trial — every feature, unlocked as a preview of the paid plans.
+            <strong style={{ color: 'var(--gold)' }}>First league</strong> is a free trial: every feature, unlocked as a preview of the paid plans.
           </div>
           {/* Feature-list explanation is verbose; it's the first thing to hide
               on phones where vertical real-estate is precious. The email
@@ -330,7 +337,7 @@ export default async function DashboardPage({
               </strong>.
             </div>
             <div className="dc-banner-note" style={{ opacity: 0.7, marginTop: '.25rem' }}>
-              Resubscribe before then to keep everything — or export anything you want to save.
+              Resubscribe before then to keep everything, or export anything you want to save.
             </div>
           </div>
           <Link href="/pricing" className="dc-btn">Resubscribe</Link>
@@ -358,57 +365,90 @@ export default async function DashboardPage({
           away in the hero). */}
       <div
         className={`section${siteAdmin ? '' : ' hide-on-mobile'}`}
-        style={{ paddingTop: '1rem' }}
+        style={{ marginTop: '1.25rem', paddingTop: 0 }}
       >
         {/* ← MANUAL EDIT: change `maxWidth` to widen/narrow the League Archive
             cards row. Larger value (e.g. '1080px') = wider; smaller (e.g. '640px')
             = narrower. Admin sees 2 cards side-by-side so they get a wider
             cap so each card stays readable. */}
-        <div className="card-grid dc-dashboard-grid" style={{ maxWidth: siteAdmin ? '880px' : '580px', margin: '0 auto' }}>
-          <Link href="/dashboard/new" className="card hide-on-mobile" style={{ display: 'block' }}>
-            <div className="card-corner">Mode I</div>
-            <div className="card-roman">§</div>
-            <div className="card-title">League <em>Archive.</em></div>
-            <div className="card-desc">A public almanac of your league&apos;s history — drafts, matchups, champions.</div>
-            <div className="card-cta">Build an archive <span className="card-arrow">→</span></div>
+        <div className="dc-mode-grid" style={{ maxWidth: siteAdmin ? '880px' : '520px', margin: '0 auto' }}>
+          <Link href="/dashboard/new" className="dc-mode hide-on-mobile">
+            <span className="dc-mode-book" aria-hidden>
+              <span className="dc-mode-book-pages" />
+              <span className="dc-mode-book-cover">
+                <span className="dc-mode-book-glyph">§</span>
+                <span className="dc-mode-book-spine-title">New Volume</span>
+              </span>
+            </span>
+            <span className="dc-mode-copy">
+              <span className="dc-mode-kicker">Mode I · Bind a new volume</span>
+              <span className="dc-mode-title">League <em>Archive.</em></span>
+              <span className="dc-mode-desc">A public almanac of your league&apos;s history: drafts, matchups, champions.</span>
+              <span className="dc-mode-cta">Start the press <span className="card-arrow">→</span></span>
+            </span>
           </Link>
 
           {siteAdmin && (
-            <Link href={chronicle ? `/manager/${chronicle.slug}` : '/manager/new'} className="card" style={{ display: 'block' }}>
-              <div className="card-corner">★ Mode II</div>
-              <div className="card-roman">✦</div>
-              <div className="card-title">Manager <em>Hub.</em></div>
-              <div className="card-desc">
-                {chronicle
-                  ? `Your career chronicle — ${chronicle.linkCount} ${chronicle.linkCount === 1 ? 'league' : 'leagues'} linked. Open the book.`
-                  : 'Track yourself across every league you play in. One book of your whole career.'}
-              </div>
-              <div className="card-cta">
-                {chronicle ? 'Open your chronicle' : 'Start your hub'} <span className="card-arrow">→</span>
-              </div>
+            <Link href={chronicle ? `/manager/${chronicle.slug}` : '/manager/new'} className="dc-mode">
+              <span className="dc-mode-book" aria-hidden>
+                <span className="dc-mode-book-pages" />
+                <span className="dc-mode-book-cover is-hub">
+                  <span className="dc-mode-book-glyph">✦</span>
+                  <span className="dc-mode-book-spine-title">Career Book</span>
+                </span>
+              </span>
+              <span className="dc-mode-copy">
+                <span className="dc-mode-kicker">★ Mode II · One book, every league</span>
+                <span className="dc-mode-title">Manager <em>Hub.</em></span>
+                <span className="dc-mode-desc">
+                  {chronicle
+                    ? `Your career chronicle, ${chronicle.linkCount} ${chronicle.linkCount === 1 ? 'league' : 'leagues'} linked. Open the book.`
+                    : 'Track yourself across every league you play in. One book of your whole career.'}
+                </span>
+                <span className="dc-mode-cta">
+                  {chronicle ? 'Open your chronicle' : 'Start your hub'} <span className="card-arrow">→</span>
+                </span>
+              </span>
             </Link>
           )}
         </div>
       </div>
 
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 01 · Your leagues</span>
-          <span className="section-title">{leagues?.length ?? 0} on file —</span>
-          <span className="section-meta">Newest first</span>
-        </div>
-
-        {(!leagues || leagues.length === 0) ? (
-          <div className="dc-empty">
-            <div className="dc-empty-title">No archives yet.</div>
-            <div className="dc-empty-text">
-              Pick a platform, paste your league ID, and watch the chronicle fill itself in.
-            </div>
-            <Link href="/dashboard/new" className="dc-btn">Start your first archive →</Link>
+      {/* § 01 · The shelf: the primary league surface. One big spine per
+          league; clicking a book pops the Setup / Archive actions above it.
+          Blacked-out spines mark unused plan slots; bookmarked almanacs
+          shelve at the end as "borrowed" volumes. */}
+      {(hasLeague || bookmarks.length > 0 || shelfPlaceholders > 0) && (
+        <div className="section" style={{ marginTop: '4rem' }}>
+          <div className="section-header">
+            <span className="section-num">§ 01 · The shelf</span>
+            <span className="section-title">Every league you keep —</span>
+            <span className="section-meta">Tap a spine to open it</span>
           </div>
-        ) : (
+          <Bookshelf
+            leagues={[...(leagues ?? [])].reverse().map((l) => ({
+              id: l.id as string,
+              name: l.name as string,
+              slug: l.slug as string,
+              platform: l.platform as string,
+              lastSyncedAt: (l.last_synced_at as string | null) ?? null,
+              published: !!l.published_at,
+            }))}
+            bookmarks={bookmarks.map((b) => ({ id: b.id, name: b.name, slug: b.slug }))}
+            placeholders={shelfPlaceholders}
+          />
+          {/* The checkout desk: the same leagues as lending cards, docked
+              under the shelf as a closed drawer so it reads as part of the
+              shelf rather than its own section. */}
+          {hasLeague && leagues && (
+            <CollapsedSection
+              plain
+              num="The checkout desk"
+              title="Pull a lending card —"
+              meta={`${leagues.length} on file`}
+            >
           <div className="card-grid dc-dashboard-grid">
-            {leagues.map((l) => (
+            {leagues.map((l, idx) => (
               <div key={l.id} style={{ position: 'relative', display: 'flex', height: '100%' }}>
                 {/* Click-area pattern: the parent .card div carries the
                     visual styling but isn't itself a link. An absolutely-
@@ -417,13 +457,16 @@ export default async function DashboardPage({
                     higher z-index so its real controls (Setup / Archive /
                     ⋯ menu) intercept their own clicks without nesting
                     anchors. */}
-                <div className="card dc-league-card" style={{ flex: 1, height: '100%' }}>
+                <div className="card dc-league-card dc-lend" style={{ flex: 1, height: '100%' }}>
                   <Link
                     href={`/league/${l.slug}`}
                     aria-label={`Open setup for ${l.name}`}
                     className="dc-league-clickarea"
                   />
-                  <div className="card-corner">{l.platform}</div>
+                  <div className="dc-lend-head">
+                    <span>Lending card</span>
+                    <span>Vol. {toRoman(leagues.length - idx)} · {l.platform}</span>
+                  </div>
                   {/* Tier badge — only on UDFA users' cards. The user's
                       earliest league is their one free trial slot ("Trial
                       · Full access"); subsequent free leagues are UDFA-
@@ -436,27 +479,30 @@ export default async function DashboardPage({
                       {l.id === earliestOwnedLeagueId ? 'Trial · Full access' : 'UDFA · Limited'}
                     </div>
                   )}
-                  <div className="card-roman">{l.name.charAt(0).toUpperCase()}</div>
-                  <div className="card-title">
+                  <div className="card-title dc-lend-title">
                     {splitName(l.name).head} <em>{splitName(l.name).tail}.</em>
                   </div>
-                  <div className="card-desc">
-                    {l.last_synced_at
-                      ? `Last synced ${new Date(l.last_synced_at).toLocaleDateString()}`
-                      : 'Not synced yet — open the archive to begin.'}
-                  </div>
-                  {l.grace_period_ends_at && (
-                    <div style={{
-                      fontFamily: 'var(--mono)', fontSize: '.6rem',
-                      letterSpacing: '.18em', textTransform: 'uppercase',
-                      color: 'var(--rust, #a04830)',
-                      marginTop: '.5rem',
-                    }}>
-                      Auto-deletes {new Date(l.grace_period_ends_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  <div className="dc-lend-lines">
+                    <div className="dc-lend-line">
+                      <span>Last synced</span>
+                      <span className="dc-lend-dots" aria-hidden />
+                      <span>{l.last_synced_at ? new Date(l.last_synced_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}</span>
                     </div>
-                  )}
+                    <div className="dc-lend-line">
+                      <span>Status</span>
+                      <span className="dc-lend-dots" aria-hidden />
+                      <span>{l.published_at ? 'Published' : 'Draft'}</span>
+                    </div>
+                    {l.grace_period_ends_at && (
+                      <div className="dc-lend-line is-due">
+                        <span>Due back</span>
+                        <span className="dc-lend-dots" aria-hidden />
+                        <span>{new Date(l.grace_period_ends_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="dc-league-cta">
-                    <Link href={`/league/${l.slug}`} className="dc-league-cta-btn">
+                    <Link href={`/league/${l.slug}`} className="dc-league-cta-btn is-primary">
                       Setup
                     </Link>
                     {l.published_at && (
@@ -476,8 +522,27 @@ export default async function DashboardPage({
               </div>
             ))}
           </div>
-        )}
-      </div>
+            </CollapsedSection>
+          )}
+        </div>
+      )}
+
+      {(!leagues || leagues.length === 0) && (
+        <div className="section">
+          <div className="section-header">
+            <span className="section-num">§ {bookmarks.length > 0 ? '02' : '01'} · Your leagues</span>
+            <span className="section-title">Nothing on the shelf —</span>
+            <span className="section-meta">Yet</span>
+          </div>
+          <div className="dc-empty">
+            <div className="dc-empty-title">No archives yet.</div>
+            <div className="dc-empty-text">
+              Pick a platform, paste your league ID, and watch the chronicle fill itself in.
+            </div>
+            <Link href="/dashboard/new" className="dc-btn">Start your first archive</Link>
+          </div>
+        </div>
+      )}
 
       {bookmarks.length > 0 && (
         <div className="section">
@@ -498,7 +563,7 @@ export default async function DashboardPage({
                 <div className="card-title">
                   {splitName(l.name).head} <em>{splitName(l.name).tail}.</em>
                 </div>
-                <div className="card-desc">Bookmarked almanac — open to view.</div>
+                <div className="card-desc">Bookmarked almanac. Open to view.</div>
                 <div className="card-cta">
                   Open the almanac <span className="card-arrow">→</span>
                 </div>
@@ -543,7 +608,7 @@ function DemoCard() {
         Demo <em>almanac.</em>
       </div>
       <div className="card-desc">
-        See a finished almanac before building your own — a real league&apos;s seven-year history.
+        See a finished almanac before building your own. Built from a real league&apos;s seven-year history.
       </div>
       <div className="card-cta">
         Open the demo <span className="card-arrow">→</span>
@@ -574,14 +639,27 @@ function splitName(name: string): { head: string; tail: string } {
   return { head: parts.slice(0, -1).join(' '), tail: parts[parts.length - 1] }
 }
 
+// Volume numbering for the shelf + edition cards. Oldest league = Vol. I.
+function toRoman(n: number): string {
+  const table: [number, string][] = [
+    [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+  ]
+  let out = ''
+  for (const [v, s] of table) {
+    while (n >= v) { out += s; n -= v }
+  }
+  return out
+}
+
+
 
 function YahooStatusBanner({ status }: { status: string }) {
   const isOk = status === 'connected'
   const messages: Record<string, string> = {
     connected: 'Yahoo connected. You can now create archives from your Yahoo leagues.',
-    state_mismatch: 'Yahoo connect failed — security check did not match. Try again.',
-    token_exchange_failed: 'Yahoo connect failed — could not exchange the auth code. Try again.',
-    save_failed: 'Yahoo connect partially succeeded — could not save tokens. Try again.',
+    state_mismatch: 'Yahoo connect failed: security check did not match. Try again.',
+    token_exchange_failed: 'Yahoo connect failed: could not exchange the auth code. Try again.',
+    save_failed: 'Yahoo connect partially succeeded but could not save tokens. Try again.',
     access_denied: 'You declined to grant access on Yahoo. Try again to connect.',
   }
   const msg = messages[status] ?? `Yahoo: ${status}`

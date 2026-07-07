@@ -157,7 +157,7 @@ export function GuideBrowser() {
             <div className="g-search-empty">
               <div className="g-search-empty-title">No matches.</div>
               <p>
-                Try a broader term — &quot;espn&quot;, &quot;trade&quot;, &quot;recap&quot;, &quot;migration&quot;, &quot;manager&quot; — or browse the categories below.
+                Try a broader term like &quot;espn&quot;, &quot;trade&quot;, or &quot;recap&quot;, or browse the categories below.
               </p>
               <button type="button" className="dc-btn-ghost" onClick={() => setQuery("")}>
                 Clear search
@@ -183,22 +183,31 @@ export function GuideBrowser() {
             </nav>
           </div>
 
-          {SECTIONS.map((s) => (
+          {SECTIONS.map((s, si) => (
             <div
               key={s.kicker}
               className="section guides-section"
               id={slugify(s.kicker)}
               style={{ maxWidth: "1080px", margin: "0 auto" }}
             >
-              <div className="section-header">
-                <span className="section-num">§ {s.kicker}</span>
-                <span className="section-title">{s.title}</span>
-                <span className="section-meta">{s.titleEm}</span>
+              {si > 0 && <div className="guides-orn" aria-hidden>✦ ✦ ✦</div>}
+              <div className="guides-sec-head">
+                <span className="guides-sec-icon" aria-hidden>
+                  <SectionGlyph kicker={s.kicker} />
+                </span>
+                <div className="section-header" style={{ flex: 1 }}>
+                  <span className="section-num">§ {s.kicker}</span>
+                  <span className="section-title">{s.title}</span>
+                  <span className="section-meta">{s.titleEm}</span>
+                </div>
               </div>
               <p className="guides-section-blurb">{s.blurb}</p>
               <div className="guides-card-grid">
-                {s.guides.map((g) => (
+                {s.guides.map((g, gi) => (
                   <Link key={g.slug} href={`/guides/${g.slug}/`} className="guide-card">
+                    <span className="guide-card-ch" aria-hidden>
+                      Ch. {String(gi + 1).padStart(2, "0")}
+                    </span>
                     {g.chip && <span className="guide-card-chip">{g.chip}</span>}
                     <div className="guide-card-title">{g.title}</div>
                     <div className="guide-card-desc">{g.tagline}</div>
@@ -218,4 +227,55 @@ export function GuideBrowser() {
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+}
+
+// Stroke glyph for each shelf, keyed off the section kicker: scales for
+// buyer's guides, a loupe for deep-dives, a chain for platform how-tos,
+// and a pen nib for the editorial shelf.
+function SectionGlyph({ kicker }: { kicker: string }) {
+  const k = kicker.toLowerCase()
+  const common = {
+    viewBox: "0 0 32 32",
+    width: 26,
+    height: 26,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.5,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  }
+  if (k.includes("buyer")) {
+    return (
+      <svg {...common}>
+        <path d="M16 6v20M10 26h12" />
+        <path d="M16 8l-8 2M16 8l8-2" />
+        <path d="M8 10l-3.5 8a4.5 3.5 0 0 0 7 0L8 10zM24 6l-3.5 8a4.5 3.5 0 0 0 7 0L24 6z" />
+      </svg>
+    )
+  }
+  if (k.includes("deep")) {
+    return (
+      <svg {...common}>
+        <circle cx="14" cy="14" r="8" />
+        <path d="M20 20l7 7" />
+        <path d="M10.5 13.5a4 4 0 0 1 3-3" />
+      </svg>
+    )
+  }
+  if (k.includes("platform")) {
+    return (
+      <svg {...common}>
+        <path d="M13 19l6-6" />
+        <path d="M15.5 21.5l-2.4 2.4a4.2 4.2 0 0 1-6-6l2.4-2.4" />
+        <path d="M16.5 10.5l2.4-2.4a4.2 4.2 0 0 1 6 6l-2.4 2.4" />
+      </svg>
+    )
+  }
+  return (
+    <svg {...common}>
+      <path d="M6 26c8-1 14-7 17-16l3-4-4 3C13 12 7 18 6 26z" />
+      <path d="M6 26l7-7" />
+      <circle cx="14.5" cy="17.5" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+  )
 }

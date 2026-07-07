@@ -1,7 +1,7 @@
-import { NavDropdown, type DropGroup } from '@/components/NavDropdown'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
+import { LibraryIndexBook, type IndexGroup } from './library-index'
 import { DashboardNavBackSlot } from './nav-back-slot'
 
 export default async function DashboardLayout({
@@ -20,25 +20,27 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser()
   const admin = await isSiteAdmin(user?.id)
 
-  const groups: DropGroup[] = [
+  const groups: IndexGroup[] = [
     {
       label: 'Library',
-      entries: [
+      links: [
         // Skip "Your leagues" — that's literally this page.
-        { type: 'link', href: '/dashboard/new', label: 'New archive' },
-        { type: 'link', href: '/hub', label: 'The Clubhouse' },
+        { href: '/dashboard/new', label: 'New archive' },
+        { href: '/hub', label: 'The Clubhouse' },
+        { href: '/guides', label: 'Guides' },
       ],
     },
     {
       label: 'Account',
-      entries: [
-        { type: 'link', href: '/account', label: 'Profile' },
+      links: [
+        { href: '/account', label: 'Profile' },
+        { href: '/pricing', label: 'Plans' },
       ],
     },
     ...(admin
       ? [{
           label: 'Site admin',
-          entries: [{ type: 'link' as const, href: '/admin', label: 'Admin console' }],
+          links: [{ href: '/admin', label: 'Admin console' }],
         }]
       : []),
   ]
@@ -46,7 +48,7 @@ export default async function DashboardLayout({
   return (
     <>
       <nav className="nav">
-        {/* Left slot: invisible on /dashboard, back arrow on sub-pages like /new. */}
+        {/* Left slot: Reader's Card chip on /dashboard, back arrow on sub-pages like /new. */}
         <DashboardNavBackSlot />
         <div className="nav-center">
           <div className="nav-kicker">Vol. II · The Library</div>
@@ -54,7 +56,7 @@ export default async function DashboardLayout({
             TS<em>C.</em>
           </div>
         </div>
-        <NavDropdown groups={groups} position="right" includeSignOut />
+        <LibraryIndexBook groups={groups} email={user?.email ?? null} />
       </nav>
       {children}
     </>

@@ -16,7 +16,7 @@ export function MobileGuides({ signedIn }: { signedIn: boolean }) {
       {SECTIONS.map((section) => (
         <div key={section.kicker}>
           <div className="mpg-section-head">
-            ★ {section.kicker} — <em>{section.title} {section.titleEm}</em>
+            ★ {section.kicker} · <em>{section.title} {section.titleEm}</em>
           </div>
           <div className="mpg-guide-list">
             {section.guides.map((g) => (

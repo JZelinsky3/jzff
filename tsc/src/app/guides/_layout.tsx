@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/SiteFooter"
 import { MobileGuideShell } from "@/components/guides/MobileGuideShell"
 import { createClient } from "@/lib/supabase/server"
 import { getViewMode } from "@/lib/viewMode"
+import { GuideToc } from "./_toc"
 
 // Author entity referenced from Article + Organization schema. Lifting the
 // byline out of the JSX so the structured-data block and the visible byline
@@ -236,27 +237,53 @@ export async function GuideShell({
         </div>
       </section>
 
-      <div className="section" style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <article style={{ color: "var(--cream-soft)", lineHeight: 1.7, fontSize: "1.02rem" }}>
+      {/* Two-column spread: prose left, sticky rail right. The rail carries
+          an auto-built table of contents (from the h2s), a small drawn
+          "figure" plate that doubles as the demo link, and the byline
+          repeated where a magazine would put the contributor note. */}
+      <div className="section guide-body">
+        <article className="guide-article">
           {children}
         </article>
+        <aside className="guide-rail">
+          <GuideToc />
+          <a href="/demo/" target="_blank" rel="noopener" className="guide-fig">
+            <span className="guide-fig-page" aria-hidden>
+              <span className="guide-fig-mast">The Sunday <em>Chronicle.</em></span>
+              {/* The mini page's "headline" is this guide's subject (the
+                  kicker up to the first ·), so each guide's figure reads
+                  as its own front page: "Sleeper.", "Editorial.", etc. */}
+              <span className="guide-fig-head">{kicker.split('·')[0].trim()}.</span>
+              <span className="guide-fig-cols">
+                <span /><span /><span />
+              </span>
+              <span className="guide-fig-strip">
+                <span>§ Standings</span>
+                <span>§ Rivalries</span>
+              </span>
+              <span className="guide-fig-seal">★</span>
+            </span>
+            <span className="guide-fig-caption">Fig. A · Tour a live almanac</span>
+          </a>
+        </aside>
       </div>
 
-      <div className="section" style={{ maxWidth: "1100px", margin: "0 auto" }}>
-        <div className="dc-card-static">
-          <div style={{ fontFamily: "var(--mono)", fontSize: ".6rem", letterSpacing: ".22em", textTransform: "uppercase", color: "var(--gold)", marginBottom: ".5rem" }}>
-            ★ Try it
-          </div>
-          <h2 style={{ fontFamily: "var(--serif)", fontSize: "1.5rem", color: "var(--cream)", marginBottom: ".4rem" }}>
-            See your league&apos;s <em style={{ color: "var(--gold)" }}>full history</em> in 30 seconds.
-          </h2>
-          <p style={{ marginBottom: "1rem" }}>
-            Paste your Sleeper, ESPN, or NFL.com league ID. We walk back through every season the league has ever existed and produce a public almanac at <code style={{ background: "var(--ink-soft)", padding: ".1rem .35rem", borderRadius: "2px" }}>thesundaychronicle.app/leagues/your-league/</code>. 7-day free trial, cancel anytime.
-          </p>
-          <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap" }}>
-            <Link href="/login?mode=signup" className="dc-btn">Start your archive →</Link>
-            <a href="/demo/" target="_blank" rel="noopener" className="dc-btn-ghost">Tour the demo</a>
-          </div>
+      {/* Closing plate: ornament + pitch, colophon-style rather than a
+          boxed card, so the article ends like a printed piece. */}
+      <div className="section guide-cta">
+        <div className="guide-cta-orn" aria-hidden>✦ ✦ ✦</div>
+        <h2 className="guide-cta-title">
+          See your league&apos;s <em>full history</em> in 30 seconds.
+        </h2>
+        <p className="guide-cta-sub">
+          Paste your Sleeper, ESPN, or NFL.com league ID. We walk back through
+          every season the league has ever existed and print a public almanac
+          at <code>thesundaychronicle.app/leagues/your-league/</code>.
+          7-day free trial, cancel anytime.
+        </p>
+        <div className="guide-cta-btns">
+          <Link href="/login?mode=signup" className="dc-btn">Start your archive</Link>
+          <a href="/demo/" target="_blank" rel="noopener" className="dc-btn-ghost">Tour the demo</a>
         </div>
       </div>
 
@@ -306,24 +333,40 @@ export function howToSchema(opts: {
   }
 }
 
+// Section heading inside a guide article. The visual §-numbering, rules,
+// and spacing all come from .guide-h2 (CSS counters), so every guide gets
+// the same editorial sectioning without per-page markup.
 export function H2({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 style={{
-      fontFamily: "var(--serif)",
-      fontSize: "1.55rem",
-      color: "var(--cream)",
-      marginTop: "2.25rem",
-      marginBottom: ".75rem",
-    }}>
-      {children}
-    </h2>
-  )
+  return <h2 className="guide-h2"><span>{children}</span></h2>
 }
 
 export function P({ children }: { children: React.ReactNode }) {
   // Cap prose line length even though the article container is wider —
   // grids and tables get the full width, body paragraphs stay readable.
-  return <p style={{ marginBottom: "1rem", maxWidth: "70ch" }}>{children}</p>
+  return <p className="guide-p">{children}</p>
+}
+
+// Pull quote: a big serif line set off from the prose with rules, for the
+// one sentence per guide that deserves to be read twice. Optional attr
+// line renders as a mono credit under the quote.
+export function PullQuote({ children, attr }: { children: React.ReactNode; attr?: string }) {
+  return (
+    <blockquote className="guide-pull">
+      <p>{children}</p>
+      {attr && <cite>{attr}</cite>}
+    </blockquote>
+  )
+}
+
+// Margin note: a small ruled aside for caveats and asterisks that would
+// otherwise clog the prose.
+export function Note({ children }: { children: React.ReactNode }) {
+  return (
+    <aside className="guide-note" role="note">
+      <span className="guide-note-star" aria-hidden>★</span>
+      <div>{children}</div>
+    </aside>
+  )
 }
 
 // Locale-stable date formatting so the visible byline doesn't shift
