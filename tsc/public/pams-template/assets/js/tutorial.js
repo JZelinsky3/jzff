@@ -67,9 +67,9 @@
                 body: "Standings · Managers · Seasons · Drafts · Records · Rivalries · Live. Pick a chapter; a quick guide pops up the first time you land on each.",
             },
             {
-                target: '.hero', placement: 'bottom',
-                title: 'The chronicle, below.',
-                body: "Scroll down for the highlights — champions, career leaders, manager spotlight, rivalries reel. Each block links into a fuller chapter.",
+                target: '.mq', placement: 'bottom',
+                title: 'The marquee.',
+                body: "The almanac's chapters take turns up here, each with a writeup and a live preview. Use the arrows to skip around, or open the featured chapter directly.",
             },
             {
                 target: '#dc-trackboard', placement: 'left',
@@ -77,9 +77,9 @@
                 body: "Live in-season updates — news, watch list, risers, odds. Click the rail to expand, ✕ to collapse.",
             },
             {
-                target: '.toc', placement: 'top',
-                title: 'Table of contents.',
-                body: "Bottom of every chronicle page — the full index. Click a chapter to jump straight there.",
+                target: '#dc-shelf', placement: 'top',
+                title: 'The shelf.',
+                body: "All seven volumes, spines out. Pick a book to feature it above; pick the featured one again to open it. Below the shelf, the catalog pulls highlights from every page.",
                 isFinal: true,
             },
         ],

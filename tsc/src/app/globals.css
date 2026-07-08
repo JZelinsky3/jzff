@@ -34333,7 +34333,7 @@ a.acct-plan-btn:hover { background: var(--gold); color: var(--ink); }
 }
 @media (max-width: 1020px) {
     .dc-press { grid-template-columns: 1fr; }
-    .dc-press-rail { display: none; }
+    .dc-press-railwrap { display: none; }
     .dc-press-after { grid-column: 1; }
 }
 .dc-press-main { min-width: 0; grid-column: 1; grid-row: 1; }
@@ -34341,10 +34341,16 @@ a.acct-plan-btn:hover { background: var(--gold); color: var(--ink); }
    the back link. Living outside row 1 keeps the sticky rail's travel
    capped at the paper page's bottom edge. */
 .dc-press-after { grid-column: 1; grid-row: 2; }
-.dc-press-rail {
+/* The wrapper is the grid item, pinned to row 1 and stretched to the
+   row's full height (= the paper page). The sticky rail inside it can
+   only travel within the wrapper, so the fourth ledger step stops at
+   the paper's bottom edge instead of riding on down the page. */
+.dc-press-railwrap {
     grid-column: 2;
-    grid-row: 1; /* sticky travel is capped by this grid area: row 1
-                    ends where the paper page ends */
+    grid-row: 1;
+    align-self: stretch; /* override the grid's align-items: start */
+}
+.dc-press-rail {
     position: sticky;
     top: 110px; /* clears the sticky masthead, same as .guide-rail */
     display: flex;
@@ -34812,4 +34818,15 @@ a.acct-plan-btn:hover { background: var(--gold); color: var(--ink); }
         3px 0 0 rgba(244,235,216,.4),
         6px 0 0 rgba(131,123,106,.35),
         9px 0 0 rgba(244,235,216,.25);
+}
+/* Catalog card: named divisions print as indented chapter lines. */
+.dc-press-line.is-sub {
+    padding-left: 1rem;
+    font-size: .72rem;
+    color: var(--cream-mute);
+}
+.dc-press-line.is-sub .dc-press-line-val {
+    color: var(--cream-soft);
+    font-family: var(--serif);
+    font-style: italic;
 }
