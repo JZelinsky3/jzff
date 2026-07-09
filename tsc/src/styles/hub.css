@@ -1197,6 +1197,20 @@ select.hub-input {
     display: grid; gap: .6rem; align-content: start;
 }
 .hub-tr-report-head { display: flex; justify-content: space-between; align-items: center; }
+/* Both managers' reads in the combined result card: grade chip beside
+   each side's name + verdict, the two perspectives side by side. */
+.hub-tr-reads {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.4rem;
+    padding-bottom: .9rem; margin-bottom: .2rem;
+    border-bottom: 1px dotted var(--hb-line-soft);
+}
+.hub-tr-read { display: flex; align-items: flex-start; gap: .7rem; }
+.hub-tr-read-body { min-width: 0; display: grid; gap: .25rem; }
+.hub-tr-read-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.1rem; color: var(--hb-gold);
+}
+.hub-tr-read .hub-tr-verdict { font-size: .9rem; }
 .hub-tr-grade {
     font-family: var(--serif); font-size: 1.5rem; line-height: 1;
     padding: .3rem .55rem; border-radius: 2px;
@@ -1352,7 +1366,7 @@ select.hub-input {
 .hub-tr-upsell a:hover { text-decoration: underline; }
 
 @media (max-width: 760px) {
-    .hub-tr-sides, .hub-tr-result-grid { grid-template-columns: 1fr; }
+    .hub-tr-sides, .hub-tr-result-grid, .hub-tr-reads { grid-template-columns: 1fr; }
     .hub-tr-roster-toggle { margin-left: 0; }
 }
 

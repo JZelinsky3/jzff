@@ -475,47 +475,41 @@ export function AnalyzerStudio() {
                 : 'Grades = raw value received vs sent · B ±2% · B+ +2% · A− +5% · A +12% · A+ +18%'}
             </div>
           </div>
-          <div className="hub-tr-result-grid">
-            {([['You', analysis.sideA, analysis.sideB], ['They', analysis.sideB, analysis.sideA]] as const).map(
-              ([name, mine, theirs]) => (
-                <div key={name} className="hub-tr-report">
-                  <div className="hub-tr-report-head">
-                    <span className="hub-tr-side-name">{name}</span>
-                    <span className={`hub-tr-grade g-${mine.grade.replace('+', 'p').replace('-', 'm')}`}>{mine.grade}</span>
-                  </div>
-                  <p className="hub-tr-verdict">{mine.verdict}</p>
-                  {mine.starterBefore !== null && (
-                    <div className="hub-tr-starters">
-                      Lineup {mine.starterBefore.toLocaleString()} → <strong>{(mine.starterAfter ?? 0).toLocaleString()}</strong>
-                    </div>
-                  )}
-                  <div className="hub-tr-flow">
-                    <div className="hub-tr-flow-col">
-                      <span className="hub-tr-flow-lbl">Sends · {mine.total.toLocaleString()}</span>
-                      {mine.assets.map((a) => (
-                        <div key={a.id} className="hub-tr-row">
-                          <Headshot id={a.id} size={22} />
-                          <span className="hub-tr-pos">{a.position}</span>
-                          <span className="hub-tr-row-name">{a.name}</span>
-                          <span className="hub-tr-row-val">{a.value.toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="hub-tr-flow-col">
-                      <span className="hub-tr-flow-lbl">Gets · {theirs.total.toLocaleString()}</span>
-                      {theirs.assets.map((a) => (
-                        <div key={a.id} className="hub-tr-row">
-                          <Headshot id={a.id} size={22} />
-                          <span className="hub-tr-pos">{a.position}</span>
-                          <span className="hub-tr-row-name">{a.name}</span>
-                          <span className="hub-tr-row-val">{a.value.toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
+          {/* One report, not two mirrored cards: both managers' grades and
+              reads sit up top, then each package is shown once (what you
+              send / what you get) instead of repeating them flipped. */}
+          <div className="hub-tr-report">
+            <div className="hub-tr-reads">
+              {([['You', analysis.sideA], ['They', analysis.sideB]] as const).map(([name, s]) => (
+                <div key={name} className="hub-tr-read">
+                  <span className={`hub-tr-grade g-${s.grade.replace('+', 'p').replace('-', 'm')}`}>{s.grade}</span>
+                  <div className="hub-tr-read-body">
+                    <span className="hub-tr-read-name">{name}</span>
+                    <p className="hub-tr-verdict">{s.verdict}</p>
+                    {s.starterBefore !== null && (
+                      <div className="hub-tr-starters">
+                        Lineup {s.starterBefore.toLocaleString()} → <strong>{(s.starterAfter ?? 0).toLocaleString()}</strong>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )
-            )}
+              ))}
+            </div>
+            <div className="hub-tr-flow">
+              {([['You send', analysis.sideA], ['You get', analysis.sideB]] as const).map(([label, s]) => (
+                <div key={label} className="hub-tr-flow-col">
+                  <span className="hub-tr-flow-lbl">{label} · {s.total.toLocaleString()}</span>
+                  {s.assets.map((a) => (
+                    <div key={a.id} className="hub-tr-row">
+                      <Headshot id={a.id} size={22} />
+                      <span className="hub-tr-pos">{a.position}</span>
+                      <span className="hub-tr-row-name">{a.name}</span>
+                      <span className="hub-tr-row-val">{a.value.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

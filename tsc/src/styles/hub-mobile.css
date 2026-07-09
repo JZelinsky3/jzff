@@ -387,6 +387,7 @@ a.mhb-sec-side { color: var(--hb-gold); }
    scale down cleanly. */
 .mhb .hub-tr-result-grid { gap: .8rem; }
 .mhb .hub-tr-report { padding: .9rem .85rem; min-width: 0; }
+.mhb .hub-tr-reads { grid-template-columns: 1fr; gap: .7rem; }
 .mhb .hub-tr-flow { grid-template-columns: 1fr; gap: .75rem; }
 .mhb .hub-tr-flow-col { min-width: 0; }
 .mhb .hub-tr-callout { padding: .9rem .8rem; }
