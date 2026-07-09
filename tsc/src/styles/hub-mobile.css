@@ -452,7 +452,7 @@ a.mhb-sec-side { color: var(--hb-gold); }
 .mhb .hub-copy-url {
     display: block;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    padding: .6rem .9rem;
+    padding: .6rem .65rem;
 }
 /* Hall splits (reused client component) */
 .mhb .hub-plaque-grid { grid-template-columns: 1fr; gap: .55rem; }
