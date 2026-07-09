@@ -8,8 +8,21 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
 
 export const HUB_THEME_KEY = 'tsc-hub-theme'
+
+// Safari tints its toolbar from <meta name="theme-color">. The hub layout
+// SSRs it as clubhouse cream; keep it matched to the active skin here
+// (night = the hub's black), both on toggle and when the hub mounts via a
+// client-side navigation (the root layout's pre-paint script only runs on
+// full loads).
+function syncThemeColorMeta() {
+  const night = document.documentElement.getAttribute('data-hub-theme') === 'night'
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute('content', night ? '#0d0d0d' : '#f3ead6')
+}
 
 const TABS = [
   { href: '/hub', label: 'Front Desk', num: 'I' },
@@ -124,6 +137,10 @@ export function HubMobileDock() {
 }
 
 export function HubThemeToggle() {
+  useEffect(() => {
+    syncThemeColorMeta()
+  }, [])
+
   function toggle() {
     // Theme lives on <html> (set pre-paint by the root layout's restore
     // script) so it survives client-side navigation between pages.
@@ -131,6 +148,7 @@ export function HubThemeToggle() {
     const next = root.getAttribute('data-hub-theme') === 'night' ? 'day' : 'night'
     if (next === 'night') root.setAttribute('data-hub-theme', 'night')
     else root.removeAttribute('data-hub-theme')
+    syncThemeColorMeta()
     try {
       localStorage.setItem(HUB_THEME_KEY, next)
     } catch {

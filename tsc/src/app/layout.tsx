@@ -263,7 +263,11 @@ const jsonLdGraph = {
 // document and the <html> attribute survives every client-side route
 // change (a script inside /hub's layout re-renders on nav and React
 // never executes client-rendered <script> tags).
-const HUB_THEME_SCRIPT = `try{if(localStorage.getItem('tsc-hub-theme')==='night')document.documentElement.setAttribute('data-hub-theme','night')}catch(e){}`;
+// The second half keeps Safari's toolbar tint honest on /hub at night:
+// the hub layout SSRs theme-color as clubhouse cream (day), so when the
+// stored theme is night the meta must flip to the hub's black pre-paint.
+// HubThemeToggle keeps it in sync from then on.
+const HUB_THEME_SCRIPT = `try{var n=localStorage.getItem('tsc-hub-theme')==='night';if(n)document.documentElement.setAttribute('data-hub-theme','night');if(n&&location.pathname.slice(0,4)==='/hub'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#0d0d0d')}}catch(e){}`;
 
 export default async function RootLayout({
   children,

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
@@ -10,6 +10,18 @@ export const metadata: Metadata = {
   title: 'The Clubhouse',
   description:
     'The Sunday Chronicle clubhouse — what’s new on the press, the network-wide census, the sitewide Hall of Records, and the Newsstand of public league almanacs.',
+}
+
+// Tint Safari's toolbar clubhouse cream instead of the site-wide navy —
+// the hub is the one wing of the React site that isn't ink-dark. Night
+// mode flips the meta to the hub's black: pre-paint by the root layout's
+// restore script, after that by HubThemeToggle.
+export const viewport: Viewport = {
+  themeColor: '#f3ead6',
+  // Re-declared from the root layout on purpose — don't rely on viewport
+  // merge semantics for the field that keeps phones on a real viewport.
+  width: 'device-width',
+  initialScale: 1,
 }
 
 // Keep this list fresh-ish: it's the slim marquee every Clubhouse page

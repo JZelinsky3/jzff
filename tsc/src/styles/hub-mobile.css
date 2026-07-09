@@ -368,5 +368,33 @@ a.mhb-sec-side { color: var(--hb-gold); }
    rules; just keep their frames off the screen edges. */
 .mhb .hub-tr-studio { padding: 1rem .8rem; }
 .mhb .hub-tr-upsell { font-size: .78rem; padding: 0 .2rem; }
+/* Docket cases: player rows run bigger than the desktop density (the
+   phone card has the full width to spend), the side total hangs under
+   the value column it sums, and the sign/shred ballot rides the card's
+   bottom edge — half on, half off — instead of a footer strip. */
+.mhb .hub-tr-case { position: relative; padding-bottom: 1.2rem; margin-bottom: 1.1rem; }
+.mhb .hub-tr-row { font-size: .95rem; gap: .6rem; padding: .3rem 0; }
+.mhb .hub-tr-row .hub-tr-mug { width: 30px; height: 30px; }
+.mhb .hub-tr-pos { font-size: .58rem; min-width: 2.2rem; padding: .16rem .3rem; }
+.mhb .hub-tr-row-val { font-size: .76rem; }
+.mhb .hub-tr-case-total { text-align: right; }
+.mhb .hub-ballot-row {
+    position: absolute; left: 0; right: 0; bottom: -1.05rem;
+    justify-content: center;
+    padding-top: 0; border-top: none;
+}
+.mhb .hub-ballot {
+    background: var(--hb-card);
+    box-shadow: 0 3px 10px var(--hb-shadow);
+}
+/* Promote editor: stop the grid blowout. The unbreakable league URL in
+   the copy row set the card track's min width, pushing the row and both
+   text fields past the card and off the page edge. */
+.mhb .hub-promo-card > * { min-width: 0; }
+.mhb .hub-copy-url {
+    display: block;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    padding: .6rem .9rem;
+}
 /* Hall splits (reused client component) */
 .mhb .hub-plaque-grid { grid-template-columns: 1fr; gap: .55rem; }
