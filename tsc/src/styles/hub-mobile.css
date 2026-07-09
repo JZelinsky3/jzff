@@ -368,22 +368,80 @@ a.mhb-sec-side { color: var(--hb-gold); }
    rules; just keep their frames off the screen edges. */
 .mhb .hub-tr-studio { padding: 1rem .8rem; }
 .mhb .hub-tr-upsell { font-size: .78rem; padding: 0 .2rem; }
-/* Docket cases: player rows run bigger than the desktop density (the
-   phone card has the full width to spend), the side total hangs under
-   the value column it sums, and the sign/shred ballot rides the card's
-   bottom edge — half on, half off — instead of a footer strip. */
-.mhb .hub-tr-case { position: relative; padding-bottom: 1.2rem; margin-bottom: 1.1rem; }
+/* Analyzer result rows read bigger on the phone (the studio's report
+   still uses the desktop hub-tr classes). */
 .mhb .hub-tr-row { font-size: .95rem; gap: .6rem; padding: .3rem 0; }
 .mhb .hub-tr-row .hub-tr-mug { width: 30px; height: 30px; }
 .mhb .hub-tr-pos { font-size: .58rem; min-width: 2.2rem; padding: .16rem .3rem; }
 .mhb .hub-tr-row-val { font-size: .76rem; }
-.mhb .hub-tr-case-total { text-align: right; }
-.mhb .hub-ballot-row {
+
+/* ── The docket slip — mobile-native trade card ───────────── */
+/* GET over GIVE, grade + side total on the bar itself, a dotted "for"
+   seam between the sides, one editorial line, and the sign/shred pill
+   riding the card's bottom edge (half on, half off). */
+.mhb-tc {
+    position: relative;
+    background: var(--hb-card);
+    border: 1px solid var(--hb-line);
+    border-radius: 3px;
+    padding: .8rem .9rem 1.05rem;
+    margin-bottom: 1.15rem;
+}
+.mhb-tc-head {
+    display: flex; justify-content: space-between; flex-wrap: wrap;
+    gap: .15rem .7rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--hb-mute);
+    padding-bottom: .55rem; margin-bottom: .55rem;
+    border-bottom: 1px solid var(--hb-line-soft);
+}
+.mhb-tc-bar { display: flex; align-items: center; gap: .55rem; }
+.mhb-tc-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .2em; text-transform: uppercase;
+}
+.mhb-tc-lbl.get { color: var(--hb-gold); }
+.mhb-tc-lbl.give { color: var(--hb-rust); }
+.mhb-tc-total {
+    margin-left: auto;
+    font-family: var(--mono); font-weight: 700; font-size: .68rem;
+    color: var(--hb-gold); font-variant-numeric: tabular-nums;
+}
+.mhb-tc-row { display: flex; align-items: center; gap: .55rem; padding: .28rem 0; }
+.mhb-tc-row:first-of-type { padding-top: .42rem; }
+.mhb-tc-row .hub-tr-mug { width: 26px; height: 26px; }
+.mhb-tc-name {
+    font-family: var(--serif); font-size: .98rem; color: var(--hb-ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mhb-tc-val {
+    margin-left: auto;
+    font-family: var(--mono); font-size: .62rem; color: var(--hb-mute);
+    font-variant-numeric: tabular-nums;
+}
+.mhb-tc-for {
+    display: flex; align-items: center; gap: .7rem;
+    margin: .4rem 0 .35rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--hb-mute);
+}
+.mhb-tc-for::before, .mhb-tc-for::after {
+    content: ''; flex: 1;
+    border-top: 1px dotted var(--hb-line);
+}
+.mhb-tc-verdict {
+    margin: .65rem 0 0;
+    font-family: var(--serif); font-style: italic;
+    font-size: .88rem; line-height: 1.45; color: var(--hb-ink-soft);
+}
+.mhb-tc .hub-ballot-row {
     position: absolute; left: 0; right: 0; bottom: -1.05rem;
     justify-content: center;
     padding-top: 0; border-top: none;
 }
-.mhb .hub-ballot {
+.mhb-tc .hub-ballot {
     background: var(--hb-card);
     box-shadow: 0 3px 10px var(--hb-shadow);
 }

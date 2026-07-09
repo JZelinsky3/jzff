@@ -7,6 +7,13 @@
    a single data-attribute flip on .hub-root.
    ============================================================ */
 
+/* Safari tints its toolbars from the theme-color meta AND from the page
+   background it can see behind them (overscroll rubber-band included).
+   The global body is site navy, so while a hub page is mounted paint the
+   body itself in the hub's skin or the toolbar reads blue over cream. */
+body:has(.hub-root) { background: #f3ead6; }
+html[data-hub-theme="night"] body:has(.hub-root) { background: #0d0d0d; }
+
 .hub-root {
     /* ── Day · "Reading Room" ── */
     /* Ticker: gold band in BOTH themes (matches the league almanacs and

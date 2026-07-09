@@ -244,7 +244,7 @@ export function MobileNewsstand({
                 </p>
               </div>
               <div style={{ marginTop: '1.1rem' }}>
-                <AdEditor leagues={adLeagues} />
+                <AdEditor leagues={adLeagues} compact />
               </div>
             </div>
           ) : (

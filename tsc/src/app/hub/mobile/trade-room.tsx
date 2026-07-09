@@ -1,12 +1,14 @@
 import Link from 'next/link'
 import { Reveal } from '../bits'
 import { AnalyzerStudio } from '../analyzer/analyzer-client'
-import { TradeCase, type Docket } from '../analyzer/board'
+import type { Docket } from '../analyzer/board'
+import { MobileTradeCard } from './trade-card'
 
-// Pocket Clubhouse — the Trade Room. The studio and docket cards are the
-// same client components as desktop (they already stack to one column at
-// phone widths); the room around them is recut: shorter hero, app-style
-// section heads, stacked full-width actions.
+// Pocket Clubhouse — the Trade Room. The studio is the same client
+// component as desktop (it already stacks to one column at phone
+// widths); the docket renders the mobile-native slip instead of the
+// desktop TradeCase, and the room around them is recut: shorter hero,
+// app-style section heads, stacked full-width actions.
 
 export function MobileTradeRoom({ signedIn, docket }: { signedIn: boolean; docket: Docket }) {
   const hottest = docket.hottest.slice(0, 2)
@@ -86,7 +88,7 @@ export function MobileTradeRoom({ signedIn, docket }: { signedIn: boolean; docke
             <div className="mhb-feed">
               {hottest.map((t, i) => (
                 <Reveal key={t.id} delay={i * 90}>
-                  <TradeCase t={t} docket={docket} signedIn={signedIn} />
+                  <MobileTradeCard t={t} docket={docket} signedIn={signedIn} />
                 </Reveal>
               ))}
             </div>

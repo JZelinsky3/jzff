@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { Reveal } from '../../bits'
+import { MobileTradeCard } from '../../mobile/trade-card'
 import { fetchDocket, TradeCase } from '../board'
 
 export const metadata = { title: 'The Clubhouse · The Full Docket' }
@@ -41,7 +42,7 @@ export default async function FullDocketPage() {
             <div className="mhb-feed">
               {docket.hottest.map((t, i) => (
                 <Reveal key={t.id} delay={(i % 2) * 80}>
-                  <TradeCase t={t} docket={docket} signedIn={signedIn} />
+                  <MobileTradeCard t={t} docket={docket} signedIn={signedIn} />
                 </Reveal>
               ))}
             </div>

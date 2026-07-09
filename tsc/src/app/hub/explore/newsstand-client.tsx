@@ -283,7 +283,11 @@ export type AdLeague = {
   link: string
 }
 
-export function AdEditor({ leagues }: { leagues: AdLeague[] }) {
+// `compact` = the Pocket Clubhouse variant: the copy row shows just
+// /leagues/[slug]/ (the slug is the part worth reading at phone width —
+// the button still copies the full URL) and the link placeholder is
+// short enough to survive a ~300px input.
+export function AdEditor({ leagues, compact = false }: { leagues: AdLeague[]; compact?: boolean }) {
   const router = useRouter()
   // Default to the league currently on the board, else the first.
   const [selectedId, setSelectedId] = useState(
@@ -361,7 +365,9 @@ export function AdEditor({ leagues }: { leagues: AdLeague[] }) {
         {sel.promoted && <span className="hub-promo-live">● On the board</span>}
       </div>
       <div className="hub-copy-row">
-        <span className="hub-copy-url">thesundaychronicle.app/leagues/{sel.slug}/</span>
+        <span className="hub-copy-url">
+          {compact ? `/leagues/${sel.slug}/` : `thesundaychronicle.app/leagues/${sel.slug}/`}
+        </span>
         <CopyLinkButton url={`https://thesundaychronicle.app/leagues/${sel.slug}/`} />
       </div>
       <textarea
@@ -376,7 +382,7 @@ export function AdEditor({ leagues }: { leagues: AdLeague[] }) {
         className="hub-input"
         value={link}
         onChange={(e) => setLink(e.target.value)}
-        placeholder="Optional link — invite URL, Discord, contact… (https://)"
+        placeholder={compact ? 'Optional link (https://)' : 'Optional link — invite URL, Discord, contact… (https://)'}
         maxLength={300}
         inputMode="url"
       />
