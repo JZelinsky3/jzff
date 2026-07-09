@@ -3,11 +3,13 @@ import type { Docket, DocketTrade } from '../analyzer/board'
 
 // Pocket Clubhouse — the docket slip. A trade card designed for the phone
 // instead of the desktop TradeCase squeezed into one column: a one-line
-// case head, GET over GIVE with the grade and side total on the side bar
-// itself, a dotted "for" seam between them, one editorial line, and the
-// sign/shred pill riding the bottom edge. A 1-for-1 slip is seven lines
-// tall; per-player values only appear when a side has more than one
-// asset (otherwise the bar total already says it).
+// case head (format only — no poster/date, and no "team trade" tag since
+// the slip doesn't show rosters), GET over GIVE with the grade and side
+// total on the side bar itself, a dotted "for" seam between them, and a
+// footer where the editorial line and the sign/shred pill share one row
+// (the verdict fills the space the pill would otherwise waste). A
+// 1-for-1 slip is six lines tall; per-player values only appear when a
+// side has more than one asset (otherwise the bar total already says it).
 
 const MODE_LABEL: Record<string, string> = { redraft: 'Redraft', keeper: 'Keeper', dynasty: 'Dynasty' }
 
@@ -58,11 +60,6 @@ export function MobileTradeCard({
       <div className="mhb-tc-head">
         <span>
           {MODE_LABEL[t.mode] ?? t.mode} · {t.qb_starters === 2 ? 'Superflex' : '1-QB'} · {t.team_count}-team
-          {t.uses_rosters ? ' · team trade' : ''}
-        </span>
-        <span>
-          {docket.posterName.get(t.owner_id) ?? 'A member'} ·{' '}
-          {new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
         </span>
       </div>
 
@@ -70,14 +67,15 @@ export function MobileTradeCard({
       <div className="mhb-tc-for" aria-hidden>for</div>
       <Side kind="give" grade={t.grade_b} side={t.side_a} />
 
-      {verdict && <p className="mhb-tc-verdict">“{verdict}”</p>}
-
-      <Ballot
-        tradeId={t.id}
-        initialCounts={docket.counts.get(t.id) ?? { sign: 0, shred: 0 }}
-        initialMine={docket.myVotes.get(t.id) ?? null}
-        signedIn={signedIn}
-      />
+      <div className="mhb-tc-foot">
+        {verdict && <p className="mhb-tc-verdict">“{verdict}”</p>}
+        <Ballot
+          tradeId={t.id}
+          initialCounts={docket.counts.get(t.id) ?? { sign: 0, shred: 0 }}
+          initialMine={docket.myVotes.get(t.id) ?? null}
+          signedIn={signedIn}
+        />
+      </div>
     </article>
   )
 }

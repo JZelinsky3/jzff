@@ -377,15 +377,13 @@ a.mhb-sec-side { color: var(--hb-gold); }
 
 /* ── The docket slip — mobile-native trade card ───────────── */
 /* GET over GIVE, grade + side total on the bar itself, a dotted "for"
-   seam between the sides, one editorial line, and the sign/shred pill
-   riding the card's bottom edge (half on, half off). */
+   seam between the sides, and a footer where the editorial line and the
+   sign/shred pill share one row — no dedicated ballot strip. */
 .mhb-tc {
-    position: relative;
     background: var(--hb-card);
     border: 1px solid var(--hb-line);
     border-radius: 3px;
-    padding: .8rem .9rem 1.05rem;
-    margin-bottom: 1.15rem;
+    padding: .8rem .9rem .8rem;
 }
 .mhb-tc-head {
     display: flex; justify-content: space-between; flex-wrap: wrap;
@@ -431,19 +429,22 @@ a.mhb-sec-side { color: var(--hb-gold); }
     content: ''; flex: 1;
     border-top: 1px dotted var(--hb-line);
 }
+.mhb-tc-foot {
+    display: flex; align-items: center; gap: .8rem;
+    margin-top: .55rem; padding-top: .6rem;
+    border-top: 1px solid var(--hb-line-soft);
+}
 .mhb-tc-verdict {
-    margin: .65rem 0 0;
+    flex: 1; min-width: 0;
+    margin: 0;
     font-family: var(--serif); font-style: italic;
     font-size: .88rem; line-height: 1.45; color: var(--hb-ink-soft);
 }
-.mhb-tc .hub-ballot-row {
-    position: absolute; left: 0; right: 0; bottom: -1.05rem;
-    justify-content: center;
+/* The Ballot ships its own right-aligned row chrome; inside the slip's
+   footer it's just the pill. */
+.mhb-tc-foot .hub-ballot-row {
+    flex: none; margin-left: auto;
     padding-top: 0; border-top: none;
-}
-.mhb-tc .hub-ballot {
-    background: var(--hb-card);
-    box-shadow: 0 3px 10px var(--hb-shadow);
 }
 /* Promote editor: stop the grid blowout. The unbreakable league URL in
    the copy row set the card track's min width, pushing the row and both
