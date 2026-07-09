@@ -364,16 +364,34 @@ a.mhb-sec-side { color: var(--hb-gold); }
 .mhb .hub-dna { padding: 1.2rem .9rem 1.1rem; }
 /* Newsstand shelf cards: consistent height on the rail. */
 .mhb .mhb-rail .hub-shelf-card { height: 100%; }
-/* Trade Room studio + docket already collapse via hub.css ≤760px
-   rules; just keep their frames off the screen edges. */
+/* Trade Room studio: the desktop layout is built for a wide card, so on
+   the phone several pieces set a min-content width larger than the
+   viewport and drag the whole studio (and its report cards) off the
+   right edge. Let every offending piece shrink to fit. */
 .mhb .hub-tr-studio { padding: 1rem .8rem; }
+.mhb .hub-tr-studio > * { min-width: 0; }
 .mhb .hub-tr-upsell { font-size: .78rem; padding: 0 .2rem; }
-/* Analyzer result rows read bigger on the phone (the studio's report
-   still uses the desktop hub-tr classes). */
-.mhb .hub-tr-row { font-size: .95rem; gap: .6rem; padding: .3rem 0; }
+/* Settings selects carry a 9rem min-width on desktop; let them share the
+   row and shrink instead of forcing the studio wide. */
+.mhb .hub-tr-set { flex: 1 1 8rem; }
+.mhb .hub-tr-set .hub-input { min-width: 0; width: 100%; }
+/* Player rows: allow the name to ellipsis (flex kids need min-width: 0)
+   and read a touch bigger than desktop density. */
+.mhb .hub-tr-row { font-size: .95rem; gap: .6rem; padding: .3rem 0; min-width: 0; }
 .mhb .hub-tr-row .hub-tr-mug { width: 30px; height: 30px; }
 .mhb .hub-tr-pos { font-size: .58rem; min-width: 2.2rem; padding: .16rem .3rem; }
+.mhb .hub-tr-row-name { min-width: 0; flex: 1; }
 .mhb .hub-tr-row-val { font-size: .76rem; }
+/* Result report: stack Sends over Gets instead of two columns (two
+   player columns never fit a phone card), and let the grade callout
+   scale down cleanly. */
+.mhb .hub-tr-result-grid { gap: .8rem; }
+.mhb .hub-tr-report { padding: .9rem .85rem; min-width: 0; }
+.mhb .hub-tr-flow { grid-template-columns: 1fr; gap: .75rem; }
+.mhb .hub-tr-flow-col { min-width: 0; }
+.mhb .hub-tr-callout { padding: .9rem .8rem; }
+.mhb .hub-tr-callout-line { font-size: 1.15rem; }
+.mhb .hub-tr-scale { font-size: .5rem; line-height: 1.6; }
 
 /* ── The docket slip — mobile-native trade card ───────────── */
 /* GET over GIVE, grade + side total on the bar itself, a dotted "for"
