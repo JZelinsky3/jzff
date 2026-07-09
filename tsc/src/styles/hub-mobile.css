@@ -408,7 +408,7 @@ a.mhb-sec-side { color: var(--hb-gold); }
 }
 .mhb-tc-row { display: flex; align-items: center; gap: .55rem; padding: .28rem 0; }
 .mhb-tc-row:first-of-type { padding-top: .42rem; }
-.mhb-tc-row .hub-tr-mug { width: 26px; height: 26px; }
+.mhb-tc-row .hub-tr-mug { width: 30px; height: 30px; }
 .mhb-tc-name {
     font-family: var(--serif); font-size: .98rem; color: var(--hb-ink);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

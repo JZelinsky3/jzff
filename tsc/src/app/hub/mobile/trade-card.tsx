@@ -32,7 +32,7 @@ function Side({
       </div>
       {side.assets.map((a) => (
         <div key={a.id} className="mhb-tc-row">
-          <Headshot id={a.id} size={26} />
+          <Headshot id={a.id} size={30} />
           <span className="hub-tr-pos">{a.position}</span>
           <span className="mhb-tc-name">{a.name}</span>
           {showRowValues && <span className="mhb-tc-val">{a.value.toLocaleString()}</span>}

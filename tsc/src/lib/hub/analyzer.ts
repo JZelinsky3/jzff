@@ -142,10 +142,10 @@ function gradeStarter(p: number): string {
 function verdictLine(pct: number, usesRosters: boolean): string {
   const abs = Math.abs(pct)
   const lens = usesRosters ? 'lineup' : 'value'
-  if (abs < 0.03) return usesRosters ? 'Starting lineup barely moves — a true coin flip.' : 'Essentially even on consensus value.'
+  if (abs < 0.03) return usesRosters ? 'Starting lineup barely moves. A true coin flip.' : 'Essentially even on consensus value.'
   if (pct > 0 && abs < 0.08) return usesRosters ? 'Nudges the starting lineup forward.' : 'A slight value win on paper.'
-  if (pct > 0 && abs < 0.15) return usesRosters ? 'Real lineup upgrade — the starters get better.' : 'Comes out ahead on raw value.'
-  if (pct > 0) return usesRosters ? 'Transforms the starting lineup — a clear heist.' : 'Clear value haul — wins on paper.'
+  if (pct > 0 && abs < 0.15) return usesRosters ? 'Real lineup upgrade. The starters get better.' : 'Comes out ahead on raw value.'
+  if (pct > 0) return usesRosters ? 'Transforms the starting lineup. A clear heist.' : 'Clear value haul. Wins on paper.'
   if (abs < 0.08) return `Gives up a touch of ${lens}.`
   if (abs < 0.15) return `Loses noticeably on ${lens}.`
   return usesRosters ? 'The starting lineup takes a real hit.' : 'Loses badly on raw value.'

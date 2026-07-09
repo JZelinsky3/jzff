@@ -43,7 +43,7 @@ export default async function TradeRoomPage() {
           The <em>Trade Room.</em>
         </h1>
         <p className="hub-hero-sub">
-          The league Trade Analyzer, unchained — no league required. Name the players, pick
+          The league Trade Analyzer, unchained. No league required. Name the players, pick
           the format, and the same consensus value engine weighs the deal. Post the good
           arguments to the docket and let the room sign or shred them.
         </p>
@@ -79,7 +79,7 @@ export default async function TradeRoomPage() {
               <div>
                 <div className="hub-promote-title">Members <em>only.</em></div>
                 <p className="hub-promote-body">
-                  The analyzer is free to use — it just needs a name on the ledger. Sign in,
+                  The analyzer is free to use; it just needs a name on the ledger. Sign in,
                   type two sides of a deal, and the consensus value engine (FantasyCalc,
                   KTC, DynastyProcess, FantasyPros, blended) does the arguing.
                 </p>
@@ -94,7 +94,7 @@ export default async function TradeRoomPage() {
         <p className="hub-tr-upsell">
           Grades here are league-blind by design. Inside your almanac, the{' '}
           <Link href="/dashboard">Trade Desk</Link> grades the same deal against your real
-          rosters, needs, and league settings — personal, not generic.
+          rosters, needs, and league settings: personal, not generic.
         </p>
       </div>
 
@@ -114,7 +114,7 @@ export default async function TradeRoomPage() {
                 fontSize: '1.05rem', lineHeight: 1.6, color: 'var(--hb-mute)',
               }}
             >
-              The docket is empty — no trades posted yet. Analyze one above and be the
+              The docket is empty. No trades posted yet. Analyze one above and be the
               first to put a deal up for argument.
             </p>
           </Reveal>

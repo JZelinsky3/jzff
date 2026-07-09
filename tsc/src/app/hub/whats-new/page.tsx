@@ -43,7 +43,7 @@ export default async function DispatchPage() {
           The <em>Dispatch.</em>
         </h1>
         <p className="hub-hero-sub">
-          Everything the press has shipped, dated and inked — and the stories still being set.
+          Everything the press has shipped, dated and inked, and the stories still being set.
           New features land here first, usually before the landing page hears about them.
         </p>
         <div className="hub-hero-meta">
@@ -89,8 +89,8 @@ export default async function DispatchPage() {
               <div className="hub-promote-title">The suggestion <em>box.</em></div>
               <p className="hub-promote-body">
                 Most of what&apos;s on this page started as a note from a commissioner. If your
-                league needs something the almanac doesn&apos;t do yet — or something here is
-                misbehaving — write in. Short notes welcome; screenshots adored.
+                league needs something the almanac doesn&apos;t do yet, or something here is
+                misbehaving, write in. Short notes welcome; screenshots adored.
               </p>
             </div>
             <div className="hub-promote-side">

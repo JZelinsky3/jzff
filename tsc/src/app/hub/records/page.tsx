@@ -44,7 +44,7 @@ export default async function HallPage() {
           The <em>Hall.</em>
         </h1>
         <p className="hub-hero-sub">
-          The records that stand across every published almanac on TSC — with the names of
+          The records that stand across every published almanac on TSC, with the names of
           the managers who set them. Sync your seasons, publish your league, and come take
           a plaque off somebody.
         </p>
@@ -64,7 +64,7 @@ export default async function HallPage() {
               <div>
                 <div className="hub-promote-title">The walls are <em>bare.</em></div>
                 <p className="hub-promote-body">
-                  Records only hang here once a league is published — names stay private until a
+                  Records only hang here once a league is published. Names stay private until a
                   commissioner opens the almanac. Publish yours and your managers go up first.
                 </p>
               </div>
@@ -122,11 +122,11 @@ export default async function HallPage() {
                 fontSize: '.8rem', lineHeight: 1.6, color: 'var(--hb-mute)',
               }}
             >
-              Only published leagues are surveyed — private archives never put names on this
+              Only published leagues are surveyed. Private archives never put names on this
               wall. Season records require at least ten games; streaks count playoffs and
               snap on a tie. Format and flex are read from real lineups (two QBs started in a
               week → superflex); scoring, passing TDs, and TE premium come from each league&apos;s
-              scoring profile and Trade Desk settings — commissioners can correct those any
+              scoring profile and Trade Desk settings. Commissioners can correct those any
               time and the splits follow. The wall re-counts itself every hour.
             </p>
           </div>

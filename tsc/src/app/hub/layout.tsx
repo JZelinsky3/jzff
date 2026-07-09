@@ -9,7 +9,7 @@ import { HubLoginButton, HubMobileDock, HubTabs, HubThemeToggle } from './hub-ch
 export const metadata: Metadata = {
   title: 'The Clubhouse',
   description:
-    'The Sunday Chronicle clubhouse — what’s new on the press, the network-wide census, the sitewide Hall of Records, and the Newsstand of public league almanacs.',
+    'The Sunday Chronicle clubhouse: what’s new on the press, the network-wide census, the sitewide Hall of Records, and the Newsstand of public league almanacs.',
 }
 
 // Tint Safari's toolbar clubhouse cream instead of the site-wide navy —
@@ -27,13 +27,13 @@ export const viewport: Viewport = {
 // Keep this list fresh-ish: it's the slim marquee every Clubhouse page
 // carries. New = shipped; Soon = on the bench warming up.
 const STRIP_ITEMS = [
-  'New · The Trade Room — analyze + post trades, no league required',
-  'New · Trade Desk — four rooms: Grader, Analyzer, Finder, Rumor Mill',
-  'New · Sunday Live — five-page game-day companion',
-  'New · Manager DNA — tendencies + tells, per manager',
-  'New · UDFA free tier — one league, forever',
-  'Soon · Weekly Recap — Monday-morning paper',
-  'Soon · The Field — cross-league player trends',
+  'New · The Trade Room: analyze + post trades, no league required',
+  'New · Trade Desk: Grader, Analyzer, Finder, Rumor Mill',
+  'New · Sunday Live: five-page game-day companion',
+  'New · Manager DNA: tendencies + tells, per manager',
+  'New · UDFA free tier: one league, forever',
+  'Soon · Weekly Recap: Monday-morning paper',
+  'Soon · The Field: cross-league player trends',
   'Sleeper · ESPN · Yahoo · NFL.com',
 ]
 

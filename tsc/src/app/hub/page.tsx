@@ -85,7 +85,7 @@ export default async function HubFrontDesk() {
           )}
         </h1>
         <p className="hub-hero-sub">
-          This is the Clubhouse — the room behind the archives. What&apos;s new on the press,
+          This is the Clubhouse: the room behind the archives. What&apos;s new on the press,
           what the whole network is putting up, who holds the records, and which almanacs
           are worth a read.
         </p>
@@ -176,8 +176,8 @@ export default async function HubFrontDesk() {
               <div className="hub-card-roman">III</div>
               <div className="hub-card-title">The <em>Census.</em></div>
               <div className="hub-card-desc">
-                The whole network in numbers — points, picks, trades, blowouts — plus the
-                Network DNA: one archetype distilled from every synced league.
+                The whole network in numbers: points, picks, trades, blowouts. Plus the
+                Network DNA, one archetype distilled from every synced league.
               </div>
               <div className="hub-card-cta">Count everything <span className="hub-card-arrow">→</span></div>
             </Link>
@@ -189,7 +189,7 @@ export default async function HubFrontDesk() {
               <div className="hub-card-title">The <em>Hall.</em></div>
               <div className="hub-card-desc">
                 Site-wide records with names on the plaques. Highest week, biggest blowout,
-                longest streak — held by real managers in real leagues.
+                longest streak, all held by real managers in real leagues.
               </div>
               <div className="hub-card-cta">Walk the hall <span className="hub-card-arrow">→</span></div>
             </Link>
@@ -200,7 +200,7 @@ export default async function HubFrontDesk() {
               <div className="hub-card-roman">V</div>
               <div className="hub-card-title">The Trade <em>Room.</em></div>
               <div className="hub-card-desc">
-                The Trade Analyzer with no league required — name the players, pick the
+                The Trade Analyzer with no league required: name the players, pick the
                 format, get a verdict. Post deals to the board and let the room vote.
               </div>
               <div className="hub-card-cta">Take a seat <span className="hub-card-arrow">→</span></div>
@@ -263,7 +263,7 @@ export default async function HubFrontDesk() {
                   {user ? <>No archives <em>yet.</em></> : <>Pull up a <em>chair.</em></>}
                 </div>
                 <p className="hub-promote-body">
-                  The Clubhouse is better with your league in it — every game you sync joins
+                  The Clubhouse is better with your league in it. Every game you sync joins
                   the census, and your managers start chasing the Hall.
                   {!user && ' Signing in takes a few seconds; the first league is free.'}
                 </p>

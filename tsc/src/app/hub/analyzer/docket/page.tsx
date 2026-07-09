@@ -87,7 +87,7 @@ export default async function FullDocketPage() {
                 fontSize: '1.05rem', lineHeight: 1.6, color: 'var(--hb-mute)',
               }}
             >
-              Nothing here yet — the docket fills as members post analyses from the desk.
+              Nothing here yet. The docket fills as members post analyses from the desk.
             </p>
           </Reveal>
         ) : (

@@ -81,7 +81,7 @@ export function EmptyShelfHint() {
       }}
     >
       Nothing on your shelf yet. Tap the ★ on any almanac above and it&apos;ll wait for you
-      here — and on your dashboard.
+      here, and on your dashboard.
     </p>
   )
 }
@@ -224,7 +224,7 @@ export function LeagueSearch({ signedIn = true }: { signedIn?: boolean }) {
         <div className="hub-search-results">
           {results.length === 0 && !loading ? (
             <div className="hub-search-empty">
-              Nothing on the rack by that name — yet. Almanacs appear here once their
+              Nothing on the rack by that name yet. Almanacs appear here once their
               commissioner publishes them.
             </div>
           ) : (
@@ -332,11 +332,11 @@ export function AdEditor({ leagues, compact = false }: { leagues: AdLeague[]; co
           setText('')
           setLink('')
         }
-        setMsg({ ok: true, text: action === 'set' ? 'On the board — see it above.' : 'Taken down.' })
+        setMsg({ ok: true, text: action === 'set' ? 'On the board. See it above.' : 'Taken down.' })
         router.refresh()
       }
     } catch {
-      setMsg({ ok: false, text: 'Network hiccup — try again.' })
+      setMsg({ ok: false, text: 'Network hiccup. Try again.' })
     } finally {
       setBusy(false)
     }
@@ -374,7 +374,7 @@ export function AdEditor({ leagues, compact = false }: { leagues: AdLeague[]; co
         className="hub-textarea"
         value={text}
         onChange={(e) => setText(e.target.value.slice(0, 280))}
-        placeholder="Pitch your league — what makes it worth following? Looking for new managers? Say so."
+        placeholder="Pitch your league: what makes it worth following? Looking for new managers? Say so."
         rows={3}
         maxLength={280}
       />
@@ -382,7 +382,7 @@ export function AdEditor({ leagues, compact = false }: { leagues: AdLeague[]; co
         className="hub-input"
         value={link}
         onChange={(e) => setLink(e.target.value)}
-        placeholder={compact ? 'Optional link (https://)' : 'Optional link — invite URL, Discord, contact… (https://)'}
+        placeholder={compact ? 'Optional link (https://)' : 'Optional link: invite URL, Discord, contact… (https://)'}
         maxLength={300}
         inputMode="url"
       />

@@ -225,9 +225,9 @@ async function computeCensus(): Promise<HubCensus> {
   const lead = [...traits].sort((x, y) => y.pct - x.pct)[0]
   const archetypes: Record<string, { name: string; blurb: string }> = {
     firepower: { name: 'The Shootout Circuit', blurb: 'Scoreboards run hot here. Defense is a rumor.' },
-    carnage: { name: 'The Hammer Network', blurb: 'Mercy is in short supply — games get decided early and loudly.' },
+    carnage: { name: 'The Hammer Network', blurb: 'Mercy is in short supply. Games get decided early and loudly.' },
     drama: { name: 'The Photo-Finish Club', blurb: 'Monday nights matter here. Margins run razor thin.' },
-    churn: { name: 'The Trading Floor', blurb: 'Rosters never sit still — the phones are always ringing.' },
+    churn: { name: 'The Trading Floor', blurb: 'Rosters never sit still. The phones are always ringing.' },
     roots: { name: 'The Old Guard', blurb: 'These archives run deep. Grudges here have anniversaries.' },
   }
   const arch = archetypes[lead?.key ?? 'roots'] ?? archetypes.roots

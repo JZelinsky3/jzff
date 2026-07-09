@@ -97,7 +97,7 @@ export function HallSplits({ splits }: { splits: HubHallSplit[] }) {
 
       {active === null ? (
         <p className="hub-filter-hint">
-          Open the filters and pick a lens — one at a time — and the wall re-hangs itself
+          Open the filters and pick a lens, one at a time, and the wall re-hangs itself
           with records from only those leagues. Counts show how many published leagues qualify.
         </p>
       ) : (

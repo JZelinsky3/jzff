@@ -194,7 +194,7 @@ export default async function NewsstandPage() {
                 fontSize: '1.05rem', lineHeight: 1.6, color: 'var(--hb-mute)',
               }}
             >
-              The board is empty — no league has taken out an ad yet. Commissioners can list
+              The board is empty. No league has taken out an ad yet. Commissioners can list
               theirs below: a pitch, a link, done.
             </p>
           </Reveal>
@@ -206,7 +206,7 @@ export default async function NewsstandPage() {
                   <div className="hub-shelf-top"><span>Open slot</span></div>
                   <div className="hub-shelf-name">Your ad <em style={{ fontStyle: 'italic', color: 'var(--hb-gold)' }}>here.</em></div>
                   <p className="hub-promo-pitch" style={{ color: 'var(--hb-mute)' }}>
-                    One free listing per account — pitch your league to every member who walks past.
+                    One free listing per account. Pitch your league to every member who walks past.
                   </p>
                   <div className="hub-shelf-sub">Write your pitch below ↓</div>
                 </a>
@@ -297,9 +297,9 @@ export default async function NewsstandPage() {
               <div style={{ maxWidth: '640px' }}>
                 <div className="hub-promote-title">Take out an <em>ad.</em></div>
                 <p className="hub-promote-body">
-                  List your league on the board above — a short pitch, plus an optional link
+                  List your league on the board above: a short pitch, plus an optional link
                   if you&apos;re recruiting managers (invite URL, Discord, an email). Listings
-                  stay up until you take them down. <strong>One listing per account</strong> —
+                  stay up until you take them down. <strong>One listing per account</strong>;
                   promoting a different league replaces your current ad.
                 </p>
               </div>
@@ -318,7 +318,7 @@ export default async function NewsstandPage() {
                   member, and enters your managers in the Hall of Records.
                   {user
                     ? ' It’s one switch on the league’s settings page.'
-                    : ' Sign in, sync your league, flip the publish switch — then take out an ad right here.'}
+                    : ' Sign in, sync your league, flip the publish switch, then take out an ad right here.'}
                 </p>
               </div>
               <div className="hub-promote-side">

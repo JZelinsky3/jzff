@@ -26,7 +26,7 @@ export default async function CensusPage() {
           The <em>Census.</em>
         </h1>
         <p className="hub-hero-sub">
-          Every synced league pools into one ledger — no names, no league IDs, just the
+          Every synced league pools into one ledger: no names, no league IDs, just the
           combined weight of all that football. Counted fresh every hour.
         </p>
         <div className="hub-hero-meta">
@@ -71,7 +71,7 @@ export default async function CensusPage() {
               <div className="hub-stat-label">Wins banked</div>
               <div className="hub-stat-value"><CountUp value={c.totalWins} /></div>
               <div className="hub-stat-detail">
-                Balanced — as wins always are — by {c.totalLosses.toLocaleString()} losses
+                Balanced, as wins always are, by {c.totalLosses.toLocaleString()} losses
                 {c.totalTies > 0 ? ` and ${c.totalTies.toLocaleString()} ties nobody enjoyed` : ''}.
               </div>
             </div>
@@ -149,7 +149,7 @@ export default async function CensusPage() {
                 <span className="unit">%</span>
               </div>
               <div className="hub-stat-detail">
-                Decided by fewer than 3 — the Monday-night stomach aches.
+                Decided by fewer than 3. The Monday-night stomach aches.
               </div>
             </div>
           </div>
@@ -191,7 +191,7 @@ export default async function CensusPage() {
           }}
         >
           Manager DNA distills one manager&apos;s habits into an archetype. The Census runs the
-          same idea across every synced league at once — scores, margins, trade volume, and
+          same idea across every synced league at once: scores, margins, trade volume, and
           archive depth, weighed together. Totals are anonymous; named records live in{' '}
           <Link href="/hub/records" style={{ color: 'var(--hb-gold)' }}>the Hall</Link>.
         </p>

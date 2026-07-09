@@ -259,13 +259,13 @@ export function AnalyzerStudio() {
       })
       const json = await res.json()
       if (!res.ok) {
-        setError(json.error ?? 'Analysis failed — try again.')
+        setError(json.error ?? 'Analysis failed. Try again.')
         setAnalysis(null)
       } else {
         setAnalysis(json.analysis)
       }
     } catch {
-      setError('Network hiccup — try again.')
+      setError('Network hiccup. Try again.')
     } finally {
       setBusy(false)
     }
@@ -283,13 +283,13 @@ export function AnalyzerStudio() {
       })
       const json = await res.json()
       if (!res.ok) {
-        setError(json.error ?? 'Publish failed — try again.')
+        setError(json.error ?? 'Publish failed. Try again.')
       } else {
         setPublished(true)
         router.refresh()
       }
     } catch {
-      setError('Network hiccup — try again.')
+      setError('Network hiccup. Try again.')
     } finally {
       setPublishing(false)
     }
@@ -455,7 +455,7 @@ export function AnalyzerStudio() {
             {publishing ? 'Posting…' : 'Post to the board'}
           </button>
         )}
-        {published && <span className="hub-promo-msg ok">Posted — it&apos;s on the docket below.</span>}
+        {published && <span className="hub-promo-msg ok">Posted. It&apos;s on the docket below.</span>}
         {error && <span className="hub-promo-msg err">{error}</span>}
       </div>
 
@@ -467,7 +467,7 @@ export function AnalyzerStudio() {
             <div className="hub-tr-callout-line">
               {Math.abs(analysis.deltaPct) < 0.03
                 ? 'Dead even. Shake hands.'
-                : `${analysis.deltaPct > 0 ? 'You win' : 'They win'} this swap by ${(Math.abs(analysis.deltaPct) * 100).toFixed(1)}%${Math.abs(analysis.deltaPct) >= 0.15 ? ' — comfortably' : ''}.`}
+                : `${analysis.deltaPct > 0 ? 'You win' : 'They win'} this swap by ${(Math.abs(analysis.deltaPct) * 100).toFixed(1)}%${Math.abs(analysis.deltaPct) >= 0.15 ? ', comfortably' : ''}.`}
             </div>
             <div className="hub-tr-scale">
               {analysis.usesRosters
@@ -594,8 +594,8 @@ export function Ballot({
           type="button"
           className="hub-ballot-side sign"
           aria-pressed={mine === 'sign'}
-          aria-label="Sign it — you'd do this deal"
-          title="Sign it — you'd do this deal"
+          aria-label="Sign it: you'd do this deal"
+          title="Sign it: you'd do this deal"
           onClick={() => cast('sign')}
           disabled={!signedIn}
         >
@@ -607,8 +607,8 @@ export function Ballot({
           type="button"
           className="hub-ballot-side shred"
           aria-pressed={mine === 'shred'}
-          aria-label="Shred it — into the bin"
-          title="Shred it — into the bin"
+          aria-label="Shred it: into the bin"
+          title="Shred it: into the bin"
           onClick={() => cast('shred')}
           disabled={!signedIn}
         >
