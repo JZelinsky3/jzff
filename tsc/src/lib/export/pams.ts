@@ -970,6 +970,21 @@ function buildSeasonFile(s: Snapshot, season: SeasonRow): unknown {
   const runnerUpResolved = resolveByManagerId(season.runner_up_manager_id)
   const thirdPlace = deriveThirdPlace(s, season, resolveByManagerId)
 
+  // Championship-game score from the champion's perspective. Same rule as
+  // the defending-champion summary in league.json, applied to every year so
+  // the hub's trophy-room stories can print the final for old seasons too.
+  let title_score_for: number | null = null
+  let title_score_against: number | null = null
+  if (season.champion_manager_id) {
+    const titleGame = (s.matchupsBySeason.get(season.id) ?? []).find((m) => m.is_championship &&
+      (m.manager_a_id === season.champion_manager_id || m.manager_b_id === season.champion_manager_id))
+    if (titleGame && titleGame.score_a != null && titleGame.score_b != null) {
+      const isA = titleGame.manager_a_id === season.champion_manager_id
+      title_score_for = round2(Number(isA ? titleGame.score_a : titleGame.score_b))
+      title_score_against = round2(Number(isA ? titleGame.score_b : titleGame.score_a))
+    }
+  }
+
   return {
     year: season.year,
     total_teams: standings.length,
@@ -980,6 +995,8 @@ function buildSeasonFile(s: Snapshot, season: SeasonRow): unknown {
           owner_user_id: userId(champResolved?.primary ?? champ),
           record: recordStr(champMs.wins, champMs.losses, champMs.ties),
           points_for: round2(Number(champMs.points_for)),
+          title_score_for,
+          title_score_against,
         }
       : null,
     runner_up: runnerUp && runnerUpMs && !runnerUpResolved?.hidden

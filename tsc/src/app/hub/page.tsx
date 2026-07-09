@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getHubCensus } from '@/lib/hub/data'
+import { getViewMode } from '@/lib/viewMode'
 import { CountUp, Reveal } from './bits'
 import { DISPATCH } from './dispatch-content'
+import { MobileFrontDesk } from './mobile/front-desk'
 
 export const metadata = { title: 'The Clubhouse · Front Desk' }
 
@@ -48,6 +50,19 @@ export default async function HubFrontDesk() {
           .then((r) => r.count ?? 0)
       : Promise.resolve(0),
   ])
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileFrontDesk
+        signedIn={!!user}
+        firstName={firstName}
+        memberSince={memberSince}
+        census={census}
+        ownLeagues={ownLeagues}
+        bookmarkCount={bookmarkCount}
+      />
+    )
+  }
 
   const wire = DISPATCH.slice(0, 3)
 

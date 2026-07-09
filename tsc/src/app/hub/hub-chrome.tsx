@@ -40,13 +40,86 @@ export function HubTabs() {
 // Masthead Login button (guests). Client component so it can carry the
 // CURRENT hub page in the `from` param — the login page uses it for both
 // its back arrow and the post-auth destination, so "back" returns here
-// instead of dumping to the landing page.
-export function HubLoginButton() {
+// instead of dumping to the landing page. `icon` renders the compact
+// square used by the Pocket Clubhouse bar instead of the text pill.
+export function HubLoginButton({ icon = false }: { icon?: boolean }) {
   const pathname = usePathname()
+  const href = `/login?from=${encodeURIComponent(pathname || '/hub')}`
+  if (icon) {
+    return (
+      <Link href={href} className="mhb-bar-ico" aria-label="Sign in">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <circle cx="12" cy="8.2" r="3.6" />
+          <path d="M5 20c.6-3.6 3.4-5.4 7-5.4s6.4 1.8 7 5.4" />
+        </svg>
+      </Link>
+    )
+  }
   return (
-    <Link href={`/login?from=${encodeURIComponent(pathname || '/hub')}`} className="hub-masthead-login">
+    <Link href={href} className="hub-masthead-login">
       Login
     </Link>
+  )
+}
+
+// ── Pocket Clubhouse dock ──────────────────────────────────────
+// Fixed bottom tab bar for the mobile tree: the six wings, one thumb.
+// Same routes as HubTabs; short labels because 6 tabs share ~390px.
+const DOCK: { href: string; label: string; icon: React.ReactNode }[] = [
+  {
+    href: '/hub',
+    label: 'Desk',
+    // service bell
+    icon: <path d="M5.5 16.5a6.5 6.5 0 0 1 13 0 M3.5 19.5h17 M12 6.5v3.5 M10 6.5h4" />,
+  },
+  {
+    href: '/hub/whats-new',
+    label: 'News',
+    // folded paper
+    icon: <path d="M4 5h13v12a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V5z M17 8h3v9a2 2 0 0 1-2 2 M7 9h7 M7 12.5h7" />,
+  },
+  {
+    href: '/hub/numbers',
+    label: 'Census',
+    // tallies
+    icon: <path d="M5.5 20v-7 M12 20V5 M18.5 20v-10 M3 20h18" />,
+  },
+  {
+    href: '/hub/records',
+    label: 'Hall',
+    // trophy
+    icon: <path d="M8 4h8v5a4 4 0 0 1-8 0V4z M8 5H5a3 3 0 0 0 3 3.6 M16 5h3a3 3 0 0 1-3 3.6 M12 13v4 M8.5 20h7" />,
+  },
+  {
+    href: '/hub/analyzer',
+    label: 'Trade',
+    // swap arrows
+    icon: <path d="M4 8.5h13 M14 5.5l3 3-3 3 M20 15.5H7 M10 12.5l-3 3 3 3" />,
+  },
+  {
+    href: '/hub/explore',
+    label: 'Rack',
+    // newsstand awning
+    icon: <path d="M5 9.5 6 5h12l1 4.5 M5 9.5V20h14V9.5 M5 9.5a2.35 2.35 0 0 0 4.7 0 2.35 2.35 0 0 0 4.6 0 2.35 2.35 0 0 0 4.7 0 M10 20v-5.5h4V20" />,
+  },
+]
+
+export function HubMobileDock() {
+  const pathname = usePathname()
+  return (
+    <nav className="mhb-dock" aria-label="Clubhouse wings">
+      {DOCK.map((d) => {
+        const active = d.href === '/hub' ? pathname === '/hub' : pathname.startsWith(d.href)
+        return (
+          <Link key={d.href} href={d.href} className={`mhb-dock-item${active ? ' active' : ''}`}>
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              {d.icon}
+            </svg>
+            {d.label}
+          </Link>
+        )
+      })}
+    </nav>
   )
 }
 

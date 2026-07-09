@@ -72,14 +72,14 @@
                 body: "The almanac's chapters take turns up here, each with a writeup and a live preview. Use the arrows to skip around, or open the featured chapter directly.",
             },
             {
-                target: '#dc-trackboard', placement: 'left',
-                title: 'Trackboard (right rail).',
-                body: "Live in-season updates — news, watch list, risers, odds. Click the rail to expand, ✕ to collapse.",
+                target: '#dc-wire', placement: 'bottom',
+                title: 'The Wire.',
+                body: "In-season bulletins: milestones crossed, records on watch, and the Sunday Live tune-in. It only prints while the season is running.",
             },
             {
                 target: '#dc-shelf', placement: 'top',
                 title: 'The shelf.',
-                body: "All seven volumes, spines out. Pick a book to feature it above; pick the featured one again to open it. Below the shelf, the catalog pulls highlights from every page.",
+                body: "All seven volumes, spines out. Pick a book to feature it above; pick the featured one again to open it. Below the shelf, the reading room: today's paper, the trophy case, the ledger, and the feud files.",
                 isFinal: true,
             },
         ],

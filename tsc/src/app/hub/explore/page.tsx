@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getHubShelves, type HubShelfLeague } from '@/lib/hub/data'
+import { getViewMode } from '@/lib/viewMode'
 import { Reveal } from '../bits'
+import { MobileNewsstand } from '../mobile/newsstand'
 import { AdEditor, BookmarkStar, DemoShelfCard, EmptyShelfHint, LeagueSearch } from './newsstand-client'
 
 export const metadata = { title: 'The Clubhouse · The Newsstand' }
@@ -105,6 +107,30 @@ export default async function NewsstandPage() {
   const bookmarkedIds = new Set(bookmarks.map((l) => l.id))
   const ownIds = new Set(ownPublished.map((l) => l.id as string))
   const hasActiveListing = ownPublished.some((l) => l.promoted_at)
+
+  const adLeagues = ownPublished.map((l) => ({
+    id: l.id as string,
+    name: l.name as string,
+    slug: l.slug as string,
+    promoted: !!l.promoted_at,
+    text: (l.promo_text as string | null) ?? '',
+    link: (l.promo_link as string | null) ?? '',
+  }))
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <MobileNewsstand
+        signedIn={!!user}
+        shelves={shelves}
+        promoted={promoted}
+        adLeagues={adLeagues}
+        hasActiveListing={hasActiveListing}
+        bookmarks={bookmarks}
+        bookmarkedIds={bookmarkedIds}
+        ownIds={ownIds}
+      />
+    )
+  }
 
   let sectionNo = 0
   const nextNum = () => `§ 0${++sectionNo}`
@@ -278,16 +304,7 @@ export default async function NewsstandPage() {
                 </p>
               </div>
               <div style={{ maxWidth: '560px', marginTop: '1.4rem' }}>
-                <AdEditor
-                  leagues={ownPublished.map((l) => ({
-                    id: l.id as string,
-                    name: l.name as string,
-                    slug: l.slug as string,
-                    promoted: !!l.promoted_at,
-                    text: (l.promo_text as string | null) ?? '',
-                    link: (l.promo_link as string | null) ?? '',
-                  }))}
-                />
+                <AdEditor leagues={adLeagues} />
               </div>
             </div>
           ) : (

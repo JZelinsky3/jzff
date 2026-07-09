@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import { getViewMode } from '@/lib/viewMode'
 import { Reveal } from '../bits'
 import { COMING_SOON, DISPATCH, type DispatchEntry } from '../dispatch-content'
+import { MobileDispatch } from '../mobile/dispatch'
 
 export const metadata = { title: 'The Clubhouse · The Dispatch' }
 
@@ -30,7 +32,9 @@ function Entry({ e }: { e: DispatchEntry }) {
   )
 }
 
-export default function DispatchPage() {
+export default async function DispatchPage() {
+  if ((await getViewMode()) === 'mobile') return <MobileDispatch />
+
   return (
     <main>
       <section className="hub-hero">

@@ -1,11 +1,15 @@
 import Link from 'next/link'
 import { getHubCensus } from '@/lib/hub/data'
+import { getViewMode } from '@/lib/viewMode'
 import { CountUp, DnaFill, Reveal } from '../bits'
+import { MobileCensus } from '../mobile/census'
 
 export const metadata = { title: 'The Clubhouse · The Census' }
 
 export default async function CensusPage() {
   const c = await getHubCensus()
+
+  if ((await getViewMode()) === 'mobile') return <MobileCensus c={c} />
 
   const span =
     c.earliestYear && c.latestYear

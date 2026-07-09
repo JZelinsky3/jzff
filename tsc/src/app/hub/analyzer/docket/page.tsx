@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 import { Reveal } from '../../bits'
 import { fetchDocket, TradeCase } from '../board'
 
@@ -11,6 +12,49 @@ export default async function FullDocketPage() {
   const signedIn = !!user
 
   const docket = await fetchDocket(100, user?.id ?? null)
+
+  // Pocket Clubhouse: same cases, recut around the mobile chrome.
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <main className="mhb">
+        <section className="mhb-hero">
+          <div className="mhb-hero-sup">★ Wing V · The Trade Room ★</div>
+          <h1 className="mhb-hero-title">
+            The full <em>docket.</em>
+          </h1>
+          <p className="mhb-hero-sub">
+            Every trade the room has posted, hottest first. Sign the ones you&apos;d do,
+            shred the ones you wouldn&apos;t.
+          </p>
+          <div className="mhb-hero-meta">
+            <span>{docket.trades.length} posted</span>
+            <Link href="/hub/analyzer">Back to the Trade Room</Link>
+          </div>
+        </section>
+
+        <section className="mhb-sec">
+          {docket.trades.length === 0 ? (
+            <p className="mhb-fine" style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: '.92rem', textAlign: 'center' }}>
+              Nothing here yet. The docket fills as members post analyses from the desk.
+            </p>
+          ) : (
+            <div className="mhb-feed">
+              {docket.hottest.map((t, i) => (
+                <Reveal key={t.id} delay={(i % 2) * 80}>
+                  <TradeCase t={t} docket={docket} signedIn={signedIn} />
+                </Reveal>
+              ))}
+            </div>
+          )}
+          <p className="mhb-fine">
+            Values are blended market consensus, frozen at post time. Quick analyses grade
+            raw asset value; team trades grade the change in each side&apos;s optimal starting
+            lineup. Five posts per member per day keeps the docket honest.
+          </p>
+        </section>
+      </main>
+    )
+  }
 
   return (
     <main>

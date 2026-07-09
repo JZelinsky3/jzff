@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 import '@/styles/hub.css'
-import { HubLoginButton, HubTabs, HubThemeToggle } from './hub-chrome'
+import '@/styles/hub-mobile.css'
+import { HubLoginButton, HubMobileDock, HubTabs, HubThemeToggle } from './hub-chrome'
 
 export const metadata: Metadata = {
   title: 'The Clubhouse',
@@ -28,32 +30,88 @@ const STRIP_ITEMS = [
 // Nothing theme-related renders here, so client-side navigation can't
 // reset it.
 
+// The gold ticker rides on top in both trees (like the league almanacs)
+// and scrolls away; only the chrome below it differs per device.
+function Strip() {
+  return (
+    <div className="hub-strip" aria-hidden>
+      <div className="hub-strip-track">
+        {[0, 1].map((dup) => (
+          <div className="hub-strip-group" key={dup}>
+            {STRIP_ITEMS.map((t, i) => (
+              <span key={`${dup}-${i}`} className="hub-strip-item">
+                <span className="star">★</span> {t}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // Browsable signed-out: guests see every wing (the data is published-league
 // or anonymous-aggregate anyway) with a Login button where members get the
 // library shortcut. Per-user touches inside the pages degrade gracefully.
+//
+// Phones get the Pocket Clubhouse: a compact sticky bar up top and a fixed
+// six-wing dock at the thumb, instead of the masthead + tab rail. Each wing
+// page forks its own body the same way (getViewMode in the page).
 export default async function HubLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const signedIn = !!user
+
+  if ((await getViewMode()) === 'mobile') {
+    return (
+      <div className="hub-root mhb-root">
+        <Strip />
+
+        <header className="mhb-bar">
+          {signedIn ? (
+            <Link href="/dashboard" className="mhb-bar-ico" aria-label="Back to your library" title="Your library">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M4 4.5h3.4v15H4z" />
+                <path d="M8.6 7h3.4v12.5H8.6z" />
+                <path d="M13.7 6.2l3.3-1 4.1 13.9-3.3 1z" />
+                <path d="M3 19.5h18.5" />
+              </svg>
+            </Link>
+          ) : (
+            <HubLoginButton icon />
+          )}
+          <div className="mhb-bar-center">
+            <div className="mhb-bar-kicker">Vol. II · Members Only</div>
+            <div className="mhb-bar-title">The <em>Clubhouse.</em></div>
+          </div>
+          <HubThemeToggle />
+        </header>
+
+        {children}
+
+        <footer className="mhb-foot">
+          <div className="mhb-foot-brand">
+            <em>The Sunday Chronicle</em> · The Clubhouse
+          </div>
+          <nav className="mhb-foot-links" aria-label="Site">
+            <Link href="/">Home</Link>
+            <Link href={signedIn ? '/dashboard' : '/login?from=%2Fhub'}>{signedIn ? 'Library' : 'Login'}</Link>
+            <Link href="/guides">Guides</Link>
+            <a href="/api/view/?mode=desktop&to=/hub">Desktop site</a>
+          </nav>
+        </footer>
+
+        <HubMobileDock />
+      </div>
+    )
+  }
 
   return (
     <div className="hub-root">
 
       {/* Ticker rides on top (like the league almanacs) and scrolls away;
           the masthead + tab rail below stick together. */}
-      <div className="hub-strip" aria-hidden>
-        <div className="hub-strip-track">
-          {[0, 1].map((dup) => (
-            <div className="hub-strip-group" key={dup}>
-              {STRIP_ITEMS.map((t, i) => (
-                <span key={`${dup}-${i}`} className="hub-strip-item">
-                  <span className="star">★</span> {t}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
+      <Strip />
 
       <div className="hub-topbar">
         <header className="hub-masthead">

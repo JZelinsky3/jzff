@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getPlayersMap } from '@/lib/sleeperPlayers'
+import { getViewMode } from '@/lib/viewMode'
 import { Reveal } from '../bits'
+import { MobileTradeRoom } from '../mobile/trade-room'
 import { AnalyzerStudio } from './analyzer-client'
 import { fetchDocket, TradeCase } from './board'
 
@@ -26,6 +28,11 @@ export default async function TradeRoomPage() {
   })
 
   const docket = await fetchDocket(50, user?.id ?? null)
+
+  if ((await getViewMode()) === 'mobile') {
+    return <MobileTradeRoom signedIn={signedIn} docket={docket} />
+  }
+
   const hottest = docket.hottest.slice(0, 2)
 
   return (

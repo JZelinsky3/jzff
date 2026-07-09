@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { getHubHall, type HubRecord } from '@/lib/hub/data'
+import { getViewMode } from '@/lib/viewMode'
 import { Reveal } from '../bits'
+import { MobileHall } from '../mobile/hall'
 import { HallSplits } from './hall-splits'
 
 export const metadata = { title: 'The Clubhouse · The Hall' }
@@ -29,6 +31,9 @@ function Plaque({ r, banner = false, delay = 0 }: { r: HubRecord; banner?: boole
 
 export default async function HallPage() {
   const hall = await getHubHall()
+
+  if ((await getViewMode()) === 'mobile') return <MobileHall hall={hall} />
+
   const [headline, ...rest] = hall.records
 
   return (

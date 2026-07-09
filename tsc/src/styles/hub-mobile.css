@@ -1,0 +1,372 @@
+/* ============================================================
+   THE POCKET CLUBHOUSE — dedicated mobile tree for /hub
+   Not the desktop reading-room scaled down: app chrome (compact
+   sticky bar + fixed bottom dock for the six wings) around the
+   same editorial content, recomposed for one thumb and ~390px.
+   Prefix: mhb-. Lives INSIDE .hub-root so every color reads from
+   the same --hb-* tokens and the day/night toggle keeps working.
+   The dock is intentionally fixed dark ink in BOTH themes, same
+   "dark ink as app chrome" move as the mobile landing.
+   ============================================================ */
+
+.mhb-root {
+    /* Room for the fixed dock (plus the home-indicator inset). */
+    padding-bottom: calc(4.4rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Top bar ──────────────────────────────────────────────── */
+.mhb-bar {
+    position: sticky; top: 0; z-index: 40;
+    display: grid; grid-template-columns: 2.1rem 1fr 2.1rem; align-items: center;
+    gap: .6rem;
+    padding: .5rem .8rem;
+    background: color-mix(in srgb, var(--hb-bg) 92%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--hb-line);
+}
+.mhb-bar-ico {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2.1rem; height: 2.1rem;
+    border: 1px solid var(--hb-line); border-radius: 2px;
+    color: var(--hb-gold); text-decoration: none;
+    background: none; cursor: pointer;
+}
+.mhb-bar-ico:active { background: var(--hb-gold-wash); }
+.mhb-bar-center { text-align: center; min-width: 0; }
+.mhb-bar-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .44rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--hb-mute); margin-bottom: .1rem;
+}
+.mhb-bar-title {
+    font-family: var(--serif); font-size: 1.08rem; line-height: 1.1;
+    color: var(--hb-ink); white-space: nowrap;
+}
+.mhb-bar-title em { font-style: italic; color: var(--hb-gold); }
+/* Reused HubThemeToggle, shrunk to a bare icon disc. */
+.mhb-bar .hub-theme-btn { padding: 0; width: 2.1rem; height: 2.1rem; justify-content: center; border-radius: 2px; }
+.mhb-bar .hub-theme-lbl { display: none; }
+/* Ticker: reuse .hub-strip; just tighten it on the pocket build. */
+.mhb-root .hub-strip { height: 30px; }
+.mhb-root .hub-strip-item { font-size: .56rem; letter-spacing: .1em; }
+
+/* ── Bottom dock — the six wings ─────────────────────────── */
+.mhb-dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    padding: .38rem .3rem calc(.42rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(16, 14, 10, .96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(232, 200, 137, .28);
+}
+.mhb-dock-item {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: .28rem;
+    padding: .34rem 0 .2rem;
+    color: #8d8570; text-decoration: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .44rem; letter-spacing: .12em; text-transform: uppercase;
+    -webkit-tap-highlight-color: transparent;
+}
+.mhb-dock-item svg { display: block; }
+.mhb-dock-item.active { color: #e8c889; }
+.mhb-dock-item.active::before {
+    content: '';
+    position: absolute; top: -.42rem; left: 28%; right: 28%; height: 2px;
+    background: #e8c889;
+}
+
+/* ── Page hero — left-set, ledger-style meta ─────────────── */
+.mhb-hero { padding: 1.7rem 1.1rem 1.4rem; }
+.mhb-hero-sup {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--hb-gold); margin-bottom: .6rem;
+}
+.mhb-hero-title {
+    font-family: var(--serif); font-weight: 400;
+    font-size: 2.1rem; line-height: 1.05; letter-spacing: -.01em;
+    color: var(--hb-ink); margin: 0;
+}
+.mhb-hero-title em { font-style: italic; color: var(--hb-gold); }
+.mhb-hero-sub {
+    font-size: .82rem; line-height: 1.6; color: var(--hb-ink-soft);
+    margin: .7rem 0 0; max-width: 34em;
+}
+.mhb-hero-meta {
+    display: flex; flex-wrap: wrap; gap: .3rem .7rem;
+    margin-top: .85rem;
+    font-family: var(--mono); font-size: .54rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--hb-mute);
+}
+.mhb-hero-meta a { color: var(--hb-gold); text-decoration: none; }
+
+/* ── Sections ─────────────────────────────────────────────── */
+.mhb-sec { padding: 0 1.1rem; margin-top: 2rem; }
+.mhb-sec-head {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: .7rem;
+    border-bottom: 1px solid var(--hb-line);
+    padding-bottom: .5rem; margin-bottom: .85rem;
+}
+.mhb-sec-num {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--hb-gold); margin-bottom: .25rem;
+}
+.mhb-sec-title {
+    font-family: var(--serif); font-size: 1.2rem; line-height: 1.15;
+    color: var(--hb-ink);
+}
+.mhb-sec-title em { font-style: italic; color: var(--hb-gold); }
+.mhb-sec-side {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--hb-mute); text-decoration: none;
+    padding-bottom: .1rem; white-space: nowrap;
+}
+a.mhb-sec-side { color: var(--hb-gold); }
+
+/* Swipe hint on horizontal rails */
+.mhb-swipe {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--hb-mute);
+}
+
+/* ── Horizontal snap rail ─────────────────────────────────── */
+.mhb-rail {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 70%;
+    gap: .65rem;
+    margin: 0 -1.1rem;
+    padding: .15rem 1.1rem .55rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 1.1rem;
+    scrollbar-width: none;
+}
+.mhb-rail::-webkit-scrollbar { display: none; }
+.mhb-rail > * { scroll-snap-align: start; min-width: 0; }
+
+/* Stat cards riding the rail (Front Desk wire) */
+.mhb-stat-card {
+    border: 1px solid var(--hb-line); border-radius: 4px;
+    background: var(--hb-card);
+    padding: .95rem .9rem 1rem;
+    box-shadow: 0 1px 0 var(--hb-shadow);
+}
+.mhb-stat-card-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--hb-mute); margin-bottom: .45rem;
+}
+.mhb-stat-card-val {
+    font-family: var(--serif); font-size: 1.9rem; line-height: 1;
+    color: var(--hb-ink); font-variant-numeric: tabular-nums;
+}
+.mhb-stat-card-det { font-size: .66rem; line-height: 1.5; color: var(--hb-mute); margin-top: .5rem; }
+.mhb-stat-card-det strong { color: var(--hb-ink-soft); }
+
+/* ── Door list — the rooms as an app list ─────────────────── */
+.mhb-doors {
+    border: 1px solid var(--hb-line); border-radius: 4px;
+    background: var(--hb-card); overflow: hidden;
+}
+.mhb-door {
+    display: grid; grid-template-columns: 2.1rem 1fr auto; align-items: center;
+    gap: .75rem;
+    padding: .9rem .95rem;
+    border-bottom: 1px solid var(--hb-line-soft);
+    text-decoration: none; color: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+.mhb-door:last-child { border-bottom: none; }
+.mhb-door:active { background: var(--hb-gold-wash); }
+.mhb-door-num {
+    font-family: var(--serif); font-style: italic; font-size: 1.25rem;
+    color: var(--hb-gold); text-align: center;
+}
+.mhb-door-name { font-family: var(--serif); font-size: 1.05rem; color: var(--hb-ink); }
+.mhb-door-name em { font-style: italic; color: var(--hb-gold); }
+.mhb-door-desc { font-size: .66rem; line-height: 1.45; color: var(--hb-mute); margin-top: .12rem; }
+.mhb-door-arrow { color: var(--hb-gold); display: flex; }
+
+/* ── Dispatch entries — inked cards, not a timeline ───────── */
+.mhb-feed { display: grid; gap: .65rem; }
+.mhb-entry {
+    border: 1px solid var(--hb-line);
+    border-left: 3px solid var(--hb-gold);
+    border-radius: 3px;
+    background: var(--hb-card);
+    padding: .85rem .9rem .9rem;
+}
+.mhb-entry.is-soon { border-left-color: var(--hb-rust); }
+.mhb-entry-date {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--hb-mute); margin-bottom: .3rem;
+}
+.mhb-entry-title { font-family: var(--serif); font-size: 1.05rem; line-height: 1.2; color: var(--hb-ink); margin: 0; font-weight: 400; }
+.mhb-entry-title em { font-style: italic; color: var(--hb-gold); }
+.mhb-entry-body { font-size: .76rem; line-height: 1.55; color: var(--hb-ink-soft); margin: .4rem 0 0; }
+.mhb-entry-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .55rem; }
+
+/* ── Census — marquee counter + tile grid ─────────────────── */
+.mhb-marquee {
+    border: 1px solid var(--hb-gold); border-radius: 4px;
+    background: var(--hb-plaque);
+    padding: 1.3rem 1rem 1.2rem;
+    text-align: center;
+    position: relative; overflow: hidden;
+}
+.mhb-marquee-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--hb-gold); margin-bottom: .5rem;
+}
+.mhb-marquee-val {
+    font-family: var(--serif); font-size: 2.5rem; line-height: 1;
+    color: var(--hb-ink); font-variant-numeric: tabular-nums;
+    word-break: break-word;
+}
+.mhb-marquee-val .unit {
+    font-size: .9rem; font-style: italic; color: var(--hb-gold); margin-left: .3rem;
+}
+.mhb-marquee-det { font-size: .68rem; line-height: 1.5; color: var(--hb-mute); margin-top: .55rem; }
+
+.mhb-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
+.mhb-tile {
+    border: 1px solid var(--hb-line); border-radius: 3px;
+    background: var(--hb-card);
+    padding: .75rem .7rem .7rem;
+    min-width: 0;
+}
+.mhb-tile-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--hb-mute); margin-bottom: .35rem;
+}
+.mhb-tile-val {
+    font-family: var(--serif); font-size: 1.32rem; line-height: 1;
+    color: var(--hb-ink); font-variant-numeric: tabular-nums;
+}
+.mhb-tile-val .unit { font-size: .7rem; font-style: italic; color: var(--hb-gold); margin-left: .2rem; }
+.mhb-tile-det { font-size: .6rem; line-height: 1.45; color: var(--hb-mute); margin-top: .35rem; }
+.mhb-tile-det strong { color: var(--hb-ink-soft); }
+
+/* ── Hall — marquee plaque + ledger of records ────────────── */
+.mhb-marqplaque {
+    border: 1px solid var(--hb-gold); border-radius: 4px;
+    background: var(--hb-plaque);
+    padding: 1.3rem 1rem 1.15rem;
+    text-align: center;
+}
+.mhb-marqplaque-cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--hb-gold); margin-bottom: .5rem;
+}
+.mhb-marqplaque-val {
+    font-family: var(--serif); font-size: 2.3rem; line-height: 1;
+    color: var(--hb-ink); font-variant-numeric: tabular-nums;
+}
+.mhb-marqplaque-val .unit { font-size: .85rem; font-style: italic; color: var(--hb-gold); margin-left: .25rem; }
+.mhb-marqplaque-holder { font-family: var(--serif); font-size: 1.02rem; color: var(--hb-ink); margin-top: .55rem; }
+.mhb-marqplaque-team { font-family: var(--serif); font-style: italic; font-size: .78rem; color: var(--hb-ink-soft); margin-top: .15rem; }
+.mhb-marqplaque-meta {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: .25rem .7rem;
+    margin-top: .6rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--hb-mute);
+}
+.mhb-marqplaque-meta a { color: var(--hb-gold); text-decoration: none; }
+
+.mhb-plaques { display: grid; gap: .55rem; }
+.mhb-plaque {
+    display: grid; grid-template-columns: 1fr auto; align-items: center;
+    gap: .1rem .9rem;
+    border: 1px solid var(--hb-line); border-radius: 3px;
+    background: var(--hb-plaque);
+    padding: .75rem .85rem;
+}
+.mhb-plaque-cat {
+    grid-column: 1;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--hb-gold);
+}
+.mhb-plaque-holder { grid-column: 1; font-family: var(--serif); font-size: .98rem; color: var(--hb-ink); margin-top: .18rem; }
+.mhb-plaque-meta {
+    grid-column: 1;
+    font-family: var(--mono); font-size: .5rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--hb-mute); margin-top: .28rem;
+}
+.mhb-plaque-meta a { color: inherit; text-decoration: none; }
+.mhb-plaque-val {
+    grid-column: 2; grid-row: 1 / span 3; align-self: center;
+    font-family: var(--serif); font-size: 1.45rem;
+    color: var(--hb-ink); font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+.mhb-plaque-val .unit { display: block; font-size: .58rem; font-style: italic; color: var(--hb-gold); margin-top: .1rem; }
+
+/* ── Buttons, stacked full-width ──────────────────────────── */
+.mhb-btnrow { display: grid; gap: .55rem; margin-top: .9rem; }
+.mhb-btnrow .hub-btn,
+.mhb-btnrow .hub-btn-ghost { display: block; text-align: center; }
+
+/* ── Small print ──────────────────────────────────────────── */
+.mhb-fine {
+    font-size: .68rem; line-height: 1.6; color: var(--hb-mute);
+    margin: .9rem 0 0;
+}
+.mhb-fine a { color: var(--hb-gold); text-decoration: none; }
+
+/* ── Footer ───────────────────────────────────────────────── */
+.mhb-foot {
+    margin-top: 3rem;
+    padding: 1.5rem 1.1rem 1.2rem;
+    border-top: 1px solid var(--hb-line);
+    text-align: center;
+}
+.mhb-foot-brand {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--hb-mute);
+}
+.mhb-foot-brand em { color: var(--hb-gold); font-style: italic; font-family: var(--serif); letter-spacing: .05em; }
+.mhb-foot-links {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: .3rem .9rem;
+    margin-top: .7rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+}
+.mhb-foot-links a { color: var(--hb-mute); text-decoration: none; }
+
+/* ── Scoped tune-ups for reused desktop pieces ────────────── */
+/* Promote card: single column, tighter frame. */
+.mhb .hub-promote { grid-template-columns: 1fr; gap: 1rem; padding: 1.1rem 1rem 1.15rem; }
+.mhb .hub-promote-title { font-size: 1.3rem; }
+.mhb .hub-promote-body { font-size: .78rem; }
+.mhb .hub-promote-side { justify-content: flex-start; }
+/* Ledger rows (your shelf) */
+.mhb .hub-ledger-row { grid-template-columns: 2rem 1fr auto; gap: .7rem; padding: .75rem .85rem; }
+.mhb .hub-ledger-name { font-size: 1rem; }
+.mhb .hub-ledger-rank { font-size: 1.1rem; }
+/* DNA card */
+.mhb .hub-dna { padding: 1.2rem .9rem 1.1rem; }
+/* Newsstand shelf cards: consistent height on the rail. */
+.mhb .mhb-rail .hub-shelf-card { height: 100%; }
+/* Trade Room studio + docket already collapse via hub.css ≤760px
+   rules; just keep their frames off the screen edges. */
+.mhb .hub-tr-studio { padding: 1rem .8rem; }
+.mhb .hub-tr-upsell { font-size: .78rem; padding: 0 .2rem; }
+/* Hall splits (reused client component) */
+.mhb .hub-plaque-grid { grid-template-columns: 1fr; gap: .55rem; }
