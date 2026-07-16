@@ -252,6 +252,28 @@ const PRELOADS_BY_FILE: Record<string, string[]> = {
     'data/rivalries.json',
     'data/seasons_directory.json',
   ],
+  // The manager file fires these four alongside its ?id-dependent
+  // managers/<uid>.json (which can't be preloaded from here).
+  'managers/manager.html': [
+    'data/manager_highs.json',
+    'data/manager_dna.json',
+    'data/record_book.json',
+    'data/current_form.json',
+  ],
+  'managers/all-time.html': [
+    'data/league.json',
+    'data/all_time_pool.json',
+    'data/managers_directory.json',
+  ],
+  'managers/visualizer.html': ['data/visualizer.json'],
+  // The live player board comes from /api/mock-board (query-dependent,
+  // can't be preloaded from here) — preload just the bundle-side feeds.
+  'draft/mock.html': [
+    'data/mock_draft.json',
+    'data/league.json',
+    'data/managers_directory.json',
+    'data/drafts/drafts_directory.json',
+  ],
 }
 
 // Same idea, separate map for the mobile templates — file names collide
@@ -608,10 +630,25 @@ const OG_CHAPTERS: Record<string, { page: string; label: string; desc: (name: st
     label: 'The Manager File',
     desc: (n) => `One manager's complete file from ${n}'s archives — record, rings, rivalries, and tendencies.`,
   },
+  'managers/all-time.html': {
+    page: 'managers',
+    label: 'The All-Time Team',
+    desc: (n) => `The best season at every position, for every manager in ${n} — one all-time lineup each, ranked.`,
+  },
+  'managers/visualizer.html': {
+    page: 'managers',
+    label: 'The Chart Room',
+    desc: (n) => `${n}, drawn in ink — points races, standings trajectories, luck lines, and every score ever posted, charted.`,
+  },
   'draft/index.html': {
     page: 'draft',
     label: 'The Draft Archive',
     desc: (n) => `Every draft in ${n}'s history — round by round, steal by steal, bust by bust.`,
+  },
+  'draft/mock.html': {
+    page: 'draft',
+    label: 'The Mock Room',
+    desc: (n) => `Simulate ${n}'s next draft against the ghosts of every manager's real draft tendencies.`,
   },
   'rivalries/index.html': {
     page: 'rivalries',
@@ -656,7 +693,7 @@ function getBundle(leagueId: string, slug: string): Promise<ExportBundle> {
   // way that the templates need to see immediately — adding a new field,
   // renaming an existing one, etc. Bumping forces unstable_cache to
   // recompute on the next request instead of waiting out the 1h TTL.
-  const BUNDLE_VERSION = 'v75'
+  const BUNDLE_VERSION = 'v80'
   return unstable_cache(
     async () => exportLeague(leagueId, { slug }),
     ['pams-bundle', BUNDLE_VERSION, leagueId, slug],
@@ -706,8 +743,10 @@ function injectMobileSwitchPill(html: string, req: NextRequest): string {
 }
 
 // Resolve the request path under /leagues/<slug>/...
-// Returns one of: { kind: 'html', file } | { kind: 'data', file } | null
-function resolveRequest(parts: string[] | undefined): { kind: 'html' | 'data'; file: string } | null {
+// Returns one of: { kind: 'html', file, fallback? } | { kind: 'data', file } | null
+function resolveRequest(
+  parts: string[] | undefined,
+): { kind: 'html' | 'data'; file: string; fallback?: string } | null {
   const segs = parts ?? []
 
   // Default: /leagues/<slug>/ → index.html
@@ -726,10 +765,15 @@ function resolveRequest(parts: string[] | undefined): { kind: 'html' | 'data'; f
   if (last.endsWith('.html')) {
     return { kind: 'html', file: segs.join('/') }
   }
-  // Directory-style URL (e.g. /pickems, /rivalries) — serve index.html inside.
-  // We treat anything with no file extension as a directory request.
+  // Extensionless URL: directory index first (/rivalries → rivalries/index.html),
+  // then a bare template file (/draft/mock → draft/mock.html). The fallback is
+  // what lets newer pages publish clean URLs without moving their templates.
   if (!last.includes('.')) {
-    return { kind: 'html', file: [...segs, 'index.html'].join('/') }
+    return {
+      kind: 'html',
+      file: [...segs, 'index.html'].join('/'),
+      fallback: segs.join('/') + '.html',
+    }
   }
   // Anything else (assets, fonts, etc.) is out of scope — those live at
   // /pams-template/assets/... and Next.js serves them directly.
@@ -803,6 +847,15 @@ function notFoundHtml(slug: string): string {
 </html>`
 }
 
+// Pages whose canonical URL is extensionless. Key = the old .html request
+// path, value = the clean address it 301s to. The templates keep their .html
+// filenames; resolveRequest's fallback maps the clean URL back to the file.
+const CLEAN_URL_PAGES: Record<string, string> = {
+  'draft/mock.html': 'draft/mock',
+  'managers/all-time.html': 'managers/all-time',
+  'managers/visualizer.html': 'managers/visualizer',
+}
+
 // Block traversal: only allow paths that stay inside the given template root.
 // The `root + path.sep` prefix check also keeps the sibling roots honest —
 // "…/pams-mobile/x" does not start with "…/pams/" so neither tree can reach
@@ -837,6 +890,18 @@ export async function GET(
   if (parts && parts.length > 0 && parts[0] === 'live-season') {
     const newPath = ['live', ...parts.slice(1)].join('/')
     const target = new URL(`/leagues/${slug}/${newPath}`, req.url)
+    target.search = req.nextUrl.search
+    return NextResponse.redirect(target, 301)
+  }
+
+  // Clean-URL pages: the newer annex pages publish extensionless addresses
+  // (/draft/mock, /managers/all-time, /managers/visualizer). Their original
+  // .html URLs 301 here so old bookmarks and shares land on the clean form;
+  // query strings (?id=) ride along.
+  const joined = (parts ?? []).join('/')
+  const cleanPath = CLEAN_URL_PAGES[joined]
+  if (cleanPath) {
+    const target = new URL(`/leagues/${slug}/${cleanPath}`, req.url)
     target.search = req.nextUrl.search
     return NextResponse.redirect(target, 301)
   }
@@ -905,29 +970,39 @@ export async function GET(
     // Mobile fork: phones (or anyone with the mobile cookie) get the template
     // from pams-mobile/ when it exists; otherwise everyone shares the desktop
     // file. readFile's failure IS the existence check — no stat round-trip.
+    // Candidates run in order (directory index, then the bare-file fallback
+    // for clean URLs); the first one found in either tree wins and becomes
+    // the canonical file for the preload/OG/lock maps below.
     const viewPref = resolveViewPref(req)
+    const candidates = [resolved.file, ...(resolved.fallback ? [resolved.fallback] : [])]
     let raw: string | null = null
     let servedMobile = false
-    if (viewPref === 'mobile') {
-      const mobilePath = safeTemplatePath(resolved.file, MOBILE_TEMPLATE_ROOT)
-      if (mobilePath) {
-        try {
-          raw = await fs.readFile(mobilePath, 'utf-8')
-          servedMobile = true
-        } catch { /* no mobile build for this page yet — fall back to desktop */ }
+    let file = resolved.file
+    for (const cand of candidates) {
+      if (viewPref === 'mobile') {
+        const mobilePath = safeTemplatePath(cand, MOBILE_TEMPLATE_ROOT)
+        if (mobilePath) {
+          try {
+            raw = await fs.readFile(mobilePath, 'utf-8')
+            servedMobile = true
+            file = cand
+            break
+          } catch { /* no mobile build for this page yet — fall back to desktop */ }
+        }
       }
-    }
-    if (raw === null) {
-      const filePath = safeTemplatePath(resolved.file, TEMPLATE_ROOT)
-      if (!filePath) return new NextResponse('Forbidden', { status: 403 })
+      const filePath = safeTemplatePath(cand, TEMPLATE_ROOT)
+      if (!filePath) continue
       try {
         raw = await fs.readFile(filePath, 'utf-8')
-      } catch {
-        return new NextResponse(notFoundHtml(slug), {
-          status: 404,
-          headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
-        })
-      }
+        file = cand
+        break
+      } catch { /* try the next candidate */ }
+    }
+    if (raw === null) {
+      return new NextResponse(notFoundHtml(slug), {
+        status: 404,
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+      })
     }
     // Auth-aware: only the league owner should see the "Manage league /
     // Library" admin links in the public almanac dropdown. Everyone else gets
@@ -939,7 +1014,7 @@ export async function GET(
       lockReasonPromise,
       supabase.auth.getUser(),
     ])
-    const pageLocked = classifyLockedPath(resolved.file, lockReason) === 'page'
+    const pageLocked = classifyLockedPath(file, lockReason) === 'page'
     const isCommish = !!user && !!meta.owner_id && user.id === meta.owner_id
     const isSignedIn = !!user
     let isBookmarked = false
@@ -983,9 +1058,9 @@ export async function GET(
 
     let html = await injectDcConfig(
       injectOgTags(
-        injectBaseTag(applyTokens(raw, meta), meta, resolved.file, servedMobile),
+        injectBaseTag(applyTokens(raw, meta), meta, file, servedMobile),
         meta,
-        resolved.file,
+        file,
         req,
       ),
       meta,

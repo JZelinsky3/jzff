@@ -3,269 +3,673 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manager Profile · {{LEAGUE_NAME}}</title>
+<title>Manager File · {{LEAGUE_NAME}}</title>
 <link rel="stylesheet" href="/pams-template/assets/css/main.css">
 <style>
-.profile-header {
+/* ============================================================
+   THE MANAGER FILE — one manager's complete dossier, laid out
+   like a working desk instead of a scrolling column. Site navy
+   chrome; paper shows up only as artifacts (the index card, a
+   notebook page in the margin).
+     Index card    — portrait, lede, seals
+     Agate band    — full-bleed, the eight numbers
+     Plates        — All-Time Team (with the real seven) + DNA
+     The spread    — main column of exhibits beside a margin
+                     rail: current form, records held, notebook
+                     jottings, cross-references
+   ============================================================ */
+
+:root {
+    /* Paper inks — only inside the paper artifacts. */
+    --paper:          #efe5cd;
+    --paper-soft:     #e6dabd;
+    --paper-line:     rgba(40, 30, 12, .22);
+    --paper-line-soft:rgba(40, 30, 12, .11);
+    --ink-print:      #241c0e;
+    --ink-print-soft: #55482e;
+    --ink-print-mute: #7f7154;
+    --gold-print:     #7a5c14;
+    --rust-print:     #8c2b1e;
+
+    /* Position inks on navy. */
+    --pos-qb:  #6ba3cc;
+    --pos-rb:  #5fae7f;
+    --pos-wr:  #d4a94c;
+    --pos-te:  #a07fd0;
+    --pos-k:   #b98b56;
+    --pos-def: #8a9a80;
+}
+
+/* ══ Masthead ════════════════════════════════════════════════ */
+.mast {
     position: relative; z-index: 10;
+    max-width: 1080px; margin: 0 auto;
+    padding: 3.4rem 1.5rem 0;
     text-align: center;
-    padding: 3.5rem 1.5rem 2rem;
-    max-width: 1000px;
+}
+.mast-kick {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .42em; text-transform: uppercase;
+    color: var(--gold);
+}
+.mast-orn {
+    margin: 1.1rem 0 .9rem;
+    font-size: .7rem; color: var(--cream-mute); letter-spacing: .8em;
+}
+.mast-title {
+    font-family: var(--serif);
+    font-size: clamp(3.4rem, 9vw, 7rem);
+    line-height: .94; letter-spacing: -.02em;
+    color: var(--cream);
+}
+.mast-title em { font-style: italic; color: var(--gold); }
+.mast-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; color: var(--cream-soft);
+    margin-top: .9rem;
+}
+.mast-wire {
+    margin: 1.9rem auto 0; max-width: 760px;
+    padding: .55rem 1rem;
+    border-top: 1px solid var(--ink-line);
+    border-bottom: 1px solid var(--ink-line);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mast-wire strong { color: var(--gold); font-weight: 700; }
+
+/* ══ Page scaffold ═══════════════════════════════════════════ */
+.profile-main {
+    position: relative; z-index: 10;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem 4.5rem;
+}
+
+/* ══ The index card: the paper artifact ══════════════════════ */
+.id-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 168px 1fr auto;
+    gap: 2.2rem;
+    align-items: start;
+    max-width: 1140px;
+    margin: 2.8rem auto 0;
+    background:
+        linear-gradient(168deg, var(--paper) 0%, var(--paper) 78%, var(--paper-soft) 100%);
+    color: var(--ink-print);
+    border: 1px solid #47402f;
+    border-radius: 5px;
+    padding: 1.9rem 2.1rem;
+    box-shadow: 0 22px 55px rgba(0, 0, 0, .45), inset 0 0 42px rgba(60, 44, 16, .08);
+    transform: rotate(-.35deg);
+}
+/* Ruled index-card line along the top edge. */
+.id-card::after {
+    content: '';
+    position: absolute; top: 12px; left: 0; right: 0;
+    height: 2px;
+    background: var(--rust-print);
+    opacity: .28;
+}
+.fp-portrait {
+    position: relative;
+    width: 168px; height: 168px;
+    border: 1px solid var(--paper-line);
+    border-radius: 3px;
+    background: var(--paper-soft);
+    overflow: hidden;
+    box-shadow: 2px 3px 0 rgba(40, 30, 12, .12);
+}
+.fp-portrait img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
+/* Alumni portraits get the archive treatment: sepia halftone.
+   Active members stay in modern color. */
+.fp-portrait.vintage img {
+    filter: grayscale(1) sepia(.4) contrast(1.06) brightness(1.02);
+    mix-blend-mode: multiply;
+}
+.fp-portrait.vintage::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(40, 30, 12, .28) 1px, transparent 1px);
+    background-size: 3.5px 3.5px;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+}
+.fp-portrait .fp-mono {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: 4.2rem; color: var(--gold-print);
+}
+.fp-stamp {
+    position: absolute; left: 50%; bottom: 10px;
+    transform: translateX(-50%) rotate(-6deg);
+    padding: .22rem .6rem;
+    border: 2px solid var(--gold-print);
+    border-radius: 2px;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--gold-print);
+    background: rgba(239, 229, 205, .82);
+    white-space: nowrap;
+    z-index: 2;
+}
+.fp-stamp.alum { color: var(--rust-print); border-color: var(--rust-print); }
+
+.fp-name {
+    font-family: var(--serif);
+    font-size: clamp(2.2rem, 4.6vw, 3.2rem);
+    line-height: .96; letter-spacing: -.02em;
+    color: var(--ink-print);
+    margin-bottom: .45rem;
+}
+.fp-name em { font-style: italic; color: var(--gold-print); }
+.fp-dateline {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+    margin-bottom: 1.05rem;
+}
+.fp-lede {
+    font-family: var(--serif);
+    font-size: 1rem; line-height: 1.7;
+    color: #3a3020;
+    max-width: 56ch;
+}
+.fp-lede::first-letter {
+    font-family: var(--serif);
+    font-size: 3.2rem; line-height: .78;
+    float: left;
+    padding: .26rem .5rem 0 0;
+    color: var(--gold-print);
+}
+.fp-seals { display: flex; flex-direction: column; gap: .6rem; align-items: center; }
+.fp-seals .mini-seal { width: 84px; height: 84px; display: block; }
+.fp-seals-none {
+    max-width: 130px;
+    padding: .9rem .8rem;
+    border: 1px dashed var(--paper-line);
+    border-radius: 2px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+}
+.fp-seals-more {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--gold-print);
+}
+
+/* ══ Agate band — full-bleed across the viewport ═════════════ */
+.agate-band {
+    position: relative; z-index: 10;
+    margin-top: 2.8rem;
+    border-top: 1px solid var(--ink-line);
+    border-bottom: 1px solid var(--ink-line);
+    background: rgba(22, 32, 44, .38);
+}
+.agate-inner {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    max-width: 1500px;
     margin: 0 auto;
 }
-.profile-kicker {
+.ag-cell {
+    padding: 1.15rem .9rem 1.05rem;
+    text-align: center;
+    border-right: 1px solid var(--ink-line-soft);
+}
+.ag-cell:last-child { border-right: none; }
+.ag-label {
     font-family: var(--mono); font-weight: 700;
-    font-size: .62rem; letter-spacing: .35em; text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 1.2rem;
-}
-.profile-name {
-    font-family: var(--serif);
-    font-size: clamp(4rem, 12vw, 9rem);
-    line-height: .9; letter-spacing: -.03em;
-    color: var(--cream);
-    margin-bottom: 1rem;
-}
-.profile-name em { font-style: italic; color: var(--gold); }
-.profile-tagline {
-    font-family: var(--serif); font-style: italic;
-    font-size: 1.25rem; line-height: 1.4;
-    color: var(--cream-soft);
-    max-width: 56ch; margin: 0 auto 2rem;
-}
-
-.banner-row {
-    display: flex; justify-content: center; align-items: center; gap: 1.5rem;
-    margin: 2rem 0 1rem;
-    flex-wrap: wrap;
-}
-.mini-seal { width: 90px; height: 90px; }
-.banner-empty {
-    font-family: var(--mono);
-    font-size: .65rem; letter-spacing: .25em; text-transform: uppercase;
+    font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
     color: var(--cream-mute);
-    padding: 1rem;
-    border: 1px dashed var(--ink-line);
-    border-radius: 2px;
+    margin-bottom: .45rem;
+}
+.ag-value {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.75rem; line-height: 1;
+    color: var(--gold);
+}
+.ag-value.plain { color: var(--cream); font-style: normal; }
+.ag-detail {
+    margin-top: .35rem;
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
 }
 
-/* ── Manager DNA teaser card ───────────────────────────────────
-   Sits between the masthead banner and the stat strip — visible
-   the moment the profile loads. Compact: barcode, archetype name,
-   tagline, two trait chips, a "see full DNA" link. Cyan/magenta
-   palette ties it to the Manager DNA page; locked variant (no DNA
-   data on the league, i.e. the commissioner isn't on Veteran+)
-   greys it out with a small upgrade hint instead of a link. */
-.profile-dna {
+/* ══ Plates: All-Time Team + Manager DNA ═════════════════════ */
+.fp-plates {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2.6rem;
+}
+.plate {
     position: relative;
-    max-width: 720px;
-    margin: 1rem auto 0;
-    padding: 1.1rem 1.35rem 1.1rem 2.25rem;
-    background: linear-gradient(90deg, rgba(20, 23, 42, .5), rgba(20, 23, 42, .25));
-    border: 1px solid rgba(79, 209, 255, .18);
-    border-radius: 4px;
+    background: linear-gradient(155deg, rgba(22, 32, 44, .9), rgba(14, 22, 32, .95));
+    border: 1px solid var(--ink-line);
+    border-radius: 6px;
+    padding: 1.4rem 1.5rem 1.45rem;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .35);
     overflow: hidden;
 }
-.profile-dna::before {
-    content: '';
-    position: absolute;
-    top: 0; bottom: 0; left: 0;
-    width: 2px;
-    background: linear-gradient(180deg, rgba(79, 209, 255, .55), rgba(255, 93, 177, .45));
+.plate.gold { border-color: rgba(232, 200, 137, .35); }
+.plate-kick {
+    display: flex; align-items: baseline; gap: .65rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .85rem;
 }
-.profile-dna.is-locked {
-    border-color: rgba(122, 131, 166, .25);
-    background: rgba(20, 23, 42, .25);
-    opacity: 0.72;
-}
-.profile-dna.is-locked::before {
-    background: rgba(122, 131, 166, .4);
-}
-
-.pdna-head {
-    display: flex;
-    align-items: baseline;
-    gap: .65rem;
-    margin-bottom: .6rem;
-    flex-wrap: wrap;
-}
-.pdna-lbl {
-    font-family: var(--mono);
-    font-size: .54rem;
-    letter-spacing: .28em;
-    text-transform: uppercase;
-    color: rgba(79, 209, 255, .8);
-}
-.is-locked .pdna-lbl { color: var(--cream-mute); }
-.pdna-tier {
+.plate-kick .tier {
     margin-left: auto;
     padding: .15rem .45rem;
-    font-family: var(--mono);
-    font-size: .48rem;
-    letter-spacing: .22em;
-    text-transform: uppercase;
+    font-size: .48rem; letter-spacing: .22em;
     color: var(--gold);
     border: 1px solid rgba(232, 200, 137, .35);
     border-radius: 2px;
 }
+.plate-title {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.55rem; line-height: 1.05;
+    color: var(--cream);
+    margin-bottom: .5rem;
+}
+.plate-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: .86rem; line-height: 1.55;
+    color: var(--cream-soft);
+    margin-bottom: 1.05rem;
+}
+.plate-cta {
+    display: inline-block;
+    padding: .55rem 1.05rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ink);
+    background: var(--gold);
+    border: 1px solid var(--gold);
+    border-radius: 2px;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+}
+.plate-cta:hover { background: var(--gold-bright); }
+.plate-cta.ghost { background: transparent; color: var(--gold); }
+.plate-cta.ghost:hover { background: rgba(232, 200, 137, .1); color: var(--gold-bright); }
+.plate-cta.locked {
+    background: transparent;
+    border-color: var(--ink-line);
+    color: var(--cream-mute);
+    cursor: not-allowed;
+}
+.plate.is-locked { opacity: .78; }
+.plate.is-locked .plate-title { color: var(--cream-soft); }
 
-.pdna-barcode {
-    display: flex;
-    height: 14px;
-    gap: 2px;
-    margin-bottom: .65rem;
-}
-.pdna-band {
+/* The lineup shelf: numbered tiles at first, then the real seven
+   (headshot + finish) once the pool data streams in. */
+.plate-slots { display: flex; gap: .45rem; margin-bottom: 1.15rem; }
+.plate-slot {
     flex: 1;
-    border-radius: 1px;
+    aspect-ratio: 3 / 3.8;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: .3rem;
+    border: 1px solid rgba(232, 200, 137, .3);
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(232, 200, 137, .08), rgba(232, 200, 137, .02));
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .12em;
+    color: var(--gold);
+    overflow: hidden;
+    padding: 0;
 }
+.plate-slot i {
+    font-family: var(--serif); font-style: italic; font-weight: 400;
+    font-size: 1.05rem; color: var(--cream-soft);
+}
+.plate-slot.filled { justify-content: flex-end; gap: .25rem; padding-bottom: .4rem; position: relative; }
+.plate-slot.filled img {
+    position: absolute; top: 0; left: 0; right: 0;
+    width: 100%; height: 62%;
+    object-fit: cover; object-position: center top;
+    border-bottom: 1px solid rgba(232, 200, 137, .25);
+}
+.plate-slot.filled .ps-fin {
+    margin-top: auto;
+    font-size: .6rem; letter-spacing: .1em;
+    line-height: 1;
+}
+.plate-slot.filled .ps-year {
+    font-family: var(--mono); font-weight: 400;
+    font-size: .48rem; letter-spacing: .14em;
+    color: var(--cream-mute);
+}
+.plate.is-locked .plate-slot { border-color: var(--ink-line-soft); color: var(--cream-mute); }
+.plate.is-locked .plate-slot i { color: var(--cream-mute); }
+
+/* Manager DNA plate — the cyan specimen keeps its lab identity. */
+.plate.dna { border-color: rgba(79, 209, 255, .22); }
+.plate.dna .plate-kick { color: rgba(79, 209, 255, .85); }
+.pdna-barcode { display: flex; height: 14px; gap: 2px; margin-bottom: .8rem; }
+.pdna-band { flex: 1; border-radius: 1px; }
 .pdna-band.b-cyan    { background: rgba(79, 209, 255, var(--a, .8)); }
 .pdna-band.b-magenta { background: rgba(255, 93, 177, var(--a, .8)); }
 .pdna-band.b-lime    { background: rgba(216, 255, 93,  var(--a, .8)); }
 .pdna-band.b-amber   { background: rgba(255, 203, 107, var(--a, .8)); }
 .pdna-band.b-mute    { background: rgba(122, 131, 166, var(--a, .3)); }
-
 .pdna-arch {
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 1.4rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.45rem; line-height: 1.05;
     color: #f0f2ff;
-    line-height: 1.05;
-    margin-bottom: .15rem;
+    margin-bottom: .2rem;
 }
-.is-locked .pdna-arch { color: var(--cream-soft); }
 .pdna-tagline {
     font-family: var(--mono);
-    font-size: .58rem;
-    letter-spacing: .2em;
-    text-transform: uppercase;
+    font-size: .56rem; letter-spacing: .2em; text-transform: uppercase;
     color: rgba(255, 93, 177, .8);
-    margin-bottom: .6rem;
+    margin-bottom: .7rem;
 }
-.is-locked .pdna-tagline { color: var(--cream-mute); }
-
-.pdna-traits {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .35rem;
-    margin-bottom: .85rem;
-}
+.pdna-traits { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .85rem; }
 .pdna-trait {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
+    display: inline-flex; align-items: center; gap: .35rem;
     padding: .25rem .55rem;
     background: rgba(79, 209, 255, .05);
     border: 1px solid rgba(79, 209, 255, .22);
     border-radius: 2px;
     font-family: var(--mono);
-    font-size: .52rem;
-    letter-spacing: .14em;
-    text-transform: uppercase;
+    font-size: .52rem; letter-spacing: .14em; text-transform: uppercase;
     color: var(--cream-soft);
 }
 .pdna-trait::before {
     content: '';
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: #4fd1ff;
-    flex-shrink: 0;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #4fd1ff; flex-shrink: 0;
 }
-
-.pdna-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    padding: .4rem .75rem;
-    background: rgba(79, 209, 255, .04);
-    border: 1px solid rgba(79, 209, 255, .22);
-    border-radius: 2px;
+/* Signal readouts fill out the specimen card. */
+.pdna-sigs {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: .45rem .9rem;
+    margin-bottom: 1rem;
+    padding-top: .75rem;
+    border-top: 1px dashed rgba(79, 209, 255, .18);
+}
+.pdna-sig { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.pdna-sig-label {
     font-family: var(--mono);
-    font-size: .58rem;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: rgba(181, 185, 214, .9);
-    text-decoration: none;
-    transition: background .2s, color .2s, border-color .2s;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cream-mute);
 }
-.pdna-cta:hover {
-    background: rgba(79, 209, 255, .14);
-    border-color: rgba(79, 209, 255, .5);
+.pdna-sig-val {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .66rem;
     color: #82e0ff;
 }
-.pdna-cta.is-locked {
-    cursor: not-allowed;
-    border-color: rgba(122, 131, 166, .3);
-    background: rgba(122, 131, 166, .08);
-    color: var(--cream-mute);
-}
-.pdna-cta.is-locked:hover { background: rgba(122, 131, 166, .08); color: var(--cream-mute); }
-.pdna-cta-arrow { font-family: var(--serif); font-style: italic; }
-
+.plate.dna .plate-cta.ghost { border-color: rgba(79, 209, 255, .35); color: #82e0ff; }
+.plate.dna .plate-cta.ghost:hover { background: rgba(79, 209, 255, .1); }
+.plate.dna.is-locked { border-color: var(--ink-line); }
 .pdna-locked-msg {
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: .85rem;
-    color: var(--cream-soft);
-    margin-bottom: .85rem;
-    line-height: 1.45;
-}
-
-.stat-strip {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0;
-    border-top: 1px solid var(--ink-line);
-    border-bottom: 1px solid var(--ink-line);
-    margin-bottom: 3rem;
-}
-.strip-item {
-    padding: 1.5rem 1.25rem;
-    border-right: 1px solid var(--ink-line);
-    text-align: center;
-}
-.strip-item:last-child { border-right: none; }
-.strip-label {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
-    color: var(--cream-mute);
-    margin-bottom: .5rem;
-}
-.strip-value {
     font-family: var(--serif); font-style: italic;
-    font-size: 2rem; line-height: 1;
-    color: var(--gold);
-    margin-bottom: .25rem;
-}
-.strip-value.cream { color: var(--cream); font-style: normal; }
-.strip-detail {
-    font-family: var(--mono);
-    font-size: .55rem; letter-spacing: .15em; text-transform: uppercase;
-    color: var(--cream-mute);
+    font-size: .85rem; line-height: 1.5;
+    color: var(--cream-soft);
+    margin-bottom: 1rem;
 }
 
-.split-row {
+/* ══ The spread: main column + margin rail ═══════════════════ */
+.spread {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 3rem;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 1.8rem;
+    align-items: start;
+    margin-top: 2.6rem;
 }
-@media (max-width: 700px) { .split-row { grid-template-columns: 1fr; } }
-.split-col {
-    background: rgba(26, 37, 50, .3);
-    border: 1px solid var(--ink-line);
-    padding: 1.5rem 1.75rem;
+.spread-main { min-width: 0; }
+
+.region {
     position: relative;
+    background: linear-gradient(180deg, rgba(26, 37, 50, .5), rgba(26, 37, 50, .22));
+    border: 1px solid var(--ink-line);
+    border-radius: 6px;
+    padding: 1.7rem 1.9rem 1.9rem;
+    overflow: hidden;
+}
+.region + .region { margin-top: 2rem; }
+.region::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--gold);
+    opacity: .75;
+}
+.region[data-accent="steel"]::before { background: var(--steel); }
+.region[data-accent="rust"]::before  { background: var(--rust); }
+.region[data-accent="cream"]::before { background: var(--cream-soft); opacity: .4; }
+
+.fs-head {
+    display: flex; align-items: baseline; gap: 1.2rem;
+    border-bottom: 3px double var(--ink-line);
+    padding-bottom: .7rem;
+    margin-bottom: 1.4rem;
+}
+.fs-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--gold); flex-shrink: 0;
+}
+.fs-title {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.45rem; letter-spacing: -.01em;
+    color: var(--cream);
+}
+.fs-note {
+    margin-left: auto; flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: .53rem; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.fs-empty {
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; color: var(--cream-mute);
+    padding: .4rem 0 .2rem;
+}
+
+/* ── Margin rail ── */
+.spread-rail { min-width: 0; }
+.rail-card {
+    border: 1px solid var(--ink-line);
+    border-radius: 6px;
+    background: rgba(22, 32, 44, .35);
+    padding: 1.15rem 1.25rem 1.2rem;
+}
+.rail-card + .rail-card, .note-card + .rail-card, .rail-card + .note-card { margin-top: 1.4rem; }
+.rail-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: .7rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--gold);
+    padding-bottom: .55rem; margin-bottom: .95rem;
+    border-bottom: 2px solid var(--ink-line);
+}
+.rail-head .sub { color: var(--cream-mute); letter-spacing: .14em; font-weight: 400; }
+
+/* Current form, compact for the rail. */
+.now-rank { display: flex; align-items: baseline; gap: .55rem; margin-bottom: .8rem; }
+.now-pos {
+    font-family: var(--serif); font-style: italic;
+    font-size: 2.6rem; line-height: 1;
+    color: var(--gold);
+}
+.now-delta { font-family: var(--mono); font-weight: 700; font-size: .6rem; letter-spacing: .1em; }
+.now-delta.up { color: #7fc79a; }
+.now-delta.down { color: var(--rust); }
+.now-delta.flat { color: var(--cream-mute); }
+.now-team {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: right;
+}
+.now-row {
+    display: flex; align-items: baseline; gap: .55rem;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--ink-line-soft);
+}
+.now-row:last-of-type { border-bottom: none; }
+.now-row-label {
+    flex-shrink: 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.now-row-dots { flex: 1; border-bottom: 1px dotted var(--ink-line); transform: translateY(-3px); }
+.now-row-val {
+    font-family: var(--sans); font-weight: 600;
+    font-size: .78rem; color: var(--cream);
+}
+.form-dots { display: inline-flex; gap: .3rem; }
+.form-dot {
+    width: 15px; height: 15px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-weight: 700; font-size: .48rem;
+    border: 1px solid var(--ink-line);
+    color: var(--ink);
+}
+.form-dot.w { background: var(--gold); border-color: var(--gold); }
+.form-dot.l { background: var(--rust); border-color: var(--rust); color: var(--cream); }
+.form-dot.t { background: var(--cream-mute); border-color: var(--cream-mute); }
+
+/* Records held, stacked for the rail. */
+.rec-plate {
+    position: relative;
+    border: 1px solid var(--ink-line);
+    background: rgba(14, 22, 32, .45);
+    border-radius: 4px;
+    padding: .85rem 1rem .8rem;
+}
+.rec-plate + .rec-plate { margin-top: .7rem; }
+.rec-plate::before {
+    content: ''; position: absolute; top: -1px; left: -1px; bottom: -1px;
+    width: 3px; background: var(--gold);
+    border-radius: 4px 0 0 4px;
+}
+.rec-plate.dub::before { background: var(--rust); }
+.rec-cat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: .35rem;
+}
+.rec-val {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.4rem; line-height: 1;
+    color: var(--gold);
+    margin-bottom: .3rem;
+}
+.rec-plate.dub .rec-val { color: var(--rust); }
+.rec-ctx {
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.rec-shared {
+    position: absolute; top: .6rem; right: .65rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cream-mute);
+    border: 1px solid var(--ink-line);
+    border-radius: 2px;
+    padding: .08rem .28rem;
+}
+.rec-mentions {
+    margin-top: .9rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: .85rem; color: var(--cream-soft);
+    line-height: 1.5;
+}
+.rec-mentions a { color: var(--gold); }
+
+/* The notebook page: paper, taped into the margin. */
+.note-card {
+    position: relative;
+    background:
+        linear-gradient(172deg, var(--paper) 0%, var(--paper-soft) 100%);
+    color: var(--ink-print);
+    border: 1px solid #47402f;
+    border-radius: 3px;
+    padding: 1.5rem 1.3rem 1.2rem;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, .4);
+    transform: rotate(.5deg);
+    margin-top: 1.4rem;
+}
+/* The tape. */
+.note-card::before {
+    content: '';
+    position: absolute; top: -9px; left: 50%;
+    transform: translateX(-50%) rotate(-1.5deg);
+    width: 92px; height: 20px;
+    background: rgba(239, 229, 205, .5);
+    border: 1px solid rgba(40, 30, 12, .12);
+}
+.note-head {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--gold-print);
+    padding-bottom: .5rem; margin-bottom: .8rem;
+    border-bottom: 2px solid var(--paper-line);
+}
+.note-line {
+    display: flex; gap: .55rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: .92rem; line-height: 1.5;
+    color: #3a3020;
+    padding: .3rem 0;
+}
+.note-line + .note-line { border-top: 1px dotted var(--paper-line-soft); }
+.note-line::before { content: '✦'; flex-shrink: 0; color: var(--gold-print); font-style: normal; font-size: .7rem; padding-top: .25rem; }
+
+/* Cross-references. */
+.xref-link {
+    display: flex; align-items: baseline; gap: .6rem;
+    padding: .55rem 0;
+    border-bottom: 1px solid var(--ink-line-soft);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-soft);
+    text-decoration: none;
+    transition: color .15s;
+}
+.xref-link:last-child { border-bottom: none; }
+.xref-link:hover { color: var(--gold-bright); }
+.xref-link::before { content: '✦'; color: var(--gold); font-size: .55rem; }
+.xref-link .sub { margin-left: auto; color: var(--cream-mute); font-weight: 400; letter-spacing: .1em; }
+
+/* ══ § Career splits ═════════════════════════════════════════ */
+.split-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+.split-col {
+    position: relative;
+    border: 1px solid var(--ink-line);
+    background: rgba(14, 22, 32, .45);
+    border-radius: 4px;
+    padding: 1.3rem 1.5rem 1.2rem;
 }
 .split-col::before {
-    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
-    background: var(--gold);
+    content: ''; position: absolute; top: -1px; left: -1px; bottom: -1px;
+    width: 3px; background: var(--gold);
+    border-radius: 4px 0 0 4px;
 }
 .split-col.playoff::before { background: var(--rust); }
 .split-label {
     font-family: var(--mono); font-weight: 700;
-    font-size: .6rem; letter-spacing: .25em; text-transform: uppercase;
-    color: var(--gold); margin-bottom: .8rem;
+    font-size: .56rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: .7rem;
 }
 .split-col.playoff .split-label { color: var(--rust); }
 .split-record {
@@ -276,194 +680,279 @@
 }
 .split-pct {
     font-family: var(--mono); font-weight: 700;
-    font-size: .8rem; letter-spacing: .15em;
+    font-size: .78rem; letter-spacing: .15em;
     color: var(--cream-soft);
-    margin-bottom: .8rem;
+    margin-bottom: .7rem;
 }
 .split-pf {
     font-family: var(--mono);
-    font-size: .65rem; letter-spacing: .15em; text-transform: uppercase;
+    font-size: .62rem; letter-spacing: .15em; text-transform: uppercase;
     color: var(--cream-mute);
 }
 
-.ledger-section { margin-bottom: 4rem; }
-.season-ledger,
-.h2h-table,
-.top5-table {
-    background: var(--ink-card);
-    border: 1px solid var(--ink-line);
+/* ══ Tables (ledger, top5, h2h) ══════════════════════════════ */
+.ptable-wrap {
     overflow-x: auto;
+    border: 1px solid var(--ink-line);
+    border-radius: 4px;
+    background: rgba(14, 22, 32, .45);
 }
-.season-ledger table,
-.h2h-table table,
-.top5-table table {
-    width: 100%; border-collapse: collapse;
-    font-family: var(--sans);
-}
-.season-ledger thead,
-.h2h-table thead,
-.top5-table thead {
-    background: var(--ink-soft); border-bottom: 1px solid var(--ink-line);
-}
-.season-ledger th,
-.h2h-table th,
-.top5-table th {
-    padding: .85rem 1rem;
+.ptable { width: 100%; min-width: max-content; border-collapse: collapse; font-size: .82rem; }
+.ptable thead th {
     font-family: var(--mono); font-weight: 700;
-    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+    font-size: .55rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .65rem .8rem;
+    background: rgba(22, 32, 44, .9);
+    border-bottom: 2px solid var(--ink-line);
     color: var(--cream-mute);
     text-align: left; white-space: nowrap;
 }
-.season-ledger th.num,
-.h2h-table th.num,
-.top5-table th.num { text-align: right; }
-.season-ledger td,
-.h2h-table td,
-.top5-table td {
-    padding: 1rem;
-    border-top: 1px solid var(--ink-line-soft);
-    font-size: .9rem;
+.ptable th.num { text-align: right; }
+.ptable td {
+    padding: .7rem .8rem;
+    border-bottom: 1px solid var(--ink-line-soft);
     color: var(--cream-soft);
     vertical-align: middle;
+    white-space: nowrap;
 }
-.season-ledger td.num,
-.h2h-table td.num,
-.top5-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ptable tbody tr:last-child td { border-bottom: none; }
+.ptable tbody tr:hover td { background: rgba(232, 200, 137, .04); }
+.ptable td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ptable td.year {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; color: var(--gold);
+}
+.ptable td.strong { color: var(--cream); font-weight: 500; }
+.ptable td.fin { font-family: var(--mono); font-weight: 700; font-size: .72rem; }
+.ptable td.fin.gold   { color: var(--gold); }
+.ptable td.fin.silver { color: #c0c0c0; }
+.ptable td.fin.bronze { color: #cd7f32; }
+.ptable td.win  { color: var(--gold); font-family: var(--mono); font-weight: 700; }
+.ptable td.loss { color: var(--rust); font-family: var(--mono); font-weight: 700; }
+.ptable td.rec { font-family: var(--mono); font-weight: 700; font-size: .72rem; }
+.ptable td.rec.winning { color: var(--gold); }
+.ptable td.rec.losing  { color: var(--rust); }
+.ptable td.score {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem; color: var(--gold);
+}
+tr.champ-row td { background: rgba(232, 200, 137, .06) !important; }
 
-.top5-table td.rank {
+/* ══ § Head-to-head callouts ═════════════════════════════════ */
+.h2h-callouts { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; margin-bottom: 1.3rem; }
+.h2h-call {
+    position: relative;
+    border: 1px solid var(--ink-line);
+    background: rgba(14, 22, 32, .45);
+    border-radius: 4px;
+    padding: 1rem 1.2rem .95rem;
+}
+.h2h-call::before {
+    content: ''; position: absolute; top: -1px; left: -1px; bottom: -1px;
+    width: 3px; background: var(--gold);
+    border-radius: 4px 0 0 4px;
+}
+.h2h-call.bogey::before { background: var(--rust); }
+.h2h-call-label {
     font-family: var(--mono); font-weight: 700;
-    font-size: .8rem;
+    font-size: .52rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .4rem;
+}
+.h2h-call.bogey .h2h-call-label { color: var(--rust); }
+.h2h-call-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.45rem; line-height: 1;
+    color: var(--cream);
+    margin-bottom: .35rem;
+}
+.h2h-call-rec {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .12em; text-transform: uppercase;
     color: var(--cream-mute);
-    width: 3rem;
 }
-.top5-table td.rank.gold { color: var(--gold); }
-.top5-table td.score {
-    font-family: var(--serif); font-style: italic;
-    font-size: 1.25rem;
-    color: var(--gold);
-}
-.top5-table td.opp {
-    font-family: var(--serif);
-    font-size: 1rem;
-    color: var(--cream);
-}
-.top5-table td.result {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .7rem; letter-spacing: .1em;
-}
-.top5-table td.result.win  { color: var(--gold); }
-.top5-table td.result.loss { color: var(--rust); }
-.top5-table tbody tr:hover { background: rgba(232, 200, 137, .03); }
-.season-ledger td.year {
-    font-family: var(--serif); font-style: italic;
-    font-size: 1.25rem;
-    color: var(--gold);
-    width: 5rem;
-}
-.season-ledger td.team { color: var(--cream); font-weight: 500; }
-.season-ledger td.finish {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .75rem;
-}
-.season-ledger td.finish.gold { color: var(--gold); }
-.season-ledger td.finish.silver { color: #c0c0c0; }
-.season-ledger td.finish.bronze { color: #cd7f32; }
-.h2h-table td.opp {
-    font-family: var(--serif);
-    font-size: 1.1rem;
-    color: var(--cream);
-    width: 8rem;
-}
-.h2h-table td.record { font-family: var(--mono); font-weight: 700; }
-.h2h-table td.record.winning { color: var(--gold); }
-.h2h-table td.record.losing  { color: var(--rust); }
-.h2h-table td.record.even    { color: var(--cream-soft); }
-.season-ledger tbody tr:hover,
-.h2h-table tbody tr:hover { background: rgba(232, 200, 137, .03); }
 
-.error-state, .loading-state {
-    text-align: center;
-    padding: 4rem 2rem;
+/* ══ § At the podium ═════════════════════════════════════════ */
+.podium-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 2.4rem;
+    align-items: start;
 }
+.pod-fact {
+    display: flex; align-items: baseline; gap: .7rem;
+    padding: .52rem 0;
+    border-bottom: 1px solid var(--ink-line-soft);
+}
+.pod-fact:first-child { border-top: 1px solid var(--ink-line); }
+.pod-fact-label {
+    flex-shrink: 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.pod-fact-dots { flex: 1; border-bottom: 1px dotted var(--ink-line); transform: translateY(-3px); }
+.pod-fact-val {
+    font-family: var(--sans); font-weight: 600;
+    font-size: .78rem; color: var(--cream);
+    text-align: right;
+}
+.pod-fact-val .sub { font-family: var(--mono); font-weight: 400; font-size: .6rem; color: var(--cream-mute); margin-left: .3em; }
+.pod-bars { margin-top: 1.5rem; }
+.pod-bars-label, .lineage-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--cream-mute);
+    padding-bottom: .55rem;
+    border-bottom: 2px solid var(--ink-line);
+}
+.pod-bars-label { margin-bottom: .7rem; }
+.lineage-label { margin-bottom: .2rem; }
+.pod-bar-row { display: flex; align-items: center; gap: .7rem; margin-bottom: .5rem; }
+.pod-bar-pos {
+    flex-shrink: 0; width: 2.4rem;
+    font-family: var(--mono); font-weight: 700; font-size: .6rem;
+    letter-spacing: .1em;
+}
+.pod-bar-track { flex: 1; height: 10px; background: rgba(232, 200, 137, .07); border-radius: 1px; overflow: hidden; }
+.pod-bar-fill { display: block; height: 100%; border-radius: 1px; }
+.pod-bar-n {
+    flex-shrink: 0; width: 3.4rem; text-align: right;
+    font-family: var(--mono); font-size: .58rem;
+    color: var(--cream-mute);
+}
+.pp-qb  { color: var(--pos-qb); }  .pod-bar-fill.pp-qb  { background: var(--pos-qb); }
+.pp-rb  { color: var(--pos-rb); }  .pod-bar-fill.pp-rb  { background: var(--pos-rb); }
+.pp-wr  { color: var(--pos-wr); }  .pod-bar-fill.pp-wr  { background: var(--pos-wr); }
+.pp-te  { color: var(--pos-te); }  .pod-bar-fill.pp-te  { background: var(--pos-te); }
+.pp-k   { color: var(--pos-k); }   .pod-bar-fill.pp-k   { background: var(--pos-k); }
+.pp-def { color: var(--pos-def); } .pod-bar-fill.pp-def { background: var(--pos-def); }
+
+.lineage-row {
+    display: flex; align-items: center; gap: .7rem;
+    padding: .42rem 0;
+    border-bottom: 1px solid var(--ink-line-soft);
+}
+.lineage-year {
+    flex-shrink: 0; width: 3rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; color: var(--gold);
+}
+.lineage-player {
+    font-family: var(--sans); font-weight: 600;
+    font-size: .8rem; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lineage-pos {
+    flex-shrink: 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .08em;
+    padding: .08rem .3rem; border-radius: 2px;
+    border: 1px solid currentColor;
+    line-height: 1.4;
+}
+.lineage-slot {
+    margin-left: auto; flex-shrink: 0;
+    font-family: var(--mono); font-size: .56rem;
+    color: var(--cream-mute);
+}
+.pod-link {
+    display: inline-block; margin-top: 1.3rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink-line);
+    padding-bottom: .2rem;
+}
+.pod-link:hover { color: var(--gold-bright); }
+
+/* ══ UDFA locked note ════════════════════════════════════════ */
+.locked-note {
+    border: 1px dashed var(--ink-line);
+    border-radius: 4px;
+    padding: 1.1rem 1.3rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; color: var(--cream-soft);
+}
+.locked-note a { color: var(--gold); }
+.locked-note .lk {
+    display: block;
+    font-family: var(--mono); font-weight: 700; font-style: normal;
+    font-size: .52rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: .4rem;
+}
+
+/* ══ End of file ═════════════════════════════════════════════ */
+.file-folio {
+    margin-top: 3.4rem;
+    text-align: center;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .34em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.file-folio b { color: var(--gold); font-weight: 700; }
+
+/* ══ States ══════════════════════════════════════════════════ */
+.error-state, .loading-state { text-align: center; padding: 4.5rem 2rem; position: relative; z-index: 10; }
 .error-state h1, .loading-state h1 {
     font-family: var(--serif); font-style: italic;
-    font-size: 3rem;
-    color: var(--cream);
-    margin-bottom: 1rem;
+    font-size: 3rem; color: var(--cream); margin-bottom: 1rem;
 }
 .error-state p, .loading-state p {
     font-family: var(--serif); font-style: italic;
-    font-size: 1.2rem;
-    color: var(--cream-soft);
-    margin-bottom: 1.5rem;
+    font-size: 1.2rem; color: var(--cream-soft); margin-bottom: 1.5rem;
 }
 .error-state a {
     font-family: var(--mono); font-weight: 700;
     font-size: .7rem; letter-spacing: .22em; text-transform: uppercase;
-    color: var(--gold);
-    text-decoration: none;
+    color: var(--gold); text-decoration: none;
 }
 .error-state a:hover { color: var(--gold-bright); }
 
-/* ── Mobile ── */
-@media (max-width: 640px) {
-    .profile-header { padding: 2.5rem 1rem 1.25rem; }
-    .profile-tagline { font-size: 1.05rem; }
-    .mini-seal { width: 70px; height: 70px; }
-
-    .stat-strip { grid-template-columns: repeat(2, 1fr); }
-    .strip-item {
-        padding: 1.1rem .75rem;
-        border-right: 1px solid var(--ink-line);
-        border-bottom: 1px solid var(--ink-line);
-    }
-    .strip-item:nth-child(2n) { border-right: none; }
-    .strip-item:nth-last-child(-n+2) { border-bottom: none; }
-    .strip-value { font-size: 1.55rem; }
-    .strip-label { font-size: .52rem; letter-spacing: .18em; }
-
-    .split-record { font-size: 2rem; }
-    .split-col { padding: 1.1rem 1.25rem; }
-
-    /* Tables: keep horizontal scroll, but tighten padding + type */
-    .season-ledger th,
-    .h2h-table th,
-    .top5-table th { padding: .65rem .6rem; font-size: .54rem; letter-spacing: .14em; }
-    .season-ledger td,
-    .h2h-table td,
-    .top5-table td { padding: .75rem .6rem; font-size: .82rem; }
-    .season-ledger td.year { font-size: 1rem; width: auto; }
-    .h2h-table td.opp { font-size: .95rem; width: auto; }
-    .top5-table td.score { font-size: 1rem; }
-    .top5-table td.opp { font-size: .9rem; }
-    .top5-table td.rank { width: 1.4rem; font-size: .7rem; }
-
-    /* Scroll hint */
-    .season-ledger,
-    .h2h-table,
-    .top5-table {
-        background-image:
-            linear-gradient(to right, var(--ink-card), var(--ink-card)),
-            linear-gradient(to right, var(--ink-card), var(--ink-card)),
-            linear-gradient(to right, rgba(0,0,0,.5), rgba(0,0,0,0)),
-            linear-gradient(to left,  rgba(0,0,0,.5), rgba(0,0,0,0));
-        background-position: left center, right center, left center, right center;
-        background-repeat: no-repeat;
-        background-size: 20px 100%, 20px 100%, 14px 100%, 14px 100%;
-        background-attachment: local, local, scroll, scroll;
-    }
+/* Reveal: opacity only — transforms on big sections made the first
+   scroll stutter, and the fade alone reads just as well. */
+.fs-reveal { opacity: 0; transition: opacity .45s ease; }
+.fs-reveal.is-in { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+    .fs-reveal { opacity: 1; transition: none; }
 }
 
-@media (max-width: 420px) {
-    .stat-strip { grid-template-columns: 1fr 1fr; }
-    .profile-tagline { font-size: .95rem; }
-    .strip-value { font-size: 1.4rem; }
-    .season-ledger th,
-    .h2h-table th,
-    .top5-table th { padding: .55rem .5rem; }
-    .season-ledger td,
-    .h2h-table td,
-    .top5-table td { padding: .65rem .5rem; font-size: .78rem; }
+/* ══ Responsive ══════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+    .agate-inner { grid-template-columns: repeat(4, 1fr); }
+    .ag-cell:nth-child(4n) { border-right: none; }
+    .ag-cell:nth-child(-n+4) { border-bottom: 1px solid var(--ink-line-soft); }
+    .spread { grid-template-columns: 1fr; }
+    .spread-rail { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; align-items: start; margin-top: 2rem; }
+    .rail-card + .rail-card, .note-card + .rail-card, .rail-card + .note-card { margin-top: 0; }
+    .note-card { margin-top: 0; }
+}
+@media (max-width: 900px) {
+    .id-card { grid-template-columns: 130px 1fr; }
+    .fp-portrait { width: 130px; height: 130px; }
+    .fp-seals { grid-column: 1 / -1; flex-direction: row; justify-content: center; }
+    .fp-plates { grid-template-columns: 1fr; }
+    .podium-grid { grid-template-columns: 1fr; gap: 1.6rem; }
+}
+@media (max-width: 640px) {
+    .profile-main { padding: 0 1rem 3.5rem; }
+    .region { padding: 1.2rem 1rem 1.3rem; }
+    .region + .region { margin-top: 1.5rem; }
+    .spread-rail { grid-template-columns: 1fr; gap: 1.2rem; }
+    .id-card { grid-template-columns: 1fr; gap: 1.3rem; padding: 1.4rem 1.2rem; transform: none; }
+    .fp-portrait { margin: 0 auto; }
+    .fp-name, .fp-dateline { text-align: center; }
+    .fp-lede { max-width: none; }
+    .agate-inner { grid-template-columns: 1fr 1fr; }
+    .ag-cell { border-right: 1px solid var(--ink-line-soft) !important; border-bottom: 1px solid var(--ink-line-soft); }
+    .ag-cell:nth-child(2n) { border-right: none !important; }
+    .ag-cell:nth-last-child(-n+2) { border-bottom: none; }
+    .split-row, .h2h-callouts { grid-template-columns: 1fr; }
+    .fs-head { flex-wrap: wrap; gap: .5rem .9rem; }
+    .fs-note { margin-left: 0; width: 100%; }
+    .mast-title { font-size: clamp(2.6rem, 12vw, 4rem); }
 }
 </style>
 </head>
@@ -475,10 +964,10 @@
 <div class="ticker">
     <div class="ticker-track">
         <div class="ticker-group" id="ticker-1">
-            <span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · MANAGER PROFILE</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · THE MANAGER FILE</span>
         </div>
         <div class="ticker-group" id="ticker-2">
-            <span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · MANAGER PROFILE</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · THE MANAGER FILE</span>
         </div>
     </div>
 </div>
@@ -494,7 +983,7 @@
 
 <div id="profile-body">
     <div class="loading-state">
-        <h1>Loading…</h1>
+        <h1>Pulling the file…</h1>
         <p>Fetching the records.</p>
     </div>
 </div>
@@ -505,51 +994,28 @@
 
 
 <script>
-
+/* ── Utilities ─────────────────────────────────────────────── */
 function getUserIdFromURL() {
     return new URLSearchParams(window.location.search).get('id');
 }
 
-function toRoman(num) {
-    const romans = [
-        [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
-        [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
-        [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
-    ];
-    let result = '';
-    for (const [v, s] of romans) { while (num >= v) { result += s; num -= v; } }
-    return result;
+function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
 }
 
-function miniSeal(year) {
-    return `
-        <svg class="mini-seal" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <path id="topArc${year}" d="M 20,100 A 80,80 0 0 1 180,100" fill="none"/>
-                <path id="bottomArc${year}" d="M 24,108 A 76,76 0 0 0 176,108" fill="none"/>
-            </defs>
-            <circle cx="100" cy="100" r="92" fill="none" stroke="#e8c889" stroke-width="1.5" opacity="0.4"/>
-            <circle cx="100" cy="100" r="86" fill="none" stroke="#e8c889" stroke-width="0.5" opacity="0.6"/>
-            <g fill="#e8c889">
-                <circle cx="100" cy="14" r="1.5"/><circle cx="186" cy="100" r="1.5"/>
-                <circle cx="100" cy="186" r="1.5"/><circle cx="14" cy="100" r="1.5"/>
-            </g>
-            <text fill="#e8c889" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700" letter-spacing="3">
-                <textPath href="#topArc${year}" startOffset="50%" text-anchor="middle">★ {{LEAGUE_ABBR}} · CHAMPION ·</textPath>
-            </text>
-            <text fill="#e8c889" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700" letter-spacing="3">
-                <textPath href="#bottomArc${year}" startOffset="50%" text-anchor="middle">· ${year} ·</textPath>
-            </text>
-            <g fill="#e8c889">
-                <polygon points="100,42 102,49 109,49 103,53 105,60 100,56 95,60 97,53 91,49 98,49"/>
-            </g>
-            <text x="100" y="125" fill="#f4ebd8" font-family="DM Serif Display, serif" font-style="italic"
-                  font-size="58" font-weight="400" letter-spacing="-0.04em" text-anchor="middle">I</text>
-            <line x1="78" y1="138" x2="122" y2="138" stroke="#e8c889" stroke-width="0.8"/>
-            <text x="100" y="152" fill="#c9c0ad" font-family="JetBrains Mono, monospace"
-                  font-size="6.5" font-weight="700" letter-spacing="2" text-anchor="middle">CHAMPION</text>
-        </svg>
-    `;
+function normName(name) {
+    return (name || '').toLowerCase()
+        .replace(/[.''']/g, '')
+        .replace(/\s+(jr|sr|ii|iii|iv|v)$/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function fmtPct(p) {
+    if (p == null) return '·';
+    return p.toFixed(3).replace(/^0\./, '.');
 }
 
 function finishClass(rank) {
@@ -560,417 +1026,960 @@ function finishClass(rank) {
 }
 
 function recordClass(record) {
-    if (!record || record === '—') return 'even';
-    const parts = record.split('-').map(Number);
-    if (parts.length < 2 || isNaN(parts[0])) return 'even';
-    const [w, l] = parts;
-    if (w > l) return 'winning';
-    if (l > w) return 'losing';
-    return 'even';
+    if (!record) return '';
+    var parts = record.split('-').map(Number);
+    if (parts.length < 2 || isNaN(parts[0])) return '';
+    if (parts[0] > parts[1]) return 'winning';
+    if (parts[1] > parts[0]) return 'losing';
+    return '';
 }
 
-function fmtPct(p) {
-    if (p == null) return '—';
-    return p.toFixed(3).replace(/^0\./, '.');
+function parseRecord(record) {
+    var p = String(record || '').split('-').map(Number);
+    return { w: p[0] || 0, l: p[1] || 0, t: p[2] || 0 };
+}
+
+function initials(name) {
+    return String(name || '?').trim().split(/\s+/).map(function (w) { return w[0]; })
+        .join('').slice(0, 2).toUpperCase();
+}
+
+function hashStr(s) {
+    var h = 0;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
+}
+
+function jget(url) {
+    return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+}
+
+function isUdfa() {
+    return !!(window.__DC && window.__DC.leagueTier === 'udfa');
+}
+
+/* Champion seal — printed inks, it lives on the paper index card. */
+function miniSeal(year) {
+    return '' +
+        '<svg class="mini-seal" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">' +
+            '<defs>' +
+                '<path id="topArc' + year + '" d="M 20,100 A 80,80 0 0 1 180,100" fill="none"/>' +
+                '<path id="bottomArc' + year + '" d="M 24,108 A 76,76 0 0 0 176,108" fill="none"/>' +
+            '</defs>' +
+            '<circle cx="100" cy="100" r="92" fill="none" stroke="#7a5c14" stroke-width="1.5" opacity="0.5"/>' +
+            '<circle cx="100" cy="100" r="86" fill="none" stroke="#7a5c14" stroke-width="0.5" opacity="0.7"/>' +
+            '<g fill="#7a5c14">' +
+                '<circle cx="100" cy="14" r="1.5"/><circle cx="186" cy="100" r="1.5"/>' +
+                '<circle cx="100" cy="186" r="1.5"/><circle cx="14" cy="100" r="1.5"/>' +
+            '</g>' +
+            '<text fill="#7a5c14" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700" letter-spacing="3">' +
+                '<textPath href="#topArc' + year + '" startOffset="50%" text-anchor="middle">★ {{LEAGUE_ABBR}} · CHAMPION ·</textPath>' +
+            '</text>' +
+            '<text fill="#7a5c14" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700" letter-spacing="3">' +
+                '<textPath href="#bottomArc' + year + '" startOffset="50%" text-anchor="middle">· ' + year + ' ·</textPath>' +
+            '</text>' +
+            '<g fill="#7a5c14">' +
+                '<polygon points="100,42 102,49 109,49 103,53 105,60 100,56 95,60 97,53 91,49 98,49"/>' +
+            '</g>' +
+            '<text x="100" y="125" fill="#241c0e" font-family="DM Serif Display, serif" font-style="italic" ' +
+                  'font-size="58" font-weight="400" letter-spacing="-0.04em" text-anchor="middle">' + year.toString().slice(-2) + '</text>' +
+            '<line x1="70" y1="138" x2="130" y2="138" stroke="#7a5c14" stroke-width="0.8"/>' +
+            '<text x="100" y="152" fill="#55482e" font-family="JetBrains Mono, monospace" ' +
+                  'font-size="6.5" font-weight="700" letter-spacing="2" text-anchor="middle">CHAMPION</text>' +
+        '</svg>';
 }
 
 function showError(msg) {
-    document.getElementById('profile-body').innerHTML = `
-        <div class="error-state">
-            <h1>Manager not found.</h1>
-            <p>${msg}</p>
-            <a href="managers/">← View all managers</a>
-        </div>
-    `;
+    document.getElementById('profile-body').innerHTML =
+        '<div class="error-state">' +
+            '<h1>Manager not found.</h1>' +
+            '<p>' + esc(msg) + '</p>' +
+            '<a href="managers/">View all managers</a>' +
+        '</div>';
 }
 
-async function loadProfile() {
-    const userId = getUserIdFromURL();
-    if (!userId) return showError("No manager ID was specified.");
+/* ── Load everything ───────────────────────────────────────── */
+function loadProfile() {
+    var userId = getUserIdFromURL();
+    if (!userId) return showError('No manager ID was specified.');
 
-    let m;
-    try {
-        const res = await fetch(`data/managers/${userId}.json`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        m = await res.json();
-    } catch (err) {
-        return showError(`Couldn't load profile (${err.message}). Did you run build_data.py?`);
-    }
+    Promise.all([
+        fetch('data/managers/' + encodeURIComponent(userId) + '.json')
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+        jget('data/manager_highs.json'),
+        jget('data/manager_dna.json'),
+        jget('data/record_book.json'),
+        jget('data/current_form.json'),
+    ]).then(function (res) {
+        var m = res[0];
+        var highs = res[1];
+        var dna = res[2];
+        var recordBook = res[3];
+        var currentForm = res[4];
 
-    let top5 = [];
-    try {
-        const res = await fetch('data/manager_highs.json');
-        if (res.ok) {
-            const highs = await res.json();
-            const entry = highs.find(h => String(h.user_id) === String(userId));
+        var top5 = [];
+        if (highs && Array.isArray(highs)) {
+            var entry = highs.find(function (h) { return String(h.user_id) === String(userId); });
             if (entry && Array.isArray(entry.top5)) top5 = entry.top5;
         }
-    } catch (_) { /* non-fatal */ }
 
-    // Manager DNA — Veteran-tier feature. The exporter only emits this
-    // bundle when the commissioner is on Veteran+. If the file 404s OR the
-    // payload is null OR this manager isn't in the manager list, we render
-    // the locked variant instead of nothing — gives non-Veteran leagues a
-    // visible "upgrade to unlock" prompt rather than an invisible feature.
-    let dnaEntry = null;
-    let dnaAvailable = false;
-    try {
-        const res = await fetch('data/manager_dna.json');
-        if (res.ok) {
-            const dna = await res.json();
-            if (dna && Array.isArray(dna.managers)) {
-                dnaAvailable = true;
-                dnaEntry = dna.managers.find(d => String(d.uid) === String(userId)) ?? null;
-            }
+        var dnaAvailable = !!(dna && Array.isArray(dna.managers));
+        var dnaEntry = dnaAvailable
+            ? (dna.managers.find(function (d) { return String(d.uid) === String(userId); }) || null)
+            : null;
+
+        try {
+            renderProfile(m, top5, dnaEntry, dnaAvailable, recordBook, currentForm, userId);
+        } catch (err) {
+            showError('The file could not be rendered (' + err.message + '). Please report this.');
         }
-    } catch (_) { /* non-fatal */ }
 
-    // Anything that throws below leaves the page stuck on the loading state
-    // (the old failure mode for managers with empty stats). Surface it instead.
-    try {
-        renderProfile(m, top5, dnaEntry, dnaAvailable);
-    } catch (err) {
-        showError(`Couldn't render profile (${err.message}). Please report this.`);
-    }
+        loadDraftIdentity(userId);
+        enhanceAllTimePlate(userId);
+    }).catch(function (err) {
+        showError('The file could not be pulled (' + err.message + ').');
+    });
 }
 
-// Tiny helper for the DNA teaser barcode — 12 bands, first 5 keyed off
-// the manager's signal genotype, rest are decorative + seeded by name so
-// repeat archetypes still look distinct. Mirrors the bigger version on the
-// Manager DNA page so the teaser visually previews the destination.
+/* ── Record book scan ──────────────────────────────────────── */
+/* Category map: [group, key, label, dubious, keyFn, valueFn, ctxFn, matchFn]. */
+function recordCategories() {
+    function wCtx(r) { return 'W' + r.week + ' ' + r.season + ' vs ' + (r.opp_owner || '?'); }
+    function sCtx(r) { return r.season + (r.team_name ? ' · ' + r.team_name : ''); }
+    function stCtx(r) { return 'W' + r.start_week + ' ' + r.start_season + ' to W' + r.end_week + ' ' + r.end_season; }
+    /* Weekly + season rows carry per-identity user_ids (a merged profile's
+       NFL-era rows keep the NFL id), but every row is stamped with the
+       profile's canonical owner name. Match on the name first, id second. */
+    function selfMatch(r, uid, name) {
+        return (r.owner && name && r.owner === name) || String(r.user_id) === String(uid);
+    }
+    function pairMatch(r, uid, name) {
+        return selfMatch(r, uid, name) || (r.opp_owner && name && r.opp_owner === name) || String(r.opp_user_id) === String(uid);
+    }
+    return [
+        ['weekly', 'highest_single_week_score', 'Highest single week', false,
+            function (r) { return r.score; }, function (r) { return r.score.toFixed(2); }, wCtx, selfMatch],
+        ['weekly', 'lowest_single_week_score', 'Lowest single week', true,
+            function (r) { return r.score; }, function (r) { return r.score.toFixed(2); }, wCtx, selfMatch],
+        ['weekly', 'biggest_blowouts', 'Biggest blowout', false,
+            function (r) { return r.margin; }, function (r) { return '+' + r.margin.toFixed(2); }, wCtx, selfMatch],
+        ['weekly', 'closest_games', 'Closest win', false,
+            function (r) { return r.margin; }, function (r) { return '+' + r.margin.toFixed(2); }, wCtx, selfMatch],
+        ['weekly', 'unluckiest_losses', 'Highest score in a loss', true,
+            function (r) { return r.score; }, function (r) { return r.score.toFixed(2); }, wCtx, selfMatch],
+        ['weekly', 'luckiest_wins', 'Lowest winning score', false,
+            function (r) { return r.score; }, function (r) { return r.score.toFixed(2); }, wCtx, selfMatch],
+        ['weekly', 'highest_combined_score', 'Highest combined score', false,
+            function (r) { return r.combined_score; }, function (r) { return (r.combined_score || 0).toFixed(2); }, wCtx, pairMatch],
+        ['weekly', 'lowest_combined_score', 'Lowest combined score', true,
+            function (r) { return r.combined_score; }, function (r) { return (r.combined_score || 0).toFixed(2); }, wCtx, pairMatch],
+        ['season', 'highest_season_pf', 'Most points in a season', false,
+            function (r) { return r.reg_pf; }, function (r) { return Math.round(r.reg_pf).toLocaleString(); }, sCtx, selfMatch],
+        ['season', 'highest_total_season_pf', 'Most points incl. playoffs', false,
+            function (r) { return r.total_pf; }, function (r) { return Math.round(r.total_pf).toLocaleString(); }, sCtx, selfMatch],
+        ['season', 'lowest_season_pf', 'Fewest points in a season', true,
+            function (r) { return r.reg_pf; }, function (r) { return Math.round(r.reg_pf).toLocaleString(); }, sCtx, selfMatch],
+        ['season', 'best_reg_season_records', 'Best season record', false,
+            function (r) { return r.reg_win_pct; }, function (r) { return r.reg_record; }, sCtx, selfMatch],
+        ['season', 'worst_reg_season_records', 'Worst season record', true,
+            function (r) { return r.reg_win_pct; }, function (r) { return r.reg_record; }, sCtx, selfMatch],
+        ['season', 'highest_ppg', 'Best PPG season', false,
+            function (r) { return r.reg_ppg; }, function (r) { return r.reg_ppg.toFixed(1); }, sCtx, selfMatch],
+        ['season', 'lowest_ppg', 'Worst PPG season', true,
+            function (r) { return r.reg_ppg; }, function (r) { return r.reg_ppg.toFixed(1); }, sCtx, selfMatch],
+        ['season', 'most_points_against', 'Most points against', true,
+            function (r) { return r.reg_pa; }, function (r) { return Math.round(r.reg_pa).toLocaleString(); }, sCtx, selfMatch],
+        ['career', 'longest_win_streaks', 'Longest win streak', false,
+            function (r) { return r.length; }, function (r) { return r.length + ' straight'; }, stCtx, selfMatch],
+        ['career', 'longest_loss_streaks', 'Longest losing streak', true,
+            function (r) { return r.length; }, function (r) { return r.length + ' straight'; }, stCtx, selfMatch],
+    ];
+}
+
+function scanRecordBook(recordBook, uid, name) {
+    if (!recordBook || !recordBook.full_book) return null;
+    var book = recordBook.full_book;
+    var held = [];
+    var mentions = 0;
+    recordCategories().forEach(function (cat) {
+        var group = cat[0], key = cat[1], label = cat[2], dubious = cat[3];
+        var keyFn = cat[4], valFn = cat[5], ctxFn = cat[6], matchFn = cat[7];
+        var rows = (book[group] || {})[key];
+        if (!Array.isArray(rows) || rows.length === 0) return;
+        var topVal = keyFn(rows[0]);
+        var holders = rows.filter(function (r) { return keyFn(r) === topVal; });
+        var mine = holders.find(function (r) { return matchFn(r, uid, name); });
+        if (mine) {
+            held.push({
+                label: label,
+                dubious: dubious,
+                value: valFn(mine),
+                ctx: ctxFn(mine),
+                shared: holders.length > 1,
+            });
+        }
+        rows.forEach(function (r) { if (matchFn(r, uid, name)) mentions++; });
+    });
+    return { held: held, mentions: mentions };
+}
+
+/* ── DNA plate ─────────────────────────────────────────────── */
 function dnaTeaserBarcode(signals, seed) {
-    function classifyBand(v, lo, hi, midColor, lowColor, highColor) {
+    function band(v, lo, hi, midColor, lowColor, highColor) {
         if (v == null) return { cls: 'mute', a: 0.3 };
         if (v < lo) return { cls: lowColor, a: 0.55 };
         if (v > hi) return { cls: highColor, a: 0.85 };
         return { cls: midColor, a: 0.65 };
     }
-    const bands = [
-        classifyBand(signals.efficiency_pct, 50, 80, 'cyan', 'amber', 'lime'),
-        classifyBand(signals.lineup_churn_pct, 12, 28, 'cyan', 'lime', 'magenta'),
-        classifyBand(signals.volatility_pct, 14, 26, 'cyan', 'lime', 'amber'),
-        classifyBand(signals.draft_rb_share_pct, 30, 60, 'cyan', 'lime', 'amber'),
-        classifyBand(signals.trades_per_season, 0.6, 2.5, 'cyan', 'mute', 'magenta'),
+    var bands = [
+        band(signals.efficiency_pct, 50, 80, 'cyan', 'amber', 'lime'),
+        band(signals.lineup_churn_pct, 12, 28, 'cyan', 'lime', 'magenta'),
+        band(signals.volatility_pct, 14, 26, 'cyan', 'lime', 'amber'),
+        band(signals.draft_rb_share_pct, 30, 60, 'cyan', 'lime', 'amber'),
+        band(signals.trades_per_season, 0.6, 2.5, 'cyan', 'mute', 'magenta'),
     ];
-    const palette = ['cyan', 'magenta', 'mute', 'cyan', 'lime', 'mute', 'magenta'];
-    let h = seed;
+    var palette = ['cyan', 'magenta', 'mute', 'cyan', 'lime', 'mute', 'magenta'];
+    var h = seed;
     while (bands.length < 12) {
         bands.push({ cls: palette[h % palette.length], a: 0.3 + ((h % 50) / 100) });
         h = Math.floor(h / 3) + (h * 11) % 233;
     }
-    return bands.map(b => `<span class="pdna-band b-${b.cls}" style="--a:${b.a.toFixed(2)}"></span>`).join('');
+    return bands.map(function (b) {
+        return '<span class="pdna-band b-' + b.cls + '" style="--a:' + b.a.toFixed(2) + '"></span>';
+    }).join('');
 }
 
-function escapeHtmlDna(s) {
-    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[c]);
-}
-
-function hashStr(s) {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
-    return Math.abs(h);
-}
-
-function renderDnaCard(dnaEntry, dnaAvailable, managerName) {
-    // Locked variant when the league owner isn't on Veteran+. Greyed out
-    // with an upgrade hint and no link to the full DNA page.
+function renderDnaPlate(dnaEntry, dnaAvailable, managerName) {
     if (!dnaAvailable || !dnaEntry) {
-        return `
-            <div class="profile-dna is-locked">
-                <div class="pdna-head">
-                    <span class="pdna-lbl">Manager DNA</span>
-                    <span class="pdna-tier">★ Veteran ★</span>
-                </div>
-                <div class="pdna-arch">Sequencing locked.</div>
-                <p class="pdna-locked-msg">
-                    Behavioral DNA — archetypes, trait markers, and the genome lab — unlocks
-                    when this league&apos;s commissioner is on the Veteran tier.
-                </p>
-                <span class="pdna-cta is-locked">
-                    Manager DNA <span class="pdna-cta-arrow">→</span>
-                </span>
-            </div>
-        `;
+        return '' +
+            '<div class="plate dna is-locked">' +
+                '<div class="plate-kick">Manager DNA<span class="tier">★ Veteran ★</span></div>' +
+                '<div class="pdna-arch">Sequencing locked.</div>' +
+                '<p class="pdna-locked-msg">Behavioral DNA, archetypes, trait markers, and the genome lab unlock when this league’s commissioner is on the Veteran tier.</p>' +
+                '<span class="plate-cta locked">Manager DNA</span>' +
+            '</div>';
     }
+    var traits = (dnaEntry.traits || []).slice(0, 3);
+    var traitsHtml = traits.map(function (t) {
+        return '<span class="pdna-trait" title="' + esc(t.detail) + '">' + esc(t.label) + '</span>';
+    }).join('');
+    var seed = hashStr((managerName || '') + '|' + ((dnaEntry.archetype || {}).key || ''));
+    var barcode = dnaTeaserBarcode(dnaEntry.signals || {}, seed);
 
-    const traits = (dnaEntry.traits ?? []).slice(0, 2);
-    const traitsHtml = traits
-        .map(t => `<span class="pdna-trait" title="${escapeHtmlDna(t.detail)}">${escapeHtmlDna(t.label)}</span>`)
-        .join('');
-    const seed = hashStr((managerName || '') + '|' + (dnaEntry.archetype?.key || ''));
-    const barcode = dnaTeaserBarcode(dnaEntry.signals ?? {}, seed);
+    /* Signal readouts — fills the specimen card out with the numbers
+       behind the barcode. Only signals that exist get a row. */
+    var sig = dnaEntry.signals || {};
+    function sigRow(label, v, fmt) {
+        if (v == null) return '';
+        return '<span class="pdna-sig"><span class="pdna-sig-label">' + label + '</span>' +
+            '<span class="pdna-sig-val">' + fmt(v) + '</span></span>';
+    }
+    var sigs =
+        sigRow('Efficiency', sig.efficiency_pct, function (v) { return Math.round(v) + '%'; }) +
+        sigRow('Lineup churn', sig.lineup_churn_pct, function (v) { return Math.round(v) + '%'; }) +
+        sigRow('Volatility', sig.volatility_pct, function (v) { return Math.round(v) + '%'; }) +
+        sigRow('Trades / yr', sig.trades_per_season, function (v) { return v.toFixed(1); }) +
+        sigRow('RB draft share', sig.draft_rb_share_pct, function (v) { return Math.round(v) + '%'; });
+    var sigsHtml = sigs ? '<div class="pdna-sigs">' + sigs + '</div>' : '';
 
-    // Unlocked variant: no Veteran badge — the link is itself proof the
-    // viewer has access. The badge stays on the locked variant above as a
-    // hint about what gates the feature.
-    return `
-        <div class="profile-dna">
-            <div class="pdna-head">
-                <span class="pdna-lbl">Manager DNA · Specimen</span>
-            </div>
-            <div class="pdna-barcode">${barcode}</div>
-            <div class="pdna-arch">${escapeHtmlDna(dnaEntry.archetype.name)}</div>
-            <div class="pdna-tagline">${escapeHtmlDna(dnaEntry.archetype.tagline)}</div>
-            ${traits.length > 0 ? `<div class="pdna-traits">${traitsHtml}</div>` : ''}
-            <a class="pdna-cta" href="live/manager-dna/">
-                See full strand <span class="pdna-cta-arrow">→</span>
-            </a>
-        </div>
-    `;
+    return '' +
+        '<div class="plate dna">' +
+            '<div class="plate-kick">Manager DNA · Specimen</div>' +
+            '<div class="pdna-barcode">' + barcode + '</div>' +
+            '<div class="pdna-arch">' + esc(dnaEntry.archetype.name) + '</div>' +
+            '<div class="pdna-tagline">' + esc(dnaEntry.archetype.tagline) + '</div>' +
+            (traits.length ? '<div class="pdna-traits">' + traitsHtml + '</div>' : '') +
+            sigsHtml +
+            '<a class="plate-cta ghost" href="live/manager-dna/">See the full strand</a>' +
+        '</div>';
 }
 
-function renderProfile(m, top5, dnaEntry, dnaAvailable) {
-    document.getElementById('nav-name').innerHTML = `${m.name} <em>·</em>`;
-    document.title = `${m.name} · {{LEAGUE_NAME}}`;
+/* ── All-Time Team plate ───────────────────────────────────── */
+function renderAllTimePlate(m, userId) {
+    var slots = ['QB', 'RB', 'RB', 'WR', 'WR', 'TE', 'FLX'];
+    var slotsHtml = slots.map(function (s, i) {
+        return '<span class="plate-slot"><i>' + (i + 1) + '</i>' + s + '</span>';
+    }).join('');
+    if (isUdfa()) {
+        return '' +
+            '<div class="plate gold is-locked">' +
+                '<div class="plate-kick">The All-Time Team<span class="tier">★ Paid Tier ★</span></div>' +
+                '<div class="plate-slots">' + slotsHtml + '</div>' +
+                '<div class="plate-title">The team sheet is sealed.</div>' +
+                '<p class="plate-sub">Every player who ever suited up for ' + esc(m.name) + ', distilled to the best season at each position. Unlocks when the commissioner is on a paid plan.</p>' +
+                '<a class="plate-cta ghost" href="/pricing" target="_top">Upgrade to unlock</a>' +
+            '</div>';
+    }
+    return '' +
+        '<div class="plate gold">' +
+            '<div class="plate-kick">The All-Time Team</div>' +
+            '<div class="plate-slots" id="atSlots">' + slotsHtml + '</div>' +
+            '<div class="plate-title">The best season at every position.</div>' +
+            '<p class="plate-sub">Every player who ever suited up for ' + esc(m.name) + ', distilled to one all-time starting lineup. Compare it against the rest of the league.</p>' +
+            '<a class="plate-cta" href="managers/all-time?id=' + encodeURIComponent(userId) + '">Open the team sheet</a>' +
+        '</div>';
+}
 
-    document.querySelectorAll('#ticker-1, #ticker-2').forEach(el => {
-        el.innerHTML = `
-            <span class="ticker-item"><span class="ticker-star">★</span> ${m.name.toUpperCase()} · MANAGER PROFILE</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> ${m.seasons_played} SEASONS · ${m.total_games} GAMES</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> ${m.championships > 0 ? m.championships + ' CHIP' + (m.championships>1?'S':'') + ' · ' + m.championship_seasons.join(', ') : 'CHASING FIRST CHIP'}</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · EST. {{LEAGUE_FOUNDED}}</span>
-        `;
+/* After first paint: pull the pool + rank files and swap the numbered
+   tiles for the real starting seven (headshot, finish, year). Quietly
+   keeps the placeholders if anything is missing. */
+function enhanceAllTimePlate(uid) {
+    if (isUdfa()) return;
+    var mount = document.getElementById('atSlots');
+    if (!mount) return;
+    Promise.all([jget('data/league.json'), jget('data/all_time_pool.json')]).then(function (res) {
+        var profile = (res[0] && res[0].draft_scoring_profile) || 'ppr_6pt';
+        var pool = res[1];
+        if (!pool || !Array.isArray(pool.managers)) return;
+        var mgr = pool.managers.find(function (x) { return String(x.user_id) === String(uid); });
+        if (!mgr) return;
+        var years = mgr.seasons.map(function (se) { return se.year; });
+        Promise.all(years.map(function (y) {
+            return jget('/data/fantasy_ranks/' + profile + '/' + y + '.json');
+        })).then(function (files) {
+            var ranks = {};
+            files.forEach(function (d, i) {
+                if (!d || !Array.isArray(d.players)) return;
+                var byPos = {};
+                d.players.forEach(function (p) {
+                    var pos = (p.position || '?').toUpperCase();
+                    (byPos[pos] = byPos[pos] || []).push(p);
+                });
+                var lookup = {};
+                Object.keys(byPos).forEach(function (pos) {
+                    byPos[pos].sort(function (a, b) { return (b.fpts || 0) - (a.fpts || 0); });
+                    byPos[pos].forEach(function (p, j) {
+                        lookup[normName(p.player_name)] = { fpts: p.fpts || 0, posRank: j + 1, pid: p.player_id || null, pos: pos };
+                    });
+                });
+                ranks[years[i]] = lookup;
+            });
+
+            var best = {};
+            mgr.seasons.forEach(function (se) {
+                var lookup = ranks[se.year];
+                if (!lookup) return;
+                se.players.forEach(function (p) {
+                    var key = normName(p.name);
+                    var lk = lookup[key];
+                    if (!lk || !lk.fpts) return;
+                    var cand = { key: key, name: p.name, pos: lk.pos, year: se.year, fpts: lk.fpts, posRank: lk.posRank, pid: lk.pid };
+                    if (!best[key] || cand.fpts > best[key].fpts) best[key] = cand;
+                });
+            });
+            var all = Object.keys(best).map(function (k) { return best[k]; })
+                .sort(function (a, b) { return b.fpts - a.fpts; });
+            var used = {};
+            function take(filter) {
+                for (var i = 0; i < all.length; i++) {
+                    var c = all[i];
+                    if (used[c.key]) continue;
+                    if (filter(c)) { used[c.key] = 1; return c; }
+                }
+                return null;
+            }
+            var picks = [
+                take(function (c) { return c.pos === 'QB'; }),
+                take(function (c) { return c.pos === 'RB'; }),
+                take(function (c) { return c.pos === 'RB'; }),
+                take(function (c) { return c.pos === 'WR'; }),
+                take(function (c) { return c.pos === 'WR'; }),
+                take(function (c) { return c.pos === 'TE'; }),
+                take(function (c) { return c.pos === 'RB' || c.pos === 'WR' || c.pos === 'TE'; }),
+            ];
+            var labels = ['QB', 'RB', 'RB', 'WR', 'WR', 'TE', 'FLX'];
+            if (!picks.some(function (p) { return p; })) return;
+            mount.innerHTML = picks.map(function (p, i) {
+                if (!p) return '<span class="plate-slot"><i>' + (i + 1) + '</i>' + labels[i] + '</span>';
+                var img = p.pid
+                    ? '<img loading="lazy" alt="" src="https://sleepercdn.com/content/nfl/players/thumb/' + p.pid + '.jpg" onerror="this.remove()">'
+                    : '';
+                return '<span class="plate-slot filled" title="' + esc(p.name) + ' · ' + p.fpts.toFixed(1) + ' pts">' +
+                    img +
+                    '<span class="ps-fin">' + p.pos + p.posRank + '</span>' +
+                    '<span class="ps-year">’' + String(p.year).slice(-2) + '</span>' +
+                '</span>';
+            }).join('');
+        });
+    });
+}
+
+/* ── Current form (margin rail) ────────────────────────────── */
+function renderNowRail(currentForm, uid) {
+    if (!currentForm || !Array.isArray(currentForm.rows)) return '';
+    var row = currentForm.rows.find(function (r) { return String(r.user_id) === String(uid); });
+    if (!row) return '';
+    var title = currentForm.is_final
+        ? currentForm.year + ' Final'
+        : 'Week ' + currentForm.week;
+    var delta = row.pos_change || 0;
+    var deltaHtml = delta > 0 ? '<span class="now-delta up">▲ ' + delta + '</span>'
+        : delta < 0 ? '<span class="now-delta down">▼ ' + Math.abs(delta) + '</span>'
+        : '<span class="now-delta flat">· even</span>';
+    var formHtml = (row.form || []).slice().reverse().map(function (r) {
+        return '<span class="form-dot ' + r.toLowerCase() + '">' + r + '</span>';
+    }).join('');
+    var gb = typeof row.gb === 'number'
+        ? (row.gb > 0 ? '+' + row.gb.toFixed(1) : row.gb.toFixed(1))
+        : '·';
+    var diff = typeof row.pt_diff_5 === 'number'
+        ? (row.pt_diff_5 > 0 ? '+' + row.pt_diff_5.toFixed(1) : row.pt_diff_5.toFixed(1))
+        : '·';
+    function nrow(label, val) {
+        return '<div class="now-row"><span class="now-row-label">' + label + '</span>' +
+            '<span class="now-row-dots"></span><span class="now-row-val">' + val + '</span></div>';
+    }
+    return '' +
+        '<div class="rail-card fs-reveal">' +
+            '<div class="rail-head"><span>Current Form</span><span class="sub">' + esc(title) + '</span></div>' +
+            '<div class="now-rank"><span class="now-pos">#' + row.pos + '</span>' + deltaHtml +
+                '<span class="now-team">' + esc(row.team || '') + '</span></div>' +
+            nrow('Record', esc(row.record)) +
+            nrow('Points for', Math.round(row.pts).toLocaleString()) +
+            nrow('PPG · last 5', (row.ppg5 || 0).toFixed(1)) +
+            nrow('Pt diff · last 5', diff) +
+            nrow('Games back', gb) +
+            nrow('Form', '<span class="form-dots">' + formHtml + '</span>') +
+        '</div>';
+}
+
+/* ── Records held (margin rail) ────────────────────────────── */
+function renderRecordsRail(recordBook, uid, name) {
+    var scan = scanRecordBook(recordBook, uid, name);
+    if (!scan) {
+        if (isUdfa()) {
+            return '' +
+                '<div class="rail-card fs-reveal">' +
+                    '<div class="rail-head"><span>The Record Book</span></div>' +
+                    '<div class="locked-note"><span class="lk">★ Paid Tier ★</span>' +
+                    'The record book cross-reference unlocks on a paid plan. ' +
+                    '<a href="/pricing" target="_top">Upgrade to unlock</a></div>' +
+                '</div>';
+        }
+        return '';
+    }
+    var body;
+    if (scan.held.length === 0) {
+        body = '<p class="fs-empty">No standing league records. The book remains unclaimed territory.</p>';
+    } else {
+        body = scan.held.map(function (r) {
+            return '<div class="rec-plate' + (r.dubious ? ' dub' : '') + '">' +
+                (r.shared ? '<span class="rec-shared">Shared</span>' : '') +
+                '<div class="rec-cat">' + esc(r.label) + '</div>' +
+                '<div class="rec-val">' + esc(r.value) + '</div>' +
+                '<div class="rec-ctx">' + esc(r.ctx) + '</div>' +
+            '</div>';
+        }).join('');
+    }
+    var mentionsLine = scan.mentions > 0
+        ? '<p class="rec-mentions">' + scan.mentions + ' top-ten ' + (scan.mentions === 1 ? 'entry' : 'entries') +
+          ' across the ledgers. <a href="records.html">Open the record book</a></p>'
+        : '';
+    return '' +
+        '<div class="rail-card fs-reveal">' +
+            '<div class="rail-head"><span>Records Held</span><span class="sub">' + scan.held.length + ' standing</span></div>' +
+            body + mentionsLine +
+        '</div>';
+}
+
+/* ── The notebook: margin jottings from the data ───────────── */
+function renderNotebook(m, top5) {
+    var notes = [];
+    if (m.championships > 0) {
+        notes.push('Champion in ' + m.championship_seasons.join(', ') + '.');
+    } else {
+        var ranks = (m.season_ledger || []).filter(function (s) { return s.final_rank != null; });
+        if (ranks.length) {
+            var bestRow = ranks.reduce(function (a, b) { return b.final_rank < a.final_rank ? b : a; });
+            notes.push('Best finish so far: #' + bestRow.final_rank + ' in ' + bestRow.year + '. The first title is still out there.');
+        }
+    }
+    if (top5 && top5.length) {
+        var g = top5[0];
+        notes.push('Career-high ' + g.score.toFixed(2) + ' came in W' + g.week + ' ' + g.season + ' against ' + g.opp_name + '.');
+    }
+    if (m.playoff_appearances != null && m.seasons_played) {
+        notes.push('Reached the playoffs in ' + m.playoff_appearances + ' of ' + m.seasons_played + ' seasons.');
+    }
+    var careerPf = Math.round((m.reg_pf || 0) + (m.playoff_pf || 0));
+    if (careerPf > 0) {
+        notes.push(careerPf.toLocaleString() + ' career points' + (m.is_current === false ? ' in the books.' : ' and counting.'));
+    }
+    if (m.longest_win_streak && m.longest_win_streak.length >= 4) {
+        notes.push('Longest heater: ' + m.longest_win_streak.length + ' straight wins (' + m.longest_win_streak.when + ').');
+    }
+    notes = notes.slice(0, 4);
+    if (!notes.length) return '';
+    return '' +
+        '<div class="note-card fs-reveal">' +
+            '<div class="note-head">From the notebook</div>' +
+            notes.map(function (n) { return '<div class="note-line">' + esc(n) + '</div>'; }).join('') +
+        '</div>';
+}
+
+/* ── Draft identity (async fill) ───────────────────────────── */
+function loadDraftIdentity(uid) {
+    var mount = document.getElementById('podium-section');
+    if (!mount) return;
+    jget('data/drafts/drafts_directory.json').then(function (dir) {
+        var years = dir && Array.isArray(dir.drafts)
+            ? dir.drafts.map(function (d) { return d.year; })
+            : [];
+        if (!years.length) { mount.remove(); return; }
+        return Promise.all(years.map(function (y) { return jget('data/drafts/' + y + '.json'); }))
+            .then(function (files) { renderPodium(mount, uid, years, files); });
+    }).then(function () {}, function () { mount.remove(); });
+}
+
+// DEF picks carry the full team name as the "player"; show a code instead.
+var DEF_ABBR = {
+    'arizona cardinals': 'ARI', 'atlanta falcons': 'ATL', 'baltimore ravens': 'BAL',
+    'buffalo bills': 'BUF', 'carolina panthers': 'CAR', 'chicago bears': 'CHI',
+    'cincinnati bengals': 'CIN', 'cleveland browns': 'CLE', 'dallas cowboys': 'DAL',
+    'denver broncos': 'DEN', 'detroit lions': 'DET', 'green bay packers': 'GB',
+    'houston texans': 'HOU', 'indianapolis colts': 'IND', 'jacksonville jaguars': 'JAX',
+    'kansas city chiefs': 'KC', 'las vegas raiders': 'LV', 'oakland raiders': 'LV',
+    'los angeles chargers': 'LAC', 'san diego chargers': 'LAC',
+    'los angeles rams': 'LAR', 'st. louis rams': 'LAR',
+    'miami dolphins': 'MIA', 'minnesota vikings': 'MIN', 'new england patriots': 'NE',
+    'new orleans saints': 'NO', 'new york giants': 'NYG', 'new york jets': 'NYJ',
+    'philadelphia eagles': 'PHI', 'pittsburgh steelers': 'PIT',
+    'san francisco 49ers': 'SF', 'seattle seahawks': 'SEA',
+    'tampa bay buccaneers': 'TB', 'tennessee titans': 'TEN',
+    'washington commanders': 'WAS', 'washington football team': 'WAS', 'washington redskins': 'WAS',
+};
+function defAbbr(name) { return DEF_ABBR[(name || '').trim().toLowerCase()] || null; }
+// A known team name → its city (drop the nickname): "Buffalo Bills" → "Buffalo".
+function defCity(name) { return defAbbr(name) ? (name || '').trim().replace(/\s+\S+$/, '') : null; }
+// Full label incl. " DEF" for use where no position chip sits alongside.
+function draftName(name) { var c = defCity(name); return c ? c + ' DEF' : name; }
+
+function renderPodium(mount, uid, years, files) {
+    var mine = [];
+    files.forEach(function (f, i) {
+        if (!f || !Array.isArray(f.picks)) return;
+        f.picks.forEach(function (p) {
+            if (String(p.user_id) === String(uid)) mine.push(Object.assign({ year: years[i] }, p));
+        });
+    });
+    if (!mine.length) { mount.remove(); return; }
+
+    var yearsDrafted = {};
+    var posCounts = {};
+    var nameCounts = {};
+    var namePickSum = {};
+    var round1 = [];
+    mine.forEach(function (p) {
+        yearsDrafted[p.year] = 1;
+        var pos = (p.position || '?').toUpperCase();
+        posCounts[pos] = (posCounts[pos] || 0) + 1;
+        if (p.player_name) {
+            nameCounts[p.player_name] = (nameCounts[p.player_name] || 0) + 1;
+            namePickSum[p.player_name] = (namePickSum[p.player_name] || 0) + (p.overall_pick || p.round_pick || 0);
+        }
+        if (p.round === 1) round1.push(p);
+    });
+    round1.sort(function (a, b) { return a.year - b.year; });
+
+    // Most-drafted: just the top name. If several tie for the top count,
+    // show 2 — the ones with the best (lowest) average draft slot, so a
+    // late-round repeat loses out to earlier-drafted repeats.
+    var maxCount = 0;
+    Object.keys(nameCounts).forEach(function (n) { if (nameCounts[n] > maxCount) maxCount = nameCounts[n]; });
+    var topNames = Object.keys(nameCounts)
+        .filter(function (n) { return nameCounts[n] === maxCount; })
+        .sort(function (a, b) { return (namePickSum[a] / nameCounts[a]) - (namePickSum[b] / nameCounts[b]); });
+    var repeats = maxCount >= 2 ? topNames.slice(0, topNames.length > 1 ? 2 : 1) : [];
+
+    var favSlot = round1.length
+        ? (round1.reduce(function (acc, p) { return acc + (p.round_pick || 0); }, 0) / round1.length)
+        : null;
+
+    var posOrder = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
+    var posMax = Math.max.apply(null, posOrder.map(function (p) { return posCounts[p] || 0; }).concat([1]));
+    var bars = posOrder.filter(function (p) { return posCounts[p]; }).map(function (p) {
+        var n = posCounts[p];
+        var w = Math.round((n / posMax) * 100);
+        var cls = 'pp-' + p.toLowerCase();
+        return '<div class="pod-bar-row">' +
+            '<span class="pod-bar-pos ' + cls + '">' + p + '</span>' +
+            '<span class="pod-bar-track"><span class="pod-bar-fill ' + cls + '" style="width:' + w + '%"></span></span>' +
+            '<span class="pod-bar-n">' + n + ' · ' + Math.round((n / mine.length) * 100) + '%</span>' +
+        '</div>';
+    }).join('');
+
+    function factRow(label, valHtml) {
+        return '<div class="pod-fact">' +
+            '<span class="pod-fact-label">' + label + '</span>' +
+            '<span class="pod-fact-dots"></span>' +
+            '<span class="pod-fact-val">' + valHtml + '</span>' +
+        '</div>';
+    }
+    /* "Drafted most often": top name gets its own line, the runners-up
+       share the second so the row stays two lines tall. */
+    var repeatsHtml = '';
+    if (repeats.length) {
+        var fmt = function (n) { return esc(draftName(n)) + ' <span class="sub">×' + nameCounts[n] + '</span>'; };
+        repeatsHtml = fmt(repeats[0]);
+        if (repeats.length > 1) {
+            repeatsHtml += '<br>' + repeats.slice(1).map(fmt).join(' · ');
+        }
+    }
+    var facts =
+        factRow('Drafts attended', Object.keys(yearsDrafted).length + '<span class="sub">of ' + years.length + ' on file</span>') +
+        factRow('Career picks', String(mine.length)) +
+        factRow('First-round picks', String(round1.length)) +
+        (favSlot != null ? factRow('Avg first-round slot', favSlot.toFixed(1)) : '') +
+        (repeatsHtml ? factRow('Drafted most often', repeatsHtml) : '');
+
+    var lineage = round1.map(function (p) {
+        var pos = (p.position || '?').toUpperCase();
+        // DEF already gets a chip below, so show just the city (Buffalo), not "Buffalo DEF".
+        var disp = defCity(p.player_name) || p.player_name || '?';
+        return '<div class="lineage-row">' +
+            '<span class="lineage-year">' + p.year + '</span>' +
+            '<span class="lineage-player">' + esc(disp) + '</span>' +
+            '<span class="lineage-pos pp-' + pos.toLowerCase() + '">' + pos + '</span>' +
+            '<span class="lineage-slot">Pick ' + (p.round_pick || p.overall_pick) + '</span>' +
+        '</div>';
+    }).join('');
+
+    mount.innerHTML =
+        '<div class="fs-head">' +
+            '<span class="fs-num">§ 05 · At the Podium</span>' +
+            '<span class="fs-title">Draft identity</span>' +
+            '<span class="fs-note">' + mine.length + ' picks · ' + Object.keys(yearsDrafted).length + ' drafts</span>' +
+        '</div>' +
+        '<div class="podium-grid">' +
+            '<div>' + facts +
+                '<div class="pod-bars">' +
+                    '<div class="pod-bars-label">Position mix · all picks</div>' + bars +
+                '</div>' +
+            '</div>' +
+            '<div>' +
+                '<div class="lineage-label">First-round lineage</div>' +
+                (lineage || '<p class="fs-empty">No first-round picks on file.</p>') +
+                '<a class="pod-link" href="draft/">Read the full dossier in the Draft Annual</a>' +
+            '</div>' +
+        '</div>';
+    watchReveals();
+}
+
+/* ── Main render ───────────────────────────────────────────── */
+function renderProfile(m, top5, dnaEntry, dnaAvailable, recordBook, currentForm, userId) {
+    document.getElementById('nav-name').innerHTML = esc(m.name) + ' <em>·</em>';
+    document.title = m.name + ' · {{LEAGUE_NAME}}';
+
+    document.querySelectorAll('#ticker-1, #ticker-2').forEach(function (el) {
+        el.innerHTML =
+            '<span class="ticker-item"><span class="ticker-star">★</span> ' + esc(m.name.toUpperCase()) + ' · THE MANAGER FILE</span>' +
+            '<span class="ticker-item"><span class="ticker-star">★</span> ' + m.seasons_played + ' SEASONS · ' + m.total_games + ' GAMES</span>' +
+            '<span class="ticker-item"><span class="ticker-star">★</span> ' + (m.championships > 0
+                ? m.championships + ' CHIP' + (m.championships > 1 ? 'S' : '') + ' · ' + m.championship_seasons.join(', ')
+                : 'CHASING THE FIRST CHIP') + '</span>' +
+            '<span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · EST. {{LEAGUE_FOUNDED}}</span>';
     });
 
-    // Banner
-    let bannerHTML;
+    var firstYear = (m.season_ledger && m.season_ledger.length) ? m.season_ledger[0].year : '{{LEAGUE_FOUNDED}}';
+    var lastYear = (m.season_ledger && m.season_ledger.length) ? m.season_ledger[m.season_ledger.length - 1].year : '';
+    var isCurrent = m.is_current !== false;
+    var status = isCurrent ? 'Active member' : 'Alumnus';
+
+    /* The lede: set from the career line like an editor would. */
+    var pct = m.reg_win_pct != null ? fmtPct(m.reg_win_pct) : '·';
+    var chipsPhrase = m.championships > 0
+        ? m.championships + ' championship' + (m.championships === 1 ? '' : 's') + ' (' + m.championship_seasons.join(', ') + ')'
+        : 'no championships yet';
+    var lede = m.seasons_played + ' season' + (m.seasons_played === 1 ? '' : 's') +
+        ' under the {{LEAGUE_NAME}} masthead. A regular-season mark of ' + m.reg_record +
+        ' (' + pct + '), ' + chipsPhrase +
+        ', and a single-week high of ' + (m.high_score != null ? m.high_score.toFixed(1) : '·') +
+        '. This is the complete file on ' + m.name + '.';
+
+    /* Seals: cap the rendered row at 4, then a +N more line. */
+    var sealsHtml;
     if (m.championships > 0) {
-        bannerHTML = `<div class="banner-row">${m.championship_seasons.map(y => miniSeal(y)).join('')}</div>`;
+        var shown = m.championship_seasons.slice(0, 4);
+        sealsHtml = shown.map(function (y) { return miniSeal(y); }).join('') +
+            (m.championship_seasons.length > 4
+                ? '<span class="fp-seals-more">+' + (m.championship_seasons.length - 4) + ' more</span>'
+                : '');
     } else {
-        bannerHTML = `<div class="banner-row"><div class="banner-empty">— No championships yet —</div></div>`;
+        sealsHtml = '<div class="fp-seals-none">No championships on file</div>';
     }
 
-    // Season ledger
-    let ledgerHTML;
-    if (m.season_ledger && m.season_ledger.length > 0) {
-        ledgerHTML = `
-            <div class="season-ledger">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Year</th>
-                            <th>Team</th>
-                            <th class="num">Finish</th>
-                            <th class="num">Reg. Rank</th>
-                            <th class="num">Reg. Record</th>
-                            <th class="num">Reg. PF</th>
-                            <th class="num">Playoffs</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${m.season_ledger.map(s => `
-                            <tr>
-                                <td class="year">${s.year}</td>
-                                <td class="team">${s.team_name}</td>
-                                <td class="num finish ${finishClass(s.final_rank)}">${s.final_rank === 1 ? '★ 1st' : (s.final_rank ? '#' + s.final_rank : '—')}</td>
-                                <td class="num">${s.reg_season_rank ?? '—'}</td>
-                                <td class="num">${s.reg_record}</td>
-                                <td class="num">${s.reg_pf != null ? s.reg_pf.toFixed(1) : '—'}</td>
-                                <td class="num">${s.playoff_record}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
+    var portrait = m.avatar
+        ? '<img src="' + esc(m.avatar) + '" alt="" onerror="this.outerHTML=\'<div class=&quot;fp-mono&quot;>' + esc(initials(m.name)) + '</div>\'">'
+        : '<div class="fp-mono">' + esc(initials(m.name)) + '</div>';
+
+    /* Agate band: the eight numbers that follow this manager around. */
+    var agate =
+        agateCell('Seasons', String(m.seasons_played), firstYear + (lastYear && lastYear !== firstYear ? ' to ' + lastYear : ''), true) +
+        agateCell('Career games', String(m.total_games), 'reg + playoffs', true) +
+        agateCell('High score', m.high_score != null ? m.high_score.toFixed(1) : '·', 'career best', false) +
+        agateCell('Avg PPG', m.avg_ppg != null ? m.avg_ppg.toFixed(1) : '·', 'all games', false) +
+        agateCell('Top-3 finishes', String(m.top_three_finishes), m.top_three_finishes ? 'podium visits' : 'still chasing', false) +
+        agateCell('Playoff trips', String(m.playoff_appearances != null ? m.playoff_appearances : '·'), 'appearances', false) +
+        agateCell('Best streak', String((m.longest_win_streak || {}).length || 0), (m.longest_win_streak || {}).when || '·', false) +
+        agateCell('Worst skid', String((m.longest_loss_streak || {}).length || 0), (m.longest_loss_streak || {}).when || '·', false);
+
+    /* Season ledger — newest year on top. */
+    var ledgerHtml;
+    if (m.season_ledger && m.season_ledger.length) {
+        ledgerHtml =
+            '<div class="ptable-wrap"><table class="ptable"><thead><tr>' +
+                '<th>Year</th><th>Team</th><th class="num">Finish</th><th class="num">Reg rank</th>' +
+                '<th class="num">Record</th><th class="num">PF</th><th class="num">PPG</th>' +
+                '<th class="num">High week</th><th class="num">Playoffs</th>' +
+            '</tr></thead><tbody>' +
+            m.season_ledger.slice().reverse().map(function (s) {
+                var champ = s.final_rank === 1;
+                return '<tr' + (champ ? ' class="champ-row"' : '') + '>' +
+                    '<td class="year">' + s.year + '</td>' +
+                    '<td class="strong">' + esc(s.team_name) + '</td>' +
+                    '<td class="num fin ' + finishClass(s.final_rank) + '">' + (champ ? '★ 1st' : (s.final_rank ? '#' + s.final_rank : '·')) + '</td>' +
+                    '<td class="num">' + (s.reg_season_rank != null ? s.reg_season_rank : '·') + '</td>' +
+                    '<td class="num rec ' + recordClass(s.reg_record) + '">' + esc(s.reg_record) + '</td>' +
+                    '<td class="num">' + (s.reg_pf != null ? s.reg_pf.toFixed(1) : '·') + '</td>' +
+                    '<td class="num">' + (s.avg_ppg ? s.avg_ppg.toFixed(1) : '·') + '</td>' +
+                    '<td class="num">' + (s.high_week_score ? s.high_week_score.toFixed(1) + (s.high_week ? ' <span style="color:var(--cream-mute);font-size:.62rem">W' + s.high_week + '</span>' : '') : '·') + '</td>' +
+                    '<td class="num">' + esc(s.playoff_record) + '</td>' +
+                '</tr>';
+            }).join('') +
+            '</tbody></table></div>';
     } else {
-        ledgerHTML = `<p style="font-family: var(--serif); font-style: italic; color: var(--cream-mute); padding: 1rem;">No season data on file.</p>`;
+        ledgerHtml = '<p class="fs-empty">No season data on file.</p>';
     }
 
-    // H2H
-    let h2hHTML;
-    if (m.h2h && m.h2h.length > 0) {
-        const h2hWithGames = m.h2h.filter(h => h.total_games > 0);
-        if (h2hWithGames.length === 0) {
-            h2hHTML = `<p style="font-family: var(--serif); font-style: italic; color: var(--cream-mute); padding: 1rem;">No head-to-head matchups on file.</p>`;
-        } else {
-            h2hHTML = `
-                <div class="h2h-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Opponent</th>
-                                <th class="num">Reg. Record</th>
-                                <th class="num">Playoffs</th>
-                                <th class="num">All-Time</th>
-                                <th class="num">Games</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${h2hWithGames.map(h => `
-                                <tr>
-                                    <td class="opp">${h.opp_name}</td>
-                                    <td class="num record ${recordClass(h.reg_record)}">${h.reg_record}</td>
-                                    <td class="num record ${recordClass(h.playoff_record)}">${h.playoff_record}</td>
-                                    <td class="num record ${recordClass(h.total_record)}">${h.total_record}</td>
-                                    <td class="num">${h.total_games}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
+    /* Top performances */
+    var topHtml;
+    if (top5.length) {
+        topHtml =
+            '<div class="ptable-wrap"><table class="ptable"><thead><tr>' +
+                '<th class="num">No.</th><th class="num">Score</th><th>Opponent</th><th class="num">Their score</th>' +
+                '<th class="num">Result</th><th class="num">Year</th><th class="num">Week</th><th>Team</th>' +
+            '</tr></thead><tbody>' +
+            top5.map(function (g, i) {
+                return '<tr>' +
+                    '<td class="num fin' + (i === 0 ? ' gold' : '') + '">' + (i + 1) + '</td>' +
+                    '<td class="num score">' + g.score.toFixed(2) + '</td>' +
+                    '<td class="strong">' + esc(g.opp_name) + '</td>' +
+                    '<td class="num">' + g.opp_score.toFixed(2) + '</td>' +
+                    '<td class="num ' + (g.result === 'W' ? 'win' : 'loss') + '">' + g.result + '</td>' +
+                    '<td class="num">' + g.season + '</td>' +
+                    '<td class="num">W' + g.week + '</td>' +
+                    '<td>' + esc(g.team || '·') + '</td>' +
+                '</tr>';
+            }).join('') +
+            '</tbody></table></div>';
+    } else if (isUdfa()) {
+        topHtml = '<div class="locked-note"><span class="lk">★ Paid Tier ★</span>' +
+            'Career highs unlock when this league’s commissioner is on a paid plan. ' +
+            '<a href="/pricing" target="_top">Upgrade to unlock</a></div>';
+    } else {
+        topHtml = '<p class="fs-empty">No top performances on file.</p>';
+    }
+
+    /* Head-to-head: callouts + full ledger */
+    var h2hRows = (m.h2h || []).filter(function (h) { return h.total_games > 0; });
+    var h2hHtml;
+    var calloutsHtml = '';
+    if (h2hRows.length) {
+        var qualified = h2hRows.filter(function (h) { return h.total_games >= 3; });
+        if (qualified.length >= 2) {
+            var scored = qualified.map(function (h) {
+                var r = parseRecord(h.total_record);
+                var games = r.w + r.l + r.t;
+                return { h: h, pct: games ? r.w / games : 0, rec: h.total_record };
+            });
+            scored.sort(function (a, b) { return b.pct - a.pct || b.h.total_games - a.h.total_games; });
+            var best = scored[0];
+            var worst = scored[scored.length - 1];
+            if (best !== worst) {
+                calloutsHtml =
+                    '<div class="h2h-callouts">' +
+                        '<div class="h2h-call">' +
+                            '<div class="h2h-call-label">Owns</div>' +
+                            '<div class="h2h-call-name">' + esc(best.h.opp_name) + '</div>' +
+                            '<div class="h2h-call-rec">' + esc(best.rec) + ' all-time · ' + best.h.total_games + ' meetings</div>' +
+                        '</div>' +
+                        '<div class="h2h-call bogey">' +
+                            '<div class="h2h-call-label">Haunted by</div>' +
+                            '<div class="h2h-call-name">' + esc(worst.h.opp_name) + '</div>' +
+                            '<div class="h2h-call-rec">' + esc(worst.rec) + ' all-time · ' + worst.h.total_games + ' meetings</div>' +
+                        '</div>' +
+                    '</div>';
+            }
         }
+        h2hHtml =
+            '<div class="ptable-wrap"><table class="ptable"><thead><tr>' +
+                '<th>Opponent</th><th class="num">Reg</th><th class="num">Playoffs</th>' +
+                '<th class="num">All-time</th><th class="num">Games</th><th class="num">Pt diff</th>' +
+            '</tr></thead><tbody>' +
+            h2hRows.map(function (h) {
+                var diff = (h.reg_pf + (h.playoff_pf || 0)) - (h.reg_pa + (h.playoff_pa || 0));
+                var diffStr = (diff > 0 ? '+' : '') + diff.toFixed(1);
+                return '<tr>' +
+                    '<td class="strong">' + esc(h.opp_name) + '</td>' +
+                    '<td class="num rec ' + recordClass(h.reg_record) + '">' + esc(h.reg_record) + '</td>' +
+                    '<td class="num rec ' + recordClass(h.playoff_record) + '">' + esc(h.playoff_record) + '</td>' +
+                    '<td class="num rec ' + recordClass(h.total_record) + '">' + esc(h.total_record) + '</td>' +
+                    '<td class="num">' + h.total_games + '</td>' +
+                    '<td class="num" style="color:' + (diff >= 0 ? 'var(--gold)' : 'var(--rust)') + '">' + diffStr + '</td>' +
+                '</tr>';
+            }).join('') +
+            '</tbody></table></div>';
     } else {
-        h2hHTML = `<p style="font-family: var(--serif); font-style: italic; color: var(--cream-mute); padding: 1rem;">No head-to-head data on file.</p>`;
+        h2hHtml = '<p class="fs-empty">No head-to-head data on file.</p>';
     }
 
-    // Top 5 weeks
-    let top5HTML;
-    if (top5.length > 0) {
-        top5HTML = `
-            <div class="top5-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="num">#</th>
-                            <th class="num">Score</th>
-                            <th>Opponent</th>
-                            <th class="num">Opp Score</th>
-                            <th class="num">Result</th>
-                            <th class="num">Year</th>
-                            <th class="num">Week</th>
-                            <th>Team</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${top5.map((g, i) => `
-                            <tr>
-                                <td class="rank${i === 0 ? ' gold' : ''}">${i + 1}</td>
-                                <td class="num score">${g.score.toFixed(2)}</td>
-                                <td class="opp">${g.opp_name}</td>
-                                <td class="num">${g.opp_score.toFixed(2)}</td>
-                                <td class="num result ${g.result === 'W' ? 'win' : 'loss'}">${g.result}</td>
-                                <td class="num">${g.season}</td>
-                                <td class="num">W${g.week}</td>
-                                <td>${g.team || '—'}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    } else if (window.__DC && window.__DC.leagueTier === 'udfa') {
-        // UDFA leagues 404 manager_highs.json by design — render a
-        // matched-style locked card so users see "this is gated" instead
-        // of the generic "no data" message that's confusing for a fresh
-        // free-tier league.
-        top5HTML = `
-            <div class="profile-dna is-locked" style="margin:0">
-                <div class="pdna-head">
-                    <span class="pdna-lbl">Top Performances</span>
-                    <span class="pdna-tier">★ Paid Tier ★</span>
-                </div>
-                <div class="pdna-arch">Top weeks locked.</div>
-                <p class="pdna-locked-msg">
-                    Career highs unlock when this league's commissioner is on a paid plan.
-                </p>
-                <a class="pdna-cta is-locked" href="/pricing" target="_top">
-                    <span>Upgrade to unlock</span>
-                    <span class="pdna-cta-arrow">→</span>
-                </a>
-            </div>`;
-    } else {
-        top5HTML = `<p style="font-family: var(--serif); font-style: italic; color: var(--cream-mute); padding: 1rem;">No top performances on file.</p>`;
+    var railHtml =
+        renderNowRail(currentForm, userId) +
+        renderRecordsRail(recordBook, userId, m.name) +
+        renderNotebook(m, top5) +
+        '<div class="rail-card fs-reveal">' +
+            '<div class="rail-head"><span>Cross-References</span></div>' +
+            '<a class="xref-link" href="managers/all-time?id=' + encodeURIComponent(userId) + '">The All-Time Team<span class="sub">team sheet</span></a>' +
+            '<a class="xref-link" href="records.html">The Record Book<span class="sub">every mark</span></a>' +
+            '<a class="xref-link" href="draft/">The Draft Annual<span class="sub">full dossier</span></a>' +
+            '<a class="xref-link" href="rivalries/">The Rivalries<span class="sub">grudge files</span></a>' +
+        '</div>';
+
+    document.getElementById('profile-body').innerHTML =
+        '<header class="mast">' +
+            '<div class="mast-kick">{{LEAGUE_NAME}} · The Manager File</div>' +
+            '<div class="mast-orn">✦ ✦ ✦</div>' +
+            '<h1 class="mast-title">' + esc(m.name) + '<em>.</em></h1>' +
+            '<p class="mast-sub">' + esc(m.tagline) + '</p>' +
+            '<div class="mast-wire">File No. <strong>' + esc(initials(m.name)) + '-' + firstYear + '</strong>' +
+                ' · Opened ' + firstYear +
+                ' · Status <strong>' + status.toUpperCase() + '</strong>' +
+                (m.championships ? ' · <strong>' + m.championships + '×</strong> CHAMPION' : '') +
+            '</div>' +
+        '</header>' +
+
+        '<div class="profile-main" style="padding-bottom:0">' +
+            '<div class="id-card fs-reveal is-in">' +
+                '<div class="fp-portrait' + (isCurrent ? '' : ' vintage') + '">' + portrait +
+                    '<span class="fp-stamp' + (isCurrent ? '' : ' alum') + '">' + status + '</span>' +
+                '</div>' +
+                '<div>' +
+                    '<div class="fp-name">' + esc(m.name) + '<em>.</em></div>' +
+                    '<div class="fp-dateline">' + firstYear + (lastYear && lastYear !== firstYear ? ' to ' + lastYear : '') +
+                        ' · ' + m.seasons_played + ' season' + (m.seasons_played === 1 ? '' : 's') +
+                        ' · ' + m.total_games + ' games</div>' +
+                    '<p class="fp-lede">' + esc(lede) + '</p>' +
+                '</div>' +
+                '<div class="fp-seals">' + sealsHtml + '</div>' +
+            '</div>' +
+        '</div>' +
+
+        '<div class="agate-band fs-reveal is-in"><div class="agate-inner">' + agate + '</div></div>' +
+
+        '<main class="profile-main">' +
+
+            '<div class="fp-plates fs-reveal is-in">' +
+                renderAllTimePlate(m, userId) +
+                renderDnaPlate(dnaEntry, dnaAvailable, m.name) +
+            '</div>' +
+
+            '<div class="spread">' +
+                '<div class="spread-main">' +
+
+                    '<section class="region fs-reveal">' +
+                        '<div class="fs-head">' +
+                            '<span class="fs-num">§ 01 · Career</span>' +
+                            '<span class="fs-title">Regular season and postseason</span>' +
+                            '<span class="fs-note">all-time splits</span>' +
+                        '</div>' +
+                        '<div class="split-row">' +
+                            '<div class="split-col">' +
+                                '<div class="split-label">Regular Season</div>' +
+                                '<div class="split-record">' + esc(m.reg_record) + '</div>' +
+                                '<div class="split-pct">' + fmtPct(m.reg_win_pct) + ' win pct</div>' +
+                                '<div class="split-pf">PF ' + Math.round(m.reg_pf).toLocaleString() + ' · PA ' + Math.round(m.reg_pa).toLocaleString() + '</div>' +
+                            '</div>' +
+                            '<div class="split-col playoff">' +
+                                '<div class="split-label">Playoffs</div>' +
+                                '<div class="split-record">' + esc(m.playoff_record) + '</div>' +
+                                '<div class="split-pct">' + fmtPct(m.playoff_win_pct) + ' win pct</div>' +
+                                '<div class="split-pf">PF ' + Math.round(m.playoff_pf).toLocaleString() + ' · PA ' + Math.round(m.playoff_pa).toLocaleString() + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</section>' +
+
+                    '<section class="region fs-reveal" data-accent="cream">' +
+                        '<div class="fs-head">' +
+                            '<span class="fs-num">§ 02 · The Season Ledger</span>' +
+                            '<span class="fs-title">Year by year</span>' +
+                            '<span class="fs-note">newest first · ' + m.seasons_played + ' seasons on file</span>' +
+                        '</div>' +
+                        ledgerHtml +
+                    '</section>' +
+
+                    '<section class="region fs-reveal" data-accent="steel">' +
+                        '<div class="fs-head">' +
+                            '<span class="fs-num">§ 03 · Top Performances</span>' +
+                            '<span class="fs-title">The five loudest weeks</span>' +
+                            '<span class="fs-note">all-time top 5</span>' +
+                        '</div>' +
+                        topHtml +
+                    '</section>' +
+
+                    '<section class="region fs-reveal" data-accent="rust">' +
+                        '<div class="fs-head">' +
+                            '<span class="fs-num">§ 04 · Head-to-Head</span>' +
+                            '<span class="fs-title">The rivalry ledger</span>' +
+                            '<span class="fs-note">every opponent faced</span>' +
+                        '</div>' +
+                        calloutsHtml + h2hHtml +
+                    '</section>' +
+
+                    '<section class="region fs-reveal" id="podium-section" data-accent="cream">' +
+                        '<div class="fs-head">' +
+                            '<span class="fs-num">§ 05 · At the Podium</span>' +
+                            '<span class="fs-title">Draft identity</span>' +
+                            '<span class="fs-note">loading the annual…</span>' +
+                        '</div>' +
+                    '</section>' +
+
+                '</div>' +
+                '<aside class="spread-rail">' + railHtml + '</aside>' +
+            '</div>' +
+
+            '<div class="file-folio">✦ End of file <b>' + esc(initials(m.name)) + '-' + firstYear + '</b> · {{LEAGUE_NAME_UPPER}} archives ✦</div>' +
+
+        '</main>';
+
+    watchReveals();
+}
+
+function agateCell(label, value, detail, plain) {
+    return '<div class="ag-cell">' +
+        '<div class="ag-label">' + label + '</div>' +
+        '<div class="ag-value' + (plain ? ' plain' : '') + '">' + value + '</div>' +
+        '<div class="ag-detail">' + esc(detail) + '</div>' +
+    '</div>';
+}
+
+/* Scroll-in reveals. Re-run after async sections mount. */
+var revealObserver = null;
+function watchReveals() {
+    if (!('IntersectionObserver' in window)) {
+        document.querySelectorAll('.fs-reveal').forEach(function (el) { el.classList.add('is-in'); });
+        return;
     }
-
-    const dnaCardHTML = renderDnaCard(dnaEntry, dnaAvailable, m.name);
-
-    document.getElementById('profile-body').innerHTML = `
-        <div class="profile-header">
-            <div class="profile-kicker">★ ${m.seasons_played} Seasons · ${m.championships} ${m.championships === 1 ? 'Chip' : 'Chips'} ★</div>
-            <h1 class="profile-name">${m.name}<em>.</em></h1>
-            <p class="profile-tagline">${m.tagline}</p>
-            ${bannerHTML}
-            ${dnaCardHTML}
-        </div>
-
-        <div class="section">
-            <div class="stat-strip">
-                <div class="strip-item">
-                    <div class="strip-label">Total Games</div>
-                    <div class="strip-value cream">${m.total_games}</div>
-                    <div class="strip-detail">${m.seasons_played} seasons</div>
-                </div>
-                <div class="strip-item">
-                    <div class="strip-label">High Score</div>
-                    <div class="strip-value">${m.high_score != null ? m.high_score.toFixed(1) : '—'}</div>
-                    <div class="strip-detail">Career best</div>
-                </div>
-                <div class="strip-item">
-                    <div class="strip-label">Avg PPG</div>
-                    <div class="strip-value">${m.avg_ppg != null ? m.avg_ppg.toFixed(1) : '—'}</div>
-                    <div class="strip-detail">All games</div>
-                </div>
-                <div class="strip-item">
-                    <div class="strip-label">Top-3 Finishes</div>
-                    <div class="strip-value">${m.top_three_finishes}</div>
-                    <div class="strip-detail">${m.top_three_finishes ? 'In the hunt' : 'Still chasing'}</div>
-                </div>
-                <div class="strip-item">
-                    <div class="strip-label">Longest Win Streak</div>
-                    <div class="strip-value">${m.longest_win_streak?.length ?? 0}</div>
-                    <div class="strip-detail">${m.longest_win_streak?.when || '—'}</div>
-                </div>
-                <div class="strip-item">
-                    <div class="strip-label">Longest Loss Streak</div>
-                    <div class="strip-value">${m.longest_loss_streak?.length ?? 0}</div>
-                    <div class="strip-detail">${m.longest_loss_streak?.when || '—'}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">§ 01 · Career</span>
-                <span class="section-title">Regular season &amp; postseason —</span>
-                <span class="section-meta">all-time splits</span>
-            </div>
-            <div class="split-row">
-                <div class="split-col">
-                    <div class="split-label">Regular Season</div>
-                    <div class="split-record">${m.reg_record}</div>
-                    <div class="split-pct">${fmtPct(m.reg_win_pct)} win pct</div>
-                    <div class="split-pf">PF ${Math.round(m.reg_pf)} · PA ${Math.round(m.reg_pa)}</div>
-                </div>
-                <div class="split-col playoff">
-                    <div class="split-label">Playoffs</div>
-                    <div class="split-record">${m.playoff_record}</div>
-                    <div class="split-pct">${fmtPct(m.playoff_win_pct)} win pct</div>
-                    <div class="split-pf">PF ${Math.round(m.playoff_pf)} · PA ${Math.round(m.playoff_pa)}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section ledger-section">
-            <div class="section-header">
-                <span class="section-num">§ 02 · Season Ledger</span>
-                <span class="section-title">Year by year —</span>
-                <span class="section-meta">${m.seasons_played} seasons</span>
-            </div>
-            ${ledgerHTML}
-        </div>
-
-        <div class="section ledger-section">
-            <div class="section-header">
-                <span class="section-num">§ 03 · Top Performances</span>
-                <span class="section-title">Highest scoring weeks —</span>
-                <span class="section-meta">all-time top 5</span>
-            </div>
-            ${top5HTML}
-        </div>
-
-        <div class="section">
-            <div class="section-header">
-                <span class="section-num">§ 04 · Rivalries</span>
-                <span class="section-title">Head-to-head —</span>
-                <span class="section-meta">all opponents</span>
-            </div>
-            ${h2hHTML}
-        </div>
-    `;
+    if (!revealObserver) {
+        revealObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) {
+                    e.target.classList.add('is-in');
+                    revealObserver.unobserve(e.target);
+                }
+            });
+        }, { rootMargin: '0px 0px -8% 0px' });
+    }
+    document.querySelectorAll('.fs-reveal:not(.is-in)').forEach(function (el) { revealObserver.observe(el); });
 }
 
 loadProfile();

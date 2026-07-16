@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The All-Time Team · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+/* ============================================================
+   THE ALL-TIME TEAM — one manager's history, distilled to the
+   best season at every position and dealt onto the table as a
+   set of trading cards. Dark display-case chrome around cream
+   card stock; the same bound-annual family as the Draft Annual
+   and the Manager File.
+     I    The switcher  — every manager, one tap apart
+     II   The starters  — seven cards, click to turn one over
+     III  The reserves  — the next six, in agate
+     IV   The gallery   — every squad in the league, ranked
+   ============================================================ */
+
+:root {
+    /* Display-case chrome: aliased to the site's own navy tokens so
+       this page lives in the almanac's base theme (the black cloth
+       stays unique to the Draft Annual). */
+    --an-soft:        var(--ink-soft);
+    --an-card:        var(--ink-card);
+    --an-card-hover:  #20304272;
+    --an-line:        var(--ink-line);
+    --an-line-soft:   var(--ink-line-soft);
+    --an-accent:      var(--gold);
+    --an-bright:      var(--gold-bright);
+    --an-mute:        var(--cream-mute);
+
+    /* Card stock — the trading cards stay printed artifacts. */
+    --paper:          #efe5cd;
+    --paper-soft:     #e6dabd;
+    --paper-shade:    #d7c9a6;
+    --paper-line:     rgba(40, 30, 12, .22);
+    --paper-line-soft:rgba(40, 30, 12, .11);
+    --ink-print:      #241c0e;
+    --ink-print-soft: #55482e;
+    --ink-print-mute: #7f7154;
+    --gold-print:     #7a5c14;
+    --rust-print:     #8c2b1e;
+}
+
+/* Position inks — print set for the cream cards, bright set for
+   the dark bench/gallery chrome. */
+.tc-slot.pos-qb { background: #2c516b; }
+.tc-slot.pos-rb { background: #2d6842; }
+.tc-slot.pos-wr { background: #8a651c; }
+.tc-slot.pos-te { background: #5f4380; }
+.tc-finish.pos-qb b { color: #2c516b; }
+.tc-finish.pos-rb b { color: #2d6842; }
+.tc-finish.pos-wr b { color: #8a651c; }
+.tc-finish.pos-te b { color: #5f4380; }
+.bench-fin.bf-qb { color: #6ba3cc; }
+.bench-fin.bf-rb { color: #5fae7f; }
+.bench-fin.bf-wr { color: #d4a94c; }
+.bench-fin.bf-te { color: #a07fd0; }
+
+/* ══ Masthead ════════════════════════════════════════════════ */
+.mast {
+    position: relative; z-index: 10;
+    max-width: 1080px; margin: 0 auto;
+    padding: 3.4rem 1.5rem 0;
+    text-align: center;
+}
+.mast-kick {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .42em; text-transform: uppercase;
+    color: var(--an-accent);
+}
+.mast-orn { margin: 1.1rem 0 .9rem; font-size: .7rem; color: var(--an-mute); letter-spacing: .8em; }
+.mast-title {
+    font-family: var(--serif);
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: .94; letter-spacing: -.02em;
+    color: var(--cream);
+}
+.mast-title em { font-style: italic; color: var(--gold); }
+.mast-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.2rem; color: var(--cream-soft);
+    margin-top: .9rem;
+}
+.mast-sub b { color: var(--gold); font-weight: 400; }
+.mast-wire {
+    margin: 1.9rem auto 0; max-width: 780px;
+    padding: .55rem 1rem;
+    border-top: 1px solid var(--an-line);
+    border-bottom: 1px solid var(--an-line);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.mast-wire strong { color: var(--an-accent); font-weight: 700; }
+.mast-file-link {
+    display: inline-block; margin-top: 1.1rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--an-mute); text-decoration: none;
+    border-bottom: 1px solid var(--an-line);
+    padding-bottom: .2rem;
+    transition: color .15s;
+}
+.mast-file-link:hover { color: var(--an-accent); }
+
+/* ══ Switcher ════════════════════════════════════════════════ */
+.switcher {
+    position: relative; z-index: 10;
+    max-width: 1240px; margin: 2.6rem auto 0;
+    padding: 0 1.5rem;
+}
+.switch-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    border-bottom: 3px double var(--an-line);
+    padding-bottom: .7rem; margin-bottom: 1rem;
+}
+.switch-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .32em; text-transform: uppercase;
+    color: var(--gold);
+}
+.switch-hint {
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.switch-tabs { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+.switch-tab {
+    display: inline-flex; align-items: center; gap: .5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .14em; text-transform: uppercase;
+    padding: .35rem .8rem .35rem .45rem;
+    border: 1px solid var(--an-line);
+    background: transparent;
+    color: var(--cream-soft);
+    cursor: pointer;
+    transition: all .15s;
+}
+.switch-ava {
+    width: 22px; height: 22px; border-radius: 50%;
+    object-fit: cover; display: block;
+    border: 1px solid var(--an-line);
+}
+.switch-ava-mono {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: .65rem; color: var(--an-accent);
+    border: 1px solid var(--an-line);
+}
+.switch-tab.alum .switch-ava { filter: grayscale(1) sepia(.35); }
+.switch-tab.active .switch-ava { border-color: rgba(14, 22, 32, .45); }
+.switch-tab.active .switch-ava-mono { color: var(--ink); border-color: rgba(14, 22, 32, .45); }
+.switch-tab:hover { background: var(--an-card-hover); color: var(--cream); }
+.switch-tab.active {
+    background: var(--an-accent); border-color: var(--an-accent);
+    color: var(--ink);
+}
+.switch-divider {
+    font-family: var(--mono); font-size: .54rem;
+    letter-spacing: .24em; text-transform: uppercase;
+    color: var(--an-mute);
+    margin: 0 .5rem;
+}
+
+/* ══ The display case ════════════════════════════════════════ */
+.case-main {
+    position: relative; z-index: 10;
+    max-width: 1240px; margin: 2.4rem auto 0;
+    padding: 0 1.5rem 6rem;
+}
+.sheet-head {
+    display: flex; align-items: baseline; gap: 1.2rem;
+    border-bottom: 3px double var(--an-line);
+    padding-bottom: .7rem; margin-bottom: 1.8rem;
+}
+.sheet-num {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--an-accent); flex-shrink: 0;
+}
+.sheet-title {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.45rem; letter-spacing: -.01em;
+    color: var(--cream);
+}
+.sheet-note {
+    margin-left: auto; flex-shrink: 0;
+    font-family: var(--mono); font-size: .55rem;
+    letter-spacing: .15em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.sheet-note b { color: var(--an-accent); font-weight: 700; }
+
+/* ── The starters: dealt onto the field ── */
+/* The pitch: faint yard lines + a midfield seam behind the cards. */
+.field {
+    position: relative;
+    border: 1px solid var(--an-line);
+    border-radius: 8px;
+    padding: 2.1rem 1.5rem 2rem;
+    background:
+        repeating-linear-gradient(180deg, rgba(232, 200, 137, .05) 0 1px, transparent 1px 58px),
+        linear-gradient(180deg, rgba(26, 37, 50, .45), rgba(14, 22, 32, .3));
+    overflow: hidden;
+}
+.starters {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 1.5rem 1.3rem;
+    perspective: 1600px;
+    position: relative;
+}
+/* Formation, wide screens: WRs split wide, RBs inside, QB at the
+   heart of it, TE + FLEX as the second rank. The V-shaped offsets
+   give the front line its arc. */
+@media (min-width: 1150px) {
+    .starters.formation {
+        display: grid;
+        grid-template-columns: repeat(5, 212px);
+        grid-template-areas:
+            "wr1 rb1 qb rb2 wr2"
+            ".   te  .  fx  .";
+        justify-content: center;
+        gap: 1.7rem 1.3rem;
+    }
+    .fs-qb  { grid-area: qb; }
+    .fs-rb1 { grid-area: rb1; margin-top: 16px; }
+    .fs-rb2 { grid-area: rb2; margin-top: 16px; }
+    .fs-wr1 { grid-area: wr1; margin-top: 34px; }
+    .fs-wr2 { grid-area: wr2; margin-top: 34px; }
+    .fs-te  { grid-area: te; }
+    .fs-fx  { grid-area: fx; }
+}
+.tcard {
+    width: 212px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    opacity: 0;
+    transform: translateY(30px) rotate(var(--tilt, 0deg));
+}
+.starters.dealt .tcard {
+    animation: deal .55s cubic-bezier(.22,.9,.32,1.12) forwards;
+    animation-delay: calc(var(--i, 0) * 90ms);
+}
+@keyframes deal {
+    from { opacity: 0; transform: translateY(30px) rotate(var(--tilt, 0deg)); }
+    to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tcard { opacity: 1; transform: none; }
+    .starters.dealt .tcard { animation: none; }
+}
+.tcard-inner {
+    position: relative;
+    width: 100%; height: 356px;
+    transform-style: preserve-3d;
+    transition: transform .65s cubic-bezier(.35,.65,.3,1);
+}
+.tcard.flipped .tcard-inner { transform: rotateY(180deg); }
+.tcard:not(.flipped):hover .tcard-inner { transform: translateY(-7px) rotateZ(-.6deg); }
+.tcard-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background:
+        linear-gradient(168deg, var(--paper) 0%, var(--paper) 72%, var(--paper-soft) 100%);
+    border: 1px solid #47402f;
+    border-radius: 7px;
+    box-shadow: 0 14px 34px rgba(0,0,0,.5), inset 0 0 0 5px rgba(122,92,20,.16), inset 0 0 34px rgba(60,44,16,.09);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+}
+.tcard-face.back { transform: rotateY(180deg); }
+
+.tc-top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .55rem .7rem .45rem;
+}
+.tc-slot {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--paper);
+    background: var(--gold-print);
+    padding: .18rem .5rem;
+    border-radius: 2px;
+}
+.tc-year {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem; color: var(--gold-print);
+}
+.tc-photo {
+    position: relative;
+    margin: 0 .7rem;
+    height: 148px;
+    background: var(--paper-soft);
+    border: 1px solid var(--paper-line);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.tc-photo img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center top;
+    filter: grayscale(1) sepia(.42) contrast(1.06) brightness(1.03);
+    mix-blend-mode: multiply;
+    display: block;
+}
+.tc-photo::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(40,30,12,.26) 1px, transparent 1px);
+    background-size: 3.5px 3.5px;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+}
+.tc-mono {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: 3rem; color: var(--gold-print);
+}
+.tc-captain {
+    position: absolute; top: 6px; right: 6px; z-index: 2;
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--gold-print); color: var(--paper);
+    font-size: .8rem;
+    box-shadow: 0 2px 6px rgba(40,30,12,.35);
+}
+.tc-name {
+    padding: .65rem .7rem .1rem;
+    font-family: var(--serif);
+    font-size: 1.12rem; line-height: 1.08;
+    color: var(--ink-print);
+    letter-spacing: -.01em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tc-finish {
+    padding: .25rem .7rem 0;
+    display: flex; align-items: baseline; gap: .45rem;
+}
+.tc-finish b {
+    font-family: var(--serif); font-style: italic; font-weight: 400;
+    font-size: 1.5rem; line-height: 1;
+    color: var(--gold-print);
+}
+.tc-finish span {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+}
+/* Floats centered in the card's breathing room between the finish
+   line and the agate footer. */
+.tc-teamfin {
+    display: flex; align-items: center; gap: .55rem;
+    margin: auto .7rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+    white-space: nowrap;
+}
+.tc-teamfin::before, .tc-teamfin::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--paper-line-soft);
+}
+.tc-teamfin.champ { color: var(--gold-print); }
+.tc-bottom {
+    margin-top: auto;
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: .5rem .7rem .6rem;
+    border-top: 1px solid var(--paper-line-soft);
+}
+.tc-pts {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; color: var(--ink-print);
+}
+.tc-pts i { font-style: normal; font-size: .52rem; color: var(--ink-print-mute); letter-spacing: .1em; }
+.tc-acq {
+    font-family: var(--mono);
+    font-size: .52rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+    text-align: right;
+}
+.tc-acq.pickup { color: var(--rust-print); }
+
+/* Card back: the scouting note. */
+.tcb-head {
+    text-align: center;
+    padding: .9rem .8rem .2rem;
+}
+.tcb-slot {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--gold-print);
+    margin-bottom: .4rem;
+}
+.tcb-name {
+    font-family: var(--serif);
+    font-size: 1.25rem; line-height: 1.05;
+    color: var(--ink-print);
+}
+.tcb-rule { max-width: 110px; margin: .4rem auto .5rem; border-top: 1px solid var(--paper-line); border-bottom: 3px double var(--paper-line); height: 5px; }
+.tcb-rows { padding: 0 1rem; }
+.tcb-row {
+    display: flex; align-items: baseline; gap: .55rem;
+    padding: .44rem 0;
+    border-bottom: 1px solid var(--paper-line-soft);
+}
+.tcb-row:last-child { border-bottom: none; }
+.tcb-label {
+    flex-shrink: 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+}
+.tcb-dots { flex: 1; border-bottom: 1px dotted var(--paper-line); transform: translateY(-3px); }
+.tcb-val {
+    font-family: var(--sans); font-weight: 600;
+    font-size: .72rem; color: var(--ink-print);
+    text-align: right;
+}
+.tcb-foot {
+    margin-top: auto;
+    padding: .6rem .8rem .7rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+    border-top: 1px solid var(--paper-line-soft);
+}
+
+/* Vacant slot */
+.tcard.vacant { cursor: default; }
+.tcard.vacant .tcard-inner { transition: none; }
+.tcard.vacant:hover .tcard-inner { transform: none; }
+.tc-vacant {
+    height: 356px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem;
+    border: 1px dashed var(--an-line);
+    border-radius: 7px;
+    color: var(--an-mute);
+}
+.tc-vacant .vs {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .26em; text-transform: uppercase;
+}
+.tc-vacant .vi { font-family: var(--serif); font-style: italic; font-size: .9rem; }
+
+/* ── The reserves: six mini-cards on the shelf ── */
+.bench-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+}
+.bmini {
+    position: relative;
+    border: 1px solid var(--an-line);
+    border-radius: 6px;
+    background: linear-gradient(165deg, rgba(22, 32, 44, .8), rgba(14, 22, 32, .9));
+    padding: 1.05rem .7rem .8rem;
+    text-align: center;
+    transition: transform .2s, border-color .15s;
+}
+.bmini:hover { transform: translateY(-4px); border-color: rgba(232, 200, 137, .35); }
+.bmini-thumb {
+    width: 58px; height: 58px; border-radius: 50%;
+    object-fit: cover; object-position: center top;
+    display: block; margin: 0 auto .6rem;
+    border: 2px solid var(--an-line);
+    background: var(--an-soft);
+    filter: grayscale(1) sepia(.25) contrast(1.04);
+}
+.bmini-mono {
+    width: 58px; height: 58px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto .6rem;
+    border: 2px solid var(--an-line);
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.3rem; color: var(--an-accent);
+}
+.bmini-name {
+    font-family: var(--sans); font-weight: 600;
+    font-size: .76rem; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: .2rem;
+}
+.bmini-fin {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.2rem; line-height: 1.1;
+    color: var(--an-accent);
+}
+.bmini-year {
+    font-family: var(--mono);
+    font-size: .54rem; letter-spacing: .16em;
+    color: var(--an-mute);
+    margin: .15rem 0 .45rem;
+}
+.bmini-pts {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .64rem; color: var(--cream-soft);
+    padding-top: .45rem;
+    border-top: 1px solid var(--an-line-soft);
+}
+.bmini-acq {
+    margin-top: .3rem;
+    font-family: var(--mono);
+    font-size: .48rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--an-mute);
+}
+.bmini-acq.pickup { color: #c47a6a; }
+.bmini-fin.bf-qb { color: #6ba3cc; }
+.bmini-fin.bf-rb { color: #5fae7f; }
+.bmini-fin.bf-wr { color: #d4a94c; }
+.bmini-fin.bf-te { color: #a07fd0; }
+@media (max-width: 1150px) { .bench-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px)  { .bench-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── Alumni expanders ── */
+.alum-hidden { display: none !important; }
+.switch-more {
+    display: inline-flex; align-items: center; gap: .45rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .14em; text-transform: uppercase;
+    padding: .45rem .9rem;
+    border: 1px dashed var(--an-line);
+    background: transparent;
+    color: var(--an-mute);
+    cursor: pointer;
+    transition: all .15s;
+}
+.switch-more:hover { color: var(--cream-soft); border-color: var(--an-mute); }
+.switch-more b { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: .85rem; color: var(--an-accent); }
+.gal-alumni-toggle {
+    display: flex; align-items: center; gap: 1rem;
+    margin-top: 1.6rem;
+    padding: .65rem .4rem;
+    border: none;
+    background: transparent;
+    width: 100%;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--an-mute);
+    cursor: pointer;
+    transition: color .15s;
+}
+.gal-alumni-toggle:hover { color: var(--cream-soft); }
+.gal-alumni-toggle::before, .gal-alumni-toggle::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--an-line-soft);
+}
+.gal-alumni-toggle b { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: .95rem; color: var(--an-accent); }
+
+.bench-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--an-line);
+    background: var(--an-card);
+}
+.bench-table { width: 100%; min-width: max-content; border-collapse: collapse; }
+.bench-table th {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .2em; text-transform: uppercase;
+    padding: .7rem .9rem;
+    background: var(--an-soft);
+    border-bottom: 2px solid var(--an-line);
+    color: var(--an-accent);
+    text-align: left; white-space: nowrap;
+}
+.bench-table th.num { text-align: right; }
+.bench-table td {
+    padding: .6rem .9rem;
+    border-bottom: 1px solid var(--an-line-soft);
+    color: var(--cream-soft);
+    font-size: .82rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.bench-table tbody tr:last-child td { border-bottom: none; }
+.bench-table tbody tr:hover td { background: var(--an-card-hover); }
+.bench-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bench-thumb {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--an-line);
+    background: var(--an-soft);
+    object-fit: cover; object-position: center top;
+    display: block;
+    filter: grayscale(1) sepia(.25) contrast(1.04);
+}
+.bench-mono {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--an-line);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: .8rem; color: var(--an-accent);
+}
+.bench-name { font-family: var(--sans); font-weight: 600; color: var(--cream); }
+.bench-fin { font-family: var(--mono); font-weight: 700; color: var(--an-accent); }
+.bench-year { font-family: var(--serif); font-style: italic; color: var(--gold); font-size: .95rem; }
+.bench-acq { font-family: var(--mono); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--an-mute); }
+.bench-acq.pickup { color: #c47a6a; }
+
+/* ── The squad line: the numbers for the squad on display ── */
+.squad-line {
+    display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center;
+    gap: .7rem 2.4rem;
+    margin: -.6rem 0 1.9rem;
+    padding: .85rem 1.2rem;
+    border: 1px solid var(--an-line);
+    border-radius: 5px;
+    background: rgba(22, 32, 44, .35);
+}
+.sq-item { display: flex; align-items: baseline; gap: .55rem; }
+.sq-val {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.4rem; line-height: 1;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+}
+.sq-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+
+/* ── The gallery ── */
+.gal-podium {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1.3rem;
+    margin-bottom: 1.9rem;
+}
+.pod-card {
+    position: relative;
+    border: 1px solid var(--an-line);
+    border-radius: 6px;
+    background: linear-gradient(155deg, rgba(22, 32, 44, .9), rgba(14, 22, 32, .95));
+    padding: 1.5rem 1.3rem 1.2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, transform .2s;
+}
+.pod-card:hover { border-color: rgba(232, 200, 137, .4); transform: translateY(-4px); }
+.pod-card.active, .pod-card.r1 { border-color: rgba(232, 200, 137, .45); }
+.pod-medal {
+    position: absolute; top: -13px; left: 50%;
+    transform: translateX(-50%);
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: .9rem; color: var(--ink);
+    background: var(--gold);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, .4);
+}
+.pod-card.r2 .pod-medal { background: #c0c0c0; }
+.pod-card.r3 .pod-medal { background: #cd7f32; }
+.pod-ava {
+    width: 64px; height: 64px; border-radius: 50%;
+    object-fit: cover; display: block;
+    margin: 0 auto .7rem;
+    border: 2px solid rgba(232, 200, 137, .4);
+}
+.pod-ava-mono {
+    width: 64px; height: 64px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto .7rem;
+    border: 2px solid rgba(232, 200, 137, .4);
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.5rem; color: var(--an-accent);
+}
+.pod-name { font-family: var(--serif); font-size: 1.15rem; color: var(--cream); margin-bottom: .3rem; }
+.pod-pts {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.7rem; line-height: 1;
+    color: var(--gold);
+}
+.pod-sub {
+    margin-top: .45rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--an-mute);
+}
+.gal-ava {
+    width: 30px; height: 30px; border-radius: 50%;
+    object-fit: cover; display: block;
+    border: 1px solid var(--an-line);
+}
+.gal-ava-mono {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: .75rem; color: var(--an-accent);
+    border: 1px solid var(--an-line);
+}
+.gal-row.alum .gal-ava { filter: grayscale(1) sepia(.35); }
+
+.gallery-group-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--an-mute);
+    margin: 1.6rem 0 .8rem;
+}
+.gallery-group-label:first-child { margin-top: 0; }
+.gal-row {
+    display: grid;
+    grid-template-columns: 2.2rem 30px 11rem 1fr auto;
+    gap: 1rem; align-items: center;
+    padding: .55rem .8rem;
+    border: 1px solid transparent;
+    border-bottom: 1px solid var(--an-line-soft);
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+.gal-row:hover { background: var(--an-card-hover); }
+.gal-row.active {
+    background: rgba(232,200,137,.07);
+    border: 1px solid rgba(232,200,137,.3);
+}
+.gal-rank {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.15rem; color: var(--an-mute);
+}
+.gal-row.active .gal-rank, .gal-rank.top { color: var(--gold); }
+.gal-name {
+    font-family: var(--sans); font-weight: 600;
+    font-size: .88rem; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gal-name .sub {
+    display: block;
+    font-family: var(--mono); font-weight: 400;
+    font-size: .52rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--an-mute); margin-top: .1rem;
+}
+.gal-track { height: 12px; background: rgba(232,200,137,.07); border-radius: 1px; overflow: hidden; }
+.gal-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8a651c, var(--an-accent));
+    border-radius: 1px;
+    transform-origin: left center;
+    animation: gal-grow .7s cubic-bezier(.25,.7,.3,1) both;
+}
+@keyframes gal-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .gal-fill { animation: none; } }
+.gal-pts {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .72rem; color: var(--cream-soft);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Fine print ── */
+.fine-print {
+    margin-top: 3rem;
+    padding-top: 1.1rem;
+    border-top: 3px double var(--an-line);
+    font-family: var(--serif); font-style: italic;
+    font-size: .88rem; line-height: 1.7;
+    color: var(--an-mute);
+    max-width: 72ch;
+}
+.fine-print b { color: var(--cream-soft); font-weight: 400; }
+
+/* ── States ── */
+.loading-line {
+    padding: 3rem; text-align: center;
+    font-family: var(--mono); font-size: .68rem;
+    letter-spacing: .2em; text-transform: uppercase;
+    color: var(--an-accent);
+}
+.error-state { text-align: center; padding: 4.5rem 2rem; position: relative; z-index: 10; }
+.error-state h1 {
+    font-family: var(--serif); font-style: italic;
+    font-size: 3rem; color: var(--cream); margin-bottom: 1rem;
+}
+.error-state p {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.2rem; color: var(--cream-soft); margin-bottom: 1.5rem;
+}
+.error-state a {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .7rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold); text-decoration: none;
+}
+.locked-case {
+    max-width: 680px; margin: 3rem auto 0;
+    position: relative; z-index: 10;
+    background: linear-gradient(155deg, rgba(22, 32, 44, .9), rgba(14, 22, 32, .95));
+    border: 1px solid var(--ink-line);
+    border-radius: 4px;
+    padding: 2rem 2.2rem;
+    text-align: center;
+}
+.locked-case .lk {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--an-accent);
+    margin-bottom: .9rem;
+}
+.locked-case h2 {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.8rem; color: var(--cream);
+    margin-bottom: .7rem;
+}
+.locked-case p {
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; line-height: 1.6; color: var(--cream-soft);
+    margin-bottom: 1.3rem;
+}
+.locked-case a {
+    display: inline-block;
+    padding: .55rem 1.05rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ink);
+    background: var(--an-accent);
+    border-radius: 2px;
+    text-decoration: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+    .tcard { width: min(46vw, 212px); }
+    .tcard-inner, .tc-vacant { height: 340px; }
+    .gal-podium { grid-template-columns: 1fr; gap: 1.2rem; }
+    .gal-row { grid-template-columns: 1.6rem 26px 7.5rem 1fr auto; gap: .6rem; padding: .5rem .4rem; }
+    .gal-ava, .gal-ava-mono { width: 26px; height: 26px; }
+    .squad-line { gap: .6rem 1.3rem; }
+    .sheet-head { flex-wrap: wrap; gap: .5rem .9rem; }
+    .sheet-note { margin-left: 0; width: 100%; }
+    .mast-title { font-size: clamp(2.4rem, 11vw, 3.6rem); }
+}
+</style>
+</head>
+<body>
+
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<div class="ticker">
+    <div class="ticker-track">
+        <div class="ticker-group" id="ticker-1">
+            <span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · THE ALL-TIME TEAM</span>
+        </div>
+        <div class="ticker-group" id="ticker-2">
+            <span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · THE ALL-TIME TEAM</span>
+        </div>
+    </div>
+</div>
+
+<nav id="site-nav"
+     data-page="manager-all-time"
+     data-chapter="CH. II · PROFILE"
+     data-back-label="← Managers"
+     data-back-href="managers/"
+     data-title-id="nav-name"
+     data-title-href="managers/"></nav>
+<script src="/pams-template/assets/js/nav.js"></script>
+
+<div id="page-body">
+    <div class="loading-line">Opening the display case…</div>
+</div>
+
+<footer class="site-footer">
+    <span>Built by <em>jzFF</em> · {{LEAGUE_ABBR}} · Since {{LEAGUE_FOUNDED}}</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
+</footer>
+
+
+<script>
+/* ── Utilities ─────────────────────────────────────────────── */
+function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+function normName(name) {
+    return (name || '').toLowerCase()
+        .replace(/[.''']/g, '')
+        .replace(/\s+(jr|sr|ii|iii|iv|v)$/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+function initials(name) {
+    return String(name || '?').trim().split(/\s+/).map(function (w) { return w[0]; })
+        .join('').slice(0, 2).toUpperCase();
+}
+function jget(url) {
+    return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+}
+function headshot(pid) { return 'https://sleepercdn.com/content/nfl/players/' + pid + '.jpg'; }
+function headshotThumb(pid) { return 'https://sleepercdn.com/content/nfl/players/thumb/' + pid + '.jpg'; }
+
+var PROFILE_LABEL = {
+    ppr_6pt:  'Full PPR · 6pt Pass TD',
+    ppr_4pt:  'Full PPR · 4pt Pass TD',
+    half_6pt: 'Half PPR · 6pt Pass TD',
+    half_4pt: 'Half PPR · 4pt Pass TD',
+};
+
+/* ── State ─────────────────────────────────────────────────── */
+var POOL = null;          // all_time_pool.json
+var RANKS = {};           // year -> { normName: {fpts, posRank, overall, pid, pos} }
+var TEAMS = {};           // uid -> built team
+var ORDER = [];           // uids ranked by team total
+var AVATARS = {};         // uid -> avatar url (managers_directory)
+var PROFILE = 'ppr_6pt';
+var activeUid = null;
+var alumniTabsOpen = false;
+var alumniGalOpen = false;
+
+/* ── Boot ──────────────────────────────────────────────────── */
+function boot() {
+    Promise.all([
+        jget('data/league.json'),
+        jget('data/all_time_pool.json'),
+        jget('data/managers_directory.json'),
+    ]).then(function (res) {
+        var league = res[0];
+        POOL = res[1];
+        var dir = res[2];
+        if (league && league.draft_scoring_profile) PROFILE = league.draft_scoring_profile;
+        if (dir && Array.isArray(dir.managers)) {
+            dir.managers.forEach(function (x) {
+                if (x.user_id != null) AVATARS[x.user_id] = x.avatar || '';
+            });
+        }
+
+        if (!POOL || !Array.isArray(POOL.managers) || POOL.managers.length === 0) {
+            if (window.__DC && window.__DC.leagueTier === 'udfa') return renderLocked();
+            return renderError('No team sheets yet.', 'The archive needs at least one synced draft or season to build an all-time team.');
+        }
+
+        var years = {};
+        POOL.managers.forEach(function (m) {
+            m.seasons.forEach(function (se) { years[se.year] = 1; });
+        });
+        var yearList = Object.keys(years).map(Number).sort();
+        return Promise.all(yearList.map(function (y) {
+            return jget('/data/fantasy_ranks/' + PROFILE + '/' + y + '.json').then(function (d) {
+                if (d && Array.isArray(d.players)) RANKS[y] = buildRankLookup(d.players);
+            });
+        })).then(function () {
+            if (Object.keys(RANKS).length === 0) {
+                return renderError('The rankings are missing.', 'Season finish data could not be loaded, so the team sheet cannot be built.');
+            }
+            buildAllTeams();
+            var requested = new URLSearchParams(window.location.search).get('id');
+            var uid = requested && TEAMS[requested] ? requested : (ORDER[0] || null);
+            if (!uid) return renderError('Nothing to show.', 'No manager has enough history to field a team.');
+            renderShell();
+            selectManager(uid, true);
+        });
+    }).catch(function (err) {
+        renderError('The case would not open.', 'Something went wrong (' + err.message + '). Please report this.');
+    });
+}
+
+function buildRankLookup(players) {
+    var byPos = {};
+    players.forEach(function (p) {
+        var pos = (p.position || '?').toUpperCase();
+        (byPos[pos] = byPos[pos] || []).push(p);
+    });
+    Object.keys(byPos).forEach(function (pos) {
+        byPos[pos].sort(function (a, b) { return (b.fpts || 0) - (a.fpts || 0); });
+    });
+    var lookup = {};
+    Object.keys(byPos).forEach(function (pos) {
+        byPos[pos].forEach(function (p, i) {
+            lookup[normName(p.player_name)] = {
+                fpts: p.fpts || 0,
+                posRank: i + 1,
+                overall: p.rank,
+                pid: p.player_id || null,
+                pos: pos,
+            };
+        });
+    });
+    return lookup;
+}
+
+/* ── Team building ─────────────────────────────────────────── */
+function buildTeam(mgr) {
+    var best = {};   // normName -> best candidate season
+    mgr.seasons.forEach(function (se) {
+        var lookup = RANKS[se.year];
+        if (!lookup) return;
+        se.players.forEach(function (p) {
+            var key = normName(p.name);
+            var lk = lookup[key];
+            if (!lk || !lk.fpts) return;
+            var cand = {
+                name: p.name, key: key,
+                pos: lk.pos, year: se.year,
+                fpts: lk.fpts, posRank: lk.posRank, overall: lk.overall, pid: lk.pid,
+                src: p.source,
+                round: p.round, roundPick: p.round_pick, overallPick: p.overall,
+                starts: p.weeks_started || 0, startPts: p.started_pts || 0,
+                teamRank: se.final_rank != null ? se.final_rank : null,
+            };
+            if (!best[key] || cand.fpts > best[key].fpts) best[key] = cand;
+        });
+    });
+
+    var all = Object.keys(best).map(function (k) { return best[k]; })
+        .sort(function (a, b) { return b.fpts - a.fpts; });
+
+    var used = {};
+    function take(filter) {
+        for (var i = 0; i < all.length; i++) {
+            var c = all[i];
+            if (used[c.key]) continue;
+            if (filter(c)) { used[c.key] = 1; return c; }
+        }
+        return null;
+    }
+    var slots = [
+        { slot: 'QB',   player: take(function (c) { return c.pos === 'QB'; }) },
+        { slot: 'RB1',  player: take(function (c) { return c.pos === 'RB'; }) },
+        { slot: 'RB2',  player: take(function (c) { return c.pos === 'RB'; }) },
+        { slot: 'WR1',  player: take(function (c) { return c.pos === 'WR'; }) },
+        { slot: 'WR2',  player: take(function (c) { return c.pos === 'WR'; }) },
+        { slot: 'TE',   player: take(function (c) { return c.pos === 'TE'; }) },
+        { slot: 'FLEX', player: take(function (c) { return c.pos === 'RB' || c.pos === 'WR' || c.pos === 'TE'; }) },
+    ];
+    /* The reserves: picked by positional finish, not raw points (raw
+       totals would stack the bench with QB seasons), and capped at two
+       per position so it reads like a real bench. Backfill by finish
+       if the cap leaves seats empty. */
+    var leftovers = all.filter(function (c) { return !used[c.key]; })
+        .sort(function (a, b) { return a.posRank - b.posRank || b.fpts - a.fpts; });
+    var bench = [];
+    var perPos = {};
+    leftovers.forEach(function (c) {
+        if (bench.length >= 6) return;
+        if ((perPos[c.pos] || 0) >= 2) return;
+        perPos[c.pos] = (perPos[c.pos] || 0) + 1;
+        bench.push(c);
+    });
+    if (bench.length < 6) {
+        leftovers.forEach(function (c) {
+            if (bench.length >= 6) return;
+            if (bench.indexOf(c) === -1) bench.push(c);
+        });
+    }
+    var total = 0;
+    var captain = null;
+    var ppw = 0;
+    slots.forEach(function (s) {
+        if (!s.player) return;
+        total += s.player.fpts;
+        // Weekly-output estimate: each starter's season total spread over
+        // that season's schedule (17 games from 2021 on, 16 before).
+        ppw += s.player.fpts / (s.player.year >= 2021 ? 17 : 16);
+        // Captain: the squad's best positional finish, not raw points —
+        // raw totals would pin the star on the QB every time. Ties break
+        // on points.
+        if (!captain
+            || s.player.posRank < captain.posRank
+            || (s.player.posRank === captain.posRank && s.player.fpts > captain.fpts)) {
+            captain = s.player;
+        }
+    });
+    return {
+        uid: mgr.user_id,
+        name: mgr.name,
+        isCurrent: mgr.is_current !== false,
+        seasonsScouted: mgr.seasons.length,
+        poolSize: all.length,
+        slots: slots,
+        bench: bench,
+        total: Math.round(total * 10) / 10,
+        ppw: Math.round(ppw * 10) / 10,
+        captainKey: captain ? captain.key : null,
+    };
+}
+
+function buildAllTeams() {
+    POOL.managers.forEach(function (mgr) {
+        if (!mgr.user_id) return;
+        var team = buildTeam(mgr);
+        if (team.poolSize > 0) TEAMS[mgr.user_id] = team;
+    });
+    var uids = Object.keys(TEAMS);
+    uids.sort(function (a, b) { return TEAMS[b].total - TEAMS[a].total; });
+    ORDER = uids;
+}
+
+function leagueRank(uid) {
+    return ORDER.indexOf(uid) + 1;
+}
+
+function ordinal(n) {
+    var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/* ── Shell + rendering ─────────────────────────────────────── */
+function renderShell() {
+    document.getElementById('page-body').innerHTML =
+        '<header class="mast">' +
+            '<div class="mast-kick">{{LEAGUE_NAME}} · From the Manager File</div>' +
+            '<div class="mast-orn">✦ ✦ ✦</div>' +
+            '<h1 class="mast-title">The All-Time <em>Team.</em></h1>' +
+            '<p class="mast-sub" id="mastSub"></p>' +
+            '<div class="mast-wire" id="mastWire"></div>' +
+            '<a class="mast-file-link" id="fileLink" href="managers/">Return to the manager file</a>' +
+        '</header>' +
+
+        '<section class="switcher">' +
+            '<div class="switch-head">' +
+                '<span class="switch-label">Choose a squad</span>' +
+                '<span class="switch-hint">Arrow keys work too</span>' +
+            '</div>' +
+            '<div class="switch-tabs" id="switchTabs"></div>' +
+        '</section>' +
+
+        '<main class="case-main">' +
+            '<div class="sheet-head">' +
+                '<span class="sheet-num">II · The Starters</span>' +
+                '<span class="sheet-title" id="startersTitle">The starting seven</span>' +
+                '<span class="sheet-note" id="startersNote"></span>' +
+            '</div>' +
+            '<div class="squad-line" id="squadLine"></div>' +
+            '<div class="field"><div class="starters formation" id="starters"></div></div>' +
+
+            '<div class="sheet-head" style="margin-top:3rem">' +
+                '<span class="sheet-num">III · The Reserves</span>' +
+                '<span class="sheet-title">The next six in the queue</span>' +
+                '<span class="sheet-note" id="benchNote"></span>' +
+            '</div>' +
+            '<div id="bench"></div>' +
+
+            '<div class="sheet-head" style="margin-top:3rem">' +
+                '<span class="sheet-num">IV · The Gallery</span>' +
+                '<span class="sheet-title">Every squad in the league</span>' +
+                '<span class="sheet-note">ranked by starting-seven points</span>' +
+            '</div>' +
+            '<div id="gallery"></div>' +
+
+            '<p class="fine-print" id="finePrint"></p>' +
+        '</main>';
+
+    document.getElementById('mastWire').innerHTML =
+        '<strong>' + ORDER.length + '</strong> squads on file · ' + esc(PROFILE_LABEL[PROFILE] || PROFILE) +
+        ' · every season scouted';
+    renderTabs();
+    renderGallery();
+    document.getElementById('finePrint').innerHTML =
+        'How the team is picked: every player a manager <b>drafted or started</b> is scouted, ' +
+        'each one credited with his single best season while on that roster. Seasons are scored ' +
+        'league-wide by <b>' + esc(PROFILE_LABEL[PROFILE] || PROFILE) + '</b> season totals, and each player ' +
+        'fills one slot only: a quarterback, two running backs, two wideouts, a tight end, and a flex. ' +
+        'Positional finishes (WR1, RB14) are that year&apos;s league-wide ranks, not this league&apos;s. ' +
+        'The ★ marks the captain: the squad&apos;s <b>best positional finish</b>, points breaking ties.';
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        var i = ORDER.indexOf(activeUid);
+        if (i < 0) return;
+        if (e.key === 'ArrowLeft' && i > 0) selectManager(ORDER[i - 1]);
+        if (e.key === 'ArrowRight' && i < ORDER.length - 1) selectManager(ORDER[i + 1]);
+    });
+}
+
+function renderTabs() {
+    var current = ORDER.filter(function (u) { return TEAMS[u].isCurrent; });
+    var alumni = ORDER.filter(function (u) { return !TEAMS[u].isCurrent; });
+    function avaChip(u, name) {
+        var av = AVATARS[u];
+        var mono = '<span class="switch-ava-mono">' + esc((initials(name) || '?')[0]) + '</span>';
+        return av
+            ? '<img class="switch-ava" src="' + esc(av) + '" alt="" onerror="this.outerHTML=\'' + mono.replace(/"/g, '&quot;') + '\'">'
+            : mono;
+    }
+    function tab(u, hidden) {
+        var t = TEAMS[u];
+        return '<button class="switch-tab' + (t.isCurrent ? '' : ' alum') + (hidden ? ' alum-hidden' : '') + '" data-uid="' + esc(u) + '">' +
+            avaChip(u, t.name) + esc(t.name) + '</button>';
+    }
+    var mount = document.getElementById('switchTabs');
+    mount.innerHTML =
+        current.map(function (u) { return tab(u, false); }).join('') +
+        (alumni.length
+            ? '<button class="switch-more" id="switchMore"><b>' + (alumniTabsOpen ? '−' : '+') + '</b> Alumni · ' + alumni.length + '</button>' +
+              alumni.map(function (u) { return tab(u, !alumniTabsOpen); }).join('')
+            : '');
+    mount.addEventListener('click', function (e) {
+        var more = e.target.closest('.switch-more');
+        if (more) { toggleAlumniTabs(); return; }
+        var btn = e.target.closest('.switch-tab');
+        if (btn) selectManager(btn.getAttribute('data-uid'));
+    });
+}
+
+/* Open/close the alumni tab group. Pass true to force-open (used when
+   an alumnus gets selected from the gallery or the URL). */
+function toggleAlumniTabs(open) {
+    alumniTabsOpen = open != null ? open : !alumniTabsOpen;
+    var more = document.getElementById('switchMore');
+    if (more) more.querySelector('b').textContent = alumniTabsOpen ? '−' : '+';
+    document.querySelectorAll('.switch-tab.alum').forEach(function (t) {
+        t.classList.toggle('alum-hidden', !alumniTabsOpen);
+    });
+}
+
+function selectManager(uid, replaceUrl) {
+    if (!TEAMS[uid]) return;
+    activeUid = uid;
+    var team = TEAMS[uid];
+
+    var url = new URL(window.location.href);
+    url.searchParams.set('id', uid);
+    if (replaceUrl) history.replaceState(null, '', url);
+    else history.replaceState(null, '', url);
+
+    document.title = team.name + ' · The All-Time Team · {{LEAGUE_NAME}}';
+    var navName = document.getElementById('nav-name');
+    if (navName) navName.innerHTML = esc(team.name) + ' <em>·</em>';
+
+    /* Selecting an alumnus (via URL or gallery) reveals the alumni tabs. */
+    if (!TEAMS[uid].isCurrent && !alumniTabsOpen) toggleAlumniTabs(true);
+    document.querySelectorAll('.switch-tab').forEach(function (t) {
+        t.classList.toggle('active', t.getAttribute('data-uid') === uid);
+    });
+
+    var rank = leagueRank(uid);
+    document.getElementById('mastSub').innerHTML =
+        'The best season at every position ever to play for <b>' + esc(team.name) + '</b>.';
+    function sq(val, label) {
+        return '<span class="sq-item"><span class="sq-val">' + val + '</span>' +
+            '<span class="sq-label">' + label + '</span></span>';
+    }
+    document.getElementById('squadLine').innerHTML =
+        sq(ordinal(rank) + ' <span style="font-size:.9rem;color:var(--cream-mute)">of ' + ORDER.length + '</span>', 'Squad rank') +
+        sq('<span id="wireTotal">0.0</span>', 'Starting-seven pts') +
+        sq('≈ ' + team.ppw.toFixed(1), 'Team PPG') +
+        sq(String(team.seasonsScouted), 'Seasons scouted') +
+        sq(String(team.poolSize), 'Players considered');
+    document.getElementById('fileLink').setAttribute('href', 'managers/manager.html?id=' + encodeURIComponent(uid));
+
+    document.querySelectorAll('#ticker-1, #ticker-2').forEach(function (el) {
+        el.innerHTML =
+            '<span class="ticker-item"><span class="ticker-star">★</span> ' + esc(team.name.toUpperCase()) + ' · THE ALL-TIME TEAM</span>' +
+            '<span class="ticker-item"><span class="ticker-star">★</span> STARTING SEVEN · ' + team.total.toFixed(1) + ' PTS</span>' +
+            '<span class="ticker-item"><span class="ticker-star">★</span> SQUAD RANK ' + rank + ' OF ' + ORDER.length + '</span>' +
+            '<span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · EST. {{LEAGUE_FOUNDED}}</span>';
+    });
+
+    document.getElementById('startersTitle').textContent = team.name + '’s starting seven';
+    document.getElementById('startersNote').innerHTML =
+        '<b>' + team.total.toFixed(1) + '</b> combined pts';
+    renderStarters(team);
+    renderBench(team);
+    renderGallery();
+    countUp(document.getElementById('wireTotal'), team.total);
+}
+
+/* ── Starters ──────────────────────────────────────────────── */
+function acqFront(p) {
+    if (p.src === 'draft') return 'Rd ' + p.round + ' · Pk ' + p.roundPick;
+    return 'In-season add';
+}
+function renderStarters(team) {
+    var wrap = document.getElementById('starters');
+    wrap.classList.remove('dealt');
+    var tilts = [-1.4, 1.1, -0.8, 1.5, -1.2, 0.9, -1.6];
+    var AREA = { QB: 'fs-qb', RB1: 'fs-rb1', RB2: 'fs-rb2', WR1: 'fs-wr1', WR2: 'fs-wr2', TE: 'fs-te', FLEX: 'fs-fx' };
+    wrap.innerHTML = team.slots.map(function (s, i) {
+        var p = s.player;
+        var areaCls = ' ' + (AREA[s.slot] || '');
+        if (!p) {
+            return '<div class="tcard vacant' + areaCls + '" style="--i:' + i + ';--tilt:' + tilts[i % tilts.length] + 'deg">' +
+                '<div class="tc-vacant"><span class="vs">' + s.slot + '</span><span class="vi">Position never filled.</span></div>' +
+            '</div>';
+        }
+        var isCaptain = p.key === team.captainKey;
+        var posCls = ' pos-' + p.pos.toLowerCase();
+        var photo = p.pid
+            ? '<img loading="lazy" src="' + headshot(p.pid) + '" alt="" onerror="this.outerHTML=\'<div class=&quot;tc-mono&quot;>' + esc(initials(p.name)) + '</div>\'">'
+            : '<div class="tc-mono">' + esc(initials(p.name)) + '</div>';
+        var teamFin = '';
+        if (p.teamRank != null) {
+            teamFin = p.teamRank === 1
+                ? '<div class="tc-teamfin champ"><span>★ Title season</span></div>'
+                : '<div class="tc-teamfin"><span>Finished #' + p.teamRank + '</span></div>';
+        }
+        var backRows =
+            tcbRow('Season', p.year + ' · ' + p.pos + p.posRank + ' overall No. ' + p.overall) +
+            tcbRow('Points', p.fpts.toFixed(1) + ' · ' + PROFILE_LABEL[PROFILE]) +
+            tcbRow('Acquired', p.src === 'draft'
+                ? 'Draft · Rd ' + p.round + ', Pick ' + p.roundPick + ' (No. ' + p.overallPick + ')'
+                : 'In-season · trade or waiver') +
+            (p.starts ? tcbRow('Starts that year', String(p.starts)) : '') +
+            (p.starts && p.startPts ? tcbRow('Pts in your lineup', p.startPts.toFixed(1)) : '') +
+            (p.teamRank != null ? tcbRow('Your finish that year', p.teamRank === 1 ? '★ Champion' : '#' + p.teamRank) : '');
+        return '<div class="tcard' + areaCls + '" style="--i:' + i + ';--tilt:' + tilts[i % tilts.length] + 'deg" tabindex="0" role="button" aria-label="' + esc(p.name) + ', turn card">' +
+            '<div class="tcard-inner">' +
+                '<div class="tcard-face front">' +
+                    '<div class="tc-top"><span class="tc-slot' + posCls + '">' + s.slot + '</span><span class="tc-year">' + p.year + '</span></div>' +
+                    '<div class="tc-photo">' + (isCaptain ? '<span class="tc-captain" title="Captain · the squad&#39;s best positional finish">★</span>' : '') + photo + '</div>' +
+                    '<div class="tc-name">' + esc(p.name) + '</div>' +
+                    '<div class="tc-finish' + posCls + '"><b>' + p.pos + p.posRank + '</b><span>that season</span></div>' +
+                    teamFin +
+                    '<div class="tc-bottom">' +
+                        '<span class="tc-pts">' + p.fpts.toFixed(1) + ' <i>PTS</i></span>' +
+                        '<span class="tc-acq' + (p.src === 'pickup' ? ' pickup' : '') + '">' + acqFront(p) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="tcard-face back">' +
+                    '<div class="tcb-head">' +
+                        '<div class="tcb-slot">Scouting note · ' + s.slot + '</div>' +
+                        '<div class="tcb-name">' + esc(p.name) + '</div>' +
+                    '</div>' +
+                    '<div class="tcb-rule"></div>' +
+                    '<div class="tcb-rows">' + backRows + '</div>' +
+                    '<div class="tcb-foot">Tap to turn back</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    wrap.querySelectorAll('.tcard:not(.vacant)').forEach(function (card) {
+        card.addEventListener('click', function () { card.classList.toggle('flipped'); });
+        card.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.classList.toggle('flipped'); }
+        });
+    });
+
+    requestAnimationFrame(function () {
+        requestAnimationFrame(function () { wrap.classList.add('dealt'); });
+    });
+}
+
+function tcbRow(label, val) {
+    return '<div class="tcb-row">' +
+        '<span class="tcb-label">' + label + '</span>' +
+        '<span class="tcb-dots"></span>' +
+        '<span class="tcb-val">' + esc(val) + '</span>' +
+    '</div>';
+}
+
+/* ── Bench ─────────────────────────────────────────────────── */
+function renderBench(team) {
+    var mount = document.getElementById('bench');
+    document.getElementById('benchNote').textContent = team.bench.length + ' players';
+    if (!team.bench.length) {
+        mount.innerHTML = '<p style="font-family:var(--serif);font-style:italic;color:var(--an-mute);padding:.6rem 0">The bench is bare. Every scouted player made the starting seven.</p>';
+        return;
+    }
+    mount.innerHTML =
+        '<div class="bench-grid">' +
+        team.bench.map(function (p) {
+            var thumb = p.pid
+                ? '<img class="bmini-thumb" loading="lazy" src="' + headshotThumb(p.pid) + '" alt="" onerror="this.outerHTML=\'<div class=&quot;bmini-mono&quot;>' + esc(initials(p.name)) + '</div>\'">'
+                : '<div class="bmini-mono">' + esc(initials(p.name)) + '</div>';
+            return '<div class="bmini" title="' + esc(p.name) + ' · ' + p.year + '">' +
+                thumb +
+                '<div class="bmini-name">' + esc(p.name) + '</div>' +
+                '<div class="bmini-fin bf-' + p.pos.toLowerCase() + '">' + p.pos + p.posRank + '</div>' +
+                '<div class="bmini-year">' + p.year + (p.starts ? ' · ' + p.starts + ' starts' : '') + '</div>' +
+                '<div class="bmini-pts">' + p.fpts.toFixed(1) + ' pts</div>' +
+                '<div class="bmini-acq' + (p.src === 'pickup' ? ' pickup' : '') + '">' +
+                    (p.src === 'draft' ? 'Draft · Rd ' + p.round + ' Pk ' + p.roundPick : 'In-season add') + '</div>' +
+            '</div>';
+        }).join('') +
+        '</div>';
+}
+
+/* ── Gallery ───────────────────────────────────────────────── */
+function renderGallery() {
+    var mount = document.getElementById('gallery');
+    if (!mount) return;
+    var max = ORDER.length ? TEAMS[ORDER[0]].total : 1;
+    var current = ORDER.filter(function (u) { return TEAMS[u].isCurrent; });
+    var alumni = ORDER.filter(function (u) { return !TEAMS[u].isCurrent; });
+    var podium = current.slice(0, 3);
+    var rest = current.slice(3);
+
+    function ava(u, name, cls, monoCls) {
+        var av = AVATARS[u];
+        var mono = '<span class="' + monoCls + '">' + esc((initials(name) || '?')[0]) + '</span>';
+        return av
+            ? '<img class="' + cls + '" src="' + esc(av) + '" alt="" onerror="this.outerHTML=\'' + mono.replace(/"/g, '&quot;') + '\'">'
+            : mono;
+    }
+
+    function podCard(u, i) {
+        var t = TEAMS[u];
+        var rank = leagueRank(u);
+        return '<div class="pod-card r' + (i + 1) + (u === activeUid ? ' active' : '') + '" data-uid="' + esc(u) + '">' +
+            '<span class="pod-medal">' + rank + '</span>' +
+            ava(u, t.name, 'pod-ava', 'pod-ava-mono') +
+            '<div class="pod-name">' + esc(t.name) + '</div>' +
+            '<div class="pod-pts">' + t.total.toFixed(1) + '</div>' +
+            '<div class="pod-sub">≈ ' + t.ppw.toFixed(1) + ' PPG · ' + t.poolSize + ' scouted</div>' +
+        '</div>';
+    }
+
+    function row(u) {
+        var t = TEAMS[u];
+        var rank = leagueRank(u);
+        var pct = max > 0 ? Math.max(4, Math.round((t.total / max) * 100)) : 4;
+        return '<div class="gal-row' + (u === activeUid ? ' active' : '') + (t.isCurrent ? '' : ' alum') + '" data-uid="' + esc(u) + '">' +
+            '<span class="gal-rank' + (rank === 1 ? ' top' : '') + '">' + rank + '</span>' +
+            ava(u, t.name, 'gal-ava', 'gal-ava-mono') +
+            '<span class="gal-name">' + esc(t.name) +
+                '<span class="sub">≈ ' + t.ppw.toFixed(1) + ' ppg · ' + t.poolSize + ' scouted</span></span>' +
+            '<span class="gal-track"><span class="gal-fill" style="width:' + pct + '%"></span></span>' +
+            '<span class="gal-pts">' + t.total.toFixed(1) + '</span>' +
+        '</div>';
+    }
+
+    /* Alumni squads live behind an expander so the gallery stays
+       the active league at a glance. Auto-open when the squad on
+       display belongs to an alumnus. */
+    if (activeUid && TEAMS[activeUid] && !TEAMS[activeUid].isCurrent) alumniGalOpen = true;
+    var alumniHtml = '';
+    if (alumni.length) {
+        alumniHtml =
+            '<button class="gal-alumni-toggle" id="galAlumniToggle"><span><b>' +
+                (alumniGalOpen ? '−' : '+') + '</b> Alumni squads · ' + alumni.length + '</span></button>' +
+            '<div id="galAlumniRows"' + (alumniGalOpen ? '' : ' class="alum-hidden"') + '>' +
+                alumni.map(row).join('') +
+            '</div>';
+    }
+    mount.innerHTML =
+        '<div class="gal-podium">' + podium.map(podCard).join('') + '</div>' +
+        rest.map(row).join('') +
+        alumniHtml;
+    var toggle = document.getElementById('galAlumniToggle');
+    if (toggle) {
+        toggle.addEventListener('click', function () {
+            alumniGalOpen = !alumniGalOpen;
+            document.getElementById('galAlumniRows').classList.toggle('alum-hidden', !alumniGalOpen);
+            toggle.querySelector('b').textContent = alumniGalOpen ? '−' : '+';
+        });
+    }
+    mount.querySelectorAll('.gal-row, .pod-card').forEach(function (r) {
+        r.addEventListener('click', function () {
+            selectManager(r.getAttribute('data-uid'));
+            document.querySelector('.case-main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+}
+
+/* ── Count-up ──────────────────────────────────────────────── */
+function countUp(el, target) {
+    if (!el) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        el.textContent = target.toFixed(1);
+        return;
+    }
+    var start = null;
+    var dur = 900;
+    function tick(ts) {
+        if (start == null) start = ts;
+        var t = Math.min(1, (ts - start) / dur);
+        var eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = (target * eased).toFixed(1);
+        if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+/* ── States ────────────────────────────────────────────────── */
+function renderError(title, msg) {
+    document.getElementById('page-body').innerHTML =
+        '<div class="error-state">' +
+            '<h1>' + esc(title) + '</h1>' +
+            '<p>' + esc(msg) + '</p>' +
+            '<a href="managers/">View all managers</a>' +
+        '</div>';
+}
+function renderLocked() {
+    document.getElementById('page-body').innerHTML =
+        '<header class="mast">' +
+            '<div class="mast-kick">{{LEAGUE_NAME}} · From the Manager File</div>' +
+            '<div class="mast-orn">✦ ✦ ✦</div>' +
+            '<h1 class="mast-title">The All-Time <em>Team.</em></h1>' +
+        '</header>' +
+        '<div class="locked-case">' +
+            '<div class="lk">★ Paid Tier ★</div>' +
+            '<h2>The display case is sealed.</h2>' +
+            '<p>Every manager&apos;s history, distilled to the best season at every position and dealt as a set of cards. Unlocks when this league&apos;s commissioner is on a paid plan.</p>' +
+            '<a href="/pricing" target="_top">Upgrade to unlock</a>' +
+        '</div>';
+}
+
+boot();
+</script>
+
+</body>
+</html>

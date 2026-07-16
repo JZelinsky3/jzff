@@ -29,7 +29,7 @@ import type { LeagueValuationContext, PlayerValue, ValueSource } from './types'
 const FP_URL_DYNASTY = 'https://www.fantasypros.com/nfl/rankings/dynasty-overall.php'
 const FP_URL_ROS_PPR = 'https://www.fantasypros.com/nfl/rankings/ros-ppr-overall.php'
 
-type FpPlayer = {
+export type FpPlayer = {
   player_name: string
   player_position_id: string
   player_team_id?: string | null
@@ -37,7 +37,10 @@ type FpPlayer = {
   rank_ecr: number
   tier?: number | null
 }
-type FpEcrData = { players: FpPlayer[] }
+// ranking_type_name/year let callers validate they got the page they asked
+// for — the ROS page serves stale prior-season data all offseason (see
+// draftRanks.ts, which learned this the hard way).
+export type FpEcrData = { players: FpPlayer[]; ranking_type_name?: string; year?: string | number }
 
 // Always available — the scrape needs no key. Override env (FP_API_KEY or
 // FP_VALUES_URL) is kept for the future paid-API path.
@@ -52,7 +55,7 @@ async function loadPlayersDict(): Promise<Record<string, SleeperPlayer>> {
   return getPlayersNflDict()
 }
 
-function nameKey(name: string, position?: string | null): string {
+export function nameKey(name: string, position?: string | null): string {
   const stripped = name
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')   // diacritics
@@ -64,7 +67,7 @@ function nameKey(name: string, position?: string | null): string {
   return `${stripped}|${(position ?? '').toUpperCase()}`
 }
 
-function buildSleeperLookup(players: Record<string, SleeperPlayer>): Map<string, string> {
+export function buildSleeperLookup(players: Record<string, SleeperPlayer>): Map<string, string> {
   const out = new Map<string, string>()
   for (const [pid, p] of Object.entries(players)) {
     const full = p.full_name ?? `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim()
@@ -112,7 +115,7 @@ function extractEcrData(html: string): FpEcrData {
   return obj as FpEcrData
 }
 
-async function fetchFp(url: string): Promise<FpEcrData> {
+export async function fetchFp(url: string): Promise<FpEcrData> {
   const res = await fetch(url, {
     cache: 'no-store',
     headers: {

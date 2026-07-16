@@ -125,6 +125,13 @@ const UDFA_LOCKED_DATA_PATTERNS: RegExp[] = [
   /^data\/manager_dna\.json$/,
   /^data\/manager_highs\.json$/,
   /^data\/drafts\//,
+  // All-Time Team pool rides the same gate as draft data — the page it
+  // feeds (managers/all-time.html) renders a locked plate on 404.
+  /^data\/all_time_pool\.json$/,
+  // Mock Room ghost book: draft/mock.html is already page-locked via the
+  // ^draft pattern above, but gate the tendencies JSON too so a direct
+  // fetch can't sidestep the page lock.
+  /^data\/mock_draft\.json$/,
   /^data\/h2h_matrix\.json$/,
   /^data\/current_form\.json$/,
   /^data\/matchup_preview\.json$/,

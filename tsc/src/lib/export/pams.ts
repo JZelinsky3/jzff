@@ -985,9 +985,36 @@ function buildSeasonFile(s: Snapshot, season: SeasonRow): unknown {
     }
   }
 
+  // Week-by-week results, joined to `standings` rows via owner_user_id.
+  // Powers the season page's race chart, playoff bracket, weekly grid and
+  // superlatives. Unplayed games (null scores) are skipped so a live season
+  // only carries completed weeks; games touching a hidden profile drop out
+  // the same way their standings rows do.
+  const matchups = (s.matchupsBySeason.get(season.id) ?? [])
+    .map((m) => {
+      if (m.score_a == null || m.score_b == null) return null
+      const a = resolveByManagerId(m.manager_a_id)
+      const b = resolveByManagerId(m.manager_b_id)
+      const aId = userId(a?.primary)
+      const bId = userId(b?.primary)
+      if (!aId || !bId || a?.hidden || b?.hidden) return null
+      return {
+        week: m.week,
+        a_user_id: aId,
+        b_user_id: bId,
+        a_score: round2(Number(m.score_a)),
+        b_score: round2(Number(m.score_b)),
+        is_playoff: m.is_playoff,
+        is_championship: m.is_championship,
+      }
+    })
+    .filter((r): r is NonNullable<typeof r> => r != null)
+    .sort((x, y) => x.week - y.week)
+
   return {
     year: season.year,
     total_teams: standings.length,
+    matchups,
     champion: champ && champMs && !champResolved?.hidden
       ? {
           team_name: champMs.team_name ?? champ.team_name ?? champResolved?.name ?? champ.display_name,
@@ -1634,6 +1661,437 @@ function buildManagerFile(s: Snapshot, g: ProfileGroup): unknown {
   }
 }
 
+// ============================================================
+// all_time_pool.json — per-manager pool of player-seasons for the
+// All-Time Team page (managers/all-time.html). For every profile
+// group and every season: the players they drafted plus any player
+// they started at least one week (in-season pickups). The client
+// joins this pool against the static /data/fantasy_ranks/<profile>/
+// <year>.json files to find each player-season's positional finish,
+// then assembles the manager's best-ever lineup.
+//
+// Skill positions only (QB/RB/WR/TE) — the rank files don't cover
+// K/DEF, so entries outside those positions could never place.
+// ============================================================
+function poolNameKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\b(jr|sr|ii|iii|iv|v)\b\.?/g, '')
+    .replace(/[^a-z0-9]/g, '')
+}
+
+function buildAllTimePool(s: Snapshot): unknown {
+  const POOL_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE'])
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  const autoCurrent = currentManagerIdSet(s)
+
+  type PoolEntry = {
+    name: string
+    pos: string
+    source: 'draft' | 'pickup'
+    round?: number
+    round_pick?: number
+    overall?: number
+    weeks_started: number
+    started_pts: number
+  }
+
+  const managers = groups.map((g) => {
+    const uid = userId(g.primary)
+    if (uid == null) return null
+    const seasons: Array<{ year: number; final_rank: number | null; players: PoolEntry[] }> = []
+
+    for (const season of s.seasons) {
+      const byKey = new Map<string, PoolEntry>()
+
+      // Drafted players — full history, even for seasons without lineups.
+      const draft = s.draftsBySeason.get(season.id)
+      const picks = draft ? s.picksByDraft.get(draft.id) ?? [] : []
+      const teamsPerRound = Math.max(
+        1,
+        (s.managerSeasonsBySeason.get(season.id) ?? []).length,
+      )
+      for (const p of picks) {
+        if (!p.manager_id || !g.managerIds.has(p.manager_id)) continue
+        if (!p.player_name) continue
+        const pos = (p.position ?? '').toUpperCase()
+        if (!POOL_POSITIONS.has(pos)) continue
+        byKey.set(poolNameKey(p.player_name), {
+          name: p.player_name,
+          pos,
+          source: 'draft',
+          round: p.round,
+          round_pick: ((p.pick - 1) % teamsPerRound) + 1,
+          overall: p.pick,
+          weeks_started: 0,
+          started_pts: 0,
+        })
+      }
+
+      // Started players — anyone in the weekly lineups with the starter
+      // flag. Upserts into the drafted entry when the names line up (ids
+      // can't be trusted across sources, names can), otherwise records an
+      // in-season pickup (trade / waiver — the ledger doesn't know which).
+      for (const r of s.weeklyLineupsBySeason.get(season.id) ?? []) {
+        if (!g.managerIds.has(r.manager_id)) continue
+        if (!r.is_starter || !r.player_name) continue
+        const pos = (r.position ?? '').toUpperCase()
+        if (!POOL_POSITIONS.has(pos)) continue
+        const key = poolNameKey(r.player_name)
+        let entry = byKey.get(key)
+        if (!entry) {
+          entry = {
+            name: r.player_name,
+            pos,
+            source: 'pickup',
+            weeks_started: 0,
+            started_pts: 0,
+          }
+          byKey.set(key, entry)
+        }
+        entry.weeks_started++
+        entry.started_pts += Number(r.points ?? 0)
+      }
+
+      if (byKey.size === 0) continue
+      // The manager's final rank that year — the All-Time Team cards use
+      // it for the "your squad finished #N" line on each player-season.
+      let finalRank: number | null = null
+      for (const r of s.managerSeasonsBySeason.get(season.id) ?? []) {
+        if (g.managerIds.has(r.manager_id) && r.final_rank != null) {
+          finalRank = r.final_rank
+          break
+        }
+      }
+      const players = [...byKey.values()].map((e) => ({
+        ...e,
+        started_pts: round2(e.started_pts),
+      }))
+      seasons.push({ year: season.year, final_rank: finalRank, players })
+    }
+
+    if (seasons.length === 0) return null
+    return {
+      user_id: uid,
+      name: groupDisplayName(g),
+      is_current: isGroupCurrent(g, autoCurrent),
+      seasons,
+    }
+  }).filter((m) => m != null)
+
+  return { managers }
+}
+
+// ============================================================
+// mock_draft.json — the ghost book for the Mock Room
+// (draft/mock.html). Everything the client-side simulator needs
+// that derives from league history: per-current-manager draft
+// tendencies (the "ghosts"), the shape of a draft (teams, rounds,
+// starting-lineup slots), and the raw material for draft-order
+// presets. The live player board is NOT here — it comes from
+// /api/mock-board so its freshness isn't tied to the bundle cache.
+//
+// Tendencies are bucketed (early R1-3 / mid R4-8 / late R9+)
+// rather than per-round: ~7 seasons of history means a manager has
+// ~7 picks per round, which is noise at per-round granularity but
+// signal at bucket granularity. `baseline` carries the same shape
+// aggregated over every visible group (current and alumni) so the
+// client can blend thin samples toward the league norm.
+// ============================================================
+const MOCK_POSITIONS = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'] as const
+
+function mockPos(raw: string | null): string | null {
+  const p = (raw ?? '').toUpperCase()
+  if (p === 'DST' || p === 'D/ST') return 'DEF'
+  return (MOCK_POSITIONS as readonly string[]).includes(p) ? p : null
+}
+
+function mockBucket(round: number): 'early' | 'mid' | 'late' {
+  if (round <= 3) return 'early'
+  if (round <= 8) return 'mid'
+  return 'late'
+}
+
+function median(nums: number[]): number | null {
+  if (nums.length === 0) return null
+  const a = [...nums].sort((x, y) => x - y)
+  const mid = Math.floor(a.length / 2)
+  return a.length % 2 ? a[mid] : Math.round((a[mid - 1] + a[mid]) / 2)
+}
+
+type MockTally = {
+  buckets: Record<'early' | 'mid' | 'late', Record<string, number>>
+  r1: Record<string, number>
+  // pos -> per-season rounds of the first pick at that position
+  firstRounds: Record<string, number[]>
+  totalPicks: number
+  seasonsDrafted: number
+}
+
+function emptyMockTally(): MockTally {
+  return {
+    buckets: { early: {}, mid: {}, late: {} },
+    r1: {},
+    firstRounds: {},
+    totalPicks: 0,
+    seasonsDrafted: 0,
+  }
+}
+
+// Normalize a tally's raw counts into the JSON shape the client reads:
+// bucket counts become shares (sum to 1 per bucket), first-pick rounds
+// collapse to their per-season median.
+function finalizeMockTally(t: MockTally) {
+  const shares = (counts: Record<string, number>) => {
+    const total = Object.values(counts).reduce((a, b) => a + b, 0)
+    if (total === 0) return {}
+    const out: Record<string, number> = {}
+    for (const [pos, n] of Object.entries(counts)) out[pos] = round2(n / total)
+    return out
+  }
+  const firstRoundByPos: Record<string, number> = {}
+  for (const [pos, rounds] of Object.entries(t.firstRounds)) {
+    const m = median(rounds)
+    if (m != null) firstRoundByPos[pos] = m
+  }
+  return {
+    buckets: {
+      early: shares(t.buckets.early),
+      mid: shares(t.buckets.mid),
+      late: shares(t.buckets.late),
+    },
+    r1: shares(t.r1),
+    first_round_by_pos: firstRoundByPos,
+    total_picks: t.totalPicks,
+    seasons_drafted: t.seasonsDrafted,
+  }
+}
+
+// Infer the starting-lineup slot profile from the most recent season with
+// weekly lineup data: normalize platform slot names, count starters per
+// (manager, week), and take the most common signature per slot. Falls back
+// to the standard 1QB/2RB/2WR/TE/FLEX/K/DEF when no lineup data exists.
+function inferMockSlots(s: Snapshot): Record<string, number> {
+  const normSlot = (raw: string): string | null => {
+    const S = raw.toUpperCase()
+    if (S === 'QB' || S === 'RB' || S === 'WR' || S === 'TE' || S === 'K') return S
+    if (S === 'DEF' || S === 'D/ST' || S === 'DST') return 'DEF'
+    // NFL.com writes its flex slot as "W/R" in older seasons and "R/W/T"
+    // in newer ones (see platforms/nfl.ts; pams has both across 2019-2025).
+    if (S === 'FLEX' || S === 'W/R' || S === 'W/T' || S === 'W/R/T' || S === 'R/W/T' || S === 'RB/WR' || S === 'WR/TE') return 'FLEX'
+    if (S === 'OP' || S === 'SUPER_FLEX' || S === 'SUPERFLEX' || S === 'Q/W/R/T' || S === 'Q/R/W/T' || S === 'TQB') return 'SFLEX'
+    return null // bench / IR / IDP oddities — not draft-shaping
+  }
+
+  for (let i = s.seasons.length - 1; i >= 0; i--) {
+    const rows = s.weeklyLineupsBySeason.get(s.seasons[i].id) ?? []
+    if (rows.length === 0) continue
+    // slot -> observed per-manager-week counts -> frequency of each count
+    const freq = new Map<string, Map<number, number>>()
+    const byMgrWeek = new Map<string, Map<string, number>>()
+    for (const r of rows) {
+      if (!r.is_starter) continue
+      const slot = normSlot(r.slot)
+      if (!slot) continue
+      const key = `${r.manager_id}|${r.week}`
+      let counts = byMgrWeek.get(key)
+      if (!counts) byMgrWeek.set(key, (counts = new Map()))
+      counts.set(slot, (counts.get(slot) ?? 0) + 1)
+    }
+    if (byMgrWeek.size === 0) continue
+    for (const counts of byMgrWeek.values()) {
+      for (const [slot, n] of counts.entries()) {
+        let f = freq.get(slot)
+        if (!f) freq.set(slot, (f = new Map()))
+        f.set(n, (f.get(n) ?? 0) + 1)
+      }
+    }
+    const slots: Record<string, number> = {}
+    for (const [slot, f] of freq.entries()) {
+      // Mode across manager-weeks; a slot must appear in at least a third of
+      // them to count (filters one-off parser oddities).
+      let bestCount = 0
+      let bestFreq = 0
+      let seen = 0
+      for (const [n, times] of f.entries()) {
+        seen += times
+        if (times > bestFreq) { bestFreq = times; bestCount = n }
+      }
+      if (seen >= byMgrWeek.size / 3 && bestCount > 0) slots[slot] = bestCount
+    }
+    if (Object.keys(slots).length > 0) return slots
+  }
+  return { QB: 1, RB: 2, WR: 2, TE: 1, FLEX: 1, K: 1, DEF: 1 }
+}
+
+function buildMockDraft(s: Snapshot): unknown {
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  const autoCurrent = currentManagerIdSet(s)
+  const managerToGroup = buildManagerToGroup(groups)
+
+  const tallies = new Map<ProfileGroup, MockTally>()
+  const baseline = emptyMockTally()
+
+  let lastDraftYear: number | null = null
+  let lastDraftType: string | null = null
+  let lastDraftRounds: number | null = null
+  let lastDraftOrder: Array<string | null> = []
+  const openingsByGroup = new Map<ProfileGroup, Array<{ y: number; picks: Array<[number, string]> }>>()
+
+  for (const season of s.seasons) {
+    const draft = s.draftsBySeason.get(season.id)
+    if (!draft) continue
+    const picks = s.picksByDraft.get(draft.id) ?? []
+    if (picks.length === 0) continue
+
+    const teams = Math.max(1, (s.managerSeasonsBySeason.get(season.id) ?? []).length)
+    lastDraftYear = season.year
+    lastDraftType = draft.draft_type
+    lastDraftRounds = draft.rounds ?? Math.ceil(picks.length / teams)
+    const r1 = picks
+      .filter((p) => p.round === 1)
+      .sort((a, b) => a.pick - b.pick)
+    lastDraftOrder = r1.map((p) => {
+      const mgr = p.manager_id ? s.managers.get(p.manager_id) : null
+      const g = mgr ? managerToGroup.get(mgr.id) : undefined
+      return g ? userId(g.primary) : null
+    })
+
+    // pos -> first-pick round this season, per group (and league-wide)
+    const seasonFirst = new Map<ProfileGroup, Record<string, number>>()
+    const seasonDrafted = new Set<ProfileGroup>()
+    const baselineFirst: Record<string, number> = {}
+    const seasonOpenings = new Map<ProfileGroup, Array<[number, string]>>()
+
+    for (const p of [...picks].sort((a, b) => a.pick - b.pick)) {
+      const pos = mockPos(p.position)
+      if (!pos || !p.manager_id) continue
+      const g = managerToGroup.get(p.manager_id)
+      if (!g) continue
+      // Opening sequence: this group's picks through round 8, in order.
+      // The Mock Room reads these to spot named strategies (Zero RB,
+      // Elite QB, ...) season by season.
+      if (p.round >= 1 && p.round <= 8) {
+        let seq = seasonOpenings.get(g)
+        if (!seq) seasonOpenings.set(g, (seq = []))
+        seq.push([p.round, pos])
+      }
+      let tally = tallies.get(g)
+      if (!tally) tallies.set(g, (tally = emptyMockTally()))
+      const bucket = mockBucket(p.round)
+      tally.buckets[bucket][pos] = (tally.buckets[bucket][pos] ?? 0) + 1
+      baseline.buckets[bucket][pos] = (baseline.buckets[bucket][pos] ?? 0) + 1
+      tally.totalPicks++
+      baseline.totalPicks++
+      if (p.round === 1) {
+        tally.r1[pos] = (tally.r1[pos] ?? 0) + 1
+        baseline.r1[pos] = (baseline.r1[pos] ?? 0) + 1
+      }
+      seasonDrafted.add(g)
+      let first = seasonFirst.get(g)
+      if (!first) seasonFirst.set(g, (first = {}))
+      if (first[pos] == null) {
+        first[pos] = p.round
+        ;(tally.firstRounds[pos] = tally.firstRounds[pos] ?? []).push(p.round)
+      }
+      if (baselineFirst[pos] == null) {
+        baselineFirst[pos] = p.round
+        ;(baseline.firstRounds[pos] = baseline.firstRounds[pos] ?? []).push(p.round)
+      }
+    }
+    for (const g of seasonDrafted) {
+      const tally = tallies.get(g)
+      if (tally) tally.seasonsDrafted++
+    }
+    if (seasonDrafted.size > 0) baseline.seasonsDrafted++
+    for (const [g, seq] of seasonOpenings.entries()) {
+      let all = openingsByGroup.get(g)
+      if (!all) openingsByGroup.set(g, (all = []))
+      all.push({ y: season.year, picks: seq })
+    }
+  }
+
+  // Repeat-player affinity: players a manager has drafted in 2+ seasons.
+  // Keyed by normalized name (same rationale as the All-Time pool: ids
+  // don't survive platform moves, names do).
+  const favoritesByGroup = new Map<ProfileGroup, Array<{ name: string; pos: string; count: number }>>()
+  {
+    const seen = new Map<ProfileGroup, Map<string, { name: string; pos: string; years: Set<number> }>>()
+    for (const season of s.seasons) {
+      const draft = s.draftsBySeason.get(season.id)
+      if (!draft) continue
+      for (const p of s.picksByDraft.get(draft.id) ?? []) {
+        const pos = mockPos(p.position)
+        if (!pos || !p.manager_id || !p.player_name) continue
+        const g = managerToGroup.get(p.manager_id)
+        if (!g) continue
+        let m = seen.get(g)
+        if (!m) seen.set(g, (m = new Map()))
+        const key = poolNameKey(p.player_name)
+        let e = m.get(key)
+        if (!e) m.set(key, (e = { name: p.player_name, pos, years: new Set() }))
+        e.years.add(season.year)
+      }
+    }
+    for (const [g, m] of seen.entries()) {
+      const favs = [...m.values()]
+        .filter((e) => e.years.size >= 2)
+        .map((e) => ({ name: e.name, pos: e.pos, count: e.years.size }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6)
+      if (favs.length > 0) favoritesByGroup.set(g, favs)
+    }
+  }
+
+  // Ghosts: current managers only — the sim drafts the upcoming season.
+  // A newcomer with no draft history still gets a seat; the client blends
+  // their (empty) tendencies fully toward the baseline.
+  const currentGroups = groups.filter((g) => isGroupCurrent(g, autoCurrent))
+  const managers = currentGroups
+    .map((g) => {
+      const uid = userId(g.primary)
+      if (uid == null) return null
+      return {
+        user_id: uid,
+        name: groupDisplayName(g),
+        ...finalizeMockTally(tallies.get(g) ?? emptyMockTally()),
+        favorites: favoritesByGroup.get(g) ?? [],
+        openings: openingsByGroup.get(g) ?? [],
+      }
+    })
+    .filter((m) => m != null)
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  // Final ranks from the most recent completed season with ranks — the
+  // "reverse the standings" order preset.
+  const lastFinalRanks: Record<string, number> = {}
+  for (let i = s.seasons.length - 1; i >= 0; i--) {
+    const rows = s.managerSeasonsBySeason.get(s.seasons[i].id) ?? []
+    const ranked = rows.filter((r) => r.final_rank != null)
+    if (ranked.length === 0) continue
+    for (const r of ranked) {
+      const g = managerToGroup.get(r.manager_id)
+      const uid = g ? userId(g.primary) : null
+      if (uid != null && lastFinalRanks[uid] == null) lastFinalRanks[uid] = r.final_rank as number
+    }
+    break
+  }
+
+  return {
+    meta: {
+      team_count: managers.length,
+      rounds: lastDraftRounds ?? 15,
+      draft_type: lastDraftType ?? 'snake',
+      slots: inferMockSlots(s),
+      last_draft_year: lastDraftYear,
+      last_draft_order: lastDraftOrder,
+      last_final_ranks: lastFinalRanks,
+    },
+    baseline: finalizeMockTally(baseline),
+    managers,
+  }
+}
+
 // Rivalries: commissioner-curated head-to-head pairs. For each rivalry, compute
 // h2h stats aggregated by profile (so merged identities are pooled).
 function buildRivalries(s: Snapshot): unknown {
@@ -1841,6 +2299,7 @@ function buildManagerHighs(s: Snapshot): unknown {
   // Top-5 single-week scores per profile (merged identities pool their scores).
   const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
   const managerToGroup = buildManagerToGroup(groups)
+  const currentIds = currentManagerIdSet(s)
   return groups.map((g) => {
     const seen = new Set<string>()
     const games: ManagerGame[] = []
@@ -1877,7 +2336,9 @@ function buildManagerHighs(s: Snapshot): unknown {
     return {
       user_id: userId(g.primary),
       name: groupDisplayName(g),
-      is_current: top5.length > 0,
+      // Actual membership, not "has games" — the record book splits its
+      // personal-best chips into active vs alumni off this flag.
+      is_current: isGroupCurrent(g, currentIds),
       top5,
     }
   })
@@ -2583,6 +3044,68 @@ function buildRecordBook(s: Snapshot): unknown {
   const longest_win_streaks = winStreaks.sort((a, b) => b.length - a.length).slice(0, N)
   const longest_loss_streaks = lossStreaks.sort((a, b) => b.length - a.length).slice(0, N)
 
+  // 5-game scoring stretches: every window of five consecutive counted
+  // games (regular + championship bracket, week order) within one season.
+  // Ranked league-wide by window total; overlapping windows from the same
+  // manager-season collapse to their best one so a single hot month
+  // doesn't fill the board five times.
+  type Stretch = {
+    user_id: string | null
+    owner: string
+    season: number
+    start_week: number
+    end_week: number
+    total: number
+    avg: number
+    record: string
+  }
+  const stretchWindows: Stretch[] = []
+  for (const m of s.managers.values()) {
+    const bySeason = new Map<string, ManagerGame[]>()
+    for (const mt of s.matchupsByManager.get(m.id) ?? []) {
+      const g = asManagerGame(mt, m.id)
+      if (!g) continue
+      if (g.is_playoff && !isChampionshipBracketGame(s, g)) continue
+      const arr = bySeason.get(g.season_id) ?? []
+      arr.push(g)
+      bySeason.set(g.season_id, arr)
+    }
+    for (const [seasonId, games] of bySeason) {
+      const year = s.seasons.find((sn) => sn.id === seasonId)?.year
+      if (!year) continue
+      games.sort((a, b) => a.week - b.week)
+      for (let i = 0; i + 5 <= games.length; i++) {
+        const win = games.slice(i, i + 5)
+        const total = win.reduce((t, g) => t + g.self_score, 0)
+        const w = win.filter((g) => g.result === 'W').length
+        const l = win.filter((g) => g.result === 'L').length
+        stretchWindows.push({
+          user_id: userId(m),
+          owner: ownerName(m),
+          season: year,
+          start_week: win[0].week,
+          end_week: win[4].week,
+          total: round2(total),
+          avg: round2(total / 5),
+          record: recordStr(w, l, win.length - w - l),
+        })
+      }
+    }
+  }
+  const collapseStretches = (rows: Stretch[]): Stretch[] => {
+    const taken: Stretch[] = []
+    for (const r of rows) {
+      const clash = taken.some((t) =>
+        t.owner === r.owner && t.season === r.season &&
+        r.start_week <= t.end_week && r.end_week >= t.start_week)
+      if (!clash) taken.push(r)
+      if (taken.length === N) break
+    }
+    return taken
+  }
+  const hottest_stretches = collapseStretches([...stretchWindows].sort((a, b) => b.total - a.total))
+  const coldest_stretches = collapseStretches([...stretchWindows].sort((a, b) => a.total - b.total))
+
   // Career summary rows per manager (used by several leaderboards)
   type CareerRow = {
     user_id: string | null
@@ -2730,12 +3253,68 @@ function buildRecordBook(s: Snapshot): unknown {
         most_playoff_appearances,
         most_championship_appearances,
       },
+      stretches: {
+        hottest_5: hottest_stretches,
+        coldest_5: coldest_stretches,
+      },
       milestones: buildMilestonesBook(s),
       gauntlet: buildGauntletBook(s),
       clutch: buildClutchBook(s),
       boom_bust: buildBoomBustBook(s),
+      margins: buildMarginsBook(s),
     },
   }
+}
+
+// "The Margins" — career average margin of victory (in wins) and defeat
+// (in losses) per active manager. Same scope + framing as Clutch: regular
+// season + championship bracket, active managers only, hidden groups kept.
+function buildMarginsBook(s: Snapshot): { avg_win_margin: unknown[]; avg_loss_margin: unknown[] } {
+  const groups = buildProfileGroups(s)
+  const currentIds = currentManagerIdSet(s)
+  type Acc = {
+    user_id: string | null; name: string
+    wins: number; losses: number
+    winTotal: number; lossTotal: number
+    biggestWin: number; worstLoss: number
+  }
+  const rows: Acc[] = []
+  for (const g of groups) {
+    if (!isGroupCurrent(g, currentIds)) continue
+    const seenKey = new Set<string>()
+    const acc: Acc = {
+      user_id: userId(g.primary), name: groupDisplayName(g),
+      wins: 0, losses: 0, winTotal: 0, lossTotal: 0, biggestWin: 0, worstLoss: 0,
+    }
+    for (const mid of g.managerIds) {
+      for (const mt of s.matchupsByManager.get(mid) ?? []) {
+        const k = `${mt.season_id}|${mt.week}|${mt.manager_a_id}|${mt.manager_b_id}`
+        if (seenKey.has(k)) continue
+        seenKey.add(k)
+        const gm = asManagerGame(mt, mid)
+        if (!gm) continue
+        if (gm.is_playoff && !isChampionshipBracketGame(s, gm)) continue
+        const margin = Math.abs(gm.margin)
+        if (gm.result === 'W') {
+          acc.wins++; acc.winTotal += margin
+          if (margin > acc.biggestWin) acc.biggestWin = margin
+        } else if (gm.result === 'L') {
+          acc.losses++; acc.lossTotal += margin
+          if (margin > acc.worstLoss) acc.worstLoss = margin
+        }
+      }
+    }
+    rows.push(acc)
+  }
+  const avg_win_margin = rows.filter((r) => r.wins > 0).map((r) => ({
+    user_id: r.user_id, name: r.name, games: r.wins,
+    avg: round2(r.winTotal / r.wins), most: round2(r.biggestWin),
+  })).sort((a, b) => b.avg - a.avg)
+  const avg_loss_margin = rows.filter((r) => r.losses > 0).map((r) => ({
+    user_id: r.user_id, name: r.name, games: r.losses,
+    avg: round2(r.lossTotal / r.losses), most: round2(r.worstLoss),
+  })).sort((a, b) => b.avg - a.avg)
+  return { avg_win_margin, avg_loss_margin }
 }
 
 function stripCombined<T extends { combined_score?: number }>(g: T): T {
@@ -2869,11 +3448,14 @@ export async function exportLeague(
   // data). current_form returns null when no season is is_live — the
   // route handler still serves the JSON; the client treats null as
   // "no current season" and hides the form sheet.
+  out['all_time_pool.json'] = buildAllTimePool(s)
+  out['mock_draft.json'] = buildMockDraft(s)
   out['h2h_matrix.json'] = buildH2HMatrix(s)
   out['current_form.json'] = buildCurrentForm(s)
   out['matchup_preview.json'] = buildMatchupPreview(s)
   out['best_coach.json'] = buildBestCoach(s)
   out['manager_dna.json'] = buildManagerDna(s)
+  out['visualizer.json'] = buildVisualizer(s)
 
   for (const season of s.seasons) {
     out[`seasons/${season.year}.json`] = buildSeasonFile(s, season)
@@ -6350,5 +6932,114 @@ function buildManagerDna(s: Snapshot): unknown {
     },
     archetype_counts: archetypeCounts,
     managers: result,
+  }
+}
+
+// ============================================================
+// visualizer.json — one compact feed for the Chart Room
+// (managers/visualizer.html). Every completed game for every
+// visible profile group, season by season, plus final/regular
+// ranks. All twelve charts on the page derive client-side from
+// this single file, so the shape is tuned for size: managers
+// are indexed once up front and each game is a 5-tuple.
+//
+//   managers: [{ uid, name, current }]      // index = manager id everywhere
+//   seasons:  [{ year, teams: [{ m, final, reg, g }] }]
+//     g: [[week, pts, oppPts, oppIdx, flag], ...]  sorted by week
+//     flag: 0 regular · 1 championship-bracket playoff · 2 championship game
+//     oppIdx: index into managers, or -1 (opponent hidden/unresolvable)
+//
+// Consolation / placement games are dropped entirely (same top-4 rule as
+// isChampionshipBracketGame), so a season's charts run 1..14 for eliminated
+// teams and only the title track extends into the playoff weeks.
+//
+// final uses the same "non-playoff teams fall back to regular
+// rank" rule as buildSeasonFile so the finish charts agree with
+// the season pages.
+function buildVisualizer(s: Snapshot): unknown {
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  const autoCurrent = currentManagerIdSet(s)
+  const managerToGroup = buildManagerToGroup(groups)
+
+  const indexed = groups
+    .map((g) => ({ g, uid: userId(g.primary) }))
+    .filter((x): x is { g: ProfileGroup; uid: string } => x.uid != null)
+    .sort((a, b) => groupDisplayName(a.g).localeCompare(groupDisplayName(b.g)))
+  const idxByGroup = new Map<ProfileGroup, number>()
+  indexed.forEach((x, i) => idxByGroup.set(x.g, i))
+
+  type GameTuple = [number, number, number, number, number]
+  const seasons: Array<{
+    year: number
+    teams: Array<{ m: number; final: number | null; reg: number | null; g: GameTuple[] }>
+  }> = []
+
+  for (const season of s.seasons) {
+    const gamesByIdx = new Map<number, GameTuple[]>()
+    const push = (idx: number, t: GameTuple) => {
+      const arr = gamesByIdx.get(idx)
+      if (arr) arr.push(t)
+      else gamesByIdx.set(idx, [t])
+    }
+    const hadPlayoffMatchup = new Set<string>()
+    for (const m of s.matchupsBySeason.get(season.id) ?? []) {
+      if (m.is_playoff) {
+        hadPlayoffMatchup.add(m.manager_a_id)
+        hadPlayoffMatchup.add(m.manager_b_id)
+      }
+      if (m.score_a == null || m.score_b == null) continue
+      let flag = 0
+      if (m.is_championship) flag = 2
+      else if (m.is_playoff) {
+        const aRank = s.finalRankByMgrSeason.get(`${season.id}|${m.manager_a_id}`) ?? null
+        const bRank = s.finalRankByMgrSeason.get(`${season.id}|${m.manager_b_id}`) ?? null
+        const champBracket = (aRank != null && aRank <= 4) || (bRank != null && bRank <= 4)
+        if (!champBracket) continue
+        flag = 1
+      }
+      const ga = managerToGroup.get(m.manager_a_id)
+      const gb = managerToGroup.get(m.manager_b_id)
+      const ia = ga ? idxByGroup.get(ga) : undefined
+      const ib = gb ? idxByGroup.get(gb) : undefined
+      const a = round2(Number(m.score_a))
+      const b = round2(Number(m.score_b))
+      if (ia != null) push(ia, [m.week, a, b, ib ?? -1, flag])
+      if (ib != null) push(ib, [m.week, b, a, ia ?? -1, flag])
+    }
+
+    // Ranks per group — a merged profile has at most one identity per season,
+    // so the first manager_seasons row found inside the group wins.
+    const rankByIdx = new Map<number, { final: number | null; reg: number | null }>()
+    for (const row of s.managerSeasonsBySeason.get(season.id) ?? []) {
+      const g = managerToGroup.get(row.manager_id)
+      const idx = g ? idxByGroup.get(g) : undefined
+      if (idx == null) continue
+      const inPlayoffs = madePlayoffs(season, row.final_rank ?? null, hadPlayoffMatchup.has(row.manager_id))
+      const effectiveFinal = inPlayoffs
+        ? (row.final_rank ?? row.regular_rank ?? null)
+        : (row.regular_rank ?? row.final_rank ?? null)
+      rankByIdx.set(idx, { final: effectiveFinal, reg: row.regular_rank ?? null })
+    }
+
+    const teamIdxs = new Set<number>([...gamesByIdx.keys(), ...rankByIdx.keys()])
+    const teams = [...teamIdxs]
+      .sort((a, b) => a - b)
+      .map((idx) => ({
+        m: idx,
+        final: rankByIdx.get(idx)?.final ?? null,
+        reg: rankByIdx.get(idx)?.reg ?? null,
+        g: (gamesByIdx.get(idx) ?? []).sort((a, b) => a[0] - b[0]),
+      }))
+      .filter((t) => t.g.length > 0)
+    if (teams.length > 0) seasons.push({ year: season.year, teams })
+  }
+
+  return {
+    managers: indexed.map((x) => ({
+      uid: x.uid,
+      name: groupDisplayName(x.g),
+      current: isGroupCurrent(x.g, autoCurrent),
+    })),
+    seasons,
   }
 }

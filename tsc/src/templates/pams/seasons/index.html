@@ -7,12 +7,36 @@
 <link rel="stylesheet" href="/pams-template/assets/css/main.css">
 <style>
 /* ============================================================
-   SEASON ARCHIVES INDEX
+   SEASON ARCHIVES · "THE VAULT"
+   Navy room, mahogany-leather shelving. Three regions:
+     §01 The Reign Map · one colored block per season
+     §02 The Shelf     · every season as a bound volume
+     §03 The Chronicle · the detailed list, newest first
    ============================================================ */
+
+:root {
+    --mahog:      #3a1d16;   /* mahogany leather */
+    --mahog-deep: #241009;
+    --mahog-lite: #4d2a20;
+    --plank:      #2b1812;
+}
+
+/* Section titles pinned to the true center line, whatever the kicker and
+   meta widths are on either side. */
+@media (min-width: 720px) {
+    .section-header {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: baseline;
+    }
+    .section-num   { justify-self: start; }
+    .section-title { text-align: center; }
+    .section-meta  { justify-self: end; text-align: right; }
+}
 
 .page-header {
     text-align: center;
-    padding: 3.5rem 1.5rem 2.5rem;
+    padding: 2rem 1.5rem 2.5rem;
     max-width: 900px;
     margin: 0 auto;
     position: relative; z-index: 10;
@@ -35,12 +59,299 @@
     color: var(--cream-soft); max-width: 540px; margin: 0 auto;
 }
 
-/* ─── Chronicle list ─── */
+.loading-state {
+    text-align: center; padding: 4rem 2rem;
+    font-family: var(--serif); font-style: italic;
+    color: var(--cream-mute);
+}
+
+/* ============================================================
+   §01 THE SHELF
+   ============================================================ */
+.shelf-area {
+    position: relative;
+    background: linear-gradient(180deg, rgba(0,0,0,.25) 0%, transparent 30%),
+                var(--ink-card);
+    border: 1px solid var(--ink-line);
+    padding: 2.75rem 2rem 0;
+    overflow: hidden;
+}
+.shelf-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.1rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding: 1rem .5rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ink-line) transparent;
+}
+.book {
+    scroll-snap-align: center;
+    flex-shrink: 0;
+    /* margin:auto on the ends centers the row when it fits, and degrades to
+       a normal left-anchored scroll row when it overflows */
+    width: 98px;
+    height: var(--bh, 270px);
+    text-decoration: none;
+    position: relative;
+    display: flex; flex-direction: column; align-items: center;
+    background:
+        linear-gradient(90deg,
+            rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 7%,
+            transparent 15%, transparent 82%,
+            rgba(0,0,0,.35) 92%, rgba(0,0,0,.5) 100%),
+        linear-gradient(180deg, var(--mahog-lite) 0%, var(--mahog) 30%, var(--mahog-deep) 100%);
+    border-radius: 3px 7px 7px 3px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.06), 0 4px 10px rgba(0,0,0,.4);
+    transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s;
+}
+.book:first-child { margin-left: auto; }
+.book:last-child  { margin-right: auto; }
+.book:hover {
+    transform: translateY(-14px);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.06), 0 18px 26px rgba(0,0,0,.55);
+}
+.book-rule {
+    width: 72%;
+    border-top: 1px solid rgba(232,200,137,.55);
+    border-bottom: 1px solid rgba(232,200,137,.25);
+    height: 3px;
+    margin-top: .9rem;
+}
+.book-vol {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .22em;
+    color: var(--gold);
+    margin-top: .6rem;
+    text-transform: uppercase;
+}
+.book-year {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    writing-mode: vertical-rl;
+    font-family: var(--serif); font-style: italic;
+    font-size: 2.5rem; letter-spacing: .12em;
+    color: var(--gold-bright);
+    text-shadow: 0 1px 0 rgba(0,0,0,.6);
+}
+.book-band {
+    width: 100%;
+    padding: .5rem .3rem;
+    background: var(--band, var(--gold-deep));
+    text-align: center;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .14em; text-transform: uppercase;
+    color: rgba(10, 10, 12, .85);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.book-band.in-play {
+    background: var(--ink-soft);
+    color: var(--cream-mute);
+    border-top: 1px solid var(--ink-line);
+    border-bottom: 1px solid var(--ink-line);
+}
+.book-foot {
+    font-family: var(--mono);
+    font-size: .55rem;
+    color: var(--gold);
+    padding: .55rem 0 .8rem;
+}
+.shelf-plank {
+    height: 18px;
+    margin: 0 -2rem;
+    background: linear-gradient(180deg, #4a2c1c 0%, var(--plank) 35%, #1a0d08 100%);
+    border-top: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 -6px 14px rgba(0,0,0,.35);
+}
+.shelf-hint {
+    font-family: var(--mono);
+    font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: center;
+    padding: .9rem 0 1rem;
+}
+
+/* ============================================================
+   THE RAFTERS · championship pennants strung on a rope above the
+   page header, one per title, oldest to newest. The rope hangs in
+   a U between two brass stanchions pinned a tenth of the way in
+   from each side; layoutRafters() drops and tilts each pennant to follow
+   the sag, like real bunting, keeping the row high in the strip.
+   ============================================================ */
+.rafter-strip {
+    position: relative;
+    display: flex; justify-content: center;
+    flex-wrap: wrap;
+    /* Row gap clears the pennants' arc (capped ~48px by layoutRafters)
+       if the row ever wraps. */
+    gap: 4rem 1.9rem;
+    padding: 0 1.5rem 5rem;
+}
+.rafter-rope {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+}
+.flag {
+    display: flex; flex-direction: column; align-items: center;
+    width: clamp(64px, 7vw, 88px);
+    height: 116px;
+    position: relative;
+    text-decoration: none;
+    text-align: center;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.07) 0%, transparent 35%),
+        var(--cloth, #24303e);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
+    padding-top: 1.15rem;
+    filter: drop-shadow(0 7px 8px rgba(0,0,0,.5));
+    transform-origin: top center;
+    /* --dy/--tilt place the pennant on the rope's curve (set per flag
+       by layoutRafters); hover adds a little swing on top of them. */
+    transform: translateY(var(--dy, 0px)) rotate(var(--tilt, 0deg));
+    transition: transform .3s ease;
+}
+.flag:hover {
+    transform: translateY(calc(var(--dy, 0px) + 4px))
+               rotate(calc(var(--tilt, 0deg) + 2deg));
+}
+/* Grommet ring where the cloth rides the rope. */
+.flag::after {
+    content: '';
+    position: absolute; top: 1px; left: 50%;
+    width: 7px; height: 7px;
+    margin-left: -3.5px;
+    border: 1.5px solid rgba(232,200,137,.75);
+    border-radius: 50%;
+    background: rgba(10,10,12,.3);
+}
+.flag::before {
+    content: '';
+    position: absolute; inset: 6px 6px 15px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 81%, 0 100%);
+    border: 1px solid rgba(232,200,137,.4);
+    pointer-events: none;
+}
+.flag-year {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.12rem; line-height: 1;
+    color: var(--gold-bright);
+    text-shadow: 0 1px 0 rgba(0,0,0,.5);
+}
+.flag-name {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-soft);
+    margin-top: .5rem;
+    max-width: 84%;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.flag-star {
+    font-size: .62rem;
+    color: var(--gold);
+    margin-top: .5rem;
+}
+@media (max-width: 640px) { .rafter-strip { display: none; } }
+
+/* ============================================================
+   THE TITLE FIGHTS · a bout card docked into the right edge of
+   each chronicle row, full row height.
+   ============================================================ */
+.entry-bout {
+    align-self: stretch;
+    /* Cancel the row's padding so the card runs edge to edge */
+    margin: -2.25rem -2rem -2.25rem 0;
+    display: flex;
+    width: 238px;
+    flex-shrink: 0;
+}
+.bout {
+    display: flex; flex-direction: column;
+    width: 100%;
+    /* Transparent so the card shares the row's exact color, including the
+       featured tint and the row's hover wash — reads as a column of the
+       row rather than a pasted-on panel. */
+    background: transparent;
+    border-left: 1px solid var(--ink-line);
+    text-align: center;
+}
+.bout-plate {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--gold);
+    /* A recessed cut rather than a gold wash: dark reads the same over
+       the plain rows, the featured tint, and the hover wash — the gold
+       wash used to melt into those. Gold lettering keeps the pop. */
+    background: rgba(0, 0, 0, .22);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, .25);
+    border-bottom: 1px solid var(--ink-line-soft);
+    padding: .55rem .5rem;
+}
+.bout-body {
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 1rem 1rem .6rem;
+}
+.bout-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.45rem; line-height: 1;
+    color: var(--gold-bright);
+}
+.bout-name.loser {
+    font-size: 1.05rem;
+    color: var(--cream-soft);
+    opacity: .8;
+}
+.bout-sub {
+    font-family: var(--mono);
+    font-size: .55rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-top: .3rem;
+    font-variant-numeric: tabular-nums;
+}
+.bout-sub .sc { color: var(--gold); font-weight: 700; font-size: .68rem; }
+.bout-name.loser + .bout-sub .sc { color: var(--cream-mute); font-weight: 500; }
+.bout-def {
+    display: flex; align-items: center; gap: .6rem;
+    margin: .8rem 0;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.bout-def::before, .bout-def::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--ink-line-soft);
+}
+/* Score-share bar: how much of the final's points the winner took */
+.bout-bar {
+    display: flex;
+    height: 4px;
+    margin: .9rem auto 0;
+    width: 82%;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.bout-bar .w { background: var(--gold); }
+.bout-bar .l { background: rgba(160,72,48,.55); }
+.bout-foot {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+    padding: .55rem .5rem .8rem;
+}
+.bout-foot .tag { color: var(--gold); }
+.bout.pending .bout-bar { display: none; }
+
+/* ============================================================
+   §03 THE CHRONICLE
+   ============================================================ */
 .chronicle { display: flex; flex-direction: column; }
 
 .season-entry {
     display: grid;
-    grid-template-columns: 8rem 1fr auto;
+    grid-template-columns: 8rem 1fr auto auto;
     align-items: center;
     gap: 2.5rem;
     padding: 2.25rem 2rem;
@@ -54,7 +365,7 @@
     content: '';
     position: absolute; top: 0; left: 0;
     width: 4px; height: 100%;
-    background: var(--gold);
+    background: var(--rc, var(--gold));
     transform: scaleY(0); transform-origin: bottom;
     transition: transform .3s cubic-bezier(.2,.8,.2,1);
 }
@@ -65,14 +376,12 @@
 .season-entry:hover::before { transform: scaleY(1); }
 .season-entry:last-child { border-bottom: none; }
 
-/* Featured (latest) season */
 .season-entry.featured {
     background: linear-gradient(135deg, rgba(232,200,137,.06) 0%, rgba(232,200,137,.02) 100%);
     border-bottom: 2px solid var(--ink-line);
 }
-.season-entry.featured::before { background: var(--gold); transform: scaleY(1); }
+.season-entry.featured::before { transform: scaleY(1); }
 
-/* ─── Year column (LEFT) ─── */
 .entry-year-col {
     display: flex; flex-direction: column;
     align-items: flex-end;
@@ -92,9 +401,7 @@
     margin-top: .35rem;
 }
 
-/* ─── Center column (CHAMPION) ─── */
 .entry-center { min-width: 0; }
-
 .entry-badge {
     display: inline-flex; align-items: center; gap: .4rem;
     font-family: var(--mono); font-weight: 700;
@@ -109,6 +416,10 @@
 .entry-badge.current {
     color: var(--ink); background: var(--gold);
     border: 1px solid var(--gold-deep);
+}
+.entry-badge.progress {
+    color: var(--cream-soft); background: var(--ink-soft);
+    border: 1px solid var(--ink-line);
 }
 
 .champ-team {
@@ -126,14 +437,14 @@
     font-family: var(--mono);
     font-size: .6rem; letter-spacing: .15em;
     color: var(--cream-mute);
-    margin-top: .25rem;
+    margin-top: .35rem;
 }
+.champ-record .final-score { color: var(--cream-soft); }
 
-/* ─── Right column (PODIUM + META) ─── */
 .entry-right {
     display: flex; flex-direction: column;
     gap: .6rem; align-items: flex-end;
-    flex-shrink: 0; min-width: 180px;
+    flex-shrink: 0; min-width: 200px;
 }
 .podium-item {
     display: flex; align-items: center; gap: .6rem;
@@ -142,10 +453,11 @@
 .podium-medal {
     font-family: var(--mono); font-weight: 700;
     font-size: .6rem; letter-spacing: .15em;
-    width: 1.8rem; text-align: right; flex-shrink: 0;
+    width: 2.4rem; text-align: right; flex-shrink: 0;
 }
 .podium-medal.silver { color: #b0b8c0; }
 .podium-medal.bronze { color: #a07848; }
+.podium-medal.regs   { color: var(--steel); }
 .podium-name {
     font-family: var(--serif);
     font-size: .95rem;
@@ -164,20 +476,22 @@
     transition: transform .25s ease;
 }
 .season-entry:hover .entry-arrow { transform: translateX(5px); }
+.season-entry.no-bout { grid-template-columns: 8rem 1fr auto; }
 
 @media (max-width: 800px) {
-    .season-entry {
+    .season-entry, .season-entry.no-bout {
         grid-template-columns: 6rem 1fr;
         gap: 1.5rem;
     }
-    .entry-right { display: none; }
+    .entry-right, .entry-bout { display: none; }
     .entry-year { font-size: 2.8rem; }
+    .reign-champ { display: none; }
+    .book { width: 84px; }
+    .book-year { font-size: 2rem; }
 }
 
-.loading-state {
-    text-align: center; padding: 4rem 2rem;
-    font-family: var(--serif); font-style: italic;
-    color: var(--cream-mute);
+@media (prefers-reduced-motion: reduce) {
+    .book, .reign-color, .season-entry, .season-entry::before, .entry-arrow { transition: none !important; }
 }
 </style>
 </head>
@@ -210,19 +524,48 @@
      data-back-href="./"></nav>
 <script src="/pams-template/assets/js/nav.js"></script>
 
+<!-- THE RAFTERS: one pennant per crown, crowning the page title -->
+<div class="rafter-strip" id="rafter-strip"></div>
+
 <!-- PAGE HEADER -->
 <div class="page-header">
     <div class="page-kicker" id="page-kicker">★ Volumes · Campaigns ★</div>
     <h1 class="page-title">Season <em>Archives.</em></h1>
     <p class="page-sub">
-        From the founding year to the present — every champion, every campaign, every chapter of the league.
+        From the founding year to the present: every champion, every campaign, every chapter of the league.
     </p>
 </div>
 
-<div class="section">
-    <div id="chronicle-container">
-        <div class="loading-state">Loading the archives…</div>
+<div id="page-regions" style="display:none;">
+
+    <!-- §01 THE SHELF -->
+    <div class="section" style="margin-top: 0;">
+        <div class="section-header">
+            <span class="section-num">§ 01 · The Shelf</span>
+            <span class="section-title">The bound volumes.</span>
+            <span class="section-meta">Pull one down</span>
+        </div>
+        <div class="shelf-area">
+            <div class="shelf-row" id="shelf-row"></div>
+            <div class="shelf-plank"></div>
+            <div class="shelf-hint" id="shelf-hint">Each volume opens a season</div>
+        </div>
     </div>
+
+    <!-- §02 THE CHRONICLE · title-fight card docked in each row -->
+    <div class="section" style="margin-bottom: 4rem;">
+        <div class="section-header">
+            <span class="section-num">§ 02 · The Chronicle</span>
+            <span class="section-title">The full record.</span>
+            <span class="section-meta">Newest first</span>
+        </div>
+        <div id="chronicle-container"></div>
+    </div>
+
+</div>
+
+<div class="section" id="loading-section">
+    <div class="loading-state">Loading the archives…</div>
 </div>
 
 <footer class="site-footer">
@@ -240,15 +583,18 @@ function toRoman(n) {
     return r;
 }
 
+// Champion colors: assigned per unique champion in order of first title.
+// Leather-friendly tones that read on navy.
+const REIGN_COLORS = ['#e8c889','#c96f4a','#6b8aa8','#7da26b','#a67ab5',
+                      '#c4a05a','#5fa8a0','#b55a6b','#8a9a5b','#9a86c9'];
+
 async function load() {
     try {
-        // Get directory for the list of years
         const dirRes = await fetch('data/seasons_directory.json');
         if (!dirRes.ok) throw new Error(`HTTP ${dirRes.status}`);
         const dir = await dirRes.json();
         const years = dir.seasons.map(s => s.year);
 
-        // Fetch all individual season files in parallel for runner-up / 3rd / champion record
         const seasonData = await Promise.all(
             years.map(y =>
                 fetch(`data/seasons/${y}.json`)
@@ -257,29 +603,256 @@ async function load() {
             )
         );
 
-        // Most recent first
         const seasons = seasonData.filter(Boolean).sort((a, b) => b.year - a.year);
-        const latest = seasons[0].year;
-        render(seasons, latest);
+        render(seasons);
     } catch (err) {
-        document.getElementById('chronicle-container').innerHTML = `
+        document.getElementById('loading-section').innerHTML = `
             <div class="loading-state" style="color:var(--rust);">
-                Couldn't load season data.<br><small>${err.message}</small>
+                The season data could not be loaded.<br><small>${err.message}</small>
             </div>`;
     }
 }
 
-function render(seasons, latest) {
-    populateChrome(seasons);
-    // Volume number = chronological index (Vol. I = league's first season).
-    // Seasons are newest-first here, so we count backwards from total.
-    const total = seasons.length;
-    document.getElementById('chronicle-container').innerHTML = `
-        <div class="chronicle">
-            ${seasons.map((s, i) => buildEntry(s, s.year === latest, total - i)).join('')}
-        </div>`;
+function champKey(s) {
+    return s.champion ? String(s.champion.owner_user_id ?? s.champion.owner_name) : null;
 }
 
+function assignReignColors(seasons) {
+    // Oldest first so color #1 belongs to the league's first champion.
+    const colors = {};
+    let i = 0;
+    for (const s of [...seasons].sort((a, b) => a.year - b.year)) {
+        const k = champKey(s);
+        if (k && !(k in colors)) colors[k] = REIGN_COLORS[i++ % REIGN_COLORS.length];
+    }
+    return colors;
+}
+
+function render(seasons) {
+    populateChrome(seasons);
+    const latest = seasons[0]?.year;
+    const colors = assignReignColors(seasons);
+    const chrono = [...seasons].sort((a, b) => a.year - b.year);
+    const total = seasons.length;
+
+    buildShelf(chrono, colors);
+    buildRafterStrip(chrono, colors);
+    const bouts = computeBouts(seasons);
+
+    document.getElementById('chronicle-container').innerHTML = `
+        <div class="chronicle">
+            ${seasons.map((s, i) => buildEntry(s, s.year === latest, total - i, colors, bouts[s.year] ?? '')).join('')}
+        </div>`;
+
+    document.getElementById('loading-section').style.display = 'none';
+    document.getElementById('page-regions').style.display = '';
+}
+
+/* ─── §01 The shelf ─── */
+function buildShelf(chrono, colors) {
+    const first = chrono[0]?.year ?? 0;
+    document.getElementById('shelf-row').innerHTML = chrono.map((s, i) => {
+        const k = champKey(s);
+        const band = k
+            ? `<span class="book-band" style="--band:${colors[k]}">${s.champion.owner_name}</span>`
+            : `<span class="book-band in-play">In play</span>`;
+        // Slight deterministic height variation so the shelf reads organic.
+        const h = 258 + ((s.year % 3) * 11);
+        return `<a class="book" href="seasons/season.html?year=${s.year}" style="--bh:${h}px">
+            <span class="book-rule"></span>
+            <span class="book-vol">Vol. ${toRoman(s.year - first + 1)}</span>
+            <span class="book-year">${s.year}</span>
+            ${band}
+            <span class="book-foot">★</span>
+        </a>`;
+    }).join('');
+    // Newest volume in view first on narrow screens.
+    const row = document.getElementById('shelf-row');
+    requestAnimationFrame(() => { row.scrollLeft = row.scrollWidth; });
+}
+
+/* ─── The rafters · pennant row above the page title ─── */
+
+// Darken a #rrggbb hex toward black; the cloth is a deep cut of the
+// champion's reign color so flags stay legible on navy.
+function cloth(hex, f = .45) {
+    const n = parseInt(hex.slice(1), 16);
+    const ch = (v) => Math.round(v * f);
+    return `rgb(${ch((n >> 16) & 255)},${ch((n >> 8) & 255)},${ch(n & 255)})`;
+}
+
+function buildRafterStrip(chrono, colors) {
+    const champYears = chrono.filter(s => s.champion);
+    if (champYears.length === 0) return;
+    const strip = document.getElementById('rafter-strip');
+    strip.innerHTML = `<svg class="rafter-rope" aria-hidden="true"></svg>` + champYears.map(s => {
+        const k = champKey(s);
+        return `<a class="flag" href="seasons/season.html?year=${s.year}"
+            style="--cloth:${cloth(colors[k])}"
+            title="${s.year} · ${s.champion.owner_name} · ${s.champion.team_name}">
+            <div class="flag-year">${s.year}</div>
+            <div class="flag-name">${s.champion.owner_name}</div>
+            <div class="flag-star">★</div>
+        </a>`;
+    }).join('');
+    layoutRafters();
+    if (window.ResizeObserver) new ResizeObserver(layoutRafters).observe(strip);
+    else window.addEventListener('resize', layoutRafters);
+}
+
+// Drape the pennants along a rope strung between two brass stanchions
+// pinned a tenth of the way in from each side — each a long mounting
+// plate screwed flush with the top edge, a short shank, and an open
+// eye ring the twine threads through. The rope is a quadratic bezier (a parabola — close
+// enough to a hung rope's catenary); each pennant drops to the curve
+// and tilts to its tangent, so the cloth's top edge runs parallel to
+// the rope it hangs from. Flex wrap can split the flags over several
+// rows on narrow windows; wrapped rows hang from a plain rope that
+// runs off the page sides at row height.
+function layoutRafters() {
+    const strip = document.getElementById('rafter-strip');
+    const svg = strip?.querySelector('.rafter-rope');
+    const flags = strip ? [...strip.querySelectorAll('.flag')] : [];
+    if (!svg || flags.length === 0) return;
+    const W = strip.clientWidth;
+
+    // Bucket into visual rows by untransformed offsetTop.
+    const rows = new Map();
+    for (const f of flags) {
+        const key = Math.round(f.offsetTop / 20);
+        if (!rows.has(key)) rows.set(key, []);
+        rows.get(key).push(f);
+    }
+
+    let paths = '';
+    let strung = false;
+    for (const row of rows.values()) {
+        let d, caps = '';
+        if (!strung) {
+            strung = true;
+            // The strung row: the rope's anchors ARE the stanchions,
+            // 10% in from each page edge, hangY below the top. Clamp v
+            // so a pennant that wraps wider than the span still hangs
+            // at anchor height instead of floating above the rope.
+            const e = W * .1, hangY = 16;
+            const Wi = W - 2 * e;
+            const vs = row.map(f => Math.min(1, Math.max(0, (f.offsetLeft + f.offsetWidth / 2 - e) / Wi)));
+            const arcs = vs.map(v => 4 * v * (1 - v));   // 0 at the stanchions, 1 at mid-span
+            const lo = Math.min(...arcs);
+            const span = Math.max(...arcs) - lo;
+            // Sag: hang the outermost pennants ~50px below the top,
+            // capped so the row's arc (deepest pennant minus
+            // shallowest) stays within ~48px however many crowns are
+            // strung.
+            let S = (50 - hangY) / Math.max(lo, .05);
+            if (span > .01) S = Math.min(S, 48 / span);
+            row.forEach((f, i) => {
+                const dy = hangY + S * arcs[i] - (f.offsetTop + 4);
+                const tilt = Math.atan2(4 * S * (1 - 2 * vs[i]), Wi) * 180 / Math.PI;
+                f.style.setProperty('--dy', dy.toFixed(1) + 'px');
+                f.style.setProperty('--tilt', tilt.toFixed(2) + 'deg');
+            });
+            d = `M ${e} ${hangY} Q ${W / 2} ${(hangY + 2 * S).toFixed(1)} ${W - e} ${hangY}`;
+            for (const x of [e, W - e]) {
+                const shank = `M ${x} 5 L ${x} ${hangY - 3.5}`;
+                paths += `<rect x="${x - 17}" y="0" width="34" height="5.5" rx="1" fill="#8c7040" stroke="rgba(0,0,0,.45)" stroke-width="1"/>`
+                       + `<rect x="${x - 15.5}" y=".9" width="31" height="1.5" rx=".75" fill="rgba(246,226,168,.4)"/>`
+                       + `<circle cx="${x - 13}" cy="2.8" r="1.2" fill="#5f4d2b" stroke="rgba(0,0,0,.35)" stroke-width=".6"/>`
+                       + `<circle cx="${x + 13}" cy="2.8" r="1.2" fill="#5f4d2b" stroke="rgba(0,0,0,.35)" stroke-width=".6"/>`
+                       + `<path d="${shank}" transform="translate(1 .6)" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="3.4"/>`
+                       + `<path d="${shank}" fill="none" stroke="#a8874a" stroke-width="2.8"/>`;
+                // The eye ring draws after the rope, unfilled, so the
+                // twine reads as threaded through it.
+                caps += `<circle cx="${x}" cy="${hangY}" r="4.2" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="3.8"/>`
+                      + `<circle cx="${x}" cy="${hangY}" r="4.2" fill="none" stroke="#a8874a" stroke-width="2.4"/>`
+                      + `<circle cx="${x}" cy="${hangY}" r="5.3" fill="none" stroke="rgba(246,226,168,.35)" stroke-width=".8"/>`;
+            }
+        } else {
+            // Wrapped rows: a plain rope across the full width at row
+            // height, running off the page sides, shallowest pennant
+            // lifted to ~50px under the row's own top.
+            const ts = row.map(f => (f.offsetLeft + f.offsetWidth / 2) / W);
+            const arcs = ts.map(t => 4 * t * (1 - t));
+            const lo = Math.min(...arcs);
+            const span = Math.max(...arcs) - lo;
+            let sag = Math.min(96, W * .085);
+            if (span > .01) sag = Math.min(sag, 48 / span);
+            const ropeY = row[0].offsetTop + 50 - sag * lo;
+            row.forEach((f, i) => {
+                const dy = ropeY + sag * arcs[i] - (f.offsetTop + 4);
+                const tilt = Math.atan2(4 * sag * (1 - 2 * ts[i]), W) * 180 / Math.PI;
+                f.style.setProperty('--dy', dy.toFixed(1) + 'px');
+                f.style.setProperty('--tilt', tilt.toFixed(2) + 'deg');
+            });
+            d = `M 0 ${ropeY} Q ${W / 2} ${ropeY + 2 * sag} ${W} ${ropeY}`;
+        }
+        // Shadow pass, twine, highlight — three strokes of the same curve.
+        paths += `<path d="${d}" transform="translate(0 1.5)" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="3"/>`
+               + `<path d="${d}" fill="none" stroke="#8a6a41" stroke-width="2"/>`
+               + `<path d="${d}" transform="translate(0 -.7)" fill="none" stroke="rgba(244,217,164,.3)" stroke-width=".8"/>`
+               + caps;
+    }
+    svg.setAttribute('viewBox', `0 0 ${W} ${strip.clientHeight}`);
+    svg.innerHTML = paths;
+}
+
+/* ─── The title fights · one bout card per final, docked into the
+       matching chronicle row. Returns { year: html } ─── */
+function computeBouts(seasons) {
+    const fights = seasons.filter(s => s.champion).map(s => {
+        const seedOf = (uid) => (s.standings || []).find(t => String(t.owner_user_id) === String(uid))?.reg_season_rank ?? null;
+        const sf = s.champion.title_score_for, sa = s.champion.title_score_against;
+        return {
+            s,
+            champ: s.champion.owner_name,
+            champSeed: seedOf(s.champion.owner_user_id),
+            runner: s.runner_up?.owner_name ?? null,
+            runnerSeed: s.runner_up ? seedOf(s.runner_up.owner_user_id) : null,
+            scored: sf != null && sa != null,
+            margin: (sf != null && sa != null) ? Math.abs(sf - sa) : null,
+        };
+    });
+
+    // Superlative tags across finals that have scores.
+    const scored = fights.filter(f => f.scored);
+    let routY = null, photoY = null;
+    if (scored.length >= 3) {
+        routY = scored.reduce((a, b) => a.margin > b.margin ? a : b).s.year;
+        photoY = scored.reduce((a, b) => a.margin < b.margin ? a : b).s.year;
+        if (routY === photoY) { routY = null; photoY = null; }
+    }
+
+    const byYear = {};
+    for (const f of fights) {
+        const sf = f.s.champion.title_score_for, sa = f.s.champion.title_score_against;
+        const seedLine = (n) => n ? `#${n} seed` : '';
+        const wSub = [seedLine(f.champSeed), f.scored ? `<span class="sc">${sf.toFixed(1)}</span>` : ''].filter(Boolean).join(' · ');
+        const lSub = [f.runner ? seedLine(f.runnerSeed) : '', f.scored ? `<span class="sc">${sa.toFixed(1)}</span>` : ''].filter(Boolean).join(' · ');
+        const share = f.scored ? sf / (sf + sa) : .5;
+        const foot = f.s.year === routY  ? `<span class="tag">★ Biggest rout in history</span>`
+                   : f.s.year === photoY ? `<span class="tag">★ Closest final ever</span>`
+                   : f.scored ? `Decided by ${f.margin.toFixed(1)}`
+                   : 'Score after the next sync';
+        byYear[f.s.year] = `<div class="entry-bout"><div class="bout${f.scored ? '' : ' pending'}">
+            <div class="bout-plate">The Final</div>
+            <div class="bout-body">
+                <div class="bout-name">${f.champ}</div>
+                <div class="bout-sub">${wSub || '&nbsp;'}</div>
+                <div class="bout-def">def.</div>
+                <div class="bout-name loser">${f.runner ?? 'The field'}</div>
+                <div class="bout-sub">${lSub || '&nbsp;'}</div>
+                ${f.scored ? `<div class="bout-bar">
+                    <span class="w" style="flex:${share.toFixed(3)}"></span>
+                    <span class="l" style="flex:${(1 - share).toFixed(3)}"></span>
+                </div>` : ''}
+            </div>
+            <div class="bout-foot">${foot}</div>
+        </div></div>`;
+    }
+    return byYear;
+}
+
+/* ─── Chrome ─── */
 function populateChrome(seasons) {
     const years = seasons.map(s => s.year);
     const seasonCount = years.length;
@@ -294,10 +867,10 @@ function populateChrome(seasons) {
     if (kicker && minY && maxY) {
         kicker.textContent = minY === maxY
             ? `★ ${minY} · Volume I ★`
-            : `★ ${minY} — ${maxY} · ${seasonCount} Volume${seasonCount === 1 ? '' : 's'} ★`;
+            : `★ ${minY} – ${maxY} · ${seasonCount} Volume${seasonCount === 1 ? '' : 's'} ★`;
     }
     document.querySelectorAll('.ticker-stat[data-stat="seasons-range"]').forEach(el => {
-        const range = (minY && maxY && minY !== maxY) ? ` · ${minY} — ${maxY}` : (minY ? ` · ${minY}` : '');
+        const range = (minY && maxY && minY !== maxY) ? ` · ${minY} – ${maxY}` : (minY ? ` · ${minY}` : '');
         el.innerHTML = `<span class="ticker-star">★</span> ${seasonCount || '—'} SEASON${seasonCount === 1 ? '' : 'S'}${range}`;
     });
     document.querySelectorAll('.ticker-stat[data-stat="champions"]').forEach(el => {
@@ -305,32 +878,55 @@ function populateChrome(seasons) {
     });
 }
 
-function buildEntry(s, isFeatured, volNum) {
-    const badge = isFeatured
-        ? `<span class="entry-badge current">★ Reigning Champion</span>`
-        : `<span class="entry-badge champ">★ Champion</span>`;
+/* ─── §03 Chronicle entries ─── */
+function buildEntry(s, isFeatured, volNum, colors, boutHTML) {
+    const k = champKey(s);
+    const accent = k ? colors[k] : 'var(--gold)';
+
+    let badge, teamLine, ownerLine;
+    if (s.champion) {
+        badge = isFeatured
+            ? `<span class="entry-badge current">★ Reigning Champion</span>`
+            : `<span class="entry-badge champ">★ Champion</span>`;
+        teamLine = s.champion.team_name ?? '—';
+        ownerLine = s.champion.owner_name ?? '—';
+    } else {
+        badge = `<span class="entry-badge progress">Season in progress</span>`;
+        teamLine = 'Champion to be decided';
+        ownerLine = 'The chase is on';
+    }
 
     const record = s.champion?.record ?? '';
     const pf = s.champion?.points_for ? Math.round(s.champion.points_for) + ' PF' : '';
-    const recordLine = record
-        ? `<div class="champ-record">${record}${pf ? ' · ' + pf : ''}</div>`
+    const titleScore = (s.champion?.title_score_for != null && s.champion?.title_score_against != null)
+        ? `<span class="final-score">Final ${s.champion.title_score_for.toFixed(1)} to ${s.champion.title_score_against.toFixed(1)}</span>`
         : '';
+    const recordBits = [record, pf, titleScore].filter(Boolean).join(' · ');
+    const recordLine = recordBits ? `<div class="champ-record">${recordBits}</div>` : '';
 
     const runner = s.runner_up?.owner_name
         ? `<div class="podium-item">
                <span class="podium-medal silver">2nd</span>
                <span class="podium-name">${s.runner_up.owner_name}</span>
-           </div>`
-        : '';
+           </div>` : '';
     const third = s.third_place?.owner_name
         ? `<div class="podium-item">
                <span class="podium-medal bronze">3rd</span>
                <span class="podium-name">${s.third_place.owner_name}</span>
-           </div>`
-        : '';
+           </div>` : '';
+
+    // Regular-season champion, from the standings block.
+    const regChamp = (s.standings || []).find(t => t.reg_season_rank === 1);
+    const regLine = regChamp
+        ? `<div class="podium-item">
+               <span class="podium-medal regs">Reg</span>
+               <span class="podium-name">${regChamp.owner_name}</span>
+           </div>` : '';
 
     return `
-        <a href="seasons/season.html?year=${s.year}" class="season-entry${isFeatured ? ' featured' : ''}">
+        <a href="seasons/season.html?year=${s.year}"
+           class="season-entry${isFeatured ? ' featured' : ''}${boutHTML ? '' : ' no-bout'}"
+           style="--rc:${accent}">
             <div class="entry-year-col">
                 <div class="entry-year">${s.year}</div>
                 <div class="entry-roman">Vol. ${toRoman(volNum)}</div>
@@ -338,17 +934,19 @@ function buildEntry(s, isFeatured, volNum) {
 
             <div class="entry-center">
                 ${badge}
-                <div class="champ-team">${s.champion?.team_name ?? '—'}</div>
-                <div class="champ-owner">${s.champion?.owner_name ?? '—'}</div>
+                <div class="champ-team">${teamLine}</div>
+                <div class="champ-owner">${ownerLine}</div>
                 ${recordLine}
             </div>
 
             <div class="entry-right">
                 ${runner}
                 ${third}
+                ${regLine}
                 <div class="entry-meta">${s.total_teams} teams</div>
                 <div class="entry-arrow">→</div>
             </div>
+            ${boutHTML}
         </a>
     `;
 }

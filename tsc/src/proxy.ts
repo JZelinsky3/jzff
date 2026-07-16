@@ -1,7 +1,20 @@
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
+// Static demo trees under /public that are browsed with directory URLs
+// (/demo/, /demo/seasons/, ...). Vercel's static layer resolves those to
+// <dir>/index.html in production, but `next dev` does no index resolution
+// for /public, so the same URLs 404 locally. Rewriting here keeps dev and
+// prod serving identical paths.
+const STATIC_INDEX_TREES = /^\/(demo|demo-m|old)(\/|$)/
+
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  if (STATIC_INDEX_TREES.test(pathname) && !/\.[a-z0-9]+$/i.test(pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname.replace(/\/?$/, '/index.html')
+    return NextResponse.rewrite(url)
+  }
   return await updateSession(request)
 }
 

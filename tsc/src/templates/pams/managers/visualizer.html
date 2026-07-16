@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Chart Room · {{LEAGUE_NAME}}</title>
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+/* ============================================================
+   THE CHART ROOM — the league's whole numeric record, drawn.
+   One JSON feed (data/visualizer.json), twelve hand-inked SVG
+   charts, zero libraries. Lives in the almanac's base navy.
+     I    The scope rail   — Season / Career / League
+     II   The chart shelf  — named views, one tap apart
+     III  The plate        — the chart itself, hover to read
+     IV   The roster       — manager toggles, alumni below
+   ============================================================ */
+
+/* The plates want every inch: widen this page's column past the site's
+   default 1370px so a 17-week season gets real width on big monitors. */
+.section { max-width: 1760px; }
+
+.page-header {
+    text-align: center;
+    padding: 3.5rem 1.5rem 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+}
+.page-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .65rem; letter-spacing: .4em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1.5rem;
+}
+.page-title {
+    font-family: var(--serif);
+    font-size: clamp(3rem, 8vw, 6rem);
+    line-height: .95; letter-spacing: -.025em;
+    color: var(--cream); margin-bottom: 1rem;
+}
+.page-title em { font-style: italic; color: var(--gold); }
+.page-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.2rem; line-height: 1.5;
+    color: var(--cream-soft);
+    max-width: 560px; margin: 0 auto;
+}
+
+/* ─── Scope rail + chart shelf ─── */
+.viz-controls {
+    border-top: 1px solid var(--ink-line);
+    border-bottom: 1px solid var(--ink-line);
+    padding: 1.1rem 0 1.15rem;
+    margin-bottom: 1.5rem;
+    display: flex; flex-direction: column; gap: .85rem;
+}
+.viz-row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .9rem;
+    justify-content: center;
+}
+.viz-row-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--cream-mute);
+    min-width: 4.4rem;
+}
+.viz-tabs { display: flex; gap: .25rem; flex-wrap: wrap; }
+.viz-tab {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--cream-soft);
+    font-family: var(--mono); font-weight: 500;
+    font-size: .64rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .48rem .85rem;
+    cursor: pointer;
+    transition: all .2s;
+    border-radius: 2px;
+}
+.viz-tab:hover { color: var(--cream); }
+.viz-tab.active {
+    color: var(--gold);
+    border-color: rgba(232, 200, 137, .3);
+    background: rgba(232, 200, 137, .06);
+}
+.viz-year {
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    color: var(--cream);
+    font-family: var(--mono);
+    font-size: .68rem; letter-spacing: .12em;
+    padding: .42rem .6rem;
+    border-radius: 2px;
+    cursor: pointer;
+}
+.viz-year:focus { outline: 1px solid rgba(232,200,137,.4); }
+
+/* ─── The plate ─── */
+.viz-stage {
+    position: relative;
+    background: linear-gradient(160deg, var(--ink-card) 0%, var(--ink-soft) 100%);
+    border: 1px solid var(--ink-line);
+    box-shadow: 0 4px 14px rgba(0,0,0,.28);
+    padding: 1.35rem 1.35rem 1rem;
+    margin-bottom: 1.4rem;
+}
+.viz-stage-head {
+    display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+    margin-bottom: .8rem;
+    padding-bottom: .7rem;
+    border-bottom: 1px dotted var(--ink-line);
+}
+.viz-stage-title {
+    font-family: var(--serif);
+    font-size: 1.7rem; letter-spacing: -.01em;
+    color: var(--cream);
+}
+.viz-stage-title em { font-style: italic; color: var(--gold); }
+.viz-stage-tag {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid rgba(232,200,137,.3);
+    background: rgba(232,200,137,.06);
+    padding: .28rem .6rem;
+    border-radius: 2px;
+}
+.viz-svg-wrap { position: relative; }
+#viz-svg { display: block; width: 100%; height: auto; }
+#viz-svg text { font-family: var(--mono); }
+.viz-caption {
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; line-height: 1.45;
+    color: var(--cream-mute);
+    padding-top: .75rem;
+    margin-top: .35rem;
+    border-top: 1px dotted var(--ink-line);
+}
+.viz-empty {
+    padding: 5rem 2rem;
+    text-align: center;
+    font-family: var(--serif); font-style: italic;
+    color: var(--cream-mute);
+    font-size: 1.05rem;
+}
+
+/* line hover: dim the field, raise the hovered manager */
+.vz-line { transition: opacity .15s; cursor: pointer; }
+.vz-dim .vz-line { opacity: .1 !important; }
+.vz-dim .vz-line.vz-hot { opacity: 1 !important; }
+.vz-dim .vz-endlab { opacity: .12; }
+.vz-dim .vz-endlab.vz-hot { opacity: 1; }
+
+/* tooltip */
+#viz-tip {
+    position: absolute;
+    pointer-events: none;
+    z-index: 40;
+    background: rgba(14, 22, 32, .96);
+    border: 1px solid rgba(232, 200, 137, .35);
+    border-radius: 2px;
+    padding: .5rem .7rem;
+    font-family: var(--mono);
+    font-size: .62rem; letter-spacing: .08em;
+    line-height: 1.6;
+    color: var(--cream);
+    box-shadow: 0 8px 22px rgba(0,0,0,.5);
+    max-width: 240px;
+}
+#viz-tip .t-name { color: var(--gold); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+#viz-tip .t-mut { color: var(--cream-mute); }
+
+/* ─── The roster ─── */
+.viz-roster {
+    border: 1px solid var(--ink-line);
+    background: rgba(26, 37, 50, .25);
+    padding: 1rem 1.2rem 1.1rem;
+    margin-bottom: 3rem;
+}
+.viz-roster-head {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-bottom: .8rem;
+}
+.viz-roster-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.viz-quick { display: flex; gap: .3rem; margin-left: auto; }
+.viz-quick button {
+    background: none;
+    border: 1px solid var(--ink-line);
+    color: var(--cream-soft);
+    font-family: var(--mono);
+    font-size: .55rem; letter-spacing: .18em; text-transform: uppercase;
+    padding: .32rem .6rem;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all .2s;
+}
+.viz-quick button:hover { color: var(--gold); border-color: rgba(232,200,137,.35); }
+.viz-chips { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.mgr-chip {
+    display: inline-flex; align-items: center; gap: .45rem;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    color: var(--cream-mute);
+    font-family: var(--mono);
+    font-size: .62rem; letter-spacing: .1em;
+    padding: .38rem .7rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all .2s;
+}
+.mgr-chip .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--ink-line);
+    flex-shrink: 0;
+    transition: background .2s;
+}
+.mgr-chip.on {
+    color: var(--cream);
+    border-color: rgba(232,200,137,.35);
+    background: rgba(232,200,137,.05);
+}
+.mgr-chip:hover { border-color: rgba(232,200,137,.5); }
+.viz-chips-divider {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--cream-mute);
+    padding: 0 .35rem;
+}
+
+.loading-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    font-family: var(--serif); font-style: italic;
+    color: var(--cream-mute);
+}
+
+@media (max-width: 640px) {
+    .viz-stage { padding: 1rem .8rem .8rem; }
+    .viz-stage-title { font-size: 1.35rem; }
+    .viz-row-label { min-width: 100%; }
+    .viz-quick { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<!-- TICKER -->
+<div class="ticker">
+    <div class="ticker-track">
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> THE CHART ROOM · {{LEAGUE_NAME_UPPER}}</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> EVERY LINE EVER SCORED</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> PICK A CHART · PICK A FIGHT</span>
+        </div>
+        <div class="ticker-group">
+            <span class="ticker-item"><span class="ticker-star">★</span> THE CHART ROOM · {{LEAGUE_NAME_UPPER}}</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> EVERY LINE EVER SCORED</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> PICK A CHART · PICK A FIGHT</span>
+        </div>
+    </div>
+</div>
+
+<!-- NAV -->
+<nav id="site-nav"
+     data-page="manager-visualizer"
+     data-chapter="CH. II · CHARTS"
+     data-back-label="← Managers"
+     data-back-href="managers/"></nav>
+<script src="/pams-template/assets/js/nav.js"></script>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <div class="page-kicker">★ The Chart Room ★</div>
+    <h1 class="page-title">The <em>Visualizer.</em></h1>
+    <p class="page-sub">
+        Every score the league has ever posted, drawn in ink.
+        Pick a chart, pick your managers, and watch the seasons argue with each other.
+    </p>
+</div>
+
+<div class="section">
+    <div id="viz-app">
+        <div class="loading-state">Inking the plates…</div>
+    </div>
+</div>
+
+<footer class="site-footer">
+    <span>Built by <em>jzFF</em> · {{LEAGUE_ABBR}} · Since {{LEAGUE_FOUNDED}}</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
+</footer>
+
+<script>
+(function () {
+'use strict';
+
+/* ============================================================
+   DATA + STATE
+   ============================================================ */
+let DATA = null;            // { managers: [{uid,name,current}], seasons: [{year, teams:[{m,final,reg,g}]}] }
+                            // g rows: [week, pts, oppPts, oppIdx, flag]
+                            // flag 0 reg / 1 champ-bracket playoff / 2 title game
+                            // (consolation + placement games never ship in the feed)
+const S = {
+    scope: 'season',
+    chart: { season: 'race', career: 'finish', league: 'quadrant' },
+    year: null,
+    sel: new Set(),
+};
+
+const PALETTE = [
+    '#e8c889', '#6b8aa8', '#c0563a', '#8aa86b', '#a86b9e', '#5fb0a5', '#d98e4a',
+    '#7fc4e8', '#e88989', '#b0a54f', '#8f9fe8', '#c9c0ad', '#e8b3d1', '#7a9d8f',
+];
+const color = (mi) => PALETTE[mi % PALETTE.length];
+
+const CHARTS = {
+    season: [
+        { id: 'race',    name: 'Points Race',        el: 'Race',
+          desc: 'Cumulative points, week by week, across the regular season.' },
+        { id: 'bump',    name: 'Standings by Week',  el: 'Bump',
+          desc: 'League position after every regular-season week, by record with points as the tiebreak. Rank one is the top line.' },
+        { id: 'luck',    name: 'The Luck Line',      el: 'Luck',
+          desc: 'Actual wins minus all-play expected wins, accumulating through the regular season. Above zero the schedule loved you; below it owed you one.' },
+        { id: 'field',   name: 'Scores vs the Field', el: 'Field',
+          desc: 'Weekly scores against the field: dotted rails trace the league high and low each week, the dashed line is the median.' },
+        { id: 'margins', name: 'The Margins',        el: 'Margins',
+          desc: 'Result margins by week: wins reach up, losses hang down. Reads best with one to three managers selected.' },
+        { id: 'quilt',   name: 'The Season Quilt',   el: 'Quilt',
+          desc: 'Every regular-season score in one weave, ordered by final standing. Brighter cells scored more; a stitch marks a win.' },
+    ],
+    career: [
+        { id: 'finish',   name: 'The Finish Line',    el: 'Finish',
+          desc: 'Final standing, year over year. Stars mark the championships.' },
+        { id: 'winsrace', name: 'Career Wins Race',   el: 'WinsRace',
+          desc: 'Every regular-season win, accumulating game by game across the seasons. Ties count half; each ring is a milestone crossed, with the games it took in the tip.' },
+        { id: 'ptsrace',  name: 'Career Points Race', el: 'PtsRace',
+          desc: 'Total regular-season points, accumulating game by game across the seasons. Each ring is a scoring milestone crossed, with the games it took in the tip.' },
+        { id: 'ppg',      name: 'Points Per Game',    el: 'Ppg',
+          desc: 'Regular-season scoring average by season. The dashed cream line is the league average that year.' },
+    ],
+    league: [
+        { id: 'quadrant', name: 'The Luck Quadrant',  el: 'Quadrant',
+          desc: 'Each dot is one manager-season: points scored against points allowed, per regular-season game. Crosshairs sit at the league medians.' },
+        { id: 'strips',   name: 'Score Strips',       el: 'Strips',
+          desc: 'Every regular-season game of a career on one line: gold won, rust lost, blue tied. The cream notch is the career median.' },
+    ],
+};
+const SCOPES = [
+    { id: 'season', name: 'Season' },
+    { id: 'career', name: 'Career' },
+    { id: 'league', name: 'League' },
+];
+
+/* ============================================================
+   SMALL HELPERS
+   ============================================================ */
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt1 = (n) => (Math.round(n * 10) / 10).toLocaleString();
+const fmt0 = (n) => Math.round(n).toLocaleString();
+const yy = (y) => "’" + String(y).slice(-2);
+
+function median(arr) {
+    if (!arr.length) return 0;
+    const a = [...arr].sort((x, y) => x - y);
+    const mid = a.length >> 1;
+    return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+}
+
+// tight scale: the domain hugs the data (plus a small cushion) so the plot
+// always fills its vertical space; only the tick POSITIONS are rounded to
+// nice steps within that domain, never the domain itself
+function tightScale(min, max, count, padFrac) {
+    count = count || 5;
+    padFrac = padFrac == null ? 0.05 : padFrac;
+    if (!isFinite(min) || !isFinite(max)) { min = 0; max = 1; }
+    if (min === max) { min -= 1; max += 1; }
+    const pad = (max - min) * padFrac;
+    const lo = min - pad, hi = max + pad;
+    const raw = (hi - lo) / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    let step = mag * 10;
+    for (const c of [1, 2, 2.5, 5, 10]) { if (mag * c >= raw) { step = mag * c; break; } }
+    const ticks = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(+v.toFixed(6));
+    return { lo, hi, ticks };
+}
+
+// frame: linear scales + plot rect. M is {t,r,b,l}.
+function frame(W, H, M, xLo, xHi, yLo, yHi) {
+    const X = (v) => M.l + (v - xLo) / (xHi - xLo || 1) * (W - M.l - M.r);
+    const Y = (v) => H - M.b - (v - yLo) / (yHi - yLo || 1) * (H - M.t - M.b);
+    return { X, Y, W, H, M };
+}
+
+function gridY(f, ticks, fmtFn) {
+    return ticks.map((t) =>
+        `<line x1="${f.M.l}" x2="${f.W - f.M.r}" y1="${f.Y(t)}" y2="${f.Y(t)}" stroke="#2a3645" stroke-width="1" stroke-dasharray="1 4"/>` +
+        `<text x="${f.M.l - 8}" y="${f.Y(t) + 4}" text-anchor="end" font-size="11" fill="#837b6a">${fmtFn ? fmtFn(t) : t}</text>`
+    ).join('');
+}
+
+function labelsX(f, pairs, opts) { // pairs: [{v, label}]
+    const o = opts || {};
+    return pairs.map((p) =>
+        `<text x="${f.X(p.v)}" y="${f.H - f.M.b + 18}" text-anchor="middle" font-size="11" fill="${p.gold ? '#e8c889' : '#837b6a'}">${esc(p.label)}</text>` +
+        (o.ticks ? `<line x1="${f.X(p.v)}" x2="${f.X(p.v)}" y1="${f.H - f.M.b}" y2="${f.H - f.M.b + 5}" stroke="#2a3645"/>` : '')
+    ).join('');
+}
+
+function linePath(pts, X, Y) {
+    return pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join('');
+}
+
+// sparse x ticks: at most n labels from a list of values
+function thin(values, n) {
+    if (values.length <= n) return values;
+    const step = Math.ceil(values.length / n);
+    return values.filter((_, i) => i % step === 0 || i === values.length - 1);
+}
+
+// spread end-of-line labels so they don't overlap
+function spreadLabels(items, minGap, top, bottom) {
+    items.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < items.length; i++) {
+        if (items[i].y - items[i - 1].y < minGap) items[i].y = items[i - 1].y + minGap;
+    }
+    const over = items.length ? items[items.length - 1].y - bottom : 0;
+    if (over > 0) for (const it of items) it.y -= over;
+    for (const it of items) if (it.y < top) it.y = top;
+    return items;
+}
+
+// right-gutter width sized to this chart's longest label so the plot
+// keeps every remaining unit: 10px mono ≈ 6 units per character
+const gutterFor = (texts) => texts.reduce((a, t) => Math.max(a, t.length), 0) * 6 + 24;
+
+// left margin sized to the widest y-tick label (11px mono ≈ 6.6/char),
+// so short axes (ranks, luck) give their slack back to the plot
+const leftFor = (ticks, fmtFn) =>
+    ticks.reduce((a, t) => Math.max(a, String(fmtFn ? fmtFn(t) : t).length), 0) * 6.6 + 16;
+
+// name labels in a slim gutter just past the plot's right edge: small
+// type, tight padding, spread vertically so nothing overlaps the lines
+function endLabels(f, labels) {
+    let out = '';
+    for (const L of spreadLabels(labels, 13, f.M.t + 4, f.H - f.M.b)) {
+        out += `<text class="vz-endlab" data-mi="${L.mi}" x="${f.W - f.M.r + 16}" y="${L.y + 3.5}" font-size="10" fill="${color(L.mi)}">${esc(L.text)}</text>`;
+    }
+    return out;
+}
+
+function tipHtml(name, lines) {
+    return `<span class="t-name">${esc(name)}</span><br>` + lines.map(esc).join('<br>');
+}
+
+/* ============================================================
+   DATA VIEWS
+   ============================================================ */
+const seasonOf = (year) => DATA.seasons.find((s) => s.year === year);
+const selIdx = () => [...S.sel].sort((a, b) => a - b);
+const isSel = (mi) => S.sel.has(mi);
+const mgrName = (mi) => (DATA.managers[mi] ? DATA.managers[mi].name : '?');
+
+// weeks present in a season (optionally regular-season only)
+function seasonWeeks(sn, regOnly) {
+    const w = new Set();
+    for (const t of sn.teams) for (const g of t.g) if (!regOnly || g[4] === 0) w.add(g[0]);
+    return [...w].sort((a, b) => a - b);
+}
+
+// career timeline: one slot per (year, week) the league ever played
+function careerTimeline() {
+    const steps = [];
+    const tIdx = new Map();
+    for (const sn of DATA.seasons) {
+        for (const wk of seasonWeeks(sn, false)) {
+            tIdx.set(sn.year + '|' + wk, steps.length);
+            steps.push({ year: sn.year, wk });
+        }
+    }
+    return { steps, tIdx };
+}
+
+/* ============================================================
+   CHART: POINTS RACE (season)
+   ============================================================ */
+function drawRace(sn) {
+    const weeks = seasonWeeks(sn, false);
+    const series = [];
+    let maxCum = 0, minCum = Infinity;
+    for (const t of sn.teams) {
+        if (!isSel(t.m)) continue;
+        let cum = 0;
+        const pts = t.g.map((g) => { cum += g[1]; return [g[0], +cum.toFixed(2), g[1]]; });
+        if (pts.length) {
+            series.push({ mi: t.m, pts });
+            maxCum = Math.max(maxCum, cum);
+            minCum = Math.min(minCum, pts[0][1]);
+        }
+    }
+    if (!series.length) return emptyPlate();
+    const ys = tightScale(minCum, maxCum, 6, 0.04);
+    const gut = gutterFor(series.map((s) => mgrName(s.mi) + ' · ' + fmt0(s.pts[s.pts.length - 1][1])));
+    const f = frame(1400, 560, { t: 24, r: gut, b: 44, l: leftFor(ys.ticks, fmt0) }, weeks[0], weeks[weeks.length - 1], ys.lo, ys.hi);
+    let out = gridY(f, ys.ticks, fmt0);
+    out += labelsX(f, thin(weeks, 18).map((w) => ({ v: w, label: 'W' + w })), { ticks: true });
+    const labels = [];
+    for (const s of series) {
+        const last = s.pts[s.pts.length - 1];
+        out += `<path class="vz-line" data-mi="${s.mi}" d="${linePath(s.pts, f.X, f.Y)}" fill="none" stroke="${color(s.mi)}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" data-tip="${esc(tipHtml(mgrName(s.mi), [fmt1(last[1]) + ' pts through W' + last[0]]))}"/>`;
+        for (const p of s.pts) {
+            out += `<circle class="vz-line" data-mi="${s.mi}" cx="${f.X(p[0]).toFixed(1)}" cy="${f.Y(p[1]).toFixed(1)}" r="3" fill="${color(s.mi)}" data-tip="${esc(tipHtml(mgrName(s.mi), ['W' + p[0] + ' · ' + fmt1(p[1]) + ' total', '+' + fmt1(p[2]) + ' that week']))}"/>`;
+        }
+        labels.push({ mi: s.mi, y: f.Y(last[1]), text: mgrName(s.mi) + ' · ' + fmt0(last[1]) });
+    }
+    out += endLabels(f, labels);
+    return svgWrap(out, f.W, f.H);
+}
+
+/* ============================================================
+   CHART: STANDINGS BY WEEK (season, bump)
+   ============================================================ */
+function drawBump(sn) {
+    const weeks = seasonWeeks(sn, true);
+    if (!weeks.length) return emptyPlate();
+    // cumulative record per team per week → rank
+    const rankSeries = new Map(); // mi -> [{wk, rank}]
+    for (const wk of weeks) {
+        const rows = [];
+        for (const t of sn.teams) {
+            let w = 0, l = 0, tie = 0, pf = 0, played = 0;
+            for (const g of t.g) {
+                if (g[4] !== 0 || g[0] > wk) continue;
+                played++; pf += g[1];
+                if (g[1] > g[2]) w++; else if (g[1] < g[2]) l++; else tie++;
+            }
+            if (played) rows.push({ mi: t.m, pct: (w + tie / 2) / played, pf, rec: w + '-' + l + (tie ? '-' + tie : '') });
+        }
+        rows.sort((a, b) => (b.pct - a.pct) || (b.pf - a.pf));
+        rows.forEach((r, i) => {
+            if (!rankSeries.has(r.mi)) rankSeries.set(r.mi, []);
+            rankSeries.get(r.mi).push([wk, i + 1, r.rec]);
+        });
+    }
+    const N = sn.teams.length;
+    const gut = gutterFor([...rankSeries.entries()].filter(([mi]) => isSel(mi))
+        .map(([mi, pts]) => mgrName(mi) + ' · #' + pts[pts.length - 1][1]));
+    const f = frame(1400, 560, { t: 24, r: gut, b: 44, l: leftFor([N]) }, weeks[0], weeks[weeks.length - 1], N, 1); // inverted: rank 1 on top
+    let out = '';
+    for (let r = 1; r <= N; r++) {
+        out += `<line x1="${f.M.l}" x2="${f.W - f.M.r}" y1="${f.Y(r)}" y2="${f.Y(r)}" stroke="#2a3645" stroke-width="1" stroke-dasharray="1 4"/>` +
+               `<text x="${f.M.l - 8}" y="${f.Y(r) + 4}" text-anchor="end" font-size="11" fill="#837b6a">${r}</text>`;
+    }
+    out += labelsX(f, thin(weeks, 18).map((w) => ({ v: w, label: 'W' + w })), { ticks: true });
+    const labels = [];
+    // unselected first (dim context), selected on top
+    const entries = [...rankSeries.entries()].sort((a, b) => (isSel(a[0]) ? 1 : 0) - (isSel(b[0]) ? 1 : 0));
+    for (const [mi, pts] of entries) {
+        const on = isSel(mi);
+        const last = pts[pts.length - 1];
+        out += `<path class="${on ? 'vz-line' : ''}" data-mi="${mi}" d="${linePath(pts, f.X, f.Y)}" fill="none" stroke="${on ? color(mi) : '#2a3645'}" stroke-width="${on ? 2.4 : 1.2}" stroke-linejoin="round" ${on ? `data-tip="${esc(tipHtml(mgrName(mi), ['Finished the regular season #' + last[1]]))}"` : 'opacity=".6"'}/>`;
+        if (on) {
+            for (const p of pts) {
+                out += `<circle class="vz-line" data-mi="${mi}" cx="${f.X(p[0]).toFixed(1)}" cy="${f.Y(p[1]).toFixed(1)}" r="3" fill="${color(mi)}" data-tip="${esc(tipHtml(mgrName(mi), ['W' + p[0] + ' · #' + p[1] + ' · ' + p[2]]))}"/>`;
+            }
+            labels.push({ mi, y: f.Y(last[1]), text: mgrName(mi) + ' · #' + last[1] });
+        }
+    }
+    out += endLabels(f, labels);
+    return svgWrap(out, f.W, f.H);
+}
+
+/* ============================================================
+   CHART: THE LUCK LINE (season)
+   ============================================================ */
+function drawLuck(sn) {
+    const weeks = seasonWeeks(sn, true);
+    if (!weeks.length) return emptyPlate();
+    const scoresByWeek = new Map();
+    for (const wk of weeks) scoresByWeek.set(wk, []);
+    for (const t of sn.teams) for (const g of t.g) if (g[4] === 0) scoresByWeek.get(g[0]).push(g[1]);
+    const series = [];
+    let lo = 0, hi = 0;
+    for (const t of sn.teams) {
+        if (!isSel(t.m)) continue;
+        let wins = 0, exp = 0;
+        const pts = [];
+        for (const g of t.g) {
+            if (g[4] !== 0) continue;
+            const field = scoresByWeek.get(g[0]);
+            const others = field.length - 1;
+            if (others > 0) {
+                let beat = 0;
+                for (const s of field) { if (s < g[1]) beat++; else if (s === g[1]) beat += 0.5; }
+                beat -= 0.5; // remove self-comparison (counts as tie above)
+                exp += beat / others;
+            }
+            wins += g[1] > g[2] ? 1 : g[1] === g[2] ? 0.5 : 0;
+            const d = +(wins - exp).toFixed(3);
+            pts.push([g[0], d, wins, +exp.toFixed(2)]);
+            lo = Math.min(lo, d); hi = Math.max(hi, d);
+        }
+        if (pts.length) series.push({ mi: t.m, pts });
+    }
+    if (!series.length) return emptyPlate();
+    const ys = tightScale(Math.min(lo, -0.5), Math.max(hi, 0.5), 6, 0.08);
+    // label the actual extremes too: the axis should say how far the luckiest
+    // and unluckiest lines really reach, even when the nice steps stop short
+    // (a -3.5 season deserves its own line, not just "-2"), skipped only when
+    // an existing tick already sits close enough
+    const yStep = ys.ticks.length > 1 ? ys.ticks[1] - ys.ticks[0] : 1;
+    for (const v of [lo, hi]) {
+        if (ys.ticks.every((t) => Math.abs(t - v) > yStep * 0.35)) ys.ticks.push(+v.toFixed(2));
+    }
+    const gut = gutterFor(series.map((s) => {
+        const v = s.pts[s.pts.length - 1][1];
+        return mgrName(s.mi) + ' · ' + (v > 0 ? '+' : '') + fmt1(v);
+    }));
+    const yFmt = (t) => (t > 0 ? '+' : '') + fmt1(t);
+    const f = frame(1400, 560, { t: 24, r: gut, b: 44, l: leftFor(ys.ticks, yFmt) }, weeks[0], weeks[weeks.length - 1], ys.lo, ys.hi);
+    let out = gridY(f, ys.ticks, yFmt);
+    out += `<line x1="${f.M.l}" x2="${f.W - f.M.r}" y1="${f.Y(0)}" y2="${f.Y(0)}" stroke="#837b6a" stroke-width="1.4"/>`;
+    out += `<text x="${f.M.l + 4}" y="${f.M.t + 12}" font-size="9" fill="#837b6a" letter-spacing="2" paint-order="stroke" stroke="#161f2a" stroke-width="3">LUCKY ABOVE ZERO · UNLUCKY BELOW</text>`;
+    out += labelsX(f, thin(weeks, 18).map((w) => ({ v: w, label: 'W' + w })), { ticks: true });
+    const labels = [];
+    for (const s of series) {
+        const last = s.pts[s.pts.length - 1];
+        out += `<path class="vz-line" data-mi="${s.mi}" d="${linePath(s.pts, f.X, f.Y)}" fill="none" stroke="${color(s.mi)}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" data-tip="${esc(tipHtml(mgrName(s.mi), [(last[1] > 0 ? '+' : '') + fmt1(last[1]) + ' wins vs the all-play expectation']))}"/>`;
+        for (const p of s.pts) {
+            out += `<circle class="vz-line" data-mi="${s.mi}" cx="${f.X(p[0]).toFixed(1)}" cy="${f.Y(p[1]).toFixed(1)}" r="3" fill="${color(s.mi)}" data-tip="${esc(tipHtml(mgrName(s.mi), ['W' + p[0] + ' · ' + (p[1] > 0 ? '+' : '') + fmt1(p[1]) + ' luck', fmt1(p[2]) + ' actual wins · ' + fmt1(p[3]) + ' expected']))}"/>`;
+        }
+        labels.push({ mi: s.mi, y: f.Y(last[1]), text: mgrName(s.mi) + ' · ' + (last[1] > 0 ? '+' : '') + fmt1(last[1]) });
+    }
+    out += endLabels(f, labels);
+    return svgWrap(out, f.W, f.H);
+}
+
+/* ============================================================
+   CHART: SCORES VS THE FIELD (season)
+   ============================================================ */
+function drawField(sn) {
+    const weeks = seasonWeeks(sn, false);
+    const byWeek = new Map();
+    for (const wk of weeks) byWeek.set(wk, []);
+    for (const t of sn.teams) for (const g of t.g) byWeek.get(g[0]).push(g[1]);
+    const band = weeks.map((wk) => {
+        const s = byWeek.get(wk);
+        return { wk, min: Math.min(...s), max: Math.max(...s), med: median(s) };
+    });
+    const ys = tightScale(Math.min(...band.map((b) => b.min)), Math.max(...band.map((b) => b.max)), 6, 0.06);
+    const gut = gutterFor(sn.teams.filter((t) => isSel(t.m) && t.g.length).map((t) => mgrName(t.m)));
+    const f = frame(1400, 560, { t: 24, r: gut, b: 44, l: leftFor(ys.ticks, fmt0) }, weeks[0], weeks[weeks.length - 1], ys.lo, ys.hi);
+    let out = gridY(f, ys.ticks, fmt0);
+    // the field: dotted high/low rails + dashed weekly median, no fill
+    const rail = (pts) => `<path d="${linePath(pts, f.X, f.Y)}" fill="none" stroke="#6b8aa8" stroke-width="1" stroke-dasharray="2 5" opacity=".45"/>`;
+    out += rail(band.map((b) => [b.wk, b.max]));
+    out += rail(band.map((b) => [b.wk, b.min]));
+    out += `<path d="${linePath(band.map((b) => [b.wk, b.med]), f.X, f.Y)}" fill="none" stroke="#c9c0ad" stroke-width="1.3" stroke-dasharray="6 5" opacity=".6"/>`;
+    out += `<text x="${f.M.l + 4}" y="${f.M.t + 12}" font-size="9" fill="#837b6a" letter-spacing="2" paint-order="stroke" stroke="#161f2a" stroke-width="3">DOTTED · FIELD HIGH AND LOW &#160;&#160; DASHED · WEEKLY MEDIAN</text>`;
+    out += labelsX(f, thin(weeks, 18).map((w) => ({ v: w, label: 'W' + w })), { ticks: true });
+    const labels = [];
+    for (const t of sn.teams) {
+        if (!isSel(t.m)) continue;
+        const pts = t.g.map((g) => [g[0], g[1]]);
+        if (!pts.length) continue;
+        out += `<path class="vz-line" data-mi="${t.m}" d="${linePath(pts, f.X, f.Y)}" fill="none" stroke="${color(t.m)}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+        for (const g of t.g) {
+            const res = g[1] > g[2] ? 'W' : g[1] < g[2] ? 'L' : 'T';
+            out += `<circle class="vz-line" data-mi="${t.m}" cx="${f.X(g[0])}" cy="${f.Y(g[1])}" r="3.4" fill="${color(t.m)}" data-tip="${esc(tipHtml(mgrName(t.m), ['W' + g[0] , fmt1(g[1]) + ' pts · ' + res + ' vs ' + mgrName(g[3]) + ' (' + fmt1(g[2]) + ')']))}"/>`;
+        }
+        const last = pts[pts.length - 1];
+        labels.push({ mi: t.m, y: f.Y(last[1]), text: mgrName(t.m) });
+    }
+    out += endLabels(f, labels);
+    return svgWrap(out, f.W, f.H);
+}
+
+/* ============================================================
+   CHART: THE MARGINS (season)
+   ============================================================ */
+function drawMargins(sn) {
+    const weeks = seasonWeeks(sn, false);
+    const sel = selIdx().filter((mi) => sn.teams.some((t) => t.m === mi && t.g.length));
+    if (!sel.length) return emptyPlate();
+    let ext = 0;
+    const rows = [];
+    for (const mi of sel) {
+        const t = sn.teams.find((x) => x.m === mi);
+        for (const g of t.g) {
+            const m = +(g[1] - g[2]).toFixed(2);
+            ext = Math.max(ext, Math.abs(m));
+            rows.push({ mi, wk: g[0], margin: m, g });
+        }
+    }
+    const ys = tightScale(-ext, ext, 6, 0.06);
+    const yFmt = (t) => (t > 0 ? '+' : '') + fmt0(t);
+    const f = frame(1400, 560, { t: 24, r: 24, b: 44, l: leftFor(ys.ticks, yFmt) }, 0, weeks.length, ys.lo, ys.hi);
+    let out = gridY(f, ys.ticks, yFmt);
+    const slot = (f.W - f.M.l - f.M.r) / weeks.length;
+    const bw = Math.min(18, (slot * 0.72) / sel.length);
+    const wkPos = new Map(); weeks.forEach((w, i) => wkPos.set(w, i));
+    for (const r of rows) {
+        const i = wkPos.get(r.wk);
+        const gi = sel.indexOf(r.mi);
+        const x = f.M.l + i * slot + slot / 2 - (bw * sel.length) / 2 + gi * bw;
+        const y0 = f.Y(0), y1 = f.Y(r.margin);
+        const res = r.margin > 0 ? 'W' : r.margin < 0 ? 'L' : 'T';
+        out += `<rect x="${x.toFixed(1)}" y="${Math.min(y0, y1).toFixed(1)}" width="${Math.max(1, bw - 2).toFixed(1)}" height="${Math.max(1, Math.abs(y1 - y0)).toFixed(1)}" fill="${color(r.mi)}" opacity="${r.margin >= 0 ? .95 : .55}" data-tip="${esc(tipHtml(mgrName(r.mi), ['W' + r.wk, res + ' by ' + fmt1(Math.abs(r.margin)) + ' vs ' + mgrName(r.g[3])]))}"/>`;
+    }
+    out += `<line x1="${f.M.l}" x2="${f.W - f.M.r}" y1="${f.Y(0)}" y2="${f.Y(0)}" stroke="#837b6a" stroke-width="1.4"/>`;
+    out += thin(weeks, 18).map((w) => {
+        const x = f.M.l + wkPos.get(w) * slot + slot / 2;
+        return `<text x="${x}" y="${f.H - f.M.b + 18}" text-anchor="middle" font-size="11" fill="#837b6a">W${w}</text>`;
+    }).join('');
+    return svgWrap(out, f.W, f.H);
+}
+
+/* ============================================================
+   CHART: THE SEASON QUILT (season)
+   ============================================================ */
+function lerp3(a, b, t) {
+    return 'rgb(' + a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',') + ')';
+}
+function drawQuilt(sn) {
+    const weeks = seasonWeeks(sn, false);
+    const teams = [...sn.teams].filter((t) => t.g.length)
+        .sort((a, b) => (a.final ?? a.reg ?? 99) - (b.final ?? b.reg ?? 99));
+    if (!teams.length) return emptyPlate();
+    let lo = Infinity, hi = -Infinity;
+    for (const t of teams) for (const g of t.g) { lo = Math.min(lo, g[1]); hi = Math.max(hi, g[1]); }
+    const rowH = 34, labelW = 150, topH = 34;
+    const W = 1400, H = topH + teams.length * rowH + 16;
+    const cellW = (W - labelW - 20) / weeks.length;
+    const wkPos = new Map(); weeks.forEach((w, i) => wkPos.set(w, i));
+    let out = '';
+    out += thin(weeks, 20).map((w) =>
+        `<text x="${labelW + wkPos.get(w) * cellW + cellW / 2}" y="${topH - 12}" text-anchor="middle" font-size="10" fill="#837b6a">W${w}</text>`).join('');
+    teams.forEach((t, ri) => {
+        const on = isSel(t.m);
+        const y = topH + ri * rowH;
+        const rk = t.final ?? t.reg;
+        out += `<text x="${labelW - 10}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="11" fill="${on ? color(t.m) : '#837b6a'}" opacity="${on ? 1 : .55}">${rk ? '#' + rk + ' ' : ''}${esc(mgrName(t.m))}</text>`;
+        for (const g of t.g) {
+            const x = labelW + wkPos.get(g[0]) * cellW;
+            const tt = hi > lo ? (g[1] - lo) / (hi - lo) : 0.5;
+            const res = g[1] > g[2] ? 'W' : g[1] < g[2] ? 'L' : 'T';
+            out += `<rect x="${(x + 1).toFixed(1)}" y="${y + 1}" width="${(cellW - 2).toFixed(1)}" height="${rowH - 2}" fill="${lerp3([22, 32, 44], [232, 200, 137], tt)}" opacity="${on ? 1 : .28}" data-tip="${esc(tipHtml(mgrName(t.m), ['W' + g[0], fmt1(g[1]) + ' pts · ' + res + ' vs ' + mgrName(g[3])]))}"/>`;
+            if (res === 'W') out += `<circle cx="${(x + cellW - 6).toFixed(1)}" cy="${y + 7}" r="2" fill="${tt > 0.55 ? '#0e1620' : '#e8c889'}" opacity="${on ? .9 : .3}" pointer-events="none"/>`;
+        }
+    });
+    return svgWrap(out, W, H);
+}
+
+/* ============================================================
+   CHART: THE FINISH LINE (career)
+   ============================================================ */
+function drawFinish() {
+    const years = DATA.seasons.map((s) => s.year);
+    let maxRank = 0;
+    const byMgr = new Map();
+    for (const sn of DATA.seasons) {
+        for (const t of sn.teams) {
+            const rk = t.final ?? t.reg;
+            if (rk == null) continue;
+            maxRank = Math.max(maxRank, rk);
+            if (!byMgr.has(t.m)) byMgr.set(t.m, []);
+            byMgr.get(t.m).push([sn.year, rk]);
+        }
+    }
+    if (!maxRank) return emptyPlate();
+    const gut = gutterFor([...byMgr.keys()].filter((mi) => isSel(mi)).map(mgrName));
+    const f = frame(1400, 560, { t: 24, r: gut, b: 44, l: leftFor([maxRank]) }, years[0], years[years.length - 1], maxRank, 1);
+    let out = '';
+    for (let r = 1; r <= maxRank; r++) {
+        out += `<line x1="${f.M.l}" x2="${f.W - f.M.r}" y1="${f.Y(r)}" y2="${f.Y(r)}" stroke="#2a3645" stroke-width="1" stroke-dasharray="1 4"/>` +
+               `<text x="${f.M.l - 8}" y="${f.Y(r) + 4}" text-anchor="end" font-size="11" fill="${r === 1 ? '#e8c889' : '#837b6a'}">${r}</text>`;
+    }
+    out += labelsX(f, years.map((y) => ({ v: y, label: yy(y) })), { ticks: true });
+    const labels = [];
+    const entries = [...byMgr.entries()].sort((a, b) => (isSel(a[0]) ? 1 : 0) - (isSel(b[0]) ? 1 : 0));
+    for (const [mi, pts] of entries) {
+        const on = isSel(mi);
+        out += `<path class="${on ? 'vz-line' : ''}" data-mi="${mi}" d="${linePath(pts, f.X, f.Y)}" fill="none" stroke="${on ? color(mi) : '#2a3645'}" stroke-width="${on ? 2.4 : 1.2}" stroke-linejoin="round" ${on ? `data-tip="${esc(tipHtml(mgrName(mi), pts.map((p) => yy(p[0]) + ' · #' + p[1])))}"` : 'opacity=".6"'}/>`;
+        if (on) {
+            for (const p of pts) {
+                if (p[1] === 1) out += `<text x="${f.X(p[0])}" y="${f.Y(1) + 5}" text-anchor="middle" font-size="14" fill="#e8c889" data-tip="${esc(tipHtml(mgrName(mi), [yy(p[0]) + ' Champion']))}">★</text>`;
+                else out += `<circle cx="${f.X(p[0])}" cy="${f.Y(p[1])}" r="3" fill="${color(mi)}" data-tip="${esc(tipHtml(mgrName(mi), [yy(p[0]) + ' · finished #' + p[1]]))}"/>`;
+            }
+            const last = pts[pts.length - 1];
+            labels.push({ mi, y: f.Y(last[1]), text: mgrName(mi) });
+        }
+    }
+    out += endLabels(f, labels);
+    return svgWrap(out, f.W, f.H);
+}
+
+/* ============================================================
+   CHART: CAREER RACES (wins / points)
+   ============================================================ */
+function drawCareerRace(mode) {
+    const { steps, tIdx } = careerTimeline();
+    if (!steps.length) return emptyPlate();
+    const series = [];
+    let maxV = 0;
+    for (const mi of selIdx()) {
+        let cum = 0;
+        const pts = [];
+        for (const sn of DATA.seasons) {
+            const t = sn.teams.find((x) => x.m === mi);
+            if (!t) continue;
+            for (const g of t.g) {
+                cum += mode === 'wins' ? (g[1] > g[2] ? 1 : g[1] === g[2] ? 0.5 : 0) : g[1];
+                pts.push([tIdx.get(sn.year + '|' + g[0]), +cum.toFixed(2)]);
+            }
+        }
+        if (pts.length) { series.push({ mi, pts }); maxV = Math.max(maxV, cum); }
+    }
+    if (!series.length) return emptyPlate();
+    const ys = tightScale(0, maxV, 6, 0.03);
+    const gut = gutterFor(series.map((s) => {
+        const v = s.pts[s.pts.length - 1][1];
+        return mgrName(s.mi) + ' · ' + (mode === 'wins' ? fmt1(v) + ' W' : fmt0(v));
+    }));
+    const f = frame(1400, 560, { t: 24, r: gut, b: 44, l: leftFor(ys.ticks, fmt0) }, 0, steps.length - 1, ys.lo, ys.hi);
+    let out = gridY(f, ys.ticks, fmt0);
+    // season boundary ticks
+    const seen = new Set();
+    for (let i = 0; i < steps.length; i++) {
+        if (seen.has(steps[i].year)) continue;
+        seen.add(steps[i].year);
+        out += `<line x1="${f.X(i)}" x2="${f.X(i)}" y1="${f.M.t}" y2="${f.H - f.M.b}" stroke="#1e2937" stroke-width="1"/>` +
+               `<text x="${f.X(i) + 4}" y="${f.H - f.M.b + 18}" font-size="11" fill="#837b6a">${yy(steps[i].year)}</text>`;
+    }
+    // milestone rings: one at every y-axis step a manager crosses (10 wins,
+    // 500 points, whatever tightScale picked for this league's size), sitting
+    // on the line at the game that crossed it; the tip tells you how many
+    // games it took to get there
+    const mileStep = ys.ticks.length > 1 ? ys.ticks[1] - ys.ticks[0] : (mode === 'wins' ? 10 : 500);
+    const unit = mode === 'wins' ? ' wins' : ' pts';
+    const labels = [];
+    for (const s of series) {
+        const last = s.pts[s.pts.length - 1];
+        const val = mode === 'wins' ? fmt1(last[1]) + ' W' : fmt0(last[1]);
+        out += `<path class="vz-line" data-mi="${s.mi}" d="${linePath(s.pts, f.X, f.Y)}" fill="none" stroke="${color(s.mi)}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" data-tip="${esc(tipHtml(mgrName(s.mi), [(mode === 'wins' ? fmt1(last[1]) + ' career wins' : fmt0(last[1]) + ' career points')]))}"/>`;
+        let next = mileStep;
+        s.pts.forEach((p, i) => {
+            while (p[1] >= next) {
+                const st = steps[p[0]];
+                out += `<circle class="vz-line" data-mi="${s.mi}" cx="${f.X(p[0]).toFixed(1)}" cy="${f.Y(p[1]).toFixed(1)}" r="3.6" fill="#16202c" stroke="${color(s.mi)}" stroke-width="1.8" data-tip="${esc(tipHtml(mgrName(s.mi), [fmt0(next) + unit + ' · game ' + (i + 1), 'reached ' + yy(st.year) + ' W' + st.wk]))}"/>`;
+                next += mileStep;
+            }
+        });
+        labels.push({ mi: s.mi, y: f.Y(last[1]), text: mgrName(s.mi) + ' · ' + val });
+    }
+    out += endLabels(f, labels);
+    return svgWrap(out, f.W, f.H);
+}
+const drawWinsRace = () => drawCareerRace('wins');
+const drawPtsRace = () => drawCareerRace('pts');
+
+/* ============================================================
+   CHART: POINTS PER GAME BY SEASON (career)
+   ============================================================ */
+function drawPpg() {
+    const years = DATA.seasons.map((s) => s.year);
+    const leagueAvg = [];
+    let lo = Infinity, hi = -Infinity;
+    for (const sn of DATA.seasons) {
+        let sum = 0, n = 0;
+        for (const t of sn.teams) for (const g of t.g) { sum += g[1]; n++; }
+        if (n) { const v = sum / n; leagueAvg.push([sn.year, v]); lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    }
+    const series = [];
+    for (const mi of selIdx()) {
+        const pts = [];
+        for (const sn of DATA.seasons) {
+            const t = sn.teams.find((x) => x.m === mi);
+            if (!t || !t.g.length) continue;
+            const v = t.g.reduce((a, g) => a + g[1], 0) / t.g.length;
+            pts.push([sn.year, v]);
+            lo = Math.min(lo, v); hi = Math.max(hi, v);
+        }
+        if (pts.length) series.push({ mi, pts });
+    }
+    if (!series.length) return emptyPlate();
+    const ys = tightScale(lo, hi, 6, 0.06);
+    const gut = gutterFor(series.map((s) => mgrName(s.mi) + ' · ' + fmt1(s.pts[s.pts.length - 1][1])));
+    const f = frame(1400, 560, { t: 24, r: gut, b: 44, l: leftFor(ys.ticks, fmt0) }, years[0], years[years.length - 1], ys.lo, ys.hi);
+    let out = gridY(f, ys.ticks, fmt0);
+    out += labelsX(f, years.map((y) => ({ v: y, label: yy(y) })), { ticks: true });
+    out += `<path d="${linePath(leagueAvg, f.X, f.Y)}" fill="none" stroke="#c9c0ad" stroke-width="1.4" stroke-dasharray="5 4" opacity=".7"/>`;
+    out += `<text x="${f.W - f.M.r - 4}" y="${f.Y(leagueAvg[leagueAvg.length - 1][1]) - 8}" text-anchor="end" font-size="10" fill="#837b6a" letter-spacing="2">LEAGUE AVG</text>`;
+    const labels = [];
+    for (const s of series) {
+        out += `<path class="vz-line" data-mi="${s.mi}" d="${linePath(s.pts, f.X, f.Y)}" fill="none" stroke="${color(s.mi)}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+        for (const p of s.pts) out += `<circle class="vz-line" data-mi="${s.mi}" cx="${f.X(p[0])}" cy="${f.Y(p[1])}" r="3.2" fill="${color(s.mi)}" data-tip="${esc(tipHtml(mgrName(s.mi), [yy(p[0]) + ' · ' + fmt1(p[1]) + ' pts per game']))}"/>`;
+        const last = s.pts[s.pts.length - 1];
+        labels.push({ mi: s.mi, y: f.Y(last[1]), text: mgrName(s.mi) + ' · ' + fmt1(last[1]) });
+    }
+    out += endLabels(f, labels);
+    return svgWrap(out, f.W, f.H);
+}
+
+/* ============================================================
+   CHART: THE LUCK QUADRANT (league)
+   ============================================================ */
+function drawQuadrant() {
+    const dots = [];
+    for (const sn of DATA.seasons) {
+        for (const t of sn.teams) {
+            const reg = t.g.filter((g) => g[4] === 0);
+            if (reg.length < 3) continue;
+            let pf = 0, pa = 0, w = 0, l = 0, tie = 0;
+            for (const g of reg) { pf += g[1]; pa += g[2]; if (g[1] > g[2]) w++; else if (g[1] < g[2]) l++; else tie++; }
+            dots.push({ mi: t.m, year: sn.year, pf: pf / reg.length, pa: pa / reg.length, rec: w + '-' + l + (tie ? '-' + tie : ''), final: t.final });
+        }
+    }
+    if (!dots.length) return emptyPlate();
+    const medPf = median(dots.map((d) => d.pf));
+    const medPa = median(dots.map((d) => d.pa));
+    const xs = tightScale(Math.min(...dots.map((d) => d.pf)), Math.max(...dots.map((d) => d.pf)), 6, 0.06);
+    const ysc = tightScale(Math.min(...dots.map((d) => d.pa)), Math.max(...dots.map((d) => d.pa)), 6, 0.06);
+    // +14 keeps the rotated "points against" axis title clear of the ticks
+    const f = frame(1400, 560, { t: 30, r: 34, b: 50, l: leftFor(ysc.ticks, fmt0) + 14 }, xs.lo, xs.hi, ysc.lo, ysc.hi);
+    let out = gridY(f, ysc.ticks, fmt0);
+    out += labelsX(f, xs.ticks.map((t) => ({ v: t, label: fmt0(t) })), { ticks: true });
+    out += `<line x1="${f.X(medPf)}" x2="${f.X(medPf)}" y1="${f.M.t}" y2="${f.H - f.M.b}" stroke="#837b6a" stroke-width="1" stroke-dasharray="4 4"/>`;
+    out += `<line x1="${f.M.l}" x2="${f.W - f.M.r}" y1="${f.Y(medPa)}" y2="${f.Y(medPa)}" stroke="#837b6a" stroke-width="1" stroke-dasharray="4 4"/>`;
+    const qlab = (x, y, anchor, text) =>
+        `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="10" fill="#837b6a" letter-spacing="3" opacity=".8">${text}</text>`;
+    out += qlab(f.W - f.M.r - 6, f.M.t + 14, 'end', 'SNAKEBIT · SCORED BIG, PAID FOR IT');
+    out += qlab(f.W - f.M.r - 6, f.H - f.M.b - 8, 'end', 'CHARMED · GOOD AND LUCKY');
+    out += qlab(f.M.l + 6, f.M.t + 14, 'start', 'CURSED · BAD AND BEATEN');
+    out += qlab(f.M.l + 6, f.H - f.M.b - 8, 'start', 'SKATING BY · SOFT SCHEDULE');
+    out += `<text x="${f.W - f.M.r}" y="${f.H - 8}" text-anchor="end" font-size="10" fill="#837b6a" letter-spacing="2">POINTS FOR / GAME →</text>`;
+    out += `<text x="14" y="${f.M.t + 6}" font-size="10" fill="#837b6a" letter-spacing="2" transform="rotate(-90 14 ${f.M.t + 6})" text-anchor="end">POINTS AGAINST / GAME →</text>`;
+    // unselected context first, then selected
+    for (const pass of [0, 1]) {
+        for (const d of dots) {
+            const on = isSel(d.mi);
+            if ((pass === 0) === on) continue;
+            const champ = d.final === 1;
+            out += `<circle cx="${f.X(d.pf).toFixed(1)}" cy="${f.Y(d.pa).toFixed(1)}" r="${on ? (champ ? 7 : 5.5) : 3.5}" fill="${on ? color(d.mi) : '#2a3645'}" opacity="${on ? .92 : .6}" stroke="${champ && on ? '#f4ebd8' : 'none'}" stroke-width="1.5" data-tip="${esc(tipHtml(mgrName(d.mi), [yy(d.year) + ' · ' + d.rec + (champ ? ' · Champion' : d.final ? ' · #' + d.final : ''), fmt1(d.pf) + ' PF/g · ' + fmt1(d.pa) + ' PA/g']))}"/>`;
+        }
+    }
+    return svgWrap(out, f.W, f.H);
+}
+
+/* ============================================================
+   CHART: SCORE STRIPS (league)
+   ============================================================ */
+function drawStrips() {
+    const rows = [];
+    let lo = Infinity, hi = -Infinity;
+    for (const mi of selIdx()) {
+        const games = [];
+        for (const sn of DATA.seasons) {
+            const t = sn.teams.find((x) => x.m === mi);
+            if (!t) continue;
+            for (const g of t.g) {
+                games.push({ year: sn.year, g });
+                lo = Math.min(lo, g[1]); hi = Math.max(hi, g[1]);
+            }
+        }
+        if (games.length) rows.push({ mi, games });
+    }
+    if (!rows.length) return emptyPlate();
+    const xs = tightScale(lo, hi, 8, 0.04);
+    const rowH = 38, labelW = 165, topH = 40;
+    const W = 1400, H = topH + rows.length * rowH + 26;
+    const X = (v) => labelW + (v - xs.lo) / (xs.hi - xs.lo) * (W - labelW - 30);
+    let out = xs.ticks.map((t) =>
+        `<line x1="${X(t)}" x2="${X(t)}" y1="${topH - 6}" y2="${H - 22}" stroke="#1e2937" stroke-width="1"/>` +
+        `<text x="${X(t)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="#837b6a">${fmt0(t)}</text>`).join('');
+    out += `<text x="${labelW}" y="${topH - 16}" font-size="10" fill="#837b6a" letter-spacing="2">EVERY GAME · GOLD WON · RUST LOST</text>`;
+    rows.forEach((r, ri) => {
+        const y = topH + ri * rowH + rowH / 2;
+        const med = median(r.games.map((x) => x.g[1]));
+        out += `<text x="${labelW - 12}" y="${y + 4}" text-anchor="end" font-size="11" fill="${color(r.mi)}">${esc(mgrName(r.mi))}</text>`;
+        out += `<line x1="${labelW}" x2="${W - 30}" y1="${y}" y2="${y}" stroke="#1e2937" stroke-width="1"/>`;
+        for (const it of r.games) {
+            const g = it.g;
+            const res = g[1] > g[2] ? 'W' : g[1] < g[2] ? 'L' : 'T';
+            const fill = res === 'W' ? '#e8c889' : res === 'L' ? '#c0563a' : '#6b8aa8';
+            out += `<circle cx="${X(g[1]).toFixed(1)}" cy="${y}" r="4" fill="${fill}" opacity=".5" data-tip="${esc(tipHtml(mgrName(r.mi), [yy(it.year) + ' W' + g[0], fmt1(g[1]) + ' pts · ' + res + ' vs ' + mgrName(g[3]) + ' (' + fmt1(g[2]) + ')']))}"/>`;
+        }
+        out += `<line x1="${X(med)}" x2="${X(med)}" y1="${y - 12}" y2="${y + 12}" stroke="#f4ebd8" stroke-width="2" data-tip="${esc(tipHtml(mgrName(r.mi), ['Career median · ' + fmt1(med) + ' pts']))}"/>`;
+    });
+    return svgWrap(out, W, H);
+}
+
+/* ============================================================
+   RENDER SHELL
+   ============================================================ */
+const app = document.getElementById('viz-app');
+
+function svgWrap(inner, w, h) {
+    return `<svg id="viz-svg" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img">${inner}</svg>`;
+}
+function emptyPlate() {
+    return `<div class="viz-empty">Nothing to draw yet. Select at least one manager below.</div>`;
+}
+
+const DRAW = {
+    race: () => drawRace(seasonOf(S.year)),
+    bump: () => drawBump(seasonOf(S.year)),
+    luck: () => drawLuck(seasonOf(S.year)),
+    field: () => drawField(seasonOf(S.year)),
+    margins: () => drawMargins(seasonOf(S.year)),
+    quilt: () => drawQuilt(seasonOf(S.year)),
+    finish: drawFinish,
+    winsrace: drawWinsRace,
+    ptsrace: drawPtsRace,
+    ppg: drawPpg,
+    quadrant: drawQuadrant,
+    strips: drawStrips,
+};
+
+function buildShell() {
+    const years = DATA.seasons.map((s) => s.year).sort((a, b) => b - a);
+    const current = DATA.managers.map((m, i) => ({ m, i })).filter((x) => x.m.current);
+    const alumni = DATA.managers.map((m, i) => ({ m, i })).filter((x) => !x.m.current);
+    app.innerHTML = `
+    <div class="viz-controls">
+        <div class="viz-row">
+            <span class="viz-row-label">Scope</span>
+            <div class="viz-tabs" id="viz-scopes">
+                ${SCOPES.map((s) => `<button class="viz-tab${s.id === S.scope ? ' active' : ''}" data-scope="${s.id}">${s.name}</button>`).join('')}
+            </div>
+            <select class="viz-year" id="viz-year" ${S.scope !== 'season' ? 'hidden' : ''}>
+                ${years.map((y) => `<option value="${y}"${y === S.year ? ' selected' : ''}>${y} Season</option>`).join('')}
+            </select>
+        </div>
+        <div class="viz-row">
+            <span class="viz-row-label">Chart</span>
+            <div class="viz-tabs" id="viz-charts"></div>
+        </div>
+    </div>
+    <div class="viz-stage">
+        <div class="viz-stage-head">
+            <div class="viz-stage-title" id="viz-title"></div>
+            <div class="viz-stage-tag" id="viz-tag"></div>
+        </div>
+        <div class="viz-svg-wrap" id="viz-plate"></div>
+        <div class="viz-caption" id="viz-caption"></div>
+        <div id="viz-tip" hidden></div>
+    </div>
+    <div class="viz-roster">
+        <div class="viz-roster-head">
+            <span class="viz-roster-label">The Roster · tap to toggle</span>
+            <div class="viz-quick">
+                <button data-quick="current">Current</button>
+                <button data-quick="all">Everyone</button>
+                <button data-quick="none">None</button>
+            </div>
+        </div>
+        <div class="viz-chips" id="viz-chips">
+            ${current.map((x) => chipHtml(x.i)).join('')}
+            ${alumni.length ? `<span class="viz-chips-divider">· Alumni ·</span>${alumni.map((x) => chipHtml(x.i)).join('')}` : ''}
+        </div>
+    </div>`;
+
+    document.getElementById('viz-scopes').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-scope]');
+        if (!b) return;
+        S.scope = b.dataset.scope;
+        document.querySelectorAll('#viz-scopes .viz-tab').forEach((x) => x.classList.toggle('active', x.dataset.scope === S.scope));
+        document.getElementById('viz-year').hidden = S.scope !== 'season';
+        renderChartTabs();
+        render();
+    });
+    document.getElementById('viz-year').addEventListener('change', (e) => {
+        S.year = Number(e.target.value);
+        render();
+    });
+    document.getElementById('viz-charts').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-chart]');
+        if (!b) return;
+        S.chart[S.scope] = b.dataset.chart;
+        renderChartTabs();
+        render();
+    });
+    document.getElementById('viz-chips').addEventListener('click', (e) => {
+        const c = e.target.closest('.mgr-chip');
+        if (!c) return;
+        const mi = Number(c.dataset.mi);
+        if (S.sel.has(mi)) S.sel.delete(mi); else S.sel.add(mi);
+        syncChips();
+        render();
+    });
+    document.querySelector('.viz-quick').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-quick]');
+        if (!b) return;
+        S.sel.clear();
+        if (b.dataset.quick === 'all') DATA.managers.forEach((_, i) => S.sel.add(i));
+        if (b.dataset.quick === 'current') DATA.managers.forEach((m, i) => { if (m.current) S.sel.add(i); });
+        syncChips();
+        render();
+    });
+
+    // one delegated tooltip + line-highlight handler on the plate
+    const plate = document.getElementById('viz-plate');
+    const tip = document.getElementById('viz-tip');
+    plate.addEventListener('mousemove', (e) => {
+        const el = e.target.closest('[data-tip]');
+        if (!el) { tip.hidden = true; return; }
+        tip.innerHTML = el.dataset.tip;
+        tip.hidden = false;
+        const stage = plate.closest('.viz-stage').getBoundingClientRect();
+        let x = e.clientX - stage.left + 14, ymo = e.clientY - stage.top + 14;
+        if (x + 250 > stage.width) x = e.clientX - stage.left - 254;
+        tip.style.left = x + 'px';
+        tip.style.top = ymo + 'px';
+    });
+    plate.addEventListener('mouseleave', () => { tip.hidden = true; });
+    plate.addEventListener('mouseover', (e) => {
+        const l = e.target.closest('.vz-line');
+        const svg = plate.querySelector('svg');
+        if (!svg) return;
+        svg.classList.toggle('vz-dim', !!l);
+        svg.querySelectorAll('.vz-hot').forEach((n) => n.classList.remove('vz-hot'));
+        if (l) svg.querySelectorAll(`[data-mi="${l.dataset.mi}"]`).forEach((n) => n.classList.add('vz-hot'));
+    });
+    plate.addEventListener('mouseout', (e) => {
+        if (!e.relatedTarget || !plate.contains(e.relatedTarget)) {
+            const svg = plate.querySelector('svg');
+            if (svg) { svg.classList.remove('vz-dim'); svg.querySelectorAll('.vz-hot').forEach((n) => n.classList.remove('vz-hot')); }
+        }
+    });
+
+    renderChartTabs();
+}
+
+function chipHtml(mi) {
+    const on = S.sel.has(mi);
+    return `<button class="mgr-chip${on ? ' on' : ''}" data-mi="${mi}"><span class="dot" style="${on ? 'background:' + color(mi) : ''}"></span>${esc(DATA.managers[mi].name)}</button>`;
+}
+function syncChips() {
+    document.querySelectorAll('.mgr-chip').forEach((c) => {
+        const mi = Number(c.dataset.mi);
+        const on = S.sel.has(mi);
+        c.classList.toggle('on', on);
+        c.querySelector('.dot').style.background = on ? color(mi) : '';
+    });
+}
+function renderChartTabs() {
+    const wrap = document.getElementById('viz-charts');
+    wrap.innerHTML = CHARTS[S.scope].map((c) =>
+        `<button class="viz-tab${c.id === S.chart[S.scope] ? ' active' : ''}" data-chart="${c.id}">${c.name}</button>`).join('');
+}
+
+function render() {
+    const meta = CHARTS[S.scope].find((c) => c.id === S.chart[S.scope]);
+    document.getElementById('viz-title').innerHTML = meta.name.replace(/(\S+)$/, '<em>$1</em>');
+    document.getElementById('viz-tag').textContent =
+        S.scope === 'season' ? S.year + ' · Weekly' : S.scope === 'career' ? 'All Seasons' : 'The Whole League';
+    document.getElementById('viz-caption').textContent = meta.desc;
+    const plate = document.getElementById('viz-plate');
+    try {
+        plate.innerHTML = S.sel.size ? DRAW[meta.id]() : emptyPlate();
+    } catch (err) {
+        plate.innerHTML = `<div class="viz-empty">Couldn't draw this one. ${esc(err.message)}</div>`;
+    }
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+fetch('data/visualizer.json')
+    .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then((data) => {
+        DATA = data;
+        // Regular season only: the feed still carries championship-bracket
+        // playoff games (flag 1/2), but the charts read cleaner inside the
+        // 14-week window, so strip them here. Flip this filter off if a
+        // "include playoffs" toggle ever lands.
+        for (const sn of DATA.seasons) {
+            for (const t of sn.teams) t.g = t.g.filter((g) => g[4] === 0);
+            sn.teams = sn.teams.filter((t) => t.g.length > 0);
+        }
+        DATA.seasons = DATA.seasons.filter((sn) => sn.teams.length > 0);
+        if (!DATA.seasons.length) {
+            app.innerHTML = '<div class="loading-state">No completed seasons to chart yet.</div>';
+            return;
+        }
+        S.year = DATA.seasons[DATA.seasons.length - 1].year;
+        DATA.managers.forEach((m, i) => { if (m.current) S.sel.add(i); });
+        if (!S.sel.size) DATA.managers.forEach((_, i) => S.sel.add(i));
+        buildShell();
+        render();
+    })
+    .catch((err) => {
+        app.innerHTML = `<div class="loading-state" style="color: var(--rust);">Couldn't load the chart data.<br><small>${esc(err.message)}</small></div>`;
+    });
+
+})();
+</script>
+
+</body>
+</html>

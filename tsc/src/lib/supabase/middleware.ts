@@ -30,7 +30,9 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // trades-theme, trade-desk/settings POST, ...) still enforce owner/editor
 // auth inside their own handlers — bypassing the middleware redirect just
 // keeps an unauthenticated GET from being bounced to /login as HTML.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/hub/', '/api/hub/']
+// `/api/mock-board` is the Mock Room's player board (league-agnostic
+// redraft values) — the almanac page fetching it is public.
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/hub/', '/api/hub/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
