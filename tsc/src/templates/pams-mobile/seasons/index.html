@@ -115,7 +115,7 @@
             }
             if (featured) {
                 document.getElementById('feature').innerHTML =
-                    '<a class="m-card se-feature" href="seasons/season.html?year=' + featured.year + '">' +
+                    '<a class="m-card se-feature" href="seasons/season?year=' + featured.year + '">' +
                         '<div class="m-kicker">Latest Chronicle</div>' +
                         '<div class="se-feature-year">' + featured.year + '</div>' +
                         '<div class="se-feature-champ"><em>' + esc(featured.champion_name) + '</em> takes the crown</div>' +
@@ -136,7 +136,7 @@
                 var sub = partial
                     ? '<i>Partial records</i>'
                     : esc(s.champion_team_name || '') + ' · champion';
-                return '<a class="m-list-row se-row' + (partial ? ' se-row-partial' : '') + '" href="seasons/season.html?year=' + s.year + '">' +
+                return '<a class="m-list-row se-row' + (partial ? ' se-row-partial' : '') + '" href="seasons/season?year=' + s.year + '">' +
                     '<span class="se-year">' + s.year + '</span>' +
                     '<span class="se-row-name">' + esc(s.champion_name || '—') + '<small>' + sub + '</small></span>' +
                     '<span class="se-row-rec">' + esc(s.champion_record || '') + '</span>' +

@@ -969,7 +969,7 @@ function chipBadges(m) {
 
 function cellValue(key, m, leagueAvgPct) {
     switch (key) {
-        case 'name': return `<a href="managers/manager.html?id=${m.user_id}">${m.name}</a><span class="expand-caret">▾</span>`;
+        case 'name': return `<a href="managers/manager?id=${m.user_id}">${m.name}</a><span class="expand-caret">▾</span>`;
         case 'team': return m.team_latest;
         case 'reg_record': return m.reg_record;
         case 'po_record':  return m.playoff_record;
@@ -1065,7 +1065,7 @@ function buildDetail(m) {
                 <div class="detail-stat-sub">${st.s}</div>
             </div>`).join('')}
         </div>
-        <a class="detail-profile-link" href="managers/manager.html?id=${m.user_id}">Full profile</a>
+        <a class="detail-profile-link" href="managers/manager?id=${m.user_id}">Full profile</a>
     </div>`;
 }
 
@@ -1212,7 +1212,7 @@ document.getElementById('preset-options').addEventListener('click', (e) => {
    ============================================================ */
 function buildDistinctions() {
     const cards = [];
-    const link = m => `managers/manager.html?id=${m.user_id}`;
+    const link = m => `managers/manager?id=${m.user_id}`;
     const maxSeasonYear = Math.max(...(leagueMeta?.all_seasons ?? [0]));
 
     // The Dynasty: most chips, needs 2+.

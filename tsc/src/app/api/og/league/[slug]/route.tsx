@@ -186,8 +186,11 @@ export async function GET(
       break
     }
     case 'records': {
-      const rb = bundle['record_book.json'] as { highest_single_week_score?: RecordEntry[] } | undefined
-      const top = rb?.highest_single_week_score?.[0]
+      // record_book.json nests categories: { hub_records, full_book: { weekly: {...} } }
+      const rb = bundle['record_book.json'] as
+        | { full_book?: { weekly?: { highest_single_week_score?: RecordEntry[] } } }
+        | undefined
+      const top = rb?.full_book?.weekly?.highest_single_week_score?.[0]
       if (top) return renderRecordsCard(data, top, fonts)
       break
     }
@@ -218,12 +221,13 @@ export async function GET(
 }
 
 /* ============================================================
-   THE STANDINGS — cream ledger paper, ink type, steel ranks.
-   Matches standings.html: cream body, ink nav, gold-deep italic.
+   THE STANDINGS — cream ledger paper, ink type, and a winners'
+   podium for the top three career records. Matches standings.html:
+   cream body, ink nav, gold-deep italic.
    ============================================================ */
 function renderStandingsCard(d: LeagueFile, managers: DirectoryManager[], fonts: Fonts) {
   const founded = d.founded ?? d.current_season ?? new Date().getFullYear()
-  const top = managers.slice(0, 4)
+  const top3 = managers.slice(0, 3)
   const stats = [
     `EST. ${founded}`,
     d.total_seasons != null ? `${d.total_seasons} SEASON${d.total_seasons === 1 ? '' : 'S'}` : null,
@@ -341,84 +345,105 @@ function renderStandingsCard(d: LeagueFile, managers: DirectoryManager[], fonts:
             </div>
           </div>
 
-          {/* Right — the ledger table itself */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              width: '400px',
-              background: '#faf3e2',
-              border: '1px solid rgba(14,22,32,0.4)',
-              boxShadow: '0 20px 50px rgba(14,22,32,0.22)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '14px 22px',
-                background: INK,
-                color: CREAM,
-                fontSize: '12px',
-                fontWeight: 700,
-                letterSpacing: '0.3em',
-                textTransform: 'uppercase',
-              }}
-            >
-              <span style={{ display: 'flex' }}>The All-Time Ledger</span>
-              <span style={{ display: 'flex', color: GOLD }}>Fol. 1</span>
+          {/* Right — the winners' podium, top three by career wins */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '440px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '14px' }}>
+              {[
+                { m: top3[1], place: 2, h: 148, color: STEEL },
+                { m: top3[0], place: 1, h: 214, color: GOLD_DEEP },
+                { m: top3[2], place: 3, h: 112, color: RUST },
+              ]
+                .filter((p) => p.m)
+                .map((p) => (
+                  <div key={p.place} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '134px' }}>
+                    {p.place === 1 && (
+                      <div style={{ display: 'flex', marginBottom: '8px' }}>
+                        <Star size={22} color={GOLD_DEEP} />
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        display: 'flex',
+                        fontFamily: 'DMSerif',
+                        fontSize: p.place === 1 ? '27px' : '23px',
+                        color: INK,
+                      }}
+                    >
+                      {clip(p.m!.name, 10)}
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        color: '#55482e',
+                        marginTop: '3px',
+                        marginBottom: '10px',
+                      }}
+                    >
+                      {p.m!.total_record}
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '134px',
+                        height: `${p.h}px`,
+                        background: `linear-gradient(180deg, ${p.color} 0%, ${p.color} 62%, rgba(14,22,32,0.35) 160%)`,
+                        boxShadow: '0 14px 30px rgba(14,22,32,0.25)',
+                        borderRadius: '3px 3px 0 0',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          fontFamily: 'DMSerif',
+                          fontStyle: 'italic',
+                          fontSize: p.place === 1 ? '64px' : '48px',
+                          color: CREAM,
+                        }}
+                      >
+                        {p.place}
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          letterSpacing: '0.26em',
+                          textTransform: 'uppercase',
+                          color: 'rgba(244,235,216,0.75)',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {pct(p.m!.win_pct)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
             </div>
-
-            {top.map((m, i) => (
-              <div
-                key={m.name}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  padding: '15px 22px',
-                  borderBottom: i < top.length - 1 ? '1px dashed rgba(14,22,32,0.28)' : 'none',
-                  background: i === 0 ? 'rgba(232,200,137,0.28)' : 'transparent',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    width: '34px',
-                    fontFamily: 'DMSerif',
-                    fontStyle: 'italic',
-                    fontSize: '26px',
-                    color: i === 0 ? GOLD_DEEP : STEEL,
-                  }}
-                >
-                  {i + 1}
-                </div>
-                <div style={{ flex: 1, display: 'flex', fontFamily: 'DMSerif', fontSize: '25px', color: INK }}>
-                  {clip(m.name, 14)}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                  <div style={{ display: 'flex', fontSize: '15px', fontWeight: 700, color: INK }}>
-                    {m.total_record}
-                  </div>
-                  <div style={{ display: 'flex', fontSize: '11px', color: CREAM_MUTE, marginTop: '2px' }}>
-                    {pct(m.win_pct)}
-                  </div>
-                </div>
-              </div>
-            ))}
-
+            {/* Podium base */}
             <div
               style={{
                 display: 'flex',
-                justifyContent: 'center',
-                padding: '11px 22px',
-                borderTop: '1px solid rgba(14,22,32,0.4)',
-                fontSize: '10px',
+                width: '440px',
+                height: '12px',
+                background: INK,
+                borderRadius: '2px',
+              }}
+            />
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '11px',
                 fontWeight: 700,
-                letterSpacing: '0.26em',
+                letterSpacing: '0.28em',
                 textTransform: 'uppercase',
                 color: CREAM_MUTE,
+                marginTop: '14px',
               }}
             >
               Ranked by career wins
@@ -1304,17 +1329,24 @@ function renderSeasonsCard(d: LeagueFile, seasons: SeasonEntry[], fonts: Fonts) 
   const PLANK = '#2b1812'
 
   const founded = d.founded ?? seasons[0]?.year ?? new Date().getFullYear()
-  // Latest 8 volumes fit the shelf; volume numbers stay true to the full run.
-  const MAX_BOOKS = 8
+  // Latest 5 volumes fit the compact shelf; volume numbers stay true to
+  // the full run.
+  const MAX_BOOKS = 5
   const offset = Math.max(0, seasons.length - MAX_BOOKS)
   const shelf = seasons.slice(-MAX_BOOKS)
   // Deterministic height variation so the shelf reads hand-filled.
-  const HEIGHTS = [292, 268, 302, 278, 296, 272, 288, 282]
+  const HEIGHTS = [232, 212, 244, 220, 238]
 
   const bandText = (s: SeasonEntry): string => {
     const first = (s.champion_name ?? '').trim().split(/\s+/)[0] ?? ''
-    return first ? clip(first, 9) : 'Champion'
+    return first ? clip(first, 8) : 'Champ'
   }
+
+  const stats = [
+    `${seasons.length} VOLUME${seasons.length === 1 ? '' : 'S'}`,
+    `${seasons.length} CHAMPION${seasons.length === 1 ? '' : 'S'} CROWNED`,
+    `EST. ${founded}`,
+  ].join('  ·  ')
 
   return new ImageResponse(
     (
@@ -1324,7 +1356,7 @@ function renderSeasonsCard(d: LeagueFile, seasons: SeasonEntry[], fonts: Fonts) 
           height: '630px',
           display: 'flex',
           flexDirection: 'column',
-          background: `linear-gradient(180deg, ${INK_SOFT} 0%, ${INK} 62%, ${INK_DEEP} 100%)`,
+          background: `linear-gradient(155deg, ${INK_SOFT} 0%, ${INK} 55%, ${INK_DEEP} 100%)`,
           color: CREAM,
           fontFamily: 'JetBrains',
           position: 'relative',
@@ -1335,136 +1367,188 @@ function renderSeasonsCard(d: LeagueFile, seasons: SeasonEntry[], fonts: Fonts) 
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            background: `radial-gradient(ellipse at 50% 26%, ${GOLD}1e 0%, transparent 52%)`,
+            background: `radial-gradient(circle at 78% 55%, ${GOLD}1c 0%, transparent 46%), radial-gradient(circle at 22% 30%, ${GOLD}18 0%, transparent 44%)`,
           }}
         />
 
-        <div style={{ display: 'flex', height: '12px', background: GOLD }} />
+        <div style={{ display: 'flex', height: '14px', background: GOLD }} />
 
-        {/* Masthead */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '30px' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              fontSize: '14px',
-              fontWeight: 700,
-              letterSpacing: '0.4em',
-              textTransform: 'uppercase',
-              color: GOLD,
-            }}
-          >
-            <Star size={13} color={GOLD} />
-            <span style={{ display: 'flex' }}>{clip(d.name, 30)} · Est. {founded}</span>
-            <Star size={13} color={GOLD} />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '20px', marginTop: '12px' }}>
-            <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '72px', lineHeight: 1, color: CREAM }}>Season</span>
-            <span style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '72px', lineHeight: 1, color: GOLD }}>Archives.</span>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              fontFamily: 'DMSerif',
-              fontStyle: 'italic',
-              fontSize: '22px',
-              color: CREAM_SOFT,
-              marginTop: '12px',
-            }}
-          >
-            {seasons.length} volume{seasons.length === 1 ? '' : 's'}, bound and shelved.
-          </div>
-        </div>
-
-        {/* The shelf */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '16px', padding: '0 60px' }}>
-          {shelf.map((s, i) => (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 64px 0 84px', gap: '30px' }}>
+          {/* Left — masthead */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div
-              key={s.year}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                fontSize: '16px',
+                fontWeight: 700,
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                color: GOLD,
+              }}
+            >
+              <Star size={15} color={GOLD} />
+              <span style={{ display: 'flex' }}>The League Library</span>
+              <Star size={15} color={GOLD} />
+            </div>
+
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '92px', lineHeight: 1.02, color: CREAM, marginTop: '24px' }}>
+              Season
+            </div>
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '92px', lineHeight: 1.02, color: GOLD }}>
+              Archives.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: '120px',
+                height: '3px',
+                background: `linear-gradient(90deg, ${GOLD_DEEP}, transparent)`,
+                marginTop: '28px',
+              }}
+            />
+
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '30px',
+                lineHeight: 1.35,
+                color: CREAM_SOFT,
+                marginTop: '22px',
+                maxWidth: '560px',
+              }}
+            >
+              Season by season through {clip(d.name, 26)} — bound and shelved.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '15px',
+                fontWeight: 700,
+                letterSpacing: '0.28em',
+                textTransform: 'uppercase',
+                color: CREAM_MUTE,
+                marginTop: '30px',
+              }}
+            >
+              {stats}
+            </div>
+          </div>
+
+          {/* Right — the bookcase */}
+          <div style={{ display: 'flex', flexDirection: 'column', width: '440px' }}>
+            <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
-                width: '96px',
-                height: `${HEIGHTS[i % HEIGHTS.length]}px`,
-                background: `linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 7%, transparent 15%, transparent 82%, rgba(0,0,0,0.35) 92%, rgba(0,0,0,0.5) 100%), linear-gradient(180deg, ${MAHOG_LITE} 0%, ${MAHOG} 30%, ${MAHOG_DEEP} 100%)`,
-                borderRadius: '3px 7px 7px 3px',
-                boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.06), 0 6px 14px rgba(0,0,0,0.45)',
-                overflow: 'hidden',
+                background: `linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 34%), ${INK_CARD}`,
+                border: `1px solid ${INK_LINE}`,
+                boxShadow: '0 24px 60px rgba(0,0,0,0.55)',
+                padding: '26px 20px 0',
               }}
             >
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '12px' }}>
+                {shelf.map((s, i) => (
+                  <div
+                    key={s.year}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      width: '68px',
+                      height: `${HEIGHTS[i % HEIGHTS.length]}px`,
+                      background: `linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 7%, transparent 15%, transparent 82%, rgba(0,0,0,0.35) 92%, rgba(0,0,0,0.5) 100%), linear-gradient(180deg, ${MAHOG_LITE} 0%, ${MAHOG} 30%, ${MAHOG_DEEP} 100%)`,
+                      borderRadius: '2px 6px 6px 2px',
+                      boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.06), 0 5px 12px rgba(0,0,0,0.45)',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', width: '68%', marginTop: '10px' }}>
+                      <div style={{ display: 'flex', height: '1px', background: 'rgba(232,200,137,0.55)' }} />
+                      <div style={{ display: 'flex', height: '1px', background: 'rgba(232,200,137,0.25)', marginTop: '2px' }} />
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        fontSize: '8px',
+                        fontWeight: 700,
+                        letterSpacing: '0.18em',
+                        textTransform: 'uppercase',
+                        color: GOLD,
+                        marginTop: '7px',
+                      }}
+                    >
+                      {toRoman(offset + i + 1)}
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          transform: 'rotate(90deg)',
+                          fontFamily: 'DMSerif',
+                          fontStyle: 'italic',
+                          fontSize: '28px',
+                          letterSpacing: '0.08em',
+                          color: GOLD_BRIGHT,
+                        }}
+                      >
+                        {s.year}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        width: '100%',
+                        justifyContent: 'center',
+                        padding: '6px 3px',
+                        background: GOLD_DEEP,
+                        color: 'rgba(10,10,12,0.85)',
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {bandText(s)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* The plank */}
               <div
                 style={{
                   display: 'flex',
-                  flexDirection: 'column',
-                  width: '70%',
-                  marginTop: '13px',
+                  height: '18px',
+                  margin: '0 -20px',
+                  background: `linear-gradient(180deg, #4a2c1c 0%, ${PLANK} 35%, #1a0d08 100%)`,
+                  borderTop: '1px solid rgba(255,255,255,0.12)',
+                  boxShadow: '0 -6px 14px rgba(0,0,0,0.35)',
                 }}
-              >
-                <div style={{ display: 'flex', height: '1px', background: 'rgba(232,200,137,0.55)' }} />
-                <div style={{ display: 'flex', height: '1px', background: 'rgba(232,200,137,0.25)', marginTop: '2px' }} />
-              </div>
+              />
+            </div>
+            {offset > 0 && (
               <div
                 style={{
                   display: 'flex',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  letterSpacing: '0.22em',
-                  textTransform: 'uppercase',
-                  color: GOLD,
-                  marginTop: '9px',
-                }}
-              >
-                Vol. {toRoman(offset + i + 1)}
-              </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    transform: 'rotate(90deg)',
-                    fontFamily: 'DMSerif',
-                    fontStyle: 'italic',
-                    fontSize: '38px',
-                    letterSpacing: '0.1em',
-                    color: GOLD_BRIGHT,
-                  }}
-                >
-                  {s.year}
-                </div>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  width: '100%',
                   justifyContent: 'center',
-                  padding: '8px 4px',
-                  background: GOLD_DEEP,
-                  color: 'rgba(10,10,12,0.85)',
                   fontSize: '10px',
                   fontWeight: 700,
-                  letterSpacing: '0.12em',
+                  letterSpacing: '0.26em',
                   textTransform: 'uppercase',
+                  color: CREAM_MUTE,
+                  marginTop: '12px',
                 }}
               >
-                {bandText(s)}
+                + {offset} earlier volume{offset === 1 ? '' : 's'}
               </div>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
-
-        {/* The plank */}
-        <div
-          style={{
-            display: 'flex',
-            height: '24px',
-            background: `linear-gradient(180deg, #4a2c1c 0%, ${PLANK} 35%, #1a0d08 100%)`,
-            borderTop: '1px solid rgba(255,255,255,0.12)',
-            boxShadow: '0 -8px 18px rgba(0,0,0,0.4)',
-          }}
-        />
 
         {/* Bottom strip */}
         <div

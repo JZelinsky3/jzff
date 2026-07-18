@@ -147,7 +147,7 @@
         return out;
     }
     function mgrHref(uid) {
-        return 'managers/manager.html?id=' + encodeURIComponent(uid);
+        return 'managers/manager?id=' + encodeURIComponent(uid);
     }
 
     var grab = function (path) {
@@ -182,8 +182,8 @@
         var next = idx >= 0 && idx < years.length - 1 ? years[idx + 1] : null;
         var prevEl = document.getElementById('prevYear');
         var nextEl = document.getElementById('nextYear');
-        if (prev) { prevEl.setAttribute('href', 'seasons/season.html?year=' + prev); prevEl.removeAttribute('aria-disabled'); }
-        if (next) { nextEl.setAttribute('href', 'seasons/season.html?year=' + next); nextEl.removeAttribute('aria-disabled'); }
+        if (prev) { prevEl.setAttribute('href', 'seasons/season?year=' + prev); prevEl.removeAttribute('aria-disabled'); }
+        if (next) { nextEl.setAttribute('href', 'seasons/season?year=' + next); nextEl.removeAttribute('aria-disabled'); }
     }
 
     function renderSeason(s) {

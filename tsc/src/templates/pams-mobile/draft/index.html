@@ -347,7 +347,7 @@
             var rounds = Object.keys(byRound).map(Number).sort(function (a, b) { return a - b; });
 
             var html =
-                '<a class="m-card dr-first" href="managers/manager.html?id=' + encodeURIComponent(first.user_id) + '">' +
+                '<a class="m-card dr-first" href="managers/manager?id=' + encodeURIComponent(first.user_id) + '">' +
                     '<div class="m-kicker">' + year + ' · First Overall</div>' +
                     '<div class="dr-first-player"><em>' + esc(first.player_name) + '</em></div>' +
                     '<div class="m-mono" style="margin-top:.3rem">' +
@@ -376,7 +376,7 @@
 
     function pickRow(p) {
         var posCls = /^(QB|RB|WR|TE)$/.test(p.position || '') ? ' dr-pos--' + p.position : '';
-        return '<a class="m-list-row dr-pick" href="managers/manager.html?id=' + encodeURIComponent(p.user_id) + '">' +
+        return '<a class="m-list-row dr-pick" href="managers/manager?id=' + encodeURIComponent(p.user_id) + '">' +
             '<span class="dr-pick-no">' + p.overall_pick + '</span>' +
             '<span class="dr-player">' + esc(p.player_name) +
                 '<small>' + esc(p.manager_name) + (p.team_name ? ' · ' + esc(p.team_name) : '') + '</small></span>' +
@@ -439,7 +439,7 @@
             if (!current.length) { current = mgrs; alumni = []; }
 
             function mgrCard(m) {
-                return '<a class="m-card" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+                return '<a class="m-card" href="managers/manager?id=' + encodeURIComponent(m.user_id) + '">' +
                     '<div class="dr-r1-mgr">' + esc(m.name) + '</div>' +
                     '<div class="dr-r1-picks">' +
                     m.picks.sort(function (x, y) { return y.year - x.year; }).map(function (p) {
@@ -540,7 +540,7 @@
                                 String(pp.round_pick == null ? '?' : pp.round_pick).padStart(2, '0');
                         }).join(' · ') + '</div>';
                 }).join('');
-                return '<a class="m-card" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+                return '<a class="m-card" href="managers/manager?id=' + encodeURIComponent(m.user_id) + '">' +
                     '<div class="dr-r1-mgr dr-loyal-mgr">' + esc(m.name) + '</div>' +
                     (favHtml || '<div class="dr-loyal-years m-mono" style="margin-top:.4rem">No picks recorded.</div>') +
                     (teams.length
@@ -577,7 +577,7 @@
                             ? '<span class="dr-finish' + (fin === 1 ? ' is-champ' : '') + '">' +
                                 (fin === 1 ? 'Won title' : 'Fin. ' + ord(fin)) + '</span>'
                             : '';
-                        return '<a class="m-list-row dr-pick" href="managers/manager.html?id=' + encodeURIComponent(p.user_id) + '">' +
+                        return '<a class="m-list-row dr-pick" href="managers/manager?id=' + encodeURIComponent(p.user_id) + '">' +
                             '<span class="dr-pick-no">' + p.round_pick + '</span>' +
                             '<span class="dr-player">' + esc(p.manager_name) +
                                 '<small>took ' + esc(p.player_name) + '</small></span>' +

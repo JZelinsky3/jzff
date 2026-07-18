@@ -24,7 +24,7 @@
  *   • tier strip     — slim variant of nav.js's testing strip
  *
  * IMPORTANT: every almanac page carries <base href="/leagues/<slug>/">, so
- * relative hrefs ("standings.html", "managers/") work from any subdirectory —
+ * relative hrefs ("standings", "managers/") work from any subdirectory —
  * but "#" and "?view=..." would ALSO resolve against the base and silently
  * navigate to the league root. Actions are <button>s; the view toggle builds
  * its href from location.pathname + search.
@@ -570,7 +570,7 @@
             '<div class="m-sheet-handle" aria-hidden></div>' +
             '<div class="m-sheet-title">League History</div>' +
             sheetRow('seasons/', 'Season Archives') +
-            sheetRow('records.html', 'Record Book', { locked: udfa }) +
+            sheetRow('records', 'Record Book', { locked: udfa }) +
             sheetRow('draft/', 'Draft History', { locked: udfa });
 
         // Live-mode sheets — the Week and Desks tabs' targets.
@@ -641,14 +641,14 @@
               sheetRow('rivalries/', 'Rivalries') +
               '<div class="m-sheet-divider"></div>' +
               '<span class="m-sheet-label">With a paid plan</span>' +
-              sheetRow('records.html', 'Record Book', { locked: true }) +
+              sheetRow('records', 'Record Book', { locked: true }) +
               sheetRow('draft/', 'Draft History', { locked: true }) +
               sheetRow('live/', 'Live Season', { locked: true })
             : liveMode
             ? '<span class="m-sheet-label">The Almanac</span>' +
-              sheetRow('standings.html', 'Standings') +
+              sheetRow('standings', 'Standings') +
               sheetRow('seasons/', 'Season Archives') +
-              sheetRow('records.html', 'Record Book') +
+              sheetRow('records', 'Record Book') +
               sheetRow('draft/', 'Draft History') +
               sheetRow('managers/', 'Managers') +
               sheetRow('rivalries/', 'Rivalries')
@@ -922,12 +922,12 @@
               tab('more', 'More', '', true)
             : udfa
             ? tab('home', 'Home', './') +
-              tab('standings', 'Standings', 'standings.html') +
+              tab('standings', 'Standings', 'standings') +
               tab('history', 'History', 'seasons/') +
               tab('managers', 'Managers', 'managers/') +
               tab('more', 'More', '', true)
             : tab('home', 'Home', './') +
-              tab('standings', 'Standings', 'standings.html') +
+              tab('standings', 'Standings', 'standings') +
               tab('history', 'History', '', true) +
               tab('live', 'Live', 'live/') +
               tab('more', 'More', '', true);

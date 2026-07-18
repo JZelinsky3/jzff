@@ -852,10 +852,21 @@ function notFoundHtml(slug: string): string {
 // Pages whose canonical URL is extensionless. Key = the old .html request
 // path, value = the clean address it 301s to. The templates keep their .html
 // filenames; resolveRequest's fallback maps the clean URL back to the file.
+// Directory indexes 301 to their trailing-slash form for the same reason.
 const CLEAN_URL_PAGES: Record<string, string> = {
   'draft/mock.html': 'draft/mock',
   'managers/all-time.html': 'managers/all-time',
   'managers/visualizer.html': 'managers/visualizer',
+  'standings.html': 'standings',
+  'records.html': 'records',
+  'managers/manager.html': 'managers/manager',
+  'seasons/season.html': 'seasons/season',
+  'rivalries/rivalry.html': 'rivalries/rivalry',
+  'index.html': '',
+  'managers/index.html': 'managers/',
+  'seasons/index.html': 'seasons/',
+  'draft/index.html': 'draft/',
+  'rivalries/index.html': 'rivalries/',
 }
 
 // Block traversal: only allow paths that stay inside the given template root.

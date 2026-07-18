@@ -51,7 +51,7 @@
     // ── In-archive page registry (relative paths within /leagues/<slug>/) ──
     var PAGES = [
         { key: 'hub',       label: 'Hub',         path: './' },
-        { key: 'standings', label: 'Standings',   path: 'standings.html' },
+        { key: 'standings', label: 'Standings',   path: 'standings' },
         {
             isGroup: true, label: 'Live Season',
             items: [
@@ -76,7 +76,7 @@
             isGroup: true, label: 'League History',
             items: [
                 { key: 'seasons', label: 'Season Archives', path: 'seasons/' },
-                { key: 'records', label: 'Record Book',     path: 'records.html' },
+                { key: 'records', label: 'Record Book',     path: 'records' },
                 { key: 'draft',   label: 'Draft History',   path: 'draft/' },
             ]
         },
@@ -84,7 +84,7 @@
 
     // All in-archive paths are slug-rooted because the route handler injects
     // <base href="/leagues/<slug>/">. Returning '' here keeps links simple:
-    // "standings.html", "managers/", etc. all resolve correctly
+    // "standings", "managers/", etc. all resolve correctly
     // regardless of which subdirectory the user is currently viewing.
     function archiveRoot() {
         return '';
@@ -125,11 +125,11 @@
     // server resolves that from the league's current live season settings.
     var CHAPBAR_ITEMS = [
         { key: 'hub',         label: 'Home',      path: './' },
-        { key: 'standings',   label: 'Standings', path: 'standings.html' },
+        { key: 'standings',   label: 'Standings', path: 'standings' },
         { key: 'managers',    label: 'Managers',  path: 'managers/' },
         { key: 'seasons',     label: 'Seasons',   path: 'seasons/' },
         { key: 'draft',       label: 'Drafts',    path: 'draft/' },
-        { key: 'records',     label: 'Records',   path: 'records.html' },
+        { key: 'records',     label: 'Records',   path: 'records' },
         { key: 'rivalries',   label: 'Rivalries', path: 'rivalries/' },
         { key: 'live', label: 'Live',      path: 'live/' }
     ];

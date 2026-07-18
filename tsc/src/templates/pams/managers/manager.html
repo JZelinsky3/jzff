@@ -1473,7 +1473,7 @@ function renderRecordsRail(recordBook, uid, name) {
     }
     var mentionsLine = scan.mentions > 0
         ? '<p class="rec-mentions">' + scan.mentions + ' top-ten ' + (scan.mentions === 1 ? 'entry' : 'entries') +
-          ' across the ledgers. <a href="records.html">Open the record book</a></p>'
+          ' across the ledgers. <a href="records">Open the record book</a></p>'
         : '';
     return '' +
         '<div class="rail-card fs-reveal">' +
@@ -1840,7 +1840,7 @@ function renderProfile(m, top5, dnaEntry, dnaAvailable, recordBook, currentForm,
         '<div class="rail-card fs-reveal">' +
             '<div class="rail-head"><span>Cross-References</span></div>' +
             '<a class="xref-link" href="managers/all-time?id=' + encodeURIComponent(userId) + '">The All-Time Team<span class="sub">team sheet</span></a>' +
-            '<a class="xref-link" href="records.html">The Record Book<span class="sub">every mark</span></a>' +
+            '<a class="xref-link" href="records">The Record Book<span class="sub">every mark</span></a>' +
             '<a class="xref-link" href="draft/">The Draft Annual<span class="sub">full dossier</span></a>' +
             '<a class="xref-link" href="rivalries/">The Rivalries<span class="sub">grudge files</span></a>' +
         '</div>';

@@ -290,7 +290,7 @@
                 <div class="m-kicker">All-Time</div>
                 <h2 class="m-h2">The <em>Table.</em></h2>
             </div>
-            <a class="m-section-link" href="standings.html">Full standings</a>
+            <a class="m-section-link" href="standings">Full standings</a>
         </div>
         <div class="m-list" id="standingsList"></div>
     </section>
@@ -301,9 +301,9 @@
                 <div class="m-kicker">From the Record Book</div>
                 <h2 class="m-h2">For the <em>ages.</em></h2>
             </div>
-            <a class="m-section-link" href="records.html">All records</a>
+            <a class="m-section-link" href="records">All records</a>
         </div>
-        <a class="m-card" href="records.html" id="recordCard">
+        <a class="m-card" href="records" id="recordCard">
             <div class="m-record-value" id="recordValue"></div>
             <div class="m-record-name" id="recordName"></div>
             <div class="m-mono" id="recordDetail" style="margin-top:.3rem"></div>
@@ -444,7 +444,7 @@
         var ch = league && league.defending_champion;
         if (!ch) return;
         document.getElementById('champSection').hidden = false;
-        document.getElementById('champCard').setAttribute('href', 'seasons/season.html?year=' + ch.year);
+        document.getElementById('champCard').setAttribute('href', 'seasons/season?year=' + ch.year);
         document.getElementById('champKicker').textContent = ch.year + ' · Defending Champion';
         document.getElementById('champName').innerHTML = '<em>' + esc(ch.owner_name) + '</em>';
         document.getElementById('champMeta').textContent = ch.team_name;
@@ -469,7 +469,7 @@
         document.getElementById('standingsSection').hidden = false;
         document.getElementById('standingsList').innerHTML = ranked.map(function (m, i) {
             var rings = m.championships ? '<span class="m-standrow-rings">' + '✦'.repeat(Math.min(m.championships, 4)) + '</span>' : '';
-            return '<a class="m-list-row" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+            return '<a class="m-list-row" href="managers/manager?id=' + encodeURIComponent(m.user_id) + '">' +
                 '<span class="m-standrow-rank">' + (i + 1) + '</span>' +
                 '<span class="m-standrow-name">' + esc(m.name) + '<small>' + esc(m.team_latest || '') + '</small></span>' +
                 rings +
@@ -517,7 +517,7 @@
                 ? '<img src="' + esc(m.avatar) + '" alt="" loading="lazy" onerror="this.remove()">'
                 : '';
             var sub = m.championships ? m.championships + '× champ' : fmtRec(m.total_record || '');
-            return '<a class="m-mgr-chip' + (m.championships ? ' is-champ' : '') + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+            return '<a class="m-mgr-chip' + (m.championships ? ' is-champ' : '') + '" href="managers/manager?id=' + encodeURIComponent(m.user_id) + '">' +
                 '<div class="m-mgr-ava">' + esc(initial) + img + '</div>' +
                 '<div class="m-mgr-chip-name">' + esc(m.name) + '</div>' +
                 '<div class="m-mgr-chip-sub">' + esc(sub) + '</div>' +
@@ -541,7 +541,7 @@
             var sub = r.is_deadlocked
                 ? 'Dead even after ' + r.total_meetings
                 : esc(r.leader_name) + ' leads · ' + r.total_meetings + (r.total_meetings === 1 ? ' meeting' : ' meetings');
-            return '<a class="m-card" href="rivalries/rivalry.html?id=' + encodeURIComponent(r.id) + '">' +
+            return '<a class="m-card" href="rivalries/rivalry?id=' + encodeURIComponent(r.id) + '">' +
                 '<div class="m-kicker">' + esc(r.name) + '</div>' +
                 '<div class="m-riv-vs">' +
                     '<span class="m-riv-side"><b>' + esc(r.manager_a.name) + '</b></span>' +
@@ -578,7 +578,7 @@
         list = list.slice().sort(function (a, b) { return b.year - a.year; });
         document.getElementById('seasonsSection').hidden = false;
         document.getElementById('seasonsList').innerHTML = list.map(function (s) {
-            return '<a class="m-list-row" href="seasons/season.html?year=' + s.year + '">' +
+            return '<a class="m-list-row" href="seasons/season?year=' + s.year + '">' +
                 '<span class="m-season-year">' + s.year + '</span>' +
                 '<span class="m-standrow-name">' + esc(s.champion_name) + '<small>' + esc(s.champion_team_name || '') + ' · champion</small></span>' +
                 '<span class="m-standrow-rec">' + esc(s.champion_record || '') + '</span>' +

@@ -3497,11 +3497,13 @@ var TIER_FROM = 8; // ladder splices onto the points value at this rank
 // Same idea on the flex board: FLEX 2 -> 3 (Bijan 25) is a hit, not a miss.
 var DELTA_DOWN_ELITE = 0.2;
 var FLX_ELITE = 6;
-// Paid a top-6 flex price AND delivered a top-6 flex season at or below the
-// slot: a weekly anchor you never had to think about. Raw VOR reads that as
-// a push (Bijan 25, FLEX 2 -> 3, barely +200); the premium calls it what it
-// was — a hit. Finishes ABOVE the slot don't need it: the up-move already
-// pays in full (CMC 19 at +539 with it was gilding the lily).
+// Paid a top-6 flex price AND delivered a top-6 flex season: a weekly anchor
+// you never had to think about. Raw VOR reads a met slot as a push (Bijan 25,
+// FLEX 2 -> 3, barely +200), so the anchor guarantees at least this much
+// reward on top of baseline — as a TOP-UP, not a flat add: the up-move delta
+// counts toward it, so a monster season that already out-earned the guarantee
+// gets nothing extra (CMC 19 stays +519) and finishing one slot better can
+// never score lower than meeting the slot.
 var FLX_ANCHOR_BONUS = 20;
 // Totals hide missed time on the way up too: a climber who out-earned his
 // slot in fewer games (Adams 25, FLEX 42 -> 24 in 14 games) gets a small
@@ -3709,12 +3711,12 @@ function computeGrader() {
                 var missedG = Math.max(0, (y >= 2021 ? 17 : 16) - fin.gp);
                 if (missedG) score *= 1 + CLIMB_GP_W * Math.min(missedG, CLIMB_GP_MAX);
             }
-            // Elite anchor premium (see FLX_ANCHOR_BONUS). Met-or-slipped
-            // only: up-moves are already paid by the delta term.
+            // Elite anchor premium (see FLX_ANCHOR_BONUS): top up whatever
+            // the up-move delta already paid to the guaranteed minimum.
             if (isFlex && dr >= 1 && dr <= FLX_ELITE
-                && flexFinalRank[nn] && flexFinalRank[nn] <= FLX_ELITE
-                && flexFinalRank[nn] >= dr) {
-                score += FLX_ANCHOR_BONUS;
+                && flexFinalRank[nn] && flexFinalRank[nn] <= FLX_ELITE) {
+                var upPaid = DELTA_UP.FLX * Math.max(0, actualVor - expVor);
+                score += Math.max(0, FLX_ANCHOR_BONUS - upPaid);
             }
             var mgr = d.manager_name;
             byMgrYear[mgr] = byMgrYear[mgr] || {};

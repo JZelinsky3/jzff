@@ -1594,7 +1594,7 @@ main { position: relative; z-index: 1; }
         // served with <base href="/leagues/<slug>/"> so relative paths
         // resolve against the league root — use a base-relative href
         // rather than walking up directories.
-        const profileHref = m.uid ? `managers/manager.html?id=${m.uid}` : null;
+        const profileHref = m.uid ? `managers/manager?id=${m.uid}` : null;
 
         // Compare key — uid when we have one, otherwise fall back to the
         // display name. Stable enough across re-renders and unique across
@@ -1638,7 +1638,7 @@ main { position: relative; z-index: 1; }
     // grid cell wider than the content would split the pair toward opposite
     // edges and the archetype could read as belonging to the next column.
     function renderAlumniItem(m) {
-        const href = m.uid ? `managers/manager.html?id=${m.uid}` : null;
+        const href = m.uid ? `managers/manager?id=${m.uid}` : null;
         const inner = `
             <span class="dna-alumni-name">${escapeHtml(m.name)}</span>
             <span class="dna-alumni-sep">·</span>

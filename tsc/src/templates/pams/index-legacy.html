@@ -888,7 +888,7 @@ table.data tbody tr.highlight {
      data-page="hub"
      data-chapter="{{LEAGUE_NAME_UPPER}} · VOL. 02"
      data-right-label="Standings"
-     data-right-href="standings.html"></nav>
+     data-right-href="standings"></nav>
 <script src="/pams-template/assets/js/nav.js"></script>
 
 <!-- HERO -->
@@ -943,7 +943,7 @@ table.data tbody tr.highlight {
 
         <div class="toc-body">
 
-        <a href="standings.html" class="toc-row">
+        <a href="standings" class="toc-row">
             <div class="toc-chapter">Ch. I</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">All-Time <em>Standings.</em></div>
@@ -953,7 +953,7 @@ table.data tbody tr.highlight {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="managers/index.html" class="toc-row">
+        <a href="managers/" class="toc-row">
             <div class="toc-chapter">Ch. II</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">The <em>Society.</em></div>
@@ -963,7 +963,7 @@ table.data tbody tr.highlight {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="seasons/index.html" class="toc-row">
+        <a href="seasons/" class="toc-row">
             <div class="toc-chapter">Ch. III</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">Season <em>Archives.</em></div>
@@ -973,7 +973,7 @@ table.data tbody tr.highlight {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="records.html" class="toc-row">
+        <a href="records" class="toc-row">
             <div class="toc-chapter">Ch. IV</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">Record <em>Book.</em></div>
@@ -1007,7 +1007,7 @@ table.data tbody tr.highlight {
           })();
         </script>
 
-        <a href="draft/index.html" class="toc-row">
+        <a href="draft/" class="toc-row">
             <div class="toc-chapter">Ch. VI</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">Draft <em>History.</em></div>
@@ -1017,7 +1017,7 @@ table.data tbody tr.highlight {
             <div class="toc-arrow">→</div>
         </a>
 
-        <a href="rivalries/index.html" class="toc-row">
+        <a href="rivalries/" class="toc-row">
             <div class="toc-chapter">Ch. VII</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">The <em>Rivalries.</em></div>
@@ -1168,7 +1168,7 @@ table.data tbody tr.highlight {
           '<div class="champion-kicker">★ ' + escapeAttr(champ.year + ' · Reigning Champion') + ' ★</div>' +
           '<h2 class="champion-name">' + (teamHead ? escapeAttr(teamHead) + ' <em>' + escapeAttr(teamTail) + '.</em>' : '<em>' + escapeAttr(teamTail) + '.</em>') + '</h2>' +
           '<p class="champion-blurb"><strong>' + escapeAttr(champ.owner_name || '') + '</strong> claimed the ' + champ.year + ' title' + (champ.record ? ' — ' + escapeAttr(champ.record) : '') + (champ.points_for ? ' · ' + champ.points_for + ' PF' : '') + '.</p>' +
-          '<a href="seasons/season.html?year=' + champ.year + '" class="champion-link"><span>View the ' + champ.year + ' season</span><span class="arrow">→</span></a>' +
+          '<a href="seasons/season?year=' + champ.year + '" class="champion-link"><span>View the ' + champ.year + ' season</span><span class="arrow">→</span></a>' +
         '</div>';
     }
 

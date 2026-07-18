@@ -584,7 +584,7 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
 
         const num = String(idx + 1).padStart(3, '0');
         const seq = seqCode(m.archetype.key + '|' + m.name);
-        const profileHref = m.uid ? `managers/manager.html?id=${m.uid}` : null;
+        const profileHref = m.uid ? `managers/manager?id=${m.uid}` : null;
         const cmpKey = m.uid ?? `name:${m.name}`;
 
         return `
@@ -618,7 +618,7 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
     }
 
     function renderAlumniItem(m) {
-        const href = m.uid ? `managers/manager.html?id=${m.uid}` : null;
+        const href = m.uid ? `managers/manager?id=${m.uid}` : null;
         const inner = `
             <span class="dna-alumni-name">${escapeHtml(m.name)}</span>
             <span class="dna-alumni-sep">·</span>

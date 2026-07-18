@@ -196,7 +196,7 @@
         // Championship seals
         if (m.championships && (m.championship_seasons || []).length) {
             document.getElementById('seals').innerHTML = m.championship_seasons.map(function (y) {
-                return '<a class="mp-seal" href="seasons/season.html?year=' + y + '" style="text-decoration:none">✦ ' + y + ' Champion</a>';
+                return '<a class="mp-seal" href="seasons/season?year=' + y + '" style="text-decoration:none">✦ ' + y + ' Champion</a>';
             }).join('');
         }
 
@@ -228,7 +228,7 @@
                 var rank = s.final_rank
                     ? '<span class="mp-led-rank' + podiumClass + '">' + rankLabel + '</span>'
                     : '';
-                return '<a class="m-list-row" href="seasons/season.html?year=' + s.year + '">' +
+                return '<a class="m-list-row" href="seasons/season?year=' + s.year + '">' +
                     '<span class="mp-year">' + s.year + '</span>' +
                     '<span class="mp-led-name">' + esc(s.team_name || '') + '<small>' + num(s.avg_ppg) + ' ppg</small></span>' +
                     rank +
@@ -249,7 +249,7 @@
                     if (parts[0] > parts[1]) tone = 'lead';
                     else if (parts[0] < parts[1]) tone = 'trail';
                 }
-                return '<a class="m-list-row" href="managers/manager.html?id=' + encodeURIComponent(o.opp_user_id) + '">' +
+                return '<a class="m-list-row" href="managers/manager?id=' + encodeURIComponent(o.opp_user_id) + '">' +
                     '<span class="mp-h2h-name">vs ' + esc(o.opp_name) +
                         '<small>' + (o.total_games || 0) + (o.total_games === 1 ? ' meeting' : ' meetings') + '</small></span>' +
                     '<span class="mp-h2h-rec ' + tone + '">' + esc(rec) + '</span>' +

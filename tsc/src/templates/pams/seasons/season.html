@@ -1165,7 +1165,7 @@ function buildStandingsSection(s, luck) {
         return `<tr class="${t.final_rank <= 3 ? 'podium-row' : ''}">
             <td class="final-rank ${rankClass(t.final_rank)}">${t.final_rank}</td>
             <td class="team-name">${t.team_name}</td>
-            <td class="owner-link"><a href="managers/manager.html?id=${t.owner_user_id}">${t.owner_name}</a></td>
+            <td class="owner-link"><a href="managers/manager?id=${t.owner_user_id}">${t.owner_name}</a></td>
             <td class="record num">${t.wins}–${t.losses}${t.ties ? '–'+t.ties : ''}</td>
             <td class="winpct num">${fmtPct(t.win_pct)}</td>
             <td class="num ${pfCls}">${t.points_for.toFixed(1)}</td>
@@ -1273,8 +1273,8 @@ async function loadSeason() {
     const prevYear = idx > 0 ? ALL_YEARS[idx - 1] : null;
     const nextYear = idx < ALL_YEARS.length - 1 ? ALL_YEARS[idx + 1] : null;
     const yearNavHTML = [
-        prevYear ? `<a href="seasons/season.html?year=${prevYear}" class="hero-nav-year">← ${prevYear}</a>` : '',
-        nextYear ? `<a href="seasons/season.html?year=${nextYear}" class="hero-nav-year">${nextYear} →</a>` : '',
+        prevYear ? `<a href="seasons/season?year=${prevYear}" class="hero-nav-year">← ${prevYear}</a>` : '',
+        nextYear ? `<a href="seasons/season?year=${nextYear}" class="hero-nav-year">${nextYear} →</a>` : '',
     ].filter(Boolean).join('');
 
     const podiumDefs = [
@@ -1285,7 +1285,7 @@ async function loadSeason() {
     const podiumHTML = podiumDefs.map(p => {
         const t = s.standings.find(r => r.final_rank === p.rank);
         if (!t) return '';
-        return `<a href="managers/manager.html?id=${t.owner_user_id}" class="podium-card ${p.cls}">
+        return `<a href="managers/manager?id=${t.owner_user_id}" class="podium-card ${p.cls}">
             <div class="podium-medal-label">${p.label}</div>
             <div class="podium-place-num">${p.roman}</div>
             <div class="podium-team">${t.team_name}</div>
@@ -1321,7 +1321,7 @@ async function loadSeason() {
                 </div>
                 ${buildRoad(s)}
             </div>
-            <a href="managers/manager.html?id=${s.champion.owner_user_id}" class="champ-profile-link">
+            <a href="managers/manager?id=${s.champion.owner_user_id}" class="champ-profile-link">
                 View profile <span class="arrow">→</span>
             </a>
             <div class="champ-block-watermark">★</div>

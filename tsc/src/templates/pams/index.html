@@ -349,7 +349,7 @@ body {
      data-page="hub"
      data-chapter="{{LEAGUE_NAME_UPPER}} · VOL. 02"
      data-right-label="Standings"
-     data-right-href="standings.html"></nav>
+     data-right-href="standings"></nav>
 <script src="/pams-template/assets/js/nav.js"></script>
 
 <!-- BOOKMARK RIBBON — vaulted via [hidden]; CSS + click handler remain
@@ -1351,7 +1351,7 @@ body {
             <p class="mq-write" id="dc-mq-write">Champions, blowouts, and grudge matches. Every record, every rivalry, every Sunday since {{LEAGUE_FOUNDED}}, kept in the books and printed here in full.</p>
             <div class="mq-facts" id="dc-mq-facts">Est. {{LEAGUE_FOUNDED}} · The complete history</div>
             <div class="mq-ctas">
-                <a class="mq-cta" id="dc-mq-cta" href="standings.html"><span id="dc-mq-cta-label">Start reading</span></a>
+                <a class="mq-cta" id="dc-mq-cta" href="standings"><span id="dc-mq-cta-label">Start reading</span></a>
                 <button type="button" class="mq-browse" id="dc-mq-browse">Browse the shelf</button>
                 <span class="mq-lockchip" id="dc-mq-lock" hidden>Locked</span>
             </div>
@@ -1482,7 +1482,7 @@ body {
   // lands) and degrade to designed placeholders.
   var VOLS = [
     {
-      href: 'standings.html', cta: 'Open the chapter',
+      href: 'standings', cta: 'Open the chapter',
       ch: 'I', orn: '<span class="o-rules"><i></i><i></i><i></i></span>',
       eyebrow: 'Now Featuring · <strong>Ch. I of VII</strong>',
       title: 'All-Time <em>Standings.</em>',
@@ -1623,7 +1623,7 @@ body {
       },
     },
     {
-      href: 'records.html', cta: 'Open the chapter', locked: true, theme: 'vt-records',
+      href: 'records', cta: 'Open the chapter', locked: true, theme: 'vt-records',
       ch: 'V', orn: '<span class="o-star">★</span>',
       eyebrow: 'Now Featuring · <strong>Ch. V of VII</strong>',
       title: 'Record <em>Book.</em>',
@@ -3285,7 +3285,7 @@ body {
         <span class="section-title">Today's edition.</span>
         <span class="section-right">
             <span class="section-meta" id="dc-paper-meta">A new story every day</span>
-            <a class="section-src" href="records.html">From the Stacks</a>
+            <a class="section-src" href="records">From the Stacks</a>
         </span>
     </div>
     <div class="paper">
@@ -3323,7 +3323,7 @@ body {
                 <div class="paper-col-head">The Record Column</div>
                 <div class="paper-hero" id="dc-marks-hero"></div>
                 <div class="paper-briefs" id="dc-marks-briefs"></div>
-                <a class="paper-col-link" href="records.html">The full record book</a>
+                <a class="paper-col-link" href="records">The full record book</a>
             </aside>
             <aside class="paper-note">
                 <div class="paper-col-head">The Editor's Desk</div>
@@ -3914,11 +3914,11 @@ body {
     var inside = el('dc-inside');
     if (inside) {
       var pagesIdx = [
-        ['The Table', 'standings.html'],
+        ['The Table', 'standings'],
         ['The Society', 'managers/'],
         ['The Archives', 'seasons/'],
         ['The Board', 'draft/'],
-        ['The Marks', 'records.html'],
+        ['The Marks', 'records'],
         ['The Feuds', 'rivalries/'],
         ['This Week', 'live/'],
       ];
@@ -4223,7 +4223,7 @@ body {
             '<div class="tf-kicker">★ ' + s.year + ' · ' + (isReigning ? 'Reigning Champion' : 'Champion of Record') + ' ★</div>' +
             '<h3 class="tf-name">' + nameHtml + '</h3>' +
             '<p class="tf-blurb">' + blurb + '</p>' +
-            '<a class="tf-link" href="seasons/season.html?year=' + s.year + '">View the ' + s.year + ' season</a>' +
+            '<a class="tf-link" href="seasons/season?year=' + s.year + '">View the ' + s.year + ' season</a>' +
           '</div>' +
           (summaryHtml ? '<p class="tf-summary">' + summaryHtml + '</p>' : '');
         var wm = el('dc-trophy-wm');
@@ -4372,7 +4372,7 @@ body {
                 '<span class="dossier-rings-text">Champion of <em>' + romanList + '</em></span>' +
               '</div>';
           }
-          var href = m.user_id ? 'managers/manager.html?id=' + encodeURIComponent(m.user_id) : 'managers/';
+          var href = m.user_id ? 'managers/manager?id=' + encodeURIComponent(m.user_id) : 'managers/';
           if (animate && !reduceMotion) {
             dossierHost.classList.remove('is-slide');
             void dossierHost.offsetWidth;
@@ -4478,7 +4478,7 @@ body {
           var b = rv.manager_b || {};
           var aWins = (a.record_total && a.record_total.wins) != null ? a.record_total.wins : (a.wins != null ? a.wins : 0);
           var bWins = (b.record_total && b.record_total.wins) != null ? b.record_total.wins : (b.wins != null ? b.wins : 0);
-          return '<a class="feudcard" href="rivalries/rivalry.html?id=' + encodeURIComponent(rv.id || '') + '">' +
+          return '<a class="feudcard" href="rivalries/rivalry?id=' + encodeURIComponent(rv.id || '') + '">' +
                    '<div class="feudcard-bill"><span>✦ The Fight Card</span><span>' + (rv.total_meetings || 0) + ' meetings</span></div>' +
                    '<div class="feudcard-title">' + escapeAttr(rv.name || 'Untitled feud') + '</div>' +
                    '<div class="feudcard-tape">' +
@@ -4507,7 +4507,7 @@ body {
       regSection.removeAttribute('hidden');
       function regEntries(list) {
         return list.map(function (m) {
-          var href = m.user_id ? 'managers/manager.html?id=' + encodeURIComponent(m.user_id) : 'managers/';
+          var href = m.user_id ? 'managers/manager?id=' + encodeURIComponent(m.user_id) : 'managers/';
           return '<a class="reg-entry" href="' + href + '">' +
                    '<span class="reg-name">' + escapeAttr(m.name || '·') + '</span>' +
                    '<span class="reg-record">' + escapeAttr(m.total_record || '0-0') + '</span>' +

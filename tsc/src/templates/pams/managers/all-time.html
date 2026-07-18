@@ -1239,7 +1239,7 @@ function selectManager(uid, replaceUrl) {
         sq('≈ ' + team.ppw.toFixed(1), 'Team PPG') +
         sq(String(team.seasonsScouted), 'Seasons scouted') +
         sq(String(team.poolSize), 'Players considered');
-    document.getElementById('fileLink').setAttribute('href', 'managers/manager.html?id=' + encodeURIComponent(uid));
+    document.getElementById('fileLink').setAttribute('href', 'managers/manager?id=' + encodeURIComponent(uid));
 
     document.querySelectorAll('#ticker-1, #ticker-2').forEach(function (el) {
         el.innerHTML =

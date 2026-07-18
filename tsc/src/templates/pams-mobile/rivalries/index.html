@@ -145,7 +145,7 @@
                 function ppg(m) {
                     return m.avg_ppg == null ? '' : Number(m.avg_ppg).toFixed(1) + ' PPG';
                 }
-                return '<a class="m-card rv-card" href="rivalries/rivalry.html?id=' + encodeURIComponent(r.id) + '">' +
+                return '<a class="m-card rv-card" href="rivalries/rivalry?id=' + encodeURIComponent(r.id) + '">' +
                     '<div class="m-kicker rv-kicker">' + esc(r.name) + '</div>' +
                     '<div class="rv-vs">' +
                         '<span class="rv-side"><b>' + esc(a.name) + '</b><small>' + ppg(a) + '</small></span>' +

@@ -658,7 +658,7 @@ function buildShelf(chrono, colors) {
             : `<span class="book-band in-play">In play</span>`;
         // Slight deterministic height variation so the shelf reads organic.
         const h = 258 + ((s.year % 3) * 11);
-        return `<a class="book" href="seasons/season.html?year=${s.year}" style="--bh:${h}px">
+        return `<a class="book" href="seasons/season?year=${s.year}" style="--bh:${h}px">
             <span class="book-rule"></span>
             <span class="book-vol">Vol. ${toRoman(s.year - first + 1)}</span>
             <span class="book-year">${s.year}</span>
@@ -687,7 +687,7 @@ function buildRafterStrip(chrono, colors) {
     const strip = document.getElementById('rafter-strip');
     strip.innerHTML = `<svg class="rafter-rope" aria-hidden="true"></svg>` + champYears.map(s => {
         const k = champKey(s);
-        return `<a class="flag" href="seasons/season.html?year=${s.year}"
+        return `<a class="flag" href="seasons/season?year=${s.year}"
             style="--cloth:${cloth(colors[k])}"
             title="${s.year} · ${s.champion.owner_name} · ${s.champion.team_name}">
             <div class="flag-year">${s.year}</div>
@@ -924,7 +924,7 @@ function buildEntry(s, isFeatured, volNum, colors, boutHTML) {
            </div>` : '';
 
     return `
-        <a href="seasons/season.html?year=${s.year}"
+        <a href="seasons/season?year=${s.year}"
            class="season-entry${isFeatured ? ' featured' : ''}${boutHTML ? '' : ' no-bout'}"
            style="--rc:${accent}">
             <div class="entry-year-col">

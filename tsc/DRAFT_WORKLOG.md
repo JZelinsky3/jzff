@@ -216,11 +216,13 @@ flex pick that still finished top-12 at his own position missed on the flex boar
 position call — Chase 23 WR2→WR11 −130→−97 per Joey's −90/−105 window, Zeke 20 RB2→RB9 −171→−127,
 Saquon 19 RB1→RB10 −198→−159, Nico 25 WR4→WR8 −101→−75). Fifth-pass example numbers above are
 superseded where they overlap. Second round same day (hits side): `FLX_ELITE` 6 extends the
-elite down-forgiveness (0.2) to the flex board; `FLX_ANCHOR_BONUS` +20 for picks that paid a
-top-6 flex price AND finished top-6 flex at-or-below the slot — the push-reading correction
-(Bijan 25 FLEX 2→3 +203→+229 per Joey's 220-240 window; Gibbs 25 +226, Zeke 19 +169). Up-moves
-are excluded: the delta term already pays them, and CMC 19 at +539 with the bonus was too rich
-for Joey — without it he sits at +519 (his 510-520 ask), Chase 24 +318, Jefferson 22 +257;
+elite down-forgiveness (0.2) to the flex board; `FLX_ANCHOR_BONUS` 20 for picks that paid a
+top-6 flex price AND finished top-6 flex — implemented as a TOP-UP, not a flat add: the up-move
+delta counts toward the guarantee, so score += max(0, 20 − upPaid). Met slots get the full 20
+(Bijan 25 FLEX 2→3 +203→+229 per Joey's 220-240 window; Gibbs 25 +226, Zeke 19 +169), monster
+up-moves get nothing extra (CMC 19 +519 per Joey's 510-520 ask; Chase 24 +318, Jefferson 22
++257), tight-gap up-moves top up to the guarantee (Ekeler 22 FLX 2→1 +226, Cook 20 +200,
+Henry 20 +188) — continuous, so finishing a slot better can never score lower;
 `CLIMB_GP_W` .02/missed game (cap 4) credits positive flex climbs earned in fewer games
 (Adams 25 FLEX 42→24 in 14g +91→+96 vs Sutton's healthy +105, closing the gap to ~8 per Joey;
 ~99 climbers bumped +2 to +16). UI same day:

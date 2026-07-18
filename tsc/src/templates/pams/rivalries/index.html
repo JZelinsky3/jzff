@@ -993,7 +993,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 
 /* ─── OPEN-CARD AFFORDANCE ─────────────────────────
-   Each .rv-card is a link to rivalry.html?id=… for the full series
+   Each .rv-card is a link to rivalry?id=… for the full series
    detail, but the card body looks self-contained and users weren't
    noticing the click target. A small footer strip with "Open the
    file →" makes it unmistakable, and the arrow nudges right on hover
@@ -1538,7 +1538,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
           <span class="rv-entry-rule" aria-hidden="true"></span>
         </div>
         <h2 class="rv-entry-title">${escapeHtml(rv.name)}</h2>
-        <a class="rv-card ${leaderClass}" id="rivalry-${escapeHtml(rv.id)}" href="rivalries/rivalry.html?id=${encodeURIComponent(rv.id || '')}" style="display:block;color:inherit;text-decoration:none;">
+        <a class="rv-card ${leaderClass}" id="rivalry-${escapeHtml(rv.id)}" href="rivalries/rivalry?id=${encodeURIComponent(rv.id || '')}" style="display:block;color:inherit;text-decoration:none;">
           <div class="rv-card-head">
             <span class="rv-card-label">${escapeHtml(rv.manager_a.name)} vs ${escapeHtml(rv.manager_b.name)} · ${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}${sinceLabel}</span>
             <span class="rv-badge">${headBadge}</span>

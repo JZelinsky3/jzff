@@ -1571,7 +1571,7 @@ function fmtPct(p) { return (p ?? 0).toFixed(3).replace(/^0\./, '.'); }
 function fmtPts(n) { return Math.round(n ?? 0).toLocaleString(); }
 function whenStr(season, week) { return week != null ? `${season} · W${week}` : `${season}`; }
 function mgrLink(userId, name) {
-    return `<a href="managers/manager.html?id=${userId}">${name}</a>`;
+    return `<a href="managers/manager?id=${userId}">${name}</a>`;
 }
 function alumTag(userId, flag) {
     const cur = flag != null ? flag : (DIRMAP.get(String(userId))?.is_current ?? true);

@@ -249,7 +249,7 @@
         if (m.championships) classes += ' is-champ';
         if (m.is_reigning_champion) classes += ' is-reigning';
         if (isAlumni) classes += ' mg-alumni';
-        return '<a class="' + classes + '" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">' +
+        return '<a class="' + classes + '" href="managers/manager?id=' + encodeURIComponent(m.user_id) + '">' +
             '<span class="mg-stub"><span class="mg-ava">' + esc(initial) + img + '</span></span>' +
             '<span class="mg-body">' +
                 '<span class="mg-name">' + esc(m.name) +

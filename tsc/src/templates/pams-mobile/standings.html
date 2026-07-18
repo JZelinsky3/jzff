@@ -348,7 +348,7 @@ body { background: var(--cream); color: var(--ink); }
                     cell(num(ppgOf(m), 1), 'PPG') +
                     cell(m.avg_finish == null ? '—' : num(m.avg_finish, 1), 'Avg finish') +
                 '</div>' +
-                '<a class="st-profile-link" href="managers/manager.html?id=' + encodeURIComponent(m.user_id) + '">Full profile</a>' +
+                '<a class="st-profile-link" href="managers/manager?id=' + encodeURIComponent(m.user_id) + '">Full profile</a>' +
             '</div>' +
         '</div>';
     }
