@@ -1517,7 +1517,8 @@ body { background: var(--an-bg); }
 .lg-avg { font-family: var(--mono); font-size: .92rem; font-weight: 700; color: var(--cream-soft); }
 /* Career total, small under the avg so the number stays the headline. */
 .lg-career { display: block; font-size: .46rem; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--an-mute); margin-top: .16rem; }
-.lg-career + .lg-career { margin-top: .05rem; }
+/* Avg season finish rides the headline row, small beside the big number. */
+.lg-fin { font-size: .5rem; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--an-mute); margin-left: .35rem; white-space: nowrap; }
 .ledger-table tr.is-top .lg-career { color: var(--an-mute); }
 /* The top drafter's line, in gold. */
 .ledger-table tr.is-top td { background: rgba(232,200,137,.05); }
@@ -4128,11 +4129,10 @@ function renderGraderLedger() {
                 }
             });
             html += '<td class="lg-avg">' + m.avgRank.toFixed(1)
-                  + '<span class="lg-career">' + Math.round(m.totalScore).toLocaleString() + ' career</span>'
                   + (m.avgFinish != null
-                      ? '<span class="lg-career">avg finish ' + m.avgFinish.toFixed(1) + '</span>'
+                      ? '<span class="lg-fin">fin ' + m.avgFinish.toFixed(1) + '</span>'
                       : '')
-                  + '</td></tr>';
+                  + '<span class="lg-career">' + Math.round(m.totalScore).toLocaleString() + ' career</span></td></tr>';
         });
     }
     rowsFor(active, false);

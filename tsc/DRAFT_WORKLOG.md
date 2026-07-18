@@ -312,12 +312,13 @@ tiebreak (newer managers could never win it): avg rank → best finish → caree
 small uppercase `.lg-career` line under the Avg Rank number ("3,935 career"), muted so the avg
 stays the headline. NOTE: old snapshot names drift from live Supabase profiles (snapshot's
 "Connor 21" class is live's "Cat"); harness names may differ from the site's.
-(5) Avg season finish added under the career line in the Avg Rank cell ("avg finish 5.0",
-second `.lg-career` line, tighter stacking via `.lg-career + .lg-career`): full-season standing
-(playoffs included) from the export's `finishes` map, averaged over the manager's years that
-have it; omitted when absent. Purpose: read draft-avg vs season-finish correlation in one cell
-(Joey 5.7 draft avg → 5.0 avg finish). Harness now loads `finishes` from draft JSONs; the
-static-serve rig injects real final_ranks fetched from manager_seasons. Headless-verify trick for the opened
+(5) Avg season finish: full-season standing (playoffs included) from the export's `finishes`
+map, averaged over the manager's years that have it; omitted when absent. Placement story: first cut stacked it as a second line under the Avg Rank cell's career total
+(too busy); second cut put it as a chip by the manager name (Joey wanted it near avg rank);
+landed inline on the Avg Rank headline row as a small muted `.lg-fin` ("5.7 · FIN 5.0") with
+the career footnote alone underneath. Purpose: draft-avg vs season-finish correlation
+(Joey 5.7 draft avg → 5.0 avg finish; Chris same 5.7 → 6.4). Harness now loads `finishes` from
+draft JSONs; the static-serve rig injects real final_ranks fetched from manager_seasons. Headless-verify trick for the opened
 year view: the template's functions are closure-scoped, so hooks must go through `window.*`; a
 MutationObserver watching for `#graderYears` children then calling `window.openGraderYear(y)`
 is the reliable way to screenshot it.
