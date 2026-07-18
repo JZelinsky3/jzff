@@ -25,8 +25,16 @@ const POSITIONS = new Set(['QB', 'RB', 'WR', 'TE'])
 // The canonical profiles derive from Sleeper's own precomputed fantasy points
 // (pts_ppr / pts_half_ppr, which already bake in standard per-yard/TD/turnover
 // scoring at a 4pt passing-TD baseline). The only knob the four profiles turn
-// is passing TDs: the 6pt variants add +2 per passing TD on top. This exactly
-// reproduces the committed 2015-2024 files (verified via --check).
+// is passing TDs: the 6pt variants add +2 per passing TD on top.
+//
+// CAUTION (2026-07-17): the committed 2015-2024 files do NOT come from
+// Sleeper — they trace back to the old pams site's FantasyPros scrape
+// (08_scrape_fantasy_ranks.py), which this script's Sleeper-derived numbers
+// only approximate (±1-3 fpts, different name forms like "Patrick Mahomes
+// II", different player pools, occasional rank flips near the top). Do NOT
+// wholesale-regenerate past years — every grader score is calibrated against
+// the committed curves. Run --check first; to add a new field to old files,
+// backfill it by player_id join instead (that's how gp was added).
 const PROFILES = {
   ppr_6pt:  { base: 'pts_ppr',      passTd6: true },
   ppr_4pt:  { base: 'pts_ppr',      passTd6: false },
@@ -71,7 +79,7 @@ async function main() {
       if (!name) continue
       const fpts = score(stats, scoring)
       if (fpts == null || fpts <= 0) continue
-      rows.push({ player_id: pid, player_name: name, team: p.team || null, position: pos, fpts })
+      rows.push({ player_id: pid, player_name: name, team: p.team || null, position: pos, fpts, gp: stats.gp ?? null })
     }
     rows.sort((a, b) => b.fpts - a.fpts)
     rows.forEach((r, i) => { r.rank = i + 1 })

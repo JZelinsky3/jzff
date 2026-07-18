@@ -588,13 +588,15 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       description: `The ${year} season of ${meta.name}, chronicled on The Sunday Chronicle.`,
     }
   }
-  // Every other public almanac page gets the league cover card, stamped
-  // with a per-page chapter label (?page=) so a shared standings link
-  // previews as "The Standings", a records link as "The Record Book", etc.
-  // Unmapped paths fall back to the plain front cover.
+  // Every other public almanac page gets a per-page card from the league
+  // OG route (?page=): standings/records/managers/draft/seasons render
+  // bespoke themed scenes; rivalries/live get the stamped cover. Unmapped
+  // paths fall back to the plain front cover. `v=2` cache-busts crawler
+  // caches from the pre-bespoke stamped covers — bump it when a chapter
+  // design changes.
   const chapter = OG_CHAPTERS[file]
   const url = new URL(
-    `/api/og/league/${meta.slug}${chapter ? `?page=${chapter.page}` : ''}`,
+    `/api/og/league/${meta.slug}${chapter ? `?page=${chapter.page}&v=2` : ''}`,
     req.nextUrl.origin,
   ).toString()
   return {
