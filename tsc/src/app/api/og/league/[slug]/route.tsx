@@ -392,7 +392,7 @@ function renderStandingsCard(d: LeagueFile, managers: DirectoryManager[], fonts:
                         justifyContent: 'center',
                         width: '134px',
                         height: `${p.h}px`,
-                        background: `linear-gradient(180deg, ${p.color} 0%, ${p.color} 62%, rgba(14,22,32,0.35) 160%)`,
+                        background: p.color,
                         boxShadow: '0 14px 30px rgba(14,22,32,0.25)',
                         borderRadius: '3px 3px 0 0',
                       }}
@@ -1185,7 +1185,7 @@ function renderDraftCard(d: LeagueFile, drafts: DraftEntry[], fonts: Fonts) {
                 maxWidth: '540px',
               }}
             >
-              Round by round, steal by steal, bust by bust — {clip(d.name, 26)}.
+              Round by round, steal by steal, bust by bust in {clip(d.name, 26)}.
             </div>
 
             <div
@@ -1422,7 +1422,7 @@ function renderSeasonsCard(d: LeagueFile, seasons: SeasonEntry[], fonts: Fonts) 
                 maxWidth: '560px',
               }}
             >
-              Season by season through {clip(d.name, 26)} — bound and shelved.
+              Season by season through {clip(d.name, 26)}, bound and shelved.
             </div>
 
             <div
@@ -1440,18 +1440,9 @@ function renderSeasonsCard(d: LeagueFile, seasons: SeasonEntry[], fonts: Fonts) 
             </div>
           </div>
 
-          {/* Right — the bookcase */}
+          {/* Right — the volumes, standing straight on their plank */}
           <div style={{ display: 'flex', flexDirection: 'column', width: '440px' }}>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                background: `linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 34%), ${INK_CARD}`,
-                border: `1px solid ${INK_LINE}`,
-                boxShadow: '0 24px 60px rgba(0,0,0,0.55)',
-                padding: '26px 20px 0',
-              }}
-            >
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '12px' }}>
                 {shelf.map((s, i) => (
                   <div
@@ -1524,10 +1515,10 @@ function renderSeasonsCard(d: LeagueFile, seasons: SeasonEntry[], fonts: Fonts) 
                 style={{
                   display: 'flex',
                   height: '18px',
-                  margin: '0 -20px',
                   background: `linear-gradient(180deg, #4a2c1c 0%, ${PLANK} 35%, #1a0d08 100%)`,
                   borderTop: '1px solid rgba(255,255,255,0.12)',
-                  boxShadow: '0 -6px 14px rgba(0,0,0,0.35)',
+                  borderRadius: '2px',
+                  boxShadow: '0 10px 24px rgba(0,0,0,0.45)',
                 }}
               />
             </div>
