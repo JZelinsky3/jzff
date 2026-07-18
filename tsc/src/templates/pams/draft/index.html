@@ -1415,6 +1415,32 @@ body { background: var(--an-bg); }
 .grade-C  { background: rgba(138,172,204,.13); color: #8aaccc; border-color: rgba(138,172,204,.3); }
 .grade-D  { background: rgba(200,140,110,.14); color: #d19878; border-color: rgba(200,140,110,.32); }
 .grade-F  { background: rgba(200,96,80,.16);  color: #d47060; border-color: rgba(200,96,80,.4); }
+/* S tier: the four-digit classes (score 1000+). Not a band on the letter
+   scale but its own object: black cloth (the Annual's cover material), a
+   serif-italic cream-foil S, and a slow sheen sweeping the foil. Every
+   letter grade is a color; the S is the page itself, printed in reverse,
+   so nothing on the scale rhymes with it. */
+.grade-S {
+    position: relative; overflow: hidden;
+    background: linear-gradient(155deg, #141210, #0b0a08 55%, #12100d);
+    color: #f0e9d8;
+    border-color: rgba(240,233,216,.75);
+    box-shadow: 0 0 10px rgba(240,233,216,.22), inset 0 0 6px rgba(240,233,216,.12);
+    font-family: var(--serif); font-style: italic;
+    -webkit-text-stroke: .045em currentColor; /* the serif's 700 is thin at chip size */
+}
+.grade-S::after {
+    content: ''; position: absolute; inset: -1px;
+    background: linear-gradient(115deg, transparent 25%, rgba(255,250,238,.42) 50%, transparent 75%);
+    transform: translateX(-130%);
+    animation: sFoilSweep 3.4s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes sFoilSweep {
+    55%  { transform: translateX(130%); }
+    100% { transform: translateX(130%); }
+}
+@media (prefers-reduced-motion: reduce) { .grade-S::after { animation: none; } }
 
 /* ── The Registrar's Ledger ─────────────────────────────────────────────
    Best Drafters and the Official Transcript merged into one sheet: rank,
@@ -1440,9 +1466,12 @@ body { background: var(--an-bg); }
     font-family: var(--mono); font-weight: 700; font-size: .48rem;
     letter-spacing: .28em; text-transform: uppercase; color: var(--an-mute);
 }
-.ledger-title { font-family: var(--serif); font-style: italic; font-size: 1.3rem; color: var(--cream); margin-top: .18rem; }
-.ledger-no { text-align: right; font-family: var(--mono); font-size: .48rem; letter-spacing: .16em; text-transform: uppercase; color: var(--an-mute); }
-.ledger-no b { display: block; font-family: var(--serif); font-style: italic; font-size: 1.15rem; letter-spacing: 0; color: var(--gold); margin-top: .12rem; }
+/* Namespaced -mast- so these don't collide with the Steal Sheet's newsprint
+   .ledger-title/.ledger-no (this block loads later and was painting the cream
+   sheet's titles cream-on-cream). */
+.ledger-mast-title { font-family: var(--serif); font-style: italic; font-size: 1.3rem; color: var(--cream); margin-top: .18rem; }
+.ledger-mast-no { text-align: right; font-family: var(--mono); font-size: .48rem; letter-spacing: .16em; text-transform: uppercase; color: var(--an-mute); }
+.ledger-mast-no b { display: block; font-family: var(--serif); font-style: italic; font-size: 1.15rem; letter-spacing: 0; color: var(--gold); margin-top: .12rem; }
 .ledger-scroll { overflow-x: auto; }
 .ledger-table { border-collapse: collapse; width: 100%; min-width: 680px; }
 .ledger-table thead th {
@@ -1468,6 +1497,17 @@ body { background: var(--an-bg); }
 .lg-rank { display: inline-block; width: 1.45rem; font-family: var(--mono); font-size: .72rem; font-weight: 700; color: var(--cream-mute); }
 .lg-name { font-family: var(--serif); font-style: italic; font-weight: 600; font-size: .95rem; color: var(--cream); }
 .lg-sub { display: block; margin: .16rem 0 0 1.45rem; font-family: var(--mono); font-size: .52rem; color: var(--cream-mute); overflow: hidden; text-overflow: ellipsis; }
+/* Best-finish chip on the career line; a 1st gets the gold tint. */
+.lg-best {
+    display: inline-block; margin-left: .45rem; padding: .07rem .32rem;
+    border: 1px solid var(--an-line); border-radius: 2px;
+    font-size: .44rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--cream-soft);
+}
+.lg-best.is-first {
+    border-color: rgba(232,200,137,.45); color: var(--gold);
+    background: rgba(232,200,137,.08);
+}
 /* Year cells: the grade on top, where that class ranked in its year below. */
 .lg-cellrank { display: block; font-family: var(--mono); font-size: .48rem; letter-spacing: .04em; color: var(--cream-mute); margin-top: .2rem; }
 .lg-empty { color: var(--an-line); font-family: var(--mono); font-size: .7rem; }
@@ -1475,6 +1515,10 @@ body { background: var(--an-bg); }
     border-left: 1px solid var(--an-line-soft); padding-right: 1.05rem;
 }
 .lg-avg { font-family: var(--mono); font-size: .92rem; font-weight: 700; color: var(--cream-soft); }
+/* Career total, small under the avg so the number stays the headline. */
+.lg-career { display: block; font-size: .46rem; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--an-mute); margin-top: .16rem; }
+.lg-career + .lg-career { margin-top: .05rem; }
+.ledger-table tr.is-top .lg-career { color: var(--an-mute); }
 /* The top drafter's line, in gold. */
 .ledger-table tr.is-top td { background: rgba(232,200,137,.05); }
 .ledger-table tr.is-top .lg-id { background: #201e19; }
@@ -1511,6 +1555,19 @@ body { background: var(--an-bg); }
 .grader-class-mgr { font-weight: 600; font-size: .82rem; color: var(--cream); }
 .grader-class-detail { font-family: var(--mono); font-size: .58rem; color: var(--cream-mute); margin-top: .15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .grader-class-year { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; color: var(--cream-mute); min-width: 2.6rem; text-align: center; }
+/* Classes of Record tab row: Classes | Players, plus position tabs that only
+   show on the Players view. Same language as the open-year tabs. */
+.rec-tabs { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.rec-tab {
+    font-family: var(--mono); font-weight: 700; font-size: .62rem;
+    letter-spacing: .08em; text-transform: uppercase;
+    padding: .3rem .7rem; border: 1px solid var(--an-line); background: var(--an-soft);
+    color: var(--cream-soft); cursor: pointer; transition: all .15s;
+}
+.rec-tab:hover { border-color: var(--an-accent); color: var(--cream); }
+.rec-tab.active { background: var(--an-accent); border-color: var(--an-accent); color: var(--an-bg); }
+.rec-sep { width: 1px; height: 1.1rem; background: var(--an-line); margin: 0 .45rem; }
+.gpr-score { font-family: var(--mono); font-weight: 700; font-size: .85rem; }
 
 /* The Class Of: a report card per year; click one to open the whole class. */
 .gyc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.3rem; }
@@ -1665,6 +1722,10 @@ body { background: var(--an-bg); }
 .gys-label { font-family: var(--mono); font-size: .52rem; letter-spacing: .12em; text-transform: uppercase; color: var(--an-mute); margin-bottom: .4rem; }
 .gys-val { font-size: .86rem; font-weight: 700; color: var(--cream); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; }
 .gys-val .grade-chip { margin-right: .45rem; vertical-align: middle; }
+/* Best/Worst draft entries: chip + serif name sit on mismatched metrics when
+   inline (the name rides high), so those two rows flex-center instead. */
+.gys-val.has-chip { display: flex; align-items: center; flex-wrap: wrap; }
+.gys-val.has-chip .gys-sub { flex-basis: 100%; }
 .gys-name { font-family: var(--serif); font-style: italic; font-weight: 600; font-size: .98rem; }
 .gys-num { font-family: var(--serif); font-style: italic; font-weight: 600; font-size: 1.45rem; line-height: 1; color: var(--gold); }
 .gys-sub { display: block; font-family: var(--mono); font-size: .56rem; font-weight: 400; color: var(--cream-mute); margin-top: .3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -3492,6 +3553,29 @@ var TIER_OFFSETS = {
     TE: [127, 104, 81, 63, 46, 29, 12],
 };
 var TIER_FROM = 8; // ladder splices onto the points value at this rank
+// Production kickers for the ladder positions. Rank owns the majority of
+// elite value, but points buy back a minority stake: a finish above the
+// splice adds TOP_MARGIN_W of its points over the year's pos-8 anchor, so a
+// 494-point QB1 season (Lamar 19) or a TE1 who lapped the field (McBride 24)
+// out-earns a routine one. Below the anchor, the first NEAR_WINDOW points of
+// deficit are refunded at NEAR_REFUND of the band slope: a bunched pack
+// (QB12 one ppg behind QB8) reads bunched instead of a class apart. The
+// refund only reaches starter-rank finishes, so sub-line busts keep their
+// tuned penalties.
+var TOP_MARGIN_W = 0.25;
+var NEAR_REFUND = 0.5;
+var NEAR_WINDOW = { QB: 40, TE: 25 };
+// The banded QB read keeps a solid full-season starter (QB5-7) down around
+// 70-100, which sat light next to the other boards. Any QB pick that returned
+// a starter-rank finish (top-12 in a 12-teamer) earns this flat credit: not
+// steal money, just credit for landing a real weekly starter. Ramped in over
+// score -20..0 so the tuned fall windows (QB2 -> QB9 at -40/-50) stay where
+// they are and there's no cliff at zero. Elite finishes step the credit up
+// from the flat 20: +4 per rank above QB5 (QB4 24, QB3 28, QB2 32, QB1 36),
+// so even a QB3/QB4 slot that lands QB4 banks a little extra and the credit
+// scales with the tier ladder instead of jumping.
+var QB_STARTER_BONUS = 20;
+var QB_ELITE_BONUS_STEP = 4;
 // A pick that still finished inside the elite tier got what it paid for, so
 // most of the slot-miss penalty is forgiven (QB1 -> QB4 is a fine outcome).
 // Same idea on the flex board: FLEX 2 -> 3 (Bijan 25) is a hit, not a miss.
@@ -3509,6 +3593,14 @@ var FLX_ANCHOR_BONUS = 20;
 // slot in fewer games (Adams 25, FLEX 42 -> 24 in 14 games) gets a small
 // per-missed-game credit, capped so tiny samples can't run away with it.
 var CLIMB_GP_W = 0.02; var CLIMB_GP_MAX = 4;
+// Heist premium: a top-6 flex finish dug out from deep in the draft is the
+// defining steal, but raw VOR reads production through the year's points
+// curve, so a cooler year's heist (Jacobs 22, FLEX 53 -> 6, 328 pts) was
+// losing to a hot year's near-slot elite (JT 25, FLEX 20 -> 5, 362 pts)
+// despite costing 33 slots more. Credit scales with depth past the elite
+// line and caps, so top-of-draft picks get ~nothing and the ordering
+// within a year never changes.
+var FLX_HEIST_W = 0.5; var FLX_HEIST_CAP = 25;
 // A flex pick from the top of the draft whose season fell below the startable
 // line is nearly always injury, not a bad read. Soften those, don't erase.
 // A top-10 flex pick who still finished startable but way under cost gets the
@@ -3682,6 +3774,25 @@ function computeGrader() {
             var climbPts = Math.max(0, Math.min(repl, actualF) - expF);
             score += CLIMB_W * Math.min(climbPts, CLIMB_CAP)
                    - BUST_W  * Math.min(bustPts,  BUST_CAP);
+            // Production kickers (see TOP_MARGIN_W / NEAR_REFUND): points buy
+            // back a minority stake on the ladder boards.
+            if (band && finPosRank) {
+                var f8 = fptsAtRank(curve, TIER_FROM);
+                if (finPosRank < TIER_FROM) {
+                    score += TOP_MARGIN_W * Math.max(0, actualF - f8);
+                } else if (finPosRank <= Math.round((REPL_MULT[pos] || 1) * (teams > 0 ? teams : 12))) {
+                    score += NEAR_REFUND * band.band
+                           * Math.min(Math.max(0, f8 - actualF), NEAR_WINDOW[pos]);
+                }
+            }
+            // QB starter credit (see QB_STARTER_BONUS): finished inside the
+            // starter ranks, so the pick returned a weekly starter. Elite
+            // finishes (QB1-4) step the credit up the tier ladder.
+            if (pos === 'QB' && finPosRank && finPosRank <= (teams > 0 ? teams : 12)) {
+                var qbCred = QB_STARTER_BONUS
+                           + QB_ELITE_BONUS_STEP * Math.max(0, 5 - finPosRank);
+                score += Math.max(0, Math.min(qbCred, score + qbCred));
+            }
             // Positional guard: an RB/WR who met or beat his positional draft
             // slot was never a bad pick, even if the combined flex board says
             // the other position surged past him. Sometimes you need the
@@ -3718,6 +3829,10 @@ function computeGrader() {
                 var upPaid = DELTA_UP.FLX * Math.max(0, actualVor - expVor);
                 score += Math.max(0, FLX_ANCHOR_BONUS - upPaid);
             }
+            // Heist premium (see FLX_HEIST_W): elite flex finish from a deep slot.
+            if (isFlex && dr > FLX_ELITE && flexFinalRank[nn] && flexFinalRank[nn] <= FLX_ELITE) {
+                score += Math.min(FLX_HEIST_CAP, FLX_HEIST_W * (dr - FLX_ELITE));
+            }
             var mgr = d.manager_name;
             byMgrYear[mgr] = byMgrYear[mgr] || {};
             var cell = byMgrYear[mgr][y] = byMgrYear[mgr][y] || { score: 0, picks: [] };
@@ -3739,14 +3854,30 @@ function computeGrader() {
             var c = byMgrYear[mgr][y];
             if (!c.picks.length) return;
             c.picks.sort(function (a, b) { return b.score - a.score; });
-            classes.push({ manager: mgr, year: +y, score: c.score, picks: c.picks });
+            classes.push({
+                manager: mgr, year: +y, score: c.score, picks: c.picks,
+                posPicks: c.picks.filter(function (p) { return p.score > 0; }).length,
+            });
         });
     });
-    classes.sort(function (a, b) { return b.score - a.score; });
+    // Class ties are judged at displayed precision (whole points), so two
+    // sheets both reading −17 break on merit instead of float dust: more
+    // plus-scoring picks first, then the better single best pick, then name.
+    function classCmp(a, b) {
+        var as = Math.round(a.score), bs = Math.round(b.score);
+        if (as !== bs) return bs - as;
+        if (a.posPicks !== b.posPicks) return b.posPicks - a.posPicks;
+        var ab = Math.round(a.picks[0].score), bb = Math.round(b.picks[0].score);
+        if (ab !== bb) return bb - ab;
+        return a.manager < b.manager ? -1 : 1;
+    }
+    classes.sort(classCmp);
     var N = classes.length;
     classes.forEach(function (c, i) {
         c.rank = i + 1;
-        c.grade = letterForPct(N > 1 ? i / (N - 1) : 0);
+        // S tier sits above the letter scale and is absolute, not percentile:
+        // a four-digit class is an S no matter how crowded the top gets.
+        c.grade = c.score >= 1000 ? 'S' : letterForPct(N > 1 ? i / (N - 1) : 0);
         byMgrYear[c.manager][c.year].rank = c.rank;
         byMgrYear[c.manager][c.year].grade = c.grade;
     });
@@ -3756,7 +3887,7 @@ function computeGrader() {
     var classesByYear = {};
     classes.forEach(function (c) { (classesByYear[c.year] = classesByYear[c.year] || []).push(c); });
     Object.keys(classesByYear).forEach(function (y) {
-        classesByYear[y].sort(function (a, b) { return b.score - a.score; });
+        classesByYear[y].sort(classCmp);
         classesByYear[y].forEach(function (c, i) {
             c.yearRank = i + 1;
             byMgrYear[c.manager][c.year].yearRank = i + 1;
@@ -3772,9 +3903,21 @@ function computeGrader() {
         });
         if (!ranks.length) return;
         var sum = ranks.reduce(function (a, b) { return a + b; }, 0);
+        var totalScore = 0, fins = [];
+        Object.keys(byMgrYear[mgr]).forEach(function (y) {
+            totalScore += byMgrYear[mgr][y].score || 0;
+            // Full-season standing (playoffs included) from the export's
+            // finishes map; years without it just don't count in the average.
+            var f = (yearFinishes[y] || {})[mgr];
+            if (f) fins.push(f);
+        });
         drafters.push({
             manager: mgr, avgRank: sum / ranks.length, classes: ranks.length,
             best: Math.min.apply(null, ranks), years: gradedYears.sort(),
+            totalScore: totalScore,
+            avgFinish: fins.length
+                ? fins.reduce(function (a, b) { return a + b; }, 0) / fins.length
+                : null,
         });
     });
 
@@ -3786,9 +3929,16 @@ function computeGrader() {
     drafters.forEach(function (d) { if (d.classes > maxClasses) maxClasses = d.classes; });
     var needed = Math.min(3, maxClasses);
     drafters.forEach(function (d) { d.qualified = d.classes >= needed; });
+    // Ties on avg rank used to fall through to object-key order (arbitrary).
+    // Now: better single-year finish, then career score, then name for
+    // stability. Class count is deliberately NOT a tiebreaker: newer managers
+    // could never win one.
     drafters.sort(function (a, b) {
         if (a.qualified !== b.qualified) return a.qualified ? -1 : 1;
-        return a.avgRank - b.avgRank;
+        if (a.avgRank !== b.avgRank) return a.avgRank - b.avgRank;
+        if (a.best !== b.best) return a.best - b.best;
+        if (a.totalScore !== b.totalScore) return b.totalScore - a.totalScore;
+        return a.manager < b.manager ? -1 : 1;
     });
 
     return {
@@ -3818,15 +3968,24 @@ function renderReportCards() {
       +       '<div class="ledger-seal">&#10022;</div>'
       +       '<div class="ledger-mast-main">'
       +         '<div class="ledger-office">Office of the Registrar</div>'
-      +         '<div class="ledger-title">The Official Transcript</div>'
+      +         '<div class="ledger-mast-title">The Official Transcript</div>'
       +       '</div>'
-      +       '<div class="ledger-no">Classes on file<b>' + graderData.total + '</b></div>'
+      +       '<div class="ledger-mast-no">Classes on file<b>' + graderData.total + '</b></div>'
       +     '</div>'
       +     '<div class="ledger-scroll" id="graderLedger"></div>'
       +   '</div>'
       + '</div>'
       + '<div class="grader-block">'
-      +   '<div class="grader-block-head">Classes of Record <span>best &amp; worst single drafts of all time</span></div>'
+      +   '<div class="grader-block-head">Classes of Record <span id="recHeadSub">best &amp; worst single drafts of all time</span></div>'
+      +   '<div class="rec-tabs">'
+      +     '<button type="button" class="rec-tab active" data-rec="classes" onclick="setGraderRecTab(\'classes\')">Classes</button>'
+      +     '<button type="button" class="rec-tab" data-rec="players" onclick="setGraderRecTab(\'players\')">Players</button>'
+      +     '<span id="recPosTabs" style="display:none"><span class="rec-sep"></span>'
+      +       GRADER_POS.map(function (p) {
+                  return '<button type="button" class="rec-tab rec-pos" data-pos="' + p + '" onclick="setGraderRecPos(\'' + p + '\')">' + p + '</button>';
+              }).join('')
+      +     '</span>'
+      +   '</div>'
       +   '<div class="grader-class-cols" id="graderClasses"></div>'
       + '</div>'
       + '<div class="grader-block" id="graderClassOf">'
@@ -3955,7 +4114,7 @@ function renderGraderLedger() {
                   + '<span class="lg-rank">' + (i + 1) + '</span>'
                   + '<span class="lg-name">' + esc(m.manager) + '</span>'
                   + '<span class="lg-sub">' + m.classes + ' class' + (m.classes === 1 ? '' : 'es')
-                  + ' · best finish ' + ordinal(m.best)
+                  + '<span class="lg-best' + (m.best === 1 ? ' is-first' : '') + '">Best ' + ordinal(m.best) + '</span>'
                   + (m.qualified ? '' : ' · provisional') + '</span>'
                   + '</td>';
             years.forEach(function (y) {
@@ -3968,7 +4127,12 @@ function renderGraderLedger() {
                     html += '<td><span class="lg-empty">·</span></td>';
                 }
             });
-            html += '<td class="lg-avg">' + m.avgRank.toFixed(1) + '</td></tr>';
+            html += '<td class="lg-avg">' + m.avgRank.toFixed(1)
+                  + '<span class="lg-career">' + Math.round(m.totalScore).toLocaleString() + ' career</span>'
+                  + (m.avgFinish != null
+                      ? '<span class="lg-career">avg finish ' + m.avgFinish.toFixed(1) + '</span>'
+                      : '')
+                  + '</td></tr>';
         });
     }
     rowsFor(active, false);
@@ -3991,7 +4155,74 @@ function classDetailLine(c, wantBest) {
         + ' <span style="color:' + pc.text + '">' + p.pos + p.pos_draft_rank + ' → ' + fin + '</span>';
 }
 
+// Classes of Record state: which tab (classes | players) and, on the players
+// tab, which position board is open.
+var graderRecTab = 'classes';
+var graderRecPos = 'QB';
+window.setGraderRecTab = function (t) {
+    graderRecTab = t;
+    document.querySelectorAll('.rec-tab[data-rec]').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-rec') === t);
+    });
+    var posEl = document.getElementById('recPosTabs');
+    if (posEl) posEl.style.display = t === 'players' ? '' : 'none';
+    var sub = document.getElementById('recHeadSub');
+    if (sub) sub.innerHTML = t === 'players'
+        ? 'best &amp; worst graded picks of all time, by position'
+        : 'best &amp; worst single drafts of all time';
+    renderGraderClasses();
+};
+window.setGraderRecPos = function (p) {
+    graderRecPos = p;
+    renderGraderClasses();
+};
+
+function renderGraderPickRecords() {
+    var pool = [];
+    graderData.classes.forEach(function (c) {
+        c.picks.forEach(function (p) {
+            if (p.pos === graderRecPos) pool.push({ p: p, mgr: c.manager, year: c.year });
+        });
+    });
+    pool.sort(function (a, b) { return b.p.score - a.p.score; });
+    var best = pool.slice(0, 8);
+    var worst = pool.slice(-8).reverse();
+
+    function panel(title, list) {
+        var html = '<div class="grader-class-list"><div class="grader-class-hdr">' + title + '</div>';
+        list.forEach(function (r) {
+            var p = r.p;
+            var pc = POS_COLORS[p.pos] || {};
+            var move = p.pos + p.pos_draft_rank + ' → ' + (p.pos_final_rank ? p.pos + p.pos_final_rank : 'NR');
+            html += '<div class="grader-class-row" onclick="openGraderYear(' + r.year + ')" title="Open the Class of ' + r.year + '">'
+                  + '<div class="grader-class-year">&rsquo;' + ("" + r.year).slice(2) + '</div>'
+                  + '<div class="grader-class-main">'
+                  + '<div class="grader-class-mgr">' + esc(p.player_name) + '</div>'
+                  + '<div class="grader-class-detail">' + esc(r.mgr)
+                  + ' · <span style="color:' + (pc.text || 'inherit') + '">' + move + '</span>'
+                  + (p.fpts ? ' · ' + Math.round(p.fpts) + ' pts' : '')
+                  + (p.gp ? ' · ' + p.gp + 'g' : '') + '</div>'
+                  + '</div>'
+                  + '<div class="grader-class-side">'
+                  + '<span class="gpr-score">' + fmtScore(p.score) + '</span>'
+                  + '<span class="grader-class-go">Open class</span>'
+                  + '</div>'
+                  + '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    document.querySelectorAll('.rec-tab.rec-pos').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-pos') === graderRecPos);
+    });
+    document.getElementById('graderClasses').innerHTML =
+        panel('Best Graded Picks · ' + graderRecPos, best) +
+        panel('Worst Graded Picks · ' + graderRecPos, worst);
+}
+
 function renderGraderClasses() {
+    if (graderRecTab === 'players') { renderGraderPickRecords(); return; }
     var classes = graderData.classes;
     var best = classes.slice(0, 6);
     var worst = classes.slice(-6).reverse();
@@ -4056,7 +4287,7 @@ function renderGraderYearSummary(year, list) {
     }
     function draftItem(label, c) {
         return '<div class="gys-item"><div class="gys-label">' + label + '</div>'
-             + '<div class="gys-val"><span class="grade-chip ' + gradeClass(c.grade) + '">' + c.grade + '</span>'
+             + '<div class="gys-val has-chip"><span class="grade-chip ' + gradeClass(c.grade) + '">' + c.grade + '</span>'
              + '<span class="gys-name">' + esc(c.manager) + '</span>'
              + '<span class="gys-sub">' + ordinal(c.yearRank) + ' of the year · score ' + Math.round(c.score) + '</span></div></div>';
     }

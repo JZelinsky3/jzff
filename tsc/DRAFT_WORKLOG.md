@@ -231,6 +231,110 @@ line (never-played NR seasons like Guerendo 25); ungraded "not graded" label shr
 all `.gp-ungraded` rows flex together so multiple K/DEF lines share a card's leftover height
 evenly instead of the last one absorbing it all.
 
+**Eighth pass (2026-07-18): QB starter credit.** Joey: QB grading a little harsh points-wise;
+QB5-7 finishes at ~70-100 read low for a solid full-season starter, wanted "most" QBs about +20
+(not steal money, just a good pick). `QB_STARTER_BONUS = 20`: any QB pick whose finish landed
+inside the starter ranks (top-12 in a 12-teamer) gets a flat +20 on top of the ladder, ramped in
+over score -20..0 (`score += max(0, min(20, score + 20))`) so the sixth-pass fall windows are
+untouched (Herbert 22 QB2→QB9 stays −40, Hurts 24 −50, Mahomes 23 −57, Lamar 20 −50) and there is
+no cliff at zero. Verified offline (tune.js harness rebuilt, reproduces all prior exemplars
+exactly): 59 of 140 QB picks bumped, none past a QB12 finish. QB5-7 zone now ~65-155 (Cousins 22
+92→112, Goff 23 49→69, Rodgers 21 107→127, Daniels 24 114→134); ramp zone examples Hurts 25
+QB4→QB9 −12→−4, Kyler 24 QB6→QB10 −8→+4, Mahomes 25 QB6→QB11 −1→+18; ceiling Rodgers 20 QB9→QB1
+234→254. Class order barely moves (Krish 19 swaps with Chris 24 at #5/#6, Sean's classes nudge
+into the top 10); Joey 2021 still #1. Second round same day: Joey wanted QB1-4 finishes up a bit
+more too, even a met slot (QB3/QB4 taking QB4), scaling with the ladder. `QB_ELITE_BONUS_STEP = 4`:
+the credit steps +4 per rank above QB5 (QB4 24, QB3 28, QB2 32, QB1 36) instead of the flat 20,
+same ramp. 23 picks bumped, QB5+ finishes and all fall windows byte-identical. Russ 20 QB3→QB4
+115→119, Mahomes 21 QB1→QB4 108→112, Hurts 23 QB2→QB3 106→114, Mahomes 20 QB2→QB3 129→137,
+Allen 21 QB2→QB1 188→204, Allen 23 3→1 = 194 vs Dak 23 10→2 = 207 (value pick still wins),
+ceiling Rodgers 20 = 270.
+
+**Ninth pass (2026-07-18): production kickers on the ladder boards.** Joey asked why Lamar 19
+(QB15→QB1, 494 pts) graded ~20 under Rodgers 20 (QB9→QB1). Root cause: the tier ladder's base is
+the year's pos-8 value over replacement, so elite finishes inherit the richness of the MIDDLE
+class, which runs backwards (2019's bunched middle: QB8 just 43 raw pts over the QB19 repl, base
+17; 2020: 108 pts, base 43; yet Lamar beat replacement by 199 to Rodgers' 175). Joey's call: keep
+rank as the majority but add points back at a lesser rate, both above and below the splice.
+`TOP_MARGIN_W = 0.25`: finishes 1-7 add a quarter of their points over the year's pos-8 anchor
+(Lamar 19 250→289 now edges Rodgers 270→287; Mahomes 22 203→243; McBride 25 TE 165→199 and
+Kelce 22 133→175 per Joey's McBride-lapped-the-field point; Andrews 21 204→238; Bowers 24
+245→267). `NEAR_REFUND = 0.5` over `NEAR_WINDOW` QB 40 / TE 25: for finishes from rank 8 to the
+replacement rank, the first window-points of deficit under the pos-8 anchor are refunded at half
+the band slope, so a bunched pack reads bunched (Joey's example: QB12 15 pts behind QB8 now ~3
+value pts behind instead of 6; Rodgers 22 QB10→QB13 −0→+8, Carr 22 QB14→QB15 −1→+7, Mahomes 24
+QB4→QB11 −32→−24). Pos-8 finishes are gap-0 so Mahomes 23 QB1→QB8 stays −57; sub-replacement
+busts are outside the refund gate and keep their tuned penalties; QB2→QB9 shape softens only via
+the refund (Herbert 22 −40→−38, Hurts 24 −50→−43). Class order stable, Joey 2021 still #1.
+Harness fix in the same session: old/pams snapshot's 2019 draft was stale (pre-curated, Lamar
+QB2); tune.js now loads the live curated-2019 board from Supabase (live2019.json, 14 teams,
+Lamar QB15), so 2019 exemplars quoted before this pass were computed off the wrong board.
+Harness now lives durably at `scripts/grader-harness/` (tune.js + live2019.json, untracked) so
+it stops dying with each session's scratchpad; it extracts the grader source verbatim from the
+template, so it never drifts from the shipped code.
+
+**Tenth pass (2026-07-18): S tier, Players records tab, steal-sheet CSS fix.**
+
+- **S tier**: classes scoring 1000+ grade S instead of the percentile letter (absolute cutoff, so
+  a four-digit class is an S no matter how crowded the top). Currently two exist: Joey 21 (1544)
+  and Chris 21 (1152). `.grade-S` is deliberately not a band on the letter scale: black cloth
+  (the Annual's cover material), serif-italic cream-foil S, cream border/glow, and a slow foil
+  sheen sweeping the chip every ~3.4s (`sFoilSweep`; disabled under prefers-reduced-motion).
+  Color story: first cut was gold foil (rhymed with the A family), second amethyst (Joey liked
+  it but purple broke the vibe); landed on cream: every letter grade is a color, the S is the
+  page itself printed in reverse. Don't re-tint it. Glyph carries a .045em text-stroke; the
+  serif's 700 renders thin at chip size and Joey wanted it thicker.
+
+**Eleventh pass (2026-07-18): flex heist premium.** Joey: Jacobs 22 (RB25→RB3, FLEX 53→6, 328
+pts, +364) losing to JT 25 (RB10→RB4, FLEX 20→5, 362 pts, +371) is wrong when Jacobs cost 33
+flex slots more for the same shelf of finish; the year's curve heat was deciding it (2025 flex
+top-5 ran 362-417 vs 2022's 328-373, and the production gap counts 2.35x through base + up-delta,
+narrowly beating the 1.35x cost edge). Same cross-year shape the ninth pass fixed for QB/TE, now
+on the flex board. `FLX_HEIST_W = 0.5` capped at `FLX_HEIST_CAP = 25`: a top-6 flex finish from a
+slot past the elite line earns +0.5 per slot of depth. Top-of-draft picks get ~0, so the anchor
+crowd is untouched and within-year ordering never flips against a deeper pick. 25 picks moved,
+all upward, all heists: Jacobs 22 387 (now beats JT 25's 378), Deebo 21 FLX 90→5 +25 to 451,
+Kupp 21 626, Ekeler 19 342, Diggs 20 366, JSN 25 422, Breece 23 217. CMC 19 stays 534, Bijan 24
++2, Gibbs 24 +5. Class order: one #4/#5 swap (Isaac 25 over Connie 23); Joey 21 = 1565, still S.
+UI nit same day: Registrar's Summary Best/Worst draft cells set `.gys-val.has-chip` to
+flex-center the grade chip against the serif name (inline metrics left the name riding high;
+`.gys-sub` takes `flex-basis:100%` to keep its own line).
+Ledger follow-ups same day: (1) avg-rank ties had NO tiebreaker (stable sort fell through to
+object-key order); now avg rank → best single-year finish → more classes → career total score →
+name. Real case: Joey and Chris both 5.714/best-1st/7 classes; career score (3935 vs 3512) puts
+Joey #2 over Chris #3. `totalScore` now carried on each drafter. (2) Career line "best finish
+1st" text replaced with a `.lg-best` chip ("Best 1st"); gold-tinted `is-first` variant when the
+best finish is a 1st, neutral otherwise. Joey then dropped class count from the drafter
+tiebreak (newer managers could never win it): avg rank → best finish → career score → name.
+(3) Class-score ties (Cat/CJ 21 both showing −17) now judged at displayed precision via
+`classCmp` in BOTH the all-time and within-year sorts: rounded score → more plus-scoring picks
+(6 beats 3 there) → rounded best single pick → name. (4) Career total added to the Transcript:
+small uppercase `.lg-career` line under the Avg Rank number ("3,935 career"), muted so the avg
+stays the headline. NOTE: old snapshot names drift from live Supabase profiles (snapshot's
+"Connor 21" class is live's "Cat"); harness names may differ from the site's.
+(5) Avg season finish added under the career line in the Avg Rank cell ("avg finish 5.0",
+second `.lg-career` line, tighter stacking via `.lg-career + .lg-career`): full-season standing
+(playoffs included) from the export's `finishes` map, averaged over the manager's years that
+have it; omitted when absent. Purpose: read draft-avg vs season-finish correlation in one cell
+(Joey 5.7 draft avg → 5.0 avg finish). Harness now loads `finishes` from draft JSONs; the
+static-serve rig injects real final_ranks fetched from manager_seasons. Headless-verify trick for the opened
+year view: the template's functions are closure-scoped, so hooks must go through `window.*`; a
+MutationObserver watching for `#graderYears` children then calling `window.openGraderYear(y)`
+is the reliable way to screenshot it.
+- **Classes of Record tabs**: the block now has a Classes | Players tab row (`.rec-tabs`, same
+  language as the open-year tabs). Classes = the existing best/worst six drafts. Players = best
+  and worst 8 graded picks of all time for a position, with QB/RB/WR/TE position tabs appearing
+  only on that view; rows reuse `.grader-class-row` (year, player, manager + colored move +
+  pts/games, fmtScore, click opens the class year). Head subtext swaps per tab.
+- **Steal-sheet cream-on-cream fix**: the Registrar's Ledger CSS redefined `.ledger-title` and
+  `.ledger-no` after Chapter IV's newsprint sheet did, so "Bull Market · Steals" / "Bear Market ·
+  Busts" painted cream on the cream paper. Registrar mast classes renamed `.ledger-mast-title` /
+  `.ledger-mast-no`; the newsprint titles are ink again.
+- Verified via headless-Chrome screenshots against real data (scratchpad static-serve rig:
+  template + old/pams data with the live curated 2019 board swapped in): S chips in ledger,
+  Best Drafts and year cards; Players tab QB board matches the harness (Lamar 19 +289 best,
+  Luck 19 −105 worst); both market-report titles legible.
+
 **Report Card redesign (2026-07-17): the Registrar's Ledger.** Best Drafters and the Official
 Transcript said the same thing twice, so they merged into one sheet: `renderGraderLedger()` replaced
 `renderGraderLead()` + `renderGraderMatrix()` (and `toggleGraderAlumni`; the ledger reuses the shared
