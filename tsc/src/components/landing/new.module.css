@@ -47,10 +47,15 @@
 }
 
 /* ------------------------------------------------------------ buttons
-   Mirrors the site's dc-btn language: mono, uppercase, zero radius. */
+   Ticket-stub buttons: a punched notch on each side and a perforated
+   inner rule, like an admission ticket torn off the roll — the masthead
+   already jokes "Price: one league ID", so entry reads as a ticket.
+   The notches are two radial-gradient mask layers (one per half, union
+   composite, so no mask-composite support needed). */
 
 .btnGold,
 .btnGhost {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -59,32 +64,130 @@
   font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  padding: 0.85rem 1.5rem;
+  padding: 0.95rem 1.9rem;
   line-height: 1;
+  border: none;
   border-radius: 0;
-  transition: all 0.2s;
+  -webkit-mask-image:
+    radial-gradient(circle 6px at 0 50%, transparent 5.5px, #000 6px),
+    radial-gradient(circle 6px at 100% 50%, transparent 5.5px, #000 6px);
+  -webkit-mask-size: 51% 100%;
+  -webkit-mask-position: left, right;
+  -webkit-mask-repeat: no-repeat;
+  mask-image:
+    radial-gradient(circle 6px at 0 50%, transparent 5.5px, #000 6px),
+    radial-gradient(circle 6px at 100% 50%, transparent 5.5px, #000 6px);
+  mask-size: 51% 100%;
+  mask-position: left, right;
+  mask-repeat: no-repeat;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+/* The perforation: a dashed frame just inside the stub. */
+.btnGold::before,
+.btnGhost::before {
+  content: '';
+  position: absolute;
+  inset: 4px 12px;
+  border: 1px dashed rgba(14, 22, 32, 0.4);
+  pointer-events: none;
+  transition: border-color 0.2s;
 }
 
 .btnGold {
   background: var(--gold, #e8c889);
   color: var(--ink, #0e1620) !important;
-  border: 1px solid var(--gold, #e8c889);
 }
 
 .btnGold:hover {
   background: var(--gold-bright, #f4d9a4);
-  border-color: var(--gold-bright, #f4d9a4);
+  transform: translateY(-1px);
 }
 
 .btnGhost {
-  background: transparent;
+  background: var(--ink-card, #1a2532);
   color: var(--cream, #f4ebd8);
-  border: 1px solid var(--ink-line, #2a3645);
+}
+
+.btnGhost::before {
+  border-color: rgba(244, 235, 216, 0.28);
 }
 
 .btnGhost:hover {
-  border-color: var(--gold, #e8c889);
   color: var(--gold, #e8c889);
+  transform: translateY(-1px);
+}
+
+.btnGhost:hover::before {
+  border-color: rgba(232, 200, 137, 0.55);
+}
+
+/* Headline CTAs (picked from /design/buttons): serif italic on a rule.
+   Primary is gold on a 2px deep-gold rule; secondary is cream on a
+   hairline. Used for the Clubhouse, subscription desk, and nav. */
+
+.btnHead,
+.btnHeadGhost {
+  display: inline-block;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  padding-bottom: 4px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.btnHead {
+  color: var(--gold, #e8c889);
+  border-bottom: 2px solid var(--gold-deep, #a88a4a);
+}
+
+.btnHead:hover {
+  color: var(--gold-bright, #f4d9a4);
+  border-bottom-color: var(--gold, #e8c889);
+}
+
+.btnHeadGhost {
+  color: var(--cream-soft, #c9c0ad);
+}
+
+.btnHeadGhost:hover {
+  color: var(--gold, #e8c889);
+}
+
+/* Sunday Live's CTA dresses like one of the scorebugs below it: a dark
+   broadcast chip with a pulsing LIVE tag, glowing faint red on hover. */
+
+.btnLive {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 20px 13px 16px;
+  background: var(--ink, #0e1620);
+  border: 1px solid var(--ink-line, #2a3645);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream, #f4ebd8);
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.25s;
+}
+
+.btnLiveTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 14px;
+  border-right: 1px solid var(--ink-line, #2a3645);
+  color: #c14b36;
+  letter-spacing: 0.24em;
+}
+
+.btnLive:hover {
+  border-color: rgba(193, 75, 54, 0.65);
+  color: var(--gold, #e8c889);
+  box-shadow: 0 0 0 1px rgba(193, 75, 54, 0.3), 0 0 20px rgba(193, 75, 54, 0.16);
 }
 
 .textLink {
@@ -126,9 +229,21 @@
   white-space: nowrap;
 }
 
-.brandAbbr {
-  display: none;
-  letter-spacing: 0.04em;
+/* Nameplate letters that slide away on scroll, leaving TSC. — the same
+   trick as the mobile top bar: animating font-size to 0 collapses width
+   and visibility together without dropping the baseline. Stays inline. */
+
+.brandFade {
+  font-size: inherit;
+  opacity: 1;
+  transition:
+    font-size 0.55s cubic-bezier(0.7, 0, 0.2, 1),
+    opacity 0.3s ease;
+}
+
+.navSlim .brandFade {
+  font-size: 0;
+  opacity: 0;
 }
 
 .navLinks {
@@ -142,16 +257,79 @@
   color: var(--cream-soft, #c9c0ad);
 }
 
+.navLinks a:not(.navCta) {
+  position: relative;
+  padding-bottom: 3px;
+}
+
+.navLinks a:not(.navCta)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: 0;
+  height: 1px;
+  background: var(--gold, #e8c889);
+  transition: right 0.25s ease;
+}
+
 .navLinks a:hover {
   color: var(--gold, #e8c889);
 }
 
-.navSignIn {
+.navLinks a:not(.navCta):hover::after {
+  right: 0;
+}
+
+/* `.root`-prefixed so these win over the `.root a { color: inherit }` rule. */
+
+.root .navLogin {
   color: var(--cream, #f4ebd8);
 }
 
-.nav .btnGold {
-  padding: 0.6rem 1.1rem;
+/* Nav CTA: an ink swipe printed off-register — a skewed slab of gold
+   with a hairline duplicate offset behind it, like a two-pass print that
+   didn't quite line up. Hover: the second pass snaps into register. */
+.root .navCta {
+  position: relative;
+  z-index: 0;
+  /* Asymmetric on purpose: the other links carry 3px of bottom padding
+     for their hover underline, which lifts their text off the row's
+     center — this matches the CTA label to their baseline. */
+  padding: 7px 18px 11px;
+  color: var(--ink, #0e1620);
+}
+
+.root .navCta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--gold, #e8c889);
+  transform: skewX(-10deg);
+  transition: background 0.2s;
+}
+
+.root .navCta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border: 1px solid var(--gold-deep, #a88a4a);
+  transform: skewX(-10deg) translate(4px, 3px);
+  transition: transform 0.25s;
+}
+
+.root .navCta:hover {
+  color: var(--ink, #0e1620);
+}
+
+.root .navCta:hover::before {
+  background: var(--gold-bright, #f4d9a4);
+}
+
+.root .navCta:hover::after {
+  transform: skewX(-10deg) translate(0, 0);
 }
 
 /* ----------------------------------------------------------- masthead
@@ -159,7 +337,7 @@
    the whole viewport, deck between rules, then one line + CTAs. */
 
 .masthead {
-  padding: 34px var(--edge) 0;
+  padding: 22px var(--edge) 0;
 }
 
 .masthead > * {
@@ -210,22 +388,45 @@
   text-align: right;
 }
 
+/* Slightly heavier on the bottom: the serif's ascenders eat into the
+   top gap visually, so equal padding reads top-heavy. */
 .mastTitle {
   margin: 0;
-  padding: 3vw 0 1.2vw;
+  padding: clamp(30px, 3.4vw, 60px) 0 clamp(24px, 2.6vw, 44px);
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(3.2rem, 10.4vw, 10.5rem);
+  font-size: clamp(3rem, 8.4vw, 8.4rem);
   line-height: 0.98;
   letter-spacing: -0.015em;
   text-align: center;
   text-wrap: balance;
 }
 
+/* Gilded foil rule under the nameplate: a metallic gradient bar with a
+   champagne highlight at its center, ends that dissolve instead of
+   stopping, and a soft bloom of light beneath it. */
+.mastFlourish {
+  width: min(82%, 1180px);
+  height: 4px;
+  border-radius: 2px;
+  margin: 0 auto clamp(30px, 3.4vw, 58px);
+  background: linear-gradient(
+    90deg,
+    rgba(168, 138, 74, 0) 0%,
+    #a88a4a 14%,
+    #e8c889 38%,
+    #f8e5b2 50%,
+    #e8c889 62%,
+    #a88a4a 86%,
+    rgba(168, 138, 74, 0) 100%
+  );
+  box-shadow: 0 2px 12px rgba(232, 200, 137, 0.35);
+}
+
 .mastDeckRow {
   border-top: 1px solid var(--ink-line, #2a3645);
   border-bottom: 1px solid var(--ink-line, #2a3645);
-  padding: 14px 0;
+  padding: 26px 0;
   text-align: center;
 }
 
@@ -233,25 +434,20 @@
   margin: 0;
   font-family: var(--serif);
   font-style: italic;
-  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  font-size: clamp(1.2rem, 2.2vw, 1.7rem);
   color: var(--cream-soft, #c9c0ad);
 }
 
+/* Just the tickets, centered under the deck — the nameplate and deck do
+   the talking, the buttons sell the entry. */
 .mastBottom {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 18px 40px;
-  padding: 26px 2px 34px;
+  justify-content: center;
+  padding: 46px 2px 50px;
 }
 
-.mastProse {
-  margin: 0;
-  max-width: 44ch;
-  font-size: 0.95rem;
-  line-height: 1.65;
-  color: var(--cream-soft, #c9c0ad);
+.mastBottom .ctas {
+  gap: 22px;
 }
 
 .ctas {
@@ -317,7 +513,7 @@
    allowed to cross them. */
 
 .spread {
-  padding: clamp(64px, 7vw, 110px) var(--edge) 0;
+  padding: clamp(48px, 5.5vw, 88px) var(--edge) 0;
 }
 
 .pageGrid {
@@ -339,13 +535,18 @@
   color: var(--gold-deep, #a88a4a);
 }
 
+.kickerCenter {
+  justify-content: center;
+  text-align: center;
+}
+
 /* row 1 columns */
 
 .colRail {
   grid-column: 1 / span 3;
   display: flex;
   flex-direction: column;
-  gap: 52px;
+  gap: 40px;
   padding-right: var(--colpad);
 }
 
@@ -412,33 +613,6 @@
   color: var(--cream-mute, #837b6a);
 }
 
-/* members' notice */
-
-.notice {
-  padding: 24px 22px 26px;
-  border: 1px solid var(--ink-line, #2a3645);
-  outline: 1px solid var(--ink-line, #2a3645);
-  outline-offset: 4px;
-}
-
-.notice .kicker {
-  margin-bottom: 12px;
-}
-
-.noticeTitle {
-  margin: 0 0 10px;
-  font-family: var(--serif);
-  font-size: 1.5rem;
-  line-height: 1.15;
-}
-
-.noticeProse {
-  margin: 0 0 18px;
-  font-size: 0.82rem;
-  line-height: 1.6;
-  color: var(--cream-soft, #c9c0ad);
-}
-
 /* lead stories */
 
 .leadTitle {
@@ -480,8 +654,8 @@
 
 .ledger {
   position: relative;
-  margin: 54px 0 6px;
-  padding: 24px 28px 30px;
+  margin: 42px 0 6px;
+  padding: 16px 22px 20px;
   background: var(--cream, #f4ebd8);
   color: var(--ink, #0e1620);
   box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.35);
@@ -512,18 +686,18 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
-  padding-bottom: 12px;
+  padding-bottom: 9px;
   border-bottom: 3px double var(--ink, #0e1620);
 }
 
 .ledgerHead span:first-child {
   font-family: var(--serif);
-  font-size: 1.25rem;
+  font-size: 1.05rem;
 }
 
 .ledgerHeadMeta {
   font-family: var(--mono);
-  font-size: 0.6rem;
+  font-size: 0.56rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   opacity: 0.55;
@@ -539,14 +713,14 @@
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-areas: 'name val' 'meta val';
-  column-gap: 16px;
-  padding: 12px 2px;
+  column-gap: 14px;
+  padding: 8px 2px;
   border-bottom: 1px solid rgba(14, 22, 32, 0.18);
 }
 
 .ledgerList span {
   grid-area: name;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
 }
 
 .ledgerList b {
@@ -554,14 +728,14 @@
   align-self: center;
   font-family: var(--serif);
   font-weight: 400;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
 }
 
 .ledgerList i {
   grid-area: meta;
   font-family: var(--mono);
   font-style: normal;
-  font-size: 0.62rem;
+  font-size: 0.56rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   opacity: 0.5;
@@ -569,13 +743,13 @@
 
 .ledgerStamp {
   position: absolute;
-  right: 18px;
-  bottom: -14px;
-  padding: 6px 14px;
+  right: 16px;
+  bottom: -12px;
+  padding: 5px 12px;
   background: var(--ink, #0e1620);
   color: var(--gold, #e8c889);
   font-family: var(--mono);
-  font-size: 0.62rem;
+  font-size: 0.56rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   transform: rotate(2deg);
@@ -607,8 +781,9 @@
 .book {
   position: relative;
   display: flex;
-  width: min(150%, 560px);
-  margin-right: calc(-1 * var(--edge) - 12%);
+  width: min(128%, 470px);
+  /* Halfway between the old full bleed (-4%) and fully inset (+28px). */
+  margin-right: calc(-1 * var(--edge) + 14px - 2%);
   margin-left: auto;
   aspect-ratio: 4 / 4.6;
   transform: rotate(3.5deg);
@@ -634,20 +809,58 @@
   }
 }
 
+/* Leather binding — same palette as the mobile landing's cover book:
+   dark tanned gradients, deep-gold hardware, gold-leaf type. */
+
+/* The spine reads as a rounded case binding: full cover height, with
+   horizontal curvature (dark at the outer edge, lit in the middle,
+   falling into a seam right at the hinge). */
+
 .bookSpine {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 54px;
+  width: 68px;
   flex: none;
-  background: var(--ink-card, #1a2532);
-  border: 1px solid var(--gold-deep, #a88a4a);
+  background: linear-gradient(
+    90deg,
+    #16100a 0%,
+    #3a2c14 22%,
+    #443318 45%,
+    #2a1e0e 78%,
+    #0c0906 100%
+  );
+  border: 1px solid #4a3a1e;
   border-right: none;
+  /* No left edge: the leather rolls around to the unseen back cover, so
+     a hard outline there would read as the case ending. */
+  border-left: none;
+  border-radius: 7px 0 0 7px;
+}
+
+.bookSpine::before,
+.bookSpine::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: var(--gold-deep, #a88a4a);
+  opacity: 0.45;
+}
+
+.bookSpine::before {
+  top: 22px;
+}
+
+.bookSpine::after {
+  bottom: 22px;
 }
 
 .bookSpine span {
   font-family: var(--mono);
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   letter-spacing: 0.34em;
   text-transform: uppercase;
   color: var(--gold, #e8c889);
@@ -655,45 +868,74 @@
   white-space: nowrap;
 }
 
+/* The cover shares the spine's leather: same border tone (not bright
+   gold), no left edge at the hinge, and a gradient that starts from the
+   spine's dark seam so the two read as one wrapped case. The gold lives
+   only in the tooling pressed into the front, not on the book's edges. */
 .bookCover {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
+  text-align: center;
   gap: 14px;
-  padding: 9% 10%;
-  background: var(--cream, #f4ebd8);
-  color: var(--ink, #0e1620);
-  border: 1px solid var(--gold-deep, #a88a4a);
-  box-shadow:
-    inset 0 0 0 10px var(--cream, #f4ebd8),
-    inset 0 0 0 11px var(--gold-deep, #a88a4a),
-    inset 0 0 0 16px var(--cream, #f4ebd8),
-    inset 0 0 0 17px rgba(168, 138, 74, 0.45);
+  padding: 9% 12%;
+  background: linear-gradient(115deg, #191308 0%, #1e1608 26%, #120f08 62%, #1a1408 100%);
+  color: var(--cream, #f4ebd8);
+  border: 1px solid #4a3a1e;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Tooled double frame pressed into the leather. */
+.bookCover::before {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(168, 138, 74, 0.45);
+  outline: 1px solid rgba(168, 138, 74, 0.18);
+  outline-offset: 5px;
+  pointer-events: none;
+}
+
+/* Hinge groove where the board meets the spine: a dark gutter fading in
+   from the left edge, so the cover looks folded on, not butted against. */
+.bookCover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 14px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.08) 55%, transparent);
+  pointer-events: none;
 }
 
 .bookCrest {
   font-size: 1.3rem;
-  color: var(--gold-deep, #a88a4a);
+  color: var(--gold, #e8c889);
 }
 
 .bookLeague {
   font-family: var(--serif);
   font-size: clamp(1.7rem, 2.6vw, 2.6rem);
   line-height: 1.05;
+  color: var(--gold, #e8c889);
 }
 
 .bookRule {
   width: 64px;
   height: 1px;
-  background: rgba(14, 22, 32, 0.35);
+  background: linear-gradient(90deg, transparent, var(--gold-deep, #a88a4a), transparent);
 }
 
 .bookSub {
   font-family: var(--serif);
   font-style: italic;
   font-size: 1.05rem;
+  color: var(--cream-soft, #c9c0ad);
 }
 
 .bookYears {
@@ -701,7 +943,7 @@
   font-size: 0.62rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  opacity: 0.6;
+  color: var(--cream-mute, #837b6a);
 }
 
 .bookFt {
@@ -763,8 +1005,8 @@
 
 .draftClip {
   position: relative;
-  width: min(148%, 480px);
-  margin: 10px 0 0 calc(-1 * var(--edge) - 16%);
+  width: min(122%, 410px);
+  margin: 10px 0 0 calc(-1 * var(--edge) - 12%);
   padding: 22px 26px 26px 30px;
   background: var(--cream, #f4ebd8);
   color: var(--ink, #0e1620);
@@ -884,7 +1126,7 @@
 .formList li {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   padding: 13px 2px;
   border-bottom: 1px solid var(--ink-line-soft, #1e2937);
 }
@@ -902,7 +1144,28 @@
   margin-left: auto;
   font-family: var(--mono);
   font-size: 0.72rem;
-  color: var(--cream-soft, #c9c0ad);
+  color: var(--cream-soft);
+}
+
+/* PPG in bronze: same family as the gold pips so the row stays one
+   palette, but a register down so it doesn't compete with them or with
+   the cream record. */
+.formPpg {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--cream-soft);
+  white-space: nowrap;
+}
+
+.formPpg i {
+  margin-left: 3px;
+  font-style: normal;
+  font-size: 0.48rem;
+  font-weight: 450;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-deep, #a88a4a);
+  opacity: 0.55;
 }
 
 .formRun {
@@ -966,7 +1229,7 @@
 /* ------------------------------------------------------------ pull quote */
 
 .pull {
-  margin: clamp(64px, 7vw, 110px) 0 0;
+  margin: clamp(56px, 6vw, 96px) 0;
   padding: clamp(36px, 4vw, 60px) 0;
   border-top: 3px double var(--ink-line, #2a3645);
   border-bottom: 3px double var(--ink-line, #2a3645);
@@ -984,7 +1247,6 @@
 /* ------------------------------------------------------- sunday live */
 
 .sunday {
-  margin-top: clamp(64px, 7vw, 110px);
   background: #0a1119;
   border-top: 1px solid var(--ink-line, #2a3645);
   border-bottom: 1px solid var(--ink-line, #2a3645);
@@ -993,8 +1255,8 @@
 .sundayGrid {
   display: grid;
   grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: clamp(36px, 5vw, 90px);
-  padding: clamp(70px, 7vw, 110px) var(--edge) clamp(56px, 5vw, 80px);
+  gap: clamp(32px, 4vw, 72px);
+  padding: clamp(64px, 6.5vw, 100px) calc(var(--edge) + clamp(16px, 4vw, 84px));
   align-items: center;
 }
 
@@ -1261,29 +1523,412 @@
   color: var(--cream-soft, #c9c0ad);
 }
 
+/* -------------------------------------------------------- the clubhouse
+   Members' wing, all out: a giant engraved entrance on the dark wall,
+   five cream membership cards hung at a tilt beneath it, and a brass
+   plaque with the shine sweep for the door itself. */
+
+.club {
+  padding: clamp(96px, 11vw, 170px) var(--edge);
+  background:
+    radial-gradient(110% 70% at 50% 0%, rgba(232, 200, 137, 0.07), transparent 58%),
+    radial-gradient(90% 60% at 50% 110%, rgba(232, 200, 137, 0.04), transparent 55%),
+    #0a0f16;
+  border-bottom: 1px solid var(--ink-line, #2a3645);
+}
+
+.clubHead {
+  text-align: center;
+}
+
+.clubKicker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 0 0 22px;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold-deep, #a88a4a);
+}
+
+.clubKicker::before,
+.clubKicker::after {
+  content: '';
+  width: clamp(40px, 8vw, 130px);
+  height: 3px;
+  border-top: 1px solid var(--gold-deep, #a88a4a);
+  border-bottom: 1px solid rgba(168, 138, 74, 0.35);
+}
+
+.clubTitle {
+  margin: 0 0 20px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(3.4rem, 8vw, 8rem);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+}
+
+.clubSub {
+  max-width: 54ch;
+  margin: 0 auto;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--cream-soft, #c9c0ad);
+}
+
+/* Five membership cards, hung at alternating tilts like clippings pinned
+   to the clubhouse wall. Cream stock, tooled hairline frame, ink type. */
+
+.clubCards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: clamp(16px, 1.8vw, 26px);
+  max-width: 1280px;
+  margin: clamp(56px, 6vw, 88px) auto clamp(64px, 7vw, 100px);
+}
+
+/* `.root .clubCard` so the ink color beats the `.root a { color: inherit }`
+   rule — otherwise the card titles inherit the page cream and vanish. */
+.root .clubCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+  padding: 22px 20px 20px;
+  background: linear-gradient(168deg, #f7efdc 0%, #efe3c9 100%);
+  color: var(--ink, #0e1620);
+  box-shadow:
+    9px 10px 0 rgba(0, 0, 0, 0.4),
+    inset 0 0 0 7px transparent,
+    inset 0 0 0 8px rgba(168, 138, 74, 0.55);
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.35s;
+}
+
+.clubCard:nth-child(odd) {
+  transform: rotate(-1.5deg);
+}
+
+.clubCard:nth-child(even) {
+  transform: rotate(1.2deg);
+  margin-top: 26px;
+}
+
+.clubCard:hover {
+  transform: rotate(0deg) translateY(-8px);
+  box-shadow:
+    12px 16px 0 rgba(0, 0, 0, 0.45),
+    inset 0 0 0 7px transparent,
+    inset 0 0 0 8px rgba(168, 138, 74, 0.85);
+}
+
+.clubCardWing {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.56rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(14, 22, 32, 0.5);
+}
+
+.clubCardNum {
+  margin-top: 10px;
+  font-family: var(--serif);
+  font-size: 2.3rem;
+  line-height: 1;
+  color: var(--gold-deep, #a88a4a);
+}
+
+.clubCardName {
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-size: 1.28rem;
+  line-height: 1.1;
+  color: var(--ink, #0e1620);
+}
+
+.clubCardRule {
+  width: 36px;
+  height: 1px;
+  margin: 12px 0;
+  background: rgba(14, 22, 32, 0.3);
+}
+
+.clubCardBlurb {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: rgba(14, 22, 32, 0.72);
+}
+
+.clubCardCta {
+  margin-top: auto;
+  padding-top: 14px;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-deep, #a88a4a);
+  transition: color 0.2s;
+}
+
+.clubCard:hover .clubCardCta {
+  color: var(--ink, #0e1620);
+}
+
+/* The brass plaque by the door. */
+
+.clubPlaque {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 840px;
+  margin: 0 auto;
+  padding: clamp(30px, 3.4vw, 44px) clamp(24px, 3.4vw, 52px);
+  text-align: center;
+  background: linear-gradient(175deg, #241c0e 0%, #15100a 55%, #1d150b 100%);
+  border: 1px solid var(--gold-deep, #a88a4a);
+  outline: 1px solid rgba(168, 138, 74, 0.3);
+  outline-offset: 5px;
+  overflow: hidden;
+}
+
+.clubShine {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -30%;
+  width: 24%;
+  background: linear-gradient(100deg, transparent, rgba(232, 200, 137, 0.12), transparent);
+  transform: skewX(-18deg);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .clubPlaque.in .clubShine {
+    animation: clubSweep 2.1s ease-in-out 0.45s both;
+  }
+}
+
+@keyframes clubSweep {
+  from {
+    left: -30%;
+  }
+  to {
+    left: 130%;
+  }
+}
+
+.clubPlaqueLine {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 2;
+  color: var(--cream-soft, #c9c0ad);
+}
+
+.clubPlaqueLine span {
+  margin: 0 10px;
+  color: var(--gold-deep, #a88a4a);
+}
+
+.clubFine {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream-mute, #837b6a);
+}
+
+/* ---------------------------------------------------- subscription desk */
+
+.rates {
+  padding: clamp(56px, 6vw, 88px) var(--edge);
+}
+
+.ratesHead {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto clamp(28px, 3vw, 40px);
+}
+
+.ratesTitle {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  line-height: 1.05;
+}
+
+.ratesSub {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--cream-soft, #c9c0ad);
+}
+
+.rateGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  max-width: 1040px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+.rateCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 18px 22px;
+  border: 1px solid var(--ink-line, #2a3645);
+  outline: 1px solid var(--ink-line-soft, #1e2937);
+  outline-offset: 4px;
+  transition: border-color 0.25s, outline-color 0.25s;
+}
+
+.rateCard:hover {
+  border-color: var(--gold-deep, #a88a4a);
+  outline-color: rgba(168, 138, 74, 0.35);
+}
+
+.rateFeatured {
+  border-color: var(--gold-deep, #a88a4a);
+  outline-color: rgba(168, 138, 74, 0.4);
+  background: rgba(232, 200, 137, 0.03);
+}
+
+.rateFlag {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  background: var(--gold, #e8c889);
+  color: var(--ink, #0e1620);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rateName {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+}
+
+.ratePrice {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--gold, #e8c889);
+}
+
+.ratePrice span {
+  font-size: 0.85rem;
+  color: var(--cream-mute, #837b6a);
+}
+
+.rateYearly {
+  margin: 7px 0 0;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cream-mute, #837b6a);
+}
+
+.rateRule {
+  width: 40px;
+  height: 1px;
+  margin: 14px 0;
+  background: linear-gradient(90deg, transparent, var(--gold-deep, #a88a4a), transparent);
+}
+
+.rateLeagues {
+  margin: 0 0 7px;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream, #f4ebd8);
+}
+
+.rateNote {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: var(--cream-soft, #c9c0ad);
+}
+
+.ratesFoot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: clamp(24px, 2.8vw, 36px);
+  text-align: center;
+}
+
+.rateFree {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cream-mute, #837b6a);
+}
+
 /* ----------------------------------------------------------- closing */
 
 .closing {
-  padding: clamp(90px, 10vw, 150px) var(--edge) clamp(80px, 9vw, 130px);
+  padding: clamp(56px, 6vw, 88px) var(--edge) clamp(90px, 10vw, 140px);
+  border-top: 1px solid var(--ink-line, #2a3645);
 }
 
 .closeTitle {
-  margin: 0 0 clamp(40px, 5vw, 70px);
+  margin: 0 0 clamp(40px, 5vw, 64px);
   font-family: var(--serif);
   font-weight: 400;
-  line-height: 0.95;
+  line-height: 1;
 }
 
 .closeLine1,
 .closeLine2 {
   display: block;
-  font-size: clamp(3rem, 9vw, 9rem);
+  font-size: clamp(2.6rem, 6.2vw, 6.2rem);
   letter-spacing: -0.015em;
+}
+
+/* Both stagger lines (and the kicker above them) step in from the page
+   edges by the same small amount. */
+.closeLine1 {
+  padding-left: clamp(10px, 1.4vw, 28px);
 }
 
 .closeLine2 {
   text-align: right;
-  margin-top: 0.04em;
+  margin-top: 0.06em;
+  padding-right: clamp(10px, 1.4vw, 28px);
+}
+
+.closing > .kicker {
+  padding-left: clamp(10px, 1.4vw, 28px);
 }
 
 .closeRow {
@@ -1338,21 +1983,6 @@
 }
 
 .footLinks a:hover {
-  color: var(--gold, #e8c889);
-}
-
-.footCompare {
-  margin: 0;
-  font-size: 0.76rem;
-}
-
-.footCompare a {
-  color: var(--cream-mute, #837b6a);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.footCompare a:hover {
   color: var(--gold, #e8c889);
 }
 
@@ -1411,20 +2041,27 @@
   .sundayGrid {
     grid-template-columns: 1fr;
   }
+
+  .clubCards {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 900px) {
-  /* TSC brand collapse, like the mobile landing */
-  .brandFull {
+  /* Brand stays collapsed to TSC. at phone widths */
+  .brandFade {
+    font-size: 0;
+    opacity: 0;
+  }
+
+  .navLinks a:not(.navCta):not(.navLogin) {
     display: none;
   }
 
-  .brandAbbr {
-    display: inline;
-  }
-
-  .navLinks a:not(.btnGold):not(.navSignIn) {
-    display: none;
+  .rateGrid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 620px;
+    gap: 18px;
   }
 }
 
@@ -1464,13 +2101,33 @@
   }
 
   .draftClip {
-    width: min(118%, 420px);
-    margin-left: calc(-1 * var(--edge) - 8%);
+    width: min(112%, 400px);
+    margin-left: calc(-1 * var(--edge) - 6%);
+  }
+
+  .clubCards {
+    grid-template-columns: 1fr;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .clubCard:nth-child(even) {
+    margin-top: 0;
+  }
+
+  .root .clubCard {
+    min-height: 0;
+  }
+
+  .rateGrid {
+    grid-template-columns: 1fr;
+    max-width: 380px;
   }
 
   .closeLine2 {
     text-align: left;
-    padding-left: 12vw;
+    padding-left: 10vw;
   }
 
   .closeRow {

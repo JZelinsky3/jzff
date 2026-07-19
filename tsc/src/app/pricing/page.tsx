@@ -1,6 +1,7 @@
 import type { Viewport } from 'next'
 import Link from 'next/link'
 import { cookies } from 'next/headers'
+import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
@@ -75,11 +76,9 @@ export default async function PricingPage({
   return (
     <main>
       <nav className="nav">
-        <Link href={backHref} className="dc-nav-icon" aria-label="Back">
-          <svg viewBox="0 0 8 14" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="7 1 1 7 7 13" />
-          </svg>
-        </Link>
+        {/* History-aware back: returns to the actual previous page (e.g. a
+            landing candidate), falling back to ?back= / dashboard / home. */}
+        <BackButton fallbackHref={backHref} ariaLabel="Back" />
         <div className="nav-center">
           <div className="nav-kicker">Pricing</div>
           <div className="nav-title">The <em>plans.</em></div>

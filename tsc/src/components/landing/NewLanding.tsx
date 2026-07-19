@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import s from './new.module.css'
 
 // ---------------------------------------------------------------------------
@@ -30,21 +30,24 @@ const AGATE = [
   { rk: 6, team: 'Grant', rec: '6-8', pf: '1,402.4' },
   { rk: 7, team: 'Ryan', rec: '6-8', pf: '1,344.0' },
   { rk: 8, team: 'Cruz', rec: '4-10', pf: '1,296.5' },
+  { rk: 9, team: 'Bell', rec: '4-10', pf: '1,254.3' },
+  { rk: 10, team: 'Mason', rec: '3-11', pf: '1,187.6' },
 ]
 
 const DRAFT = [
-  { pick: '1.01', mgr: 'Shaw', player: 'J. Chase' },
-  { pick: '1.02', mgr: 'Ryan', player: 'B. Robinson' },
-  { pick: '1.03', mgr: 'Torres', player: 'J. Jefferson' },
-  { pick: '1.04', mgr: 'Rivera', player: 'C. Lamb' },
-  { pick: '1.05', mgr: 'Okafor', player: 'A. St. Brown' },
+  { pick: '1.01', mgr: 'Shaw', player: "Ja'Marr Chase" },
+  { pick: '1.02', mgr: 'Ryan', player: 'Bijan Robinson' },
+  { pick: '1.03', mgr: 'Torres', player: 'Justin Jefferson' },
+  { pick: '1.04', mgr: 'Rivera', player: 'CeeDee Lamb' },
+  { pick: '1.05', mgr: 'Okafor', player: 'Amon-Ra St. Brown' },
 ]
 
+// PPG figures agree with the agate PF column (PF / 14 weeks).
 const FORM = [
-  { team: 'Shaw', rec: '11-3', run: ['w', 'w', 'w', 'l', 'w'] },
-  { team: 'Torres', rec: '10-4', run: ['w', 'l', 'w', 'w', 'w'] },
-  { team: 'Rivera', rec: '8-6', run: ['l', 'w', 'l', 'w', 'w'] },
-  { team: 'Ryan', rec: '6-8', run: ['l', 'l', 'w', 'l', 'l'] },
+  { team: 'Shaw', rec: '11-3', ppg: '117.3', run: ['w', 'w', 'w', 'l', 'w'] },
+  { team: 'Torres', rec: '10-4', ppg: '113.6', run: ['w', 'l', 'w', 'w', 'w'] },
+  { team: 'Rivera', rec: '8-6', ppg: '109.5', run: ['l', 'w', 'l', 'w', 'w'] },
+  { team: 'Ryan', rec: '6-8', ppg: '96.0', run: ['l', 'l', 'w', 'l', 'l'] },
 ]
 
 const WIRE = [
@@ -62,8 +65,78 @@ const BUGS = [
   { a: 'MASON', as: '51.7', b: 'CRUZ', bs: '49.9', meta: 'Q2 · WP 53%' },
 ]
 
-export function NewLanding() {
+const CLUB_ROOMS = [
+  {
+    numeral: 'II',
+    name: 'The Dispatch',
+    blurb: 'What just shipped and what is coming down the wire, written like news.',
+    href: '/hub/whats-new',
+  },
+  {
+    numeral: 'III',
+    name: 'The Census',
+    blurb: 'The whole network in numbers: points, picks, trades, blowouts.',
+    href: '/hub/numbers',
+  },
+  {
+    numeral: 'IV',
+    name: 'The Hall',
+    blurb: 'Site-wide records with real names on the plaques.',
+    href: '/hub/records',
+  },
+  {
+    numeral: 'V',
+    name: 'The Trade Room',
+    blurb: 'Verdicts on any trade, no league required. Post it, let the room vote.',
+    href: '/hub/analyzer',
+  },
+  {
+    numeral: 'VI',
+    name: 'The Newsstand',
+    blurb: 'Every public almanac on one rack. Browse, search, bookmark.',
+    href: '/hub/explore',
+  },
+]
+
+const RATES = [
+  {
+    name: 'UDFA',
+    price: '$0',
+    per: '/forever',
+    yearly: 'no card required',
+    leagues: 'One league',
+    note: 'The full almanac, free for as long as you keep it.',
+  },
+  {
+    name: 'Rookie',
+    price: '$3',
+    per: '/mo',
+    yearly: 'or $15/yr',
+    leagues: 'One league',
+    note: 'A single league, kept in print and in sync.',
+  },
+  {
+    name: 'Veteran',
+    price: '$5',
+    per: '/mo',
+    yearly: 'or $25/yr',
+    leagues: 'Three leagues',
+    note: 'Run every league you keep from one account.',
+    flag: 'Most subscribed',
+  },
+  {
+    name: 'All-Pro',
+    price: '$15',
+    per: '/mo',
+    yearly: 'or $50/yr',
+    leagues: 'Ten leagues',
+    note: 'The whole shelf, plus first look at new features.',
+  },
+]
+
+export function NewLanding({ signedIn = false }: { signedIn?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null)
+  const [slim, setSlim] = useState(false)
 
   useEffect(() => {
     const root = rootRef.current
@@ -84,28 +157,55 @@ export function NewLanding() {
     return () => io.disconnect()
   }, [])
 
+  // Brand collapse: past the masthead the nameplate letters slide away and
+  // leave TSC., same mechanism as the mobile landing's top bar.
+  useEffect(() => {
+    let ticking = false
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        setSlim(window.scrollY > 120)
+        ticking = false
+      })
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
     <div ref={rootRef} className={s.root}>
       {/* ------------------------------------------------------------ nav */}
-      <header className={s.nav}>
-        <Link href="/new" className={s.brand}>
-          <span className={s.brandFull}>
-            The Sunday <em>Chronicle.</em>
-          </span>
-          <span className={s.brandAbbr}>
-            TS<em>C</em>
+      <header className={`${s.nav} ${slim ? s.navSlim : ''}`}>
+        <Link href="/" className={s.brand} aria-label="The Sunday Chronicle">
+          <span aria-hidden>
+            T<span className={s.brandFade}>{'he '}</span>S
+            <span className={s.brandFade}>{'unday '}</span>
+            <em>
+              C<span className={s.brandFade}>hronicle</span>.
+            </em>
           </span>
         </Link>
         <nav className={s.navLinks}>
-          <Link href="/demo/">Almanac</Link>
+          <Link href="/demo/">Demo</Link>
           <Link href="/pricing">Pricing</Link>
           <Link href="/guides">Guides</Link>
           <Link href="/about">About</Link>
-          <Link href="/login" className={s.navSignIn}>
-            Sign in
-          </Link>
-          <Link href="/login?mode=signup" className={s.btnGold}>
-            Start free
+          {signedIn ? (
+            <Link href="/hub" className={s.navLogin}>
+              Clubhouse
+            </Link>
+          ) : (
+            <Link href="/login" className={s.navLogin}>
+              Login
+            </Link>
+          )}
+          <Link
+            href={signedIn ? '/dashboard' : '/login?mode=signup'}
+            className={s.navCta}
+          >
+            {signedIn ? 'Your library' : 'Start free'}
           </Link>
         </nav>
       </header>
@@ -120,17 +220,17 @@ export function NewLanding() {
         <h1 className={s.mastTitle}>
           The Sunday <em>Chronicle.</em>
         </h1>
+        <div className={s.mastFlourish} aria-hidden />
         <div className={s.mastDeckRow}>
           <p className={s.deck}>The record book your league never kept.</p>
         </div>
         <div className={s.mastBottom}>
-          <p className={s.mastProse}>
-            Bring a league ID and the Chronicle walks every season back to the
-            beginning, then keeps writing.
-          </p>
           <div className={s.ctas}>
-            <Link href="/login?mode=signup" className={s.btnGold}>
-              Start your chronicle
+            <Link
+              href={signedIn ? '/dashboard' : '/login?mode=signup'}
+              className={s.btnGold}
+            >
+              {signedIn ? 'Open your library' : 'Start your chronicle'}
             </Link>
             <Link href="/demo/" className={s.btnGhost}>
               Read the demo league
@@ -158,7 +258,7 @@ export function NewLanding() {
       {/* ------------------------------------------------ front page, row 1 */}
       <section className={s.spread}>
         <div className={s.pageGrid}>
-          {/* left rail: agate standings + members' notice */}
+          {/* left rail: agate standings */}
           <div className={s.colRail} data-reveal>
             <div className={s.agate}>
               <p className={s.kicker}>The agate page</p>
@@ -180,20 +280,6 @@ export function NewLanding() {
                 back to year one, for as many seasons as your league has played.
               </p>
             </div>
-
-            <aside className={s.notice}>
-              <p className={s.kicker}>Members&rsquo; notice</p>
-              <p className={s.noticeTitle}>
-                The Clubhouse <em>is open.</em>
-              </p>
-              <p className={s.noticeProse}>
-                Signed-in members get the room in the back: every league on one
-                shelf, records across the whole site.
-              </p>
-              <Link href="/hub" className={s.textLink}>
-                Step inside
-              </Link>
-            </aside>
           </div>
 
           {/* center: lead story + ledger clipping */}
@@ -327,6 +413,10 @@ export function NewLanding() {
                         <i key={i} className={r === 'w' ? s.w : s.l} />
                       ))}
                     </span>
+                    <span className={s.formPpg}>
+                      {t.ppg}
+                      <i>ppg</i>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -337,7 +427,7 @@ export function NewLanding() {
         {/* ------------------------------------------------------ pull quote */}
         <blockquote className={s.pull} data-reveal>
           <p>
-            Seven years of arguments, <em>finally settled in print.</em>
+            Every argument your league ever had, <em>settled in print.</em>
           </p>
         </blockquote>
       </section>
@@ -360,8 +450,11 @@ export function NewLanding() {
               as they happen. The week&rsquo;s history, written while it is still
               being played.
             </p>
-            <Link href="/demo/pickems/" className={s.btnGold}>
-              Watch a Sunday live
+            <Link href="/demo/live/" className={s.btnLive}>
+              <span className={s.btnLiveTag}>
+                <i className={s.bugDot} aria-hidden /> Live
+              </span>
+              Tour game day in the demo
             </Link>
           </div>
 
@@ -432,25 +525,115 @@ export function NewLanding() {
         </div>
       </section>
 
+      {/* ------------------------------------------------------ the clubhouse
+          Members' wing: a big engraved entrance on the dark wall, five cream
+          membership cards hung at a tilt behind it, and a brass plaque with
+          the door handle. */}
+      <section className={s.club}>
+        <div className={s.clubHead} data-reveal>
+          <p className={s.clubKicker}>✦ Members&rsquo; entrance · Est. 2026 ✦</p>
+          <h2 className={s.clubTitle}>
+            The <em>Clubhouse.</em>
+          </h2>
+          <p className={s.clubSub}>
+            Behind every almanac is the room where the members read. One door,
+            every league on your shelf, and the whole network&rsquo;s numbers
+            up on the wall.
+          </p>
+        </div>
+
+        <div className={s.clubCards} data-reveal>
+          {CLUB_ROOMS.map((r) => (
+            <Link key={r.numeral} href={r.href} className={s.clubCard}>
+              <span className={s.clubCardWing}>Wing {r.numeral}</span>
+              <span className={s.clubCardNum}>{r.numeral}</span>
+              <span className={s.clubCardName}>{r.name}</span>
+              <span className={s.clubCardRule} />
+              <span className={s.clubCardBlurb}>{r.blurb}</span>
+              <span className={s.clubCardCta}>Open the door</span>
+            </Link>
+          ))}
+        </div>
+
+        <div className={s.clubPlaque} data-reveal>
+          <span className={s.clubShine} aria-hidden />
+          <p className={s.clubPlaqueLine}>
+            One membership <span>·</span> Every league on one shelf
+            <span>·</span> The whole network on the wall
+          </p>
+          <Link href="/hub" className={s.btnHead}>
+            Step inside.
+          </Link>
+          <p className={s.clubFine}>Included with every account</p>
+        </div>
+      </section>
+
+      {/* -------------------------------------------------- subscription desk */}
+      <section className={s.rates}>
+        <div className={s.ratesHead} data-reveal>
+          <p className={`${s.kicker} ${s.kickerCenter}`}>The subscription desk</p>
+          <h2 className={s.ratesTitle}>
+            Take the <em>paper.</em>
+          </h2>
+          <p className={s.ratesSub}>
+            One league is free forever, no card. Paid editions add shelves and
+            keep every one of them in print.
+          </p>
+        </div>
+        <div className={s.rateGrid} data-reveal>
+          {RATES.map((r) => (
+            <div key={r.name} className={`${s.rateCard} ${r.flag ? s.rateFeatured : ''}`}>
+              {r.flag && <span className={s.rateFlag}>★ {r.flag}</span>}
+              <p className={s.rateName}>{r.name}</p>
+              <p className={s.ratePrice}>
+                {r.price}
+                <span>{r.per}</span>
+              </p>
+              <p className={s.rateYearly}>{r.yearly}</p>
+              <span className={s.rateRule} />
+              <p className={s.rateLeagues}>{r.leagues}</p>
+              <p className={s.rateNote}>{r.note}</p>
+            </div>
+          ))}
+        </div>
+        <div className={s.ratesFoot} data-reveal>
+          <p className={s.rateFree}>Every paid plan starts with a free trial.</p>
+          <div className={s.ctas}>
+            <Link href="/pricing" className={s.btnHead}>
+              See full pricing.
+            </Link>
+            <Link href="/pricing/plans" className={s.btnHeadGhost}>
+              Compare plans.
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* -------------------------------------------------------- closing */}
       <section className={s.closing}>
+        <p className={s.kicker} data-reveal>
+          The last word
+        </p>
         <h2 className={s.closeTitle} data-reveal>
-          <span className={s.closeLine1}>Your league.</span>
+          <span className={s.closeLine1}>The only place built</span>
           <span className={s.closeLine2}>
-            <em>Bound forever.</em>
+            to <em>immortalize</em> your league!
           </span>
         </h2>
         <div className={s.closeRow} data-reveal>
           <p className={s.closeMeta}>
-            Free tier: one league, forever <span>·</span> No card to start
+            Your league, bound forever <span>·</span> No card to start
             <span>·</span> Five minutes to import
           </p>
           <div className={s.ctas}>
-            <Link href="/login?mode=signup" className={s.btnGold}>
-              Start your chronicle
+            <Link
+              href={signedIn ? '/dashboard' : '/login?mode=signup'}
+              className={s.btnGold}
+            >
+              {signedIn ? 'Open your library' : 'Start your chronicle'}
             </Link>
-            <Link href="/pricing" className={s.btnGhost}>
-              See pricing
+            <Link href="/demo/" className={s.btnGhost}>
+              Read the demo league
             </Link>
           </div>
         </div>
@@ -470,9 +653,6 @@ export function NewLanding() {
           <Link href="/terms">Terms</Link>
           <Link href="/privacy">Privacy</Link>
         </nav>
-        <p className={s.footCompare}>
-          <Link href="/">Current homepage, for comparison</Link>
-        </p>
       </footer>
     </div>
   )

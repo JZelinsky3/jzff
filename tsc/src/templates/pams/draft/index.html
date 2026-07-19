@@ -1517,8 +1517,11 @@ body { background: var(--an-bg); }
 .lg-avg { font-family: var(--mono); font-size: .92rem; font-weight: 700; color: var(--cream-soft); }
 /* Career total, small under the avg so the number stays the headline. */
 .lg-career { display: block; font-size: .46rem; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--an-mute); margin-top: .16rem; }
-/* Avg season finish rides the headline row, small beside the big number. */
-.lg-fin { font-size: .5rem; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--an-mute); margin-left: .35rem; white-space: nowrap; }
+/* Avg season finish rides the headline row: a small serif-italic "fin"
+   label (the ledger's accent voice), then the muted value. */
+.lg-fin { font-size: .5rem; font-weight: 400; letter-spacing: .08em; color: var(--an-mute); margin-left: .35rem; white-space: nowrap; }
+/* Sans italic: keeps the lean without the serif italic's swashy f. */
+.lg-fin .fin-l { font-family: var(--sans); font-size: .48rem; letter-spacing: .02em; margin-right: .18rem; }
 .ledger-table tr.is-top .lg-career { color: var(--an-mute); }
 /* The top drafter's line, in gold. */
 .ledger-table tr.is-top td { background: rgba(232,200,137,.05); }
@@ -4130,7 +4133,7 @@ function renderGraderLedger() {
             });
             html += '<td class="lg-avg">' + m.avgRank.toFixed(1)
                   + (m.avgFinish != null
-                      ? '<span class="lg-fin">fin ' + m.avgFinish.toFixed(1) + '</span>'
+                      ? '<span class="lg-fin"><span class="fin-l">fin</span>' + m.avgFinish.toFixed(1) + '</span>'
                       : '')
                   + '<span class="lg-career">' + Math.round(m.totalScore).toLocaleString() + ' career</span></td></tr>';
         });

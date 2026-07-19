@@ -315,8 +315,14 @@ stays the headline. NOTE: old snapshot names drift from live Supabase profiles (
 (5) Avg season finish: full-season standing (playoffs included) from the export's `finishes`
 map, averaged over the manager's years that have it; omitted when absent. Placement story: first cut stacked it as a second line under the Avg Rank cell's career total
 (too busy); second cut put it as a chip by the manager name (Joey wanted it near avg rank);
-landed inline on the Avg Rank headline row as a small muted `.lg-fin` ("5.7 · FIN 5.0") with
-the career footnote alone underneath. Purpose: draft-avg vs season-finish correlation
+landed inline on the Avg Rank headline row as `.lg-fin`: a lowercase italic "fin" label
+(`.fin-l`, .48rem, var(--sans) italic — serif italic's f read "extra" to Joey, sans keeps the
+lean with a plain f) then the value at .5rem muted mono, .35rem off the avg number —
+"5.7  fin 5.0" — career footnote alone underneath. CAUTION: the static-serve screenshot rig
+does not load the site's shared stylesheet, so font vars fall back; don't trust it for
+letterform-level detail, only layout. (Several intermediate cuts
+resized/recolored the value or flipped the order; all vetoed. Only the label is styled; the
+value matches the career footnote's voice.) Purpose: draft-avg vs season-finish correlation
 (Joey 5.7 draft avg → 5.0 avg finish; Chris same 5.7 → 6.4). Harness now loads `finishes` from
 draft JSONs; the static-serve rig injects real final_ranks fetched from manager_seasons. Headless-verify trick for the opened
 year view: the template's functions are closure-scoped, so hooks must go through `window.*`; a

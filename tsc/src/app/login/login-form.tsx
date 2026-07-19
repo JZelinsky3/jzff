@@ -239,7 +239,7 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
               marginBottom: '-1px',
             }}
           >
-            {m === 'signin' ? 'Sign in' : 'Sign up'}
+            {m === 'signin' ? 'Login' : 'Sign up'}
           </button>
         ))}
       </div>
@@ -330,8 +330,8 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
 
         <button type="submit" disabled={submitting} className="dc-btn dc-btn-block">
           {submitting
-            ? (mode === 'signin' ? 'Signing in…' : 'Creating account…')
-            : (mode === 'signin' ? 'Sign in' : 'Create account')}
+            ? (mode === 'signin' ? 'Logging in…' : 'Creating account…')
+            : (mode === 'signin' ? 'Login' : 'Create account')}
         </button>
 
         {error && <p className="dc-form-error">{error}</p>}

@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { BackButton } from '@/components/BackButton'
-import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { LoginForm } from './login-form'
 import { MobileLogin } from './MobileLogin'
+import l from './login.module.css'
 
 // Mobile auth runs in its own app-style tree — 1:1 scale wanted.
 export const viewport: Viewport = {
@@ -15,9 +16,9 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Sign in',
+  title: 'Login',
   description:
-    "Sign in to The Sunday Chronicle to manage your fantasy football league's public almanac, sync history, and curate rivalries.",
+    "Login to The Sunday Chronicle to manage your fantasy football league's public almanac, sync history, and curate rivalries.",
 }
 
 export default async function LoginPage({
@@ -51,33 +52,34 @@ export default async function LoginPage({
   }
 
   return (
-    <main>
-      <nav className="nav">
-        <BackButton fallbackHref={backHref} ariaLabel="Back" />
-        <div className="nav-center">
-          <div className="nav-kicker">Sign in</div>
-          <div className="nav-title">The <em>Library.</em></div>
-        </div>
-        <span className="nav-link" style={{ visibility: 'hidden' }}>—</span>
-      </nav>
+    <main className={l.page}>
+      <header className={l.bar}>
+        <span className={l.barLeft}>
+          <BackButton fallbackHref={backHref} ariaLabel="Back" />
+        </span>
+        <Link href="/" className={l.brand}>
+          The Sunday <em>Chronicle.</em>
+        </Link>
+        <span className={l.barRight}>Members&rsquo; desk</span>
+      </header>
 
-      <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '2rem' }}>
-        <div className="hero-sup">★ Open the archive ★</div>
-        <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
-          The <em>library.</em>
+      <section className={l.stage}>
+        <p className={l.kicker}>★ Subscriber services ★</p>
+        <h1 className={l.title}>
+          Open your <em>archive.</em>
         </h1>
-        <p className="hero-sub">
-          Sign in to your archive, or start a new one. Either way takes a few seconds.
+        <p className={l.sub}>
+          Login to your library, or start a new chronicle. A few seconds either way.
         </p>
-      </section>
 
-      <div className="section" style={{ maxWidth: '460px' }}>
-        <div className="dc-card-static">
+        <div className={l.card}>
           <LoginForm next={postAuthNext} initialMode={initialMode} />
         </div>
-      </div>
 
-      <SiteFooter />
+        <p className={l.fine}>
+          Just browsing? <Link href="/demo/">The demo league is open to everyone</Link>
+        </p>
+      </section>
     </main>
   )
 }
