@@ -61,6 +61,18 @@ export type LeagueValuationContext = {
   qbStarters: number
   // Number of teams in the league — adjusts scarcity baselines.
   teamCount: number
+  // Reception scoring. Threads into FantasyCalc's ppr query param so a
+  // standard-scoring league stops being priced off PPR market values.
+  // Optional so non-Trade-Desk callers keep their old behavior (PPR).
+  scoringProfile?: 'STANDARD' | 'HALF' | 'PPR'
+  // TE premium (+0.5 / +1.0 per TE reception). No public source prices
+  // TEP leagues directly, so the orchestrator applies a flat TE value
+  // multiplier after blending. Optional; default NONE.
+  tePremium?: 'NONE' | 'MILD' | 'FULL'
+  // Commish source preference from Trade Desk settings. EQUAL keeps the
+  // default reliability weights; FC_WEIGHTED / DP_WEIGHTED tilt the
+  // consensus toward that provider. Optional; default EQUAL.
+  sourcePreference?: 'EQUAL' | 'FC_WEIGHTED' | 'DP_WEIGHTED'
 }
 
 export type ValueSource = {

@@ -15,6 +15,9 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isCompUser, isSubscriptionActive, getUserSubscription } from '@/lib/stripe'
+import { buildNameLookup, nameKey } from '@/lib/positionRanks'
+import { parseSettings, mergeEffective } from '@/lib/tradeDesk/settings'
+import { valuateLeague, type LeagueMode, type PlayerValue as ConsensusValue } from '@/lib/values'
 
 const MAX_TRADES = 100
 const VERDICT_WINDOW_DAYS = 7
@@ -62,7 +65,16 @@ export type TradePublic = {
   ai_summary: string | null
   // Revisit recap (4-week retrospective). Null until the verdict job runs.
   revisit_summary: string | null
+  // When the revisit ran. The wire page dates its verdict bulletins with it.
+  revisited_at: string | null
   sides: TradeSidePublic[]
+  // How big this trade is, judged by the best consensus-market piece in
+  // it. Drives the wire page's announcement scale: blockbusters get the
+  // siren treatment, depth moves a quiet row. Null when no piece could be
+  // valued (unresolvable names, engine outage) — render at standard size.
+  magnitude?: 'blockbuster' | 'headline' | 'depth' | null
+  // The most valuable player in the deal, for auto-written headlines.
+  headline_piece?: { name: string; position: string | null } | null
 }
 
 export type TradesState =
@@ -87,11 +99,85 @@ export type TradesState =
 // check runs against the LEAGUE OWNER's subscription, not the current
 // viewer — readers don't pay; the commissioner does. Comp/lifetime users
 // bypass the check.
-async function ownerHasTradesAccess(ownerId: string): Promise<boolean> {
+export async function ownerHasTradesAccess(ownerId: string): Promise<boolean> {
   if (await isCompUser(ownerId)) return true
   const sub = await getUserSubscription(ownerId)
   if (!isSubscriptionActive(sub) || !sub) return false
   return sub.tier === 'tier2' || sub.tier === 'tier3'
+}
+
+// Stamp magnitude + headline_piece on every trade, in place. Resolves each
+// player asset to a Sleeper id (direct for Sleeper trades, name+position
+// match otherwise) and reads the league-calibrated consensus values — the
+// same engine the whole Trade Desk runs on. Entirely best-effort: any
+// failure leaves the fields null and the page renders at standard scale.
+async function stampMagnitudes(
+  trades: TradePublic[],
+  league: { league_type: string | null; trade_desk_settings: unknown },
+): Promise<void> {
+  if (trades.length === 0) return
+  try {
+    const effective = mergeEffective(parseSettings(league.trade_desk_settings), {
+      mode: ((league.league_type as LeagueMode | null) ?? 'redraft'),
+      lineupType: null,
+      teamCount: null,
+      qbStarters: null,
+    })
+    const valuation = await valuateLeague({
+      mode: effective.mode,
+      qbStarters: effective.qbStarters,
+      teamCount: effective.teamCount,
+      scoringProfile: effective.scoringProfile,
+      tePremium: effective.tePremium,
+      sourcePreference: effective.valueSourcePreference,
+    })
+    const needsNameMatch = trades.some((t) => t.platform !== 'sleeper')
+    const lookup = needsNameMatch ? await buildNameLookup() : null
+
+    for (const t of trades) {
+      let best: { value: number; pctPos: number; name: string; position: string | null } | null = null
+      let hasFirstRoundPick = false
+      for (const side of t.sides) {
+        for (const a of side.assets) {
+          if (a.kind === 'pick' && a.round === 1) hasFirstRoundPick = true
+          if (a.kind !== 'player') continue
+          let sid: string | null = null
+          if (t.platform === 'sleeper') {
+            sid = a.player_id
+          } else if (a.name && lookup) {
+            sid = (a.position ? lookup.get(nameKey(a.name, a.position)) : undefined)
+              ?? lookup.get(nameKey(a.name, ''))
+              ?? null
+          }
+          if (!sid) continue
+          const cv: ConsensusValue | undefined = valuation.values.get(sid)
+          if (!cv) continue
+          if (!best || cv.value > best.value) {
+            best = {
+              value: cv.value,
+              pctPos: cv.percentilePosition ?? 100,
+              name: a.name ?? cv.name,
+              position: a.position ?? cv.position,
+            }
+          }
+        }
+      }
+      if (!best) {
+        t.magnitude = hasFirstRoundPick ? 'headline' : null
+        t.headline_piece = null
+        continue
+      }
+      t.headline_piece = { name: best.name, position: best.position }
+      // Blockbusters must stay rare or the siren means nothing: top ~3% of
+      // a position is the true star tier (roughly a positional top-8).
+      t.magnitude =
+        best.pctPos <= 3 ? 'blockbuster'
+        : best.pctPos <= 20 || hasFirstRoundPick ? 'headline'
+        : 'depth'
+    }
+  } catch {
+    // Magnitude is presentation sugar — never let it break the page.
+  }
 }
 
 export async function getTradesState(slug: string): Promise<TradesState | null> {
@@ -99,7 +185,7 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
 
   const { data: league } = await db
     .from('leagues')
-    .select('id, owner_id')
+    .select('id, owner_id, league_type, trade_desk_settings')
     .eq('slug', slug)
     .maybeSingle()
   if (!league) return null
@@ -196,6 +282,7 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
       executed_at: t.executed_at,
       ai_summary: (t as { ai_summary?: string | null }).ai_summary ?? null,
       revisit_summary: (t as { revisit_summary?: string | null }).revisit_summary ?? null,
+      revisited_at: (t as { revisited_at?: string | null }).revisited_at ?? null,
       sides: sidesByTrade.get(t.id) ?? [],
     }
   })
@@ -285,9 +372,15 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
       executed_at: t.executed_at,
       ai_summary: (t as { ai_summary?: string | null }).ai_summary ?? null,
       revisit_summary: (t as { revisit_summary?: string | null }).revisit_summary ?? null,
+      revisited_at: (t as { revisited_at?: string | null }).revisited_at ?? null,
       sides: sidesByTrade.get(t.id) ?? [],
     }
   })
+
+  // Magnitude + headline enrichment. all_verdicts holds separate objects
+  // for trades that also appear in allTrades, so stamp both lists; the
+  // duplicate work is a map lookup, not a refetch.
+  await stampMagnitudes([...allTrades, ...all_verdicts], league)
 
   return {
     status: 'ok',

@@ -18,6 +18,7 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { devCacheBust } from '@/lib/devCache'
 import {
   parseSettings,
@@ -65,6 +66,7 @@ export async function GET(
         .eq('user_id', user.id)
         .maybeSingle<{ role: string }>()
       isCommish = !!member && ['owner', 'editor'].includes(member.role)
+      if (!isCommish) isCommish = await isSiteAdmin(user.id)
     }
   }
 
@@ -99,7 +101,9 @@ export async function POST(
       .eq('user_id', user.id)
       .maybeSingle<{ role: string }>()
     if (!member || !['owner', 'editor'].includes(member.role)) {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+      if (!(await isSiteAdmin(user.id))) {
+        return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+      }
     }
   }
 

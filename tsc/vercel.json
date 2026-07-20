@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/refresh-draft-ranks",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/grade-trades",
+      "schedule": "0 14 * * *"
     }
   ]
 }

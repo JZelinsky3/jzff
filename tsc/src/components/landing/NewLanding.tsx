@@ -105,7 +105,7 @@ const RATES = [
     per: '/forever',
     yearly: 'no card required',
     leagues: 'One league',
-    note: 'The full almanac, free for as long as you keep it.',
+    note: 'A free chapter of your league\'s history.',
   },
   {
     name: 'Rookie',

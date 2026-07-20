@@ -37,8 +37,8 @@ type FCEntry = {
   combinedValue?: number
 }
 
-async function fetchValues(isDynasty: boolean, numQbs: number, numTeams: number): Promise<FCEntry[]> {
-  const url = `${BASE}?isDynasty=${isDynasty}&numQbs=${numQbs}&numTeams=${numTeams}&ppr=1`
+async function fetchValues(isDynasty: boolean, numQbs: number, numTeams: number, ppr: number): Promise<FCEntry[]> {
+  const url = `${BASE}?isDynasty=${isDynasty}&numQbs=${numQbs}&numTeams=${numTeams}&ppr=${ppr}`
   const res = await fetch(url, {
     cache: 'no-store',
     headers: { 'User-Agent': 'TSC-ManagerHub/1.0 (+https://thesunday.chronicle)' },
@@ -50,12 +50,20 @@ async function fetchValues(isDynasty: boolean, numQbs: number, numTeams: number)
 }
 
 // Cache 12h. FC updates daily; 12h is the freshness/cost sweet spot.
-function cachedFetch(isDynasty: boolean, numQbs: number, numTeams: number): Promise<FCEntry[]> {
+function cachedFetch(isDynasty: boolean, numQbs: number, numTeams: number, ppr: number): Promise<FCEntry[]> {
   return unstable_cache(
-    () => fetchValues(isDynasty, numQbs, numTeams),
-    ['fantasycalc-values', 'v1', String(isDynasty), String(numQbs), String(numTeams)],
+    () => fetchValues(isDynasty, numQbs, numTeams, ppr),
+    ['fantasycalc-values', 'v2', String(isDynasty), String(numQbs), String(numTeams), String(ppr)],
     { revalidate: 12 * 60 * 60 },
   )()
+}
+
+// FC's API accepts ppr=0 / 0.5 / 1 (verified live 2026-07-19). Leagues that
+// never set a scoring profile keep the historical PPR default.
+function pprParam(profile: LeagueValuationContext['scoringProfile']): number {
+  if (profile === 'STANDARD') return 0
+  if (profile === 'HALF') return 0.5
+  return 1
 }
 
 function clampNumTeams(n: number): number {
@@ -102,7 +110,7 @@ function tierBucket(rank: number): number {
 export const fantasyCalcDynastySource: ValueSource = {
   id: 'fantasycalc-dynasty',
   async valueAll(ctx: LeagueValuationContext): Promise<Map<string, PlayerValue>> {
-    const entries = await cachedFetch(true, normalizeQbs(ctx.qbStarters), clampNumTeams(ctx.teamCount))
+    const entries = await cachedFetch(true, normalizeQbs(ctx.qbStarters), clampNumTeams(ctx.teamCount), pprParam(ctx.scoringProfile))
     const out = new Map<string, PlayerValue>()
     for (const e of entries) {
       const v = entryToValue(e, 'dynasty', true)
@@ -115,7 +123,7 @@ export const fantasyCalcDynastySource: ValueSource = {
 export const fantasyCalcRedraftSource: ValueSource = {
   id: 'fantasycalc-redraft',
   async valueAll(ctx: LeagueValuationContext): Promise<Map<string, PlayerValue>> {
-    const entries = await cachedFetch(false, normalizeQbs(ctx.qbStarters), clampNumTeams(ctx.teamCount))
+    const entries = await cachedFetch(false, normalizeQbs(ctx.qbStarters), clampNumTeams(ctx.teamCount), pprParam(ctx.scoringProfile))
     const out = new Map<string, PlayerValue>()
     for (const e of entries) {
       const v = entryToValue(e, 'redraft', false)

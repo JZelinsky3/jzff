@@ -75,6 +75,9 @@ export async function GET(
       mode: result.data.effective.mode,
       qbStarters: result.data.effective.qbStarters,
       teamCount: result.data.effective.teamCount,
+      scoringProfile: result.data.effective.scoringProfile,
+      tePremium: result.data.effective.tePremium,
+      sourcePreference: result.data.effective.valueSourcePreference,
     })
     for (const [pid, pv] of valuation.values) {
       valuesByPid[pid] = pv.value

@@ -27,6 +27,12 @@ export const NAME_ALIASES: ReadonlyArray<{
   { alias: 'Chip Trayanum',   canonical: 'DeaMonte Trayanum', position: 'RB' },
   { alias: 'Gabriel Davis',   canonical: 'Gabe Davis',        position: 'WR' },
   { alias: 'Matthew Hibner',  canonical: 'Matt Hibner',       position: 'TE' },
+  // NFL.com trade-archive spellings (surfaced by the pams grader sweep).
+  { alias: 'Josh Palmer',     canonical: 'Joshua Palmer',     position: 'WR' },
+  { alias: 'Scott Miller',    canonical: 'Scotty Miller',     position: 'WR' },
+  { alias: 'Will Fuller',     canonical: 'William Fuller',    position: 'WR' },
+  { alias: 'Robby Anderson',  canonical: 'Robbie Chosen',     position: 'WR' },
+  { alias: 'Robbie Anderson', canonical: 'Robbie Chosen',     position: 'WR' },
 ]
 
 // Walks the alias list and, for each pair, registers a lookup entry for the

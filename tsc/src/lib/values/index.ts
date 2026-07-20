@@ -329,12 +329,58 @@ const SOURCE_WEIGHTS: Record<ValueProviderId, number> = {
   'sleeper-derived':       0.50,   // weight set for completeness; only used as floor
 }
 
+// Commish source preference (Trade Desk drawer). EQUAL uses SOURCE_WEIGHTS
+// as-is; the weighted modes tilt the blend toward FantasyCalc or
+// DynastyProcess without silencing the other sources — a 1.5x/0.5x swing
+// moves the pair to roughly a 75/25 split of their combined weight, which
+// is what the drawer's copy promises.
+function effectiveWeights(pref: 'EQUAL' | 'FC_WEIGHTED' | 'DP_WEIGHTED'): Record<ValueProviderId, number> {
+  if (pref === 'FC_WEIGHTED') {
+    return {
+      ...SOURCE_WEIGHTS,
+      'fantasycalc-dynasty': SOURCE_WEIGHTS['fantasycalc-dynasty'] * 1.5,
+      'fantasycalc-redraft': SOURCE_WEIGHTS['fantasycalc-redraft'] * 1.5,
+      'dynastyprocess':      SOURCE_WEIGHTS['dynastyprocess'] * 0.5,
+    }
+  }
+  if (pref === 'DP_WEIGHTED') {
+    return {
+      ...SOURCE_WEIGHTS,
+      'dynastyprocess':      SOURCE_WEIGHTS['dynastyprocess'] * 1.5,
+      'fantasycalc-dynasty': SOURCE_WEIGHTS['fantasycalc-dynasty'] * 0.5,
+      'fantasycalc-redraft': SOURCE_WEIGHTS['fantasycalc-redraft'] * 0.5,
+    }
+  }
+  return SOURCE_WEIGHTS
+}
+
+// TE premium value adjustment. No public source prices TEP leagues
+// directly, so we lift every TE's blended value by a flat multiplier —
+// simple, monotonic (ordering within TE never changes), and sized to
+// match how TEP market calculators shift mid-tier TE1s: MILD (+0.5/rec)
+// ≈ +10%, FULL (+1.0/rec) ≈ +20%.
+const TE_PREMIUM_MULT: Record<'NONE' | 'MILD' | 'FULL', number> = {
+  NONE: 1.0,
+  MILD: 1.10,
+  FULL: 1.20,
+}
+
+function applyTePremium(values: Map<string, PlayerValue>, tePremium: 'NONE' | 'MILD' | 'FULL' | undefined): void {
+  const mult = TE_PREMIUM_MULT[tePremium ?? 'NONE']
+  if (mult === 1.0) return
+  for (const pv of values.values()) {
+    if (pv.position.toUpperCase() === 'TE') {
+      pv.value = Math.round(pv.value * mult)
+    }
+  }
+}
+
 // Only drop a source when its value is more than 2x or less than 0.5x the
-// median of peer sources for that player. The intent is catching scrape
-// regressions (e.g. KTC silently returning 50 instead of 9997), not
-// arbitrating legitimate inter-source disagreement — that's what consensus
-// is for. Empirically a 40% threshold fires on ~40% of players; 100% fires
-// only on real ~2x errors.
+// median of peer sources for that player (threshold 1.00 = 100% deviation).
+// The intent is catching scrape regressions (e.g. KTC silently returning 50
+// instead of 9997), not arbitrating legitimate inter-source disagreement —
+// that's what consensus is for. Empirically a 40% threshold fired on ~40%
+// of players; 100% fires only on real ~2x errors.
 const OUTLIER_THRESHOLD = 1.00
 const OUTLIER_MIN_PEERS = 3
 
@@ -344,6 +390,7 @@ function consensusBlend(
     values: Map<string, PlayerValue>          // rescaled values used in the mean
     rawValues: Map<string, PlayerValue>       // pre-rescale values for diagnostics
   }>,
+  weights: Record<ValueProviderId, number> = SOURCE_WEIGHTS,
 ): Map<string, PlayerValue> {
   // First pass: collect every source's contribution per player so we can
   // run the Sleeper-floor + outlier filters with global knowledge.
@@ -391,7 +438,7 @@ function consensusBlend(
     let weightedSum = 0
     let weightTotal = 0
     for (const c of kept) {
-      const w = SOURCE_WEIGHTS[c.sourceId] ?? 1.0
+      const w = weights[c.sourceId] ?? 1.0
       weightedSum += c.value * w
       weightTotal += w
     }
@@ -478,7 +525,11 @@ async function valuateConsensus(ctx: LeagueValuationContext): Promise<ValuationR
     source: p.source,
     values: p.values,
     rawValues: p.rawValues,
-  })))
+  })), effectiveWeights(ctx.sourcePreference ?? 'EQUAL'))
+
+  // League-shape adjustments run after the blend so every source (and the
+  // percentile badges) see the same adjusted frame.
+  applyTePremium(values, ctx.tePremium)
 
   attachPercentiles(values)
 
@@ -630,6 +681,7 @@ async function valuateSingle(ctx: LeagueValuationContext, requested: Exclude<Val
       }
     }
   }
+  applyTePremium(primary.values, ctx.tePremium)
   return {
     provider: primary.source.id,
     providerLabel: PROVIDER_LABELS[primary.source.id],

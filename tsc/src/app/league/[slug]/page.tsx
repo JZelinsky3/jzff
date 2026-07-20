@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
 import { MobileLeagueHub } from '@/components/league/MobileLeagueHub'
 import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { resolveLeagueTier, tierBadgeLabel } from '@/lib/leagueTier'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { getViewMode } from '@/lib/viewMode'
@@ -29,6 +30,13 @@ export default async function LeagueOverviewPage({
 
   const { data: { user: viewer } } = await supabase.auth.getUser()
   const isOwner = !!viewer && league.owner_id === viewer.id
+  // Site admins can run every owner control here (sync, publish, wizard,
+  // presentations) when assisting with someone else's league.
+  const canManage = isOwner || (!!viewer && (await isSiteAdmin(viewer.id)))
+  // Manual "grade N trades" card — dev/backfill tool, deliberately limited
+  // to Joey's own leagues. Everyone else gets grades automatically via the
+  // daily cron (/api/cron/grade-trades); no button needed.
+  const canGradeTrades = ['jake', 'pams'].includes(league.slug)
 
   const [
     { count: seasonCount },
@@ -65,7 +73,7 @@ export default async function LeagueOverviewPage({
     return (
       <MobileLeagueHub
         league={league}
-        isOwner={isOwner}
+        isOwner={canManage}
         seasonCount={seasonCount ?? 0}
         managerCount={managerCount ?? 0}
         matchupCount={matchupCount ?? 0}
@@ -112,7 +120,7 @@ export default async function LeagueOverviewPage({
         </div>
       </section>
 
-      {isOwner && !((league.settings ?? {}) as { wizard_dismissed_at?: string }).wizard_dismissed_at && (
+      {canManage && !((league.settings ?? {}) as { wizard_dismissed_at?: string }).wizard_dismissed_at && (
         <SetupWizCallout leagueId={league.id} slug={slug} />
       )}
 
@@ -167,7 +175,7 @@ export default async function LeagueOverviewPage({
                 season records, drafts, manager profiles, rivalries — all of it.
                 Reversible any time.
               </div>
-              {isOwner && <BillboardPublishCta leagueId={league.id} />}
+              {canManage && <BillboardPublishCta leagueId={league.id} />}
             </div>
             <div className="almanac-billboard-rule" aria-hidden />
           </div>
@@ -280,11 +288,11 @@ export default async function LeagueOverviewPage({
           </div>
         </div>
 
-        {/* Row 2 — Trade Grader, private beta. Lives in a second 2-col grid
-            so the card aligns under Sync at the same width; empty right
-            slot keeps the grid layout consistent. Server route gates this
-            too, so it stays Jake-only end-to-end. */}
-        {league.slug === 'jake' && (
+        {/* Row 2 — Trade Grader. Lives in a second 2-col grid so the card
+            aligns under Sync at the same width; empty right slot keeps the
+            grid layout consistent. Server route enforces the same
+            Veteran-tier gate. */}
+        {canGradeTrades && (
           <div
             style={{
               display: 'grid',
@@ -393,7 +401,7 @@ export default async function LeagueOverviewPage({
               <span className="toc-badge teal">Set</span>
               <div className="toc-arrow">→</div>
             </Link>
-            {isOwner && (
+            {canManage && (
               <Link href={`/league/${slug}/present`} className="toc-row">
                 <div className="toc-chapter">Ch. V</div>
                 <div className="toc-title-wrap">

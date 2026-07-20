@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { slugify } from '@/lib/slugify'
 
 const Schema = z.object({
@@ -38,7 +39,9 @@ export async function updateLeagueSettings(_prev: Result | null, formData: FormD
     .eq('id', parsed.data.leagueId)
     .maybeSingle()
   if (!league) return { ok: false, error: 'League not found.' }
-  if (league.owner_id !== user.id) return { ok: false, error: 'Only the owner can edit settings.' }
+  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+    return { ok: false, error: 'Only the owner can edit settings.' }
+  }
 
   // Normalize requested slug; default to current if empty. If it changed,
   // check uniqueness before saving.

@@ -532,6 +532,18 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       description: `An upcoming head-to-head in ${meta.name} — records, form, projections, and the all-time ledger.`,
     }
   }
+  // The Grader: /leagues/<slug>/live/trades/grader/
+  // Two variants from the image route: a sealed-dispatch tease when a
+  // deal cleared in the last 24h (no trade details revealed), else the
+  // Transaction Times front page.
+  if (file === 'live/trades/grader/index.html') {
+    const url = new URL(`/api/og/grader/${meta.slug}`, req.nextUrl.origin).toString()
+    return {
+      url,
+      title: `${meta.name} · The Grader`,
+      description: `Every trade in ${meta.name} hits the wire — announced, graded on arrival, revisited four weeks later.`,
+    }
+  }
   // Power Rankings: /leagues/<slug>/live/powerrank/
   // Cream-paper podium card — week, top three power-ranked teams with
   // records and PR scores. Falls back to a "board is set" card when no

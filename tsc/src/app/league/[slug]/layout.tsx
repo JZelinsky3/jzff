@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
 import { LeagueBackLink } from './back-link'
 import { AdminNavMenu } from './admin-nav-menu'
@@ -25,6 +26,11 @@ export default async function LeagueLayout({
   if (!league) notFound()
 
   const isOwner = league.owner_id === user.id
+  // Site admins get the full management surface on any league (assist
+  // mode). The nav kicker flags it so an assisted league is never mistaken
+  // for one of your own.
+  const adminAssist = !isOwner && (await isSiteAdmin(user.id))
+  const canManage = isOwner || adminAssist
 
   const words = league.name.trim().split(/\s+/)
   const head = words.slice(0, -1).join(' ')
@@ -38,7 +44,10 @@ export default async function LeagueLayout({
         <header className="mlsub-bar">
           <MobileLeagueBackLink slug={slug} />
           <div className="mlsub-bar-center">
-            <span className="mlsub-bar-kicker">{league.platform}</span>
+            <span className="mlsub-bar-kicker">
+              {league.platform}
+              {adminAssist && ' · Admin'}
+            </span>
             <span className="mlsub-bar-name">{league.name}</span>
           </div>
           <span className="mlsub-bar-spacer" />
@@ -53,12 +62,15 @@ export default async function LeagueLayout({
       <nav className="nav">
         <LeagueBackLink slug={slug} />
         <div className="nav-center">
-          <div className="nav-kicker">{league.platform} · Management</div>
+          <div className="nav-kicker">
+            {league.platform} · Management
+            {adminAssist && ' · Site admin'}
+          </div>
           <div className="nav-title">
             {head} {tail && <em>{tail}.</em>}
           </div>
         </div>
-        <AdminNavMenu slug={slug} isOwner={isOwner} />
+        <AdminNavMenu slug={slug} isOwner={canManage} />
       </nav>
       {children}
     </>

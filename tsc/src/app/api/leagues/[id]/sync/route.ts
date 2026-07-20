@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { ingestSleeperLeague } from '@/lib/ingest/sleeper'
 import { ingestNflLeague } from '@/lib/ingest/nfl'
 import { ingestEspnLeague } from '@/lib/ingest/espn'
@@ -38,7 +39,9 @@ async function authorizeLeague(id: string): Promise<
       .eq('user_id', user.id)
       .maybeSingle()
     if (!member || !['owner', 'editor'].includes(member.role)) {
-      return { response: NextResponse.json({ error: 'forbidden' }, { status: 403 }) }
+      if (!(await isSiteAdmin(user.id))) {
+        return { response: NextResponse.json({ error: 'forbidden' }, { status: 403 }) }
+      }
     }
   }
   return { league }

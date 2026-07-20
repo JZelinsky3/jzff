@@ -5,7 +5,739 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Trade Grader · The Trade Desk · {{LEAGUE_NAME}}</title>
   <link rel="stylesheet" href="/pams-template/assets/css/main.css" />
-  <link rel="stylesheet" href="/pams-template/assets/css/trades.css" />
+  <style>
+/* ============================================================
+   THE GRADER — "the wire room."
+   A season of trades told as a story:
+
+     • THE FRONT PAGE — the season's biggest deal set as a full
+       newspaper front page. Recomputed every load, so a bigger
+       deal takes the page over the moment it lands.
+
+     • THE VERDICT DESK — four-week revisits are their own
+       bulletins (blue ruling ink). Fresh rulings pin near the
+       top of the wire; the full docket lives on its own tab.
+
+     • THE WIRE — everything else rides a left rail split into
+       week editions (chip + rule per week), wide cards beside it
+       so long write-ups read properly. Every card is a page of
+       The Transaction Times (folio at the foot); paper stock
+       varies by tier — blockbusters bright, headlines cream,
+       telegrams manila, depth scraps grey newsprint.
+
+     • THE EMBARGO — grades don't print the moment a deal clears.
+       Fresh trades show the packages plus a live countdown to
+       the grade drop (26-36h after execution, per-trade hash);
+       when it hits zero the stamps slam in.
+
+     • SEALED DISPATCHES — a trade from the last 48h that this
+       reader hasn't opened arrives sealed: wax seal, no details.
+       Break the seal and the reveal runs slow: headline, then
+       the manager names, then the packages one asset at a time,
+       then the wire copy TYPED out, and the grade stamps slam
+       LAST. Seen-state lives in localStorage; seals expire on
+       their own after 48h.
+   ============================================================ */
+:root {
+  --w-bg:        #101216;
+  --w-bg-deep:   #0a0c0f;
+  --w-line:      #272b33;
+  --w-line-soft: #1b1f26;
+  --w-mute:      #6b7280;
+  --w-text:      #e8e4d8;
+  --w-cream:     #f0e8d2;
+  --w-cream-2:   #e6dcc0;
+  --w-siren:     #d5382b;
+  --w-siren-dim: #8e2820;
+  --w-amber:     #d9a441;
+  --ink:         #2c2417;
+  --ink-soft:    #554833;
+  --ink-faint:   #77684e;
+  --g-a: #2e6b4f;
+  --g-b: #3e639a;
+  --g-c: #a3720f;
+  --g-d: #b5443a;
+}
+
+html, body { background: var(--w-bg); color: var(--w-text); }
+body {
+  background-image:
+    radial-gradient(ellipse 70% 40% at 50% -6%, rgba(213, 56, 43, .09) 0%, transparent 60%),
+    radial-gradient(ellipse 120% 70% at 50% 115%, rgba(0, 0, 0, .6) 0%, transparent 60%),
+    linear-gradient(180deg, #12151a 0%, #0c0e12 100%);
+}
+
+.nav { background: var(--w-bg-deep); border-bottom-color: var(--w-line); }
+.nav-back { color: var(--w-mute); }
+.nav-back:hover { color: var(--w-text); }
+.nav-link { color: var(--w-amber); }
+.nav-link:hover { color: var(--w-cream); }
+.nav-title em { color: var(--w-text); font-style: italic; }
+.nav-kicker { color: var(--w-siren); }
+.nav-drop-btn { color: var(--w-amber); }
+.nav-drop-btn:hover { color: var(--w-cream); }
+:root {
+  --chapbar-bg:     #0a0c0f;
+  --chapbar-border: #272b33;
+  --chapbar-text:   #6b7280;
+  --chapbar-active: #d9a441;
+  --chapbar-line:   #272b33;
+  --subrail-active: #e8e4d8;
+  --subrail-bg:     rgba(240, 232, 210, .05);
+  --nav-drop-bg:         #0a0c0f;
+  --nav-drop-border:     #272b33;
+  --nav-drop-text:       #e8e4d8;
+  --nav-drop-text-hover: #f0e8d2;
+}
+
+.wire-wrap { max-width: 980px; margin: 0 auto; padding: 1.4rem 1rem 4.5rem; }
+
+/* ── Hero — the siren light ─────────────────────────────── */
+.wire-hero { text-align: center; padding: 2rem 1rem 1.2rem; }
+.wire-hero-chip {
+  display: inline-flex; align-items: center; gap: .55rem;
+  font-family: var(--mono); font-size: .6rem; letter-spacing: .3em;
+  text-transform: uppercase; color: var(--w-siren);
+  border: 1px solid rgba(213, 56, 43, .45);
+  border-radius: 999px; padding: .38rem .9rem .38rem .7rem;
+  margin-bottom: 1.1rem;
+}
+.wire-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--w-siren);
+  box-shadow: 0 0 8px rgba(213, 56, 43, .9);
+  animation: wire-pulse 1.6s ease-in-out infinite;
+}
+@keyframes wire-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .25; }
+}
+/* The paper's nameplate — the Transaction Times runs the whole wire,
+   not just the front page. */
+.wire-paper-name {
+  display: flex; align-items: center; justify-content: center; gap: 1rem;
+  font-family: var(--serif); font-size: .9rem; letter-spacing: .34em;
+  text-transform: uppercase; color: var(--w-cream);
+  margin-bottom: .8rem;
+}
+.wire-paper-name::before, .wire-paper-name::after {
+  content: ''; width: 64px;
+  border-top: 1px solid rgba(240, 232, 210, .25);
+}
+.wire-hero-title {
+  font-family: var(--serif);
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  line-height: 1; margin: 0; color: var(--w-text);
+}
+.wire-hero-title em { color: var(--w-siren); font-style: italic; }
+.wire-hero-sub {
+  margin: 1.1rem auto 0; max-width: 560px;
+  color: var(--w-mute); font-size: .95rem; line-height: 1.55;
+}
+
+/* Room tabs — the wire vs. the verdict desk. */
+.wire-tabs { display: flex; justify-content: center; gap: .5rem; margin-top: 1.2rem; }
+.wire-tab {
+  font-family: var(--mono); font-size: .58rem; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--w-mute);
+  background: none; border: 1px solid var(--w-line); border-radius: 999px;
+  padding: .42rem .95rem; cursor: pointer;
+}
+.wire-tab:hover { color: var(--w-cream); }
+.wire-tab.is-on { color: var(--w-amber); border-color: rgba(217, 164, 65, .55); }
+
+/* Season picker — same quiet "Live ▾" line the Analyzer uses. */
+.wire-year-picker { display: inline-block; margin: .8rem auto 0; }
+.wire-year-select {
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--w-mute);
+  font-family: var(--mono); font-size: .58rem; letter-spacing: .24em;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: center;
+  text-align-last: center;
+}
+.wire-year-select:focus { outline: none; color: var(--w-amber); }
+.wire-year-select:hover { color: var(--w-amber); }
+
+.wire-meta {
+  text-align: center; margin-top: .5rem;
+  font-family: var(--mono); font-size: .56rem; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--w-mute);
+}
+
+/* ── Shared bulletin anatomy (sides, stamps, copy) ──────── */
+.bl-sides {
+  display: grid; grid-template-columns: 1fr 1fr;
+  padding: 1rem 1.4rem 1.15rem;
+}
+@media (max-width: 640px) { .bl-sides { grid-template-columns: 1fr; gap: 1.2rem; } }
+.bl-side { padding: 0 1.1rem; position: relative; }
+.bl-side:first-child { padding-left: 0; }
+.bl-side:last-child  { padding-right: 0; }
+.bl-side + .bl-side { border-left: 1px solid rgba(60, 45, 25, .22); }
+@media (max-width: 640px) {
+  .bl-side + .bl-side { border-left: 0; border-top: 1px dashed rgba(60,45,25,.3); padding-top: 1.1rem; }
+  .bl-side { padding-left: 0 !important; padding-right: 0 !important; }
+}
+.bl-side-head { display: flex; align-items: center; gap: .55rem; margin-bottom: .6rem; }
+.bl-side-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  object-fit: cover; background: rgba(60,45,25,.18);
+  flex: none;
+}
+.bl-side-name { font-weight: 700; font-size: .95rem; line-height: 1.15; }
+.bl-side-team { font-size: .72rem; color: var(--ink-faint); }
+.bl-side-label {
+  font-family: var(--mono); font-size: .54rem; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--ink-faint);
+  margin: 0 0 .45rem;
+}
+.bl-assets { display: flex; flex-direction: column; gap: .34rem; }
+.bl-asset { display: flex; align-items: baseline; gap: .5rem; font-size: .9rem; flex-wrap: wrap; }
+.bl-asset .pos {
+  font-family: var(--mono); font-size: .58rem; letter-spacing: .12em;
+  color: var(--ink-faint); width: 2.4em; flex: none;
+}
+.bl-asset .nm { font-weight: 600; }
+.bl-asset .tm { color: var(--ink-faint); font-size: .72rem; }
+.bl-asset .rk {
+  font-family: var(--mono); font-size: .56rem;
+  color: var(--w-siren-dim);
+  border: 1px solid rgba(181, 68, 58, .4);
+  border-radius: 2px; padding: .05rem .3rem;
+}
+.bl-asset .rk .then { opacity: .6; text-decoration: line-through; margin-right: .3rem; }
+
+/* Grade stamp. Rendered ONLY when a grade exists — an ungraded side
+   shows nothing rather than a placeholder. */
+.bl-stamp {
+  position: absolute; top: -0.4rem; right: 0;
+  font-family: var(--mono); font-weight: 700;
+  border: 3px solid currentColor; border-radius: 3px;
+  padding: .18rem .5rem;
+  transform: rotate(6deg);
+  opacity: .85;
+  background: rgba(255, 252, 240, .5);
+}
+.bl-side:first-child .bl-stamp { transform: rotate(-6deg); }
+@media (max-width: 640px) { .bl-stamp { top: 0; } }
+.bl-stamp .g { font-size: 1.6rem; letter-spacing: .02em; }
+.bl-stamp .re { font-size: .9rem; opacity: .8; margin-left: .3rem; }
+.bl-stamp .re::before { content: '\2192 '; }
+.g-a { color: var(--g-a); }
+.g-b { color: var(--g-b); }
+.g-c { color: var(--g-c); }
+.g-d { color: var(--g-d); }
+
+.bl-copy {
+  margin: 0 1.4rem 1.15rem;
+  padding: .85rem 1rem;
+  border-left: 3px solid rgba(181, 68, 58, .55);
+  background: rgba(60, 45, 25, .06);
+  font-size: .88rem; line-height: 1.62; color: var(--ink-soft);
+}
+.bl-copy .lbl {
+  display: block;
+  font-family: var(--mono); font-size: .54rem; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--w-siren-dim);
+  margin-bottom: .4rem;
+}
+.bl-copy.pending { border-left-color: rgba(60,45,25,.3); font-style: italic; color: var(--ink-faint); }
+
+/* Grades under review — live countdown to the grade drop. */
+.bl-timer {
+  margin: 0 1.4rem 1.15rem;
+  padding: .85rem 1rem;
+  border: 1px dashed rgba(60, 45, 25, .45);
+  background: rgba(60, 45, 25, .05);
+  display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap;
+}
+.bl-timer .lbl {
+  font-family: var(--mono); font-size: .54rem; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--w-siren-dim);
+}
+.bl-timer .clock {
+  font-family: var(--mono); font-weight: 700; font-size: 1.05rem;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.bl-timer .note {
+  font-size: .8rem; font-style: italic; color: var(--ink-faint);
+}
+.fp .bl-timer { margin: 0 0 1.1rem; }
+.bl--depth .bl-timer { margin: 0 1.1rem .9rem; }
+
+/* Folio — every card is a page of The Transaction Times. */
+.bl-folio {
+  display: flex; justify-content: space-between; gap: 1rem;
+  padding: .45rem 1.4rem .55rem;
+  border-top: 1px dashed rgba(60, 45, 25, .28);
+  font-family: var(--mono); font-size: .5rem; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.fp .bl-folio { padding: .6rem 0 0; margin-top: 1.1rem; }
+.bl--depth .bl-folio { padding: .4rem 1.1rem .5rem; }
+
+/* Verdict on file — a folded line on the trade card, not a block.
+   The real verdict presentation is its own bulletin at the desk. */
+.bl-vtoggle {
+  display: block; width: 100%;
+  background: none; border: 0; cursor: pointer;
+  padding: 0 1.4rem 1rem;
+  font-family: var(--mono); font-size: .56rem; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--g-b);
+  text-align: left;
+}
+.bl-vtoggle:hover { color: var(--ink); }
+.bl-vfile {
+  margin: 0 1.4rem 1.15rem;
+  padding: .8rem .95rem;
+  border: 1px dashed rgba(62, 99, 154, .55);
+  background: rgba(62, 99, 154, .07);
+  font-size: .86rem; line-height: 1.6; color: var(--ink-soft);
+}
+
+.bl-fresh {
+  font-family: var(--mono); font-size: .52rem; letter-spacing: .22em;
+  color: var(--w-amber);
+  border: 1px solid rgba(217, 164, 65, .5);
+  border-radius: 999px; padding: .12rem .5rem;
+}
+
+/* ── THE FRONT PAGE — deal of the season ────────────────── */
+.fp {
+  margin-top: 2.2rem;
+  background: linear-gradient(180deg, #f2ecda, #e8dfc4);
+  color: var(--ink);
+  border-radius: 2px;
+  box-shadow: 0 3px 6px rgba(0,0,0,.55), 0 26px 70px rgba(0,0,0,.5);
+  padding: 1.6rem 2rem 1.9rem;
+  position: relative;
+}
+.fp-masthead {
+  text-align: center;
+  border-bottom: 3px double rgba(60,45,25,.6);
+  padding-bottom: .8rem;
+}
+.fp-masthead-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--mono); font-size: .54rem; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--ink-faint);
+  margin-bottom: .5rem;
+}
+.fp-masthead-name {
+  font-family: var(--serif); font-size: clamp(1.3rem, 3vw, 2rem);
+  letter-spacing: .04em;
+  color: var(--ink);
+}
+.fp-edition {
+  display: flex; justify-content: center; gap: 1.6rem;
+  border-bottom: 1px solid rgba(60,45,25,.4);
+  padding: .35rem 0;
+  font-family: var(--mono); font-size: .52rem; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.fp-edition .siren { color: var(--w-siren-dim); font-weight: 700; }
+.fp-headline {
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 6.4vw, 4.6rem);
+  line-height: .96; letter-spacing: -0.015em;
+  text-align: center; text-wrap: balance;
+  margin: 1.4rem 0 .6rem; color: var(--ink);
+  text-transform: uppercase;
+}
+.fp-dek {
+  text-align: center; font-style: italic;
+  color: var(--ink-soft); font-size: .95rem;
+  margin: 0 auto 1.2rem; max-width: 60ch;
+}
+.fp .bl-sides {
+  border-top: 1px solid rgba(60,45,25,.35);
+  border-bottom: 1px solid rgba(60,45,25,.35);
+  padding: 1.2rem .2rem;
+  margin-bottom: 1.1rem;
+}
+.fp-copy {
+  columns: 2; column-gap: 2rem; column-rule: 1px solid rgba(60,45,25,.25);
+  font-size: .9rem; line-height: 1.65; color: var(--ink-soft);
+  margin: 0;
+}
+@media (max-width: 700px) { .fp-copy { columns: 1; } .fp { padding: 1.3rem 1.2rem 1.5rem; } }
+.fp-copy::first-letter {
+  font-family: var(--serif);
+  font-size: 3.1em; line-height: .8;
+  float: left; padding: .08em .12em 0 0;
+  color: var(--w-siren-dim);
+}
+.fp-copy.pending { font-style: italic; color: var(--ink-faint); }
+.fp-copy.pending::first-letter { color: var(--ink-faint); }
+.fp .bl-vtoggle { padding: 1rem 0 0; }
+.fp .bl-vfile { margin: .8rem 0 0; }
+.fp-tag {
+  position: absolute; top: 1rem; right: -0.6rem;
+  background: var(--w-siren);
+  color: #fdf3e4;
+  font-family: var(--mono); font-size: .56rem; letter-spacing: .26em;
+  text-transform: uppercase;
+  padding: .4rem .8rem;
+  transform: rotate(2deg);
+  box-shadow: 0 4px 10px rgba(0,0,0,.4);
+}
+.fp { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+.fp.is-in { opacity: 1; transform: none; }
+
+/* ── THE WIRE — left rail timeline, full-width cards ────── */
+.wire-feed {
+  position: relative;
+  margin-top: 2.6rem;
+  padding-bottom: .5rem;
+}
+.wire-feed::before {
+  content: '';
+  position: absolute; top: 0; bottom: 0; left: 10px;
+  width: 0;
+  border-left: 2px dashed rgba(217, 164, 65, .28);
+}
+/* Week editions — chip on the rail, deal count, rule running out to
+   the right edge so each week reads as its own section. */
+.wk-divider {
+  position: relative;
+  display: flex; align-items: center; gap: .9rem;
+  margin: 0 0 1.6rem;
+}
+.wk-divider:not(:first-child) { margin-top: 2.8rem; }
+.wk-chip {
+  padding: .34rem .9rem;
+  background: var(--w-bg-deep);
+  border: 1px solid var(--w-line);
+  border-radius: 999px;
+  font-family: var(--mono); font-size: .56rem; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--w-amber);
+}
+.wk-count {
+  font-family: var(--mono); font-size: .52rem; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--w-mute);
+  white-space: nowrap;
+}
+.wk-divider::after {
+  content: ''; flex: 1;
+  border-top: 1px dashed rgba(217, 164, 65, .22);
+}
+
+/* Cards run wide beside the rail so long write-ups breathe. */
+.bl {
+  position: relative;
+  margin: 0 0 1.9rem 2.4rem;
+}
+@media (max-width: 640px) { .bl { margin-left: 1.7rem; } }
+/* node on the rail — centered on the 2px dashed line at left 10px:
+   card indent minus node left lands the 9px dot's middle at 11px */
+.bl::before {
+  content: '';
+  position: absolute; top: 1.3rem; left: -2rem;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--w-amber);
+  box-shadow: 0 0 0 3px rgba(217, 164, 65, .18);
+  z-index: 1;
+}
+@media (max-width: 640px) { .bl::before { left: -1.3rem; } }
+
+/* Blockbusters break the rail — full bleed across it. */
+.bl--block { margin-left: 0; }
+.bl--block::before { display: none; }
+
+/* Depth scraps stay small — they're one-line moves. */
+.bl--depth { max-width: 560px; }
+
+/* reveal-on-scroll */
+.bl { opacity: 0; transform: translateY(20px); transition: opacity .5s ease, transform .5s ease; }
+.bl.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .bl, .fp { opacity: 1 !important; transform: none !important; transition: none; }
+}
+
+/* ── Paper styles ───────────────────────────────────────── */
+.bl-paper {
+  background: linear-gradient(180deg, var(--w-cream), var(--w-cream-2));
+  color: var(--ink);
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 14px 34px rgba(0,0,0,.42);
+  overflow: hidden;
+}
+.bl-bar {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .5rem .95rem;
+  font-family: var(--mono); font-size: .56rem; letter-spacing: .24em;
+  text-transform: uppercase;
+}
+.bl-bar .spacer { margin-left: auto; display: flex; gap: .8rem; align-items: baseline; }
+.bl-bar .when { letter-spacing: .16em; opacity: .85; }
+.bl-head { padding: 1rem 1.4rem .35rem; }
+.bl-headline {
+  font-family: var(--serif); margin: 0;
+  line-height: 1; color: var(--ink);
+  text-wrap: balance;
+}
+.bl-dek {
+  margin: .5rem 0 0; color: var(--ink-soft);
+  font-size: .84rem; font-style: italic;
+}
+
+/* blockbuster — the siren banner on bright, fresh-off-the-press stock */
+.bl--block .bl-paper {
+  background: linear-gradient(180deg, #f8f2df, #f0e6c9);
+}
+.bl--block .bl-bar {
+  background: linear-gradient(90deg, var(--w-siren), #a52d22);
+  color: #fdf3e4;
+}
+.bl--block .bl-bar .dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #fdf3e4;
+  animation: wire-pulse 1.1s ease-in-out infinite;
+}
+.bl--block .bl-headline { font-size: clamp(1.9rem, 4.4vw, 3.1rem); }
+.bl--block .bl-paper { box-shadow: 0 2px 4px rgba(0,0,0,.55), 0 20px 55px rgba(213, 56, 43, .15), 0 16px 40px rgba(0,0,0,.48); }
+.bl--block .bl-fresh { color: #fdf3e4; border-color: rgba(253, 243, 228, .5); }
+
+/* headline, paper variant */
+.bl--head .bl-bar { background: #2c2417; color: var(--w-cream); }
+.bl--head .bl-bar .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--w-amber); }
+.bl--head .bl-headline { font-size: clamp(1.4rem, 2.8vw, 2rem); }
+
+/* headline, telegram variant */
+.bl--tg .bl-paper {
+  background: linear-gradient(180deg, #efe6cd, #e5d9b6);
+  border: 1px dashed rgba(60, 40, 20, .5);
+  box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 12px 30px rgba(0,0,0,.4);
+}
+.bl--tg .bl-bar {
+  background: none; color: var(--ink-soft);
+  border-bottom: 1px dashed rgba(60,40,20,.4);
+}
+.bl--tg .bl-bar .dot { display: none; }
+.bl--tg .bl-headline {
+  font-family: var(--mono); font-size: 1rem; letter-spacing: .08em;
+  text-transform: uppercase; line-height: 1.4;
+}
+.bl--tg .bl-dek { font-family: var(--mono); font-size: .66rem; font-style: normal; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-faint); }
+.bl--tg .bl-copy { border-left-color: rgba(60,40,20,.4); }
+.bl--tg .bl-copy .lbl { color: var(--ink-soft); }
+
+/* depth — a torn scrap of grey newsprint, clearly duller stock than
+   the cream bulletins */
+.bl--depth .bl-paper {
+  background: linear-gradient(180deg, #c9c5b7, #bcb8aa);
+  box-shadow: 0 1px 2px rgba(0,0,0,.45), 0 8px 18px rgba(0,0,0,.32);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), 96% 100%, 90% calc(100% - 5px), 82% 100%, 74% calc(100% - 6px), 65% 100%, 55% calc(100% - 4px), 45% 100%, 36% calc(100% - 7px), 27% 100%, 18% calc(100% - 5px), 9% 100%, 3% calc(100% - 7px), 0 100%);
+  padding-bottom: 6px;
+}
+.bl--depth .bl-bar {
+  background: none; color: var(--ink-faint);
+  border-bottom: 1px solid rgba(60,45,25,.18);
+}
+.bl--depth .bl-headline { font-size: 1.05rem; }
+.bl--depth .bl-head { padding: .7rem 1.1rem .3rem; }
+.bl--depth .bl-sides { padding: .65rem 1.1rem .7rem; }
+.bl--depth .bl-copy { margin: 0 1.1rem .9rem; }
+.bl--depth .bl-vtoggle { padding: 0 1.1rem .9rem; }
+.bl--depth .bl-vfile { margin: 0 1.1rem .9rem; }
+.bl--depth .bl-stamp .g { font-size: 1.15rem; }
+.bl--depth .bl-stamp { border-width: 2px; }
+.bl--depth[data-open="false"] .bl-copy,
+.bl--depth[data-open="false"] .bl-vtoggle,
+.bl--depth[data-open="false"] .bl-vfile,
+.bl--depth[data-open="false"] .bl-timer,
+.bl--depth[data-open="false"] .bl-folio,
+.bl--depth[data-open="false"] .bl-sides { display: none; }
+.bl--depth .bl-more {
+  display: block; width: 100%;
+  background: none; border: 0; cursor: pointer;
+  padding: .4rem 1.1rem .7rem;
+  font-family: var(--mono); font-size: .54rem; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--ink-faint);
+  text-align: left;
+}
+.bl--depth .bl-more:hover { color: var(--ink); }
+
+/* ── THE VERDICT DESK — rulings as their own bulletins ──── */
+.wire-feed--desk { margin-top: 2.2rem; padding-bottom: 0; }
+.wk-divider--vd .wk-chip {
+  color: var(--g-b);
+  border-color: rgba(62, 99, 154, .5);
+}
+.wk-divider--vd::after { border-top-color: rgba(62, 99, 154, .3); }
+.bl--vd::before {
+  background: var(--g-b);
+  box-shadow: 0 0 0 3px rgba(62, 99, 154, .18);
+}
+.bl--vd .bl-paper {
+  background: linear-gradient(180deg, #e9ecf0, #dde3ea);
+  border-top: 3px double rgba(62, 99, 154, .75);
+  box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 16px 40px rgba(62, 99, 154, .14), 0 14px 34px rgba(0,0,0,.42);
+}
+.bl--vd .bl-bar { background: rgba(62, 99, 154, .14); color: var(--g-b); }
+.bl--vd .bl-bar .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--g-b); }
+.bl--vd .bl-headline { font-size: clamp(1.4rem, 2.8vw, 2rem); }
+.bl--vd .bl-copy { border-left-color: rgba(62, 99, 154, .6); }
+.bl--vd .bl-copy .lbl { color: var(--g-b); }
+/* grade-change ledger: TEAM  B → A- rows */
+.vd-changes {
+  display: flex; flex-wrap: wrap; gap: .6rem 1.6rem;
+  padding: .85rem 1.4rem .2rem;
+}
+.vd-change { display: flex; align-items: baseline; gap: .6rem; }
+.vd-change .who { font-weight: 700; font-size: .9rem; }
+.vd-change .gg {
+  font-family: var(--mono); font-weight: 700; font-size: 1rem;
+  border: 2px solid currentColor; border-radius: 3px;
+  padding: .08rem .4rem;
+  transform: rotate(-2deg);
+  opacity: .85;
+}
+.vd-change .arrow { font-family: var(--mono); color: var(--ink-faint); }
+.vd-change .held {
+  font-family: var(--mono); font-size: .56rem; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+
+/* ── SEALED DISPATCH — the reveal ───────────────────────── */
+.bl--sealed .bl-inner { display: none; }
+.bl-cover {
+  background: linear-gradient(180deg, #efe6cd, #e2d5b0);
+  color: var(--ink);
+  border-radius: 3px;
+  border: 1px solid rgba(60,40,20,.35);
+  box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 16px 40px rgba(0,0,0,.45);
+  text-align: center;
+  padding: 1.8rem 1.4rem 1.7rem;
+  position: relative;
+  overflow: hidden;
+}
+/* string-and-button envelope hatching */
+.bl-cover::before {
+  content: '';
+  position: absolute; inset: 8px;
+  border: 1px dashed rgba(60,40,20,.3);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.bl-cover-sup {
+  font-family: var(--mono); font-size: .58rem; letter-spacing: .3em;
+  text-transform: uppercase; color: var(--w-siren-dim);
+  margin-bottom: 1rem;
+}
+.bl-seal {
+  width: 64px; height: 64px; margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #e05244, var(--w-siren) 55%, #99271d);
+  box-shadow: 0 3px 8px rgba(0,0,0,.35), inset 0 0 0 4px rgba(255,255,255,.12);
+  display: flex; align-items: center; justify-content: center;
+  color: #fdf3e4;
+  font-family: var(--serif); font-size: 1.35rem; font-style: italic;
+  animation: seal-throb 2.2s ease-in-out infinite;
+}
+@keyframes seal-throb {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) { .bl-seal { animation: none; } }
+.bl-cover-line {
+  font-family: var(--serif); font-size: 1.35rem; line-height: 1.2;
+  margin: 0 auto .35rem; max-width: 34ch;
+}
+.bl-cover-when {
+  font-family: var(--mono); font-size: .56rem; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--ink-faint);
+  margin-bottom: 1.2rem;
+}
+.bl-break {
+  font-family: var(--mono); font-size: .62rem; letter-spacing: .24em;
+  text-transform: uppercase;
+  color: #fdf3e4; background: var(--w-siren);
+  border: 0; border-radius: 2px;
+  padding: .65rem 1.3rem;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,.3);
+}
+.bl-break:hover { background: #b92f23; }
+
+/* staged reveal: cover lifts, assets fade one by one, stamps slam
+   LAST, then the wire copy. JS assigns per-row transition delays and
+   flips the hold classes on a timer. */
+.bl.opening .bl-cover { display: none; }
+.bl.opening .bl-inner { display: block; }
+.bl.opening .rv { opacity: 0; transform: translateY(8px); transition: opacity .45s ease, transform .45s ease; }
+.bl.opening.rv-go .rv { opacity: 1; transform: none; }
+.bl.opening .bl-stamp { opacity: 0; animation: none; }
+.bl.opening.stamps-go .bl-stamp { animation: stamp-slam .5s cubic-bezier(.2, 1.4, .4, 1) both; }
+.bl.opening.stamps-go .bl-side:last-child .bl-stamp { animation-delay: .3s; }
+.bl.opening .bl-copy, .bl.opening .bl-vtoggle, .bl.opening .bl-more,
+.bl.opening .bl-timer, .bl.opening .bl-folio { opacity: 0; transition: opacity .55s ease; }
+.bl.opening.copy-go .bl-copy, .bl.opening.copy-go .bl-vtoggle, .bl.opening.copy-go .bl-more,
+.bl.opening.copy-go .bl-timer, .bl.opening.copy-go .bl-folio { opacity: 1; }
+
+/* typing cursor while the wire copy comes off the machine */
+.bl-copy .txt.typing::after {
+  content: '▍';
+  margin-left: 2px;
+  color: var(--w-siren-dim);
+  animation: caret-blink .7s step-end infinite;
+}
+@keyframes caret-blink { 50% { opacity: 0; } }
+
+/* stamp slam on normal scroll reveal */
+.bl.is-in:not(.opening) .bl-stamp, .fp.is-in .bl-stamp { animation: stamp-slam .5s cubic-bezier(.2, 1.4, .4, 1) both; }
+.bl.is-in:not(.opening) .bl-side:last-child .bl-stamp, .fp.is-in .bl-side:last-child .bl-stamp { animation-delay: .28s; }
+@keyframes stamp-slam {
+  0%   { opacity: 0; transform: scale(2.6) rotate(-14deg); }
+  70%  { opacity: .95; }
+  100% { opacity: .85; transform: scale(1) rotate(6deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bl .bl-stamp, .fp .bl-stamp { animation: none !important; opacity: .85 !important; }
+  .bl.opening .rv, .bl.opening .bl-copy, .bl.opening .bl-vtoggle, .bl.opening .bl-more,
+  .bl.opening .bl-timer, .bl.opening .bl-folio { opacity: 1 !important; transform: none !important; transition: none; }
+}
+
+/* end-of-wire marker */
+.wire-end {
+  position: relative;
+  width: max-content; margin: 0;
+  padding: .3rem .9rem;
+  background: var(--w-bg-deep);
+  border: 1px solid var(--w-line);
+  border-radius: 999px;
+  font-family: var(--mono); font-size: .54rem; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--w-mute);
+}
+
+/* ── Empty / locked / loading states ────────────────────── */
+.wire-empty {
+  text-align: center; padding: 4.5rem 1rem;
+  color: var(--w-mute);
+}
+.wire-empty h2 { font-family: var(--serif); font-size: 1.7rem; color: var(--w-text); margin: 0 0 .6rem; }
+.wire-empty p { font-size: .9rem; max-width: 46ch; margin: 0 auto; line-height: 1.6; }
+.wire-empty .tsc-spinner { width: 42px; height: 42px; margin-bottom: 1rem; color: var(--w-mute); }
+.wire-lock-cta {
+  display: inline-block; margin-top: 1.2rem;
+  font-family: var(--mono); font-size: .62rem; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--w-amber);
+  border: 1px solid rgba(217, 164, 65, .5); border-radius: 2px;
+  padding: .55rem 1rem; text-decoration: none;
+}
+.wire-lock-cta:hover { color: var(--w-cream); border-color: var(--w-cream); }
+
+.wire-foot {
+  margin-top: 3.2rem; text-align: center;
+  font-family: var(--mono); font-size: .62rem; letter-spacing: .2em;
+  text-transform: uppercase; opacity: .4;
+}
+  </style>
 </head>
 <body data-trade-desk-room="grader">
   <div class="site-glow" aria-hidden="true"></div>
@@ -14,34 +746,45 @@
        data-back-href="live/trades/" data-back-label="Back to Trade Desk"></nav>
   <script src="/pams-template/assets/js/nav.js"></script>
 
-  <main class="tr-wrap">
+  <main class="wire-wrap">
 
-    <header class="tr-page-head">
-      <h1 class="tr-page-title">Trade <em>Grader.</em></h1>
+    <header class="wire-hero">
+      <div class="wire-hero-chip"><span class="wire-dot" aria-hidden="true"></span>Official wire · every deal announced</div>
+      <div class="wire-paper-name">The Transaction Times</div>
+      <h1 class="wire-hero-title">The <em>Grader.</em></h1>
+      <p class="wire-hero-sub">
+        When a trade clears in {{LEAGUE_ABBR}}, it crosses this wire like it just
+        shook the whole league. Graded on arrival, revisited four weeks later.
+      </p>
+      <div id="wire-tabs" class="wire-tabs" hidden>
+        <button type="button" class="wire-tab is-on" data-tab="wire">The wire</button>
+        <button type="button" class="wire-tab" data-tab="verdicts">The verdict desk</button>
+      </div>
+      <label class="wire-year-picker">
+        <select id="wire-year-select" class="wire-year-select" aria-label="Season"></select>
+      </label>
+      <div id="wire-meta" class="wire-meta" hidden></div>
     </header>
 
-    <!-- Commissioner-only theme picker — rendered by trades.js when __DC.isCommish -->
-    <div id="theme-picker"></div>
-
-    <div id="content">
-      <div class="tr-empty">
+    <div id="wire-content">
+      <div class="wire-empty">
         <svg class="tsc-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
             <g transform="rotate(-45 12 12)">
                 <ellipse cx="12" cy="12" rx="8.5" ry="5.2"/>
                 <path d="M9.7 12h4.6M10.8 10.8v2.4M12 10.8v2.4M13.2 10.8v2.4"/>
             </g>
         </svg>
-        <h2>Loading…</h2>
+        <h2>Watching the wire</h2>
         <p>Pulling completed trades.</p>
       </div>
     </div>
 
-    <div class="tr-footer" style="margin-top:3rem;text-align:center;font-family:var(--mono);font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;opacity:.45;">
-      {{LEAGUE_ABBR}} · The Trade Desk · Trade Grader · Every deal marked up
+    <div class="wire-foot">
+      {{LEAGUE_ABBR}} · The Trade Desk · The Grader · Announced, graded, revisited
     </div>
 
   </main>
 
-  <script src="/pams-template/assets/js/trades.js"></script>
+  <script src="/pams-template/assets/js/grader-wire.js"></script>
 </body>
 </html>

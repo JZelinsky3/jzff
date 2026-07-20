@@ -135,7 +135,7 @@ async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]
     '  • headline — a punchy tabloid-style header, 4–9 words. Vary the construction across trades (question, declaration, tease). Use player or team names. Do not put quotation marks inside the headline text.',
     '  • blurb — 2–3 sentences selling WHY the desk mocked this deal: who patches what hole, who is buying a window, what the risk is. Reference the starter-value gains and rank movements you are given. Playful but sharp; never neutral filler.',
     '',
-    'BANNED: "win-win", "no-brainer", "blockbuster alert", "look no further", restating the player lists without analysis.',
+    'BANNED: "win-win", "no-brainer", "blockbuster alert", "look no further", restating the player lists without analysis, and the em dash character (use commas, periods, or parentheses instead).',
     '',
     'OUTPUT strict, valid JSON only — every key and string value double-quoted: { "trades": [ { "headline": "...", "blurb": "..." }, ... ] } — exactly one entry per trade, same order as given.',
   ].join('\n')
@@ -274,6 +274,9 @@ export async function GET(
       mode: data.effective.mode,
       qbStarters: data.effective.qbStarters,
       teamCount: data.effective.teamCount,
+      scoringProfile: data.effective.scoringProfile,
+      tePremium: data.effective.tePremium,
+      sourcePreference: data.effective.valueSourcePreference,
     })
   } catch (e) {
     return NextResponse.json(

@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { loadManagerOptions, loadManagerNameMap } from '@/lib/managerOptions'
 import { getViewMode } from '@/lib/viewMode'
 import type { ProfileRow } from '@/app/league/[slug]/setup/setup-list'
@@ -30,10 +31,10 @@ export default async function WelcomePage({
 
   // Owner-only — same gate as the other write surfaces. Editors can still
   // edit pieces via the regular setup pages; the wizard is a one-time
-  // commissioner walk.
+  // commissioner walk. Site admins pass so they can run it while assisting.
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(`/login?next=/league/${slug}/welcome`)
-  if (league.owner_id !== user.id) redirect(`/league/${slug}`)
+  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) redirect(`/league/${slug}`)
 
   const [
     { data: sourcesRaw },

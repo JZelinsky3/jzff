@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { pickRivalryName } from '../rivalries/_lib/nameBank'
 
 type Result = { ok: true } | { ok: false; error: string }
@@ -18,7 +19,9 @@ async function assertOwner(leagueId: string) {
     .eq('id', leagueId)
     .maybeSingle()
   if (!league) return { ok: false as const, error: 'League not found.' }
-  if (league.owner_id !== user.id) return { ok: false as const, error: 'Only the owner can do this.' }
+  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+    return { ok: false as const, error: 'Only the owner can do this.' }
+  }
   return { ok: true as const, slug: league.slug }
 }
 

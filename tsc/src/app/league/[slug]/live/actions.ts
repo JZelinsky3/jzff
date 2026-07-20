@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 
 const Schema = z.object({
   leagueId: z.string().uuid(),
@@ -35,7 +36,9 @@ export async function setLiveSeason(
     .eq('id', parsed.data.leagueId)
     .maybeSingle()
   if (!league) return { ok: false, error: 'League not found.' }
-  if (league.owner_id !== user.id) return { ok: false, error: 'Only the owner can change the live season.' }
+  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+    return { ok: false, error: 'Only the owner can change the live season.' }
+  }
 
   // Clear is_live across all seasons in this league, then set the chosen one (if any).
   const { error: clearErr } = await supabase
@@ -92,7 +95,9 @@ export async function setLiveSource(leagueId: string, sourceId: string | null): 
     .eq('id', parsed.data.leagueId)
     .maybeSingle()
   if (!league) return { ok: false, error: 'League not found.' }
-  if (league.owner_id !== user.id) return { ok: false, error: 'Only the owner can change the live source.' }
+  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+    return { ok: false, error: 'Only the owner can change the live source.' }
+  }
 
   const { error: clearErr } = await supabase
     .from('league_sources')
@@ -141,7 +146,9 @@ export async function setGotw(
     .eq('id', parsed.data.leagueId)
     .maybeSingle()
   if (!league) return { ok: false, error: 'League not found.' }
-  if (league.owner_id !== user.id) return { ok: false, error: 'Only the owner can set the Game of the Week.' }
+  if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
+    return { ok: false, error: 'Only the owner can set the Game of the Week.' }
+  }
 
   const { data: seasonRow } = await supabase
     .from('seasons')

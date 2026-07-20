@@ -42,7 +42,23 @@ const Body = z.object({
 })
 
 // ── Rubric ──────────────────────────────────────────────────────────────
-function gradeForDeltaPct(p: number): string {
+//
+// Each side is graded on its OWN score, not a mirror of the other side's:
+//
+//   sideScore = 0.5 * ownGainPct + 0.5 * relativeDeltaPct
+//
+//   ownGainPct       — the side's marginal starting-lineup change vs its
+//                      own pre-trade starter value ("did my lineup improve?")
+//   relativeDeltaPct — the gap between the two sides' marginal gains,
+//                      normalized to average pre-trade starter value
+//                      ("did I beat the other side of the table?")
+//
+// Blending the two lets mutual wins grade as mutual wins — both sides can
+// print B+/B+ when both lineups genuinely improve — while a lopsided deal
+// still splits (A vs C). The old rubric graded one mirrored delta and
+// could never award both sides above B, which contradicted the Grader's
+// own calibration ("mutual wins are real").
+function gradeForScore(p: number): string {
   if (p >= 0.18)  return 'A+'
   if (p >= 0.12)  return 'A'
   if (p >= 0.05)  return 'A-'
@@ -51,6 +67,7 @@ function gradeForDeltaPct(p: number): string {
   if (p >  -0.05) return 'B-'
   if (p >  -0.08) return 'C+'
   if (p >  -0.12) return 'C'
+  if (p >  -0.16) return 'C-'
   if (p >  -0.20) return 'D'
   return 'F'
 }
@@ -121,15 +138,16 @@ function buildAnalyzerPrompt(ctx: PromptCtx): { system: string; user: string } {
     '',
     typeNote,
     '',
-    'GRADE LOCK — the grades you receive in the user message are FACTS, not suggestions. They are determined by a STARTER-VALUE-IMPACT rubric (see deltaPct):',
-    '  ≥+25%→A+ · +15..+25%→A · +8..+15%→A- · +3..+8%→B+ · -3..+3%→B · -8..-3%→B- · -15..-8%→C+ · -25..-15%→C · -40..-25%→D · ≤-40%→F',
+    'GRADE LOCK — the grades you receive in the user message are FACTS, not suggestions. Each side\'s grade comes from a deterministic rubric on that side\'s score: 0.5 x (its own starting-lineup change %) + 0.5 x (the marginal gap between the two sides). Bands: >=+18% A+ · +12..18% A · +5..12% A- · +2..5% B+ · -2..+2% B · -5..-2% B- · -8..-5% C+ · -12..-8% C · -16..-12% C- · -20..-16% D · below -20% F.',
     '',
-    'IMPORTANT — the grade is NOT raw asset value delta. It is the change in each team\'s STARTING LINEUP value (sum of best starters at QB/RB/WR/TE including FLEX + SF), before vs after the trade. This naturally captures:',
+    'Because the rubric blends each side\'s own lineup change with the relative gap, grades do NOT have to mirror. A deal where both lineups improve can print B+/B+ or A-/B+; a lopsided one prints A/C. Write the narrative to match the pairing you are given.',
+    '',
+    'IMPORTANT — the grade is NOT raw asset value delta. It is built on the change in each team\'s STARTING LINEUP value (sum of best starters at QB/RB/WR/TE including FLEX + SF), before vs after the trade. This naturally captures:',
     '  • Position scarcity — a 4th elite WR added to a team that starts 2 displaces nothing and earns ~0 marginal value, even if his asset value is huge.',
     '  • Real team need — patching a weak position is worth far more than padding a strong one.',
     '  • Package deal nerf — 3-for-1s where the team getting 3 only counts whichever of them cracks the starter tier; the team sending the elite player loses a real starter and gets nothing back to replace him.',
     '',
-    'Do NOT propose different grades. Your narrative MUST be consistent with the grades shown — the team whose STARTING LINEUP improves more wins this trade.',
+    'Do NOT propose different grades. Your narrative MUST be consistent with the grades shown. When one grade is clearly higher, that team improved more; when both grades sit in the B+/A range, frame it as a deal both sides should take.',
     '',
     'WRITING THE NARRATIVE — 4 to 6 sentences total. Follow these rules:',
     '',
@@ -147,6 +165,7 @@ function buildAnalyzerPrompt(ctx: PromptCtx): { system: string; user: string } {
     '• "added depth" or "addressed a need" as the entire reason',
     '• "solid move" / "great trade for both" / "win-win" / "fair deal" as the verdict',
     '• Any sentence whose only purpose is to restate who received whom',
+    '• The em dash character. Never use an em dash anywhere; use commas, periods, or parentheses instead.',
     '',
     'PER-TEAM VERDICTS — one sentence each. The verdict is the takeaway tagline for that team (e.g. "Wins big on consensus value but skews older at WR" or "Loses real value for a positional bet that probably doesn\'t pay off"). NOT another grade — that\'s already determined.',
     '',
@@ -303,6 +322,9 @@ export async function POST(
       mode: data.effective.mode,
       qbStarters: data.effective.qbStarters,
       teamCount: data.effective.teamCount,
+      scoringProfile: data.effective.scoringProfile,
+      tePremium: data.effective.tePremium,
+      sourcePreference: data.effective.valueSourcePreference,
     })
   } catch (e) {
     return NextResponse.json(
@@ -422,8 +444,13 @@ export async function POST(
   const avgPreStarter    = (beforeA + beforeB) / 2 || 1
   const marginalDeltaPct = marginalDelta / avgPreStarter
 
-  const teamAGrade = gradeForDeltaPct(marginalDeltaPct)
-  const teamBGrade = gradeForDeltaPct(-marginalDeltaPct)
+  // Per-side score: own lineup change + relative gap, equal weight (see
+  // the rubric comment above). Grades can land B+/B+ on a genuine mutual
+  // win instead of being forced to mirror.
+  const sideScoreA = 0.5 * marginalAPct + 0.5 * marginalDeltaPct
+  const sideScoreB = 0.5 * marginalBPct - 0.5 * marginalDeltaPct
+  const teamAGrade = gradeForScore(sideScoreA)
+  const teamBGrade = gradeForScore(sideScoreB)
 
   // Re-expose as deltaPct so the existing prompt + UI fields stay
   // wired without renames. raw* fields stay distinct.

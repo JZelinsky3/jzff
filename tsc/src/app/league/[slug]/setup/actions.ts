@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { devCacheBust } from '@/lib/devCache'
 
 type Result = { ok: false; error: string } | { ok: true }
@@ -59,7 +60,9 @@ async function assertWriteAccess(leagueId: string) {
       .eq('user_id', user.id)
       .maybeSingle()
     if (!member || !['owner', 'editor'].includes(member.role)) {
-      return { ok: false as const, error: 'No write access.' }
+      if (!(await isSiteAdmin(user.id))) {
+        return { ok: false as const, error: 'No write access.' }
+      }
     }
   }
   return { ok: true as const, slug: league.slug }

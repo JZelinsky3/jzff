@@ -16,6 +16,7 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { gradeUngradedForLeague } from '@/lib/tradeGrader'
 import { devCacheBust } from '@/lib/devCache'
 
@@ -45,11 +46,11 @@ export async function POST(
     .eq('id', id)
     .maybeSingle()
   if (!league) return NextResponse.json({ error: 'not found' }, { status: 404 })
-  // Trade Grader is in private testing — only Jake's league can run it.
-  // The UI hides the button elsewhere; this is the matching server gate so
-  // a curious user can't POST to this endpoint directly.
-  if (league.slug !== 'jake') {
-    return NextResponse.json({ error: 'trade grader is in private testing' }, { status: 403 })
+  // Manual grading is a dev/backfill tool for Joey's own leagues only.
+  // Every other league gets new trades graded automatically by the daily
+  // cron (/api/cron/grade-trades) — old archives stay ungraded on purpose.
+  if (!['jake', 'pams'].includes(league.slug)) {
+    return NextResponse.json({ error: 'manual grading is not available for this league' }, { status: 403 })
   }
   if (league.owner_id !== user.id) {
     const { data: member } = await supabase
@@ -59,7 +60,9 @@ export async function POST(
       .eq('user_id', user.id)
       .maybeSingle()
     if (!member || !['owner', 'editor'].includes(member.role)) {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+      if (!(await isSiteAdmin(user.id))) {
+        return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+      }
     }
   }
 

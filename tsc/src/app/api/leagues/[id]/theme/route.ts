@@ -10,6 +10,7 @@ import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { devCacheBust } from '@/lib/devCache'
 
 const Body = z.object({
@@ -39,7 +40,9 @@ export async function POST(
       .eq('user_id', user.id)
       .maybeSingle()
     if (!member || !['owner', 'editor'].includes(member.role)) {
-      return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+      if (!(await isSiteAdmin(user.id))) {
+        return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+      }
     }
   }
 

@@ -112,6 +112,9 @@ export async function POST(
       mode: data.effective.mode,
       qbStarters: data.effective.qbStarters,
       teamCount: data.effective.teamCount,
+      scoringProfile: data.effective.scoringProfile,
+      tePremium: data.effective.tePremium,
+      sourcePreference: data.effective.valueSourcePreference,
     })
   } catch (e) {
     return NextResponse.json(
