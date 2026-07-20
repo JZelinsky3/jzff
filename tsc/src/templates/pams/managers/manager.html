@@ -189,8 +189,15 @@
     padding: .26rem .5rem 0 0;
     color: var(--gold-print);
 }
-.fp-seals { display: flex; flex-direction: column; gap: .6rem; align-items: center; }
+/* Seals wrap two across (2×2 at the 4-seal cap) instead of one tall
+   column, so a dynasty's hardware doesn't stretch the index card. */
+.fp-seals {
+    display: flex; flex-wrap: wrap; gap: .6rem;
+    align-items: flex-start; justify-content: center; align-content: flex-start;
+    max-width: 178px;
+}
 .fp-seals .mini-seal { width: 84px; height: 84px; display: block; }
+.fp-seals .fp-seals-more { flex-basis: 100%; text-align: center; }
 .fp-seals-none {
     max-width: 130px;
     padding: .9rem .8rem;
@@ -932,7 +939,8 @@ tr.champ-row td { background: rgba(232, 200, 137, .06) !important; }
 @media (max-width: 900px) {
     .id-card { grid-template-columns: 130px 1fr; }
     .fp-portrait { width: 130px; height: 130px; }
-    .fp-seals { grid-column: 1 / -1; flex-direction: row; justify-content: center; }
+    .fp-seals { grid-column: 1 / -1; justify-content: center; max-width: none; }
+    .fp-seals .fp-seals-more { flex-basis: auto; align-self: center; }
     .fp-plates { grid-template-columns: 1fr; }
     .podium-grid { grid-template-columns: 1fr; gap: 1.6rem; }
 }

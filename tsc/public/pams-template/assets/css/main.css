@@ -189,7 +189,10 @@ a.nav-title { text-decoration: none; color: var(--cream); }
 /* Per-page-themable nav dropdown — fallbacks are navy/gold defaults */
 .nav-drop-menu {
     display: none;
-    position: fixed; top: 4.5rem; right: 1.5rem; left: auto;
+    /* --nav-h is the masthead's real rendered height (published by nav.js);
+       the 4.5rem guess runs short on pages with a taller masthead, which
+       left the open menu covering the hamburger button. */
+    position: fixed; top: calc(var(--nav-h, 4.5rem) + 6px); right: 1.5rem; left: auto;
     background: var(--nav-drop-bg, rgba(14,22,32,.97));
     border: 2px solid var(--nav-drop-border, var(--ink-line));
     border-radius: 2px;

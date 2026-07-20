@@ -25,6 +25,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { gradeTrade, revisitTrade } from '@/lib/tradeGrader'
 import { ownerHasTradesAccess } from '@/lib/trades'
+import { computePositionRanks, stampRanks, type PositionRanks } from '@/lib/positionRanks'
+import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
 export const maxDuration = 300
 
@@ -33,6 +35,9 @@ const REVISIT_AGE_DAYS = 28
 const MAX_GRADES = 25
 const MAX_REVISITS = 15
 const PER_CALL_DELAY_MS = 5000
+// Rank refresh: newest trades first, drains across days if a backlog
+// ever exceeds the cap. Sides, not trades, are the write unit.
+const MAX_RANK_TRADES = 150
 
 type TradeRow = { id: string; league_id: string }
 
@@ -63,6 +68,92 @@ async function filterEligible(
     eligible: rows.filter((r) => accessByLeague.get(r.league_id) === true),
     leaguesChecked: leagueIds.length,
   }
+}
+
+// Keep every player asset's `rank_now` current for recent seasons, so the
+// wire shows where a traded player sits in the points race TODAY (and the
+// verdict desk can show "at trade → now"). Revisits used to be the only
+// thing stamping rank_now, frozen at trade week + 4; this pass refreshes
+// it daily instead. Ranks are computed once per season year (through week
+// 18 — season-to-date under default PPR, same convention as revisits) and
+// stamped across every eligible trade of that season. Costs zero LLM
+// calls; the Sleeper stat fetches are cached in-process.
+async function refreshRanksNow(
+  db: ReturnType<typeof createAdminClient>,
+  warnings: string[],
+): Promise<number> {
+  // The season whose stats are still "live" flips over in September; the
+  // previous year rides along so a just-finished season keeps its final
+  // ranks and pre-pipeline trades get backfilled.
+  const nowDate = new Date()
+  const liveYear = nowDate.getMonth() >= 8 ? nowDate.getFullYear() : nowDate.getFullYear() - 1
+  const seasonYears = [liveYear, liveYear - 1]
+
+  const { data: rows, error } = await db
+    .from('trades')
+    .select('id, league_id, platform, seasons!inner(year)')
+    .eq('status', 'completed')
+    .in('seasons.year', seasonYears)
+    .order('executed_at', { ascending: false })
+    .limit(MAX_RANK_TRADES)
+  if (error) {
+    warnings.push(`rank refresh: load trades: ${error.message}`)
+    return 0
+  }
+
+  const { eligible } = await filterEligible(db, (rows ?? []) as TradeRow[])
+  if (eligible.length === 0) return 0
+  const eligibleIds = new Set(eligible.map((r) => r.id))
+
+  const metaByTrade = new Map<string, { platform: 'sleeper' | 'espn' | 'yahoo' | 'nfl'; year: number }>()
+  for (const t of rows ?? []) {
+    if (!eligibleIds.has(t.id)) continue
+    const season = Array.isArray(t.seasons) ? t.seasons[0] : t.seasons
+    metaByTrade.set(t.id, {
+      platform: (t.platform as 'sleeper' | 'espn' | 'yahoo' | 'nfl') ?? 'sleeper',
+      year: season?.year ?? liveYear,
+    })
+  }
+
+  const ranksByYear = new Map<number, PositionRanks | null>()
+  for (const year of new Set([...metaByTrade.values()].map((m) => m.year))) {
+    try {
+      ranksByYear.set(year, await computePositionRanks({
+        season: year,
+        throughWeek: 18,
+        scoring: DEFAULT_PPR_SCORING,
+      }))
+    } catch (e) {
+      warnings.push(`rank refresh: ranks for ${year}: ${e instanceof Error ? e.message : String(e)}`)
+      ranksByYear.set(year, null)
+    }
+  }
+
+  const { data: sides, error: sidesErr } = await db
+    .from('trade_sides')
+    .select('id, trade_id, assets')
+    .in('trade_id', [...metaByTrade.keys()])
+  if (sidesErr) {
+    warnings.push(`rank refresh: load sides: ${sidesErr.message}`)
+    return 0
+  }
+
+  let stamped = 0
+  for (const s of sides ?? []) {
+    const meta = metaByTrade.get(s.trade_id)
+    const ranks = meta ? ranksByYear.get(meta.year) : null
+    if (!meta || !ranks || ranks.size === 0) continue
+    const original = (s.assets as Array<Record<string, unknown>>) ?? []
+    const updated = await stampRanks(original, { ranks, platform: meta.platform, field: 'rank_now' })
+    if (JSON.stringify(updated) === JSON.stringify(original)) continue
+    const { error: upErr } = await db
+      .from('trade_sides')
+      .update({ assets: updated })
+      .eq('id', s.id)
+    if (upErr) warnings.push(`rank refresh: side ${s.id}: ${upErr.message}`)
+    else stamped++
+  }
+  return stamped
 }
 
 export async function GET(req: Request) {
@@ -125,11 +216,15 @@ export async function GET(req: Request) {
     warnings.push(...r.warnings)
   }
 
+  // ── Current-rank refresh on every recent trade ────────────────────────
+  const ranksStamped = await refreshRanksNow(db, warnings)
+
   return NextResponse.json({
     graded,
     gradeCandidates: fresh.eligible.length,
     revisited,
     revisitCandidates: stale.eligible.length,
+    ranksStamped,
     warnings,
   })
 }

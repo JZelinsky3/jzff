@@ -13,6 +13,18 @@ type ProfileRow = {
   email: string | null
   member_code: string | null
   created_at: string
+  referral_source: string | null
+  referral_source_other: string | null
+}
+
+// Canonical channel values from profiles_referral_source_chk (0042).
+const REFERRAL_LABELS: Record<string, string> = {
+  discord: 'Discord',
+  reddit: 'Reddit',
+  twitter: 'Twitter/X',
+  facebook: 'Facebook',
+  ai: 'AI',
+  other: 'Other',
 }
 
 type LeagueRow = {
@@ -48,7 +60,7 @@ export default async function AdminPage() {
   const db = createAdminClient()
 
   const [profilesRes, leaguesRes, subsRes, compsRes, authUsersRes] = await Promise.all([
-    db.from('profiles').select('id, display_name, member_code, created_at').order('created_at', { ascending: false }),
+    db.from('profiles').select('id, display_name, member_code, created_at, referral_source, referral_source_other').order('created_at', { ascending: false }),
     db.from('leagues').select('id, name, slug, platform, owner_id, created_at, last_synced_at, published_at, grace_period_ends_at, is_udfa').order('created_at', { ascending: false }),
     db.from('subscriptions').select('user_id, tier, billing_period, status, current_period_end, trial_ends_at'),
     db.from('comp_grants').select('user_id, granted_by, note, created_at'),
@@ -66,6 +78,8 @@ export default async function AdminPage() {
     email: emailById.get(p.id as string) ?? null,
     member_code: (p.member_code as string | null) ?? null,
     created_at: p.created_at as string,
+    referral_source: (p.referral_source as string | null) ?? null,
+    referral_source_other: (p.referral_source_other as string | null) ?? null,
   }))
   const leagues = (leaguesRes.data ?? []) as LeagueRow[]
   const subs = (subsRes.data ?? []) as SubscriptionRow[]
@@ -128,6 +142,7 @@ export default async function AdminPage() {
                 <th style={th}>Email</th>
                 <th style={th}>Code</th>
                 <th style={th}>Leagues</th>
+                <th style={th}>Heard via</th>
                 <th style={th}>Subscription</th>
                 <th style={th}>Comp</th>
                 <th style={th}></th>
@@ -149,6 +164,18 @@ export default async function AdminPage() {
                       {p.member_code ?? '—'}
                     </td>
                     <td style={td}>{leagueCountByOwner.get(p.id) ?? 0}</td>
+                    <td style={td}>
+                      {p.referral_source || p.referral_source_other ? (
+                        <>
+                          <div>{p.referral_source ? REFERRAL_LABELS[p.referral_source] ?? p.referral_source : 'Other'}</div>
+                          {p.referral_source_other && (
+                            <div style={{ opacity: 0.6, fontSize: '.7rem' }}>{p.referral_source_other}</div>
+                          )}
+                        </>
+                      ) : (
+                        <span style={{ opacity: 0.4 }}>—</span>
+                      )}
+                    </td>
                     <td style={td}>
                       {sub ? (
                         <>

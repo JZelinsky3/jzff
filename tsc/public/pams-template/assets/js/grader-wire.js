@@ -204,11 +204,14 @@
   // can reveal them piece by piece; outside .opening the class is inert.
   function renderAsset(a) {
     if (a.kind === 'player') {
+      // rank_now is refreshed daily by the grading cron, so it reads as
+      // "where they sit in the points race today". When the at-trade rank
+      // differs, show the drift; otherwise a single current chip.
       var rank = '';
       if (a.rank_now && a.rank_at_trade && a.rank_now !== a.rank_at_trade) {
         rank = '<span class="rk"><span class="then">' + escapeHtml(a.rank_at_trade) + '</span>' + escapeHtml(a.rank_now) + '</span>';
-      } else if (a.rank_at_trade) {
-        rank = '<span class="rk">' + escapeHtml(a.rank_at_trade) + '</span>';
+      } else if (a.rank_now || a.rank_at_trade) {
+        rank = '<span class="rk">' + escapeHtml(a.rank_now || a.rank_at_trade) + '</span>';
       }
       return '<div class="bl-asset rv">' +
         '<span class="pos">' + escapeHtml(a.position || '?') + '</span>' +
@@ -338,6 +341,27 @@
     return '<div class="vd-change"><span class="who">' + escapeHtml(who) + '</span>' + grades + '</div>';
   }
 
+  // Rank drift per player: where they ranked when the deal was struck vs
+  // where they sit now. Players with no rank data are skipped.
+  function renderVerdictRanks(t) {
+    var rows = [];
+    (t.sides || []).forEach(function (s) {
+      (s.assets || []).forEach(function (a) {
+        if (a.kind !== 'player' || !a.name) return;
+        if (a.rank_at_trade && a.rank_now) {
+          var rr = a.rank_at_trade === a.rank_now
+            ? escapeHtml(a.rank_now) + ' · held'
+            : escapeHtml(a.rank_at_trade) + ' → ' + escapeHtml(a.rank_now);
+          rows.push('<span class="vd-rank"><span class="nm">' + escapeHtml(a.name) + '</span><span class="rr">' + rr + '</span></span>');
+        } else if (a.rank_now) {
+          rows.push('<span class="vd-rank"><span class="nm">' + escapeHtml(a.name) + '</span><span class="rr">now ' + escapeHtml(a.rank_now) + '</span></span>');
+        }
+      });
+    });
+    if (rows.length === 0) return '';
+    return '<div class="vd-ranks"><span class="lbl">The tape · at the trade and now</span>' + rows.join('') + '</div>';
+  }
+
   function renderVerdictBulletin(t) {
     var when = t.week != null ? 'the Week ' + t.week : 'the offseason';
     var dek = 'The desk pulls the tape on ' + when + ' deal between ' + joinNames(sideNames(t)) + '.';
@@ -354,6 +378,7 @@
           '<p class="bl-dek">' + escapeHtml(dek) + '</p>' +
         '</div>' +
         '<div class="vd-changes">' + (t.sides || []).map(renderVerdictChange).join('') + '</div>' +
+        renderVerdictRanks(t) +
         '<div class="bl-copy"><span class="lbl">The ruling · four weeks later</span>' + escapeHtml(t.revisit_summary || '') + '</div>' +
       '</div>' +
     '</article>';
@@ -679,7 +704,7 @@
     var full = txt.textContent;
     txt.textContent = '';
     txt.classList.add('typing');
-    var totalMs = Math.min(4500, Math.max(2000, full.length * 12));
+    var totalMs = Math.min(15000, Math.max(5000, full.length * 28));
     var stepMs = 30;
     var per = Math.max(1, Math.round(full.length / (totalMs / stepMs)));
     var i = 0;

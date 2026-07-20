@@ -48,7 +48,7 @@ export default async function Home() {
         name: "Where can I view all my fantasy football league history in one place?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "The Sunday Chronicle imports every season of a Sleeper, ESPN, NFL.com, or Yahoo fantasy football league and publishes it as a single browsable almanac. Standings, champions, drafts, weekly matchups, manager profiles, rivalries, and a record book all live at one URL — thesundaychronicle.app/leagues/your-league/ — that the whole league can read and bookmark.",
+          text: "The Sunday Chronicle imports every season of a Sleeper, ESPN, NFL.com, or Yahoo fantasy football league and publishes it as a single browsable almanac. Standings, champions, drafts, weekly matchups, manager profiles, rivalries, and a record book all live at one URL (thesundaychronicle.app/leagues/your-league/) that the whole league can read and bookmark.",
         },
       },
       {
@@ -88,7 +88,7 @@ export default async function Home() {
         name: "Is The Sunday Chronicle worth it for a long-running fantasy football league?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Long-running leagues benefit the most. Years of context — champions, rivalries, trade arguments, draft busts — live scattered across screenshots, group chats, and platforms that delete data. The Sunday Chronicle turns that into a permanent, searchable, shareable record book your league owns. Multi-platform leagues (started on ESPN, moved to Sleeper) are a particularly good fit.",
+          text: "Long-running leagues benefit the most. Years of context (champions, rivalries, trade arguments, draft busts) live scattered across screenshots, group chats, and platforms that delete data. The Sunday Chronicle turns that into a permanent, searchable, shareable record book your league owns. Multi-platform leagues (started on ESPN, moved to Sleeper) are a particularly good fit.",
         },
       },
       {
@@ -96,7 +96,7 @@ export default async function Home() {
         name: "Who is The Sunday Chronicle for?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Fantasy football commissioners and league members of dynasty, keeper, or multi-year redraft leagues — especially leagues that have run five-plus seasons or moved between platforms. The almanac format works best when there is meaningful history to display, but a fresh league can start one in its first season.",
+          text: "Fantasy football commissioners and league members of dynasty, keeper, or multi-year redraft leagues, especially leagues that have run five-plus seasons or moved between platforms. The almanac format works best when there is meaningful history to display, but a fresh league can start one in its first season.",
         },
       },
     ],

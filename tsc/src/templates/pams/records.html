@@ -1511,7 +1511,7 @@ function populateChrome(managers) {
     if (kicker && minY && maxY) {
         kicker.textContent = minY === maxY
             ? `★ ${minY} · The Official Register ★`
-            : `★ Vol. ${minY} — ${maxY} · The Official Register ★`;
+            : `★ Vol. ${minY}–${maxY} · The Official Register ★`;
     }
     const wire = document.getElementById('mast-wire');
     if (wire) {
@@ -1666,9 +1666,12 @@ function secHead(glyph, title, note) {
 
 /* ════════════════ CH. I — BANNER HALL ════════════════ */
 function buildHonorsChapter(allSeasons, managers, book) {
+    // Oldest to newest, left to right; initHall() parks the rail at the far
+    // right so the newest crown greets you and older ones sit behind the
+    // left fade — same reading direction as the rest of the almanac.
     const champByYear = allSeasons
         .filter(s => s.final_rank === 1)
-        .sort((a, b) => b.year - a.year);
+        .sort((a, b) => a.year - b.year);
     CROWN_COUNT = champByYear.length;
 
     const pennants = champByYear.map((c, i) => {
@@ -1677,11 +1680,11 @@ function buildHonorsChapter(allSeasons, managers, book) {
         const ava = mgr?.avatar
             ? `<img class="pn-ava" src="${mgr.avatar}" alt="" loading="lazy">`
             : `<div class="pn-ava-mono">${(c.name || '?')[0]}</div>`;
-        const prev = champByYear[i + 1];
+        const prev = champByYear[i - 1];
         const repeat = prev && prev.user_id === c.user_id && prev.year === c.year - 1;
-        const defending = i === 0;
+        const defending = i === champByYear.length - 1;
         return `
-            <div class="pennant" style="--i:${i}"${mgrAttr(c.user_id)}>
+            <div class="pennant" style="--i:${champByYear.length - 1 - i}"${mgrAttr(c.user_id)}>
                 <div class="pennant-rod"></div>
                 <div class="pennant-body">
                     ${defending ? '<div class="pn-ribbon">Defending</div>'
@@ -1770,6 +1773,9 @@ function initHall() {
     };
     hall.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
+    // Start parked at the newest pennant (far right); older crowns wait
+    // behind the left fade.
+    hall.scrollLeft = hall.scrollWidth;
     update();
 }
 

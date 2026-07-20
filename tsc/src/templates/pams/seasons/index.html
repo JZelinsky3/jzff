@@ -252,6 +252,17 @@
     color: var(--gold);
     margin-top: .5rem;
 }
+/* Dense mode (11+ crowns): smaller cloth and tighter spacing so a long
+   league's banners still fit on the strung rope before wrapping. */
+.rafter-strip.dense { gap: 4rem 1.1rem; }
+.rafter-strip.dense .flag {
+    width: clamp(54px, 5.4vw, 70px);
+    height: 98px;
+    padding-top: .95rem;
+}
+.rafter-strip.dense .flag-year { font-size: .92rem; }
+.rafter-strip.dense .flag-name { font-size: .42rem; margin-top: .4rem; }
+.rafter-strip.dense .flag-star { font-size: .52rem; margin-top: .35rem; }
 @media (max-width: 640px) { .rafter-strip { display: none; } }
 
 /* ============================================================
@@ -685,6 +696,7 @@ function buildRafterStrip(chrono, colors) {
     const champYears = chrono.filter(s => s.champion);
     if (champYears.length === 0) return;
     const strip = document.getElementById('rafter-strip');
+    strip.classList.toggle('dense', champYears.length > 10);
     strip.innerHTML = `<svg class="rafter-rope" aria-hidden="true"></svg>` + champYears.map(s => {
         const k = champKey(s);
         return `<a class="flag" href="seasons/season?year=${s.year}"

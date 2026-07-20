@@ -603,6 +603,23 @@ body {
   font-family: var(--mono); font-size: .56rem; letter-spacing: .18em;
   text-transform: uppercase; color: var(--ink-faint);
 }
+/* rank drift strip: PLAYER  RB4 → RB11 */
+.vd-ranks {
+  display: flex; flex-wrap: wrap; gap: .45rem 1.1rem;
+  padding: .5rem 1.4rem .3rem;
+}
+.vd-ranks .lbl {
+  width: 100%;
+  font-family: var(--mono); font-size: .54rem; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--g-b);
+}
+.vd-rank { display: inline-flex; align-items: baseline; gap: .45rem; font-size: .84rem; }
+.vd-rank .nm { font-weight: 600; }
+.vd-rank .rr {
+  font-family: var(--mono); font-size: .62rem; color: var(--ink-soft);
+  border: 1px solid rgba(62, 99, 154, .4); border-radius: 2px;
+  padding: .08rem .38rem;
+}
 
 /* ── SEALED DISPATCH — the reveal ───────────────────────── */
 .bl--sealed .bl-inner { display: none; }

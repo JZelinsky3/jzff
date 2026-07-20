@@ -1364,7 +1364,7 @@ body { background: var(--ls-bg); }
                             <div class="weekly-quick-status"><span class="status-pip"></span><span class="status-label">Incomplete</span></div>
                         </div>
                         <h3 class="weekly-quick-title">Make your <em>picks</em></h3>
-                        <p class="weekly-quick-desc">Pick the winner of every matchup. Honor-system — claim your name and vote.</p>
+                        <p class="weekly-quick-desc">Pick the winner of every matchup. Honor-system: claim your name and vote.</p>
                     </a>
                     <div class="weekly-quick-foot">
                         <button class="weekly-quick-skip" type="button" data-action="skip">Skip this week</button>
@@ -1471,12 +1471,12 @@ body { background: var(--ls-bg); }
                 <a class="trades-cta" data-cta="analyzer" href="live/trades/analyzer/">
                     <div class="trades-cta-label">Test a deal</div>
                     <div class="trades-cta-title">Trade <em>analyzer</em></div>
-                    <div class="trades-cta-desc">Drop in any deal — get a grade, fairness curve, and a write-up.</div>
+                    <div class="trades-cta-desc">Drop in any deal and get a grade, fairness curve, and a write-up.</div>
                 </a>
                 <a class="trades-cta" data-cta="finder" href="live/trades/finder/">
                     <div class="trades-cta-label">Hunt for deals</div>
                     <div class="trades-cta-title">Trade <em>finder</em></div>
-                    <div class="trades-cta-desc">Surface trade ideas that help your team — sorted by mutual fit.</div>
+                    <div class="trades-cta-desc">Surface trade ideas that help your team, sorted by mutual fit.</div>
                 </a>
             </div>
         </article>
@@ -1522,7 +1522,7 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
     var meta = document.getElementById('snap-standings-meta');
     if (!host) return;
     if (!data || !data.rows || !data.rows.length) {
-      host.innerHTML = '<div class="snap-empty">Standings are quiet — check back once the season opens.</div>';
+      host.innerHTML = '<div class="snap-empty">Standings are quiet. Check back once the season opens.</div>';
       if (meta) meta.textContent = '';
       return;
     }
@@ -1895,7 +1895,7 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
     }
     var top = data.rankings && data.rankings.by_efficiency_desc && data.rankings.by_efficiency_desc[0];
     if (!top) {
-      head.innerHTML = 'No coaching standings yet — check back after Sunday.';
+      head.innerHTML = 'No coaching standings yet. Check back after Sunday.';
       sub.textContent = '';
       return;
     }
@@ -1938,7 +1938,7 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
       return;
     }
     if (data.status === 'no-trades') {
-      host.innerHTML = '<div class="trades-empty">The market\'s been quiet — no trades on the books.</div>';
+      host.innerHTML = '<div class="trades-empty">The market\'s been quiet. No trades on the books.</div>';
       if (meta) meta.textContent = '';
       return;
     }
@@ -1946,7 +1946,7 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
       .concat(data.current_trades || [])
       .concat(data.past_trades || []);
     if (!all.length) {
-      host.innerHTML = '<div class="trades-empty">The market\'s been quiet — no trades on the books.</div>';
+      host.innerHTML = '<div class="trades-empty">The market\'s been quiet. No trades on the books.</div>';
       if (meta) meta.textContent = '';
       return;
     }

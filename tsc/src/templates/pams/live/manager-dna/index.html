@@ -1962,15 +1962,15 @@ main { position: relative; z-index: 1; }
         }).filter(Boolean).join('');
 
         return `
-            <div class="dna-compare-hint">Cyan = ${escapeHtml(a.name)} · Magenta = ${escapeHtml(b.name)} — each bar is split into shares that sum to 100%. The bigger slice owns more of the signal.</div>
+            <div class="dna-compare-hint">Cyan = ${escapeHtml(a.name)} · Magenta = ${escapeHtml(b.name)}. Each bar is split into shares that sum to 100%. The bigger slice owns more of the signal.</div>
             <div class="dna-compare-grid">
                 <div>
                     <div class="dna-compare-col-name">${escapeHtml(a.name)}</div>
-                    <div class="dna-compare-col-arch is-a">${escapeHtml(a.archetype.name)} — <span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(a.archetype.tagline)}</span></div>
+                    <div class="dna-compare-col-arch is-a">${escapeHtml(a.archetype.name)} · <span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(a.archetype.tagline)}</span></div>
                 </div>
                 <div style="text-align: right;">
                     <div class="dna-compare-col-name">${escapeHtml(b.name)}</div>
-                    <div class="dna-compare-col-arch is-b"><span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(b.archetype.tagline)}</span> — ${escapeHtml(b.archetype.name)}</div>
+                    <div class="dna-compare-col-arch is-b"><span style="color: var(--dna-cream-soft); font-style: normal; font-family: var(--mono); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;">${escapeHtml(b.archetype.tagline)}</span> · ${escapeHtml(b.archetype.name)}</div>
                 </div>
             </div>
             <div class="dna-compare-rail">${rails}</div>
@@ -2058,7 +2058,7 @@ main { position: relative; z-index: 1; }
         .then(r => r.ok ? r.json() : null)
         .then(data => {
             if (!data || !data.managers || data.managers.length === 0) {
-                renderEmpty('Sync at least one season with weekly lineup data — the genome lab runs on what your league has done, not what they say they\'ll do.');
+                renderEmpty('Sync at least one season with weekly lineup data. The genome lab runs on what your league has done, not what they say they\'ll do.');
                 return;
             }
             // Split current society from alumni — only current goes in the

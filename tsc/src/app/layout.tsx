@@ -36,12 +36,12 @@ const mono = JetBrains_Mono({
 });
 
 const DESCRIPTION =
-  "Turn your fantasy football league's full history into a polished public almanac. Walks Sleeper, ESPN, or NFL.com league IDs back through every season — champions, drafts, rivalries, head-to-head records, weekly pick'ems. Built for commissioners.";
+  "Turn your fantasy football league's full history into a polished public almanac. Walks Sleeper, ESPN, or NFL.com league IDs back through every season: champions, drafts, rivalries, head-to-head records, weekly pick'ems. Built for commissioners.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thesundaychronicle.app"),
   title: {
-    default: "The Sunday Chronicle — Fantasy Football League History & Almanac",
+    default: "The Sunday Chronicle · Fantasy Football League History & Almanac",
     template: "%s · The Sunday Chronicle",
   },
   description: DESCRIPTION,
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "https://thesundaychronicle.app/",
-    title: "The Sunday Chronicle — Fantasy football league archive for commissioners",
+    title: "The Sunday Chronicle · Fantasy football league archive for commissioners",
     description: DESCRIPTION,
     siteName: "The Sunday Chronicle",
     locale: "en_US",
@@ -74,13 +74,13 @@ export const metadata: Metadata = {
         url: "/api/og/home?v=5",
         width: 1200,
         height: 630,
-        alt: "The Sunday Chronicle — your league's history, archived for good.",
+        alt: "The Sunday Chronicle: your league's history, archived for good.",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "The Sunday Chronicle — Fantasy Football League History & Almanac",
+    title: "The Sunday Chronicle · Fantasy Football League History & Almanac",
     description: DESCRIPTION,
     images: ["/api/og/home?v=5"],
   },
@@ -230,7 +230,7 @@ const productLd = {
   "@context": "https://schema.org",
   "@type": "Product",
   "@id": "https://thesundaychronicle.app/#product",
-  name: "The Sunday Chronicle — Fantasy Football League History Almanac",
+  name: "The Sunday Chronicle · Fantasy Football League History Almanac",
   description: DESCRIPTION,
   brand: { "@id": "https://thesundaychronicle.app/#org" },
   category: "Fantasy Football League Management Software",

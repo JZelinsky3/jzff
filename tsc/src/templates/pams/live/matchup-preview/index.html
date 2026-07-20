@@ -1254,7 +1254,7 @@ body { background: var(--mp-bg); }
     <div class="mp-empty" id="mp-empty" hidden>
         <div class="mp-empty-title">No live slate.</div>
         <div class="mp-empty-body">
-            There's no week currently on the board — either the season hasn't
+            There's no week currently on the board. Either the season hasn't
             started yet, or every scheduled game is already in the books.
             Check back once next week's matchups appear, or browse the
             archive in the meantime.
@@ -1337,12 +1337,12 @@ body { background: var(--mp-bg); }
     copyToClipboard(url, title);
   }
   function copyToClipboard(url, title) {
-    var payload = title ? title + ' — ' + url : url;
+    var payload = title ? title + ' - ' + url : url;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(payload).then(function () {
-        showToast('Link copied — paste anywhere');
+        showToast('Link copied. Paste anywhere');
       }, function () {
-        showToast('Couldn’t copy — long-press to grab it');
+        showToast('Couldn’t copy. Long-press to grab it');
       });
       return;
     }
@@ -1356,9 +1356,9 @@ body { background: var(--mp-bg); }
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      showToast('Link copied — paste anywhere');
+      showToast('Link copied. Paste anywhere');
     } catch (e) {
-      showToast('Couldn’t copy — long-press to grab it');
+      showToast('Couldn’t copy. Long-press to grab it');
     }
   }
   function wireHubShare(data) {
@@ -1401,7 +1401,7 @@ body { background: var(--mp-bg); }
       ? 'All-time H2H · <strong>' + (m.h2h.winsA) + '–' + (m.h2h.winsB) + (m.h2h.ties ? '–' + m.h2h.ties : '') + '</strong> in ' + m.h2h.meetings + ' meeting' + (m.h2h.meetings === 1 ? '' : 's')
       : 'First meeting on the board.';
     host.innerHTML =
-      '<div class="mp-marquee" aria-label="Featured matchup — The Main Line">' +
+      '<div class="mp-marquee" aria-label="Featured matchup: The Main Line">' +
         '<div class="mp-marquee-ribbon"><span class="lamp"></span> ★ The Main Line ★ <span class="lamp"></span></div>' +
         '<div class="mp-marquee-grid">' +
           '<div class="mp-marquee-side left">' +
@@ -1609,7 +1609,7 @@ body { background: var(--mp-bg); }
              '<span class="mp-h2h-recent-week">Wk ' + esc(r.week) + '</span>' +
              '<span class="mp-h2h-recent-score">' +
                '<span class="' + cls + '">' + fmtPts(selfScore) + '</span>' +
-               ' — ' + fmtPts(oppScore) +
+               ' – ' + fmtPts(oppScore) +
              '</span>' +
            '</div>';
   }
@@ -1674,7 +1674,7 @@ body { background: var(--mp-bg); }
     var spread = m.projected.spread;
     var projMsg;
     if (m.projected.favorite === 'pp') {
-      projMsg = 'A coin flip on the board — neither side has separated.';
+      projMsg = 'A coin flip on the board. Neither side has separated.';
     } else if (favSelf) {
       projMsg = 'Form has you favored by <strong>' + fmtPts(spread) + '</strong> on the last-5 average.';
     } else {

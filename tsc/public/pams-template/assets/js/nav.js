@@ -171,7 +171,20 @@
     // so visitors see at a glance which chapters need an upgrade.
     var UDFA_LOCKED_CHAPTER_KEYS = ['live', 'draft', 'records'];
 
+    // Detail pages carry their own data-page keys (manager-detail,
+    // season-detail, …) so the chapbar's exact match lights nothing.
+    // Map them to their parent chapter so e.g. a 2023 season page still
+    // underlines "Seasons".
+    var CHAPBAR_PARENT = {
+        'manager-detail':     'managers',
+        'manager-all-time':   'managers',
+        'manager-visualizer': 'managers',
+        'season-detail':      'seasons',
+        'draft-mock':         'draft',
+    };
+
     function buildChapBar(currentPage, root) {
+        currentPage = CHAPBAR_PARENT[currentPage] || currentPage;
         // Remove any prior render so multiple buildNav() calls don't stack bars.
         var existing = document.getElementById('nav-chapbar');
         if (existing) existing.remove();
@@ -704,8 +717,13 @@
         // section reads as its own "mode" without screaming. The mode is
         // also signaled by the contents themselves (different tabs, the
         // "‹ History" back link) — the tint is just a soft confirmation.
+        // The tint layers OVER the page's opaque --chapbar-bg; an earlier
+        // version replaced the background with a gradient whose top stop
+        // was 6%-alpha gold over nothing, so scrolled text bled through
+        // the sticky rail on every live page.
         '.nav-chapbar.is-live-mode {',
-        '  background: linear-gradient(180deg, rgba(232,200,137,.06), rgba(14,22,32,1));',
+        '  background-color: var(--chapbar-bg, rgb(14, 22, 32));',
+        '  background-image: linear-gradient(180deg, rgba(232,200,137,.06), rgba(232,200,137,0));',
         '}',
         // "History" back-link tab in live mode. Visually quieter than the
         // other tabs (muted color) so the live chapters read as the active

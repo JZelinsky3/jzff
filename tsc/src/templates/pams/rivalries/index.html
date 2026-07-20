@@ -1464,7 +1464,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     <div style="font-family:var(--mono);font-size:.75rem;letter-spacing:.25em;color:var(--rv-gold);text-transform:uppercase;margin-bottom:1rem;">No rivalries on file yet</div>
     <h2 style="font-family:var(--serif);font-size:1.8rem;line-height:1.2;margin:0 0 1rem;">Pick two managers. Name the feud. Watch it write itself.</h2>
     <p style="font-family:var(--serif);font-size:1rem;line-height:1.55;opacity:.78;margin:0 0 1.5rem;">
-      Rivalries are commissioner-curated. Open the league's rivalries tab from your management page and add one — head-to-head records, dominance bars, and recent meetings fill in automatically.
+      Rivalries are commissioner-curated. Open the league's rivalries tab from your management page and add one: head-to-head records, dominance bars, and recent meetings fill in automatically.
     </p>
   </section>
 </template>
@@ -2011,7 +2011,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const disagreement = recordLeader && weightedLeader && recordLeader !== weightedLeader;
 
     const recordBits = [];
-    if (rv.leader_record) recordBits.push(`Raw record <strong>${escapeHtml(rv.leader_record)}</strong>${disagreement ? ' — overruled by the scorecard' : ''}`);
+    if (rv.leader_record) recordBits.push(`Raw record <strong>${escapeHtml(rv.leader_record)}</strong>${disagreement ? ', overruled by the scorecard' : ''}`);
     if (rv.last_meeting) recordBits.push(`Last met <strong>${rv.last_meeting.year} W${rv.last_meeting.week}</strong>${rv.last_meeting.is_playoff ? ' (Playoff)' : ''}`);
     const record = recordBits.join(' &nbsp;·&nbsp; ');
 

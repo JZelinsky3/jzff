@@ -123,13 +123,19 @@ body { background: var(--cream); }
 .race-g.leader path.race-line { stroke-width: 3.25; }
 .race-g.alum path.race-line { stroke-dasharray: 3 4 !important; stroke-width: 1.6; }
 .race-g circle, .race-g .race-star { transition: opacity .25s; }
-.race-g .race-label {
+/* End labels render in their own top layer (after every line group) with a
+   cream halo, so an alumnus's name that ends mid-chart can't be painted
+   over by the active managers' lines that keep going. */
+.race-svg .race-label {
     font-family: var(--mono); font-weight: 700;
     font-size: 10.5px; letter-spacing: .06em;
     cursor: default;
     transition: opacity .25s;
+    paint-order: stroke fill;
+    stroke: #f4ebd8; stroke-width: 3px; stroke-linejoin: round;
 }
 .race-svg.focus .race-g:not(.on) { opacity: .1; }
+.race-svg.focus .race-label:not(.on) { opacity: .1 !important; }
 .race-svg .race-g.on path.race-line { stroke-width: 3.5; }
 .race-axis line.grid-y { stroke: rgba(14,22,32,.09); }
 .race-axis line.grid-x { stroke: rgba(14,22,32,.05); }
@@ -404,12 +410,15 @@ tr.detail-row > td {
 /* ============================================================
    §03 DISTINCTIONS
    ============================================================ */
+/* Flex instead of grid: rows cap at 4 cards, and a short last row
+   (5th/6th card) centers itself instead of hugging the left edge. */
 .distinct-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    display: flex; flex-wrap: wrap; justify-content: center;
     gap: 1rem;
 }
 .distinct-card {
+    flex: 0 1 calc(25% - .75rem);
+    min-width: 240px; max-width: 100%;
     background: rgba(255,255,255,.5);
     border: 1px solid rgba(14,22,32,.15);
     border-top: 3px solid var(--gold-deep);
@@ -675,6 +684,9 @@ async function loadData() {
                 win_streak:      d.longest_win_streak?.length ?? null,
                 win_streak_when: d.longest_win_streak?.when ?? null,
                 avg_final_finish: computeAvgFinalFinish(d.season_ledger),
+                // Career points against — the export only carries regular-season
+                // PA (reg_pa per ledger year), so this column is reg-season only.
+                total_pa: (d.season_ledger || []).reduce((s, r) => s + (r.reg_pa || 0), 0) || null,
             };
         });
 
@@ -822,8 +834,6 @@ function buildRaceChart() {
 
     const groups = series.map(s => {
         const dAttr = s.pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.year).toFixed(1)},${y(p.wins).toFixed(1)}`).join(' ');
-        const last = s.pts[s.pts.length - 1];
-        const labelY = ends.find(e => e.s === s).ey;
         // A gold star marks a championship year; plain seasons get a dot
         // with a cream halo so crossings stay readable.
         const marks = s.pts.map(p => p.chip
@@ -835,14 +845,23 @@ function buildRaceChart() {
         return `<g class="${cls}" data-uid="${s.uid}" style="opacity:${s.current ? .95 : .4}">
             <path class="race-line" d="${dAttr}" stroke="${s.color}"></path>
             ${marks}
-            <text class="race-label" x="${x(last.year) + 10}" y="${labelY + 3.5}" fill="${s.color}">${s.name.toUpperCase()} · ${last.wins}</text>
         </g>`;
+    }).join('');
+
+    // Labels last so they sit above every line; alumni names end mid-chart
+    // and would otherwise be run over by the lines that keep going.
+    const labels = series.map(s => {
+        const last = s.pts[s.pts.length - 1];
+        const labelY = ends.find(e => e.s === s).ey;
+        return `<text class="race-label" data-uid="${s.uid}" x="${x(last.year) + 10}" y="${labelY + 3.5}"
+            fill="${s.color}" style="opacity:${s.current ? .95 : .6}">${s.name.toUpperCase()} · ${last.wins}</text>`;
     }).join('');
 
     document.getElementById('race-chart').innerHTML = `
         <svg class="race-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
             <g class="race-axis">${axis}</g>
             ${groups}
+            <g class="race-labels">${labels}</g>
         </svg>`;
 
     // Legend chips double as hover targets so tangled lines stay findable.
@@ -855,11 +874,14 @@ function buildRaceChart() {
     const svg = document.querySelector('.race-svg');
     const gByUid = {};
     svg.querySelectorAll('.race-g').forEach(g => { gByUid[g.dataset.uid] = g; });
+    const labelByUid = {};
+    svg.querySelectorAll('.race-label').forEach(l => { labelByUid[l.dataset.uid] = l; });
     const focus = (uid, on) => {
         svg.classList.toggle('focus', on);
         if (gByUid[uid]) gByUid[uid].classList.toggle('on', on);
+        if (labelByUid[uid]) labelByUid[uid].classList.toggle('on', on);
     };
-    svg.querySelectorAll('.race-g').forEach(g => {
+    svg.querySelectorAll('.race-g, .race-label').forEach(g => {
         g.addEventListener('mouseenter', () => focus(g.dataset.uid, true));
         g.addEventListener('mouseleave', () => focus(g.dataset.uid, false));
     });
@@ -905,6 +927,7 @@ const COLUMNS = {
     all_record: { label: 'Record',        cls: 'all-record', sort: 'wins' },
     winpct:     { label: 'Win %',         cls: 'winpct-cell',sort: 'winpct' },
     pf:         { label: 'Points For',    cls: '',           sort: 'pf' },
+    pa:         { label: 'Pts Against',   cls: '',           sort: 'pa' },
     ppg:        { label: 'PPG',           cls: '',           sort: 'ppg' },
     high:       { label: 'Best Week',     cls: '',           sort: 'high' },
     low:        { label: 'Worst Week',    cls: '',           sort: 'low' },
@@ -918,7 +941,7 @@ const COLUMNS = {
 };
 const PRESETS = {
     classic:    ['rank','name','team','reg_record','po_record','all_record','winpct','pf','ppg','seasons','playoffs','avgfinish','chips'],
-    scoring:    ['rank','name','team','pf','ppg','high','low','streak','seasons','chips'],
+    scoring:    ['rank','name','team','pf','pa','ppg','high','low','streak','seasons','chips'],
     postseason: ['rank','name','team','reg_record','po_record','po_winpct','playoffs','top3','avgfinish','chips'],
 };
 
@@ -932,6 +955,7 @@ function getSortValue(m) {
         case 'regwins':   return m.reg_wins ?? parseRec(m.reg_record).w;
         case 'powins':    return (m.playoff_wins ?? parseRec(m.playoff_record).w) + (m.playoff_win_pct ?? 0);
         case 'pf':        return m.total_pf;
+        case 'pa':        return m.total_pa ?? -1;
         case 'ppg':       return m.total_pf / (games(m) || 1);
         case 'high':      return m.high_score ?? -1;
         case 'low':       return -(m.low_score ?? 9999);
@@ -976,6 +1000,7 @@ function cellValue(key, m, leagueAvgPct) {
         case 'all_record': return `${m.wins}–${m.losses}${m.ties ? '–' + m.ties : ''}`;
         case 'winpct': return fmtPct(m.win_pct);
         case 'pf':  return m.total_pf.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        case 'pa':  return m.total_pa != null ? m.total_pa.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—';
         case 'ppg': return (games(m) ? m.total_pf / games(m) : 0).toFixed(1);
         case 'high': return m.high_score != null ? m.high_score.toFixed(1) : '—';
         case 'low':  return m.low_score  != null ? m.low_score.toFixed(1)  : '—';

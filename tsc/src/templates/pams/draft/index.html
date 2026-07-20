@@ -1474,6 +1474,12 @@ body { background: var(--an-bg); }
 .ledger-mast-no b { display: block; font-family: var(--serif); font-style: italic; font-size: 1.15rem; letter-spacing: 0; color: var(--gold); margin-top: .12rem; }
 .ledger-scroll { overflow-x: auto; }
 .ledger-table { border-collapse: collapse; width: 100%; min-width: 680px; }
+/* Deep leagues (9+ drafts): stop squeezing the year columns to fit — hold
+   their width and let the sheet scroll sideways instead. The scroll starts
+   parked at the far right (newest drafts) and you pull left for the older
+   ones; the identity column is sticky so names stay put. */
+.ledger-table.is-deep { width: max-content; min-width: 100%; }
+.ledger-table.is-deep thead th, .ledger-table.is-deep tbody td { min-width: 3.4rem; }
 .ledger-table thead th {
     font-family: var(--mono); font-size: .52rem; font-weight: 600;
     letter-spacing: .12em; text-transform: uppercase; color: var(--cream-mute);
@@ -1519,9 +1525,10 @@ body { background: var(--an-bg); }
 .lg-career { display: block; font-size: .46rem; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--an-mute); margin-top: .16rem; }
 /* Avg season finish rides the headline row: a small serif-italic "fin"
    label (the ledger's accent voice), then the muted value. */
-.lg-fin { font-size: .5rem; font-weight: 400; letter-spacing: .08em; color: var(--an-mute); margin-left: .35rem; white-space: nowrap; }
-/* Sans italic: keeps the lean without the serif italic's swashy f. */
-.lg-fin .fin-l { font-family: var(--sans); font-size: .48rem; letter-spacing: .02em; margin-right: .18rem; }
+.lg-fin { font-size: .5rem; font-weight: 400; letter-spacing: .08em; color: var(--cream-soft); margin-left: .35rem; white-space: nowrap; }
+/* "Fin" label muted, value a touch brighter — reads as label + number
+   instead of one run-together string. */
+.lg-fin .fin-l { font-family: var(--sans); font-size: .48rem; letter-spacing: .06em; margin-right: .2rem; color: var(--an-mute); }
 .ledger-table tr.is-top .lg-career { color: var(--an-mute); }
 /* The top drafter's line, in gold. */
 .ledger-table tr.is-top td { background: rgba(232,200,137,.05); }
@@ -4108,7 +4115,8 @@ function renderGraderLedger() {
     graderData.drafters.forEach(function (m) {
         (isRetired(m.manager) ? alumni : active).push(m);
     });
-    var html = '<table class="ledger-table"><thead><tr><th class="lg-id">Drafter</th>';
+    var deep = years.length > 8;
+    var html = '<table class="ledger-table' + (deep ? ' is-deep' : '') + '"><thead><tr><th class="lg-id">Drafter</th>';
     years.forEach(function (y) { html += '<th>&rsquo;' + ("" + y).slice(2) + '</th>'; });
     html += '<th class="lg-avg">Avg rank</th></tr></thead><tbody>';
     function rowsFor(list, hidden) {
@@ -4133,7 +4141,7 @@ function renderGraderLedger() {
             });
             html += '<td class="lg-avg">' + m.avgRank.toFixed(1)
                   + (m.avgFinish != null
-                      ? '<span class="lg-fin"><span class="fin-l">fin</span>' + m.avgFinish.toFixed(1) + '</span>'
+                      ? '<span class="lg-fin"><span class="fin-l">Fin</span>' + m.avgFinish.toFixed(1) + '</span>'
                       : '')
                   + '<span class="lg-career">' + Math.round(m.totalScore).toLocaleString() + ' career</span></td></tr>';
         });
@@ -4145,7 +4153,10 @@ function renderGraderLedger() {
         rowsFor(alumni, true);
     }
     html += '</tbody></table>';
-    document.getElementById('graderLedger').innerHTML = html;
+    var scroller = document.getElementById('graderLedger');
+    scroller.innerHTML = html;
+    // Park deep sheets at the newest drafts; scroll left for the older ones.
+    if (deep) scroller.scrollLeft = scroller.scrollWidth;
 }
 
 function classDetailLine(c, wantBest) {

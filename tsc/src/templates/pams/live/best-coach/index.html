@@ -889,7 +889,7 @@ body::before {
         const worst = m.worst_week;
         const note = worst && worst.left > 0
             ? `Worst single week: <em>−${fmt(worst.left)} pts</em> stranded in Week <strong>${worst.week}</strong>.`
-            : `No bench left behind — a perfectly coached season.`;
+            : `No bench left behind: a perfectly coached season.`;
         return `
             <div class="bc-drill-cap">${escapeHtml(m.display_name)} · ${note}</div>
             <div class="bc-weeks">${weeks}</div>
@@ -950,7 +950,7 @@ body::before {
         .then(r => r.ok ? r.json() : null)
         .then(data => {
             if (!data || !data.managers || data.managers.length === 0) {
-                renderEmpty('No weekly lineup data on file yet. NFL.com leagues don\'t qualify — their history archive returns the season\'s final roster for every week, so Best Coach can\'t score it. Mix in a Sleeper, ESPN, or Yahoo source (or sync a current Sleeper season) and the board will chalk itself.');
+                renderEmpty('No weekly lineup data on file yet. NFL.com leagues don\'t qualify. Their history archive returns the season\'s final roster for every week, so Best Coach can\'t score it. Mix in a Sleeper, ESPN, or Yahoo source (or sync a current Sleeper season) and the board will chalk itself.');
                 return;
             }
             yearEl.textContent = data.year ?? '—';
