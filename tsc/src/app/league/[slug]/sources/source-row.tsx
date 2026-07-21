@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { syncSource, deleteSource, updateNflSourceSettings, updateEspnSourceSettings, updateChainSourceSettings } from './actions'
 import type { StageKey } from '@/lib/ingest/stages'
+import type { SourcePrefill } from './add-source-form'
 
 type Source = {
   id: string
@@ -52,15 +53,26 @@ export function SourceRow({
   slug,
   hasCookies = false,
   syncedRange = null,
-}: { source: Source; leagueId: string; slug: string; hasCookies?: boolean; syncedRange?: string | null }) {
+  onExtend,
+}: {
+  source: Source
+  leagueId: string
+  slug: string
+  hasCookies?: boolean
+  syncedRange?: string | null
+  // When provided, renders an "Extend" action that hands this source's
+  // platform + ID to the add-source form so the user can attach the next
+  // stretch of years without re-typing anything.
+  onExtend?: (prefill: SourcePrefill) => void
+}) {
   void slug
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [busy, setBusy] = useState<'syncing' | 'deleting' | 'saving' | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
-  // Custom sync panel — lets the commissioner pick which stages to refresh
-  // instead of paying the full-sync runtime cost every time.
+  // Custom sync panel — lets the commissioner pick which of the four stages
+  // to refresh instead of paying the full-sync runtime cost every time.
   const [customSyncOpen, setCustomSyncOpen] = useState(false)
   const [stagesSelected, setStagesSelected] = useState<Record<StageKey, boolean>>({
     matchups: true,
@@ -84,6 +96,10 @@ export function SourceRow({
   const [espnS2, setEspnS2] = useState('')
   const [clearCookies, setClearCookies] = useState(false)
 
+  const editable =
+    source.platform === 'nfl' || source.platform === 'espn' ||
+    source.platform === 'sleeper' || source.platform === 'yahoo'
+
   async function onSync() {
     setBusy('syncing')
     setMsg(null)
@@ -99,6 +115,8 @@ export function SourceRow({
         const preview = warns.slice(0, 6).join('\n')
         const more = warns.length > 6 ? `\n…and ${warns.length - 6} more` : ''
         setMsg(`Synced with warnings:\n${preview}${more}`)
+      } else {
+        setMsg('Synced.')
       }
       router.refresh()
     }
@@ -135,6 +153,23 @@ export function SourceRow({
       router.refresh()
       setBusy(null)
     })
+  }
+
+  function onExtendClick() {
+    if (!onExtend) return
+    const start = num(source.settings, 'season_start')
+    const end = num(source.settings, 'season_end')
+    onExtend({
+      platform: source.platform as SourcePrefill['platform'],
+      externalId: source.external_id,
+      label: source.label,
+      // Suggest picking up right after this source's coverage ends.
+      seasonStart: end != null ? end + 1 : null,
+      seasonEnd: null,
+      playoffWeekStart: num(source.settings, 'playoff_week_start'),
+      playoffTeamCount: num(source.settings, 'playoff_team_count'),
+    })
+    void start
   }
 
   async function onSaveSettings() {
@@ -194,126 +229,119 @@ export function SourceRow({
   }
 
   return (
-    <div className="card" style={{ padding: '.85rem 1.1rem' }}>
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '180px' }}>
-          <div className="card-corner" style={{ position: 'static', marginBottom: '.2rem' }}>{source.platform}</div>
-          <div className="card-title" style={{ fontSize: '1.1rem' }}>
-            {source.label ?? 'Source'}
-          </div>
-          <div className="text-mono" style={{ fontSize: '.74rem', color: 'var(--cream-soft)', marginTop: '.2rem', wordBreak: 'break-all' }}>
-            {source.external_id}
-          </div>
-          <div className="text-mono text-cream-mute" style={{ fontSize: '.6rem', letterSpacing: '.18em', textTransform: 'uppercase', marginTop: '.4rem' }}>
-            {source.platform === 'nfl' || source.platform === 'espn'
-              ? (describeRange(source) ?? 'No range set')
-              : (source.walk_history
-                  ? (describeRange(source) ?? syncedRange ?? 'Walks history')
-                  : 'Single season')}
-            {describePlayoff(source) && (
-              <>{' · '}{describePlayoff(source)}</>
-            )}
-            {source.platform === 'espn' && hasCookies && (
-              <>{' · '}Private (cookies stored)</>
-            )}
-            {' · '}
-            {source.last_synced_at
-              ? `synced ${new Date(source.last_synced_at).toLocaleDateString()}`
-              : 'never synced'}
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', width: '12rem', flexShrink: 0 }}>
-          {/* Action column — 12rem wide so the four buttons read comfortably.
-              Only Sync gets the filled treatment (primary action); Custom /
-              Settings / Remove all read as ghost buttons that hover into
-              their themes. */}
+    <div className={`lo-src lo-src--${source.platform}`}>
+      <span className="lo-src-stamp">{source.platform}</span>
+      <div className="lo-src-head">
+        <div className="lo-src-title">{source.label ?? 'Source'}</div>
+        <div className="lo-src-id">{source.external_id}</div>
+      </div>
+
+      <div className="lo-src-meta">
+        <span>
+          {source.platform === 'nfl' || source.platform === 'espn'
+            ? (describeRange(source) ?? 'No range set')
+            : (source.walk_history
+                ? (describeRange(source) ?? syncedRange ?? 'Walks history')
+                : 'Single season')}
+        </span>
+        {describePlayoff(source) && <span>{describePlayoff(source)}</span>}
+        {source.platform === 'espn' && hasCookies && <span>Private</span>}
+        <span className={source.last_synced_at ? 'ok' : 'warn'}>
+          {busy === 'syncing'
+            ? 'Syncing…'
+            : source.last_synced_at
+            ? `Synced ${new Date(source.last_synced_at).toLocaleDateString()}`
+            : 'Never synced'}
+        </span>
+      </div>
+
+      {busy === 'syncing' && (
+        <p className="lo-msg-ok" style={{ marginBottom: '.7rem', color: 'var(--gold)' }}>
+          Pulling from {source.platform.toUpperCase()}. Stay on this page until it finishes.
+        </p>
+      )}
+
+      {/* 2x2 segmented block sharing its rules — as four loose inline
+          buttons these wrapped into an uneven floating cluster inside a
+          narrow card. */}
+      <div className="lo-src-actions">
+        <button onClick={onSync} disabled={busy !== null || isPending} className="lo-btn-ghost primary">
+          {busy === 'syncing' ? 'Syncing…' : 'Sync'}
+        </button>
+        <button
+          onClick={() => setCustomSyncOpen((v) => !v)}
+          disabled={busy !== null || isPending}
+          className="lo-btn-ghost"
+        >
+          {customSyncOpen ? 'Close custom' : 'Custom sync'}
+        </button>
+        {editable && (
           <button
-            onClick={onSync}
+            onClick={() => setEditing((v) => !v)}
             disabled={busy !== null || isPending}
-            className="dc-btn"
-            style={{ padding: '.75rem .3rem', fontSize: '.8rem', whiteSpace: 'nowrap' }}
+            className="lo-btn-ghost"
           >
-            {busy === 'syncing' ? 'Syncing…' : 'Sync →'}
+            {editing ? 'Close settings' : 'Settings'}
           </button>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.35rem' }}>
-            <button
-              onClick={() => setCustomSyncOpen((v) => !v)}
-              disabled={busy !== null || isPending}
-              className="dc-btn-ghost"
-              style={{
-                padding: '.7rem .25rem',
-                fontSize: '.75rem',
-                whiteSpace: 'nowrap',
-                minWidth: 0,
-              }}
-            >
-              {customSyncOpen ? 'Cancel' : 'Custom'}
-            </button>
-            {(source.platform === 'nfl' || source.platform === 'espn' || source.platform === 'sleeper' || source.platform === 'yahoo') && (
-              <button
-                onClick={() => setEditing((v) => !v)}
-                disabled={busy !== null || isPending}
-                className="dc-btn-ghost"
-                style={{
-                  padding: '.7rem .25rem',
-                  fontSize: '.75rem',
-                  whiteSpace: 'nowrap',
-                  minWidth: 0,
-                }}
-              >
-                {editing ? 'Cancel' : 'Settings'}
-              </button>
-            )}
-          </div>
+        )}
+        {onExtend && (
           <button
-            onClick={onDelete}
+            onClick={onExtendClick}
             disabled={busy !== null || isPending}
-            className="dc-btn-ghost"
-            style={{ padding: '.7rem .3rem', fontSize: '.75rem' }}
+            className="lo-btn-ghost"
+            title="Attach this same league again for a new stretch of years or a new playoff format"
           >
-            Remove
+            Extend
           </button>
-        </div>
+        )}
+      </div>
+
+      <div className="lo-src-foot">
+        <button
+          onClick={onDelete}
+          disabled={busy !== null || isPending}
+          className="lo-btn-quiet"
+        >
+          Remove
+        </button>
       </div>
 
       {customSyncOpen && (
-        <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(255,255,255,.025)', borderRadius: '2px', borderLeft: '3px solid var(--gold)' }}>
+        <div className="lo-src-panel">
+          <div className="lo-src-panel-title">Custom sync · pick the parts</div>
           <div className="dc-form" style={{ gap: '.75rem' }}>
             <div className="dc-field">
-              <label className="dc-label">Sync only these parts</label>
               <span className="dc-checkbox-hint" style={{ marginBottom: '.5rem' }}>
-                Skip the ones you don&apos;t need to refresh — faster than a full sync.
+                Skip what you don&apos;t need to refresh; it&apos;s much faster
+                than a full sync.
               </span>
               <label className="dc-checkbox-row">
                 <input type="checkbox" checked={stagesSelected.matchups} onChange={() => toggleStage('matchups')} />
-                <span><strong>Matchups &amp; standings</strong> — per-week scores, records, finishes</span>
+                <span><strong>Matchups &amp; standings</strong> · per-week scores, records, finishes</span>
               </label>
               <label className="dc-checkbox-row">
                 <input type="checkbox" checked={stagesSelected.drafts} onChange={() => toggleStage('drafts')} />
-                <span><strong>Drafts</strong> — pick-by-pick results</span>
+                <span><strong>Drafts</strong> · pick-by-pick results</span>
               </label>
               <label className="dc-checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={stagesSelected.lineups}
-                  onChange={() => toggleStage('lineups')}
-                />
-                <span><strong>Weekly lineups</strong> — per-week starters &amp; bench</span>
+                <input type="checkbox" checked={stagesSelected.lineups} onChange={() => toggleStage('lineups')} />
+                <span><strong>Weekly lineups</strong> · per-week starters &amp; bench</span>
               </label>
               <label className="dc-checkbox-row">
                 <input type="checkbox" checked={stagesSelected.trades} onChange={() => toggleStage('trades')} />
-                <span><strong>Trades</strong> — completed deals &amp; assets</span>
+                <span><strong>Trades</strong> · completed deals &amp; assets</span>
               </label>
             </div>
-            <button onClick={onCustomSync} disabled={busy !== null} className="dc-btn dc-btn-block">
-              {busy === 'syncing' ? 'Syncing…' : 'Sync selected →'}
+            <button onClick={onCustomSync} disabled={busy !== null} className="lo-btn block sm">
+              {busy === 'syncing' ? 'Syncing…' : 'Sync selected'}
             </button>
           </div>
         </div>
       )}
 
       {editing && source.platform === 'nfl' && (
-        <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(255,255,255,.025)', borderRadius: '2px', borderLeft: '3px solid var(--gold)' }}>
+        <div className="lo-src-panel">
+          <div className="lo-src-panel-title">Source settings</div>
           <div className="dc-form" style={{ gap: '.85rem' }}>
             <div className="dc-field">
               <label className="dc-label">Label (optional)</label>
@@ -321,7 +349,7 @@ export function SourceRow({
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 className="dc-input"
-                placeholder="e.g. 2022–2025 (4-team playoffs)"
+                placeholder="e.g. 2022-2025 (4-team playoffs)"
               />
             </div>
             <div className="dc-field">
@@ -377,10 +405,12 @@ export function SourceRow({
                 </div>
               </div>
               <span className="dc-checkbox-hint">
-                After saving, click <strong>Sync now</strong> to re-ingest this year range with the new playoff config.
+                Remember: the NFL&apos;s 2021 schedule change pushed many league
+                playoffs a week later. After saving, click <strong>Sync</strong> to
+                re-ingest this range with the new config.
               </span>
             </div>
-            <button onClick={onSaveSettings} disabled={busy !== null} className="dc-btn dc-btn-block">
+            <button onClick={onSaveSettings} disabled={busy !== null} className="lo-btn block sm">
               {busy === 'saving' ? 'Saving…' : 'Save settings'}
             </button>
           </div>
@@ -388,7 +418,8 @@ export function SourceRow({
       )}
 
       {editing && (source.platform === 'sleeper' || source.platform === 'yahoo') && (
-        <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(255,255,255,.025)', borderRadius: '2px', borderLeft: '3px solid var(--gold)' }}>
+        <div className="lo-src-panel">
+          <div className="lo-src-panel-title">Source settings</div>
           <div className="dc-form" style={{ gap: '.85rem' }}>
             <div className="dc-field">
               <label className="dc-label">Label (optional)</label>
@@ -425,12 +456,12 @@ export function SourceRow({
                 />
               </div>
               <span className="dc-checkbox-hint">
-                Leave both blank to ingest every season the chain reaches. Use this when a
-                second source (e.g. Yahoo) already covers some years and you don&apos;t want
-                duplicates from a partial Sleeper season the league never actually played.
+                Leave both blank to ingest every season the chain reaches. Use this
+                when a second source already covers some years and you don&apos;t
+                want duplicates from a partial season the league never played out.
               </span>
             </div>
-            <button onClick={onSaveChainSettings} disabled={busy !== null} className="dc-btn dc-btn-block">
+            <button onClick={onSaveChainSettings} disabled={busy !== null} className="lo-btn block sm">
               {busy === 'saving' ? 'Saving…' : 'Save settings'}
             </button>
           </div>
@@ -438,7 +469,8 @@ export function SourceRow({
       )}
 
       {editing && source.platform === 'espn' && (
-        <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(255,255,255,.025)', borderRadius: '2px', borderLeft: '3px solid var(--gold)' }}>
+        <div className="lo-src-panel">
+          <div className="lo-src-panel-title">Source settings</div>
           <div className="dc-form" style={{ gap: '.85rem' }}>
             <div className="dc-field">
               <label className="dc-label">Label (optional)</label>
@@ -446,7 +478,7 @@ export function SourceRow({
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 className="dc-input"
-                placeholder="e.g. 2020–2025"
+                placeholder="e.g. 2020-2025"
               />
             </div>
             <div className="dc-field">
@@ -485,7 +517,7 @@ export function SourceRow({
                 value={swid}
                 onChange={(e) => { setSwid(e.target.value); setClearCookies(false) }}
                 className="dc-input mono"
-                placeholder="SWID — {ABC12345-...}"
+                placeholder="SWID: {ABC12345-...}"
                 style={{ marginBottom: '.5rem' }}
               />
               <input
@@ -509,7 +541,7 @@ export function SourceRow({
               )}
             </div>
 
-            <button onClick={onSaveEspnSettings} disabled={busy !== null} className="dc-btn dc-btn-block">
+            <button onClick={onSaveEspnSettings} disabled={busy !== null} className="lo-btn block sm">
               {busy === 'saving' ? 'Saving…' : 'Save settings'}
             </button>
           </div>
@@ -518,8 +550,8 @@ export function SourceRow({
 
       {msg && (
         <p
-          className={msg.startsWith('Saved') || msg.startsWith('Synced') ? 'dc-form-ok' : 'dc-form-error'}
-          style={{ marginTop: '.85rem', whiteSpace: 'pre-wrap', fontFamily: msg.startsWith('Synced') ? 'var(--mono)' : undefined, fontSize: msg.startsWith('Synced') ? '.75rem' : undefined }}
+          className={msg.startsWith('Saved') || msg.startsWith('Synced') ? 'lo-msg-ok' : 'lo-msg-err'}
+          style={{ marginTop: '.85rem' }}
         >
           {msg}
         </p>

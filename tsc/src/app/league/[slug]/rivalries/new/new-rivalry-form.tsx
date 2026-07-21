@@ -65,12 +65,12 @@ export function NewRivalryForm({
         </div>
       )}
 
-      <button type="submit" disabled={isPending} className="dc-btn dc-btn-block">
-        {isPending ? 'Saving…' : 'Forge the rivalry →'}
+      <button type="submit" disabled={isPending} className="lo-btn block">
+        {isPending ? 'Saving…' : 'Forge the rivalry'}
       </button>
 
       {state && 'ok' in state && !state.ok && (
-        <p className="dc-form-error">{state.error}</p>
+        <p className="lo-msg-err">{state.error}</p>
       )}
     </form>
   )

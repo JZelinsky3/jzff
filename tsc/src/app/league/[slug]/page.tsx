@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SiteFooter } from '@/components/SiteFooter'
@@ -7,11 +8,20 @@ import { isSiteAdmin } from '@/lib/siteAdmin'
 import { resolveLeagueTier, tierBadgeLabel } from '@/lib/leagueTier'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 import { getViewMode } from '@/lib/viewMode'
+import { loadManagerNameMap, loadManagerOptions } from '@/lib/managerOptions'
 import { SyncButton } from './sync-button'
 import { GradeTradesButton } from './grade-trades-button'
 import { PublishButton } from './setup/publish-button'
 import { BillboardPublishCta } from './billboard-publish-cta'
 import { SetupWizCallout } from './setup-wiz-callout'
+import { ChapterBook } from './chapter-book'
+import { SourcesWorkbench } from './sources/sources-workbench'
+import { SetupList, type ProfileRow } from './setup/setup-list'
+import { FeudBoard } from './rivalries/feud-board'
+import { LiveSeasonForm, type SeasonRow } from './live/live-form'
+import { SourcePicker, type SourceRow as LiveSourceRow } from './live/source-picker'
+import { GotwPicker, type GotwWeek } from './live/gotw-picker'
+import { SettingsForm } from './settings/settings-form'
 
 export default async function LeagueOverviewPage({
   params,
@@ -89,334 +99,595 @@ export default async function LeagueOverviewPage({
     )
   }
 
+  const tierTitle =
+    tier === 'test'
+      ? 'Your free trial league. Every non-comp user gets one slot.'
+      : tier === 'udfa'
+      ? 'Free-tier (UDFA) league. Upgrade for more features.'
+      : tier === 'paid'
+      ? 'Paid plan league.'
+      : 'Comped account with unlimited access.'
+
+  // ── Chapter data ──────────────────────────────────────────────────
+  // The book edits every chapter in place, so the hub loads what the
+  // five standalone pages each used to load on their own. Runs after the
+  // mobile bail-out above, since the mobile hub renders none of it.
+  const [
+    { data: sourcesRaw },
+    { data: profileRows },
+    { data: managerRows },
+    { data: rivalryRows },
+    { data: seasonRowsRaw },
+    { data: liveSourceRows },
+    { data: yahooTok },
+    managerOpts,
+    nameOf,
+  ] = await Promise.all([
+    supabase
+      .from('league_sources')
+      .select('id, platform, external_id, label, walk_history, settings, last_synced_at, created_at')
+      .eq('league_id', league.id)
+      .order('created_at'),
+    supabase
+      .from('manager_profiles')
+      .select('id, canonical_name, is_alumni_override, is_hidden')
+      .eq('league_id', league.id)
+      .order('canonical_name'),
+    supabase
+      .from('managers')
+      .select('id, profile_id, display_name, team_name, external_id')
+      .eq('league_id', league.id),
+    supabase
+      .from('rivalries')
+      .select('id, name, manager_a_id, manager_b_id, created_at')
+      .eq('league_id', league.id)
+      .order('created_at'),
+    supabase
+      .from('seasons')
+      .select('id, year, is_live, settings')
+      .eq('league_id', league.id)
+      .order('year', { ascending: false }),
+    supabase
+      .from('league_sources')
+      .select('id, platform, external_id, label, is_live')
+      .eq('league_id', league.id)
+      .order('created_at', { ascending: true }),
+    viewer
+      ? supabase.from('yahoo_tokens').select('user_id').eq('user_id', viewer.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    loadManagerOptions(supabase, league.id),
+    loadManagerNameMap(supabase, league.id),
+  ])
+  const yahooConnected = !!yahooTok
+
+  // ESPN cookies must never cross into the client bundle.
+  type RawSource = NonNullable<typeof sourcesRaw>[number]
+  const chapterSources = (sourcesRaw ?? []).map((s: RawSource) => {
+    const settings = (s.settings ?? {}) as Record<string, unknown>
+    if (s.platform !== 'espn') return { ...s, hasCookies: false }
+    const hasCookies = Boolean(settings.swid && settings.espn_s2)
+    const safe: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(settings)) {
+      if (k !== 'swid' && k !== 'espn_s2') safe[k] = v
+    }
+    return { ...s, settings: safe, hasCookies }
+  })
+  const syncedRange =
+    years.length === 0
+      ? null
+      : years[0] === years[years.length - 1]
+      ? `Pulled ${years[0]}`
+      : `Pulled ${years[0]}–${years[years.length - 1]}`
+
+  // Members: stitch profiles to their platform accounts, flagging anyone
+  // who appears in the newest season that actually has data.
+  const profilesById = new Map<string, ProfileRow>()
+  for (const p of profileRows ?? []) {
+    profilesById.set(p.id, {
+      id: p.id,
+      canonical_name: p.canonical_name,
+      is_alumni_override: p.is_alumni_override,
+      is_hidden: p.is_hidden,
+      auto_current: false,
+      managers: [],
+    })
+  }
+  let currentManagerIds = new Set<string>()
+  for (const sn of (seasonRowsRaw ?? []).slice(0, 20)) {
+    const { data: ms } = await supabase
+      .from('manager_seasons')
+      .select('manager_id')
+      .eq('season_id', sn.id)
+    if (ms && ms.length > 0) {
+      currentManagerIds = new Set(ms.map((r) => r.manager_id))
+      break
+    }
+  }
+  for (const m of managerRows ?? []) {
+    if (!m.profile_id) continue
+    const p = profilesById.get(m.profile_id)
+    if (!p) continue
+    p.managers.push({
+      id: m.id,
+      display_name: m.display_name,
+      team_name: m.team_name,
+      external_id: m.external_id,
+    })
+    if (currentManagerIds.has(m.id)) p.auto_current = true
+  }
+  const profilesList = Array.from(profilesById.values())
+
+  const feuds = (rivalryRows ?? []).map((r) => ({
+    id: r.id,
+    name: r.name as string | null,
+    managerAId: r.manager_a_id as string,
+    managerBId: r.manager_b_id as string,
+    aName: nameOf.get(r.manager_a_id as string) ?? 'Unknown',
+    bName: nameOf.get(r.manager_b_id as string) ?? 'Unknown',
+  }))
+
+  const seasonRows: SeasonRow[] = (seasonRowsRaw ?? []).map((s) => ({
+    id: s.id,
+    year: s.year,
+    is_live: !!s.is_live,
+  }))
+  const liveRaw = (seasonRowsRaw ?? []).find((s) => s.is_live)
+  const liveSettings = (liveRaw?.settings ?? {}) as Record<string, unknown>
+  const weekOverride =
+    typeof liveSettings.current_week === 'number' ? (liveSettings.current_week as number) : null
+  const seasonStartDate =
+    typeof liveSettings.season_start_date === 'string' ? (liveSettings.season_start_date as string) : null
+  const livePickerSources: LiveSourceRow[] = (liveSourceRows ?? []).map((s) => ({
+    id: s.id,
+    platform: s.platform,
+    external_id: s.external_id,
+    label: s.label ?? null,
+    is_live: !!s.is_live,
+  }))
+
+  // Game of the Week lives in the Season chapter, so the hub needs the
+  // live season's regular-season schedule and the names on both sides of
+  // each matchup. Only runs when a season is actually flagged live.
+  const gotwMap = (liveSettings.gotw ?? {}) as Record<string, string>
+  let gotwWeeks: GotwWeek[] = []
+  let gotwManagers: string[] = []
+  if (liveRaw) {
+    const { data: matchupRows } = await supabase
+      .from('matchups')
+      .select('id, week, manager_a_id, manager_b_id, is_playoff')
+      .eq('season_id', liveRaw.id)
+      .order('week', { ascending: true })
+    const regular = (matchupRows ?? []).filter((r) => !r.is_playoff)
+    if (regular.length > 0) {
+      const gotwNameOf = (mid: string) => nameOf.get(mid) ?? 'Unknown'
+      const byWeek = new Map<number, typeof regular>()
+      for (const r of regular) {
+        if (!byWeek.has(r.week)) byWeek.set(r.week, [])
+        byWeek.get(r.week)!.push(r)
+      }
+      gotwWeeks = [...byWeek.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([week, rows]) => ({
+          week,
+          matchups: rows.map((r) => ({
+            id: r.id,
+            label: `${gotwNameOf(r.manager_a_id)} vs ${gotwNameOf(r.manager_b_id)}`,
+            managerA: gotwNameOf(r.manager_a_id),
+            managerB: gotwNameOf(r.manager_b_id),
+          })),
+        }))
+      const nameSet = new Set<string>()
+      for (const w of gotwWeeks) for (const m of w.matchups) { nameSet.add(m.managerA); nameSet.add(m.managerB) }
+      gotwManagers = [...nameSet].sort((a, b) => a.localeCompare(b))
+    }
+  }
+
+  // Settings chapter. Older leagues predate the scoring/prize columns, so
+  // fall back the same way the standalone settings page does.
+  type SettingsRow = {
+    abbreviation: string | null
+    prize_pool: string | null
+    draft_scoring_profile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
+  }
+  let settingsRow: SettingsRow = { abbreviation: null, prize_pool: null, draft_scoring_profile: 'ppr_6pt' }
+  const withScoring = await supabase
+    .from('leagues')
+    .select('abbreviation, prize_pool, draft_scoring_profile')
+    .eq('id', league.id)
+    .maybeSingle<SettingsRow>()
+  if (withScoring.data) {
+    settingsRow = withScoring.data
+  } else {
+    const bare = await supabase
+      .from('leagues')
+      .select('abbreviation')
+      .eq('id', league.id)
+      .maybeSingle<{ abbreviation: string | null }>()
+    if (bare.data) settingsRow = { ...settingsRow, abbreviation: bare.data.abbreviation }
+  }
+
+  // Members is the one chapter with a real, explicitly-recorded review
+  // signal; the others infer from their own content (see `reviewed`).
+  const membersReviewedAt =
+    ((league.settings ?? {}) as { members_reviewed_at?: string }).members_reviewed_at ?? null
+
+  // Imprint line on the cover. "Vol. N" read as an edition number and
+  // just confused matters — it was the season row count, which an empty
+  // in-progress season quietly inflated. State the contents instead.
+  const boundSeasons = years.length
+  const boundLine =
+    boundSeasons === 0
+      ? 'Nothing bound yet'
+      : `${boundSeasons} season${boundSeasons === 1 ? '' : 's'} bound`
+
+  // Sync readout: the big serif number on the control board is the
+  // last-sync date (or "Never"), not a sentence.
+  const syncedDate = league.last_synced_at ? new Date(league.last_synced_at) : null
+  const syncedShort = syncedDate
+    ? syncedDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    : null
+
   return (
-    <main>
-      <section className="hero">
-        <div className="hero-sup">★ League Management ★</div>
-        <h1 className="hero-title">
-          {head} {tail && <em>{tail}.</em>}
-        </h1>
-        <p className="hero-sub">
-          Sync from your platform, manage sources, curate rivalries.
-          The public almanac updates whenever you sync.
-        </p>
-        <div className="hero-meta">
-          {seasonCount ?? 0} season{seasonCount === 1 ? '' : 's'} · {managerCount ?? 0} managers · {matchupCount ?? 0} matchups
+    <main className="lo-page">
+      {/* ── The volume: the archive itself, bound and stamped ── */}
+      <section className="lo-volume">
+        <div className="lo-cover-stage">
+          {league.published_at ? (
+            <a
+              href={`/leagues/${slug}/`}
+              target="_blank"
+              rel="noopener"
+              className="lo-cover"
+              title="Open the public almanac"
+            >
+              <span className="lo-cover-plate">
+                <span className="lo-cover-kicker">The Sunday Chronicle</span>
+                <span className="lo-cover-title">{league.name}</span>
+                <span className="lo-cover-orn" aria-hidden>✦</span>
+                <span className="lo-cover-years">
+                  {firstYear != null && lastYear != null
+                    ? (firstYear === lastYear ? firstYear : `${firstYear}–${lastYear}`)
+                    : 'No seasons yet'}
+                </span>
+                <span className="lo-cover-lower">
+                  <span className="lo-cover-band live">Published</span>
+                </span>
+              </span>
+              <span className="lo-cover-foot">{boundLine}</span>
+            </a>
+          ) : (
+            <div className="lo-cover">
+              <span className="lo-cover-plate">
+                <span className="lo-cover-kicker">The Sunday Chronicle</span>
+                <span className="lo-cover-title">{league.name}</span>
+                <span className="lo-cover-orn" aria-hidden>✦</span>
+                <span className="lo-cover-years">
+                  {firstYear != null && lastYear != null
+                    ? (firstYear === lastYear ? firstYear : `${firstYear}–${lastYear}`)
+                    : 'No seasons yet'}
+                </span>
+                <span className="lo-cover-lower">
+                  <span className="lo-cover-band">Not published</span>
+                </span>
+              </span>
+              <span className="lo-cover-foot">{boundLine}</span>
+            </div>
+          )}
         </div>
-        <div
-          className={`dc-tier-badge dc-tier-badge--${tier}`}
-          title={
-            tier === 'test'
-              ? 'Your free trial league — every non-comp user gets one slot.'
-              : tier === 'udfa'
-              ? 'Free-tier (UDFA) league. Upgrade for more features.'
-              : tier === 'paid'
-              ? 'Paid plan league.'
-              : 'Comped account — unlimited access.'
-          }
-        >
-          <span aria-hidden>★</span>
-          {tierBadgeLabel(tier)}
+
+        <div className="lo-volume-side">
+          <div className="lo-volume-kicker">The Front Office</div>
+          <h1 className="lo-volume-title">
+            {head} {tail && <em>{tail}.</em>}
+          </h1>
+          <p className="lo-volume-sub">
+            Everything the commissioner touches lives here. Pull your history
+            in, tune how it reads, and publish the almanac for the whole league.
+          </p>
+          <div className="lo-volume-stats">
+            <span><strong>{seasonCount ?? 0}</strong> season{seasonCount === 1 ? '' : 's'}</span>
+            <span className="sep">|</span>
+            <span><strong>{managerCount ?? 0}</strong> managers</span>
+            <span className="sep">|</span>
+            <span><strong>{matchupCount ?? 0}</strong> matchups</span>
+            <span className="sep">|</span>
+            <span><strong>{rivalryCount ?? 0}</strong> feuds</span>
+            <span className="sep">|</span>
+            <span title={tierTitle} style={{ color: 'var(--gold)' }}>★ {tierBadgeLabel(tier)}</span>
+          </div>
+          <div className="lo-volume-acts">
+            {league.published_at ? (
+              <a
+                href={`/leagues/${slug}/`}
+                target="_blank"
+                rel="noopener"
+                className="lo-btn"
+                data-no-turn
+              >
+                Read the almanac
+              </a>
+            ) : (
+              canManage && <BillboardPublishCta leagueId={league.id} />
+            )}
+            <Link href={`/league/${slug}/sources`} className="lo-btn-ghost">
+              Sources
+            </Link>
+          </div>
         </div>
       </section>
 
       {canManage && !((league.settings ?? {}) as { wizard_dismissed_at?: string }).wizard_dismissed_at && (
-        <SetupWizCallout leagueId={league.id} slug={slug} />
+        <div className="lo-band tight">
+          <SetupWizCallout leagueId={league.id} slug={slug} />
+        </div>
       )}
 
-      {/* § 01 — Public Almanac BILLBOARD. Wide marquee shape: the only
-          non-rectangular block on the page (angled clip on both sides)
-          so the live-site CTA visually pops above the rest. */}
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 01 · Public Almanac</span>
-          <span className="section-title">Your live site —</span>
-          <span className="section-meta">
-            {league.published_at ? 'Live now' : 'Not yet published'}
-          </span>
+      {/* ── § 01 · Control board ── */}
+      <div className="lo-band">
+        <div className="lo-folio">
+          <span className="lo-folio-no">01</span>
+          <span className="lo-folio-title">The control board</span>
+          <span className="lo-folio-meta">Sync &amp; publish</span>
         </div>
-        {/* When published, the billboard is a link to the live site. When
-            not published, it's a static block whose CTA publishes the
-            almanac directly — sending the user to the placeholder page just
-            to bounce back was a pointless detour. */}
-        {league.published_at ? (
-          <a
-            href={`/leagues/${slug}/`}
-            target="_blank"
-            rel="noopener"
-            className="almanac-billboard"
-          >
-            <span className="almanac-billboard-status live">LIVE</span>
-            <div className="almanac-billboard-rule" aria-hidden />
-            <div className="almanac-billboard-inner">
-              <div className="almanac-billboard-kicker">★ Click to open ★</div>
-              <div className="almanac-billboard-title">
-                Public <em>Almanac.</em>
-              </div>
-              <div className="almanac-billboard-desc">
-                Standings, season archives, the record book, drafts, manager profiles,
-                rivalries — the whole thing. Opens in a new tab.
-              </div>
-              <span className="almanac-billboard-cta">View site ↗</span>
-            </div>
-            <div className="almanac-billboard-rule" aria-hidden />
-          </a>
-        ) : (
-          <div className="almanac-billboard almanac-billboard-static">
-            <span className="almanac-billboard-status setup">SETUP</span>
-            <div className="almanac-billboard-rule" aria-hidden />
-            <div className="almanac-billboard-inner">
-              <div className="almanac-billboard-kicker">★ Not yet published ★</div>
-              <div className="almanac-billboard-title">
-                Public <em>Almanac.</em>
-              </div>
-              <div className="almanac-billboard-desc">
-                One click and your archive goes live at /leagues/{slug}/. Standings,
-                season records, drafts, manager profiles, rivalries — all of it.
-                Reversible any time.
-              </div>
-              {canManage && <BillboardPublishCta leagueId={league.id} />}
-            </div>
-            <div className="almanac-billboard-rule" aria-hidden />
+
+        <div className="lo-console">
+          <div className="lo-console-bar">
+            <span className="lo-console-bar-side">
+              <span>{league.platform} archive</span>
+              <span className="rule" aria-hidden />
+            </span>
+            <span>Console</span>
+            <span className="lo-console-bar-side right">
+              <span className="rule" aria-hidden />
+              <span>{league.published_at ? 'On air' : 'Off air'}</span>
+            </span>
           </div>
-        )}
-      </div>
 
-      {/* § 02 — Run it. Sync (left) + Publish (right). Grade Trades stacks
-          below Sync (Jake-only beta — only visible for that league). */}
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 02 · Run it</span>
-          <span className="section-title">Sync &amp; publish —</span>
-          <span className="section-meta">
-            {league.last_synced_at
-              ? `Synced ${new Date(league.last_synced_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
-              : 'Never synced'}
-          </span>
-        </div>
-
-        {/* Row 1 — Sync (left) + Publish (right), equal height via the grid's
-            stretch. Each card stretches via .dc-card-row alignItems:stretch,
-            keeping text top-aligned but vertically centering the button.
-            minmax uses min(100%, 340px) so on phones (<340px content area)
-            the card shrinks to fit the viewport instead of overflowing — a
-            plain minmax(340px,1fr) refuses to go below 340 and forces a
-            horizontal scroll. */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
-            gap: '1.25rem',
-            alignItems: 'stretch',
-          }}
-        >
-          <div
-            className="dc-card-row"
-            style={{ alignItems: 'stretch', height: '100%', marginTop: 0 }}
-          >
-            <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
-                Sync from sources.
+          <div className="lo-gauges">
+            <div className="lo-gauge">
+              <div className={`lo-gauge-label${syncedDate ? ' on' : ' warn'}`}>
+                <span className="lamp" aria-hidden />
+                Last sync
               </div>
-              <div
-                style={{
-                  opacity: 0.7,
-                  fontSize: '.85rem',
-                  marginTop: '.35rem',
-                  lineHeight: 1.5,
-                }}
-              >
-                Walks every season your sources can reach — standings, drafts, matchups.{' '}
-                <strong style={{ color: 'var(--gold)' }}>Stay on this page</strong> until
-                it finishes; closing the tab cancels the run. Typically{' '}
-                <strong>20-90 seconds</strong> depending on history depth.
+              <div className={`lo-gauge-value${syncedDate ? '' : ' muted'}`}>
+                {syncedShort ?? 'Never'}
               </div>
-              {league.last_synced_at && (
-                <div
-                  style={{
-                    opacity: 0.55,
-                    fontSize: '.7rem',
-                    marginTop: '.4rem',
-                    fontFamily: 'var(--mono)',
-                  }}
-                >
-                  Last: {new Date(league.last_synced_at).toLocaleString()}
-                </div>
-              )}
+              <div className="lo-gauge-sub">
+                {syncedDate ? syncedDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'No data pulled yet'}
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <SyncButton leagueId={league.id} />
+
+            <div className="lo-gauge">
+              <div className={`lo-gauge-label${league.published_at ? ' on' : ''}`}>
+                <span className="lamp" aria-hidden />
+                Almanac
+              </div>
+              <div className="lo-gauge-value">
+                {league.published_at ? <em>Live.</em> : 'Hidden.'}
+              </div>
+              <div className="lo-gauge-sub">
+                {league.published_at ? `/leagues/${slug}/` : 'Not published'}
+              </div>
+            </div>
+
+            <div className="lo-gauge">
+              <div className="lo-gauge-label"><span className="lamp" aria-hidden />Coverage</div>
+              <div className="lo-gauge-value">{seasonCount ?? 0}</div>
+              <div className="lo-gauge-sub">
+                {firstYear != null && lastYear != null
+                  ? (firstYear === lastYear ? `${firstYear}` : `${firstYear}–${lastYear}`)
+                  : 'No seasons'}
+              </div>
+            </div>
+
+            <div className="lo-gauge">
+              <div className="lo-gauge-label"><span className="lamp" aria-hidden />On file</div>
+              <div className="lo-gauge-value">{(matchupCount ?? 0).toLocaleString()}</div>
+              <div className="lo-gauge-sub">matchups</div>
             </div>
           </div>
 
-          <div
-            className="dc-card-row"
-            style={{ alignItems: 'stretch', height: '100%', marginTop: 0 }}
-          >
-            <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.15rem' }}>
-                {league.published_at ? 'Almanac is live.' : 'Almanac is hidden.'}
-              </div>
-              <div
-                style={{
-                  opacity: 0.7,
-                  fontSize: '.85rem',
-                  marginTop: '.35rem',
-                  lineHeight: 1.5,
-                }}
-              >
+          <div className="lo-console-acts">
+            <div className="lo-console-act">
+              <span className="lo-console-act-btn">
+                <SyncButton leagueId={league.id} />
+              </span>
+              <span className="lo-console-act-note">
+                Pulls every attached source again: standings, drafts, matchups,
+                lineups and trades. Can take a few minutes on a deep history, so{' '}
+                <strong>stay on this page</strong> until it finishes.
+              </span>
+            </div>
+            <div className="lo-console-act">
+              <span className="lo-console-act-btn">
+                <PublishButton leagueId={league.id} isPublished={!!league.published_at} />
+              </span>
+              <span className="lo-console-act-note">
                 {league.published_at
-                  ? 'Visitors can read the public archive at any time. Unpublish to take it offline again — synced data stays put.'
-                  : `Visitors to /leagues/${slug}/ see a placeholder until you flip this. Publishing is instant and reversible.`}
-              </div>
-              {league.published_at && (
-                <div
-                  style={{
-                    opacity: 0.55,
-                    fontSize: '.7rem',
-                    marginTop: '.4rem',
-                    fontFamily: 'var(--mono)',
-                  }}
-                >
-                  Published {new Date(league.published_at).toLocaleString()}
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <PublishButton leagueId={league.id} isPublished={!!league.published_at} />
+                  ? <>Takes the public almanac back offline. Everything you have synced stays exactly where it is, and you can publish again whenever you like.</>
+                  : <>Puts the whole archive online at <strong>/leagues/{slug}/</strong> for anyone with the link. Instant, and reversible any time.</>}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Row 2 — Trade Grader. Lives in a second 2-col grid so the card
-            aligns under Sync at the same width; empty right slot keeps the
-            grid layout consistent. Server route enforces the same
-            Veteran-tier gate. */}
+
+        {/* Trade grader is a private dev/backfill tool for Joey's own two
+            leagues, not part of the standard commissioner console, so it
+            sits apart on its own bench below rather than as a third
+            readout implying every league has one. */}
         {canGradeTrades && (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
-              gap: '1.25rem',
-              marginTop: '.6rem',
-            }}
-          >
-            <div className="dc-card-row" style={{ alignItems: 'flex-start' }}>
-              <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem' }}>
-                  Grade trades with AI.{' '}
-                  <span
-                    style={{
-                      fontFamily: 'var(--mono)',
-                      fontSize: '.55rem',
-                      letterSpacing: '.2em',
-                      color: 'var(--gold)',
-                      marginLeft: '.4rem',
-                    }}
-                  >
-                    BETA
-                  </span>
-                </div>
-                <div
-                  style={{
-                    opacity: 0.7,
-                    fontSize: '.82rem',
-                    marginTop: '.3rem',
-                    lineHeight: 1.45,
-                  }}
-                >
-                  Runs Groq on up to 10 ungraded trades at a time. Click again to keep going.
-                </div>
+          <div className="lo-bench">
+            <div className="lo-bench-tag">Private tool</div>
+            <div className="lo-bench-body">
+              <div className="lo-bench-title">
+                Trade <em>grader.</em> <span className="lo-tag gold">Beta</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <GradeTradesButton leagueId={league.id} />
+              <div className="lo-bench-copy">
+                Runs Groq on up to 10 ungraded trades at a time. Click again to
+                keep going through the backlog. Every other league gets grades
+                automatically from the nightly cron.
               </div>
             </div>
-            <div />
+            <div className="lo-bench-act">
+              <GradeTradesButton leagueId={league.id} />
+            </div>
           </div>
         )}
       </div>
 
-      {/* § 03 — Configuration TOC. Two-column ledger (default density). */}
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 03 · Configuration</span>
-          <span className="section-title">Tune the archive —</span>
-          <span className="section-meta">Sub-pages</span>
+      {/* ── § 02 · The book ── */}
+      <div className="lo-band">
+        <div className="lo-folio">
+          <span className="lo-folio-no">02</span>
+          <span className="lo-folio-title">The chapters</span>
+          <span className="lo-folio-meta">Open at the contents</span>
         </div>
-        <div className="toc">
-          <div className="toc-body">
-            <Link href={`/league/${slug}/setup`} className="toc-row">
-              <div className="toc-chapter">Ch. 0</div>
-              <div className="toc-title-wrap">
-                <div className="toc-title">League <em>Members.</em></div>
-                <div className="toc-desc">
-                  Every person who&apos;s ever been in the league. Merge cross-platform identities, hide throwaways, override alumni, or delete entirely.
-                </div>
-              </div>
-              <span className="toc-badge teal">{managerCount ?? 0} on file</span>
-              <div className="toc-arrow">→</div>
-            </Link>
-            <Link href={`/league/${slug}/sources`} className="toc-row">
-              <div className="toc-chapter">Ch. I</div>
-              <div className="toc-title-wrap">
-                <div className="toc-title">League <em>Sources.</em></div>
-                <div className="toc-desc">
-                  Connect more Sleeper/ESPN league IDs. Each source walks its own history when synced.
-                </div>
-              </div>
-              <span className="toc-badge sage">{sourceCount ?? 0} on file</span>
-              <div className="toc-arrow">→</div>
-            </Link>
-            <Link href={`/league/${slug}/rivalries`} className="toc-row">
-              <div className="toc-chapter">Ch. II</div>
-              <div className="toc-title-wrap">
-                <div className="toc-title">The <em>Rivalries.</em></div>
-                <div className="toc-desc">
-                  Pick two managers, name the feud. They&apos;ll appear on the public rivalries page.
-                </div>
-              </div>
-              <span className="toc-badge fire">{rivalryCount ?? 0} curated</span>
-              <div className="toc-arrow">→</div>
-            </Link>
-            <Link href={`/league/${slug}/settings`} className="toc-row">
-              <div className="toc-chapter">Ch. III</div>
-              <div className="toc-title-wrap">
-                <div className="toc-title">League <em>Settings.</em></div>
-                <div className="toc-desc">
-                  Custom abbreviation and other knobs for the public almanac.
-                </div>
-              </div>
-              <span className="toc-badge steel">Edit</span>
-              <div className="toc-arrow">→</div>
-            </Link>
-            <Link href={`/league/${slug}/live`} className="toc-row">
-              <div className="toc-chapter">Ch. IV</div>
-              <div className="toc-title-wrap">
-                <div className="toc-title">Current <em>Season.</em></div>
-                <div className="toc-desc">
-                  Mark the in-progress year. Pick&apos;ems, power rankings, and the weekly cron all read from this.
-                </div>
-              </div>
-              <span className="toc-badge teal">Set</span>
-              <div className="toc-arrow">→</div>
-            </Link>
-            {canManage && (
-              <Link href={`/league/${slug}/present`} className="toc-row">
-                <div className="toc-chapter">Ch. V</div>
-                <div className="toc-title-wrap">
-                  <div className="toc-title">Presentation <em>Mode.</em></div>
-                  <div className="toc-desc">
-                    Build a slide deck from your league&apos;s data — present full-screen at a draft party or end-of-year banquet. Decks live in the browser tab; nothing saves.
+
+        <ChapterBook
+          slug={slug}
+          counts={{
+            sources: { value: String(sourceCount ?? 0), unit: 'attached' },
+            members: { value: String(managerCount ?? 0), unit: 'on file' },
+            rivalries: { value: String(rivalryCount ?? 0), unit: 'curated' },
+            season: liveYear
+              ? { value: String(liveYear), unit: liveWeek != null ? `· wk ${liveWeek}` : 'live' }
+              : { unit: 'Off-season' },
+            settings: { unit: 'Edit' },
+          }}
+          reviewed={{
+            sources: {
+              done: (sourceCount ?? 0) > 0 && !!league.last_synced_at,
+              why: (sourceCount ?? 0) === 0
+                ? 'No sources attached yet'
+                : league.last_synced_at
+                ? 'A source is attached and has been synced'
+                : 'Attached, but never synced',
+            },
+            members: {
+              done: !!membersReviewedAt,
+              why: membersReviewedAt
+                ? `Marked reviewed ${new Date(membersReviewedAt).toLocaleDateString()}`
+                : 'Not marked reviewed yet',
+            },
+            rivalries: {
+              done: (rivalryCount ?? 0) > 0,
+              why: (rivalryCount ?? 0) > 0 ? 'At least one feud on file' : 'No feuds curated yet',
+            },
+            season: {
+              done: liveYear != null,
+              why: liveYear != null ? `${liveYear} is marked live` : 'No season marked live (off-season)',
+            },
+            settings: {
+              done: !!settingsRow.abbreviation,
+              why: settingsRow.abbreviation
+                ? 'An abbreviation has been set'
+                : 'Still using the derived abbreviation',
+            },
+          }}
+          /* Each panel carries an explicit key. These elements are built
+             here in a Server Component and handed across the RSC boundary
+             as props to a Client Component, so React cannot treat them as
+             statically-authored children of ChapterBook's own JSX the way
+             it would for inline elements. An explicit key settles it. */
+          panels={{
+            sources: (
+              <SourcesWorkbench
+                key="sources"
+                leagueId={league.id}
+                slug={slug}
+                sources={chapterSources}
+                syncedRange={syncedRange}
+                yahooConnected={yahooConnected}
+              />
+            ),
+            members: <SetupList key="members" leagueId={league.id} slug={slug} profiles={profilesList} />,
+            rivalries: (
+              <FeudBoard
+                key="rivalries"
+                leagueId={league.id}
+                slug={slug}
+                managers={managerOpts.map((m) => ({ id: m.id, name: m.name }))}
+                feuds={feuds}
+              />
+            ),
+            season: (
+              <Fragment key="season">
+                <div className="lo-pair">
+                  <LiveSeasonForm
+                    leagueId={league.id}
+                    seasons={seasonRows}
+                    weekOverride={weekOverride}
+                    seasonStartDate={seasonStartDate}
+                    resolvedWeek={liveWeek}
+                  />
+                  {/* The season column runs taller (start date + week
+                      override), so the source column gets a note rather
+                      than a hole beneath it. */}
+                  <div>
+                    <SourcePicker leagueId={league.id} sources={livePickerSources} />
+                    <div className="lo-note" style={{ marginTop: '1.4rem' }}>
+                      <div className="lo-note-head">
+                        <span className="pin">✦</span> What going live turns on
+                      </div>
+                      <div className="lo-note-body">
+                        Pick&apos;ems, power rankings, the weekly form sheet and
+                        Sunday Live all read from whichever season is marked
+                        live. With nothing marked, the league reads as
+                        off-season and those pages stay dark.
+                        {liveYear != null && liveWeek != null && (
+                          <>
+                            {' '}Right now that resolves to{' '}
+                            <strong>{liveYear}, week {liveWeek}</strong>.
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <span className="toc-badge ember">New</span>
-                <div className="toc-arrow">→</div>
-              </Link>
-            )}
-          </div>
-        </div>
+                <div className="lo-leaf-sub">
+                  <span className="lo-leaf-sub-title">Game of the Week</span>
+                  <span className="lo-leaf-sub-meta">
+                    {gotwWeeks.length > 0
+                      ? `${gotwWeeks.length} weeks on the schedule`
+                      : 'Set a live season first'}
+                  </span>
+                </div>
+                {liveRaw && gotwWeeks.length > 0 ? (
+                  <GotwPicker
+                    leagueId={league.id}
+                    seasonId={liveRaw.id}
+                    defaultWeek={liveWeek}
+                    weeks={gotwWeeks}
+                    currentGotw={gotwMap}
+                    managers={gotwManagers}
+                  />
+                ) : (
+                  <div className="lo-empty">
+                    <div className="lo-empty-text">
+                      Mark a season live above, then sync it, to choose Games of the Week.
+                    </div>
+                  </div>
+                )}
+              </Fragment>
+            ),
+            settings: (
+              <SettingsForm
+                key="settings"
+                leagueId={league.id}
+                leagueName={league.name}
+                currentSlug={league.slug}
+                currentAbbreviation={settingsRow.abbreviation}
+                currentPrizePool={settingsRow.prize_pool}
+                currentDraftScoringProfile={settingsRow.draft_scoring_profile}
+                savedJustNow={false}
+                inline
+              />
+            ),
+          }}
+        />
       </div>
+
 
       <SiteFooter />
     </main>

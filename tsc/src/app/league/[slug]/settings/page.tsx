@@ -67,25 +67,37 @@ export default async function SettingsPage({
   }
 
   return (
-    <main>
-      <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '2rem' }}>
-        <div className="hero-sup">★ Settings ★</div>
-        <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
-          The <em>Knobs.</em>
-        </h1>
-        <p className="hero-sub">Tweak how your league appears on the public almanac.</p>
+    <main className="lo-page lo-page--settings">
+      <section className="lo-hero">
+        <div className="lo-hero-kicker">Chapter V</div>
+        <h1 className="lo-hero-title">The <em>Settings.</em></h1>
+        <p className="lo-hero-standfirst">
+          Name, abbreviation, public URL, prize pool, draft scoring. How the
+          almanac presents itself to everyone else in the league.
+        </p>
+        <div className="lo-hero-rules" aria-hidden />
       </section>
 
-      <div className="section" style={{ maxWidth: 560 }}>
-        <SettingsForm
-          leagueId={league.id}
-          leagueName={league.name}
-          currentSlug={league.slug}
-          currentAbbreviation={league.abbreviation}
-          currentPrizePool={league.prize_pool}
-          currentDraftScoringProfile={league.draft_scoring_profile}
-          savedJustNow={sp.saved === '1'}
-        />
+      <div className="lo-band" style={{ maxWidth: 980 }}>
+        <div className="lo-note" style={{ marginBottom: '1.6rem' }}>
+          <div className="lo-note-head"><span className="pin">✦</span> Changing the URL</div>
+          <div className="lo-note-body">
+            Old links to <code>/leagues/{league.slug}/</code> stop working the
+            moment you save a new one. Share the new link with your league
+            after you change it.
+          </div>
+        </div>
+        <div className="lo-form-card">
+          <SettingsForm
+            leagueId={league.id}
+            leagueName={league.name}
+            currentSlug={league.slug}
+            currentAbbreviation={league.abbreviation}
+            currentPrizePool={league.prize_pool}
+            currentDraftScoringProfile={league.draft_scoring_profile}
+            savedJustNow={sp.saved === '1'}
+          />
+        </div>
       </div>
 
       <SiteFooter />

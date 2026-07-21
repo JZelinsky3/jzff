@@ -3,18 +3,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { MobileSources } from '@/components/league/MobileSources'
 import { getViewMode } from '@/lib/viewMode'
-import { AddSourcePanel } from './add-source-panel'
-import { SourceRow } from './source-row'
-
-// Round-robin distribution preserves row-major reading order: items[0,1,2]
-// land at the top of col 0, 1, 2 respectively; items[3,4,5] form the next
-// row. Each returned column is rendered as an independent flex stack so
-// expanding a card only shifts items below it WITHIN the same column.
-function splitColumns<T>(items: T[], cols: number): T[][] {
-  const out: T[][] = Array.from({ length: cols }, () => [])
-  items.forEach((item, i) => { out[i % cols].push(item) })
-  return out
-}
+import { SourcesWorkbench } from './sources-workbench'
 
 export default async function SourcesPage({
   params,
@@ -99,71 +88,61 @@ export default async function SourcesPage({
   }
 
   return (
-    <main>
-      <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
-        <div className="hero-sup">★ Chapter V · Setup ★</div>
-        <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
-          Source <em>Ledger.</em>
-        </h1>
-        <p className="hero-sub">
-          One archive can pull from many league IDs. Useful if your league moved between leagues
-          — old seasons under an old ID, current seasons under a new one. Each source is fetched
-          independently.
+    <main className="lo-page lo-page--sources">
+      <section className="lo-hero">
+        <div className="lo-hero-kicker">Chapter I</div>
+        <h1 className="lo-hero-title">The <em>Sources.</em></h1>
+        <p className="lo-hero-standfirst">
+          One archive can pull from many league IDs. Useful when your league
+          moved platforms mid-history: old seasons under one ID, current
+          seasons under another. Each source syncs independently.
         </p>
+        <div className="lo-hero-rules" aria-hidden />
       </section>
 
-      <div className="section" id="sources-ledger">
-        <div className="section-header">
-          <span className="section-num">§ 01 · On the ledger</span>
-          <span className="section-title">Attached sources —</span>
-          <span className="section-meta">{sources?.length ?? 0} in use</span>
+      <div className="lo-band">
+        <div className="lo-note-grid" style={{ marginBottom: '2.4rem' }}>
+          <div className="lo-note">
+            <div className="lo-note-head"><span className="pin">✦</span> While a sync runs</div>
+            <div className="lo-note-body">
+              <strong>Stay on this page</strong> until it finishes. Closing the tab or
+              navigating away cancels the run partway through. Most syncs take
+              20 to 90 seconds; a deep multi-season walk can run a few minutes.
+            </div>
+          </div>
+          <div className="lo-note rust">
+            <div className="lo-note-head"><span className="pin">✦</span> The 2021 playoff shift</div>
+            <div className="lo-note-body">
+              The NFL added a 17th regular-season game in <strong>2021</strong>,
+              and a lot of leagues pushed their fantasy playoffs a week later
+              that year. If your league&apos;s playoff week changed, split your
+              history into two sources: one for the old format, one for the new.
+            </div>
+          </div>
+          <div className="lo-note steel">
+            <div className="lo-note-head"><span className="pin">✦</span> Splitting by playoffs</div>
+            <div className="lo-note-body">
+              Split at whatever changed: playoff start week, playoff team count,
+              even scoring. Each source gets its own year range and its own
+              rules, and they sync independently, so nothing overlaps or
+              double-counts as long as the ranges don&apos;t.
+            </div>
+          </div>
         </div>
 
-        {!sources || sources.length === 0 ? (
-          <div className="dc-empty"><div className="dc-empty-text">No sources yet.</div></div>
-        ) : (
-          // Pre-distribute sources into independent columns so expanding one
-          // card only pushes items in the SAME column. Each column is a flex
-          // stack; the outer grid arranges the columns side-by-side. The
-          // dc-source-ledger class swaps column count by viewport in
-          // globals.css — three trees are rendered (3/2/1 col) and the
-          // unused two are display:none. Distribution is round-robin so
-          // reading row-major still gives original insertion order.
-          <>
-            <div className="dc-source-ledger dc-source-ledger-3">
-              {splitColumns(sources, 3).map((col, i) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
-                  {col.map((s) => (
-                    <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div className="dc-source-ledger dc-source-ledger-2">
-              {splitColumns(sources, 2).map((col, i) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
-                  {col.map((s) => (
-                    <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div className="dc-source-ledger dc-source-ledger-1">
-              {sources.map((s) => (
-                <SourceRow key={s.id} source={s} leagueId={league.id} slug={slug} hasCookies={s.hasCookies} syncedRange={syncedRange} />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 02 · Add another</span>
-          <span className="section-title">A new league ID —</span>
-          <span className="section-meta">Walk history or single season</span>
+        <div className="lo-folio">
+          <span className="lo-folio-no">01</span>
+          <span className="lo-folio-title">On the ledger</span>
+          <span className="lo-folio-meta">{sources?.length ?? 0} in use</span>
         </div>
-        <AddSourcePanel leagueId={league.id} slug={slug} yahooConnected={yahooConnected} />
+
+        <SourcesWorkbench
+          leagueId={league.id}
+          slug={slug}
+          sources={sources}
+          syncedRange={syncedRange}
+          yahooConnected={yahooConnected}
+        />
       </div>
 
       <SiteFooter />

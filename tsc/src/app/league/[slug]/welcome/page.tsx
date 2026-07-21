@@ -49,7 +49,7 @@ export default async function WelcomePage({
   ] = await Promise.all([
     supabase
       .from('league_sources')
-      .select('id, platform, external_id, label, last_synced_at')
+      .select('id, platform, external_id, label, last_synced_at, walk_history, settings')
       .eq('league_id', league.id)
       .order('created_at'),
     supabase
@@ -148,11 +148,28 @@ export default async function WelcomePage({
   const profiles = Array.from(profilesById.values())
   const avatarMap: Record<string, string> = Object.fromEntries(avatarByProfile)
 
+  // Same credential scrub as /league/[slug]/sources/page.tsx — ESPN cookies
+  // never cross into the client. The wizard's sources step renders the real
+  // SourceRow editor (so the source attached at creation is fully editable
+  // here, not just listed), which needs `settings`/`walk_history` to avoid
+  // clobbering real config with blank defaults on save.
+  type RawSource = NonNullable<typeof sourcesRaw>[number]
+  const scrubbedSources = (sourcesRaw ?? []).map((s: RawSource) => {
+    const settings = (s.settings ?? {}) as Record<string, unknown>
+    if (s.platform !== 'espn') return { ...s, hasCookies: false }
+    const hasCookies = Boolean(settings.swid && settings.espn_s2)
+    const safe: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(settings)) {
+      if (k !== 'swid' && k !== 'espn_s2') safe[k] = v
+    }
+    return { ...s, settings: safe, hasCookies }
+  })
+
   const wizardProps = {
     leagueId: league.id,
     leagueName: league.name,
     slug,
-    initialSources: sourcesRaw ?? [],
+    initialSources: scrubbedSources,
     initialLastSyncedAt: league.last_synced_at,
     initialPublishedAt: league.published_at,
     latestSeason: latestSeason ? { id: latestSeason.id, year: latestSeason.year as number, isLive: !!latestSeason.is_live } : null,
@@ -180,7 +197,7 @@ export default async function WelcomePage({
       leagueId={league.id}
       leagueName={league.name}
       slug={slug}
-      initialSources={sourcesRaw ?? []}
+      initialSources={scrubbedSources}
       initialLastSyncedAt={league.last_synced_at}
       initialPublishedAt={league.published_at}
       latestSeason={latestSeason ? { id: latestSeason.id, year: latestSeason.year as number, isLive: !!latestSeason.is_live } : null}

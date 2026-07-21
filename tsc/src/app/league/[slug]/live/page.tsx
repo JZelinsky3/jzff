@@ -124,52 +124,58 @@ export default async function LiveSeasonPage({
   }
 
   return (
-    <main>
-      <section className="hero">
-        <div className="hero-sup">★ Live Season ★</div>
-        <h1 className="hero-title">
-          Current <em>Season.</em>
-        </h1>
-        <p className="hero-sub">
-          Mark which season is currently in-progress. Pick&apos;ems, power rankings, and the weekly cron all use this.
-          Only one season can be live at a time.
+    <main className="lo-page lo-page--season">
+      <section className="lo-hero">
+        <div className="lo-hero-kicker">Chapter IV</div>
+        <h1 className="lo-hero-title">Current <em>Season.</em></h1>
+        <p className="lo-hero-standfirst">
+          Mark which season is currently in progress. Pick&apos;ems, power
+          rankings, and the weekly cron all read from this. Only one season
+          can be live at a time.
         </p>
-        <div className="hero-meta">
-          {liveSeason
-            ? `Currently live: ${liveSeason.year}${currentWeek != null ? ` · Week ${currentWeek}` : ''}`
-            : 'No live season — off-season'}
+        <div className="lo-hero-dateline">
+          <span>
+            {liveSeason
+              ? <>Live now: <strong>{liveSeason.year}</strong>{currentWeek != null && <> · Week <strong>{currentWeek}</strong></>}</>
+              : 'No live season (off-season)'}
+          </span>
         </div>
+        <div className="lo-hero-rules" aria-hidden />
       </section>
 
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 01 · Active</span>
-          <span className="section-title">Which year is on?</span>
-          <span className="section-meta">{rows.length} season{rows.length === 1 ? '' : 's'} on file</span>
+      {/* §01 and §02 share a row: a short list of years and a short list
+          of sources each wasted a full-width band on their own. */}
+      <div className="lo-band">
+        <div className="lo-pair">
+          <div>
+            <div className="lo-folio">
+              <span className="lo-folio-no">01</span>
+              <span className="lo-folio-title">Which year is on?</span>
+            </div>
+            <LiveSeasonForm
+              leagueId={league.id}
+              seasons={rows}
+              weekOverride={weekOverride}
+              seasonStartDate={seasonStartDate}
+              resolvedWeek={currentWeek}
+            />
+          </div>
+
+          <div>
+            <div className="lo-folio">
+              <span className="lo-folio-no">02</span>
+              <span className="lo-folio-title">Weekly source</span>
+            </div>
+            <SourcePicker leagueId={league.id} sources={sourceRows} />
+          </div>
         </div>
-        <LiveSeasonForm
-          leagueId={league.id}
-          seasons={rows}
-          weekOverride={weekOverride}
-          seasonStartDate={seasonStartDate}
-          resolvedWeek={currentWeek}
-        />
       </div>
 
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 02 · Live source</span>
-          <span className="section-title">Which source updates weekly?</span>
-          <span className="section-meta">{sourceRows.length} source{sourceRows.length === 1 ? '' : 's'}</span>
-        </div>
-        <SourcePicker leagueId={league.id} sources={sourceRows} />
-      </div>
-
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 03 · Game of the Week</span>
-          <span className="section-title">Star one matchup —</span>
-          <span className="section-meta">
+      <div className="lo-band">
+        <div className="lo-folio">
+          <span className="lo-folio-no">03</span>
+          <span className="lo-folio-title">Game of the Week</span>
+          <span className="lo-folio-meta">
             {gotwWeeks.length > 0 ? `${gotwWeeks.length} weeks on the schedule` : 'Set a live season first'}
           </span>
         </div>
@@ -183,8 +189,8 @@ export default async function LiveSeasonPage({
             managers={gotwManagers}
           />
         ) : (
-          <div className="dc-empty">
-            <div className="dc-empty-text">Pick a live season above to choose Games of the Week.</div>
+          <div className="lo-empty">
+            <div className="lo-empty-text">Pick a live season above to choose Games of the Week.</div>
           </div>
         )}
       </div>

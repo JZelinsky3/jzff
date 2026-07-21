@@ -103,13 +103,13 @@ export function SyncButton({ leagueId }: { leagueId: string }) {
       } catch (err) {
         const chunkElapsed = Math.floor((Date.now() - (chunkStartedAt.current ?? Date.now())) / 1000)
         if (err instanceof DOMException && err.name === 'AbortError') {
-          allWarnings.push(`[${platform ?? 'sync'}] stalled past ${formatElapsed(ABORT_THRESHOLD_S)} — the server likely timed out. Data may still have partially landed.`)
+          allWarnings.push(`[${platform ?? 'sync'}] stalled past ${formatElapsed(ABORT_THRESHOLD_S)}. The server likely timed out. Data may still have partially landed.`)
         } else if (err instanceof TypeError && chunkElapsed >= HOBBY_FUNCTION_CAP_S - 1) {
           // Vercel killed the connection at the function cap. The ingest almost
           // always finishes its writes before the cut, so keep walking the
           // remaining platforms rather than scaring the user with a raw error.
           landed++
-          allWarnings.push(`[${platform ?? 'sync'}] connection cut at ${formatElapsed(chunkElapsed)} (Vercel function cap) — the ingest likely finished its writes.`)
+          allWarnings.push(`[${platform ?? 'sync'}] connection cut at ${formatElapsed(chunkElapsed)} (Vercel function cap). The ingest likely finished its writes.`)
         } else {
           allWarnings.push(`[${platform ?? 'sync'}] ${err instanceof Error ? err.message : 'network error'}`)
         }
@@ -156,13 +156,13 @@ export function SyncButton({ leagueId }: { leagueId: string }) {
         // lands before someone clicks away.
         <p style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--cream-mute)', textTransform: 'uppercase', textAlign: 'right', maxWidth: '180px', lineHeight: 1.45 }}>
           {showPatience
-            ? 'Large ingests can take 2–5 min — stay on this page.'
+            ? 'Large ingests can take 2-5 min. Stay on this page.'
             : 'Stay on this page until it finishes.'}
         </p>
       )}
       {showWarning && (
         <p style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--rust)', textTransform: 'uppercase', textAlign: 'right', maxWidth: '180px', lineHeight: 1.45 }}>
-          Past the server budget — will abort soon. Sources may still be updating in the background.
+          Past the server budget, will abort soon. Sources may still be updating in the background.
         </p>
       )}
       {msg && (

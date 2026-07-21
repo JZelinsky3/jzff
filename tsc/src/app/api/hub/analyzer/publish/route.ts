@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { AnalyzeBody, analyzeHubTrade, validateRosterMode } from '@/lib/hub/analyzer'
+import { getUserSubscription, isCompUser, isSubscriptionActive } from '@/lib/stripe'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -20,15 +21,31 @@ export async function POST(req: Request) {
   if (rosterError) return NextResponse.json({ error: rosterError }, { status: 400 })
   const usesRosters = !!(body.rosterA?.length && body.rosterB?.length)
 
-  // Light flood guard: at most 5 posted trades per member per day.
+  // Self-heal: make sure the caller has a profiles row before the FK insert.
+  // Accounts that predated the on_auth_user_created trigger (or where it
+  // failed) have none, which used to blow up on hub_trades_owner_id_fkey.
+  // No-op when the profile already exists.
+  await supabase.rpc('ensure_profile')
+
+  // Daily board limit: 2 posts for free members, 5 for paid / comp.
+  const paid =
+    (await isCompUser(user.id)) || isSubscriptionActive(await getUserSubscription(user.id))
+  const dailyLimit = paid ? 5 : 2
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const { count: recent } = await supabase
     .from('hub_trades')
     .select('id', { count: 'exact', head: true })
     .eq('owner_id', user.id)
     .gte('created_at', dayAgo)
-  if ((recent ?? 0) >= 5) {
-    return NextResponse.json({ error: 'Board limit reached — 5 posted trades per day.' }, { status: 429 })
+  if ((recent ?? 0) >= dailyLimit) {
+    return NextResponse.json(
+      {
+        error: paid
+          ? 'Board limit reached — 5 posted trades per day.'
+          : 'Board limit reached — 2 posted trades per day. Upgrade for 5.',
+      },
+      { status: 429 },
+    )
   }
 
   let analysis

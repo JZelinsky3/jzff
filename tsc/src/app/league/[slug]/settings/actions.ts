@@ -14,6 +14,10 @@ const Schema = z.object({
   slug: z.string().trim().max(60).optional(),
   prizePool: z.string().trim().max(60).optional(),
   draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt', 'ppr_4pt', 'half_6pt']).optional(),
+  // Set when the form is rendered as a chapter of the league hub's book.
+  // The standalone page wants its post-save redirect; the book must stay
+  // put, or saving a chapter silently navigates the reader out of it.
+  inline: z.coerce.boolean().optional(),
 })
 
 type Result = { ok: true } | { ok: false; error: string }
@@ -26,6 +30,7 @@ export async function updateLeagueSettings(_prev: Result | null, formData: FormD
     slug: formData.get('slug') || undefined,
     prizePool: formData.get('prizePool') ?? undefined,
     draftScoringProfile: formData.get('draftScoringProfile') || undefined,
+    inline: formData.get('inline') || undefined,
   })
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
 
@@ -82,5 +87,12 @@ export async function updateLeagueSettings(_prev: Result | null, formData: FormD
   revalidatePath(`/league/${requestedSlug}`)
   revalidatePath(`/leagues/${league.slug}`, 'layout')
   revalidatePath(`/leagues/${requestedSlug}`, 'layout')
+
+  if (parsed.data.inline) {
+    // Renaming the slug moves the hub itself, so the reader has to follow
+    // it; otherwise stay on the page so the open chapter survives the save.
+    if (requestedSlug !== league.slug) redirect(`/league/${requestedSlug}`)
+    return { ok: true }
+  }
   redirect(`/league/${requestedSlug}/settings?saved=1`)
 }

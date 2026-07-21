@@ -1,6 +1,7 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useRef, useState } from 'react'
+import { useChapterEdits } from '@/app/league/[slug]/chapter-book'
 import { updateLeagueSettings } from './actions'
 
 function autoAbbr(name: string): string {
@@ -25,6 +26,7 @@ export function SettingsForm({
   currentPrizePool,
   currentDraftScoringProfile,
   savedJustNow,
+  inline = false,
 }: {
   leagueId: string
   leagueName: string
@@ -33,6 +35,10 @@ export function SettingsForm({
   currentPrizePool: string | null
   currentDraftScoringProfile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
   savedJustNow: boolean
+  // Rendered as a chapter of the hub's book: suppresses the action's
+  // post-save redirect and hides the form's own submit, since the book
+  // supplies Save in its footer.
+  inline?: boolean
 }) {
   const [state, formAction, isPending] = useActionState(updateLeagueSettings, null)
   const [name, setName] = useState(leagueName)
@@ -56,9 +62,26 @@ export function SettingsForm({
   const placeholder = autoAbbr(name)
   const previewSlug = slugifyClient(slug) || currentSlug
 
+  // Report pending edits to the surrounding chapter book (no-op on the
+  // standalone /settings page, which renders outside a book). Submitting
+  // the real <form> keeps the server action's redirect + revalidation, so
+  // the book's Save button just clicks it.
+  const formRef = useRef<HTMLFormElement>(null)
+  const dirty =
+    name !== leagueName ||
+    abbr !== (currentAbbreviation ?? '') ||
+    slug !== currentSlug ||
+    prizePool !== (currentPrizePool ?? '') ||
+    draftScoringProfile !== currentDraftScoringProfile
+  useChapterEdits('settings', dirty, () => {
+    formRef.current?.requestSubmit()
+    return true
+  })
+
   return (
-    <form action={formAction} className="dc-form">
+    <form ref={formRef} action={formAction} className="dc-form">
       <input type="hidden" name="leagueId" value={leagueId} />
+      {inline && <input type="hidden" name="inline" value="1" />}
 
       <div className="dc-field">
         <label htmlFor="name" className="dc-label">League name</label>
@@ -105,7 +128,7 @@ export function SettingsForm({
         />
         <span className="dc-checkbox-hint">
           Public URL becomes <strong style={{ fontFamily: 'var(--mono)' }}>/leagues/{previewSlug}/</strong>.
-          Old URLs stop working after you save — share the new link.
+          Old URLs stop working after you save, so share the new link.
         </span>
       </div>
 
@@ -165,15 +188,14 @@ export function SettingsForm({
               <button
                 type="button"
                 onClick={() => setPrizePool('$' + calcTotal.toLocaleString())}
-                className="dc-btn-ghost"
-                style={{ fontSize: '.7rem', padding: '.3rem .65rem' }}
+                className="lo-btn-ghost sm"
               >
                 Use ${calcTotal.toLocaleString()}
               </button>
             )}
           </div>
           <span className="dc-checkbox-hint" style={{ marginTop: '.4rem' }}>
-            Doesn&apos;t auto-fill if buy-ins varied across years — paste your own total in that case.
+            Doesn&apos;t auto-fill if buy-ins varied across years; paste your own total in that case.
           </span>
         </details>
       </div>
@@ -211,12 +233,14 @@ export function SettingsForm({
         </span>
       </div>
 
-      <button type="submit" disabled={isPending} className="dc-btn dc-btn-block">
-        {isPending ? 'Saving…' : 'Save settings →'}
-      </button>
+      {!inline && (
+        <button type="submit" disabled={isPending} className="lo-btn block">
+          {isPending ? 'Saving…' : 'Save settings'}
+        </button>
+      )}
 
-      {state && !state.ok && <p className="dc-form-error">{state.error}</p>}
-      {savedJustNow && !state && <p className="dc-form-ok">Saved.</p>}
+      {state && !state.ok && <p className="lo-msg-err">{state.error}</p>}
+      {savedJustNow && !state && <p className="lo-msg-ok">Saved.</p>}
     </form>
   )
 }

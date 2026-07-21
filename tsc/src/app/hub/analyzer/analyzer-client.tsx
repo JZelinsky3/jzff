@@ -5,6 +5,8 @@
 // server-side (/api/hub/analyzer); this file is pure UI state.
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { HubSpinner } from '../spinner'
 
@@ -551,6 +553,13 @@ export function Ballot({
   const [counts, setCounts] = useState(initialCounts)
   const [mine, setMine] = useState(initialMine)
   const [busy, setBusy] = useState(false)
+  const [prompt, setPrompt] = useState(false)
+
+  // Signed-out taps don't cast — they open the sign-in prompt instead.
+  function onSide(vote: 'sign' | 'shred') {
+    if (!signedIn) { setPrompt(true); return }
+    cast(vote)
+  }
 
   async function cast(vote: 'sign' | 'shred') {
     if (!signedIn || busy) return
@@ -583,15 +592,14 @@ export function Ballot({
 
   return (
     <div className="hub-ballot-row">
-      <div className="hub-ballot" title={signedIn ? undefined : 'Sign in to vote'}>
+      <div className="hub-ballot">
         <button
           type="button"
           className="hub-ballot-side sign"
           aria-pressed={mine === 'sign'}
-          aria-label="Sign it: you'd do this deal"
-          title="Sign it: you'd do this deal"
-          onClick={() => cast('sign')}
-          disabled={!signedIn}
+          aria-label={signedIn ? "Sign it: you'd do this deal" : 'Sign in to vote'}
+          title={signedIn ? "Sign it: you'd do this deal" : 'Sign in to vote'}
+          onClick={() => onSide('sign')}
         >
           {SIGN_ICON}
           <span className="hub-ballot-n">{counts.sign}</span>
@@ -601,15 +609,64 @@ export function Ballot({
           type="button"
           className="hub-ballot-side shred"
           aria-pressed={mine === 'shred'}
-          aria-label="Shred it: into the bin"
-          title="Shred it: into the bin"
-          onClick={() => cast('shred')}
-          disabled={!signedIn}
+          aria-label={signedIn ? 'Shred it: into the bin' : 'Sign in to vote'}
+          title={signedIn ? 'Shred it: into the bin' : 'Sign in to vote'}
+          onClick={() => onSide('shred')}
         >
           {SHRED_ICON}
           <span className="hub-ballot-n">{counts.shred}</span>
         </button>
       </div>
+      {prompt && <SignInToVote onClose={() => setPrompt(false)} />}
     </div>
+  )
+}
+
+// Sign-in prompt shown when a signed-out reader taps a vote button.
+// Portaled to document.body — the ballot lives inside a .hub-reveal
+// (transformed), which would otherwise trap a position: fixed overlay.
+function SignInToVote({ onClose }: { onClose: () => void }) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [onClose])
+
+  if (!mounted) return null
+
+  return createPortal(
+    <div
+      className="hub-vote-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hub-vote-title"
+      onClick={onClose}
+    >
+      <div className="hub-vote-card" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="hub-vote-close" aria-label="Close" onClick={onClose}>
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
+        <div className="hub-vote-eyebrow">★ The docket</div>
+        <h3 className="hub-vote-title" id="hub-vote-title">Sign in to vote.</h3>
+        <p className="hub-vote-body">
+          Signing and shredding trades is for members. It&apos;s free to join, and the
+          whole analyzer comes with it.
+        </p>
+        <div className="hub-vote-actions">
+          <Link href="/login?from=%2Fhub%2Fanalyzer" className="hub-btn">Sign in</Link>
+          <Link href="/login?mode=signup&from=%2Fhub%2Fanalyzer" className="hub-btn-ghost">Join the Chronicle</Link>
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }

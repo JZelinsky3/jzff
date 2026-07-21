@@ -89,6 +89,10 @@ export default async function SetupPage({
   }
 
   const profilesList = Array.from(profilesById.values())
+  const currentCount = profilesList.filter((p) =>
+    !(p.is_alumni_override === true || (p.is_alumni_override === null && !p.auto_current))
+  ).length
+  const alumniCount = profilesList.length - currentCount
 
   if ((await getViewMode()) === 'mobile') {
     return (
@@ -101,32 +105,50 @@ export default async function SetupPage({
     )
   }
 
-  const words = league.name.trim().split(/\s+/)
-  const head = words.slice(0, -1).join(' ')
-  const tail = words[words.length - 1] ?? ''
-
   return (
-    <main>
-      <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
-        <div className="hero-sup">★ Chapter VI · League Members ★</div>
-        <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}>
-          The <em>Members.</em>
-        </h1>
-        <p className="hero-sub">
-          Every person who&apos;s ever been in the league. Merge cross-platform identities
-          (same human, two accounts), hide test/throwaway managers, mark alumni overrides,
+    <main className="lo-page lo-page--members">
+      <section className="lo-hero">
+        <div className="lo-hero-kicker">Chapter II</div>
+        <h1 className="lo-hero-title">The <em>Members.</em></h1>
+        <p className="lo-hero-standfirst">
+          Every person who&apos;s ever been in the league. Merge cross-platform
+          identities, hide test or throwaway accounts, mark alumni overrides,
           or delete entirely.
         </p>
-        <div className="hero-meta">
-          {head} {tail && <em>{tail}.</em>} · {profilesList.length} {profilesList.length === 1 ? 'person' : 'people'}
+        <div className="lo-hero-dateline">
+          <span><strong>{profilesList.length}</strong> total</span>
+          <span className="sep">·</span>
+          <span><strong>{currentCount}</strong> current</span>
+          <span className="sep">·</span>
+          <span><strong>{alumniCount}</strong> alumni</span>
         </div>
+        <div className="lo-hero-rules" aria-hidden />
       </section>
 
-      <div className="section">
-        <div className="section-header">
-          <span className="section-num">§ 01 · The roster</span>
-          <span className="section-title">Everyone on file —</span>
-          <span className="section-meta">Select 2+ → Merge</span>
+      <div className="lo-band">
+        <div className="lo-note-grid" style={{ marginBottom: '1.6rem' }}>
+          <div className="lo-note">
+            <div className="lo-note-head"><span className="pin">✦</span> Merge duplicates</div>
+            <div className="lo-note-body">
+              Same human, two accounts: a Sleeper login and a leftover NFL.com
+              one, say. Select both, click <strong>Merge</strong>, and pick which
+              name survives. Stats roll up under the keeper automatically.
+            </div>
+          </div>
+          <div className="lo-note steel">
+            <div className="lo-note-head"><span className="pin">✦</span> Hide vs. delete</div>
+            <div className="lo-note-body">
+              <strong>Hide</strong> keeps someone off the public almanac without
+              touching their stats, reversible any time. <strong>Delete</strong>{' '}
+              permanently wipes their history. Use hide unless you&apos;re certain.
+            </div>
+          </div>
+        </div>
+
+        <div className="lo-folio">
+          <span className="lo-folio-no">01</span>
+          <span className="lo-folio-title">Everyone on file</span>
+          <span className="lo-folio-meta">Select 2+ to merge</span>
         </div>
         {/* Confirm sits above the table — on long rosters the button was
             below the fold and people never found it. */}

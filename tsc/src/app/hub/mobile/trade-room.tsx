@@ -49,8 +49,8 @@ export function MobileTradeRoom({ signedIn, docket }: { signedIn: boolean; docke
               <div>
                 <div className="hub-promote-title">Members <em>only.</em></div>
                 <p className="hub-promote-body">
-                  The analyzer is free to use; it just needs a name on the ledger. Sign in,
-                  type two sides of a deal, and the consensus value engine does the arguing.
+                  Weighing deals takes an account, but joining is free. Become a member
+                  today and the value engine does the arguing.
                 </p>
               </div>
               <div className="hub-promote-side">

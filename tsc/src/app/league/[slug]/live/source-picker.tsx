@@ -14,7 +14,7 @@ export type SourceRow = {
 
 function sourceLabel(s: SourceRow): string {
   const base = `${s.platform.toUpperCase()} · ${s.external_id}`
-  return s.label ? `${base} — ${s.label}` : base
+  return s.label ? `${base} · ${s.label}` : base
 }
 
 export function SourcePicker({ leagueId, sources }: { leagueId: string; sources: SourceRow[] }) {
@@ -26,8 +26,8 @@ export function SourcePicker({ leagueId, sources }: { leagueId: string; sources:
 
   if (sources.length === 0) {
     return (
-      <div className="dc-empty">
-        <div className="dc-empty-text">No sources yet — add one on the Sources page first.</div>
+      <div className="lo-empty">
+        <div className="lo-empty-text">No sources yet. Add one on the Sources page first.</div>
       </div>
     )
   }
@@ -43,52 +43,41 @@ export function SourcePicker({ leagueId, sources }: { leagueId: string; sources:
   const dirty = selected !== initial
 
   return (
-    <div className="card" style={{ padding: '1rem 1.25rem' }}>
-      <p style={{ marginTop: 0, marginBottom: '.85rem', fontSize: '.82rem', opacity: 0.65 }}>
+    <div className="lo-form-card">
+      <p style={{ marginTop: 0, marginBottom: '1rem', fontSize: '.85rem', color: 'var(--cream-soft)', lineHeight: 1.6 }}>
         The weekly cron re-syncs only the live source. History sources don&apos;t change, so they stay synced-once.
       </p>
-      <div className="dc-stack" style={{ gap: '.4rem', marginBottom: '1rem' }}>
-        <label style={{ display: 'flex', gap: '.6rem', alignItems: 'center', cursor: 'pointer' }}>
+      <div className="lo-pick" style={{ marginBottom: '1.1rem' }}>
+        <label className="lo-pick-row">
           <input
             type="radio"
             name="live-source"
             value=""
             checked={selected === ''}
             onChange={() => setSelected('')}
-            style={{ transform: 'scale(1.15)' }}
           />
-          <span style={{ fontFamily: 'var(--serif)', fontSize: '.95rem', opacity: 0.75 }}>
-            None — no weekly sync
-          </span>
+          <span className="lo-pick-label muted">None (no weekly sync)</span>
         </label>
         {sources.map((s) => (
-          <label key={s.id} style={{ display: 'flex', gap: '.6rem', alignItems: 'center', cursor: 'pointer' }}>
+          <label key={s.id} className="lo-pick-row">
             <input
               type="radio"
               name="live-source"
               value={s.id}
               checked={selected === s.id}
               onChange={() => setSelected(s.id)}
-              style={{ transform: 'scale(1.15)' }}
             />
-            <span style={{ fontFamily: 'var(--serif)', fontSize: '1rem' }}>
+            <span className="lo-pick-label">
               {sourceLabel(s)}
-              {s.is_live && (
-                <span
-                  className="text-mono text-cream-mute"
-                  style={{ marginLeft: '.6rem', fontSize: '.55rem', letterSpacing: '.18em', textTransform: 'uppercase' }}
-                >
-                  Live source
-                </span>
-              )}
+              {s.is_live && <span className="lo-tag live">Live source</span>}
             </span>
           </label>
         ))}
       </div>
 
-      {err && <p className="dc-form-error" style={{ marginBottom: '.75rem' }}>{err}</p>}
+      {err && <p className="lo-msg-err" style={{ marginBottom: '.75rem' }}>{err}</p>}
 
-      <button onClick={onSubmit} disabled={!dirty || busy} className="dc-btn">
+      <button onClick={onSubmit} disabled={!dirty || busy} className="lo-btn">
         {busy ? 'Saving…' : 'Save'}
       </button>
     </div>

@@ -1,10 +1,13 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import '@/styles/league-office.css'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { getViewMode } from '@/lib/viewMode'
 import { LeagueBackLink } from './back-link'
 import { AdminNavMenu } from './admin-nav-menu'
 import { MobileLeagueBackLink } from './_mobile-back-link'
+import { SpineRail } from './spine-rail'
+import { PageTurn } from './page-turn'
 
 export default async function LeagueLayout({
   children,
@@ -72,6 +75,8 @@ export default async function LeagueLayout({
         </div>
         <AdminNavMenu slug={slug} isOwner={canManage} />
       </nav>
+      <SpineRail slug={slug} canManage={canManage} />
+      <PageTurn />
       {children}
     </>
   )

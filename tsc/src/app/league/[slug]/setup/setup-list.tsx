@@ -13,11 +13,14 @@ export type ProfileRow = {
   managers: { id: string; display_name: string | null; team_name: string | null; external_id: string | null }[]
 }
 
+// Auto-detected status reads as the plain word; only a commissioner
+// override is qualified. Labelling the common case "(auto)" added a
+// parenthetical to nearly every row without telling anyone anything.
 function statusLabel(p: ProfileRow): string {
   if (p.is_hidden) return 'Hidden'
   if (p.is_alumni_override === true) return 'Alumni (forced)'
   if (p.is_alumni_override === false) return 'Current (forced)'
-  return p.auto_current ? 'Current (auto)' : 'Alumni (auto)'
+  return p.auto_current ? 'Current' : 'Alumni'
 }
 
 function nextStatusAction(p: ProfileRow): string {
@@ -103,7 +106,7 @@ export function SetupList({
     const more = ids.length > 5 ? ` + ${ids.length - 5} more` : ''
     if (!confirm(
       `Permanently delete ${ids.length} ${ids.length === 1 ? 'person' : 'people'} (${names}${more})? ` +
-      `Every season, matchup, and rivalry tied to them is wiped too. This can't be undone — Hide is safer if you just want them off the public site.`
+      `Every season, matchup, and rivalry tied to them is wiped too. This cannot be undone. Hide is safer if you just want them off the public site.`
     )) return
     setBusy('delete'); setErr(null)
     const result = await deleteProfiles({ leagueId, profileIds: ids })
@@ -153,96 +156,86 @@ export function SetupList({
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap', marginBottom: '1rem', alignItems: 'center' }}>
+      <div className="lo-roster-toolbar">
         <button
           onClick={onSelectAll}
           disabled={profiles.length === 0 || busy !== null}
-          className="dc-btn-ghost"
+          className="lo-btn-ghost sm"
         >
           {profiles.length > 0 && profiles.every((p) => selected.has(p.id)) ? 'Deselect all' : 'Select all'}
         </button>
         <button
           onClick={onMergeStart}
           disabled={selected.size < 2 || busy !== null || pickingKeeper}
-          className="dc-btn"
+          className="lo-btn sm"
         >
           {busy === 'merge' ? 'Merging…' : `Merge ${selected.size}`}
         </button>
         <button
           onClick={onDelete}
           disabled={selected.size === 0 || busy !== null}
-          className="dc-btn-ghost"
-          style={{ color: 'var(--fire, #d65a3c)', borderColor: 'rgba(214,90,60,.4)' }}
-          title="Delete the profile AND its underlying stats — permanent. Use Hide instead for a soft remove."
+          className="lo-btn-ghost sm danger"
+          title="Delete the profile AND its underlying stats. Permanent: use Hide instead for a soft remove."
         >
           {busy === 'delete' ? 'Deleting…' : `Delete ${selected.size}`}
         </button>
         <button
           onClick={() => setSelected(new Set())}
           disabled={selected.size === 0 || busy !== null}
-          className="dc-btn-ghost"
+          className="lo-btn-quiet"
         >
           Clear
         </button>
-        <span
-          className="hide-on-mobile"
-          style={{ flex: 1, minWidth: '14rem', opacity: 0.6, fontSize: '.8rem' }}
-        >
-          Pick the keeper after clicking Merge · Delete is permanent (cascades stats)
+        <span className="lo-roster-hint hide-on-mobile">
+          Pick the keeper after Merge · Delete is permanent
         </span>
       </div>
 
       {pickingKeeper && (
-        <div className="dc-card-row" style={{ marginBottom: '.85rem' }}>
-          <div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem' }}>
-              Which profile should stay?
+        <div className="lo-form-card" style={{ marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)' }}>
+                Which profile should stay?
+              </div>
+              <div style={{ opacity: 0.65, fontSize: '.8rem', marginTop: '.25rem' }}>
+                The others get deleted; their stats roll up under the keeper.
+              </div>
             </div>
-            <div style={{ opacity: 0.6, fontSize: '.8rem', marginTop: '.25rem' }}>
-              The others get deleted; their stats roll up under the keeper.
+            <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <select
+                value={keeperId ?? ''}
+                onChange={(e) => setKeeperId(e.target.value || null)}
+                className="dc-input"
+                // flex:1 + minWidth:0 lets the select fill the actions row
+                // when there's space but shrink to viewport width on phones,
+                // instead of forcing a 14rem floor that overflows narrow
+                // screens. min-w-0 specifically defeats the implicit min-content
+                // floor flex items have.
+                style={{ flex: '1 1 12rem', minWidth: 0 }}
+              >
+                {Array.from(selected).map((id) => {
+                  const p = profiles.find((p) => p.id === id)
+                  return <option key={id} value={id}>{p?.canonical_name ?? id}</option>
+                })}
+              </select>
+              <button onClick={onMergeConfirm} disabled={!keeperId || busy !== null} className="lo-btn sm">
+                {busy === 'merge' ? 'Merging…' : 'Confirm merge'}
+              </button>
+              <button onClick={onMergeCancel} disabled={busy !== null} className="lo-btn-ghost sm">
+                Cancel
+              </button>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <select
-              value={keeperId ?? ''}
-              onChange={(e) => setKeeperId(e.target.value || null)}
-              className="dc-input"
-              // flex:1 + minWidth:0 lets the select fill the actions row
-              // when there's space but shrink to viewport width on phones,
-              // instead of forcing a 14rem floor that overflows narrow
-              // screens. min-w-0 specifically defeats the implicit min-content
-              // floor flex items have.
-              style={{ flex: '1 1 12rem', minWidth: 0 }}
-            >
-              {Array.from(selected).map((id) => {
-                const p = profiles.find((p) => p.id === id)
-                return <option key={id} value={id}>{p?.canonical_name ?? id}</option>
-              })}
-            </select>
-            <button
-              onClick={onMergeConfirm}
-              disabled={!keeperId || busy !== null}
-              className="dc-btn"
-            >
-              {busy === 'merge' ? 'Merging…' : 'Confirm merge'}
-            </button>
-            <button
-              onClick={onMergeCancel}
-              disabled={busy !== null}
-              className="dc-btn-ghost"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}
 
-      {err && <p className="dc-form-error" style={{ marginBottom: '.85rem' }}>{err}</p>}
+      {err && <p className="lo-msg-err" style={{ marginBottom: '.85rem' }}>{err}</p>}
 
       {profiles.length === 0 && (
-        <div className="dc-empty"><div className="dc-empty-text">No profiles yet — sync a source first.</div></div>
+        <div className="lo-empty"><div className="lo-empty-text">No profiles yet. Sync a source first.</div></div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))', gap: '.5rem' }}>
+      <div className="lo-roster-grid">
         {currentProfiles.map(renderCard)}
       </div>
       {alumniProfiles.length > 0 && (
@@ -258,7 +251,7 @@ export function SetupList({
               {alumniProfiles.length} {alumniProfiles.length === 1 ? 'person' : 'people'} no longer in the league
             </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))', gap: '.5rem' }}>
+          <div className="lo-roster-grid">
             {alumniProfiles.map(renderCard)}
           </div>
         </>
@@ -270,91 +263,76 @@ export function SetupList({
     const isSel = selected.has(p.id)
     const avatarUrl = avatars?.[p.id]
     return (
-      <div key={p.id} className="card" style={{ padding: '.45rem .7rem', opacity: p.is_hidden ? 0.55 : 1 }}>
-        <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <input
-            type="checkbox"
-            checked={isSel}
-            onChange={() => toggleSelect(p.id)}
-            style={{ transform: 'scale(1.15)', cursor: 'pointer' }}
+      <div key={p.id} className={`lo-person${p.is_hidden ? ' hidden' : ''}${isSel ? ' selected' : ''}`}>
+        <input
+          type="checkbox"
+          checked={isSel}
+          onChange={() => toggleSelect(p.id)}
+        />
+        {avatars && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl || '/icon.png'}
+            alt=""
+            width={32}
+            height={32}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              objectFit: 'cover',
+              background: 'rgba(255,247,230,.06)',
+              border: '1px solid rgba(255,247,230,.15)',
+              flexShrink: 0,
+              opacity: avatarUrl ? 1 : .35,
+            }}
+            onError={(e) => {
+              // Platform avatar 404s happen — esp. when users leave a
+              // league and their avatar gets purged. Fall back to the
+              // site icon so the layout doesn't go ragged.
+              const t = e.currentTarget
+              if (t.src.endsWith('/icon.png')) return
+              t.src = '/icon.png'
+              t.style.opacity = '.35'
+            }}
           />
-          {avatars && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatarUrl || '/icon.png'}
-              alt=""
-              width={32}
-              height={32}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                background: 'rgba(255,247,230,.06)',
-                border: '1px solid rgba(255,247,230,.15)',
-                flexShrink: 0,
-                opacity: avatarUrl ? 1 : .35,
-              }}
-              onError={(e) => {
-                // Platform avatar 404s happen — esp. when users leave a
-                // league and their avatar gets purged. Fall back to the
-                // site icon so the layout doesn't go ragged.
-                const t = e.currentTarget
-                if (t.src.endsWith('/icon.png')) return
-                t.src = '/icon.png'
-                t.style.opacity = '.35'
-              }}
-            />
-          )}
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: '1rem', display: 'flex', gap: '.5rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
-              <span>{p.canonical_name}</span>
-              <span className="text-mono text-cream-mute" style={{ fontSize: '.55rem', letterSpacing: '.18em', textTransform: 'uppercase' }}>
-                {statusLabel(p)}
-                {p.managers.length > 1 && <> · {p.managers.length} merged</>}
-              </span>
+        )}
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <div className="lo-person-name" style={{ display: 'flex', gap: '.5rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <span>{p.canonical_name}</span>
+            <span className="lo-person-status">
+              {statusLabel(p)}
+              {p.managers.length > 1 && <> · {p.managers.length} merged</>}
+            </span>
+          </div>
+          {p.managers.length > 0 && (
+            <div className="lo-person-accounts">
+              {p.managers.map((m) => (
+                <span key={m.id} className="lo-person-acct" title={m.team_name ?? undefined}>
+                  {m.display_name ?? 'Unknown'}
+                  {m.team_name && m.team_name !== m.display_name && (
+                    <span style={{ opacity: 0.6 }}> · {m.team_name}</span>
+                  )}
+                </span>
+              ))}
             </div>
-            {p.managers.length > 0 && (
-              <div style={{ marginTop: '.2rem', fontSize: '.7rem', color: 'var(--cream-mute)', display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
-                {p.managers.map((m, i) => (
-                  <span key={m.id}>
-                    {i > 0 && <span style={{ opacity: 0.4 }}>· </span>}
-                    {m.display_name ?? 'Unknown'}
-                    {m.team_name && m.team_name !== m.display_name && (
-                      <span style={{ opacity: 0.55 }}> ({m.team_name})</span>
-                    )}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => onRename(p)}
-              disabled={busy !== null}
-              className="dc-btn-ghost"
-              style={{ fontSize: '.65rem', padding: '.25rem .55rem' }}
-            >
-              Rename
-            </button>
-            <button
-              onClick={() => onCycleAlumni(p)}
-              disabled={busy !== null}
-              className="dc-btn-ghost"
-              style={{ fontSize: '.65rem', padding: '.25rem .55rem' }}
-              title="Cycle: Auto → Alumni → Current → Auto"
-            >
-              {busy === p.id ? '…' : nextStatusAction(p)}
-            </button>
-            <button
-              onClick={() => onToggleHide(p)}
-              disabled={busy !== null}
-              className="dc-btn-ghost"
-              style={{ fontSize: '.65rem', padding: '.25rem .55rem' }}
-            >
-              {p.is_hidden ? 'Unhide' : 'Hide'}
-            </button>
-          </div>
+          )}
+        </div>
+        <div className="lo-person-actions">
+          <button onClick={() => onRename(p)} disabled={busy !== null} className="lo-btn-ghost xs">
+            Rename
+          </button>
+          <button
+            onClick={() => onCycleAlumni(p)}
+            disabled={busy !== null}
+            className="lo-btn-ghost xs"
+            title="Cycle: Auto → Alumni → Current → Auto"
+          >
+            {busy === p.id ? '…' : nextStatusAction(p)}
+          </button>
+          <button onClick={() => onToggleHide(p)} disabled={busy !== null} className="lo-btn-ghost xs">
+            {p.is_hidden ? 'Unhide' : 'Hide'}
+          </button>
         </div>
       </div>
     )

@@ -23,6 +23,11 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: 'Bad request.' }, { status: 400 })
   const { tradeId, vote } = parsed.data
 
+  // Self-heal a missing profiles row so the hub_trade_votes.user_id FK holds
+  // for accounts created before the profile trigger. No-op when the profile
+  // already exists (and on retract, but harmless).
+  await supabase.rpc('ensure_profile')
+
   if (vote === null) {
     const { error } = await supabase
       .from('hub_trade_votes')

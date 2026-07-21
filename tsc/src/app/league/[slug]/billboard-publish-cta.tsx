@@ -30,14 +30,14 @@ export function BillboardPublishCta({ leagueId }: { leagueId: string }) {
     <>
       <button
         type="button"
-        className="almanac-billboard-cta almanac-billboard-publish"
+        className="lo-btn sm"
         onClick={onClick}
         disabled={busy}
       >
-        {busy ? 'Publishing…' : 'Publish almanac →'}
+        {busy ? 'Publishing…' : 'Publish almanac'}
       </button>
       {err && (
-        <p className="dc-form-error" style={{ marginTop: '.5rem' }}>{err}</p>
+        <p className="lo-msg-err" style={{ marginTop: '.5rem' }}>{err}</p>
       )}
     </>
   )

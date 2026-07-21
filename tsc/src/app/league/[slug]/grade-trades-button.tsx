@@ -107,10 +107,10 @@ export function GradeTradesButton({ leagueId }: { leagueId: string }) {
         <button onClick={() => grade(true)} disabled={busy} className="dc-btn-ghost" title="Re-grade trades that already have grades (overwrites)">
           {busy && lastAction === 'regrade' ? 'Re-grading…' : 'Re-grade next 5'}
         </button>
-        <button onClick={verdict} disabled={busy} className="dc-btn-ghost" title="Run the 4-week verdict on graded trades (test mode — no waiting)">
+        <button onClick={verdict} disabled={busy} className="dc-btn-ghost" title="Run the 4-week verdict on graded trades (test mode, no waiting)">
           {busy && lastAction === 'verdict' ? 'Revisiting…' : 'Verdict next 5'}
         </button>
-        <button onClick={refreshValues} disabled={busy} className="dc-btn-ghost" title="Pull the latest Sleeper player values into the grader. The weekly cron does this automatically — this button is for one-off testing.">
+        <button onClick={refreshValues} disabled={busy} className="dc-btn-ghost" title="Pull the latest Sleeper player values into the grader. The weekly cron does this automatically; this button is for one-off testing.">
           {busy && lastAction === 'refresh' ? 'Refreshing…' : 'Refresh values'}
         </button>
       </div>

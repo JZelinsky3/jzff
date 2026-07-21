@@ -83,8 +83,8 @@ export function GotwPicker({
 
   if (weeks.length === 0) {
     return (
-      <div className="dc-empty">
-        <div className="dc-empty-text">No matchups on file yet — sync the season first.</div>
+      <div className="lo-empty">
+        <div className="lo-empty-text">No matchups on file yet. Sync the season first.</div>
       </div>
     )
   }
@@ -111,8 +111,8 @@ export function GotwPicker({
         </div>
 
         {active && active.matchups.length === 0 ? (
-          <div className="dc-empty">
-            <div className="dc-empty-text">No matchups on file for Week {activeWeek}.</div>
+          <div className="lo-empty">
+            <div className="lo-empty-text">No matchups on file for Week {activeWeek}.</div>
           </div>
         ) : (
           <div className="dc-stack" style={{ gap: '.4rem', marginBottom: '1rem' }}>
@@ -155,9 +155,9 @@ export function GotwPicker({
           </div>
         )}
 
-        {err && <p className="dc-form-error" style={{ marginBottom: '.75rem' }}>{err}</p>}
+        {err && <p className="lo-msg-err" style={{ marginBottom: '.75rem' }}>{err}</p>}
 
-        <button onClick={onSave} disabled={!dirty || busy != null} className="dc-btn">
+        <button onClick={onSave} disabled={!dirty || busy != null} className="lo-btn">
           {busy === activeWeek ? 'Saving…' : `Save Week ${activeWeek}`}
         </button>
       </div>
@@ -172,23 +172,13 @@ export function GotwPicker({
         >
           GOTW tally · season-to-date
         </div>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '.35rem' }}>
+        {/* Two columns of names: a single column of a full roster ran
+            far taller than the picker beside it. */}
+        <ul className="lo-gotw-tally">
           {tally.map(([name, n]) => (
-            <li
-              key={name}
-              style={{
-                display: 'flex', justifyContent: 'space-between',
-                fontFamily: 'var(--serif)', fontSize: '.95rem',
-                color: n > 0 ? 'var(--cream)' : 'var(--cream-mute)',
-                padding: '.25rem 0',
-                borderBottom: '1px dotted var(--ink-line)',
-              }}
-            >
-              <span>{name}</span>
-              <span style={{
-                fontFamily: 'var(--mono)', fontSize: '.85rem',
-                color: n > 0 ? 'var(--gold)' : 'var(--cream-mute)',
-              }}>{n}</span>
+            <li key={name} className={n > 0 ? 'has' : undefined}>
+              <span className="who">{name}</span>
+              <span className="n">{n}</span>
             </li>
           ))}
         </ul>

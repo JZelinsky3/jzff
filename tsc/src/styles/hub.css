@@ -1326,6 +1326,87 @@ select.hub-input {
 .hub-ballot-side.shred[aria-pressed="true"] { background: rgba(180, 76, 60, .14); }
 .hub-ballot-side[aria-pressed="true"] .hub-ballot-n { color: inherit; font-weight: 700; }
 
+/* Sign-in-to-vote prompt (portaled to <body>; signed-out ballot taps).
+   The portal lands OUTSIDE .hub-root, so the --hb-* tokens the card and
+   buttons use aren't in scope there. Re-declare them on the backdrop —
+   day values here, night override below — so the subtree paints solid. */
+.hub-vote-backdrop {
+    --hb-bg:          #f3ead6;
+    --hb-bg-soft:     #ece1c6;
+    --hb-card:        #faf4e6;
+    --hb-ink:         #1c1812;
+    --hb-ink-soft:    #4a4336;
+    --hb-mute:        #8a8068;
+    --hb-line:        rgba(28, 24, 18, .18);
+    --hb-line-soft:   rgba(28, 24, 18, .09);
+    --hb-gold:        #8a6a24;
+    --hb-gold-bright: #6e5418;
+    --hb-gold-wash:   rgba(138, 106, 36, .08);
+    --hb-shadow:      rgba(60, 48, 24, .14);
+
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.25rem;
+    background: rgba(10, 8, 5, .55);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    animation: hub-vote-fade .18s ease;
+}
+html[data-hub-theme="night"] .hub-vote-backdrop {
+    --hb-bg:          #0d0d0d;
+    --hb-bg-soft:     #131313;
+    --hb-card:        #1a1a1a;
+    --hb-ink:         #f4ebd8;
+    --hb-ink-soft:    #c9c0ad;
+    --hb-mute:        #8a7a60;
+    --hb-line:        #3e3e3e;
+    --hb-line-soft:   #262626;
+    --hb-gold:        #e8c889;
+    --hb-gold-bright: #f4d9a4;
+    --hb-gold-wash:   rgba(232, 200, 137, .08);
+    --hb-shadow:      rgba(0, 0, 0, .55);
+}
+.hub-vote-card {
+    position: relative;
+    width: 100%; max-width: 380px;
+    background: var(--hb-bg);
+    border: 1px solid var(--hb-line);
+    border-radius: 6px;
+    padding: 1.6rem 1.5rem 1.5rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+    animation: hub-vote-rise .2s ease;
+}
+.hub-vote-close {
+    position: absolute; top: .7rem; right: .7rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    background: none; border: none; cursor: pointer;
+    color: var(--hb-mute); border-radius: 50%;
+    transition: color .15s ease, background .15s ease;
+}
+.hub-vote-close:hover { color: var(--hb-ink); background: var(--hb-gold-wash); }
+.hub-vote-eyebrow {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--hb-gold);
+    margin-bottom: .55rem;
+}
+.hub-vote-title {
+    font-family: var(--serif); font-size: 1.5rem; font-weight: 700;
+    color: var(--hb-ink); margin: 0 0 .5rem;
+}
+.hub-vote-body {
+    font-family: var(--serif); font-size: .92rem; line-height: 1.5;
+    color: var(--hb-ink-soft); margin: 0 0 1.25rem;
+}
+.hub-vote-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.hub-vote-actions .hub-btn,
+.hub-vote-actions .hub-btn-ghost { flex: 1 1 auto; justify-content: center; padding: .7rem 1rem; }
+@keyframes hub-vote-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hub-vote-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+    .hub-vote-backdrop, .hub-vote-card { animation: none; }
+}
+
 /* Player mugshots (Sleeper CDN) */
 .hub-tr-mug {
     flex: none;

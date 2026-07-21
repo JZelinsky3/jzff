@@ -38,7 +38,7 @@ export function MarkReviewedButton({
   return (
     <button
       type="button"
-      className="dc-btn"
+      className="lo-btn sm"
       disabled={pending}
       onClick={() => {
         start(async () => {
@@ -47,7 +47,7 @@ export function MarkReviewedButton({
         })
       }}
     >
-      {pending ? 'Marking…' : 'Mark members reviewed →'}
+      {pending ? 'Marking…' : 'Mark members reviewed'}
     </button>
   )
 }

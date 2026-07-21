@@ -27,23 +27,22 @@ export default async function NewRivalryPage({
 
   return (
     <main>
-      <section className="hero" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
-        <div className="hero-sup">★ New feud ★</div>
-        <h1 className="hero-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
-          Pair Them <em>Up.</em>
-        </h1>
-        <p className="hero-sub">
-          Pick two managers. Leave the name blank or check Auto-name and we&apos;ll generate one.
+      <section className="lo-hero">
+        <div className="lo-hero-kicker">New Feud</div>
+        <h1 className="lo-hero-title">Pair Them <em>Up.</em></h1>
+        <p className="lo-hero-standfirst">
+          Pick two managers. Leave auto-name on and we&apos;ll generate a title
+          from a curated bank, or write your own.
         </p>
       </section>
 
-      <div className="section" style={{ maxWidth: '600px' }}>
-        <div className="card" style={{ paddingBottom: '2rem' }}>
+      <div className="lo-band" style={{ maxWidth: 620 }}>
+        <div className="lo-form-card">
           <NewRivalryForm leagueId={league.id} managers={managers} />
         </div>
 
-        <div style={{ marginTop: '2rem' }}>
-          <Link href={`/league/${slug}/rivalries`} className="dc-btn-ghost">← All rivalries</Link>
+        <div style={{ marginTop: '1.5rem' }}>
+          <Link href={`/league/${slug}/rivalries`} className="lo-btn-quiet">← All rivalries</Link>
         </div>
       </div>
 
