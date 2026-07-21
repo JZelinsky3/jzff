@@ -164,7 +164,7 @@ export function MobileFrontDesk({
                 <h3 className="mhb-entry-title">
                   {e.title} {e.titleEm && <em>{e.titleEm}</em>}
                 </h3>
-                <p className="mhb-entry-body">{e.body}</p>
+                <p className="mhb-entry-body" dangerouslySetInnerHTML={{ __html: e.body }} />
               </article>
             </Reveal>
           ))}

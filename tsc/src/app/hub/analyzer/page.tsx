@@ -3,9 +3,10 @@ import { after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getPlayersMap } from '@/lib/sleeperPlayers'
 import { getViewMode } from '@/lib/viewMode'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { Reveal } from '../bits'
 import { MobileTradeRoom } from '../mobile/trade-room'
-import { AnalyzerStudio } from './analyzer-client'
+import { AnalyzerStudio, AdminRegrade } from './analyzer-client'
 import { fetchDocket, TradeCase } from './board'
 
 export const metadata = { title: 'The Clubhouse · The Trade Room' }
@@ -14,6 +15,7 @@ export default async function TradeRoomPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const signedIn = !!user
+  const isAdmin = await isSiteAdmin(user?.id)
 
   // Warm the lean player dictionary as soon as anyone opens the room —
   // it backs the search endpoint, and its cold build (a ~5MB Sleeper
@@ -30,7 +32,7 @@ export default async function TradeRoomPage() {
   const docket = await fetchDocket(50, user?.id ?? null)
 
   if ((await getViewMode()) === 'mobile') {
-    return <MobileTradeRoom signedIn={signedIn} docket={docket} />
+    return <MobileTradeRoom signedIn={signedIn} docket={docket} isAdmin={isAdmin} />
   }
 
   const hottest = docket.hottest.slice(0, 2)
@@ -105,6 +107,7 @@ export default async function TradeRoomPage() {
           <span className="hub-section-title">Hottest arguments —</span>
           <span className="hub-section-meta">{signedIn ? 'Sign it or shred it' : 'Sign in to vote'}</span>
         </div>
+        {isAdmin && <AdminRegrade />}
         {hottest.length === 0 ? (
           <Reveal>
             <p
@@ -123,7 +126,7 @@ export default async function TradeRoomPage() {
             <div className="hub-tr-board">
               {hottest.map((t, i) => (
                 <Reveal key={t.id} delay={i * 90}>
-                  <TradeCase t={t} docket={docket} signedIn={signedIn} />
+                  <TradeCase t={t} docket={docket} signedIn={signedIn} isAdmin={isAdmin} />
                 </Reveal>
               ))}
             </div>

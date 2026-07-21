@@ -214,6 +214,7 @@ a.mhb-sec-side { color: var(--hb-gold); }
 .mhb-entry-title { font-family: var(--serif); font-size: 1.05rem; line-height: 1.2; color: var(--hb-ink); margin: 0; font-weight: 400; }
 .mhb-entry-title em { font-style: italic; color: var(--hb-gold); }
 .mhb-entry-body { font-size: .76rem; line-height: 1.55; color: var(--hb-ink-soft); margin: .4rem 0 0; }
+.mhb-entry-body em { font-style: normal; font-weight: 700; color: var(--hb-gold); }
 .mhb-entry-tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .55rem; }
 
 /* ── Census — marquee counter + tile grid ─────────────────── */

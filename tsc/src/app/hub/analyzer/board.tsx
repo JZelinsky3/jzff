@@ -3,7 +3,7 @@
 // (the full board) so the two never drift.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Ballot, Headshot } from './analyzer-client'
+import { AdminDelete, Ballot, Headshot } from './analyzer-client'
 
 export type DocketAsset = { id: string; name: string; position: string; team: string | null; value: number }
 export type DocketRosterPlayer = { name: string; position: string }
@@ -30,7 +30,6 @@ export type Docket = {
   trades: DocketTrade[]
   counts: Map<string, { sign: number; shred: number }>
   myVotes: Map<string, 'sign' | 'shred'>
-  posterName: Map<string, string>
   /** trades sorted hottest-first (most total votes, then newest) */
   hottest: DocketTrade[]
 }
@@ -60,7 +59,6 @@ export async function fetchDocket(limit: number, userId: string | null): Promise
 
   const counts = new Map<string, { sign: number; shred: number }>()
   const myVotes = new Map<string, 'sign' | 'shred'>()
-  const posterName = new Map<string, string>()
   if (tradeIds.length > 0) {
     const { data: voteRows } = await admin
       .from('hub_trade_votes')
@@ -73,17 +71,9 @@ export async function fetchDocket(limit: number, userId: string | null): Promise
       counts.set(v.trade_id as string, c)
       if (userId && v.user_id === userId) myVotes.set(v.trade_id as string, key)
     }
-    const ownerIds = [...new Set(trades.map((t) => t.owner_id))]
-    const { data: profileRows } = await admin
-      .from('profiles')
-      .select('id, display_name')
-      .in('id', ownerIds)
-    for (const p of profileRows ?? []) {
-      // Never show a full email — same rule as the Front Desk greeting.
-      const raw = ((p.display_name as string | null) ?? 'A member').split('@')[0].trim()
-      posterName.set(p.id as string, raw || 'A member')
-    }
   }
+  // Poster identity is intentionally NOT fetched or exposed — docket trades
+  // are anonymous.
 
   const heat = (t: DocketTrade) => {
     const c = counts.get(t.id) ?? { sign: 0, shred: 0 }
@@ -93,7 +83,7 @@ export async function fetchDocket(limit: number, userId: string | null): Promise
     (a, b) => heat(b) - heat(a) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )
 
-  return { trades, counts, myVotes, posterName, hottest }
+  return { trades, counts, myVotes, hottest }
 }
 
 // Compact roster context for roster-aware trades — position-sorted text,
@@ -120,10 +110,12 @@ export function TradeCase({
   t,
   docket,
   signedIn,
+  isAdmin = false,
 }: {
   t: DocketTrade
   docket: Docket
   signedIn: boolean
+  isAdmin?: boolean
 }) {
   return (
     <article className="hub-tr-case">
@@ -132,9 +124,11 @@ export function TradeCase({
           {MODE_LABEL[t.mode] ?? t.mode} · {t.qb_starters === 2 ? 'Superflex' : '1-QB'} · {t.team_count}-team
           {t.uses_rosters ? ' · team trade' : ''}
         </span>
-        <span className="hub-tr-case-meta">
-          {docket.posterName.get(t.owner_id) ?? 'A member'} ·{' '}
+        {/* Posted trades stay anonymous. Only the date is shown; admins get a
+            remove control here (invisible to everyone else). */}
+        <span className="hub-tr-case-meta hub-tr-case-meta-right">
           {new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+          {isAdmin && <AdminDelete tradeId={t.id} />}
         </span>
       </div>
       {/* Framed from the poster's seat: "You receive" lists what side B sends

@@ -1,5 +1,6 @@
-import { Ballot, Headshot } from '../analyzer/analyzer-client'
+import { AdminDelete, Ballot, Headshot } from '../analyzer/analyzer-client'
 import type { Docket, DocketTrade } from '../analyzer/board'
+import { composeDuelVerdict } from '@/lib/hub/verdict'
 
 // Pocket Clubhouse — the docket slip. A trade card designed for the phone
 // instead of the desktop TradeCase squeezed into one column: a one-line
@@ -46,14 +47,22 @@ export function MobileTradeCard({
   t,
   docket,
   signedIn,
+  isAdmin = false,
 }: {
   t: DocketTrade
   docket: Docket
   signedIn: boolean
+  isAdmin?: boolean
 }) {
-  // One editorial line per slip — the You-side read, since votes are cast
-  // from the You chair. Grades still show both sides of the argument.
-  const verdict = t.verdict_a ?? t.verdict_b
+  // One editorial line per slip. Unlike the two-column desktop docket (a read
+  // per side), the phone shows a single writeup, so it names BOTH sides by
+  // their headline player and says who wins outright rather than leaning on an
+  // ambiguous "this side." One sentence, so the vote pill sits clean beside it.
+  const verdict = composeDuelVerdict({
+    pct: t.delta_pct,
+    getSide: t.side_b.assets,
+    giveSide: t.side_a.assets,
+  })
 
   return (
     <article className="mhb-tc">
@@ -61,6 +70,7 @@ export function MobileTradeCard({
         <span>
           {MODE_LABEL[t.mode] ?? t.mode} · {t.qb_starters === 2 ? 'Superflex' : '1-QB'} · {t.team_count}-team
         </span>
+        {isAdmin && <AdminDelete tradeId={t.id} />}
       </div>
 
       <Side kind="get" grade={t.grade_a} side={t.side_b} />

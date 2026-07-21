@@ -465,7 +465,7 @@ export function AnalyzerStudio() {
       {analysis && (
         <div className="hub-tr-result">
           <div className="hub-tr-callout">
-            <div className="hub-tr-callout-kicker">{analysis.valuationLabel} · {analysis.usesRosters ? 'starting-lineup impact' : 'raw asset value'}</div>
+            <div className="hub-tr-callout-kicker">{analysis.valuationLabel} · {analysis.usesRosters ? 'starting-lineup impact' : 'consolidation-adjusted value'}</div>
             <div className="hub-tr-callout-line">
               {Math.abs(analysis.deltaPct) < 0.03
                 ? 'Dead even. Shake hands.'
@@ -474,7 +474,7 @@ export function AnalyzerStudio() {
             <div className="hub-tr-scale">
               {analysis.usesRosters
                 ? 'Grades = change in your optimal starting lineup · B ±3% · B+ +3% · A− +8% · A +15% · A+ +25%'
-                : 'Grades = raw value received vs sent · B ±2% · B+ +2% · A− +5% · A +12% · A+ +18%'}
+                : 'Grades = consolidation-adjusted value: extra depth is discounted, an elite piece gets a premium, so more bodies does not automatically win · B ±2% · B+ +2% · A− +5% · A +12% · A+ +18%'}
             </div>
           </div>
           {/* One report, not two mirrored cards: both managers' grades and
@@ -482,7 +482,7 @@ export function AnalyzerStudio() {
               send / what you get) instead of repeating them flipped. */}
           <div className="hub-tr-report">
             <div className="hub-tr-reads">
-              {([['You', analysis.sideA], ['They', analysis.sideB]] as const).map(([name, s]) => (
+              {([['You', analysis.sideA], ['Them', analysis.sideB]] as const).map(([name, s]) => (
                 <div key={name} className="hub-tr-read">
                   <span className={`hub-tr-grade g-${s.grade.replace('+', 'p').replace('-', 'm')}`}>{s.grade}</span>
                   <div className="hub-tr-read-body">
@@ -618,6 +618,145 @@ export function Ballot({
         </button>
       </div>
       {prompt && <SignInToVote onClose={() => setPrompt(false)} />}
+    </div>
+  )
+}
+
+// ── Admin: remove a trade from the docket ────────────────────────────────
+// Only rendered for site admins (the page passes isAdmin). A small ✕ opens a
+// confirm dialog (portaled to body to clear the .section stacking context);
+// confirming calls the admin-only DELETE route and refreshes the docket.
+export function AdminDelete({ tradeId }: { tradeId: string }) {
+  const router = useRouter()
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function remove() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/hub/analyzer/${tradeId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        setError(j.error ?? 'Delete failed.')
+        setBusy(false)
+        return
+      }
+      setConfirming(false)
+      router.refresh()
+    } catch {
+      setError('Network hiccup. Try again.')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="hub-tr-admin-x"
+        aria-label="Remove this trade (admin)"
+        title="Remove this trade (admin)"
+        onClick={() => setConfirming(true)}
+      >
+        <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden>
+          <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
+      {confirming && (
+        <AdminConfirm
+          onCancel={() => { if (!busy) setConfirming(false) }}
+          onConfirm={remove}
+          busy={busy}
+          error={error}
+        />
+      )}
+    </>
+  )
+}
+
+function AdminConfirm({
+  onCancel,
+  onConfirm,
+  busy,
+  error,
+}: {
+  onCancel: () => void
+  onConfirm: () => void
+  busy: boolean
+  error: string | null
+}) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onCancel() }
+    window.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [onCancel])
+  if (!mounted) return null
+
+  return createPortal(
+    <div className="hub-vote-backdrop" role="dialog" aria-modal="true" aria-labelledby="hub-del-title" onClick={onCancel}>
+      <div className="hub-vote-card" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="hub-vote-close" aria-label="Close" onClick={onCancel}>
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
+        <div className="hub-vote-eyebrow">★ Admin</div>
+        <h3 className="hub-vote-title" id="hub-del-title">Remove this trade?</h3>
+        <p className="hub-vote-body">
+          It comes off the public docket for everyone, along with its votes. This can&apos;t be undone.
+        </p>
+        <div className="hub-vote-actions">
+          <button type="button" className="hub-btn" onClick={onConfirm} disabled={busy} style={{ background: '#b3261e', borderColor: '#b3261e' }}>
+            {busy ? 'Removing…' : 'Remove it'}
+          </button>
+          <button type="button" className="hub-btn-ghost" onClick={onCancel} disabled={busy}>Cancel</button>
+        </div>
+        {error && <p className="hub-promo-msg err" style={{ marginTop: '.6rem' }}>{error}</p>}
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+// ── Admin: regrade every posted trade with the current engine ─────────────
+export function AdminRegrade() {
+  const router = useRouter()
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+
+  async function run() {
+    if (busy) return
+    setBusy(true)
+    setMsg(null)
+    try {
+      const res = await fetch('/api/hub/analyzer/regrade', { method: 'POST' })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok) setMsg(j.error ?? 'Regrade failed.')
+      else { setMsg(`Regraded ${j.updated}/${j.total}.`); router.refresh() }
+    } catch {
+      setMsg('Network hiccup. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="hub-tr-admin-bar">
+      <span className="hub-tr-admin-tag">★ Admin</span>
+      <button type="button" className="hub-btn-ghost" onClick={run} disabled={busy}>
+        {busy ? 'Regrading…' : 'Regrade all posted'}
+      </button>
+      {msg && <span className="hub-promo-msg ok">{msg}</span>}
     </div>
   )
 }

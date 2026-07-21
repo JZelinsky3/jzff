@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Reveal } from '../bits'
-import { AnalyzerStudio } from '../analyzer/analyzer-client'
+import { AnalyzerStudio, AdminRegrade } from '../analyzer/analyzer-client'
 import type { Docket } from '../analyzer/board'
 import { MobileTradeCard } from './trade-card'
 
@@ -10,7 +10,7 @@ import { MobileTradeCard } from './trade-card'
 // desktop TradeCase, and the room around them is recut: shorter hero,
 // app-style section heads, stacked full-width actions.
 
-export function MobileTradeRoom({ signedIn, docket }: { signedIn: boolean; docket: Docket }) {
+export function MobileTradeRoom({ signedIn, docket, isAdmin = false }: { signedIn: boolean; docket: Docket; isAdmin?: boolean }) {
   const hottest = docket.hottest.slice(0, 2)
 
   return (
@@ -76,6 +76,7 @@ export function MobileTradeRoom({ signedIn, docket }: { signedIn: boolean; docke
           </div>
           <span className="mhb-sec-side">{signedIn ? 'Sign it or shred it' : 'Sign in to vote'}</span>
         </div>
+        {isAdmin && <AdminRegrade />}
         {hottest.length === 0 ? (
           <Reveal>
             <p className="mhb-fine" style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: '.92rem', textAlign: 'center' }}>
@@ -88,7 +89,7 @@ export function MobileTradeRoom({ signedIn, docket }: { signedIn: boolean; docke
             <div className="mhb-feed">
               {hottest.map((t, i) => (
                 <Reveal key={t.id} delay={i * 90}>
-                  <MobileTradeCard t={t} docket={docket} signedIn={signedIn} />
+                  <MobileTradeCard t={t} docket={docket} signedIn={signedIn} isAdmin={isAdmin} />
                 </Reveal>
               ))}
             </div>

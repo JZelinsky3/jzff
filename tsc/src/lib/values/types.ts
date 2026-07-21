@@ -17,6 +17,8 @@ export type ValueProviderId =
   | 'fantasypros-dynasty'
   | 'fantasypros-ros'
   | 'espn-ros'
+  | 'ffc-adp'
+  | 'sleeper-projections'
 
 // Diagnostic info returned alongside a valuation so the UI can show what
 // happened: which provider was picked, did it succeed, did we fall through.

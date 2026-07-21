@@ -16,6 +16,7 @@
 import { z } from 'zod'
 import { valuateLeague, type LeagueMode, type PlayerValue } from '@/lib/values'
 import { getPlayersMap } from '@/lib/sleeperPlayers'
+import { composeVerdict, effectivePackageValue } from './verdict'
 
 // Request schema shared by the analyze + publish routes (route files can
 // only export handlers, so the schema lives here).
@@ -137,19 +138,11 @@ function gradeStarter(p: number): string {
   return 'F'
 }
 
-// Deterministic one-liners (no Groq dependency — the Trade Room analyzes
-// on every keypress-ish cadence; blurbs stay cheap and instant).
-function verdictLine(pct: number, usesRosters: boolean): string {
-  const abs = Math.abs(pct)
-  const lens = usesRosters ? 'lineup' : 'value'
-  if (abs < 0.03) return usesRosters ? 'Starting lineup barely moves. A true coin flip.' : 'Essentially even on consensus value.'
-  if (pct > 0 && abs < 0.08) return usesRosters ? 'Nudges the starting lineup forward.' : 'A slight value win on paper.'
-  if (pct > 0 && abs < 0.15) return usesRosters ? 'Real lineup upgrade. The starters get better.' : 'Comes out ahead on raw value.'
-  if (pct > 0) return usesRosters ? 'Transforms the starting lineup. A clear heist.' : 'Clear value haul. Wins on paper.'
-  if (abs < 0.08) return `Gives up a touch of ${lens}.`
-  if (abs < 0.15) return `Loses noticeably on ${lens}.`
-  return usesRosters ? 'The starting lineup takes a real hit.' : 'Loses badly on raw value.'
-}
+// Verdict prose now lives in ./verdict (composeVerdict) — a seeded,
+// trade-shape-aware generator that replaces the old eight fixed strings, so
+// two similarly-graded trades read differently on the studio and the docket.
+// Still deterministic and Groq-free: the Trade Room analyzes on a
+// keypress-ish cadence, so blurbs stay cheap and instant.
 
 // Greedy optimal-lineup value: fixed slots from most restrictive first,
 // then SF (QB-eligible), then FLEX. Mirrors the Best Coach fill order.
@@ -196,8 +189,11 @@ export async function analyzeHubTrade(args: {
   rosterA?: string[] | null
   rosterB?: string[] | null
   slots?: HubLineupSlots | null
+  /** 'full' (default, studio) or 'brief' (docket). See composeVerdict. */
+  verdictLength?: 'full' | 'brief'
 }): Promise<HubAnalysis> {
   const { settings } = args
+  const verdictLength = args.verdictLength ?? 'full'
   const [result, players] = await Promise.all([
     valuateLeague({
       mode: settings.mode,
@@ -265,12 +261,12 @@ export async function analyzeHubTrade(args: {
       valuationLabel: result.providerLabel,
       sideA: {
         assets: assetsA, total: totalA, grade: gradeA,
-        verdict: verdictLine(pctA, true),
+        verdict: composeVerdict({ pct: pctA, lens: 'lineup', mode: settings.mode, received: assetsB, sent: assetsA, length: verdictLength, voice: 'you' }),
         starterBefore: starterA.before, starterAfter: starterA.after,
       },
       sideB: {
         assets: assetsB, total: totalB, grade: gradeB,
-        verdict: verdictLine(pctB, true),
+        verdict: composeVerdict({ pct: pctB, lens: 'lineup', mode: settings.mode, received: assetsA, sent: assetsB, length: verdictLength, voice: 'they' }),
         starterBefore: starterB.before, starterAfter: starterB.after,
       },
       rosterAssetsA: rosterA.map(toAsset),
@@ -278,9 +274,16 @@ export async function analyzeHubTrade(args: {
     }
   }
 
-  // Quick mode — side A receives what side B sends and vice versa.
-  const avg = Math.max((totalA + totalB) / 2, 1)
-  deltaPct = (totalB - totalA) / avg
+  // Quick mode — side A receives what side B sends and vice versa. Grade on
+  // CONSOLIDATION-ADJUSTED value, not the raw sum: extra bench bodies get
+  // diminishing returns and an elite peak gets a scarcity premium, so a
+  // 2-for-1 no longer wins on body count alone and a stud can out-value two
+  // mids of higher raw total. Per-asset value columns still show raw
+  // consensus value; only the delta/grade use the adjusted totals.
+  const effA = effectivePackageValue(assetsA)
+  const effB = effectivePackageValue(assetsB)
+  const avg = Math.max((effA + effB) / 2, 1)
+  deltaPct = (effB - effA) / avg
   gradeA = gradeRaw(deltaPct)
   gradeB = gradeRaw(-deltaPct)
 
@@ -293,15 +296,40 @@ export async function analyzeHubTrade(args: {
     valuationLabel: result.providerLabel,
     sideA: {
       assets: assetsA, total: totalA, grade: gradeA,
-      verdict: verdictLine(deltaPct, false),
+      verdict: composeVerdict({ pct: deltaPct, lens: 'value', mode: settings.mode, received: assetsB, sent: assetsA, length: verdictLength, voice: 'you' }),
       starterBefore: null, starterAfter: null,
     },
     sideB: {
       assets: assetsB, total: totalB, grade: gradeB,
-      verdict: verdictLine(-deltaPct, false),
+      verdict: composeVerdict({ pct: -deltaPct, lens: 'value', mode: settings.mode, received: assetsA, sent: assetsB, length: verdictLength, voice: 'they' }),
       starterBefore: null, starterAfter: null,
     },
     rosterAssetsA: null,
     rosterAssetsB: null,
+  }
+}
+
+// Re-grade a docket trade from its STORED per-side assets (values frozen at
+// publish time) without re-running the value engine. Used by the admin
+// regrade tool to refresh grades/verdicts on already-posted trades after the
+// grading logic changes, using the consolidation-adjusted quick-mode rubric.
+// Roster-mode trades are re-graded on this same value basis because their
+// original lineup context (starter values) is not stored on the row.
+export function regradeStoredTrade(args: {
+  sideA: HubAsset[]
+  sideB: HubAsset[]
+  mode: LeagueMode
+}): { deltaPct: number; gradeA: string; gradeB: string; verdictA: string; verdictB: string } {
+  const { sideA, sideB, mode } = args
+  const effA = effectivePackageValue(sideA)
+  const effB = effectivePackageValue(sideB)
+  const avg = Math.max((effA + effB) / 2, 1)
+  const deltaPct = (effB - effA) / avg
+  return {
+    deltaPct,
+    gradeA: gradeRaw(deltaPct),
+    gradeB: gradeRaw(-deltaPct),
+    verdictA: composeVerdict({ pct: deltaPct, lens: 'value', mode, received: sideB, sent: sideA, length: 'brief', voice: 'you' }),
+    verdictB: composeVerdict({ pct: -deltaPct, lens: 'value', mode, received: sideA, sent: sideB, length: 'brief', voice: 'they' }),
   }
 }

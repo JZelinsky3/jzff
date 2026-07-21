@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
+import { isSiteAdmin } from '@/lib/siteAdmin'
 import { Reveal } from '../../bits'
 import { MobileTradeCard } from '../../mobile/trade-card'
+import { AdminRegrade } from '../analyzer-client'
 import { fetchDocket, TradeCase } from '../board'
 
 export const metadata = { title: 'The Clubhouse · The Full Docket' }
@@ -11,6 +13,7 @@ export default async function FullDocketPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const signedIn = !!user
+  const isAdmin = await isSiteAdmin(user?.id)
 
   const docket = await fetchDocket(100, user?.id ?? null)
 
@@ -34,6 +37,7 @@ export default async function FullDocketPage() {
         </section>
 
         <section className="mhb-sec">
+          {isAdmin && <AdminRegrade />}
           {docket.trades.length === 0 ? (
             <p className="mhb-fine" style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: '.92rem', textAlign: 'center' }}>
               Nothing here yet. The docket fills as members post analyses from the desk.
@@ -42,7 +46,7 @@ export default async function FullDocketPage() {
             <div className="mhb-feed">
               {docket.hottest.map((t, i) => (
                 <Reveal key={t.id} delay={(i % 2) * 80}>
-                  <MobileTradeCard t={t} docket={docket} signedIn={signedIn} />
+                  <MobileTradeCard t={t} docket={docket} signedIn={signedIn} isAdmin={isAdmin} />
                 </Reveal>
               ))}
             </div>
@@ -69,15 +73,19 @@ export default async function FullDocketPage() {
           shred the ones you wouldn&apos;t.
         </p>
         <div className="hub-hero-meta">
-          <span>{docket.trades.length} posted</span>
-          <span>·</span>
-          <Link href="/hub/analyzer" style={{ color: 'var(--hb-gold)', textDecoration: 'none' }}>
-            ← Back to the Trade Room
+          <Link href="/hub/analyzer" className="hub-back-link">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Back to the Trade Room
           </Link>
+          <span>·</span>
+          <span>{docket.trades.length} posted</span>
         </div>
       </section>
 
       <div className="hub-section">
+        {isAdmin && <AdminRegrade />}
         {docket.trades.length === 0 ? (
           <Reveal>
             <p
@@ -94,7 +102,7 @@ export default async function FullDocketPage() {
           <div className="hub-tr-board">
             {docket.hottest.map((t, i) => (
               <Reveal key={t.id} delay={(i % 2) * 80}>
-                <TradeCase t={t} docket={docket} signedIn={signedIn} />
+                <TradeCase t={t} docket={docket} signedIn={signedIn} isAdmin={isAdmin} />
               </Reveal>
             ))}
           </div>

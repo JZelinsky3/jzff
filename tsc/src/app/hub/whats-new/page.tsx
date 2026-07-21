@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getViewMode } from '@/lib/viewMode'
 import { Reveal } from '../bits'
 import { COMING_SOON, DISPATCH, type DispatchEntry } from '../dispatch-content'
+import { DispatchList } from '../dispatch-list'
 import { MobileDispatch } from '../mobile/dispatch'
 
 export const metadata = { title: 'The Clubhouse · The Dispatch' }
@@ -60,11 +61,7 @@ export default async function DispatchPage() {
           <span className="hub-section-title">Already in your almanac —</span>
           <span className="hub-section-meta">Newest first</span>
         </div>
-        <div className="hub-dispatch">
-          {DISPATCH.map((e) => (
-            <Entry key={e.id} e={e} />
-          ))}
-        </div>
+        <DispatchList entries={DISPATCH} variant="desktop" />
       </div>
 
       {/* ─── On the way ───────────────────────────────────── */}

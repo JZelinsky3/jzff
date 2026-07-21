@@ -35,6 +35,11 @@ type RawProjectionRow = {
 type CachedProjectionMap = {
   // playerId → projected fantasy points per game for each scoring variant.
   ppgByPid: Record<string, { ppr: number; half: number; std: number }>
+  // playerId → projected SEASON TOTAL points for each scoring variant. Used
+  // by the sleeper-projections value source, which wants total production
+  // (durability included) rather than rate. Refreshes in-season as Sleeper
+  // reprices, which is exactly why it's a good in-season value signal.
+  totalByPid: Record<string, { ppr: number; half: number; std: number }>
   year: number
   rowCount: number
 }
@@ -49,28 +54,30 @@ async function fetchAndShape(year: number): Promise<CachedProjectionMap> {
   if (!Array.isArray(rows)) throw new Error('Sleeper projections returned non-array')
 
   const ppgByPid: CachedProjectionMap['ppgByPid'] = {}
+  const totalByPid: CachedProjectionMap['totalByPid'] = {}
   for (const r of rows) {
     const pid = r.player_id
     if (!pid) continue
     const stats = r.stats ?? {}
     const gp = typeof stats.gp === 'number' && stats.gp > 0 ? stats.gp : 18
-    const total = (variant: 'ppr' | 'half' | 'std'): number => {
+    const seasonTotal = (variant: 'ppr' | 'half' | 'std'): number => {
       const raw =
         variant === 'ppr'  ? stats.pts_ppr :
         variant === 'half' ? stats.pts_half_ppr :
                              stats.pts_std
       if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) return 0
-      return raw / gp
+      return raw
     }
-    const ppr = total('ppr')
-    const half = total('half')
-    const std = total('std')
+    const totPpr = seasonTotal('ppr')
+    const totHalf = seasonTotal('half')
+    const totStd = seasonTotal('std')
     // Skip rows with zero projections in all scoring variants (IDP, undrafted
     // FAs Sleeper still ships — they'd just be noise in the map).
-    if (ppr === 0 && half === 0 && std === 0) continue
-    ppgByPid[pid] = { ppr, half, std }
+    if (totPpr === 0 && totHalf === 0 && totStd === 0) continue
+    ppgByPid[pid] = { ppr: totPpr / gp, half: totHalf / gp, std: totStd / gp }
+    totalByPid[pid] = { ppr: totPpr, half: totHalf, std: totStd }
   }
-  return { ppgByPid, year, rowCount: Object.keys(ppgByPid).length }
+  return { ppgByPid, totalByPid, year, rowCount: Object.keys(ppgByPid).length }
 }
 
 // Per-year cache. unstable_cache key includes the year so different seasons
@@ -78,7 +85,7 @@ async function fetchAndShape(year: number): Promise<CachedProjectionMap> {
 const cachedYear = (year: number) =>
   unstable_cache(
     () => fetchAndShape(year),
-    ['sleeper-projections', 'v1', String(year)],
+    ['sleeper-projections', 'v2', String(year)],
     { revalidate: 12 * 60 * 60 },
   )
 
@@ -86,8 +93,19 @@ export async function getProjectionsForYear(year: number): Promise<CachedProject
   try {
     return await cachedYear(year)()
   } catch {
-    return { ppgByPid: {}, year, rowCount: 0 }
+    return { ppgByPid: {}, totalByPid: {}, year, rowCount: 0 }
   }
+}
+
+// Season-total projected points for a player. Returns 0 when unprojected.
+export function totalPointsFor(
+  pid: string,
+  scoring: string | undefined,
+  map: CachedProjectionMap,
+): number {
+  const row = map.totalByPid[pid]
+  if (!row) return 0
+  return row[variantFor(scoring)]
 }
 
 // Convert a scoring profile string (from EffectiveSettings) to the variant

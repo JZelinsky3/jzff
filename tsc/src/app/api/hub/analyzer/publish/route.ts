@@ -57,6 +57,9 @@ export async function POST(req: Request) {
       rosterA: usesRosters ? body.rosterA : null,
       rosterB: usesRosters ? body.rosterB : null,
       slots: body.slots ?? null,
+      // The docket shows a brief, single-sentence read per side; the studio
+      // (analyze route) keeps the full-length advice.
+      verdictLength: 'brief',
     })
   } catch {
     return NextResponse.json({ error: 'Valuation engine unavailable — try again shortly.' }, { status: 502 })

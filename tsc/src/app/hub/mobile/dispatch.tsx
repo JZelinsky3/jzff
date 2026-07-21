@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Reveal } from '../bits'
 import { COMING_SOON, DISPATCH, type DispatchEntry } from '../dispatch-content'
+import { DispatchList } from '../dispatch-list'
 
 // Pocket Clubhouse — the Dispatch. The desktop timeline (dates in a left
 // gutter, rule down the page) becomes a feed of inked cards: gold spine
@@ -14,7 +15,7 @@ function Entry({ e }: { e: DispatchEntry }) {
         <h3 className="mhb-entry-title">
           {e.title} {e.titleEm && <em>{e.titleEm}</em>}
         </h3>
-        <p className="mhb-entry-body">{e.body}</p>
+        <p className="mhb-entry-body" dangerouslySetInnerHTML={{ __html: e.body }} />
         {e.tags.length > 0 && (
           <div className="mhb-entry-tags">
             {e.tags.map((t) => (
@@ -55,11 +56,7 @@ export function MobileDispatch() {
           </div>
           <span className="mhb-sec-side">Newest first</span>
         </div>
-        <div className="mhb-feed">
-          {DISPATCH.map((e) => (
-            <Entry key={e.id} e={e} />
-          ))}
-        </div>
+        <DispatchList entries={DISPATCH} variant="mobile" initial={10} />
       </section>
 
       {/* ── On the way ── */}

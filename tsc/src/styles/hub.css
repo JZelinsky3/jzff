@@ -291,7 +291,7 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     font-family: var(--mono); font-size: .64rem;
     letter-spacing: .22em; text-transform: uppercase;
     color: var(--hb-mute);
-    display: flex; justify-content: center; flex-wrap: wrap; gap: .4rem 1rem;
+    display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: .4rem 1rem;
 }
 
 /* ============================================================
@@ -528,7 +528,17 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
 }
 .hub-entry-body a { color: var(--hb-gold); text-decoration: none; }
 .hub-entry-body a:hover { text-decoration: underline; }
+/* Room/feature names called out inside a dispatch body. Gold + bold so they
+   read as the highlight in both day and night (bold alone washes out against
+   the cream night ink). */
+.hub-entry-body em { font-style: normal; font-weight: 700; color: var(--hb-gold); }
+
 .hub-entry-tags { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .7rem; }
+.hub-dispatch-more {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: .7rem;
+    margin: 1.6rem auto 0; max-width: 860px;
+}
+.hub-dispatch-more .hub-btn-ghost { padding: .65rem 1.2rem; }
 .hub-chip {
     display: inline-flex; align-items: center; gap: .4rem;
     font-family: var(--mono); font-weight: 700;
@@ -1133,7 +1143,7 @@ select.hub-input {
     font-family: var(--mono); font-weight: 700; font-size: .52rem;
     letter-spacing: .1em; color: var(--hb-gold);
     border: 1px solid var(--hb-line); border-radius: 2px;
-    padding: .12rem .3rem; min-width: 2rem; text-align: center;
+    padding: .12rem .22rem; min-width: 1.75rem; text-align: center;
 }
 
 .hub-tr-chips { display: flex; flex-wrap: wrap; gap: .45rem; align-content: start; }
@@ -1258,7 +1268,11 @@ select.hub-input {
     border: 1px solid var(--hb-line);
     border-radius: 3px;
     padding: 1.2rem 1.2rem 1rem;
-    display: grid; gap: .9rem;
+    /* Flex column so the ballot row can be pinned to the bottom (margin-top
+       auto below). When cards in a board row stretch to match the tallest,
+       the extra height collects between the writeup and the divider line, so
+       the line + vote pill sit at the same spot in both cards. */
+    display: flex; flex-direction: column; gap: .9rem;
     transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s, border-color .3s;
     height: 100%;
 }
@@ -1272,6 +1286,44 @@ select.hub-input {
     font-family: var(--mono); font-size: .56rem;
     letter-spacing: .14em; text-transform: uppercase; color: var(--hb-mute);
 }
+.hub-tr-case-meta-right { display: inline-flex; align-items: center; gap: .5rem; }
+
+/* Admin-only remove control on a docket card. Muted until hover so it never
+   competes with the trade; only site admins ever see it rendered. */
+.hub-tr-admin-x {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; padding: 0;
+    border: 1px solid var(--hb-line-soft); border-radius: 50%;
+    background: transparent; color: var(--hb-mute);
+    cursor: pointer; transition: color .15s, border-color .15s, background .15s;
+}
+.hub-tr-admin-x:hover { color: #fff; background: #b3261e; border-color: #b3261e; }
+
+/* Admin regrade strip above the docket. */
+.hub-tr-admin-bar {
+    display: flex; align-items: center; flex-wrap: wrap; gap: .6rem;
+    margin: 0 auto 1.2rem; padding: .5rem .8rem;
+    border: 1px dashed var(--hb-line-soft); border-radius: 8px;
+    max-width: 720px;
+}
+.hub-tr-admin-tag {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--hb-gold);
+}
+.hub-tr-admin-bar .hub-btn-ghost { padding: .3rem .8rem; font-size: .78rem; }
+
+/* Back-to-Trade-Room link on the docket. A small bordered chip so it reads as
+   a real way out, with the arrow on the far left (nothing to its left) since
+   it points that way. */
+.hub-back-link {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .28rem .8rem .28rem .65rem;
+    border: 1px solid var(--hb-line); border-radius: 999px;
+    color: var(--hb-gold); text-decoration: none; font-weight: 600;
+    transition: border-color .15s, background .15s, color .15s;
+}
+.hub-back-link:hover { border-color: var(--hb-gold); background: var(--hb-gold-wash); color: var(--hb-gold-bright); }
+.hub-back-link svg { flex-shrink: 0; }
 /* Three shared rows (head / asset rows / foot) that each side subgrids
    into, so the dotted Total rule starts at the same height in both
    columns even when one side sends fewer players. */
@@ -1294,9 +1346,17 @@ select.hub-input {
 /* ── Sign/Shred ballot — the Rumor Mill's pill switch, hub-toned ── */
 .hub-ballot-row {
     display: flex; justify-content: flex-end;
+    /* Anchor the pill to the bottom at its natural size. Cards in a board row
+       stretch to match the tallest, which would otherwise stretch this row and
+       balloon the pill; align-items:flex-end keeps the pill a fixed size. */
+    align-items: flex-end;
+    /* Push the row (and its divider line) to the card bottom, so the extra
+       height on a shorter card lands above the line, not inside the pill. */
+    margin-top: auto;
     padding-top: .8rem;
     border-top: 1px solid var(--hb-line-soft);
 }
+.hub-ballot { flex: 0 0 auto; align-self: flex-end; }
 .hub-ballot {
     display: inline-flex; align-items: stretch;
     border: 1px solid var(--hb-line);
@@ -1417,6 +1477,9 @@ html[data-hub-theme="night"] .hub-vote-backdrop {
     border: 1px solid var(--hb-line-soft);
 }
 .hub-tr-search-drop .hub-tr-mug { width: 24px; height: 24px; }
+/* Bigger player avatars in the trade rows (docket cards + studio result),
+   while the compact builder chips keep the base size. */
+.hub-tr-row .hub-tr-mug { width: 30px; height: 30px; }
 
 /* Roster context on team-trade cards — text only, deliberately quiet */
 .hub-tr-roster-note {

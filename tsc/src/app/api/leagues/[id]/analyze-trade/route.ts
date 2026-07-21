@@ -412,7 +412,7 @@ export async function POST(
   const projYear =
     Number.isFinite(year) ? Number(year) : new Date().getFullYear()
   const projections = await getProjectionsForYear(projYear).catch(
-    () => ({ ppgByPid: {}, year: projYear, rowCount: 0 }),
+    () => ({ ppgByPid: {}, totalByPid: {}, year: projYear, rowCount: 0 }),
   )
   const K_DEF_FLAT_PPG = 14
   const hasProjections = projections.rowCount > 0

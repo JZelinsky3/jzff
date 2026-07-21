@@ -20,6 +20,10 @@ import { ktcDynastySource, isKtcConfigured } from './ktc'
 import { dynastyProcessSource, isDynastyProcessConfigured } from './dynastyprocess'
 import { fantasyProsDynastySource, fantasyProsRosSource, isFantasyProsConfigured } from './fantasypros'
 import { espnRosSource, isEspnConfigured } from './espn'
+import { ffcAdpSource, isFfcConfigured } from './ffc'
+import { sleeperProjectionsSource, isSleeperProjectionsConfigured } from './sleeperProjections'
+import { unstable_cache } from 'next/cache'
+import { sleeper } from '@/lib/platforms/sleeper'
 import type { LeagueMode, LeagueValuationContext, PlayerValue, ProviderAttempt, ValueProviderId, ValueSource } from './types'
 
 export type { LeagueMode, LeagueValuationContext, PlayerValue, ProviderAttempt, ValueProviderId } from './types'
@@ -69,7 +73,9 @@ const PROVIDER_LABELS: Record<ValueProviderId, string> = {
   'dynastyprocess': 'DynastyProcess',
   'fantasypros-dynasty': 'FantasyPros · Dynasty',
   'fantasypros-ros': 'FantasyPros · ROS',
-  'espn-ros': 'ESPN · ROS',
+  'espn-ros': 'ESPN · Ranks',
+  'ffc-adp': 'FF Calculator · ADP',
+  'sleeper-projections': 'Sleeper · Projections',
 }
 
 const SOURCE_BY_ID: Record<Exclude<ValueProviderId, 'consensus'>, ValueSource> = {
@@ -81,6 +87,8 @@ const SOURCE_BY_ID: Record<Exclude<ValueProviderId, 'consensus'>, ValueSource> =
   'fantasypros-dynasty': fantasyProsDynastySource,
   'fantasypros-ros': fantasyProsRosSource,
   'espn-ros': espnRosSource,
+  'ffc-adp': ffcAdpSource,
+  'sleeper-projections': sleeperProjectionsSource,
 }
 
 // Per-mode source preference (also the consensus pool — everything in this
@@ -100,7 +108,9 @@ function preferenceOrder(mode: LeagueMode): ValueSource[] {
       return [
         fantasyCalcRedraftSource,
         fantasyProsRosSource,
+        sleeperProjectionsSource,
         espnRosSource,
+        ffcAdpSource,
         sleeperValueSource,
       ]
   }
@@ -325,7 +335,9 @@ const SOURCE_WEIGHTS: Record<ValueProviderId, number> = {
   'dynastyprocess':        0.85,
   'fantasypros-dynasty':   0.70,
   'fantasypros-ros':       0.80,   // ROS is FP's relative strength
-  'espn-ros':              0.70,
+  'sleeper-projections':   0.85,   // RotoWire-backed, reprices in season — the in-season workhorse
+  'espn-ros':              0.75,   // ESPN draft rank; preseason-only (dropped in season)
+  'ffc-adp':               0.75,   // crowd ADP; preseason-only (dropped in season)
   'sleeper-derived':       0.50,   // weight set for completeness; only used as floor
 }
 
@@ -478,8 +490,39 @@ export async function valuateLeague(ctx: LeagueValuationContext, opts: Valuation
   return valuateSingle(ctx, requested)
 }
 
+// Sources that only reflect PRESEASON expectations — ADP and draft rankings
+// stop moving once drafts end, so in a Week-8 trade they'd still be pricing a
+// benched or injured player at his draft-day cost. Dropped from the consensus
+// once the NFL season is underway; the fresh sources (FantasyCalc trade
+// market, FantasyPros ROS, Sleeper/RotoWire projections) carry it from there.
+const PRESEASON_ONLY_SOURCES: ReadonlySet<ValueProviderId> = new Set(['ffc-adp', 'espn-ros'])
+
+// Cached NFL season phase from Sleeper's /state/nfl. Revalidated hourly — the
+// phase only flips a few times a year, and a stale read just means the
+// preseason sources linger a day, never a hard failure.
+const getSeasonPhase = unstable_cache(
+  async (): Promise<'pre' | 'regular' | 'post' | 'off'> => {
+    try {
+      const st = await sleeper.state()
+      const t = st?.season_type
+      if (t === 'regular' || t === 'post' || t === 'pre' || t === 'off') return t
+      return 'off'
+    } catch {
+      return 'off'
+    }
+  },
+  ['nfl-season-phase', 'v1'],
+  { revalidate: 60 * 60 },
+)
+
 async function valuateConsensus(ctx: LeagueValuationContext): Promise<ValuationResult> {
-  const sources = preferenceOrder(ctx.mode)
+  const phase = await getSeasonPhase()
+  const inSeason = phase === 'regular' || phase === 'post'
+  // In season, drop the preseason-only sources entirely (they aren't even
+  // fetched — a nice side effect is skipping the ~38MB ESPN pull in season).
+  const sources = preferenceOrder(ctx.mode).filter(
+    (s) => !inSeason || !PRESEASON_ONLY_SOURCES.has(s.id),
+  )
   const attemptedResults = await Promise.all(
     sources.map(async (src) => ({ source: src, ...(await tryAttempt(src, ctx)) })),
   )
@@ -740,13 +783,16 @@ export function availableSourcesForMode(mode: LeagueMode): AvailableSource[] {
   const ktcConfigured = isKtcConfigured()
   const fpConfigured = isFantasyProsConfigured()
   const espnConfigured = isEspnConfigured()
+  const ffcConfigured = isFfcConfigured()
 
   if (mode === 'redraft') {
     return [
       { id: 'consensus', label: 'Consensus', configured: true, applicable: true },
       { id: 'fantasycalc-redraft', label: PROVIDER_LABELS['fantasycalc-redraft'], configured: dynastyConfigured, applicable: true },
       { id: 'fantasypros-ros', label: PROVIDER_LABELS['fantasypros-ros'], configured: fpConfigured, applicable: true },
+      { id: 'sleeper-projections', label: PROVIDER_LABELS['sleeper-projections'], configured: isSleeperProjectionsConfigured(), applicable: true },
       { id: 'espn-ros', label: PROVIDER_LABELS['espn-ros'], configured: espnConfigured, applicable: true },
+      { id: 'ffc-adp', label: PROVIDER_LABELS['ffc-adp'], configured: ffcConfigured, applicable: true },
       { id: 'sleeper-derived', label: PROVIDER_LABELS['sleeper-derived'], configured: true, applicable: true },
     ]
   }
@@ -769,7 +815,7 @@ export function parseSourceParam(raw: string | string[] | undefined): ValueProvi
     'consensus', 'sleeper-derived',
     'fantasycalc-dynasty', 'fantasycalc-redraft',
     'ktc-dynasty', 'dynastyprocess',
-    'fantasypros-dynasty', 'fantasypros-ros', 'espn-ros',
+    'fantasypros-dynasty', 'fantasypros-ros', 'espn-ros', 'ffc-adp', 'sleeper-projections',
   ]
   return (allIds as string[]).includes(s) ? (s as ValueProviderId) : 'consensus'
 }
@@ -782,6 +828,8 @@ export function providerConfigStatus() {
     dynastyprocess: isDynastyProcessConfigured(),
     fantasypros: isFantasyProsConfigured(),
     espn: isEspnConfigured(),
+    ffc: isFfcConfigured(),
+    sleeperProjections: isSleeperProjectionsConfigured(),
     sleeper: true,
   }
 }
