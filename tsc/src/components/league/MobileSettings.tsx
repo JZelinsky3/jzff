@@ -7,6 +7,7 @@ export function MobileSettings({
   currentAbbreviation,
   currentPrizePool,
   currentDraftScoringProfile,
+  currentSuperflex,
   savedJustNow,
 }: {
   leagueId: string
@@ -14,7 +15,8 @@ export function MobileSettings({
   currentSlug: string
   currentAbbreviation: string | null
   currentPrizePool: string | null
-  currentDraftScoringProfile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
+  currentDraftScoringProfile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt' | 'std_4pt' | 'std_6pt'
+  currentSuperflex: boolean
   savedJustNow: boolean
 }) {
   return (
@@ -31,6 +33,7 @@ export function MobileSettings({
           currentAbbreviation={currentAbbreviation}
           currentPrizePool={currentPrizePool}
           currentDraftScoringProfile={currentDraftScoringProfile}
+          currentSuperflex={currentSuperflex}
           savedJustNow={savedJustNow}
         />
       </div>

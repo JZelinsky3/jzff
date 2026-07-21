@@ -4,6 +4,9 @@ import { useActionState, useRef, useState } from 'react'
 import { useChapterEdits } from '@/app/league/[slug]/chapter-book'
 import { updateLeagueSettings } from './actions'
 
+type DraftScoringProfile =
+  | 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt' | 'std_4pt' | 'std_6pt'
+
 function autoAbbr(name: string): string {
   return name
     .replace(/[^A-Za-z\s]/g, '')
@@ -25,6 +28,7 @@ export function SettingsForm({
   currentAbbreviation,
   currentPrizePool,
   currentDraftScoringProfile,
+  currentSuperflex,
   savedJustNow,
   inline = false,
 }: {
@@ -33,7 +37,8 @@ export function SettingsForm({
   currentSlug: string
   currentAbbreviation: string | null
   currentPrizePool: string | null
-  currentDraftScoringProfile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
+  currentDraftScoringProfile: DraftScoringProfile
+  currentSuperflex: boolean
   savedJustNow: boolean
   // Rendered as a chapter of the hub's book: suppresses the action's
   // post-save redirect and hides the form's own submit, since the book
@@ -45,9 +50,13 @@ export function SettingsForm({
   const [abbr, setAbbr] = useState(currentAbbreviation ?? '')
   const [slug, setSlug] = useState(currentSlug)
   const [prizePool, setPrizePool] = useState(currentPrizePool ?? '')
-  const [pprMode, setPprMode] = useState<'ppr' | 'half'>(currentDraftScoringProfile.startsWith('ppr') ? 'ppr' : 'half')
+  const [pprMode, setPprMode] = useState<'ppr' | 'half' | 'std'>(
+    currentDraftScoringProfile.startsWith('ppr') ? 'ppr'
+      : currentDraftScoringProfile.startsWith('half') ? 'half' : 'std',
+  )
   const [passTdPts, setPassTdPts] = useState<'4' | '6'>(currentDraftScoringProfile.endsWith('6pt') ? '6' : '4')
-  const draftScoringProfile = `${pprMode}_${passTdPts}pt` as 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
+  const draftScoringProfile = `${pprMode}_${passTdPts}pt` as DraftScoringProfile
+  const [superflex, setSuperflex] = useState<boolean>(currentSuperflex)
   // Mini calculator (members × buy-in × years). User can apply it OR ignore — the
   // final number stays free-form so they can hand-enter totals that include
   // variable buy-ins across years.
@@ -72,7 +81,8 @@ export function SettingsForm({
     abbr !== (currentAbbreviation ?? '') ||
     slug !== currentSlug ||
     prizePool !== (currentPrizePool ?? '') ||
-    draftScoringProfile !== currentDraftScoringProfile
+    draftScoringProfile !== currentDraftScoringProfile ||
+    superflex !== currentSuperflex
   useChapterEdits('settings', dirty, () => {
     formRef.current?.requestSubmit()
     return true
@@ -213,6 +223,7 @@ export function SettingsForm({
             >
               <option value="ppr">Full PPR (1 pt/catch)</option>
               <option value="half">Half PPR (0.5 pt/catch)</option>
+              <option value="std">Standard (no PPR)</option>
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '.25rem', flex: '1 1 12rem' }}>
@@ -231,6 +242,20 @@ export function SettingsForm({
           Used to grade past drafts on the History tab (Steal of the Year, Bust of the Year, Heartbreakers).
           End-of-season FantasyPros totals are evaluated under this scoring.
         </span>
+        <input type="hidden" name="superflex" value={superflex ? 'true' : 'false'} />
+        <label className="dc-checkbox-row" style={{ marginTop: '.75rem' }}>
+          <input
+            type="checkbox"
+            checked={superflex}
+            onChange={(e) => setSuperflex(e.target.checked)}
+          />
+          <span>
+            Superflex
+            <span className="dc-checkbox-hint">
+              Second QB-eligible starter. Adds a SUPERFLEX slot to the All-Time Team.
+            </span>
+          </span>
+        </label>
       </div>
 
       {!inline && (

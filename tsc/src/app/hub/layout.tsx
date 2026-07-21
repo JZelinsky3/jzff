@@ -12,12 +12,13 @@ export const metadata: Metadata = {
     'The Sunday Chronicle clubhouse: what’s new on the press, the network-wide census, the sitewide Hall of Records, and the Newsstand of public league almanacs.',
 }
 
-// Tint Safari's toolbar clubhouse cream instead of the site-wide navy —
-// the hub is the one wing of the React site that isn't ink-dark. Night
-// mode flips the meta to the hub's black: pre-paint by the root layout's
-// restore script, after that by HubThemeToggle.
+// Tint Safari's toolbar to the hub's black in both skins, so it reads as one
+// piece with the fixed mobile nav (the bottom dock is always dark). Day mode
+// used to tint cream to match the page, but that left a cream browser bar
+// butting up against the black dock; the dock can't go cream (unreadable), so
+// the toolbar goes dark instead. Night already matched.
 export const viewport: Viewport = {
-  themeColor: '#f3ead6',
+  themeColor: '#100e0a',
   // Re-declared from the root layout on purpose — don't rely on viewport
   // merge semantics for the field that keeps phones on a real viewport.
   width: 'device-width',

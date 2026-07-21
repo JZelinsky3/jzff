@@ -23,7 +23,8 @@ type LeagueRow = {
   division_term: 'division' | 'conference'
   division_names: string[]
   last_synced_at: string | null
-  draft_scoring_profile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
+  draft_scoring_profile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt' | 'std_4pt' | 'std_6pt'
+  superflex: boolean
 }
 
 type SeasonRow = {
@@ -164,6 +165,11 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     // Try with the richest column set; fall back per missing-column error so
     // the exporter still works against pre-migration databases.
     const queries: Array<() => Promise<{ data: unknown }>> = [
+      // migration 0045 (superflex)
+      () => db.from('leagues')
+        .select('id, name, platform, external_id, abbreviation, prize_pool, division_count, division_term, division_names, last_synced_at, draft_scoring_profile, superflex')
+        .eq('id', leagueId)
+        .single() as unknown as Promise<{ data: unknown }>,
       // migration 0017 (draft_scoring_profile)
       () => db.from('leagues')
         .select('id, name, platform, external_id, abbreviation, prize_pool, division_count, division_term, division_names, last_synced_at, draft_scoring_profile')
@@ -211,6 +217,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     division_names: leagueRaw.division_names ?? [],
     last_synced_at: leagueRaw.last_synced_at ?? null,
     draft_scoring_profile: leagueRaw.draft_scoring_profile ?? 'ppr_6pt',
+    superflex: leagueRaw.superflex ?? false,
   }
 
   // First batch: queries that have a direct league_id filter. These are
@@ -834,6 +841,7 @@ function buildLeagueJson(s: Snapshot): unknown {
     all_seasons: years,
     defending_champion: defendingChampion,
     draft_scoring_profile: s.league.draft_scoring_profile,
+    superflex: s.league.superflex,
   }
 }
 

@@ -15,6 +15,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isCompUser, isSubscriptionActive, getUserSubscription } from '@/lib/stripe'
+import { getLockReason } from '@/lib/leagueTier'
 import { buildNameLookup, nameKey } from '@/lib/positionRanks'
 import { parseSettings, mergeEffective } from '@/lib/tradeDesk/settings'
 import { valuateLeague, type LeagueMode, type PlayerValue as ConsensusValue } from '@/lib/values'
@@ -106,6 +107,19 @@ export async function ownerHasTradesAccess(ownerId: string): Promise<boolean> {
   return sub.tier === 'tier2' || sub.tier === 'tier3'
 }
 
+// Per-LEAGUE trades access. Unlike ownerHasTradesAccess (owner sub only),
+// this grants the owner's free trial ('test') league the full Veteran
+// preview even when the owner is on a Rookie plan or no plan at all. It
+// mirrors the page-level lock policy exactly: access iff the league
+// carries no lock (comp, trial slot, or tier2/tier3). UDFA and Rookie
+// leagues stay blocked.
+export async function leagueHasTradesAccess(
+  leagueId: string,
+  ownerId: string | null,
+): Promise<boolean> {
+  return (await getLockReason(leagueId, ownerId)) === null
+}
+
 // Stamp magnitude + headline_piece on every trade, in place. Resolves each
 // player asset to a Sleeper id (direct for Sleeper trades, name+position
 // match otherwise) and reads the league-calibrated consensus values — the
@@ -190,9 +204,9 @@ export async function getTradesState(slug: string): Promise<TradesState | null> 
     .maybeSingle()
   if (!league) return null
 
-  // Tier gate. Fails closed: anything but a confirmed tier2+ owner blocks
-  // the response.
-  if (!(await ownerHasTradesAccess(league.owner_id))) {
+  // Tier gate. Fails closed: anything but a Veteran-level league (comp,
+  // trial slot, or tier2+) blocks the response.
+  if (!(await leagueHasTradesAccess(league.id, league.owner_id))) {
     return { status: 'tier-locked', league_id: league.id }
   }
 

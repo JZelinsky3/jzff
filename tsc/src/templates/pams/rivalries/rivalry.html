@@ -379,12 +379,22 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   font-size: .78rem;
   font-variant-numeric: tabular-nums;
   display: flex; align-items: center; gap: .5rem;
+  min-width: 0; /* let the grid column shrink instead of overflowing the card */
 }
 .rv-ledger-side.a { justify-content: flex-start; }
 .rv-ledger-side.b { justify-content: flex-end; }
+/* Long manager names truncate inside their column rather than spilling
+   off the edge of the card where the tail gets clipped. */
+.rv-ledger-side > span:not(.marg) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .rv-ledger-side .marg {
   color: var(--rv-grey-lt);
   font-size: .65rem;
+  flex-shrink: 0;
 }
 .rv-ledger-side.won { color: var(--rv-red); font-weight: 700; }
 .rv-ledger-mid {

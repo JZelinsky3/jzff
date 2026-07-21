@@ -322,6 +322,12 @@ table.standings td.winpct-cell {
     color: var(--ink);
 }
 table.standings td.num { font-variant-numeric: tabular-nums; }
+table.standings td.stat-num {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: .8rem;
+    color: var(--ink-soft);
+}
 
 .chip-badges { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
 .chip-badge {
@@ -926,17 +932,17 @@ const COLUMNS = {
     po_record:  { label: 'Record',        cls: 'po-record',  sort: 'powins' },
     all_record: { label: 'Record',        cls: 'all-record', sort: 'wins' },
     winpct:     { label: 'Win %',         cls: 'winpct-cell',sort: 'winpct' },
-    pf:         { label: 'Points For',    cls: '',           sort: 'pf' },
-    pa:         { label: 'Pts Against',   cls: '',           sort: 'pa' },
-    ppg:        { label: 'PPG',           cls: '',           sort: 'ppg' },
-    high:       { label: 'Best Week',     cls: '',           sort: 'high' },
-    low:        { label: 'Worst Week',    cls: '',           sort: 'low' },
-    streak:     { label: 'Best Streak',   cls: '',           sort: 'streak' },
-    po_winpct:  { label: 'PO Win %',      cls: '',           sort: 'po_winpct' },
-    seasons:    { label: 'Seasons',       cls: '',           sort: 'seasons' },
-    playoffs:   { label: 'PA',            cls: '',           sort: 'playoffs' },
-    top3:       { label: 'Podiums',       cls: '',           sort: 'top3' },
-    avgfinish:  { label: 'Avg Finish',    cls: '',           sort: 'avgfinish' },
+    pf:         { label: 'Points For',    cls: 'stat-num',   sort: 'pf' },
+    pa:         { label: 'Pts Against',   cls: 'stat-num',   sort: 'pa' },
+    ppg:        { label: 'PPG',           cls: 'stat-num',   sort: 'ppg' },
+    high:       { label: 'Best Week',     cls: 'stat-num',   sort: 'high' },
+    low:        { label: 'Worst Week',    cls: 'stat-num',   sort: 'low' },
+    streak:     { label: 'Best Streak',   cls: 'stat-num',   sort: 'streak' },
+    po_winpct:  { label: 'PO Win %',      cls: 'stat-num',   sort: 'po_winpct' },
+    seasons:    { label: 'Seasons',       cls: 'stat-num',   sort: 'seasons' },
+    playoffs:   { label: 'PA',            cls: 'stat-num',   sort: 'playoffs' },
+    top3:       { label: 'Podiums',       cls: 'stat-num',   sort: 'top3' },
+    avgfinish:  { label: 'Avg Finish',    cls: 'stat-num',   sort: 'avgfinish' },
     chips:      { label: 'Championships', cls: '',           sort: 'chips', left: true },
 };
 const PRESETS = {
@@ -1071,11 +1077,21 @@ function buildDetail(m) {
         : null;
     const spark = finishSparkline(ledger);
     const ord = n => n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`;
+    const yy = y => `'${String(y).slice(-2)}`;
+    // Turn the exported "W9 2021 → W16 2021" into a tighter label: collapse
+    // the year when the streak stays in one season, and abbreviate the year.
+    const fmtStreakWhen = w => {
+        if (!w) return '';
+        const p = w.match(/^W(\d+)\s+(\d{4})\s*→\s*W(\d+)\s+(\d{4})$/);
+        if (!p) return w;
+        const [, wa, ya, wb, yb] = p;
+        return ya === yb ? `W${wa}→W${wb} ${yy(ya)}` : `W${wa} ${yy(ya)} → W${wb} ${yy(yb)}`;
+    };
 
     const stats = [
         bestFinish ? { v: ord(correctedFinalRank(bestFinish)), s: `Best finish · ${bestFinish.year}` } : null,
-        bestWeek && bestWeek.high_week_score ? { v: bestWeek.high_week_score.toFixed(1), s: `Best week · ${bestWeek.year} W${bestWeek.high_week ?? '?'}` } : null,
-        d.longest_win_streak?.length ? { v: `W${d.longest_win_streak.length}`, s: d.longest_win_streak.when ? `Longest heater · ${d.longest_win_streak.when}` : 'Longest heater' } : null,
+        bestWeek && bestWeek.high_week_score ? { v: bestWeek.high_week_score.toFixed(1), s: `Best week · W${bestWeek.high_week ?? '?'} ${yy(bestWeek.year)}` } : null,
+        d.longest_win_streak?.length ? { v: `W${d.longest_win_streak.length}`, s: d.longest_win_streak.when ? `Longest heater · ${fmtStreakWhen(d.longest_win_streak.when)}` : 'Longest heater' } : null,
         d.avg_ppg ? { v: d.avg_ppg.toFixed(1), s: 'Career PPG' } : null,
         d.playoff_record ? { v: d.playoff_record, s: 'Playoff record' } : null,
     ].filter(Boolean);

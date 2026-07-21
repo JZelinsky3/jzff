@@ -13,7 +13,11 @@ const Schema = z.object({
   abbreviation: z.string().trim().max(16).optional(),
   slug: z.string().trim().max(60).optional(),
   prizePool: z.string().trim().max(60).optional(),
-  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt', 'ppr_4pt', 'half_6pt']).optional(),
+  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt', 'ppr_4pt', 'half_6pt', 'std_4pt', 'std_6pt']).optional(),
+  // Hidden input mirrors the toggle as the literal 'true'/'false' so we can
+  // tell "off" apart from "not present" (z.coerce.boolean would read the
+  // string 'false' as true).
+  superflex: z.enum(['true', 'false']).optional(),
   // Set when the form is rendered as a chapter of the league hub's book.
   // The standalone page wants its post-save redirect; the book must stay
   // put, or saving a chapter silently navigates the reader out of it.
@@ -30,6 +34,7 @@ export async function updateLeagueSettings(_prev: Result | null, formData: FormD
     slug: formData.get('slug') || undefined,
     prizePool: formData.get('prizePool') ?? undefined,
     draftScoringProfile: formData.get('draftScoringProfile') || undefined,
+    superflex: formData.get('superflex') || undefined,
     inline: formData.get('inline') || undefined,
   })
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
@@ -74,6 +79,9 @@ export async function updateLeagueSettings(_prev: Result | null, formData: FormD
   }
   if (parsed.data.draftScoringProfile) {
     updatePayload.draft_scoring_profile = parsed.data.draftScoringProfile
+  }
+  if (parsed.data.superflex !== undefined) {
+    updatePayload.superflex = parsed.data.superflex === 'true'
   }
   const { error } = await supabase
     .from('leagues')

@@ -40,7 +40,20 @@ const PROFILES = {
   ppr_4pt:  { base: 'pts_ppr',      passTd6: false },
   half_6pt: { base: 'pts_half_ppr', passTd6: true },
   half_4pt: { base: 'pts_half_ppr', passTd6: false },
+  // Standard (non-PPR) variants. Net-new dirs — the ppr/half caution above
+  // doesn't apply since nothing is calibrated against these yet. Sleeper's
+  // pts_std bakes in standard per-yard/TD/turnover at a 4pt passing-TD
+  // baseline, same as the other bases; the 6pt variant adds +2 per pass TD.
+  std_6pt:  { base: 'pts_std',      passTd6: true },
+  std_4pt:  { base: 'pts_std',      passTd6: false },
 }
+// Restrict a run to specific profiles with --only=std_4pt,std_6pt. Lets us
+// generate the new standard files without recomputing the committed
+// ppr/half curves (which trace to a different source — see caution above).
+const ONLY = (process.argv.find((a) => a.startsWith('--only=')) || '')
+  .replace('--only=', '')
+  .split(',')
+  .filter(Boolean)
 
 async function getJson(url) {
   const res = await fetch(url)
@@ -69,6 +82,7 @@ async function main() {
   ])
 
   for (const [profile, scoring] of Object.entries(PROFILES)) {
+    if (ONLY.length && !ONLY.includes(profile)) continue
     const rows = []
     for (const [pid, stats] of Object.entries(agg)) {
       const p = players[pid]

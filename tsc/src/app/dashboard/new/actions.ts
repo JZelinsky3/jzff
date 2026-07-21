@@ -39,7 +39,11 @@ const Schema = z.object({
   espnS2: z.string().trim().optional(),
   // Scoring profile used to evaluate draft picks on the draft history page.
   // Maps to public/data/fantasy_ranks/<profile>/<year>.json.
-  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt', 'ppr_4pt', 'half_6pt']).default('ppr_6pt'),
+  draftScoringProfile: z.enum(['ppr_6pt', 'half_4pt', 'ppr_4pt', 'half_6pt', 'std_4pt', 'std_6pt']).default('ppr_6pt'),
+  // Superflex (second QB-eligible starter). Hidden input mirrors the toggle
+  // as literal 'true'/'false' so "off" is distinguishable and z.coerce
+  // wouldn't misread the string 'false' as true.
+  superflex: z.enum(['true', 'false']).default('false'),
   // User-chosen URL slug. The form auto-fills it from the league name but the
   // user can override. Defensive: server still normalizes via slugify().
   customSlug: z.string().trim().max(60).optional(),
@@ -70,6 +74,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
     swid: formData.get('swid') || undefined,
     espnS2: formData.get('espnS2') || undefined,
     draftScoringProfile: formData.get('draftScoringProfile') || undefined,
+    superflex: formData.get('superflex') || undefined,
     customSlug: formData.get('customSlug') || undefined,
   })
   if (!parsed.success) {
@@ -285,6 +290,7 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
       division_term: divisionTerm,
       division_names: finalDivisionNames,
       draft_scoring_profile: parsed.data.draftScoringProfile,
+      superflex: parsed.data.superflex === 'true',
       settings,
       is_udfa: isUdfa,
     })

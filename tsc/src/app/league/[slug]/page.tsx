@@ -287,16 +287,26 @@ export default async function LeagueOverviewPage({
   type SettingsRow = {
     abbreviation: string | null
     prize_pool: string | null
-    draft_scoring_profile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
+    draft_scoring_profile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt' | 'std_4pt' | 'std_6pt'
+    superflex: boolean
   }
-  let settingsRow: SettingsRow = { abbreviation: null, prize_pool: null, draft_scoring_profile: 'ppr_6pt' }
-  const withScoring = await supabase
+  let settingsRow: SettingsRow = { abbreviation: null, prize_pool: null, draft_scoring_profile: 'ppr_6pt', superflex: false }
+  const withSuperflex = await supabase
     .from('leagues')
-    .select('abbreviation, prize_pool, draft_scoring_profile')
+    .select('abbreviation, prize_pool, draft_scoring_profile, superflex')
     .eq('id', league.id)
     .maybeSingle<SettingsRow>()
+  const withScoring = withSuperflex.data
+    ? withSuperflex
+    : await supabase
+        .from('leagues')
+        .select('abbreviation, prize_pool, draft_scoring_profile')
+        .eq('id', league.id)
+        .maybeSingle<SettingsRow>()
   if (withScoring.data) {
-    settingsRow = withScoring.data
+    // The scoring-only fallback query omits superflex; coalesce so it's
+    // always a real boolean regardless of which query answered.
+    settingsRow = { ...withScoring.data, superflex: withScoring.data.superflex ?? false }
   } else {
     const bare = await supabase
       .from('leagues')
@@ -680,6 +690,7 @@ export default async function LeagueOverviewPage({
                 currentAbbreviation={settingsRow.abbreviation}
                 currentPrizePool={settingsRow.prize_pool}
                 currentDraftScoringProfile={settingsRow.draft_scoring_profile}
+                currentSuperflex={settingsRow.superflex}
                 savedJustNow={false}
                 inline
               />

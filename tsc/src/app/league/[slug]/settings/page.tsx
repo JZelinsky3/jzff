@@ -22,32 +22,42 @@ export default async function SettingsPage({
     slug: string
     abbreviation: string | null
     prize_pool: string | null
-    draft_scoring_profile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
+    draft_scoring_profile: 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt' | 'std_4pt' | 'std_6pt'
+    superflex: boolean
   }
   let league: LeagueRow | null = null
-  const withScoring = await supabase
+  const withSuperflex = await supabase
     .from('leagues')
-    .select('id, name, slug, abbreviation, prize_pool, draft_scoring_profile')
+    .select('id, name, slug, abbreviation, prize_pool, draft_scoring_profile, superflex')
     .eq('slug', slug)
     .maybeSingle<LeagueRow>()
-  if (withScoring.data) {
-    league = withScoring.data
+  if (withSuperflex.data) {
+    league = withSuperflex.data
   } else {
-    const withPrize = await supabase
+    const withScoring = await supabase
       .from('leagues')
-      .select('id, name, slug, abbreviation, prize_pool')
+      .select('id, name, slug, abbreviation, prize_pool, draft_scoring_profile')
       .eq('slug', slug)
       .maybeSingle()
-    if (withPrize.data) {
-      league = { ...withPrize.data, draft_scoring_profile: 'ppr_6pt' }
+    if (withScoring.data) {
+      league = { ...withScoring.data, superflex: false }
     } else {
-      // Pre-migration fallback (pre-prize-pool).
-      const bare = await supabase
+      const withPrize = await supabase
         .from('leagues')
-        .select('id, name, slug, abbreviation')
+        .select('id, name, slug, abbreviation, prize_pool')
         .eq('slug', slug)
         .maybeSingle()
-      if (bare.data) league = { ...bare.data, prize_pool: null, draft_scoring_profile: 'ppr_6pt' }
+      if (withPrize.data) {
+        league = { ...withPrize.data, draft_scoring_profile: 'ppr_6pt', superflex: false }
+      } else {
+        // Pre-migration fallback (pre-prize-pool).
+        const bare = await supabase
+          .from('leagues')
+          .select('id, name, slug, abbreviation')
+          .eq('slug', slug)
+          .maybeSingle()
+        if (bare.data) league = { ...bare.data, prize_pool: null, draft_scoring_profile: 'ppr_6pt', superflex: false }
+      }
     }
   }
   if (!league) notFound()
@@ -61,6 +71,7 @@ export default async function SettingsPage({
         currentAbbreviation={league.abbreviation}
         currentPrizePool={league.prize_pool}
         currentDraftScoringProfile={league.draft_scoring_profile}
+        currentSuperflex={league.superflex}
         savedJustNow={sp.saved === '1'}
       />
     )
@@ -95,6 +106,7 @@ export default async function SettingsPage({
             currentAbbreviation={league.abbreviation}
             currentPrizePool={league.prize_pool}
             currentDraftScoringProfile={league.draft_scoring_profile}
+            currentSuperflex={league.superflex}
             savedJustNow={sp.saved === '1'}
           />
         </div>

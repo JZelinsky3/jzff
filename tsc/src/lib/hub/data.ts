@@ -293,13 +293,64 @@ export type HubHallSplit = {
   records: HubRecord[]
 }
 
+// One published league's settings, shipped per candidate so the client can
+// apply the multi-select filters (Format, Scoring, size, ...) without a round
+// trip. Booleans/enums only — never anything that identifies the league.
+export type HubLeagueClass = {
+  superflex: boolean
+  scoring: 'PPR' | 'HALF' | 'STANDARD'
+  qbTd: 4 | 6
+  flex: number | null
+  size: number | null
+  leagueType: string
+  tePremium: boolean
+}
+
+// A single league's best record in one category, with the numbers the client
+// needs to rank and re-scale it. Every Hall record is inherently a one-league
+// feat (a game, a season, a streak), so the sitewide wall is just an argmax of
+// these across the leagues that pass the active filters.
+export type HubCandidate = HubRecord & {
+  /** Stable category key (== id), e.g. 'top-week' | 'points-season'. */
+  category: string
+  /** Numeric value used to rank within the category. */
+  rankValue: number
+  /** Whether the category is won by the highest or lowest rankValue. */
+  rankDir: 'max' | 'min'
+  /**
+   * The league's own scoring baseline (avg week / avg season / 2× avg week)
+   * that the "adjusted" lens divides rankValue by, so scoring systems compare
+   * fairly. null = a volume record (wins, rings, streaks) that is never scaled.
+   */
+  scaleBase: number | null
+  leagueId: string
+  cls: HubLeagueClass
+}
+
 export type HubHall = {
   records: HubRecord[]
   /** One-lens-at-a-time record walls: by format, platform, league size */
   splits: HubHallSplit[]
+  /** Per-league ranked records the client combines under the live filters. */
+  candidates: HubCandidate[]
   sourceLeagues: number
   sourceSeasons: number
   generatedAt: string
+}
+
+// buildRanked's output: a display record plus the numeric ranking metadata.
+// Stripped back to a plain HubRecord for the server-rendered walls (records,
+// splits); shipped whole as candidates for the client board.
+type RankedRecord = HubRecord & {
+  category: string
+  rankValue: number
+  rankDir: 'max' | 'min'
+  scaleBase: number | null
+}
+const stripRanked = (r: RankedRecord): HubRecord => {
+  const { category, rankValue, rankDir, scaleBase, ...rest } = r
+  void category; void rankValue; void rankDir; void scaleBase
+  return rest
 }
 
 type SeasonMeta = { id: string; league_id: string; year: number; champion_manager_id: string | null }
@@ -314,7 +365,7 @@ async function computeHall(): Promise<HubHall> {
     .not('published_at', 'is', null)
   const leagues = leagueRows ?? []
   if (leagues.length === 0) {
-    return { records: [], splits: [], sourceLeagues: 0, sourceSeasons: 0, generatedAt: new Date().toISOString() }
+    return { records: [], splits: [], candidates: [], sourceLeagues: 0, sourceSeasons: 0, generatedAt: new Date().toISOString() }
   }
   const leagueById = new Map(leagues.map((l) => [l.id as string, l]))
   const leagueIds = leagues.map((l) => l.id as string)
@@ -393,11 +444,51 @@ async function computeHall(): Promise<HubHall> {
     return { league: l?.name ?? 'Unknown league', leagueSlug: l?.slug ?? '', year: s?.year ?? 0 }
   }
   const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const leagueIdOf = (seasonId: string) => seasonById.get(seasonId)?.league_id ?? ''
+
+  // Per-league scoring baselines for the "adjusted" lens. A points record is
+  // scaled by its OWN league's average, so a 300 in a 190-avg league and a 150
+  // in a 95-avg league compete fairly; volume records are never scaled.
+  const leagueAvgWeek = new Map<string, number>()
+  {
+    const sum = new Map<string, number>()
+    const n = new Map<string, number>()
+    for (const g of allGames) {
+      const lid = leagueIdOf(g.season_id)
+      if (!lid) continue
+      for (const v of [Number(g.score_a), Number(g.score_b)]) {
+        if (!(v > 0)) continue
+        sum.set(lid, (sum.get(lid) ?? 0) + v)
+        n.set(lid, (n.get(lid) ?? 0) + 1)
+      }
+    }
+    for (const [lid, total] of sum) {
+      const c = n.get(lid) ?? 0
+      if (c > 0) leagueAvgWeek.set(lid, total / c)
+    }
+  }
+  const leagueAvgSeasonPF = new Map<string, number>()
+  {
+    const sum = new Map<string, number>()
+    const n = new Map<string, number>()
+    for (const r of standings) {
+      const lid = leagueIdOf(r.season_id)
+      const pf = Number(r.points_for)
+      if (!lid || !(pf > 0)) continue
+      sum.set(lid, (sum.get(lid) ?? 0) + pf)
+      n.set(lid, (n.get(lid) ?? 0) + 1)
+    }
+    for (const [lid, total] of sum) {
+      const c = n.get(lid) ?? 0
+      if (c > 0) leagueAvgSeasonPF.set(lid, total / c)
+    }
+  }
 
   // One record-wall build, optionally restricted to a set of league ids.
-  // The full Hall passes null; the split walls (1QB vs superflex, per
-  // platform, per league size) pass their bucket.
-  const buildRecords = (leagueFilter: Set<string> | null): HubRecord[] => {
+  // Returns ranked records (display fields plus the numeric value/direction and
+  // per-league scale base). The full Hall passes null; the split walls and the
+  // per-league candidate pass their bucket / single league.
+  const buildRanked = (leagueFilter: Set<string> | null): RankedRecord[] => {
     const inScope = (seasonId: string) => {
       if (!leagueFilter) return true
       const s = seasonById.get(seasonId)
@@ -407,7 +498,8 @@ async function computeHall(): Promise<HubHall> {
     const scopedStandings = leagueFilter ? standings.filter((r) => inScope(r.season_id)) : standings
     const scopedSeasons = leagueFilter ? seasons.filter((s) => leagueFilter.has(s.league_id)) : seasons
 
-    const records: HubRecord[] = []
+    const records: RankedRecord[] = []
+    const wk = (seasonId: string) => leagueAvgWeek.get(leagueIdOf(seasonId)) ?? null
 
     // ── Single-game records ──
     let topWeek: { score: number; managerId: string; g: GameRow } | null = null
@@ -435,20 +527,24 @@ async function computeHall(): Promise<HubHall> {
 
     const pushGameRecord = (
       id: string, title: string, value: string, unit: string,
-      managerId: string, g: GameRow, extra?: string
+      managerId: string, g: GameRow, rankValue: number, scaleBase: number | null,
+      rankDir: 'max' | 'min' = 'max', extra?: string
     ) => {
       const { holder, team } = holderOf(managerId, g.season_id)
       const { league, leagueSlug, year } = leagueOf(g.season_id)
       records.push({
-        id, title, value, unit, holder, team, league, leagueSlug,
+        id, category: id, title, value, unit, holder, team, league, leagueSlug,
         detail: `Week ${g.week} · ${year}${extra ? ` · ${extra}` : ''}`,
+        rankValue, rankDir, scaleBase,
       })
     }
 
-    if (topWeek) pushGameRecord('top-week', 'Highest single week', fmt(topWeek.score), 'pts', topWeek.managerId, topWeek.g)
-    if (blowout) pushGameRecord('blowout', 'Biggest blowout', fmt(blowout.margin), 'pt margin', blowout.managerId, blowout.g)
+    if (topWeek) pushGameRecord('top-week', 'Highest single week', fmt(topWeek.score), 'pts', topWeek.managerId, topWeek.g, topWeek.score, wk(topWeek.g.season_id))
+    if (blowout) pushGameRecord('blowout', 'Biggest blowout', fmt(blowout.margin), 'pt margin', blowout.managerId, blowout.g, blowout.margin, wk(blowout.g.season_id))
     if (closest)
-      pushGameRecord('closest', 'Closest game ever', fmt(closest.margin), 'pt margin', closest.managerId, closest.g, 'survived')
+      // Not scaled: the closest margin is near zero in every league, so an
+      // "adjusted" percentage would be noise. Ranks raw in both lenses.
+      pushGameRecord('closest', 'Closest game ever', fmt(closest.margin), 'pt margin', closest.managerId, closest.g, closest.margin, null, 'min', 'survived')
     if (shootout) {
       // Shootout credits both teams; bill it under the winner's name.
       const a = Number(shootout.g.score_a), b = Number(shootout.g.score_b)
@@ -457,16 +553,18 @@ async function computeHall(): Promise<HubHall> {
       const w = holderOf(winnerId, shootout.g.season_id)
       const l = holderOf(loserId, shootout.g.season_id)
       const { league, leagueSlug, year } = leagueOf(shootout.g.season_id)
+      const shootBase = wk(shootout.g.season_id)
       records.push({
-        id: 'shootout', title: 'Highest-scoring game', value: fmt(shootout.total), unit: 'combined',
+        id: 'shootout', category: 'shootout', title: 'Highest-scoring game', value: fmt(shootout.total), unit: 'combined',
         holder: `${w.holder} vs ${l.holder}`, team: null, league, leagueSlug,
         detail: `Week ${shootout.g.week} · ${year} · ${fmt(Math.max(a, b))}–${fmt(Math.min(a, b))}`,
+        rankValue: shootout.total, rankDir: 'max', scaleBase: shootBase != null ? shootBase * 2 : null,
       })
     }
     if (heartbreak)
-      pushGameRecord('heartbreak', 'Most points in a loss', fmt(heartbreak.score), 'pts', heartbreak.managerId, heartbreak.g, 'still lost')
+      pushGameRecord('heartbreak', 'Most points in a loss', fmt(heartbreak.score), 'pts', heartbreak.managerId, heartbreak.g, heartbreak.score, wk(heartbreak.g.season_id), 'max', 'still lost')
     if (stingiestWin)
-      pushGameRecord('stingy', 'Lowest score to win', fmt(stingiestWin.score), 'pts', stingiestWin.managerId, stingiestWin.g, 'and it held')
+      pushGameRecord('stingy', 'Lowest score to win', fmt(stingiestWin.score), 'pts', stingiestWin.managerId, stingiestWin.g, stingiestWin.score, wk(stingiestWin.g.season_id), 'min', 'and it held')
 
     // ── Season records ──
     let bestSeason: StandingRow | null = null
@@ -488,16 +586,19 @@ async function computeHall(): Promise<HubHall> {
       const { league, leagueSlug, year } = leagueOf(bestSeason.season_id)
       const rec = `${bestSeason.wins}–${bestSeason.losses}${bestSeason.ties ? `–${bestSeason.ties}` : ''}`
       records.push({
-        id: 'best-record', title: 'Best season record', value: rec, unit: '',
+        id: 'best-record', category: 'best-record', title: 'Best season record', value: rec, unit: '',
         holder, team, league, leagueSlug, detail: `${year} regular season`,
+        rankValue: bestSeasonPct, rankDir: 'max', scaleBase: null,
       })
     }
     if (pointsSeason) {
       const { holder, team } = holderOf(pointsSeason.manager_id, pointsSeason.season_id)
       const { league, leagueSlug, year } = leagueOf(pointsSeason.season_id)
       records.push({
-        id: 'points-season', title: 'Most points, one season', value: fmt(Number(pointsSeason.points_for)), unit: 'pts',
+        id: 'points-season', category: 'points-season', title: 'Most points, one season', value: fmt(Number(pointsSeason.points_for)), unit: 'pts',
         holder, team, league, leagueSlug, detail: `${year} season`,
+        rankValue: Number(pointsSeason.points_for), rankDir: 'max',
+        scaleBase: leagueAvgSeasonPF.get(leagueIdOf(pointsSeason.season_id)) ?? null,
       })
     }
 
@@ -540,8 +641,9 @@ async function computeHall(): Promise<HubHall> {
       const { holder, team } = holderOf(streakHolder.managerId, streakHolder.s.bestEnd.seasonId)
       const { league, leagueSlug, year } = leagueOf(streakHolder.s.bestEnd.seasonId)
       records.push({
-        id: 'win-streak', title: 'Longest win streak', value: String(streakHolder.s.best), unit: 'straight wins',
+        id: 'win-streak', category: 'win-streak', title: 'Longest win streak', value: String(streakHolder.s.best), unit: 'straight wins',
         holder, team, league, leagueSlug, detail: `Snapped after Week ${streakHolder.s.bestEnd.week} · ${year}`,
+        rankValue: streakHolder.s.best, rankDir: 'max', scaleBase: null,
       })
     }
 
@@ -562,17 +664,18 @@ async function computeHall(): Promise<HubHall> {
       const m = managerById.get(dynasty.managerId)
       const l = m ? leagueById.get(m.league_id) : undefined
       records.push({
-        id: 'dynasty', title: 'Most championships', value: String(dynasty.rings), unit: 'rings',
+        id: 'dynasty', category: 'dynasty', title: 'Most championships', value: String(dynasty.rings), unit: 'rings',
         holder: m?.display_name ?? 'Unknown manager', team: m?.team_name ?? null,
         league: l?.name ?? 'Unknown league', leagueSlug: l?.slug ?? '',
         detail: dynasty.years.sort((a, b) => a - b).join(' · '),
+        rankValue: dynasty.rings, rankDir: 'max', scaleBase: null,
       })
     }
 
     return records
   }
 
-  const records = buildRecords(null)
+  const records = buildRanked(null).map(stripRanked)
 
   // ── League classification for the split walls ──────────────────────────
   // Sources, in priority order:
@@ -717,20 +820,44 @@ async function computeHall(): Promise<HubHall> {
       label: def.label,
       leagues: ids.size,
       seasons: seasons.filter((s) => ids.has(s.league_id)).length,
-      records: buildRecords(ids),
+      records: buildRanked(ids).map(stripRanked),
     })
+  }
+
+  // Per-league candidates for the client board's multi-select filters +
+  // adjusted lens. Each league contributes its own best-in-category records,
+  // tagged with its settings; the client argmaxes across the leagues that pass
+  // the live filters.
+  const candidates: HubCandidate[] = []
+  for (const l of leagues) {
+    const id = l.id as string
+    const c = classOf.get(id)
+    if (!c) continue
+    const clsOut: HubLeagueClass = {
+      superflex: c.superflex,
+      scoring: c.scoring,
+      qbTd: c.qbTd,
+      flex: c.flex,
+      size: leagueSize.get(id) ?? null,
+      leagueType: c.leagueType,
+      tePremium: c.tePremium,
+    }
+    for (const r of buildRanked(new Set([id]))) {
+      candidates.push({ ...r, leagueId: id, cls: clsOut })
+    }
   }
 
   return {
     records,
     splits,
+    candidates,
     sourceLeagues: leagues.length,
     sourceSeasons: seasons.length,
     generatedAt: new Date().toISOString(),
   }
 }
 
-export const getHubHall = unstable_cache(computeHall, ['hub-hall-v3'], {
+export const getHubHall = unstable_cache(computeHall, ['hub-hall-v4'], {
   revalidate: 3600,
   tags: ['hub-data'],
 })

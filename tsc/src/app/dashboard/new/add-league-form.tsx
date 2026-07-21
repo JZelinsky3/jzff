@@ -241,9 +241,10 @@ export function AddLeagueForm({
   const [swid, setSwid] = useState('')
   const [espnS2, setEspnS2] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
-  const [pprMode, setPprMode] = useState<'ppr' | 'half'>('ppr')
+  const [pprMode, setPprMode] = useState<'ppr' | 'half' | 'std'>('ppr')
+  const [superflex, setSuperflex] = useState(false)
   const [passTdPts, setPassTdPts] = useState<'4' | '6'>('6')
-  const draftScoringProfile = `${pprMode}_${passTdPts}pt` as 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt'
+  const draftScoringProfile = `${pprMode}_${passTdPts}pt` as 'ppr_6pt' | 'half_4pt' | 'ppr_4pt' | 'half_6pt' | 'std_4pt' | 'std_6pt'
 
   function handlePreview(idOverride?: string) {
     const id = idOverride ?? externalId
@@ -438,6 +439,7 @@ export function AddLeagueForm({
                     <select value={pprMode} onChange={(e) => setPprMode(e.target.value as typeof pprMode)} className="dc-select">
                       <option value="ppr">Full PPR (1 pt/catch)</option>
                       <option value="half">Half PPR (0.5 pt/catch)</option>
+                      <option value="std">Standard (no PPR)</option>
                     </select>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '.25rem', flex: '1 1 12rem' }}>
@@ -448,6 +450,11 @@ export function AddLeagueForm({
                     </select>
                   </div>
                 </div>
+                <input type="hidden" name="superflex" value={superflex ? 'true' : 'false'} />
+                <label className="dc-checkbox-row" style={{ marginTop: '.75rem' }}>
+                  <input type="checkbox" checked={superflex} onChange={(e) => setSuperflex(e.target.checked)} />
+                  <span>Superflex<span className="dc-checkbox-hint">Second QB-eligible starter. Adds a SUPERFLEX slot to the All-Time Team.</span></span>
+                </label>
               </div>
               </Chapter>
 
@@ -576,6 +583,7 @@ export function AddLeagueForm({
             >
               <option value="ppr">Full PPR (1 pt/catch)</option>
               <option value="half">Half PPR (0.5 pt/catch)</option>
+              <option value="std">Standard (no PPR)</option>
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '.25rem', flex: '1 1 12rem' }}>
@@ -594,6 +602,11 @@ export function AddLeagueForm({
           Used to grade past drafts (Steal of the Year, Bust of the Year, Heartbreakers).
           End-of-season FantasyPros totals are evaluated under this scoring. Change anytime in League Settings.
         </span>
+        <input type="hidden" name="superflex" value={superflex ? 'true' : 'false'} />
+        <label className="dc-checkbox-row" style={{ marginTop: '.75rem' }}>
+          <input type="checkbox" checked={superflex} onChange={(e) => setSuperflex(e.target.checked)} />
+          <span>Superflex<span className="dc-checkbox-hint">Second QB-eligible starter. Adds a SUPERFLEX slot to the All-Time Team.</span></span>
+        </label>
       </div>
 
       {platform === 'nfl' && (

@@ -111,14 +111,6 @@ export function MobileLibrary({
 
       {/* ── Quick actions ── */}
       <div className="mlib-actions">
-        <Link href="/dashboard/new" className="mlib-action">
-          <span className="mlib-action-icon">+</span>
-          <span>New archive</span>
-        </Link>
-        <Link href="/hub" className="mlib-action">
-          <span className="mlib-action-icon">★</span>
-          <span>Clubhouse</span>
-        </Link>
         <Link href="/account" className="mlib-action">
           <span className="mlib-action-icon">
             <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
@@ -127,6 +119,14 @@ export function MobileLibrary({
             </svg>
           </span>
           <span>Account</span>
+        </Link>
+        <Link href="/hub" className="mlib-action">
+          <span className="mlib-action-icon">★</span>
+          <span>Clubhouse</span>
+        </Link>
+        <Link href="/dashboard/new" className="mlib-action">
+          <span className="mlib-action-icon">+</span>
+          <span>New archive</span>
         </Link>
       </div>
 

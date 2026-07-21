@@ -226,7 +226,7 @@ export function composeVerdict(input: VerdictInput): string {
   // ── Optional mode / scarcity flavor, ~half the time, seeded ──────────────
   if (pick([true, false, true])) {
     const positions = posSet(received)
-    const flavorPool = FLAVORS(mode, positions, headPos, dir, lens)
+    const flavorPool = FLAVORS(mode, positions, headPos, dir)
     if (flavorPool.length) {
       const flavor = pick(flavorPool)
       if (flavor) line = `${line} ${flavor}`
@@ -585,7 +585,6 @@ function FLAVORS(
   positions: string[],
   headPos: string,
   dir: 'up' | 'down' | 'flat',
-  lens: 'value' | 'lineup',
 ): string[] {
   const out: string[] = []
 

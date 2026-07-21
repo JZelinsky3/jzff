@@ -1,40 +1,16 @@
 import Link from 'next/link'
-import { getHubHall, type HubRecord } from '@/lib/hub/data'
+import { getHubHall } from '@/lib/hub/data'
 import { getViewMode } from '@/lib/viewMode'
 import { Reveal } from '../bits'
 import { MobileHall } from '../mobile/hall'
-import { HallSplits } from './hall-splits'
+import { HallBoard } from './hall-board'
 
 export const metadata = { title: 'The Clubhouse · The Hall' }
-
-function Plaque({ r, banner = false, delay = 0 }: { r: HubRecord; banner?: boolean; delay?: number }) {
-  return (
-    <Reveal delay={delay} className={banner ? 'hub-plaque-banner-wrap' : undefined}>
-      <div className={`hub-plaque${banner ? ' is-banner' : ''}`} style={{ height: '100%' }}>
-        <div className="hub-plaque-cat">{r.title}</div>
-        <div className="hub-plaque-value">
-          {r.value}
-          {r.unit && <span className="unit">{r.unit}</span>}
-        </div>
-        <div className="hub-plaque-holder">{r.holder}</div>
-        {r.team && <div className="hub-plaque-team">“{r.team}”</div>}
-        <div className="hub-plaque-meta">
-          <span>
-            {r.leagueSlug ? <a href={`/leagues/${r.leagueSlug}/`}>{r.league}</a> : r.league}
-          </span>
-          <span>{r.detail}</span>
-        </div>
-      </div>
-    </Reveal>
-  )
-}
 
 export default async function HallPage() {
   const hall = await getHubHall()
 
   if ((await getViewMode()) === 'mobile') return <MobileHall hall={hall} />
-
-  const [headline, ...rest] = hall.records
 
   return (
     <main>
@@ -76,44 +52,7 @@ export default async function HallPage() {
         </div>
       ) : (
         <>
-          <div className="hub-section">
-            <div className="hub-section-header">
-              <span className="hub-section-num">§ 01 · The marquee</span>
-              <span className="hub-section-title">The record of records —</span>
-              <span className="hub-section-meta">Sitewide · All platforms</span>
-            </div>
-            {headline && (
-              <div className="hub-plaque-grid">
-                <Plaque r={headline} banner />
-              </div>
-            )}
-          </div>
-
-          <div className="hub-section">
-            <div className="hub-section-header">
-              <span className="hub-section-num">§ 02 · The wall</span>
-              <span className="hub-section-title">Plaques in good standing —</span>
-              <span className="hub-section-meta">Until somebody takes them</span>
-            </div>
-            <div className="hub-plaque-grid">
-              {rest.map((r, i) => (
-                <Plaque key={r.id} r={r} delay={(i % 3) * 90} />
-              ))}
-            </div>
-          </div>
-
-          {hall.splits.length > 0 && (
-            <div className="hub-section">
-              <div className="hub-section-header">
-                <span className="hub-section-num">§ 03 · Split the field</span>
-                <span className="hub-section-title">Records by setting —</span>
-                <span className="hub-section-meta">So superflex never argues with 1-QB</span>
-              </div>
-              <Reveal>
-                <HallSplits splits={hall.splits} />
-              </Reveal>
-            </div>
-          )}
+          <HallBoard candidates={hall.candidates} />
 
           <div className="hub-section">
             <p
@@ -126,8 +65,9 @@ export default async function HallPage() {
               wall. Season records require at least ten games; streaks count playoffs and
               snap on a tie. Format and flex are read from real lineups (two QBs started in a
               week → superflex); scoring, passing TDs, and TE premium come from each league&apos;s
-              scoring profile and Trade Desk settings. Commissioners can correct those any
-              time and the splits follow. The wall re-counts itself every hour.
+              scoring profile and Trade Desk settings, and the filters read from those.
+              Adjusted scales each points record by its own league&apos;s average so scoring
+              systems compare fairly. The wall re-counts itself every hour.
             </p>
           </div>
         </>

@@ -12,16 +12,16 @@ import { useEffect } from 'react'
 
 export const HUB_THEME_KEY = 'tsc-hub-theme'
 
-// Safari tints its toolbar from <meta name="theme-color">. The hub layout
-// SSRs it as clubhouse cream; keep it matched to the active skin here
-// (night = the hub's black), both on toggle and when the hub mounts via a
-// client-side navigation (the root layout's pre-paint script only runs on
-// full loads).
+// Safari tints its toolbar from <meta name="theme-color">. The toolbar stays
+// dark in both skins so it reads as one piece with the always-dark mobile
+// dock (a cream toolbar butted against the black dock looked broken). Kept in
+// sync on toggle and when the hub mounts via a client-side navigation (the
+// root layout's pre-paint script only runs on full loads).
 function syncThemeColorMeta() {
   const night = document.documentElement.getAttribute('data-hub-theme') === 'night'
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', night ? '#0d0d0d' : '#f3ead6')
+    ?.setAttribute('content', night ? '#0d0d0d' : '#100e0a')
 }
 
 const TABS = [

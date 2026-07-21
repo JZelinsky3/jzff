@@ -772,6 +772,26 @@ html[data-hub-theme="night"] .hub-root .hub-theme-ico .moon { opacity: 1; transf
     color: var(--hb-gold);
 }
 .hub-filter-chip.active .hub-filter-count { background: rgba(255,255,255,.14); color: inherit; }
+
+/* Hall control strip — the lens toggle, the quick 1-QB chip, and the filter
+   drawer opener sit on one wrapping row above the marquee. */
+.hub-hall-controls { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
+/* Raw / Adjusted segmented toggle. */
+.hub-hall-lens {
+    display: inline-flex; border: 1px solid var(--hb-line); border-radius: 2px;
+    overflow: hidden; background: var(--hb-card);
+}
+.hub-hall-lens-btn {
+    background: none; cursor: pointer; border: none;
+    padding: .6rem 1rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--hb-mute);
+    transition: color .2s, background .2s;
+}
+.hub-hall-lens-btn + .hub-hall-lens-btn { border-left: 1px solid var(--hb-line); }
+.hub-hall-lens-btn:hover { color: var(--hb-gold); background: var(--hb-gold-wash); }
+.hub-hall-lens-btn.active { background: var(--hb-ink); color: var(--hb-bg); }
 .hub-filter-hint {
     margin: 1.4rem auto 0; max-width: 540px; text-align: center;
     font-family: var(--serif); font-style: italic;

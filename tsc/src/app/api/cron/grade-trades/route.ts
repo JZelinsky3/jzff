@@ -24,7 +24,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { gradeTrade, revisitTrade } from '@/lib/tradeGrader'
-import { ownerHasTradesAccess } from '@/lib/trades'
+import { leagueHasTradesAccess } from '@/lib/trades'
 import { computePositionRanks, stampRanks, type PositionRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
@@ -54,15 +54,12 @@ async function filterEligible(
     .from('leagues')
     .select('id, owner_id')
     .in('id', leagueIds)
+  // Access is per-league (a paid owner's trial slot unlocks trades even if
+  // their other leagues don't), so we check each league once. leagueIds are
+  // already de-duped above, so there's no repeated work to cache away.
   const accessByLeague = new Map<string, boolean>()
-  const accessByOwner = new Map<string, boolean>()
   for (const lg of leagues ?? []) {
-    let ok = accessByOwner.get(lg.owner_id)
-    if (ok === undefined) {
-      ok = await ownerHasTradesAccess(lg.owner_id)
-      accessByOwner.set(lg.owner_id, ok)
-    }
-    accessByLeague.set(lg.id, ok)
+    accessByLeague.set(lg.id, await leagueHasTradesAccess(lg.id, lg.owner_id))
   }
   return {
     eligible: rows.filter((r) => accessByLeague.get(r.league_id) === true),

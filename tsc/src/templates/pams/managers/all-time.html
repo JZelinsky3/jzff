@@ -222,7 +222,7 @@
         grid-template-columns: repeat(5, 212px);
         grid-template-areas:
             "wr1 rb1 qb rb2 wr2"
-            ".   te  .  fx  .";
+            ".   te  sf  fx  .";
         justify-content: center;
         gap: 1.7rem 1.3rem;
     }
@@ -233,6 +233,9 @@
     .fs-wr2 { grid-area: wr2; margin-top: 34px; }
     .fs-te  { grid-area: te; }
     .fs-fx  { grid-area: fx; }
+    /* Superflex only: the back-rank center card. 1QB teams never render it,
+       so the sf area just collapses to empty space. */
+    .fs-sf  { grid-area: sf; }
 }
 .tcard {
     width: 212px;
@@ -897,6 +900,8 @@ var PROFILE_LABEL = {
     ppr_4pt:  'Full PPR · 4pt Pass TD',
     half_6pt: 'Half PPR · 6pt Pass TD',
     half_4pt: 'Half PPR · 4pt Pass TD',
+    std_6pt:  'Standard · 6pt Pass TD',
+    std_4pt:  'Standard · 4pt Pass TD',
 };
 
 /* ── State ─────────────────────────────────────────────────── */
@@ -907,6 +912,24 @@ var ORDER = [];           // uids ranked by team total
 var AVATARS = {};         // uid -> avatar url (managers_directory)
 var PROFILE = 'ppr_6pt';
 var activeUid = null;
+var SUPERFLEX = false;    // league.json superflex flag — adds a 2nd QB-eligible slot
+// Where "Return to the manager file" points: whatever managers page the
+// visitor came from (the index or a specific profile), captured once on
+// load so switching squads inside this page doesn't rewrite it. Falls
+// back to the selected team's profile when there's no usable referrer.
+var RETURN_HREF = (function () {
+    try {
+        var u = new URL(document.referrer, location.href);
+        // A managers page, but not this all-time page itself (guards against
+        // a reload pointing the return link back here).
+        if (u.origin === location.origin &&
+            /(^|\/)managers(\/|$)/.test(u.pathname) &&
+            u.pathname !== location.pathname) {
+            return u.pathname + u.search;
+        }
+    } catch (e) {}
+    return null;
+})();
 var alumniTabsOpen = false;
 var alumniGalOpen = false;
 
@@ -921,6 +944,7 @@ function boot() {
         POOL = res[1];
         var dir = res[2];
         if (league && league.draft_scoring_profile) PROFILE = league.draft_scoring_profile;
+        if (league) SUPERFLEX = !!league.superflex;
         if (dir && Array.isArray(dir.managers)) {
             dir.managers.forEach(function (x) {
                 if (x.user_id != null) AVATARS[x.user_id] = x.avatar || '';
@@ -1025,6 +1049,14 @@ function buildTeam(mgr) {
         { slot: 'TE',   player: take(function (c) { return c.pos === 'TE'; }) },
         { slot: 'FLEX', player: take(function (c) { return c.pos === 'RB' || c.pos === 'WR' || c.pos === 'TE'; }) },
     ];
+    // Superflex leagues start a second QB-eligible slot. Taken after FLEX so
+    // the flex still pulls from the RB/WR/TE pool first; the SF then grabs the
+    // best remaining QB-eligible season (usually the manager's 2nd-best QB).
+    if (SUPERFLEX) {
+        slots.push({ slot: 'SF', player: take(function (c) {
+            return c.pos === 'QB' || c.pos === 'RB' || c.pos === 'WR' || c.pos === 'TE';
+        }) });
+    }
     /* The reserves: picked by positional finish, not raw points (raw
        totals would stack the bench with QB seasons), and capped at two
        per position so it reads like a real bench. Backfill by finish
@@ -1120,7 +1152,7 @@ function renderShell() {
         '<main class="case-main">' +
             '<div class="sheet-head">' +
                 '<span class="sheet-num">II · The Starters</span>' +
-                '<span class="sheet-title" id="startersTitle">The starting seven</span>' +
+                '<span class="sheet-title" id="startersTitle">The starting ' + (SUPERFLEX ? 'eight' : 'seven') + '</span>' +
                 '<span class="sheet-note" id="startersNote"></span>' +
             '</div>' +
             '<div class="squad-line" id="squadLine"></div>' +
@@ -1136,7 +1168,7 @@ function renderShell() {
             '<div class="sheet-head" style="margin-top:3rem">' +
                 '<span class="sheet-num">IV · The Gallery</span>' +
                 '<span class="sheet-title">Every squad in the league</span>' +
-                '<span class="sheet-note">ranked by starting-seven points</span>' +
+                '<span class="sheet-note">ranked by starting-' + (SUPERFLEX ? 'eight' : 'seven') + ' points</span>' +
             '</div>' +
             '<div id="gallery"></div>' +
 
@@ -1235,11 +1267,11 @@ function selectManager(uid, replaceUrl) {
     }
     document.getElementById('squadLine').innerHTML =
         sq(ordinal(rank) + ' <span style="font-size:.9rem;color:var(--cream-mute)">of ' + ORDER.length + '</span>', 'Squad rank') +
-        sq('<span id="wireTotal">0.0</span>', 'Starting-seven pts') +
+        sq('<span id="wireTotal">0.0</span>', 'Starting-' + (SUPERFLEX ? 'eight' : 'seven') + ' pts') +
         sq('≈ ' + team.ppw.toFixed(1), 'Team PPG') +
         sq(String(team.seasonsScouted), 'Seasons scouted') +
         sq(String(team.poolSize), 'Players considered');
-    document.getElementById('fileLink').setAttribute('href', 'managers/manager?id=' + encodeURIComponent(uid));
+    document.getElementById('fileLink').setAttribute('href', RETURN_HREF || ('managers/manager?id=' + encodeURIComponent(uid)));
 
     document.querySelectorAll('#ticker-1, #ticker-2').forEach(function (el) {
         el.innerHTML =
@@ -1249,7 +1281,7 @@ function selectManager(uid, replaceUrl) {
             '<span class="ticker-item"><span class="ticker-star">★</span> {{LEAGUE_NAME_UPPER}} · EST. {{LEAGUE_FOUNDED}}</span>';
     });
 
-    document.getElementById('startersTitle').textContent = team.name + '’s starting seven';
+    document.getElementById('startersTitle').textContent = team.name + '’s starting ' + (SUPERFLEX ? 'eight' : 'seven');
     document.getElementById('startersNote').innerHTML =
         '<b>' + team.total.toFixed(1) + '</b> combined pts';
     renderStarters(team);
@@ -1266,8 +1298,8 @@ function acqFront(p) {
 function renderStarters(team) {
     var wrap = document.getElementById('starters');
     wrap.classList.remove('dealt');
-    var tilts = [-1.4, 1.1, -0.8, 1.5, -1.2, 0.9, -1.6];
-    var AREA = { QB: 'fs-qb', RB1: 'fs-rb1', RB2: 'fs-rb2', WR1: 'fs-wr1', WR2: 'fs-wr2', TE: 'fs-te', FLEX: 'fs-fx' };
+    var tilts = [-1.4, 1.1, -0.8, 1.5, -1.2, 0.9, -1.6, 1.3];
+    var AREA = { QB: 'fs-qb', RB1: 'fs-rb1', RB2: 'fs-rb2', WR1: 'fs-wr1', WR2: 'fs-wr2', TE: 'fs-te', FLEX: 'fs-fx', SF: 'fs-sf' };
     wrap.innerHTML = team.slots.map(function (s, i) {
         var p = s.player;
         var areaCls = ' ' + (AREA[s.slot] || '');
@@ -1347,7 +1379,7 @@ function renderBench(team) {
     var mount = document.getElementById('bench');
     document.getElementById('benchNote').textContent = team.bench.length + ' players';
     if (!team.bench.length) {
-        mount.innerHTML = '<p style="font-family:var(--serif);font-style:italic;color:var(--an-mute);padding:.6rem 0">The bench is bare. Every scouted player made the starting seven.</p>';
+        mount.innerHTML = '<p style="font-family:var(--serif);font-style:italic;color:var(--an-mute);padding:.6rem 0">The bench is bare. Every scouted player made the starting ' + (SUPERFLEX ? 'eight' : 'seven') + '.</p>';
         return;
     }
     mount.innerHTML =
