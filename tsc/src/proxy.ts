@@ -8,11 +8,20 @@ import { updateSession } from '@/lib/supabase/middleware'
 // prod serving identical paths.
 const STATIC_INDEX_TREES = /^\/(demo|demo-m|old)(\/|$)/
 
+// Within those trees these two pages are flat files (standings.html,
+// records.html) rather than directories with an index. The shared almanac
+// nav links to them with clean URLs (/demo/standings), which the live league
+// route resolves via a .html fallback but the static demo can't — the clean
+// URL would rewrite to <name>/index.html and 404. Map it to the sibling file.
+const STATIC_FLAT_PAGES = /\/(standings|records)\/?$/
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   if (STATIC_INDEX_TREES.test(pathname) && !/\.[a-z0-9]+$/i.test(pathname)) {
     const url = request.nextUrl.clone()
-    url.pathname = pathname.replace(/\/?$/, '/index.html')
+    url.pathname = STATIC_FLAT_PAGES.test(pathname)
+      ? pathname.replace(/\/?$/, '').replace(STATIC_FLAT_PAGES, '/$1.html')
+      : pathname.replace(/\/?$/, '/index.html')
     return NextResponse.rewrite(url)
   }
   return await updateSession(request)
