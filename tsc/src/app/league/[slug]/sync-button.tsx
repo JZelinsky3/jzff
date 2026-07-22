@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 
 // Sync route has maxDuration = 300 (5min). Surface that as a hard ceiling
 // in the UI so the user knows when to give up vs keep waiting. The budget
-// applies per source platform — multi-source leagues sync one platform per
-// request so no single request has to fit the whole history under the cap.
+// applies per chunk — a chunk is one source platform, windowed to a few
+// seasons when the source declares a season range — so no single request
+// has to fit the whole history under the cap.
 const SYNC_BUDGET_S = 300
 const PATIENCE_THRESHOLD_S = 30
 const ABORT_THRESHOLD_S = SYNC_BUDGET_S + 30
@@ -57,26 +58,38 @@ export function SyncButton({ leagueId }: { leagueId: string }) {
     chunkStartedAt.current = Date.now()
     setElapsedS(0)
 
-    // One POST per source platform. A multi-source league synced in a single
-    // request routinely outlives the function cap — the run dies mid-walk
-    // with a raw error and only the platforms that ran first land. Chunking
-    // gives every platform the full budget. If the platform listing fails
-    // for any reason, fall back to the old single all-platforms request.
-    let platforms: string[] = []
+    // One POST per chunk. A chunk is a source platform plus (when the
+    // source declares a season range) a window of a few seasons — a long
+    // single-source history synced in one request routinely outlives the
+    // function cap, dying mid-walk around whatever season the budget ran
+    // out on. Chunking gives every few seasons the full budget. If the
+    // plan listing fails for any reason, fall back to the old single
+    // all-platforms request.
+    type SyncChunk = { platform: string; from?: number; to?: number }
+    let plan: SyncChunk[] = []
     try {
       const res = await fetch(`/api/leagues/${leagueId}/sync/`)
       const body = await res.json().catch(() => ({}))
-      if (res.ok && Array.isArray(body?.platforms)) platforms = body.platforms
+      if (res.ok && Array.isArray(body?.chunks) && body.chunks.length > 0) {
+        plan = body.chunks
+      } else if (res.ok && Array.isArray(body?.platforms)) {
+        plan = body.platforms.map((p: string) => ({ platform: p }))
+      }
     } catch { /* fall through to single request */ }
 
     const totals = { seasonsIngested: 0, matchupsIngested: 0, draftsIngested: 0 }
     const allWarnings: string[] = []
-    const chunks: Array<string | null> = platforms.length > 0 ? platforms : [null]
+    const chunks: Array<SyncChunk | null> = plan.length > 0 ? plan : [null]
     let landed = 0
 
     for (let ci = 0; ci < chunks.length; ci++) {
-      const platform = chunks[ci]
-      if (platform && chunks.length > 1) setPhase(`Source ${ci + 1}/${chunks.length} · ${platform}`)
+      const chunk = chunks[ci]
+      const label = chunk
+        ? chunk.from != null
+          ? `${chunk.platform} ${chunk.from}${chunk.to != null && chunk.to !== chunk.from ? `–${chunk.to}` : ''}`
+          : chunk.platform
+        : null
+      if (label && chunks.length > 1) setPhase(`Chunk ${ci + 1}/${chunks.length} · ${label}`)
       chunkStartedAt.current = Date.now()
 
       const controller = new AbortController()
@@ -86,13 +99,18 @@ export function SyncButton({ leagueId }: { leagueId: string }) {
         // Trailing slash matters — next.config has trailingSlash: true, so a
         // POST to /sync without the slash gets 308-redirected and the browser's
         // follow-up request hangs. Hit the canonical URL directly.
-        const url = platform
-          ? `/api/leagues/${leagueId}/sync/?platform=${encodeURIComponent(platform)}`
-          : `/api/leagues/${leagueId}/sync/`
+        const qs = new URLSearchParams()
+        if (chunk) {
+          qs.set('platform', chunk.platform)
+          if (chunk.from != null) qs.set('from', String(chunk.from))
+          if (chunk.to != null) qs.set('to', String(chunk.to))
+        }
+        const q = qs.toString()
+        const url = `/api/leagues/${leagueId}/sync/${q ? `?${q}` : ''}`
         const res = await fetch(url, { method: 'POST', signal: controller.signal })
         const body = await res.json().catch(() => ({}))
         if (!res.ok) {
-          allWarnings.push(`[${platform ?? 'sync'}] ${body?.error ?? `failed (HTTP ${res.status})`}`)
+          allWarnings.push(`[${label ?? 'sync'}] ${body?.error ?? `failed (HTTP ${res.status})`}`)
           continue
         }
         landed++
@@ -103,15 +121,15 @@ export function SyncButton({ leagueId }: { leagueId: string }) {
       } catch (err) {
         const chunkElapsed = Math.floor((Date.now() - (chunkStartedAt.current ?? Date.now())) / 1000)
         if (err instanceof DOMException && err.name === 'AbortError') {
-          allWarnings.push(`[${platform ?? 'sync'}] stalled past ${formatElapsed(ABORT_THRESHOLD_S)}. The server likely timed out. Data may still have partially landed.`)
+          allWarnings.push(`[${label ?? 'sync'}] stalled past ${formatElapsed(ABORT_THRESHOLD_S)}. The server likely timed out. Data may still have partially landed.`)
         } else if (err instanceof TypeError && chunkElapsed >= HOBBY_FUNCTION_CAP_S - 1) {
           // Vercel killed the connection at the function cap. The ingest almost
           // always finishes its writes before the cut, so keep walking the
           // remaining platforms rather than scaring the user with a raw error.
           landed++
-          allWarnings.push(`[${platform ?? 'sync'}] connection cut at ${formatElapsed(chunkElapsed)} (Vercel function cap). The ingest likely finished its writes.`)
+          allWarnings.push(`[${label ?? 'sync'}] connection cut at ${formatElapsed(chunkElapsed)} (Vercel function cap). The ingest likely finished its writes.`)
         } else {
-          allWarnings.push(`[${platform ?? 'sync'}] ${err instanceof Error ? err.message : 'network error'}`)
+          allWarnings.push(`[${label ?? 'sync'}] ${err instanceof Error ? err.message : 'network error'}`)
         }
       } finally {
         abortRef.current = null

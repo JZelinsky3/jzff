@@ -9,7 +9,7 @@ import { ingestEspnLeague } from '@/lib/ingest/espn'
 import { ingestYahooLeague } from '@/lib/ingest/yahoo'
 import { devCacheBust } from '@/lib/devCache'
 import { isLeagueLocked } from '@/lib/leagueTier'
-import type { IngestStages } from '@/lib/ingest/stages'
+import type { IngestStages, IngestYearRange } from '@/lib/ingest/stages'
 
 export const maxDuration = 300 // 5 min, plenty of headroom on Vercel Pro
 
@@ -65,11 +65,71 @@ async function leaguePlatforms(leagueId: string, fallback: string): Promise<stri
   return [...platforms]
 }
 
-// GET lists the platforms a sync would walk, so the client can issue one
-// POST per platform instead of one giant request. A multi-source league
-// synced in a single request routinely outlives the Vercel function cap —
-// the function gets killed mid-walk, the user sees a raw error, and only
-// the platforms that happened to run first have their seasons on disk.
+// How many seasons one chunked request should walk per platform. NFL is
+// scrape-bound (~200 gamecenter pages per season) so it gets the smallest
+// window; Yahoo is API-fast but deliberately fetched with low concurrency
+// (rate limits); ESPN and Sleeper are cheap JSON APIs.
+const CHUNK_SEASONS: Record<string, number> = { nfl: 3, espn: 5, yahoo: 3, sleeper: 6 }
+
+export type SyncChunk = { platform: string; from?: number; to?: number }
+
+// Build the chunk plan: for each platform, if EVERY source carries a numeric
+// season_start/season_end we can split the union of those ranges into
+// year-window chunks; otherwise (walk-history Sleeper/Yahoo sources with no
+// declared range) the platform syncs as one un-windowed chunk, same as before.
+async function syncChunkPlan(leagueId: string, fallbackPlatform: string): Promise<{ platforms: string[]; chunks: SyncChunk[] }> {
+  const admin = createAdminClient()
+  const { data: sourceRows } = await admin
+    .from('league_sources')
+    .select('platform, settings')
+    .eq('league_id', leagueId)
+  let rows = (sourceRows ?? []).filter((r) => r.platform)
+  if (rows.length === 0) {
+    // Pre-multi-source league: range (if any) lives on leagues.settings.
+    const { data: leagueRow } = await admin
+      .from('leagues')
+      .select('settings')
+      .eq('id', leagueId)
+      .maybeSingle()
+    rows = [{ platform: fallbackPlatform, settings: leagueRow?.settings ?? null }]
+  }
+
+  const byPlatform = new Map<string, Array<{ start?: number; end?: number }>>()
+  for (const r of rows) {
+    const s = (r.settings ?? {}) as { season_start?: unknown; season_end?: unknown }
+    const arr = byPlatform.get(r.platform as string) ?? []
+    arr.push({
+      start: typeof s.season_start === 'number' ? s.season_start : undefined,
+      end: typeof s.season_end === 'number' ? s.season_end : undefined,
+    })
+    byPlatform.set(r.platform as string, arr)
+  }
+
+  const platforms = [...byPlatform.keys()]
+  const chunks: SyncChunk[] = []
+  for (const [platform, ranges] of byPlatform) {
+    const allRanged = ranges.every((r) => r.start != null && r.end != null && r.start <= r.end)
+    const size = CHUNK_SEASONS[platform] ?? 4
+    if (!allRanged) {
+      chunks.push({ platform })
+      continue
+    }
+    const min = Math.min(...ranges.map((r) => r.start!))
+    const max = Math.max(...ranges.map((r) => r.end!))
+    for (let from = min; from <= max; from += size) {
+      chunks.push({ platform, from, to: Math.min(from + size - 1, max) })
+    }
+  }
+  return { platforms, chunks }
+}
+
+// GET lists the work a sync would walk — platforms (legacy shape) plus the
+// year-window chunk plan — so the client can issue one POST per chunk
+// instead of one giant request. A long single-source history (say NFL
+// 2014–2025) synced in a single request routinely outlives the Vercel
+// function cap: the function gets killed mid-walk around whatever season
+// the 300s budget ran out on, the user sees a raw error, and only the
+// earlier seasons have their rows on disk.
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -77,8 +137,8 @@ export async function GET(
   const { id } = await params
   const auth = await authorizeLeague(id)
   if ('response' in auth) return auth.response
-  const platforms = await leaguePlatforms(auth.league.id, auth.league.platform as string)
-  return NextResponse.json({ platforms })
+  const plan = await syncChunkPlan(auth.league.id, auth.league.platform as string)
+  return NextResponse.json(plan)
 }
 
 export async function POST(
@@ -92,16 +152,27 @@ export async function POST(
 
   try {
     let platforms = await leaguePlatforms(league.id, league.platform as string)
-    // `?platform=` narrows the run to a single source platform — the chunked
-    // sync button walks platforms one request at a time so no single request
-    // has to fit the whole multi-source history under the function cap.
-    const only = new URL(req.url).searchParams.get('platform')
+    // `?platform=` narrows the run to a single source platform and
+    // `?from=&to=` to a year window — the chunked sync button walks the
+    // history a few seasons per request so no single request has to fit the
+    // whole multi-source history under the function cap.
+    const search = new URL(req.url).searchParams
+    const only = search.get('platform')
     if (only) {
       if (!platforms.includes(only)) {
         return NextResponse.json({ error: `no ${only} source on this league` }, { status: 400 })
       }
       platforms = [only]
     }
+    const fromParam = parseInt(search.get('from') ?? '', 10)
+    const toParam = parseInt(search.get('to') ?? '', 10)
+    const range: IngestYearRange | undefined =
+      Number.isFinite(fromParam) || Number.isFinite(toParam)
+        ? {
+            ...(Number.isFinite(fromParam) ? { from: fromParam } : {}),
+            ...(Number.isFinite(toParam) ? { to: toParam } : {}),
+          }
+        : undefined
 
     // Aggregate counts across every platform's ingest. Keeping the same
     // top-level shape (seasonsIngested / managersIngested / matchupsIngested /
@@ -139,10 +210,10 @@ export async function POST(
     for (const p of platforms) {
       try {
         let r: IngestResult | undefined
-        if (p === 'sleeper') r = await ingestSleeperLeague(league.id, stages)
-        else if (p === 'nfl') r = await ingestNflLeague(league.id, stages)
-        else if (p === 'espn') r = await ingestEspnLeague(league.id, stages)
-        else if (p === 'yahoo') r = await ingestYahooLeague(league.id, stages)
+        if (p === 'sleeper') r = await ingestSleeperLeague(league.id, stages, range)
+        else if (p === 'nfl') r = await ingestNflLeague(league.id, stages, range)
+        else if (p === 'espn') r = await ingestEspnLeague(league.id, stages, range)
+        else if (p === 'yahoo') r = await ingestYahooLeague(league.id, stages, range)
         else { errors.push({ platform: p, error: `${p} sync not implemented yet` }); continue }
         totals.seasonsIngested += r?.seasonsIngested ?? 0
         totals.managersIngested += r?.managersIngested ?? 0

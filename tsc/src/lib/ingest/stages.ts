@@ -38,3 +38,26 @@ export function resolveStages(stages: IngestStages | undefined): Required<Ingest
 // adding a new stage in one place lights it up across all four platforms.
 export const STAGE_KEYS = ['matchups', 'drafts', 'lineups', 'trades'] as const
 export type StageKey = (typeof STAGE_KEYS)[number]
+
+// Optional year window for one ingest request. The chunked sync button
+// walks a long-history source a few seasons per request so no single
+// request has to fit the whole range under the Vercel function cap; each
+// ingest intersects this window with its source's own season range and
+// quietly skips when the intersection is empty.
+export type IngestYearRange = { from?: number; to?: number }
+
+// Intersect a source's own [start, end] season range with a request-level
+// year window. Returns null when the intersection is empty (this source has
+// nothing to do for this chunk).
+export function intersectRange(
+  start: number | undefined,
+  end: number | undefined,
+  range: IngestYearRange | undefined,
+): { start: number | undefined; end: number | undefined } | null {
+  let s = start
+  let e = end
+  if (range?.from != null) s = s == null ? range.from : Math.max(s, range.from)
+  if (range?.to != null) e = e == null ? range.to : Math.min(e, range.to)
+  if (s != null && e != null && s > e) return null
+  return { start: s, end: e }
+}

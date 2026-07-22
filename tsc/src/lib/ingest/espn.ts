@@ -34,7 +34,7 @@ import {
   type EspnMember,
   type EspnTransaction,
 } from '@/lib/platforms/espn'
-import { resolveStages, type IngestStages } from './stages'
+import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
 
@@ -59,6 +59,7 @@ export type EspnSourceSettings = {
 export async function ingestEspnLeague(
   leagueRowId: string,
   stages?: IngestStages,
+  range?: IngestYearRange,
 ): Promise<IngestResult> {
   const db = createAdminClient()
   const { data: leagueRow, error: leagueErr } = await db
@@ -94,7 +95,7 @@ export async function ingestEspnLeague(
   }
 
   for (const src of sourceList) {
-    const result = await ingestEspnSource(leagueRowId, src.external_id, src.settings, stages)
+    const result = await ingestEspnSource(leagueRowId, src.external_id, src.settings, stages, range)
     aggregate.seasonsIngested += result.seasonsIngested
     aggregate.matchupsIngested += result.matchupsIngested
     aggregate.draftsIngested += result.draftsIngested
@@ -121,13 +122,12 @@ export async function ingestEspnSource(
   externalId: string,
   settings: EspnSourceSettings = {},
   stagesIn?: IngestStages,
+  range?: IngestYearRange,
 ): Promise<IngestResult> {
   const stages = resolveStages(stagesIn)
   const db = createAdminClient()
 
-  const startYear = settings.season_start
-  const endYear = settings.season_end
-  if (!startYear || !endYear || startYear > endYear) {
+  if (!settings.season_start || !settings.season_end || settings.season_start > settings.season_end) {
     throw new Error('ESPN source settings missing season_start/season_end range')
   }
   const auth: EspnAuth | undefined =
@@ -145,17 +145,28 @@ export async function ingestEspnSource(
     warnings: [],
   }
 
+  // Narrow the walk to the request's year window (chunked sync). An empty
+  // intersection means this source has nothing to do for this chunk.
+  const window = intersectRange(settings.season_start, settings.season_end, range)
+  if (!window) return result
+  const startYear = window.start!
+  const endYear = window.end!
+
   // Fetch every season once. ESPN returns members + teams + schedule + settings
-  // + draft in a single call per season, so no extra parallelism needed beyond
-  // sequencing seasons.
+  // + draft in a single call per season; the calls are independent so run a
+  // few in parallel instead of strictly sequencing a long year range.
   const seasonPayloads = new Map<number, EspnLeague>()
-  for (let y = startYear; y <= endYear; y++) {
+  const seasonYears = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i)
+  const seasonFetches = await parallelLimit(seasonYears, 4, async (y) => {
     try {
-      const lg = await fetchSeason(externalId, y, auth)
-      seasonPayloads.set(y, lg)
+      return { year: y, lg: await fetchSeason(externalId, y, auth), error: null as string | null }
     } catch (err) {
-      result.warnings.push(`Season ${y}: ${(err as Error).message}`)
+      return { year: y, lg: null, error: (err as Error).message }
     }
+  })
+  for (const f of seasonFetches) {
+    if (f.lg) seasonPayloads.set(f.year, f.lg)
+    else result.warnings.push(`Season ${f.year}: ${f.error}`)
   }
 
   // Manager identity is the ESPN member SWID — stable across seasons. Build the
@@ -200,18 +211,17 @@ export async function ingestEspnSource(
     }
   }
 
-  for (const seed of memberSeed.values()) {
-    const { error } = await db.from('managers').upsert(
-      {
-        league_id: archiveLeagueId,
-        external_id: seed.swid,
-        display_name: seed.display,
-        team_name: seed.team_name,
-        avatar_url: seed.avatar,
-      },
-      { onConflict: 'league_id,external_id' }
-    )
-    if (error) result.warnings.push(`Upsert manager ${seed.swid}: ${error.message}`)
+  // One batched upsert; memberSeed already dedupes on SWID.
+  const managerUpserts = [...memberSeed.values()].map((seed) => ({
+    league_id: archiveLeagueId,
+    external_id: seed.swid,
+    display_name: seed.display,
+    team_name: seed.team_name,
+    avatar_url: seed.avatar,
+  }))
+  if (managerUpserts.length > 0) {
+    const { error } = await db.from('managers').upsert(managerUpserts, { onConflict: 'league_id,external_id' })
+    if (error) result.warnings.push(`managers upsert: ${error.message}`)
   }
 
   // Lookup: SWID -> our manager UUID
@@ -428,6 +438,10 @@ async function ingestSeason(args: {
     teamsSorted.forEach((t, idx) => regRank.set(t.id, idx + 1))
   }
 
+  // Batched upsert keyed by manager_id — co-owner setups can resolve two
+  // teams to one manager, and the Map keeps last-write-wins semantics the
+  // old serial loop had.
+  const seasonRowsByManager = new Map<string, Record<string, unknown>>()
   for (const team of lg.teams ?? []) {
     const managerId = teamToManagerId(team.id)
     if (!managerId) continue
@@ -439,24 +453,26 @@ async function ingestSeason(args: {
     // the exporter's "playoff games where someone finished top 4" filter
     // excludes all postseason matchups, undercounting total_matchups badly.
     const finalRank = team.rankCalculatedFinal ?? team.rankFinal ?? team.playoffSeed ?? null
-    const { error } = await db.from('manager_seasons').upsert(
-      {
-        season_id: seasonId,
-        manager_id: managerId,
-        team_name: teamToName.get(team.id) ?? null,
-        avatar_url: teamToAvatar.get(team.id) ?? null,
-        wins: ov.wins ?? 0,
-        losses: ov.losses ?? 0,
-        ties: ov.ties ?? 0,
-        points_for: round2(ov.pointsFor ?? 0),
-        points_against: round2(ov.pointsAgainst ?? 0),
-        final_rank: finalRank,
-        regular_rank: regRank.get(team.id) ?? null,
-        division_index: divIdx,
-      },
-      { onConflict: 'season_id,manager_id' }
-    )
-    if (error) result.warnings.push(`Season ${year} manager_seasons team ${team.id}: ${error.message}`)
+    seasonRowsByManager.set(managerId, {
+      season_id: seasonId,
+      manager_id: managerId,
+      team_name: teamToName.get(team.id) ?? null,
+      avatar_url: teamToAvatar.get(team.id) ?? null,
+      wins: ov.wins ?? 0,
+      losses: ov.losses ?? 0,
+      ties: ov.ties ?? 0,
+      points_for: round2(ov.pointsFor ?? 0),
+      points_against: round2(ov.pointsAgainst ?? 0),
+      final_rank: finalRank,
+      regular_rank: regRank.get(team.id) ?? null,
+      division_index: divIdx,
+    })
+  }
+  if (seasonRowsByManager.size > 0) {
+    const { error } = await db.from('manager_seasons').upsert([...seasonRowsByManager.values()], {
+      onConflict: 'season_id,manager_id',
+    })
+    if (error) result.warnings.push(`Season ${year} manager_seasons upsert: ${error.message}`)
   }
 
   // Regular-season winner = top of regRank. Null until at least one game.
@@ -492,6 +508,7 @@ async function ingestSeason(args: {
   let skippedUnresolvedTeam = 0
   let skippedSameManager = 0
   const unresolvedTeamIds = new Set<number>()
+  const matchupRows = new Map<string, Record<string, unknown>>()
 
   for (const m of flat) {
     const aMgr = teamToManagerId(m.a_team_id)
@@ -549,20 +566,24 @@ async function ingestSeason(args: {
     if (mA > mB) { [mA, mB] = [mB, mA]; [sA, sB] = [sB, sA] }
     validKeys.add(`${m.week}|${mA}|${mB}`)
 
-    const { error } = await db.from('matchups').upsert(
-      {
-        season_id: seasonId,
-        week: m.week,
-        manager_a_id: mA,
-        manager_b_id: mB,
-        score_a: sA,
-        score_b: sB,
-        is_playoff: isPlayoff,
-        is_championship: isChampGame,
-      },
-      { onConflict: 'season_id,week,manager_a_id,manager_b_id' }
-    )
-    if (error) result.warnings.push(`Season ${year} week ${m.week} matchup: ${error.message}`)
+    // Batched below — keyed by the conflict identity so a duplicate schedule
+    // entry can't make one bulk upsert touch the same row twice.
+    matchupRows.set(`${m.week}|${mA}|${mB}`, {
+      season_id: seasonId,
+      week: m.week,
+      manager_a_id: mA,
+      manager_b_id: mB,
+      score_a: sA,
+      score_b: sB,
+      is_playoff: isPlayoff,
+      is_championship: isChampGame,
+    })
+  }
+  if (matchupRows.size > 0) {
+    const { error } = await db.from('matchups').upsert([...matchupRows.values()], {
+      onConflict: 'season_id,week,manager_a_id,manager_b_id',
+    })
+    if (error) result.warnings.push(`Season ${year} matchups upsert: ${error.message}`)
   }
   result.matchupsIngested += matchupsCount
   if (skippedBySeed > 0) {
@@ -631,7 +652,7 @@ async function ingestSeason(args: {
     // ~N round-trips and keeps the season under the Vercel function timeout.
     const seasonLineupRows: Array<Record<string, unknown>> = []
     let lineupWeeksEmpty = 0
-    await parallelLimit(lineupWeeks, 4, async (week) => {
+    await parallelLimit(lineupWeeks, 8, async (week) => {
       let payload
       try {
         payload = await fetchWeekRoster(String(lg.id), year, week, auth)
@@ -733,6 +754,9 @@ async function ingestSeason(args: {
         result.warnings.push(`Season ${year} player lookup: ${(err as Error).message} — draft picks will have null names`)
       }
 
+      // Batched on (draft_id, pick); dedupe by overall pick number so a
+      // double-listed pick can't make the bulk upsert touch one row twice.
+      const pickRows = new Map<number, Record<string, unknown>>()
       for (const p of picks) {
         const mgrId = teamToManagerId(p.teamId)
         const info = playerLookup.get(p.playerId)
@@ -740,20 +764,22 @@ async function ingestSeason(args: {
           info?.fullName?.trim()
           || [info?.firstName, info?.lastName].filter(Boolean).join(' ').trim()
           || null
-        const { error } = await db.from('draft_picks').upsert(
-          {
-            draft_id: draftRow.id,
-            round: p.roundId,
-            pick: p.overallPickNumber,
-            manager_id: mgrId,
-            player_name: fullName,
-            position: positionFromId(info?.defaultPositionId),
-            nfl_team: nflTeamFromId(info?.proTeamId),
-            player_external_id: String(p.playerId),
-          },
-          { onConflict: 'draft_id,pick' }
-        )
-        if (error) result.warnings.push(`Season ${year} draft pick ${p.overallPickNumber}: ${error.message}`)
+        pickRows.set(p.overallPickNumber, {
+          draft_id: draftRow.id,
+          round: p.roundId,
+          pick: p.overallPickNumber,
+          manager_id: mgrId,
+          player_name: fullName,
+          position: positionFromId(info?.defaultPositionId),
+          nfl_team: nflTeamFromId(info?.proTeamId),
+          player_external_id: String(p.playerId),
+        })
+      }
+      if (pickRows.size > 0) {
+        const { error } = await db.from('draft_picks').upsert([...pickRows.values()], {
+          onConflict: 'draft_id,pick',
+        })
+        if (error) result.warnings.push(`Season ${year} draft_picks upsert: ${error.message}`)
       }
       result.draftsIngested++
     }

@@ -32,7 +32,7 @@ import {
 import { parallelLimit } from '@/lib/platforms/sleeper'
 import { computePositionRanks, stampRanks } from '@/lib/positionRanks'
 import { DEFAULT_PPR_SCORING } from '@/lib/scoring'
-import { resolveStages, type IngestStages } from './stages'
+import { resolveStages, intersectRange, type IngestStages, type IngestYearRange } from './stages'
 
 export type IngestResult = {
   ok: boolean
@@ -47,6 +47,7 @@ export type IngestResult = {
 export async function ingestYahooLeague(
   leagueRowId: string,
   stages?: IngestStages,
+  range?: IngestYearRange,
 ): Promise<IngestResult> {
   const db = createAdminClient()
   const { data: leagueRow, error: leagueErr } = await db
@@ -82,14 +83,18 @@ export async function ingestYahooLeague(
 
   for (const src of sourceList) {
     const settings = (src.settings ?? null) as Record<string, unknown> | null
-    const seasonStart = typeof settings?.season_start === 'number' ? settings.season_start : undefined
-    const seasonEnd = typeof settings?.season_end === 'number' ? settings.season_end : undefined
+    const srcStart = typeof settings?.season_start === 'number' ? settings.season_start : undefined
+    const srcEnd = typeof settings?.season_end === 'number' ? settings.season_end : undefined
+    // Intersect the source's own season window with the request's chunk
+    // window (chunked sync). Empty intersection = nothing to do this chunk.
+    const window = intersectRange(srcStart, srcEnd, range)
+    if (!window) continue
     const result = await ingestYahooSource(
       leagueRowId,
       src.external_id,
       src.walk_history,
       accessToken,
-      { seasonStart, seasonEnd },
+      { seasonStart: window.start, seasonEnd: window.end },
       stages,
     )
     aggregate.seasonsIngested += result.seasonsIngested
@@ -172,18 +177,17 @@ export async function ingestYahooSource(
     }
   }
 
-  // Upsert managers
-  for (const [guid, m] of managerByGuid) {
-    await db.from('managers').upsert(
-      {
-        league_id: archiveLeagueId,
-        external_id: guid,
-        display_name: m.nickname,
-        team_name: m.nickname,  // refined per-season below in manager_seasons
-        avatar_url: m.image_url ?? null,
-      },
-      { onConflict: 'league_id,external_id' }
-    )
+  // Upsert managers — one batched upsert; managerByGuid already dedupes on guid.
+  const managerUpserts = [...managerByGuid.entries()].map(([guid, m]) => ({
+    league_id: archiveLeagueId,
+    external_id: guid,
+    display_name: m.nickname,
+    team_name: m.nickname,  // refined per-season below in manager_seasons
+    avatar_url: m.image_url ?? null,
+  }))
+  if (managerUpserts.length > 0) {
+    const { error } = await db.from('managers').upsert(managerUpserts, { onConflict: 'league_id,external_id' })
+    if (error) warnings.push(`managers upsert: ${error.message}`)
   }
 
   // Lookup table: yahoo guid -> our manager UUID
@@ -292,7 +296,9 @@ export async function ingestYahooSource(
     }
 
     // Insert manager_seasons. Co-managers share a team — we attribute the
-    // season to the primary manager only.
+    // season to the primary manager only. Batched, keyed by manager_id so a
+    // guid owning two teams keeps the old last-write-wins behavior.
+    const seasonRowsByManager = new Map<string, Record<string, unknown>>()
     for (const t of teams) {
       const primary = t.managers[0]
       if (!primary) continue
@@ -301,23 +307,26 @@ export async function ingestYahooSource(
       const finalRank = treatRankAsFinal
         ? t.rank ?? regRank.get(t.team_key) ?? null
         : null
-      await db.from('manager_seasons').upsert(
-        {
-          season_id: seasonId,
-          manager_id: mgrId,
-          team_name: t.name || primary.nickname,
-          avatar_url: t.logo_url ?? primary.image_url ?? null,
-          wins: t.wins,
-          losses: t.losses,
-          ties: t.ties,
-          points_for: t.points_for,
-          points_against: t.points_against,
-          regular_rank: regRank.get(t.team_key) ?? null,
-          final_rank: finalRank,
-          division_index: t.division_id != null ? Math.max(0, parseInt(t.division_id, 10) - 1) : null,
-        },
-        { onConflict: 'season_id,manager_id' }
-      )
+      seasonRowsByManager.set(mgrId, {
+        season_id: seasonId,
+        manager_id: mgrId,
+        team_name: t.name || primary.nickname,
+        avatar_url: t.logo_url ?? primary.image_url ?? null,
+        wins: t.wins,
+        losses: t.losses,
+        ties: t.ties,
+        points_for: t.points_for,
+        points_against: t.points_against,
+        regular_rank: regRank.get(t.team_key) ?? null,
+        final_rank: finalRank,
+        division_index: t.division_id != null ? Math.max(0, parseInt(t.division_id, 10) - 1) : null,
+      })
+    }
+    if (seasonRowsByManager.size > 0) {
+      const { error } = await db.from('manager_seasons').upsert([...seasonRowsByManager.values()], {
+        onConflict: 'season_id,manager_id',
+      })
+      if (error) warnings.push(`Season ${year} manager_seasons upsert: ${error.message}`)
     }
 
     // Champion / runner-up / regular-season winner — only meaningful once the
@@ -380,6 +389,9 @@ export async function ingestYahooSource(
     let seasonPlacementFiltered = 0
     const championshipWeek = lg.end_week
     if (stages.matchups) {
+    // Batched matchup upsert, keyed by the conflict identity so a duplicate
+    // scoreboard entry can't make one bulk upsert touch the same row twice.
+    const matchupRows = new Map<string, Record<string, unknown>>()
     for (let week = 1; week <= lg.end_week; week++) {
       const scoreboard = await getLeagueScoreboard(accessToken, lg.league_key, week, warnings)
       for (const m of scoreboard) {
@@ -431,22 +443,25 @@ export async function ingestYahooSource(
         let sB = isPlayed ? m.team_b_points : null
         if (mA > mB) { [mA, mB] = [mB, mA]; [sA, sB] = [sB, sA] }
 
-        await db.from('matchups').upsert(
-          {
-            season_id: seasonId,
-            week,
-            manager_a_id: mA,
-            manager_b_id: mB,
-            score_a: sA,
-            score_b: sB,
-            is_playoff: isPlayoff,
-            is_championship: isChampionship,
-          },
-          { onConflict: 'season_id,week,manager_a_id,manager_b_id' }
-        )
+        matchupRows.set(`${week}|${mA}|${mB}`, {
+          season_id: seasonId,
+          week,
+          manager_a_id: mA,
+          manager_b_id: mB,
+          score_a: sA,
+          score_b: sB,
+          is_playoff: isPlayoff,
+          is_championship: isChampionship,
+        })
         matchupsIngested++
         seasonInserted++
       }
+    }
+    if (matchupRows.size > 0) {
+      const { error } = await db.from('matchups').upsert([...matchupRows.values()], {
+        onConflict: 'season_id,week,manager_a_id,manager_b_id',
+      })
+      if (error) warnings.push(`Season ${year} matchups upsert: ${error.message}`)
     }
     const ranksKnown = [...teamKeyToFinalRank.values()].filter((r) => r > 0).length
     warnings.push(
@@ -553,22 +568,28 @@ export async function ingestYahooSource(
         const playerKeys = picks.map((p) => p.player_key).filter(Boolean)
         const playerInfo = await getPlayersBatch(accessToken, lg.league_key, playerKeys)
 
+        // Batched on (draft_id, pick); dedupe by pick so a double-listed pick
+        // can't make the bulk upsert touch one row twice.
+        const pickRows = new Map<number, Record<string, unknown>>()
         for (const p of picks) {
           const mgrId = teamKeyToManagerId.get(p.team_key) ?? null
           const info = playerInfo.get(p.player_key)
-          await db.from('draft_picks').upsert(
-            {
-              draft_id: draftRow.id,
-              round: p.round,
-              pick: p.pick,
-              manager_id: mgrId,
-              player_name: info?.full_name ?? null,
-              position: info?.position ?? null,
-              nfl_team: info?.editorial_team_abbr ?? null,
-              player_external_id: p.player_key,
-            },
-            { onConflict: 'draft_id,pick' }
-          )
+          pickRows.set(p.pick, {
+            draft_id: draftRow.id,
+            round: p.round,
+            pick: p.pick,
+            manager_id: mgrId,
+            player_name: info?.full_name ?? null,
+            position: info?.position ?? null,
+            nfl_team: info?.editorial_team_abbr ?? null,
+            player_external_id: p.player_key,
+          })
+        }
+        if (pickRows.size > 0) {
+          const { error } = await db.from('draft_picks').upsert([...pickRows.values()], {
+            onConflict: 'draft_id,pick',
+          })
+          if (error) warnings.push(`Season ${year} draft_picks upsert: ${error.message}`)
         }
         draftsIngested++
       }
