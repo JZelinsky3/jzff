@@ -300,10 +300,14 @@
   color: var(--ink, #0e1620);
 }
 
+/* The label carries asymmetric padding (7px top / 11px bottom) so its
+   baseline lines up with the neighbouring nav links. That drops the
+   padding box's center 2px below the text center, so the slab is shifted
+   up 2px here to re-center it on the label rather than on the padding box. */
 .root .navCta::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -2px 0 2px;
   z-index: -1;
   background: var(--gold, #e8c889);
   transform: skewX(-10deg);
@@ -313,7 +317,7 @@
 .root .navCta::after {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -2px 0 2px;
   z-index: -2;
   border: 1px solid var(--gold-deep, #a88a4a);
   transform: skewX(-10deg) translate(4px, 3px);
