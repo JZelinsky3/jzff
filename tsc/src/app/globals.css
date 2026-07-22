@@ -17316,13 +17316,14 @@ body.tsc-hdr-collapsed .mpg-bar { padding: .45rem 1.1rem; }
 /* Popover: opens above the clicked book. */
 .dc-shelf-pop {
     position: absolute;
-    bottom: calc(100% + 14px);
+    bottom: calc(100% + 22px);
     left: 50%;
     transform: translateX(-50%);
     width: 240px;
     padding: .9rem 1rem .95rem;
     background: linear-gradient(165deg, var(--ink-card), var(--ink-soft));
     border: 1px solid var(--gold-deep);
+    border-radius: 12px;
     box-shadow: 0 18px 40px rgba(0,0,0,.55);
     text-align: left;
     z-index: 5;
