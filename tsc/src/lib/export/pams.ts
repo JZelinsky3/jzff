@@ -4187,12 +4187,18 @@ function buildMatchupPreview(s: Snapshot): unknown {
       : 0
     const nameA = groupDisplayName(ga)
     const nameB = groupDisplayName(gb)
-    function sideJson(g: ProfileGroup, f: GroupForm, name: string, ppg: number): Record<string, unknown> {
+    function sideJson(g: ProfileGroup, f: GroupForm, name: string, ppg: number, currentManagerId: string): Record<string, unknown> {
       const sk = streakFrom(f.fullForm)
       const lws = longestWinStreakFrom(f.fullForm)
       const ppgSeason = f.games > 0 ? round2(f.pf / f.games) : 0
+      // Link/pick key: use THIS season's participant external_id, not the
+      // identity-group primary's. Pick'ems links with the current manager's
+      // external_id, and when a manager is grouped under a different-season
+      // primary (e.g. NFL.com id vs the current Sleeper id) the two diverge
+      // and the ?m= deep-link misses. The current manager's id always matches.
+      const currentUid = userId(s.managers.get(currentManagerId)) ?? userId(g.primary)
       return {
-        uid: userId(g.primary),
+        uid: currentUid,
         name,
         team: teamLatest(g),
         abbr: abbrFor(name),
@@ -4219,8 +4225,8 @@ function buildMatchupPreview(s: Snapshot): unknown {
       train: `${week}.${String(i + 1).padStart(2, '0')}`,
       // Platform: roman numeral matchup index.
       plat: toRomanLite(i + 1),
-      a: sideJson(ga, fa, nameA, ppgA),
-      b: sideJson(gb, fb, nameB, ppgB),
+      a: sideJson(ga, fa, nameA, ppgA, m.manager_a_id),
+      b: sideJson(gb, fb, nameB, ppgB, m.manager_b_id),
       h2h,
       projected: { a: ppgA, b: ppgB, spread: Math.abs(spread), favorite: fav },
       gotw: isGotw,

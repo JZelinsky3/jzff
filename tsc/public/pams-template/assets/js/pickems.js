@@ -92,8 +92,12 @@
       elViews.innerHTML = state.weeks.map(function (w) { return weekViewHTML(w); }).join('');
     }
 
+    // Lazy hydration: build only the active week's matchup cards up front and
+    // fill the rest the first time their tab is opened. A full season is 14–18
+    // weeks × 6 cards; rendering all of them (with logos + shadows) into the
+    // DOM at once made scrolling the single visible week janky. setActive()
+    // hydrates whatever week it switches to.
     setActive(state.currentWeekId || state.weeks[state.weeks.length - 1].id);
-    state.weeks.forEach(function (w) { hydrateWeek(w); });
     renderRecords();
 
     // Re-fit the active week as fonts and layout settle. document.fonts
@@ -131,8 +135,20 @@
   }
 
   // ── Views ───────────────────────────────────────────────────────────────────
+  // Build a week's matchup cards on demand (once). Non-active weeks stay as
+  // empty section shells until first viewed — keeps the live DOM light.
+  var hydrated = {};
+  function ensureHydrated(weekId) {
+    if (hydrated[weekId]) return;
+    var w = weekById(weekId);
+    if (!w) return;
+    hydrateWeek(w);
+    hydrated[weekId] = true;
+  }
+
   function setActive(weekId) {
     state.activeWeekId = weekId;
+    ensureHydrated(weekId);
     // CSS gates on data-active="true" specifically — toggleAttribute would set
     // an empty value, so set the explicit string.
     var activeTab = null;
@@ -415,11 +431,11 @@
     function teamBlock(side, team, rec, isAway) {
       var champ = team && team.isChampion ? '<span title="Defending Champion">👑</span>' : '';
       var name = esc(team ? team.name : side);
-      // Record gets its own line below the name so it sits in the same
-      // vertical slot for both sides — the old inline placement
-      // (name + record on home, record + name on away) made the record
-      // jump between top and bottom rows when names wrapped.
-      var recLine = rec ? '<div class="record-line">' + esc(rec) + '</div>' : '';
+      // Record sits inline with the name — right of it on the home side,
+      // left of it on the away side — so it reads toward the center of the
+      // card on both sides (matches the demo layout).
+      var recHTML = rec ? '<span class="record">' + esc(rec) + '</span>' : '';
+      var nameLine = isAway ? (recHTML + ' ' + name + ' ' + champ) : (name + ' ' + champ + ' ' + recHTML);
       var lwk = team && team.last_week_points != null
         ? '<div class="lwk"><span class="lbl">LAST WK</span> <strong>' + team.last_week_points.toFixed(1) + '</strong></div>'
         : '';
@@ -427,8 +443,7 @@
         + '<div class="team" data-team="' + esc(side) + '">'
         +   '<div class="logo">' + (team && team.logo ? '<img src="' + esc(team.logo) + '" alt="' + esc(team.name) + '" loading="lazy">' : '') + '</div>'
         +   '<div class="meta">'
-        +     '<div class="team-name">' + name + ' ' + champ + '</div>'
-        +     recLine
+        +     '<div class="team-name">' + nameLine + '</div>'
         +     '<div class="manager">' + esc(team ? team.manager : '') + '</div>'
         +     lwk
         +   '</div>'

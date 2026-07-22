@@ -1,0 +1,241 @@
+/* TSC Support widget — floating cream pill, bottom-right, that expands into
+   a small help-desk form. Desktop only: the mobile templates never load it
+   and the media query below hides it on any small viewport that falls back
+   to a desktop template. Shared by the public almanac pages (injected by the
+   /leagues route) and the /league management pages (SupportWidget component).
+
+   Palette is the almanac's own: cream paper on night-navy ink, gold cap
+   accents. Values are hardcoded (not var(--cream) etc.) because the widget
+   also renders on React pages that don't load main.css. */
+
+.tscs-btn {
+  position: fixed;
+  right: calc(1.1rem + env(safe-area-inset-right));
+  bottom: calc(1.1rem + env(safe-area-inset-bottom));
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: #f4ebd8;
+  color: #0e1620;
+  border: 1px solid #a88a4a;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  padding: .68rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .45);
+  transition: background .15s, transform .15s, box-shadow .15s;
+}
+.tscs-btn:hover {
+  background: #f4d9a4;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, .5);
+}
+.tscs-btn svg { width: 14px; height: 14px; flex: none; }
+.tscs-btn.is-open { display: none; }
+
+.tscs-panel {
+  position: fixed;
+  right: calc(1.1rem + env(safe-area-inset-right));
+  bottom: calc(1.1rem + env(safe-area-inset-bottom));
+  z-index: 95;
+  width: 340px;
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  background: #f4ebd8;
+  color: #1c2733;
+  border: 1px solid #a88a4a;
+  border-radius: 3px;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, .55);
+  padding: 1.1rem 1.15rem 1.15rem;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.tscs-panel[hidden] { display: none; }
+
+.tscs-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-bottom: .35rem;
+}
+.tscs-kicker {
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: #a88a4a;
+  padding-top: .2rem;
+}
+.tscs-close {
+  background: transparent;
+  border: none;
+  color: #837b6a;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: .15rem .25rem;
+}
+.tscs-close:hover { color: #0e1620; }
+
+.tscs-title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  color: #0e1620;
+  margin: 0 0 .3rem;
+}
+.tscs-sub {
+  font-size: .74rem;
+  line-height: 1.45;
+  color: #5c5546;
+  margin: 0 0 .85rem;
+}
+
+.tscs-field { margin-bottom: .65rem; }
+.tscs-label {
+  display: block;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #837b6a;
+  margin-bottom: .3rem;
+}
+.tscs-input,
+.tscs-select,
+.tscs-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #fffdf6;
+  border: 1px solid #cfc4a8;
+  border-radius: 2px;
+  color: #1c2733;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: .8rem;
+  padding: .5rem .6rem;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.tscs-input:focus,
+.tscs-select:focus,
+.tscs-textarea:focus {
+  border-color: #a88a4a;
+  box-shadow: 0 0 0 2px rgba(168, 138, 74, .18);
+}
+.tscs-select { appearance: none; cursor: pointer; }
+.tscs-select-wrap { position: relative; }
+.tscs-select-wrap::after {
+  content: '\25BE';
+  position: absolute;
+  right: .6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #837b6a;
+  pointer-events: none;
+  font-size: .7rem;
+}
+.tscs-textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+/* Honeypot: parked off-screen, never display:none so dumb bots still see it. */
+.tscs-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.tscs-send {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  background: #0e1620;
+  color: #f4ebd8;
+  border: 1px solid #0e1620;
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  padding: .75rem .6rem;
+  margin-top: .2rem;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.tscs-send:hover { background: #1a2532; }
+.tscs-send:disabled { opacity: .55; cursor: default; }
+.tscs-send svg { width: 12px; height: 12px; }
+
+.tscs-error {
+  font-size: .72rem;
+  line-height: 1.4;
+  color: #8c2f22;
+  margin: .55rem 0 0;
+}
+.tscs-error[hidden] { display: none; }
+.tscs-error a { color: inherit; }
+
+.tscs-foot {
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: .52rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #a89f8a;
+  text-align: center;
+  margin: .7rem 0 0;
+}
+
+/* Success view */
+.tscs-done { text-align: center; padding: .6rem 0 .2rem; }
+.tscs-done-mark {
+  font-size: 1.1rem;
+  color: #a88a4a;
+  margin-bottom: .45rem;
+}
+.tscs-done-title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 1.3rem;
+  color: #0e1620;
+  margin: 0 0 .35rem;
+}
+.tscs-done-sub {
+  font-size: .74rem;
+  line-height: 1.5;
+  color: #5c5546;
+  margin: 0 0 1rem;
+}
+.tscs-again {
+  background: transparent;
+  border: 1px solid #cfc4a8;
+  border-radius: 2px;
+  color: #1c2733;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  padding: .6rem .9rem;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.tscs-again:hover { border-color: #a88a4a; color: #0e1620; }
+
+/* Desktop-only widget. Phones get the mobile templates (which never load
+   this), but a phone falling back to a desktop template still hides it. */
+@media (max-width: 767px) {
+  .tscs-btn, .tscs-panel { display: none !important; }
+}

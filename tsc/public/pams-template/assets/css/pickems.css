@@ -44,9 +44,16 @@
 
 /* ── Page base ────────────────────────────────────────────────── */
 body {
-  /* No background-attachment: fixed — it repaints every gradient layer
-     across the full viewport on each scroll frame and stutters. */
+  /* All texture lives in the body's own (scrolling) background so it paints
+     into the layer once and composites for free on scroll. Earlier this page
+     had a `position: fixed` full-viewport pinstripe overlay (body::before) —
+     a fixed repeating-gradient re-rasterizes every scroll frame and was the
+     main cause of the scroll lag, independent of how many cards were on the
+     page. The pinstripe is now the first (scrolling) background layer; at
+     .015 alpha it reads identically. No background-attachment: fixed for the
+     same reason. */
   background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,.015) 0 1px, transparent 1px 4px),
     radial-gradient(ellipse at 12% 0%, rgba(255, 61, 139, .10) 0%, transparent 55%),
     radial-gradient(ellipse at 88% 100%, rgba(240, 196, 99, .07) 0%, transparent 55%),
     var(--pk-bg);
@@ -55,18 +62,6 @@ body {
   margin: 0;
 }
 .site-glow, .site-grain { display: none; }
-
-/* Subtle pinstripe overlay — oddsboard texture */
-body::before {
-  content: "";
-  position: fixed; inset: 0;
-  pointer-events: none; z-index: 1;
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, .015) 0 1px,
-    transparent 1px 4px
-  );
-}
 
 .pe-app {
   position: relative; z-index: 10;
@@ -78,14 +73,24 @@ body::before {
 /* ══════════════════════════════════════════════════════════════════
    MASTHEAD — neon "BOARD" header
    ══════════════════════════════════════════════════════════════════ */
-.pe-nav {
+/* Sticky dock — masthead + live rail pin together as one unit, matching
+   the site-nav + chapbar stack on other live pages. The bottom gap lives
+   on the dock so the rail sits flush against the masthead. */
+.pe-dock {
   position: sticky; top: 0; z-index: 30;
+  margin: 0 0 1.75rem;
+}
+.pe-nav {
+  /* Sticky moved to .pe-dock. Background is fully opaque (no backdrop-filter):
+     a blurred backdrop on a scroll-pinned bar re-rasterizes every frame and
+     made the page scroll like molasses. The old .96/.92 gradient + blur read
+     as frosted; the solid gradient below is visually near-identical without
+     the per-frame cost. */
   background:
-    linear-gradient(180deg, rgba(22,11,29,.96), rgba(22,11,29,.92));
-  backdrop-filter: blur(10px);
+    linear-gradient(180deg, rgb(22,11,29), rgb(20,10,26));
   border-bottom: 1px solid var(--pk-line);
   box-shadow: 0 1px 0 rgba(255,61,139,.18), 0 14px 30px -18px rgba(0,0,0,.65);
-  margin: 0 0 1.75rem;
+  margin: 0;
 }
 .pe-nav-inner {
   display: grid;
@@ -94,6 +99,57 @@ body::before {
   gap: 1rem;
   padding: 1rem 1.4rem;
   position: relative;
+}
+
+/* ── Live Season rail — parity with the site-wide nav rail on other live
+   pages, themed to the velvet-plum board. Sits under the pe-nav and
+   scrolls horizontally when the tabs outrun the viewport. ── */
+.pe-rail {
+  position: relative; z-index: 20;
+  background: linear-gradient(180deg, var(--pk-bg-soft), var(--pk-bg));
+  border-bottom: 1px solid #5e2955;   /* opaque; matches the masthead's pink seam so both dock edges read the same */
+  box-shadow: 0 1px 0 rgba(255,61,139,.10);
+  margin: 0;   /* sits flush under the masthead inside .pe-dock; gap lives on the dock */
+}
+.pe-rail-track {
+  max-width: 1370px; margin: 0 auto;
+  display: flex; align-items: stretch;
+  justify-content: center;
+  padding: 0 1rem;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.pe-rail-track::-webkit-scrollbar { display: none; }
+.pe-rail-link {
+  flex: 0 0 auto; position: relative;
+  font-family: var(--mono); font-weight: 700;
+  font-size: .78rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--pk-chalk-mute);
+  text-decoration: none; white-space: nowrap;
+  padding: .65rem 1.3rem .75rem;
+  transition: color .15s;
+}
+.pe-rail-link:hover { color: var(--pk-chalk-soft); }
+.pe-rail-link.is-active { color: var(--pk-magenta-bright); }
+.pe-rail-link.is-active::after {
+  content: ""; position: absolute;
+  left: 1.3rem; right: 1.3rem; bottom: 0;
+  height: 2px; background: var(--pk-magenta);
+}
+.pe-rail-link + .pe-rail-link::before {
+  content: ""; position: absolute; left: 0;
+  top: 35%; bottom: 35%; width: 1px;
+  background: var(--pk-line);
+}
+/* "History" back-tab reads as the quietest tab; a champagne-tinted
+   divider groups it apart from the live chapters, per the site chapbar. */
+.pe-rail-link.is-back { color: rgba(233,222,245,.4); }
+.pe-rail-link.is-back + .pe-rail-link::before { background: rgba(232,200,137,.35); }
+@media (max-width: 640px) {
+  .pe-rail-track { justify-content: flex-start; padding: 0 .15rem; }
+  .pe-rail-link { padding: .55rem .75rem; font-size: .58rem; letter-spacing: .15em; }
+  .pe-rail-link.is-active::after { left: .75rem; right: .75rem; }
+  .pe-rail-link + .pe-rail-link::before { top: 28%; bottom: 28%; }
 }
 .pe-nav-inner::after {
   content: "";
@@ -226,6 +282,44 @@ body::before {
 .pe-demo-hint b {
   color: var(--pk-champagne-bright);
   font-weight: 800;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CONTENT HEADER — landing title inside .pe-app (mirrors mobile .pk-head).
+   The masthead pins as sticky nav, so the content carries its own title so
+   the page doesn't open straight onto the identity dropdown.
+   ══════════════════════════════════════════════════════════════════ */
+.pe-intro {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 1.6rem;
+}
+.pe-intro-kicker {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .58rem; letter-spacing: .34em; text-transform: uppercase;
+  color: var(--pk-champagne);
+}
+.pe-intro-title {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.02;
+  color: var(--pk-chalk);
+  margin-top: .55rem;
+  text-shadow: 0 0 22px rgba(255,61,139,.18);
+}
+.pe-intro-title em {
+  font-style: italic;
+  color: var(--pk-magenta);
+  text-shadow: 0 0 16px rgba(255,61,139,.4);
+}
+.pe-intro-lede {
+  margin-top: .7rem;
+  font-family: var(--sans);
+  font-size: .92rem; line-height: 1.5;
+  color: var(--pk-chalk-mute);
+}
+@media (max-width: 640px) {
+  .pe-intro-lede { font-size: .85rem; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -553,7 +647,7 @@ body::before {
 
 /* Text recolors — dark plum throughout */
 .match[data-gotw="true"] .team-name        { color: #1a0f23; }
-.match[data-gotw="true"] .record-line      { color: rgba(26,15,35,.5); }
+.match[data-gotw="true"] .team-name .record { color: rgba(26,15,35,.5); }
 .match[data-gotw="true"] .manager          { color: rgba(26,15,35,.55); }
 .match[data-gotw="true"] .lwk              { color: rgba(26,15,35,.7); }
 .match[data-gotw="true"] .lwk .lbl         { color: rgba(26,15,35,.55); }
@@ -589,18 +683,23 @@ body::before {
 }
 .match[data-gotw="true"] .vote-pct           { color: #b8205f; text-shadow: none; }
 .match[data-gotw="true"] .vote-btn:last-child .vote-pct { color: var(--pk-gotw-amber); text-shadow: none; }
+/* Picked GOTW side: a richer treatment than the regular games (this is the
+   featured game) — a medium tinted gradient with depth, a bright 2px accent
+   border, a thick top stripe, and a strong outer glow. Reads as clearly
+   "stamped" without flooding the button flat-solid. */
 .match[data-gotw="true"] .vote-btn[data-picked="true"] {
-  background: var(--pk-magenta);
-  color: #fff;
-  box-shadow: inset 0 0 0 1px var(--pk-magenta), inset 0 3px 0 var(--pk-magenta-bright);
+  background: linear-gradient(180deg, rgba(184,32,95,.36), rgba(184,32,95,.22));
+  color: #1a0f23;
+  box-shadow: inset 0 0 0 2px var(--pk-magenta), inset 0 5px 0 var(--pk-magenta-bright), 0 0 24px rgba(184,32,95,.45);
 }
-.match[data-gotw="true"] .vote-btn[data-picked="true"] .vote-pct { color: #fff; }
+.match[data-gotw="true"] .vote-btn[data-picked="true"] .vote-name { font-weight: 800; }
+.match[data-gotw="true"] .vote-btn[data-picked="true"] .vote-pct { color: #8c1746; }
 .match[data-gotw="true"] .vote-btn:last-child[data-picked="true"] {
-  background: var(--pk-gotw-amber);
-  color: #fff;
-  box-shadow: inset 0 0 0 1px var(--pk-gotw-amber), inset 0 3px 0 var(--pk-gotw-amber-light);
+  background: linear-gradient(180deg, rgba(176,120,20,.34), rgba(176,120,20,.2));
+  color: #1a0f23;
+  box-shadow: inset 0 0 0 2px var(--pk-gotw-amber), inset 0 5px 0 var(--pk-gotw-amber-light), 0 0 24px rgba(176,120,20,.42);
 }
-.match[data-gotw="true"] .vote-btn:last-child[data-picked="true"] .vote-pct { color: #fff; }
+.match[data-gotw="true"] .vote-btn:last-child[data-picked="true"] .vote-pct { color: #7a5310; }
 
 /* GOTW winner override — solid deep-plum field stays the same on cream
    (so the winner reads as a clear badge), but the border + top-stripe
@@ -685,8 +784,12 @@ body::before {
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
-  gap: .22rem;
+  /* Gaps are set per-row via margins below: a roomier team-name → manager
+     break, then a tight manager → last-wk pairing. */
+  gap: 0;
 }
+.meta .manager { margin-top: .34rem; }
+.meta .lwk { margin-top: .08rem; }
 
 .team-name {
   font-family: var(--sans);
@@ -700,17 +803,22 @@ body::before {
 .team-name.win {
   color: var(--pk-champagne-bright);
 }
-/* Record on its own row underneath the team name. Was inline inside
-   .team-name with mirrored margins, which moved the record to the top
-   row on one side and bottom row on the other when names wrapped — this
-   keeps it in the same vertical slot regardless of name length. */
-.record-line {
+/* Record sits inline with the name — right of it on the home side, left of
+   it on the away side — so it reads toward the center of the card on both
+   sides. */
+.team-name .record {
+  display: inline-block;
   font-family: var(--mono); font-weight: 700;
-  font-size: .56rem; letter-spacing: .14em;
+  font-size: .66rem; letter-spacing: .1em;
   color: var(--pk-chalk-mute);
-  line-height: 1.1;
+  margin-left: .4rem;
+  vertical-align: middle;
 }
-.team-name.win + .record-line { color: var(--pk-champagne); }
+.team[data-team]:last-of-type .team-name .record {
+  margin-left: 0;
+  margin-right: .4rem;
+}
+.team-name.win .record { color: var(--pk-champagne); }
 
 .manager {
   font-family: var(--mono); font-weight: 600;
@@ -728,8 +836,13 @@ body::before {
   display: inline-flex;
   align-items: baseline;
   gap: .35rem;
-  margin-top: .05rem;
+  /* Trimmed from .05rem so manager→last-wk (.22 gap + .04) equals
+     team-name→record above. */
+  margin-top: .04rem;
 }
+/* Away side: number leads, label trails ("94.1 LAST WK") so both sides'
+   figures hug the center column instead of sitting lopsided. */
+.team[data-team]:last-of-type .lwk { flex-direction: row-reverse; }
 .lwk .lbl {
   font-weight: 700;
   font-size: .46rem; letter-spacing: .22em; text-transform: uppercase;
@@ -990,8 +1103,11 @@ body::before {
   justify-content: center;
   gap: 1rem;
   padding: .95rem 1.5rem;
-  background: linear-gradient(180deg, rgba(22,11,29,.6), rgba(22,11,29,.96));
-  backdrop-filter: blur(8px);
+  /* Opaque, no backdrop-filter — this bar is sticky at the bottom and stayed
+     on screen the whole scroll, so its blur was a second per-frame cost on
+     top of the masthead's. Solid gradient keeps the "lifts off the page" feel
+     via the top border + shadow instead of a frosted see-through. */
+  background: linear-gradient(180deg, rgb(24,12,31), rgb(20,10,26));
   border-top: 1px solid var(--pk-line);
   box-shadow: 0 -1px 0 rgba(255,61,139,.2);
 }
@@ -1172,7 +1288,8 @@ body::before {
     text-overflow: clip;
     max-width: 100%;
   }
-  .record-line { font-size: .42rem; letter-spacing: .12em; }
+  .team-name .record { font-size: .36rem; letter-spacing: .12em; margin-left: .18rem; white-space: nowrap; }
+  .team[data-team]:last-of-type .team-name .record { margin-left: 0; margin-right: .18rem; }
   .manager { font-size: .38rem; letter-spacing: .14em; }
   .lwk { font-size: .38rem; gap: .18rem; }
   .lwk .lbl { font-size: .32rem; letter-spacing: .14em; }

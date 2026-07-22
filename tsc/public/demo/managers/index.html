@@ -9,16 +9,35 @@
 <script>(function(){var u=navigator.userAgent;if(!(/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u)))return;if(/(?:^|;\s*)dc_view=desktop/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo\//,"/demo-m/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Managers · The Lakeside League</title>
+<title>The Society · The Lakeside League</title>
 <link rel="stylesheet" href="assets/css/main.css">
 <style>
 /* ============================================================
-   MANAGERS DIRECTORY PAGE
+   THE SOCIETY · MANAGERS AS A CARD CATALOG
+   A library reading of the league: each manager is a checkout
+   card pulled from the drawer. Chapters:
+     §01 The Catalog     · library cards, sortable
+     §02 Head-to-Head    · the dominance grid (moved from Standings)
+     Appendix            · alumni, the closed accounts
    ============================================================ */
+
+/* Scoped to this page only: main.css's .section-header uses
+   justify-content: space-between, which only visually centers the
+   title when the num/meta side-text happen to match in width. Grid
+   with equal outer columns keeps the title on the true center line
+   regardless. */
+.section-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: .75rem;
+}
+.section-header .section-num { text-align: left; }
+.section-header .section-title { text-align: center; }
+.section-header .section-meta { text-align: right; }
 
 .page-header {
     text-align: center;
-    padding: 3.5rem 1.5rem 2.5rem;
+    padding: 3.5rem 1.5rem 2.25rem;
     max-width: 900px;
     margin: 0 auto;
     position: relative;
@@ -43,6 +62,75 @@
     max-width: 540px; margin: 0 auto;
 }
 
+.loading-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    font-family: var(--serif); font-style: italic;
+    color: var(--cream-mute);
+}
+
+/* ============================================================
+   FEATURE LAUNCHERS · the special collections
+   Three sibling panels above the catalog: DNA, Chart Room,
+   All-Time Team. Same silhouette, each keeps its own accent.
+   ============================================================ */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.1rem;
+}
+.feature-panel {
+    position: relative;
+    display: flex; flex-direction: column;
+    gap: .45rem;
+    padding: 1.5rem 1.5rem 1.4rem;
+    background: linear-gradient(160deg, var(--ink-card) 0%, var(--ink-soft) 100%);
+    border: 1px solid var(--ink-line);
+    border-top: 3px solid rgba(232,200,137,.45);
+    text-decoration: none; color: inherit;
+    overflow: hidden;
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), border-color .25s, box-shadow .25s;
+}
+.feature-panel:hover {
+    transform: translateY(-3px);
+    border-color: rgba(232,200,137,.45);
+    box-shadow: 0 14px 28px rgba(0,0,0,.4);
+}
+.feature-panel .fp-glyph {
+    position: absolute; top: 1.15rem; right: 1.25rem;
+    width: 42px; height: 42px;
+    opacity: .8;
+    transition: opacity .25s, transform .25s;
+}
+.feature-panel:hover .fp-glyph { opacity: 1; transform: scale(1.06); }
+.fp-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-bottom: .35rem;
+}
+.fp-title {
+    font-family: var(--serif);
+    font-size: 1.6rem; line-height: 1; letter-spacing: -.01em;
+    color: var(--cream);
+    padding-right: 3.2rem;
+}
+.fp-desc {
+    font-family: var(--sans);
+    font-size: .8rem; line-height: 1.5;
+    color: var(--cream-soft);
+    padding-right: 2.6rem;
+}
+.feature-panel.dna { border-top-color: rgba(79,209,255,.5); }
+.feature-panel.dna:hover { border-color: rgba(79,209,255,.4); }
+.feature-panel.dna .fp-title { color: #b9ecff; }
+.feature-panel.viz { border-top-color: rgba(107,138,168,.65); }
+.feature-panel.viz:hover { border-color: rgba(107,138,168,.5); }
+.feature-panel.att .fp-title em { font-style: italic; color: var(--gold); }
+
+/* ============================================================
+   §01 THE CATALOG
+   ============================================================ */
 .sort-bar {
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 1.5rem;
     padding: 1.25rem 0;
@@ -74,211 +162,358 @@
     background: rgba(232, 200, 137, .06);
 }
 
-/* 2-column landscape grid */
-.managers-grid {
+.catalog-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
+    gap: 1.4rem;
 }
-@media (max-width: 900px) { .managers-grid { grid-template-columns: 1fr; } }
 
-/* ─── Ticket-stub manager card ─── */
-.ts-card {
+/* ─── The member credential ───
+   Dark card stock, the same ink/gold language as the feature panels
+   above it, not a paper insert. A real photo box on the left, the
+   finish chart balances the top-right, and a full-width stat rail
+   keeps the lower half from going empty. */
+.cred-card {
     position: relative;
-    display: flex;
+    display: flex; flex-direction: column;
+    min-height: 230px;
+    padding: 1rem 1.2rem 1.1rem;
+    color: var(--cream); text-decoration: none;
+    border: 1px solid var(--ink-line);
+    border-radius: 6px;
     background: linear-gradient(160deg, var(--ink-card) 0%, var(--ink-soft) 100%);
-    border: 1px solid var(--ink-line);
-    text-decoration: none; color: inherit;
-    transition: transform .25s, border-color .25s, box-shadow .25s;
-    min-height: 168px;
-    box-shadow: 0 4px 14px rgba(0,0,0,.28);
+    box-shadow: 0 9px 22px rgba(0,0,0,.4);
+    overflow: hidden;
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), border-color .25s, box-shadow .25s;
 }
-.ts-card:hover {
-    transform: translateY(-3px);
+.cred-card::before {                  /* inset gold keyline */
+    content: ''; position: absolute; inset: 6px;
+    border: 1px solid rgba(232,200,137,.22);
+    border-radius: 3px;
+    pointer-events: none;
+}
+.cred-card:hover {
+    transform: translateY(-4px);
     border-color: rgba(232,200,137,.4);
-    box-shadow: 0 14px 28px rgba(0,0,0,.45), 0 0 14px rgba(232,200,137,.08);
+    box-shadow: 0 20px 34px rgba(0,0,0,.55), 0 0 18px rgba(232,200,137,.1);
 }
-.ts-card:hover .ts-arrow { transform: translateX(4px); }
 
-/* Half-circle notches on the divider so it reads as perforated */
-.ts-card::before, .ts-card::after {
-    content: '';
-    position: absolute; left: 70px;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: var(--ink);
-    transform: translateX(-50%);
-    z-index: 2;
+/* header row: league mark + credential type, over a gold hairline */
+.cred-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: .6rem;
+    padding-bottom: .55rem; margin-bottom: .85rem;
+    border-bottom: 1px solid rgba(232,200,137,.2);
 }
-.ts-card::before { top: -6px; }
-.ts-card::after  { bottom: -6px; }
-
-.ts-stub {
-    width: 70px; flex-shrink: 0;
-    background: linear-gradient(180deg, rgba(232,200,137,.1), rgba(232,200,137,.02));
-    border-right: 2px dashed rgba(232,200,137,.35);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: .9rem .4rem;
-    text-align: center;
-}
-.ts-stub-lbl {
+.cred-org {
+    display: flex; align-items: center; gap: .4rem; min-width: 0;
     font-family: var(--mono); font-weight: 700;
-    font-size: .46rem; letter-spacing: .25em; text-transform: uppercase;
-    color: var(--gold); margin-bottom: .35rem;
+    font-size: .55rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ts-stub-num {
+.cred-org svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--gold); }
+.cred-type {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--gold); white-space: nowrap; flex-shrink: 0;
+}
+
+/* main row: photo box + identity (left/center), finish chart (right) */
+.cred-body { display: flex; align-items: flex-start; gap: 1rem; }
+.cred-photo {
+    position: relative; flex-shrink: 0;
+    width: 64px; height: 64px;
+    border-radius: 5px;
+    border: 1px solid rgba(232,200,137,.4);
+    background: linear-gradient(160deg, rgba(232,200,137,.12), rgba(232,200,137,.02));
+    overflow: hidden;
+    box-shadow: 0 3px 8px rgba(0,0,0,.4);
+}
+.cred-photo img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+}
+.cred-photo-fallback {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
     font-family: var(--serif); font-style: italic;
-    font-size: 2.4rem; line-height: 1; letter-spacing: -.04em;
-    color: var(--gold); margin-bottom: .25rem;
+    font-size: 1.9rem; color: var(--gold);
+    background: linear-gradient(160deg, rgba(232,200,137,.14), transparent);
 }
-.ts-stub-foot {
+.cred-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .12rem; }
+.cred-line { display: flex; align-items: baseline; gap: .55rem; min-width: 0; }
+.cred-line > span:last-child { min-width: 0; }
+.cred-lab {
+    flex-shrink: 0; width: 2.5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .44rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.cred-name {
+    font-family: var(--serif);
+    font-size: 1.55rem; line-height: 1.05; letter-spacing: -.02em;
+    color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cred-club, .cred-since {
     font-family: var(--mono);
-    font-size: .42rem; letter-spacing: .22em; text-transform: uppercase;
+    font-size: .6rem; letter-spacing: .06em;
+    color: var(--cream-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cred-club { text-transform: uppercase; }
+.cred-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
+.cred-dna {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .16em; text-transform: uppercase;
+    color: #82c8f5;
+    border: 1px dotted rgba(107,138,168,.55);
+    padding: .2rem .45rem; border-radius: 2px;
+    background: rgba(107,138,168,.08);
+}
+.cred-div {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .16em; text-transform: uppercase;
+    padding: .2rem .45rem; border: 1px solid var(--ink-line);
+    border-radius: 2px; color: var(--cream-soft);
+    background: rgba(255,255,255,.04);
+}
+.cred-div.whole { color: var(--gold-bright); border-color: rgba(232,200,137,.4); background: rgba(232,200,137,.08); }
+.cred-div.skim  { color: #82c8f5; border-color: rgba(107,138,168,.45); background: rgba(107,138,168,.08); }
+
+/* All-Time Team badge: gold, matching that feature's own accent */
+.cred-att {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--gold-bright);
+    border: 1px dotted rgba(232,200,137,.5);
+    padding: .2rem .45rem; border-radius: 2px;
+    background: rgba(232,200,137,.08);
+    white-space: nowrap; flex-shrink: 0;
+}
+
+/* finish chart: balances the top-right of the card */
+.cat-spark {
+    flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; gap: .3rem;
+    padding-top: .1rem;
+    margin-right: .55rem;
+}
+.cat-spark svg { display: block; }
+.cat-spark-lbl {
+    font-family: var(--mono);
+    font-size: .42rem; letter-spacing: .16em; text-transform: uppercase;
     color: var(--cream-mute);
 }
 
-.ts-body {
-    flex: 1; min-width: 0;
-    padding: 1.2rem 1.3rem 1.1rem;
-    display: flex; flex-direction: column;
-    justify-content: space-between;
+/* stat rail: full width so the card doesn't run empty on the right */
+.cred-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: .4rem;
+    margin-top: 1rem; padding: .65rem 0;
+    border-top: 1px solid var(--ink-line);
+    border-bottom: 1px solid var(--ink-line);
+}
+.cred-stat { display: flex; flex-direction: column; gap: .18rem; min-width: 0; }
+.cred-stats .cred-stat:nth-child(3) { text-align: center; }
+.cred-stats .cred-stat:nth-child(4),
+.cred-stats .cred-stat:nth-child(5) { text-align: right; }
+.cred-stat-lbl {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .42rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--cream-mute);
+    white-space: nowrap;
+}
+.cred-stat-val {
+    font-family: var(--serif); font-size: .95rem; line-height: 1;
+    color: var(--cream); font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.cred-stat-val.gold { color: var(--gold); font-style: italic; }
+
+/* foot: chips left, All-Time Team rank middle, DNA badge right */
+.cred-foot {
+    display: flex; align-items: flex-end; flex-wrap: wrap;
+    gap: .4rem .9rem; margin-top: auto; padding-top: .35rem;
+}
+.cred-titles { min-width: 0; flex: 1; }
+.cred-titles-lab {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .42rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--cream-mute); margin-bottom: .35rem;
+}
+.cred-chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.cred-chip {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .04em;
+    color: #4a3410;
+    background: linear-gradient(160deg, #f8ebc7 0%, #e8c889 45%, #c49a4f 100%);
+    border: 1px solid rgba(120,90,40,.55);
+    border-radius: 2px; padding: .16rem .42rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 1px 2px rgba(0,0,0,.2);
+}
+/* Empty-state chip: same silhouette as a title chip so the row reads
+   consistently, but ghosted so it never competes with real winners. */
+.cred-none {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .38rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+    border: 1px dashed var(--ink-line);
+    border-radius: 2px; padding: .14rem .35rem;
+    background: rgba(255,255,255,.02);
+}
+
+/* ============================================================
+   §02 HEAD-TO-HEAD GRID · ported from the Standings ledger
+   ============================================================ */
+.h2h-wrap {
+    background: var(--cream);
+    border: 1px solid rgba(14,22,32,.35);
+    box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    overflow-x: auto;
     position: relative;
 }
-.ts-conf {
-    position: absolute; top: .85rem; right: 1rem;
+table.h2h { border-collapse: collapse; width: 100%; }
+table.h2h th, table.h2h td { border: 1px solid rgba(14,22,32,.1); }
+table.h2h th {
     font-family: var(--mono); font-weight: 700;
-    font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
-    padding: .25rem .55rem;
-    border: 1px solid;
-    border-radius: 2px;
-}
-.ts-conf.whole {
-    color: var(--gold);
-    background: rgba(232,200,137,.1);
-    border-color: rgba(232,200,137,.4);
-}
-.ts-conf.skim {
-    color: #6b8aa8;
-    background: rgba(107,138,168,.1);
-    border-color: rgba(107,138,168,.4);
-}
-
-.ts-name {
-    font-family: var(--serif);
-    font-size: 1.55rem; line-height: 1; letter-spacing: -.02em;
+    font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
     color: var(--cream);
-    margin-bottom: .2rem;
-    padding-right: 4.5rem;
+    padding: .5rem .45rem;
+    background: var(--ink-soft);
+    border-color: rgba(244,235,216,.1);
+    white-space: nowrap;
 }
-.ts-team {
-    font-family: var(--mono);
-    font-size: .6rem; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--cream-mute); margin-bottom: .5rem;
+table.h2h th.col-head {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    vertical-align: bottom;
+    padding: .55rem .35rem;
+    height: 4.6rem;
 }
-.ts-chips {
-    display: flex; flex-direction: column; gap: .2rem;
-    min-height: 1rem;
+table.h2h th.row-head {
+    text-align: right;
+    position: sticky; left: 0;
+    background: var(--ink-soft);
+    z-index: 2;
+    width: 5rem;
 }
-.ts-chip-line {
+table.h2h th.alum { color: #b0a793; }
+table.h2h th.nm-s  { font-size: .63rem; letter-spacing: .06em; }
+table.h2h th.nm-xs { font-size: .55rem; letter-spacing: .03em; }
+table.h2h td {
     font-family: var(--mono); font-weight: 700;
-    font-size: .55rem; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--gold);
-    display: flex; align-items: center; gap: .35rem;
-}
-.ts-chip-star { color: var(--gold); font-size: .85rem; line-height: 1; }
-.ts-chips.empty {
-    font-family: var(--mono);
-    font-size: .55rem; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--cream-mute);
-}
-
-.ts-statline {
-    display: flex; gap: 1.1rem; align-items: center;
-    border-top: 1px dotted var(--ink-line);
-    padding-top: .65rem; margin-top: .75rem;
-    flex-wrap: wrap;
-}
-.ts-stat { display: flex; flex-direction: column; gap: .15rem; }
-.ts-stat-lbl {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .46rem; letter-spacing: .22em; text-transform: uppercase;
-    color: var(--cream-mute);
-}
-.ts-stat-val {
-    font-family: var(--serif); font-size: 1rem; line-height: 1;
-    color: var(--cream);
-}
-.ts-stat-val.gold { color: var(--gold); font-style: italic; }
-.ts-arrow {
-    margin-left: auto;
-    font-family: var(--serif); font-size: 1.3rem;
-    color: var(--gold);
-    transition: transform .25s ease;
-}
-
-@media (max-width: 520px) {
-    .ts-stub { width: 56px; }
-    .ts-card::before, .ts-card::after { left: 56px; }
-    .ts-stub-num { font-size: 2rem; }
-    .ts-body { padding: 1rem 1rem .9rem; }
-    .ts-name { font-size: 1.3rem; padding-right: 4rem; }
-    .ts-conf { top: .7rem; right: .75rem; font-size: .46rem; padding: .2rem .45rem; }
-    .ts-statline { gap: .85rem; }
-    .ts-stat-val { font-size: .9rem; }
-}
-
-.former-wrap {
-    margin-top: 4rem;
-    border-top: 3px double var(--ink-line);
-    padding-top: 2rem;
-}
-.former-header {
+    font-size: .82rem; letter-spacing: .04em;
     text-align: center;
-    margin-bottom: 2rem;
+    padding: .95rem .7rem;
+    min-width: 3.9rem;
+    color: var(--ink-soft);
+    cursor: default;
+    transition: box-shadow .15s;
 }
-.former-kicker {
+table.h2h td.win  { color: #2f5522; }
+table.h2h td.loss { color: #5c2214; }
+table.h2h td.self { background: rgba(14,22,32,.22); }
+table.h2h td.never { color: #c4bba6; }
+table.h2h td.playable:hover { box-shadow: inset 0 0 0 2px var(--gold-deep); }
+
+.h2h-legend {
+    display: flex; flex-wrap: wrap; gap: 1.5rem;
+    padding: .9rem 1.2rem;
+    border-top: 1px solid rgba(14,22,32,.1);
     font-family: var(--mono); font-weight: 700;
-    font-size: .62rem; letter-spacing: .3em; text-transform: uppercase;
-    color: var(--cream-mute);
-    margin-bottom: .5rem;
+    font-size: .55rem; letter-spacing: .2em; text-transform: uppercase;
+    color: #837b6a;
 }
-.former-title {
-    font-family: var(--serif); font-style: italic;
-    font-size: 1.8rem; letter-spacing: -.01em;
+.h2h-legend .sw {
+    display: inline-block; width: 10px; height: 10px;
+    margin-right: .4rem; vertical-align: -1px;
+    border: 1px solid rgba(14,22,32,.15);
+}
+
+#h2h-tip {
+    position: fixed; z-index: 200;
+    pointer-events: none;
+    background: var(--ink);
     color: var(--cream);
+    border: 1px solid var(--gold-deep);
+    padding: .6rem .8rem;
+    font-family: var(--mono);
+    font-size: .62rem; letter-spacing: .08em;
+    line-height: 1.7;
+    display: none;
+    max-width: 260px;
+    white-space: nowrap;
 }
-.former-title em { color: var(--gold); }
-.former-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 0;
-    background: rgba(26, 37, 50, .25);
+#h2h-tip .t-big { color: var(--gold); font-weight: 700; }
+
+/* ============================================================
+   APPENDIX · FORMER SOCIETY
+   ============================================================ */
+.alumni-wrap {
     border: 1px solid var(--ink-line);
+    background: rgba(26, 37, 50, .25);
+    overflow-x: auto;
 }
-.former-item {
-    padding: 1rem 1.3rem;
-    border-right: 1px solid var(--ink-line-soft);
-    border-bottom: 1px solid var(--ink-line-soft);
-    display: flex; flex-direction: column;
-    gap: .25rem;
+table.alumni { width: 100%; border-collapse: collapse; }
+table.alumni th {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--cream-mute);
+    text-align: left;
+    padding: .85rem 1.2rem;
+    border-bottom: 1px solid var(--ink-line);
+    white-space: nowrap;
 }
-.former-name {
+table.alumni th.num, table.alumni td.num { text-align: right; }
+table.alumni td {
+    padding: .8rem 1.2rem;
+    border-top: 1px solid var(--ink-line-soft);
+    font-family: var(--mono);
+    font-size: .72rem; letter-spacing: .06em;
+    color: var(--cream-soft);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+table.alumni td.a-name {
     font-family: var(--serif);
-    font-size: 1.2rem;
+    font-size: 1.1rem; letter-spacing: 0;
     color: var(--cream);
 }
-.former-detail {
-    font-family: var(--mono);
-    font-size: .6rem; letter-spacing: .15em; text-transform: uppercase;
-    color: var(--cream-mute);
+table.alumni td.a-chips { color: var(--gold); }
+table.alumni tbody tr { opacity: .75; transition: opacity .2s, background .2s; }
+table.alumni tbody tr:hover { opacity: 1; background: rgba(14,22,32,.25); }
+
+/* ── Motion safety ── */
+@media (prefers-reduced-motion: reduce) {
+    .cred-card, .feature-panel, .sort-option { transition: none !important; }
+    .cred-card:hover::after { transform: none; }
 }
 
-.loading-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    font-family: var(--serif); font-style: italic;
-    color: var(--cream-mute);
+/* ── Mobile ── */
+@media (max-width: 900px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .feature-panel { padding: 1.25rem 1.25rem 1.15rem; }
+    .catalog-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+    .page-header { padding: 2.5rem 1rem 1.5rem; }
+    .page-sub { font-size: 1.05rem; }
+    .sort-bar { gap: .75rem; padding: 1rem 0; margin-bottom: 1.5rem; }
+    .sort-option { font-size: .58rem; padding: .4rem .6rem; }
+    .catalog-grid { gap: 1.1rem; }
+    .cred-photo { width: 52px; height: 52px; }
+    .cred-photo-fallback { font-size: 1.5rem; }
+    .cat-spark { display: none; }
+    .cred-name { font-size: 1.45rem; }
+    .cred-stats { gap: .85rem; }
+    .cred-stat-val { font-size: .95rem; }
+    table.alumni th, table.alumni td { padding: .7rem .8rem; }
 }
 </style>
 </head>
@@ -291,13 +526,13 @@
 <div class="ticker">
     <div class="ticker-track">
         <div class="ticker-group">
-            <span class="ticker-item"><span class="ticker-star">★</span> THE MANAGERS · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> SEVEN SEASONS · TWELVE ACTIVE</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> THE SOCIETY · THE LAKESIDE LEAGUE</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> THE CARD CATALOG · EVERY MANAGER ON FILE</span>
             <span class="ticker-item"><span class="ticker-star">★</span> EVERY STREAK · EVERY RIVALRY · EVERY CHIP</span>
         </div>
         <div class="ticker-group">
-            <span class="ticker-item"><span class="ticker-star">★</span> THE MANAGERS · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item"><span class="ticker-star">★</span> SEVEN SEASONS · TWELVE ACTIVE</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> THE SOCIETY · THE LAKESIDE LEAGUE</span>
+            <span class="ticker-item"><span class="ticker-star">★</span> THE CARD CATALOG · EVERY MANAGER ON FILE</span>
             <span class="ticker-item"><span class="ticker-star">★</span> EVERY STREAK · EVERY RIVALRY · EVERY CHIP</span>
         </div>
     </div>
@@ -308,23 +543,73 @@
      data-page="managers"
      data-chapter="CH. II · MANAGERS"
      data-back-label="← The Hub"
-     data-back-href="./index.html"></nav>
+     data-back-href="./"></nav>
 <script src="assets/js/nav.js"></script>
 
-<!-- PAGE HEADER -->
+<!-- MASTHEAD -->
 <div class="page-header">
-    <div class="page-kicker">★ Twelve Managers · One League ★</div>
-    <h1 class="page-title">The <em>Managers.</em></h1>
+    <div class="page-kicker">★ The Card Catalog · Since 2019 ★</div>
+    <h1 class="page-title">The <em>Society.</em></h1>
     <p class="page-sub">
-        The active society — twelve commissioners of their own destinies.
-        Click any name for the full profile: streaks, rivalries, finishes, and championship banners.
+        Every manager on file. Pull a card for the full record:
+        streaks, rivalries, finishes, and banners.
     </p>
 </div>
 
-<!-- SORT BAR + GRID -->
+<!-- FEATURE LAUNCHERS -->
+<div class="section" style="margin-top: 0;">
+    <div class="features-grid">
+        <a class="feature-panel dna" href="live/manager-dna/">
+            <svg class="fp-glyph" viewBox="0 0 42 42" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M10 4 C32 12, 14 24, 34 38" stroke="#4fd1ff" />
+                <path d="M34 4 C12 12, 30 24, 8 38" stroke="#ff5db1" />
+                <line x1="15" y1="9"  x2="29" y2="9"  stroke="rgba(244,235,216,.4)" stroke-width="1.4" />
+                <line x1="18" y1="21" x2="26" y2="21" stroke="rgba(244,235,216,.4)" stroke-width="1.4" />
+                <line x1="14" y1="33" x2="30" y2="33" stroke="rgba(244,235,216,.4)" stroke-width="1.4" />
+            </svg>
+            <div class="fp-kicker">Special Collection · 01</div>
+            <div class="fp-title">Manager DNA</div>
+            <div class="fp-desc">Every manager sequenced: archetypes, traits, and tendencies decoded from the full record.</div>
+        </a>
+        <a class="feature-panel viz" href="managers/visualizer">
+            <svg class="fp-glyph" viewBox="0 0 42 42" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="6" y1="4" x2="6" y2="36" stroke="rgba(244,235,216,.35)" stroke-width="1.4" />
+                <line x1="6" y1="36" x2="38" y2="36" stroke="rgba(244,235,216,.35)" stroke-width="1.4" />
+                <polyline points="9 30 17 18 24 24 36 8" stroke="#e8c889" stroke-width="2" />
+                <circle cx="17" cy="18" r="2.4" fill="#6b8aa8" />
+                <circle cx="24" cy="24" r="2.4" fill="#6b8aa8" />
+                <circle cx="36" cy="8"  r="2.4" fill="#e8c889" />
+            </svg>
+            <div class="fp-kicker">Special Collection · 02</div>
+            <div class="fp-title">The Chart Room</div>
+            <div class="fp-desc">The league drawn out: careers, scoring arcs, and rivalries rendered as living charts.</div>
+        </a>
+        <a class="feature-panel att" href="managers/all-time">
+            <svg class="fp-glyph" viewBox="0 0 42 42" fill="none" aria-hidden="true">
+                <rect x="16.5" y="3"  width="9"  height="7" rx="1.5" stroke="#e8c889" stroke-width="1.8" />
+                <rect x="4"  y="17" width="9"  height="7" rx="1.5" stroke="rgba(244,235,216,.5)" stroke-width="1.6" />
+                <rect x="16.5" y="17" width="9"  height="7" rx="1.5" stroke="rgba(244,235,216,.5)" stroke-width="1.6" />
+                <rect x="29" y="17" width="9"  height="7" rx="1.5" stroke="rgba(244,235,216,.5)" stroke-width="1.6" />
+                <rect x="10" y="31" width="9"  height="7" rx="1.5" stroke="#6b8aa8" stroke-width="1.6" />
+                <rect x="23" y="31" width="9"  height="7" rx="1.5" stroke="#6b8aa8" stroke-width="1.6" />
+            </svg>
+            <div class="fp-kicker">Special Collection · 03</div>
+            <div class="fp-title">The All-Time <em>Team</em></div>
+            <div class="fp-desc">The best lineup each manager ever iced, position by position, all seasons on the board.</div>
+        </a>
+    </div>
+</div>
+
+<!-- §01 THE CATALOG -->
 <div class="section">
+    <div class="section-header">
+        <span class="section-num">§ 01 · The Catalog</span>
+        <span class="section-title">The active society.</span>
+        <span class="section-meta">Pull a card for the full file</span>
+    </div>
+
     <div class="sort-bar">
-        <span class="sort-bar-label">Sort —</span>
+        <span class="sort-bar-label">Sort</span>
         <div class="sort-options" id="sort-options">
             <button class="sort-option active" data-sort="winpct">Win %</button>
             <button class="sort-option" data-sort="chips">Championships</button>
@@ -334,20 +619,42 @@
         </div>
     </div>
 
-    <div class="managers-grid" id="managers-grid">
-        <div class="loading-state">Loading the society…</div>
+    <div class="catalog-grid" id="catalog-grid">
+        <div class="loading-state">Opening the drawer…</div>
     </div>
+</div>
 
-    <div class="former-wrap">
-        <div class="former-header">
-            <div class="former-kicker">★ Alumni · Hall of Past Members ★</div>
-            <h2 class="former-title">Former <em>society.</em></h2>
-        </div>
-        <div class="former-list" id="former-list">
-            <div class="loading-state">Loading alumni…</div>
+<!-- §02 HEAD-TO-HEAD -->
+<div class="section" id="h2h-section" style="display:none;">
+    <div class="section-header">
+        <span class="section-num">§ 02 · Head-to-Head</span>
+        <span class="section-title">The dominance grid.</span>
+        <span class="section-meta">Manager vs manager</span>
+    </div>
+    <div class="h2h-wrap">
+        <div id="h2h-grid"></div>
+        <div class="h2h-legend">
+            <span><span class="sw" style="background:rgba(96,140,74,.45);"></span>Row owns the series</span>
+            <span><span class="sw" style="background:rgba(160,72,48,.35);"></span>Column owns the series</span>
+            <span><span class="sw" style="background:rgba(14,22,32,.22);"></span>Same manager</span>
+            <span>Read across: the row manager's record against each column</span>
         </div>
     </div>
 </div>
+
+<!-- APPENDIX · FORMER SOCIETY -->
+<div class="section" style="margin-bottom: 4rem;">
+    <div class="section-header">
+        <span class="section-num">Appendix · Alumni</span>
+        <span class="section-title">Former society.</span>
+        <span class="section-meta">Accounts closed</span>
+    </div>
+    <div class="alumni-wrap" id="alumni-wrap">
+        <div class="loading-state">Checking the archive…</div>
+    </div>
+</div>
+
+<div id="h2h-tip"></div>
 
 <footer class="site-footer">
     <span>Built by <em>jzFF</em> · LSL · Since 2019</span><a href="/login?mode=signup" style="display:block;padding:1.1rem 0 0;font-family:var(--mono);font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);text-decoration:none;">Start your own league</a>
@@ -357,132 +664,321 @@
 <script>
 
 let allManagers = [];
+let detailsByUid = {};
+let dnaByUid = {};
+let dnaByName = {};
 let divisionMap = {};
+let leagueMeta = null;
+let attRankByUid = {};
 let currentSort = 'winpct';
+
+/* ── helpers ── */
+function parseRec(str) {
+    // "10-4-0" -> {w:10, l:4, t:0}; tolerates "10-4" and junk.
+    if (typeof str !== 'string') return { w: 0, l: 0, t: 0 };
+    const p = str.split('-').map(n => parseInt(n, 10));
+    return { w: p[0] || 0, l: p[1] || 0, t: p[2] || 0 };
+}
+function correctedFinalRank(season) {
+    const cutoff = season.year === 2020 ? 8 : 6;
+    return season.reg_season_rank > cutoff ? season.reg_season_rank : season.final_rank;
+}
+function games(m) { return m.wins + m.losses + m.ties; }
+function fmtPct(p) {
+    if (p == null) return '-';
+    return p.toFixed(3).replace(/^0\./, '.');
+}
+const ord = n => n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`;
+function esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* All-Time Team rank: ports the exact starting-lineup total used by
+   managers/all-time.html (normName -> position-ranked lookup ->
+   best-fpts-per-player -> 7 starting slots), restricted here to
+   active managers only, so the badge matches that page's own math. */
+function normName(name) {
+    return (name || '').toLowerCase()
+        .replace(/[.''']/g, '')
+        .replace(/\s+(jr|sr|ii|iii|iv|v)$/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+function buildRankLookup(players) {
+    const byPos = {};
+    players.forEach(p => {
+        const pos = (p.position || '?').toUpperCase();
+        (byPos[pos] = byPos[pos] || []).push(p);
+    });
+    const lookup = {};
+    Object.keys(byPos).forEach(pos => {
+        byPos[pos].sort((a, b) => (b.fpts || 0) - (a.fpts || 0));
+        byPos[pos].forEach((p, i) => {
+            lookup[normName(p.player_name)] = { fpts: p.fpts || 0, posRank: i + 1, pos };
+        });
+    });
+    return lookup;
+}
+function allTimeTeamTotal(mgr, ranks) {
+    const best = {};
+    (mgr.seasons || []).forEach(se => {
+        const lookup = ranks[se.year];
+        if (!lookup) return;
+        (se.players || []).forEach(p => {
+            const key = normName(p.name);
+            const lk = lookup[key];
+            if (!lk || !lk.fpts) return;
+            const cand = { key, pos: lk.pos, fpts: lk.fpts };
+            if (!best[key] || cand.fpts > best[key].fpts) best[key] = cand;
+        });
+    });
+    const all = Object.values(best).sort((a, b) => b.fpts - a.fpts);
+    if (all.length === 0) return null;
+    const used = {};
+    const take = filter => {
+        for (const c of all) { if (!used[c.key] && filter(c)) { used[c.key] = 1; return c; } }
+        return null;
+    };
+    const slots = [
+        take(c => c.pos === 'QB'), take(c => c.pos === 'RB'), take(c => c.pos === 'RB'),
+        take(c => c.pos === 'WR'), take(c => c.pos === 'WR'), take(c => c.pos === 'TE'),
+        take(c => c.pos === 'RB' || c.pos === 'WR' || c.pos === 'TE'),
+    ];
+    let total = 0;
+    slots.forEach(s => { if (s) total += s.fpts; });
+    return Math.round(total * 10) / 10;
+}
+async function loadAllTimeRanks(activeManagers) {
+    const poolRes = await fetch('data/all_time_pool.json').catch(() => null);
+    if (!poolRes || !poolRes.ok) return;
+    const pool = await poolRes.json().catch(() => null);
+    if (!pool || !Array.isArray(pool.managers)) return;
+
+    const activeUids = new Set(activeManagers.map(m => String(m.user_id)));
+    const activePoolMgrs = pool.managers.filter(m => m.user_id != null && activeUids.has(String(m.user_id)));
+    if (activePoolMgrs.length === 0) return;
+
+    const years = new Set();
+    activePoolMgrs.forEach(m => (m.seasons || []).forEach(se => years.add(se.year)));
+    const profile = leagueMeta?.draft_scoring_profile || 'ppr_6pt';
+    const yearList = [...years];
+    const rankFiles = await Promise.all(yearList.map(y =>
+        fetch(`/data/fantasy_ranks/${profile}/${y}.json`).then(r => r.ok ? r.json() : null).catch(() => null)));
+    const ranks = {};
+    yearList.forEach((y, i) => { if (rankFiles[i]?.players) ranks[y] = buildRankLookup(rankFiles[i].players); });
+    if (Object.keys(ranks).length === 0) return;
+
+    const totals = activePoolMgrs
+        .map(m => ({ uid: String(m.user_id), total: allTimeTeamTotal(m, ranks) }))
+        .filter(t => t.total != null)
+        .sort((a, b) => b.total - a.total);
+    totals.forEach((t, i) => { attRankByUid[t.uid] = { rank: i + 1, of: totals.length }; });
+}
 
 async function loadData() {
     try {
-        const [dirRes, seasonRes] = await Promise.all([
+        const [dirRes, dnaRes, seasonRes, leagueRes] = await Promise.all([
             fetch('data/managers_directory.json'),
-            fetch('data/seasons/2025.json'),
+            fetch('data/manager_dna.json').catch(() => null),
+            fetch('data/seasons/2025.json').catch(() => null),
+            fetch('data/league.json').catch(() => null),
         ]);
         if (!dirRes.ok) throw new Error(`HTTP ${dirRes.status}`);
-        const data = await dirRes.json();
-        allManagers = data.managers;
+        const dir = await dirRes.json();
 
-        if (seasonRes.ok) {
-            const season = await seasonRes.json();
-            (season.standings || []).forEach(s => {
-                if (s.owner_user_id && s.division) {
-                    divisionMap[s.owner_user_id] = s.division;
-                }
+        if (dnaRes && dnaRes.ok) {
+            const dna = await dnaRes.json();
+            (dna.managers || []).forEach(d => {
+                dnaByUid[String(d.uid)] = d;
+                if (d.name) dnaByName[d.name.toLowerCase()] = d;
             });
         }
-        render();
+        if (seasonRes && seasonRes.ok) {
+            const season = await seasonRes.json();
+            (season.standings || []).forEach(s => {
+                if (s.owner_user_id && s.division) divisionMap[s.owner_user_id] = s.division;
+            });
+        }
+        if (leagueRes && leagueRes.ok) leagueMeta = await leagueRes.json();
+
+        // All manager detail files in parallel: season ledgers feed the
+        // finish sparklines, h2h feeds the dominance grid.
+        const details = await Promise.all(
+            dir.managers.map(m =>
+                fetch(`data/managers/${m.user_id}.json`)
+                    .then(r => r.ok ? r.json() : null)
+                    .catch(() => null)
+            )
+        );
+
+        allManagers = dir.managers.map((m, i) => {
+            const d = details[i] || {};
+            detailsByUid[String(m.user_id)] = d;
+            return {
+                ...m,
+                reg_record:      d.reg_record      || m.reg_record      || '-',
+                playoff_record:  d.playoff_record  || m.playoff_record  || '-',
+                reg_win_pct:     d.reg_win_pct     ?? m.reg_win_pct     ?? null,
+                playoff_win_pct: d.playoff_win_pct ?? m.playoff_win_pct ?? null,
+                win_streak:      d.longest_win_streak?.length ?? null,
+                win_streak_when: d.longest_win_streak?.when ?? null,
+            };
+        });
+
+        loadAllTimeRanks(allManagers.filter(m => m.is_current))
+            .then(() => renderCatalog())
+            .catch(() => {});
+
+        renderCatalog();
+        renderAlumni();
+        buildH2H();
     } catch (err) {
-        document.getElementById('managers-grid').innerHTML = `
+        document.getElementById('catalog-grid').innerHTML = `
             <div class="loading-state" style="color: var(--rust);">
-                Couldn't load manager data — make sure you've run build_data.py.<br>
+                Couldn't load manager data. Make sure you've run build_data.py.<br>
                 <small>${err.message}</small>
             </div>
         `;
+        document.getElementById('alumni-wrap').innerHTML =
+            '<div class="loading-state">No archive available.</div>';
     }
 }
 
-function render() {
-    renderCurrent();
-    renderFormer();
+/* DNA lookup: uid keys are strings in manager_dna.json while the
+   directory uses numeric user_ids; match on String(), fall back to name. */
+function dnaFor(m) {
+    return dnaByUid[String(m.user_id)] || dnaByName[(m.name || '').toLowerCase()] || null;
 }
 
-function renderCurrent() {
-    const grid = document.getElementById('managers-grid');
-    let current = allManagers.filter(m => m.is_current);
+/* ============================================================
+   §01 THE CATALOG
+   ============================================================ */
+function finishSparkline(ledger) {
+    const rows = (ledger || [])
+        .filter(r => typeof r.final_rank === 'number' && r.final_rank > 0)
+        .sort((a, b) => a.year - b.year);
+    if (rows.length === 0) return '';
+    const BW = 8, GAP = 5, H = 34;
+    const W = rows.length * (BW + GAP) - GAP;
+    const maxRank = Math.max(...rows.map(correctedFinalRank), 6);
+    // Invert: 1st place = tallest bar. Championship seasons stamp rust.
+    const bars = rows.map((r, i) => {
+        const rank = correctedFinalRank(r);
+        const h = 4 + (1 - (rank - 1) / (maxRank - 1)) * (H - 5);
+        const champ = rank === 1;
+        return `<rect x="${i * (BW + GAP)}" y="${(H - h).toFixed(1)}" width="${BW}" height="${h.toFixed(1)}" rx="1"
+            fill="${champ ? '#e8c889' : 'rgba(244,235,216,.28)'}"><title>${r.year}: finished ${ord(rank)}</title></rect>`;
+    }).join('');
+    const range = rows.length === 1 ? `${rows[0].year}` : `${rows[0].year}-${rows[rows.length - 1].year}`;
+    return `
+        <div class="cat-spark">
+            <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${bars}</svg>
+            <span class="cat-spark-lbl">Finishes · ${range}</span>
+        </div>`;
+}
+
+function renderCatalog() {
+    const grid = document.getElementById('catalog-grid');
+    const current = allManagers.filter(m => m.is_current);
 
     const sorts = {
         winpct: (a, b) => b.win_pct - a.win_pct,
         chips:  (a, b) => (b.championships - a.championships) || (b.win_pct - a.win_pct),
-        games:  (a, b) => (b.wins + b.losses + b.ties) - (a.wins + a.losses + a.ties),
+        games:  (a, b) => games(b) - games(a),
         pf:     (a, b) => b.total_pf - a.total_pf,
         name:   (a, b) => a.name.localeCompare(b.name),
     };
     current.sort(sorts[currentSort] || sorts.winpct);
 
-    const ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV'];
+    const orgName = leagueMeta?.name || 'The Society';
+    const emblem = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.6l2.6 5.7 6.2.6-4.7 4.1 1.4 6.1-5.5-3.2-5.5 3.2 1.4-6.1L2.2 8.9l6.2-.6z"/></svg>`;
 
     grid.innerHTML = current.map((m, idx) => {
-        let chipRow;
+        const catNum = String(idx + 1).padStart(2, '0');
+        const initial = (m.name || '?').trim().charAt(0).toUpperCase();
+
+        const ledger = detailsByUid[String(m.user_id)]?.season_ledger || [];
+        const years = ledger.map(r => r.year).filter(y => typeof y === 'number');
+        const firstYear = years.length ? Math.min(...years) : null;
+        const seasonWord = m.seasons_played === 1 ? '1 season' : `${m.seasons_played} seasons`;
+        const sinceTxt = firstYear ? `${firstYear} · ${seasonWord}` : seasonWord;
+
+        let chips;
         if (m.championships > 0) {
-            const lines = [...m.championship_seasons]
-                .sort((a, b) => b - a)
-                .map(y => `<div class="ts-chip-line">* ${y} Champion</div>`)
-                .join('');
-            chipRow = `<div class="ts-chips">${lines}</div>`;
+            chips = [...m.championship_seasons].sort((a, b) => a - b)
+                .map(y => `<span class="cred-chip">★ ${y}</span>`).join('');
         } else {
-            chipRow = `<div class="ts-chips empty">— No chips yet —</div>`;
+            chips = `<span class="cred-none">No titles yet</span>`;
         }
 
-        const pctDisplay = m.win_pct.toFixed(3).replace(/^0\./, '.');
-        const rank = idx + 1;
-        const roman = ROMAN[rank] || rank;
-        const rankNum = String(rank).padStart(2, '0');
         const division = divisionMap[m.user_id];
-        const confBadge = division
-            ? `<span class="ts-conf ${division.toLowerCase()}">${division}</span>`
+        const divBadge = division
+            ? `<span class="cred-div ${division.toLowerCase()}">${division}</span>`
             : '';
 
+        const dna = dnaFor(m);
+        const dnaBadge = dna?.archetype?.name
+            ? `<span class="cred-dna" title="${dna.archetype.tagline || ''}">✦ ${dna.archetype.name}</span>`
+            : '';
+
+        const att = attRankByUid[String(m.user_id)];
+        const attBadge = att
+            ? `<span class="cred-att">◆ All-Time Team · #${att.rank} of ${att.of}</span>`
+            : '';
+
+        const spark = finishSparkline(detailsByUid[String(m.user_id)]?.season_ledger);
+
+        const photo = m.avatar
+            ? `<img src="${esc(m.avatar)}" alt="" loading="lazy" onerror="this.outerHTML='<div class=&quot;cred-photo-fallback&quot;>${initial}</div>'">`
+            : `<div class="cred-photo-fallback">${initial}</div>`;
+
         return `
-            <a href="managers/manager.html?id=${m.user_id}" class="ts-card">
-                <div class="ts-stub">
-                    <div class="ts-stub-lbl">Admit</div>
-                    <div class="ts-stub-num">${roman}</div>
-                    <div class="ts-stub-foot">Mgr № ${rankNum}</div>
+            <a href="managers/manager?id=${m.user_id}" class="cred-card">
+                <div class="cred-head">
+                    <span class="cred-org">${emblem}${orgName}</span>
+                    <span class="cred-type">Member Credential · № ${catNum}</span>
                 </div>
-                <div class="ts-body">
-                    ${confBadge}
-                    <div>
-                        <div class="ts-name">${m.name}</div>
-                        <div class="ts-team">${m.team_latest}</div>
-                        ${chipRow}
+                <div class="cred-body">
+                    <div class="cred-photo">${photo}</div>
+                    <div class="cred-id">
+                        <div class="cred-line"><span class="cred-lab">Name</span><span class="cred-name">${m.name}</span></div>
+                        <div class="cred-line"><span class="cred-lab">Club</span><span class="cred-club">${m.team_latest}</span></div>
+                        <div class="cred-line"><span class="cred-lab">Since</span><span class="cred-since">${sinceTxt}</span></div>
+                        <div class="cred-tags">${divBadge}</div>
                     </div>
-                    <div class="ts-statline">
-                        <div class="ts-stat">
-                            <span class="ts-stat-lbl">Record</span>
-                            <span class="ts-stat-val">${m.wins}–${m.losses}${m.ties?'–'+m.ties:''}</span>
-                        </div>
-                        <div class="ts-stat">
-                            <span class="ts-stat-lbl">Win %</span>
-                            <span class="ts-stat-val gold">${pctDisplay}</span>
-                        </div>
-                        <div class="ts-stat">
-                            <span class="ts-stat-lbl">Points</span>
-                            <span class="ts-stat-val">${Math.round(m.total_pf).toLocaleString()}</span>
-                        </div>
-                        <div class="ts-stat">
-                            <span class="ts-stat-lbl">Top-3</span>
-                            <span class="ts-stat-val">${m.top_three_finishes}</span>
-                        </div>
-                        <span class="ts-arrow">→</span>
+                    ${spark}
+                </div>
+                <div class="cred-stats">
+                    <div class="cred-stat">
+                        <span class="cred-stat-lbl">Record</span>
+                        <span class="cred-stat-val">${m.wins}-${m.losses}${m.ties ? '-' + m.ties : ''}</span>
                     </div>
+                    <div class="cred-stat">
+                        <span class="cred-stat-lbl">Win %</span>
+                        <span class="cred-stat-val gold">${fmtPct(m.win_pct)}</span>
+                    </div>
+                    <div class="cred-stat">
+                        <span class="cred-stat-lbl">Points</span>
+                        <span class="cred-stat-val">${Math.round(m.total_pf).toLocaleString()}</span>
+                    </div>
+                    <div class="cred-stat">
+                        <span class="cred-stat-lbl">Playoffs</span>
+                        <span class="cred-stat-val">${m.playoff_record}</span>
+                    </div>
+                    <div class="cred-stat">
+                        <span class="cred-stat-lbl">Top-3</span>
+                        <span class="cred-stat-val">${m.top_three_finishes}</span>
+                    </div>
+                </div>
+                <div class="cred-foot">
+                    <div class="cred-titles">
+                        <span class="cred-titles-lab">Titles held</span>
+                        <div class="cred-chips">${chips}</div>
+                    </div>
+                    ${attBadge}
+                    ${dnaBadge}
                 </div>
             </a>
-        `;
-    }).join('');
-}
-
-function renderFormer() {
-    const list = document.getElementById('former-list');
-    const former = allManagers.filter(m => !m.is_current);
-    if (former.length === 0) {
-        list.innerHTML = '<div class="loading-state">No alumni recorded.</div>';
-        return;
-    }
-    list.innerHTML = former.map(m => {
-        const yrs = m.seasons_played === 1 ? '1 season' : `${m.seasons_played} seasons`;
-        return `
-            <div class="former-item">
-                <div class="former-name">${m.name}</div>
-                <div class="former-detail">${yrs} · ${m.wins}–${m.losses} · ${Math.round(m.total_pf)} PF</div>
-            </div>
         `;
     }).join('');
 }
@@ -493,8 +989,128 @@ document.getElementById('sort-options').addEventListener('click', (e) => {
     document.querySelectorAll('.sort-option').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentSort = btn.dataset.sort;
-    renderCurrent();
+    renderCatalog();
 });
+
+/* ============================================================
+   §02 HEAD-TO-HEAD GRID · ported from the Standings ledger
+   ============================================================ */
+function buildH2H() {
+    const ordered = [
+        ...allManagers.filter(m => m.is_current).sort((a, b) => b.win_pct - a.win_pct),
+        ...allManagers.filter(m => !m.is_current).sort((a, b) => b.win_pct - a.win_pct),
+    ];
+    if (ordered.length < 3) return;
+
+    const h2hByUid = {};
+    let anyData = false;
+    for (const m of ordered) {
+        const d = detailsByUid[String(m.user_id)];
+        const map = {};
+        for (const row of (d?.h2h || [])) {
+            map[String(row.opp_user_id)] = row;
+            anyData = true;
+        }
+        h2hByUid[String(m.user_id)] = map;
+    }
+    if (!anyData) return;
+
+    document.getElementById('h2h-section').style.display = '';
+
+    // Longer names scale down so they sit comfortably inside the head cell
+    // (row-head width / col-head height) instead of crowding the edges.
+    const nmCls = (n) => n.length > 12 ? ' nm-xs' : n.length > 7 ? ' nm-s' : '';
+
+    const colHeads = ordered.map(m =>
+        `<th class="col-head${m.is_current ? '' : ' alum'}${nmCls(m.name)}">${m.name}</th>`).join('');
+
+    const rows = ordered.map(rm => {
+        const cells = ordered.map(cm => {
+            if (rm.user_id === cm.user_id) return `<td class="self"></td>`;
+            const rec = h2hByUid[String(rm.user_id)][String(cm.user_id)];
+            if (!rec) return `<td class="never">·</td>`;
+            const { w, l, t } = parseRec(rec.total_record);
+            const played = w + l + t;
+            if (played === 0) return `<td class="never">·</td>`;
+            const share = (w + l) > 0 ? w / (w + l) : .5;
+            let style = '', cls = '';
+            if (share > .5)      { cls = 'win';  style = `background:rgba(96,140,74,${(0.10 + (share - .5) * .8).toFixed(2)});`; }
+            else if (share < .5) { cls = 'loss'; style = `background:rgba(160,72,48,${(0.08 + (.5 - share) * .62).toFixed(2)});`; }
+            return `<td class="playable ${cls}" style="${style}"
+                data-row="${rm.name}" data-col="${cm.name}" data-rec="${w}-${l}${t ? '-' + t : ''}"
+                data-games="${played}" data-po="${rec.playoff_record || ''}">${w}-${l}</td>`;
+        }).join('');
+        return `<tr><th class="row-head${rm.is_current ? '' : ' alum'}${nmCls(rm.name)}">${rm.name}</th>${cells}</tr>`;
+    }).join('');
+
+    document.getElementById('h2h-grid').innerHTML = `
+        <table class="h2h">
+            <thead><tr><th class="row-head"></th>${colHeads}</tr></thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+
+    // Tooltip
+    const tip = document.getElementById('h2h-tip');
+    document.querySelectorAll('table.h2h td.playable').forEach(td => {
+        td.addEventListener('mouseenter', () => {
+            const po = td.dataset.po && td.dataset.po !== '0-0-0'
+                ? `<br>playoffs · ${td.dataset.po.replace(/-0$/, '')}` : '';
+            tip.innerHTML = `<span class="t-big">${td.dataset.row} vs ${td.dataset.col}</span><br>
+                all-time · ${td.dataset.rec} · ${td.dataset.games} game${td.dataset.games === '1' ? '' : 's'}${po}`;
+            tip.style.display = 'block';
+        });
+        td.addEventListener('mousemove', (e) => {
+            const pad = 14;
+            let tx = e.clientX + pad, ty = e.clientY + pad;
+            const r = tip.getBoundingClientRect();
+            if (tx + r.width  > window.innerWidth  - 8) tx = e.clientX - r.width  - pad;
+            if (ty + r.height > window.innerHeight - 8) ty = e.clientY - r.height - pad;
+            tip.style.left = tx + 'px'; tip.style.top = ty + 'px';
+        });
+        td.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+    });
+}
+
+/* ============================================================
+   APPENDIX · FORMER SOCIETY
+   ============================================================ */
+function renderAlumni() {
+    const wrap = document.getElementById('alumni-wrap');
+    const former = allManagers.filter(m => !m.is_current)
+        .sort((a, b) => b.win_pct - a.win_pct);
+    if (former.length === 0) {
+        wrap.innerHTML = '<div class="loading-state">No alumni recorded.</div>';
+        return;
+    }
+    const rows = former.map(m => {
+        const chips = m.championships > 0
+            ? [...m.championship_seasons].sort((a, b) => a - b).map(y => `★ ${y}`).join(' ')
+            : '·';
+        return `
+            <tr>
+                <td class="a-name">${m.name}</td>
+                <td>${m.seasons_played === 1 ? '1 season' : m.seasons_played + ' seasons'}</td>
+                <td class="num">${m.wins}-${m.losses}${m.ties ? '-' + m.ties : ''}</td>
+                <td class="num">${fmtPct(m.win_pct)}</td>
+                <td class="num">${Math.round(m.total_pf).toLocaleString()}</td>
+                <td class="a-chips">${chips}</td>
+            </tr>`;
+    }).join('');
+    wrap.innerHTML = `
+        <table class="alumni">
+            <thead>
+                <tr>
+                    <th>Manager</th>
+                    <th>Tenure</th>
+                    <th class="num">Record</th>
+                    <th class="num">Win %</th>
+                    <th class="num">Points For</th>
+                    <th>Titles</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+}
 
 loadData();
 </script>

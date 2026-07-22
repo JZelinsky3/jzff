@@ -113,6 +113,23 @@
         }
     }
 
+    // The demo is served as a static tree (base href "/demo/"). Its desktop
+    // pages don't inject window.__DC at all, so slug/tier alone can't identify
+    // it — fall back to the URL. Live leagues live under /leagues/<slug>/ and
+    // never match, so this stays demo-only.
+    function isDemoPage() {
+        var dc = window.__DC || {};
+        if (dc.slug === 'demo' || dc.leagueTier === 'demo') return true;
+        try {
+            var p = location.pathname;
+            if (p.indexOf('/demo/') === 0 || p.indexOf('/demo-m/') === 0) return true;
+            var b = document.querySelector('base');
+            var h = b ? (b.getAttribute('href') || '') : '';
+            if (h === '/demo/' || h === '/demo-m/') return true;
+        } catch (_) {}
+        return false;
+    }
+
     function dcContext() {
         var dc = window.__DC || {};
         return {
@@ -121,6 +138,10 @@
             isCommish: !!dc.isCommish,
             isSignedIn: !!dc.isSignedIn,
             isBookmarked: !!dc.isBookmarked,
+            // The demo is a fake league that lives as a static page: it's
+            // never bookmarkable, and its signed-in state is corrected
+            // client-side (see maybeCorrectDemoAuth).
+            isDemo: isDemoPage(),
             managePath: dc.slug ? '/league/' + dc.slug : null,
             libraryPath: '/dashboard',
         };
@@ -182,7 +203,7 @@
         if (!ctx.isCommish) {
             var groupLabel = ctx.isSignedIn ? 'Your account' : 'Join Today';
             var bookmarkRow = '';
-            if (ctx.isSignedIn && ctx.slug) {
+            if (ctx.isSignedIn && ctx.slug && !ctx.isDemo) {
                 var bmLabel = ctx.isBookmarked ? 'Bookmarked ★' : 'Bookmark ☆';
                 bookmarkRow =
                     '<a href="#" id="dc-bookmark-toggle" data-slug="' + ctx.slug + '" data-on="' + (ctx.isBookmarked ? '1' : '0') + '">' +
@@ -632,12 +653,33 @@
         wrap.appendChild(star);
     }
 
+    // The demo tree is a static page: window.__DC.isSignedIn is baked in as
+    // false and can't be injected server-side. So a reader who is actually
+    // signed in still sees the signed-out CTA, and its "Sign in" / "New
+    // chronicle" links just bounce through /login straight back to the demo.
+    // Probe the real session once and, if signed in, flip the context and
+    // rebuild the nav so it shows the account links instead.
+    function maybeCorrectDemoAuth() {
+        if (!isDemoPage() || (window.__DC && window.__DC.isSignedIn)) return;
+        fetch('/api/me', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r && r.ok ? r.json() : null; })
+            .then(function (j) {
+                if (!j || !j.signedIn) return;
+                window.__DC = window.__DC || {};
+                window.__DC.isSignedIn = true;
+                buildNav();
+                enhanceAuthLinks();
+            })
+            .catch(function () { /* offline / probe failed — leave signed-out nav */ });
+    }
+
     function init() {
         buildDemoStrip();
         buildNav();
         buildDemoBookmark();
         enhanceAuthLinks();
         wireBookmarkToggle();
+        maybeCorrectDemoAuth();
     }
 
     if (document.readyState === 'loading') {

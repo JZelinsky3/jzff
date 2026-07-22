@@ -32,7 +32,10 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // keeps an unauthenticated GET from being bounced to /login as HTML.
 // `/api/mock-board` is the Mock Room's player board (league-agnostic
 // redraft values) — the almanac page fetching it is public.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/hub/', '/api/hub/']
+// `/api/support` is the Support widget's inbox — league members browsing a
+// public almanac are usually signed out and must still be able to send a
+// note. The handler has its own honeypot + throttle.
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })

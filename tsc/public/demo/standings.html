@@ -13,7 +13,13 @@
 <link rel="stylesheet" href="assets/css/main.css">
 <style>
 /* ============================================================
-   STANDINGS PAGE
+   ALL-TIME STANDINGS · "THE LEDGER"
+   Cream page, ink chrome. Three chapters:
+     §01 The Ledger · the standings table (presets, FLIP sort,
+                      expandable rows, alumni appendix)
+     §02 The Race   · cumulative-wins chart
+     §03 Distinctions · computed career superlatives
+   (The head-to-head dominance grid now lives on the Managers page.)
    ============================================================ */
 
 .page-header {
@@ -27,40 +33,175 @@
 .page-kicker {
     font-family: var(--mono); font-weight: 700;
     font-size: .65rem; letter-spacing: .4em; text-transform: uppercase;
-    color: var(--gold); margin-bottom: 1.5rem;
+    color: var(--gold-deep); margin-bottom: 1.5rem;
 }
 .page-title {
     font-family: var(--serif);
     font-size: clamp(3rem, 8vw, 6rem);
     line-height: .95; letter-spacing: -.025em;
-    color: var(--cream); margin-bottom: 1rem;
+    color: var(--ink); margin-bottom: 1rem;
 }
-.page-title em { font-style: italic; color: var(--gold); }
+.page-title em { font-style: italic; color: var(--gold-deep); }
 .page-sub {
     font-family: var(--serif); font-style: italic;
     font-size: 1.2rem; line-height: 1.5;
-    color: var(--cream-soft);
+    color: var(--ink-soft);
     max-width: 540px; margin: 0 auto;
 }
 
-/* Sort / filter bar */
-.sort-bar {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: 1.5rem;
-    padding: 1.25rem 0;
-    margin-bottom: 2rem;
-    border-top: 1px solid var(--ink);
-    border-bottom: 1px solid var(--ink);
+/* ── Full-page cream override ── */
+body { background: var(--cream); }
+.site-glow, .site-grain { display: none; }
+/* Nav + chapbar keep the navy/gold palette; force solid --ink so the cream
+   body doesn't bleed through the default rgba backgrounds. */
+.nav { background: var(--ink); }
+:root { --chapbar-bg: var(--ink); }
+
+/* Section idiom recolored for cream, and the title truly centered:
+   1fr | auto | 1fr keeps the serif title on the page's center line no
+   matter how long the kicker and meta on either side run. */
+.section-header { border-bottom-color: rgba(14,22,32,.3); }
+@media (min-width: 720px) {
+    .section-header {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: baseline;
+    }
+    .section-num   { justify-self: start; }
+    .section-title { text-align: center; }
+    .section-meta  { justify-self: end; text-align: right; }
 }
-.sort-bar-label {
+.section-num    { color: var(--gold-deep); }
+.section-title  { color: var(--ink); }
+.section-meta   { color: #837b6a; }
+
+.loading-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    font-family: var(--serif); font-style: italic;
+    color: #837b6a;
+}
+
+/* ── League totals strip ── */
+.league-totals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0;
+    background: rgba(14,22,32,.06);
+    border: 1px solid rgba(14,22,32,.15);
+}
+.total-item {
+    padding: 1.2rem 1.4rem;
+    border-right: 1px solid rgba(14,22,32,.1);
+    text-align: center;
+}
+.total-item:last-child { border-right: none; }
+.total-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
+    color: #837b6a; margin-bottom: .4rem;
+}
+.total-value {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.6rem; line-height: 1;
+    color: var(--gold-deep);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   §01 THE RACE
+   ============================================================ */
+.race-wrap {
+    background: var(--cream);
+    border: 1px solid rgba(14,22,32,.15);
+    padding: 1.75rem 1.25rem .75rem;
+    overflow: hidden;
+}
+.race-svg { display: block; width: 100%; height: auto; }
+.race-svg text { user-select: none; }
+
+.race-g path.race-line {
+    fill: none;
+    stroke-width: 2.25;
+    stroke-linejoin: round;
+    transition: opacity .25s, stroke-width .2s;
+}
+.race-g.leader path.race-line { stroke-width: 3.25; }
+.race-g.alum path.race-line { stroke-dasharray: 3 4 !important; stroke-width: 1.6; }
+.race-g circle, .race-g .race-star { transition: opacity .25s; }
+/* End labels render in their own top layer (after every line group) with a
+   cream halo, so an alumnus's name that ends mid-chart can't be painted
+   over by the active managers' lines that keep going. */
+.race-svg .race-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 10.5px; letter-spacing: .06em;
+    cursor: default;
+    transition: opacity .25s;
+    paint-order: stroke fill;
+    stroke: #f4ebd8; stroke-width: 3px; stroke-linejoin: round;
+}
+.race-svg.focus .race-g:not(.on) { opacity: .1; }
+.race-svg.focus .race-label:not(.on) { opacity: .1 !important; }
+.race-svg .race-g.on path.race-line { stroke-width: 3.5; }
+.race-axis line.grid-y { stroke: rgba(14,22,32,.09); }
+.race-axis line.grid-x { stroke: rgba(14,22,32,.05); }
+.race-axis line.base { stroke: rgba(14,22,32,.3); }
+.race-axis text {
+    font-family: var(--mono); font-weight: 700;
+    font-size: 10px; letter-spacing: .12em;
+    fill: #a09880;
+}
+.race-legend {
+    display: flex; flex-wrap: wrap; gap: .4rem .5rem;
+    padding: 1.1rem .35rem .35rem;
+    border-top: 1px dotted rgba(14,22,32,.18);
+    margin-top: .9rem;
+}
+.race-chip {
+    display: inline-flex; align-items: center; gap: .45rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-soft);
+    border: 1px solid rgba(14,22,32,.14);
+    background: rgba(255,255,255,.4);
+    padding: .34rem .6rem;
+    border-radius: 2px;
+    cursor: default;
+    transition: border-color .2s, color .2s;
+}
+.race-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.race-chip .rc-wins { color: #a09880; }
+.race-chip.alum-chip { opacity: .55; }
+.race-chip:hover { border-color: rgba(139,109,56,.55); color: var(--ink); }
+.race-note {
+    font-family: var(--mono);
+    font-size: .58rem; letter-spacing: .18em; text-transform: uppercase;
+    color: #a09880;
+    padding: .7rem .35rem .25rem;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+}
+
+/* ============================================================
+   §02 THE LEDGER
+   ============================================================ */
+.control-bar {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 1.25rem 2rem;
+    padding: 1.1rem 0;
+    margin-bottom: 1.5rem;
+    border-top: 1px solid rgba(14,22,32,.15);
+    border-bottom: 1px solid rgba(14,22,32,.15);
+}
+.control-group { display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem; }
+.control-label {
     font-family: var(--mono); font-weight: 700;
     font-size: .62rem; letter-spacing: .25em; text-transform: uppercase;
-    color: var(--cream-mute);
+    color: #837b6a;
 }
-.sort-options { display: flex; flex-wrap: wrap; gap: .25rem; }
-.sort-option {
+.control-pills { display: flex; flex-wrap: wrap; gap: .25rem; }
+.pill {
     background: none;
     border: 1px solid transparent;
-    color: var(--cream-soft);
+    color: var(--ink-soft);
     font-family: var(--mono); font-weight: 500;
     font-size: .65rem; letter-spacing: .18em; text-transform: uppercase;
     padding: .5rem .85rem;
@@ -68,17 +209,20 @@
     transition: all .2s;
     border-radius: 2px;
 }
-.sort-option:hover { color: var(--cream); }
-.sort-option.active {
-    color: var(--gold);
-    border-color: rgba(232, 200, 137, .3);
-    background: rgba(232, 200, 137, .06);
+.pill:hover { color: var(--ink); }
+.pill.active {
+    color: var(--gold-deep);
+    border-color: rgba(139,109,56,.4);
+    background: rgba(139,109,56,.08);
 }
 
-/* Standings table — cream background */
+/* The table: ledger-paper treatment. Thin red margin rule on the left,
+   like an accountant's book. */
 .standings-wrap {
     background: var(--cream);
-    border: 1px solid rgba(14,22,32,.15);
+    border: 1px solid rgba(14,22,32,.18);
+    border-left: none;
+    box-shadow: inset 3px 0 0 rgba(160,72,48,.35), inset 4px 0 0 rgba(14,22,32,.18);
     overflow-x: auto;
 }
 
@@ -89,7 +233,6 @@ table.standings {
 table.standings thead {
     background: rgba(14,22,32,.07);
     border-bottom: 1px solid rgba(14,22,32,.12);
-    position: sticky; top: 0; z-index: 5;
 }
 table.standings th {
     padding: .9rem 1rem;
@@ -103,6 +246,8 @@ table.standings th {
     transition: color .2s;
 }
 table.standings th:hover { color: var(--ink); }
+table.standings th.no-sort { cursor: default; }
+table.standings th.no-sort:hover { color: #837b6a; }
 table.standings th.active-sort { color: var(--gold-deep); }
 table.standings th.num,
 table.standings td.num { text-align: right; }
@@ -111,11 +256,10 @@ table.standings th .sort-arrow {
     margin-left: .3rem;
     opacity: .4;
     font-size: .7em;
-    transition: opacity .2s;
 }
 table.standings th.active-sort .sort-arrow { opacity: 1; }
 
-/* Column group headers */
+/* Column group headers (Classic preset) */
 table.standings thead tr.col-groups th {
     padding: .5rem 1rem;
     font-size: .55rem; letter-spacing: .22em;
@@ -123,9 +267,9 @@ table.standings thead tr.col-groups th {
     border-bottom: 1px dotted rgba(14,22,32,.12);
     cursor: default;
 }
-table.standings thead tr.col-groups th.group-reg    { color: var(--gold-deep); }
-table.standings thead tr.col-groups th.group-po     { color: var(--rust); }
-table.standings thead tr.col-groups th.group-all    { color: var(--steel); }
+table.standings thead tr.col-groups th.group-reg { color: var(--gold-deep); }
+table.standings thead tr.col-groups th.group-po  { color: #8c3820; }
+table.standings thead tr.col-groups th.group-all { color: #4a6a88; }
 
 table.standings td {
     padding: .9rem 1rem;
@@ -142,10 +286,7 @@ table.standings td.rank {
     width: 2.5rem;
     text-align: center;
 }
-
-table.standings td.name-cell {
-    min-width: 130px;
-}
+table.standings td.name-cell { min-width: 130px; }
 table.standings td.name-cell a {
     color: var(--ink);
     text-decoration: none;
@@ -154,6 +295,14 @@ table.standings td.name-cell a {
     transition: color .2s;
 }
 table.standings td.name-cell a:hover { color: var(--gold-deep); }
+.expand-caret {
+    display: inline-block;
+    font-size: .6rem;
+    color: #a09880;
+    margin-left: .5rem;
+    transition: transform .25s ease, color .2s;
+}
+tr.is-open .expand-caret { transform: rotate(180deg); color: var(--gold-deep); }
 table.standings td.team-cell {
     font-family: var(--mono);
     font-size: .6rem; letter-spacing: .07em; text-transform: uppercase;
@@ -161,186 +310,177 @@ table.standings td.team-cell {
     min-width: 100px;
 }
 
-/* Record split columns — use deeper tones for cream-bg readability */
-table.standings td.reg-record {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .78rem;
-    color: var(--gold-deep);
-    border-left: 1px solid rgba(14,22,32,.12);
-}
-table.standings td.po-record {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .78rem;
-    color: #8c3820;
-}
+table.standings td.reg-record,
+table.standings td.po-record,
 table.standings td.all-record {
     font-family: var(--mono); font-weight: 700;
     font-size: .78rem;
-    color: #4a6a88;
-    border-right: 1px solid rgba(14,22,32,.12);
 }
+table.standings td.reg-record { color: var(--gold-deep); border-left: 1px solid rgba(14,22,32,.12); }
+table.standings td.po-record  { color: #8c3820; }
+table.standings td.all-record { color: #4a6a88; border-right: 1px solid rgba(14,22,32,.12); }
 table.standings th.reg-record { border-left: 1px solid rgba(14,22,32,.12); }
-table.standings th.all-record  { border-right: 1px solid rgba(14,22,32,.12); }
+table.standings th.all-record { border-right: 1px solid rgba(14,22,32,.12); }
 
 table.standings td.winpct-cell {
     font-family: var(--serif); font-style: italic;
     font-size: 1.05rem;
     color: var(--ink);
 }
-table.standings td.num {
-    font-variant-numeric: tabular-nums;
+table.standings td.num { font-variant-numeric: tabular-nums; }
+table.standings td.stat-num {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: .8rem;
+    color: var(--ink-soft);
 }
 
-/* Chips column */
-.chip-badges {
-    display: flex; flex-wrap: wrap; gap: .3rem;
-    align-items: center;
-}
+.chip-badges { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
 .chip-badge {
-    font-family: var(--mono); font-weight: 700;
+    font-family: var(--mono); font-weight: 900;
     font-size: .55rem; letter-spacing: .18em;
     padding: .25rem .5rem;
     border-radius: 2px;
-    background: rgba(232, 200, 137, .1);
-    color: var(--gold);
-    border: 1px solid rgba(232, 200, 137, .3);
+    color: #5c3e0e;
+    background: rgba(139,109,56,.14);
+    border: 1px solid rgba(139,109,56,.42);
     white-space: nowrap;
 }
 .chip-count-zero {
     font-family: var(--mono);
     font-size: .6rem; letter-spacing: .15em;
-    color: #a0987e;
+    color: #9a9080;
 }
 
-table.standings tbody tr:hover {
-    background: rgba(14,22,32,.03);
+table.standings tbody tr.mgr-row { cursor: pointer; }
+table.standings tbody tr.mgr-row:hover { background: rgba(14,22,32,.03); }
+table.standings tbody tr.champ-row { background: rgba(139,109,56,.05); }
+table.standings tbody tr.is-open { background: rgba(139,109,56,.08); }
+
+/* Expansion row */
+tr.detail-row > td {
+    padding: 0;
+    border-top: none;
+    background: rgba(255,255,255,.5);
 }
-table.standings tbody tr.champ-row {
-    background: rgba(14,22,32,.04);
+.detail-inner {
+    display: flex; flex-wrap: wrap; gap: 2rem 3rem;
+    align-items: center;
+    padding: 1.4rem 1.5rem 1.5rem 3.5rem;
+    border-top: 1px dotted rgba(14,22,32,.15);
+    border-bottom: 2px solid rgba(139,109,56,.25);
 }
-table.standings tbody tr.former-row {
-    opacity: .6;
+.detail-spark-label, .detail-stat-label {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
+    color: #a09880; margin-bottom: .4rem;
 }
-table.standings tbody tr.former-row td.name-cell a {
+.detail-spark svg { display: block; }
+.detail-stats { display: flex; flex-wrap: wrap; gap: 1.75rem; }
+.detail-stat-val {
+    font-family: var(--serif);
+    font-size: 1.25rem; color: var(--ink); line-height: 1;
+}
+.detail-stat-sub {
+    font-family: var(--mono);
+    font-size: .55rem; letter-spacing: .12em; text-transform: uppercase;
+    color: #a09880; margin-top: .3rem;
+}
+.detail-profile-link {
+    margin-left: auto;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--gold-deep); text-decoration: none;
+    padding: .6rem 1rem;
+    border: 1px solid rgba(139,109,56,.4);
+    background: rgba(139,109,56,.07);
+    transition: background .2s;
+    white-space: nowrap;
+}
+.detail-profile-link:hover { background: rgba(139,109,56,.14); }
+
+/* Alumni appendix */
+.alumni-head {
+    display: flex; align-items: baseline; gap: 1rem;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: .6rem;
+    border-bottom: 2px solid rgba(14,22,32,.2);
+}
+.alumni-head .a-title {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.4rem; color: var(--ink);
+}
+.alumni-head .a-meta {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; letter-spacing: .25em; text-transform: uppercase;
+    color: #837b6a;
+}
+.standings-wrap.alumni table.standings tbody tr { opacity: .7; }
+.standings-wrap.alumni table.standings tbody tr:hover,
+.standings-wrap.alumni table.standings tbody tr.is-open { opacity: 1; }
+
+/* ============================================================
+   §03 DISTINCTIONS
+   ============================================================ */
+/* Flex instead of grid: rows cap at 4 cards, and a short last row
+   (5th/6th card) centers itself instead of hugging the left edge. */
+.distinct-grid {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 1rem;
+}
+.distinct-card {
+    flex: 0 1 calc(25% - .75rem);
+    min-width: 240px; max-width: 100%;
+    background: rgba(255,255,255,.5);
+    border: 1px solid rgba(14,22,32,.15);
+    border-top: 3px solid var(--gold-deep);
+    padding: 1.4rem 1.4rem 1.5rem;
+    display: block;
+    text-decoration: none; color: inherit;
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s;
+}
+.distinct-card:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(14,22,32,.12); }
+.distinct-kicker {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .55rem; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--gold-deep); margin-bottom: .8rem;
+}
+.distinct-name {
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.7rem; line-height: 1;
+    color: var(--ink); margin-bottom: .45rem;
+}
+.distinct-stat {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; letter-spacing: .1em;
+    color: #8c3820; margin-bottom: .6rem;
+}
+.distinct-blurb {
+    font-family: var(--sans);
+    font-size: .82rem; line-height: 1.55;
     color: var(--ink-soft);
 }
 
-/* Divider row between current and former */
-.divider-row td {
-    padding: .6rem 1rem;
-    background: rgba(14,22,32,.06);
-    border-top: 2px solid rgba(14,22,32,.15);
-    font-family: var(--mono); font-weight: 700;
-    font-size: .6rem; letter-spacing: .3em; text-transform: uppercase;
-    color: #837b6a;
+/* ── Motion safety ── */
+@media (prefers-reduced-motion: reduce) {
+    .race-g path.race-line { transition: none !important; }
+    .distinct-card, .pill, .expand-caret { transition: none !important; }
 }
-
-/* Legend strip */
-.legend-strip {
-    display: flex; flex-wrap: wrap; gap: 2rem;
-    padding: 1.1rem 1.5rem;
-    border-top: 1px solid rgba(14,22,32,.12);
-    background: rgba(14,22,32,.04);
-}
-.legend-item {
-    display: flex; align-items: center; gap: .5rem;
-    font-family: var(--mono); font-weight: 700;
-    font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
-    color: #837b6a;
-}
-.legend-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-}
-
-/* League totals strip */
-.league-totals {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0;
-    background: var(--ink-card);
-    border: 1px solid var(--ink-line);
-    border-bottom: none;
-}
-.total-item {
-    padding: 1.2rem 1.4rem;
-    border-right: 1px solid var(--ink-line-soft);
-    text-align: center;
-}
-.total-item:last-child { border-right: none; }
-.total-label {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
-    color: var(--cream-mute); margin-bottom: .4rem;
-}
-.total-value {
-    font-family: var(--serif); font-style: italic;
-    font-size: 1.6rem; line-height: 1;
-    color: var(--gold);
-}
-
-.loading-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    font-family: var(--serif); font-style: italic;
-    color: var(--cream-mute);
-}
-
-/* ── Full-page cream override ── */
-body { background: var(--cream); }
-.site-glow, .site-grain { display: none; }
-/* Nav + chapbar use the home page's navy/gold palette. Force solid --ink
-   (no alpha) so the cream body underneath doesn't bleed through and wash
-   them out — the default rgba(14,22,32,.9) reads light-grey on cream. */
-.nav { background: var(--ink); }
-:root { --chapbar-bg: var(--ink); }
-
-.page-kicker { color: var(--gold-deep); }
-.page-title  { color: var(--ink); }
-.page-title em { color: var(--gold-deep); }
-.page-sub    { color: var(--ink-soft); }
-
-.sort-bar {
-    border-top-color: rgba(14,22,32,.15);
-    border-bottom-color: rgba(14,22,32,.15);
-}
-.sort-bar-label { color: #837b6a; }
-.sort-option { color: var(--ink-soft); }
-.sort-option:hover { color: var(--ink); }
-.sort-option.active {
-    color: var(--gold-deep);
-    border-color: rgba(139,109,56,.4);
-    background: rgba(139,109,56,.08);
-}
-
-.league-totals {
-    background: rgba(14,22,32,.06);
-    border-color: rgba(14,22,32,.15);
-}
-.total-label  { color: #837b6a; }
-.total-value  { color: var(--gold-deep); }
-.loading-state { color: #837b6a; }
-
-/* ── Chip badges on cream background — need dark amber for contrast ── */
-.chip-badge {
-    color: #5c3e0e;
-    background: rgba(139,109,56,.14);
-    border-color: rgba(139,109,56,.42);
-    font-weight: 900;
-}
-.chip-count-zero { color: #9a9080; }
 
 /* ── Mobile ── */
 @media (max-width: 640px) {
     .page-header { padding: 2.5rem 1rem 1.5rem; }
-    .sort-bar { gap: .75rem; padding: 1rem 0; }
-    .sort-option { font-size: .58rem; padding: .4rem .6rem; }
+    .control-bar { gap: .75rem 1.25rem; padding: 1rem 0; }
+    .pill { font-size: .58rem; padding: .4rem .6rem; }
     .league-totals { grid-template-columns: repeat(3, 1fr); }
     table.standings th,
     table.standings td { padding: .7rem .65rem; }
+    .detail-inner { padding: 1.2rem 1rem; gap: 1.25rem 1.75rem; }
+    .detail-profile-link { margin-left: 0; }
 }
 @media (max-width: 400px) {
     .league-totals { grid-template-columns: 1fr 1fr; }
-    .sort-options { gap: .15rem; }
+    .control-pills { gap: .15rem; }
 }
 </style>
 </head>
@@ -370,7 +510,7 @@ body { background: var(--cream); }
      data-page="standings"
      data-chapter="CH. I · STANDINGS"
      data-back-label="← The Hub"
-     data-back-href="./index.html"></nav>
+     data-back-href="./"></nav>
 <script src="assets/js/nav.js"></script>
 
 <!-- PAGE HEADER -->
@@ -378,61 +518,106 @@ body { background: var(--cream); }
     <div class="page-kicker" id="page-kicker">★ All-Time ★</div>
     <h1 class="page-title">All-Time <em>Standings.</em></h1>
     <p class="page-sub">
-        Every win, every loss, every chip — ranked across <span id="page-sub-seasons">every season</span> of the league.
-        Click any manager for their full profile.
+        Every win, every loss, every chip, ranked across <span id="page-sub-seasons">every season</span> of the league.
+        Click any manager to open their line.
     </p>
 </div>
 
-<div class="section">
-
+<div class="section" style="margin-top: 0;">
     <!-- League totals -->
     <div class="league-totals" id="league-totals">
         <div class="total-item">
             <div class="total-label">Managers</div>
-            <div class="total-value" id="tot-managers">—</div>
+            <div class="total-value" data-count id="tot-managers">—</div>
         </div>
         <div class="total-item">
             <div class="total-label">Seasons</div>
-            <div class="total-value" id="tot-seasons">—</div>
+            <div class="total-value" data-count id="tot-seasons">—</div>
         </div>
         <div class="total-item">
             <div class="total-label">Total Matchups</div>
-            <div class="total-value" id="tot-matchups">—</div>
+            <div class="total-value" data-count id="tot-matchups">—</div>
         </div>
         <div class="total-item">
             <div class="total-label">Different Champions</div>
-            <div class="total-value" id="tot-champs">—</div>
+            <div class="total-value" data-count id="tot-champs">—</div>
         </div>
         <div class="total-item">
             <div class="total-label">Total Points Scored</div>
-            <div class="total-value" id="tot-pf">—</div>
+            <div class="total-value" data-count id="tot-pf">—</div>
         </div>
         <div class="total-item">
             <div class="total-label">Total Prize Pool</div>
             <div class="total-value" id="tot-prize-pool">—</div>
         </div>
     </div>
+</div>
 
-    <!-- Sort bar -->
-    <div class="sort-bar" style="margin-top: 2rem;">
-        <span class="sort-bar-label">Sort —</span>
-        <div class="sort-options" id="sort-options">
-            <button class="sort-option active" data-sort="winpct">Win %</button>
-            <button class="sort-option" data-sort="chips">Championships</button>
-            <button class="sort-option" data-sort="wins">Wins</button>
-            <button class="sort-option" data-sort="pf">Total Points</button>
-            <button class="sort-option" data-sort="seasons">Seasons Played</button>
-            <button class="sort-option" data-sort="playoffs">Playoff Apps</button>
-            <button class="sort-option" data-sort="avgfinish">Avg Finish</button>
-            <button class="sort-option" data-sort="name">Alphabetical</button>
+<!-- §01 THE LEDGER -->
+<div class="section">
+    <div class="section-header">
+        <span class="section-num">§ 01 · The Ledger</span>
+        <span class="section-title">The standings.</span>
+        <span class="section-meta">Click a row to expand</span>
+    </div>
+
+    <div class="control-bar">
+        <div class="control-group">
+            <span class="control-label">View</span>
+            <div class="control-pills" id="preset-options">
+                <button class="pill active" data-preset="classic">Classic</button>
+                <button class="pill" data-preset="scoring">Scoring</button>
+                <button class="pill" data-preset="postseason">Postseason</button>
+            </div>
+        </div>
+        <div class="control-group">
+            <span class="control-label">Sort</span>
+            <div class="control-pills" id="sort-options">
+                <button class="pill active" data-sort="winpct">Win %</button>
+                <button class="pill" data-sort="chips">Championships</button>
+                <button class="pill" data-sort="wins">Wins</button>
+                <button class="pill" data-sort="pf">Total Points</button>
+                <button class="pill" data-sort="ppg">PPG</button>
+                <button class="pill" data-sort="seasons">Seasons</button>
+                <button class="pill" data-sort="playoffs">Playoff Apps</button>
+                <button class="pill" data-sort="avgfinish">Avg Finish</button>
+                <button class="pill" data-sort="name">Alphabetical</button>
+            </div>
         </div>
     </div>
 
-    <!-- Table -->
     <div id="standings-container">
         <div class="loading-state">Loading the standings…</div>
     </div>
 
+    <div id="alumni-container"></div>
+</div>
+
+<!-- §02 THE RACE -->
+<div class="section" id="race-section" style="display:none;">
+    <div class="section-header">
+        <span class="section-num">§ 02 · The Race</span>
+        <span class="section-title">The race for the crown.</span>
+        <span class="section-meta">Cumulative wins</span>
+    </div>
+    <div class="race-wrap">
+        <div id="race-chart"></div>
+        <div class="race-legend" id="race-legend"></div>
+        <div class="race-note">
+            <span>Hover a line or a name to isolate a manager</span>
+            <span>★ championship year · dashed = former member</span>
+        </div>
+    </div>
+</div>
+
+<!-- §03 DISTINCTIONS -->
+<div class="section" id="distinct-section" style="display:none; margin-bottom: 4rem;">
+    <div class="section-header">
+        <span class="section-num">§ 03 · Distinctions</span>
+        <span class="section-title">Career distinctions.</span>
+        <span class="section-meta">Computed from the full ledger</span>
+    </div>
+    <div class="distinct-grid" id="distinct-grid"></div>
 </div>
 
 <footer class="site-footer">
@@ -443,8 +628,13 @@ body { background: var(--cream); }
 <script>
 
 let allManagers = [];
+let detailsByUid = {};
+let leagueMeta = null;
 let currentSort = 'winpct';
 let sortAsc = false;
+let currentPreset = 'classic';
+const expandedIds = new Set();
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function correctedFinalRank(season) {
     const cutoff = season.year === 2020 ? 8 : 6;
@@ -453,10 +643,8 @@ function correctedFinalRank(season) {
 
 function computeAvgFinalFinish(ledger) {
     if (!ledger || ledger.length === 0) return null;
-    // Only count seasons that are fully finalized. final_rank is null until
-    // the championship is decided, so an in-progress live season (or an
-    // unplayed future season) is skipped entirely — a mid-season reg-rank
-    // shouldn't pretend to be a final finish.
+    // Only count fully finalized seasons: final_rank is null until the
+    // championship is decided, so an in-progress live season is skipped.
     const finalized = ledger.filter((s) => typeof s.final_rank === 'number' && s.final_rank > 0);
     if (finalized.length === 0) return null;
     const ranked = finalized
@@ -466,7 +654,12 @@ function computeAvgFinalFinish(ledger) {
     return ranked.reduce((sum, r) => sum + r, 0) / ranked.length;
 }
 
-let leagueMeta = null;
+function parseRec(str) {
+    // "10-4-0" -> {w:10, l:4, t:0}; tolerates "10-4" and junk.
+    if (typeof str !== 'string') return { w: 0, l: 0, t: 0 };
+    const p = str.split('-').map(n => parseInt(n, 10));
+    return { w: p[0] || 0, l: p[1] || 0, t: p[2] || 0 };
+}
 
 async function loadData() {
     try {
@@ -478,7 +671,8 @@ async function loadData() {
         const dir = await dirRes.json();
         if (leagueRes.ok) leagueMeta = await leagueRes.json();
 
-        // Fetch all individual manager detail files in parallel for reg/playoff splits
+        // All manager detail files in parallel: reg/playoff splits and
+        // season ledgers (sparklines + race chart).
         const details = await Promise.all(
             dir.managers.map(m =>
                 fetch(`data/managers/${m.user_id}.json`)
@@ -487,47 +681,58 @@ async function loadData() {
             )
         );
 
-        // Merge detail data into directory entries
         allManagers = dir.managers.map((m, i) => {
             const d = details[i] || {};
+            detailsByUid[String(m.user_id)] = d;
             return {
                 ...m,
-                reg_record:    d.reg_record    || '—',
-                playoff_record: d.playoff_record || '—',
-                reg_win_pct:   d.reg_win_pct   ?? null,
+                reg_record:      d.reg_record      || '—',
+                playoff_record:  d.playoff_record  || '—',
+                reg_win_pct:     d.reg_win_pct     ?? null,
                 playoff_win_pct: d.playoff_win_pct ?? null,
+                high_score:      d.high_score      ?? null,
+                low_score:       d.low_score       ?? null,
+                // longest_win_streak is { length, when } in the export
+                win_streak:      d.longest_win_streak?.length ?? null,
+                win_streak_when: d.longest_win_streak?.when ?? null,
                 avg_final_finish: computeAvgFinalFinish(d.season_ledger),
+                // Career points against — the export only carries regular-season
+                // PA (reg_pa per ledger year), so this column is reg-season only.
+                total_pa: (d.season_ledger || []).reduce((s, r) => s + (r.reg_pa || 0), 0) || null,
             };
         });
 
         populateTotals();
         render();
+        buildRaceChart();
+        buildDistinctions();
+        wireCountUp();
     } catch (err) {
         document.getElementById('standings-container').innerHTML = `
             <div class="loading-state" style="color: var(--rust);">
-                Couldn't load standings yet — the data may not be synced.<br>
+                The standings could not be loaded. The data may not be synced yet.<br>
                 <small>${err.message}</small>
             </div>
         `;
     }
 }
 
+/* ============================================================
+   TOTALS + COUNT-UP
+   ============================================================ */
 function populateTotals() {
-    document.getElementById('tot-managers').textContent = allManagers.length;
+    setCount('tot-managers', allManagers.length);
     const uniqueChamps = new Set(allManagers.flatMap(m => m.championship_seasons)).size;
-    document.getElementById('tot-champs').textContent = uniqueChamps;
+    setCount('tot-champs', uniqueChamps);
     const totalPF = allManagers.reduce((s, m) => s + m.total_pf, 0);
-    document.getElementById('tot-pf').textContent = Math.round(totalPF / 1000).toLocaleString() + 'K';
+    setCount('tot-pf', Math.round(totalPF / 1000), 'K');
     if (leagueMeta) {
-        const tm = document.getElementById('tot-matchups');
-        if (tm) tm.textContent = leagueMeta.total_matchups != null ? leagueMeta.total_matchups.toLocaleString() : '—';
-        const ts = document.getElementById('tot-seasons');
+        if (leagueMeta.total_matchups != null) setCount('tot-matchups', leagueMeta.total_matchups);
         const seasonCount = leagueMeta.total_seasons ?? (leagueMeta.all_seasons?.length ?? 0);
-        if (ts) ts.textContent = seasonCount || '—';
+        if (seasonCount) setCount('tot-seasons', seasonCount);
         const tpp = document.getElementById('tot-prize-pool');
         if (tpp) tpp.textContent = leagueMeta.prize_pool || '—';
 
-        // Ticker + page kicker (year range)
         const years = leagueMeta.all_seasons || [];
         const minY = years.length ? Math.min(...years) : null;
         const maxY = years.length ? Math.max(...years) : null;
@@ -535,32 +740,242 @@ function populateTotals() {
         if (kicker && minY && maxY) {
             kicker.textContent = minY === maxY
                 ? `★ ${minY} · All-Time ★`
-                : `★ ${minY} — ${maxY} · All-Time ★`;
+                : `★ ${minY} – ${maxY} · All-Time ★`;
         }
         const sub = document.getElementById('page-sub-seasons');
         if (sub && seasonCount) {
             sub.textContent = seasonCount === 1 ? 'one season' : `${seasonCount} seasons`;
         }
-        const champCount = new Set(allManagers.flatMap(m => m.championship_seasons)).size;
         const matchupsStr = leagueMeta.total_matchups != null ? leagueMeta.total_matchups.toLocaleString() : '—';
         document.querySelectorAll('.ticker-stat[data-stat="seasons-managers"]').forEach(el => {
             el.innerHTML = `<span class="ticker-star">★</span> ${seasonCount} SEASONS · ${allManagers.length} MANAGERS`;
         });
         document.querySelectorAll('.ticker-stat[data-stat="matchups-champs"]').forEach(el => {
-            el.innerHTML = `<span class="ticker-star">★</span> ${matchupsStr} MATCHUPS · ${champCount} DIFFERENT CHAMPION${champCount === 1 ? '' : 'S'}`;
+            el.innerHTML = `<span class="ticker-star">★</span> ${matchupsStr} MATCHUPS · ${uniqueChamps} DIFFERENT CHAMPION${uniqueChamps === 1 ? '' : 'S'}`;
         });
     }
 }
 
+// Stash targets on the elements; the IntersectionObserver runs them once.
+function setCount(id, value, suffix = '') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.dataset.target = String(value);
+    el.dataset.suffix = suffix;
+    el.textContent = REDUCED_MOTION ? value.toLocaleString() + suffix : '0' + suffix;
+}
+
+function wireCountUp() {
+    if (REDUCED_MOTION) return;
+    const strip = document.getElementById('league-totals');
+    const io = new IntersectionObserver((entries) => {
+        if (!entries.some(e => e.isIntersecting)) return;
+        io.disconnect();
+        strip.querySelectorAll('[data-count]').forEach(el => {
+            const target = parseInt(el.dataset.target || '0', 10);
+            const suffix = el.dataset.suffix || '';
+            if (!target) { el.textContent = (el.dataset.target ?? '—') + suffix; return; }
+            const t0 = performance.now(), dur = 850;
+            (function tick(t) {
+                const p = Math.min(1, (t - t0) / dur);
+                const eased = 1 - Math.pow(1 - p, 3);
+                el.textContent = Math.round(target * eased).toLocaleString() + suffix;
+                if (p < 1) requestAnimationFrame(tick);
+            })(t0);
+        });
+    }, { threshold: .4 });
+    io.observe(strip);
+}
+
+/* ============================================================
+   §01 THE RACE · cumulative wins line chart
+   ============================================================ */
+const RACE_COLORS = ['#8b6d38','#a04830','#4a6a88','#2e5a3c','#5c3a5e','#8c5a2e',
+                     '#3d6b6b','#7a2e22','#4a4f88','#6b8a2e','#88465c','#2e4a5a',
+                     '#9a7a1e','#586158'];
+
+function buildRaceChart() {
+    const series = [];
+    for (const m of allManagers) {
+        const d = detailsByUid[String(m.user_id)];
+        const ledger = (d?.season_ledger || []).slice().sort((a, b) => a.year - b.year);
+        if (ledger.length === 0) continue;
+        const chips = new Set(m.championship_seasons || []);
+        let cum = 0;
+        const pts = ledger.map(row => {
+            cum += parseRec(row.reg_record).w + parseRec(row.playoff_record).w;
+            return { year: row.year, wins: cum, chip: chips.has(row.year) };
+        });
+        series.push({ uid: String(m.user_id), name: m.name, current: m.is_current, pts });
+    }
+    if (series.length < 2) return;
+    const years = [...new Set(series.flatMap(s => s.pts.map(p => p.year)))].sort((a, b) => a - b);
+    if (years.length < 2) return;   // one season: a race chart says nothing yet
+
+    document.getElementById('race-section').style.display = '';
+
+    // Stable color per manager, palette in win order; series[0] is the leader.
+    series.sort((a, b) => b.pts[b.pts.length - 1].wins - a.pts[a.pts.length - 1].wins);
+    series.forEach((s, i) => { s.color = RACE_COLORS[i % RACE_COLORS.length]; });
+    const leaderUid = series[0].uid;
+
+    const W = 1000, H = 430, L = 46, R = 112, T = 26, B = 46;
+    const maxWins = Math.max(...series.map(s => s.pts[s.pts.length - 1].wins));
+    const yMax = Math.ceil(maxWins / 10) * 10 || 10;
+    const x = (year) => L + (year - years[0]) / (years[years.length - 1] - years[0]) * (W - L - R);
+    const y = (w) => T + (1 - w / yMax) * (H - T - B);
+
+    // Axis: win gridlines, a solid baseline, and a faint vertical per season.
+    let axis = '';
+    for (let g = 10; g <= yMax; g += 10) {
+        axis += `<line class="grid-y" x1="${L}" y1="${y(g)}" x2="${W - R + 20}" y2="${y(g)}"></line>
+                 <text x="${L - 10}" y="${y(g) + 3.5}" text-anchor="end">${g}</text>`;
+    }
+    axis += `<line class="base" x1="${L}" y1="${y(0)}" x2="${W - R + 20}" y2="${y(0)}"></line>`;
+    for (const yr of years) {
+        axis += `<line class="grid-x" x1="${x(yr)}" y1="${T - 6}" x2="${x(yr)}" y2="${y(0)}"></line>
+                 <text x="${x(yr)}" y="${H - B + 26}" text-anchor="middle">${yr}</text>`;
+    }
+
+    // End labels with simple collision push-apart
+    const ends = series.map(s => ({ s, ey: y(s.pts[s.pts.length - 1].wins) }))
+        .sort((a, b) => a.ey - b.ey);
+    for (let i = 1; i < ends.length; i++) {
+        if (ends[i].ey - ends[i - 1].ey < 13.5) ends[i].ey = ends[i - 1].ey + 13.5;
+    }
+
+    const groups = series.map(s => {
+        const dAttr = s.pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.year).toFixed(1)},${y(p.wins).toFixed(1)}`).join(' ');
+        // A gold star marks a championship year; plain seasons get a dot
+        // with a cream halo so crossings stay readable.
+        const marks = s.pts.map(p => p.chip
+            ? `<text class="race-star" x="${x(p.year).toFixed(1)}" y="${(y(p.wins) + 4.6).toFixed(1)}"
+                  text-anchor="middle" font-size="13" fill="#8b6d38">★</text>`
+            : `<circle cx="${x(p.year).toFixed(1)}" cy="${y(p.wins).toFixed(1)}" r="2.7" fill="${s.color}"
+                  stroke="#f4ebd8" stroke-width="1.1"></circle>`).join('');
+        const cls = ['race-g', s.current ? '' : 'alum', s.uid === leaderUid ? 'leader' : ''].filter(Boolean).join(' ');
+        return `<g class="${cls}" data-uid="${s.uid}" style="opacity:${s.current ? .95 : .4}">
+            <path class="race-line" d="${dAttr}" stroke="${s.color}"></path>
+            ${marks}
+        </g>`;
+    }).join('');
+
+    // Labels last so they sit above every line; alumni names end mid-chart
+    // and would otherwise be run over by the lines that keep going.
+    const labels = series.map(s => {
+        const last = s.pts[s.pts.length - 1];
+        const labelY = ends.find(e => e.s === s).ey;
+        return `<text class="race-label" data-uid="${s.uid}" x="${x(last.year) + 10}" y="${labelY + 3.5}"
+            fill="${s.color}" style="opacity:${s.current ? .95 : .6}">${s.name.toUpperCase()} · ${last.wins}</text>`;
+    }).join('');
+
+    document.getElementById('race-chart').innerHTML = `
+        <svg class="race-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+            <g class="race-axis">${axis}</g>
+            ${groups}
+            <g class="race-labels">${labels}</g>
+        </svg>`;
+
+    // Legend chips double as hover targets so tangled lines stay findable.
+    document.getElementById('race-legend').innerHTML = series.map(s => `
+        <span class="race-chip${s.current ? '' : ' alum-chip'}" data-uid="${s.uid}">
+            <span class="dot" style="background:${s.color}"></span>
+            ${s.name} <span class="rc-wins">${s.pts[s.pts.length - 1].wins}</span>
+        </span>`).join('');
+
+    const svg = document.querySelector('.race-svg');
+    const gByUid = {};
+    svg.querySelectorAll('.race-g').forEach(g => { gByUid[g.dataset.uid] = g; });
+    const labelByUid = {};
+    svg.querySelectorAll('.race-label').forEach(l => { labelByUid[l.dataset.uid] = l; });
+    const focus = (uid, on) => {
+        svg.classList.toggle('focus', on);
+        if (gByUid[uid]) gByUid[uid].classList.toggle('on', on);
+        if (labelByUid[uid]) labelByUid[uid].classList.toggle('on', on);
+    };
+    svg.querySelectorAll('.race-g, .race-label').forEach(g => {
+        g.addEventListener('mouseenter', () => focus(g.dataset.uid, true));
+        g.addEventListener('mouseleave', () => focus(g.dataset.uid, false));
+    });
+    document.querySelectorAll('.race-chip').forEach(c => {
+        c.addEventListener('mouseenter', () => focus(c.dataset.uid, true));
+        c.addEventListener('mouseleave', () => focus(c.dataset.uid, false));
+    });
+
+    // Draw-in: dash trick, staggered, once on view.
+    if (!REDUCED_MOTION) {
+        const paths = [...svg.querySelectorAll('path.race-line')];
+        paths.forEach(p => {
+            const len = p.getTotalLength();
+            p.style.strokeDasharray = `${len}`;
+            p.style.strokeDashoffset = `${len}`;
+        });
+        const io = new IntersectionObserver((entries) => {
+            if (!entries.some(e => e.isIntersecting)) return;
+            io.disconnect();
+            paths.forEach((p, i) => {
+                p.style.transition = `stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1) ${i * 45}ms`;
+                p.style.strokeDashoffset = '0';
+                p.addEventListener('transitionend', () => {
+                    // Clear the dash so hover width changes don't re-dash the line
+                    // (alumni keep their CSS dash pattern via !important).
+                    p.style.strokeDasharray = ''; p.style.transition = ''; p.style.strokeDashoffset = '';
+                }, { once: true });
+            });
+        }, { threshold: .3 });
+        io.observe(svg);
+    }
+}
+
+/* ============================================================
+   §02 THE LEDGER · presets, sorting, FLIP, expansion
+   ============================================================ */
+const COLUMNS = {
+    rank:       { label: '#',             cls: 'rank',       sort: null },
+    name:       { label: 'Manager',       cls: 'name-cell',  sort: 'name', left: true },
+    team:       { label: 'Team',          cls: 'team-cell',  sort: null,   left: true },
+    reg_record: { label: 'Record',        cls: 'reg-record', sort: 'regwins' },
+    po_record:  { label: 'Record',        cls: 'po-record',  sort: 'powins' },
+    all_record: { label: 'Record',        cls: 'all-record', sort: 'wins' },
+    winpct:     { label: 'Win %',         cls: 'winpct-cell',sort: 'winpct' },
+    pf:         { label: 'Points For',    cls: 'stat-num',   sort: 'pf' },
+    pa:         { label: 'Pts Against',   cls: 'stat-num',   sort: 'pa' },
+    ppg:        { label: 'PPG',           cls: 'stat-num',   sort: 'ppg' },
+    high:       { label: 'Best Week',     cls: 'stat-num',   sort: 'high' },
+    low:        { label: 'Worst Week',    cls: 'stat-num',   sort: 'low' },
+    streak:     { label: 'Best Streak',   cls: 'stat-num',   sort: 'streak' },
+    po_winpct:  { label: 'PO Win %',      cls: 'stat-num',   sort: 'po_winpct' },
+    seasons:    { label: 'Seasons',       cls: 'stat-num',   sort: 'seasons' },
+    playoffs:   { label: 'PA',            cls: 'stat-num',   sort: 'playoffs' },
+    top3:       { label: 'Podiums',       cls: 'stat-num',   sort: 'top3' },
+    avgfinish:  { label: 'Avg Finish',    cls: 'stat-num',   sort: 'avgfinish' },
+    chips:      { label: 'Championships', cls: '',           sort: 'chips', left: true },
+};
+const PRESETS = {
+    classic:    ['rank','name','team','reg_record','po_record','all_record','winpct','pf','ppg','seasons','playoffs','avgfinish','chips'],
+    scoring:    ['rank','name','team','pf','pa','ppg','high','low','streak','seasons','chips'],
+    postseason: ['rank','name','team','reg_record','po_record','po_winpct','playoffs','top3','avgfinish','chips'],
+};
+
+function games(m) { return m.wins + m.losses + m.ties; }
+
 function getSortValue(m) {
     switch (currentSort) {
-        case 'winpct':   return m.win_pct;
-        case 'chips':    return m.championships * 1000 + m.win_pct;
-        case 'wins':     return m.wins;
-        case 'pf':       return m.total_pf;
-        case 'ppg':      return m.total_pf / ((m.wins + m.losses + m.ties) || 1);
+        case 'winpct':    return m.win_pct;
+        case 'chips':     return m.championships * 1000 + m.win_pct;
+        case 'wins':      return m.wins;
+        case 'regwins':   return m.reg_wins ?? parseRec(m.reg_record).w;
+        case 'powins':    return (m.playoff_wins ?? parseRec(m.playoff_record).w) + (m.playoff_win_pct ?? 0);
+        case 'pf':        return m.total_pf;
+        case 'pa':        return m.total_pa ?? -1;
+        case 'ppg':       return m.total_pf / (games(m) || 1);
+        case 'high':      return m.high_score ?? -1;
+        case 'low':       return -(m.low_score ?? 9999);
+        case 'streak':    return m.win_streak ?? 0;
+        case 'po_winpct': return m.playoff_win_pct ?? -1;
         case 'seasons':   return m.seasons_played;
         case 'playoffs':  return m.playoff_appearances;
+        case 'top3':      return m.top_three_finishes ?? 0;
         case 'avgfinish': return -(m.avg_final_finish ?? 999);
         case 'name':      return m.name.toLowerCase();
         default:          return m.win_pct;
@@ -588,165 +1003,346 @@ function chipBadges(m) {
     ).join('')}</div>`;
 }
 
-function buildRow(m, displayRank, isFormer) {
-    const rowClass = [
-        m.championships > 0 ? 'champ-row' : '',
-        isFormer ? 'former-row' : '',
-    ].filter(Boolean).join(' ');
-
-    const rankTd = `<td class="rank">${displayRank}</td>`;
-
-    return `
-        <tr class="${rowClass}">
-            ${rankTd}
-            <td class="name-cell">
-                <a href="managers/manager.html?id=${m.user_id}">${m.name}</a>
-            </td>
-            <td class="team-cell">${m.team_latest}</td>
-            <td class="reg-record num">${m.reg_record}</td>
-            <td class="po-record num">${m.playoff_record}</td>
-            <td class="all-record num">${m.wins}–${m.losses}${m.ties ? '–' + m.ties : ''}</td>
-            <td class="winpct-cell num" title="Overall win %">${fmtPct(m.win_pct)}</td>
-            <td class="num">${m.total_pf.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1})}</td>
-            <td class="num">${((m.wins + m.losses + m.ties) ? m.total_pf / (m.wins + m.losses + m.ties) : 0).toFixed(1)}</td>
-            <td class="num">${m.seasons_played}</td>
-            <td class="num">${m.playoff_appearances}</td>
-            <td class="num">${m.avg_final_finish != null ? m.avg_final_finish.toFixed(1) : '—'}</td>
-            <td>${chipBadges(m)}</td>
-        </tr>
-    `;
+function cellValue(key, m, leagueAvgPct) {
+    switch (key) {
+        case 'name': return `<a href="managers/manager?id=${m.user_id}">${m.name}</a><span class="expand-caret">▾</span>`;
+        case 'team': return m.team_latest;
+        case 'reg_record': return m.reg_record;
+        case 'po_record':  return m.playoff_record;
+        case 'all_record': return `${m.wins}–${m.losses}${m.ties ? '–' + m.ties : ''}`;
+        case 'winpct': return fmtPct(m.win_pct);
+        case 'pf':  return m.total_pf.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        case 'pa':  return m.total_pa != null ? m.total_pa.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—';
+        case 'ppg': return (games(m) ? m.total_pf / games(m) : 0).toFixed(1);
+        case 'high': return m.high_score != null ? m.high_score.toFixed(1) : '—';
+        case 'low':  return m.low_score  != null ? m.low_score.toFixed(1)  : '—';
+        case 'streak': return m.win_streak ? `W${m.win_streak}` : '—';
+        case 'po_winpct': return m.playoff_win_pct != null ? fmtPct(m.playoff_win_pct) : '—';
+        case 'seasons': return m.seasons_played;
+        case 'playoffs': return m.playoff_appearances;
+        case 'top3': return m.top_three_finishes ?? '—';
+        case 'avgfinish': return m.avg_final_finish != null ? m.avg_final_finish.toFixed(1) : '—';
+        case 'chips': return chipBadges(m);
+        default: return '—';
+    }
 }
 
-function render() {
+function buildRow(m, displayRank, leagueAvgPct) {
+    const cols = PRESETS[currentPreset];
+    const rowClass = [
+        'mgr-row',
+        m.championships > 0 ? 'champ-row' : '',
+        expandedIds.has(String(m.user_id)) ? 'is-open' : '',
+    ].filter(Boolean).join(' ');
+
+    const tds = cols.map(key => {
+        if (key === 'rank') return `<td class="rank">${displayRank}</td>`;
+        const col = COLUMNS[key];
+        const numCls = col.left ? '' : ' num';
+        return `<td class="${col.cls}${numCls}">${cellValue(key, m, leagueAvgPct)}</td>`;
+    }).join('');
+
+    let html = `<tr class="${rowClass}" data-uid="${m.user_id}">${tds}</tr>`;
+    if (expandedIds.has(String(m.user_id))) {
+        html += `<tr class="detail-row"><td colspan="${cols.length}">${buildDetail(m)}</td></tr>`;
+    }
+    return html;
+}
+
+function finishSparkline(ledger) {
+    const rows = (ledger || [])
+        .filter(r => typeof r.final_rank === 'number' && r.final_rank > 0)
+        .sort((a, b) => a.year - b.year);
+    if (rows.length < 2) return '';
+    const W = 230, H = 54, P = 8;
+    const maxRank = Math.max(...rows.map(correctedFinalRank), 6);
+    const x = i => P + i / (rows.length - 1) * (W - 2 * P);
+    const y = r => P + (r - 1) / (maxRank - 1) * (H - 2 * P);
+    const d = rows.map((r, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(correctedFinalRank(r)).toFixed(1)}`).join(' ');
+    const dots = rows.map((r, i) => {
+        const rank = correctedFinalRank(r);
+        const champ = rank === 1;
+        return `<circle cx="${x(i).toFixed(1)}" cy="${y(rank).toFixed(1)}" r="${champ ? 3.4 : 2.3}"
+            fill="${champ ? '#8b6d38' : '#5a5346'}"><title>${r.year}: finished ${rank}</title></circle>`;
+    }).join('');
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+        <line x1="${P}" y1="${y(1)}" x2="${W - P}" y2="${y(1)}" stroke="rgba(139,109,56,.35)" stroke-dasharray="2 3"></line>
+        <path d="${d}" fill="none" stroke="#8b6d38" stroke-width="1.8"></path>${dots}
+    </svg>`;
+}
+
+function buildDetail(m) {
+    const d = detailsByUid[String(m.user_id)] || {};
+    const ledger = d.season_ledger || [];
+    const finalized = ledger.filter(r => typeof r.final_rank === 'number' && r.final_rank > 0);
+    const bestFinish = finalized.length
+        ? finalized.reduce((best, r) => correctedFinalRank(r) < correctedFinalRank(best) ? r : best)
+        : null;
+    const bestWeek = ledger.length
+        ? ledger.reduce((best, r) => (r.high_week_score ?? 0) > (best.high_week_score ?? 0) ? r : best)
+        : null;
+    const spark = finishSparkline(ledger);
+    const ord = n => n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`;
+    const yy = y => `'${String(y).slice(-2)}`;
+    // Turn the exported "W9 2021 → W16 2021" into a tighter label: collapse
+    // the year when the streak stays in one season, and abbreviate the year.
+    const fmtStreakWhen = w => {
+        if (!w) return '';
+        const p = w.match(/^W(\d+)\s+(\d{4})\s*→\s*W(\d+)\s+(\d{4})$/);
+        if (!p) return w;
+        const [, wa, ya, wb, yb] = p;
+        return ya === yb ? `W${wa}→W${wb} ${yy(ya)}` : `W${wa} ${yy(ya)} → W${wb} ${yy(yb)}`;
+    };
+
+    const stats = [
+        bestFinish ? { v: ord(correctedFinalRank(bestFinish)), s: `Best finish · ${bestFinish.year}` } : null,
+        bestWeek && bestWeek.high_week_score ? { v: bestWeek.high_week_score.toFixed(1), s: `Best week · W${bestWeek.high_week ?? '?'} ${yy(bestWeek.year)}` } : null,
+        d.longest_win_streak?.length ? { v: `W${d.longest_win_streak.length}`, s: d.longest_win_streak.when ? `Longest heater · ${fmtStreakWhen(d.longest_win_streak.when)}` : 'Longest heater' } : null,
+        d.avg_ppg ? { v: d.avg_ppg.toFixed(1), s: 'Career PPG' } : null,
+        d.playoff_record ? { v: d.playoff_record, s: 'Playoff record' } : null,
+    ].filter(Boolean);
+
+    return `<div class="detail-inner">
+        ${spark ? `<div class="detail-spark">
+            <div class="detail-spark-label">Finishes by season · gold line = title</div>${spark}
+        </div>` : ''}
+        <div class="detail-stats">
+            ${stats.map(st => `<div class="detail-stat">
+                <div class="detail-stat-val">${st.v}</div>
+                <div class="detail-stat-sub">${st.s}</div>
+            </div>`).join('')}
+        </div>
+        <a class="detail-profile-link" href="managers/manager?id=${m.user_id}">Full profile</a>
+    </div>`;
+}
+
+function buildTable(rows, cols, leagueAvgPct, showGroups) {
+    const arr = sortAsc ? '↑' : '↓';
+    const groupRow = showGroups && currentPreset === 'classic' ? `
+        <tr class="col-groups">
+            <th colspan="3"></th>
+            <th colspan="1" class="group-reg num">Reg Season</th>
+            <th colspan="1" class="group-po num">Playoffs</th>
+            <th colspan="1" class="group-all num">All-Time</th>
+            <th colspan="${cols.length - 6}"></th>
+        </tr>` : '';
+    const ths = cols.map(key => {
+        const col = COLUMNS[key];
+        if (key === 'rank') return `<th class="num no-sort">#</th>`;
+        const numCls = col.left ? '' : ' num';
+        if (!col.sort) return `<th class="${col.cls}${numCls} no-sort">${col.label}</th>`;
+        const active = currentSort === col.sort;
+        return `<th class="${col.cls}${numCls}${active ? ' active-sort' : ''}" data-sort="${col.sort}">
+            ${col.label}${active ? `<span class="sort-arrow">${arr}</span>` : ''}</th>`;
+    }).join('');
+    return `<table class="standings">
+        <thead>${groupRow}<tr>${ths}</tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function render(withFlip) {
+    const cols = PRESETS[currentPreset];
+    const totGames = allManagers.reduce((s, m) => s + games(m), 0);
+    const totWins  = allManagers.reduce((s, m) => s + m.wins, 0);
+    const leagueAvgPct = totGames ? totWins / totGames : .5;
+
+    // FLIP prep: remember where each visible manager row currently sits.
+    const before = {};
+    if (withFlip && !REDUCED_MOTION) {
+        document.querySelectorAll('tr.mgr-row[data-uid]').forEach(tr => {
+            before[tr.dataset.uid] = tr.getBoundingClientRect().top;
+        });
+    }
+
     const current = sortManagers(allManagers.filter(m => m.is_current));
     const former  = sortManagers(allManagers.filter(m => !m.is_current));
 
-    // Three layouts:
-    //   - active == total → no alumni divider, no former styling
-    //   - some active, some not → actives top, divider, formers below
-    //   - none active (e.g. current season not yet ingested) → show all as primary
     let rank = 1;
-    let primaryRows, alumniRows;
+    let primary, alumni;
     if (current.length > 0) {
-        primaryRows = current.map(m => buildRow(m, rank++, false)).join('');
-        alumniRows  = former.length > 0 ? former.map(m => buildRow(m, rank++, true)).join('') : '';
+        primary = current;
+        alumni = former;
     } else {
-        primaryRows = former.map(m => buildRow(m, rank++, false)).join('');
-        alumniRows  = '';
+        primary = former;
+        alumni = [];
     }
 
-    const arr = sortAsc ? '↑' : '↓';
+    const primaryRows = primary.map(m => buildRow(m, rank++, leagueAvgPct)).join('');
+    document.getElementById('standings-container').innerHTML =
+        `<div class="standings-wrap">${buildTable(primaryRows, cols, leagueAvgPct, true)}</div>`;
 
-    // Build a sortable th; pass noSort=true for columns we don't support sorting on
-    function th(col, label, extraClass = '', noSort = false) {
-        if (noSort) {
-            return `<th class="${extraClass} num" style="cursor:default;">${label}</th>`;
-        }
-        const active = currentSort === col;
-        return `<th class="${extraClass} num ${active ? 'active-sort' : ''}" data-sort="${col}">
-            ${label}${active ? `<span class="sort-arrow">${arr}</span>` : ''}
-        </th>`;
-    }
-
-    const nameActive = currentSort === 'name';
-
-    const html = `
-        <div class="standings-wrap">
-            <table class="standings">
-                <thead>
-                    <tr class="col-groups">
-                        <th colspan="3"></th>
-                        <th colspan="1" class="group-reg num">Reg Season</th>
-                        <th colspan="1" class="group-po num">Playoffs</th>
-                        <th colspan="1" class="group-all num">All-Time</th>
-                        <th colspan="7"></th>
-                    </tr>
-                    <tr>
-                        <th class="num" style="cursor:default;">#</th>
-                        <th data-sort="name" class="${nameActive ? 'active-sort' : ''}">
-                            Manager${nameActive ? `<span class="sort-arrow">${arr}</span>` : ''}
-                        </th>
-                        <th style="cursor:default;">Team</th>
-                        ${th('wins', 'Record', 'reg-record')}
-                        ${th('po_record', 'Record', 'po-record', true)}
-                        ${th('wins', 'Record', 'all-record')}
-                        ${th('winpct', 'Win %')}
-                        ${th('pf', 'Points For')}
-                        ${th('ppg', 'PPG')}
-                        ${th('seasons', 'Seasons')}
-                        ${th('playoffs', 'PA')}
-                        ${th('avgfinish', 'Avg Finish')}
-                        ${th('chips', 'Championships')}
-                    </tr>
-                </thead>
-                <tbody>
-                    ${primaryRows}
-                    ${alumniRows ? `
-                        <tr class="divider-row">
-                            <td colspan="13">★ Former Members · Alumni</td>
-                        </tr>
-                        ${alumniRows}
-                    ` : ''}
-                </tbody>
-            </table>
-            <div class="legend-strip">
-                <div class="legend-item">
-                    <div class="legend-dot" style="background: rgba(232,200,137,.5);"></div>
-                    Champion row
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot" style="background: rgba(255,255,255,.15);"></div>
-                    Former member
-                </div>
-                <div class="legend-item" style="margin-left:auto;">
-                    <span style="color:var(--gold);">■</span>&nbsp;Reg Season
-                </div>
-                <div class="legend-item">
-                    <span style="color:var(--rust);">■</span>&nbsp;Playoffs
-                </div>
-                <div class="legend-item">
-                    <span style="color:var(--steel);">■</span>&nbsp;All-Time
-                </div>
+    const alumniBox = document.getElementById('alumni-container');
+    if (alumni.length > 0) {
+        const alumniRows = alumni.map(m => buildRow(m, rank++, leagueAvgPct)).join('');
+        alumniBox.innerHTML = `
+            <div class="alumni-head">
+                <span class="a-title">Alumni.</span>
+                <span class="a-meta">★ Former members · ${alumni.length}</span>
             </div>
-        </div>
-    `;
+            <div class="standings-wrap alumni">${buildTable(alumniRows, cols, leagueAvgPct, false)}</div>`;
+    } else {
+        alumniBox.innerHTML = '';
+    }
 
-    document.getElementById('standings-container').innerHTML = html;
-    wireTableHeaders();
+    wireTable();
+
+    // FLIP play: rows glide from their old slot to the new one.
+    if (withFlip && !REDUCED_MOTION) {
+        const moved = [];
+        document.querySelectorAll('tr.mgr-row[data-uid]').forEach(tr => {
+            const prev = before[tr.dataset.uid];
+            if (prev == null) return;
+            const dy = prev - tr.getBoundingClientRect().top;
+            if (Math.abs(dy) < 2) return;
+            tr.style.transform = `translateY(${dy}px)`;
+            tr.style.transition = 'none';
+            moved.push(tr);
+        });
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            moved.forEach(tr => {
+                tr.style.transition = 'transform .38s cubic-bezier(.2,.8,.2,1)';
+                tr.style.transform = '';
+                tr.addEventListener('transitionend', () => { tr.style.transition = ''; }, { once: true });
+            });
+        }));
+    }
 }
 
-function wireTableHeaders() {
+function wireTable() {
     document.querySelectorAll('table.standings th[data-sort]').forEach(th => {
         th.addEventListener('click', () => {
             const col = th.dataset.sort;
-            if (currentSort === col) {
-                sortAsc = !sortAsc;
-            } else {
-                currentSort = col;
-                sortAsc = false;
-            }
-            // Sync pill bar
-            document.querySelectorAll('.sort-option').forEach(b => b.classList.remove('active'));
-            const pill = document.querySelector(`.sort-option[data-sort="${col}"]`);
-            if (pill) pill.classList.add('active');
-            render();
+            if (currentSort === col) sortAsc = !sortAsc;
+            else { currentSort = col; sortAsc = false; }
+            syncSortPills();
+            render(true);
+        });
+    });
+    document.querySelectorAll('tr.mgr-row').forEach(tr => {
+        tr.addEventListener('click', (e) => {
+            if (e.target.closest('a')) return;
+            const uid = tr.dataset.uid;
+            if (expandedIds.has(uid)) expandedIds.delete(uid);
+            else expandedIds.add(uid);
+            render(false);
         });
     });
 }
 
+function syncSortPills() {
+    document.querySelectorAll('#sort-options .pill').forEach(b => {
+        b.classList.toggle('active', b.dataset.sort === currentSort);
+    });
+}
+
 document.getElementById('sort-options').addEventListener('click', (e) => {
-    const btn = e.target.closest('.sort-option');
+    const btn = e.target.closest('.pill');
     if (!btn) return;
-    document.querySelectorAll('.sort-option').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    if (currentSort === btn.dataset.sort) {
-        sortAsc = !sortAsc;
-    } else {
-        currentSort = btn.dataset.sort;
-        sortAsc = false;
-    }
-    render();
+    if (currentSort === btn.dataset.sort) sortAsc = !sortAsc;
+    else { currentSort = btn.dataset.sort; sortAsc = false; }
+    syncSortPills();
+    render(true);
 });
+
+document.getElementById('preset-options').addEventListener('click', (e) => {
+    const btn = e.target.closest('.pill');
+    if (!btn) return;
+    currentPreset = btn.dataset.preset;
+    document.querySelectorAll('#preset-options .pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render(false);
+});
+
+/* ============================================================
+   §03 DISTINCTIONS
+   ============================================================ */
+function buildDistinctions() {
+    const cards = [];
+    const link = m => `managers/manager?id=${m.user_id}`;
+    const maxSeasonYear = Math.max(...(leagueMeta?.all_seasons ?? [0]));
+
+    // The Dynasty: most chips, needs 2+.
+    const byChips = [...allManagers].sort((a, b) => b.championships - a.championships || b.win_pct - a.win_pct);
+    if (byChips[0] && byChips[0].championships >= 2) {
+        const m = byChips[0];
+        cards.push({ k: 'The Dynasty', m, stat: `${m.championships} titles · ${m.championship_seasons.join(', ')}`,
+            blurb: `${m.championships} championships in ${m.seasons_played} seasons. Nobody else has more than ${byChips[1]?.championships ?? 0}.` });
+    }
+
+    // The Bridesmaid: most podiums, zero chips.
+    const brides = allManagers.filter(m => m.championships === 0 && (m.top_three_finishes ?? 0) >= 2)
+        .sort((a, b) => (b.top_three_finishes ?? 0) - (a.top_three_finishes ?? 0));
+    if (brides[0]) {
+        const m = brides[0];
+        cards.push({ k: 'The Bridesmaid', m, stat: `${m.top_three_finishes} podiums · 0 titles`,
+            blurb: `${m.top_three_finishes} top-three finishes without a ring. Always at the party, never the guest of honor.` });
+    }
+
+    // The Regular Season Merchant: wins all fall, disappears in January.
+    const merch = allManagers.filter(m => {
+        const po = parseRec(m.playoff_record);
+        return (po.w + po.l) >= 4 && m.reg_win_pct != null && m.playoff_win_pct != null && m.reg_win_pct > .5;
+    }).sort((a, b) => (b.reg_win_pct - b.playoff_win_pct) - (a.reg_win_pct - a.playoff_win_pct));
+    if (merch[0] && (merch[0].reg_win_pct - merch[0].playoff_win_pct) > .12) {
+        const m = merch[0];
+        cards.push({ k: 'The Regular Season Merchant', m,
+            stat: `${fmtPct(m.reg_win_pct)} regular · ${fmtPct(m.playoff_win_pct)} playoffs`,
+            blurb: `Dominant from September to December, mortal after that. The gap is ${((m.reg_win_pct - m.playoff_win_pct) * 100).toFixed(0)} points of win rate.` });
+    }
+
+    // Built for January: playoff riser.
+    const jan = allManagers.filter(m => {
+        const po = parseRec(m.playoff_record);
+        return (po.w + po.l) >= 4 && m.reg_win_pct != null && m.playoff_win_pct != null;
+    }).sort((a, b) => (b.playoff_win_pct - b.reg_win_pct) - (a.playoff_win_pct - a.reg_win_pct));
+    if (jan[0] && (jan[0].playoff_win_pct - jan[0].reg_win_pct) > .08) {
+        const m = jan[0];
+        cards.push({ k: 'Built for January', m,
+            stat: `${fmtPct(m.playoff_win_pct)} playoffs · ${fmtPct(m.reg_win_pct)} regular`,
+            blurb: `A different manager when the bracket starts. Playoff win rate ${((m.playoff_win_pct - m.reg_win_pct) * 100).toFixed(0)} points above the regular season.` });
+    }
+
+    // The Heater: longest win streak.
+    const heat = [...allManagers].filter(m => m.win_streak).sort((a, b) => b.win_streak - a.win_streak);
+    if (heat[0] && heat[0].win_streak >= 5) {
+        const m = heat[0];
+        cards.push({ k: 'The Heater', m, stat: `${m.win_streak} straight wins${m.win_streak_when ? ' · ' + m.win_streak_when : ''}`,
+            blurb: `The longest run of consecutive wins in league history. ${m.win_streak} in a row before anyone could cool it off.` });
+    }
+
+    // The Marathon Man: most games played.
+    const iron = [...allManagers].sort((a, b) => games(b) - games(a));
+    if (iron[0]) {
+        const m = iron[0];
+        cards.push({ k: 'The Marathon Man', m, stat: `${games(m)} games · ${m.seasons_played} seasons`,
+            blurb: `More lineups set than anyone in the league. ${games(m)} games of showing up, every single week.` });
+    }
+
+    // The Drought: current member, longest wait since a title (or never).
+    const droughts = allManagers.filter(m => m.is_current && m.seasons_played >= 3).map(m => {
+        const lastChip = m.championship_seasons?.length ? Math.max(...m.championship_seasons) : null;
+        return { m, wait: lastChip ? maxSeasonYear - lastChip : Infinity };
+    }).sort((a, b) => b.wait - a.wait || b.m.seasons_played - a.m.seasons_played);
+    if (droughts[0] && (droughts[0].wait === Infinity ? droughts[0].m.seasons_played >= 4 : droughts[0].wait >= 4)) {
+        const { m, wait } = droughts[0];
+        cards.push({ k: 'The Drought', m,
+            stat: wait === Infinity ? `${m.seasons_played} seasons, no title` : `${wait} years since the last one`,
+            blurb: wait === Infinity
+                ? `${m.seasons_played} seasons in the league and the trophy case is still empty. The wait continues.`
+                : `Champion in ${Math.max(...m.championship_seasons)}, and not since. ${wait} years is a long time to hear about it.` });
+    }
+
+    if (cards.length === 0) return;
+    document.getElementById('distinct-section').style.display = '';
+    document.getElementById('distinct-grid').innerHTML = cards.slice(0, 6).map(c => `
+        <a class="distinct-card" href="${link(c.m)}">
+            <div class="distinct-kicker">★ ${c.k}</div>
+            <div class="distinct-name">${c.m.name}</div>
+            <div class="distinct-stat">${c.stat}</div>
+            <div class="distinct-blurb">${c.blurb}</div>
+        </a>`).join('');
+}
 
 loadData();
 </script>

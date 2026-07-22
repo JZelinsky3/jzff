@@ -10135,7 +10135,16 @@ body.tsc-hdr-collapsed .mlib-bar {
 /* ── Empty state ── */
 .mlib-empty {
     text-align: center;
-    padding: 2.5rem 1.5rem;
+    margin: .65rem .85rem 0;
+    padding: 2rem 1.5rem;
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 12px;
+}
+/* Primary CTA inherits .dc-btn's square editorial corners; round it so it
+   matches the quick-action tiles and cards around it on mobile. */
+.mlib-empty .dc-btn-block {
+    border-radius: 10px;
 }
 .mlib-empty-title {
     font-family: var(--serif);
@@ -26774,7 +26783,16 @@ body.tsc-hdr-collapsed .mlib-bar {
 /* ── Empty state ── */
 .mlib-empty {
     text-align: center;
-    padding: 2.5rem 1.5rem;
+    margin: .65rem .85rem 0;
+    padding: 2rem 1.5rem;
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--ink-line);
+    border-radius: 12px;
+}
+/* Primary CTA inherits .dc-btn's square editorial corners; round it so it
+   matches the quick-action tiles and cards around it on mobile. */
+.mlib-empty .dc-btn-block {
+    border-radius: 10px;
 }
 .mlib-empty-title {
     font-family: var(--serif);

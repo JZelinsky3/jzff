@@ -425,8 +425,9 @@ function injectOgTags(html: string, meta: LeagueMeta, file: string, req: NextReq
 // pool, weekly matchup). Other almanac pages keep their OG tags but skip
 // the button so the chrome stays calm.
 const SHARE_BUTTON_FILES = new Set<string>([
-  'live/pickems/index.html',
-  'live/matchup-preview/index.html',
+  // No pages use the floating OG-share FAB right now. Matchup-preview
+  // carries its own in-layout share buttons (departures-board header +
+  // game actions row), so it no longer needs the floating pill.
 ])
 
 type OgImage = { url: string; title: string; description: string; downloadName?: string; shareSub?: string }
@@ -754,6 +755,26 @@ function injectMobileSwitchPill(html: string, req: NextRequest): string {
     `text-decoration:none;box-shadow:0 4px 18px rgba(0,0,0,.45);">Switch to mobile site</a>`
   if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, `${pill}\n</body>`)
   return html + pill
+}
+
+// Floating Support widget — every desktop almanac page gets the cream
+// bottom-right pill (bug reports / suggestions / questions → /api/support).
+// Mobile templates skip it on purpose; support.css also hides it below
+// 768px for phones that fall back to a desktop template. The signed-in
+// user's email rides along so the form prefills. JSON is </script>-safe
+// via the < escape (league names are user-controlled).
+function injectSupportWidget(html: string, meta: LeagueMeta, email: string | null): string {
+  const cfg = JSON.stringify({
+    slug: meta.slug,
+    league: meta.name,
+    ...(email ? { email } : {}),
+  }).replace(/</g, '\\u003c')
+  const block =
+    `<link rel="stylesheet" href="/pams-template/assets/css/support.css">\n` +
+    `<script>window.__TSCSupport=${cfg};</script>\n` +
+    `<script src="/pams-template/assets/js/support.js" defer></script>`
+  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, `${block}\n</body>`)
+  return html + block
 }
 
 // Resolve the request path under /leagues/<slug>/...
@@ -1102,6 +1123,9 @@ export async function GET(
     // Phone user who explicitly chose the desktop view: give them a way back.
     if (!servedMobile && isMobileUA(req) && req.cookies.get(VIEW_COOKIE)?.value === 'desktop') {
       html = injectMobileSwitchPill(html, req)
+    }
+    if (!servedMobile) {
+      html = injectSupportWidget(html, meta, user?.email ?? null)
     }
     return new NextResponse(html, {
       status: 200,

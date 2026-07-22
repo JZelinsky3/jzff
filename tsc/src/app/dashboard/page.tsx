@@ -267,6 +267,9 @@ export default async function DashboardPage({
           <div className="dc-banner-lede" style={{ fontFamily: 'var(--serif)', color: 'var(--cream)' }}>
             <strong style={{ color: 'var(--gold)' }}>First league</strong> is a free trial: every feature, unlocked as a preview of the paid plans.
           </div>
+          <div className="dc-banner-thanks" style={{ fontFamily: 'var(--serif)', color: 'var(--cream-soft)', marginTop: '.4rem' }}>
+            Thank you to everyone who tested the first round and sent feedback. Phase 2 picks up right where you left off.
+          </div>
           {/* Feature-list explanation is verbose; it's the first thing to hide
               on phones where vertical real-estate is precious. The email
               follow-up stays visible at every width. */}
@@ -291,8 +294,8 @@ export default async function DashboardPage({
               letterSpacing: '.22em', textTransform: 'uppercase',
               color: 'var(--cream-mute)',
             }}>
-              ★ Testing ends:{' '}
-              <strong style={{ color: 'var(--gold)' }}>Jul 20, 2026</strong>
+              ★ Testing phase 2 ends:{' '}
+              <strong style={{ color: 'var(--gold)' }}>Aug 16, 2026</strong>
             </span>
             <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
               <Link

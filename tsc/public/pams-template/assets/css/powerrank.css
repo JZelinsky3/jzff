@@ -539,11 +539,75 @@ body {
      · Title "Power Rankings." (center), double-rule underline,
        kicker "THE LAKESIDE LEAGUE · 2026" below
    ─────────────────────────────────────────────────────────────────── */
-.pr-nav {
+/* Sticky dock — masthead + live rail pin together as one unit, matching
+   the site-nav + chapbar stack on other live pages. The bottom gap lives
+   on the dock so the rail sits flush against the masthead. */
+.pr-dock {
   position: sticky; top: 0; z-index: 30;
-  background: var(--ink-card);   /* navy shows only along the bottom edge */
-  padding: 0 0 2px;
   margin: 0 0 2.5rem;
+}
+.pr-nav {
+  /* Sticky moved to .pr-dock. Opaque cream masthead with a thin gold
+     border at the bottom — this is the rail's top edge. Kept OPAQUE so
+     content scrolling under the sticky dock can't bleed through the seam. */
+  background: var(--cream);
+  border-bottom: 1px solid #cdbb92;
+  margin: 0;
+}
+
+/* ── Live Season rail — parity with the site-wide nav rail on other
+   live pages, themed to the parchment masthead. Sits flush under the
+   pr-nav; scrolls horizontally when the tabs outrun the viewport. ── */
+.pr-rail {
+  position: relative; z-index: 20;
+  /* Lighter parchment at the top fading a touch darker toward the bottom,
+     mirroring the warm-top/dark-bottom fade the site live rail carries. */
+  background: linear-gradient(180deg, #f9f2e2, #ece1c8);
+  /* Bottom border only, like the site live rail; the masthead above
+     supplies its own edge, so a top border would double up into a
+     thick two-tone line. */
+  border-bottom: 1px solid #cdbb92;   /* opaque — no see-through when content scrolls under the sticky dock */
+  margin: 0;   /* bottom gap lives on .pr-dock */
+}
+.pr-rail-track {
+  max-width: 1370px; margin: 0 auto;
+  display: flex; align-items: stretch;
+  justify-content: center;
+  padding: 0 1rem;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.pr-rail-track::-webkit-scrollbar { display: none; }
+.pr-rail-link {
+  flex: 0 0 auto; position: relative;
+  font-family: var(--mono); font-weight: 700;
+  font-size: .78rem; letter-spacing: .2em; text-transform: uppercase;
+  color: rgba(14,22,32,.55);
+  text-decoration: none; white-space: nowrap;
+  padding: .65rem 1.3rem .75rem;
+  transition: color .15s;
+}
+.pr-rail-link:hover { color: var(--ink); }
+.pr-rail-link.is-active { color: #5c3e0e; }
+.pr-rail-link.is-active::after {
+  content: ""; position: absolute;
+  left: 1.3rem; right: 1.3rem; bottom: 0;
+  height: 2px; background: rgba(139,109,56,.7);
+}
+.pr-rail-link + .pr-rail-link::before {
+  content: ""; position: absolute; left: 0;
+  top: 35%; bottom: 35%; width: 1px;
+  background: rgba(139,109,56,.3);
+}
+/* "History" back-tab reads as the quietest tab; a gold-tinted divider
+   groups it apart from the live chapters, mirroring the site chapbar. */
+.pr-rail-link.is-back { color: rgba(14,22,32,.42); }
+.pr-rail-link.is-back + .pr-rail-link::before { background: rgba(139,109,56,.45); }
+@media (max-width: 640px) {
+  .pr-rail-track { justify-content: flex-start; padding: 0 .15rem; }
+  .pr-rail-link { padding: .55rem .75rem; font-size: .58rem; letter-spacing: .15em; }
+  .pr-rail-link.is-active::after { left: .75rem; right: .75rem; }
+  .pr-rail-link + .pr-rail-link::before { top: 28%; bottom: 28%; }
 }
 .pr-nav-inner {
   background: var(--cream);
@@ -587,8 +651,13 @@ body {
   padding-top: .42rem;
   border-top: 3px double rgba(139,109,56,.55);
 }
-.pr-nav-auto {
+/* Right-side masthead actions — Share sits next to the AUTO badge,
+   mirroring Pick'ems' pe-nav-actions (Share + Records). */
+.pr-nav-actions {
   justify-self: end;
+  display: inline-flex; align-items: center; gap: .55rem;
+}
+.pr-nav-auto {
   font-family: var(--mono); font-weight: 700;
   font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
   color: var(--gold-deep);
@@ -597,6 +666,47 @@ body {
   padding: .35rem .65rem;
   border-radius: 2px;
 }
+/* Share button — gold outline, link glyph + label, styled after the
+   Pick'ems pe-nav-share but keyed to the parchment palette. */
+.pr-nav-share {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: transparent;
+  border: 1px solid rgba(139,109,56,.4);
+  color: var(--gold-deep);
+  font-family: var(--mono); font-weight: 700;
+  font-size: .58rem; letter-spacing: .22em; text-transform: uppercase;
+  padding: .38rem .7rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.pr-nav-share svg { display: block; }
+.pr-nav-share:hover {
+  color: var(--cream);
+  background: var(--gold-deep);
+  border-color: var(--gold-deep);
+}
+
+/* Share-link clipboard confirmation toast. Mirrors Pick'ems' pk-toast,
+   themed to the parchment palette. */
+.pr-toast {
+  position: fixed;
+  left: 50%; bottom: 1.6rem;
+  transform: translate(-50%, 200%);
+  background: var(--gold-deep);
+  color: var(--cream);
+  font-family: var(--mono); font-weight: 700;
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+  padding: .75rem 1.15rem;
+  border-radius: 3px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  z-index: 400;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .35s cubic-bezier(.2,.7,.3,1), opacity .25s;
+  white-space: nowrap;
+}
+.pr-toast.is-on { transform: translate(-50%, 0); opacity: 1; }
 
 /* ── STEPPED-MAT FRAME — main tables (10px outward) ────────────────
    Single central gold line between two navy mats. Tighter drop shadow.
@@ -711,6 +821,9 @@ body {
   .pr-nav-title { font-size: 1.25rem; }
   .pr-nav-kicker { font-size: .48rem; letter-spacing: .22em; }
   .pr-nav-auto { font-size: .52rem; padding: .25rem .5rem; }
+  .pr-nav-actions { gap: .4rem; }
+  .pr-nav-share { font-size: .5rem; padding: .28rem .5rem; letter-spacing: .16em; }
+  .pr-nav-share svg { width: 9px; height: 9px; }
 
   .pr-table-wrap {
     margin: 10px 0 22px;

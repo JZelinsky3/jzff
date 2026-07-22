@@ -153,15 +153,16 @@ body { background: var(--mp-bg); }
 
 /* ── Section header ────────────────────────────────────────── */
 .mp-section-header {
-    display: flex; align-items: baseline; gap: .9rem;
+    position: relative;
+    display: flex; align-items: baseline; gap: .7rem;
     padding-bottom: .85rem;
     margin-bottom: 1.4rem;
     border-bottom: 1px solid var(--mp-line-soft);
     flex-wrap: wrap;
 }
 .mp-section-num {
-    font-family: var(--mono); font-size: .66rem;
-    letter-spacing: .26em; text-transform: uppercase;
+    font-family: var(--mono); font-size: .58rem;
+    letter-spacing: .22em; text-transform: uppercase;
     color: var(--mp-brass);
 }
 .mp-section-title {
@@ -170,7 +171,10 @@ body { background: var(--mp-bg); }
 }
 .mp-section-title em { color: var(--mp-brass); font-style: italic; }
 .mp-section-meta {
-    margin-left: auto;
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+    bottom: .85rem;
+    white-space: nowrap;
     font-family: var(--mono); font-size: .66rem;
     letter-spacing: .18em; text-transform: uppercase;
     color: var(--mp-mute);
@@ -253,9 +257,11 @@ body { background: var(--mp-bg); }
     color: var(--mp-cream);
     font-size: .85rem;
     transition: background .15s;
+    text-decoration: none;
+    cursor: pointer;
 }
 .mp-bd-row:last-child { border-bottom: none; }
-.mp-bd-row:hover { background: rgba(200,157,92,.05); }
+.mp-bd-row:hover { background: rgba(200,157,92,.08); }
 
 .mp-bd-train {
     font-weight: 700;
@@ -504,6 +510,10 @@ body { background: var(--mp-bg); }
 }
 
 @media (max-width: 720px) {
+    .mp-section-meta {
+        position: static; transform: none;
+        margin-left: auto; white-space: normal;
+    }
     .mp-bd-head, .mp-bd-row {
         grid-template-columns: 48px 1fr 100px;
         gap: .6rem; padding: .5rem 1rem .5rem .8rem;
@@ -1063,7 +1073,7 @@ body { background: var(--mp-bg); }
     background-size: 8px 8px, 8px 8px, 8px 8px;
     background-position: left center, left top, left bottom;
     background-repeat: repeat-y, no-repeat, no-repeat;
-    padding-left: 14px;
+    padding-left: 9px;
 }
 .mp-share:hover {
     color: var(--mp-brass-hi);
@@ -1073,11 +1083,11 @@ body { background: var(--mp-bg); }
 .mp-share-icon {
     display: inline-flex;
     align-items: center; justify-content: center;
-    padding: .7rem .65rem .7rem .55rem;
+    padding: .7rem .6rem;
     border-right: 1px dashed var(--mp-brass-deep);
     color: var(--mp-brass);
 }
-.mp-share-icon svg { width: 12px; height: 12px; display: block; }
+.mp-share-icon svg { width: 13px; height: 13px; display: block; }
 .mp-share-label {
     padding: .7rem 1rem .7rem .8rem;
     display: inline-flex;
@@ -1103,7 +1113,7 @@ body { background: var(--mp-bg); }
     font-size: .6rem;
     letter-spacing: .2em;
 }
-.mp-share.in-meta .mp-share-icon { padding: .55rem .55rem .55rem .5rem; }
+.mp-share.in-meta .mp-share-icon { padding: .55rem .5rem; }
 .mp-share.in-meta .mp-share-label { padding: .55rem .85rem .55rem .7rem; }
 
 /* Slide-up confirmation toast */
@@ -1260,7 +1270,7 @@ body { background: var(--mp-bg); }
             <span class="mp-section-title" id="mp-board-section-title">This week's <em>departures —</em></span>
             <span class="mp-section-meta" id="mp-board-section-meta">Updated weekly</span>
             <button type="button" class="mp-share in-meta" id="mp-share-hub" hidden aria-label="Share the departures board">
-                <span class="mp-share-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg></span>
+                <span class="mp-share-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
                 <span class="mp-share-label">Share the board</span>
             </button>
         </div>
@@ -1459,7 +1469,7 @@ body { background: var(--mp-bg); }
           '<div class="mp-marquee-side right">' +
             '<div class="mp-marquee-name">' + esc(b.name) + '</div>' +
             '<div class="mp-marquee-team">' + esc(b.team) + '</div>' +
-            '<div class="mp-marquee-record">' + esc(b.record) + ' · ' + fmtPts(b.ppgSeason || b.ppg5) + ' PPG</div>' +
+            '<div class="mp-marquee-record">' + fmtPts(b.ppgSeason || b.ppg5) + ' PPG · ' + esc(b.record) + '</div>' +
           '</div>' +
         '</div>' +
         '<div class="mp-marquee-foot">' + h2hLine + '</div>' +
@@ -1510,12 +1520,13 @@ body { background: var(--mp-bg); }
         spreadTxt = '<span class="fav-mark">★</span> ' + sideArrow + ' <strong>by ' + fmtPts(m.projected.spread) + '</strong>';
       }
       var rowCls = 'mp-bd-row' + (m.gotw ? ' gotw' : '');
-      html += '<div class="' + rowCls + '">' +
+      var rowHref = m.a && m.a.uid ? 'live/matchup-preview/?m=' + encodeURIComponent(m.a.uid) : null;
+      html += '<' + (rowHref ? 'a' : 'div') + ' class="' + rowCls + '"' + (rowHref ? ' href="' + rowHref + '"' : '') + '>' +
                 '<span class="mp-bd-train">' + esc(m.train) + '</span>' +
                 '<span class="mp-bd-service">' + serviceTxt + '</span>' +
                 '<span class="mp-bd-records">' + recordsTxt + '</span>' +
                 '<span class="mp-bd-spread' + spreadCls + '">' + spreadTxt + '</span>' +
-              '</div>';
+              '</' + (rowHref ? 'a' : 'div') + '>';
     });
     html += '<div class="mp-bd-legend">' +
               '<span><span class="star">★</span> ◀ / ▶ points to the favored side</span>' +
@@ -1673,9 +1684,7 @@ body { background: var(--mp-bg); }
     var subEl   = document.getElementById('mp-mast-sub');
     if (titleEl) titleEl.innerHTML = 'The <em>Booking.</em>';
     if (subEl) {
-      subEl.textContent =
-        'Your one game from this week’s slate. H2H archive, recent form, ' +
-        'season highs, and a form-based projection for the run.';
+      subEl.textContent = found.self.name + ' vs ' + found.opp.name + ' · Week ' + data.week;
     }
 
     var m = found.matchup;
@@ -1808,7 +1817,7 @@ body { background: var(--mp-bg); }
       '<div class="mp-actions">' +
         '<div class="mp-actions-msg">Put your stake in. <strong>Pick the winner</strong> for this week before kickoff.</div>' +
         '<button type="button" class="mp-share primary" id="mp-share-desk" aria-label="Share this matchup">' +
-          '<span class="mp-share-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg></span>' +
+          '<span class="mp-share-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>' +
           '<span class="mp-share-label">Share matchup</span>' +
         '</button>' +
         '<a class="mp-action-btn primary" href="live/pickems/index.html">Open Pick’ems</a>' +

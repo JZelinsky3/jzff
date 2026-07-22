@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="JO">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="hsl(57 40% 46%)"/>
+    <stop offset="1" stop-color="hsl(57 44% 34%)"/>
+  </linearGradient></defs>
+  <circle cx="64" cy="64" r="64" fill="url(#g)"/>
+  <circle cx="64" cy="64" r="60" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="2"/>
+  <text x="64" y="64" dy=".34em" text-anchor="middle"
+    font-family="'DM Serif Display', Georgia, serif" font-size="54" font-weight="600"
+    fill="#f6efe6" letter-spacing="1">JO</text>
+</svg>

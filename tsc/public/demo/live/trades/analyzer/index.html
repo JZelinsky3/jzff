@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/demo/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Trade Analyzer · The Lakeside League</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+/* Demo-only stub: the trade tools are live, interactive, and roster-aware,
+   so they can't run on the fixed demo snapshot. On-theme "live only" note. */
+body { background: var(--ink); }
+.tstub { position: relative; z-index: 10; max-width: 640px; margin: 0 auto;
+    padding: clamp(4rem, 12vh, 8rem) 1.5rem 5rem; text-align: center; }
+.tstub-kicker { font-family: var(--mono); font-weight: 700; font-size: .65rem;
+    letter-spacing: .4em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.75rem; }
+.tstub-title { font-family: var(--serif); font-size: clamp(2.4rem, 6vw, 3.6rem);
+    line-height: 1; letter-spacing: -.02em; color: var(--cream); margin-bottom: 1.4rem; }
+.tstub-title em { font-style: italic; color: var(--gold); }
+.tstub-body { font-family: var(--serif); font-size: 1.12rem; line-height: 1.6;
+    color: var(--cream-soft); max-width: 34rem; margin: 0 auto 2.5rem; }
+.tstub-rule { width: 46px; height: 2px; background: var(--gold); opacity: .8;
+    margin: 0 auto 2.25rem; }
+.tstub-actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+.tstub-btn { font-family: var(--mono); font-weight: 700; font-size: .72rem;
+    letter-spacing: .16em; text-transform: uppercase; text-decoration: none;
+    padding: .85rem 1.5rem; border-radius: 2px; cursor: pointer; border: 1px solid transparent; }
+.tstub-btn.is-primary { background: var(--gold); color: var(--ink); }
+.tstub-btn.is-primary:hover { background: var(--gold-hi, #f3d775); }
+.tstub-btn.is-ghost { background: transparent; color: var(--cream); border-color: var(--ink-line); }
+.tstub-btn.is-ghost:hover { border-color: var(--gold); color: var(--gold); }
+</style>
+</head>
+<body>
+
+<nav id="site-nav" data-page="trades" data-chapter="THE TRADE DESK"></nav>
+<script src="assets/js/nav.js"></script>
+
+<main>
+    <section class="tstub">
+        <div class="tstub-kicker">The Trade Desk · Live Tool</div>
+        <h1 class="tstub-title">The Trade <em>Analyzer</em>.</h1>
+        <div class="tstub-rule"></div>
+        <p class="tstub-body">Drop in any deal and get a grade, a fairness curve, and a plain-English write up. The analyzer reads your league's live rosters and the current player market, so it runs inside a real league rather than on this fixed demo snapshot.</p>
+        <div class="tstub-actions">
+            <button type="button" class="tstub-btn is-ghost" id="tstub-back">Go back</button>
+            <a class="tstub-btn is-primary" href="/login?mode=signup">Start your own league</a>
+        </div>
+    </section>
+</main>
+
+<script>
+document.getElementById('tstub-back').addEventListener('click', function () {
+    if (history.length > 1) history.back();
+    else location.href = 'live/';
+});
+</script>
+
+</body>
+</html>

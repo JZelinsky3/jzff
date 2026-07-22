@@ -8,6 +8,7 @@ import { AdminNavMenu } from './admin-nav-menu'
 import { MobileLeagueBackLink } from './_mobile-back-link'
 import { SpineRail } from './spine-rail'
 import { PageTurn } from './page-turn'
+import { SupportWidget } from '@/components/SupportWidget'
 
 export default async function LeagueLayout({
   children,
@@ -77,6 +78,7 @@ export default async function LeagueLayout({
       </nav>
       <SpineRail slug={slug} canManage={canManage} />
       <PageTurn />
+      <SupportWidget slug={slug} league={league.name} email={user.email} />
       {children}
     </>
   )

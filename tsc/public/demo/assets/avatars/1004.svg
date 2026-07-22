@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Eastside Express">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="hsl(79 40% 46%)"/>
+    <stop offset="1" stop-color="hsl(79 44% 34%)"/>
+  </linearGradient></defs>
+  <circle cx="64" cy="64" r="64" fill="url(#g)"/>
+  <circle cx="64" cy="64" r="60" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="2"/>
+  <g fill="none" stroke="#f6efe6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="42" y="46" width="44" height="30" rx="6" fill="none"/><rect x="49" y="52" width="30" height="11" rx="2" fill="none"/><circle cx="53" cy="83" r="5" fill="none"/><circle cx="75" cy="83" r="5" fill="none"/>
+  </g>
+</svg>

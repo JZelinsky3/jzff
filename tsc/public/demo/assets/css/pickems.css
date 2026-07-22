@@ -44,28 +44,21 @@
 
 /* ── Page base ────────────────────────────────────────────────── */
 body {
+  /* Texture folded into the scrolling background (no background-attachment:
+     fixed, no fixed body::before overlay) — a fixed repeating-gradient
+     re-rasterizes every scroll frame and was the main cause of scroll lag,
+     independent of card count. Pinstripe is the first scrolling layer; at
+     .015 alpha it reads identically. */
   background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,.015) 0 1px, transparent 1px 4px),
     radial-gradient(ellipse at 12% 0%, rgba(255, 61, 139, .10) 0%, transparent 55%),
     radial-gradient(ellipse at 88% 100%, rgba(240, 196, 99, .07) 0%, transparent 55%),
     var(--pk-bg);
-  background-attachment: fixed;
   color: var(--pk-chalk);
   font-family: var(--sans);
   margin: 0;
 }
 .site-glow, .site-grain { display: none; }
-
-/* Subtle pinstripe overlay — oddsboard texture */
-body::before {
-  content: "";
-  position: fixed; inset: 0;
-  pointer-events: none; z-index: 1;
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, .015) 0 1px,
-    transparent 1px 4px
-  );
-}
 
 .pe-app {
   position: relative; z-index: 10;
@@ -79,9 +72,10 @@ body::before {
    ══════════════════════════════════════════════════════════════════ */
 .pe-nav {
   position: sticky; top: 0; z-index: 30;
+  /* Fully opaque, no backdrop-filter — a blurred backdrop on a scroll-pinned
+     bar re-rasterizes every frame and made scrolling lag badly. */
   background:
-    linear-gradient(180deg, rgba(22,11,29,.96), rgba(22,11,29,.92));
-  backdrop-filter: blur(10px);
+    linear-gradient(180deg, rgb(22,11,29), rgb(20,10,26));
   border-bottom: 1px solid var(--pk-line);
   box-shadow: 0 1px 0 rgba(255,61,139,.18), 0 14px 30px -18px rgba(0,0,0,.65);
   margin: 0 0 1.75rem;
@@ -185,6 +179,42 @@ body::before {
 .pe-demo-hint b {
   color: var(--pk-champagne-bright);
   font-weight: 800;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CONTENT HEADER — landing title inside .pe-app (mirrors mobile .pk-head).
+   ══════════════════════════════════════════════════════════════════ */
+.pe-intro {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 1.6rem;
+}
+.pe-intro-kicker {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .58rem; letter-spacing: .34em; text-transform: uppercase;
+  color: var(--pk-champagne);
+}
+.pe-intro-title {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.02;
+  color: var(--pk-chalk);
+  margin-top: .55rem;
+  text-shadow: 0 0 22px rgba(255,61,139,.18);
+}
+.pe-intro-title em {
+  font-style: italic;
+  color: var(--pk-magenta);
+  text-shadow: 0 0 16px rgba(255,61,139,.4);
+}
+.pe-intro-lede {
+  margin-top: .7rem;
+  font-family: var(--sans);
+  font-size: .92rem; line-height: 1.5;
+  color: var(--pk-chalk-mute);
+}
+@media (max-width: 640px) {
+  .pe-intro-lede { font-size: .85rem; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -487,18 +517,23 @@ body::before {
 }
 .match[data-gotw="true"] .vote-pct           { color: #b8205f; text-shadow: none; }
 .match[data-gotw="true"] .vote-btn:last-child .vote-pct { color: var(--pk-gotw-amber); text-shadow: none; }
+/* Picked GOTW side: a richer treatment than the regular games (this is the
+   featured game) — a medium tinted gradient with depth, a bright 2px accent
+   border, a thick top stripe, and a strong outer glow. Reads as clearly
+   "stamped" without flooding the button flat-solid. */
 .match[data-gotw="true"] .vote-btn[data-picked="true"] {
-  background: var(--pk-magenta);
-  color: #fff;
-  box-shadow: inset 0 0 0 1px var(--pk-magenta), inset 0 3px 0 var(--pk-magenta-bright);
+  background: linear-gradient(180deg, rgba(184,32,95,.36), rgba(184,32,95,.22));
+  color: #1a0f23;
+  box-shadow: inset 0 0 0 2px var(--pk-magenta), inset 0 5px 0 var(--pk-magenta-bright), 0 0 24px rgba(184,32,95,.45);
 }
-.match[data-gotw="true"] .vote-btn[data-picked="true"] .vote-pct { color: #fff; }
+.match[data-gotw="true"] .vote-btn[data-picked="true"] .vote-name { font-weight: 800; }
+.match[data-gotw="true"] .vote-btn[data-picked="true"] .vote-pct { color: #8c1746; }
 .match[data-gotw="true"] .vote-btn:last-child[data-picked="true"] {
-  background: var(--pk-gotw-amber);
-  color: #fff;
-  box-shadow: inset 0 0 0 1px var(--pk-gotw-amber), inset 0 3px 0 var(--pk-gotw-amber-light);
+  background: linear-gradient(180deg, rgba(176,120,20,.34), rgba(176,120,20,.2));
+  color: #1a0f23;
+  box-shadow: inset 0 0 0 2px var(--pk-gotw-amber), inset 0 5px 0 var(--pk-gotw-amber-light), 0 0 24px rgba(176,120,20,.42);
 }
-.match[data-gotw="true"] .vote-btn:last-child[data-picked="true"] .vote-pct { color: #fff; }
+.match[data-gotw="true"] .vote-btn:last-child[data-picked="true"] .vote-pct { color: #7a5310; }
 
 /* Bar2 on cream: keep pink, swap champagne for deep amber */
 .match[data-gotw="true"] .bar2 {
@@ -563,8 +598,12 @@ body::before {
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
-  gap: .22rem;
+  /* Gaps are set per-row via margins below: a roomier team-name → manager
+     break, then a tight manager → last-wk pairing. */
+  gap: 0;
 }
+.meta .manager { margin-top: .34rem; }
+.meta .lwk { margin-top: .08rem; }
 
 .team-name {
   font-family: var(--sans);
@@ -581,7 +620,7 @@ body::before {
 .team-name .record {
   display: inline-block;
   font-family: var(--mono); font-weight: 700;
-  font-size: .55rem; letter-spacing: .14em;
+  font-size: .66rem; letter-spacing: .1em;
   color: var(--pk-chalk-mute);
   margin-left: .4rem;
   vertical-align: middle;
@@ -611,6 +650,9 @@ body::before {
   gap: .35rem;
   margin-top: .05rem;
 }
+/* Away side: number leads, label trails ("94.1 LAST WK") so both sides'
+   figures hug the center column instead of sitting lopsided. */
+.team[data-team]:last-of-type .lwk { flex-direction: row-reverse; }
 .lwk .lbl {
   font-weight: 700;
   font-size: .46rem; letter-spacing: .22em; text-transform: uppercase;
@@ -813,6 +855,48 @@ body::before {
 }
 .hl-card select option { background: var(--pk-card); color: var(--pk-chalk); }
 
+/* High/low reveal — 2-column card mirroring the picker grid above, so each
+   result aligns under its own select box (Lowest below the Lowest box). */
+.hl-reveal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: .35rem;
+  padding-top: .65rem;
+  border-top: 1px solid var(--pk-line);
+}
+.hl-reveal-col {
+  display: flex; flex-direction: column;
+  gap: .22rem;
+  min-width: 0;
+}
+.hl-reveal-label {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
+}
+.hl-reveal-col.hi .hl-reveal-label { color: var(--pk-champagne); }
+.hl-reveal-col.lo .hl-reveal-label { color: var(--pk-magenta); }
+.hl-reveal-name {
+  font-family: var(--sans); font-weight: 600;
+  font-size: .85rem;
+  color: var(--pk-chalk);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.hl-reveal-name.is-tbd {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .54rem; letter-spacing: .18em;
+  color: var(--pk-chalk-mute);
+  text-transform: uppercase;
+}
+.hl-reveal-hint {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .54rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--pk-chalk-mute);
+  text-align: center;
+  padding: .4rem 0 .1rem;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    SUBMIT BAR
    ══════════════════════════════════════════════════════════════════ */
@@ -825,8 +909,8 @@ body::before {
   justify-content: center;
   gap: 1rem;
   padding: .95rem 1.5rem;
-  background: linear-gradient(180deg, rgba(22,11,29,.6), rgba(22,11,29,.96));
-  backdrop-filter: blur(8px);
+  /* Opaque, no backdrop-filter — second scroll-pinned blur removed for perf. */
+  background: linear-gradient(180deg, rgb(24,12,31), rgb(20,10,26));
   border-top: 1px solid var(--pk-line);
   box-shadow: 0 -1px 0 rgba(255,61,139,.2);
 }

@@ -142,6 +142,10 @@
             isSignedIn: !!dc.isSignedIn,
             isBookmarked: !!dc.isBookmarked,
             leagueTier: dc.leagueTier || '',
+            // The demo is a fake league (slug "demo") served as a static page:
+            // never bookmarkable, and its signed-in state is corrected
+            // client-side (see maybeCorrectDemoAuth).
+            isDemo: dc.slug === 'demo' || dc.leagueTier === 'demo',
             pageLocked: !!dc.pageLocked,
             liveWeek: dc.liveWeek || null,
             managePath: dc.slug ? '/league/' + dc.slug : null,
@@ -613,7 +617,7 @@
             var bmLabel = ctx.isBookmarked ? 'Bookmarked ★' : 'Bookmark ☆';
             account =
                 '<span class="m-sheet-label">Your account</span>' +
-                (ctx.slug
+                (ctx.slug && !ctx.isDemo
                     ? '<button class="m-sheet-row" id="dc-bookmark-toggle" data-slug="' + escapeHtml(ctx.slug) + '" data-on="' + (ctx.isBookmarked ? '1' : '0') + '">' + bmLabel + '</button>'
                     : '') +
                 sheetRow('/dashboard', 'Library') +
@@ -789,9 +793,32 @@
     }
 
     // ── App bar + tab bar ───────────────────────────────────────────────
+    // Stashed on first build so buildShell() can run a second time (the demo
+    // rebuilds after its async auth probe). The original #site-nav carries the
+    // page datasets; we clone it back in on rebuild since the first pass
+    // replaced it with the appbar.
+    var _siteNavProto = null;
     function buildShell() {
         var nav = document.getElementById('site-nav');
-        if (!nav) return;
+        if (nav) {
+            _siteNavProto = nav;
+        } else if (_siteNavProto) {
+            // Rebuild: tear down the previously built shell, then drop a fresh
+            // #site-nav placeholder where the appbar sits so the code below can
+            // run unchanged.
+            var appbar = document.querySelector('.m-appbar');
+            if (!appbar || !appbar.parentNode) return;
+            nav = _siteNavProto.cloneNode(true);
+            appbar.parentNode.replaceChild(nav, appbar);
+            var oldTab = document.querySelector('.m-tabbar');
+            if (oldTab) oldTab.remove();
+            ['m-sheet-more', 'm-sheet-history', 'm-sheet-week', 'm-sheet-desk'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.remove();
+            });
+        } else {
+            return;
+        }
         var ctx = dcContext();
         var page = nav.dataset.page || '';
         var chapter = nav.dataset.chapter || '';
@@ -822,7 +849,7 @@
         //     calling the API.
         //   • empty otherwise
         var left;
-        var showBookmark = page === 'hub' && !ctx.isCommish && ctx.slug && !backHref;
+        var showBookmark = page === 'hub' && !ctx.isCommish && ctx.slug && !backHref && !ctx.isDemo;
         if (backHref) {
             left = '<a class="m-appbar-back" id="m-appbar-back" href="' + escapeHtml(backHref) + '" aria-label="Back">' + ICONS.back + '</a>';
         } else if (showBookmark) {
@@ -1065,6 +1092,28 @@
     // Progress bar first — synchronously, before any template fetch fires.
     installProgressBar();
 
+    // The demo tree is a static page: window.__DC.isSignedIn is baked in as
+    // false and can't be injected server-side, so a reader who is actually
+    // signed in still sees the signed-out "Join today" group, whose Sign in /
+    // New chronicle links just bounce through /login back to the demo. Probe
+    // the real session once and, if signed in, flip the context and rebuild
+    // the shell so the account links show instead.
+    function maybeCorrectDemoAuth() {
+        var dc = window.__DC || {};
+        var isDemo = dc.slug === 'demo' || dc.leagueTier === 'demo';
+        if (!isDemo || dc.isSignedIn) return;
+        fetch('/api/me', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r && r.ok ? r.json() : null; })
+            .then(function (j) {
+                if (!j || !j.signedIn) return;
+                window.__DC = window.__DC || {};
+                window.__DC.isSignedIn = true;
+                buildShell();
+                enhanceAuthLinks();
+            })
+            .catch(function () { /* offline / probe failed — leave signed-out shell */ });
+    }
+
     function init() {
         buildShell();
         buildTierStrip();
@@ -1073,6 +1122,7 @@
         wireBookmarkToggle();
         wirePostSigninBookmark();
         wireInstallPrompt();
+        maybeCorrectDemoAuth();
         // wireThemePicker(); // vaulted — themes not ready yet
     }
 

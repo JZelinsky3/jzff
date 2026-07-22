@@ -19,6 +19,9 @@
   var state = { data: null, weeks: [], activeWk: null, view: 'overall' }
 
   boot().catch(function (e) { console.error(e); showMessage('Couldn’t load power rankings.', String(e)) })
+  // Wired regardless of data state — the page URL is shareable even before
+  // Week 1. Mirrors Pick'ems' masthead share (native sheet + clipboard).
+  initShareBtn()
 
   // ── Boot ────────────────────────────────────────────────────────────────
   async function boot() {
@@ -292,5 +295,55 @@
     var cls = delta > 0 ? 'delta-up' : 'delta-down'
     var sym = delta > 0 ? '↑' : '↓'
     return '<span class="rank-delta ' + cls + '">' + sym + abs + '</span>'
+  }
+
+  // ── Share button ──────────────────────────────────────────────────────────
+  // Pops the native share sheet when available, otherwise copies the link to
+  // the clipboard. Surfaces a toast so the click registers. Same behaviour as
+  // Pick'ems' masthead share.
+  function initShareBtn() {
+    var btn = byId('shareBtn')
+    if (!btn) return
+    btn.addEventListener('click', function () {
+      var leagueName = (window.__DC && window.__DC.name) || 'Power Rankings'
+      var wk = state.activeWk || (state.weeks.length ? state.weeks[state.weeks.length - 1].id : '')
+      var title = leagueName + ' · Power Rankings' + (wk ? ' · Wk ' + wk : '')
+      var text  = 'This week’s power rankings — see where every team lands.'
+      var url   = window.location.href
+      if (navigator.share) {
+        navigator.share({ title: title, text: text, url: url })
+          .catch(function () { copyShareLink(url, title) })
+        return
+      }
+      copyShareLink(url, title)
+    })
+  }
+  function copyShareLink(url, title) {
+    var payload = title ? title + ' — ' + url : url
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(payload).then(
+        function () { showPrToast('Link copied') },
+        function () { showPrToast('Couldn’t copy') }
+      )
+      return
+    }
+    try {
+      var ta = document.createElement('textarea')
+      ta.value = payload
+      ta.style.position = 'fixed'; ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+      showPrToast('Link copied')
+    } catch (e) { showPrToast('Couldn’t copy') }
+  }
+  function showPrToast(msg) {
+    var t = byId('prToast')
+    if (!t) return
+    if (msg) t.textContent = msg
+    t.classList.add('is-on')
+    clearTimeout(showPrToast._t)
+    showPrToast._t = setTimeout(function () { t.classList.remove('is-on') }, 2200)
   }
 })()

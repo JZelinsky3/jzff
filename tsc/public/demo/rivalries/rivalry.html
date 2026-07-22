@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Pin relative URLs to /demo/ — these pages are synced from the
+     league templates, whose hrefs/fetches assume the <base> the
+     /leagues/<slug>/ route handler injects. Static /demo/ has no route
+     handler, so the base lives in the file itself. -->
+<base href="/demo/">
+<script>(function(){var u=navigator.userAgent;if(!(/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u)))return;if(/(?:^|;\s*)dc_view=desktop/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo\//,"/demo-m/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rivalry · The Lakeside League</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --rv-red:        #dc2626;
+  --rv-red-dim:    #7f1d1d;
+  --rv-bg:         #0a0a0a;
+  --rv-card:       #111111;
+  --rv-card2:      #141414;
+  --rv-line:       #1e1e1e;
+  --rv-line2:      #272727;
+  --rv-grey:       #374151;
+  --rv-grey-mid:   #6b7280;
+  --rv-grey-lt:    #9ca3af;
+  --rv-white:      #f3f4f6;
+  --rv-cream:      #d1d5db;
+  --rv-gold:       #e8c889;
+  --serif:         'DM Serif Display', Georgia, serif;
+  --sans:          'Inter', system-ui, sans-serif;
+  --mono:          'JetBrains Mono', 'SF Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white); min-height: 100vh; overflow-x: hidden; }
+
+.site-glow {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(220,38,38,.07) 0%, transparent 48%),
+    radial-gradient(circle at 88% 82%, rgba(220,38,38,.04) 0%, transparent 44%);
+}
+.site-grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .45;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+}
+
+/* ─── HEADER ─────────────────────────────────────── */
+.rv-detail-header {
+  position: relative; z-index: 2;
+  text-align: center;
+  padding: 3rem 1.5rem 1.5rem;
+}
+.rv-detail-back {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--rv-red);
+  text-decoration: none;
+  margin-bottom: 1.6rem;
+}
+.rv-detail-back:hover { color: #ef4444; }
+.rv-detail-footer {
+  position: relative; z-index: 2;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 1.25rem 4rem;
+  text-align: center;
+}
+.rv-detail-back-foot { margin: 0; }
+.rv-detail-kicker {
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: 1rem;
+}
+.rv-detail-title {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  line-height: .98;
+  color: var(--rv-white);
+  letter-spacing: -.02em;
+  margin-bottom: .6rem;
+}
+.rv-detail-title em { font-style: italic; color: var(--rv-red); }
+.rv-detail-sub {
+  font-family: var(--mono);
+  font-size: .78rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--rv-cream);
+}
+
+.rv-detail-main {
+  position: relative; z-index: 2;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 6rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* Re-use the card chrome from the index page so the detail summary card
+   reads identically to the list card it expanded from. */
+.rv-card {
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rv-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .5rem 1.2rem;
+  background: var(--rv-card2);
+  border-bottom: 1px solid var(--rv-line2);
+}
+.rv-card-label {
+  font-family: var(--mono);
+  font-size: .66rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rv-cream);
+}
+.rv-badge {
+  font-family: var(--mono);
+  font-size: .57rem; letter-spacing: .14em; text-transform: uppercase;
+  padding: .18rem .55rem;
+  border-radius: 2px;
+  border: 1px solid var(--rv-red-dim);
+  color: var(--rv-red);
+}
+.rv-badge.tied { color: var(--rv-grey-lt); border-color: var(--rv-grey); }
+.rv-body { display: grid; grid-template-columns: 1fr 240px 1fr; }
+.rv-side { padding: 1.6rem 1.8rem; display: flex; flex-direction: column; gap: .35rem; }
+.rv-side-a { align-items: flex-start; border-right: 1px solid var(--rv-line2); }
+.rv-side-b { align-items: flex-end; border-left: 1px solid var(--rv-line2); }
+.rv-side-a.side-leads { background: linear-gradient(105deg, rgba(220,38,38,.055) 0%, transparent 60%); }
+.rv-side-b.side-leads { background: linear-gradient(255deg, rgba(220,38,38,.055) 0%, transparent 60%); }
+.rv-wins { font-family: var(--mono); font-size: 4.2rem; font-weight: 700; line-height: 1; color: var(--rv-grey-lt); }
+.rv-wins.hot { color: var(--rv-red); }
+.rv-wins-lbl { font-family: var(--mono); font-size: .6rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rv-grey-lt); }
+.rv-name { font-family: var(--serif); font-size: 1.9rem; color: var(--rv-white); margin-top: .25rem; line-height: 1; }
+.rv-ppg { font-family: var(--mono); font-size: .85rem; color: var(--rv-cream); }
+.rv-rec { font-family: var(--mono); font-size: .7rem; color: var(--rv-grey-lt); }
+.rv-center {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 1.6rem 1.2rem; gap: .55rem;
+}
+.rv-rivalry-name { font-family: var(--mono); font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; color: var(--rv-cream); }
+.rv-vs { font-family: var(--serif); font-size: 2.4rem; font-style: italic; color: var(--rv-red); }
+.rv-games { font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--rv-grey-lt); }
+.rv-bar-wrap { width: 100%; display: flex; flex-direction: column; gap: .3rem; }
+.rv-bar { width: 100%; height: 6px; border-radius: 3px; overflow: hidden; }
+.rv-bar-nums { display: flex; justify-content: space-between; font-family: var(--mono); font-size: .7rem; color: var(--rv-cream); }
+.rv-series-lbl { font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; text-align: center; color: var(--rv-red); }
+.rv-last-game { font-family: var(--mono); font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--rv-cream); text-align: center; }
+.rv-last-game span { color: var(--rv-white); }
+
+/* ─── DETAIL — recent meetings table ─────────────── */
+.rv-section {
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  padding: 1.5rem 1.75rem;
+}
+.rv-section-title {
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: 1.2rem;
+  padding-bottom: .65rem;
+  border-bottom: 1px solid var(--rv-line2);
+}
+.rv-meet-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--mono); font-size: .78rem;
+  color: var(--rv-cream);
+}
+.rv-meet-table th {
+  text-align: left;
+  font-size: .58rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  padding: .45rem .65rem .55rem;
+  border-bottom: 1px solid var(--rv-line2);
+  font-weight: 600;
+}
+.rv-meet-table th.num { text-align: right; }
+.rv-meet-table td {
+  padding: .55rem .65rem;
+  border-bottom: 1px dotted var(--rv-line2);
+  color: var(--rv-white);
+}
+.rv-meet-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.rv-meet-table td.win { color: var(--rv-red); font-weight: 700; }
+.rv-meet-table td.loss { color: var(--rv-grey-lt); }
+.rv-tag-po {
+  display: inline-block;
+  font-size: .55rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-gold);
+  border: 1px solid var(--rv-grey);
+  padding: 0 .35rem;
+  border-radius: 2px;
+  margin-left: .35rem;
+}
+
+.rv-empty {
+  text-align: center; padding: 4rem 1.5rem;
+  color: var(--rv-cream);
+}
+
+/* ─── BY THE NUMBERS — top stat strip ────────────────
+   Five compact cells across the top of the body so the headline stats
+   read at a glance before you scroll. Stats come straight from the
+   rivalry record + a tiny derivation from last5 (avg margin, streak).
+   On narrow viewports the strip wraps so the cells stay readable. */
+.rv-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--rv-line2);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rv-stat {
+  background: var(--rv-card);
+  padding: 1rem 1.1rem 1.05rem;
+  display: flex; flex-direction: column;
+  gap: .25rem;
+}
+.rv-stat-label {
+  font-family: var(--mono);
+  font-size: .54rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-stat-value {
+  font-family: var(--serif);
+  font-size: 1.6rem; line-height: 1;
+  color: var(--rv-white);
+}
+.rv-stat-value em { color: var(--rv-red); font-style: italic; }
+.rv-stat-sub {
+  font-family: var(--mono);
+  font-size: .58rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+
+/* ─── LAST MEETING — featured recap ─────────────────
+   Shows the most recent matchup with both scores AND the supporting
+   numbers around it: margin, combined total, and a knockout footer
+   when one player's playoff run ended on this game. The middle column
+   carries margin/combined chips so the card doesn't read as 70% white
+   space (the old "name vs. name" layout did). */
+.rv-last-card {
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  padding: 1.4rem 1.6rem;
+  display: grid;
+  grid-template-columns: 1fr minmax(150px, auto) 1fr;
+  gap: .75rem 1.25rem;
+  align-items: center;
+}
+.rv-last-card .rv-last-meta {
+  grid-column: 1 / -1;
+  font-family: var(--mono);
+  font-size: .6rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--rv-red);
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--rv-line2);
+  margin-bottom: .25rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.rv-last-side {
+  display: flex; flex-direction: column;
+}
+.rv-last-side.a { align-items: flex-start; }
+.rv-last-side.b { align-items: flex-end; }
+.rv-last-name {
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  margin-bottom: .35rem;
+}
+.rv-last-score {
+  font-family: var(--serif);
+  font-size: 2.6rem; line-height: 1;
+  color: var(--rv-grey-lt);
+}
+.rv-last-side.won .rv-last-score { color: var(--rv-red); }
+.rv-last-mid {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .35rem;
+}
+.rv-last-vs {
+  font-family: var(--serif); font-style: italic;
+  font-size: 1.4rem;
+  color: var(--rv-grey-lt);
+}
+.rv-last-chip {
+  font-family: var(--mono);
+  font-size: .58rem; letter-spacing: .14em; text-transform: uppercase;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rv-line2);
+  border-radius: 2px;
+  color: var(--rv-cream);
+  background: var(--rv-card2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rv-last-chip strong { color: var(--rv-red); font-weight: 700; }
+/* League-avg comparison sits centered in the middle column below the
+   chips (used to live in a full-width footer; that footer was dropped
+   when knockout detection got vaulted, since it was its only other
+   tenant). The middle column stretches the full row height and the
+   avg pushes itself toward the bottom with margin-top:auto so the
+   white space above and below the avg reads as balanced — the
+   alternative (margin-top: .15rem) crammed the avg right under the
+   chips and left a giant gap below it. */
+/* `align-self: stretch` would only buy us extra room if the side
+   columns were taller than the middle stack — they're not (the score
+   is big but the name + score is still shorter than vs + chips + avg),
+   so `margin-top: auto` had no auto space to consume and the avg
+   ended up right under the chips. Explicit margin gives the avg the
+   breathing room it needs to read as a separate "footnote" line
+   rather than another chip. */
+.rv-last-avg {
+  font-family: var(--mono);
+  font-size: .56rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  text-align: center;
+  max-width: 18rem;
+  line-height: 1.4;
+  margin-top: 1rem;
+}
+
+/* ─── BIGGEST MEETING — pulled out as its own callout ─
+   Walks last5, finds the largest-margin meeting (playoff bias-breaks
+   ties), and surfaces it as a one-liner above the ledger. Reads like
+   "this is the one to remember." */
+.rv-biggest {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem;
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  border-left: 3px solid var(--rv-red);
+  border-radius: 3px;
+  padding: .85rem 1.2rem;
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--rv-cream);
+}
+.rv-biggest-label {
+  color: var(--rv-red);
+  letter-spacing: .22em;
+}
+.rv-biggest strong { color: var(--rv-white); font-weight: 700; }
+
+/* (Knockout chip styles vaulted alongside the detection logic.) */
+
+/* ─── DUAL-SIDE LEDGER ──────────────────────────────
+   Replaces the old single-column meetings table with a two-sided
+   scoreboard layout — A on the left, B on the right, the matchup
+   metadata in the middle. Reads like a real game ledger. */
+.rv-ledger { display: flex; flex-direction: column; gap: .4rem; }
+.rv-ledger-row {
+  display: grid;
+  grid-template-columns: 1fr 8rem 1fr;
+  align-items: center;
+  background: var(--rv-card2);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  padding: .65rem .9rem;
+}
+.rv-ledger-side {
+  font-family: var(--mono);
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; gap: .5rem;
+  min-width: 0; /* let the grid column shrink instead of overflowing the card */
+}
+.rv-ledger-side.a { justify-content: flex-start; }
+.rv-ledger-side.b { justify-content: flex-end; }
+/* Long manager names truncate inside their column rather than spilling
+   off the edge of the card where the tail gets clipped. */
+.rv-ledger-side > span:not(.marg) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rv-ledger-side .marg {
+  color: var(--rv-grey-lt);
+  font-size: .65rem;
+  flex-shrink: 0;
+}
+.rv-ledger-side.won { color: var(--rv-red); font-weight: 700; }
+.rv-ledger-mid {
+  font-family: var(--mono);
+  font-size: .6rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  text-align: center;
+  display: flex; flex-direction: column; gap: .15rem;
+}
+.rv-ledger-mid .yr { color: var(--rv-white); letter-spacing: .12em; }
+.rv-tag-po-inline {
+  display: inline-block;
+  font-size: .5rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-gold);
+  border: 1px solid var(--rv-grey);
+  padding: 0 .35rem;
+  border-radius: 2px;
+}
+
+/* ─── STREAK CHIP ───────────────────────────────────
+   A small pill above the ledger summarizing the active streak (e.g.
+   "ceejeroonie has won 2 straight"). Derived from the last entries of
+   last5. */
+.rv-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  background: var(--rv-card2);
+  border: 1px solid var(--rv-red-dim);
+  border-radius: 999px;
+  padding: .4rem .85rem;
+  font-family: var(--mono);
+  font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-cream);
+  margin-bottom: 1rem;
+}
+.rv-streak strong { color: var(--rv-red); font-weight: 700; }
+
+/* ─── CAREER SNAPSHOTS — two-up manager mini cards ──
+   Pulled from managers_directory.json so each side gets a quick career
+   read: championships (rings), playoff appearances, career W-L, seasons.
+   Sits below the headline card so the reader sees the rivalry in
+   context — "this manager has won 2 rings, this one is still chasing." */
+.rv-careers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.rv-career-card {
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  border-radius: 3px;
+  padding: 1.2rem 1.4rem;
+  display: flex; flex-direction: column;
+  gap: .75rem;
+}
+.rv-career-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-bottom: 1px solid var(--rv-line2);
+  padding-bottom: .6rem;
+}
+.rv-career-name {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  color: var(--rv-white);
+}
+.rv-career-team {
+  font-family: var(--mono);
+  font-size: .58rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-career-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .75rem .65rem;
+}
+.rv-career-cell {
+  display: flex; flex-direction: column; gap: .15rem;
+}
+.rv-career-cell-label {
+  font-family: var(--mono);
+  font-size: .54rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-career-cell-value {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  color: var(--rv-white);
+  font-variant-numeric: tabular-nums;
+}
+.rv-rings {
+  display: inline-flex; gap: .25rem;
+  font-size: 1rem; line-height: 1;
+}
+.rv-ring { color: var(--rv-gold); }
+.rv-ring.empty { color: var(--rv-grey); }
+.rv-career-cell-sub {
+  font-family: var(--mono);
+  font-size: .56rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+
+/* ─── MET-IN CHIP STRIP ────────────────────────────
+   Tiny horizontal strip listing the years this pair has played each
+   other (from last5). A bit of breathing context before the ledger. */
+.rv-metin {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: .35rem;
+  font-family: var(--mono);
+  font-size: .62rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  /* No margin-bottom — the parent .rv-detail-main is a grid with a
+     1.5rem gap, and a margin here would stack on top of the gap and
+     leave Met-in/Ledger spaced further than Biggest/Met-in. */
+}
+.rv-metin-label { color: var(--rv-red); margin-right: .4rem; }
+.rv-metin-chip {
+  display: inline-block;
+  padding: .22rem .55rem;
+  background: var(--rv-card2);
+  border: 1px solid var(--rv-line2);
+  border-radius: 2px;
+  color: var(--rv-cream);
+  font-variant-numeric: tabular-nums;
+}
+.rv-metin-chip.po {
+  border-color: var(--rv-red-dim);
+  color: var(--rv-red);
+}
+
+@media (max-width: 760px) {
+  .rv-stats { grid-template-columns: 1fr 1fr; }
+  .rv-stat-value { font-size: 1.3rem; }
+  .rv-last-card { grid-template-columns: 1fr; gap: .6rem; }
+  .rv-last-card .rv-last-vs { display: none; }
+  .rv-last-side.b { align-items: flex-start; }
+  .rv-ledger-row { grid-template-columns: 1fr 5.5rem 1fr; padding: .55rem .65rem; }
+  .rv-ledger-side { font-size: .68rem; gap: .35rem; }
+}
+
+/* Nav theme overrides (same crimson palette as the index page). */
+.nav { background: rgb(14, 3, 3) !important; border-bottom-color: rgba(220, 38, 38, 0.18) !important; }
+:root {
+  --chapbar-bg:     rgb(14, 3, 3);
+  --chapbar-border: rgba(220, 38, 38, 0.18);
+  --chapbar-text:   var(--rv-grey-mid);
+  --chapbar-active: var(--rv-red);
+  --chapbar-line:   rgba(220, 38, 38, 0.18);
+  --nav-drop-bg:           rgb(12, 3, 3);
+  --nav-drop-border:       rgba(220,38,38,.15);
+  --nav-drop-text:         var(--rv-cream);
+  --nav-drop-text-mute:    var(--rv-grey-mid);
+  --nav-drop-accent:       var(--rv-red);
+  --nav-drop-hover-bg:     rgba(220,38,38,.1);
+  --nav-drop-sub-bg:       rgba(0,0,0,.35);
+  --nav-drop-accent-line:  rgba(220,38,38,.2);
+}
+.nav-kicker { color: rgba(220, 38, 38, 0.55) !important; }
+.nav-title em { color: var(--rv-red) !important; }
+.nav-drop-btn, .nav-back, .nav-link { color: var(--rv-red) !important; }
+.nav-drop-btn:hover, .nav-back:hover, .nav-link:hover { color: #ef4444 !important; }
+
+@media (max-width: 760px) {
+  .rv-body { grid-template-columns: 1fr; }
+  .rv-side-a { border-right: none; border-bottom: 1px solid var(--rv-line2); }
+  .rv-side-b { border-left: none; border-top: 1px solid var(--rv-line2); align-items: flex-start; }
+  .rv-wins { font-size: 2.6rem; }
+  .rv-name { font-size: 1.2rem; }
+  .rv-vs { font-size: 1.6rem; }
+  .rv-section { padding: 1.25rem 1rem; }
+  .rv-meet-table { font-size: .68rem; }
+}
+
+/* ─── SHARE BUTTON + DIALOG ─────────────────────── */
+.rv-share-btn { display: none !important; } /* share UI hidden site-wide for now */
+.rv-share-btn {
+  position: fixed;
+  top: 76px;
+  right: 18px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(17, 17, 17, .85);
+  border: 1px solid var(--rv-line2);
+  color: var(--rv-cream);
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  padding: .55rem .85rem;
+  border-radius: 2px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: color .15s, border-color .15s, background .15s;
+}
+.rv-share-btn:hover {
+  color: var(--rv-white);
+  border-color: var(--rv-red-dim);
+  background: rgba(127, 29, 29, .25);
+}
+.rv-share-btn svg { width: 12px; height: 12px; }
+.rv-share-btn[hidden] { display: none; }
+
+.rv-share-dialog {
+  background: var(--rv-card);
+  border: 1px solid var(--rv-line2);
+  color: var(--rv-white);
+  max-width: 460px;
+  width: calc(100% - 2rem);
+  padding: 1.75rem 1.75rem 1.5rem;
+  text-align: center;
+  font-family: var(--sans);
+  border-radius: 2px;
+}
+.rv-share-dialog::backdrop {
+  background: rgba(0, 0, 0, .72);
+  backdrop-filter: blur(4px);
+}
+.rv-share-modal-kicker {
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: .65rem;
+}
+.rv-share-modal-title {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  color: var(--rv-white);
+  margin-bottom: .4rem;
+}
+.rv-share-modal-sub {
+  font-size: .82rem;
+  color: var(--rv-grey-lt);
+  margin-bottom: 1.4rem;
+}
+.rv-share-preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1200 / 630;
+  background: #0a0a0a;
+  border: 1px solid var(--rv-line2);
+  margin-bottom: 1.25rem;
+  object-fit: contain;
+}
+.rv-share-actions {
+  display: flex;
+  gap: .6rem;
+}
+.rv-share-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  background: transparent;
+  border: 1px solid var(--rv-line2);
+  color: var(--rv-cream);
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  padding: .8rem .6rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.rv-share-action:hover {
+  color: var(--rv-white);
+  border-color: var(--rv-red);
+  background: rgba(220, 38, 38, .08);
+}
+.rv-share-action.is-success {
+  color: var(--rv-gold);
+  border-color: var(--rv-gold);
+}
+.rv-share-close {
+  margin-top: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--rv-grey-mid);
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.rv-share-close:hover { color: var(--rv-red); }
+</style>
+</head>
+<body data-league-name="The Lakeside League">
+
+<div class="site-glow"></div>
+<div class="site-grain"></div>
+
+<nav id="site-nav"
+     data-page="rivalries"
+     data-chapter="CH. VI · RIVALRY"
+     data-back-label="← All rivalries"
+     data-back-href="rivalries/"></nav>
+<script src="assets/js/nav.js"></script>
+
+<button type="button" class="rv-share-btn" id="rv-share-btn" hidden aria-label="Share this rivalry">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+  </svg>
+  <span>Share</span>
+</button>
+
+<dialog class="rv-share-dialog" id="rv-share-dialog" aria-labelledby="rv-share-title">
+  <div class="rv-share-modal-kicker">Share this rivalry</div>
+  <div class="rv-share-modal-title" id="rv-share-title">&nbsp;</div>
+  <div class="rv-share-modal-sub" id="rv-share-sub">A clipping from the head-to-head record</div>
+  <img class="rv-share-preview" id="rv-share-preview" alt="Rivalry card preview" />
+  <div class="rv-share-actions">
+    <button type="button" class="rv-share-action" id="rv-share-copy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      <span id="rv-share-copy-label">Copy link</span>
+    </button>
+    <button type="button" class="rv-share-action" id="rv-share-download">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      <span>Download card</span>
+    </button>
+  </div>
+  <button type="button" class="rv-share-close" id="rv-share-close">Close</button>
+</dialog>
+
+<header class="rv-detail-header">
+  <div class="rv-detail-kicker" id="rv-kicker">The Lakeside League · Head-to-Head</div>
+  <h1 class="rv-detail-title" id="rv-title">Loading…</h1>
+  <div class="rv-detail-sub" id="rv-sub">&nbsp;</div>
+</header>
+
+<main class="rv-detail-main" id="rv-main">
+  <div class="rv-empty" id="rv-loading">Loading rivalry…</div>
+</main>
+
+<!-- Bottom-of-page back link: after scrolling through the rivalry the
+     reader is far from the masthead's back arrow, so a second
+     unobtrusive link gives them a way home without scrolling all the
+     way back up. -->
+<footer class="rv-detail-footer">
+  <a class="rv-detail-back rv-detail-back-foot" href="rivalries/">← All rivalries</a>
+</footer>
+
+<script>
+(function () {
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function getParam(name) {
+    return new URLSearchParams(window.location.search).get(name);
+  }
+  function fmtScore(n) {
+    return typeof n === 'number' ? n.toFixed(1) : '—';
+  }
+
+  function buildSide(side, sideLetter, isLeading) {
+    return `
+      <div class="rv-side rv-side-${sideLetter}${isLeading ? ' side-leads' : ''}">
+        <div class="rv-wins${isLeading ? ' hot' : ''}">${side.wins}</div>
+        <div class="rv-wins-lbl">Wins</div>
+        <div class="rv-name">${escapeHtml(side.name)}</div>
+        <div class="rv-ppg">${side.avg_ppg ? side.avg_ppg.toFixed(1) + ' avg PPG' : '—'}</div>
+        <div class="rv-rec">Reg ${escapeHtml(side.reg_record)} &nbsp;·&nbsp; Playoff ${escapeHtml(side.playoff_record)}</div>
+      </div>
+    `;
+  }
+
+  function buildCard(rv) {
+    const totalDecided = rv.manager_a.wins + rv.manager_b.wins;
+    let aPct = 50;
+    if (totalDecided > 0) aPct = (rv.manager_a.wins / totalDecided) * 100;
+    const aLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_a.name;
+    const bLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_b.name;
+    const aColor = aLeading ? '#dc2626' : '#1f2937';
+    const bColor = bLeading ? '#dc2626' : '#1f2937';
+    const barStyle = `background: linear-gradient(to right, ${aColor} 0%, ${aColor} ${aPct}%, ${bColor} ${aPct}%, ${bColor} 100%)`;
+    const sinceLabel = rv.first_meeting_year ? ` · Since ${rv.first_meeting_year}` : '';
+    const headBadge = rv.is_deadlocked
+      ? `Deadlocked · ${rv.manager_a.wins}–${rv.manager_b.wins}`
+      : rv.leader_name
+        ? `${escapeHtml(rv.leader_name)} Leads · ${escapeHtml(rv.leader_record)}`
+        : 'No games yet';
+    const lastGameStr = rv.last_meeting ? `${rv.last_meeting.year} · W${rv.last_meeting.week}` : '—';
+
+    return `
+      <div class="rv-card">
+        <div class="rv-card-head">
+          <span class="rv-card-label">${escapeHtml(rv.manager_a.name)} vs ${escapeHtml(rv.manager_b.name)} · ${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}${sinceLabel}</span>
+          <span class="rv-badge">${headBadge}</span>
+        </div>
+        <div class="rv-body">
+          ${buildSide(rv.manager_a, 'a', aLeading)}
+          <div class="rv-center">
+            <div class="rv-rivalry-name">${escapeHtml(rv.name).toUpperCase()}</div>
+            <div class="rv-vs">vs</div>
+            <div class="rv-games">${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}</div>
+            <div class="rv-bar-wrap">
+              <div class="rv-bar" style="${barStyle}"></div>
+              <div class="rv-bar-nums"><span>${rv.manager_a.wins}</span><span>${rv.manager_b.wins}</span></div>
+            </div>
+            <div class="rv-series-lbl">${rv.is_deadlocked ? 'Deadlocked' : rv.leader_name ? `${escapeHtml(rv.leader_name)} Leads` : '—'}</div>
+            <div class="rv-last-game">Last: <span>${lastGameStr}</span></div>
+          </div>
+          ${buildSide(rv.manager_b, 'b', bLeading)}
+        </div>
+      </div>
+    `;
+  }
+
+  // Walk last5 from the most recent entry backward until the result
+  // flips — that's the active streak length + which side owns it.
+  // Returns null when there are no meetings or the most recent was a tie
+  // (no clear streak owner).
+  function activeStreak(rv) {
+    const a = rv.manager_a, b = rv.manager_b;
+    const n = Math.min(a.last5.length, b.last5.length);
+    if (n === 0) return null;
+    const lastA = a.last5[n - 1];
+    if (lastA.result === 'T') return null;
+    const winner = lastA.result === 'W' ? a.name : b.name;
+    let count = 1;
+    for (let i = n - 2; i >= 0; i--) {
+      const g = a.last5[i];
+      if (g.result === lastA.result) count++;
+      else break;
+    }
+    return { winner, count };
+  }
+
+  // Average absolute margin across the recorded last5 — gives a feel for
+  // how close or blowout-y this rivalry has been recently.
+  function avgMargin(rv) {
+    const games = rv.manager_a.last5 || [];
+    const decided = games.filter((g) => g.result !== 'T' && typeof g.margin === 'number');
+    if (decided.length === 0) return null;
+    const total = decided.reduce((sum, g) => sum + Math.abs(g.margin), 0);
+    return total / decided.length;
+  }
+
+  function postseasonCount(rv) {
+    const games = rv.manager_a.last5 || [];
+    return games.filter((g) => g.is_playoff).length;
+  }
+
+  // Look up a manager's directory entry by user_id. Returns null if the
+  // directory hasn't loaded (we render without career snapshots) or the
+  // user isn't in it (alumni edge case). Directory is the cheap source —
+  // championships, playoff appearances, career W-L — without needing the
+  // per-manager .json.
+  function findInDirectory(directory, userId) {
+    if (!directory || !Array.isArray(directory.managers) || !userId) return null;
+    return directory.managers.find((m) => m.user_id === userId) || null;
+  }
+
+  // League-average PPG, computed from the directory rather than shipped
+  // as its own number. Sum every manager's total PF; divide by their
+  // total games. Returns null when the directory's missing or empty.
+  function leagueAvgPpg(directory) {
+    if (!directory || !Array.isArray(directory.managers) || directory.managers.length === 0) return null;
+    let totalPf = 0, totalGames = 0;
+    for (const m of directory.managers) {
+      const games = (m.wins || 0) + (m.losses || 0) + (m.ties || 0);
+      totalPf += m.total_pf || 0;
+      totalGames += games;
+    }
+    if (totalGames === 0) return null;
+    return totalPf / totalGames;
+  }
+
+  // VAULTED: playoff knockout detection. Removed for now because it
+  // crowded the last-meeting card and the heuristic ("playoff_games === 1
+  // is a certain KO, anything else is ambiguous") couldn't tell a final
+  // loss from a semi loss without per-game bracket data. Bring this back
+  // alongside the regular-season elimination feature once exportLeague
+  // ships per-week standings + bracket position. See git history for the
+  // earlier implementation.
+
+  // Walk last5 from manager A's perspective, find the meeting with the
+  // largest |margin|. Playoff games tie-break above regular-season games
+  // at the same margin since they tend to be the more memorable beating.
+  function biggestMeeting(rv) {
+    const games = rv.manager_a.last5 || [];
+    if (games.length === 0) return null;
+    let best = null;
+    for (const g of games) {
+      if (g.result === 'T' || typeof g.margin !== 'number') continue;
+      if (!best) { best = g; continue; }
+      if (g.margin > best.margin) { best = g; continue; }
+      if (g.margin === best.margin && g.is_playoff && !best.is_playoff) { best = g; }
+    }
+    if (!best) return null;
+    const winner = best.result === 'W' ? rv.manager_a.name : rv.manager_b.name;
+    return { game: best, winner };
+  }
+
+  // Did the latest game continue a streak or end one? Walks last5 from
+  // the perspective of manager A (which is what rivalries.json ships).
+  // Returns:
+  //   { type: 'extended', count }  — current winner just won their Nth straight
+  //   { type: 'snapped',  count, snappedOwner }  — broke an opponent's run
+  //   null                         — first meeting, ties, or 1-1 alternation
+  function streakImpact(games) {
+    if (!games || games.length < 2) return null;
+    const last = games[games.length - 1];
+    if (last.result === 'T') return null;
+    let runLen = 1;
+    for (let i = games.length - 2; i >= 0; i--) {
+      if (games[i].result === last.result) runLen++;
+      else break;
+    }
+    if (runLen > 1) return { type: 'extended', count: runLen };
+    let priorRun = 0;
+    for (let i = games.length - 2; i >= 0; i--) {
+      if (games[i].result === 'T') break;
+      if (games[i].result !== last.result) priorRun++;
+      else break;
+    }
+    if (priorRun >= 2) return { type: 'snapped', count: priorRun };
+    return null;
+  }
+
+  // From a side's last5, find the meeting with the biggest margin matching
+  // a given result ('W' or 'L'). Returns null when no such meeting exists
+  // — e.g., a side that's never won this rivalry has no "best win" to show.
+  function biggestByResult(side, result) {
+    const games = (side.last5 || []).filter(
+      (g) => g.result === result && typeof g.margin === 'number',
+    );
+    if (games.length === 0) return null;
+    return games.reduce((best, g) => (g.margin > best.margin ? g : best));
+  }
+
+  // "1-0-0" → "1-0" (drop trailing zero-tie segment). Server ships records
+  // in W-L-T but the tie column is almost always zero and noisy when it is.
+  function tidyRecord(rec) {
+    const parts = (rec || '').split('-');
+    if (parts.length === 3 && parts[2] === '0') return parts.slice(0, 2).join('-');
+    return rec || '—';
+  }
+
+  function buildRivalryCard(side, opp, rv, dirEntry, profile) {
+    // Win pct against THIS opponent (not career). Ties count against both
+    // the wins and losses denominator.
+    const totalH2H = side.wins + opp.wins + (rv.ties_count || 0);
+    const winPct = totalH2H > 0 ? ((side.wins / totalH2H) * 100).toFixed(1) + '%' : '—';
+
+    const bestW = biggestByResult(side, 'W');
+    const worstL = biggestByResult(side, 'L');
+    const playoffRec = tidyRecord(side.playoff_record);
+
+    // PPG in this rivalry vs this manager's career PPG. Profile fetch may
+    // have failed silently (archive manager, network blip) — in that case
+    // we just show the rivalry number without a delta.
+    const careerAvg = profile && typeof profile.avg_ppg === 'number' ? profile.avg_ppg : null;
+    const rivAvg = typeof side.avg_ppg === 'number' ? side.avg_ppg : null;
+    let avgSub = 'PPG vs this opponent';
+    if (rivAvg != null && careerAvg != null && careerAvg > 0) {
+      const delta = ((rivAvg - careerAvg) / careerAvg) * 100;
+      const sign = delta >= 0 ? '+' : '';
+      avgSub = `${sign}${delta.toFixed(1)}% vs career avg`;
+    }
+
+    // Best single-week score this side has put up against THIS opponent.
+    // Comes from the exporter (it has every game's raw scores in scope);
+    // last5 only ships margins, so we can't derive this client-side.
+    // When the bundle hasn't been rebuilt yet (older cached value) we
+    // gracefully fall back to "—" instead of breaking.
+    const hi = side.high_score;
+    const hiValue = hi && typeof hi.score === 'number' ? hi.score.toFixed(1) : '—';
+    const hiSub = hi
+      ? `${hi.year} · W${hi.week}${hi.is_playoff ? ' · PO' : ''}`
+      : 'No games on file';
+
+    const teamLabel = dirEntry && dirEntry.team_latest ? dirEntry.team_latest : '';
+
+    return `
+      <div class="rv-career-card">
+        <div class="rv-career-head">
+          <span class="rv-career-name">${escapeHtml(side.name)}</span>
+          <span class="rv-career-team">${escapeHtml(teamLabel)}</span>
+        </div>
+        <div class="rv-career-grid">
+          <div class="rv-career-cell">
+            <div class="rv-career-cell-label">vs. ${escapeHtml(opp.name)}</div>
+            <div class="rv-career-cell-value">${side.wins}–${opp.wins}${rv.ties_count ? '–' + rv.ties_count : ''}</div>
+            <div class="rv-career-cell-sub">${winPct} win rate</div>
+          </div>
+          <div class="rv-career-cell">
+            <div class="rv-career-cell-label">Best win</div>
+            <div class="rv-career-cell-value">${bestW ? '+' + bestW.margin.toFixed(1) : '—'}</div>
+            <div class="rv-career-cell-sub">${bestW ? `${bestW.year} · W${bestW.week}${bestW.is_playoff ? ' · PO' : ''}` : 'No wins yet'}</div>
+          </div>
+          <div class="rv-career-cell">
+            <div class="rv-career-cell-label">Toughest loss</div>
+            <div class="rv-career-cell-value">${worstL ? '−' + worstL.margin.toFixed(1) : '—'}</div>
+            <div class="rv-career-cell-sub">${worstL ? `${worstL.year} · W${worstL.week}${worstL.is_playoff ? ' · PO' : ''}` : 'No losses yet'}</div>
+          </div>
+          <div class="rv-career-cell">
+            <div class="rv-career-cell-label">Playoff series</div>
+            <div class="rv-career-cell-value">${escapeHtml(playoffRec)}</div>
+            <div class="rv-career-cell-sub">In postseason</div>
+          </div>
+          <div class="rv-career-cell">
+            <div class="rv-career-cell-label">Avg in series</div>
+            <div class="rv-career-cell-value">${rivAvg != null ? rivAvg.toFixed(1) : '—'}</div>
+            <div class="rv-career-cell-sub">${escapeHtml(avgSub)}</div>
+          </div>
+          <div class="rv-career-cell">
+            <div class="rv-career-cell-label">High vs ${escapeHtml(opp.name)}</div>
+            <div class="rv-career-cell-value">${hiValue}</div>
+            <div class="rv-career-cell-sub">${escapeHtml(hiSub)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildCareers(rv, directory, profiles) {
+    // Render the two rivalry cards whenever the rivalry has any data —
+    // career snapshots used to require a directory hit, but rivalry-
+    // specific stats come from rivalries.json itself, which is always
+    // present on this page. Directory + profile only add cosmetic
+    // sub-info (team name, career PPG delta); their absence shouldn't
+    // suppress the cards.
+    const aDir = findInDirectory(directory, rv.manager_a.user_id);
+    const bDir = findInDirectory(directory, rv.manager_b.user_id);
+    return `
+      <section class="rv-careers" aria-label="Head-to-head splits">
+        ${buildRivalryCard(rv.manager_a, rv.manager_b, rv, aDir, profiles && profiles.a)}
+        ${buildRivalryCard(rv.manager_b, rv.manager_a, rv, bDir, profiles && profiles.b)}
+      </section>
+    `;
+  }
+
+  // Compact "Met in YYYY · YYYY · YYYY" strip — playoff meetings get a
+  // red border so postseason chapters stand out at a glance.
+  function buildMetInStrip(rv) {
+    const games = rv.manager_a.last5 || [];
+    if (games.length === 0) return '';
+    // De-dupe by year — multiple meetings in the same season collapse to
+    // one chip, but if any meeting that year was a playoff one the chip
+    // gets the playoff styling.
+    const byYear = new Map();
+    for (const g of games) {
+      const cur = byYear.get(g.year) || { year: g.year, playoff: false };
+      if (g.is_playoff) cur.playoff = true;
+      byYear.set(g.year, cur);
+    }
+    const chips = Array.from(byYear.values())
+      .sort((a, b) => a.year - b.year)
+      .map((y) => `<span class="rv-metin-chip${y.playoff ? ' po' : ''}">${y.year}${y.playoff ? ' · PO' : ''}</span>`)
+      .join('');
+    return `
+      <div class="rv-metin">
+        <span class="rv-metin-label">Met in</span>
+        ${chips}
+      </div>
+    `;
+  }
+
+  function buildStatStrip(rv) {
+    const seriesValue = rv.is_deadlocked
+      ? `${rv.manager_a.wins}<em>—</em>${rv.manager_b.wins}`
+      : rv.leader_record
+        ? escapeHtml(rv.leader_record).replace(/[-–]/g, '<em>—</em>')
+        : '—';
+    const seriesSub = rv.is_deadlocked
+      ? 'Deadlocked'
+      : rv.leader_name
+        ? `${escapeHtml(rv.leader_name)} leads`
+        : 'No games yet';
+    const sinceVal = rv.first_meeting_year ? rv.first_meeting_year : '—';
+    const streak = activeStreak(rv);
+    const streakVal = streak ? `${streak.count}` : '—';
+    const streakSub = streak ? `${escapeHtml(streak.winner)} · in a row` : 'No active streak';
+    const avg = avgMargin(rv);
+    const avgVal = avg != null ? avg.toFixed(1) : '—';
+    const po = postseasonCount(rv);
+    const poSub = rv.manager_a.last5.length
+      ? `${po} of last ${rv.manager_a.last5.length}`
+      : 'None yet';
+
+    return `
+      <section class="rv-stats" aria-label="By the numbers">
+        <div class="rv-stat">
+          <div class="rv-stat-label">Meetings</div>
+          <div class="rv-stat-value">${rv.total_meetings}</div>
+          <div class="rv-stat-sub">All-time</div>
+        </div>
+        <div class="rv-stat">
+          <div class="rv-stat-label">Series</div>
+          <div class="rv-stat-value">${seriesValue}</div>
+          <div class="rv-stat-sub">${seriesSub}</div>
+        </div>
+        <div class="rv-stat">
+          <div class="rv-stat-label">Since</div>
+          <div class="rv-stat-value">${sinceVal}</div>
+          <div class="rv-stat-sub">First meeting</div>
+        </div>
+        <div class="rv-stat">
+          <div class="rv-stat-label">Streak</div>
+          <div class="rv-stat-value">${streakVal}</div>
+          <div class="rv-stat-sub">${streakSub}</div>
+        </div>
+        <div class="rv-stat">
+          <div class="rv-stat-label">Avg margin</div>
+          <div class="rv-stat-value">${avgVal}</div>
+          <div class="rv-stat-sub">${poSub} · Postseason</div>
+        </div>
+      </section>
+    `;
+  }
+
+  function buildLastMeetingCard(rv, leagueAvg) {
+    if (!rv.last_meeting || typeof rv.last_meeting.a_score !== 'number') return '';
+    const lm = rv.last_meeting;
+    const a = rv.manager_a, b = rv.manager_b;
+    const aWon = lm.a_score > lm.b_score;
+    const bWon = lm.b_score > lm.a_score;
+    const poTag = lm.is_playoff ? '<span class="rv-tag-po-inline">Playoff</span>' : '';
+    const margin = Math.abs(lm.a_score - lm.b_score);
+    const combinedAvg = (lm.a_score + lm.b_score) / 2;
+    // Comparison against the league's all-time PPG. Skip if we don't have
+    // it (avoids "vs. NaN" rendering when directory missed).
+    let avgLine = '';
+    if (typeof leagueAvg === 'number' && leagueAvg > 0) {
+      const delta = ((combinedAvg - leagueAvg) / leagueAvg) * 100;
+      const sign = delta >= 0 ? '+' : '';
+      avgLine = `Combined avg ${combinedAvg.toFixed(1)} · ${sign}${delta.toFixed(1)}% vs lg avg ${leagueAvg.toFixed(1)}`;
+    }
+    // Streak chip: did this game extend or break a run? `last5` ships
+    // oldest-first with the most recent meeting last, so it includes
+    // `last_meeting` as its tail entry — exactly what streakImpact
+    // expects. We render the chip only when the game had a meaningful
+    // streak effect (≥2 in a row or snapped a ≥2 run).
+    const streak = streakImpact(rv.manager_a.last5);
+    let streakChip = '';
+    if (streak) {
+      const text = streak.type === 'extended'
+        ? `Run · ${streak.count} in a row`
+        : `Snapped ${streak.count}-game run`;
+      streakChip = `<div class="rv-last-chip">${escapeHtml(text)}</div>`;
+    }
+    return `
+      <section class="rv-last-card" aria-label="Last meeting">
+        <div class="rv-last-meta">
+          <span>Last meeting · ${lm.year} · W${lm.week}</span>
+          <span>${poTag}</span>
+        </div>
+        <div class="rv-last-side a${aWon ? ' won' : ''}">
+          <div class="rv-last-name">${escapeHtml(a.name)}</div>
+          <div class="rv-last-score">${fmtScore(lm.a_score)}</div>
+        </div>
+        <div class="rv-last-mid">
+          <div class="rv-last-vs">vs.</div>
+          <div class="rv-last-chip">Margin · <strong>${margin.toFixed(1)}</strong></div>
+          ${streakChip}
+          ${avgLine ? `<div class="rv-last-avg">${escapeHtml(avgLine)}</div>` : ''}
+        </div>
+        <div class="rv-last-side b${bWon ? ' won' : ''}">
+          <div class="rv-last-name">${escapeHtml(b.name)}</div>
+          <div class="rv-last-score">${fmtScore(lm.b_score)}</div>
+        </div>
+      </section>
+    `;
+  }
+
+  function buildBiggestMeeting(rv) {
+    const big = biggestMeeting(rv);
+    if (!big) return '';
+    const g = big.game;
+    const poTag = g.is_playoff ? '<span class="rv-tag-po-inline" style="margin-left:.4rem;">Playoff</span>' : '';
+    return `
+      <div class="rv-biggest">
+        <span class="rv-biggest-label">Biggest meeting</span>
+        <span>
+          <strong>${escapeHtml(big.winner)}</strong>
+          by <strong>${g.margin.toFixed(1)}</strong>
+          · ${g.year} W${g.week}${poTag}
+        </span>
+      </div>
+    `;
+  }
+
+  function buildStreakChip(rv) {
+    const streak = activeStreak(rv);
+    if (!streak || streak.count < 2) return '';
+    return `
+      <div class="rv-streak">★ <strong>${escapeHtml(streak.winner)}</strong> · ${streak.count} in a row</div>
+    `;
+  }
+
+  function buildLedger(rv) {
+    // rivalries.json ships the last 5 meetings per side. Render them
+    // newest-first as a two-sided scoreboard so visitors see both
+    // sides' margins at the same glance instead of a one-column winner
+    // list. Playoff games get a `PO` tag. Anything older than 5 isn't
+    // in the bundle — when more is available we'll expand this from a
+    // richer per-rivalry endpoint.
+    const a = rv.manager_a, b = rv.manager_b;
+    const n = Math.min(a.last5.length, b.last5.length);
+    if (n === 0) {
+      return `
+        <section class="rv-section">
+          <div class="rv-section-title">Recent meetings</div>
+          <div class="rv-empty" style="padding:1.5rem 0;">No meetings on file yet.</div>
+        </section>
+      `;
+    }
+    const rows = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const ga = a.last5[i];
+      const aWon = ga.result === 'W';
+      const bWon = ga.result === 'L'; // from a's perspective
+      const tie = ga.result === 'T';
+      const margin = typeof ga.margin === 'number' ? ga.margin.toFixed(1) : '0.0';
+      const aMargStr = aWon ? `<span class="marg">+${margin}</span>` : '';
+      const bMargStr = bWon ? `<span class="marg">+${margin}</span>` : '';
+      const tagPo = ga.is_playoff ? '<span class="rv-tag-po-inline">PO</span>' : '';
+      rows.push(`
+        <div class="rv-ledger-row">
+          <div class="rv-ledger-side a${aWon ? ' won' : ''}${tie ? ' tie' : ''}">
+            <span>${escapeHtml(a.name)}</span>
+            ${aMargStr}
+          </div>
+          <div class="rv-ledger-mid">
+            <span class="yr">${ga.year}</span>
+            <span>Week ${ga.week} ${tagPo}</span>
+          </div>
+          <div class="rv-ledger-side b${bWon ? ' won' : ''}${tie ? ' tie' : ''}">
+            ${bMargStr}
+            <span>${escapeHtml(b.name)}</span>
+          </div>
+        </div>
+      `);
+    }
+    const moreNote = rv.total_meetings > n
+      ? `<div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--rv-grey-lt);margin-top:1rem;text-align:center;">Showing last ${n} of ${rv.total_meetings} all-time meetings.</div>`
+      : '';
+    return `
+      <section class="rv-section">
+        <div class="rv-section-title">Recent meetings · last ${n}</div>
+        ${buildStreakChip(rv)}
+        <div class="rv-ledger">${rows.join('')}</div>
+        ${moreNote}
+      </section>
+    `;
+  }
+
+  function setupShare(rv, rivalryId) {
+    const btn = document.getElementById('rv-share-btn');
+    const dialog = document.getElementById('rv-share-dialog');
+    const closeBtn = document.getElementById('rv-share-close');
+    const copyBtn = document.getElementById('rv-share-copy');
+    const copyLabel = document.getElementById('rv-share-copy-label');
+    const downloadBtn = document.getElementById('rv-share-download');
+    const preview = document.getElementById('rv-share-preview');
+    const titleEl = document.getElementById('rv-share-title');
+    if (!btn || !dialog) return;
+
+    const slug = (document.body.getAttribute('data-league-name-slug')) ||
+      (window.__DC && window.__DC.slug) || '';
+    const ogPath = '/api/og/rivalry/' + encodeURIComponent(slug) + '/' + encodeURIComponent(rivalryId);
+    const ogUrl = new URL(ogPath, window.location.origin).toString();
+    const shareUrl = window.location.href;
+    const safeFile = (rv.manager_a.name + '-vs-' + rv.manager_b.name)
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'rivalry';
+
+    titleEl.textContent = rv.manager_a.name + ' vs. ' + rv.manager_b.name;
+    preview.src = ogUrl;
+    btn.hidden = false;
+
+    btn.addEventListener('click', () => {
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    });
+    closeBtn.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        copyLabel.textContent = 'Copied!';
+        copyBtn.classList.add('is-success');
+        setTimeout(() => {
+          copyLabel.textContent = 'Copy link';
+          copyBtn.classList.remove('is-success');
+        }, 1800);
+      } catch {
+        // Older browsers / insecure contexts: fall back to a textarea select.
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); copyLabel.textContent = 'Copied!'; } catch {}
+        document.body.removeChild(ta);
+      }
+    });
+
+    downloadBtn.addEventListener('click', async () => {
+      try {
+        const res = await fetch(ogUrl);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = safeFile + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        // Last-resort: open the image in a new tab so the user can save it.
+        window.open(ogUrl, '_blank', 'noopener');
+      }
+    });
+  }
+
+  async function load() {
+    const id = getParam('id');
+    const main = document.getElementById('rv-main');
+    if (!id) {
+      main.innerHTML = '<div class="rv-empty">No rivalry selected. <a class="rv-detail-back" href="rivalries/">← Back to all rivalries</a></div>';
+      document.getElementById('rv-title').textContent = 'Not found.';
+      document.getElementById('rv-sub').textContent = '';
+      return;
+    }
+    try {
+      // First round: rivalries + directory in parallel. Directory tells
+      // us the user_ids' career snapshot AND lets us compute the league
+      // PPG benchmark used by the last-meeting comparison.
+      const [rvRes, dirRes] = await Promise.all([
+        fetch('data/rivalries.json'),
+        fetch('data/managers_directory.json').catch(() => null),
+      ]);
+      if (!rvRes.ok) throw new Error('HTTP ' + rvRes.status);
+      const data = await rvRes.json();
+      const directory = dirRes && dirRes.ok ? await dirRes.json().catch(() => null) : null;
+      const rv = (data.rivalries || []).find((r) => r.id === id);
+      if (!rv) {
+        main.innerHTML = '<div class="rv-empty">That rivalry isn\'t on file. <a class="rv-detail-back" href="rivalries/">← Back to all rivalries</a></div>';
+        document.getElementById('rv-title').textContent = 'Not found.';
+        return;
+      }
+      // Second round: per-manager profiles. We need both rv user_ids
+      // (only known after rvRes resolves) and they power: career-card
+      // high score + longest WS, playoff knockout detection in the
+      // ledger, and the last-meeting card's KO line. Both calls are
+      // best-effort — null on miss, the renderers degrade gracefully.
+      const fetchProfile = (uid) =>
+        uid
+          ? fetch(`data/managers/${encodeURIComponent(uid)}.json`)
+              .then((r) => (r.ok ? r.json() : null))
+              .catch(() => null)
+          : Promise.resolve(null);
+      const [profA, profB] = await Promise.all([
+        fetchProfile(rv.manager_a.user_id),
+        fetchProfile(rv.manager_b.user_id),
+      ]);
+      const profiles = { a: profA, b: profB };
+      const leagueAvg = leagueAvgPpg(directory);
+
+      const leagueName = document.body.getAttribute('data-league-name') || '';
+      document.title = rv.name + (leagueName ? ' · ' + leagueName : '');
+      document.getElementById('rv-title').innerHTML = `${escapeHtml(rv.manager_a.name)} <em>vs.</em> ${escapeHtml(rv.manager_b.name)}`;
+      document.getElementById('rv-sub').textContent =
+        rv.total_meetings === 0
+          ? 'No meetings on file yet.'
+          : `${rv.total_meetings} meeting${rv.total_meetings === 1 ? '' : 's'}${rv.first_meeting_year ? ' · Since ' + rv.first_meeting_year : ''}`;
+      const kicker = document.getElementById('rv-kicker');
+      kicker.textContent = (leagueName ? leagueName + ' · ' : '') + rv.name;
+      main.innerHTML =
+        buildStatStrip(rv) +
+        buildCard(rv) +
+        buildLastMeetingCard(rv, leagueAvg) +
+        buildCareers(rv, directory, profiles) +
+        buildBiggestMeeting(rv) +
+        buildMetInStrip(rv) +
+        buildLedger(rv);
+      setupShare(rv, id);
+    } catch (err) {
+      main.innerHTML = `<div class="rv-empty">Couldn't load this rivalry.<br><span style="font-family:var(--mono);font-size:.7rem;color:var(--rv-red);">${escapeHtml(err.message || 'unknown error')}</span></div>`;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', load);
+  } else {
+    load();
+  }
+})();
+</script>
+
+</body>
+</html>

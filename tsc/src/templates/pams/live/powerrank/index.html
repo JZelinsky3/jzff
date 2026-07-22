@@ -10,6 +10,9 @@
 <body>
   <div class="site-glow" aria-hidden="true"></div>
 
+  <!-- ── STICKY NAV DOCK — masthead + live rail pin together as one unit,
+       matching the site-nav + chapbar stack on other live pages. ── -->
+  <div class="pr-dock">
   <!-- ── MASTHEAD NAV ── -->
   <nav class="pr-nav">
     <div class="pr-nav-inner">
@@ -18,9 +21,39 @@
         <a href="./" class="pr-nav-title">Power <em>Rankings.</em></a>
         <div class="pr-nav-kicker">{{LEAGUE_NAME_UPPER}}</div>
       </div>
-      <span class="pr-nav-auto">AUTO</span>
+      <div class="pr-nav-actions">
+        <button id="shareBtn" class="pr-nav-share" type="button" aria-label="Share the rankings">
+          <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5 9.5 6.5"/><path d="M7 4.5h-1.5a3 3 0 0 0 0 6h1.5"/><path d="M9 11.5h1.5a3 3 0 0 0 0-6h-1.5"/></svg>
+          <span>Share</span>
+        </button>
+        <span class="pr-nav-auto">AUTO</span>
+      </div>
     </div>
   </nav>
+
+  <!-- ── LIVE SECTION RAIL ──
+       Parity with the site-wide nav rail the other live pages get from
+       nav.js. Power Rankings ships its own masthead (pr-nav) so nav.js
+       skips it here; this static rail restores lateral navigation across
+       the Live Season section, themed to the parchment palette. -->
+  <nav class="pr-rail" aria-label="Live Season">
+    <div class="pr-rail-track">
+      <a class="pr-rail-link is-back" href="./">History</a>
+      <a class="pr-rail-link" href="live/">Live</a>
+      <a class="pr-rail-link" href="live/matchup-preview/">Matchups</a>
+      <a class="pr-rail-link is-active" aria-current="page" href="live/powerrank/">Power Rank</a>
+      <a class="pr-rail-link" href="live/pickems/">Pick'ems</a>
+      <a class="pr-rail-link" href="live/records-watch/">Records</a>
+      <a class="pr-rail-link" href="live/best-coach/">Coach</a>
+      <a class="pr-rail-link" href="live/milestones/">Milestones</a>
+      <a class="pr-rail-link" href="live/trades/">Trades</a>
+      <a class="pr-rail-link" href="live/manager-dna/">DNA</a>
+    </div>
+  </nav>
+  </div><!-- /pr-dock -->
+
+  <!-- Toast for share fallback (clipboard copy confirmation). -->
+  <output id="prToast" class="pr-toast" aria-live="polite">Link copied</output>
 
   <div class="pr-app">
 

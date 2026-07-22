@@ -363,6 +363,15 @@ body { background: var(--ls-bg); }
 .snap-row.podium-3 .snap-delta { font-size: .8em;  margin-left: .42rem; font-weight: 700; }
 .snap-pos { color: var(--ls-mute); font-variant-numeric: tabular-nums; }
 .snap-name { color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Long team names step down a notch (or two) so they fit the narrow
+   snapshot columns before the ellipsis has to clip them. */
+.snap-name.len-l  { font-size: .90em; }
+.snap-name.len-xl { font-size: .76em; letter-spacing: -.015em; }
+/* The form row pins its own .snap-name font-size, which ties on
+   specificity and would otherwise beat the scale classes — restate the
+   steps scoped to the form row so long names shrink there too. */
+.snap-form-row .snap-name.len-l  { font-size: .74rem; }
+.snap-form-row .snap-name.len-xl { font-size: .63rem; letter-spacing: -.015em; }
 .snap-val  { color: var(--snap-accent); font-variant-numeric: tabular-nums; font-weight: 700; }
 .snap-delta {
     display: inline-block;
@@ -411,9 +420,13 @@ body { background: var(--ls-bg); }
     text-align: center; line-height: 16px;
     letter-spacing: 0;
 }
-.snap-pills i.w { background: rgba(106,154,110,.85); color: #0e1a14; }
-.snap-pills i.l { background: rgba(199,88,71,.78); color: #1a0e08; }
-.snap-pills i.t { background: rgba(232,200,137,.5); color: #1a1408; }
+/* Form results in the league's own palette instead of traffic-light
+   green/red: a win takes the gold accent (the good thing on this page),
+   a loss recedes into a faded moss chip, a tie sits hollow between them.
+   The W/L/T letter carries the meaning; colour just sets the emphasis. */
+.snap-pills i.w { background: rgba(216,178,90,.92); color: #4a5852; }
+.snap-pills i.l { background: rgba(125,140,129,.44); color: var(--ls-pro); }
+.snap-pills i.t { background: transparent; border: 1px solid var(--ls-line); color: var(--ls-pro); line-height: 14px; }
 .snap-pills i.e { background: transparent; border: 1px dashed var(--ls-line); color: var(--ls-mute); line-height: 14px; }
 
 .snap-foot {
@@ -558,6 +571,10 @@ body { background: var(--ls-bg); }
    card so they fit the GOTW slot. */
 .gotw-stats .snap-pills { gap: 2px; display: inline-flex; }
 .gotw-stats .snap-pills i { width: 14px; height: 14px; font-size: .5rem; line-height: 14px; }
+/* GOTW sits on the dark green card, so the semi-transparent loss chip
+   picks up the green underneath and reads dimmer than it does on the
+   neutral snapshot cards. Bump the fill a touch to match that pop. */
+.gotw-stats .snap-pills i.l { background: rgba(148,162,151,.55); color: var(--ls-pro); }
 .gotw-stat-b .snap-pills { justify-content: flex-end; }
 
 /* H2H block — centered record + title, flanked by each side's avg PPG
@@ -1498,12 +1515,12 @@ body { background: var(--ls-bg); }
                 <a class="trades-cta" data-cta="analyzer" href="live/trades/analyzer/">
                     <div class="trades-cta-label">Test a deal</div>
                     <div class="trades-cta-title">Trade <em>analyzer</em></div>
-                    <div class="trades-cta-desc">Drop in any deal — get a grade, fairness curve, and a write-up.</div>
+                    <div class="trades-cta-desc">Drop in any deal and get a grade, fairness curve, and a write-up.</div>
                 </a>
                 <a class="trades-cta" data-cta="finder" href="live/trades/finder/">
                     <div class="trades-cta-label">Hunt for deals</div>
                     <div class="trades-cta-title">Trade <em>finder</em></div>
-                    <div class="trades-cta-desc">Surface trade ideas that help your team — sorted by mutual fit.</div>
+                    <div class="trades-cta-desc">Surface trade ideas that help your team, sorted by mutual fit.</div>
                 </a>
             </div>
         </article>
@@ -1526,6 +1543,36 @@ function jget(url) {
     .catch(function () { return null; });
 }
 function clampList(arr, n) { return (arr || []).slice(0, n); }
+// Fit a team name into the tight § 01 snapshot columns: step the font
+// down for long names, and only when even the smallest size can't help
+// (very long names) fall back to an abbreviation instead of an ellipsis.
+function snapFitName(name, tight) {
+  var s = String(name == null ? '' : name).trim();
+  var len = s.length;
+  // The form card is the tight one (name shares the row with 5 pills +
+  // PPG), so it steps down early and abbreviates the very long names.
+  if (tight) {
+    if (len > 29) return { cls: '',        text: snapAbbrev(s) };
+    if (len > 24) return { cls: ' len-xl', text: s };
+    if (len > 20) return { cls: ' len-l',  text: s };
+    return { cls: '', text: s };
+  }
+  // Standings + power rankings have roomier rows (name + one value), so
+  // only the genuinely long names get a light nudge down.
+  if (len > 29) return { cls: ' len-l', text: s };
+  return { cls: '', text: s };
+}
+function snapAbbrev(s) {
+  var words = s.split(/\s+/).filter(Boolean);
+  var stop = /^(the|of|and|a|an|for|to|&|los?|el|la)$/i;
+  var sig = words.filter(function (w) { return !stop.test(w); });
+  if (sig.length >= 2) {
+    // Initials of the significant words (e.g. "The Fighting Mongooses of
+    // Doom" -> "FMD"), capped so it can't run long again.
+    return sig.slice(0, 6).map(function (w) { return w.charAt(0).toUpperCase(); }).join('');
+  }
+  return s.slice(0, 14); // single very long word — hard truncate
+}
 
 // ───────────────── HERO · week pill ─────────────────
 (function () {
@@ -1554,12 +1601,12 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
       return;
     }
     host.innerHTML = data.rows.map(function (r, i) {
-      var name = r.team || r.name || '—';
+      var nm = snapFitName(r.team || r.name || '—');
       var rec  = (r.wins || 0) + '-' + (r.losses || 0) + ((r.ties || 0) > 0 ? '-' + r.ties : '');
       var podium = i < 3 ? ' podium-' + (i + 1) : (i === 0 ? ' leader' : '');
       return '<div class="snap-row' + podium + '">' +
                '<span class="snap-pos">' + (r.pos || (i + 1)) + '.</span>' +
-               '<span class="snap-name">' + escHtml(name) + '</span>' +
+               '<span class="snap-name' + nm.cls + '">' + escHtml(nm.text) + '</span>' +
                '<span class="snap-val">' + rec + '</span>' +
              '</div>';
     }).join('');
@@ -1599,7 +1646,7 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
     });
 
     host.innerHTML = sortedRows.map(function (r, idx) {
-      var name = r.team || r.name || '—';
+      var nm = snapFitName(r.team || r.name || '—', true);
       // Form arrays come oldest-first; reverse so the most recent week
       // reads left in the pill strip (matches the standings page).
       var form = (r.form || []).slice().reverse();
@@ -1616,7 +1663,7 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
       var podium = idx < 3 ? ' podium-' + (idx + 1) : '';
       return '<div class="snap-form-row' + podium + '">' +
                '<span class="snap-pos">' + (idx + 1) + '.</span>' +
-               '<span class="snap-name">' + escHtml(name) + '</span>' +
+               '<span class="snap-name' + nm.cls + '">' + escHtml(nm.text) + '</span>' +
                '<span class="snap-pills">' + pills + '</span>' +
                '<span class="snap-ppg">' + ppg + '</span>' +
              '</div>';
@@ -1649,7 +1696,7 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
       return;
     }
     host.innerHTML = teams.map(function (r, idx) {
-      var name = r.team_name || r.manager || '—';
+      var nm = snapFitName(r.team_name || r.manager || '—');
       var d = typeof r.delta === 'number' ? r.delta : 0;
       var deltaCls = d > 0 ? 'up' : d < 0 ? 'down' : 'same';
       var deltaTxt = d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + Math.abs(d) : '—';
@@ -1657,7 +1704,7 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
       var podium = idx < 3 ? ' podium-' + (idx + 1) : '';
       return '<div class="snap-row' + podium + '">' +
                '<span class="snap-pos">' + r.rank + '.</span>' +
-               '<span class="snap-name">' + escHtml(name) +
+               '<span class="snap-name' + nm.cls + '">' + escHtml(nm.text) +
                  ' <span class="snap-delta ' + deltaCls + '">' + deltaTxt + '</span>' +
                '</span>' +
                '<span class="snap-val">' + escHtml(score) + '</span>' +
@@ -1825,15 +1872,22 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
         // Trim trailing "(123.4 vs 56.7 Opponent)" tail from the copy on
         // the dashboard only — the full Records Watch page keeps the
         // breakdown, but it runs too long for the teaser rows here.
-        var copy = (r.copy_html || '').replace(/\s*\([^)]*\)\s*$/, '');
+        var copy = (r.copy_html || r.copy || '').replace(/\s*\([^)]*\)\s*$/, '');
         if (!copy) copy = escHtml(r.holder || r.chaser || '—');
+        // The actual number carried by whichever schema: record_value on
+        // the live export, chaser_value on the demo feed. A broken record
+        // that only names what fell (not to what) reads as half a sentence.
+        var value = r.record_value || r.chaser_value || '';
+        var isBroken = r.realized || r.flag === 'BROKEN';
+        var detail = escHtml(cat) +
+                     (value ? ' · ' + escHtml(value) : '') +
+                     (r.gap ? ' · ' + escHtml(r.gap) : '');
         return '<div class="watch-row">' +
                  '<div class="watch-row-main">' +
                    '<div class="watch-row-mgr">' + copy + '</div>' +
-                   '<div class="watch-row-detail">' + escHtml(cat) +
-                     (r.gap ? ' · ' + escHtml(r.gap) : '') + '</div>' +
+                   '<div class="watch-row-detail">' + detail + '</div>' +
                  '</div>' +
-                 '<div class="watch-row-pct">' + (r.realized ? '✓' : pct) + '</div>' +
+                 '<div class="watch-row-pct">' + (isBroken ? '✓' : pct) + '</div>' +
                '</div>';
       }).join('');
     }
@@ -1862,18 +1916,25 @@ function clampList(arr, n) { return (arr || []).slice(0, n); }
     if (!brokenHost || !closeHost) return;
 
     function renderRow(r) {
-      // Imminent copy_html omits the manager name (e.g. "1 win from 30th")
-      // because the full milestones page shows the name in an avatar
-      // header above the row. The dashboard doesn't have that header, so
-      // we prepend the name + " · " here. Stats_html is dropped on the
-      // dashboard — it's a sub-detail block that runs long; the category
-      // tag + eta on the right already carries the context.
-      var rightCol = r.eta ? (r.eta + (r.eta_unit ? ' ' + r.eta_unit : '')) : '✓';
+      // Two row shapes share this teaser. Both omit the manager name in
+      // their copy (the full pages show it in an avatar header), so we
+      // prepend "<name> · " here.
+      //   · Crossed: carries achievement_html (live export) or achievement
+      //     (demo) plus a `when` week — e.g. "Noah · 100th career win".
+      //     Without it the row just says a name completed something unnamed.
+      //   · Imminent: carries copy_html + an eta to the next tier.
       var name = r.name || '—';
-      // Strip "personal-best" / "personal best" → "best" for the dashboard
-      // teaser only; the full Milestones page keeps the longer phrasing.
-      var copy = (r.copy_html || '').replace(/personal[-\s]+best/gi, 'best');
-      copy = '<em>' + escHtml(name) + '</em> · ' + copy;
+      var isCrossed = !r.eta && (r.achievement_html || r.achievement);
+      var body, rightCol;
+      if (isCrossed) {
+        body = r.achievement_html || escHtml(r.achievement || '');
+        rightCol = r.when || '✓';
+      } else {
+        // Strip "personal-best" / "personal best" → "best" for the teaser.
+        body = (r.copy_html || r.copy || '').replace(/personal[-\s]+best/gi, 'best');
+        rightCol = r.eta ? (r.eta + (r.eta_unit ? ' ' + r.eta_unit : '')) : '✓';
+      }
+      var copy = '<em>' + escHtml(name) + '</em> · ' + body;
       return '<div class="watch-row">' +
                '<div class="watch-row-main">' +
                  '<div class="watch-row-mgr">' + copy + '</div>' +

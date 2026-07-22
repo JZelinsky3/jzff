@@ -81,10 +81,10 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-header-sub {
   font-family: var(--mono);
-  font-size: .68rem;
+  font-size: .76rem;
   letter-spacing: .18em;
   text-transform: uppercase;
-  color: var(--rv-grey-mid);
+  color: var(--rv-cream);
   margin-bottom: 2rem;
 }
 .rv-header-rule {
@@ -124,14 +124,776 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-stat-label {
   font-family: var(--mono);
-  font-size: .55rem;
+  font-size: .62rem;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--rv-grey-mid);
+  color: var(--rv-cream);
   margin-top: .3rem;
 }
 
+/* ─── REVEAL LAUNCH ──────────────────────────────────
+   Thin line treatment: monospace text flanked by hairline rules so the
+   CTA reads like an editorial section break rather than a stamp-style
+   button. Hover lights up the rules + text to red. Sits below the
+   stats grid; doesn't dominate but is still unmistakable. */
+.rv-reveal-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: .75rem;
+  margin: 1.75rem auto 0;
+  padding: .4rem 0;
+  background: transparent;
+  border: none;
+  color: var(--rv-cream);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  transition: color .2s ease;
+}
+.rv-reveal-launch::before,
+.rv-reveal-launch::after {
+  content: '';
+  width: 4.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--rv-line2) 50%, transparent 100%);
+  transition: background .2s ease;
+}
+.rv-reveal-launch:hover { color: var(--rv-white); }
+.rv-reveal-launch:hover::before,
+.rv-reveal-launch:hover::after {
+  background: linear-gradient(90deg, transparent 0%, var(--rv-red) 50%, transparent 100%);
+}
+.rv-reveal-launch-icon {
+  color: var(--rv-red);
+  font-size: .58rem;
+  letter-spacing: 0;
+  margin-right: -.1rem;
+}
+.rv-reveal-launch-label {
+  color: inherit;
+  font-weight: 700;
+}
+.rv-reveal-launch-sub {
+  color: var(--rv-grey-lt);
+  font-weight: 500;
+}
+.rv-reveal-launch-sub::before {
+  content: '· ';
+  opacity: .55;
+  margin-right: .15rem;
+}
+
+/* ─── REVEAL OVERLAY ─────────────────────────────────
+   Fixed full-screen container with backdrop, slide stage, top progress
+   bar, and bottom controls. Slides themselves are rendered into the
+   stage by the JS engine. */
+/* The container is a <dialog> for screen-reader semantics, but we
+   manage visibility ourselves via the [hidden] attribute (not the
+   native open/showModal/close API), so this rule resets every
+   user-agent dialog default that would otherwise leak through —
+   margin, border, background, max-width, position. */
+.rv-reveal {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: stretch; justify-content: center;
+  font-family: var(--sans);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  max-width: none;
+  max-height: none;
+  width: 100%;
+  height: 100%;
+}
+.rv-reveal[hidden] { display: none; }
+.rv-reveal-backdrop {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(220,38,38,.12) 0%, transparent 55%),
+    radial-gradient(circle at 50% 110%, rgba(220,38,38,.08) 0%, transparent 55%),
+    #050505;
+  animation: rv-reveal-fade-in .3s ease-out;
+}
+.rv-reveal-shell {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  display: flex; flex-direction: column;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+@keyframes rv-reveal-fade-in { from { opacity: 0 } to { opacity: 1 } }
+.rv-reveal-topbar {
+  display: flex; align-items: center; gap: 1rem;
+  padding-bottom: 1rem;
+}
+.rv-reveal-progress {
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  font-variant-numeric: tabular-nums;
+  min-width: 4.5rem;
+}
+.rv-reveal-progress span { color: var(--rv-white); }
+.rv-reveal-progress-sep { color: var(--rv-grey-lt); margin: 0 .25rem; }
+.rv-reveal-progress-bar {
+  flex: 1; height: 2px;
+  background: rgba(255,255,255,.08);
+  border-radius: 1px;
+  overflow: hidden;
+}
+#rv-reveal-progress-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--rv-red-dim) 0%, var(--rv-red) 100%);
+  transition: width .35s ease;
+}
+.rv-reveal-icon-btn {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--rv-cream);
+  width: 2.4rem; height: 2.4rem;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.rv-reveal-icon-btn:hover {
+  background: rgba(220,38,38,.1);
+  border-color: var(--rv-red-dim);
+  color: var(--rv-white);
+}
+.rv-reveal-icon-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+/* The stage takes the bulk of the overlay's vertical space — each
+   slide is centered inside and animates in from the bottom. */
+.rv-reveal-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 1rem 0;
+  position: relative;
+}
+.rv-reveal-controls {
+  display: flex; align-items: center; justify-content: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.rv-reveal-play-btn {
+  background: var(--rv-red);
+  border: 1px solid var(--rv-red);
+  color: var(--rv-white);
+  padding: .65rem 1.4rem;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; gap: .55rem;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  transition: background .15s ease, transform .15s ease;
+}
+.rv-reveal-play-btn:hover {
+  background: #ef4444;
+  transform: translateY(-1px);
+}
+.rv-reveal-play-icon {
+  font-size: .7rem;
+  font-family: var(--mono);
+}
+
+/* ─── SLIDES ─────────────────────────────────────────
+   Each slide mounts into the stage, runs an entry animation (fade +
+   rise), then waits to be replaced. Animation timing is intentionally
+   staged so the reader's eye is led — eyebrow first, big text second,
+   sub-text last. Title slides hold a brief pause before reveal for
+   suspense; tape and verdict slides ladder content in row by row. */
+.rv-slide {
+  width: 100%;
+  text-align: center;
+  animation: rv-slide-enter .55s cubic-bezier(.2,.6,.2,1) both;
+}
+@keyframes rv-slide-enter {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rv-slide-eyebrow {
+  font-family: var(--mono);
+  font-size: .8rem; letter-spacing: .35em; text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: 1.75rem;
+  animation: rv-eyebrow-pulse .9s .05s both cubic-bezier(.2,.6,.2,1);
+}
+/* Eyebrow squeezes into place and brightens — a soft "drumroll" cue */
+@keyframes rv-eyebrow-pulse {
+  0%   { opacity: 0; letter-spacing: .7em; transform: translateY(12px); }
+  60%  { opacity: 1; letter-spacing: .3em; }
+  100% { opacity: 1; letter-spacing: .35em; transform: translateY(0); }
+}
+.rv-slide-title-text,
+.rv-slide-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2.6rem, 8.5vw, 6.4rem);
+  line-height: 1.04;
+  color: var(--rv-white);
+  letter-spacing: -.01em;
+  margin: 0 auto 1.5rem;
+  max-width: 22ch;
+  /* Held off-screen for ~.55s after eyebrow before slamming in — that
+     pause is the suspense beat. */
+  animation: rv-slide-title-in 1s .55s both cubic-bezier(.2,.6,.2,1);
+}
+@keyframes rv-slide-title-in {
+  from { opacity: 0; transform: translateY(36px) scale(.94); filter: blur(8px); }
+  to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.rv-slide-title em { color: var(--rv-red); }
+.rv-slide-sub {
+  font-family: var(--mono);
+  font-size: .9rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--rv-cream);
+  animation: rv-slide-fade-in .9s 1.35s both ease-out;
+}
+@keyframes rv-slide-fade-in {
+  from { opacity: 0 } to { opacity: 1 }
+}
+
+/* Intro/title support: big faded backdrop numeral for chapter title
+   so the slide has visual mass even with sparse text. */
+.rv-slide-title-wrap { position: relative; }
+.rv-slide-roman {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(12rem, 30vw, 24rem);
+  font-weight: 700;
+  color: rgba(220, 38, 38, .06);
+  letter-spacing: -.05em;
+  z-index: 0;
+  pointer-events: none;
+  animation: rv-roman-in 1.4s .1s both cubic-bezier(.2,.6,.2,1);
+}
+@keyframes rv-roman-in {
+  from { opacity: 0; transform: scale(.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.rv-slide-title-wrap > *:not(.rv-slide-roman) { position: relative; z-index: 1; }
+.rv-slide-intro-lead {
+  font-family: var(--mono);
+  font-size: .9rem; letter-spacing: .35em; text-transform: uppercase;
+  color: var(--rv-cream);
+  margin-bottom: 1.25rem;
+  animation: rv-slide-fade-in .8s .15s both ease-out;
+}
+.rv-slide-intro-lead strong {
+  color: var(--rv-white);
+  font-weight: 700;
+}
+.rv-slide-presents {
+  display: inline-flex; align-items: center; gap: 1rem;
+  font-family: var(--mono);
+  font-size: .65rem; letter-spacing: .45em; text-transform: uppercase;
+  color: var(--rv-red);
+  margin-bottom: 2rem;
+  animation: rv-slide-fade-in .8s .4s both ease-out;
+}
+.rv-slide-presents::before,
+.rv-slide-presents::after {
+  content: '';
+  width: 3rem; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--rv-red) 50%, transparent 100%);
+}
+
+/* ─── TALE OF THE TAPE ────────────────────────────────
+   Boxing-style stat comparison. Two name columns flanking a centered
+   label column; rows ladder in one at a time so the audience clocks
+   each comparison before the next drops. Stat winner cell gets
+   white + bold; loser stays cream. */
+.rv-slide-tape {
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
+}
+.rv-tape-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem 2rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--rv-line2);
+}
+.rv-tape-side {
+  display: flex; flex-direction: column; gap: .35rem;
+}
+.rv-tape-side.a { text-align: left;  animation: rv-slide-from-left  .75s .1s both cubic-bezier(.2,.6,.2,1); }
+.rv-tape-side.b { text-align: right; animation: rv-slide-from-right .75s .1s both cubic-bezier(.2,.6,.2,1); }
+@keyframes rv-slide-from-left {
+  from { opacity: 0; transform: translateX(-50px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes rv-slide-from-right {
+  from { opacity: 0; transform: translateX(50px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.rv-tape-corner {
+  font-family: var(--mono);
+  font-size: .58rem; letter-spacing: .28em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-tape-side.a .rv-tape-corner::before { content: 'IN THIS CORNER · '; color: var(--rv-red); }
+.rv-tape-side.b .rv-tape-corner::after  { content: ' · IN THIS CORNER'; color: var(--rv-red); }
+.rv-tape-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2.4rem, 5.5vw, 3.6rem);
+  line-height: 1;
+  color: var(--rv-white);
+}
+.rv-tape-side.leads .rv-tape-name { color: var(--rv-red); }
+.rv-tape-team {
+  font-family: var(--mono);
+  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rv-cream);
+}
+.rv-tape-vs {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  color: var(--rv-red);
+  align-self: center;
+  animation: rv-slide-vs-zoom .8s .4s both cubic-bezier(.2,.6,.2,1);
+}
+@keyframes rv-slide-vs-zoom {
+  from { opacity: 0; transform: scale(.4) rotate(-10deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.rv-tape-rows {
+  display: flex; flex-direction: column;
+}
+.rv-tape-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(140px, auto) 1fr;
+  gap: 1rem 2rem;
+  align-items: baseline;
+  padding: .9rem .25rem;
+  border-bottom: 1px dotted rgba(255,255,255,.08);
+  opacity: 0;
+  animation: rv-tape-row-in .55s both cubic-bezier(.2,.6,.2,1);
+}
+.rv-tape-row:last-child { border-bottom: none; }
+/* Stagger each row's entrance so the audience reads them in order
+   rather than all at once. Delay grows with the row index. */
+.rv-tape-row:nth-child(1) { animation-delay: .9s; }
+.rv-tape-row:nth-child(2) { animation-delay: 1.15s; }
+.rv-tape-row:nth-child(3) { animation-delay: 1.4s; }
+.rv-tape-row:nth-child(4) { animation-delay: 1.65s; }
+.rv-tape-row:nth-child(5) { animation-delay: 1.9s; }
+.rv-tape-row:nth-child(6) { animation-delay: 2.15s; }
+.rv-tape-row:nth-child(7) { animation-delay: 2.4s; }
+.rv-tape-row:nth-child(8) { animation-delay: 2.65s; }
+@keyframes rv-tape-row-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rv-tape-val {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--rv-grey-lt);
+}
+.rv-tape-val.a { text-align: right; }
+.rv-tape-val.b { text-align: left; }
+/* Stat winner: white + slightly larger, plus a subtle glow for drama */
+.rv-tape-val.wins {
+  color: var(--rv-white);
+  text-shadow: 0 0 18px rgba(220,38,38,.35);
+}
+.rv-tape-val .sub {
+  display: block;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: .55rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  margin-top: .15rem;
+}
+.rv-tape-label {
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .25em; text-transform: uppercase;
+  color: var(--rv-red);
+  text-align: center;
+  white-space: nowrap;
+}
+.rv-tape-foot {
+  font-family: var(--mono);
+  font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rv-line2);
+  animation: rv-slide-fade-in .8s 2.9s both ease-out;
+}
+.rv-tape-foot strong { color: var(--rv-cream); }
+
+/* ─── VERDICT — weighted scorecard + meter ────────────
+   Verdict is no longer just record-based. Six categories split 100
+   points; the leader meter shows the WEIGHTED score split. The
+   scorecard ladders in row-by-row before the meter fills, so the
+   audience sees the math add up to the result rather than just
+   reading a final percentage. */
+.rv-slide-verdict {
+  max-width: 940px;
+  margin: 0 auto;
+  width: 100%;
+}
+.rv-score-card {
+  max-width: 640px;
+  margin: 0 auto 2rem;
+  border: 1px solid var(--rv-line2);
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0,0,0,.25);
+}
+.rv-score-row {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1fr;
+  gap: 1rem;
+  padding: .7rem 1.4rem;
+  align-items: baseline;
+  border-bottom: 1px dotted rgba(255,255,255,.1);
+  opacity: 0;
+  animation: rv-score-row-in .55s both cubic-bezier(.2,.6,.2,1);
+}
+.rv-score-row:last-child { border-bottom: none; }
+.rv-score-head { animation-delay: .35s; }
+.rv-score-row.rv-score-data:nth-of-type(2) { animation-delay: .6s; }
+.rv-score-row.rv-score-data:nth-of-type(3) { animation-delay: .8s; }
+.rv-score-row.rv-score-data:nth-of-type(4) { animation-delay: 1.0s; }
+.rv-score-row.rv-score-data:nth-of-type(5) { animation-delay: 1.2s; }
+.rv-score-row.rv-score-data:nth-of-type(6) { animation-delay: 1.4s; }
+.rv-score-row.rv-score-data:nth-of-type(7) { animation-delay: 1.6s; }
+.rv-score-total { animation-delay: 1.95s; }
+@keyframes rv-score-row-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rv-score-head {
+  background: rgba(255,255,255,.04);
+  border-bottom: 1px solid var(--rv-line2);
+  padding: .85rem 1.4rem;
+}
+.rv-score-head .rv-score-val {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.4rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.rv-score-head .rv-score-val.a { color: var(--a-color-readable, var(--rv-white)); }
+.rv-score-head .rv-score-val.b { color: var(--b-color-readable, var(--rv-white)); }
+.rv-score-head .rv-score-label {
+  color: var(--rv-red);
+  font-weight: 700;
+  font-size: .62rem;
+  letter-spacing: .3em;
+}
+.rv-score-val {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--rv-cream);
+}
+.rv-score-val.a { text-align: right; color: var(--a-color-readable, var(--rv-cream)); }
+.rv-score-val.b { text-align: left;  color: var(--b-color-readable, var(--rv-cream)); }
+/* Category-winner cell gets the brighter readable color + glow so the
+   audience clocks who's earning each category as the row enters. */
+.rv-score-val.wins { text-shadow: 0 0 16px rgba(220,38,38,.4); }
+.rv-score-label {
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  text-align: center;
+  display: flex; align-items: center; justify-content: center;
+  gap: .35rem;
+}
+.rv-score-label .max {
+  color: var(--rv-grey);
+  font-size: .56rem;
+  letter-spacing: .12em;
+}
+.rv-score-total {
+  background: rgba(220,38,38,.07);
+  border-top: 1px solid var(--rv-red-dim);
+  padding: 1rem 1.4rem;
+}
+.rv-score-total .rv-score-val { font-size: 1.85rem; }
+.rv-score-total .rv-score-label {
+  color: var(--rv-red);
+  font-weight: 700;
+  letter-spacing: .3em;
+}
+
+.rv-verdict-meter {
+  position: relative;
+  height: 32px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: .6rem;
+  /* Empty meter used to flash in at slide mount, then sit there idle
+     for ~2s before filling — read as a layout artifact. Fade the
+     track in just before the fills start so it shows up intentionally
+     in sync with the rest of the choreography. */
+  opacity: 0;
+  animation: rv-slide-fade-in .25s 2.25s both ease-out;
+}
+.rv-verdict-meter-a,
+.rv-verdict-meter-b {
+  position: absolute; top: 0; bottom: 0;
+  width: 0;
+}
+.rv-verdict-meter-a {
+  left: 0;
+  background: var(--a-color, #1f2937);
+  animation: rv-meter-a-fill 1.6s 2.45s cubic-bezier(.2,.6,.2,1) both;
+}
+.rv-verdict-meter-b {
+  right: 0;
+  background: var(--b-color, #1f2937);
+  animation: rv-meter-b-fill 1.6s 2.45s cubic-bezier(.2,.6,.2,1) both;
+}
+@keyframes rv-meter-a-fill { from { width: 0; } to { width: var(--a-pct, 50%); } }
+@keyframes rv-meter-b-fill { from { width: 0; } to { width: var(--b-pct, 50%); } }
+.rv-verdict-meter-divider {
+  position: absolute; top: -4px; bottom: -4px;
+  left: var(--a-pct, 50%);
+  width: 1px;
+  background: var(--rv-white);
+  opacity: 0;
+  animation: rv-slide-fade-in .35s 4.0s both ease-out;
+}
+.rv-verdict-meter-nums {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 2.25rem;
+  opacity: 0;
+  animation: rv-slide-fade-in .55s 4.15s both ease-out;
+}
+.rv-verdict-meter-nums .a { text-align: left;  color: var(--a-color-readable, var(--rv-white)); }
+.rv-verdict-meter-nums .b { text-align: right; color: var(--b-color-readable, var(--rv-white)); }
+.rv-verdict-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2.2rem, 6.5vw, 4.2rem);
+  color: var(--rv-white);
+  margin: 0 0 1rem;
+  animation: rv-slide-title-in 1s 4.4s both cubic-bezier(.2,.6,.2,1);
+}
+.rv-verdict-title em { color: var(--rv-red); }
+.rv-verdict-record {
+  font-family: var(--mono);
+  font-size: 1rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rv-cream);
+  animation: rv-slide-fade-in .85s 5.05s both ease-out;
+  /* Padding below the record line pushes the centered slide content
+     up — the title + record were sitting too close to the bottom edge
+     of the stage; this shifts the visible block higher without
+     restructuring the layout. */
+  padding-bottom: 2.5rem;
+}
+.rv-verdict-record strong { color: var(--rv-white); }
+
+@media (max-width: 720px) {
+  .rv-score-card { max-width: 100%; }
+  .rv-score-row { padding: .55rem .9rem; grid-template-columns: 1fr 1.2fr 1fr; gap: .65rem; }
+  .rv-score-val { font-size: 1rem; }
+  .rv-score-total .rv-score-val { font-size: 1.45rem; }
+  .rv-score-head .rv-score-val { font-size: 1.05rem; }
+  .rv-score-label { font-size: .58rem; letter-spacing: .15em; }
+}
+
+/* ─── SUMMARY OUTRO ──────────────────────────────────
+   Final slide. Every rivalry's weighted verdict on one page, one row
+   each. Each row mini-meter fills on entry; rows stagger top-to-bottom
+   so the whole "ledger" assembles itself in front of the reader. */
+.rv-slide-summary {
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+}
+.rv-summary-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  color: var(--rv-white);
+  margin: 0 0 1.75rem;
+  animation: rv-slide-title-in .9s .25s both cubic-bezier(.2,.6,.2,1);
+}
+.rv-summary-title em { color: var(--rv-red); }
+.rv-summary-list {
+  display: flex; flex-direction: column;
+  border-top: 1px solid var(--rv-line2);
+  border-bottom: 1px solid var(--rv-line2);
+  background: rgba(0,0,0,.25);
+}
+.rv-summary-row {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1.5fr) minmax(0, 2fr) minmax(0, 1.3fr);
+  gap: 1.25rem;
+  align-items: center;
+  padding: .75rem 1.25rem;
+  border-bottom: 1px dotted rgba(255,255,255,.08);
+  text-align: left;
+  opacity: 0;
+  animation: rv-summary-row-in .55s both cubic-bezier(.2,.6,.2,1);
+}
+.rv-summary-row:last-child { border-bottom: none; }
+.rv-summary-row:nth-child(1)  { animation-delay: .65s; }
+.rv-summary-row:nth-child(2)  { animation-delay: .8s; }
+.rv-summary-row:nth-child(3)  { animation-delay: .95s; }
+.rv-summary-row:nth-child(4)  { animation-delay: 1.1s; }
+.rv-summary-row:nth-child(5)  { animation-delay: 1.25s; }
+.rv-summary-row:nth-child(6)  { animation-delay: 1.4s; }
+.rv-summary-row:nth-child(7)  { animation-delay: 1.55s; }
+.rv-summary-row:nth-child(8)  { animation-delay: 1.7s; }
+.rv-summary-row:nth-child(9)  { animation-delay: 1.85s; }
+.rv-summary-row:nth-child(10) { animation-delay: 2.0s; }
+@keyframes rv-summary-row-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rv-summary-num {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: .85rem;
+  letter-spacing: .15em;
+  color: var(--rv-red);
+  text-align: center;
+}
+.rv-summary-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--rv-white);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rv-summary-versus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: .75rem;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-summary-versus .a { text-align: right; color: var(--a-color-readable, var(--rv-cream)); }
+.rv-summary-versus .b { text-align: left;  color: var(--b-color-readable, var(--rv-cream)); }
+.rv-summary-meter {
+  position: relative;
+  height: 7px;
+  width: 100%;
+  border-radius: 3.5px;
+  background: rgba(255,255,255,.04);
+  overflow: hidden;
+}
+.rv-summary-meter::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to right,
+    var(--a-color, #374151) 0%,
+    var(--a-color, #374151) var(--a-pct, 50%),
+    var(--b-color, #374151) var(--a-pct, 50%),
+    var(--b-color, #374151) 100%);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: rv-summary-bar-fill .7s var(--bar-delay, .9s) cubic-bezier(.2,.6,.2,1) both;
+}
+@keyframes rv-summary-bar-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.rv-summary-result {
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--rv-cream);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.rv-summary-result strong { color: var(--rv-white); font-weight: 700; }
+.rv-summary-result.tight { color: var(--rv-grey-lt); }
+.rv-summary-foot {
+  text-align: center;
+  margin-top: 1.75rem;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+  animation: rv-slide-fade-in .8s 2.3s both ease-out;
+}
+.rv-summary-foot strong { color: var(--rv-white); font-weight: 700; }
+
+@media (max-width: 720px) {
+  .rv-summary-row {
+    grid-template-columns: 2.2rem 1fr;
+    grid-template-areas:
+      "num name"
+      "num bar"
+      "num verdict";
+    gap: .35rem .9rem;
+    padding: .85rem 1rem;
+  }
+  .rv-summary-num     { grid-area: num; align-self: center; }
+  .rv-summary-name    { grid-area: name; }
+  .rv-summary-versus  { grid-area: bar; }
+  .rv-summary-result  { grid-area: verdict; text-align: left; }
+}
+
+@media (max-width: 720px) {
+  .rv-reveal-shell { padding: .75rem .9rem 1rem; }
+  .rv-reveal-controls { gap: .65rem; }
+  .rv-tape-head { grid-template-columns: 1fr; gap: .6rem; text-align: center; }
+  .rv-tape-side.a, .rv-tape-side.b { text-align: center; }
+  .rv-tape-vs { font-size: 1.6rem; }
+  .rv-tape-row { grid-template-columns: 1fr minmax(100px, auto) 1fr; padding: .65rem .15rem; }
+  .rv-tape-val { font-size: 1.2rem; }
+  .rv-slide-roman { font-size: 10rem; }
+}
+
 /* ─── MAIN GRID ──────────────────────────────────── */
+/* Used to be 3px between cards — reads as one continuous block when
+   there's more than one rivalry. Now each rivalry is its own
+   "chapter entry" with breathing room. */
 .rv-grid {
   position: relative; z-index: 2;
   max-width: 1060px;
@@ -139,7 +901,57 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   padding: .5rem 1.25rem 6rem;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 3.5rem;
+}
+
+/* ─── CHAPTER ENTRY (above each card) ────────────────
+   Editorial heading that introduces each rivalry — Roman numeral
+   eyebrow strip + serif chapter title. Gives the page a clear visual
+   rhythm regardless of whether the league has 1 rivalry or 10. */
+.rv-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.rv-entry-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.rv-entry-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--rv-line2) 50%, transparent 100%);
+}
+.rv-entry-num {
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--rv-red);
+  white-space: nowrap;
+}
+.rv-entry-num::before,
+.rv-entry-num::after {
+  content: '★';
+  color: var(--rv-red);
+  margin: 0 .5rem;
+  opacity: .8;
+}
+.rv-entry-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  line-height: 1.15;
+  color: var(--rv-cream);
+  text-align: center;
+  margin: 0;
+  padding: 0 1rem;
+}
+@media (max-width: 640px) {
+  .rv-grid { gap: 2.5rem; }
+  .rv-entry-eyebrow .rv-entry-num::before,
+  .rv-entry-eyebrow .rv-entry-num::after { display: none; }
 }
 
 /* ─── RIVALRY CARD ───────────────────────────────── */
@@ -166,10 +978,10 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-card-label {
   font-family: var(--mono);
-  font-size: .58rem;
+  font-size: .66rem;
   letter-spacing: .2em;
   text-transform: uppercase;
-  color: var(--rv-grey-mid);
+  color: var(--rv-cream);
 }
 .rv-badge {
   font-family: var(--mono);
@@ -186,10 +998,41 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   border-color: var(--rv-grey);
 }
 
+/* ─── OPEN-CARD AFFORDANCE ─────────────────────────
+   Each .rv-card is a link to rivalry?id=… for the full series
+   detail, but the card body looks self-contained and users weren't
+   noticing the click target. A small footer strip with "Open the
+   file →" makes it unmistakable, and the arrow nudges right on hover
+   so the action reads. */
+.rv-open {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .35rem;
+  padding: .5rem 1.2rem;
+  border-top: 1px solid var(--rv-line2);
+  background: var(--rv-card2);
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--rv-grey-lt);
+}
+.rv-open-arrow {
+  display: inline-block;
+  transition: transform .2s ease;
+  color: var(--rv-red);
+}
+.rv-card:hover .rv-open { color: var(--rv-cream); }
+.rv-card:hover .rv-open-arrow { transform: translateX(3px); }
+
 /* ─── CARD BODY 3-COL ────────────────────────────── */
 .rv-body {
   display: grid;
-  grid-template-columns: 1fr 180px 1fr;
+  /* Bumped from 180px so the rivalry name + meeting count + bar/leader
+     line all get breathing room. The two side columns still flex 1:1
+     so balance survives the wider middle. */
+  grid-template-columns: 1fr 240px 1fr;
 }
 
 /* ─── MANAGER SIDES ──────────────────────────────── */
@@ -220,35 +1063,35 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   font-size: 3.8rem;
   font-weight: 700;
   line-height: 1;
-  color: var(--rv-grey);
+  color: var(--rv-grey-lt);
   transition: color .2s;
 }
 .rv-wins.hot { color: var(--rv-red); }
 .rv-wins.tied-color { color: var(--rv-grey-lt); }
 .rv-wins-lbl {
   font-family: var(--mono);
-  font-size: .52rem;
+  font-size: .6rem;
   letter-spacing: .18em;
   text-transform: uppercase;
-  color: var(--rv-grey);
+  color: var(--rv-grey-lt);
   margin-top: -.1rem;
 }
 .rv-name {
   font-family: var(--serif);
-  font-size: 1.65rem;
+  font-size: 1.8rem;
   color: var(--rv-white);
   margin-top: .25rem;
   line-height: 1;
 }
 .rv-ppg {
   font-family: var(--mono);
-  font-size: .72rem;
-  color: var(--rv-grey-lt);
+  font-size: .82rem;
+  color: var(--rv-cream);
 }
 .rv-rec {
   font-family: var(--mono);
-  font-size: .58rem;
-  color: var(--rv-grey);
+  font-size: .7rem;
+  color: var(--rv-grey-lt);
   letter-spacing: .04em;
 }
 
@@ -309,10 +1152,10 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-rivalry-name {
   font-family: var(--mono);
-  font-size: .58rem;
+  font-size: .66rem;
   letter-spacing: .2em;
   text-transform: uppercase;
-  color: var(--rv-grey-mid);
+  color: var(--rv-cream);
 }
 .rv-vs {
   font-family: var(--serif);
@@ -323,10 +1166,10 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-games {
   font-family: var(--mono);
-  font-size: .57rem;
+  font-size: .68rem;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--rv-grey);
+  color: var(--rv-grey-lt);
 }
 
 /* ─── DOMINANCE BAR ──────────────────────────────── */
@@ -340,12 +1183,12 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   display: flex;
   justify-content: space-between;
   font-family: var(--mono);
-  font-size: .58rem;
-  color: var(--rv-grey-mid);
+  font-size: .7rem;
+  color: var(--rv-cream);
 }
 .rv-series-lbl {
   font-family: var(--mono);
-  font-size: .6rem;
+  font-size: .7rem;
   letter-spacing: .1em;
   text-transform: uppercase;
   text-align: center;
@@ -355,14 +1198,14 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 
 .rv-last-game {
   font-family: var(--mono);
-  font-size: .53rem;
+  font-size: .62rem;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--rv-grey);
+  color: var(--rv-cream);
   text-align: center;
 }
 .rv-last-game span {
-  color: var(--rv-grey-mid);
+  color: var(--rv-white);
 }
 
 /* ─── KEY MOMENT STRIP ───────────────────────────── */
@@ -389,15 +1232,15 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-key-text {
   font-family: var(--sans);
-  font-size: .8rem;
-  color: var(--rv-cream);
+  font-size: .92rem;
+  color: var(--rv-white);
   flex: 1;
   min-width: 180px;
 }
 .rv-key-date {
   font-family: var(--mono);
-  font-size: .58rem;
-  color: var(--rv-grey-mid);
+  font-size: .66rem;
+  color: var(--rv-cream);
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -409,9 +1252,9 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 .rv-tagline em {
   font-family: var(--serif);
-  font-size: .88rem;
+  font-size: 1rem;
   font-style: italic;
-  color: var(--rv-grey-mid);
+  color: var(--rv-cream);
 }
 
 /* ─── SECTION DIVIDER ────────────────────────────── */
@@ -424,28 +1267,28 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 .rv-section-sep-line { flex: 1; height: 1px; background: var(--rv-line2); }
 .rv-section-sep-label {
   font-family: var(--mono);
-  font-size: .57rem;
+  font-size: .68rem;
   letter-spacing: .2em;
   text-transform: uppercase;
-  color: var(--rv-grey);
+  color: var(--rv-cream);
   white-space: nowrap;
 }
 
 /* ─── NAV OVERRIDE — crimson instead of navy ────────── */
 .nav {
-  background: rgba(14, 3, 3, 0.94) !important;
+  background: rgb(14, 3, 3) !important;
   border-bottom-color: rgba(220, 38, 38, 0.18) !important;
 }
 /* Chapbar theme overrides — nav.js reads these vars. */
 :root {
-    --chapbar-bg:     rgba(14, 3, 3, 0.92);
+    --chapbar-bg:     rgb(14, 3, 3);
     --chapbar-border: rgba(220, 38, 38, 0.18);
     --chapbar-text:   var(--rv-grey-mid);
     --chapbar-active: var(--rv-red);
     --chapbar-line:   rgba(220, 38, 38, 0.18);
 }
 :root {
-  --nav-drop-bg:           rgba(12,3,3,.97);
+  --nav-drop-bg:           rgb(12, 3, 3);
   --nav-drop-border:       rgba(220,38,38,.15);
   --nav-drop-text:         var(--rv-cream);
   --nav-drop-text-mute:    var(--rv-grey-mid);
@@ -546,7 +1389,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 }
 </style>
 </head>
-<body>
+<body data-league-name="The Lakeside League">
 
 <div class="site-glow"></div>
 <div class="site-grain"></div>
@@ -571,7 +1414,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
      data-page="rivalries"
      data-chapter="CH. VI · RIVALRIES"
      data-back-label="← The Hub"
-     data-back-href="./index.html"></nav>
+     data-back-href="./"></nav>
 <script src="assets/js/nav.js"></script>
 
 <!-- ══════════════════════════════════════════════════
@@ -583,16 +1426,51 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   <div class="rv-header-sub" id="rv-header-sub">Loading…</div>
   <div class="rv-header-rule"></div>
   <div class="rv-header-stats" id="rv-header-stats"></div>
+  <button type="button" id="rv-reveal-launch" class="rv-reveal-launch" hidden>
+    <span class="rv-reveal-launch-icon" aria-hidden="true">▶</span>
+    <span class="rv-reveal-launch-label">Play the reveal</span>
+    <span class="rv-reveal-launch-sub">~90s walk-through</span>
+  </button>
 </header>
 
 <main class="rv-grid" id="rv-grid"></main>
+
+<!-- ══════════════════════════════════════════════════
+     REVEAL OVERLAY (hidden until launched)
+     Renders one slide at a time on top of the page. The slide engine
+     in <script> below populates #rv-reveal-stage and runs entry
+     animations per slide.
+════════════════════════════════════════════════════ -->
+<dialog id="rv-reveal" class="rv-reveal" hidden aria-modal="true" aria-label="Rivalries reveal">
+  <div class="rv-reveal-backdrop"></div>
+  <div class="rv-reveal-shell">
+    <div class="rv-reveal-topbar">
+      <div class="rv-reveal-progress">
+        <span id="rv-reveal-pos">1</span>
+        <span class="rv-reveal-progress-sep">/</span>
+        <span id="rv-reveal-total">1</span>
+      </div>
+      <div class="rv-reveal-progress-bar"><div id="rv-reveal-progress-fill"></div></div>
+      <button type="button" id="rv-reveal-close" class="rv-reveal-icon-btn" aria-label="Close reveal">✕</button>
+    </div>
+    <section class="rv-reveal-stage" id="rv-reveal-stage" aria-live="polite" aria-label="Current slide"></section>
+    <div class="rv-reveal-controls">
+      <button type="button" id="rv-reveal-prev" class="rv-reveal-icon-btn" aria-label="Previous slide">←</button>
+      <button type="button" id="rv-reveal-play" class="rv-reveal-play-btn" aria-label="Pause">
+        <span class="rv-reveal-play-icon" id="rv-reveal-play-icon">❚❚</span>
+        <span class="rv-reveal-play-label" id="rv-reveal-play-label">Pause</span>
+      </button>
+      <button type="button" id="rv-reveal-next" class="rv-reveal-icon-btn" aria-label="Next slide">→</button>
+    </div>
+  </div>
+</dialog>
 
 <template id="rv-empty-template">
   <section style="text-align:center;max-width:48ch;margin:4rem auto;padding:0 1.5rem;">
     <div style="font-family:var(--mono);font-size:.75rem;letter-spacing:.25em;color:var(--rv-gold);text-transform:uppercase;margin-bottom:1rem;">No rivalries on file yet</div>
     <h2 style="font-family:var(--serif);font-size:1.8rem;line-height:1.2;margin:0 0 1rem;">Pick two managers. Name the feud. Watch it write itself.</h2>
     <p style="font-family:var(--serif);font-size:1rem;line-height:1.55;opacity:.78;margin:0 0 1.5rem;">
-      Rivalries are commissioner-curated. Open the league's rivalries tab from your management page and add one — head-to-head records, dominance bars, and recent meetings fill in automatically.
+      Rivalries are commissioner-curated. Open the league's rivalries tab from your management page and add one: head-to-head records, dominance bars, and recent meetings fill in automatically.
     </p>
   </section>
 </template>
@@ -623,7 +1501,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       <div class="rv-side rv-side-${sideLetter}${isLeading ? ' side-leads' : ''}">
         <div class="rv-wins${isLeading ? ' hot' : ''}">${side.wins}</div>
         <div class="rv-wins-lbl">Wins</div>
-        <div class="rv-name">${side.user_id ? `<a href="managers/manager.html?id=${escapeHtml(side.user_id)}" style="color:inherit;text-decoration:none;">${escapeHtml(side.name)}</a>` : escapeHtml(side.name)}</div>
+        <div class="rv-name">${escapeHtml(side.name)}</div>
         <div class="rv-ppg">${side.avg_ppg ? side.avg_ppg.toFixed(1) + ' avg PPG' : '—'}</div>
         <div class="rv-rec">Reg ${escapeHtml(side.reg_record)} &nbsp;·&nbsp; Playoff ${escapeHtml(side.playoff_record)}</div>
         <div class="rv-dots">${dots}</div>
@@ -657,38 +1535,87 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const bColor = bLeading ? '#dc2626' : '#1f2937';
     const barStyle = `background: linear-gradient(to right, ${aColor} 0%, ${aColor} ${aPct}%, ${bColor} ${aPct}%, ${bColor} 100%)`;
 
+    const roman = ROMAN[idx + 1] || String(idx + 1);
     return `
-      <div class="rv-card ${leaderClass}" id="rivalry-${escapeHtml(rv.id)}">
-        <div class="rv-card-head">
-          <span class="rv-card-label">Rivalry ${ROMAN[idx + 1] || idx + 1} · ${escapeHtml(rv.manager_a.name)} vs ${escapeHtml(rv.manager_b.name)} · ${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}${sinceLabel}</span>
-          <span class="rv-badge">${headBadge}</span>
+      <article class="rv-entry">
+        <div class="rv-entry-eyebrow">
+          <span class="rv-entry-rule" aria-hidden="true"></span>
+          <span class="rv-entry-num">Rivalry ${roman}</span>
+          <span class="rv-entry-rule" aria-hidden="true"></span>
         </div>
-        <div class="rv-body">
-          ${buildSide(rv.manager_a, 'a', aLeading)}
-          <div class="rv-center">
-            <div class="rv-rivalry-name">${escapeHtml(rv.name).toUpperCase()}</div>
-            <div class="rv-vs">vs</div>
-            <div class="rv-games">${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}</div>
-            <div class="rv-bar-wrap">
-              <div class="rv-bar" style="${barStyle}"></div>
-              <div class="rv-bar-nums"><span>${rv.manager_a.wins}</span><span>${rv.manager_b.wins}</span></div>
-            </div>
-            <div class="rv-series-lbl">${rv.is_deadlocked ? 'Deadlocked' : rv.leader_name ? `${escapeHtml(rv.leader_name)} Leads` : '—'}</div>
-            <div class="rv-last-game">Last: <span>${lastGameStr}</span></div>
+        <h2 class="rv-entry-title">${escapeHtml(rv.name)}</h2>
+        <a class="rv-card ${leaderClass}" id="rivalry-${escapeHtml(rv.id)}" href="rivalries/rivalry?id=${encodeURIComponent(rv.id || '')}" style="display:block;color:inherit;text-decoration:none;">
+          <div class="rv-card-head">
+            <span class="rv-card-label">${escapeHtml(rv.manager_a.name)} vs ${escapeHtml(rv.manager_b.name)} · ${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}${sinceLabel}</span>
+            <span class="rv-badge">${headBadge}</span>
           </div>
-          ${buildSide(rv.manager_b, 'b', bLeading)}
-        </div>
-      </div>
+          <div class="rv-body">
+            ${buildSide(rv.manager_a, 'a', aLeading)}
+            <div class="rv-center">
+              <div class="rv-rivalry-name">${escapeHtml(rv.name).toUpperCase()}</div>
+              <div class="rv-vs">vs</div>
+              <div class="rv-games">${rv.total_meetings} Meeting${rv.total_meetings === 1 ? '' : 's'}</div>
+              <div class="rv-bar-wrap">
+                <div class="rv-bar" style="${barStyle}"></div>
+                <div class="rv-bar-nums"><span>${rv.manager_a.wins}</span><span>${rv.manager_b.wins}</span></div>
+              </div>
+              <div class="rv-series-lbl">${rv.is_deadlocked ? 'Deadlocked' : rv.leader_name ? `${escapeHtml(rv.leader_name)} Leads` : '—'}</div>
+              <div class="rv-last-game">Last: <span>${lastGameStr}</span></div>
+            </div>
+            ${buildSide(rv.manager_b, 'b', bLeading)}
+          </div>
+          <div class="rv-open" aria-hidden="true">
+            <span>Open the file</span>
+            <span class="rv-open-arrow">→</span>
+          </div>
+        </a>
+      </article>
     `;
   }
 
+  // Sort rivalries so the most-played feuds bubble to the top — gives
+  // the page a coherent "biggest stories first" rhythm regardless of the
+  // order rivalries were created in. Tiebreaks: more recent last-meeting
+  // year (active rivalries beat dormant ones), then name asc for stability.
+  function sortRivalries(rivalries) {
+    return rivalries.slice().sort((a, b) => {
+      if (b.total_meetings !== a.total_meetings) return b.total_meetings - a.total_meetings;
+      const ay = a.last_meeting?.year ?? 0;
+      const by = b.last_meeting?.year ?? 0;
+      if (by !== ay) return by - ay;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }
+
+  // Map of user_id → most recent team name from the league sync. Populated
+  // by the parallel managers_directory.json fetch in load() and read by
+  // the reveal tape slide so each combatant's "in this corner" label can
+  // surface their actual team name instead of just their handle.
+  const teamByUid = new Map();
+
   async function load() {
     try {
-      const res = await fetch('data/rivalries.json');
+      const [res, dirRes] = await Promise.all([
+        fetch('data/rivalries.json'),
+        fetch('data/managers_directory.json').catch(() => null),
+      ]);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       const rivalries = data.rivalries || [];
       const summary = data.summary || { active_feuds: 0, total_meetings: 0, leaders: 0, deadlocked: 0 };
+
+      // Best-effort: directory may not be available; the reveal silently
+      // falls back to uppercased manager handles when team_latest is null.
+      if (dirRes && dirRes.ok) {
+        try {
+          const dir = await dirRes.json();
+          for (const m of (dir.managers || [])) {
+            if (m.user_id && m.team_latest) {
+              teamByUid.set(m.user_id, m.team_latest);
+            }
+          }
+        } catch (_) {}
+      }
 
       // Header
       const sub = document.getElementById('rv-header-sub');
@@ -714,12 +1641,16 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 
       // Cards
       const grid = document.getElementById('rv-grid');
+      const ordered = sortRivalries(rivalries);
       if (rivalries.length === 0) {
         const tpl = document.getElementById('rv-empty-template');
         grid.appendChild(tpl.content.cloneNode(true));
       } else {
-        grid.innerHTML = rivalries.map(buildCard).join('');
+        grid.innerHTML = ordered.map(buildCard).join('');
       }
+      // Wire the reveal launcher only when there's at least one rivalry to
+      // present — empty-state shouldn't dangle a non-functional CTA.
+      if (ordered.length > 0) wireReveal(ordered);
     } catch (err) {
       document.getElementById('rv-grid').innerHTML = `
         <section style="text-align:center;max-width:48ch;margin:4rem auto;padding:0 1.5rem;color:var(--rv-cream);">
@@ -728,6 +1659,586 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
         </section>
       `;
     }
+  }
+
+  // ═════════════════════════════════════════════════════
+  // REVEAL MODE — slideshow presentation of every rivalry
+  // ═════════════════════════════════════════════════════
+  // Slide types:
+  //   intro       — "The Rivalries" front card
+  //   title       — "Rivalry I · {name}" chapter title
+  //   combatants  — both managers' names + wins count up + avg PPG
+  //   verdict     — head-to-head bar fills, leader announced
+  //   outro       — closing card
+  //
+  // Each slide has a base duration; the engine auto-advances after that
+  // unless the user pauses or navigates manually. Animations are CSS
+  // keyframes triggered on mount; the count-up is a small rAF loop.
+
+  // Durations let animation-heavy slides breathe — tape's row-stagger
+  // alone is ~2s, verdict's scorecard + meter + title ladder runs ~6s
+  // (scorecard rows ladder 0.35-2.05s, meter fill 2.45-4.05s, divider
+  // 4.0s, nums 4.15s, verdict title 4.4s, record 5.05s).
+  const SLIDE_DURATIONS = {
+    intro:   5000,
+    title:   4500,
+    tape:    7500,
+    verdict: 8500,
+    outro:   5500,
+  };
+
+  function buildSlides(rivalries) {
+    const slides = [];
+    slides.push({ type: 'intro', rivalries });
+    rivalries.forEach((rv, idx) => {
+      slides.push({ type: 'title',   rv, idx });
+      slides.push({ type: 'tape',    rv, idx });
+      slides.push({ type: 'verdict', rv, idx });
+    });
+    slides.push({ type: 'outro', rivalries });
+    return slides;
+  }
+
+  function renderSlide(slide) {
+    switch (slide.type) {
+      case 'intro':   return renderIntroSlide(slide);
+      case 'title':   return renderTitleSlide(slide);
+      case 'tape':    return renderTapeSlide(slide);
+      case 'verdict': return renderVerdictSlide(slide);
+      case 'outro':   return renderOutroSlide(slide);
+      default:        return '';
+    }
+  }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────
+  // Pull the league name the route handler stamped on <body>.
+  function getLeagueName() {
+    return document.body.getAttribute('data-league-name') || '';
+  }
+
+  // Best margin victory (largest +margin on a W) and largest L (largest
+  // margin on a loss) from a side's last5. Both used in the tape row
+  // for "biggest win" and "toughest loss."
+  function bigByResult(side, result) {
+    const games = (side.last5 || []).filter(
+      (g) => g.result === result && typeof g.margin === 'number',
+    );
+    if (games.length === 0) return null;
+    return games.reduce((b, g) => (g.margin > b.margin ? g : b));
+  }
+
+  // "1-0-0" → "1-0". Trailing zero-tie segment is noise on a tape row.
+  function tidy(rec) {
+    const parts = (rec || '').split('-');
+    if (parts.length === 3 && parts[2] === '0') return parts.slice(0, 2).join('-');
+    return rec || '—';
+  }
+
+  // Returns 'a' | 'b' | null indicating which side has the higher value
+  // for a given comparison. Used to add the .wins class for emphasis.
+  function compare(av, bv) {
+    if (av == null && bv == null) return null;
+    if (av == null) return 'b';
+    if (bv == null) return 'a';
+    if (av > bv) return 'a';
+    if (bv > av) return 'b';
+    return null;
+  }
+  // Compare W from "X-Y-Z" records (more wins = better).
+  function wOf(rec) {
+    const m = String(rec || '').match(/^(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  // ─── Renderers ───────────────────────────────────────────────────────
+  function renderIntroSlide(slide) {
+    const n = slide.rivalries.length;
+    const meetings = slide.rivalries.reduce((a, r) => a + r.total_meetings, 0);
+    const leaders = slide.rivalries.filter((r) => r.leader_name && !r.is_deadlocked).length;
+    const deadlocked = slide.rivalries.filter((r) => r.is_deadlocked && r.total_meetings > 0).length;
+    const leagueName = getLeagueName();
+    return `
+      <section class="rv-slide rv-slide-title-wrap">
+        <div class="rv-slide-intro-lead">${leagueName ? `<strong>${escapeHtml(leagueName)}</strong>` : ''}</div>
+        <div class="rv-slide-presents">Presents</div>
+        <h1 class="rv-slide-title">The <em>Rivalries.</em></h1>
+        <div class="rv-slide-sub">
+          ${n} feud${n === 1 ? '' : 's'} &nbsp;·&nbsp;
+          ${meetings} meeting${meetings === 1 ? '' : 's'} &nbsp;·&nbsp;
+          ${leaders} leader${leaders === 1 ? '' : 's'} &nbsp;·&nbsp;
+          ${deadlocked} deadlocked
+        </div>
+      </section>
+    `;
+  }
+
+  function renderTitleSlide(slide) {
+    const roman = ROMAN[slide.idx + 1] || String(slide.idx + 1);
+    const rv = slide.rv;
+    const since = rv.first_meeting_year ? `Since ${rv.first_meeting_year}` : 'New feud';
+    const last = rv.last_meeting
+      ? `Last met · ${rv.last_meeting.year} W${rv.last_meeting.week}`
+      : 'No games yet';
+    return `
+      <section class="rv-slide rv-slide-title-wrap">
+        <div class="rv-slide-roman" aria-hidden="true">${escapeHtml(roman)}</div>
+        <div class="rv-slide-eyebrow">★ Chapter ${escapeHtml(roman)} · Rivalry ${escapeHtml(roman)} ★</div>
+        <h1 class="rv-slide-title-text">${escapeHtml(rv.name)}</h1>
+        <div class="rv-slide-sub">
+          ${rv.total_meetings} meeting${rv.total_meetings === 1 ? '' : 's'} &nbsp;·&nbsp;
+          ${escapeHtml(since)} &nbsp;·&nbsp;
+          ${escapeHtml(last)}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderTapeSlide(slide) {
+    const rv = slide.rv;
+    const a = rv.manager_a, b = rv.manager_b;
+    const aLeading = !rv.is_deadlocked && rv.leader_name === a.name;
+    const bLeading = !rv.is_deadlocked && rv.leader_name === b.name;
+
+    // Per-row winner detection — drives the .wins class for emphasis.
+    const winsCmp     = compare(a.wins, b.wins);
+    const regCmp      = compare(wOf(a.reg_record), wOf(b.reg_record));
+    const poCmp       = compare(wOf(a.playoff_record), wOf(b.playoff_record));
+    const ppgCmp      = compare(a.avg_ppg, b.avg_ppg);
+    const aHigh       = a.high_score ? a.high_score.score : null;
+    const bHigh       = b.high_score ? b.high_score.score : null;
+    const highCmp     = compare(aHigh, bHigh);
+    const aBest       = bigByResult(a, 'W');
+    const bBest       = bigByResult(b, 'W');
+    const bestCmp     = compare(aBest ? aBest.margin : null, bBest ? bBest.margin : null);
+
+    const winsRow = (cmp, av, bv) => {
+      const ac = cmp === 'a' ? ' wins' : '';
+      const bc = cmp === 'b' ? ' wins' : '';
+      return { ac, bc };
+    };
+
+    const totalRows = [
+      { label: 'Wins (H2H)',     a: String(a.wins), b: String(b.wins), cmp: winsCmp },
+      { label: 'Regular Season', a: tidy(a.reg_record), b: tidy(b.reg_record), cmp: regCmp },
+      { label: 'Playoff Series', a: tidy(a.playoff_record), b: tidy(b.playoff_record), cmp: poCmp },
+      { label: 'Avg PPG',
+        a: typeof a.avg_ppg === 'number' && a.avg_ppg > 0 ? a.avg_ppg.toFixed(1) : '—',
+        b: typeof b.avg_ppg === 'number' && b.avg_ppg > 0 ? b.avg_ppg.toFixed(1) : '—',
+        cmp: ppgCmp },
+      { label: 'High Score',
+        a: aHigh != null ? aHigh.toFixed(1) : '—',
+        b: bHigh != null ? bHigh.toFixed(1) : '—',
+        aSub: a.high_score ? `${a.high_score.year} W${a.high_score.week}` : '',
+        bSub: b.high_score ? `${b.high_score.year} W${b.high_score.week}` : '',
+        cmp: highCmp },
+      { label: 'Best Win Margin',
+        a: aBest ? '+' + aBest.margin.toFixed(1) : '—',
+        b: bBest ? '+' + bBest.margin.toFixed(1) : '—',
+        aSub: aBest ? `${aBest.year} W${aBest.week}` : '',
+        bSub: bBest ? `${bBest.year} W${bBest.week}` : '',
+        cmp: bestCmp },
+    ];
+
+    const rowsHtml = totalRows.map((r) => {
+      const { ac, bc } = winsRow(r.cmp);
+      return `
+        <div class="rv-tape-row">
+          <div class="rv-tape-val a${ac}">
+            ${escapeHtml(r.a)}
+            ${r.aSub ? `<span class="sub">${escapeHtml(r.aSub)}</span>` : ''}
+          </div>
+          <div class="rv-tape-label">${escapeHtml(r.label)}</div>
+          <div class="rv-tape-val b${bc}">
+            ${escapeHtml(r.b)}
+            ${r.bSub ? `<span class="sub">${escapeHtml(r.bSub)}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const footParts = [];
+    if (rv.first_meeting_year) footParts.push(`First met <strong>${rv.first_meeting_year}</strong>`);
+    if (rv.last_meeting) footParts.push(`Last met <strong>${rv.last_meeting.year} W${rv.last_meeting.week}</strong>${rv.last_meeting.is_playoff ? ' (Playoff)' : ''}`);
+    if (rv.ties_count > 0) footParts.push(`${rv.ties_count} tie${rv.ties_count === 1 ? '' : 's'}`);
+    const foot = footParts.join(' &nbsp;·&nbsp; ');
+
+    // Pull each side's most recent team name from the directory. Falls
+    // back to the manager handle when unavailable so the layout never
+    // collapses. The team name reads as the corner banner; the manager
+    // handle (already shown big in serif below) plays the role of "and
+    // their handle is" without being duplicated.
+    const aTeam = teamByUid.get(a.user_id) || '';
+    const bTeam = teamByUid.get(b.user_id) || '';
+    const aCorner = aTeam ? aTeam : (a.name || '');
+    const bCorner = bTeam ? bTeam : (b.name || '');
+
+    return `
+      <section class="rv-slide rv-slide-tape">
+        <div class="rv-slide-eyebrow">★ Tale of the Tape ★</div>
+        <div class="rv-tape-head">
+          <div class="rv-tape-side a${aLeading ? ' leads' : ''}">
+            <div class="rv-tape-corner">${escapeHtml(aCorner.toUpperCase())}</div>
+            <div class="rv-tape-name">${escapeHtml(a.name)}</div>
+          </div>
+          <div class="rv-tape-vs">vs.</div>
+          <div class="rv-tape-side b${bLeading ? ' leads' : ''}">
+            <div class="rv-tape-corner">${escapeHtml(bCorner.toUpperCase())}</div>
+            <div class="rv-tape-name">${escapeHtml(b.name)}</div>
+          </div>
+        </div>
+        <div class="rv-tape-rows">${rowsHtml}</div>
+        ${foot ? `<div class="rv-tape-foot">${foot}</div>` : ''}
+      </section>
+    `;
+  }
+
+  // Weighted scorecard. Six categories split 100 points; each category's
+  // share is split between A and B based on their numbers. The final
+  // totals drive the verdict meter — so the verdict isn't just W-L, it
+  // factors in scoring rate, blowout-ness, peak score, playoff weight,
+  // and recent momentum.
+  //
+  // Category weights (sum to 100):
+  //   Record (H2H)   35  — direct measure, biggest single factor
+  //   Avg PPG        20  — scoring rate in this matchup
+  //   Margin         15  — average signed margin from A's perspective
+  //                        (positive = A wins by more, negative = B does)
+  //   Peak Score     10  — single best week against this opponent
+  //   Playoff        10  — wins specifically in postseason meetings
+  //   Momentum       10  — current active streak (bigger streak = more pts)
+  function computeScorecard(rv) {
+    const a = rv.manager_a, b = rv.manager_b;
+
+    // 1. Record (35 pts) — share of H2H wins, ties split the unused pts.
+    const totalDecided = a.wins + b.wins;
+    const aRec = totalDecided > 0 ? (a.wins / totalDecided) * 35 : 17.5;
+    const bRec = 35 - aRec;
+
+    // 2. Avg PPG (20 pts) — share of combined PPG in this matchup.
+    const sumPpg = (a.avg_ppg || 0) + (b.avg_ppg || 0);
+    const aPpg = sumPpg > 0 ? ((a.avg_ppg || 0) / sumPpg) * 20 : 10;
+    const bPpg = 20 - aPpg;
+
+    // 3. Margin (15 pts) — signed avg margin from A's view, clamped to
+    //    ±30 and linearly mapped to a 0..15 share. +30 → all 15 for A;
+    //    -30 → all 15 for B; 0 → 7.5 each.
+    let signed = 0, mGames = 0;
+    for (const g of (a.last5 || [])) {
+      if (typeof g.margin !== 'number') continue;
+      mGames++;
+      if (g.result === 'W') signed += g.margin;
+      else if (g.result === 'L') signed -= g.margin;
+    }
+    const avgM = mGames > 0 ? signed / mGames : 0;
+    const clamped = Math.max(-30, Math.min(30, avgM));
+    const aMargin = ((clamped + 30) / 60) * 15;
+    const bMargin = 15 - aMargin;
+
+    // 4. Peak Score (10 pts) — share of combined high_score.
+    const aHi = (a.high_score && typeof a.high_score.score === 'number') ? a.high_score.score : 0;
+    const bHi = (b.high_score && typeof b.high_score.score === 'number') ? b.high_score.score : 0;
+    const sumHi = aHi + bHi;
+    const aPeak = sumHi > 0 ? (aHi / sumHi) * 10 : 5;
+    const bPeak = 10 - aPeak;
+
+    // 5. Playoff (10 pts) — share of postseason H2H wins.
+    const aPo = wOf(a.playoff_record) || 0;
+    const bPo = wOf(b.playoff_record) || 0;
+    const sumPo = aPo + bPo;
+    const aPlayoff = sumPo > 0 ? (aPo / sumPo) * 10 : 5;
+    const bPlayoff = 10 - aPlayoff;
+
+    // 6. Momentum (10 pts) — active streak length (capped at 5) maps the
+    //    winner's share from 5 to 10; the other side gets the remainder.
+    //    No streak (tied last result) → 5/5.
+    let aMomentum = 5, bMomentum = 5;
+    const games = a.last5 || [];
+    if (games.length > 0 && games[games.length - 1].result !== 'T') {
+      const last = games[games.length - 1];
+      let runLen = 1;
+      for (let i = games.length - 2; i >= 0; i--) {
+        if (games[i].result === last.result) runLen++;
+        else break;
+      }
+      const share = Math.min(runLen, 5) / 5;     // 1→.2, 5+→1
+      const winnerPts = 5 + share * 5;            // 6..10
+      if (last.result === 'W') { aMomentum = winnerPts; bMomentum = 10 - winnerPts; }
+      else                     { aMomentum = 10 - winnerPts; bMomentum = winnerPts; }
+    }
+
+    const rows = [
+      { label: 'Record', max: 35, a: aRec,      b: bRec },
+      { label: 'Avg PPG', max: 20, a: aPpg,     b: bPpg },
+      { label: 'Margin', max: 15, a: aMargin,   b: bMargin },
+      { label: 'Peak Score', max: 10, a: aPeak, b: bPeak },
+      { label: 'Playoff', max: 10, a: aPlayoff, b: bPlayoff },
+      { label: 'Momentum', max: 10, a: aMomentum, b: bMomentum },
+    ];
+    const aTotal = rows.reduce((s, r) => s + r.a, 0);
+    const bTotal = rows.reduce((s, r) => s + r.b, 0);
+    return { rows, aTotal, bTotal };
+  }
+
+  function renderVerdictSlide(slide) {
+    const rv = slide.rv;
+    const a = rv.manager_a, b = rv.manager_b;
+    const score = computeScorecard(rv);
+    const { rows, aTotal, bTotal } = score;
+
+    // Weighted leader detection. A 2-point window counts as "tightly
+    // contested" — close enough that the meter is right around 50/50.
+    const margin = aTotal - bTotal;
+    const tight = Math.abs(margin) < 2;
+    const aLeading = !tight && margin > 0;
+    const bLeading = !tight && margin < 0;
+
+    const aColor = aLeading ? '#dc2626' : '#374151';
+    const bColor = bLeading ? '#dc2626' : '#374151';
+    const aReadable = aLeading ? '#ef4444' : '#c9c0ad';
+    const bReadable = bLeading ? '#ef4444' : '#c9c0ad';
+
+    // Use the WEIGHTED totals (sum to 100) for the meter percentages.
+    const aPct = aTotal;
+    const bPct = bTotal;
+
+    const verdictText = tight
+      ? 'Tightly contested.'
+      : aLeading
+        ? `${escapeHtml(a.name)} <em>edges it.</em>`
+        : `${escapeHtml(b.name)} <em>edges it.</em>`;
+
+    // Track raw record vs weighted leader — when they disagree, surface
+    // it in the record line so the audience sees "record says X but the
+    // weighted call goes the other way."
+    const recordLeader = rv.is_deadlocked || !rv.leader_name
+      ? null
+      : (rv.leader_name === a.name ? 'a' : 'b');
+    const weightedLeader = tight ? null : (aLeading ? 'a' : 'b');
+    const disagreement = recordLeader && weightedLeader && recordLeader !== weightedLeader;
+
+    const recordBits = [];
+    if (rv.leader_record) recordBits.push(`Raw record <strong>${escapeHtml(rv.leader_record)}</strong>${disagreement ? ', overruled by the scorecard' : ''}`);
+    if (rv.last_meeting) recordBits.push(`Last met <strong>${rv.last_meeting.year} W${rv.last_meeting.week}</strong>${rv.last_meeting.is_playoff ? ' (Playoff)' : ''}`);
+    const record = recordBits.join(' &nbsp;·&nbsp; ');
+
+    const rowsHtml = rows.map((r) => {
+      const aWins = r.a > r.b + 0.05;
+      const bWins = r.b > r.a + 0.05;
+      return `
+        <div class="rv-score-row rv-score-data">
+          <div class="rv-score-val a${aWins ? ' wins' : ''}">${r.a.toFixed(1)}</div>
+          <div class="rv-score-label">${escapeHtml(r.label)} <span class="max">(${r.max})</span></div>
+          <div class="rv-score-val b${bWins ? ' wins' : ''}">${r.b.toFixed(1)}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <section class="rv-slide rv-slide-verdict"
+               style="--a-pct: ${aPct.toFixed(2)}%; --b-pct: ${bPct.toFixed(2)}%; --a-color: ${aColor}; --b-color: ${bColor}; --a-color-readable: ${aReadable}; --b-color-readable: ${bReadable};">
+        <div class="rv-slide-eyebrow">★ The Verdict ★</div>
+        <div class="rv-score-card">
+          <div class="rv-score-row rv-score-head">
+            <div class="rv-score-val a">${escapeHtml(a.name)}</div>
+            <div class="rv-score-label">Scorecard</div>
+            <div class="rv-score-val b">${escapeHtml(b.name)}</div>
+          </div>
+          ${rowsHtml}
+          <div class="rv-score-row rv-score-total">
+            <div class="rv-score-val a">${aTotal.toFixed(1)}</div>
+            <div class="rv-score-label">Total <span class="max">(100)</span></div>
+            <div class="rv-score-val b">${bTotal.toFixed(1)}</div>
+          </div>
+        </div>
+        <div class="rv-verdict-meter" aria-hidden="true">
+          <div class="rv-verdict-meter-a"></div>
+          <div class="rv-verdict-meter-b"></div>
+          <div class="rv-verdict-meter-divider"></div>
+        </div>
+        <div class="rv-verdict-meter-nums">
+          <span class="a">${aPct.toFixed(1)}%</span>
+          <span class="b">${bPct.toFixed(1)}%</span>
+        </div>
+        <h2 class="rv-verdict-title">${verdictText}</h2>
+        ${record ? `<div class="rv-verdict-record">${record}</div>` : ''}
+      </section>
+    `;
+  }
+
+  function renderOutroSlide(slide) {
+    const n = slide.rivalries.length;
+    const leagueName = getLeagueName();
+
+    // Recompute each rivalry's weighted scorecard so the summary
+    // reflects the SAME math the per-rivalry verdict slides showed.
+    // Single pass — cheap even for 10+ rivalries since the scorecard
+    // helper is pure arithmetic over a handful of fields.
+    const rows = slide.rivalries.map((rv, idx) => {
+      const score = computeScorecard(rv);
+      const margin = score.aTotal - score.bTotal;
+      const tight = Math.abs(margin) < 2;
+      const aLeads = !tight && margin > 0;
+      const bLeads = !tight && margin < 0;
+      return {
+        rv, idx, score, tight, aLeads, bLeads,
+        roman: ROMAN[idx + 1] || String(idx + 1),
+      };
+    });
+
+    const rowsHtml = rows.map((r) => {
+      const { rv, idx, score, tight, aLeads, bLeads, roman } = r;
+      const aColor    = aLeads ? '#dc2626' : '#374151';
+      const bColor    = bLeads ? '#dc2626' : '#374151';
+      const aReadable = aLeads ? '#ef4444' : '#9ca3af';
+      const bReadable = bLeads ? '#ef4444' : '#9ca3af';
+      // Stagger each row's bar fill so it kicks off slightly after the
+      // row itself slides in. (Row enters at .65+.15*idx; bar fills
+      // .25s after that.)
+      const rowDelay = .65 + idx * .15;
+      const barDelay = (rowDelay + .25).toFixed(2) + 's';
+      const aPct = score.aTotal.toFixed(2);
+      const bPct = score.bTotal.toFixed(2);
+      const verdictLine = tight
+        ? '<span>Tightly contested</span>'
+        : aLeads
+          ? `<strong>${escapeHtml(rv.manager_a.name)}</strong> · ${score.aTotal.toFixed(1)}%`
+          : `<strong>${escapeHtml(rv.manager_b.name)}</strong> · ${score.bTotal.toFixed(1)}%`;
+      return `
+        <div class="rv-summary-row"
+             style="--a-pct: ${aPct}%; --b-pct: ${bPct}%; --a-color: ${aColor}; --b-color: ${bColor}; --a-color-readable: ${aReadable}; --b-color-readable: ${bReadable}; --bar-delay: ${barDelay};">
+          <div class="rv-summary-num">${escapeHtml(roman)}</div>
+          <div class="rv-summary-name">${escapeHtml(rv.name)}</div>
+          <div class="rv-summary-versus">
+            <span class="a">${escapeHtml(rv.manager_a.name)}</span>
+            <div class="rv-summary-meter"></div>
+            <span class="b">${escapeHtml(rv.manager_b.name)}</span>
+          </div>
+          <div class="rv-summary-result${tight ? ' tight' : ''}">${verdictLine}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <section class="rv-slide rv-slide-summary">
+        <div class="rv-slide-eyebrow">★ Final Verdicts ★</div>
+        <h1 class="rv-summary-title">The <em>Book.</em></h1>
+        <div class="rv-summary-list">
+          ${rowsHtml}
+        </div>
+        <div class="rv-summary-foot">
+          ${leagueName ? `<strong>${escapeHtml(leagueName)}</strong> · ` : ''}${n} feud${n === 1 ? '' : 's'} on the books · The book stays open
+        </div>
+      </section>
+    `;
+  }
+
+  // Animate any data-count number in the freshly-mounted slide from 0 to
+  // its target with an ease-out cubic. Mirrors the staggered CSS entrance
+  // (slide name flies in, then the number counts up after a short delay).
+  function animateCountsIn(stage) {
+    const els = stage.querySelectorAll('[data-count]');
+    els.forEach((el, i) => {
+      const target = parseInt(el.dataset.count, 10);
+      if (!Number.isFinite(target) || target <= 0) {
+        el.textContent = String(target || 0);
+        return;
+      }
+      const duration = 1300;
+      const delay = 350 + i * 100; // stagger so A counts slightly before B
+      const startAt = performance.now() + delay;
+      function tick(now) {
+        if (now < startAt) { requestAnimationFrame(tick); return; }
+        const t = Math.min((now - startAt) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = String(Math.round(target * eased));
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function wireReveal(rivalries) {
+    const slides = buildSlides(rivalries);
+    const launch = document.getElementById('rv-reveal-launch');
+    const overlay = document.getElementById('rv-reveal');
+    const stage = document.getElementById('rv-reveal-stage');
+    const posEl = document.getElementById('rv-reveal-pos');
+    const totalEl = document.getElementById('rv-reveal-total');
+    const fill = document.getElementById('rv-reveal-progress-fill');
+    const prevBtn = document.getElementById('rv-reveal-prev');
+    const nextBtn = document.getElementById('rv-reveal-next');
+    const playBtn = document.getElementById('rv-reveal-play');
+    const playIcon = document.getElementById('rv-reveal-play-icon');
+    const playLabel = document.getElementById('rv-reveal-play-label');
+    const closeBtn = document.getElementById('rv-reveal-close');
+    if (!launch || !overlay || !stage) return;
+
+    let idx = 0;
+    let playing = true;
+    let timer = 0;
+
+    function clearTimer() {
+      if (timer) { clearTimeout(timer); timer = 0; }
+    }
+    function scheduleAdvance(slide) {
+      clearTimer();
+      if (!playing) return;
+      if (idx >= slides.length - 1) return;  // outro lingers until user closes
+      const ms = SLIDE_DURATIONS[slide.type] || 4000;
+      timer = setTimeout(() => { go(idx + 1); }, ms);
+    }
+    function go(nextIdx) {
+      idx = Math.max(0, Math.min(slides.length - 1, nextIdx));
+      const slide = slides[idx];
+      // Replacing innerHTML restarts CSS animations on the new content.
+      stage.innerHTML = renderSlide(slide);
+      animateCountsIn(stage);
+      posEl.textContent = String(idx + 1);
+      totalEl.textContent = String(slides.length);
+      fill.style.width = (((idx + 1) / slides.length) * 100).toFixed(2) + '%';
+      prevBtn.disabled = idx === 0;
+      nextBtn.disabled = idx === slides.length - 1;
+      scheduleAdvance(slide);
+    }
+    function setPlaying(on) {
+      playing = on;
+      if (on) {
+        playIcon.textContent = '❚❚';
+        playLabel.textContent = 'Pause';
+        scheduleAdvance(slides[idx]);
+      } else {
+        playIcon.textContent = '▶';
+        playLabel.textContent = 'Play';
+        clearTimer();
+      }
+    }
+    function open() {
+      idx = 0;
+      playing = true;
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      go(0);
+    }
+    function close() {
+      clearTimer();
+      overlay.hidden = true;
+      document.body.style.overflow = '';
+    }
+    function onKey(e) {
+      if (overlay.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(idx + 1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1); }
+      else if (e.key.toLowerCase() === 'p') { e.preventDefault(); setPlaying(!playing); }
+    }
+
+    launch.hidden = false;
+    launch.addEventListener('click', open);
+    prevBtn.addEventListener('click', () => { clearTimer(); go(idx - 1); });
+    nextBtn.addEventListener('click', () => { clearTimer(); go(idx + 1); });
+    playBtn.addEventListener('click', () => setPlaying(!playing));
+    closeBtn.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
   }
 
   if (document.readyState === 'loading') {
