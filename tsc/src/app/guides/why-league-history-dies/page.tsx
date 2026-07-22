@@ -5,7 +5,7 @@ import { GuideShell, faqSchema, H2, P } from "../_layout"
 export const metadata: Metadata = {
   title: "Why fantasy league history dies (and how to save it)",
   description:
-    "Long-running fantasy football leagues lose their history to platform changes, lost screenshots, archived group chats, and commissioner turnover. Here's why — and how to keep the story alive.",
+    "Long-running fantasy football leagues lose their history to platform changes, lost screenshots, archived group chats, and commissioner turnover. Here's why, and how to keep the story alive.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/why-league-history-dies/" },
 }
 
@@ -41,7 +41,7 @@ export default function Page() {
       faqJsonLd={faq}
     >
       <P>
-        <strong>The opening claim:</strong> after five or six years, most long-running fantasy football leagues have effectively no usable history. The games still happen every Sunday. The trophies still get handed out at the draft. But ask a manager "who won 2018?" or "what&apos;s your career record against Joe?" — and the answer is usually a shrug, a scroll through old group chat, and a guess.
+        <strong>The opening claim:</strong> after five or six years, most long-running fantasy football leagues have effectively no usable history. The games still happen every Sunday. The trophies still get handed out at the draft. But ask a manager "who won 2018?" or "what&apos;s your career record against Joe?", and the answer is usually a shrug, a scroll through old group chat, and a guess.
       </P>
       <P>
         This is not a problem of platforms being bad at archives. It&apos;s a structural mismatch: fantasy platforms optimize for the <em>current</em> season, because that&apos;s what users open the app for every Sunday. Historical data is technically retained but practically unreachable.
@@ -64,7 +64,7 @@ export default function Page() {
 
       <H2>3. Commissioner turnover</H2>
       <P>
-        Commissioners burn out. Whoever ran the league for the first five years often passes the baton to whoever volunteers. That handoff almost never includes a documentation transfer — because there&apos;s nothing to hand off. The old commissioner&apos;s memory is the documentation.
+        Commissioners burn out. Whoever ran the league for the first five years often passes the baton to whoever volunteers. That handoff almost never includes a documentation transfer, because there&apos;s nothing to hand off. The old commissioner&apos;s memory is the documentation.
       </P>
       <P>
         When that person leaves, you lose the institutional knowledge of why the playoff format changed in 2016, who held the all-time high score, the running gag about the year Jake forgot to set his lineup. None of that is "data" in any system. All of it is what makes a league feel like a league.
@@ -80,7 +80,7 @@ export default function Page() {
 
       <H2>What we built</H2>
       <P>
-        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> is a single-purpose SaaS: paste a league ID, get a public almanac. We walk back through every season the platform has data for, render it as editorial chapters (standings, season archives, manager dossiers, record book, draft history, rivalries), and host it at a permanent URL like <code>thesundaychronicle.app/leagues/your-league/</code>. Multiple platforms can feed one archive — see the <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link>.
+        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> is a single-purpose SaaS: paste a league ID, get a public almanac. We walk back through every season the platform has data for, render it as editorial chapters (standings, season archives, manager dossiers, record book, draft history, rivalries), and host it at a permanent URL like <code>thesundaychronicle.app/leagues/your-league/</code>. Multiple platforms can feed one archive. See the <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link>.
       </P>
       <P>
         It costs $5/month. The decade of league history you&apos;d otherwise lose is worth more than that to a long-running league.

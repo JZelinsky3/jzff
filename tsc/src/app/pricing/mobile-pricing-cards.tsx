@@ -57,7 +57,7 @@ export function MobilePricingCards({
     const body = await res.json()
     if (!res.ok || !body?.url) {
       setBusy(null)
-      setErr(body?.error ?? 'Could not start checkout — try again in a moment.')
+      setErr(body?.error ?? 'Could not start checkout. Try again in a moment.')
       return
     }
     window.location.assign(body.url)

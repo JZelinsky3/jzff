@@ -127,7 +127,7 @@ export default async function PricingPage({
           <div className="dc-card-static" style={{ textAlign: 'center' }}>
             <div style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem' }}>You&apos;re comped.</div>
             <p style={{ opacity: 0.7, marginTop: '.6rem', fontSize: '.95rem', lineHeight: 1.6 }}>
-              Your account has lifetime access — unlimited leagues, no billing, no expiration.
+              Your account has lifetime access: unlimited leagues, no billing, no expiration.
               Nothing to manage on this page.
             </p>
             <Link href="/dashboard" className="dc-btn" style={{ marginTop: '1.25rem' }}>← Back to your library</Link>
@@ -294,7 +294,7 @@ export default async function PricingPage({
       <div className="section" style={{ textAlign: 'center', marginTop: '1.25rem' }}>
         <p style={{ opacity: 0.55, fontSize: '.8rem', lineHeight: 1.6, maxWidth: '38rem', margin: '0 auto' }}>
           All payments processed by <span className="text-gold">Stripe</span>. Prices in USD.
-          Your card isn&apos;t charged until the free trial ends — you can cancel any time
+          Your card isn&apos;t charged until the free trial ends. You can cancel any time
           before then from the customer portal.
         </p>
       </div>

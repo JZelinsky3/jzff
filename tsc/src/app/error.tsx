@@ -42,8 +42,8 @@ export default function Error({
           Something broke <em>mid-print.</em>
         </h1>
         <p className="hero-sub" style={{ maxWidth: "34rem", margin: "1.5rem auto 0" }}>
-          An error stopped this page from rendering. It&apos;s been noted —
-          try the press again, or head back to the front page.
+          An error stopped this page from rendering. It&apos;s been noted.
+          Try the press again, or head back to the front page.
         </p>
         <div style={{ display: "flex", gap: ".75rem", justifyContent: "center", flexWrap: "wrap", marginTop: "2.5rem" }}>
           <button type="button" onClick={reset} className="dc-btn">Try again</button>

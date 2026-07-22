@@ -13,7 +13,7 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "What is fantasy football milestone tracking?",
-      a: "Tracking the career achievements and round-numbered records of fantasy football managers across a league's full history — career wins, championship counts, win streaks, single-game point records, head-to-head milestones in rivalries. Milestones turn a multi-year league into a story with chapters.",
+      a: "Tracking the career achievements and round-numbered records of fantasy football managers across a league's full history: career wins, championship counts, win streaks, single-game point records, head-to-head milestones in rivalries. Milestones turn a multi-year league into a story with chapters.",
     },
     {
       q: "What milestones should I track in a fantasy football league?",
@@ -21,7 +21,7 @@ export default function Page() {
     },
     {
       q: "How do I automate milestone tracking for a Sleeper or ESPN league?",
-      a: "Manual tracking in a spreadsheet works for one season but degrades fast. Automated tracking via The Sunday Chronicle imports your full league history from Sleeper, ESPN, NFL.com, or Yahoo and surfaces milestones automatically — both historical milestones already crossed and active milestones approaching this season.",
+      a: "Manual tracking in a spreadsheet works for one season but degrades fast. Automated tracking via The Sunday Chronicle imports your full league history from Sleeper, ESPN, NFL.com, or Yahoo and surfaces milestones automatically, both historical milestones already crossed and active milestones approaching this season.",
     },
     {
       q: "What's the best fantasy football milestone tracker?",
@@ -29,7 +29,7 @@ export default function Page() {
     },
     {
       q: "Should every league track milestones?",
-      a: "Leagues older than three seasons benefit the most — there's enough history for milestones to mean something. Single-season leagues have nothing to compare against. The longer the league, the more powerful milestone tracking becomes for keeping engagement and giving the offseason its own story.",
+      a: "Leagues older than three seasons benefit the most: there's enough history for milestones to mean something. Single-season leagues have nothing to compare against. The longer the league, the more powerful milestone tracking becomes for keeping engagement and giving the offseason its own story.",
     },
   ])
 
@@ -50,7 +50,7 @@ export default function Page() {
 
       <H2>What counts as a milestone</H2>
       <P>
-        Milestones are the round-numbered, story-worthy achievements that give a long-running league its texture. They are different from records (the single best) and standings (the current state) — milestones are the in-between markers that recur and accumulate.
+        Milestones are the round-numbered, story-worthy achievements that give a long-running league its texture. They are different from records (the single best) and standings (the current state). Milestones are the in-between markers that recur and accumulate.
       </P>
 
       <H2>The milestones worth tracking</H2>
@@ -89,7 +89,7 @@ export default function Page() {
 
       <H2>Automated tracking via The Sunday Chronicle</H2>
       <P>
-        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> imports every season, every matchup, and every transaction from your Sleeper, ESPN, NFL.com, or Yahoo league. Milestones are computed from that data — both historical milestones that were crossed in past seasons and active milestones approaching this season (&quot;Jake K. is 4 wins away from career win #100&quot;). The tracker updates weekly during the live NFL season and stays as part of the permanent almanac after.
+        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> imports every season, every matchup, and every transaction from your Sleeper, ESPN, NFL.com, or Yahoo league. Milestones are computed from that data, both historical milestones that were crossed in past seasons and active milestones approaching this season (&quot;Jake K. is 4 wins away from career win #100&quot;). The tracker updates weekly during the live NFL season and stays as part of the permanent almanac after.
       </P>
       <P>
         Because milestones sit inside the broader almanac, they link to the manager dossier, the record book, and the rivalry pages that give the milestone meaning.
@@ -102,7 +102,7 @@ export default function Page() {
 
       <H2>What to do with milestones once you have them</H2>
       <P>
-        Share the &quot;active milestones&quot; list with the league at the start of each season — the chase becomes its own story. Post crossings in the league chat as they happen. The almanac records each milestone permanently, so the league can scroll the history and see when each one was hit.
+        Share the &quot;active milestones&quot; list with the league at the start of each season: the chase becomes its own story. Post crossings in the league chat as they happen. The almanac records each milestone permanently, so the league can scroll the history and see when each one was hit.
       </P>
       <P>
         <Link href="/demo/" style={{ color: "var(--gold)" }}>Tour the demo</Link> to see milestone tracking inside a finished almanac.

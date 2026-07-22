@@ -14,10 +14,10 @@ type Feature = {
 
 const FEATURES: Feature[] = [
   { label: 'League archive', detail: 'Standings, season archives, drafts, records, manager dossiers, rivalries.', included: { tier1: true, tier2: true, tier3: true } },
-  { label: 'Every platform', detail: 'Sleeper, ESPN, NFL.com, Yahoo — stitch a league together across all of them.', included: { tier1: true, tier2: true, tier3: true } },
+  { label: 'Every platform', detail: 'Sleeper, ESPN, NFL.com, Yahoo. Stitch a league together across all of them.', included: { tier1: true, tier2: true, tier3: true } },
   { label: 'In-season auto-sync', detail: 'Standings + weekly matchups refresh automatically through the playoffs.', included: { tier1: true, tier2: true, tier3: true } },
   { label: "Pick'ems & Power Rankings", detail: "Weekly pick'em board and power-ranking ballots, scored automatically.", included: { tier1: true, tier2: true, tier3: true } },
-  { label: '7-day free trial', detail: 'Every plan. Cancel anytime before the trial ends — no charge.', included: { tier1: true, tier2: true, tier3: true } },
+  { label: '7-day free trial', detail: 'Every plan. Cancel anytime before the trial ends. No charge.', included: { tier1: true, tier2: true, tier3: true } },
   { label: 'Weekly recaps', detail: "A short written recap of each week's slate, drawn from your league's data.", included: { tier1: false, tier2: true, tier3: true } },
   { label: 'Trade recaps', detail: 'A recap of every trade when it happens, plus a four-week revisit checking how it actually played out.', included: { tier1: false, tier2: true, tier3: true } },
   { label: 'Full Trade Desk', detail: 'Grader, analyzer, finder, and rumor mill. Every trade lens, unlocked.', included: { tier1: false, tier2: true, tier3: true } },
@@ -77,7 +77,7 @@ export function MobilePlans({
         <h1 className="mplans-title">Compare <em>the three.</em></h1>
         <p className="mplans-sub">
           Every plan unlocks the full chronicle. What changes: how many leagues you
-          can archive, and the auto-generated extras — weekly recaps, trade recaps,
+          can archive, and which auto-generated extras you get: weekly recaps, trade recaps,
           Manager DNA, and the Best Coach Board.
         </p>
       </section>
@@ -118,7 +118,7 @@ export function MobilePlans({
                         ].filter(Boolean).join(' ')
                         return (
                           <li key={f.label} className={classes}>
-                            <span className="mplans-feat-mark" aria-hidden>{inc ? '✓' : '—'}</span>
+                            <span className="mplans-feat-mark" aria-hidden>{inc ? '✓' : '–'}</span>
                             <span className="mplans-feat-body">
                               <span className="mplans-feat-label">
                                 {f.label}
@@ -146,7 +146,7 @@ export function MobilePlans({
             </div>
 
             <p className="mplans-foot">
-              Same chronicle, different reach. Upgrade or downgrade anytime — leagues
+              Same chronicle, different reach. Upgrade or downgrade anytime. Leagues
               over your new plan&apos;s cap stay viewable but go read-only until you
               reduce or upgrade.
             </p>
@@ -173,7 +173,7 @@ export function MobilePlans({
                   return (
                     <li key={f.label} className={f.includedFree ? '' : 'is-excluded'}>
                       <span className="mplans-free-mark" aria-hidden>
-                        {f.includedFree ? '✓' : '—'}
+                        {f.includedFree ? '✓' : '–'}
                       </span>
                       <span>
                         <strong>{f.label}</strong>

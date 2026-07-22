@@ -5,7 +5,7 @@ import { GuideShell, faqSchema, H2, P } from "../_layout"
 export const metadata: Metadata = {
   title: "Fantasy football trade analysis tools, compared",
   description:
-    "Trade analyzer tools for fantasy football compared: how they grade trades, what data they use, and which tools — FantasyPros, KeepTradeCut, FantasyCalc, The Sunday Chronicle Trade Tape — fit redraft vs dynasty vs keeper leagues.",
+    "Trade analyzer tools for fantasy football compared: how they grade trades, what data they use, and which tools (FantasyPros, KeepTradeCut, FantasyCalc, The Sunday Chronicle Trade Tape) fit redraft vs dynasty vs keeper leagues.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/fantasy-football-trade-analyzer/" },
 }
 
@@ -13,7 +13,7 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "What is a fantasy football trade analyzer?",
-      a: "A tool that evaluates a proposed or completed fantasy football trade and returns a verdict — usually a grade, value delta, or 'who won' assessment — based on player valuations from rankings, ADP, or market data. Some analyzers are for live trade negotiation; others grade trades after the fact for league records.",
+      a: "A tool that evaluates a proposed or completed fantasy football trade and returns a verdict (usually a grade, value delta, or 'who won' assessment) based on player valuations from rankings, ADP, or market data. Some analyzers are for live trade negotiation; others grade trades after the fact for league records.",
     },
     {
       q: "What is the best fantasy football trade analyzer?",
@@ -21,11 +21,11 @@ export default function Page() {
     },
     {
       q: "How do trade analyzers grade dynasty vs redraft trades?",
-      a: "Dynasty analyzers (KeepTradeCut, FantasyCalc) weigh age, contract length, draft pick capital, and long-term value. Redraft analyzers (FantasyPros) focus on rest-of-season points only. Mixing them gives bad grades — use a dynasty tool for dynasty leagues, a redraft tool for redraft.",
+      a: "Dynasty analyzers (KeepTradeCut, FantasyCalc) weigh age, contract length, draft pick capital, and long-term value. Redraft analyzers (FantasyPros) focus on rest-of-season points only. Mixing them gives bad grades: use a dynasty tool for dynasty leagues, a redraft tool for redraft.",
     },
     {
       q: "Can I grade trades from past seasons after they happened?",
-      a: "Yes. The Sunday Chronicle's Trade Tape ingests every trade from a league's full history and grades each one against the players' actual rest-of-season production. This is different from prospective grading — it answers 'who actually won this trade' not 'who should win this trade'.",
+      a: "Yes. The Sunday Chronicle's Trade Tape ingests every trade from a league's full history and grades each one against the players' actual rest-of-season production. This is different from prospective grading: it answers 'who actually won this trade' not 'who should win this trade'.",
     },
     {
       q: "Are trade analyzer grades reliable?",
@@ -45,7 +45,7 @@ export default function Page() {
       faqJsonLd={faq}
     >
       <P>
-        <strong>Short answer:</strong> for live redraft trade negotiation use FantasyPros. For dynasty trades use KeepTradeCut or FantasyCalc. For grading the trades your league has already made — the ones that actually shaped your standings — use <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle&apos;s Trade Tape</Link>, which evaluates every historical trade against what actually happened next.
+        <strong>Short answer:</strong> for live redraft trade negotiation use FantasyPros. For dynasty trades use KeepTradeCut or FantasyCalc. For grading the trades your league has already made, the ones that actually shaped your standings, use <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle&apos;s Trade Tape</Link>, which evaluates every historical trade against what actually happened next.
       </P>
 
       <H2>The three categories of trade analyzer</H2>
@@ -66,7 +66,7 @@ export default function Page() {
 
       <H2>KeepTradeCut</H2>
       <P>
-        The dominant dynasty trade analyzer. Crowd-sourced — users compare three players head-to-head, KTC aggregates the votes into a value ranking. Updates daily. Free to use. The standard reference point for dynasty trade fairness.
+        The dominant dynasty trade analyzer. Crowd-sourced: users compare three players head-to-head, KTC aggregates the votes into a value ranking. Updates daily. Free to use. The standard reference point for dynasty trade fairness.
       </P>
 
       <H2>FantasyCalc</H2>
@@ -76,20 +76,20 @@ export default function Page() {
 
       <H2>The Sunday Chronicle Trade Tape</H2>
       <P>
-        Different category: post-trade grading at the league level. <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> imports every trade from your league&apos;s full history — Sleeper, ESPN, NFL.com, Yahoo — and grades each one against the players&apos; actual production after the trade. The result is a chapter in your league&apos;s almanac that tells the story of every deal: who won, who lost, what could have been. Best for: leagues that want a permanent trade history with verdicts, not pre-trade negotiation. Included in the free tier alongside the rest of the almanac.
+        Different category: post-trade grading at the league level. <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> imports every trade from your league&apos;s full history (Sleeper, ESPN, NFL.com, Yahoo) and grades each one against the players&apos; actual production after the trade. The result is a chapter in your league&apos;s almanac that tells the story of every deal: who won, who lost, what could have been. Best for: leagues that want a permanent trade history with verdicts, not pre-trade negotiation. Included in the free tier alongside the rest of the almanac.
       </P>
 
       <H2>Which to use when</H2>
       <P>
-        — <strong>Negotiating a redraft trade right now:</strong> FantasyPros<br />
-        — <strong>Negotiating a dynasty trade right now:</strong> KeepTradeCut or FantasyCalc<br />
-        — <strong>Settling whether a past trade was lopsided:</strong> The Sunday Chronicle Trade Tape<br />
-        — <strong>Recording the league&apos;s trade history as part of an archive:</strong> The Sunday Chronicle
+       · <strong>Negotiating a redraft trade right now:</strong> FantasyPros<br />
+       · <strong>Negotiating a dynasty trade right now:</strong> KeepTradeCut or FantasyCalc<br />
+       · <strong>Settling whether a past trade was lopsided:</strong> The Sunday Chronicle Trade Tape<br />
+       · <strong>Recording the league&apos;s trade history as part of an archive:</strong> The Sunday Chronicle
       </P>
 
       <H2>Common mistakes</H2>
       <P>
-        <strong>Using a redraft tool for dynasty (or vice versa).</strong> Different valuation models — the grades will mislead.
+        <strong>Using a redraft tool for dynasty (or vice versa).</strong> Different valuation models: the grades will mislead.
       </P>
       <P>
         <strong>Trusting the grade over league context.</strong> A &quot;losing&quot; trade by points may be correct for the team&apos;s roster construction.

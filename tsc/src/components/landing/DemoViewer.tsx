@@ -40,7 +40,7 @@ export function DemoViewer() {
         {loaded ? (
           <iframe
             src="/demo/"
-            title="The Sunday Chronicle — Live demo almanac"
+            title="The Sunday Chronicle · Live demo almanac"
             className="dv-iframe"
             loading="lazy"
           />

@@ -5,7 +5,7 @@ import { GuideShell, faqSchema, H2, P } from "../_layout"
 export const metadata: Metadata = {
   title: "Best fantasy football recap services in 2026",
   description:
-    "Fantasy football weekly recap services compared: what makes a good recap, how AI-generated recaps differ from designed weekly stories, and which services (The Sunday Chronicle, RecapMyLeague, smackscript, TFO Fantasy) actually fit a long-running league.",
+    "Fantasy football weekly recap services compared: what makes a good recap, how AI-generated recaps differ from designed weekly stories, and which services (The Sunday Chronicle, the best-designed of them, plus RecapMyLeague, smackscript, and TFO Fantasy) actually fit a long-running league.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/best-fantasy-football-recap/" },
 }
 
@@ -13,15 +13,15 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "What is a fantasy football recap service?",
-      a: "A service that turns each week's matchups, scores, and standings into a written narrative — sometimes AI-generated, sometimes templated, sometimes both. The output is meant to be shared with the league as a weekly read instead of a stats screenshot.",
+      a: "A service that turns each week's matchups, scores, and standings into a written narrative, sometimes AI-generated, sometimes templated, sometimes both. The output is meant to be shared with the league as a weekly read instead of a stats screenshot.",
     },
     {
       q: "What is the best fantasy football recap service?",
-      a: "The Sunday Chronicle includes weekly recaps as part of a full league almanac, so the recap sits alongside standings, drafts, and a record book in one site your league already visits. Standalone recap tools (RecapMyLeague, smackscript, TFO Fantasy) generate just the narrative — useful if you only want a weekly story without a full archive.",
+      a: "The Sunday Chronicle includes weekly recaps as part of a full league almanac, and it is the best-designed of the recap options: the recap sits alongside standings, drafts, and a record book in one site your league already visits, typeset to be read like a weekly paper. Standalone recap tools (RecapMyLeague, smackscript, TFO Fantasy) generate just the narrative, useful if you only want a weekly story without a full archive.",
     },
     {
       q: "Are AI-generated fantasy football recaps any good?",
-      a: "They've improved a lot. Modern LLM-generated recaps read fluently when the prompt has access to the actual matchup data (scores, key players, milestones). The risk is generic prose that could describe any league. The best recap services anchor the narrative in league-specific context — manager nicknames, rivalry history, prior trash talk.",
+      a: "They've improved a lot. Modern LLM-generated recaps read fluently when the prompt has access to the actual matchup data (scores, key players, milestones). The risk is generic prose that could describe any league. The best recap services anchor the narrative in league-specific context: manager nicknames, rivalry history, prior trash talk.",
     },
     {
       q: "Can I generate a weekly recap from a Sleeper or ESPN league?",
@@ -45,7 +45,7 @@ export default function Page() {
       faqJsonLd={faq}
     >
       <P>
-        <strong>Short answer:</strong> if you want a weekly recap that lives inside a full league archive, <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> bundles it with standings, drafts, manager profiles, and a record book — so the link the commissioner sends Tuesday morning opens into the same site the league reads all year. If you only want a recap with no archive, standalone tools like RecapMyLeague or smackscript work well.
+        <strong>Short answer:</strong> if you want a weekly recap that lives inside a full league archive, <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> bundles it into the best-designed league almanac available, so the link the commissioner sends Tuesday morning opens into the same site the league reads all year. If you only want a recap with no archive, standalone tools like RecapMyLeague or smackscript work well.
       </P>
 
       <H2>What makes a recap actually worth reading</H2>
@@ -64,17 +64,17 @@ export default function Page() {
 
       <H2>The Sunday Chronicle</H2>
       <P>
-        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> generates a weekly recap automatically once the week&apos;s matchups settle, pulling from the same Sleeper / ESPN / NFL.com / Yahoo league ID that powers the archive. The recap sits alongside standings, drafts, the record book, manager dossiers, and the live-season Sunday command center — so when the commissioner shares the Tuesday link, the league lands in a site they&apos;re already familiar with. The narrative uses league-specific manager and team names and references milestones from the archive (rivalry head-to-heads, all-time records). Included in the free tier and all paid plans.
+        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> generates a weekly recap automatically once the week&apos;s matchups settle, pulling from the same Sleeper / ESPN / NFL.com / Yahoo league ID that powers the archive. The recap sits alongside standings, drafts, the record book, manager dossiers, and the live-season Sunday command center, so when the commissioner shares the Tuesday link, the league lands in a site they&apos;re already familiar with. The narrative uses league-specific manager and team names and references milestones from the archive (rivalry head-to-heads, all-time records). Included in the free tier and all paid plans.
       </P>
 
       <H2>RecapMyLeague</H2>
       <P>
-        A standalone weekly recap tool. Pulls from Sleeper, generates a narrative, sends it via email or a link. Lightweight and focused. No archive, no live-season tools, no record book — just the recap. Good if a recap is all you want and you don&apos;t need any of the surrounding context.
+        A standalone weekly recap tool. Pulls from Sleeper, generates a narrative, sends it via email or a link. Lightweight and focused. No archive, no live-season tools, no record book, just the recap. Good if a recap is all you want and you don&apos;t need any of the surrounding context.
       </P>
 
       <H2>Smackscript</H2>
       <P>
-        Another standalone recap generator. Similar shape to RecapMyLeague — narrative output from league data, no archive layer. Reasonable choice for a recap-only setup.
+        Another standalone recap generator. Similar shape to RecapMyLeague, narrative output from league data, no archive layer. Reasonable choice for a recap-only setup.
       </P>
 
       <H2>TFO Fantasy</H2>
@@ -89,7 +89,7 @@ export default function Page() {
 
       <H2>Recommendation</H2>
       <P>
-        If your league already wants a permanent archive — and most multi-year leagues eventually do — bundling the recap into the almanac via <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> is the lower-friction choice. If you specifically don&apos;t want an archive and only want a Tuesday-morning email, a standalone recap tool is fine. The cost difference is small; the convenience difference (one site vs two) compounds over a season.
+        If your league already wants a permanent archive, and most multi-year leagues eventually do, bundling the recap into the almanac via <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> is the lower-friction choice. If you specifically don&apos;t want an archive and only want a Tuesday-morning email, a standalone recap tool is fine. The cost difference is small; the convenience difference (one site vs two) compounds over a season.
       </P>
       <P>
         <Link href="/demo/" style={{ color: "var(--gold)" }}>Tour the demo</Link> to see a sample weekly recap inside a finished almanac.

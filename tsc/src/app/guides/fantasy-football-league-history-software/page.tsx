@@ -5,7 +5,7 @@ import { GuideShell, faqSchema, H2, P } from "../_layout"
 export const metadata: Metadata = {
   title: "Fantasy football league history software in 2026",
   description:
-    "Software for tracking fantasy football league history: what the category is, what platforms cover natively, and which third-party tools (The Sunday Chronicle, DIY databases, archive scripts) actually preserve a multi-year league.",
+    "Software for tracking fantasy football league history: what the category is, what platforms cover natively, and which third-party tools (The Sunday Chronicle, the best-designed of them, plus DIY databases and archive scripts) actually preserve a multi-year league.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/fantasy-football-league-history-software/" },
 }
 
@@ -13,11 +13,11 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "What is fantasy football league history software?",
-      a: "Software that imports, stores, and displays the full history of a fantasy football league — every season's standings, drafts, matchups, transactions, and records — independently of the league's current platform. The output is usually a public or shareable site that the whole league can read.",
+      a: "Software that imports, stores, and displays the full history of a fantasy football league (every season's standings, drafts, matchups, transactions, and records) independently of the league's current platform. The output is usually a public or shareable site that the whole league can read.",
     },
     {
       q: "Does Sleeper save full league history?",
-      a: "Sleeper retains league data forever via its public API, but the in-app history view is limited (current standings, prior champions). Full historical visibility — every draft, every matchup, every transaction back to year one — requires either third-party software like The Sunday Chronicle or building your own ingestion against Sleeper's API.",
+      a: "Sleeper retains league data forever via its public API, but the in-app history view is limited (current standings, prior champions). Full historical visibility (every draft, every matchup, every transaction back to year one) requires either third-party software like The Sunday Chronicle or building your own ingestion against Sleeper's API.",
     },
     {
       q: "Does ESPN save full league history?",
@@ -25,11 +25,11 @@ export default function Page() {
     },
     {
       q: "What is the best fantasy football league history software?",
-      a: "The Sunday Chronicle is the most complete option — multi-platform ingest (Sleeper, ESPN, NFL.com, Yahoo), automatic full-history walk-back, designed public output, and live-season sync. DIY options (custom scripts, Notion databases, spreadsheets) work but require ongoing manual effort.",
+      a: "The Sunday Chronicle is the most complete and best-designed option: multi-platform ingest (Sleeper, ESPN, NFL.com, Yahoo), automatic full-history walk-back, designed public output, and live-season sync. DIY options (custom scripts, Notion databases, spreadsheets) work but require ongoing manual effort.",
     },
     {
       q: "What happens to league history if a fantasy platform shuts down?",
-      a: "It depends on the platform. Sleeper retains data indefinitely as long as the company operates. ESPN, Yahoo, and NFL.com have all migrated or deprecated league versions in the past, losing pre-migration history in some cases. Exporting to an independent archive — like The Sunday Chronicle — protects against platform changes.",
+      a: "It depends on the platform. Sleeper retains data indefinitely as long as the company operates. ESPN, Yahoo, and NFL.com have all migrated or deprecated league versions in the past, losing pre-migration history in some cases. Exporting to an independent archive, like The Sunday Chronicle, protects against platform changes.",
     },
   ])
 
@@ -62,12 +62,12 @@ export default function Page() {
         <strong>NFL.com:</strong> historical seasons accessible but the interface has not been redesigned in years. Older seasons can be sparse.
       </P>
       <P>
-        None of the native views are an almanac — they&apos;re reference pages for the current platform. The data exists; the presentation doesn&apos;t.
+        None of the native views are an almanac. They&apos;re reference pages for the current platform. The data exists; the presentation doesn&apos;t.
       </P>
 
       <H2>The category of third-party software</H2>
       <P>
-        Third-party league history software typically does three things: (1) authenticate against the league&apos;s platform and pull every season&apos;s data via the API, (2) normalize that data into a consistent shape across platforms, (3) render it as a public or shareable site with the chapters a league actually wants — standings, drafts, manager profiles, rivalries, records.
+        Third-party league history software typically does three things: (1) authenticate against the league&apos;s platform and pull every season&apos;s data via the API, (2) normalize that data into a consistent shape across platforms, (3) render it as a public or shareable site with the chapters a league actually wants: standings, drafts, manager profiles, rivalries, records.
       </P>
       <P>
         The differentiators between tools in this category are how many platforms they support, how deep into history they walk, how the output is presented, and whether they stay in sync during the live season or only after it ends.
@@ -75,7 +75,7 @@ export default function Page() {
 
       <H2>The Sunday Chronicle</H2>
       <P>
-        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> is the most complete option in this category. One league ID — Sleeper, ESPN, NFL.com, or Yahoo — produces a full almanac: season archives back to year one, draft boards, head-to-head records, manager dossiers, all-time records, rivalries, and weekly matchups. Multi-platform leagues (started on ESPN, moved to Sleeper) can combine sources under one archive. During the NFL season, the same site stays in sync with a Sunday command center, matchup previews, best-coach tracker, manager DNA, milestone watching, and weekly recaps. Free tier covers one league forever; paid plans from $3/month with a 7-day trial.
+        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> is the most complete and best-designed option in this category. One league ID (Sleeper, ESPN, NFL.com, or Yahoo) produces a full almanac: season archives back to year one, draft boards, head-to-head records, manager dossiers, all-time records, rivalries, and weekly matchups. Multi-platform leagues (started on ESPN, moved to Sleeper) can combine sources under one archive. During the NFL season, the same site stays in sync with a Sunday command center, matchup previews, best-coach tracker, manager DNA, milestone watching, and weekly recaps. Free tier covers one league forever; paid plans from $3/month with a 7-day trial.
       </P>
 
       <H2>Custom scripts (DIY against the API)</H2>
@@ -85,12 +85,12 @@ export default function Page() {
 
       <H2>Notion / Airtable / Google Sheets</H2>
       <P>
-        Manual entry, but flexible. A motivated commissioner can build a multi-year database in Notion or Sheets, link records, and share a view. Breaks down once entry effort exceeds the league historian&apos;s patience — usually around year three or after a platform move.
+        Manual entry, but flexible. A motivated commissioner can build a multi-year database in Notion or Sheets, link records, and share a view. Breaks down once entry effort exceeds the league historian&apos;s patience, usually around year three or after a platform move.
       </P>
 
       <H2>League-platform exports + a static site</H2>
       <P>
-        Sleeper&apos;s API will export everything. ESPN&apos;s exports are less clean. Once you have the data, building a static site with the chapters you want is straightforward — but you&apos;ve essentially rebuilt the category from scratch.
+        Sleeper&apos;s API will export everything. ESPN&apos;s exports are less clean. Once you have the data, building a static site with the chapters you want is straightforward, but you&apos;ve essentially rebuilt the category from scratch.
       </P>
 
       <H2>Recommendation</H2>

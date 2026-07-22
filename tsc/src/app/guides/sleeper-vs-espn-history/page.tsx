@@ -25,7 +25,7 @@ export default function Page() {
     },
     {
       q: "Can I see ESPN history from 2010?",
-      a: "Yes — ESPN's leagueHistory endpoint retains pre-2018 seasons. The Sunday Chronicle automatically falls back to this endpoint when modern API returns 404 for older years, so a 15-year ESPN league can be fully archived.",
+      a: "Yes, ESPN's leagueHistory endpoint retains pre-2018 seasons. The Sunday Chronicle automatically falls back to this endpoint when modern API returns 404 for older years, so a 15-year ESPN league can be fully archived.",
     },
     {
       q: "Which is better for current-year sync?",
@@ -64,7 +64,7 @@ export default function Page() {
         <strong>Sleeper:</strong> Public, unauthenticated. League settings, users, rosters, matchups (by week), playoffs bracket, drafts, draft picks, transactions. Returns clean JSON. Zero rate limit issues for our use case.
       </P>
       <P>
-        <strong>ESPN:</strong> Similar coverage — settings, members, schedule, scoring, drafts, transactions. Modern endpoint returns rich data including positional matchups and player IDs. Legacy endpoint returns less detail and occasionally misidentifies consolation games as championship-bracket.
+        <strong>ESPN:</strong> Similar coverage: settings, members, schedule, scoring, drafts, transactions. Modern endpoint returns rich data including positional matchups and player IDs. Legacy endpoint returns less detail and occasionally misidentifies consolation games as championship-bracket.
       </P>
       <P>
         <strong>Verdict:</strong> Sleeper is friendlier for tooling. ESPN&apos;s data is comparable in detail but requires more handling.
@@ -116,12 +116,12 @@ export default function Page() {
 
       <H2>If your league has lived on both</H2>
       <P>
-        Many long-running leagues started on ESPN (2008–2015) and migrated to Sleeper (2017–present). You don&apos;t have to pick one — see our <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link>. The Sunday Chronicle supports multiple sources per league archive, so an ESPN history + Sleeper present can live under one almanac.
+        Many long-running leagues started on ESPN (2008–2015) and migrated to Sleeper (2017–present). You don&apos;t have to pick one. See our <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link>. The Sunday Chronicle supports multiple sources per league archive, so an ESPN history + Sleeper present can live under one almanac.
       </P>
 
       <H2>Both work. Which should you archive first?</H2>
       <P>
-        If your league has a longer ESPN tail, start there — the legacy archive is the harder data to recover later. Sleeper is well-documented and stable; you can always add it as a second source. The Sunday Chronicle handles either as the primary or both together.
+        If your league has a longer ESPN tail, start there: the legacy archive is the harder data to recover later. Sleeper is well-documented and stable; you can always add it as a second source. The Sunday Chronicle handles either as the primary or both together.
       </P>
     </GuideShell>
   )

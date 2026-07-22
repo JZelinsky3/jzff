@@ -6,7 +6,7 @@ import { SectionHead } from "../_compare"
 export const metadata: Metadata = {
   title: "Set up your league on The Sunday Chronicle",
   description:
-    "Step-by-step setup for every supported fantasy football platform. Sleeper, ESPN, Yahoo, and NFL.com — find your league ID, paste it, publish your public almanac.",
+    "Step-by-step setup for every supported fantasy football platform. Sleeper, ESPN, Yahoo, and NFL.com. Find your league ID, paste it, publish your public almanac.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/set-up-your-league/" },
 }
 
@@ -85,7 +85,7 @@ export default function Page() {
       faqJsonLd={faq}
     >
       <P>
-        <strong>One account, four platforms.</strong> The Sunday Chronicle reads from your existing fantasy host (Sleeper, ESPN, Yahoo, or NFL.com) and turns the full history into a public almanac. You don&apos;t move your league — the host stays exactly where it is. Pick your platform below for the step-by-step.
+        <strong>One account, four platforms.</strong> The Sunday Chronicle reads from your existing fantasy host (Sleeper, ESPN, Yahoo, or NFL.com) and turns the full history into a public almanac. You don&apos;t move your league. The host stays exactly where it is. Pick your platform below for the step-by-step.
       </P>
 
       <SectionHead kicker="Platforms" title="Pick your fantasy host.">

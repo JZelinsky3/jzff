@@ -66,7 +66,7 @@ export function MobilePricing({
         <section className="mpricing-lifetime">
           <div className="mpricing-lifetime-card">
             <div className="mpricing-lifetime-title">You&apos;re comped.</div>
-            <p>Your account has lifetime access — unlimited leagues, no billing, no
+            <p>Your account has lifetime access: unlimited leagues, no billing, no
               expiration. Nothing to manage here.</p>
             <Link href="/dashboard" className="mpricing-lifetime-cta">Back to library</Link>
           </div>
@@ -194,7 +194,7 @@ export function MobilePricing({
 
       <p className="mpricing-foot">
         All payments processed by Stripe. Prices in USD. Your card isn&apos;t charged
-        until the trial ends — cancel anytime from the customer portal.
+        until the trial ends. Cancel anytime from the customer portal.
       </p>
 
       <footer className="mpricing-bottom">

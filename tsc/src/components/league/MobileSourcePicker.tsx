@@ -26,7 +26,7 @@ export function MobileSourcePicker({
   const [err, setErr] = useState<string | null>(null)
 
   if (sources.length === 0) {
-    return <div className="mliv-card-empty">No sources — add one on the Sources page first.</div>
+    return <div className="mliv-card-empty">No sources yet. Add one on the Sources page first.</div>
   }
 
   async function onSubmit() {

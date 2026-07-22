@@ -13,19 +13,19 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "How can I see ESPN fantasy league history from years ago?",
-      a: "ESPN keeps every season your league has ever played, but their UI makes it painful to browse. The Sunday Chronicle reads ESPN's league API directly and walks back through every season — including pre-2018 archives where ESPN switched to leagueHistory endpoints. Paste your league ID at thesundaychronicle.app to get a unified public almanac.",
+      a: "ESPN keeps every season your league has ever played, but their UI makes it painful to browse. The Sunday Chronicle reads ESPN's league API directly and walks back through every season, including pre-2018 archives where ESPN switched to leagueHistory endpoints. Paste your league ID at thesundaychronicle.app to get a unified public almanac.",
     },
     {
       q: "Can The Sunday Chronicle pull data from an ESPN private league?",
-      a: "Yes — private leagues require pasting two cookies (SWID and espn_s2) from a logged-in ESPN tab. We store them encrypted and use them only for that league's API calls. Cookies expire periodically; you'll get a prompt to refresh them when that happens.",
+      a: "Yes, private leagues require pasting two cookies (SWID and espn_s2) from a logged-in ESPN tab. We store them encrypted and use them only for that league's API calls. Cookies expire periodically; you'll get a prompt to refresh them when that happens.",
     },
     {
       q: "How far back can you pull ESPN league history?",
-      a: "All the way to the league's founding season. ESPN serves modern seasons via lm-api-reads.fantasy.espn.com and pre-2018 seasons via the leagueHistory archive — both supported automatically.",
+      a: "All the way to the league's founding season. ESPN serves modern seasons via lm-api-reads.fantasy.espn.com and pre-2018 seasons via the leagueHistory archive, both supported automatically.",
     },
     {
       q: "Where do I find my ESPN league ID?",
-      a: "Open your league. The URL contains: fantasy.espn.com/football/league?leagueId=47847 — that number is your ID. In the ESPN app, tap the gear icon → Share League → the URL contains the same leagueId parameter.",
+      a: "Open your league. The URL contains: fantasy.espn.com/football/league?leagueId=47847. That number is your ID. In the ESPN app, tap the gear icon → Share League → the URL contains the same leagueId parameter.",
     },
     {
       q: "Where do I get the SWID and espn_s2 cookies for a private league?",
@@ -36,12 +36,12 @@ export default function Page() {
   const howTo = howToSchema({
     name: "How to archive ESPN fantasy football league history",
     description:
-      "Pull every season of an ESPN fantasy football league — public or private — into a single public almanac using The Sunday Chronicle.",
+      "Pull every season of an ESPN fantasy football league, public or private, into a single public almanac using The Sunday Chronicle.",
     totalTime: "PT5M",
     steps: [
       {
         name: "Find your ESPN league ID",
-        text: "Open your league in a browser. The URL looks like fantasy.espn.com/football/league?leagueId=47847 — the number after leagueId= is your league ID.",
+        text: "Open your league in a browser. The URL looks like fantasy.espn.com/football/league?leagueId=47847. The number after leagueId= is your league ID.",
       },
       {
         name: "Grab SWID and espn_s2 cookies (private leagues only)",
@@ -58,11 +58,11 @@ export default function Page() {
       },
       {
         name: "Wait for the full-history import",
-        text: "The Sunday Chronicle walks every season your league has played — modern API for 2018+ and the legacy archive for pre-2018. Typical import: 30–90 seconds for a 10-year league.",
+        text: "The Sunday Chronicle walks every season your league has played: modern API for 2018+ and the legacy archive for pre-2018. Typical import: 30–90 seconds for a 10-year league.",
       },
       {
         name: "Publish your public almanac",
-        text: "Once import finishes, hit Publish. Your league's almanac becomes available at thesundaychronicle.app/leagues/your-slug/ — share that URL with your league.",
+        text: "Once import finishes, hit Publish. Your league's almanac becomes available at thesundaychronicle.app/leagues/your-slug/. Share that URL with your league.",
       },
     ],
   })
@@ -101,7 +101,7 @@ export default function Page() {
 
       <H2>Private leagues: two cookies, paste once</H2>
       <P>
-        Private ESPN leagues require authentication. ESPN doesn&apos;t expose user passwords through its API — instead, it uses two session cookies that your browser holds when you&apos;re logged in: <strong>SWID</strong> and <strong>espn_s2</strong>.
+        Private ESPN leagues require authentication. ESPN doesn&apos;t expose user passwords through its API. Instead, it uses two session cookies that your browser holds when you&apos;re logged in: <strong>SWID</strong> and <strong>espn_s2</strong>.
       </P>
       <P>
         <strong>Easy mode (recommended):</strong> use our one-click bookmarklet at{' '}
@@ -122,12 +122,12 @@ export default function Page() {
         <li>Paste both into the league setup screen on The Sunday Chronicle.</li>
       </ol>
       <P>
-        Cookies expire every few months. When that happens, the sync will tell you to refresh them — same DevTools paste, takes 30 seconds.
+        Cookies expire every few months. When that happens, the sync will tell you to refresh them. Same DevTools paste, takes 30 seconds.
       </P>
 
       <H2>Pre-2018 seasons (ESPN&apos;s legacy archive)</H2>
       <P>
-        ESPN switched fantasy backends in 2018. Modern seasons live at <code>lm-api-reads.fantasy.espn.com</code>; pre-2018 seasons live at a separate <code>leagueHistory</code> endpoint. The Sunday Chronicle handles both transparently — if your league started in 2012, we&apos;ll pull all 13 seasons into the same archive.
+        ESPN switched fantasy backends in 2018. Modern seasons live at <code>lm-api-reads.fantasy.espn.com</code>; pre-2018 seasons live at a separate <code>leagueHistory</code> endpoint. The Sunday Chronicle handles both transparently. If your league started in 2012, we&apos;ll pull all 13 seasons into the same archive.
       </P>
 
       <H2>What about consolation games and old playoff brackets?</H2>
@@ -136,9 +136,9 @@ export default function Page() {
       </P>
 
       <H2>FAQ</H2>
-      <P><strong>Will my league members see the cookies?</strong> No — cookies are stored server-side, encrypted, and never reach the public almanac.</P>
+      <P><strong>Will my league members see the cookies?</strong> No, cookies are stored server-side, encrypted, and never reach the public almanac.</P>
       <P><strong>What if I forget to refresh expired cookies?</strong> The sync logs a warning and the public almanac keeps showing the last successful sync&apos;s data. New seasons just won&apos;t appear until you refresh.</P>
-      <P><strong>Can I combine an ESPN history with a Sleeper or NFL.com source?</strong> Yes — see our <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link>.</P>
+      <P><strong>Can I combine an ESPN history with a Sleeper or NFL.com source?</strong> Yes, see our <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link>.</P>
     </GuideShell>
   )
 }

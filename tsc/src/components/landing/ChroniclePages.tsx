@@ -25,7 +25,7 @@ const PAGES: Page[] = [
     chapter: 'Chapter I · Season',
     title: ['Season', 'Archives.'],
     blurb:
-      'Every year your league has existed, walked back. Final standings, every matchup, every playoff run — laid out the way an almanac would print them.',
+      'Every year your league has existed, walked back. Final standings, every matchup, every playoff run, laid out the way an almanac would print them.',
     href: '/demo/seasons/',
     cta: 'Tour the season pages →',
     body: (
@@ -168,7 +168,7 @@ const PAGES: Page[] = [
             <div className="cp-rivalry-name">Slingers</div>
             <div className="cp-rivalry-rec">9</div>
           </div>
-          <div className="cp-rivalry-dash">—</div>
+          <div className="cp-rivalry-dash">–</div>
           <div className="cp-rivalry-side">
             <div className="cp-rivalry-rec">7</div>
             <div className="cp-rivalry-name">Dad Bod</div>
@@ -260,7 +260,7 @@ export function ChroniclePages() {
         <div className="cp-meta-left">
           <span className="cp-meta-num">§ 02 · The Pages</span>
           <span className="cp-meta-title">
-            Five pages — <em>scroll the chronicle.</em>
+            Five pages: <em>scroll the chronicle.</em>
           </span>
         </div>
         <div className="cp-meta-right">

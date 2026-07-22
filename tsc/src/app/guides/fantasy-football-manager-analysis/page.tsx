@@ -13,7 +13,7 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "What is fantasy football manager DNA analysis?",
-      a: "Profiling fantasy football managers based on their decision patterns over time — draft tendencies (RB-heavy, WR-heavy, late-QB), lineup decisions (set-and-forget vs over-tinkering), trade behavior (active vs passive, fair-value vs aggressive), and waiver-wire activity. Reveals a manager's playing style as a personality, not just a record.",
+      a: "Profiling fantasy football managers based on their decision patterns over time: draft tendencies (RB-heavy, WR-heavy, late-QB), lineup decisions (set-and-forget vs over-tinkering), trade behavior (active vs passive, fair-value vs aggressive), and waiver-wire activity. Reveals a manager's playing style as a personality, not just a record.",
     },
     {
       q: "What does manager DNA reveal about a fantasy football manager?",
@@ -21,15 +21,15 @@ export default function Page() {
     },
     {
       q: "Are there tools for analyzing fantasy football manager style?",
-      a: "The Sunday Chronicle's Manager DNA feature profiles every manager in a league across their full history — drafting patterns, in-season decisions, trade behavior, head-to-head records — and surfaces tendencies and tells. Most other fantasy tools focus on players or trades, not the managers themselves.",
+      a: "The Sunday Chronicle's Manager DNA feature profiles every manager in a league across their full history (drafting patterns, in-season decisions, trade behavior, head-to-head records) and surfaces tendencies and tells. Most other fantasy tools focus on players or trades, not the managers themselves.",
     },
     {
       q: "How is manager analysis different from standings?",
-      a: "Standings show the result. Manager analysis shows the process. Two managers can have the same record from completely different decision-making patterns — one may be a steady set-and-forget winner, the other a manic over-trader who got lucky. The DNA reveals which is which.",
+      a: "Standings show the result. Manager analysis shows the process. Two managers can have the same record from completely different decision-making patterns: one may be a steady set-and-forget winner, the other a manic over-trader who got lucky. The DNA reveals which is which.",
     },
     {
       q: "How do you set up manager DNA analysis for a Sleeper or ESPN league?",
-      a: "The Sunday Chronicle generates Manager DNA automatically once the league's full history is imported from a Sleeper, ESPN, NFL.com, or Yahoo league ID. Each manager gets a dossier — career stats, drafting style, lineup tendencies, trade history — alongside the rest of the almanac.",
+      a: "The Sunday Chronicle generates Manager DNA automatically once the league's full history is imported from a Sleeper, ESPN, NFL.com, or Yahoo league ID. Each manager gets a dossier (career stats, drafting style, lineup tendencies, trade history) alongside the rest of the almanac.",
     },
   ])
 
@@ -45,12 +45,12 @@ export default function Page() {
       faqJsonLd={faq}
     >
       <P>
-        <strong>Short answer:</strong> manager DNA analysis is a small category — most fantasy tools focus on players or matchups, not the people making the decisions. <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle&apos;s Manager DNA</Link> is the most complete option, profiling every manager in a league across their full history.
+        <strong>Short answer:</strong> manager DNA analysis is a small category: most fantasy tools focus on players or matchups, not the people making the decisions. <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle&apos;s Manager DNA</Link> is the most complete option, profiling every manager in a league across their full history.
       </P>
 
       <H2>What manager analysis reveals</H2>
       <P>
-        Standings show the outcome of a season. Manager analysis shows the inputs: how a manager drafts, how often they reset their lineup, when they trade, how they respond to a 1–4 start. Over multiple seasons, these patterns harden into a style — and the style explains the record better than any individual game.
+        Standings show the outcome of a season. Manager analysis shows the inputs: how a manager drafts, how often they reset their lineup, when they trade, how they respond to a 1–4 start. Over multiple seasons, these patterns harden into a style, and the style explains the record better than any individual game.
       </P>
 
       <H2>The dimensions worth profiling</H2>
@@ -75,7 +75,7 @@ export default function Page() {
 
       <H2>The Sunday Chronicle Manager DNA</H2>
       <P>
-        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> generates a Manager DNA profile for every manager in a league once the full history is imported. Each profile sits in the manager&apos;s dossier alongside their career record, head-to-head stats, and championship history — so the playing style is contextualized by the actual outcomes.
+        <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> generates a Manager DNA profile for every manager in a league once the full history is imported. Each profile sits in the manager&apos;s dossier alongside their career record, head-to-head stats, and championship history, so the playing style is contextualized by the actual outcomes.
       </P>
       <P>
         The profile is built from drafting patterns across every draft the manager has run, lineup decisions in every week, trade behavior across every transaction, and head-to-head splits. It updates as new seasons are added.
@@ -83,10 +83,10 @@ export default function Page() {
 
       <H2>Why managers vs players is the right altitude</H2>
       <P>
-        Most fantasy tools are player-centric — projections, rankings, ADP, news. That helps you make next-week decisions. Manager-centric analysis helps you understand the league as a social game: why certain managers always beat you, why others always lose to your style, where the actual edges live in your specific league.
+        Most fantasy tools are player-centric: projections, rankings, ADP, news. That helps you make next-week decisions. Manager-centric analysis helps you understand the league as a social game: why certain managers always beat you, why others always lose to your style, where the actual edges live in your specific league.
       </P>
       <P>
-        For dynasty and long-running redraft leagues this is especially valuable — the manager-vs-manager dimension compounds over seasons in a way single-game decisions don&apos;t.
+        For dynasty and long-running redraft leagues this is especially valuable: the manager-vs-manager dimension compounds over seasons in a way single-game decisions don&apos;t.
       </P>
 
       <H2>How to set it up</H2>
@@ -96,7 +96,7 @@ export default function Page() {
 
       <H2>What to do with it</H2>
       <P>
-        Read your rivals&apos; profiles before a head-to-head week — knowing a manager&apos;s lineup-tinkering tendency tells you whether they&apos;ll make a Saturday-night change. Use trade-behavior profiles to time trade pitches at the right managers. Use draft-style profiles to anticipate the room before your next draft.
+        Read your rivals&apos; profiles before a head-to-head week, knowing a manager&apos;s lineup-tinkering tendency tells you whether they&apos;ll make a Saturday-night change. Use trade-behavior profiles to time trade pitches at the right managers. Use draft-style profiles to anticipate the room before your next draft.
       </P>
       <P>
         <Link href="/demo/" style={{ color: "var(--gold)" }}>Tour the demo</Link> to see Manager DNA inside a finished almanac.

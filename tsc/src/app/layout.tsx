@@ -36,7 +36,7 @@ const mono = JetBrains_Mono({
 });
 
 const DESCRIPTION =
-  "Turn your fantasy football league's full history into a polished public almanac. Walks Sleeper, ESPN, or NFL.com league IDs back through every season: champions, drafts, rivalries, head-to-head records, weekly pick'ems. Built for commissioners.";
+  "Turn your fantasy football league's full history into the best-designed public almanac on the web. Walks Sleeper, ESPN, Yahoo, or NFL.com league IDs back through every season: champions, drafts, rivalries, head-to-head records, weekly pick'ems. Built for commissioners.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thesundaychronicle.app"),

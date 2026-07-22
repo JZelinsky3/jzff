@@ -226,7 +226,7 @@ export function MobileSetupList({
       {err && <p className="msl-err">{err}</p>}
 
       {profiles.length === 0 && (
-        <div className="msl-empty">No profiles yet — sync a source first.</div>
+        <div className="msl-empty">No profiles yet. Sync a source first.</div>
       )}
 
       {/* ── Current members ── */}

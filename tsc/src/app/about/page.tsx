@@ -9,7 +9,7 @@ import { getViewMode } from "@/lib/viewMode"
 export const metadata: Metadata = {
   title: "About · Fantasy football league archive built for commissioners",
   description:
-    "The Sunday Chronicle turns any fantasy football league's full history into a polished, public-facing almanac. Works with Sleeper, ESPN, and NFL.com.",
+    "The Sunday Chronicle turns any fantasy football league's full history into the best-designed public-facing almanac on the web. Works with Sleeper, ESPN, Yahoo, and NFL.com.",
   alternates: { canonical: "https://thesundaychronicle.app/about/" },
 }
 
@@ -151,7 +151,7 @@ export default async function AboutPage() {
       <div className="section abt-section">
         <div className="section-header">
           <span className="section-num">§ 01 · The pitch</span>
-          <span className="section-title">Why this exists —</span>
+          <span className="section-title">Why this exists</span>
           <span className="section-meta">Two minutes, front to back</span>
         </div>
         <div className="abt-spread">
@@ -165,7 +165,10 @@ export default async function AboutPage() {
             <p>
               The Sunday Chronicle walks back through every season your league ID
               can reach and typesets the whole record into a single public
-              almanac. Standings, champions, drafts, head-to-head ledgers,
+              almanac. It is, we think, the best-designed fantasy football
+              almanac on the web, and the polish is the point: most league
+              history goes unkept because it never looked worth keeping.
+              Standings, champions, drafts, head-to-head ledgers,
               hand-curated rivalries, weekly pick&apos;ems. One URL your league
               passes around forever, like{" "}
               <code>thesundaychronicle.app/leagues/your-league/</code>.
@@ -209,7 +212,7 @@ export default async function AboutPage() {
       <div className="section abt-section">
         <div className="section-header">
           <span className="section-num">§ 02 · How it works</span>
-          <span className="section-title">Three moves —</span>
+          <span className="section-title">Three moves</span>
           <span className="section-meta">About thirty seconds of typing</span>
         </div>
         <div className="abt-steps">
@@ -268,7 +271,7 @@ export default async function AboutPage() {
       <div className="section abt-section">
         <div className="section-header">
           <span className="section-num">§ 03 · What&apos;s inside</span>
-          <span className="section-title">Table of contents —</span>
+          <span className="section-title">Table of contents</span>
           <span className="section-meta">Every almanac ships with these</span>
         </div>
         <div className="abt-toc">
@@ -289,7 +292,7 @@ export default async function AboutPage() {
       <div className="section abt-section">
         <div className="section-header">
           <span className="section-num">§ 04 · Platforms</span>
-          <span className="section-title">Where we can reach —</span>
+          <span className="section-title">Where we can reach</span>
           <span className="section-meta">One league can mix sources</span>
         </div>
         <div className="abt-ledger">
@@ -320,7 +323,7 @@ export default async function AboutPage() {
       <div className="section abt-section">
         <div className="section-header">
           <span className="section-num">§ 05 · Rates</span>
-          <span className="section-title">Three tiers —</span>
+          <span className="section-title">Three tiers</span>
           <span className="section-meta">7-day free trial on every plan</span>
         </div>
         <div className="abt-rates">
@@ -353,7 +356,7 @@ export default async function AboutPage() {
       <div className="section abt-section">
         <div className="section-header">
           <span className="section-num">§ 06 · Letters</span>
-          <span className="section-title">Fair questions —</span>
+          <span className="section-title">Fair questions</span>
           <span className="section-meta">Answered honestly</span>
         </div>
         <div className="abt-letters">

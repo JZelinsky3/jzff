@@ -915,7 +915,7 @@ function StepSeason({
       <StepShell
         title="Is the season"
         titleEm="live?"
-        subtitle="No seasons on file yet — sync a source first to set a live season."
+        subtitle="No seasons on file yet. Sync a source first to set a live season."
         cta={<ContinueButton onClick={onContinue} label="Skip for now" />}
       >
         <div className="mwiz-empty">Add and sync a source on step 1.</div>

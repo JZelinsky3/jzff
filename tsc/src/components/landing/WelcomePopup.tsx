@@ -259,7 +259,7 @@ const FEATURE_SLIDES: FeatureSlide[] = [
     kicker: 'UDFA · Free forever',
     title: (
       <>
-        Your first league —<br />
+        Your first league,<br />
         <em>on the house.</em>
       </>
     ),
@@ -303,7 +303,7 @@ const FEATURE_SLIDES: FeatureSlide[] = [
     ),
     body: (
       <>
-        Six issues — Dynasty, Wire, Records, Rivalries, Legacy, Future —
+        Six issues (Dynasty, Wire, Records, Rivalries, Legacy, Future)
         across every league a manager touches. Personal. Editorial.
         Pulling live data through per-chronicle aliases.
       </>
@@ -323,7 +323,7 @@ const FEATURE_SLIDES: FeatureSlide[] = [
     body: (
       <>
         Sleeper, Yahoo, ESPN, and NFL.com all bind into the same almanac.
-        Bring a league ID — we walk every season back to the beginning.
+        Bring a league ID. We walk every season back to the beginning.
       </>
     ),
     hero: <PlatformsHero />,
@@ -497,7 +497,7 @@ export function WelcomePopup({
               </h2>
               <p className="lp-welcome-text">
                 A free tier, a Live Season Hub, a six-issue Manager Hub, two new
-                platforms — and a discount waiting at the end. Turn the page.
+                platforms, and a discount waiting at the end. Turn the page.
               </p>
               {PROMO_CODE && (
                 <button
@@ -556,7 +556,7 @@ export function WelcomePopup({
               </h2>
               <p className="lp-welcome-text">
                 A welcome gift. Apply <strong>{PROMO_CODE}</strong> at checkout
-                for <strong>{PROMO_TAGLINE.toLowerCase()}</strong> — good on any
+                for <strong>{PROMO_TAGLINE.toLowerCase()}</strong>, good on any
                 paid tier, the first time you upgrade. One per reader.
               </p>
               <Link
@@ -577,7 +577,7 @@ export function WelcomePopup({
               </h2>
               <p className="lp-welcome-text">
                 {signedIn
-                  ? 'Your library is waiting — every feature above is live in your dashboard.'
+                  ? 'Your library is waiting. Every feature above is live in your dashboard.'
                   : 'Bring a league ID and we walk every season back to the beginning. Free forever to start. No card.'}
               </p>
               <Link

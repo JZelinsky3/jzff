@@ -16,9 +16,9 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Compare plans — The Sunday Chronicle',
+  title: 'Compare plans · The Sunday Chronicle',
   description:
-    'Side-by-side comparison of the three Sunday Chronicle plans — Rookie, Veteran, and All-Pro. League counts, weekly recaps, and every other feature, with what each tier includes (or doesn\'t).',
+    'Side-by-side comparison of the three Sunday Chronicle plans: Rookie, Veteran, and All-Pro. League counts, weekly recaps, and every other feature, with what each tier includes (or doesn\'t).',
   alternates: { canonical: 'https://thesundaychronicle.app/pricing/plans/' },
 }
 
@@ -42,7 +42,7 @@ const FEATURES: Feature[] = [
   },
   {
     label: 'Every platform',
-    detail: 'Sleeper, ESPN, NFL.com, Yahoo — stitch a league together across all of them.',
+    detail: 'Sleeper, ESPN, NFL.com, Yahoo. Stitch a league together across all of them.',
     included: { tier1: true, tier2: true, tier3: true },
   },
   {
@@ -57,7 +57,7 @@ const FEATURES: Feature[] = [
   },
   {
     label: '7-day free trial',
-    detail: 'Every plan. Cancel anytime before the trial ends — no charge.',
+    detail: 'Every plan. Cancel anytime before the trial ends. No charge.',
     included: { tier1: true, tier2: true, tier3: true },
   },
   {
@@ -72,7 +72,7 @@ const FEATURES: Feature[] = [
   },
   {
     label: 'Manager DNA',
-    detail: 'Every manager auto-classified into an archetype — Trade Hawk, Coin-Flipper, Set-and-Forget, more — from their actual transactions, lineups, and draft history.',
+    detail: 'Every manager auto-classified into an archetype (Trade Hawk, Coin-Flipper, Set-and-Forget, more) from their actual transactions, lineups, and draft history.',
     included: { tier1: false, tier2: true, tier3: true },
   },
   {
@@ -158,9 +158,9 @@ export default async function PlansPage() {
           Compare <em>the three.</em>
         </h1>
         <p className="hero-sub" style={{ maxWidth: '62ch', margin: '0 auto' }}>
-          Every plan unlocks the full chronicle — archives, drafts, records, pick&apos;ems. The
-          differences: how many leagues you can archive, and the auto-generated extras —
-          weekly recaps, trade recaps, and the Manager DNA lab.
+          Every plan unlocks the full chronicle: archives, drafts, records, pick&apos;ems. The
+          differences: how many leagues you can archive, and which auto-generated extras you get,
+          from weekly recaps and trade recaps to the Manager DNA lab.
         </p>
       </section>
 
@@ -189,7 +189,7 @@ export default async function PlansPage() {
                             repeating the same ten features three times. */}
                         {prev && (
                           <li className="plans-feat-inherit">
-                            Everything in {TIER_LABELS[prev].name}, plus —
+                            Everything in {TIER_LABELS[prev].name}, plus:
                           </li>
                         )}
                         {FEATURES.map((f) => {
@@ -207,7 +207,7 @@ export default async function PlansPage() {
                               className={`plans-feat${inc ? '' : ' is-excluded'}${inherited ? ' is-inherited' : ''}`}
                             >
                               <span className="plans-feat-mark" aria-hidden="true">
-                                {inc ? '✓' : '—'}
+                                {inc ? '✓' : '–'}
                               </span>
                               <span className="plans-feat-body">
                                 <span className="plans-feat-label">{f.label}</span>
@@ -240,7 +240,7 @@ export default async function PlansPage() {
               </div>
 
               <p className="plans-foot">
-                Same chronicle, different reach. Upgrade or downgrade anytime — leagues over your new
+                Same chronicle, different reach. Upgrade or downgrade anytime. Leagues over your new
                 plan&apos;s cap stay viewable but go read-only until you reduce or upgrade.
               </p>
             </div>
@@ -284,7 +284,7 @@ export default async function PlansPage() {
                           className={`pricing-free-mark ${f.includedFree ? 'is-yes' : 'is-no'}`}
                           aria-hidden
                         >
-                          {f.includedFree ? '✓' : '—'}
+                          {f.includedFree ? '✓' : '–'}
                         </span>
                         <span className="pricing-free-body">
                           <span className="pricing-free-feat-label">{f.label}</span>

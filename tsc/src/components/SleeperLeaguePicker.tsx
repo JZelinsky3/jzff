@@ -186,7 +186,7 @@ export function SleeperLeaguePicker({
         </div>
         <span className="dc-checkbox-hint">
           We&apos;ll list every Sleeper league you&apos;ve been in from 2020 to now, deduped
-          by history chain. Pick one — we&apos;ll walk every prior season automatically.
+          by history chain. Pick one. We&apos;ll walk every prior season automatically.
         </span>
         {lookupError && (
           <p className="dc-form-error" style={{ margin: '.5rem 0 0' }}>{lookupError}</p>

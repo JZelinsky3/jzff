@@ -25,7 +25,7 @@ const PAGES: Page[] = [
     chapter: 'Ch. II · Champion Rolls',
     pageNum: 'p. 47',
     title: ['Champion,', '2024.'],
-    lead: 'Tendency, at last — by a half-point and a Monday-night kicker.',
+    lead: 'Tendency, at last. By a half-point and a Monday-night kicker.',
     body:
       'The PAM Slingers entered Sunday undefeated for the year; they left the season as runners-up. Tight End Tendency held the lead for ninety minutes of football and surrendered it for ninety seconds, then took it back to stay. The book records the result and not the heartbreak.',
     feature: { label: 'Final', parts: ['Tendency 142.6', 'Slingers 142.1'] },
@@ -37,7 +37,7 @@ const PAGES: Page[] = [
     title: ['Single-Week', 'High.'],
     lead: 'The largest one-week score in league history, since 2018.',
     body:
-      "Dad Bod Dynasty's Week 9 outing in 2022 still stands as the league's high-water mark — a 198.4 from a roster with no obvious stars and a kicker who outscored two opposing wide receivers. The chronicle keeps the box score so the argument can rest.",
+      "Dad Bod Dynasty's Week 9 outing in 2022 still stands as the league's high-water mark: a 198.4 from a roster with no obvious stars and a kicker who outscored two opposing wide receivers. The chronicle keeps the box score so the argument can rest.",
     feature: { label: 'Mark', parts: ['198.4 pts', 'Dad Bod · Wk. 9, 2022'] },
     seal: 'Record',
   },
@@ -47,8 +47,8 @@ const PAGES: Page[] = [
     title: ['Slingers', '↔ Dad Bod.'],
     lead: 'Sixteen meetings. Nine to seven. The book records every one.',
     body:
-      'Four playoff meetings split evenly. Three different decades of football — well, three different commissioners, anyway. The longest game went to a Monday-night fumble at the goal line, and neither manager has spoken of it since.',
-    feature: { label: 'All-time', parts: ['9 — 7', '4 Playoff Meetings'] },
+      'Four playoff meetings split evenly. Three different decades of football. Well, three different commissioners, anyway. The longest game went to a Monday-night fumble at the goal line, and neither manager has spoken of it since.',
+    feature: { label: 'All-time', parts: ['9 – 7', '4 Playoff Meetings'] },
     seal: 'Rivalry',
   },
 ]

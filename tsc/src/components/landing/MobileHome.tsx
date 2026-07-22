@@ -40,7 +40,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
               <span className="mlp-book-league">Your League</span>
               <span className="mlp-book-rule" />
               <span className="mlp-book-vol">The Complete History</span>
-              <span className="mlp-book-years">2018 — 2024</span>
+              <span className="mlp-book-years">2018–2024</span>
               <span className="mlp-book-seasons">Seven Seasons</span>
               <span className="mlp-book-rule mlp-book-rule-sm" />
               <span className="mlp-book-ft">The Sunday Chronicle</span>
@@ -129,7 +129,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
               <div className="mlp-prev-row"><span className="mlp-prev-rk">1</span><span className="mlp-prev-nm">Tight End Tendency</span><span className="mlp-prev-val">12–2</span></div>
               <div className="mlp-prev-row"><span className="mlp-prev-rk">2</span><span className="mlp-prev-nm">PAM Slingers</span><span className="mlp-prev-val">11–3</span></div>
               <div className="mlp-prev-row"><span className="mlp-prev-rk">3</span><span className="mlp-prev-nm">Dad Bod Dynasty</span><span className="mlp-prev-val">10–4</span></div>
-              <div className="mlp-prev-ft">Every season, every matchup — back to the start.</div>
+              <div className="mlp-prev-ft">Every season, every matchup, back to the start.</div>
             </div>
           </div>
 
@@ -176,7 +176,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
             <div className="mlp-prev-body mlp-prev-paper mlp-prev-rivalry">
               <div className="mlp-prev-vs">
                 <span>Slingers</span>
-                <span className="mlp-prev-score">9 — 7</span>
+                <span className="mlp-prev-score">9 – 7</span>
                 <span>Dad Bod</span>
               </div>
               <div className="mlp-prev-vs-meta">16 meetings · since 2018</div>
@@ -216,7 +216,7 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
         <h2 className="mlp-live-title">It&apos;s not just history.<br /><em>It&apos;s every Sunday.</em></h2>
         <p className="mlp-live-sub">
           During the season, your chronicle comes alive. Tools built
-          for the league as a unit — not just the individual.
+          for the league as a unit, not just the individual.
         </p>
 
         <div className="mlp-live-tools">
@@ -245,14 +245,14 @@ export function MobileHome({ signedIn }: { signedIn: boolean }) {
             <span className="mlp-live-tool-num">IV</span>
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Manager DNA</span>
-              <span className="mlp-live-tool-desc">Behavioral profiles — trade hawks, streamers, set-and-forgets — from real data.</span>
+              <span className="mlp-live-tool-desc">Behavioral profiles (trade hawks, streamers, set-and-forgets) from real data.</span>
             </span>
           </div>
           <div className="mlp-live-tool">
             <span className="mlp-live-tool-num">V</span>
             <span className="mlp-live-tool-body">
               <span className="mlp-live-tool-name">Trade Desk</span>
-              <span className="mlp-live-tool-desc">Grader, analyzer, finder, and rumor mill — four rooms for every angle.</span>
+              <span className="mlp-live-tool-desc">Grader, analyzer, finder, and rumor mill: four rooms for every angle.</span>
             </span>
           </div>
         </div>

@@ -63,7 +63,7 @@ export function MobileNewArchive({
             </div>
             <div className="mnew-help-item">
               <span className="mnew-help-plat">ESPN</span>
-              <span>URL contains <code>leagueId=<em>47847</em></code> — that number. Private leagues need cookies too.</span>
+              <span>URL contains <code>leagueId=<em>47847</em></code>, that number. Private leagues need cookies too.</span>
             </div>
             <div className="mnew-help-item">
               <span className="mnew-help-plat">NFL.com</span>
@@ -71,7 +71,7 @@ export function MobileNewArchive({
             </div>
             <div className="mnew-help-item">
               <span className="mnew-help-plat">Yahoo</span>
-              <span>Connect your account above — we pull your leagues automatically.</span>
+              <span>Connect your account above. We pull your leagues automatically.</span>
             </div>
           </div>
         </details>

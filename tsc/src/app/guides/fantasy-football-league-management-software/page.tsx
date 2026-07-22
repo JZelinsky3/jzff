@@ -5,7 +5,7 @@ import { GuideShell, faqSchema, H2, P } from "../_layout"
 export const metadata: Metadata = {
   title: "Fantasy football league management software in 2026",
   description:
-    "Software for running a fantasy football league: where the host platforms (Sleeper, ESPN, Yahoo, NFL.com) end and where third-party tools start. Reviews of the active services for commissioners — The Sunday Chronicle, FantasyPros, and dedicated commissioner tools.",
+    "Software for running a fantasy football league: where the host platforms (Sleeper, ESPN, Yahoo, NFL.com) end and where third-party tools start. Reviews of the active services for commissioners, The Sunday Chronicle, FantasyPros, and dedicated commissioner tools.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/fantasy-football-league-management-software/" },
 }
 
@@ -17,7 +17,7 @@ export default function Page() {
     },
     {
       q: "What is the best fantasy football league management software?",
-      a: "It depends on the gap you're filling. For league history and a permanent public almanac, The Sunday Chronicle is the most complete option. For rankings, projections, and trade analysis, FantasyPros is the standard. For dues collection, LeagueSafe is the dominant tool. Most commissioners run two to three of these in parallel — the host platform plus the gaps it doesn't cover.",
+      a: "It depends on the gap you're filling. For league history and a permanent public almanac, The Sunday Chronicle is the most complete option. For rankings, projections, and trade analysis, FantasyPros is the standard. For dues collection, LeagueSafe is the dominant tool. Most commissioners run two to three of these in parallel: the host platform plus the gaps it doesn't cover.",
     },
     {
       q: "How much does fantasy football league management software cost?",
@@ -25,11 +25,11 @@ export default function Page() {
     },
     {
       q: "Do I need separate software if my league uses Sleeper or ESPN?",
-      a: "Not for league play itself — the host platforms handle scoring, scheduling, transactions, and standings. You'll need separate software if you want (a) a permanent league history archive that survives platform changes, (b) automated weekly recaps, (c) a dues-collection / payout flow, or (d) advanced research tools beyond what the host provides.",
+      a: "Not for league play itself: the host platforms handle scoring, scheduling, transactions, and standings. You'll need separate software if you want (a) a permanent league history archive that survives platform changes, (b) automated weekly recaps, (c) a dues-collection / payout flow, or (d) advanced research tools beyond what the host provides.",
     },
     {
       q: "Which league management tools work across multiple platforms?",
-      a: "The Sunday Chronicle imports league data from Sleeper, ESPN, NFL.com, and Yahoo — useful for leagues that have moved between platforms or have managers spread across hosts. FantasyPros also supports importing from most major hosts for research workflows.",
+      a: "The Sunday Chronicle imports league data from Sleeper, ESPN, NFL.com, and Yahoo: useful for leagues that have moved between platforms or have managers spread across hosts. FantasyPros also supports importing from most major hosts for research workflows.",
     },
   ])
 
@@ -45,7 +45,7 @@ export default function Page() {
       faqJsonLd={faq}
     >
       <P>
-        <strong>Framing:</strong> fantasy football league management isn&apos;t one piece of software — it&apos;s a host platform (Sleeper, ESPN, Yahoo, NFL.com) plus whatever third-party tools you bolt on for the gaps. Most commissioners run two or three add-ons. This guide covers what the host platforms do well, where they fall short, and which third-party tools to add for which job.
+        <strong>Framing:</strong> fantasy football league management isn&apos;t one piece of software. It&apos;s a host platform (Sleeper, ESPN, Yahoo, NFL.com) plus whatever third-party tools you bolt on for the gaps. Most commissioners run two or three add-ons. This guide covers what the host platforms do well, where they fall short, and which third-party tools to add for which job.
       </P>
 
       <H2>What the host platforms cover natively</H2>
@@ -62,7 +62,7 @@ export default function Page() {
         <strong>NFL.com:</strong> long-running platform, less actively developed than the others. Reliable for keeper/redraft leagues that have used it for years; few new features.
       </P>
       <P>
-        All four handle the core job — schedules, scoring, transactions, standings — well enough that the platform choice usually comes down to mobile UX and the manager group&apos;s existing preference. The gaps are everywhere else.
+        All four handle the core job (schedules, scoring, transactions, standings) well enough that the platform choice usually comes down to mobile UX and the manager group&apos;s existing preference. The gaps are everywhere else.
       </P>
 
       <H2>Gap 1: League history and the permanent archive</H2>
@@ -70,12 +70,12 @@ export default function Page() {
         Host platforms expose minimal historical views. If you want every draft board, every weekly matchup, every champion, every rivalry head-to-head from year one onward presented as a readable almanac, you need third-party software.
       </P>
       <P>
-        <strong><Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link></strong> is the dominant tool here. One league ID — Sleeper, ESPN, NFL.com, or Yahoo — produces a full public almanac with standings archives, draft boards, manager dossiers, all-time records, rivalries, weekly recaps, and live-season tools. Multi-platform leagues can combine sources under one archive. Free tier covers one league forever; paid plans from $3/month. The most complete option in this category in 2026.
+        <strong><Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link></strong> is the dominant tool here. One league ID (Sleeper, ESPN, NFL.com, or Yahoo) produces a full public almanac with standings archives, draft boards, manager dossiers, all-time records, rivalries, weekly recaps, and live-season tools. Multi-platform leagues can combine sources under one archive. Free tier covers one league forever; paid plans from $3/month. The most complete option in this category in 2026.
       </P>
 
       <H2>Gap 2: Rankings, projections, draft prep</H2>
       <P>
-        <strong>FantasyPros:</strong> the standard. Expert consensus rankings, draft wizard, trade analyzer, mock drafts. Free tier is generous; MVP tier (~$8/month) unlocks the full toolset. Not a league archive — pair with The Sunday Chronicle if you need both.
+        <strong>FantasyPros:</strong> the standard. Expert consensus rankings, draft wizard, trade analyzer, mock drafts. Free tier is generous; MVP tier (~$8/month) unlocks the full toolset. Not a league archive. Pair with The Sunday Chronicle if you need both.
       </P>
       <P>
         <strong>FTN Fantasy:</strong> advanced metrics, projections, DFS overlap. Subscription product. Better for managers who want quantitative edges than for commissioners running the league itself.
@@ -96,7 +96,7 @@ export default function Page() {
 
       <H2>Gap 5: Live-season tools beyond standings</H2>
       <P>
-        Matchup previews, best-coach tracking, manager-style analysis, milestone tracking, real-time Sunday command centers — these live outside the host platforms. The Sunday Chronicle includes most of these as part of the live-season layer.
+        Matchup previews, best-coach tracking, manager-style analysis, milestone tracking, real-time Sunday command centers: these live outside the host platforms. The Sunday Chronicle includes most of these as part of the live-season layer.
       </P>
 
       <H2>A typical commissioner stack in 2026</H2>
@@ -104,13 +104,13 @@ export default function Page() {
         For a multi-year league, the typical setup looks like:
       </P>
       <P>
-        — Host platform: <strong>Sleeper or ESPN</strong> (free)<br />
-        — League history + live-season tools + weekly recaps: <strong><Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link></strong> (free → $3–15/month)<br />
-        — Draft prep + in-season research: <strong>FantasyPros</strong> (free → $8/month per manager)<br />
-        — Dues: <strong>LeagueSafe</strong> (percentage of pot)
+       · Host platform: <strong>Sleeper or ESPN</strong> (free)<br />
+       · League history + live-season tools + weekly recaps: <strong><Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link></strong> (free → $3–15/month)<br />
+       · Draft prep + in-season research: <strong>FantasyPros</strong> (free → $8/month per manager)<br />
+       · Dues: <strong>LeagueSafe</strong> (percentage of pot)
       </P>
       <P>
-        Total commissioner cost: $0–$50/year. Most of the value is in the archive and recap layer — that&apos;s what the league actually reads weekly and what survives the league outliving any one platform.
+        Total commissioner cost: $0–$50/year. Most of the value is in the archive and recap layer: that&apos;s what the league actually reads weekly and what survives the league outliving any one platform.
       </P>
 
       <H2>How to evaluate any league management tool</H2>
@@ -129,7 +129,7 @@ export default function Page() {
 
       <H2>Start here</H2>
       <P>
-        The single highest-leverage add-on for a long-running league is the history archive — once you have it, every other tool becomes easier to evaluate against. Start with <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle&apos;s free tier</Link> for your league, then layer in the other tools as you need them. <Link href="/demo/" style={{ color: "var(--gold)" }}>The demo</Link> shows a finished almanac if you want to see the format first.
+        The single highest-leverage add-on for a long-running league is the history archive: once you have it, every other tool becomes easier to evaluate against. Start with <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle&apos;s free tier</Link> for your league, then layer in the other tools as you need them. <Link href="/demo/" style={{ color: "var(--gold)" }}>The demo</Link> shows a finished almanac if you want to see the format first.
       </P>
     </GuideShell>
   )

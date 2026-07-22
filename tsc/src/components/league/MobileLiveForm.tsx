@@ -30,7 +30,7 @@ export function MobileLiveForm({
   const [err, setErr] = useState<string | null>(null)
 
   if (seasons.length === 0) {
-    return <div className="mliv-card-empty">No seasons yet — sync a source first.</div>
+    return <div className="mliv-card-empty">No seasons yet. Sync a source first.</div>
   }
 
   async function onSubmit() {

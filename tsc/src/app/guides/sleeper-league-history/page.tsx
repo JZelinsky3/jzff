@@ -5,7 +5,7 @@ import { GuideShell, faqSchema, howToSchema, H2, P } from "../_layout"
 export const metadata: Metadata = {
   title: "How to archive your Sleeper league history",
   description:
-    "Walk back through every season your Sleeper fantasy football league has ever played. Champions, drafts, matchups, rivalries — pulled from any Sleeper league ID in 30 seconds.",
+    "Walk back through every season your Sleeper fantasy football league has ever played. Champions, drafts, matchups, rivalries. Pulled from any Sleeper league ID in 30 seconds.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/sleeper-league-history/" },
 }
 
@@ -13,7 +13,7 @@ export default function Page() {
   const faq = faqSchema([
     {
       q: "How do I see my Sleeper league's full history?",
-      a: "Paste your Sleeper league ID into The Sunday Chronicle at thesundaychronicle.app. We automatically walk Sleeper's previous_league_id chain back through every season the league has existed — pulling champions, drafts, matchups, and standings. No installation, no manual exports.",
+      a: "Paste your Sleeper league ID into The Sunday Chronicle at thesundaychronicle.app. We automatically walk Sleeper's previous_league_id chain back through every season the league has existed, pulling champions, drafts, matchups, and standings. No installation, no manual exports.",
     },
     {
       q: "How far back can you pull Sleeper league history?",
@@ -21,15 +21,15 @@ export default function Page() {
     },
     {
       q: "Where do I find my Sleeper league ID?",
-      a: "Open your league in a browser. The URL contains your league ID: sleeper.com/leagues/1234567890123456789/team — that 19-digit number is the ID. In the mobile app, tap settings → Share League to copy the URL.",
+      a: "Open your league in a browser. The URL contains your league ID: sleeper.com/leagues/1234567890123456789/team. That 19-digit number is the ID. In the mobile app, tap settings → Share League to copy the URL.",
     },
     {
       q: "Do I need to be the commissioner to archive a Sleeper league?",
-      a: "Yes — you need to be the league owner on Sleeper to set up an archive. Sleeper allows anyone to view league data with the league ID, but The Sunday Chronicle ties an archive to an owner account for editing and publishing controls.",
+      a: "Yes, you need to be the league owner on Sleeper to set up an archive. Sleeper allows anyone to view league data with the league ID, but The Sunday Chronicle ties an archive to an owner account for editing and publishing controls.",
     },
     {
       q: "Is there a free trial?",
-      a: "Yes — every plan includes a 7-day free trial. Cancel anytime before the trial ends and you won't be charged.",
+      a: "Yes, every plan includes a 7-day free trial. Cancel anytime before the trial ends and you won't be charged.",
     },
   ])
 
@@ -41,7 +41,7 @@ export default function Page() {
     steps: [
       {
         name: "Find your Sleeper league ID",
-        text: "Open your league on sleeper.com. The URL is sleeper.com/leagues/1234567890123456789/team — that 19-digit number is your league ID. In the mobile app, tap settings → Share League to copy a URL containing the same number.",
+        text: "Open your league on sleeper.com. The URL is sleeper.com/leagues/1234567890123456789/team. That 19-digit number is your league ID. In the mobile app, tap settings → Share League to copy a URL containing the same number.",
       },
       {
         name: "Sign up at The Sunday Chronicle",
@@ -54,11 +54,11 @@ export default function Page() {
       },
       {
         name: "Wait for the full-history walk",
-        text: "The Sunday Chronicle follows Sleeper's previous_league_id chain back through every season — usually under 60 seconds for a 5–10 year league.",
+        text: "The Sunday Chronicle follows Sleeper's previous_league_id chain back through every season, usually under 60 seconds for a 5–10 year league.",
       },
       {
         name: "Publish your public almanac",
-        text: "Once import finishes, hit Publish. The almanac becomes available at thesundaychronicle.app/leagues/your-slug/ — share that URL with the league.",
+        text: "Once import finishes, hit Publish. The almanac becomes available at thesundaychronicle.app/leagues/your-slug/, share that URL with the league.",
       },
     ],
   })
@@ -76,7 +76,7 @@ export default function Page() {
       howToJsonLd={howTo}
     >
       <P>
-        <strong>Short version:</strong> paste your Sleeper league ID into The Sunday Chronicle at <Link href="/" style={{ color: "var(--gold)" }}>thesundaychronicle.app</Link>. We walk Sleeper&apos;s <code>previous_league_id</code> chain back through every season your league has existed and turn the whole history into a public almanac — champions, drafts, every matchup, head-to-head records, and rivalries. No manual exports, no spreadsheets, no installation.
+        <strong>Short version:</strong> paste your Sleeper league ID into The Sunday Chronicle at <Link href="/" style={{ color: "var(--gold)" }}>thesundaychronicle.app</Link>. We walk Sleeper&apos;s <code>previous_league_id</code> chain back through every season your league has existed and turn the whole history into a public almanac, champions, drafts, every matchup, head-to-head records, and rivalries. No manual exports, no spreadsheets, no installation.
       </P>
 
       <H2>Where to find your Sleeper league ID</H2>
@@ -105,18 +105,18 @@ export default function Page() {
 
       <H2>How long does the import take?</H2>
       <P>
-        For a 5–10 season league, the initial sync takes 20–60 seconds. Sleeper&apos;s API is fast and we walk it in parallel. After the first sync, weekly cron picks up new matchups automatically through the season — no manual refresh needed.
+        For a 5–10 season league, the initial sync takes 20–60 seconds. Sleeper&apos;s API is fast and we walk it in parallel. After the first sync, weekly cron picks up new matchups automatically through the season, no manual refresh needed.
       </P>
 
       <H2>Can I preview what the finished almanac looks like?</H2>
       <P>
-        Yes. <a href="/demo/" target="_blank" rel="noopener" style={{ color: "var(--gold)" }}>Tour the demo</a> — a real fantasy league&apos;s seven-year history rendered as a public almanac. No signup required.
+        Yes. <a href="/demo/" target="_blank" rel="noopener" style={{ color: "var(--gold)" }}>Tour the demo</a>, a real fantasy league&apos;s seven-year history rendered as a public almanac. No signup required.
       </P>
 
       <H2>FAQ</H2>
-      <P><strong>Do I have to be the commissioner?</strong> Yes — you sign up as the league&apos;s owner. League members can view the published almanac freely; only the commissioner manages it.</P>
-      <P><strong>Can I archive multiple leagues from one account?</strong> Yes — the Veteran tier covers up to 3 leagues; All-Pro covers up to 10.</P>
-      <P><strong>What if my league moved from Yahoo or ESPN to Sleeper?</strong> See our <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link> — you can stitch multiple sources into a single archive.</P>
+      <P><strong>Do I have to be the commissioner?</strong> Yes, you sign up as the league&apos;s owner. League members can view the published almanac freely; only the commissioner manages it.</P>
+      <P><strong>Can I archive multiple leagues from one account?</strong> Yes, the Veteran tier covers up to 3 leagues; All-Pro covers up to 10.</P>
+      <P><strong>What if my league moved from Yahoo or ESPN to Sleeper?</strong> See our <Link href="/guides/migrate-fantasy-league/" style={{ color: "var(--gold)" }}>migration guide</Link>, you can stitch multiple sources into a single archive.</P>
       <P><strong>What does it cost?</strong> Rookie tier starts at $3/month or $15/year for one league. <Link href="/pricing" style={{ color: "var(--gold)" }}>See pricing</Link>.</P>
     </GuideShell>
   )

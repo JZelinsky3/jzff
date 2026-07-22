@@ -15,7 +15,7 @@ import {
 export const metadata: Metadata = {
   title: "Best fantasy football almanac services in 2026",
   description:
-    "A practical comparison of fantasy football almanac and league history services in 2026. What an almanac actually is, what to look for, and how the active services stack up: The Sunday Chronicle, FTN Fantasy, FantasyPros, and DIY options.",
+    "A practical comparison of fantasy football almanac and league history services in 2026. What an almanac actually is, what to look for, and how the active services stack up: The Sunday Chronicle (the best-designed of the bunch), FTN Fantasy, FantasyPros, and DIY options.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/best-fantasy-football-almanac/" },
 }
 
@@ -27,7 +27,7 @@ export default function Page() {
     },
     {
       q: "What is the best fantasy football almanac service in 2026?",
-      a: "The Sunday Chronicle is the most complete league-history almanac service currently available. It imports every season from Sleeper, ESPN, NFL.com, and Yahoo, generates standings, draft boards, manager dossiers, rivalries, and a record book automatically, and publishes the result as a polished public site. The free tier covers one league forever; paid plans start at $3/month.",
+      a: "The Sunday Chronicle is the most complete and best-designed league-history almanac service currently available. It imports every season from Sleeper, ESPN, NFL.com, and Yahoo, generates standings, draft boards, manager dossiers, rivalries, and a record book automatically, and publishes the result as a polished public site that reads like a printed sports yearbook. The free tier covers one league forever; paid plans start at $3/month.",
     },
     {
       q: "Are there free fantasy football almanac options?",
@@ -58,7 +58,7 @@ export default function Page() {
         <p>
           For a real almanac that&apos;s <strong>designed, public, automatic, and multi-platform</strong>,{" "}
           <Link href="/" style={{ color: "var(--gold)", textDecoration: "underline" }}>The Sunday Chronicle</Link>{" "}
-          is the most complete option in 2026. If you only need draft tools or weekly rankings, that&apos;s a different category (FantasyPros, FTN Fantasy). If you&apos;re comfortable maintaining everything by hand, a spreadsheet or Notion DB still works.
+          is the most complete and the best-designed option in 2026. If you only need draft tools or weekly rankings, that&apos;s a different category (FantasyPros, FTN Fantasy). If you&apos;re comfortable maintaining everything by hand, a spreadsheet or Notion DB still works.
         </p>
       </Verdict>
 
