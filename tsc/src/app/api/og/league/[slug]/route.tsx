@@ -1607,9 +1607,7 @@ function renderLeagueCard(
   ].filter(Boolean).join(' · ')
 
   const champ = d.defending_champion
-  const defender = champ?.owner_name
-    ? `Defending champion: ${clip(champ.owner_name, 22)}${champ.year ? ` · ${champ.year}` : ''}`
-    : null
+  const champName = champ?.owner_name ? clip(champ.owner_name, 22) : null
 
   const sealAccent = chapter?.accent ?? RUST
 
@@ -1699,19 +1697,70 @@ function renderLeagueCard(
               }}
             />
 
-            <div
-              style={{
-                display: 'flex',
-                fontFamily: 'DMSerif',
-                fontStyle: 'italic',
-                fontSize: '30px',
-                lineHeight: 1.3,
-                color: chapter ? chapter.accent : CREAM_SOFT,
-                marginTop: '22px',
-              }}
-            >
-              {chapter ? `The Chronicle · ${chapter.label}` : defender ?? 'The complete league history.'}
-            </div>
+            {/* Chapter stamps keep the italic strapline; the front cover
+                features the defending champion as its own gold block. */}
+            {chapter || !champName ? (
+              <div
+                style={{
+                  display: 'flex',
+                  fontFamily: 'DMSerif',
+                  fontStyle: 'italic',
+                  fontSize: '30px',
+                  lineHeight: 1.3,
+                  color: chapter ? chapter.accent : CREAM_SOFT,
+                  marginTop: '22px',
+                }}
+              >
+                {chapter ? `The Chronicle · ${chapter.label}` : 'The complete league history.'}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', marginTop: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Star size={13} color={GOLD_DEEP} />
+                  <span
+                    style={{
+                      display: 'flex',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      letterSpacing: '0.32em',
+                      textTransform: 'uppercase',
+                      color: GOLD_DEEP,
+                    }}
+                  >
+                    Defending Champion
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', marginTop: '6px' }}>
+                  <span
+                    style={{
+                      display: 'flex',
+                      fontFamily: 'DMSerif',
+                      fontStyle: 'italic',
+                      fontSize: '40px',
+                      lineHeight: 1.1,
+                      color: GOLD,
+                    }}
+                  >
+                    {champName}
+                  </span>
+                  {champ?.year && (
+                    <span
+                      style={{
+                        display: 'flex',
+                        fontSize: '17px',
+                        fontWeight: 700,
+                        letterSpacing: '0.2em',
+                        color: CREAM_SOFT,
+                        marginLeft: '16px',
+                        marginTop: '10px',
+                      }}
+                    >
+                      {champ.year}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {stats && (
               <div
