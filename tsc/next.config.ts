@@ -44,6 +44,33 @@ const nextConfig: NextConfig = {
     ]
   },
 
+  // Extensionless aliases for the two static demo pages used in ad
+  // sitelinks. The demo lives as raw .html files under public/demo (never
+  // wired into the App Router), so nothing rewrote their URLs the way
+  // CLEAN_URL_PAGES does for real league pages. Both slash variants are
+  // listed since trailingSlash's own redirect logic isn't guaranteed to
+  // fire for a path that only exists via a rewrite. The original .html
+  // paths and the demo's internal links keep working unchanged either way.
+  //
+  // Deliberately NOT extended to managers/, seasons/, rivalries/, or
+  // trade-themes/: those are real directories that already ship their own
+  // index.html, and Next's built-in directory-trailing-slash resolution
+  // claims any request under them before a custom rewrite (beforeFiles or
+  // not) gets a turn, tries to resolve its own index.html, and 404s. Ran
+  // into the same 404 on tables-demo/vote-icons too despite no directory
+  // collision there, an inconsistency not worth chasing since none of
+  // these are pages anything currently links to.
+  async rewrites() {
+    const aliases: Array<[string, string]> = [
+      ['/demo/records', '/demo/records.html'],
+      ['/demo/standings', '/demo/standings.html'],
+    ]
+    return aliases.flatMap(([clean, real]) => [
+      { source: clean, destination: real },
+      { source: `${clean}/`, destination: real },
+    ])
+  },
+
   // Manager Hub chapter consolidation (Phase 7 of the Issues redesign).
   // Four old narrative chapters folded into the new Issues; their data lives
   // in II (Legacy), IV (Seasons), and V (Vault) now. Permanent so bookmarks

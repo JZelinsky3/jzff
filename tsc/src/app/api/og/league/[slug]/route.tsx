@@ -1,8 +1,9 @@
 // OG image generator for the public almanac pages.
 // URL: /api/og/league/<slug>[?page=<chapter>]
 //
-// The bare URL renders the 1200x630 "book cover" card — the default share
-// image when someone links a league for the first time. Five chapters get
+// The bare URL renders the 1200x630 front-cover card — the landing card's
+// navy/gold-sash editorial layout with the league's own masthead, book
+// emboss, volume seal, champion, and career totals. Five chapters get
 // their own bespoke scene cards, each themed to match its page:
 //
 //   ?page=standings — cream ledger paper, ink type, the all-time table
@@ -1566,24 +1567,36 @@ function renderSeasonsCard(d: LeagueFile, seasons: SeasonEntry[], fonts: Fonts) 
 }
 
 /* ============================================================
-   FRONT COVER — the original league book-cover card, still used
-   for the bare URL and the rivalries/live chapter stamps.
+   FRONT COVER — mirrors the landing card (/api/og/home): navy
+   ink field, gold sash strips, masthead on the left and the
+   leather league book on the right — but personalized. The
+   league's own name is the masthead and the emboss on the book,
+   the seal carries its real volume number, and the left column
+   cites the defending champion and career totals.
+   Used for the bare URL and the rivalries/live chapter stamps.
    ============================================================ */
 function renderLeagueCard(
   d: LeagueFile,
   fonts: Fonts,
   chapter: { label: string; accent: string } | null,
 ) {
-  const accent = chapter?.accent ?? '#e8c889' // editorial gold for the front cover
   const founded = d.founded ?? d.current_season ?? new Date().getFullYear()
   const currentSeason = d.current_season ?? founded
   const volume = Math.max(1, currentSeason - founded + 1)
+  const yearSpan = currentSeason > founded ? `${founded}-${currentSeason}` : `${founded}`
 
-  // Spell the league name as headlines do: split the last word so the
-  // typography can balance head/tail just like the actual almanac hero.
+  // Spell the league name as headlines do: split the last word off so the
+  // masthead stacks head/tail like the almanac hero, tail in gold italic
+  // with the landing card's closing period.
   const words = (d.name ?? '').trim().split(/\s+/).filter(Boolean)
   const head = words.length > 1 ? words.slice(0, -1).join(' ') : ''
-  const tail = words.length > 0 ? words[words.length - 1] : d.name
+  const tailWord = words.length > 0 ? words[words.length - 1] : (d.name ?? '')
+  const tail = /[a-z0-9]$/i.test(tailWord) ? `${tailWord}.` : tailWord
+
+  // Scale the masthead to the longest stacked line so long league names
+  // stay inside the left column instead of colliding with the book.
+  const maxLen = Math.max(head.length, tail.length)
+  const nameSize = maxLen <= 10 ? 88 : maxLen <= 14 ? 70 : maxLen <= 19 ? 56 : maxLen <= 26 ? 44 : 36
 
   const stats = [
     d.total_seasons != null ? `${d.total_seasons} SEASON${d.total_seasons === 1 ? '' : 'S'}` : null,
@@ -1591,16 +1604,14 @@ function renderLeagueCard(
     d.current_members_count != null
       ? `${d.current_members_count} MANAGER${d.current_members_count === 1 ? '' : 'S'}`
       : null,
-  ].filter(Boolean).join('  ·  ')
+  ].filter(Boolean).join(' · ')
 
   const champ = d.defending_champion
   const defender = champ?.owner_name
-    ? `Defender: ${champ.owner_name}${champ.year ? ` · ${champ.year}` : ''}`
+    ? `Defending champion: ${clip(champ.owner_name, 22)}${champ.year ? ` · ${champ.year}` : ''}`
     : null
 
-  const gridiron = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
-  )
+  const sealAccent = chapter?.accent ?? RUST
 
   return new ImageResponse(
     (
@@ -1610,175 +1621,301 @@ function renderLeagueCard(
           height: '630px',
           display: 'flex',
           flexDirection: 'column',
-          background: '#0a0a0a',
-          color: '#f3f4f6',
+          background: `linear-gradient(155deg, ${INK_DEEP} 0%, ${INK} 48%, ${INK_SOFT} 100%)`,
+          color: CREAM,
           fontFamily: 'JetBrains',
           position: 'relative',
         }}
       >
-        {/* Gridiron rule overlay */}
+        {/* Warm glows — gold behind the masthead, rust under the book. */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            opacity: 0.5,
-            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
-        {/* Warm halo around the center to feel like a book cover */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            background: `radial-gradient(ellipse at 50% 50%, ${accent}1f 0%, transparent 55%)`,
+            background: `radial-gradient(circle at 24% 30%, ${GOLD}30 0%, transparent 48%), radial-gradient(circle at 86% 82%, ${RUST}2e 0%, transparent 46%)`,
           }}
         />
 
-        {/* Top masthead */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '30px 56px 0',
-            fontSize: '15px',
-            letterSpacing: '0.4em',
-            color: accent,
-            textTransform: 'uppercase',
-            zIndex: 2,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-            <div style={{ display: 'flex', width: '36px', height: '1px', background: accent }} />
-            <span style={{ display: 'flex' }}>THE SUNDAY CHRONICLE</span>
-            <div style={{ display: 'flex', width: '36px', height: '1px', background: accent }} />
-          </div>
-        </div>
+        {/* Gold sash strips — the site's identity stripe, top and bottom. */}
+        <div style={{ display: 'flex', height: '14px', background: GOLD }} />
 
-        {/* Main cover content */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '0 60px',
-            zIndex: 2,
-          }}
-        >
-          {/* League name (head + tail stacked the way the almanac hero does) */}
-          {head && (
-            <div
-              style={{
-                fontFamily: 'DMSerif',
-                fontSize: '54px',
-                lineHeight: 1,
-                color: '#d1d5db',
-                marginBottom: '6px',
-                display: 'flex',
-              }}
-            >
-              {head}
-            </div>
-          )}
-          <div
-            style={{
-              fontFamily: 'DMSerif',
-              fontSize: '120px',
-              lineHeight: 1,
-              color: '#f3f4f6',
-              textAlign: 'center',
-              maxWidth: '1080px',
-              display: 'flex',
-            }}
-          >
-            {tail}
-          </div>
-
-          {/* Subtitle: "The Chronicle · Volume V" on the front cover, or
-              "The Chronicle · <Chapter>" on per-page variants */}
-          <div
-            style={{
-              marginTop: '22px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              fontFamily: 'DMSerif',
-              fontStyle: 'italic',
-              fontSize: '28px',
-              color: accent,
-            }}
-          >
-            <span style={{ display: 'flex' }}>The Chronicle</span>
-            <span style={{ display: 'flex', color: '#374151', fontStyle: 'normal' }}>·</span>
-            <span style={{ display: 'flex' }}>{chapter ? chapter.label : `Volume ${toRoman(volume)}`}</span>
-          </div>
-
-          {/* Decorative rule */}
-          <div
-            style={{
-              display: 'flex',
-              width: '120px',
-              height: '1px',
-              background: `${accent}55`,
-              margin: '28px 0 22px',
-            }}
-          />
-
-          {/* Stats line */}
-          {stats && (
+        {/* Body */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 0 0 84px' }}>
+          {/* Left — league masthead + champion + career totals */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '30px' }}>
             <div
               style={{
                 display: 'flex',
-                fontFamily: 'JetBrains',
+                alignItems: 'center',
+                gap: '14px',
+                fontSize: '17px',
                 fontWeight: 700,
-                fontSize: '16px',
-                letterSpacing: '0.28em',
-                color: '#d1d5db',
+                letterSpacing: '0.4em',
                 textTransform: 'uppercase',
+                color: GOLD,
               }}
             >
-              EST. {founded}  ·  {stats}
+              <Star size={16} color={GOLD} />
+              <span style={{ display: 'flex' }}>The League Almanac · Est. {founded}</span>
+              <Star size={16} color={GOLD} />
             </div>
-          )}
 
-          {/* Defending champion */}
-          {defender && (
+            {head && (
+              <div
+                style={{
+                  display: 'flex',
+                  fontFamily: 'DMSerif',
+                  fontSize: `${nameSize}px`,
+                  lineHeight: 1.04,
+                  color: CREAM,
+                  marginTop: '26px',
+                }}
+              >
+                {head}
+              </div>
+            )}
             <div
               style={{
-                marginTop: '14px',
                 display: 'flex',
                 fontFamily: 'DMSerif',
                 fontStyle: 'italic',
-                fontSize: '20px',
-                color: '#9ca3af',
+                fontSize: `${nameSize}px`,
+                lineHeight: 1.04,
+                color: GOLD,
+                marginTop: head ? '0px' : '26px',
               }}
             >
-              {defender}
+              {tail}
             </div>
-          )}
+
+            <div
+              style={{
+                display: 'flex',
+                width: '120px',
+                height: '3px',
+                background: `linear-gradient(90deg, ${GOLD_DEEP}, transparent)`,
+                marginTop: '28px',
+              }}
+            />
+
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '30px',
+                lineHeight: 1.3,
+                color: chapter ? chapter.accent : CREAM_SOFT,
+                marginTop: '22px',
+              }}
+            >
+              {chapter ? `The Chronicle · ${chapter.label}` : defender ?? 'The complete league history.'}
+            </div>
+
+            {stats && (
+              <div
+                style={{
+                  display: 'flex',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  letterSpacing: '0.26em',
+                  textTransform: 'uppercase',
+                  color: CREAM_SOFT,
+                  marginTop: '30px',
+                }}
+              >
+                {stats}
+              </div>
+            )}
+          </div>
+
+          {/* Right — the league's book, tilted, cream page slipping out. */}
+          <div
+            style={{
+              display: 'flex',
+              width: '430px',
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+            }}
+          >
+            {/* Cream page peeking out from behind the cover */}
+            <div
+              style={{
+                position: 'absolute',
+                display: 'flex',
+                width: '290px',
+                height: '404px',
+                background: `linear-gradient(165deg, #f7efdc 0%, #eee1c8 100%)`,
+                borderRadius: '4px',
+                transform: 'rotate(9deg) translateX(38px)',
+                boxShadow: '0 18px 50px rgba(0,0,0,0.5)',
+              }}
+            />
+
+            {/* The book: spine + cover */}
+            <div
+              style={{
+                display: 'flex',
+                transform: 'rotate(3deg)',
+                boxShadow: '0 26px 70px rgba(0,0,0,0.65)',
+                borderRadius: '6px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  width: '26px',
+                  height: '420px',
+                  background: 'linear-gradient(180deg, #3a2c14 0%, #1a1208 40%, #2a1e0e 70%, #3a2c14 100%)',
+                  border: `1px solid #4a3a1e`,
+                  borderRight: 'none',
+                  borderRadius: '6px 0 0 6px',
+                }}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: '304px',
+                  height: '420px',
+                  background: 'linear-gradient(165deg, #1e1608 0%, #100e08 50%, #1a1408 100%)',
+                  border: `2px solid ${GOLD_DEEP}`,
+                  borderLeft: 'none',
+                  borderRadius: '0 6px 6px 0',
+                  padding: '34px 26px 26px',
+                  position: 'relative',
+                }}
+              >
+                {/* Inner frame line */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    right: '10px',
+                    bottom: '10px',
+                    display: 'flex',
+                    border: `1px solid ${GOLD_DEEP}55`,
+                    borderRadius: '2px',
+                  }}
+                />
+                <div style={{ display: 'flex', marginTop: '10px' }}>
+                  <Star size={30} color={GOLD} />
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    fontFamily: 'DMSerif',
+                    fontStyle: 'italic',
+                    fontSize: clip(d.name ?? '', 40).length > 16 ? '28px' : '36px',
+                    lineHeight: 1.15,
+                    color: GOLD,
+                    textAlign: 'center',
+                    marginTop: '14px',
+                  }}
+                >
+                  {clip(d.name ?? 'Your League', 40)}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    width: '90px',
+                    height: '2px',
+                    background: `linear-gradient(90deg, transparent, ${GOLD_DEEP}, transparent)`,
+                    marginTop: '18px',
+                  }}
+                />
+                <div
+                  style={{
+                    display: 'flex',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    letterSpacing: '0.3em',
+                    textTransform: 'uppercase',
+                    color: GOLD_DEEP,
+                    marginTop: '20px',
+                  }}
+                >
+                  The Complete History
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    letterSpacing: '0.18em',
+                    color: CREAM_SOFT,
+                    marginTop: '10px',
+                  }}
+                >
+                  {yearSpan}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    fontFamily: 'DMSerif',
+                    fontStyle: 'italic',
+                    fontSize: '17px',
+                    color: GOLD_DEEP,
+                    marginTop: 'auto',
+                  }}
+                >
+                  The Sunday Chronicle
+                </div>
+              </div>
+            </div>
+
+            {/* Volume seal overlapping the cover corner — the league's real
+                volume count; chapter stamps tint it their accent. */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '76px',
+                right: '30px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '92px',
+                height: '92px',
+                borderRadius: '92px',
+                border: `3px solid ${sealAccent}`,
+                background: `${CREAM}e6`,
+                color: sealAccent,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                transform: 'rotate(12deg)',
+              }}
+            >
+              <span style={{ display: 'flex', fontSize: '12px', letterSpacing: '0.22em' }}>Vol.</span>
+              <span style={{ display: 'flex', fontSize: '17px', letterSpacing: '0.1em', marginTop: '2px' }}>
+                {toRoman(volume)}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Footer */}
+        {/* Bottom strip — chapters on gold, mirrors the top sash. */}
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '0 56px 28px',
-            fontSize: '13px',
-            letterSpacing: '0.28em',
-            color: '#6b7280',
+            justifyContent: 'space-between',
+            padding: '12px 84px',
+            background: GOLD,
+            color: INK,
+            fontSize: '15px',
+            fontWeight: 700,
+            letterSpacing: '0.3em',
             textTransform: 'uppercase',
-            zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex' }}>FOUNDED {toRoman(founded)}</span>
-          <span style={{ display: 'flex', color: accent, fontWeight: 700 }}>{DOMAIN}</span>
+          <span style={{ display: 'flex' }}>Seasons · Records · Rivalries · Drafts</span>
+          <span style={{ display: 'flex' }}>thesundaychronicle.app</span>
         </div>
       </div>
     ),

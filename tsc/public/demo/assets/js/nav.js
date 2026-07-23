@@ -391,8 +391,28 @@
     style.textContent = [
         // Demo bookmark star: lives with the back arrow in the left grid
         // cell, spaced a beat apart so the two controls read separately.
-        '.nav-left-group { display: flex; align-items: center; gap: 1.5rem; justify-self: start; }',
-        '#demo-bookmark-star { display: inline-flex; align-items: center; line-height: 0; opacity: .85; transition: opacity .15s, transform .15s; }',
+        //
+        // .nav-back normally carries padding: .65rem 1.1rem plus a
+        // margin: -.4rem -.4rem (see main.css) to hit a 44px tap target
+        // while still sitting flush with the nav's left edge when it's the
+        // only thing in that corner. Trying to mirror that combo on the
+        // star (padding: .65rem 0; margin: -.4rem 0) didn't actually land
+        // the two on the same line, so instead of chasing that negative-
+        // margin math, reset both to plain, non-negative padding here.
+        // Flex centering on two ordinary boxes is far more predictable
+        // than centering two boxes whose margins partially cancel their
+        // own padding.
+        '.nav-left-group { display: flex; align-items: center; gap: .75rem; justify-self: start; }',
+        // The demo hub page (index.html) has no <link> to main.css — it's
+        // a fully self-contained inline stylesheet — so .nav-back never
+        // picks up main.css's display:inline-flex/align-items:center.
+        // Without those, the <a> stays display:inline and the SVG aligns
+        // to the text baseline, which reads differently per icon height
+        // (14px arrow vs 20px star) and put the arrow visibly higher than
+        // the star. Set the full centering trio here so this rule doesn't
+        // depend on main.css being present.
+        '.nav-left-group .nav-back { display: inline-flex; align-items: center; justify-content: center; padding: .5rem; margin: 0; }',
+        '#demo-bookmark-star { display: inline-flex; align-items: center; justify-content: center; padding: .5rem; margin: 0; line-height: 0; opacity: .85; transition: opacity .15s, transform .15s; }',
         '#demo-bookmark-star:hover { opacity: 1; transform: scale(1.12); }',
 
         '.nav-drop-divider { height: 1px; margin: .55rem .25rem; background: rgba(232,200,137,.15); }',
