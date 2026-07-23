@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/slugify'
+import { screenLeagueText } from '@/lib/contentModeration'
 import {
   getUserSubscription,
   isCompUser,
@@ -159,6 +160,17 @@ export async function addLeague(_prev: ActionResult | null, formData: FormData):
       return { ok: false, error: msg }
     }
   }
+
+  // Block hate speech in the league's public identifiers (name, abbreviation,
+  // URL). Ordinary profanity is allowed. Checks the name that will actually be
+  // stored — the custom one, or the platform-provided name when there's no
+  // override — plus the abbreviation and the user's requested URL slug.
+  const screen = screenLeagueText({
+    name: customName && customName.length > 0 ? customName : leagueName,
+    abbreviation,
+    slug: parsed.data.customSlug,
+  })
+  if (!screen.ok) return { ok: false, error: screen.error }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

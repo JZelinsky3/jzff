@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { slugify } from '@/lib/slugify'
+import { screenLeagueText } from '@/lib/contentModeration'
 
 const Schema = z.object({
   leagueId: z.string().uuid(),
@@ -52,6 +53,15 @@ export async function updateLeagueSettings(_prev: Result | null, formData: FormD
   if (league.owner_id !== user.id && !(await isSiteAdmin(user.id))) {
     return { ok: false, error: 'Only the owner can edit settings.' }
   }
+
+  // Block hate speech in the league's public identifiers. Ordinary profanity
+  // is allowed; slurs and hate speech are not.
+  const screen = screenLeagueText({
+    name: parsed.data.name,
+    abbreviation: parsed.data.abbreviation,
+    slug: parsed.data.slug,
+  })
+  if (!screen.ok) return { ok: false, error: screen.error }
 
   // Normalize requested slug; default to current if empty. If it changed,
   // check uniqueness before saving.
