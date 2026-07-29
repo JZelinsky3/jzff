@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hall · Trophy Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=IM+Fell+English:ital@0;1&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+/* ============================================================
+   THE TROPHY ROOM
+   Built like furniture, not like a web page. A stone room, and
+   in it one massive oak cabinet: a bonnet-top crown with a gilt
+   finial, molded cornice with dentils, carved stiles, a solid
+   arched pediment, real shelf boards with thickness that cast
+   shadows into plank-backed bays. The enshrined stand first, in
+   tall velvet-lined gilt niches with their hardware on a little
+   shelf of its own; everyone else hangs as a bronze plate, two
+   columns mirrored about a centre stile, names outboard,
+   hardware to the aisle. Manager of the Year hangs as cloth
+   banners from a wooden rod, and anything written down is
+   written in ink on parchment.
+     I    The cabinet    · oak, glass and velvet
+     II   The reliquary  · one manager, opened in a wooden case
+     III  The banners    · Manager of the Year
+     IV   The parchment  · how the Index is built
+   ============================================================ */
+
+:root {
+    /* Oak, from lit face to shadow */
+    --oak-hi:   #6f5130;
+    --oak:      #4b351e;
+    --oak-lo:   #2c1d10;
+    --oak-dk:   #170e06;
+    --oak-edge: #96754a;
+    /* Plank backs of the bays */
+    --back-hi:  #241708;
+    --back-lo:  #150d05;
+    /* Gilding */
+    --gilt-a:   #f0d9a8;
+    --gilt-b:   #c9a15e;
+    --gilt-c:   #8a6a35;
+    /* Cloth and paper */
+    --velvet-hi:#4a161c;
+    --velvet:   #331014;
+    --velvet-lo:#1f090c;
+    --parch-hi: #efdfba;
+    --parch:    #e2cd9e;
+    --parch-lo: #cfb583;
+    --quill:    #33220f;   /* ink on parchment */
+    --quill-mut:#6f5733;
+    --redink:   #7a1518;
+    --candle:   #ffd79a;
+    --display:  'Cinzel', var(--serif);
+    --fell:     'IM Fell English', var(--serif);
+
+    /* Streaky wood grain: stretched fractal noise, baked dark.
+       Two octaves, not four: the extra detail lands under a tile that every
+       board on the page paints, and at this contrast it is invisible while
+       costing real raster time on a long cabinet.
+       stitchTiles='stitch' is NOT optional. Without it feTurbulence does not
+       wrap, so the noise restarted every 480px and left a hard vertical seam
+       across the pediment and the long boards — the grain visibly broke
+       pattern mid-plank. Same for the fleck below at 240px. */
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='2' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0 0 0 0'/%3E%3C/filter%3E%3Crect width='480' height='480' filter='url(%23g)'/%3E%3C/svg%3E");
+    /* Fine fleck: cloth weave, parchment mottle, stone dust. */
+    --fleck: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='1' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.22 0 0 0 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+
+body { background: #0a0806; color: var(--cream); }
+
+/* The room: a dark stone wall, one warm torch-throw down the middle,
+   plank floor falling off into black. */
+.room {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+        radial-gradient(90% 60% at 50% 8%, rgba(255,196,120,.07), transparent 62%),
+        var(--fleck),
+        repeating-linear-gradient(180deg, transparent 0 118px, rgba(0,0,0,.55) 118px 120px),
+        repeating-linear-gradient(90deg,  transparent 0 208px, rgba(0,0,0,.4)  208px 210px),
+        linear-gradient(180deg, #14100b 0%, #0b0806 55%, #060404 100%);
+}
+/* The fade at the top of the floor is baked into the layers rather than
+   applied as a mask. A mask on a fixed element makes the compositor redo
+   the whole 24vh band on every scroll frame. */
+.floor {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 24vh; z-index: 0; pointer-events: none;
+    background-image:
+        linear-gradient(0deg, transparent 0%, #0a0806 100%),
+        var(--grain),
+        repeating-linear-gradient(90deg, transparent 0 96px, rgba(0,0,0,.6) 96px 98px),
+        linear-gradient(180deg, #191007 0%, #0c0704 100%);
+}
+
+.wrap { position: relative; z-index: 2; max-width: 1340px; margin: 0 auto; padding: 0 1.5rem 6rem; }
+.narrow { max-width: 1060px; margin-left: auto; margin-right: auto; }
+
+/* ══ Prototype chrome ════════════════════════════════════════ */
+.proto-switch {
+    position: relative; z-index: 40;
+    display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;
+    max-width: 1340px; margin: 0 auto; padding: 1rem 1.5rem .25rem;
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .16em; text-transform: uppercase;
+}
+.proto-switch-tag { color: var(--rust); font-weight: 700; }
+.proto-switch-a { color: var(--cream-mute); text-decoration: none; }
+a.proto-switch-a:hover { color: var(--candle); }
+.proto-switch-a.on { color: var(--candle); }
+.proto-switch-sep { color: var(--cream-mute); opacity: .5; }
+.proto-switch-src { margin-left: auto; color: var(--cream-mute); letter-spacing: .1em; }
+
+/* ══ Masthead ════════════════════════════════════════════════ */
+.mast { text-align: center; padding: 3.2rem 0 3rem; }
+.mast-kick {
+    font-family: var(--display); font-weight: 600; font-size: .66rem;
+    letter-spacing: .5em; text-transform: uppercase; color: var(--gilt-b);
+}
+.mast-title {
+    font-family: var(--display); font-weight: 600; font-size: clamp(2.4rem, 6.4vw, 4.6rem);
+    line-height: 1.02; letter-spacing: .06em; text-transform: uppercase; margin-top: 1rem;
+    background: linear-gradient(180deg, var(--gilt-a) 14%, var(--gilt-b) 58%, var(--gilt-c) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 3px 0 rgba(0,0,0,.55);
+}
+.mast-sub { font-family: var(--fell); font-style: italic; font-size: 1.12rem; color: var(--cream-soft); margin: 1rem auto 0; max-width: 640px; }
+.mast-sub b { color: var(--candle); font-weight: 400; font-style: normal; }
+
+/* Section heads: a parchment ribbon nailed to the stone. */
+.chap { margin: 5.2rem auto 2rem; text-align: center; }
+.chap .ribbon {
+    display: inline-block; padding: .58rem 2.6rem .52rem;
+    font-family: var(--display); font-weight: 600; font-size: .92rem;
+    letter-spacing: .3em; text-transform: uppercase; color: var(--quill);
+    background-image: var(--fleck), linear-gradient(180deg, var(--parch-hi), var(--parch) 60%, var(--parch-lo));
+    clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 18px 100%, 0 50%);
+    filter: drop-shadow(0 10px 14px rgba(0,0,0,.55));
+}
+.chap-note { font-family: var(--sans); font-size: .82rem; color: var(--cream-mute); margin: .85rem auto 0; max-width: 560px; line-height: 1.6; }
+/* A chapter that opens wears the same parchment ribbon as one that doesn't —
+   the brass-button treatment read as a control from another room. The ink
+   caret is what says this one folds; the note stays visible when the section
+   is shut, so a closed chapter still says what is behind it. */
+.rib-btn { border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: .8rem; }
+.rib-btn:hover { filter: brightness(1.06); }
+.rib-caret { font-size: .8em; line-height: 1; transition: transform .22s; }
+.ribbon .rib-caret { color: var(--quill-mut); }
+.rib-btn.open .rib-caret { transform: rotate(180deg); }
+.fold[hidden] { display: none; }
+
+/* ============================================================
+   I · THE CABINET
+   Read top to bottom as a joiner would build it: cornice,
+   pediment, carcass with stiles and shelves, base rail, feet.
+   ============================================================ */
+/* The cabinet throws its shadow with box-shadow on the pieces that have a
+   silhouette, NOT with a drop-shadow filter on the wrapper. A filter here
+   forces the browser to rasterise the entire cabinet — every plaque, every
+   board, thousands of pixels tall — into one buffer and blur it, and it
+   redoes that work as the cabinet scrolls. That was the scroll lag. */
+.furniture { position: relative; margin-top: 1rem; }
+
+/* The bonnet: a flat-topped cabinet is a bookcase; this one is a piece of
+   furniture. Two low shoulders rise to an arched centre crest over the
+   pediment, and a turned gilt finial stands on the crest the way it would on
+   a highboy. The arch is one rounded board; the highlight along its curve is
+   an inset shadow, because a border-top on a rounded corner dies out halfway
+   round the radius. */
+.bonnet { position: relative; z-index: 4; height: 98px; margin: 0 -22px; }
+.b-side {
+    position: absolute; bottom: 0; height: 26px; width: calc(50% - 138px);
+    background-image: var(--grain), linear-gradient(180deg, #7d5c36 0%, #4b351e 55%, #241708 100%);
+    border-top: 2px solid #9c7a4c;
+    box-shadow: 0 6px 12px rgba(0,0,0,.5);
+}
+.b-side.l { left: 0; border-top-left-radius: 8px 14px; }
+.b-side.r { right: 0; border-top-right-radius: 8px 14px; }
+.b-arc {
+    position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+    width: min(300px, 62%); height: 64px;
+    background-image: var(--grain), linear-gradient(180deg, #7d5c36 0%, #4b351e 60%, #241708 100%);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    box-shadow: inset 0 3px 0 #9c7a4c, inset 0 5px 8px -4px rgba(0,0,0,.4),
+                0 6px 14px rgba(0,0,0,.55);
+}
+.b-finial {
+    position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%);
+    line-height: 0; filter: drop-shadow(0 4px 4px rgba(0,0,0,.65));
+}
+.b-finial svg { width: 26px; height: 40px; }
+
+/* Crown cornice: stacked moldings, then a row of dentil blocks. */
+.cornice { position: relative; z-index: 5; margin: 0 -22px; }
+.cornice .cap {
+    height: 12px;
+    background-image: var(--grain), linear-gradient(180deg, #7d5c36 0%, #4b351e 55%, #241708 100%);
+    border-top: 2px solid #9c7a4c; border-bottom: 1px solid #0e0803;
+}
+.cornice .ogee {
+    height: 10px; margin: 0 8px;
+    background-image: var(--grain), linear-gradient(180deg, #241708 0%, #6f5130 35%, #33220f 100%);
+    border-bottom: 1px solid #0e0803;
+}
+.cornice .dentils {
+    height: 11px; margin: 0 14px;
+    background-image:
+        repeating-linear-gradient(90deg, #5d4327 0 10px, #120a04 10px 16px),
+        linear-gradient(180deg, #6f5130, #33220f);
+    border-bottom: 2px solid #0e0803;
+}
+
+/* The carcass. */
+.cabinet {
+    position: relative;
+    background-image: var(--grain), linear-gradient(180deg, var(--oak) 0%, var(--oak-lo) 70%, var(--oak-dk) 100%);
+    border-left: 1px solid #0e0803; border-right: 1px solid #0e0803;
+    padding: 0 44px;
+    box-shadow: 0 34px 44px -12px rgba(0,0,0,.8), 0 0 72px 6px rgba(0,0,0,.55);
+}
+/* Carved side stiles: a raised board with a routed double groove. */
+.stile {
+    position: absolute; top: 0; bottom: 0; width: 44px; z-index: 4;
+    background-image:
+        var(--grain),
+        linear-gradient(90deg, rgba(0,0,0,.55) 0 1px, rgba(255,222,160,.14) 1px 3px, transparent 3px 12px,
+                        rgba(0,0,0,.5) 12px 14px, rgba(255,222,160,.08) 14px 16px, transparent 16px 28px,
+                        rgba(0,0,0,.5) 28px 30px, rgba(255,222,160,.08) 30px 32px, transparent 32px 41px,
+                        rgba(0,0,0,.55) 41px 44px),
+        linear-gradient(180deg, #59401f, #33220f 70%, #1c1208);
+}
+.stile.l { left: 0; } .stile.r { right: 0; }
+/* Gold bosses pinned down each stile. */
+.stile::before, .stile::after {
+    content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+    width: 14px; height: 14px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--gilt-a), var(--gilt-c) 62%, #3a2a12);
+    box-shadow: 0 2px 4px rgba(0,0,0,.7);
+}
+.stile::before { top: 26px; } .stile::after { bottom: 26px; }
+
+/* The pediment: solid wood, an arched tympanum recessed into it,
+   ring moldings following the arch. */
+.pediment {
+    position: relative; z-index: 2;
+    padding: 40px 0 26px;
+    background-image: var(--grain), linear-gradient(180deg, #59401f, #3d2a15 65%, #2c1d10);
+    border-bottom: 2px solid #0e0803;
+    box-shadow: 0 8px 18px rgba(0,0,0,.55);
+}
+.tympanum {
+    position: relative; width: min(640px, 82%); margin: 0 auto;
+    padding: clamp(2rem, 4.5vw, 3.4rem) 2rem 1.5rem;
+    border-radius: 400px 400px 0 0;
+    background-image:
+        var(--fleck),
+        radial-gradient(120% 100% at 50% 100%, rgba(255,196,120,.08), transparent 60%),
+        repeating-linear-gradient(90deg, rgba(0,0,0,.4) 0 1px, transparent 1px 52px),
+        linear-gradient(180deg, #100a05, #1d1309 70%, #241708);
+    box-shadow:
+        inset 0 14px 30px rgba(0,0,0,.85),
+        0 0 0 5px #6f5130, 0 0 0 7px #170e06,
+        0 0 0 12px #4b351e, 0 0 0 14px #0e0803;
+    text-align: center;
+}
+.tym-kick { font-family: var(--display); font-weight: 600; font-size: .62rem; letter-spacing: .52em; text-transform: uppercase; color: var(--gilt-b); }
+.tym-name {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(1.2rem, 3vw, 2rem); line-height: 1.16; margin-top: .5rem;
+    background: linear-gradient(180deg, var(--gilt-a) 10%, var(--gilt-b) 60%, var(--gilt-c));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.tym-sub { font-family: var(--fell); font-style: italic; font-size: .82rem; color: rgba(226,205,158,.6); margin-top: .5rem; }
+
+/* The interior: bays, shelves, centre stile. */
+.nave { position: relative; padding-top: 20px; }
+.mullion {
+    position: absolute; top: 0; bottom: 0; left: 50%; width: 26px; transform: translateX(-50%); z-index: 3;
+    background-image:
+        var(--grain),
+        linear-gradient(90deg, rgba(0,0,0,.6) 0 1px, rgba(255,222,160,.14) 1px 3px, transparent 3px 10px,
+                        rgba(0,0,0,.5) 10px 12px, transparent 12px 16px,
+                        rgba(0,0,0,.5) 16px 18px, rgba(255,222,160,.08) 18px 20px, transparent 20px 23px,
+                        rgba(0,0,0,.6) 23px 26px),
+        linear-gradient(180deg, #59401f, #33220f 75%, #1c1208);
+}
+
+.bay-row { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 0 34px; z-index: 1; }
+
+/* A bay: plank back, deep shadow under the shelf above, side dark. */
+.bay {
+    position: relative; display: flex; padding: 14px 12px 0;
+    background-image:
+        var(--fleck),
+        repeating-linear-gradient(90deg, rgba(0,0,0,.45) 0 1px, rgba(255,222,160,.03) 1px 2px, transparent 2px 44px),
+        linear-gradient(180deg, var(--back-lo) 0%, var(--back-hi) 30%, var(--back-lo) 100%);
+    box-shadow:
+        inset 0 22px 26px -14px rgba(0,0,0,.95),
+        inset 12px 0 18px -12px rgba(0,0,0,.85),
+        inset -12px 0 18px -12px rgba(0,0,0,.85),
+        inset 0 -8px 12px -8px rgba(0,0,0,.6);
+}
+.bay.empty { visibility: hidden; }
+
+/* A shelf board: lit front edge, grained face, shadow thrown down. */
+.shelf {
+    position: relative; height: 15px; z-index: 2;
+    background-image: var(--grain), linear-gradient(180deg, #8a6640 0%, #59401f 30%, #33220f 75%, #170e06 100%);
+    border-top: 2px solid #a5804f;
+    box-shadow: 0 9px 12px -3px rgba(0,0,0,.85);
+}
+
+/* ── The framed exhibit ────────────────────────────────────────
+   An object standing on the shelf: a dark felt panel set in a
+   real oak frame cut from the cabinet's own wood, a gilt fillet
+   where felt meets frame — a framed exhibit on a bookcase shelf,
+   which is a thing that belongs there in a way a bare metal
+   plate did not. The frame is the transparent border painted by
+   border-box background layers; the felt layers are clipped to
+   the padding box and must stay opaque or the frame wood shows
+   through them. The right column is the mirror of the left:
+   name outboard, Index and hardware to the aisle. */
+.plaque {
+    position: relative; flex: 1; min-width: 0; font: inherit; color: inherit; cursor: pointer;
+    display: flex; align-items: center; gap: .9rem; text-align: left;
+    padding: .95rem 1.05rem; margin-bottom: 0;
+    border: 6px solid transparent; border-radius: 2px;
+    background-origin: border-box;
+    background-clip: padding-box, padding-box, padding-box, border-box, border-box;
+    background-image:
+        var(--fleck),
+        radial-gradient(120% 90% at 50% -8%, rgba(255,214,150,.08), transparent 55%),
+        linear-gradient(180deg, #23201a 0%, #181510 55%, #121009 100%),
+        var(--grain),
+        linear-gradient(180deg, #8a6640 0%, #59401f 40%, #33220f 100%);
+    box-shadow:
+        0 0 0 1px #0e0803,
+        inset 0 0 0 1px rgba(201,161,94,.4),
+        inset 0 2px 6px rgba(0,0,0,.5),
+        0 5px 7px -2px rgba(0,0,0,.7);
+    transition: transform .18s, box-shadow .18s;
+}
+/* Lift and light. Deliberately no brightness()/saturate() filter: a filter on
+   a plaque promotes it to its own layer and forces a repaint of the board
+   under it, and there are twenty of them on the wall. A warm wash from an
+   overlay costs nothing and reads the same. */
+.plaque::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: rgba(255,214,150,0); transition: background .18s;
+}
+.plaque:hover { transform: translateY(-2px); }
+.plaque:hover::after { background: rgba(255,214,150,.11); }
+.plaque.open::after { background: rgba(255,214,150,.15); }
+.plaque.open { box-shadow: 0 0 0 1px #0e0803, inset 0 0 0 1px rgba(201,161,94,.4), inset 0 2px 6px rgba(0,0,0,.5), 0 0 0 2px var(--gilt-b), 0 5px 7px -2px rgba(0,0,0,.7); }
+.plaque.r { flex-direction: row-reverse; text-align: right; }
+
+/* Rank medallion: a dark steel boss with a brass rim. */
+.p-rank {
+    flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    font-family: var(--display); font-weight: 700; font-size: .58rem; color: var(--parch);
+    background: radial-gradient(circle at 38% 32%, #45392a, #17120c 70%);
+    box-shadow: 0 0 0 1px #0a0806, 0 0 0 2.5px var(--gilt-c), 0 2px 4px rgba(0,0,0,.6);
+}
+.p-face {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 46px; height: 46px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+    background: #16120c;
+    box-shadow: 0 0 0 2px #0a0806, 0 0 0 3px #7a6237, 0 3px 5px rgba(0,0,0,.6);
+}
+.p-face img { width: 100%; height: 100%; object-fit: cover; }
+.p-face i { display: none; font-style: normal; font-family: var(--display); font-weight: 600; font-size: .78rem; color: var(--gilt-b); }
+.p-face.is-mono i { display: block; }
+
+.p-main { min-width: 0; flex: 1; }
+.p-name { display: block; font-family: var(--serif); font-size: 1.32rem; line-height: 1.08; color: #efe3c4; text-shadow: 0 1px 0 rgba(0,0,0,.7); }
+.p-team { display: block; font-family: var(--sans); font-size: .66rem; color: #9c8a68; margin-top: .14rem;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* One line, always. Left to wrap, the record line makes a plaque taller than
+   its neighbour at some widths and the Index falls out of line down the wall
+   again — the same problem the .p-hw min-height solves for the empty case. */
+.p-rec  { display: block; font-family: var(--mono); font-size: .62rem; letter-spacing: .02em; color: #b7a582; margin-top: .4rem;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p-rec b { color: #efe3c4; font-weight: 400; }
+
+/* The Index always sits at the same height on every board. The hardware row
+   underneath keeps its line whether or not there is any hardware in it —
+   otherwise a manager with an empty trophy case has nothing below the number,
+   the column re-centres, and his Index drops out of line with the rest of the
+   wall. */
+.p-aisle { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: .62rem; }
+.plaque.r .p-aisle { align-items: flex-start; }
+.p-hw { min-height: 15px; }
+.p-index { display: block; font-family: var(--serif); font-weight: 400; font-size: 1.9rem; line-height: 1; color: #efe3c4; text-shadow: 0 1px 0 rgba(0,0,0,.7); }
+/* The caption hangs off the aisle edge, under the number, not off the far
+   side of it. It was inheriting the plaque's text-align, which on a left-hand
+   board pushed "INDEX" outboard while the figure above it sat flush to the
+   middle — the two came apart. */
+.p-index i { display: block; font-style: normal; font-family: var(--mono); font-size: .46rem; letter-spacing: .26em; text-transform: uppercase; color: #9c8a68; margin-top: .28rem; text-align: right; }
+.plaque.r .p-index i { text-align: left; }
+.p-hw { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+.plaque.r .p-hw { justify-content: flex-start; }
+.p-hw span { display: inline-flex; align-items: center; gap: .18rem; font-family: var(--mono); font-size: .62rem; font-weight: 700; }
+.p-hw svg { width: 14px; height: 14px; }
+/* Every glyph is cut to STAND on a shelf, so it bottoms at y=21 of 24 rather
+   than sitting centred in its box. On a shelf that is the point. Inline beside
+   a number it is not: the two short ones, the crown and the football, hang low
+   against the digit while the tall cup and medals look level. Lifted to
+   centre in the chip row only — centred, NOT enlarged — the case shelf still
+   wants them on the baseline. */
+.p-hw .royal svg, .p-hw .leaf svg { transform: translateY(-8.5%); }
+/* Six accolades, six hues that cannot be mistaken for one another. Bronze is
+   reserved for third place alone — Manager of the Year wearing a warm brown
+   made the award read as a lesser medal. */
+.gold   { color: #f0c877; } .silver { color: #c2ccd4; }
+.bronze { color: #c08553; } .leaf   { color: #97b28f; }
+.royal  { color: #8fb6d6; } .award  { color: #b79ae6; }
+
+.p-tag { display: inline-block; margin-top: .44rem; font-family: var(--mono); font-size: .5rem; letter-spacing: .2em; text-transform: uppercase; }
+.tg-ballot { color: #8fa9c2; }
+.tg-ballot::before { content: ''; display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+                     background: #8fa9c2; margin-right: .4rem; vertical-align: 1px; }
+.tg-building { color: #9c8a68; }
+.tg-ineligible { color: #635a48; }
+
+/* ── The enshrined ─────────────────────────────────────────────
+   One manager to a row, the full breadth of the case: a wide
+   gilt-framed velvet vitrine rather than a tall shrine (the tall
+   two-up niches ate height and gave nothing back). The accolades
+   are what put a manager here, so they get the ground floor: a
+   long gilt shelf running nearly the breadth of the case with
+   the hardware standing LARGE on it, flanked by laurel sprigs.
+   Above it, an arched alcove holds the portrait under a keystone
+   rank boss, the engraved name and written citation sit beside
+   it, and the Index hangs at the same top-right station on every
+   vitrine. The lamp still breathes, the name still catches the
+   light on hover. */
+.bay-row.en { grid-template-columns: 1fr; }
+.wing { position: relative; }
+.niche {
+    position: relative; flex: 1; min-width: 0; font: inherit; color: inherit; cursor: pointer;
+    display: flex; flex-direction: column; align-items: stretch; text-align: left;
+    gap: 1.2rem;
+    padding: 1.4rem clamp(1.2rem, 3vw, 2.4rem) 1.2rem;
+    background-image:
+        var(--fleck),
+        radial-gradient(90% 140% at 50% -30%, var(--velvet-hi), var(--velvet) 55%, var(--velvet-lo) 100%);
+    border: 4px solid #b08a4a;
+    border-radius: 5px;
+    box-shadow:
+        0 0 0 1px #120a04,
+        inset 0 0 0 1px rgba(240,217,168,.55),
+        inset 0 0 0 2px #6b4e24,
+        inset 0 16px 30px rgba(0,0,0,.4),
+        inset 0 -12px 20px rgba(0,0,0,.55),
+        0 7px 11px -2px rgba(0,0,0,.75),
+        0 0 30px -4px rgba(255,196,120,.2);
+    transition: transform .2s, box-shadow .2s;
+}
+.niche:hover { transform: translateY(-2px); box-shadow:
+        0 0 0 1px #120a04,
+        inset 0 0 0 1px rgba(240,217,168,.55),
+        inset 0 0 0 2px #6b4e24,
+        inset 0 16px 30px rgba(0,0,0,.4),
+        inset 0 -12px 20px rgba(0,0,0,.55),
+        0 10px 15px -2px rgba(0,0,0,.75),
+        0 0 40px -2px rgba(255,196,120,.32); }
+.niche.open { border-color: #d9b878; }
+/* The lamp: a warm pool thrown down from the top rail that slowly breathes
+   like a real flame. Opacity only — animating a gradient repaints the case. */
+.n-lamp {
+    position: absolute; inset: 0; border-radius: 2px; pointer-events: none;
+    background: radial-gradient(48% 100% at 50% 0%, rgba(255,206,140,.24), transparent 72%);
+    animation: lampbreathe 7s ease-in-out infinite;
+}
+@keyframes lampbreathe { 0%, 100% { opacity: .72; } 44% { opacity: 1; } 58% { opacity: .84; } 76% { opacity: .95; } }
+.niche:hover .n-lamp { animation: none; opacity: 1; }
+/* The picture light itself, mounted on the frame's top rail: a brass shade
+   the glow below can be seen to come from. This is the thing the oak plates
+   do not get — the league keeps a light burning over its enshrined. */
+.n-light {
+    position: absolute; top: -9px; left: 50%; transform: translateX(-50%); z-index: 3;
+    line-height: 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,.6));
+}
+.n-light svg { width: 78px; height: 18px; display: block; }
+.niche.alum .n-light { opacity: .45; }
+/* Top storey: alcove and inscription. Right padding keeps a long name or
+   citation from running under the Index hanging in the corner. */
+.n-top { display: flex; align-items: center; gap: clamp(1.2rem, 3vw, 2.4rem); padding-right: 8.5rem; }
+/* The alcove: an arched recess sunk into the velvet, darker the way a real
+   recess is, with its own gilt fillet following the arch. */
+.n-side {
+    position: relative; z-index: 1; flex: 0 0 auto;
+    display: flex; flex-direction: column; align-items: center; gap: .8rem;
+    padding: 1.1rem 1.5rem 1.3rem;
+    background-image:
+        var(--fleck),
+        radial-gradient(130% 100% at 50% 0%, rgba(0,0,0,.44), rgba(0,0,0,.12) 75%);
+    border-radius: 110px 110px 3px 3px;
+    box-shadow:
+        inset 0 0 0 1px rgba(240,217,168,.4),
+        inset 0 0 0 2px rgba(0,0,0,.5),
+        inset 0 12px 20px rgba(0,0,0,.55);
+}
+/* The keystone boss carrying the rank. */
+.n-rank {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 50%;
+    font-family: var(--display); font-weight: 700; font-size: .58rem; color: #241708;
+    background: radial-gradient(circle at 38% 32%, var(--gilt-a), var(--gilt-b) 55%, var(--gilt-c));
+    box-shadow: 0 0 0 1px #120a04, 0 2px 5px rgba(0,0,0,.6);
+}
+.n-face {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 92px; height: 92px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+    background: #1c0a0c;
+    box-shadow: 0 0 0 3px #1c0a0c, 0 0 0 6px var(--gilt-b), 0 0 0 8px #6b4e24, 0 5px 12px rgba(0,0,0,.7);
+    transition: transform .25s;
+}
+.n-face img { width: 100%; height: 100%; object-fit: cover; }
+.n-face i { display: none; font-style: normal; font-family: var(--display); font-weight: 600; font-size: 1.7rem; color: var(--gilt-b); }
+.n-face.is-mono i { display: block; }
+.niche:hover .n-face { transform: scale(1.05); }
+.n-mid { position: relative; z-index: 1; flex: 1 1 auto; min-width: 0; }
+/* Engraved gold. The gradient is wider than the text so a hover can sweep
+   the bright band across it once, like light moving over an inscription. */
+.n-name {
+    display: block; font-family: var(--display); font-weight: 700; font-size: 1.7rem; line-height: 1.12;
+    letter-spacing: .04em;
+    background: linear-gradient(100deg, var(--gilt-c) 0%, var(--gilt-b) 34%, var(--gilt-a) 50%, var(--gilt-b) 66%, var(--gilt-c) 100%);
+    background-size: 240% 100%; background-position: 50% 0;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,.8));
+}
+.niche:hover .n-name { animation: namesheen 1.1s ease; }
+@keyframes namesheen { from { background-position: 130% 0; } to { background-position: -30% 0; } }
+.n-team { display: block; font-family: var(--fell); font-style: italic; font-size: .88rem; color: #b98f8a; margin-top: .3rem;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.n-rec { display: block; font-family: var(--mono); font-size: .66rem; letter-spacing: .02em; color: #cfa9a0; margin-top: .55rem; }
+.n-rec b { color: #efdcc4; font-weight: 400; }
+/* The citation, in the registrar's hand. Clamped to two lines so every
+   vitrine on the wall stays the same height. */
+.n-cite {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+    font-family: var(--fell); font-style: italic; font-size: .95rem; line-height: 1.55;
+    color: #d9c5a8; margin-top: .65rem; max-width: 58ch;
+}
+.niche .p-classplate { margin-top: .8rem; }
+/* The Index hangs at the same station on every vitrine: top right, clear of
+   the frame, so the eye can run straight down the wall comparing figures. */
+.n-index {
+    position: absolute; top: 1.15rem; right: 1.5rem; z-index: 2;
+    text-align: right; font-family: var(--serif); font-size: 2.5rem; line-height: 1;
+    background: linear-gradient(180deg, var(--gilt-a) 10%, var(--gilt-b) 62%, var(--gilt-c));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,.8));
+}
+.n-index i { display: block; font-style: normal; font-family: var(--mono); font-size: .48rem;
+             letter-spacing: .3em; text-transform: uppercase; color: #b98f8a; margin-top: .32rem; }
+/* The ground floor: the accolades ARE the case for enshrinement, so the shelf
+   runs nearly the breadth of the vitrine and the hardware stands LARGE on it,
+   a laurel sprig closing each end. Counts sit beside the piece on the shelf
+   the way they do on the chip rows — the corner tab read as clutter here.
+   Glyphs bottom at y=21 of 24, so 2px of padding under a 36px glyph lands the
+   feet on the 6px shelf face. */
+.n-hw {
+    position: relative; display: flex; align-items: flex-end; justify-content: center;
+    gap: clamp(1.2rem, 3.5vw, 2.6rem); padding: 0 1.4rem 2px; min-height: 46px;
+}
+.n-hw::after {
+    content: ''; position: absolute; left: 1.5%; right: 1.5%; bottom: 0; height: 6px;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 45%, var(--gilt-c) 80%, #3a2a12);
+    border-radius: 1px;
+    box-shadow: 0 4px 6px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,231,186,.55);
+}
+.n-pc { display: inline-flex; align-items: flex-end; gap: .32rem; }
+.n-pc svg { width: 36px; height: 36px; display: block; filter: drop-shadow(0 3px 3px rgba(0,0,0,.6)); }
+.n-pc b { font-family: var(--mono); font-size: .78rem; font-weight: 700; line-height: 1; padding-bottom: 8px; }
+.n-laurel { display: inline-flex; align-items: flex-end; color: var(--gilt-b); opacity: .7; }
+.n-laurel svg { width: 30px; height: 30px; display: block; }
+.n-laurel.r { transform: scaleX(-1); }
+/* An enshrined alumnus keeps the vitrine; the lamp is simply out. */
+.niche.alum .n-lamp { animation: none; opacity: .35; }
+.p-classplate {
+    display: inline-block; margin-top: .5rem; padding: .24rem .62rem .2rem;
+    font-family: var(--display); font-weight: 700; font-size: .5rem; letter-spacing: .24em; text-transform: uppercase;
+    color: #2c1a06;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 65%, var(--gilt-c));
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 -1px 0 rgba(0,0,0,.35) inset, 0 2px 4px rgba(0,0,0,.6);
+}
+
+/* Alumni: a carved rail, then colder, dustier plaques. */
+.rail {
+    position: relative; z-index: 2; display: flex; align-items: center; justify-content: center;
+    height: 34px; margin: 0 -12px;
+    background-image: var(--grain), linear-gradient(180deg, #59401f, #33220f 70%, #1c1208);
+    border-top: 1px solid var(--oak-edge); border-bottom: 2px solid #0e0803;
+    font-family: var(--display); font-weight: 700; font-size: .62rem; letter-spacing: .5em; text-transform: uppercase;
+    /* Raised brass, not engraved oak. It was cut dark-on-dark when it was only
+       a label; now that it is the switch for the drawer it has to be findable. */
+    color: #dcbd88; text-shadow: 0 1px 1px rgba(0,0,0,.8);
+}
+/* The rail is the drawer front: alumni are shut behind it by default so the
+   wall reads as the people currently playing, and it opens on click. */
+.rail-btn {
+    background: none; color: inherit; font: inherit; letter-spacing: inherit;
+    text-transform: inherit; text-shadow: inherit; padding: 0 1.2rem; height: 100%;
+}
+.rail-btn i { font-style: normal; opacity: .62; margin-left: -.3rem; }
+.rail:hover { filter: brightness(1.1); }
+
+/* Alumni sit in dust rather than under a desaturating filter, for the same
+   layer-count reason as the hover above. */
+.plaque.alum::after { background: rgba(14,10,5,.34); }
+.plaque.alum:hover::after { background: rgba(255,214,150,.06); }
+
+/* Base rail and bracket feet. */
+.baserail {
+    position: relative; z-index: 5; margin: 0 -14px; height: 20px;
+    background-image: var(--grain), linear-gradient(180deg, #6f5130 0%, #3d2a15 45%, #170e06 100%);
+    border-top: 2px solid var(--oak-edge); border-bottom: 1px solid #000;
+}
+.feet { position: relative; display: flex; justify-content: space-between; margin: 0 6px; height: 22px; }
+/* The pool of shadow the cabinet stands in. */
+.feet::after {
+    content: ''; position: absolute; left: 2%; right: 2%; bottom: -20px; height: 34px;
+    background: radial-gradient(58% 100% at 50% 0%, rgba(0,0,0,.9), transparent 72%);
+}
+.foot {
+    width: 84px; height: 100%;
+    background-image: var(--grain), linear-gradient(180deg, #4b351e, #241708 70%, #0e0803);
+    clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%);
+}
+
+/* Glass doors over the whole front: two panes, hinges, one shine. */
+.glassfront { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.glassfront::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(112deg, rgba(210,230,250,.05) 0%, transparent 16%, transparent 55%, rgba(210,230,250,.03) 66%, transparent 74%);
+}
+
+/* ============================================================
+   II · THE RELIQUARY
+   A wooden display case lifted off the wall: oak frame, velvet
+   interior, a gold fillet, glass over the front.
+   ============================================================ */
+.veil {
+    position: fixed; inset: 0; z-index: 90; display: flex; align-items: flex-start; justify-content: center;
+    padding: clamp(1rem, 4vh, 3.4rem) 1rem; overflow-y: auto;
+    background: rgba(4, 3, 2, .82);
+    -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+    animation: veilin .22s ease;
+}
+@keyframes veilin { from { opacity: 0; } to { opacity: 1; } }
+.case {
+    position: relative; width: min(860px, 100%); margin: auto 0; padding: 16px;
+    background-image: var(--grain), linear-gradient(180deg, #59401f, #3d2a15 55%, #241708);
+    border: 1px solid #0e0803; border-radius: 4px;
+    box-shadow: 0 40px 90px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,222,160,.25);
+    animation: casein .28s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes casein { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+.case-in {
+    position: relative; overflow: hidden;
+    background-image: var(--fleck), radial-gradient(130% 90% at 50% 0%, #3d1319, #240b0f 55%, #170609 100%);
+    box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,.8),
+        inset 0 0 0 3px rgba(201,161,94,.55),
+        inset 0 0 0 4px rgba(0,0,0,.6),
+        inset 0 0 70px rgba(0,0,0,.7);
+    padding-bottom: 1.7rem;
+}
+.case-in::after {   /* the glass */
+    content: ''; position: absolute; inset: 0; z-index: 8; pointer-events: none;
+    background: linear-gradient(108deg, rgba(210,230,250,.07) 0%, transparent 20%, transparent 60%, rgba(210,230,250,.04) 74%, transparent 86%);
+}
+.case-close {
+    position: absolute; top: 12px; right: 12px; z-index: 9;
+    font-family: var(--display); font-weight: 700; font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
+    color: #2c1a06; cursor: pointer; padding: .4rem .75rem; border: 0;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 65%, var(--gilt-c));
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 -1px 0 rgba(0,0,0,.4) inset, 0 2px 5px rgba(0,0,0,.6);
+}
+.case-close:hover { filter: brightness(1.1); }
+.case-alum { position: absolute; top: 16px; left: 16px; z-index: 9;
+             font-family: var(--mono); font-size: .5rem; letter-spacing: .3em; text-transform: uppercase; color: rgba(226,205,158,.5); }
+
+.case-head { position: relative; z-index: 2; text-align: center; padding: 2.4rem 2rem 0; }
+.case-portrait {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 76px; height: 76px; border-radius: 50%; overflow: hidden;
+    background: #1c0a0c;
+    box-shadow: 0 0 0 2px #1c0a0c, 0 0 0 5px var(--gilt-b), 0 0 0 7px #6b4e24, 0 4px 10px rgba(0,0,0,.8);
+}
+.case-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.case-portrait i { display: none; font-style: normal; font-family: var(--display); font-weight: 600; font-size: 1.5rem; color: var(--gilt-b); }
+.case-portrait.is-mono i { display: block; }
+.case-name {
+    font-family: var(--display); font-weight: 600; font-size: clamp(1.4rem, 4vw, 2rem); line-height: 1.12; margin-top: .95rem;
+    background: linear-gradient(180deg, var(--gilt-a) 10%, var(--gilt-b) 60%, var(--gilt-c));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,.8));
+}
+.case-name.plain { background: none; -webkit-background-clip: initial; background-clip: initial; color: #efe3c4; filter: none; }
+.case-team { font-family: var(--fell); font-style: italic; font-size: .92rem; color: #b98f8a; margin-top: .3rem; }
+.case-standing { margin-top: .8rem; }
+.case-standing .p-classplate { margin-top: 0; font-size: .54rem; }
+.case-standing .p-tag { margin-top: 0; font-size: .56rem; }
+.case-cite { font-family: var(--fell); font-style: italic; font-size: .98rem; line-height: 1.7; color: #d9c5a8;
+             max-width: 600px; margin: 1.1rem auto 0; }
+
+/* Hardware standing on real little shelves inside the case.
+   The object's feet land exactly on the shelf top; the museum label hangs
+   under the board, clear of it. The shelf is pulled up by the height of the
+   label block, which is why that reserve is a variable rather than a number
+   guessed twice. */
+/* --hw-label is the reserve under the objects' feet: the 10px board, a
+   breath, and a one-line caption. Every label is one word now ("MOTY", not
+   "Manager of the Year"), which bought back a line of height and let the
+   pieces stand closer together. */
+.hw-case { --hw-label: 40px; position: relative; z-index: 2; }
+.hw-row { position: relative; z-index: 2; display: flex; align-items: flex-end; justify-content: center;
+          gap: .75rem; flex-wrap: nowrap; margin: 1.6rem 2.4rem 0; padding: 0 .5rem; }
+.hw { position: relative; display: flex; flex-direction: column; align-items: center;
+      flex: 0 0 auto; width: 62px; padding-bottom: var(--hw-label); }
+.hw-obj { height: 46px; display: flex; align-items: flex-end; filter: drop-shadow(0 5px 4px rgba(0,0,0,.75)); }
+.hw-obj svg { width: 44px; height: 44px; display: block; }
+.hw-cap { position: absolute; left: -5px; right: -5px; bottom: 0; text-align: center; }
+.hw-yr { font-family: var(--mono); font-size: .56rem; line-height: 1.2; letter-spacing: .12em; color: #efe3c4; }
+.hw-lb { font-family: var(--sans); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
+         color: rgba(226,205,158,.5); margin-top: .2rem; line-height: 1.25; height: 1.25em; white-space: nowrap; }
+/* The repeat marker: a small brass tab on the shoulder of the piece saying
+   which one this is. Third crown reads x3, not three identical crowns you
+   have to count. */
+.hw-nth {
+    position: absolute; top: -2px; right: 2px; z-index: 3;
+    font-family: var(--mono); font-size: .5rem; font-weight: 700; letter-spacing: .02em;
+    color: #2c1a06; padding: .06rem .26rem .02rem; border-radius: 2px;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 70%, var(--gilt-c));
+    box-shadow: 0 1px 0 rgba(255,255,255,.3) inset, 0 1px 3px rgba(0,0,0,.7);
+}
+.hw.gold { color: #f0c877; } .hw.silver { color: #c2ccd4; }
+.hw.bronze { color: #c08553; } .hw.leaf { color: #97b28f; }
+.hw.royal { color: #8fb6d6; }
+.hw.award { color: #b79ae6; }
+/* The board's top edge lands exactly where the glyphs are drawn, so the
+   pieces stand ON it rather than sinking into it. Every glyph in hall-common
+   bottoms out at y=21 of its 24-unit viewBox, which in a 46px box puts the
+   feet 5.5px above the box bottom — hence the -5px. Absolute, not a negative
+   margin: a negative margin pulled the board up through the captions and let
+   the next block overlap them. */
+.hw-shelf {
+    position: absolute; z-index: 1; left: 2rem; right: 2rem;
+    bottom: calc(var(--hw-label) - 12px); height: 10px;
+    background-image: var(--grain), linear-gradient(180deg, #8a6640, #4b351e 45%, #170e06);
+    border-top: 1px solid #a5804f;
+    box-shadow: 0 7px 9px -2px rgba(0,0,0,.8);
+}
+
+.case-plate { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between;
+              gap: 1rem; flex-wrap: wrap; margin: 2.2rem 1.6rem 0; padding: .8rem 1.15rem;
+              background: linear-gradient(160deg, #6b5228, #40301680);
+              border: 1px solid rgba(201,161,94,.5); border-radius: 2px;
+              box-shadow: inset 0 1px 0 rgba(255,231,186,.25), 0 3px 8px rgba(0,0,0,.5); }
+.plate-k { font-family: var(--mono); font-size: .55rem; letter-spacing: .26em; text-transform: uppercase; color: rgba(240,200,119,.75); }
+.plate-v { font-family: var(--serif); font-size: 1.05rem; color: #efe3c4; }
+.plate-index { font-family: var(--serif); font-size: 1.9rem; line-height: 1; color: #f0c877; }
+
+.case-ledger { position: relative; z-index: 2; margin: 1.3rem 1.6rem 0; }
+.cl-head, .cl-row {
+    display: grid; grid-template-columns: 3.2rem 1fr 4.4rem 4.4rem 4.4rem 3.6rem;
+    gap: .7rem; align-items: center; padding: .42rem .2rem;
+}
+.cl-head { font-family: var(--mono); font-size: .52rem; letter-spacing: .2em; text-transform: uppercase;
+           color: rgba(226,205,158,.5); border-bottom: 1px solid rgba(201,161,94,.3); }
+.cl-row { border-bottom: 1px solid rgba(226,205,158,.08); font-family: var(--mono); font-size: .72rem; color: #d9c5a8; }
+.cl-row:last-child { border-bottom: 0; }
+.cl-yr { color: #efe3c4; }
+.cl-row.title { background: rgba(240,200,119,.08); }
+.cl-row.title .cl-yr { color: #f0c877; }
+.cl-fin { font-family: var(--sans); font-size: .72rem; }
+.cl-q { position: relative; height: 5px; background: rgba(0,0,0,.4); }
+.cl-q b { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--gilt-c), var(--gilt-b)); }
+
+/* ============================================================
+   IIb · THE RECKONING
+   Two careers pulled out of the cabinet and set on one bench.
+   The Index is a weighted sum of three numbers, so the honest
+   way to explain a gap is to show all three side by side and
+   let the bars do the arguing.
+   ============================================================ */
+.reckon {
+    position: relative; padding: 16px;
+    background-image: var(--grain), linear-gradient(180deg, #59401f, #3d2a15 55%, #241708);
+    border: 1px solid #0e0803; border-radius: 4px;
+    box-shadow: 0 26px 50px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,222,160,.25);
+}
+.reckon-in {
+    position: relative; overflow: hidden; padding: 1.6rem 1.5rem 1.8rem;
+    background-image: var(--fleck), radial-gradient(130% 90% at 50% 0%, #3d1319, #240b0f 55%, #170609);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.8), inset 0 0 0 3px rgba(201,161,94,.5),
+                inset 0 0 0 4px rgba(0,0,0,.6), inset 0 0 70px rgba(0,0,0,.7);
+}
+
+/* The two brass nameplates you choose from. The plate is a button and the
+   list under it is built, not native — a browser dropdown in the middle of
+   this room read as a hole in the set dressing. */
+.rk-head { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; }
+.rk-pick { position: relative; }
+.rk-pick-btn {
+    width: 100%; cursor: pointer; border: 0; border-radius: 2px;
+    display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+    font-family: var(--display); font-weight: 700; font-size: .74rem;
+    letter-spacing: .14em; text-transform: uppercase; color: #2c1a06;
+    padding: .5rem .9rem .46rem;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 65%, var(--gilt-c));
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 -1px 0 rgba(0,0,0,.4) inset, 0 2px 5px rgba(0,0,0,.6);
+}
+.rk-pick-btn:hover { filter: brightness(1.06); }
+.rk-pick-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-pick-btn i { font-style: normal; font-size: .7rem; line-height: 1; transition: transform .18s; }
+.rk-pick.open .rk-pick-btn i { transform: rotate(180deg); }
+.rk-menu {
+    position: absolute; top: calc(100% + 7px); left: 0; right: 0; z-index: 30;
+    max-height: 320px; overflow-y: auto; padding: 6px;
+    background-image: var(--grain), linear-gradient(180deg, #4b351e, #2c1d10 70%, #241708);
+    border: 1px solid #0e0803; border-radius: 3px;
+    box-shadow: inset 0 0 0 1px rgba(201,161,94,.4), 0 18px 34px rgba(0,0,0,.75);
+}
+.rk-menu[hidden] { display: none; }
+.rk-opt {
+    display: flex; align-items: center; gap: .7rem; width: 100%; text-align: left;
+    border: 0; cursor: pointer; padding: .45rem .55rem; border-radius: 2px;
+    background: transparent; color: #efe3c4; font-family: var(--serif); font-size: .95rem;
+}
+.rk-opt:hover { background: rgba(255,214,150,.12); }
+.rk-opt.on { background: rgba(201,161,94,.22); box-shadow: 0 0 0 1px rgba(201,161,94,.45); }
+.rk-opt-face {
+    width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center; background: #1c1208;
+    box-shadow: 0 0 0 1px #120a04, 0 0 0 2px #6f5130;
+}
+.rk-opt-face img { width: 100%; height: 100%; object-fit: cover; }
+.rk-opt-face i { display: none; font-style: normal; font-family: var(--display); font-size: .58rem; color: var(--gilt-b); }
+.rk-opt-face.is-mono i { display: block; }
+.rk-opt-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-opt b { font-family: var(--mono); font-size: .66rem; font-weight: 400; color: var(--gilt-b); }
+.rk-vs { font-family: var(--fell); font-style: italic; font-size: .92rem; color: rgba(226,205,158,.55); }
+
+/* Portraits and the headline number. */
+.rk-tops { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; margin-top: 1.5rem; }
+.rk-top { text-align: center; }
+.rk-top .case-portrait { width: 62px; height: 62px; }
+.rk-name { font-family: var(--display); font-weight: 600; font-size: 1.02rem; color: #efe3c4; margin-top: .6rem; }
+.rk-team { font-family: var(--sans); font-size: .6rem; color: #b98f8a; margin-top: .16rem; }
+.rk-idx { font-family: var(--serif); font-size: 2.2rem; line-height: 1; color: #f0c877; margin-top: .5rem; }
+.rk-idx i { display: block; font-style: normal; font-family: var(--mono); font-size: .46rem;
+            letter-spacing: .26em; text-transform: uppercase; color: rgba(226,205,158,.45); margin-top: .3rem; }
+.rk-gap { text-align: center; font-family: var(--mono); font-size: .58rem; letter-spacing: .12em;
+          text-transform: uppercase; color: rgba(226,205,158,.5); }
+.rk-gap b { display: block; font-family: var(--serif); font-size: 1.4rem; letter-spacing: 0;
+            text-transform: none; color: #efe3c4; margin-top: .3rem; }
+
+/* The verdict: one sentence naming what actually opened the gap. */
+.rk-verdict { font-family: var(--fell); font-style: italic; font-size: .98rem; line-height: 1.6;
+              color: #d9c5a8; text-align: center; max-width: 620px; margin: 1.4rem auto 0; }
+.rk-verdict b { color: var(--gilt-a); font-weight: 400; }
+
+/* Diverging bars: left manager grows left, right grows right, one shared
+   scale. The gap is the asymmetry — no arithmetic required. */
+.rk-rows { margin-top: 1.6rem; }
+.rk-row { display: grid; grid-template-columns: 3.4rem 1fr 7.6rem 1fr 3.4rem; gap: .6rem;
+          align-items: center; padding: .5rem 0; border-bottom: 1px solid rgba(226,205,158,.09); }
+.rk-row:last-child { border-bottom: 0; }
+.rk-row.total { border-top: 1px solid rgba(201,161,94,.4); border-bottom: 0; margin-top: .3rem; padding-top: .7rem; }
+.rk-lab { text-align: center; font-family: var(--mono); font-size: .54rem; letter-spacing: .12em;
+          text-transform: uppercase; color: rgba(226,205,158,.62); line-height: 1.3; }
+.rk-lab i { display: block; font-style: normal; font-size: .46rem; letter-spacing: .1em;
+            color: rgba(226,205,158,.35); margin-top: .18rem; }
+.rk-v { font-family: var(--mono); font-size: .74rem; color: #d9c5a8; }
+.rk-v.a { text-align: right; } .rk-v.b { text-align: left; }
+.rk-v.win { color: #f0c877; }
+.rk-bar { height: 9px; background: rgba(0,0,0,.38); box-shadow: 0 0 0 1px rgba(0,0,0,.5); position: relative; }
+.rk-bar b { position: absolute; top: 0; bottom: 0; }
+.rk-bar.a b { right: 0; background: linear-gradient(270deg, var(--gilt-b), var(--gilt-c)); }
+.rk-bar.b b { left: 0; background: linear-gradient(90deg, #9ab6cf, #5f7d96); }
+
+/* Trophy case and career facts. Same five-column skeleton as the Index rows
+   above, so the whole bench speaks one language: value, bar, label, bar,
+   value. Centring the old narrow table only moved the dead space to the
+   outsides — giving the bars the slack is what actually fills the width, and
+   it turns a pair of digits into something you can see the size of. */
+.rk-facts { margin-top: 1.8rem; }
+.rk-facts h4 { font-family: var(--display); font-weight: 700; font-size: .58rem;
+               letter-spacing: .28em; text-transform: uppercase; color: var(--gilt-b); text-align: center;
+               border-bottom: 1px solid rgba(201,161,94,.28); padding-bottom: .45rem; margin: 1.6rem 0 .5rem; }
+.rk-facts h4:first-child { margin-top: 0; }
+.rk-frow { display: grid; grid-template-columns: 4.4rem 1fr 8.2rem 1fr 4.4rem; gap: .6rem;
+           align-items: center; padding: .42rem 0; border-bottom: 1px solid rgba(226,205,158,.07); }
+.rk-frow:last-child { border-bottom: 0; }
+.rk-fv { font-family: var(--mono); font-size: 1.05rem; color: #d9c5a8; }
+.rk-fv.a { text-align: right; } .rk-fv.b { text-align: left; }
+.rk-fv.win { color: #f0c877; }
+/* Records and status labels are words, not counts; they get the small
+   treatment so a "55-48-0" does not blow the column out. */
+.rk-frow.wide .rk-fv { font-size: .78rem; }
+/* Value sits in the bar's slot, so it lands beside the label. */
+.rk-frow.nobar .rk-fv { font-size: .86rem; }
+.rk-frow.nobar .rk-fv.a { text-align: right; padding-right: .4rem; }
+.rk-frow.nobar .rk-fv.b { text-align: left; padding-left: .4rem; }
+.rk-flab { text-align: center; font-family: var(--mono); font-size: .56rem; letter-spacing: .14em;
+           text-transform: uppercase; color: rgba(226,205,158,.55); }
+
+/* Season by season, both careers on one row per year. The season-quality bar
+   takes the slack rather than leaving a hole: it grows outward from the year
+   column, so a row is full width and still reads at a glance. */
+.rk-years { margin-top: 1.8rem; }
+.rk-yhead, .rk-yrow { display: grid; grid-template-columns: 1fr 3.4rem 1fr; gap: .6rem; align-items: center;
+                      padding: .38rem 0; }
+.rk-yhead { font-family: var(--mono); font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+            color: rgba(226,205,158,.45); border-bottom: 1px solid rgba(201,161,94,.28); }
+.rk-yrow { border-bottom: 1px solid rgba(226,205,158,.07); font-family: var(--mono); font-size: .78rem; color: #d9c5a8; }
+.rk-yr { text-align: center; color: #efe3c4; font-size: .72rem; }
+.rk-side { display: flex; align-items: center; gap: .45rem; }
+.rk-side.a { justify-content: flex-end; }
+.rk-side.b { justify-content: flex-start; }
+.rk-side u { text-decoration: none; font-size: .68rem; color: rgba(226,205,158,.55); }
+.rk-q { flex: 1 1 auto; min-width: 34px; max-width: 210px; height: 7px;
+        background: rgba(0,0,0,.38); position: relative; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+.rk-q b { position: absolute; top: 0; bottom: 0; }
+.rk-side.a .rk-q b { right: 0; background: linear-gradient(270deg, var(--gilt-b), var(--gilt-c)); }
+.rk-side.b .rk-q b { left: 0; background: linear-gradient(90deg, #9ab6cf, #5f7d96); }
+.rk-none { color: rgba(226,205,158,.28); font-size: .6rem; }
+
+.case-compare {
+    position: absolute; top: 12px; right: 74px; z-index: 9;
+    font-family: var(--display); font-weight: 700; font-size: .55rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--gilt-a); cursor: pointer; padding: .4rem .75rem;
+    background: rgba(0,0,0,.35); border: 1px solid rgba(201,161,94,.55); border-radius: 2px;
+}
+.case-compare:hover { background: rgba(201,161,94,.2); }
+
+/* ============================================================
+   III · THE BANNERS
+   One banner a season, hung from a walnut rod. The winner is
+   embroidered on; open one and the full ballot unrolls on
+   parchment below.
+   ============================================================ */
+.rod { position: relative; z-index: 3; height: 13px; margin: 0 auto -3px; border-radius: 7px;
+       width: calc((100% - (var(--cols) - 1) * 20px) / var(--cols) * var(--n) + (var(--n) - 1) * 20px);
+       background: linear-gradient(180deg, #7d5c36 0%, #3d2a15 55%, #170e06 100%);
+       box-shadow: 0 5px 9px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,222,160,.3); }
+.rod::before, .rod::after {
+    content: ''; position: absolute; top: 50%; transform: translateY(-50%);
+    width: 24px; height: 24px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--gilt-a), var(--gilt-c) 62%, #3a2a12);
+    box-shadow: 0 3px 6px rgba(0,0,0,.7);
+}
+.rod::before { left: -12px; } .rod::after { right: -12px; }
+
+/* Four to a rod at most, two at least, and every rod centred over the row
+   it carries — a rank of six banners is a bunting line, not a trophy room.
+   The rows are cut in JS so each one gets its own rod to hang from; the
+   widths stay locked to a quarter of the wall so a row of three reads as
+   three of four, not as three fat ones. */
+.banner-rack { --cols: 4; --n: 4; padding: 0 14px; }
+.banner-rack + .banner-rack { margin-top: 2.6rem; }
+.banners { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 20px; }
+.banner {
+    position: relative; font: inherit; color: inherit; cursor: pointer; border: 0; padding: 0;
+    flex: 0 0 calc((100% - (var(--cols) - 1) * 20px) / var(--cols));
+    padding-bottom: 40px; min-height: 264px; text-align: center;
+    background: linear-gradient(180deg, var(--gilt-c), var(--gilt-b) 30%, var(--gilt-c) 90%);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 36px), 50% 100%, 0 calc(100% - 36px));
+    filter: drop-shadow(0 14px 12px rgba(0,0,0,.5));
+    transition: transform .2s;
+}
+/* Cloth catching the light, rather than a brightness() filter re-running the
+   drop-shadow blur on every frame of the hover. */
+.banner::after {
+    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: rgba(255,214,150,0); transition: background .2s;
+}
+.banner:hover { transform: translateY(4px); }
+.banner:hover::after { background: rgba(255,214,150,.09); }
+.banner.open { transform: translateY(5px); }
+.banner.open::after { background: rgba(255,214,150,.12); }
+.banner::before {   /* the cloth inside the gold trim */
+    content: ''; position: absolute; inset: 3px; z-index: 0;
+    background-image:
+        var(--fleck),
+        repeating-linear-gradient(92deg, rgba(0,0,0,.22) 0 3px, transparent 3px 30px),
+        radial-gradient(120% 60% at 50% 0%, rgba(255,222,160,.1), transparent 55%),
+        linear-gradient(180deg, #6d1d22 0%, #481115 60%, #2f0c0f 100%);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 35px), 50% 100%, 0 calc(100% - 35px));
+    box-shadow: inset 0 14px 16px -10px rgba(0,0,0,.8);
+}
+.bn { position: relative; z-index: 1; }
+.bn-year { font-family: var(--display); font-weight: 700; font-size: .82rem; letter-spacing: .3em;
+           color: var(--gilt-a); padding-top: 1.15rem; text-shadow: 0 1px 0 rgba(0,0,0,.8); }
+.bn-year .cup { display: inline-block; vertical-align: -2px; margin-left: .3rem; color: #f0c877; }
+.bn-year .cup svg { width: 13px; height: 13px; }
+.bn-rule { width: 46%; height: 1px; margin: .6rem auto 0; background: linear-gradient(90deg, transparent, rgba(240,217,168,.55), transparent); }
+.bn-face { margin: .85rem auto .7rem; display: flex; justify-content: center; }
+.bn-portrait {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%; overflow: hidden;
+    background: #2f0c0f;
+    box-shadow: 0 0 0 2px #2f0c0f, 0 0 0 4px var(--gilt-b), 0 3px 6px rgba(0,0,0,.6);
+}
+.bn-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.bn-portrait i { display: none; font-style: normal; font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--gilt-b); }
+.bn-portrait.is-mono i { display: block; }
+.bn-name { font-family: var(--serif); font-size: 1.28rem; line-height: 1.05; color: #f4e6c6; padding: 0 .6rem; text-shadow: 0 1px 0 rgba(0,0,0,.7); }
+.bn-sub { font-family: var(--mono); font-size: .58rem; letter-spacing: .06em; color: #d9a9a2; margin-top: .5rem; }
+.bn-champ { font-family: var(--sans); font-size: .6rem; color: #c79a94; margin-top: .55rem; padding: 0 .8rem; }
+.bn-champ b { color: var(--gilt-a); font-weight: 600; }
+/* The track runs the full 0-100; the unfilled tail is how far short of a
+   perfect ballot the season fell, so it needs a visible bed to sit in. */
+.bn-stack { display: flex; height: 7px; margin: .75rem 1.1rem 0; overflow: hidden;
+            background: rgba(0,0,0,.34); box-shadow: 0 0 0 1px rgba(0,0,0,.45); }
+.bn-stack span { display: block; height: 100%; }
+/* A hairline between segments. Without it, two neighbours in the same hue
+   family fused into one block and the bar read as three bands, not six. */
+.bn-stack span + span, .bo-stack span + span { box-shadow: inset 1px 0 0 rgba(0,0,0,.55); }
+
+/* The six ballot components, listed in the order they are stacked (see
+   CMP_ORDER). The hues are dealt so the sequence alternates warm and cool and
+   no band ever touches a relative — reordering the stack means re-dealing
+   them, which is why draft is no longer the violet it was.
+   Finish has been the hard one. It has to survive two grounds: the crimson
+   banner, where it sits INSIDE a gold frame, and the parchment ballot. #f0c877
+   was too bright and drowned the other five at 35% width; #c9a15e matched the
+   room but that was the problem — it read as the banner's own trim on one
+   ground and tan-on-tan on the other; #b5761f went too dark. This one is a
+   true yellow between them, saturated enough not to be mistaken for the trim.
+   Judge any replacement on BOTH grounds — the picker at the foot of
+   design/hall/icons.html lays them out side by side. */
+.cmp-result { background: #e6b74a; }   /* yellow     - final standing */
+.cmp-reg    { background: #b79ae6; }   /* violet     - regular-season finish */
+.cmp-draft  { background: #c3704f; }   /* terracotta - draft class */
+.cmp-scoring{ background: #7d9cb8; }   /* steel      - scoring */
+.cmp-allplay{ background: #c987a8; }   /* mauve      - all-play */
+.cmp-roster { background: #8dac7a; }   /* sage green - in-season roster work */
+
+/* The ballot, unrolled: ink on parchment. */
+.scroll {
+    position: relative; margin-top: 2.4rem; padding: 2.1rem 2.4rem 2.3rem;
+    color: var(--quill);
+    background-image:
+        var(--fleck),
+        radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.28), transparent 40%),
+        linear-gradient(180deg, var(--parch-hi) 0%, var(--parch) 55%, var(--parch-lo) 100%);
+    border-radius: 3px;
+    box-shadow: inset 0 0 46px rgba(120,84,40,.3), 0 16px 30px rgba(0,0,0,.6);
+}
+.scroll::before, .scroll::after {   /* the rolled ends */
+    content: ''; position: absolute; left: -9px; right: -9px; height: 17px; border-radius: 9px;
+    background: linear-gradient(180deg, #f4e7c4 0%, #d3b988 55%, #8f6f45 100%);
+    box-shadow: 0 4px 7px rgba(0,0,0,.5);
+}
+.scroll::before { top: -9px; }
+.scroll::after  { bottom: -9px; background: linear-gradient(0deg, #f4e7c4 0%, #d3b988 55%, #8f6f45 100%); }
+.bo-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .8rem; margin-bottom: 1.15rem; }
+.bo-title { font-family: var(--fell); font-size: 1.5rem; color: var(--quill); }
+.bo-title b { color: var(--redink); font-weight: 400; }
+.bo-legend { display: flex; gap: .9rem; flex-wrap: wrap; font-family: var(--mono); font-size: .55rem; letter-spacing: .12em; text-transform: uppercase; color: var(--quill-mut); }
+.bo-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.bo-legend i { width: 9px; height: 9px; display: inline-block; box-shadow: 0 0 0 1px rgba(51,34,15,.3); }
+.bo-row { display: grid; grid-template-columns: 2rem 1fr 4.4rem minmax(130px, 2fr) 3.4rem; gap: .85rem; align-items: center;
+          padding: .5rem 0; border-bottom: 1px solid rgba(90,60,20,.22); }
+.bo-row:last-child { border-bottom: 0; }
+.bo-rank { font-family: var(--mono); font-size: .72rem; color: var(--quill-mut); }
+.bo-name { font-family: var(--fell); font-size: 1.06rem; color: var(--quill); }
+.bo-row.win .bo-name { color: var(--redink); }
+.bo-row.win .bo-rank { color: var(--redink); }
+.bo-fin { font-family: var(--mono); font-size: .64rem; color: var(--quill-mut); }
+.bo-stack { display: flex; height: 9px; overflow: hidden; background: rgba(90,60,20,.14); box-shadow: 0 0 0 1px rgba(51,34,15,.2); }
+.bo-stack span { display: block; height: 100%; }
+.bo-score { font-family: var(--fell); font-size: 1.05rem; color: var(--quill); text-align: right; }
+.bo-missing { margin-top: 1.05rem; font-family: var(--fell); font-style: italic; font-size: .84rem; color: var(--quill-mut); }
+
+/* ============================================================
+   IV · THE PARCHMENT
+   The method sheet, nailed to the stone, sealed in wax.
+   ============================================================ */
+.sheet {
+    position: relative; max-width: 880px; margin: 0 auto; padding: 2.4rem 2.5rem 3.6rem;
+    color: var(--quill);
+    background-image:
+        radial-gradient(circle 4.5px at 16px 16px,               #7a6a4d 0 2.4px, #3a2c16 3px, transparent 4.5px),
+        radial-gradient(circle 4.5px at calc(100% - 16px) 16px,  #7a6a4d 0 2.4px, #3a2c16 3px, transparent 4.5px),
+        radial-gradient(circle 4.5px at 16px calc(100% - 16px),  #7a6a4d 0 2.4px, #3a2c16 3px, transparent 4.5px),
+        radial-gradient(circle 4.5px at calc(100% - 16px) calc(100% - 16px), #7a6a4d 0 2.4px, #3a2c16 3px, transparent 4.5px),
+        var(--fleck),
+        radial-gradient(130% 100% at 50% 0%, rgba(255,255,255,.3), transparent 44%),
+        linear-gradient(180deg, var(--parch-hi) 0%, var(--parch) 55%, var(--parch-lo) 100%);
+    border-radius: 3px;
+    box-shadow: inset 0 0 52px rgba(120,84,40,.32), 0 18px 34px rgba(0,0,0,.6);
+}
+.sheet::after {   /* the wax seal */
+    content: '✦'; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%) rotate(-8deg);
+    display: flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; font-size: 1.3rem; color: rgba(30,4,6,.55);
+    border-radius: 46% 54% 51% 49% / 53% 47% 56% 44%;
+    background: radial-gradient(circle at 36% 30%, #b3403a, #7a1518 55%, #4d0d0f 100%);
+    box-shadow: inset 0 2px 5px rgba(255,255,255,.25), inset 0 -4px 8px rgba(0,0,0,.5), 0 6px 12px rgba(0,0,0,.6);
+}
+.sheet h3 { font-family: var(--display); font-weight: 700; font-size: 1.12rem; letter-spacing: .2em; text-transform: uppercase; color: var(--quill); text-align: center; }
+.sheet .lc-sub { text-align: center; font-family: var(--fell); font-style: italic; font-size: .95rem; color: var(--quill-mut); margin: .5rem 0 1.8rem; }
+.lc-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4rem; }
+.lc-cols h4 { font-family: var(--display); font-weight: 700; font-size: .62rem; letter-spacing: .3em; text-transform: uppercase; color: var(--redink); margin-bottom: .8rem;
+              border-bottom: 1px solid rgba(122,21,24,.35); padding-bottom: .4rem; }
+.lc-line { display: flex; justify-content: space-between; gap: 1rem; padding: .34rem 0; border-bottom: 1px solid rgba(90,60,20,.18);
+           font-family: var(--fell); font-size: .95rem; color: var(--quill); }
+.lc-line b { font-family: var(--mono); font-size: .78rem; font-weight: 700; color: #201409; }
+.lc-note { margin-top: 1.6rem; font-family: var(--fell); font-style: italic; font-size: .95rem; line-height: 1.7; color: var(--quill-mut); }
+
+.loading { text-align: center; padding: 5rem 1rem; font-family: var(--fell); font-style: italic; color: var(--cream-mute); }
+.errbox { text-align: center; padding: 3rem 1rem; color: var(--rust); font-family: var(--mono); font-size: .8rem; }
+
+/* Two plaques to a row down to 940px, so the middle column keeps getting
+   squeezed as the window narrows. The name and record give up a little size
+   rather than an ellipsis. */
+@media (max-width: 1240px) {
+    .p-name { font-size: 1.2rem; }
+    .p-rec, .p-team { font-size: .58rem; }
+    .n-name { font-size: 1.45rem; }
+    .n-face { width: 78px; height: 78px; }
+    .n-index { font-size: 2.1rem; }
+    .n-top { padding-right: 7rem; }
+    .n-pc svg { width: 32px; height: 32px; }
+}
+/* The vitrine folds to a centred stack once the top storey can no longer
+   carry two columns; the citation is the first thing to go, never the
+   hardware. The Index rejoins the flow so it cannot land on the name. */
+@media (max-width: 820px) {
+    .niche { padding: 1.5rem 1rem 1.2rem; }
+    .n-top { flex-direction: column; text-align: center; gap: 1rem; padding-right: 0; }
+    .n-index { position: static; text-align: center; }
+    .n-side { padding: .9rem 1.3rem 1rem; }
+    .n-cite { display: none; }
+    .n-team, .n-rec { white-space: normal; }
+    .n-hw { gap: 1rem; }
+    .n-pc svg { width: 28px; height: 28px; }
+    .n-laurel { display: none; }
+}
+@media (max-width: 940px) {
+    .cabinet { padding: 0 26px; }
+    .stile { width: 26px; }
+    .bay-row { grid-template-columns: 1fr; gap: 0; }
+    .bay.empty { display: none; }
+    .mullion { display: none; }
+    .plaque.r { flex-direction: row; text-align: left; }
+    .plaque.r .p-aisle { align-items: flex-end; }
+    .plaque.r .p-hw { justify-content: flex-end; }
+    .plaque.r .p-index i { text-align: right; }
+    .lc-cols { grid-template-columns: 1fr; gap: 1.4rem; }
+    .scroll, .sheet { padding-left: 1.3rem; padding-right: 1.3rem; }
+    .cl-head, .cl-row { grid-template-columns: 2.8rem 1fr 3.8rem 4rem; }
+    .cl-head span:nth-child(5), .cl-row .cl-ppg,
+    .cl-head span:nth-child(6), .cl-row .cl-q { display: none; }
+    .bo-row { grid-template-columns: 1.6rem 1fr 3.2rem; }
+    .bo-row .bo-stack, .bo-row .bo-fin { display: none; }
+}
+@media (max-width: 620px) {
+    /* Five columns squeezed the two bar tracks down to 11px, which is not a
+       comparison. The label lifts onto its own line and the bars take the
+       full width underneath it. */
+    .rk-row, .rk-frow { grid-template-columns: 2.6rem 1fr 1fr 2.6rem; gap: .3rem .45rem; }
+    .rk-lab, .rk-flab { grid-column: 1 / -1; order: -1; }
+    .rk-lab i { display: inline; margin: 0 0 0 .45rem; }
+    .rk-frow.wide { grid-template-columns: 1fr 8rem 1fr; }
+    .rk-frow.wide .rk-bar { display: none; }
+    .rk-frow.wide .rk-flab { grid-column: auto; order: 0; }
+    .rk-fv { font-size: .92rem; }
+    .rk-head { grid-template-columns: 1fr; }
+    .rk-vs { text-align: center; }
+    .rk-tops { grid-template-columns: 1fr 1fr; }
+    .rk-gap { grid-column: 1 / -1; order: 3; margin-top: 1rem; }
+    .rk-side u { display: none; }
+    .rk-q { max-width: 70px; }
+    .reckon-in { padding-left: 1rem; padding-right: 1rem; }
+}
+@media (max-width: 560px) {
+    /* Narrower pieces so three still stand on one board inside a phone-width
+       case. perShelf() drops to three at the same breakpoint. */
+    .hw-row { gap: .5rem; margin-left: 1rem; margin-right: 1rem; }
+    .hw { width: 54px; }
+    .hw-shelf { left: .7rem; right: .7rem; }
+    .banner { min-height: 244px; }
+    .bn-name { font-size: 1.12rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .plaque, .niche, .n-face, .banner { transition: none !important; }
+    .veil, .case, .n-lamp, .n-name { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="room"></div>
+<div class="floor"></div>
+
+<div id="switch"></div>
+
+<div class="wrap">
+    <header class="mast">
+        <div class="mast-kick">The Society Almanac</div>
+        <h1 class="mast-title">The Trophy Room</h1>
+        <p class="mast-sub" id="mastSub">Lighting the candles&hellip;</p>
+    </header>
+    <div id="body"><div class="loading">Unlocking the cabinet&hellip;</div></div>
+</div>
+
+<script src="/pams-template/assets/js/draft-grade.js"></script>
+<script src="hof-model.js"></script>
+<script src="hall-common.js"></script>
+<script>
+var C = window.HallCommon;
+var P = C.params();
+var MODEL = null;
+var openUid = null;
+var openYear = null;
+var cmpA = null, cmpB = null;   // the two careers on the bench
+
+document.getElementById('switch').innerHTML = C.switcher('Trophy Room');
+
+// The reliquary overlay lives on document.body, above everything.
+var VEIL = document.createElement('div');
+document.body.appendChild(VEIL);
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    closeMenus();
+    if (openUid) openCase(null);
+});
+// The compare menus close on any click that lands outside their own plate.
+document.addEventListener('click', function (e) { if (!e.target.closest('.rk-pick')) closeMenus(); });
+
+// Rods and shelves are cut in JS, so a width change that moves a breakpoint
+// has to re-cut them. Nothing else on the page cares about resize, so this
+// only redraws when the counts actually change.
+var lastCut = null, cutTimer = null;
+window.addEventListener('resize', function () {
+    clearTimeout(cutTimer);
+    cutTimer = setTimeout(function () {
+        if (!MODEL) return;
+        var cut = bannerCols() + ':' + perShelf();
+        if (cut === lastCut) return;
+        lastCut = cut;
+        var host = document.getElementById('racks');
+        if (host) host.innerHTML = racks();
+        if (openYear !== null) {
+            var i = MODEL.moty.map(function (x) { return x.year; }).indexOf(openYear);
+            if (i >= 0) document.querySelectorAll('.banner')[i].classList.add('open');
+        }
+        renderCase();
+    }, 140);
+});
+
+window.HOF.load({ league: P.league }).then(function (m) {
+    MODEL = m;
+    document.getElementById('protoSrc').textContent = C.sourceLabel(m, P);
+    render();
+}).catch(function (err) {
+    document.getElementById('body').innerHTML = '<div class="errbox">Could not load the hall.<br>' + C.esc(err.message) + '</div>';
+});
+
+function render() {
+    var m = MODEL;
+    document.getElementById('mastSub').innerHTML =
+        C.esc(m.league.name) + ' &middot; <b>' + m.inducted.length + '</b> enshrined &middot; '
+        + '<b>' + m.eligible_count + '</b> eligible &middot; bar at <b>' + C.fmt(m.bar) + '</b>';
+
+    document.getElementById('body').innerHTML =
+          '<div id="cabinetHost">' + cabinet() + '</div>'
+        + chap('Side by Side', 'Two careers on one bench. The Index is three numbers added up, '
+            + 'so a gap between two managers can be pointed at rather than argued about.', 'cmp')
+        + '<div class="fold narrow" id="fold-cmp" hidden><div id="reckon">' + reckoning() + '</div></div>'
+        + chap('Manager of the Year', 'One banner a season. Open one and the full ballot unrolls below.')
+        + '<div class="narrow"><div id="racks">' + racks() + '</div>'
+        + '<div id="ballotOpen"></div></div>'
+        + chap('The Method', 'How the Index is built, and what it takes to be enshrined.', 'method')
+        + '<div class="fold" id="fold-method" hidden>' + sheet() + '</div>';
+    lastCut = bannerCols() + ':' + perShelf();
+    renderCase();
+}
+
+// A chapter head. Pass an id to make the ribbon the switch for the block
+// underneath it; without one it is just a heading. Foldable chapters start
+// shut — the cabinet and the banners are the page, and the bench and the
+// method sheet are there when you go looking for them.
+function chap(title, note, id) {
+    var head = id
+        ? '<button type="button" class="ribbon rib-btn" id="rib-' + id + '" aria-expanded="false"'
+          + ' aria-controls="fold-' + id + '" onclick="toggleChap(\'' + id + '\')">'
+          + C.esc(title) + '<span class="rib-caret">&#9662;</span></button>'
+        : '<span class="ribbon">' + C.esc(title) + '</span>';
+    return '<section class="chap" id="chap-' + (id || '') + '"><h2>' + head + '</h2>'
+         + (note ? '<div class="chap-note">' + C.esc(note) + '</div>' : '') + '</section>';
+}
+
+function toggleChap(id) { setChap(id, document.getElementById('fold-' + id).hidden); }
+
+function setChap(id, open) {
+    var fold = document.getElementById('fold-' + id), rib = document.getElementById('rib-' + id);
+    if (!fold) return;
+    fold.hidden = !open;
+    rib.classList.toggle('open', open);
+    rib.setAttribute('aria-expanded', String(open));
+}
+
+function roman(n) {
+    var t = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+    var s = '';
+    t.forEach(function (p) { while (n >= p[0]) { s += p[1]; n -= p[0]; } });
+    return s || '&middot;';
+}
+
+/* ============================================================
+   The cabinet. Current members fill the bays in Index order,
+   reading across the aisle; alumni hang below their own carved
+   rail so a departed manager never sits above someone playing.
+   ============================================================ */
+// The gilt finial that stands on the bonnet crest: ball, urn, plinth.
+var FINIAL =
+      '<svg viewBox="0 0 24 36" fill="none" stroke="#d9b878" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M12 2v3.4"/>'
+    + '<circle cx="12" cy="9.4" r="4" fill="#8a6a35"/>'
+    + '<path d="M8.6 15.4h6.8l-1.3 8.2h-4.2l-1.3-8.2Z" fill="#6f5130"/>'
+    + '<path d="M6.8 26.6h10.4v3.6H6.8z" fill="#4b351e"/>'
+    + '<path d="M5 33.4h14"/>'
+    + '</svg>';
+
+function cabinet() {
+    var m = MODEL;
+    var current = m.managers.filter(function (x) { return x.is_current; });
+    var alumni  = m.managers.filter(function (x) { return !x.is_current; });
+    // The enshrined stand first, in their own niches, whichever wing they
+    // hang in. Within each wing the model is already in Index order and the
+    // enshrined sit above the bar, so the partition keeps the rank numbers
+    // reading straight down the wall.
+    var cEn = current.filter(isEn), cRest = current.filter(notEn);
+    var aEn = alumni.filter(isEn),  aRest = alumni.filter(notEn);
+
+    return '<div class="furniture">'
+        + '<div class="bonnet">'
+        +   '<div class="b-side l"></div><div class="b-side r"></div>'
+        +   '<div class="b-arc"></div>'
+        +   '<div class="b-finial">' + FINIAL + '</div>'
+        + '</div>'
+        + '<div class="cornice"><div class="cap"></div><div class="ogee"></div><div class="dentils"></div></div>'
+        + '<div class="cabinet">'
+        +   '<div class="stile l"></div><div class="stile r"></div>'
+        +   '<div class="pediment"><div class="tympanum">'
+        +     '<div class="tym-kick">Hall of Fame</div>'
+        +     '<div class="tym-name">' + C.esc(m.league.name) + '</div>'
+        +     '<div class="tym-sub">Anno ' + m.years[0] + '&ndash;' + m.years[m.years.length - 1]
+        +       ' &middot; ' + m.years.length + ' seasons on record</div>'
+        +   '</div></div>'
+        +   '<div class="nave">'
+        +     nicheRows(cEn, 1, false)
+        +     '<div class="wing"><div class="mullion"></div>' + bayRows(cRest, cEn.length + 1, false) + '</div>'
+        +   '</div>'
+        +   (alumni.length
+              ? '<div class="rail"><button type="button" class="rib-btn rail-btn" id="rib-alum"'
+                +   ' aria-expanded="false" aria-controls="fold-alum" onclick="toggleChap(\'alum\')">'
+                +   'Alumni <i>' + alumni.length + '</i><span class="rib-caret">&#9662;</span></button></div>'
+                + '<div class="fold" id="fold-alum" hidden>'
+                +   '<div class="nave">'
+                +     nicheRows(aEn, current.length + 1, true)
+                +     '<div class="wing"><div class="mullion"></div>'
+                +       bayRows(aRest, current.length + aEn.length + 1, true) + '</div>'
+                +   '</div>'
+                + '</div>'
+              : '')
+        +   '<div class="glassfront"></div>'
+        + '</div>'
+        + '<div class="baserail"></div>'
+        + '<div class="feet"><div class="foot"></div><div class="foot"></div></div>'
+        + '</div>';
+}
+
+function isEn(x) { return x.status === 'enshrined'; }
+function notEn(x) { return x.status !== 'enshrined'; }
+
+function bayRows(list, startRank, alum) {
+    var out = '';
+    for (var i = 0; i < list.length; i += 2) {
+        out += '<div class="bay-row">'
+             + '<div class="bay">' + plaque(list[i], startRank + i, 'l', alum) + '</div>'
+             + '<div class="bay' + (list[i + 1] ? '' : ' empty') + '">'
+             +   (list[i + 1] ? plaque(list[i + 1], startRank + i + 1, 'r', alum) : '')
+             + '</div></div><div class="shelf"></div>';
+    }
+    return out;
+}
+
+// The enshrined rows: same bays, same shelf boards, but one manager takes
+// the full breadth of the case, and every vitrine is the same height.
+function nicheRows(list, startRank, alum) {
+    return list.map(function (x, i) {
+        return '<div class="bay-row en"><div class="bay">' + niche(x, startRank + i, alum)
+             + '</div></div><div class="shelf"></div>';
+    }).join('');
+}
+
+// The brass picture light mounted on every vitrine's top rail.
+var PICTURE_LIGHT =
+      '<svg viewBox="0 0 78 18" fill="none" stroke-linecap="round">'
+    + '<path d="M24 6V1.5M54 6V1.5" stroke="#d9b878" stroke-width="1.6"/>'
+    + '<rect x="13" y="5" width="52" height="9" rx="4.5" fill="#8a6a35" stroke="#d9b878" stroke-width="1.4"/>'
+    + '<path d="M18 14.5h42" stroke="#ffd79a" stroke-width="1.6" opacity=".65"/>'
+    + '</svg>';
+
+// A laurel sprig, gilt, closing each end of the accolade shelf. Mirrored on
+// the right with scaleX(-1).
+var LAUREL =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M7 21.5C6.2 14.5 9 8 16.5 3.8"/>'
+    + '<path d="M3.2 14c2.6.1 4.4 1.2 5.4 3.3-2.6-.1-4.4-1.2-5.4-3.3Z"/>'
+    + '<path d="M5.4 8.6c2.4.7 3.9 2.2 4.4 4.5-2.4-.7-3.9-2.2-4.4-4.5Z"/>'
+    + '<path d="M9.6 4.2c2 1.2 3 2.9 3 5.2-2-1.2-3-2.9-3-5.2Z"/>'
+    + '<path d="M11.6 15.2c1.7-1.9 3.7-2.7 6-2.4-1.7 1.9-3.7 2.7-6 2.4Z"/>'
+    + '<path d="M14.2 10c1.1-2.2 2.8-3.5 5.2-3.9-1.1 2.3-2.8 3.6-5.2 3.9Z"/>'
+    + '</svg>';
+
+function niche(x, rank, alum) {
+    return '<button type="button" class="niche' + (alum ? ' alum' : '') + (openUid === x.uid ? ' open' : '') + '"'
+        + ' data-uid="' + C.esc(x.uid) + '" onclick="openCase(this.getAttribute(\'data-uid\'))">'
+        + '<span class="n-lamp"></span>'
+        + '<span class="n-light">' + PICTURE_LIGHT + '</span>'
+        + '<span class="n-index">' + C.fmt(x.index) + '<i>Index</i></span>'
+        + '<span class="n-top">'
+        +   '<span class="n-side">'
+        +     '<span class="n-rank">' + roman(rank) + '</span>'
+        +     C.portrait(x, 'n-face')
+        +   '</span>'
+        +   '<span class="n-mid">'
+        +     '<span class="n-name">' + C.esc(x.name) + '</span>'
+        +     (x.team ? '<span class="n-team">' + C.esc(x.team) + '</span>' : '')
+        +     '<span class="n-rec"><b>' + C.esc(x.record || '--') + '</b> &middot; ' + C.pct(x.win_pct)
+        +       ' &middot; ' + x.seasons_played + ' seasons</span>'
+        +     '<span class="n-cite">' + C.esc(C.citation(x)) + '</span>'
+        +     '<span class="p-classplate">Enshrined</span>'
+        +   '</span>'
+        + '</span>'
+        + '<span class="n-hw">'
+        +   '<i class="n-laurel">' + LAUREL + '</i>'
+        +   nicheHw(x)
+        +   '<i class="n-laurel r">' + LAUREL + '</i>'
+        + '</span>'
+        + '</button>';
+}
+
+// The hardware as objects on the vitrine's own shelf, the count standing
+// beside each piece the way it does on the chip rows. An empty shelf stays:
+// an enshrined manager who got in on rate alone did, in fact, win nothing.
+function nicheHw(x) {
+    var t = x.trophies, out = '';
+    function pc(cls, g, n, lb) {
+        if (!n) return;
+        out += '<span class="n-pc ' + cls + '" title="' + lb + '">' + g + '<b>' + n + '</b></span>';
+    }
+    pc('gold',   C.GLYPH.cup,      t.title,        'Champion');
+    pc('silver', C.GLYPH.medal,    t.runner_up,    'Runner-up');
+    pc('bronze', C.GLYPH.medal,    t.third,        'Third');
+    pc('award',  C.GLYPH.orb,      t.moty,         'Manager of the Year');
+    pc('royal',  C.GLYPH.crown,    t.reg_crown,    'Best record');
+    pc('leaf',   C.GLYPH.football, t.points_title, 'Scoring title');
+    return out;
+}
+
+function hwChips(x) {
+    var t = x.trophies, hw = '';
+    if (t.title)        hw += '<span class="gold">' + C.GLYPH.cup + t.title + '</span>';
+    if (t.runner_up)    hw += '<span class="silver">' + C.GLYPH.medal + t.runner_up + '</span>';
+    if (t.third)        hw += '<span class="bronze">' + C.GLYPH.medal + t.third + '</span>';
+    if (t.moty)         hw += '<span class="award">' + C.GLYPH.orb + t.moty + '</span>';
+    if (t.reg_crown)    hw += '<span class="royal">' + C.GLYPH.crown + t.reg_crown + '</span>';
+    if (t.points_title) hw += '<span class="leaf">' + C.GLYPH.football + t.points_title + '</span>';
+    return hw;
+}
+
+function standing(x) {
+    if (x.status === 'enshrined') {
+        // No year. Enshrinement here is a live standing, not a ceremony: the
+        // bar floats and the hall is capped, so a manager can be pushed out by
+        // someone better. Any year printed next to it would have to be
+        // recomputed on every load and would move on its own, which is exactly
+        // what a "Class of 2021" promises it will never do. The model still
+        // carries class_year if a real, persisted induction date ever lands.
+        return '<span class="p-classplate">Enshrined</span>';
+    }
+    return '<span class="p-tag tg-' + x.status + '"'
+        + (x.status_note ? ' title="' + C.esc(x.status_note) + '"' : '') + '>'
+        + C.esc(x.status_label) + '</span>';
+}
+
+function plaque(x, rank, side, alum) {
+    return '<button type="button" class="plaque ' + side + ' ' + x.status + (alum ? ' alum' : '') + (openUid === x.uid ? ' open' : '') + '"'
+        + ' data-uid="' + C.esc(x.uid) + '" onclick="openCase(this.getAttribute(\'data-uid\'))">'
+        + '<span class="p-rank">' + roman(rank) + '</span>'
+        + C.portrait(x, 'p-face')
+        + '<span class="p-main">'
+        +   '<span class="p-name">' + C.esc(x.name) + '</span>'
+        +   (x.team ? '<span class="p-team">' + C.esc(x.team) + '</span>' : '')
+        +   '<span class="p-rec"><b>' + C.esc(x.record || '--') + '</b> &middot; ' + C.pct(x.win_pct)
+        +     ' &middot; ' + x.seasons_played + ' seasons</span>'
+        +   standing(x)
+        + '</span>'
+        + '<span class="p-aisle">'
+        +   '<b class="p-index">' + C.fmt(x.index) + '<i>Index</i></b>'
+        +   '<span class="p-hw">' + hwChips(x) + '</span>'
+        + '</span>'
+        + '</button>';
+}
+
+/* ============================================================
+   The reliquary.
+   ============================================================ */
+function openCase(uid) {
+    openUid = openUid === uid ? null : uid;
+    renderCase();
+}
+
+function renderCase() {
+    document.querySelectorAll('.plaque, .niche').forEach(function (el) {
+        el.classList.toggle('open', openUid != null && el.getAttribute('data-uid') === openUid);
+    });
+    var x = openUid && MODEL.managers.filter(function (r) { return r.uid === openUid; })[0];
+    if (!x) {
+        VEIL.innerHTML = '';
+        document.body.style.overflow = '';
+        return;
+    }
+    VEIL.innerHTML = '<div class="veil" onclick="if(event.target===this)openCase(null)">' + caseFor(x) + '</div>';
+    document.body.style.overflow = 'hidden';
+}
+
+// One piece of hardware per accolade, the case read left to right the way
+// the career was lived: earliest season first, and inside a season the
+// placement trophy leads, then the award, then the two regular-season
+// honours. The crown and the scoring title used to collapse into a single
+// "3× crown" tally, which is why they had no year on them.
+var HW_ORDER = { title: 0, runner: 1, third: 2, moty: 3, crown: 4, scoring: 5 };
+function hardware(m) {
+    var out = [];
+    function add(yr, kind, cls, g, label) { out.push({ yr: yr, kind: kind, cls: cls, g: g, lb: label }); }
+
+    m.title_years.forEach(function (y) { add(y, 'title', 'gold', C.GLYPH.cup, 'Champion'); });
+    m.runner_years.forEach(function (y) { add(y, 'runner', 'silver', C.GLYPH.medal, 'Runner-up'); });
+    m.third_years.forEach(function (y) { add(y, 'third', 'bronze', C.GLYPH.medal, 'Third'); });
+    (m.moty_years || []).forEach(function (y) { add(y, 'moty', 'award', C.GLYPH.orb, 'MOTY'); });
+    m.ledger.forEach(function (s) {
+        // "Crown" is what the league calls it internally, but nobody reading a
+        // shelf knows what a crown is for. Say what it was.
+        if (s.reg_crown) add(s.year, 'crown', 'royal', C.GLYPH.crown, 'Best Record');
+        if (s.points_title) add(s.year, 'scoring', 'leaf', C.GLYPH.football, 'Scoring');
+    });
+
+    out.sort(function (a, b) {
+        return a.yr - b.yr || HW_ORDER[a.kind] - HW_ORDER[b.kind];
+    });
+    // Number the repeats in the order they were won, so the second crown wears
+    // an x2 and the third an x3. Applied to every accolade, not just the three
+    // that repeat most often — a second title deserves the tab as much as a
+    // second scoring gong, and a rule with exceptions reads as a bug.
+    var seen = {};
+    out.forEach(function (h) {
+        seen[h.kind] = (seen[h.kind] || 0) + 1;
+        if (seen[h.kind] > 1) h.nth = seen[h.kind];
+    });
+    if (!out.length) out.push({ yr: '', kind: 'scoring', cls: '', g: C.GLYPH.football, lb: m.trophies.berth + ' berths' });
+    return out;
+}
+
+// How many pieces stand on one shelf. The case is 860px at most and each
+// piece is 74px wide, so a decorated career gets a second and third board
+// rather than a horizontal scrollbar nobody finds.
+function perShelf() {
+    var w = window.innerWidth;
+    if (w >= 760) return 6;
+    if (w >= 560) return 4;
+    return 3;
+}
+
+function shelves(m) {
+    var pieces = hardware(m), per = perShelf(), out = '';
+    for (var i = 0; i < pieces.length; i += per) {
+        out += '<div class="hw-case"><div class="hw-row">'
+             + pieces.slice(i, i + per).map(function (h) {
+                   return '<div class="hw ' + h.cls + '">'
+                        + (h.nth ? '<span class="hw-nth">x' + h.nth + '</span>' : '')
+                        + '<div class="hw-obj">' + h.g + '</div>'
+                        + '<div class="hw-cap"><div class="hw-yr">' + C.esc(h.yr) + '</div>'
+                        +   '<div class="hw-lb">' + h.lb + '</div></div></div>';
+               }).join('')
+             + '</div><div class="hw-shelf"></div></div>';
+    }
+    return out;
+}
+
+// Top-three finishes. Counts the title too, the way a podium does.
+function podiums(m) {
+    var t = m.trophies;
+    return t.title + t.runner_up + t.third;
+}
+
+function caseFor(m) {
+    var en = m.status === 'enshrined';
+
+    return '<article class="case" role="dialog" aria-modal="true" aria-label="' + C.esc(m.name) + '">'
+        + '<div class="case-in">'
+        + (m.is_current ? '' : '<div class="case-alum">Alumnus</div>')
+        + '<button type="button" class="case-compare" data-uid="' + C.esc(m.uid) + '"'
+        +   ' onclick="compareFrom(this.getAttribute(\'data-uid\'))">Compare</button>'
+        + '<button type="button" class="case-close" onclick="openCase(null)">Close</button>'
+        + '<div class="case-head">'
+        +   C.portrait(m, 'case-portrait')
+        +   '<div class="case-name' + (en ? '' : ' plain') + '">' + C.esc(m.name) + '</div>'
+        +   (m.team ? '<div class="case-team">' + C.esc(m.team) + '</div>' : '')
+        +   '<div class="case-standing">' + standing(m) + '</div>'
+        +   '<p class="case-cite">' + C.esc(C.citation(m)) + '</p>'
+        + '</div>'
+        + shelves(m)
+        + '<div class="case-plate">'
+        +   '<div><div class="plate-k">Seasons</div><div class="plate-v">' + m.seasons_played + '</div></div>'
+        +   '<div><div class="plate-k">Record</div><div class="plate-v">' + C.esc(m.record || '--') + '</div></div>'
+        +   '<div><div class="plate-k">Titles</div><div class="plate-v">' + m.trophies.title + '</div></div>'
+        +   '<div><div class="plate-k">Podiums</div><div class="plate-v">' + podiums(m) + '</div></div>'
+        +   '<div style="text-align:right"><div class="plate-k">Index</div><div class="plate-index">' + C.fmt(m.index) + '</div></div>'
+        + '</div>'
+        + ledger(m)
+        + '</div>'
+        + '</article>';
+}
+
+function ledger(m) {
+    var rows = m.ledger.slice().sort(function (a, b) { return b.year - a.year; }).map(function (s) {
+        return '<div class="cl-row' + (s.final_rank === 1 ? ' title' : '') + '">'
+            + '<div class="cl-yr">' + s.year + '</div>'
+            + '<div class="cl-fin">' + C.ordinal(s.final_rank) + ' of ' + (s.teams || '--')
+            +   (s.reg_crown ? ' &middot; best record' : '') + (s.points_title ? ' &middot; scoring title' : '') + '</div>'
+            + '<div>' + C.esc(s.record || '--') + '</div>'
+            + '<div>' + (s.all_play ? s.all_play.w + '-' + s.all_play.l : '--') + '</div>'
+            + '<div class="cl-ppg">' + C.fmt(s.ppg) + '</div>'
+            + '<div class="cl-q"><b style="width:' + Math.round(s.q * 100) + '%"></b></div>'
+            + '</div>';
+    }).join('');
+    return '<div class="case-ledger">'
+        + '<div class="cl-head"><span>Year</span><span>Finish</span><span>Record</span>'
+        +   '<span>All-play</span><span>PPG</span><span>Season</span></div>'
+        + rows + '</div>';
+}
+
+/* ============================================================
+   THE RECKONING
+   The Index is cred x (T-weight x trophy case + R-weight x season
+   rate + P-weight x peak). Every one of those four numbers is
+   knowable, so "why is he ahead of me" has an arithmetic answer
+   and this section prints it rather than asking anyone to trust
+   the ranking.
+   ============================================================ */
+function contribs(m) {
+    var mix = MODEL.weights.mix, c = m.parts.credibility;
+    return {
+        trophy: { raw: m.parts.trophy, w: mix.T, val: c * mix.T * m.parts.trophy },
+        rate:   { raw: m.parts.rate,   w: mix.R, val: c * mix.R * m.parts.rate },
+        peak:   { raw: m.parts.peak,   w: mix.P, val: c * mix.P * m.parts.peak },
+    };
+}
+
+var RK_ROWS = [
+    ['trophy', 'Trophy case'],
+    ['rate',   'Season rate'],
+    ['peak',   'Peak run'],
+];
+
+function reckoning() {
+    var list = MODEL.managers;
+    var a = list.filter(function (m) { return m.uid === cmpA; })[0] || list[0];
+    var b = list.filter(function (m) { return m.uid === cmpB; })[0] || list[1] || list[0];
+    cmpA = a.uid; cmpB = b.uid;
+
+    var ca = contribs(a), cb = contribs(b);
+    // One shared scale across both managers and all three components, so a
+    // bar's length means the same thing everywhere on the bench.
+    var scale = 0;
+    RK_ROWS.forEach(function (r) { scale = Math.max(scale, ca[r[0]].val, cb[r[0]].val); });
+    scale = scale || 1;
+
+    var rows = RK_ROWS.map(function (r) {
+        var k = r[0], va = ca[k], vb = cb[k];
+        return '<div class="rk-row">'
+            + '<div class="rk-v a' + (va.val > vb.val ? ' win' : '') + '">' + C.fmt(va.val) + '</div>'
+            + '<div class="rk-bar a"><b style="width:' + (va.val / scale * 100) + '%"></b></div>'
+            + '<div class="rk-lab">' + r[1] + '<i>' + Math.round(va.w * 100) + '% of the Index</i></div>'
+            + '<div class="rk-bar b"><b style="width:' + (vb.val / scale * 100) + '%"></b></div>'
+            + '<div class="rk-v b' + (vb.val > va.val ? ' win' : '') + '">' + C.fmt(vb.val) + '</div>'
+            + '</div>';
+    }).join('');
+
+    // Credibility is a multiplier, not a component, so it gets its own line
+    // rather than a bar on the same scale.
+    var credRow = (a.parts.credibility < 1 || b.parts.credibility < 1)
+        ? '<div class="rk-row"><div class="rk-v a">' + C.fmt(a.parts.credibility, 2) + '</div>'
+          + '<div class="rk-bar a"><b style="width:' + (a.parts.credibility * 100) + '%"></b></div>'
+          + '<div class="rk-lab">Credibility<i>ramps in short careers</i></div>'
+          + '<div class="rk-bar b"><b style="width:' + (b.parts.credibility * 100) + '%"></b></div>'
+          + '<div class="rk-v b">' + C.fmt(b.parts.credibility, 2) + '</div></div>'
+        : '';
+
+    return '<div class="reckon"><div class="reckon-in">'
+        + '<div class="rk-head">'
+        +   picker('cmpA', a.uid) + '<div class="rk-vs">against</div>' + picker('cmpB', b.uid)
+        + '</div>'
+        + '<div class="rk-tops">'
+        +   '<div class="rk-top">' + C.portrait(a, 'case-portrait')
+        +     '<div class="rk-name">' + C.esc(a.name) + '</div>'
+        +     (a.team ? '<div class="rk-team">' + C.esc(a.team) + '</div>' : '')
+        +     '<div class="rk-idx">' + C.fmt(a.index) + '<i>Index</i></div></div>'
+        +   '<div class="rk-gap">The gap<b>' + C.fmt(Math.abs(a.index - b.index)) + '</b></div>'
+        +   '<div class="rk-top">' + C.portrait(b, 'case-portrait')
+        +     '<div class="rk-name">' + C.esc(b.name) + '</div>'
+        +     (b.team ? '<div class="rk-team">' + C.esc(b.team) + '</div>' : '')
+        +     '<div class="rk-idx">' + C.fmt(b.index) + '<i>Index</i></div></div>'
+        + '</div>'
+        + '<p class="rk-verdict">' + verdict(a, b, ca, cb) + '</p>'
+        + '<div class="rk-rows">' + rows + credRow
+        +   '<div class="rk-row total">'
+        +     '<div class="rk-v a' + (a.index > b.index ? ' win' : '') + '">' + C.fmt(a.index) + '</div>'
+        +     '<div class="rk-bar a"><b style="width:' + (a.index / Math.max(a.index, b.index, 1) * 100) + '%"></b></div>'
+        +     '<div class="rk-lab">Index<i>the sum</i></div>'
+        +     '<div class="rk-bar b"><b style="width:' + (b.index / Math.max(a.index, b.index, 1) * 100) + '%"></b></div>'
+        +     '<div class="rk-v b' + (b.index > a.index ? ' win' : '') + '">' + C.fmt(b.index) + '</div>'
+        +   '</div>'
+        + '</div>'
+        + facts(a, b)
+        + years(a, b)
+        + '</div></div>';
+}
+
+function picker(which, sel) {
+    var cur = MODEL.managers.filter(function (m) { return m.uid === sel; })[0];
+    return '<div class="rk-pick" id="pick-' + which + '">'
+        + '<button type="button" class="rk-pick-btn" onclick="toggleMenu(\'' + which + '\')">'
+        +   '<span>' + C.esc(cur.name) + ' &middot; ' + C.fmt(cur.index) + '</span><i>&#9662;</i></button>'
+        + '<div class="rk-menu" hidden>'
+        + MODEL.managers.map(function (m) {
+              return '<button type="button" class="rk-opt' + (m.uid === sel ? ' on' : '') + '"'
+                  + ' data-uid="' + C.esc(m.uid) + '"'
+                  + ' onclick="setCmp(\'' + which + '\', this.getAttribute(\'data-uid\'))">'
+                  + C.portrait(m, 'rk-opt-face')
+                  + '<span class="rk-opt-name">' + C.esc(m.name) + '</span>'
+                  + '<b>' + C.fmt(m.index) + '</b></button>';
+          }).join('')
+        + '</div></div>';
+}
+
+// One menu open at a time. Picking a manager re-renders the whole bench, so
+// the menu never needs to close itself on selection.
+function toggleMenu(which) {
+    var pick = document.getElementById('pick-' + which);
+    var wasOpen = pick.classList.contains('open');
+    closeMenus();
+    if (!wasOpen) {
+        pick.classList.add('open');
+        pick.querySelector('.rk-menu').hidden = false;
+    }
+}
+
+function closeMenus() {
+    document.querySelectorAll('.rk-pick.open').forEach(function (p) {
+        p.classList.remove('open');
+        p.querySelector('.rk-menu').hidden = true;
+    });
+}
+
+// Name the component that actually opened the gap, and say what it means in
+// English. "He is ahead by 12" is useless; "he is ahead because of what he
+// won, not how he played" is the answer people are actually asking for.
+var RK_WHY = {
+    trophy: 'what he has won',
+    rate:   'how he plays in an average season',
+    peak:   'how high his best stretch went',
+};
+function verdict(a, b, ca, cb) {
+    if (a.uid === b.uid) return 'Pick two different managers.';
+    var lead = a.index >= b.index ? a : b, trail = lead === a ? b : a;
+    var lc = lead === a ? ca : cb, tc = lead === a ? cb : ca;
+    var diffs = RK_ROWS.map(function (r) { return { k: r[0], d: lc[r[0]].val - tc[r[0]].val }; })
+                       .sort(function (x, y) { return Math.abs(y.d) - Math.abs(x.d); });
+    var top = diffs[0], back = diffs.filter(function (d) { return d.d < 0; });
+    var s = '<b>' + C.esc(lead.name) + '</b> leads by ' + C.fmt(Math.abs(a.index - b.index))
+          + ', and ' + (top.d >= 0 ? 'most of it is ' : 'oddly not ') + RK_WHY[top.k]
+          + ' (' + (top.d >= 0 ? '+' : '') + C.fmt(top.d) + ').';
+    if (back.length) {
+        s += ' ' + C.esc(trail.name) + ' is actually ahead on '
+           + back.map(function (d) { return RK_WHY[d.k]; }).join(' and ') + '.';
+    }
+    if (lead.parts.credibility < 1) {
+        s += ' ' + C.esc(lead.name) + ' is still short of the ' + MODEL.constants.MIN_SEASONS
+           + '-season bar, so his Index is held back to ' + Math.round(lead.parts.credibility * 100) + '%.';
+    }
+    return s;
+}
+
+// better: 1 = higher wins, -1 = lower wins, 0 = not a contest.
+// o.scale: draw bars against this maximum. Omit for facts a bar would lie
+//   about — a longer bar for a WORSE average finish, or for a record string.
+// o.wide: the value is a record or a label, not a count, so shrink the type.
+function factRow(label, va, vb, better, o) {
+    o = o || {};
+    var na = parseFloat(va), nb = parseFloat(vb);
+    var num = isFinite(na) && isFinite(nb);
+    var aw = better && num && (better > 0 ? na > nb : na < nb);
+    var bw = better && num && (better > 0 ? nb > na : nb < na);
+    var av = '<div class="rk-fv a' + (aw ? ' win' : '') + '">' + va + '</div>';
+    var bv = '<div class="rk-fv b' + (bw ? ' win' : '') + '">' + vb + '</div>';
+    // No bar to draw? Then the value moves INTO the bar's column, next to the
+    // label, instead of sitting out on the rim with a field of nothing
+    // between the two. Same five columns either way, so the rows still line up.
+    if (!o.scale || !num) {
+        return '<div class="rk-frow wide nobar"><div></div>' + av
+             + '<div class="rk-flab">' + label + '</div>' + bv + '<div></div></div>';
+    }
+    function bar(v, side) {
+        return '<div class="rk-bar ' + side + '"><b style="width:'
+             + Math.max(0, Math.min(100, v / o.scale * 100)) + '%"></b></div>';
+    }
+    return '<div class="rk-frow' + (o.wide ? ' wide' : '') + '">'
+        + av + bar(na, 'a')
+        + '<div class="rk-flab">' + label + '</div>'
+        + bar(nb, 'b') + bv + '</div>';
+}
+
+function facts(a, b) {
+    var ta = a.trophies, tb = b.trophies;
+    // One scale for the whole trophy case, so four podiums draws a longer bar
+    // than one title instead of every row being pinned to its own maximum.
+    var cabinet = Math.max(1, podiums(a), podiums(b),
+        ta.title, tb.title, ta.runner_up, tb.runner_up, ta.third, tb.third,
+        ta.moty, tb.moty, ta.reg_crown, tb.reg_crown, ta.points_title, tb.points_title);
+    var yrs = Math.max(1, a.seasons_played, b.seasons_played);
+
+    return '<div class="rk-facts">'
+        + '<h4>The trophy case</h4>'
+        + factRow('Titles', ta.title, tb.title, 1, { scale: cabinet })
+        + factRow('Runner-up', ta.runner_up, tb.runner_up, 1, { scale: cabinet })
+        + factRow('Third', ta.third, tb.third, 1, { scale: cabinet })
+        + factRow('MOTY', ta.moty, tb.moty, 1, { scale: cabinet })
+        + factRow('Best record', ta.reg_crown, tb.reg_crown, 1, { scale: cabinet })
+        + factRow('Scoring', ta.points_title, tb.points_title, 1, { scale: cabinet })
+        + factRow('Podiums', podiums(a), podiums(b), 1, { scale: cabinet })
+        + '<h4>The career</h4>'
+        + factRow('Seasons', a.seasons_played, b.seasons_played, 0, { scale: yrs })
+        + factRow('Berths', ta.berth, tb.berth, 1, { scale: yrs })
+        + factRow('Win %', C.pct(a.win_pct), C.pct(b.win_pct), 1, { scale: 1, wide: true })
+        + factRow('Record', C.esc(a.record || '--'), C.esc(b.record || '--'), 0, { wide: true })
+        + factRow('Playoffs', C.esc(a.playoff_record || '--'), C.esc(b.playoff_record || '--'), 0, { wide: true })
+        + factRow('Avg finish', C.fmt(a.avg_finish), C.fmt(b.avg_finish), -1, { wide: true })
+        + factRow('Standing', C.esc(a.status_label), C.esc(b.status_label), 0, { wide: true })
+        + '</div>';
+}
+
+// Every season either played, on one row. A year only one of them played
+// shows the other side empty, which is itself the answer sometimes.
+function years(a, b) {
+    var byYear = {};
+    a.ledger.forEach(function (s) { (byYear[s.year] = byYear[s.year] || {}).a = s; });
+    b.ledger.forEach(function (s) { (byYear[s.year] = byYear[s.year] || {}).b = s; });
+    var side = function (s, cls) {
+        if (!s) return '<div class="rk-side ' + cls + '"><span class="rk-none">did not play</span></div>';
+        return '<div class="rk-side ' + cls + '">'
+            + (cls === 'b' ? '<div class="rk-q"><b style="width:' + Math.round(s.q * 100) + '%"></b></div>' : '')
+            + '<span>' + C.ordinal(s.final_rank) + '</span><u>' + C.esc(s.record || '') + '</u>'
+            + (cls === 'a' ? '<div class="rk-q"><b style="width:' + Math.round(s.q * 100) + '%"></b></div>' : '')
+            + '</div>';
+    };
+    var rows = Object.keys(byYear).sort().map(function (y) {
+        return '<div class="rk-yrow">' + side(byYear[y].a, 'a')
+             + '<div class="rk-yr">' + y + '</div>' + side(byYear[y].b, 'b') + '</div>';
+    }).join('');
+    return '<div class="rk-years"><div class="rk-yhead"><div style="text-align:right">Finish &middot; record</div>'
+        + '<div class="rk-yr">Year</div><div>Finish &middot; record</div></div>' + rows + '</div>';
+}
+
+function setCmp(which, uid) {
+    if (which === 'cmpA') cmpA = uid; else cmpB = uid;
+    document.getElementById('reckon').innerHTML = reckoning();
+}
+
+// From inside a manager's case: put him on the left of the bench, keep
+// whoever was already there on the right, and go look.
+function compareFrom(uid) {
+    if (cmpB === uid) cmpB = cmpA;
+    cmpA = uid;
+    openCase(null);
+    document.getElementById('reckon').innerHTML = reckoning();
+    setChap('cmp', true);
+    document.getElementById('chap-cmp').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ══ Manager of the Year ═════════════════════════════════════ */
+/* Weight order, not chronology. Finish alone is 35% of the ballot and is the
+   widest band on nearly every bar, so it leads and the standings sit with it;
+   everything after is the supporting detail, thinning left to right. Running
+   it in season order (draft first, finish last) read better as a story and
+   worse as a bar — the eye landed on the narrow end. The model emits its own
+   order; this is a display decision and lives here. */
+var CMP_ORDER = ['result', 'reg', 'draft', 'scoring', 'allplay', 'roster'];
+var CMP_LABEL = { result: 'Finish', reg: 'Reg season', draft: 'Draft',
+                  scoring: 'Scoring', allplay: 'All-play', roster: 'In-season' };
+function cmpRank(k) { var i = CMP_ORDER.indexOf(k); return i < 0 ? 99 : i; }
+
+/* Banners hang four to a rod at most and two at least, and the rows are
+   levelled rather than filled: nine seasons hang 3/3/3, not 4/4/1. A lone
+   banner on the bottom rod looks like something fell off the wall. */
+function bannerCols() {
+    var w = window.innerWidth;
+    if (w >= 860) return 4;
+    if (w >= 620) return 3;
+    return 2;
+}
+function rackRows(n, cols) {
+    var rows = Math.max(1, Math.ceil(n / cols));
+    var base = Math.floor(n / rows), extra = n % rows, sizes = [];
+    for (var i = 0; i < rows; i++) sizes.push(base + (i < extra ? 1 : 0));
+    return sizes;
+}
+function racks() {
+    var list = MODEL.moty, cols = bannerCols(), at = 0;
+    return rackRows(list.length, cols).map(function (size) {
+        var row = list.slice(at, at + size);
+        at += size;
+        return '<div class="banner-rack" style="--cols:' + cols + ';--n:' + size + '">'
+             + '<div class="rod"></div>'
+             + '<div class="banners">' + row.map(banner).join('') + '</div>'
+             + '</div>';
+    }).join('');
+}
+
+function banner(s) {
+    var w = s.winner;
+    var champ = s.champion === w.uid;
+    return '<button type="button" class="banner' + (openYear === s.year ? ' open' : '') + '" onclick="toggleYear(' + s.year + ')">'
+        + '<span class="bn">'
+        + '<div class="bn-year">' + s.year
+        +   (champ ? '<span class="cup">' + C.GLYPH.cup + '</span>' : '') + '</div>'
+        + '<div class="bn-rule"></div>'
+        + '<div class="bn-face">' + C.portrait(w, 'bn-portrait') + '</div>'
+        + '<div class="bn-name">' + C.esc(w.name) + '</div>'
+        + '<div class="bn-sub">' + C.esc(w.record || '') + ' &middot; ' + C.ordinal(w.final_rank) + '</div>'
+        + '<div class="bn-champ">' + (champ ? 'Took the title too' : 'Title: <b>' + C.esc(championName(s)) + '</b>') + '</div>'
+        + '<div class="bn-stack">' + stack(w, s.ballot[0].score) + '</div>'
+        + '</span>'
+        + '</button>';
+}
+function championName(s) {
+    var c = s.ballot.filter(function (r) { return r.uid === s.champion; })[0];
+    return c ? c.name : 'unknown';
+}
+/* Every bar on a ballot is measured against the WINNER's, who runs full
+   width. A band's length is therefore its real contribution to the score, and
+   lengths compare straight down the page: the longest draft band belongs to
+   the best drafter that season, and the whole bar shows how close the field
+   got to first.
+   Normalising each row to its own total made every bar the same length and
+   turned a low scorer's finish into a big share of a small number, which is
+   why 11th could look like it out-finished 10th. Scaling to a flat 100
+   fixed that but left every bar short of the rail with nothing at the end
+   worth measuring against. */
+function stack(r, top) {
+    var total = r.parts.reduce(function (a, p) { return a + p.w * p.val; }, 0) || 1;
+    var score = 100 * (r.score || 0) / (top || r.score || 1);
+    return r.parts.slice()
+        .sort(function (a, b) { return cmpRank(a.key) - cmpRank(b.key); })
+        .map(function (p) { return { key: p.key, w: (p.w * p.val) / total * score }; })
+        // A component worth nothing gets no band AND no divider. Last place
+        // scores zero for finish, and an empty span still drew the hairline
+        // its neighbour hangs off — a stray marker welded to the end of the
+        // bar with no segment attached to it. Anything under half a percent
+        // is thinner than its own divider, so it goes the same way.
+        .filter(function (p) { return p.w > 0.5; })
+        .map(function (p) { return '<span class="cmp-' + p.key + '" style="width:' + p.w + '%"></span>'; })
+        .join('');
+}
+
+function toggleYear(y) {
+    openYear = openYear === y ? null : y;
+    document.querySelectorAll('.banner').forEach(function (el) { el.classList.remove('open'); });
+    var host = document.getElementById('ballotOpen');
+    if (openYear === null) { host.innerHTML = ''; return; }
+    var s = MODEL.moty.filter(function (x) { return x.year === y; })[0];
+    document.querySelectorAll('.banner')[MODEL.moty.indexOf(s)].classList.add('open');
+    host.innerHTML = ballotPanel(s);
+    host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function ballotPanel(s) {
+    var legend = s.components.slice().sort(function (a, b) { return cmpRank(a) - cmpRank(b); })
+      .map(function (k) {
+        return '<span><i class="cmp-' + k + '"></i>' + CMP_LABEL[k] + ' ' + Math.round(MODEL.weights.moty[k] * 100) + '%</span>';
+    }).join('');
+    var missing = CMP_ORDER.filter(function (k) { return s.components.indexOf(k) < 0; });
+    var top = s.ballot[0] ? s.ballot[0].score : 0;
+    var rows = s.ballot.map(function (r) {
+        return '<div class="bo-row' + (r.rank === 1 ? ' win' : '') + '">'
+            + '<div class="bo-rank">' + r.rank + '</div>'
+            + '<div class="bo-name">' + C.esc(r.name) + '</div>'
+            + '<div class="bo-fin">' + C.ordinal(r.final_rank) + '</div>'
+            + '<div class="bo-stack">' + stack(r, top) + '</div>'
+            + '<div class="bo-score">' + C.fmt(r.score) + '</div></div>';
+    }).join('');
+    return '<div class="scroll">'
+        + '<div class="bo-head"><div class="bo-title">' + s.year + ' &middot; <b>' + C.esc(s.winner.name) + '</b></div>'
+        +   '<div class="bo-legend">' + legend + '</div></div>' + rows
+        + (missing.length ? '<div class="bo-missing">Not scored this season: '
+            + missing.map(function (k) { return CMP_LABEL[k]; }).join(', ')
+            + '. Weights renormalise over what the league has on file.</div>' : '')
+        + '</div>';
+}
+
+function sheet() {
+    var t = MODEL.weights.trophy, mix = MODEL.weights.mix, mw = MODEL.weights.moty;
+    function line(k, v) { return '<div class="lc-line"><span>' + k + '</span><b>' + v + '</b></div>'; }
+    return '<div class="sheet">'
+        + '<h3>How the Index is built</h3>'
+        + '<div class="lc-sub">Drawn from the league&rsquo;s own record. Nothing here is voted on.</div>'
+        + '<div class="lc-cols">'
+        +   '<div><h4>The trophy case</h4>'
+        +     line('Championship', t.title) + line('Manager of the Year', t.moty)
+        +     line('Runner-up', t.runner_up) + line('Best regular-season record', t.reg_crown)
+        +     line('League scoring title', t.points_title) + line('Third place', t.third)
+        +     line('Playoff berth', t.berth)
+        +     '<h4 style="margin-top:1.4rem">The mix</h4>'
+        +     line('Trophy case', Math.round(mix.T * 100) + '%') + line('Season-by-season rate', Math.round(mix.R * 100) + '%')
+        +     line('Best three-year peak', Math.round(mix.P * 100) + '%') + '</div>'
+        +   '<div><h4>Manager of the Year</h4>'
+        +     line('Final standing', Math.round(mw.result * 100) + '%')
+        +     line('Regular-season finish', Math.round(mw.reg * 100) + '%')
+        +     line('All-play record', Math.round(mw.allplay * 100) + '%')
+        +     line('Scoring power', Math.round(mw.scoring * 100) + '%')
+        +     line('Draft class', Math.round(mw.draft * 100) + '%')
+        +     line('In-season roster building', Math.round(mw.roster * 100) + '%')
+        +     '<h4 style="margin-top:1.4rem">Enshrinement</h4>'
+        +     line('Minimum seasons', MODEL.constants.MIN_SEASONS)
+        +     line('Absolute floor', MODEL.constants.ABSOLUTE_FLOOR)
+        +     line('Hall capped at', Math.round(MODEL.constants.HALL_SHARE * 100) + '% of eligible')
+        +     line('Current bar', C.fmt(MODEL.bar)) + '</div>'
+        + '</div>'
+        + '<p class="lc-note"><b>Enshrined carries no year, because it is a standing rather than a ceremony.</b> '
+        + 'The bar floats against the field and the hall is capped, so a manager <i>can</i> be pushed out by someone '
+        + 'with a better case, and let back in when his own case grows again. Nobody is voted in on a date and '
+        + 'nobody is in for life. The plate says where a career stands the moment you are looking at it.</p>'
+        + '<p class="lc-note">Every season term is normalised inside its own season, so one scoring era never competes with '
+        + 'another. The bar floats against the field you actually play in, which is how a three-year league and a twenty-year '
+        + 'league both run this page honestly. Alumni keep their standing: leaving does not close a case.</p>'
+        + '</div>';
+}
+</script>
+</body>
+</html>

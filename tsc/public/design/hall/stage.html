@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hall · Grand Stage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=IM+Fell+English:ital@0;1&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+/* ============================================================
+   THE GRAND STAGE
+   An opera house, not a web page. One proscenium: gilded arch,
+   crimson curtains swagged to the sides, a plank stage raked
+   toward the footlights. The enshrined stand DOWNSTAGE, each in
+   their own spotlight on a marble pedestal with their real
+   trophies displayed on the plinth. The rest of the league
+   stands as the company, staggered on risers upstage in the
+   half-dark. Alumni wait backstage. The trophies here are drawn
+   as OBJECTS — gradient gold, silver, crystal, leather — not as
+   line icons, because a lit stage exposes a wireframe instantly.
+     I    The stage      · spotlights, pedestals, the company
+     II   The reliquary  · one manager, opened in a velvet case
+     III  The playbills  · Manager of the Year, one bill a season
+     IV   The programme  · how the Index is built
+   ============================================================ */
+
+:root {
+    --gilt-a:   #f0d9a8;
+    --gilt-b:   #c9a15e;
+    --gilt-c:   #8a6a35;
+    --curt-hi:  #7c2129;
+    --curt:     #56151c;
+    --curt-lo:  #340a0f;
+    --velvet-hi:#4a161c;
+    --velvet:   #331014;
+    --velvet-lo:#1f090c;
+    --board-hi: #5d3d22;
+    --board:    #3c2715;
+    --board-lo: #23150a;
+    --parch-hi: #efdfba;
+    --parch:    #e2cd9e;
+    --parch-lo: #cfb583;
+    --quill:    #33220f;
+    --quill-mut:#6f5733;
+    --redink:   #7a1518;
+    --candle:   #ffd79a;
+    --spot:     255, 216, 154;
+    --display:  'Cinzel', var(--serif);
+    --fell:     'IM Fell English', var(--serif);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='2' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0 0 0 0'/%3E%3C/filter%3E%3Crect width='480' height='480' filter='url(%23g)'/%3E%3C/svg%3E");
+    --fleck: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='1' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.22 0 0 0 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+
+body { background: #060404; color: var(--cream); }
+
+/* The house: darkness, a breath of warmth rising from the stage. */
+.house {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+        radial-gradient(70% 50% at 50% 62%, rgba(var(--spot), .05), transparent 70%),
+        var(--fleck),
+        linear-gradient(180deg, #0b0705 0%, #060404 60%, #030202 100%);
+}
+
+.wrap { position: relative; z-index: 2; max-width: 1340px; margin: 0 auto; padding: 0 1.5rem 6rem; }
+.narrow { max-width: 1060px; margin-left: auto; margin-right: auto; }
+
+/* ══ Prototype chrome ════════════════════════════════════════ */
+.proto-switch {
+    position: relative; z-index: 40;
+    display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;
+    max-width: 1340px; margin: 0 auto; padding: 1rem 1.5rem .25rem;
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .16em; text-transform: uppercase;
+}
+.proto-switch-tag { color: var(--rust); font-weight: 700; }
+.proto-switch-a { color: var(--cream-mute); text-decoration: none; }
+a.proto-switch-a:hover { color: var(--candle); }
+.proto-switch-a.on { color: var(--candle); }
+.proto-switch-sep { color: var(--cream-mute); opacity: .5; }
+.proto-switch-src { margin-left: auto; color: var(--cream-mute); letter-spacing: .1em; }
+
+/* ══ Masthead ════════════════════════════════════════════════ */
+.mast { text-align: center; padding: 3rem 0 2.6rem; }
+.mast-kick {
+    font-family: var(--display); font-weight: 600; font-size: .66rem;
+    letter-spacing: .5em; text-transform: uppercase; color: var(--gilt-b);
+}
+.mast-title {
+    font-family: var(--display); font-weight: 600; font-size: clamp(2.4rem, 6.4vw, 4.6rem);
+    line-height: 1.02; letter-spacing: .06em; text-transform: uppercase; margin-top: 1rem;
+    background: linear-gradient(180deg, var(--gilt-a) 14%, var(--gilt-b) 58%, var(--gilt-c) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 3px 0 rgba(0,0,0,.55);
+}
+.mast-sub { font-family: var(--fell); font-style: italic; font-size: 1.12rem; color: var(--cream-soft); margin: 1rem auto 0; max-width: 640px; }
+.mast-sub b { color: var(--candle); font-weight: 400; font-style: normal; }
+
+/* Chapter heads: theatre marquee boards, bulbs and all. */
+.chap { margin: 5rem auto 2rem; text-align: center; }
+.ribbon {
+    position: relative; display: inline-block; padding: .8rem 2.6rem .74rem;
+    font-family: var(--display); font-weight: 600; font-size: .9rem;
+    letter-spacing: .3em; text-transform: uppercase; color: var(--candle);
+    background: linear-gradient(180deg, #17100a, #0d0806);
+    border: 2px solid #b08a4a; border-radius: 6px;
+    box-shadow: 0 0 0 1px #0a0603, 0 8px 18px rgba(0,0,0,.6), 0 0 22px rgba(var(--spot), .12);
+    text-shadow: 0 0 10px rgba(var(--spot), .5);
+}
+.ribbon::before {
+    content: ''; position: absolute; inset: 5px; pointer-events: none;
+    border: 3px dotted rgba(var(--spot), .8); border-radius: 4px;
+    filter: drop-shadow(0 0 3px rgba(var(--spot), .55));
+}
+.chap-note { font-family: var(--sans); font-size: .82rem; color: var(--cream-mute); margin: .85rem auto 0; max-width: 560px; line-height: 1.6; }
+.rib-btn { border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: .8rem; }
+.rib-btn:hover { filter: brightness(1.12); }
+.rib-caret { font-size: .8em; line-height: 1; transition: transform .22s; }
+.rib-btn.open .rib-caret { transform: rotate(180deg); }
+.fold[hidden] { display: none; }
+
+/* ============================================================
+   I · THE STAGE
+   ============================================================ */
+.theatre { position: relative; margin-top: 1.5rem; }
+
+/* The proscenium: a gilded arch over everything. */
+.pros {
+    position: relative; z-index: 6; height: 30px; margin: 0 -10px;
+    background-image: var(--grain), linear-gradient(180deg, #a5804f 0%, #6b4e24 45%, #33220f 100%);
+    border-radius: 10px 10px 0 0;
+    border-top: 2px solid #d9b878; border-bottom: 1px solid #0a0603;
+    box-shadow: 0 4px 10px rgba(0,0,0,.6);
+}
+.pros::after {
+    content: ''; position: absolute; left: 14px; right: 14px; top: 8px; height: 5px;
+    background: repeating-linear-gradient(90deg, rgba(20,10,4,.55) 0 7px, transparent 7px 14px);
+    border-radius: 3px;
+}
+.pros-col { position: absolute; top: 30px; bottom: 0; width: 26px; z-index: 6;
+    background-image: var(--grain),
+        linear-gradient(90deg, rgba(0,0,0,.5) 0 1px, rgba(255,222,160,.28) 1px 4px, transparent 4px 12px,
+                        rgba(0,0,0,.4) 12px 14px, transparent 14px 22px, rgba(0,0,0,.55) 22px 26px),
+        linear-gradient(180deg, #8a6a35, #4b351e 70%, #241708);
+}
+.pros-col.l { left: -10px; } .pros-col.r { right: -10px; }
+
+/* The stage box. */
+.stage {
+    position: relative; margin: 0 16px; overflow: hidden;
+    background-image:
+        var(--fleck),
+        radial-gradient(90% 70% at 50% 100%, rgba(var(--spot), .07), transparent 65%),
+        linear-gradient(180deg, #0a0605 0%, #100a07 55%, #171009 100%);
+    box-shadow: inset 0 0 0 1px #0a0603, inset 0 20px 40px rgba(0,0,0,.8);
+}
+
+/* The valance: swagged crimson over the top, gold fringe below it. */
+.valance {
+    position: absolute; top: 0; left: 0; right: 0; height: 58px; z-index: 5; pointer-events: none;
+    background-image:
+        var(--fleck),
+        repeating-linear-gradient(90deg,
+            var(--curt-lo) 0 8px, var(--curt) 8px 30px, var(--curt-hi) 30px 46px, var(--curt) 46px 68px, var(--curt-lo) 68px 76px),
+        linear-gradient(180deg, rgba(0,0,0,.25), transparent 60%);
+    -webkit-mask-image: radial-gradient(46px 34px at 38px 0, transparent 42px, #000 43px);
+    -webkit-mask-repeat: repeat-x; -webkit-mask-position: 0 bottom; -webkit-mask-size: 76px 100%;
+    mask-image: radial-gradient(46px 34px at 38px 0, transparent 42px, #000 43px);
+    mask-repeat: repeat-x; mask-position: 0 bottom; mask-size: 76px 100%;
+    transform: scaleY(-1);
+}
+/* mask carves scallops out of the BOTTOM edge (element is flipped so the
+   radial bites upward). The fringe hangs on its own strip so it needs no flip. */
+.fringe {
+    position: absolute; top: 46px; left: 0; right: 0; height: 16px; z-index: 5; pointer-events: none;
+    background-image:
+        repeating-linear-gradient(90deg, var(--gilt-c) 0 2px, var(--gilt-b) 2px 4px, transparent 4px 6px);
+    -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent);
+    mask-image: linear-gradient(180deg, #000 55%, transparent);
+    opacity: .85;
+}
+
+/* Side curtains, swagged in with a tieback: wider at top, gathered waist,
+   spilling back out to the floor. */
+.curt {
+    position: absolute; top: 0; bottom: 0; width: 118px; z-index: 4; pointer-events: none;
+    background-image:
+        var(--fleck),
+        linear-gradient(180deg, rgba(0,0,0,.3), transparent 20%, transparent 70%, rgba(0,0,0,.45)),
+        repeating-linear-gradient(90deg,
+            var(--curt-lo) 0 7px, var(--curt) 7px 24px, var(--curt-hi) 24px 38px, var(--curt) 38px 54px, var(--curt-lo) 54px 62px);
+    box-shadow: 0 0 34px rgba(0,0,0,.8);
+}
+.curt.l { left: 0; clip-path: polygon(0 0, 100% 0, 58% 18%, 40% 45%, 62% 74%, 100% 100%, 0 100%); }
+.curt.r { right: 0; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 38% 74%, 60% 45%, 42% 18%); }
+/* The tieback cord. */
+.curt::after {
+    content: ''; position: absolute; top: 42%; width: 58px; height: 12px; border-radius: 6px;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 55%, var(--gilt-c));
+    box-shadow: 0 2px 5px rgba(0,0,0,.7);
+}
+.curt.l::after { left: 8px; transform: rotate(-12deg); }
+.curt.r::after { right: 8px; transform: rotate(12deg); }
+
+/* The scene: company upstage, stars downstage. */
+.scene { position: relative; z-index: 2; padding: 84px 130px 0; }
+
+/* ── The company ──────────────────────────────────────────────
+   Everyone not enshrined, staggered on risers in the half-dark.
+   Depth is painted, not faked with transforms: farther rows are
+   smaller, dimmer, and closer together. */
+.crow { display: flex; justify-content: center; gap: .8rem; }
+.crow + .crow { margin-top: .8rem; }
+.crow.off { transform: translateX(56px); }
+.cast {
+    position: relative; font: inherit; color: inherit; cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: .6rem;
+    width: 236px; max-width: 100%; padding: .55rem .7rem;
+    background-image:
+        var(--fleck),
+        linear-gradient(180deg, #221a13 0%, #171009 60%, #100a06 100%);
+    border: 1px solid #0a0603; border-radius: 3px;
+    box-shadow: inset 0 1px 0 rgba(255,222,160,.12), inset 0 0 0 1px rgba(201,161,94,.16),
+                0 4px 6px -2px rgba(0,0,0,.7);
+    transition: transform .16s;
+}
+.cast::after { content: ''; position: absolute; inset: 0; border-radius: 2px; pointer-events: none;
+               background: rgba(4,2,1,0); transition: background .16s; }
+.cast:hover { transform: translateY(-2px); }
+.cast:hover::after { background: rgba(255,214,150,.07); }
+.cast.open { box-shadow: 0 0 0 2px var(--gilt-b), 0 4px 6px -2px rgba(0,0,0,.7); }
+/* Painted depth. */
+.crow.d1 .cast::after { background: rgba(4,2,1,.28); }
+.crow.d1 .cast:hover::after { background: rgba(20,12,5,.12); }
+.crow.d2 .cast::after { background: rgba(4,2,1,.44); }
+.crow.d2 .cast:hover::after { background: rgba(20,12,5,.24); }
+.crow.d1 .cast { width: 222px; }
+.crow.d2 .cast { width: 208px; }
+
+.cast-face {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+    background: #14100a;
+    box-shadow: 0 0 0 1px #0a0603, 0 0 0 2px #6b4e24;
+}
+.cast-face img { width: 100%; height: 100%; object-fit: cover; }
+.cast-face i { display: none; font-style: normal; font-family: var(--display); font-weight: 600; font-size: .62rem; color: var(--gilt-b); }
+.cast-face.is-mono i { display: block; }
+.cast-main { flex: 1; min-width: 0; }
+.cast-name { display: block; font-family: var(--serif); font-size: .98rem; line-height: 1.1; color: #e8dcbe;
+             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cast-tag { display: block; font-family: var(--mono); font-size: .46rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .22rem; }
+.tg-ballot { color: #8fa9c2; } .tg-building { color: #9c8a68; } .tg-ineligible { color: #635a48; }
+.cast-hw { display: flex; gap: .3rem; margin-top: .3rem; min-height: 13px; align-items: flex-end; }
+.cast-hw span { display: inline-flex; align-items: flex-end; gap: .14rem; font-family: var(--mono); font-size: .56rem; font-weight: 700; }
+.cast-hw svg { width: 13px; height: 13px; display: block; }
+.cast-idx { flex: 0 0 auto; text-align: right; font-family: var(--serif); font-size: 1.25rem; color: #e8dcbe; }
+.cast-idx i { display: block; font-style: normal; font-family: var(--mono); font-size: .4rem; letter-spacing: .22em;
+              text-transform: uppercase; color: #9c8a68; margin-top: .18rem; }
+/* Count hues beside the solid pieces. */
+.gold   { color: #f0c877; } .silver { color: #c2ccd4; }
+.bronze { color: #c08553; } .leaf   { color: #97b28f; }
+.royal  { color: #8fb6d6; } .award  { color: #b79ae6; }
+
+/* ── The stars ────────────────────────────────────────────────
+   Downstage centre. A cone of light from the flys, a marble
+   pedestal, and the hardware itself standing on the plinth. */
+.front { display: flex; justify-content: center; align-items: flex-end; gap: clamp(1rem, 3vw, 3rem);
+         margin-top: 2.6rem; flex-wrap: wrap; }
+.star {
+    position: relative; font: inherit; color: inherit; cursor: pointer; text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+    width: min(300px, 100%); padding: 150px 10px 0;
+}
+/* The spotlight cone. */
+.star::before {
+    content: ''; position: absolute; top: 0; bottom: 74px; left: 0; right: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(var(--spot), .2), rgba(var(--spot), .05) 62%, transparent);
+    clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+    animation: spotbreathe 8s ease-in-out infinite;
+}
+@keyframes spotbreathe { 0%, 100% { opacity: .78; } 40% { opacity: 1; } 62% { opacity: .86; } 80% { opacity: .96; } }
+.star:hover::before { animation: none; opacity: 1; }
+.star-face {
+    position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center;
+    width: 108px; height: 108px; border-radius: 50%; overflow: hidden;
+    background: #14100a;
+    box-shadow: 0 0 0 3px #14100a, 0 0 0 7px var(--gilt-b), 0 0 0 9px #6b4e24,
+                0 8px 20px rgba(0,0,0,.8), 0 0 34px rgba(var(--spot), .25);
+    transition: transform .22s;
+}
+.star-face img { width: 100%; height: 100%; object-fit: cover; }
+.star-face i { display: none; font-style: normal; font-family: var(--display); font-weight: 600; font-size: 2rem; color: var(--gilt-b); }
+.star-face.is-mono i { display: block; }
+.star:hover .star-face { transform: scale(1.04); }
+.star-name {
+    position: relative; z-index: 1; margin-top: 1rem; padding: 0 .3rem;
+    font-family: var(--display); font-weight: 700; font-size: 1.42rem; line-height: 1.12; letter-spacing: .04em;
+    background: linear-gradient(100deg, var(--gilt-c) 0%, var(--gilt-b) 34%, var(--gilt-a) 50%, var(--gilt-b) 66%, var(--gilt-c) 100%);
+    background-size: 240% 100%; background-position: 50% 0;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,.85));
+}
+.star:hover .star-name { animation: starsheen 1.1s ease; }
+@keyframes starsheen { from { background-position: 130% 0; } to { background-position: -30% 0; } }
+.star-team { position: relative; z-index: 1; font-family: var(--fell); font-style: italic; font-size: .85rem; color: #c7a09a; margin-top: .3rem; }
+.star-rec { position: relative; z-index: 1; font-family: var(--mono); font-size: .62rem; color: #b7a582; margin-top: .5rem; }
+.star-rec b { color: #efe3c4; font-weight: 400; }
+
+/* The trophies, standing on the plinth top. Solid objects: gradient metal,
+   crystal and leather. Counts stand beside the piece. */
+.star-hw { position: relative; z-index: 2; display: flex; align-items: flex-end; justify-content: center;
+           gap: .55rem; margin-top: 1.05rem; padding: 0 .4rem; min-height: 52px; }
+.star-hw .pc { display: inline-flex; align-items: flex-end; gap: .2rem; }
+.star-hw svg { width: 46px; height: 46px; display: block; filter: drop-shadow(0 4px 4px rgba(0,0,0,.7)); }
+.star-hw b { font-family: var(--mono); font-size: .74rem; font-weight: 700; color: #efe3c4; line-height: 1; padding-bottom: 7px; }
+.star-none { font-family: var(--fell); font-style: italic; font-size: .78rem; color: rgba(226,205,158,.5); padding-bottom: 12px; }
+
+/* The pedestal: marble under gold. The trophies' feet land on its cap. */
+.star-ped { position: relative; z-index: 1; width: 100%; margin-top: -6px; }
+.ped-cap {
+    height: 13px; margin: 0 4px;
+    background-image: var(--fleck), linear-gradient(180deg, #efe6d4 0%, #cfc2a8 45%, #9a8d72 100%);
+    border-radius: 2px 2px 0 0;
+    box-shadow: 0 3px 6px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.ped-body {
+    position: relative; margin: 0 12px; padding: .85rem .8rem .95rem;
+    background-image:
+        var(--fleck),
+        linear-gradient(115deg, transparent 42%, rgba(255,255,255,.06) 46%, transparent 52%),
+        linear-gradient(180deg, #d9cdb4 0%, #b5a88c 55%, #8a7d63 100%);
+    box-shadow: inset 0 0 0 1px rgba(90,70,40,.35), inset 0 -10px 16px rgba(60,45,25,.28), 0 10px 18px rgba(0,0,0,.6);
+}
+.ped-rank {
+    position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; justify-content: center;
+    width: 27px; height: 27px; border-radius: 50%;
+    font-family: var(--display); font-weight: 700; font-size: .52rem; color: #241708;
+    background: radial-gradient(circle at 38% 32%, var(--gilt-a), var(--gilt-b) 55%, var(--gilt-c));
+    box-shadow: 0 0 0 1px #6b5232, 0 2px 4px rgba(0,0,0,.5);
+}
+.ped-plate {
+    display: inline-block; padding: .3rem .9rem .26rem;
+    font-family: var(--display); font-weight: 700; font-size: .55rem; letter-spacing: .26em; text-transform: uppercase;
+    color: #2c1a06;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 65%, var(--gilt-c));
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 -1px 0 rgba(0,0,0,.3) inset, 0 2px 4px rgba(60,45,25,.5);
+}
+.ped-idx { margin-top: .5rem; font-family: var(--serif); font-size: 1.75rem; line-height: 1; color: #3a2f1c; }
+.ped-idx i { font-style: normal; font-family: var(--mono); font-size: .44rem; letter-spacing: .26em;
+             text-transform: uppercase; color: #7a6d52; margin-left: .45rem; }
+.ped-foot {
+    height: 12px; margin: 0 2px;
+    background-image: var(--fleck), linear-gradient(180deg, #cfc2a8 0%, #a3967b 50%, #6f6349 100%);
+    border-radius: 0 0 2px 2px;
+    box-shadow: 0 8px 14px rgba(0,0,0,.65);
+}
+/* The pool of light on the boards. */
+.star-pool { position: absolute; left: 6%; right: 6%; bottom: -30px; height: 40px; z-index: 0;
+    background: radial-gradient(50% 100% at 50% 40%, rgba(var(--spot), .12), transparent 70%); }
+
+.star.alum::before { opacity: .35; animation: none; }
+
+/* The apron: plank floor and a row of footlights burning along its edge. */
+.apron {
+    position: relative; z-index: 3; height: 52px; margin-top: 34px;
+    background-image:
+        var(--grain),
+        repeating-linear-gradient(90deg, transparent 0 88px, rgba(0,0,0,.5) 88px 90px),
+        linear-gradient(180deg, var(--board-hi) 0%, var(--board) 45%, var(--board-lo) 100%);
+    border-top: 1px solid #6b4a28;
+    box-shadow: inset 0 6px 12px -6px rgba(var(--spot), .25);
+}
+.foots {
+    position: absolute; left: 0; right: 0; bottom: -9px; height: 18px; z-index: 4;
+    background-image:
+        radial-gradient(circle 5px at 50% 40%, #ffe9bd 0 2.2px, #d9a94e 3.2px, rgba(120,80,20,.9) 4.2px, transparent 5px),
+        radial-gradient(14px 9px at 50% 38%, rgba(var(--spot), .5), transparent 70%);
+    background-size: 64px 18px, 64px 18px; background-position: 32px 0, 32px 0; background-repeat: repeat-x;
+}
+.stagefront {
+    position: relative; z-index: 2; height: 26px; margin: 0 6px;
+    background-image: var(--grain), linear-gradient(180deg, #2c1d10, #170e06 70%, #0a0603);
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 18px 30px rgba(0,0,0,.8);
+}
+
+/* Backstage: the alumni, behind a plain rail under the stage. */
+.rail {
+    position: relative; z-index: 2; display: flex; align-items: center; justify-content: center;
+    height: 36px; margin: 10px 40px 0;
+    background-image: var(--fleck), linear-gradient(180deg, #1c130b, #100905 70%);
+    border: 1px solid #0a0603; border-radius: 3px;
+    font-family: var(--display); font-weight: 700; font-size: .62rem; letter-spacing: .5em; text-transform: uppercase;
+    color: #cbb083; text-shadow: 0 1px 1px rgba(0,0,0,.8);
+}
+.rail-btn { background: none; color: inherit; font: inherit; letter-spacing: inherit;
+            text-transform: inherit; text-shadow: inherit; padding: 0 1.2rem; height: 100%; }
+.rail-btn i { font-style: normal; opacity: .62; margin-left: -.3rem; }
+.rail:hover { filter: brightness(1.15); }
+.backstage { padding: 1.2rem 40px 0; }
+.backstage .crow.off { transform: translateX(40px); }
+.backstage .cast::after { background: rgba(4,2,1,.4); }
+.backstage .cast:hover::after { background: rgba(20,12,5,.2); }
+
+/* ============================================================
+   II · THE RELIQUARY  (velvet case, same bones as the Trophy
+   Room's — the case earned its keep there. Hardware is solid.)
+   ============================================================ */
+.veil {
+    position: fixed; inset: 0; z-index: 90; display: flex; align-items: flex-start; justify-content: center;
+    padding: clamp(1rem, 4vh, 3.4rem) 1rem; overflow-y: auto;
+    background: rgba(4, 3, 2, .82);
+    -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+    animation: veilin .22s ease;
+}
+@keyframes veilin { from { opacity: 0; } to { opacity: 1; } }
+.case {
+    position: relative; width: min(860px, 100%); margin: auto 0; padding: 16px;
+    background-image: var(--grain), linear-gradient(180deg, #59401f, #3d2a15 55%, #241708);
+    border: 1px solid #0e0803; border-radius: 4px;
+    box-shadow: 0 40px 90px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,222,160,.25);
+    animation: casein .28s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes casein { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+.case-in {
+    position: relative; overflow: hidden;
+    background-image: var(--fleck), radial-gradient(130% 90% at 50% 0%, #3d1319, #240b0f 55%, #170609 100%);
+    box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,.8),
+        inset 0 0 0 3px rgba(201,161,94,.55),
+        inset 0 0 0 4px rgba(0,0,0,.6),
+        inset 0 0 70px rgba(0,0,0,.7);
+    padding-bottom: 1.7rem;
+}
+.case-in::after {
+    content: ''; position: absolute; inset: 0; z-index: 8; pointer-events: none;
+    background: linear-gradient(108deg, rgba(210,230,250,.07) 0%, transparent 20%, transparent 60%, rgba(210,230,250,.04) 74%, transparent 86%);
+}
+.case-close {
+    position: absolute; top: 12px; right: 12px; z-index: 9;
+    font-family: var(--display); font-weight: 700; font-size: .55rem; letter-spacing: .22em; text-transform: uppercase;
+    color: #2c1a06; cursor: pointer; padding: .4rem .75rem; border: 0;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 65%, var(--gilt-c));
+    border-radius: 2px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 -1px 0 rgba(0,0,0,.4) inset, 0 2px 5px rgba(0,0,0,.6);
+}
+.case-close:hover { filter: brightness(1.1); }
+.case-alum { position: absolute; top: 16px; left: 16px; z-index: 9;
+             font-family: var(--mono); font-size: .5rem; letter-spacing: .3em; text-transform: uppercase; color: rgba(226,205,158,.5); }
+.case-head { position: relative; z-index: 2; text-align: center; padding: 2.4rem 2rem 0; }
+.case-portrait {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 76px; height: 76px; border-radius: 50%; overflow: hidden;
+    background: #1c0a0c;
+    box-shadow: 0 0 0 2px #1c0a0c, 0 0 0 5px var(--gilt-b), 0 0 0 7px #6b4e24, 0 4px 10px rgba(0,0,0,.8);
+}
+.case-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.case-portrait i { display: none; font-style: normal; font-family: var(--display); font-weight: 600; font-size: 1.5rem; color: var(--gilt-b); }
+.case-portrait.is-mono i { display: block; }
+.case-name {
+    font-family: var(--display); font-weight: 600; font-size: clamp(1.4rem, 4vw, 2rem); line-height: 1.12; margin-top: .95rem;
+    background: linear-gradient(180deg, var(--gilt-a) 10%, var(--gilt-b) 60%, var(--gilt-c));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,.8));
+}
+.case-name.plain { background: none; -webkit-background-clip: initial; background-clip: initial; color: #efe3c4; filter: none; }
+.case-team { font-family: var(--fell); font-style: italic; font-size: .92rem; color: #b98f8a; margin-top: .3rem; }
+.case-standing { margin-top: .8rem; }
+.case-standing .ped-plate { font-size: .54rem; }
+.case-standing .cast-tag { display: inline-block; font-size: .56rem; margin-top: 0; }
+.case-cite { font-family: var(--fell); font-style: italic; font-size: .98rem; line-height: 1.7; color: #d9c5a8;
+             max-width: 600px; margin: 1.1rem auto 0; }
+
+.hw-case { --hw-label: 40px; position: relative; z-index: 2; }
+.hw-row { position: relative; z-index: 2; display: flex; align-items: flex-end; justify-content: center;
+          gap: .75rem; flex-wrap: nowrap; margin: 1.6rem 2.4rem 0; padding: 0 .5rem; }
+.hw { position: relative; display: flex; flex-direction: column; align-items: center;
+      flex: 0 0 auto; width: 62px; padding-bottom: var(--hw-label); }
+.hw-obj { height: 46px; display: flex; align-items: flex-end; filter: drop-shadow(0 5px 4px rgba(0,0,0,.75)); }
+.hw-obj svg { width: 44px; height: 44px; display: block; }
+.hw-cap { position: absolute; left: -5px; right: -5px; bottom: 0; text-align: center; }
+.hw-yr { font-family: var(--mono); font-size: .56rem; line-height: 1.2; letter-spacing: .12em; color: #efe3c4; }
+.hw-lb { font-family: var(--sans); font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
+         color: rgba(226,205,158,.5); margin-top: .2rem; line-height: 1.25; height: 1.25em; white-space: nowrap; }
+.hw-nth {
+    position: absolute; top: -2px; right: 2px; z-index: 3;
+    font-family: var(--mono); font-size: .5rem; font-weight: 700; letter-spacing: .02em;
+    color: #2c1a06; padding: .06rem .26rem .02rem; border-radius: 2px;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 70%, var(--gilt-c));
+    box-shadow: 0 1px 0 rgba(255,255,255,.3) inset, 0 1px 3px rgba(0,0,0,.7);
+}
+.hw-shelf {
+    position: absolute; z-index: 1; left: 2rem; right: 2rem;
+    bottom: calc(var(--hw-label) - 12px); height: 10px;
+    background-image: var(--grain), linear-gradient(180deg, #8a6640, #4b351e 45%, #170e06);
+    border-top: 1px solid #a5804f;
+    box-shadow: 0 7px 9px -2px rgba(0,0,0,.8);
+}
+
+.case-plate { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between;
+              gap: 1rem; flex-wrap: wrap; margin: 2.2rem 1.6rem 0; padding: .8rem 1.15rem;
+              background: linear-gradient(160deg, #6b5228, #40301680);
+              border: 1px solid rgba(201,161,94,.5); border-radius: 2px;
+              box-shadow: inset 0 1px 0 rgba(255,231,186,.25), 0 3px 8px rgba(0,0,0,.5); }
+.plate-k { font-family: var(--mono); font-size: .55rem; letter-spacing: .26em; text-transform: uppercase; color: rgba(240,200,119,.75); }
+.plate-v { font-family: var(--serif); font-size: 1.05rem; color: #efe3c4; }
+.plate-index { font-family: var(--serif); font-size: 1.9rem; line-height: 1; color: #f0c877; }
+
+.case-ledger { position: relative; z-index: 2; margin: 1.3rem 1.6rem 0; }
+.cl-head, .cl-row {
+    display: grid; grid-template-columns: 3.2rem 1fr 4.4rem 4.4rem 4.4rem 3.6rem;
+    gap: .7rem; align-items: center; padding: .42rem .2rem;
+}
+.cl-head { font-family: var(--mono); font-size: .52rem; letter-spacing: .2em; text-transform: uppercase;
+           color: rgba(226,205,158,.5); border-bottom: 1px solid rgba(201,161,94,.3); }
+.cl-row { border-bottom: 1px solid rgba(226,205,158,.08); font-family: var(--mono); font-size: .72rem; color: #d9c5a8; }
+.cl-row:last-child { border-bottom: 0; }
+.cl-yr { color: #efe3c4; }
+.cl-row.title { background: rgba(240,200,119,.08); }
+.cl-row.title .cl-yr { color: #f0c877; }
+.cl-fin { font-family: var(--sans); font-size: .72rem; }
+.cl-q { position: relative; height: 5px; background: rgba(0,0,0,.4); }
+.cl-q b { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--gilt-c), var(--gilt-b)); }
+
+/* ============================================================
+   IIb · THE RECKONING  (ported: the bench works)
+   ============================================================ */
+.reckon {
+    position: relative; padding: 16px;
+    background-image: var(--grain), linear-gradient(180deg, #59401f, #3d2a15 55%, #241708);
+    border: 1px solid #0e0803; border-radius: 4px;
+    box-shadow: 0 26px 50px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,222,160,.25);
+}
+.reckon-in {
+    position: relative; overflow: hidden; padding: 1.6rem 1.5rem 1.8rem;
+    background-image: var(--fleck), radial-gradient(130% 90% at 50% 0%, #3d1319, #240b0f 55%, #170609);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.8), inset 0 0 0 3px rgba(201,161,94,.5),
+                inset 0 0 0 4px rgba(0,0,0,.6), inset 0 0 70px rgba(0,0,0,.7);
+}
+.rk-head { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; }
+.rk-pick { position: relative; }
+.rk-pick-btn {
+    width: 100%; cursor: pointer; border: 0; border-radius: 2px;
+    display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+    font-family: var(--display); font-weight: 700; font-size: .74rem;
+    letter-spacing: .14em; text-transform: uppercase; color: #2c1a06;
+    padding: .5rem .9rem .46rem;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b) 65%, var(--gilt-c));
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 -1px 0 rgba(0,0,0,.4) inset, 0 2px 5px rgba(0,0,0,.6);
+}
+.rk-pick-btn:hover { filter: brightness(1.06); }
+.rk-pick-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-pick-btn i { font-style: normal; font-size: .7rem; line-height: 1; transition: transform .18s; }
+.rk-pick.open .rk-pick-btn i { transform: rotate(180deg); }
+.rk-menu {
+    position: absolute; top: calc(100% + 7px); left: 0; right: 0; z-index: 30;
+    max-height: 320px; overflow-y: auto; padding: 6px;
+    background-image: var(--grain), linear-gradient(180deg, #4b351e, #2c1d10 70%, #241708);
+    border: 1px solid #0e0803; border-radius: 3px;
+    box-shadow: inset 0 0 0 1px rgba(201,161,94,.4), 0 18px 34px rgba(0,0,0,.75);
+}
+.rk-menu[hidden] { display: none; }
+.rk-opt {
+    display: flex; align-items: center; gap: .7rem; width: 100%; text-align: left;
+    border: 0; cursor: pointer; padding: .45rem .55rem; border-radius: 2px;
+    background: transparent; color: #efe3c4; font-family: var(--serif); font-size: .95rem;
+}
+.rk-opt:hover { background: rgba(255,214,150,.12); }
+.rk-opt.on { background: rgba(201,161,94,.22); box-shadow: 0 0 0 1px rgba(201,161,94,.45); }
+.rk-opt-face {
+    width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center; background: #1c1208;
+    box-shadow: 0 0 0 1px #120a04, 0 0 0 2px #6f5130;
+}
+.rk-opt-face img { width: 100%; height: 100%; object-fit: cover; }
+.rk-opt-face i { display: none; font-style: normal; font-family: var(--display); font-size: .58rem; color: var(--gilt-b); }
+.rk-opt-face.is-mono i { display: block; }
+.rk-opt-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-opt b { font-family: var(--mono); font-size: .66rem; font-weight: 400; color: var(--gilt-b); }
+.rk-vs { font-family: var(--fell); font-style: italic; font-size: .92rem; color: rgba(226,205,158,.55); }
+.rk-tops { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; margin-top: 1.5rem; }
+.rk-top { text-align: center; }
+.rk-top .case-portrait { width: 62px; height: 62px; }
+.rk-name { font-family: var(--display); font-weight: 600; font-size: 1.02rem; color: #efe3c4; margin-top: .6rem; }
+.rk-team { font-family: var(--sans); font-size: .6rem; color: #b98f8a; margin-top: .16rem; }
+.rk-idx { font-family: var(--serif); font-size: 2.2rem; line-height: 1; color: #f0c877; margin-top: .5rem; }
+.rk-idx i { display: block; font-style: normal; font-family: var(--mono); font-size: .46rem;
+            letter-spacing: .26em; text-transform: uppercase; color: rgba(226,205,158,.45); margin-top: .3rem; }
+.rk-gap { text-align: center; font-family: var(--mono); font-size: .58rem; letter-spacing: .12em;
+          text-transform: uppercase; color: rgba(226,205,158,.5); }
+.rk-gap b { display: block; font-family: var(--serif); font-size: 1.4rem; letter-spacing: 0;
+            text-transform: none; color: #efe3c4; margin-top: .3rem; }
+.rk-verdict { font-family: var(--fell); font-style: italic; font-size: .98rem; line-height: 1.6;
+              color: #d9c5a8; text-align: center; max-width: 620px; margin: 1.4rem auto 0; }
+.rk-verdict b { color: var(--gilt-a); font-weight: 400; }
+.rk-rows { margin-top: 1.6rem; }
+.rk-row { display: grid; grid-template-columns: 3.4rem 1fr 7.6rem 1fr 3.4rem; gap: .6rem;
+          align-items: center; padding: .5rem 0; border-bottom: 1px solid rgba(226,205,158,.09); }
+.rk-row:last-child { border-bottom: 0; }
+.rk-row.total { border-top: 1px solid rgba(201,161,94,.4); border-bottom: 0; margin-top: .3rem; padding-top: .7rem; }
+.rk-lab { text-align: center; font-family: var(--mono); font-size: .54rem; letter-spacing: .12em;
+          text-transform: uppercase; color: rgba(226,205,158,.62); line-height: 1.3; }
+.rk-lab i { display: block; font-style: normal; font-size: .46rem; letter-spacing: .1em;
+            color: rgba(226,205,158,.35); margin-top: .18rem; }
+.rk-v { font-family: var(--mono); font-size: .74rem; color: #d9c5a8; }
+.rk-v.a { text-align: right; } .rk-v.b { text-align: left; }
+.rk-v.win { color: #f0c877; }
+.rk-bar { height: 9px; background: rgba(0,0,0,.38); box-shadow: 0 0 0 1px rgba(0,0,0,.5); position: relative; }
+.rk-bar b { position: absolute; top: 0; bottom: 0; }
+.rk-bar.a b { right: 0; background: linear-gradient(270deg, var(--gilt-b), var(--gilt-c)); }
+.rk-bar.b b { left: 0; background: linear-gradient(90deg, #9ab6cf, #5f7d96); }
+.rk-facts { margin-top: 1.8rem; }
+.rk-facts h4 { font-family: var(--display); font-weight: 700; font-size: .58rem;
+               letter-spacing: .28em; text-transform: uppercase; color: var(--gilt-b); text-align: center;
+               border-bottom: 1px solid rgba(201,161,94,.28); padding-bottom: .45rem; margin: 1.6rem 0 .5rem; }
+.rk-facts h4:first-child { margin-top: 0; }
+.rk-frow { display: grid; grid-template-columns: 4.4rem 1fr 8.2rem 1fr 4.4rem; gap: .6rem;
+           align-items: center; padding: .42rem 0; border-bottom: 1px solid rgba(226,205,158,.07); }
+.rk-frow:last-child { border-bottom: 0; }
+.rk-fv { font-family: var(--mono); font-size: 1.05rem; color: #d9c5a8; }
+.rk-fv.a { text-align: right; } .rk-fv.b { text-align: left; }
+.rk-fv.win { color: #f0c877; }
+.rk-frow.wide .rk-fv { font-size: .78rem; }
+.rk-frow.nobar .rk-fv { font-size: .86rem; }
+.rk-frow.nobar .rk-fv.a { text-align: right; padding-right: .4rem; }
+.rk-frow.nobar .rk-fv.b { text-align: left; padding-left: .4rem; }
+.rk-flab { text-align: center; font-family: var(--mono); font-size: .56rem; letter-spacing: .14em;
+           text-transform: uppercase; color: rgba(226,205,158,.55); }
+.rk-years { margin-top: 1.8rem; }
+.rk-yhead, .rk-yrow { display: grid; grid-template-columns: 1fr 3.4rem 1fr; gap: .6rem; align-items: center;
+                      padding: .38rem 0; }
+.rk-yhead { font-family: var(--mono); font-size: .5rem; letter-spacing: .2em; text-transform: uppercase;
+            color: rgba(226,205,158,.45); border-bottom: 1px solid rgba(201,161,94,.28); }
+.rk-yrow { border-bottom: 1px solid rgba(226,205,158,.07); font-family: var(--mono); font-size: .78rem; color: #d9c5a8; }
+.rk-yr { text-align: center; color: #efe3c4; font-size: .72rem; }
+.rk-side { display: flex; align-items: center; gap: .45rem; }
+.rk-side.a { justify-content: flex-end; }
+.rk-side.b { justify-content: flex-start; }
+.rk-side u { text-decoration: none; font-size: .68rem; color: rgba(226,205,158,.55); }
+.rk-q { flex: 1 1 auto; min-width: 34px; max-width: 210px; height: 7px;
+        background: rgba(0,0,0,.38); position: relative; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+.rk-q b { position: absolute; top: 0; bottom: 0; }
+.rk-side.a .rk-q b { right: 0; background: linear-gradient(270deg, var(--gilt-b), var(--gilt-c)); }
+.rk-side.b .rk-q b { left: 0; background: linear-gradient(90deg, #9ab6cf, #5f7d96); }
+.rk-none { color: rgba(226,205,158,.28); font-size: .6rem; }
+.case-compare {
+    position: absolute; top: 12px; right: 74px; z-index: 9;
+    font-family: var(--display); font-weight: 700; font-size: .55rem; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--gilt-a); cursor: pointer; padding: .4rem .75rem;
+    background: rgba(0,0,0,.35); border: 1px solid rgba(201,161,94,.55); border-radius: 2px;
+}
+.case-compare:hover { background: rgba(201,161,94,.2); }
+
+/* ============================================================
+   III · THE PLAYBILLS
+   One bill a season, pinned along a brass rail. Parchment, a
+   sepia portrait, the winner top of the bill.
+   ============================================================ */
+.rod { position: relative; z-index: 3; height: 11px; margin: 0 auto -3px; border-radius: 6px;
+       width: calc((100% - (var(--cols) - 1) * 20px) / var(--cols) * var(--n) + (var(--n) - 1) * 20px);
+       background: linear-gradient(180deg, #7d5c36 0%, #3d2a15 55%, #170e06 100%);
+       box-shadow: 0 5px 9px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,222,160,.3); }
+.rod::before, .rod::after {
+    content: ''; position: absolute; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--gilt-a), var(--gilt-c) 62%, #3a2a12);
+    box-shadow: 0 3px 6px rgba(0,0,0,.7);
+}
+.rod::before { left: -11px; } .rod::after { right: -11px; }
+.banner-rack { --cols: 4; --n: 4; padding: 0 14px; }
+.banner-rack + .banner-rack { margin-top: 2.4rem; }
+.banners { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 20px; padding-top: 14px; }
+/* A bill: parchment with a double-rule frame, two brass tacks. */
+.banner {
+    position: relative; font: inherit; cursor: pointer; border: 0; padding: 1rem .8rem 1.05rem;
+    flex: 0 0 calc((100% - (var(--cols) - 1) * 20px) / var(--cols));
+    min-height: 250px; text-align: center; color: var(--quill);
+    background-image:
+        radial-gradient(circle 4px at 14px 12px,               #b39a6d 0 2px, #3a2c16 2.7px, transparent 4px),
+        radial-gradient(circle 4px at calc(100% - 14px) 12px,  #b39a6d 0 2px, #3a2c16 2.7px, transparent 4px),
+        var(--fleck),
+        radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.3), transparent 42%),
+        linear-gradient(180deg, var(--parch-hi) 0%, var(--parch) 55%, var(--parch-lo) 100%);
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 5px transparent, inset 0 0 40px rgba(120,84,40,.28), 0 12px 22px rgba(0,0,0,.6);
+    transition: transform .2s;
+}
+.banner::before {
+    content: ''; position: absolute; inset: 7px; pointer-events: none;
+    border: 1px solid rgba(90,60,20,.5); border-radius: 1px;
+    box-shadow: inset 0 0 0 2px rgba(90,60,20,.14);
+}
+.banner::after {
+    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: rgba(122,21,24,0); transition: background .2s;
+}
+.banner:hover { transform: translateY(3px) rotate(.4deg); }
+.banner:hover::after { background: rgba(122,21,24,.05); }
+.banner.open { transform: translateY(4px); }
+.banner.open::after { background: rgba(122,21,24,.08); }
+.bn { position: relative; z-index: 1; }
+.bn-kick { font-family: var(--display); font-weight: 700; font-size: .5rem; letter-spacing: .3em;
+           text-transform: uppercase; color: var(--redink); }
+.bn-year { font-family: var(--fell); font-size: 1.5rem; color: var(--quill); margin-top: .2rem; }
+.bn-year .cup { display: inline-block; vertical-align: -3px; margin-left: .3rem; }
+.bn-year .cup svg { width: 15px; height: 15px; }
+.bn-rule { width: 52%; height: 1px; margin: .5rem auto 0; background: linear-gradient(90deg, transparent, rgba(90,60,20,.6), transparent); }
+.bn-face { margin: .7rem auto .6rem; display: flex; justify-content: center; }
+.bn-portrait {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 50%; overflow: hidden;
+    background: #cfb583;
+    box-shadow: 0 0 0 2px var(--parch-hi), 0 0 0 3px #8f6f45, 0 3px 6px rgba(120,84,40,.5);
+}
+.bn-portrait img { width: 100%; height: 100%; object-fit: cover; filter: sepia(.55) contrast(.95); }
+.bn-portrait i { display: none; font-style: normal; font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: #8f6f45; }
+.bn-portrait.is-mono i { display: block; }
+.bn-name { font-family: var(--fell); font-size: 1.3rem; line-height: 1.05; color: var(--quill); padding: 0 .4rem; }
+.bn-sub { font-family: var(--mono); font-size: .56rem; letter-spacing: .06em; color: var(--quill-mut); margin-top: .45rem; }
+.bn-champ { font-family: var(--fell); font-style: italic; font-size: .78rem; color: var(--quill-mut); margin-top: .5rem; padding: 0 .6rem; }
+.bn-champ b { color: var(--redink); font-weight: 400; }
+.bn-stack { display: flex; height: 7px; margin: .7rem .9rem 0; overflow: hidden;
+            background: rgba(90,60,20,.16); box-shadow: 0 0 0 1px rgba(51,34,15,.25); }
+.bn-stack span { display: block; height: 100%; }
+.bn-stack span + span, .bo-stack span + span { box-shadow: inset 1px 0 0 rgba(51,34,15,.35); }
+
+.cmp-result { background: #c99b28; }
+.cmp-reg    { background: #8f74b8; }
+.cmp-draft  { background: #b0603f; }
+.cmp-scoring{ background: #5f81a0; }
+.cmp-allplay{ background: #ad6f8e; }
+.cmp-roster { background: #71905e; }
+
+/* The ballot, unrolled. */
+.scroll {
+    position: relative; margin-top: 2.4rem; padding: 2.1rem 2.4rem 2.3rem;
+    color: var(--quill);
+    background-image:
+        var(--fleck),
+        radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.28), transparent 40%),
+        linear-gradient(180deg, var(--parch-hi) 0%, var(--parch) 55%, var(--parch-lo) 100%);
+    border-radius: 3px;
+    box-shadow: inset 0 0 46px rgba(120,84,40,.3), 0 16px 30px rgba(0,0,0,.6);
+}
+.scroll::before, .scroll::after {
+    content: ''; position: absolute; left: -9px; right: -9px; height: 17px; border-radius: 9px;
+    background: linear-gradient(180deg, #f4e7c4 0%, #d3b988 55%, #8f6f45 100%);
+    box-shadow: 0 4px 7px rgba(0,0,0,.5);
+}
+.scroll::before { top: -9px; }
+.scroll::after  { bottom: -9px; background: linear-gradient(0deg, #f4e7c4 0%, #d3b988 55%, #8f6f45 100%); }
+.bo-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .8rem; margin-bottom: 1.15rem; }
+.bo-title { font-family: var(--fell); font-size: 1.5rem; color: var(--quill); }
+.bo-title b { color: var(--redink); font-weight: 400; }
+.bo-legend { display: flex; gap: .9rem; flex-wrap: wrap; font-family: var(--mono); font-size: .55rem; letter-spacing: .12em; text-transform: uppercase; color: var(--quill-mut); }
+.bo-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.bo-legend i { width: 9px; height: 9px; display: inline-block; box-shadow: 0 0 0 1px rgba(51,34,15,.3); }
+.bo-row { display: grid; grid-template-columns: 2rem 1fr 4.4rem minmax(130px, 2fr) 3.4rem; gap: .85rem; align-items: center;
+          padding: .5rem 0; border-bottom: 1px solid rgba(90,60,20,.22); }
+.bo-row:last-child { border-bottom: 0; }
+.bo-rank { font-family: var(--mono); font-size: .72rem; color: var(--quill-mut); }
+.bo-name { font-family: var(--fell); font-size: 1.06rem; color: var(--quill); }
+.bo-row.win .bo-name { color: var(--redink); }
+.bo-row.win .bo-rank { color: var(--redink); }
+.bo-fin { font-family: var(--mono); font-size: .64rem; color: var(--quill-mut); }
+.bo-stack { display: flex; height: 9px; overflow: hidden; background: rgba(90,60,20,.14); box-shadow: 0 0 0 1px rgba(51,34,15,.2); }
+.bo-stack span { display: block; height: 100%; }
+.bo-score { font-family: var(--fell); font-size: 1.05rem; color: var(--quill); text-align: right; }
+.bo-missing { margin-top: 1.05rem; font-family: var(--fell); font-style: italic; font-size: .84rem; color: var(--quill-mut); }
+
+/* ============================================================
+   IV · THE PROGRAMME
+   ============================================================ */
+.sheet {
+    position: relative; max-width: 880px; margin: 0 auto; padding: 2.4rem 2.5rem 3.6rem;
+    color: var(--quill);
+    background-image:
+        radial-gradient(circle 4.5px at 16px 16px,               #7a6a4d 0 2.4px, #3a2c16 3px, transparent 4.5px),
+        radial-gradient(circle 4.5px at calc(100% - 16px) 16px,  #7a6a4d 0 2.4px, #3a2c16 3px, transparent 4.5px),
+        radial-gradient(circle 4.5px at 16px calc(100% - 16px),  #7a6a4d 0 2.4px, #3a2c16 3px, transparent 4.5px),
+        radial-gradient(circle 4.5px at calc(100% - 16px) calc(100% - 16px), #7a6a4d 0 2.4px, #3a2c16 3px, transparent 4.5px),
+        var(--fleck),
+        radial-gradient(130% 100% at 50% 0%, rgba(255,255,255,.3), transparent 44%),
+        linear-gradient(180deg, var(--parch-hi) 0%, var(--parch) 55%, var(--parch-lo) 100%);
+    border-radius: 3px;
+    box-shadow: inset 0 0 52px rgba(120,84,40,.32), 0 18px 34px rgba(0,0,0,.6);
+}
+.sheet::after {
+    content: '✦'; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%) rotate(-8deg);
+    display: flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; font-size: 1.3rem; color: rgba(30,4,6,.55);
+    border-radius: 46% 54% 51% 49% / 53% 47% 56% 44%;
+    background: radial-gradient(circle at 36% 30%, #b3403a, #7a1518 55%, #4d0d0f 100%);
+    box-shadow: inset 0 2px 5px rgba(255,255,255,.25), inset 0 -4px 8px rgba(0,0,0,.5), 0 6px 12px rgba(0,0,0,.6);
+}
+.sheet h3 { font-family: var(--display); font-weight: 700; font-size: 1.12rem; letter-spacing: .2em; text-transform: uppercase; color: var(--quill); text-align: center; }
+.sheet .lc-sub { text-align: center; font-family: var(--fell); font-style: italic; font-size: .95rem; color: var(--quill-mut); margin: .5rem 0 1.8rem; }
+.lc-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4rem; }
+.lc-cols h4 { font-family: var(--display); font-weight: 700; font-size: .62rem; letter-spacing: .3em; text-transform: uppercase; color: var(--redink); margin-bottom: .8rem;
+              border-bottom: 1px solid rgba(122,21,24,.35); padding-bottom: .4rem; }
+.lc-line { display: flex; justify-content: space-between; gap: 1rem; padding: .34rem 0; border-bottom: 1px solid rgba(90,60,20,.18);
+           font-family: var(--fell); font-size: .95rem; color: var(--quill); }
+.lc-line b { font-family: var(--mono); font-size: .78rem; font-weight: 700; color: #201409; }
+.lc-note { margin-top: 1.6rem; font-family: var(--fell); font-style: italic; font-size: .95rem; line-height: 1.7; color: var(--quill-mut); }
+
+.loading { text-align: center; padding: 5rem 1rem; font-family: var(--fell); font-style: italic; color: var(--cream-mute); }
+.errbox { text-align: center; padding: 3rem 1rem; color: var(--rust); font-family: var(--mono); font-size: .8rem; }
+
+@media (max-width: 1240px) {
+    .scene { padding-left: 96px; padding-right: 96px; }
+    .curt { width: 88px; }
+    .curt::after { width: 44px; }
+    .star { width: min(260px, 100%); }
+    .star-hw svg { width: 40px; height: 40px; }
+}
+@media (max-width: 940px) {
+    .scene { padding-left: 30px; padding-right: 30px; padding-top: 72px; }
+    .curt { display: none; }
+    .crow, .crow.off, .backstage .crow.off { transform: none; flex-wrap: wrap; }
+    .crow.d1 .cast, .crow.d2 .cast { width: 236px; }
+    .front { gap: 1.4rem; }
+    .lc-cols { grid-template-columns: 1fr; gap: 1.4rem; }
+    .scroll, .sheet { padding-left: 1.3rem; padding-right: 1.3rem; }
+    .cl-head, .cl-row { grid-template-columns: 2.8rem 1fr 3.8rem 4rem; }
+    .cl-head span:nth-child(5), .cl-row .cl-ppg,
+    .cl-head span:nth-child(6), .cl-row .cl-q { display: none; }
+    .bo-row { grid-template-columns: 1.6rem 1fr 3.2rem; }
+    .bo-row .bo-stack, .bo-row .bo-fin { display: none; }
+}
+@media (max-width: 620px) {
+    .rk-row, .rk-frow { grid-template-columns: 2.6rem 1fr 1fr 2.6rem; gap: .3rem .45rem; }
+    .rk-lab, .rk-flab { grid-column: 1 / -1; order: -1; }
+    .rk-lab i { display: inline; margin: 0 0 0 .45rem; }
+    .rk-frow.wide { grid-template-columns: 1fr 8rem 1fr; }
+    .rk-frow.wide .rk-bar { display: none; }
+    .rk-frow.wide .rk-flab { grid-column: auto; order: 0; }
+    .rk-fv { font-size: .92rem; }
+    .rk-head { grid-template-columns: 1fr; }
+    .rk-vs { text-align: center; }
+    .rk-tops { grid-template-columns: 1fr 1fr; }
+    .rk-gap { grid-column: 1 / -1; order: 3; margin-top: 1rem; }
+    .rk-side u { display: none; }
+    .rk-q { max-width: 70px; }
+    .reckon-in { padding-left: 1rem; padding-right: 1rem; }
+    .banner { min-height: 230px; }
+}
+@media (max-width: 560px) {
+    .hw-row { gap: .5rem; margin-left: 1rem; margin-right: 1rem; }
+    .hw { width: 54px; }
+    .hw-shelf { left: .7rem; right: .7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .cast, .star-face, .banner { transition: none !important; }
+    .veil, .case, .star::before, .star-name { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="house"></div>
+
+<div id="switch"></div>
+
+<div class="wrap">
+    <header class="mast">
+        <div class="mast-kick">The Society Almanac</div>
+        <h1 class="mast-title">The Grand Stage</h1>
+        <p class="mast-sub" id="mastSub">Taking our seats&hellip;</p>
+    </header>
+    <div id="body"><div class="loading">The house lights are going down&hellip;</div></div>
+</div>
+
+<!-- Shared gradient defs for the solid trophy set. One copy, referenced by
+     url(#...) from every instance on the page. Must not be display:none or
+     the gradients die with it. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+    <linearGradient id="hgAu" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f6e2a4"/><stop offset=".45" stop-color="#d0a44a"/><stop offset="1" stop-color="#8a6224"/>
+    </linearGradient>
+    <linearGradient id="hgAuS" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#e3c078"/><stop offset="1" stop-color="#a87c2e"/>
+    </linearGradient>
+    <linearGradient id="hgAg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f4f7fa"/><stop offset=".5" stop-color="#c3ccd6"/><stop offset="1" stop-color="#8892a0"/>
+    </linearGradient>
+    <linearGradient id="hgCu" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f0b57e"/><stop offset=".5" stop-color="#b5713a"/><stop offset="1" stop-color="#77441f"/>
+    </linearGradient>
+    <radialGradient id="hgOrb" cx=".38" cy=".3" r=".9">
+        <stop offset="0" stop-color="#eef6ff"/><stop offset=".55" stop-color="#a9c4e0"/><stop offset="1" stop-color="#5c7fa6"/>
+    </radialGradient>
+    <linearGradient id="hgLth" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#b06334"/><stop offset=".55" stop-color="#7c3f1d"/><stop offset="1" stop-color="#46220e"/>
+    </linearGradient>
+    <linearGradient id="hgVel" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#a12c38"/><stop offset="1" stop-color="#5a121c"/>
+    </linearGradient>
+</defs>
+</svg>
+
+<script src="/pams-template/assets/js/draft-grade.js"></script>
+<script src="hof-model.js"></script>
+<script src="hall-common.js"></script>
+<script>
+var C = window.HallCommon;
+var P = C.params();
+var MODEL = null;
+var openUid = null;
+var openYear = null;
+var cmpA = null, cmpB = null;
+
+document.getElementById('switch').innerHTML = C.switcher('Grand Stage');
+
+var VEIL = document.createElement('div');
+document.body.appendChild(VEIL);
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    closeMenus();
+    if (openUid) openCase(null);
+});
+document.addEventListener('click', function (e) { if (!e.target.closest('.rk-pick')) closeMenus(); });
+
+var lastCut = null, cutTimer = null;
+window.addEventListener('resize', function () {
+    clearTimeout(cutTimer);
+    cutTimer = setTimeout(function () {
+        if (!MODEL) return;
+        var cut = bannerCols() + ':' + perShelf();
+        if (cut === lastCut) return;
+        lastCut = cut;
+        var host = document.getElementById('racks');
+        if (host) host.innerHTML = racks();
+        if (openYear !== null) {
+            var i = MODEL.moty.map(function (x) { return x.year; }).indexOf(openYear);
+            if (i >= 0) document.querySelectorAll('.banner')[i].classList.add('open');
+        }
+        renderCase();
+    }, 140);
+});
+
+window.HOF.load({ league: P.league }).then(function (m) {
+    MODEL = m;
+    document.getElementById('protoSrc').textContent = C.sourceLabel(m, P);
+    render();
+}).catch(function (err) {
+    document.getElementById('body').innerHTML = '<div class="errbox">Could not raise the curtain.<br>' + C.esc(err.message) + '</div>';
+});
+
+function render() {
+    var m = MODEL;
+    document.getElementById('mastSub').innerHTML =
+        C.esc(m.league.name) + ' &middot; <b>' + m.inducted.length + '</b> in the spotlight &middot; '
+        + '<b>' + m.eligible_count + '</b> eligible &middot; bar at <b>' + C.fmt(m.bar) + '</b>';
+
+    document.getElementById('body').innerHTML =
+          '<div id="stageHost">' + theatre() + '</div>'
+        + chap('Side by Side', 'Two careers on one bench. The Index is three numbers added up, '
+            + 'so a gap between two managers can be pointed at rather than argued about.', 'cmp')
+        + '<div class="fold narrow" id="fold-cmp" hidden><div id="reckon">' + reckoning() + '</div></div>'
+        + chap('Manager of the Year', 'One bill a season. Open one and the full ballot unrolls below.')
+        + '<div class="narrow"><div id="racks">' + racks() + '</div>'
+        + '<div id="ballotOpen"></div></div>'
+        + chap('The Programme', 'How the Index is built, and what it takes to reach the spotlight.', 'method')
+        + '<div class="fold" id="fold-method" hidden>' + sheet() + '</div>';
+    lastCut = bannerCols() + ':' + perShelf();
+    renderCase();
+}
+
+function chap(title, note, id) {
+    var head = id
+        ? '<button type="button" class="ribbon rib-btn" id="rib-' + id + '" aria-expanded="false"'
+          + ' aria-controls="fold-' + id + '" onclick="toggleChap(\'' + id + '\')">'
+          + C.esc(title) + '<span class="rib-caret">&#9662;</span></button>'
+        : '<span class="ribbon">' + C.esc(title) + '</span>';
+    return '<section class="chap" id="chap-' + (id || '') + '"><h2>' + head + '</h2>'
+         + (note ? '<div class="chap-note">' + C.esc(note) + '</div>' : '') + '</section>';
+}
+
+function toggleChap(id) { setChap(id, document.getElementById('fold-' + id).hidden); }
+
+function setChap(id, open) {
+    var fold = document.getElementById('fold-' + id), rib = document.getElementById('rib-' + id);
+    if (!fold) return;
+    fold.hidden = !open;
+    rib.classList.toggle('open', open);
+    rib.setAttribute('aria-expanded', String(open));
+}
+
+function roman(n) {
+    var t = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+    var s = '';
+    t.forEach(function (p) { while (n >= p[0]) { s += p[1]; n -= p[0]; } });
+    return s || '&middot;';
+}
+
+/* ============================================================
+   The solid trophy set. Drawn as objects: gradient metal,
+   crystal, leather. Every piece bottoms at y=42 of its 48-unit
+   viewBox (the same 87.5% the stroke set uses), so all the
+   shelf arithmetic ports unchanged.
+   ============================================================ */
+var S = {
+    cup: '<svg viewBox="0 0 48 48">'
+       + '<path d="M15 7h18v9.5c0 6.8-4 10.8-9 10.8s-9-4-9-10.8V7Z" fill="url(#hgAu)"/>'
+       + '<path d="M33 9h4.5a3.5 3.5 0 0 1 3.5 3.5c0 4.4-3.6 7-8 7.6" fill="none" stroke="url(#hgAuS)" stroke-width="2.6" stroke-linecap="round"/>'
+       + '<path d="M15 9h-4.5A3.5 3.5 0 0 0 7 12.5c0 4.4 3.6 7 8 7.6" fill="none" stroke="url(#hgAuS)" stroke-width="2.6" stroke-linecap="round"/>'
+       + '<rect x="13.5" y="5.2" width="21" height="3.6" rx="1.8" fill="url(#hgAuS)"/>'
+       + '<ellipse cx="19.2" cy="14.5" rx="1.9" ry="4.6" fill="#fff" opacity=".28"/>'
+       + '<path d="M22 27h4v5h-4z" fill="url(#hgAuS)"/>'
+       + '<path d="M18.5 32h11l1.4 4H17.1l1.4-4Z" fill="url(#hgAu)"/>'
+       + '<rect x="14" y="36" width="20" height="3" rx="1" fill="url(#hgAuS)"/>'
+       + '<rect x="11" y="39" width="26" height="3" rx="1" fill="#3a2c14"/>'
+       + '</svg>',
+    medal_s: '<svg viewBox="0 0 48 48">'
+       + '<path d="M18 6h5.5v11l-2.75 2.2L18 17V6Z" fill="url(#hgVel)"/>'
+       + '<path d="M24.5 6H30v11l-2.75 2.2-2.75-2.2V6Z" fill="#7a1520"/>'
+       + '<circle cx="24" cy="30" r="11.5" fill="url(#hgAg)"/>'
+       + '<circle cx="24" cy="30" r="8.2" fill="none" stroke="#8f99a6" stroke-width="1"/>'
+       + '<path d="m24 25.4 1.4 3 3.3.4-2.4 2.2.6 3.2L24 32.6l-2.9 1.6.6-3.2-2.4-2.2 3.3-.4 1.4-3Z" fill="#78838f"/>'
+       + '<ellipse cx="20" cy="26" rx="1.8" ry="3.2" fill="#fff" opacity=".4" transform="rotate(-18 20 26)"/>'
+       + '</svg>',
+    medal_b: '<svg viewBox="0 0 48 48">'
+       + '<path d="M18 6h5.5v11l-2.75 2.2L18 17V6Z" fill="#3d4f66"/>'
+       + '<path d="M24.5 6H30v11l-2.75 2.2-2.75-2.2V6Z" fill="#2a3a4e"/>'
+       + '<circle cx="24" cy="30" r="11.5" fill="url(#hgCu)"/>'
+       + '<circle cx="24" cy="30" r="8.2" fill="none" stroke="#8a5a2e" stroke-width="1"/>'
+       + '<path d="m24 25.4 1.4 3 3.3.4-2.4 2.2.6 3.2L24 32.6l-2.9 1.6.6-3.2-2.4-2.2 3.3-.4 1.4-3Z" fill="#8a5324"/>'
+       + '<ellipse cx="20" cy="26" rx="1.8" ry="3.2" fill="#fff" opacity=".32" transform="rotate(-18 20 26)"/>'
+       + '</svg>',
+    orb: '<svg viewBox="0 0 48 48">'
+       + '<circle cx="24" cy="15.5" r="9.5" fill="url(#hgOrb)"/>'
+       + '<path d="M14.5 15.5h19" stroke="#dfe9f4" stroke-width="1" opacity=".55" fill="none"/>'
+       + '<path d="M24 6c4.8 5.4 4.8 13.6 0 19c-4.8-5.4-4.8-13.6 0-19Z" fill="none" stroke="#dfe9f4" stroke-width="1" opacity=".55"/>'
+       + '<ellipse cx="20.4" cy="11.4" rx="2.2" ry="3.4" fill="#fff" opacity=".5" transform="rotate(-22 20.4 11.4)"/>'
+       + '<path d="M17.5 27h13l1.6 5H15.9l1.6-5Z" fill="#33261a"/>'
+       + '<rect x="15" y="32" width="18" height="4" rx="1" fill="url(#hgAu)"/>'
+       + '<rect x="12.5" y="38" width="23" height="4" rx="1" fill="#241a10"/>'
+       + '</svg>',
+    crown: '<svg viewBox="0 0 48 48">'
+       + '<path d="M10.5 34 13 18.5l7.3 6.3L24 13.6l3.7 11.2 7.3-6.3L37.5 34Z" fill="url(#hgAu)"/>'
+       + '<circle cx="13" cy="16.6" r="2" fill="url(#hgAuS)"/><circle cx="24" cy="11.4" r="2.1" fill="url(#hgAuS)"/><circle cx="35" cy="16.6" r="2" fill="url(#hgAuS)"/>'
+       + '<rect x="10" y="34" width="28" height="8" rx="1.6" fill="url(#hgAuS)"/>'
+       + '<circle cx="16.5" cy="38" r="1.7" fill="#a12c38"/><circle cx="24" cy="38" r="1.7" fill="#3f6b8c"/><circle cx="31.5" cy="38" r="1.7" fill="#4f7040"/>'
+       + '</svg>',
+    football: '<svg viewBox="0 0 48 48">'
+       + '<g transform="rotate(-33 24 30.6)">'
+       + '<path d="M9 30.6c4-6.9 9-10.4 15-10.4s11 3.5 15 10.4c-4 6.9-9 10.4-15 10.4S13 37.5 9 30.6Z" fill="url(#hgLth)"/>'
+       + '<path d="M12.2 30.6c3.3-5 7.2-7.6 11.8-7.6" fill="none" stroke="#c98a54" stroke-width="1" opacity=".55"/>'
+       + '<path d="M18 30.6h12" stroke="#f3ead8" stroke-width="1.9" stroke-linecap="round" fill="none"/>'
+       + '<path d="M20.4 28.5v4.2M23 28.5v4.2M25.6 28.5v4.2M28.2 28.5v4.2" stroke="#f3ead8" stroke-width="1.5" stroke-linecap="round" fill="none"/>'
+       + '</g></svg>',
+};
+
+/* ============================================================
+   I · The stage.
+   ============================================================ */
+function isEn(x) { return x.status === 'enshrined'; }
+function notEn(x) { return x.status !== 'enshrined'; }
+
+function theatre() {
+    var m = MODEL;
+    var current = m.managers.filter(function (x) { return x.is_current; });
+    var alumni  = m.managers.filter(function (x) { return !x.is_current; });
+    var en = current.filter(isEn), rest = current.filter(notEn);
+
+    return '<div class="theatre">'
+        + '<div class="pros"></div>'
+        + '<div class="pros-col l"></div><div class="pros-col r"></div>'
+        + '<div class="stage">'
+        +   '<div class="valance"></div><div class="fringe"></div>'
+        +   '<div class="curt l"></div><div class="curt r"></div>'
+        +   '<div class="scene">'
+        +     company(rest, en.length + 1, false)
+        +     '<div class="front">'
+        +       en.map(function (x, i) { return star(x, i + 1, false); }).join('')
+        +     '</div>'
+        +   '</div>'
+        +   '<div class="apron"><div class="foots"></div></div>'
+        + '</div>'
+        + '<div class="stagefront"></div>'
+        + (alumni.length
+            ? '<div class="rail"><button type="button" class="rib-btn rail-btn" id="rib-alum"'
+              +   ' aria-expanded="false" aria-controls="fold-alum" onclick="toggleChap(\'alum\')">'
+              +   'Backstage <i>' + alumni.length + '</i><span class="rib-caret">&#9662;</span></button></div>'
+              + '<div class="fold backstage" id="fold-alum" hidden>'
+              +   alumniBlock(alumni, current.length + 1)
+              + '</div>'
+            : '')
+        + '</div>';
+}
+
+/* The company: levelled rows, staggered, painted deeper the farther back
+   they stand. Best-ranked row stands nearest the stars. */
+function companyRows(n, per) {
+    var rows = Math.max(1, Math.ceil(n / per));
+    var base = Math.floor(n / rows), extra = n % rows, sizes = [];
+    for (var i = 0; i < rows; i++) sizes.push(base + (i < extra ? 1 : 0));
+    return sizes;
+}
+function company(list, startRank, alum) {
+    if (!list.length) return '';
+    var sizes = companyRows(list.length, 4);
+    // Cut front-to-back (best first), then render back row first.
+    var rows = [], at = 0;
+    sizes.forEach(function (s) { rows.push(list.slice(at, at + s)); at += s; });
+    var ranks = [], r = startRank;
+    rows.forEach(function (row) { ranks.push(r); r += row.length; });
+    return rows.map(function (row, i) {
+        var depth = Math.min(i, 2);
+        return { html: '<div class="crow d' + depth + (i % 2 ? ' off' : '') + '">'
+            + row.map(function (x, j) { return castCard(x, ranks[i] + j, alum); }).join('')
+            + '</div>', i: i };
+    }).sort(function (a, b) { return b.i - a.i; }).map(function (row) { return row.html; }).join('');
+}
+
+function alumniBlock(list, startRank) {
+    var en = list.filter(isEn), rest = list.filter(notEn);
+    return (en.length
+            ? '<div class="front">' + en.map(function (x, i) { return star(x, startRank + i, true); }).join('') + '</div>'
+            : '')
+        + company(rest, startRank + en.length, true);
+}
+
+function castHw(x) {
+    var t = x.trophies, hw = '';
+    function chip(g, n, cls) { if (n) hw += '<span class="' + cls + '">' + g + '<b>' + n + '</b></span>'; }
+    chip(S.cup, t.title, 'gold'); chip(S.medal_s, t.runner_up, 'silver'); chip(S.medal_b, t.third, 'bronze');
+    chip(S.orb, t.moty, 'award'); chip(S.crown, t.reg_crown, 'royal'); chip(S.football, t.points_title, 'leaf');
+    return hw;
+}
+
+function castCard(x, rank, alum) {
+    return '<button type="button" class="cast' + (openUid === x.uid ? ' open' : '') + '"'
+        + ' data-uid="' + C.esc(x.uid) + '" onclick="openCase(this.getAttribute(\'data-uid\'))">'
+        + C.portrait(x, 'cast-face')
+        + '<span class="cast-main">'
+        +   '<span class="cast-name">' + C.esc(x.name) + '</span>'
+        +   '<span class="cast-tag tg-' + x.status + '">' + C.esc(x.status_label) + '</span>'
+        +   '<span class="cast-hw">' + castHw(x) + '</span>'
+        + '</span>'
+        + '<span class="cast-idx">' + C.fmt(x.index) + '<i>Index</i></span>'
+        + '</button>';
+}
+
+/* A star: spotlight, portrait, name in lights, trophies on the plinth. */
+function starHw(x) {
+    var t = x.trophies, out = '';
+    function pc(g, n) { if (n) out += '<span class="pc">' + g + '<b>' + n + '</b></span>'; }
+    pc(S.cup, t.title); pc(S.medal_s, t.runner_up); pc(S.medal_b, t.third);
+    pc(S.orb, t.moty); pc(S.crown, t.reg_crown); pc(S.football, t.points_title);
+    return out || '<span class="star-none">No hardware yet; the Index put him here.</span>';
+}
+
+function star(x, rank, alum) {
+    return '<button type="button" class="star' + (alum ? ' alum' : '') + (openUid === x.uid ? ' open' : '') + '"'
+        + ' data-uid="' + C.esc(x.uid) + '" onclick="openCase(this.getAttribute(\'data-uid\'))">'
+        + C.portrait(x, 'star-face')
+        + '<span class="star-name">' + C.esc(x.name) + '</span>'
+        + (x.team ? '<span class="star-team">' + C.esc(x.team) + '</span>' : '')
+        + '<span class="star-rec"><b>' + C.esc(x.record || '--') + '</b> &middot; ' + C.pct(x.win_pct)
+        +   ' &middot; ' + x.seasons_played + ' seasons</span>'
+        + '<span class="star-hw">' + starHw(x) + '</span>'
+        + '<span class="star-ped">'
+        +   '<span class="ped-cap"></span>'
+        +   '<span class="ped-body">'
+        +     '<span class="ped-rank">' + roman(rank) + '</span>'
+        +     '<span class="ped-plate">Enshrined</span>'
+        +     '<span class="ped-idx" style="display:block">' + C.fmt(x.index) + '<i>Index</i></span>'
+        +   '</span>'
+        +   '<span class="ped-foot"></span>'
+        +   '<span class="star-pool"></span>'
+        + '</span>'
+        + '</button>';
+}
+
+/* ============================================================
+   The reliquary.
+   ============================================================ */
+function openCase(uid) {
+    openUid = openUid === uid ? null : uid;
+    renderCase();
+}
+
+function renderCase() {
+    document.querySelectorAll('.cast, .star').forEach(function (el) {
+        el.classList.toggle('open', openUid != null && el.getAttribute('data-uid') === openUid);
+    });
+    var x = openUid && MODEL.managers.filter(function (r) { return r.uid === openUid; })[0];
+    if (!x) {
+        VEIL.innerHTML = '';
+        document.body.style.overflow = '';
+        return;
+    }
+    VEIL.innerHTML = '<div class="veil" onclick="if(event.target===this)openCase(null)">' + caseFor(x) + '</div>';
+    document.body.style.overflow = 'hidden';
+}
+
+var HW_ORDER = { title: 0, runner: 1, third: 2, moty: 3, crown: 4, scoring: 5 };
+function hardware(m) {
+    var out = [];
+    function add(yr, kind, cls, g, label) { out.push({ yr: yr, kind: kind, cls: cls, g: g, lb: label }); }
+    m.title_years.forEach(function (y) { add(y, 'title', 'gold', S.cup, 'Champion'); });
+    m.runner_years.forEach(function (y) { add(y, 'runner', 'silver', S.medal_s, 'Runner-up'); });
+    m.third_years.forEach(function (y) { add(y, 'third', 'bronze', S.medal_b, 'Third'); });
+    (m.moty_years || []).forEach(function (y) { add(y, 'moty', 'award', S.orb, 'MOTY'); });
+    m.ledger.forEach(function (s) {
+        if (s.reg_crown) add(s.year, 'crown', 'royal', S.crown, 'Best Record');
+        if (s.points_title) add(s.year, 'scoring', 'leaf', S.football, 'Scoring');
+    });
+    out.sort(function (a, b) { return a.yr - b.yr || HW_ORDER[a.kind] - HW_ORDER[b.kind]; });
+    var seen = {};
+    out.forEach(function (h) {
+        seen[h.kind] = (seen[h.kind] || 0) + 1;
+        if (seen[h.kind] > 1) h.nth = seen[h.kind];
+    });
+    if (!out.length) out.push({ yr: '', kind: 'scoring', cls: '', g: S.football, lb: m.trophies.berth + ' berths' });
+    return out;
+}
+
+function perShelf() {
+    var w = window.innerWidth;
+    if (w >= 760) return 6;
+    if (w >= 560) return 4;
+    return 3;
+}
+
+function shelves(m) {
+    var pieces = hardware(m), per = perShelf(), out = '';
+    for (var i = 0; i < pieces.length; i += per) {
+        out += '<div class="hw-case"><div class="hw-row">'
+             + pieces.slice(i, i + per).map(function (h) {
+                   return '<div class="hw ' + h.cls + '">'
+                        + (h.nth ? '<span class="hw-nth">x' + h.nth + '</span>' : '')
+                        + '<div class="hw-obj">' + h.g + '</div>'
+                        + '<div class="hw-cap"><div class="hw-yr">' + C.esc(h.yr) + '</div>'
+                        +   '<div class="hw-lb">' + h.lb + '</div></div></div>';
+               }).join('')
+             + '</div><div class="hw-shelf"></div></div>';
+    }
+    return out;
+}
+
+function podiums(m) {
+    var t = m.trophies;
+    return t.title + t.runner_up + t.third;
+}
+
+function standing(x) {
+    if (x.status === 'enshrined') return '<span class="ped-plate">Enshrined</span>';
+    return '<span class="cast-tag tg-' + x.status + '"'
+        + (x.status_note ? ' title="' + C.esc(x.status_note) + '"' : '') + '>'
+        + C.esc(x.status_label) + '</span>';
+}
+
+function caseFor(m) {
+    var en = m.status === 'enshrined';
+    return '<article class="case" role="dialog" aria-modal="true" aria-label="' + C.esc(m.name) + '">'
+        + '<div class="case-in">'
+        + (m.is_current ? '' : '<div class="case-alum">Alumnus</div>')
+        + '<button type="button" class="case-compare" data-uid="' + C.esc(m.uid) + '"'
+        +   ' onclick="compareFrom(this.getAttribute(\'data-uid\'))">Compare</button>'
+        + '<button type="button" class="case-close" onclick="openCase(null)">Close</button>'
+        + '<div class="case-head">'
+        +   C.portrait(m, 'case-portrait')
+        +   '<div class="case-name' + (en ? '' : ' plain') + '">' + C.esc(m.name) + '</div>'
+        +   (m.team ? '<div class="case-team">' + C.esc(m.team) + '</div>' : '')
+        +   '<div class="case-standing">' + standing(m) + '</div>'
+        +   '<p class="case-cite">' + C.esc(C.citation(m)) + '</p>'
+        + '</div>'
+        + shelves(m)
+        + '<div class="case-plate">'
+        +   '<div><div class="plate-k">Seasons</div><div class="plate-v">' + m.seasons_played + '</div></div>'
+        +   '<div><div class="plate-k">Record</div><div class="plate-v">' + C.esc(m.record || '--') + '</div></div>'
+        +   '<div><div class="plate-k">Titles</div><div class="plate-v">' + m.trophies.title + '</div></div>'
+        +   '<div><div class="plate-k">Podiums</div><div class="plate-v">' + podiums(m) + '</div></div>'
+        +   '<div style="text-align:right"><div class="plate-k">Index</div><div class="plate-index">' + C.fmt(m.index) + '</div></div>'
+        + '</div>'
+        + ledger(m)
+        + '</div>'
+        + '</article>';
+}
+
+function ledger(m) {
+    var rows = m.ledger.slice().sort(function (a, b) { return b.year - a.year; }).map(function (s) {
+        return '<div class="cl-row' + (s.final_rank === 1 ? ' title' : '') + '">'
+            + '<div class="cl-yr">' + s.year + '</div>'
+            + '<div class="cl-fin">' + C.ordinal(s.final_rank) + ' of ' + (s.teams || '--')
+            +   (s.reg_crown ? ' &middot; best record' : '') + (s.points_title ? ' &middot; scoring title' : '') + '</div>'
+            + '<div>' + C.esc(s.record || '--') + '</div>'
+            + '<div>' + (s.all_play ? s.all_play.w + '-' + s.all_play.l : '--') + '</div>'
+            + '<div class="cl-ppg">' + C.fmt(s.ppg) + '</div>'
+            + '<div class="cl-q"><b style="width:' + Math.round(s.q * 100) + '%"></b></div>'
+            + '</div>';
+    }).join('');
+    return '<div class="case-ledger">'
+        + '<div class="cl-head"><span>Year</span><span>Finish</span><span>Record</span>'
+        +   '<span>All-play</span><span>PPG</span><span>Season</span></div>'
+        + rows + '</div>';
+}
+
+/* ============================================================
+   The reckoning (ported from the Trophy Room).
+   ============================================================ */
+function contribs(m) {
+    var mix = MODEL.weights.mix, c = m.parts.credibility;
+    return {
+        trophy: { raw: m.parts.trophy, w: mix.T, val: c * mix.T * m.parts.trophy },
+        rate:   { raw: m.parts.rate,   w: mix.R, val: c * mix.R * m.parts.rate },
+        peak:   { raw: m.parts.peak,   w: mix.P, val: c * mix.P * m.parts.peak },
+    };
+}
+
+var RK_ROWS = [
+    ['trophy', 'Trophy case'],
+    ['rate',   'Season rate'],
+    ['peak',   'Peak run'],
+];
+
+function reckoning() {
+    var list = MODEL.managers;
+    var a = list.filter(function (m) { return m.uid === cmpA; })[0] || list[0];
+    var b = list.filter(function (m) { return m.uid === cmpB; })[0] || list[1] || list[0];
+    cmpA = a.uid; cmpB = b.uid;
+
+    var ca = contribs(a), cb = contribs(b);
+    var scale = 0;
+    RK_ROWS.forEach(function (r) { scale = Math.max(scale, ca[r[0]].val, cb[r[0]].val); });
+    scale = scale || 1;
+
+    var rows = RK_ROWS.map(function (r) {
+        var k = r[0], va = ca[k], vb = cb[k];
+        return '<div class="rk-row">'
+            + '<div class="rk-v a' + (va.val > vb.val ? ' win' : '') + '">' + C.fmt(va.val) + '</div>'
+            + '<div class="rk-bar a"><b style="width:' + (va.val / scale * 100) + '%"></b></div>'
+            + '<div class="rk-lab">' + r[1] + '<i>' + Math.round(va.w * 100) + '% of the Index</i></div>'
+            + '<div class="rk-bar b"><b style="width:' + (vb.val / scale * 100) + '%"></b></div>'
+            + '<div class="rk-v b' + (vb.val > va.val ? ' win' : '') + '">' + C.fmt(vb.val) + '</div>'
+            + '</div>';
+    }).join('');
+
+    var credRow = (a.parts.credibility < 1 || b.parts.credibility < 1)
+        ? '<div class="rk-row"><div class="rk-v a">' + C.fmt(a.parts.credibility, 2) + '</div>'
+          + '<div class="rk-bar a"><b style="width:' + (a.parts.credibility * 100) + '%"></b></div>'
+          + '<div class="rk-lab">Credibility<i>ramps in short careers</i></div>'
+          + '<div class="rk-bar b"><b style="width:' + (b.parts.credibility * 100) + '%"></b></div>'
+          + '<div class="rk-v b">' + C.fmt(b.parts.credibility, 2) + '</div></div>'
+        : '';
+
+    return '<div class="reckon"><div class="reckon-in">'
+        + '<div class="rk-head">'
+        +   picker('cmpA', a.uid) + '<div class="rk-vs">against</div>' + picker('cmpB', b.uid)
+        + '</div>'
+        + '<div class="rk-tops">'
+        +   '<div class="rk-top">' + C.portrait(a, 'case-portrait')
+        +     '<div class="rk-name">' + C.esc(a.name) + '</div>'
+        +     (a.team ? '<div class="rk-team">' + C.esc(a.team) + '</div>' : '')
+        +     '<div class="rk-idx">' + C.fmt(a.index) + '<i>Index</i></div></div>'
+        +   '<div class="rk-gap">The gap<b>' + C.fmt(Math.abs(a.index - b.index)) + '</b></div>'
+        +   '<div class="rk-top">' + C.portrait(b, 'case-portrait')
+        +     '<div class="rk-name">' + C.esc(b.name) + '</div>'
+        +     (b.team ? '<div class="rk-team">' + C.esc(b.team) + '</div>' : '')
+        +     '<div class="rk-idx">' + C.fmt(b.index) + '<i>Index</i></div></div>'
+        + '</div>'
+        + '<p class="rk-verdict">' + verdict(a, b, ca, cb) + '</p>'
+        + '<div class="rk-rows">' + rows + credRow
+        +   '<div class="rk-row total">'
+        +     '<div class="rk-v a' + (a.index > b.index ? ' win' : '') + '">' + C.fmt(a.index) + '</div>'
+        +     '<div class="rk-bar a"><b style="width:' + (a.index / Math.max(a.index, b.index, 1) * 100) + '%"></b></div>'
+        +     '<div class="rk-lab">Index<i>the sum</i></div>'
+        +     '<div class="rk-bar b"><b style="width:' + (b.index / Math.max(a.index, b.index, 1) * 100) + '%"></b></div>'
+        +     '<div class="rk-v b' + (b.index > a.index ? ' win' : '') + '">' + C.fmt(b.index) + '</div>'
+        +   '</div>'
+        + '</div>'
+        + facts(a, b)
+        + years(a, b)
+        + '</div></div>';
+}
+
+function picker(which, sel) {
+    var cur = MODEL.managers.filter(function (m) { return m.uid === sel; })[0];
+    return '<div class="rk-pick" id="pick-' + which + '">'
+        + '<button type="button" class="rk-pick-btn" onclick="toggleMenu(\'' + which + '\')">'
+        +   '<span>' + C.esc(cur.name) + ' &middot; ' + C.fmt(cur.index) + '</span><i>&#9662;</i></button>'
+        + '<div class="rk-menu" hidden>'
+        + MODEL.managers.map(function (m) {
+              return '<button type="button" class="rk-opt' + (m.uid === sel ? ' on' : '') + '"'
+                  + ' data-uid="' + C.esc(m.uid) + '"'
+                  + ' onclick="setCmp(\'' + which + '\', this.getAttribute(\'data-uid\'))">'
+                  + C.portrait(m, 'rk-opt-face')
+                  + '<span class="rk-opt-name">' + C.esc(m.name) + '</span>'
+                  + '<b>' + C.fmt(m.index) + '</b></button>';
+          }).join('')
+        + '</div></div>';
+}
+
+function toggleMenu(which) {
+    var pick = document.getElementById('pick-' + which);
+    var wasOpen = pick.classList.contains('open');
+    closeMenus();
+    if (!wasOpen) {
+        pick.classList.add('open');
+        pick.querySelector('.rk-menu').hidden = false;
+    }
+}
+
+function closeMenus() {
+    document.querySelectorAll('.rk-pick.open').forEach(function (p) {
+        p.classList.remove('open');
+        p.querySelector('.rk-menu').hidden = true;
+    });
+}
+
+var RK_WHY = {
+    trophy: 'what he has won',
+    rate:   'how he plays in an average season',
+    peak:   'how high his best stretch went',
+};
+function verdict(a, b, ca, cb) {
+    if (a.uid === b.uid) return 'Pick two different managers.';
+    var lead = a.index >= b.index ? a : b, trail = lead === a ? b : a;
+    var lc = lead === a ? ca : cb, tc = lead === a ? cb : ca;
+    var diffs = RK_ROWS.map(function (r) { return { k: r[0], d: lc[r[0]].val - tc[r[0]].val }; })
+                       .sort(function (x, y) { return Math.abs(y.d) - Math.abs(x.d); });
+    var top = diffs[0], back = diffs.filter(function (d) { return d.d < 0; });
+    var s = '<b>' + C.esc(lead.name) + '</b> leads by ' + C.fmt(Math.abs(a.index - b.index))
+          + ', and ' + (top.d >= 0 ? 'most of it is ' : 'oddly not ') + RK_WHY[top.k]
+          + ' (' + (top.d >= 0 ? '+' : '') + C.fmt(top.d) + ').';
+    if (back.length) {
+        s += ' ' + C.esc(trail.name) + ' is actually ahead on '
+           + back.map(function (d) { return RK_WHY[d.k]; }).join(' and ') + '.';
+    }
+    if (lead.parts.credibility < 1) {
+        s += ' ' + C.esc(lead.name) + ' is still short of the ' + MODEL.constants.MIN_SEASONS
+           + '-season bar, so his Index is held back to ' + Math.round(lead.parts.credibility * 100) + '%.';
+    }
+    return s;
+}
+
+function factRow(label, va, vb, better, o) {
+    o = o || {};
+    var na = parseFloat(va), nb = parseFloat(vb);
+    var num = isFinite(na) && isFinite(nb);
+    var aw = better && num && (better > 0 ? na > nb : na < nb);
+    var bw = better && num && (better > 0 ? nb > na : nb < na);
+    var av = '<div class="rk-fv a' + (aw ? ' win' : '') + '">' + va + '</div>';
+    var bv = '<div class="rk-fv b' + (bw ? ' win' : '') + '">' + vb + '</div>';
+    if (!o.scale || !num) {
+        return '<div class="rk-frow wide nobar"><div></div>' + av
+             + '<div class="rk-flab">' + label + '</div>' + bv + '<div></div></div>';
+    }
+    function bar(v, side) {
+        return '<div class="rk-bar ' + side + '"><b style="width:'
+             + Math.max(0, Math.min(100, v / o.scale * 100)) + '%"></b></div>';
+    }
+    return '<div class="rk-frow' + (o.wide ? ' wide' : '') + '">'
+        + av + bar(na, 'a')
+        + '<div class="rk-flab">' + label + '</div>'
+        + bar(nb, 'b') + bv + '</div>';
+}
+
+function facts(a, b) {
+    var ta = a.trophies, tb = b.trophies;
+    var cabinet = Math.max(1, podiums(a), podiums(b),
+        ta.title, tb.title, ta.runner_up, tb.runner_up, ta.third, tb.third,
+        ta.moty, tb.moty, ta.reg_crown, tb.reg_crown, ta.points_title, tb.points_title);
+    var yrs = Math.max(1, a.seasons_played, b.seasons_played);
+
+    return '<div class="rk-facts">'
+        + '<h4>The trophy case</h4>'
+        + factRow('Titles', ta.title, tb.title, 1, { scale: cabinet })
+        + factRow('Runner-up', ta.runner_up, tb.runner_up, 1, { scale: cabinet })
+        + factRow('Third', ta.third, tb.third, 1, { scale: cabinet })
+        + factRow('MOTY', ta.moty, tb.moty, 1, { scale: cabinet })
+        + factRow('Best record', ta.reg_crown, tb.reg_crown, 1, { scale: cabinet })
+        + factRow('Scoring', ta.points_title, tb.points_title, 1, { scale: cabinet })
+        + factRow('Podiums', podiums(a), podiums(b), 1, { scale: cabinet })
+        + '<h4>The career</h4>'
+        + factRow('Seasons', a.seasons_played, b.seasons_played, 0, { scale: yrs })
+        + factRow('Berths', ta.berth, tb.berth, 1, { scale: yrs })
+        + factRow('Win %', C.pct(a.win_pct), C.pct(b.win_pct), 1, { scale: 1, wide: true })
+        + factRow('Record', C.esc(a.record || '--'), C.esc(b.record || '--'), 0, { wide: true })
+        + factRow('Playoffs', C.esc(a.playoff_record || '--'), C.esc(b.playoff_record || '--'), 0, { wide: true })
+        + factRow('Avg finish', C.fmt(a.avg_finish), C.fmt(b.avg_finish), -1, { wide: true })
+        + factRow('Standing', C.esc(a.status_label), C.esc(b.status_label), 0, { wide: true })
+        + '</div>';
+}
+
+function years(a, b) {
+    var byYear = {};
+    a.ledger.forEach(function (s) { (byYear[s.year] = byYear[s.year] || {}).a = s; });
+    b.ledger.forEach(function (s) { (byYear[s.year] = byYear[s.year] || {}).b = s; });
+    var side = function (s, cls) {
+        if (!s) return '<div class="rk-side ' + cls + '"><span class="rk-none">did not play</span></div>';
+        return '<div class="rk-side ' + cls + '">'
+            + (cls === 'b' ? '<div class="rk-q"><b style="width:' + Math.round(s.q * 100) + '%"></b></div>' : '')
+            + '<span>' + C.ordinal(s.final_rank) + '</span><u>' + C.esc(s.record || '') + '</u>'
+            + (cls === 'a' ? '<div class="rk-q"><b style="width:' + Math.round(s.q * 100) + '%"></b></div>' : '')
+            + '</div>';
+    };
+    var rows = Object.keys(byYear).sort().map(function (y) {
+        return '<div class="rk-yrow">' + side(byYear[y].a, 'a')
+             + '<div class="rk-yr">' + y + '</div>' + side(byYear[y].b, 'b') + '</div>';
+    }).join('');
+    return '<div class="rk-years"><div class="rk-yhead"><div style="text-align:right">Finish &middot; record</div>'
+        + '<div class="rk-yr">Year</div><div>Finish &middot; record</div></div>' + rows + '</div>';
+}
+
+function setCmp(which, uid) {
+    if (which === 'cmpA') cmpA = uid; else cmpB = uid;
+    document.getElementById('reckon').innerHTML = reckoning();
+}
+
+function compareFrom(uid) {
+    if (cmpB === uid) cmpB = cmpA;
+    cmpA = uid;
+    openCase(null);
+    document.getElementById('reckon').innerHTML = reckoning();
+    setChap('cmp', true);
+    document.getElementById('chap-cmp').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ══ Manager of the Year: the playbills ══════════════════════ */
+var CMP_ORDER = ['result', 'reg', 'draft', 'scoring', 'allplay', 'roster'];
+var CMP_LABEL = { result: 'Finish', reg: 'Reg season', draft: 'Draft',
+                  scoring: 'Scoring', allplay: 'All-play', roster: 'In-season' };
+function cmpRank(k) { var i = CMP_ORDER.indexOf(k); return i < 0 ? 99 : i; }
+
+function bannerCols() {
+    var w = window.innerWidth;
+    if (w >= 860) return 4;
+    if (w >= 620) return 3;
+    return 2;
+}
+function rackRows(n, cols) {
+    var rows = Math.max(1, Math.ceil(n / cols));
+    var base = Math.floor(n / rows), extra = n % rows, sizes = [];
+    for (var i = 0; i < rows; i++) sizes.push(base + (i < extra ? 1 : 0));
+    return sizes;
+}
+function racks() {
+    var list = MODEL.moty, cols = bannerCols(), at = 0;
+    return rackRows(list.length, cols).map(function (size) {
+        var row = list.slice(at, at + size);
+        at += size;
+        return '<div class="banner-rack" style="--cols:' + cols + ';--n:' + size + '">'
+             + '<div class="rod"></div>'
+             + '<div class="banners">' + row.map(banner).join('') + '</div>'
+             + '</div>';
+    }).join('');
+}
+
+function banner(s) {
+    var w = s.winner;
+    var champ = s.champion === w.uid;
+    return '<button type="button" class="banner' + (openYear === s.year ? ' open' : '') + '" onclick="toggleYear(' + s.year + ')">'
+        + '<span class="bn">'
+        + '<div class="bn-kick">Manager of the Year</div>'
+        + '<div class="bn-year">' + s.year
+        +   (champ ? '<span class="cup">' + S.cup + '</span>' : '') + '</div>'
+        + '<div class="bn-rule"></div>'
+        + '<div class="bn-face">' + C.portrait(w, 'bn-portrait') + '</div>'
+        + '<div class="bn-name">' + C.esc(w.name) + '</div>'
+        + '<div class="bn-sub">' + C.esc(w.record || '') + ' &middot; ' + C.ordinal(w.final_rank) + '</div>'
+        + '<div class="bn-champ">' + (champ ? 'Took the title too' : 'Title: <b>' + C.esc(championName(s)) + '</b>') + '</div>'
+        + '<div class="bn-stack">' + stack(w, s.ballot[0].score) + '</div>'
+        + '</span>'
+        + '</button>';
+}
+function championName(s) {
+    var c = s.ballot.filter(function (r) { return r.uid === s.champion; })[0];
+    return c ? c.name : 'unknown';
+}
+function stack(r, top) {
+    var total = r.parts.reduce(function (a, p) { return a + p.w * p.val; }, 0) || 1;
+    var score = 100 * (r.score || 0) / (top || r.score || 1);
+    return r.parts.slice()
+        .sort(function (a, b) { return cmpRank(a.key) - cmpRank(b.key); })
+        .map(function (p) { return { key: p.key, w: (p.w * p.val) / total * score }; })
+        .filter(function (p) { return p.w > 0.5; })
+        .map(function (p) { return '<span class="cmp-' + p.key + '" style="width:' + p.w + '%"></span>'; })
+        .join('');
+}
+
+function toggleYear(y) {
+    openYear = openYear === y ? null : y;
+    document.querySelectorAll('.banner').forEach(function (el) { el.classList.remove('open'); });
+    var host = document.getElementById('ballotOpen');
+    if (openYear === null) { host.innerHTML = ''; return; }
+    var s = MODEL.moty.filter(function (x) { return x.year === y; })[0];
+    document.querySelectorAll('.banner')[MODEL.moty.indexOf(s)].classList.add('open');
+    host.innerHTML = ballotPanel(s);
+    host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function ballotPanel(s) {
+    var legend = s.components.slice().sort(function (a, b) { return cmpRank(a) - cmpRank(b); })
+      .map(function (k) {
+        return '<span><i class="cmp-' + k + '"></i>' + CMP_LABEL[k] + ' ' + Math.round(MODEL.weights.moty[k] * 100) + '%</span>';
+    }).join('');
+    var missing = CMP_ORDER.filter(function (k) { return s.components.indexOf(k) < 0; });
+    var top = s.ballot[0] ? s.ballot[0].score : 0;
+    var rows = s.ballot.map(function (r) {
+        return '<div class="bo-row' + (r.rank === 1 ? ' win' : '') + '">'
+            + '<div class="bo-rank">' + r.rank + '</div>'
+            + '<div class="bo-name">' + C.esc(r.name) + '</div>'
+            + '<div class="bo-fin">' + C.ordinal(r.final_rank) + '</div>'
+            + '<div class="bo-stack">' + stack(r, top) + '</div>'
+            + '<div class="bo-score">' + C.fmt(r.score) + '</div></div>';
+    }).join('');
+    return '<div class="scroll">'
+        + '<div class="bo-head"><div class="bo-title">' + s.year + ' &middot; <b>' + C.esc(s.winner.name) + '</b></div>'
+        +   '<div class="bo-legend">' + legend + '</div></div>' + rows
+        + (missing.length ? '<div class="bo-missing">Not scored this season: '
+            + missing.map(function (k) { return CMP_LABEL[k]; }).join(', ')
+            + '. Weights renormalise over what the league has on file.</div>' : '')
+        + '</div>';
+}
+
+function sheet() {
+    var t = MODEL.weights.trophy, mix = MODEL.weights.mix, mw = MODEL.weights.moty;
+    function line(k, v) { return '<div class="lc-line"><span>' + k + '</span><b>' + v + '</b></div>'; }
+    return '<div class="sheet">'
+        + '<h3>How the Index is built</h3>'
+        + '<div class="lc-sub">Drawn from the league&rsquo;s own record. Nothing here is voted on.</div>'
+        + '<div class="lc-cols">'
+        +   '<div><h4>The trophy case</h4>'
+        +     line('Championship', t.title) + line('Manager of the Year', t.moty)
+        +     line('Runner-up', t.runner_up) + line('Best regular-season record', t.reg_crown)
+        +     line('League scoring title', t.points_title) + line('Third place', t.third)
+        +     line('Playoff berth', t.berth)
+        +     '<h4 style="margin-top:1.4rem">The mix</h4>'
+        +     line('Trophy case', Math.round(mix.T * 100) + '%') + line('Season-by-season rate', Math.round(mix.R * 100) + '%')
+        +     line('Best three-year peak', Math.round(mix.P * 100) + '%') + '</div>'
+        +   '<div><h4>Manager of the Year</h4>'
+        +     line('Final standing', Math.round(mw.result * 100) + '%')
+        +     line('Regular-season finish', Math.round(mw.reg * 100) + '%')
+        +     line('All-play record', Math.round(mw.allplay * 100) + '%')
+        +     line('Scoring power', Math.round(mw.scoring * 100) + '%')
+        +     line('Draft class', Math.round(mw.draft * 100) + '%')
+        +     line('In-season roster building', Math.round(mw.roster * 100) + '%')
+        +     '<h4 style="margin-top:1.4rem">Enshrinement</h4>'
+        +     line('Minimum seasons', MODEL.constants.MIN_SEASONS)
+        +     line('Absolute floor', MODEL.constants.ABSOLUTE_FLOOR)
+        +     line('Hall capped at', Math.round(MODEL.constants.HALL_SHARE * 100) + '% of eligible')
+        +     line('Current bar', C.fmt(MODEL.bar)) + '</div>'
+        + '</div>'
+        + '<p class="lc-note"><b>Enshrined carries no year, because it is a standing rather than a ceremony.</b> '
+        + 'The bar floats against the field and the hall is capped, so a manager <i>can</i> be pushed out by someone '
+        + 'with a better case, and let back in when his own case grows again. Nobody is voted in on a date and '
+        + 'nobody is in for life. The pedestal says where a career stands the moment you are looking at it.</p>'
+        + '<p class="lc-note">Every season term is normalised inside its own season, so one scoring era never competes with '
+        + 'another. The bar floats against the field you actually play in, which is how a three-year league and a twenty-year '
+        + 'league both run this page honestly. Alumni keep their standing: leaving does not close a case.</p>'
+        + '</div>';
+}
+</script>
+</body>
+</html>

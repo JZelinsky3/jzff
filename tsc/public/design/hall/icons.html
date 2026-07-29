@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hall · Icon Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=IM+Fell+English:ital@0;1&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/pams-template/assets/css/main.css">
+<style>
+/* ============================================================
+   THE ICON BENCH
+   Every candidate piece, cut to the same 24-unit viewBox and
+   standing on the same baseline (y=21), shown at the two sizes
+   that matter: 44px on a real shelf board, and 96px on its own
+   so the drawing can be judged. Pick by name.
+   ============================================================ */
+:root {
+    --gilt-a: #f0d9a8; --gilt-b: #c9a15e; --gilt-c: #8a6a35;
+    --parch:  #e2cd9e; --quill: #33220f;
+    --display: 'Cinzel', var(--serif);
+    --fell: 'IM Fell English', var(--serif);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='2' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0 0 0 0'/%3E%3C/filter%3E%3Crect width='480' height='480' filter='url(%23g)'/%3E%3C/svg%3E");
+    --fleck: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='1' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.22 0 0 0 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+body { background: #0a0806; color: var(--cream); }
+.room {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+        radial-gradient(90% 60% at 50% 8%, rgba(255,196,120,.07), transparent 62%),
+        var(--fleck),
+        linear-gradient(180deg, #14100b 0%, #0b0806 55%, #060404 100%);
+}
+.wrap { position: relative; z-index: 2; max-width: 1180px; margin: 0 auto; padding: 0 1.5rem 6rem; }
+
+.mast { text-align: center; padding: 3rem 0 1rem; }
+.mast-kick { font-family: var(--display); font-weight: 600; font-size: .62rem;
+             letter-spacing: .5em; text-transform: uppercase; color: var(--gilt-b); }
+.mast-title {
+    font-family: var(--display); font-weight: 600; font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 1.04; letter-spacing: .06em; text-transform: uppercase; margin-top: .9rem;
+    background: linear-gradient(180deg, var(--gilt-a) 14%, var(--gilt-b) 58%, var(--gilt-c) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.mast-sub { font-family: var(--fell); font-style: italic; font-size: 1.02rem;
+            color: var(--cream-soft); margin: .9rem auto 0; max-width: 620px; }
+
+.chap { margin: 3.4rem auto 1.6rem; text-align: center; }
+.chap .ribbon {
+    display: inline-block; padding: .5rem 2.2rem .46rem;
+    font-family: var(--display); font-weight: 600; font-size: .82rem;
+    letter-spacing: .3em; text-transform: uppercase; color: var(--quill);
+    background-image: var(--fleck), linear-gradient(180deg, #efdfba, var(--parch) 60%, #cfb583);
+    clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%);
+}
+.chap-note { font-family: var(--sans); font-size: .8rem; color: var(--cream-mute);
+             margin: .8rem auto 0; max-width: 620px; line-height: 1.6; }
+
+/* The bench: pieces standing on a board, exactly as the trophy room
+   stands them, so a candidate is judged in situ and not on white. */
+.bench { position: relative; margin-top: 1.4rem; }
+.bench-row {
+    position: relative; display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 1.6rem 1.1rem; padding: 1.4rem 1.6rem 0;
+}
+.pc { position: relative; display: flex; flex-direction: column; align-items: center;
+      width: 116px; padding-bottom: 78px; }
+.bench + .bench { margin-top: .4rem; }
+.pc-obj { height: 46px; display: flex; align-items: flex-end; filter: drop-shadow(0 5px 4px rgba(0,0,0,.75)); }
+.pc-obj svg { width: 44px; height: 44px; display: block; }
+.pc-cap { position: absolute; left: -2px; right: -2px; bottom: 0; text-align: center; }
+.pc-key { font-family: var(--mono); font-size: .58rem; color: #efe3c4; }
+.pc-note { font-family: var(--sans); font-size: .52rem; letter-spacing: .06em;
+           color: rgba(226,205,158,.5); margin-top: .2rem; line-height: 1.25; }
+.pc.on .pc-key { color: #f0c877; }
+.pc.on::before {
+    content: 'IN USE'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: .46rem; letter-spacing: .22em; color: #2c1a06;
+    background: linear-gradient(180deg, var(--gilt-a), var(--gilt-b));
+    padding: .12rem .4rem; border-radius: 2px; white-space: nowrap;
+}
+.bench-shelf {
+    position: absolute; left: 1rem; right: 1rem; height: 10px;
+    background-image: var(--grain), linear-gradient(180deg, #8a6640, #4b351e 45%, #170e06);
+    border-top: 1px solid #a5804f; box-shadow: 0 7px 9px -2px rgba(0,0,0,.8);
+}
+
+/* The drawing at size, for judging line weight and silhouette. */
+.plate { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+         gap: 1.1rem; margin-top: 2.4rem; }
+.big { position: relative; padding: 1.3rem .8rem 1rem; text-align: center;
+       background-image: var(--fleck), radial-gradient(130% 90% at 50% 0%, #3d1319, #240b0f 60%, #170609);
+       border: 1px solid rgba(201,161,94,.35); border-radius: 3px; }
+.big svg { width: 96px; height: 96px; display: block; margin: 0 auto; }
+.big .pc-key { margin-top: .7rem; display: block; }
+.big .pc-note { display: block; }
+
+.gold { color: #f0c877; } .silver { color: #c2ccd4; } .bronze { color: #c08553; }
+.royal { color: #8fb6d6; } .leaf { color: #97b28f; } .award { color: #b79ae6; }
+
+.swatches { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.4rem; margin-top: 1.4rem; }
+.sw { text-align: center; font-family: var(--mono); font-size: .56rem; letter-spacing: .1em; }
+.sw i { display: block; width: 46px; height: 46px; border-radius: 50%; margin: 0 auto .5rem;
+        box-shadow: 0 0 0 1px #120a04, 0 3px 6px rgba(0,0,0,.6); }
+.sw b { display: block; font-weight: 400; color: rgba(226,205,158,.55); margin-top: .2rem; }
+
+/* Ballot-hue picker: the Finish band has to survive TWO grounds — the crimson
+   banner cloth (where it sits inside a gold frame) and the parchment ballot.
+   A hue that works on one can vanish on the other, so both are shown. */
+.hue { display: grid; grid-template-columns: 6.4rem 1fr 1fr; gap: .8rem 1rem;
+       align-items: center; padding: .5rem 0; }
+.hue-key { font-family: var(--mono); font-size: .6rem; color: #efe3c4; }
+.hue-key b { display: block; font-weight: 400; font-size: .5rem;
+             color: rgba(226,205,158,.45); margin-top: .18rem; }
+.hue.on .hue-key { color: #f0c877; }
+.hue-ground { padding: .55rem .7rem; border-radius: 2px; }
+.hue-cloth { background-image: var(--fleck),
+    repeating-linear-gradient(92deg, rgba(0,0,0,.22) 0 3px, transparent 3px 30px),
+    linear-gradient(180deg, #6d1d22 0%, #481115 60%, #2f0c0f 100%);
+    box-shadow: inset 0 0 0 2px #c9a15e; }
+.hue-parch { background-image: var(--fleck),
+    linear-gradient(180deg, #efdfba 0%, #e2cd9e 55%, #cfb583 100%); }
+.hue-stack { display: flex; height: 9px; box-shadow: 0 0 0 1px rgba(0,0,0,.45); }
+.hue-stack span { display: block; height: 100%; }
+.hue-stack span + span { box-shadow: inset 1px 0 0 rgba(0,0,0,.55); }
+.hue-head { display: grid; grid-template-columns: 6.4rem 1fr 1fr; gap: 1rem;
+            font-family: var(--mono); font-size: .5rem; letter-spacing: .2em;
+            text-transform: uppercase; color: rgba(226,205,158,.4);
+            border-bottom: 1px solid rgba(201,161,94,.28); padding-bottom: .4rem; margin-top: 1rem; }
+</style>
+</head>
+<body>
+
+<div class="room"></div>
+
+<div class="wrap">
+    <header class="mast">
+        <div class="mast-kick">The Society Almanac</div>
+        <h1 class="mast-title">The Icon Bench</h1>
+        <p class="mast-sub">Every candidate piece, standing on a real board at the size it
+        actually appears in a manager&rsquo;s case. Call one out by the name under it.</p>
+    </header>
+    <div id="body"></div>
+</div>
+
+<script src="hall-common.js"></script>
+<script>
+var C = window.HallCommon;
+var S = 'fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"';
+function svg(d) { return '<svg viewBox="0 0 24 24" ' + S + '>' + d + '</svg>'; }
+
+/* ============================================================
+   Candidates. Every one bottoms out at y=21 so they stand level
+   on the shelf, which is the whole point of seeing them here.
+   ============================================================ */
+var MOTY = [
+    // Base + rounded top, the way a real desk trophy is built. No points.
+    ['glass', 'glass slab on a base, one facet',
+        '<path d="M8 7.2a4 4 0 0 1 8 0V18H8V7.2Z"/><path d="M12 4.6V18"/><path d="M6.2 18h11.6V21H6.2z"/>'],
+    ['dome', 'half-dome on a heavy base',
+        '<path d="M6.6 16.4a5.4 5.4 0 0 1 10.8 0Z"/><path d="M9.2 16.4a2.8 2.8 0 0 1 5.6 0"/>'
+      + '<path d="M5.8 16.4h12.4V21H5.8z"/>'],
+    ['tablet', 'rounded plaque, engraved band',
+        '<path d="M7.6 6a2.6 2.6 0 0 1 2.6-2.6h3.6A2.6 2.6 0 0 1 16.4 6v11.8H7.6V6Z"/>'
+      + '<path d="M9.8 8.6h4.4M9.8 11.4h4.4"/><path d="M5.9 17.8h12.2V21H5.9z"/>'],
+    ['teardrop', 'a soft flame form on a plinth',
+        '<path d="M12 3.6c2.9 3 4.4 5 4.4 7.3a4.4 4.4 0 0 1-8.8 0c0-2.3 1.5-4.3 4.4-7.3Z"/>'
+      + '<path d="M12 15.3v2.5"/><path d="M6.6 17.8h10.8V21H6.6z"/>'],
+    ['shield-laurel', 'the crest, laurel instead of a star',
+        '<path d="M6.6 4.4h10.8v6.2c0 3.6-2.6 5.6-5.4 6.6c-2.8-1-5.4-3-5.4-6.6V4.4Z"/>'
+      + '<path d="M10.4 13.6c-1.9-1.1-2.4-3.6-1-5.3M13.6 13.6c1.9-1.1 2.4-3.6 1-5.3"/>'
+      + '<path d="M6.6 18.4h10.8V21H6.6z"/>'],
+    ['shield-star', 'the crest with the star (rejected interior)',
+        '<path d="M6.6 4.4h10.8v6.2c0 3.6-2.6 5.6-5.4 6.6c-2.8-1-5.4-3-5.4-6.6V4.4Z"/>'
+      + '<path d="M12 7.4 13 9.5l2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3L8.7 9.8 11 9.5 12 7.4Z"/>'
+      + '<path d="M6.6 18.4h10.8V21H6.6z"/>'],
+    ['orb', 'in use &middot; globe on a plinth',
+        '<circle cx="12" cy="8.4" r="5.1"/><path d="M6.9 8.4h10.2"/><path d="M12 3.3c2.6 2.9 2.6 7.3 0 10.2c-2.6-2.9-2.6-7.3 0-10.2Z"/>'
+      + '<path d="M8.6 15.2h6.8v2.3H8.6z"/><path d="M6.4 17.5h11.2V21H6.4z"/>'],
+    ['column', 'classical column, sphere finial',
+        '<circle cx="12" cy="4.9" r="2.5"/><path d="M8.8 8.2h6.4v1.9H8.8z"/><path d="M9.9 10.1h4.2v6.2H9.9z"/>'
+      + '<path d="M11.1 11.1v4.2M12.9 11.1v4.2"/><path d="M8.4 16.3h7.2v2H8.4z"/><path d="M6.4 18.3h11.2V21H6.4z"/>'],
+    ['bowl', 'wide footed bowl, no handles',
+        '<path d="M5.4 6.2h13.2a6.6 6.6 0 0 1-13.2 0Z"/><path d="M12 12.8v3.4"/>'
+      + '<path d="M8.4 16.2h7.2v2.1H8.4z"/><path d="M6.6 18.3h10.8V21H6.6z"/>'],
+    ['laurelstar', 'star inside a laurel ring',
+        '<path d="M8.6 15.6c-3.2-1.9-4-6.2-1.7-9.1M15.4 15.6c3.2-1.9 4-6.2 1.7-9.1"/>'
+      + '<path d="M12 4.4 13.6 7.7l3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5L12 4.4Z"/>'
+      + '<path d="M9 16.6h6v1.9H9z"/><path d="M7 18.5h10V21H7z"/>'],
+    ['bust', 'laurelled bust on a plinth',
+        '<circle cx="12" cy="6.4" r="3"/><path d="M7.4 15.4a4.6 4.6 0 0 1 9.2 0Z"/>'
+      + '<path d="M8.6 5.1c-1.3.3-2 1.3-2 2.5M15.4 5.1c1.3.3 2 1.3 2 2.5"/>'
+      + '<path d="M7.6 15.4h8.8v2.4H7.6z"/><path d="M5.8 17.8h12.4V21H5.8z"/>'],
+    ['medallion', 'disc on a display stand',
+        '<circle cx="12" cy="8.2" r="4.8"/><path d="M12 5.7 13 7.8l2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3L8.7 8.1l2.3-.3L12 5.7Z"/>'
+      + '<path d="M12 13v3.4"/><path d="M8.2 16.4h7.6v2.2H8.2z"/><path d="M6.2 18.6h11.6V21H6.2z"/>'],
+        ['ring', 'championship ring',
+        '<path d="M7.6 12.4a4.4 4.4 0 0 0 8.8 0"/><path d="M7.6 12.4V21M16.4 12.4V21"/>'
+      + '<path d="M9.4 8.4h5.2l1.8 4h-8.8l1.8-4Z"/><path d="M10.6 5.4h2.8l1.2 3H9.4l1.2-3Z"/>'],
+    ['clipboard', 'the manager&rsquo;s board',
+        '<path d="M6.4 5.4h11.2V21H6.4z"/><path d="M9.4 3.4h5.2v3H9.4z"/>'
+      + '<path d="M9 10.4h6M9 13.4h6M9 16.4h3.6"/>'],
+    ['spire', 'the faceted obelisk (too pointy)',
+        '<path d="M12 2.8 16.7 14.9H7.3L12 2.8Z"/><path d="M12 5.2v9.7"/>'
+      + '<path d="M8.3 14.9h7.4v2.7H8.3z"/><path d="M6.1 17.6h11.8V21H6.1z"/>'],
+    ['rosette', 'the original ribbon (rejected)',
+        '<circle cx="12" cy="8.4" r="5"/><path d="M12 5.9 13 8l2.2.2-1.6 1.4.5 2.1-2.1-1.1-2.1 1.1.5-2.1L8.8 8.2 11 8 12 5.9Z"/>'
+      + '<path d="M8.7 12.8 7 20.4l3.3-1.9L12 20.4l1.7-1.9L17 20.4l-1.7-7.6"/>'],
+];
+
+var CROWN = [
+    ['crown-jewelled', 'five points, three jewels',
+        '<path d="M3.6 10.2 7.3 13.5 12 6.6l4.7 6.9 3.7-3.3-1.6 8.1H5.2L3.6 10.2Z"/><path d="M5.7 21h12.6"/>'
+      + '<circle cx="3.4" cy="8.7" r="1.05"/><circle cx="20.6" cy="8.7" r="1.05"/><circle cx="12" cy="5.1" r="1.05"/>'],
+    ['crown-plain', 'in use &middot; no jewels, heavier band',
+        '<path d="M3.8 10.6 7.4 13.8 12 7.2l4.6 6.6 3.6-3.2-1.6 7.6H5.4L3.8 10.6Z"/><path d="M5 18.2h14V21H5z"/>'],
+    ['crown-arch', 'arched imperial crown',
+        '<path d="M5 17.4c0-5.6 3.1-8.8 7-8.8s7 3.2 7 8.8Z"/><path d="M12 8.6V5.4"/>'
+      + '<circle cx="12" cy="4.2" r="1.2"/><path d="M4.4 17.4h15.2V21H4.4z"/>'],
+    ['pennant', 'a first-place pennant',
+        '<path d="M7.4 3.6v17.4"/><path d="M7.4 4.6h11l-2.8 3.4 2.8 3.4h-11"/>'],
+];
+
+var SCORING = [
+    // Flat marks on purpose: the scoring title is a measurement, not a cup.
+    ['football', 'in use &middot; the ball, set at an angle',
+        '<g transform="rotate(-35 12 14.7)">'
+      + '<path d="M4 14.7c2.13-3.5 4.89-5.3 8-5.3s5.87 1.8 8 5.3c-2.13 3.5-4.89 5.3-8 5.3s-5.87-1.8-8-5.3Z"/>'
+      + '<path d="M8.8 14.7h6.4"/><path d="M10.2 13.3v2.8M12 13.3v2.8M13.8 13.3v2.8"/></g>'],
+    ['football-flat', 'the ball, level, seams instead of laces',
+        '<path d="M2.6 14.8c2.5-4 5.7-6 9.4-6s6.9 2 9.4 6c-2.5 4-5.7 6-9.4 6s-6.9-2-9.4-6Z"/>'
+      + '<path d="M6.4 11.5c1.4 2.2 1.4 4.4 0 6.6M17.6 11.5c-1.4 2.2-1.4 4.4 0 6.6"/>'
+      + '<path d="M8.4 14.8h7.2"/>'],
+    ['bars', 'three rising bars',
+        '<path d="M5.4 13.4h3.4V21H5.4z"/><path d="M10.3 8.9h3.4V21h-3.4z"/><path d="M15.2 4.4h3.4V21h-3.4z"/>'],
+    ['coins', 'a stack of points',
+        '<ellipse cx="12" cy="6.4" rx="6" ry="2.4"/><path d="M6 6.4v3.4c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4V6.4"/>'
+      + '<path d="M6 12.6V16c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4v-3.4"/><path d="M6 18.6V21h12v-2.4"/>'],
+    ['sunburst', 'the brightest in the league',
+        '<circle cx="12" cy="12" r="4"/><path d="M12 3.4v2.6M12 18v2.6M3.4 12h2.6M18 12h2.6"/>'
+      + '<path d="m6 6 1.9 1.9M16.1 16.1 18 18M18 6l-1.9 1.9M7.9 16.1 6 18"/>'],
+    ['chartline', 'points trending up',
+        '<path d="M4 21V4"/><path d="M4 21h16"/><path d="m6.6 16.4 3.6-4.2 3 2.4 4.6-6"/>'],
+    ['scoreboard', 'the number on the board',
+        '<path d="M4.4 5h15.2v11.4H4.4z"/><path d="M8 8.4v4.6M12 8.4v4.6M16 8.4v4.6"/>'
+      + '<path d="M8.6 16.4v2.2M15.4 16.4v2.2M6.4 21h11.2"/>'],
+    ['target', 'dead centre',
+        '<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.2"/>'],
+    ['tally', 'counted off in the ledger',
+        '<path d="M6.6 6.6V21M10 6.6V21M13.4 6.6V21M16.8 6.6V21"/><path d="M5 19.2 18.6 8.4"/>'],
+    ['sigma', 'the sum of everything',
+        '<path d="M17.8 4.4H6.2L12 12.7 6.2 21h11.6"/>'],
+    ['gauge', 'needle pinned at the top',
+        '<path d="M3.4 21a8.6 8.6 0 0 1 17.2 0"/><path d="M12 21 17.4 13.8"/><circle cx="12" cy="20.2" r=".9"/>'],
+    ['arrowup', 'rising, twice over',
+        '<path d="m5.4 12.4 6.6-6.6 6.6 6.6"/><path d="m5.4 21 6.6-6.6L18.6 21"/>'],
+    ['mountain', 'the high point of the league',
+        '<path d="M2.4 21 9.2 8.2l3.9 6.1 2.5-3.7L21.6 21H2.4Z"/><path d="m6.6 15.4 2.6-1.6 2.4 1.4"/>'],
+    ['thermometer', 'the hottest scorer',
+        '<path d="M9.7 15.2V5.8a2.3 2.3 0 0 1 4.6 0v9.4"/><circle cx="12" cy="17.6" r="3.4"/>'
+      + '<path d="M12 10.2v7.4"/>'],
+    ['bolt', 'scoring power',
+        '<path d="M13.4 3.4 6.6 13h5l-1 7.6L17 11h-5l1.4-7.6Z"/>'],
+    ['flame', 'most points, drawn hot (rejected)',
+        '<path d="M12 3.4c3.4 3.3 5.4 5.6 5.4 8.6a5.4 5.4 0 0 1-10.8 0c0-3 2-5.3 5.4-8.6Z"/>'
+      + '<path d="M12 11.4c1.5 1.5 2.3 2.5 2.3 3.8a2.3 2.3 0 0 1-4.6 0c0-1.3.8-2.3 2.3-3.8Z"/>'],
+    ['star', 'five-point star (rejected)',
+        '<path d="m12 3.8 2.7 5.9 6.3.7-4.7 4.3 1.3 6.3L12 17.8l-5.6 3.2 1.3-6.3L3 10.4l6.3-.7L12 3.8Z"/>'],
+];
+
+// Six to a board, each row on its own board — a wrapped row with no shelf
+// under it leaves half the candidates floating in the dark.
+
+/* ── The Finish band ──────────────────────────────────────────
+   Finish is 35% of the ballot, so it is the widest band on every bar and the
+   one that sets the tone. The other five are settled; only this one is open.
+   Shown at the real ballot weights on both grounds. */
+var FINISH_HUES = [
+    ['yellow',  '#e6b74a', 'in use &middot; true yellow, mid weight'],
+    ['amber',   '#b5761f', 'deep amber (too dark)'],
+    ['gilt',    '#c9a15e', 'the room gilt (reads as trim)'],
+    ['bright',  '#f0c877', 'the original (too bright)'],
+    ['bronze',  '#8f6a35', 'darker, browner'],
+    ['oxblood', '#8f2f38', 'deep red'],
+    ['ink',     '#46505e', 'slate, like ink on the page'],
+    ['teal',    '#2f7a72', 'deep teal'],
+    ['espresso','#4a3524', 'near-black brown'],
+];
+// The settled five, at their real ballot weights.
+var REST = [['#b79ae6', 7], ['#c3704f', 20], ['#7d9cb8', 15], ['#c987a8', 15], ['#8dac7a', 8]];
+
+function hueStack(finish) {
+    return '<div class="hue-stack"><span style="width:35%;background:' + finish + '"></span>'
+        + REST.map(function (p) {
+              return '<span style="width:' + p[1] + '%;background:' + p[0] + '"></span>';
+          }).join('') + '</div>';
+}
+
+function hueBench() {
+    return '<div class="hue-head"><span>Name</span><span>On the banner</span><span>On the ballot</span></div>'
+        + FINISH_HUES.map(function (h) {
+              return '<div class="hue' + (h[0] === 'yellow' ? ' on' : '') + '">'
+                   + '<div class="hue-key">' + h[0] + '<b>' + h[2] + '</b></div>'
+                   + '<div class="hue-ground hue-cloth">' + hueStack(h[1]) + '</div>'
+                   + '<div class="hue-ground hue-parch">' + hueStack(h[1]) + '</div>'
+                   + '</div>';
+          }).join('');
+}
+
+function bench(list, cls, active) {
+    var out = '';
+    for (var i = 0; i < list.length; i += 6) {
+        out += '<div class="bench"><div class="bench-row">'
+             + list.slice(i, i + 6).map(function (g) {
+                   return '<div class="pc ' + cls + (g[0] === active ? ' on' : '') + '">'
+                        + '<div class="pc-obj">' + svg(g[2]) + '</div>'
+                        + '<div class="pc-cap"><div class="pc-key">' + g[0] + '</div>'
+                        +   '<div class="pc-note">' + g[1] + '</div></div></div>';
+               }).join('')
+             // The board sits 42px down: the object box is 46 tall and every
+             // glyph bottoms at 21/24, which lands the feet on the board's edge.
+             + '</div><div class="bench-shelf" style="top:calc(1.4rem + 42px)"></div></div>';
+    }
+    return out;
+}
+
+function plate(list, cls, active) {
+    return '<div class="plate">' + list.map(function (g) {
+        return '<div class="big ' + cls + (g[0] === active ? ' on' : '') + '">' + svg(g[2])
+             + '<span class="pc-key">' + g[0] + '</span>'
+             + '<span class="pc-note">' + g[1] + '</span></div>';
+    }).join('') + '</div>';
+}
+
+function chap(t, n) {
+    return '<section class="chap"><h2><span class="ribbon">' + t + '</span></h2>'
+         + (n ? '<div class="chap-note">' + n + '</div>' : '') + '</section>';
+}
+
+document.getElementById('body').innerHTML =
+      chap('Manager of the Year', 'A base with something rounded on top, plus the rejects for reference. '
+        + 'All violet, all standing on the same baseline as the cup beside them.')
+    + bench(MOTY, 'award', 'orb') + plate(MOTY, 'award', 'orb')
+
+    + chap('Best record', 'The regular-season crown. Alternates in steel blue.')
+    + bench(CROWN, 'royal', 'crown-plain') + plate(CROWN, 'royal', 'crown-plain')
+
+    + chap('Scoring title', 'Flat marks rather than objects on plinths, in laurel green.')
+    + bench(SCORING, 'leaf', 'football') + plate(SCORING, 'leaf', 'football')
+
+    + chap('The set in place', 'What a decorated case looks like today, left to right in '
+        + 'the order a season hands them out.')
+    + '<div class="bench"><div class="bench-row">'
+    +   ['<div class="pc gold"><div class="pc-obj">' + C.GLYPH.cup + '</div><div class="pc-cap">'
+    +     '<div class="pc-key">cup</div><div class="pc-note">champion</div></div></div>',
+         '<div class="pc silver"><div class="pc-obj">' + C.GLYPH.medal + '</div><div class="pc-cap">'
+    +     '<div class="pc-key">medal</div><div class="pc-note">runner-up</div></div></div>',
+         '<div class="pc bronze"><div class="pc-obj">' + C.GLYPH.medal + '</div><div class="pc-cap">'
+    +     '<div class="pc-key">medal</div><div class="pc-note">third</div></div></div>',
+         '<div class="pc award"><div class="pc-obj">' + C.GLYPH.orb + '</div><div class="pc-cap">'
+    +     '<div class="pc-key">award</div><div class="pc-note">MOTY</div></div></div>',
+         '<div class="pc royal"><div class="pc-obj">' + C.GLYPH.crown + '</div><div class="pc-cap">'
+    +     '<div class="pc-key">crown</div><div class="pc-note">best record</div></div></div>',
+         '<div class="pc leaf"><div class="pc-obj">' + C.GLYPH.football + '</div><div class="pc-cap">'
+    +     '<div class="pc-key">star</div><div class="pc-note">scoring title</div></div></div>'].join('')
+    + '</div><div class="bench-shelf" style="top:calc(1.4rem + 42px)"></div></div>'
+
+    + chap('The Finish band', 'Manager of the Year is scored on six components stacked into '
+        + 'one bar. Five are settled; Finish is 35% of it and is the widest band, so it is the '
+        + 'one still being chosen. Shown on both grounds it has to survive.')
+    + hueBench()
+
+    + chap('The accolade hues', 'One per trophy. Bronze is third place and nothing else.')
+    + '<div class="swatches">'
+    +   ['#f0c877 champion', '#c2ccd4 runner-up', '#c08553 third',
+         '#b79ae6 MOTY', '#8fb6d6 best record', '#97b28f scoring'].map(function (s) {
+            var p = s.split(' ');
+            return '<div class="sw"><i style="background:' + p[0] + '"></i>' + p[0] + '<b>' + p[1] + '</b></div>';
+        }).join('')
+    + '</div>';
+</script>
+</body>
+</html>

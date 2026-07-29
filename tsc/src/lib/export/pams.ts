@@ -291,6 +291,7 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
         .from('draft_picks')
         .select('draft_id, round, pick, manager_id, player_name, position, nfl_team, player_external_id')
         .in('draft_id', draftIds)
+        .order('id', { ascending: true })
         .range(from, from + PAGE - 1)
       const rows = (chunk ?? []) as DraftPickRow[]
       picks = picks.concat(rows)
@@ -416,6 +417,13 @@ function groupBy<T, K>(rows: T[], key: (r: T) => K): Map<K, T[]> {
 // that can exceed that (matchups especially, but also drafts and ms across
 // the whole DB), paginate explicitly so we never lose the tail. Filter by
 // season_id IN (...) so we only download rows for the league being exported.
+//
+// The .order('id') is load-bearing, not tidiness. Postgres gives no ordering
+// guarantee for LIMIT/OFFSET without an ORDER BY, so paging an unordered
+// select lets the same row come back on two pages while another never
+// appears at all. On a 22k-row weekly_lineups set that silently deleted one
+// whole season and double-counted another. Any paged select needs a unique
+// sort key; id is the primary key, so it is always safe.
 async function selectAllPaged<T>(
   db: ReturnType<typeof createAdminClient>,
   table: 'matchups' | 'drafts' | 'weekly_lineups',
@@ -430,6 +438,7 @@ async function selectAllPaged<T>(
       .from(table)
       .select(columns)
       .in('season_id', seasonIds)
+      .order('id', { ascending: true })
       .range(from, from + PAGE - 1)
     if (error) throw new Error(`${table} paged select: ${error.message}`)
     const rows = (data ?? []) as unknown as T[]
@@ -457,6 +466,7 @@ async function selectManagerSeasonsPaged(
       .from('manager_seasons')
       .select(useDivision ? columnsWithDiv : columnsNoDiv)
       .in('season_id', seasonIds)
+      .order('id', { ascending: true })
       .range(from, from + PAGE - 1)
     if (error) {
       if (useDivision) {
@@ -616,6 +626,25 @@ function pickPrimary(s: Snapshot, mgrs: ManagerRow[]): ManagerRow {
   return best
 }
 
+// Which seasons count as HISTORY.
+//
+// A season is finished when it has a champion, full stop. The `is_live`
+// flag is NOT consulted here on purpose: it is a setting the commish
+// points at whatever season the /live/ pages should render, and it gets
+// left switched on for months after a season actually ends. Gating the
+// archive, the record book or career totals on it meant a completed year
+// silently vanished from the almanac — pams lost the whole of 2025 that
+// way, while `defending_champion` (which already used this rule) went on
+// naming its champion.
+//
+// The rule also does the right thing mid-season: a year in progress has
+// no champion yet, so partial W/L never leaks into career records.
+function completedSeasonIds(s: Snapshot): Set<string> {
+  return new Set(
+    s.seasons.filter((sn) => sn.champion_manager_id != null).map((sn) => sn.id),
+  )
+}
+
 function buildProfileGroups(s: Snapshot): ProfileGroup[] {
   const byProfile = new Map<string, ManagerRow[]>()
   const orphans: ManagerRow[] = []
@@ -724,7 +753,7 @@ function buildLeagueJson(s: Snapshot): unknown {
   // `completedYears` excludes the in-progress live season so counts like
   // total_seasons / "X seasons played" only reflect finished years.
   const years = s.seasons.map((r) => r.year)
-  const completedYears = s.seasons.filter((r) => !r.is_live).map((r) => r.year)
+  const completedYears = s.seasons.filter((r) => r.champion_manager_id != null).map((r) => r.year)
   const currentSeason = years[years.length - 1] ?? 0
   const currentSeasonRow = latestSeasonWithData(s) ?? null
   // Count only games that actually count toward the record: every regular-season
@@ -864,7 +893,7 @@ function buildSeasonsDirectory(s: Snapshot): unknown {
   //     without this guard, the archive page badges that year as "Reigning
   //     Champion" since it picks the latest year present.
   return {
-    seasons: s.seasons.filter((season) => !season.is_live && season.champion_manager_id != null).map((season) => {
+    seasons: s.seasons.filter((season) => season.champion_manager_id != null).map((season) => {
       const champ = season.champion_manager_id ? s.managers.get(season.champion_manager_id) : null
       const champGroup = season.champion_manager_id ? managerToGroup.get(season.champion_manager_id) : undefined
       const champMs = champ
@@ -1173,12 +1202,11 @@ type ManagerAggregate = {
 }
 
 function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
-  // Exclude any season currently flagged is_live — career standings and
-  // "seasons played" counts should only reflect COMPLETED seasons. Partial
-  // 2026 wins/losses skew everything if included before the season ends.
-  const liveSeasonIds = new Set(
-    s.seasons.filter((sn) => sn.is_live).map((sn) => sn.id)
-  )
+  // Career standings and "seasons played" only count COMPLETED seasons —
+  // ones with a champion. See completedSeasonIds: a year in progress has no
+  // champion, so partial wins/losses can't skew a career, and a year that
+  // finished months ago can't be hidden by a stale is_live flag.
+  const completedIds = completedSeasonIds(s)
 
   // ALSO require at least one COMPLETED game (a score recorded) in the
   // season. The is_live flag alone isn't enough — Sleeper schedules every
@@ -1205,7 +1233,7 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
     const rows = s.managerSeasonsByManager.get(mid)
     if (rows) {
       for (const r of rows) {
-        if (liveSeasonIds.has(r.season_id)) continue
+        if (!completedIds.has(r.season_id)) continue
         if (!playedSeasonIds.has(r.season_id)) continue
         mss.push(r)
       }
@@ -1219,7 +1247,7 @@ function aggregateProfile(s: Snapshot, g: ProfileGroup): ManagerAggregate {
   for (const mid of g.managerIds) {
     const matchups = s.matchupsByManager.get(mid) ?? []
     for (const m of matchups) {
-      if (liveSeasonIds.has(m.season_id)) continue
+      if (!completedIds.has(m.season_id)) continue
       const key = `${m.season_id}|${m.week}|${m.manager_a_id}|${m.manager_b_id}`
       if (seenMatchup.has(key)) continue
       seenMatchup.add(key)
@@ -1397,10 +1425,10 @@ function buildManagersDirectory(s: Snapshot): unknown {
           return yb - ya
         })[0]
       // Average final finish across COMPLETED seasons that have a final
-      // rank AND at least one game played. Live seasons skip out; so do
+      // rank AND at least one game played. Unfinished years skip out; so do
       // re-activated empty seasons with a row but no matchups. avg_finish
-      // never moves mid-season — only completed seasons get folded in.
-      const liveIds = new Set(s.seasons.filter((sn) => sn.is_live).map((sn) => sn.id))
+      // never moves mid-season — only seasons with a champion fold in.
+      const completedIds = completedSeasonIds(s)
       const playedIds = new Set<string>()
       for (const mid of g.managerIds) {
         for (const m of s.matchupsByManager.get(mid) ?? []) {
@@ -1412,7 +1440,7 @@ function buildManagersDirectory(s: Snapshot): unknown {
       const ranks = allMs
         .filter(
           (ms) =>
-            !liveIds.has(ms.season_id) &&
+            completedIds.has(ms.season_id) &&
             ms.final_rank != null &&
             playedIds.has(ms.season_id),
         )
@@ -3463,6 +3491,7 @@ export async function exportLeague(
   out['matchup_preview.json'] = buildMatchupPreview(s)
   out['best_coach.json'] = buildBestCoach(s)
   out['manager_dna.json'] = buildManagerDna(s)
+  out['roster_building.json'] = buildRosterBuilding(s)
   out['visualizer.json'] = buildVisualizer(s)
 
   for (const season of s.seasons) {
@@ -6167,6 +6196,331 @@ type DnaSignals = {
   // as ~0.14/yr rather than 1.0/yr.
   trades_total: number
   trades_per_season: number | null
+}
+
+// ============================================================
+// roster_building.json — what each manager built AFTER the draft,
+// for every season on file. Drives the Hall of Fame's Manager of
+// the Year ballot and the "best pickup" lines in a manager's case.
+//
+// No platform in the set gives us a reliable transaction log across
+// every season, so acquisitions are derived from the weekly roster
+// snapshots instead: a player sitting on your roster in week N who
+// was not there in week N-1 and was not drafted by you arrived some
+// other way. That catches waiver claims, free agency and trades on
+// all four platforms, back to the first synced season.
+//
+// The join to the draft is BY NAME, deliberately. draft_picks
+// .player_external_id is populated for some seasons and null for
+// others (NFL.com stopped handing it over), and an id join silently
+// treats every drafted player as a pickup in the seasons where it is
+// missing — which reads as a manager who built his whole roster off
+// waivers.
+//
+// SCORING BASIS: `net_surplus_pts`, not share. Share of starting points
+// from pickups measures how much churn a roster NEEDED, not how good the
+// moves were — across pams it runs -0.52 against draft score and -0.17
+// against actually finishing well, because a big pickup share mostly means
+// the draft failed. Surplus fixes that by charging every pickup against
+// what a freely available player at that position was worth that week:
+// landing the eventual RB8 scores, streaming a dozen warm bodies nets ~0.
+//
+// The shares are still exported, because "42% of his starting points came
+// from players he didn't draft" is a good line in a manager's case. They
+// just aren't what the ballot runs on. `share` counts every position, which
+// K and DEF streaming inflates hard; `share_skill` is QB/RB/WR/TE only.
+// ============================================================
+const ROSTER_BUILD_SKILL = new Set(['QB', 'RB', 'WR', 'TE'])
+
+// Replacement level as a multiple of team count, per position — the same
+// shape the Draft Grader uses, applied to a single week instead of a
+// season. In a 12-team league the ~30th-best RB of the week is about what
+// sat on the wire, so beating that line is the thing worth crediting.
+const ROSTER_BUILD_REPL_MULT: Record<string, number> = { QB: 1.35, RB: 2.5, WR: 3.0, TE: 1.25 }
+
+type RosterBuildPickup = {
+  name: string | null
+  position: string | null
+  week: number          // first week they appeared on this roster
+  points: number        // points they scored in this manager's STARTING lineup
+  surplus: number       // those points, less weekly replacement level
+  via: 'trade' | 'free_agent'
+}
+
+type RosterBuildManager = {
+  uid: string | null
+  name: string
+  adds: number
+  adds_skill: number
+  acquired_starter_pts: number   // everything that came in, gross
+  given_starter_pts: number      // what the trades cost, scored the same way
+  net_starter_pts: number        // acquired - given
+  total_starter_pts: number
+  share: number | null           // net, over all positions
+  share_skill: number | null     // net, QB/RB/WR/TE only
+  surplus_pts: number            // pickups above weekly replacement, gross
+  given_surplus_pts: number      // the same figure for what the trades sent out
+  net_surplus_pts: number        // THE SCORED FIGURE
+  best: RosterBuildPickup[]
+  given: RosterBuildPickup[]     // the best players traded away
+}
+
+function buildRosterBuilding(s: Snapshot): unknown {
+  const groups = buildProfileGroups(s).filter((g) => !isGroupHidden(g))
+  if (groups.length === 0) return null
+  const managerToGroup = buildManagerToGroup(groups)
+
+  const seasons: Record<string, { managers: RosterBuildManager[] }> = {}
+
+  for (const season of s.seasons) {
+    const rows = s.weeklyLineupsBySeason.get(season.id) ?? []
+    if (rows.length === 0) continue
+
+    // Who drafted whom, keyed by normalised name.
+    const draftedBy = new Set<string>()
+    const draft = s.draftsBySeason.get(season.id)
+    if (draft) {
+      for (const p of s.picksByDraft.get(draft.id) ?? []) {
+        if (!p.manager_id || !p.player_name) continue
+        draftedBy.add(`${p.manager_id}|${normalizeLineupName(p.player_name)}`)
+      }
+    }
+    // A season with no draft on file can't tell a pickup from a keeper,
+    // so it contributes nothing rather than crediting the whole roster.
+    if (draftedBy.size === 0) continue
+
+    // manager -> week -> playerId -> row
+    const byMgr = new Map<string, Map<number, Map<string, WeeklyLineupRow>>>()
+    for (const r of rows) {
+      if (!managerToGroup.has(r.manager_id)) continue
+      let weeks = byMgr.get(r.manager_id)
+      if (!weeks) { weeks = new Map(); byMgr.set(r.manager_id, weeks) }
+      let players = weeks.get(r.week)
+      if (!players) { players = new Map(); weeks.set(r.week, players) }
+      players.set(r.player_external_id, r)
+    }
+
+    // Who held each player in each week, so an arrival that coincides
+    // with a departure elsewhere can be labelled a trade.
+    const holders = new Map<string, Map<string, string>>()  // week|player -> managerId
+    for (const [managerId, weeks] of byMgr.entries()) {
+      for (const [week, players] of weeks.entries()) {
+        for (const pid of players.keys()) {
+          const key = String(week)
+          let m = holders.get(key)
+          if (!m) { m = new Map(); holders.set(key, m) }
+          m.set(pid, managerId)
+        }
+      }
+    }
+
+    // First week each undrafted player showed up on each roster, plus
+    // who (if anyone) held him the week before.
+    const arrivals = new Map<string, Map<string, { week: number; from: string | null }>>()
+    for (const [managerId, weeks] of byMgr.entries()) {
+      const sortedWeeks = [...weeks.keys()].sort((a, b) => a - b)
+      const mine = new Map<string, { week: number; from: string | null }>()
+      for (let i = 0; i < sortedWeeks.length; i++) {
+        const week = sortedWeeks[i]
+        const prev = i > 0 ? weeks.get(sortedWeeks[i - 1]) : null
+        for (const [pid, row] of weeks.get(week)!.entries()) {
+          if (!row.player_name) continue
+          if (draftedBy.has(`${managerId}|${normalizeLineupName(row.player_name)}`)) continue
+          if (prev && prev.has(pid)) continue
+          if (mine.has(pid)) continue
+          const prevHolder = i > 0 ? (holders.get(String(sortedWeeks[i - 1]))?.get(pid) ?? null) : null
+          mine.set(pid, { week, from: prevHolder && prevHolder !== managerId ? prevHolder : null })
+        }
+      }
+      arrivals.set(managerId, mine)
+    }
+
+    // Trade detection needs both directions. "He was on someone else's
+    // roster last week" is NOT enough on its own: a player dropped on
+    // Tuesday and claimed off waivers on Wednesday looks identical to a
+    // trade. A move only counts as a trade when the same two managers
+    // swapped players with each other in the same week.
+    const swapped = new Set<string>()   // week|managerA|managerB, both orders
+    {
+      const pairWeek = new Set<string>()
+      for (const [managerId, mine] of arrivals.entries()) {
+        for (const a of mine.values()) {
+          if (a.from) pairWeek.add(`${a.week}|${managerId}|${a.from}`)
+        }
+      }
+      for (const key of pairWeek) {
+        const [week, to, from] = key.split('|')
+        if (pairWeek.has(`${week}|${from}|${to}`)) {
+          swapped.add(`${week}|${to}|${from}`)
+          swapped.add(`${week}|${from}|${to}`)
+        }
+      }
+    }
+
+    // Weekly replacement level, per position. The pool is every rostered
+    // player at that position that week (bench included — the bench is the
+    // marginal talent), and the line is drawn at the last startable rank.
+    // A pickup is only worth crediting to the extent he beat it.
+    const teamCount = byMgr.size || 12
+    const replByWeekPos = new Map<string, number>()
+    {
+      const pool = new Map<string, number[]>()
+      for (const r of rows) {
+        const pos = (r.position ?? '').toUpperCase()
+        if (!ROSTER_BUILD_SKILL.has(pos)) continue
+        if (r.points == null) continue
+        const key = `${r.week}|${pos}`
+        let arr = pool.get(key)
+        if (!arr) { arr = []; pool.set(key, arr) }
+        arr.push(Number(r.points))
+      }
+      for (const [key, arr] of pool.entries()) {
+        arr.sort((a, b) => b - a)
+        const pos = key.split('|')[1]
+        const rank = Math.max(1, Math.round((ROSTER_BUILD_REPL_MULT[pos] ?? 1) * teamCount))
+        replByWeekPos.set(key, arr[Math.min(rank, arr.length) - 1] ?? 0)
+      }
+    }
+    const replacementFor = (week: number, position: string | null): number => {
+      const pos = (position ?? '').toUpperCase()
+      if (!ROSTER_BUILD_SKILL.has(pos)) return 0
+      return replByWeekPos.get(`${week}|${pos}`) ?? 0
+    }
+
+    // Pass one: what each manager took IN, and what it went on to score
+    // in his starting lineup.
+    type Tally = {
+      managerId: string
+      arrivedAt: Map<string, { week: number; via: 'trade' | 'free_agent'; from: string | null }>
+      perPlayer: Map<string, RosterBuildPickup>
+      acquired: number
+      acquiredSkill: number
+      totalStarter: number
+      totalStarterSkill: number
+      givenPts: number
+      givenSkillPts: number
+      surplus: number
+      givenSurplus: number
+      given: RosterBuildPickup[]
+      addsSkill: number
+    }
+    const tallies = new Map<string, Tally>()
+
+    for (const [managerId, weeks] of byMgr.entries()) {
+      if (!managerToGroup.has(managerId)) continue
+      const sortedWeeks = [...weeks.keys()].sort((a, b) => a - b)
+      const arrivedAt = new Map<string, { week: number; via: 'trade' | 'free_agent'; from: string | null }>()
+      for (const [pid, a] of (arrivals.get(managerId) ?? new Map()).entries()) {
+        const via = a.from && swapped.has(`${a.week}|${managerId}|${a.from}`) ? 'trade' : 'free_agent'
+        arrivedAt.set(pid, { week: a.week, via, from: via === 'trade' ? a.from : null })
+      }
+
+      const t: Tally = {
+        managerId, arrivedAt, perPlayer: new Map(),
+        acquired: 0, acquiredSkill: 0, totalStarter: 0, totalStarterSkill: 0,
+        givenPts: 0, givenSkillPts: 0, surplus: 0, givenSurplus: 0, given: [], addsSkill: 0,
+      }
+
+      for (const week of sortedWeeks) {
+        for (const [pid, row] of weeks.get(week)!.entries()) {
+          if (!row.is_starter) continue
+          const pts = row.points ?? 0
+          const skill = ROSTER_BUILD_SKILL.has((row.position ?? '').toUpperCase())
+          t.totalStarter += pts
+          if (skill) t.totalStarterSkill += pts
+          const arrival = arrivedAt.get(pid)
+          if (!arrival || week < arrival.week) continue
+          t.acquired += pts
+          if (skill) t.acquiredSkill += pts
+          // Surplus: what this start was worth over the wire that week.
+          // Negative is allowed and deserved — starting a pickup who
+          // bombs was still the manager's call.
+          const surplus = skill ? pts - replacementFor(week, row.position) : 0
+          t.surplus += surplus
+          let entry = t.perPlayer.get(pid)
+          if (!entry) {
+            entry = { name: row.player_name, position: row.position, week: arrival.week, points: 0, surplus: 0, via: arrival.via }
+            t.perPlayer.set(pid, entry)
+          }
+          entry.points += pts
+          entry.surplus += surplus
+        }
+      }
+
+      for (const pid of arrivedAt.keys()) {
+        const anyRow = sortedWeeks.map((w) => weeks.get(w)!.get(pid)).find(Boolean)
+        if (anyRow && ROSTER_BUILD_SKILL.has((anyRow.position ?? '').toUpperCase())) t.addsSkill++
+      }
+      tallies.set(managerId, t)
+    }
+
+    // Pass two: charge the other side of every trade.
+    //
+    // Taking in the RB2 is only good business if you did not hand over the
+    // RB1 to get him. A trade is credited to the receiver and debited from
+    // the sender at the SAME figure — the points the player went on to put
+    // in his new owner's starting lineup — so a swap of equals nets to
+    // roughly zero for both managers instead of reading as a win for
+    // whoever's incoming player scored more in isolation. Free-agent adds
+    // are not debited: what you dropped to make room was, by definition,
+    // the worst man on your roster.
+    for (const t of tallies.values()) {
+      for (const [pid, arrival] of t.arrivedAt.entries()) {
+        if (arrival.via !== 'trade' || !arrival.from) continue
+        const sender = tallies.get(arrival.from)
+        if (!sender) continue
+        const entry = t.perPlayer.get(pid)
+        if (!entry) continue
+        const skill = ROSTER_BUILD_SKILL.has((entry.position ?? '').toUpperCase())
+        sender.givenPts += entry.points
+        if (skill) sender.givenSkillPts += entry.points
+        sender.givenSurplus += entry.surplus
+        sender.given.push({ ...entry, points: round2(entry.points), surplus: round2(entry.surplus) })
+      }
+    }
+
+    const managers: RosterBuildManager[] = []
+    for (const t of tallies.values()) {
+      const group = managerToGroup.get(t.managerId)
+      if (!group) continue
+      const net = t.acquired - t.givenPts
+      const netSkill = t.acquiredSkill - t.givenSkillPts
+      managers.push({
+        uid: userId(group.primary),
+        name: groupDisplayName(group),
+        adds: t.arrivedAt.size,
+        adds_skill: t.addsSkill,
+        acquired_starter_pts: round2(t.acquired),
+        given_starter_pts: round2(t.givenPts),
+        net_starter_pts: round2(net),
+        total_starter_pts: round2(t.totalStarter),
+        share: t.totalStarter > 0 ? round2(net / t.totalStarter) : null,
+        share_skill: t.totalStarterSkill > 0 ? round2(netSkill / t.totalStarterSkill) : null,
+        surplus_pts: round2(t.surplus),
+        given_surplus_pts: round2(t.givenSurplus),
+        net_surplus_pts: round2(t.surplus - t.givenSurplus),
+        best: [...t.perPlayer.values()]
+          .sort((a, b) => b.surplus - a.surplus)
+          .slice(0, 3)
+          .map((p) => ({ ...p, points: round2(p.points), surplus: round2(p.surplus) })),
+        given: t.given.sort((a, b) => b.surplus - a.surplus).slice(0, 3),
+      })
+    }
+
+    if (managers.length > 0) seasons[String(season.year)] = { managers }
+  }
+
+  return Object.keys(seasons).length > 0 ? { seasons } : null
+}
+
+// Draft feeds and lineup feeds disagree about punctuation and
+// generational suffixes. Same flattening the Draft Grader uses.
+function normalizeLineupName(name: string): string {
+  return name.toLowerCase()
+    .replace(/[.‘’']/g, '')
+    .replace(/\s+(jr|sr|ii|iii|iv|v)$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 type DnaTrait = {

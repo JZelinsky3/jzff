@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Serif_Display, Inter, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { MobileSiteMenu } from "@/components/MobileSiteMenu";
@@ -300,6 +301,16 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18343050789"
+          strategy="beforeInteractive"
+        />
+        <Script id="google-tag-init" strategy="beforeInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'AW-18343050789');`}
+        </Script>
         <script dangerouslySetInnerHTML={{ __html: HUB_THEME_SCRIPT }} />
         <script
           type="application/ld+json"
