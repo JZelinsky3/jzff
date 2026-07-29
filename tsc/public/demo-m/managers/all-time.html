@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/demo-m/">
+<script>(function(){var u=navigator.userAgent;var m=/\b(iPhone|iPod)\b/.test(u)||(/\bAndroid\b/.test(u)&&/\bMobile\b/.test(u))||/\bWindows Phone\b/.test(u);if(m)return;if(/(?:^|;\s*)dc_view=mobile/.test(document.cookie))return;var p=location.pathname.replace(/^\/demo-m\//,"/demo/");if(p!==location.pathname)location.replace(p+location.search+location.hash)})()</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The All-Time Team · The Lakeside League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/pams-template/assets/css/mobile-app.css">
+<style>
+/* ── THE ALL-TIME TEAM, pocket edition ─────────────────────────────────
+      Same display case as the desktop annual, re-cut for one thumb:
+        I    the squad picker  — every manager, one tap apart
+        II   the starters      — landscape card stock, tap to turn one over
+        III  the reserves      — six dark rows
+        IV   the gallery       — every squad in the league, ranked
+      The page keeps the almanac's navy chrome; only the cards are paper. ── */
+:root {
+    --paper:          #efe5cd;
+    --paper-soft:     #e6dabd;
+    --paper-line:     rgba(40, 30, 12, .22);
+    --paper-line-soft:rgba(40, 30, 12, .11);
+    --ink-print:      #241c0e;
+    --ink-print-mute: #7f7154;
+    --gold-print:     #7a5c14;
+    --rust-print:     #8c2b1e;
+    --at-h: 140px;    /* card height — both faces are cut to it */
+}
+
+.at-head { text-align: center; padding: 1.1rem 0 .9rem; }
+.at-title {
+    font-family: var(--serif);
+    font-size: 1.7rem; line-height: 1.05;
+    color: var(--cream);
+}
+.at-title em { font-style: italic; color: var(--gold); }
+.at-sub {
+    font-family: var(--serif); font-style: italic;
+    font-size: .92rem; color: var(--cream-soft);
+    margin-top: .35rem;
+}
+.at-sub b { color: var(--gold); font-weight: 400; }
+
+/* ══ I · The squad picker ═════════════════════════════════════════════
+   Stepper either side of a tappable plate; the plate opens a sheet with
+   every squad on file, so the whole league is two taps from anywhere. */
+.at-pick { display: flex; gap: .4rem; align-items: stretch; margin-bottom: .8rem; }
+.at-step {
+    flex: none; width: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ink-soft);
+    border: 1px solid var(--ink-line);
+    border-radius: 10px;
+    color: var(--gold);
+}
+.at-step:disabled { color: var(--ink-line); }
+.at-step:active:not(:disabled) { background: var(--ink-card); }
+.at-plate {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: .6rem;
+    padding: .45rem .7rem;
+    background: var(--ink-card);
+    border: 1px solid var(--gold-deep);
+    border-radius: 10px;
+    color: inherit; text-align: left;
+    font: inherit;
+}
+.at-plate:active { background: var(--ink-soft); }
+.at-plate-ava {
+    flex: none;
+    position: relative; overflow: hidden;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--gold-deep);
+    background: var(--ink-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif);
+    font-size: .9rem; color: var(--gold);
+}
+.at-plate-ava img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.at-plate-main { flex: 1; min-width: 0; }
+.at-plate-name {
+    display: block;
+    font-weight: 600; font-size: .95rem; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.at-plate-sub { display: block; margin-top: 1px; }
+.at-plate svg { flex: none; color: var(--cream-mute); }
+
+/* Squad sheet rows: rank, avatar, name, starting-seven total. */
+.at-sheet-row { position: relative; }
+.at-sheet-rank {
+    flex: none; width: 1.5rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .68rem; color: var(--cream-mute);
+    text-align: center;
+}
+.at-sheet-row.is-active .at-sheet-rank,
+.at-sheet-row.is-top .at-sheet-rank { color: var(--gold); }
+.at-sheet-ava {
+    flex: none;
+    position: relative; overflow: hidden;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif);
+    font-size: .75rem; color: var(--gold);
+}
+.at-sheet-ava img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.at-sheet-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.at-sheet-pts {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .7rem; color: var(--cream-soft);
+}
+.at-sheet-row.is-active { background: rgba(232, 200, 137, .08); }
+.at-sheet-row.is-active .at-sheet-name { color: var(--gold); }
+
+/* ══ Squad line ═══════════════════════════════════════════════════════ */
+.at-scouted { text-align: center; margin-top: .45rem; }
+
+/* ══ II · The starters ════════════════════════════════════════════════
+   Landscape card stock: photo down the left, the numbers on the right.
+   Portrait cards at two-up would land near 170px wide on a phone, which
+   is where the desktop card's type stops being readable, so the card
+   turns on its side instead of shrinking. */
+.at-cards { display: flex; flex-direction: column; gap: .55rem; }
+.at-card {
+    perspective: 1200px;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none; appearance: none;
+    background: none; border: none; padding: 0;
+    width: 100%; display: block;
+    font: inherit; color: inherit;
+    opacity: 0;
+    animation: at-deal .4s cubic-bezier(.22,.9,.32,1.06) forwards;
+    animation-delay: calc(var(--i, 0) * 55ms);
+}
+@keyframes at-deal {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+}
+.at-inner {
+    display: block;
+    position: relative;
+    height: var(--at-h);
+    transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.35,.65,.3,1);
+}
+.at-card.is-flipped .at-inner { transform: rotateY(180deg); }
+.at-face {
+    display: block;
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: linear-gradient(168deg, var(--paper) 0%, var(--paper) 72%, var(--paper-soft) 100%);
+    border: 1px solid #47402f;
+    border-radius: 9px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 4px rgba(122,92,20,.14);
+    overflow: hidden;
+    text-align: left;
+}
+.at-back { transform: rotateY(180deg); }
+@media (prefers-reduced-motion: reduce) {
+    .at-card { opacity: 1; animation: none; }
+    .at-inner { transition: none; }
+}
+
+.at-front { display: flex; align-items: stretch; }
+.at-photo {
+    flex: none; width: 92px;
+    position: relative; overflow: hidden;
+    background: var(--paper-soft);
+    border-right: 1px solid var(--paper-line);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.7rem; color: var(--gold-print);
+}
+.at-photo img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center top;
+    filter: grayscale(1) sepia(.42) contrast(1.06) brightness(1.03);
+    mix-blend-mode: multiply;
+}
+/* Halftone dots — the printed-card tell, kept faint at this size. */
+.at-photo::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(40,30,12,.22) 1px, transparent 1px);
+    background-size: 3.5px 3.5px;
+    mix-blend-mode: overlay;
+}
+.at-body {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+    padding: .5rem .65rem .45rem;
+}
+.at-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.at-slot {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--paper);
+    background: var(--gold-print);
+    padding: .14rem .42rem;
+    border-radius: 2px;
+}
+.at-year { font-family: var(--serif); font-style: italic; font-size: .95rem; color: var(--gold-print); }
+.at-name {
+    margin-top: .3rem;
+    font-family: var(--serif);
+    font-size: 1.05rem; line-height: 1.1;
+    color: var(--ink-print);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.at-fin { display: flex; align-items: baseline; gap: .4rem; margin-top: .2rem; }
+.at-fin b {
+    font-family: var(--serif); font-style: italic; font-weight: 400;
+    font-size: 1.3rem; line-height: 1;
+    color: var(--gold-print);
+}
+.at-fin span {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+}
+.at-foot {
+    margin-top: auto;
+    display: flex; align-items: baseline; justify-content: space-between; gap: .5rem;
+    padding-top: .35rem;
+    border-top: 1px solid var(--paper-line-soft);
+}
+.at-pts { font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--ink-print); }
+.at-pts i { font-style: normal; font-size: .5rem; color: var(--ink-print-mute); letter-spacing: .1em; }
+.at-acq {
+    font-family: var(--mono);
+    font-size: .5rem; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+    white-space: nowrap;
+}
+.at-acq.is-pickup { color: var(--rust-print); }
+.at-cap {
+    position: absolute; top: 5px; left: 5px; z-index: 2;
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--gold-print); color: var(--paper);
+    font-size: .62rem;
+}
+.at-ttl {
+    display: inline-flex; align-items: center;
+    padding: 0 4px; border-radius: 3px;
+    border: 1px solid rgba(122, 92, 20, .5);
+    color: var(--gold-print);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .08em; text-transform: uppercase;
+}
+
+/* Position inks — print set for the paper cards. */
+.at-slot.pos-qb { background: #2c516b; }
+.at-slot.pos-rb { background: #2d6842; }
+.at-slot.pos-wr { background: #8a651c; }
+.at-slot.pos-te { background: #5f4380; }
+.at-fin.pos-qb b { color: #2c516b; }
+.at-fin.pos-rb b { color: #2d6842; }
+.at-fin.pos-wr b { color: #8a651c; }
+.at-fin.pos-te b { color: #5f4380; }
+
+/* Card back: the scouting note, same dotted-leader rows as the annual. */
+.at-back { display: flex; flex-direction: column; padding: .5rem .7rem .4rem; }
+.at-bhead { text-align: center; }
+.at-bslot {
+    display: block;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--gold-print);
+}
+.at-bname {
+    display: block;
+    font-family: var(--serif);
+    font-size: .98rem; line-height: 1.1;
+    color: var(--ink-print);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.at-brule { max-width: 80px; margin: .25rem auto .2rem; border-top: 1px solid var(--paper-line); border-bottom: 2px double var(--paper-line); height: 4px; }
+.at-brow {
+    display: flex; align-items: baseline; gap: .4rem;
+    padding: .18rem 0;
+}
+.at-brow + .at-brow { border-top: 1px solid var(--paper-line-soft); }
+.at-blabel {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .46rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+}
+.at-bdots { flex: 1; border-bottom: 1px dotted var(--paper-line); transform: translateY(-3px); }
+.at-bval {
+    flex: none;
+    font-weight: 600; font-size: .66rem; color: var(--ink-print);
+    text-align: right;
+}
+.at-bfoot {
+    margin-top: auto; padding-top: .25rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .46rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+}
+
+/* Vacant slot: a dashed plate the same height as the stock. */
+.at-vacant {
+    height: var(--at-h);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem;
+    border: 1px dashed var(--ink-line);
+    border-radius: 9px;
+    color: var(--cream-mute);
+}
+.at-vacant .vs { font-family: var(--mono); font-weight: 700; font-size: .58rem; letter-spacing: .22em; }
+.at-vacant .vi { font-family: var(--serif); font-style: italic; font-size: .82rem; }
+
+/* ══ III · The reserves ═══════════════════════════════════════════════ */
+.at-res-thumb {
+    flex: none;
+    position: relative; overflow: hidden;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    font-size: .78rem; color: var(--gold);
+}
+.at-res-thumb img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center top;
+    filter: grayscale(1) sepia(.25) contrast(1.04);
+}
+.at-res-name { flex: 1; min-width: 0; font-weight: 600; font-size: .86rem; }
+.at-res-name small { display: block; font-weight: 400; font-size: .64rem; color: var(--cream-mute); }
+.at-res-fin {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .6rem; letter-spacing: .06em;
+    padding: .14rem .42rem;
+    border-radius: 4px;
+    border: 1px solid var(--ink-line);
+    color: var(--cream-soft);
+}
+.at-res-fin.pos-qb { color: #8aaccc; border-color: #344a5a; }
+.at-res-fin.pos-rb { color: #6dc28c; border-color: #2f5040; }
+.at-res-fin.pos-wr { color: var(--gold); border-color: var(--gold-deep); }
+.at-res-fin.pos-te { color: #c4a3e8; border-color: #4a3a5c; }
+.at-res-pts { flex: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--cream-soft); }
+
+/* ══ IV · The gallery ═════════════════════════════════════════════════ */
+.at-gal-rank {
+    flex: none; width: 1.4rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1rem; color: var(--cream-mute);
+    text-align: center;
+}
+.at-gal-row.is-top .at-gal-rank, .at-gal-row.is-active .at-gal-rank { color: var(--gold); }
+.at-gal-main { flex: 1; min-width: 0; }
+.at-gal-name {
+    font-weight: 600; font-size: .88rem; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.at-gal-row.is-active .at-gal-name { color: var(--gold); }
+.at-gal-track {
+    height: 5px; margin-top: .3rem;
+    background: rgba(232, 200, 137, .08);
+    border-radius: 1px; overflow: hidden;
+}
+.at-gal-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8a651c, var(--gold));
+    border-radius: 1px;
+    transform-origin: left center;
+    animation: at-grow .6s cubic-bezier(.25,.7,.3,1) both;
+}
+@keyframes at-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .at-gal-fill { animation: none; } }
+.at-gal-pts { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--cream-soft); }
+.at-gal-sub { margin-top: .15rem; }
+
+/* Alumni always sit in their own group at the foot of the list. */
+.at-alum-toggle {
+    display: flex; align-items: center; gap: .7rem;
+    width: 100%;
+    margin: .8rem 0 .3rem;
+    padding: .3rem 0;
+    background: none; border: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.at-alum-toggle::before, .at-alum-toggle::after {
+    content: ''; flex: 1; border-top: 1px solid var(--ink-line-soft);
+}
+.at-alum-toggle b { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: .9rem; color: var(--gold); }
+[hidden] { display: none !important; }
+
+/* ══ The fine print, folded away ══════════════════════════════════════ */
+.at-note { margin: 1.3rem 0 .5rem; }
+.at-note-head {
+    display: flex; align-items: center; gap: .6rem;
+    width: 100%;
+    padding: .6rem .9rem;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-radius: 12px;
+    color: var(--gold-deep);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .22em; text-transform: uppercase;
+    text-align: left;
+}
+.at-note-head span { flex: 1; }
+.at-note-head svg { flex: none; transition: transform .18s ease; color: var(--cream-mute); }
+.at-note.is-open .at-note-head { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-color: var(--ink-line-soft); }
+.at-note.is-open .at-note-head svg { transform: rotate(180deg); }
+.at-note-body { display: none; }
+.at-note.is-open .at-note-body { display: block; }
+.at-note-body p {
+    padding: .8rem .9rem;
+    background: var(--ink-card);
+    border: 1px solid var(--ink-line);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    font-family: var(--serif); font-style: italic;
+    font-size: .86rem; line-height: 1.55;
+    color: var(--cream-soft);
+}
+.at-note-body b { font-style: normal; font-weight: 600; color: var(--cream); }
+
+/* Locked plate (UDFA: the pool JSON 404s). */
+.at-locked {
+    margin-top: 1.2rem;
+    padding: 1.8rem 1.2rem;
+    background: linear-gradient(160deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--ink-line);
+    border-radius: 12px;
+    text-align: center;
+}
+.at-locked h2 { font-family: var(--serif); font-size: 1.4rem; color: var(--cream); margin-bottom: .5rem; }
+.at-locked p { font-family: var(--serif); font-style: italic; font-size: .9rem; line-height: 1.5; color: var(--cream-soft); margin-bottom: 1.1rem; }
+.at-locked a {
+    display: inline-block;
+    padding: .7rem 1.2rem;
+    background: var(--gold); color: var(--ink);
+    border-radius: 8px;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .62rem; letter-spacing: .18em; text-transform: uppercase;
+    text-decoration: none;
+}
+</style>
+</head>
+<body>
+<div class="site-glow"></div>
+
+<nav id="site-nav"
+     data-page="manager-all-time"
+     data-chapter="Ch. II · All-Time Team"
+     data-back-href="managers/"></nav>
+<script>window.__DC={slug:"demo",name:"The Lakeside League",isCommish:false,isSignedIn:false,isBookmarked:false,leagueTier:"demo",pageLocked:false}</script>
+<script src="/pams-template/assets/js/mobile-app.js"></script>
+<script src="/pams-template/assets/js/all-time-team.js"></script>
+
+<main class="m-main">
+    <header class="at-head">
+        <div class="m-kicker">Special Collection</div>
+        <h1 class="at-title">The All-Time <em>Team.</em></h1>
+        <p class="at-sub" id="atSub">Opening the display case…</p>
+    </header>
+
+    <div id="atBody"></div>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    var ATT = window.AllTimeTeam;
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function initial(name) { return String(name || '?').trim().charAt(0).toUpperCase(); }
+    function initials(name) {
+        return String(name || '?').trim().split(/\s+/).map(function (w) { return w.charAt(0); })
+            .join('').slice(0, 2).toUpperCase();
+    }
+    function ordinal(n) {
+        var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+    function grab(url) {
+        return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    }
+    function headshot(pid) { return 'https://sleepercdn.com/content/nfl/players/' + pid + '.jpg'; }
+    function headshotThumb(pid) { return 'https://sleepercdn.com/content/nfl/players/thumb/' + pid + '.jpg'; }
+    // Every avatar/headshot is a monogram with the photo laid over it, so a
+    // 404 just needs the <img> to remove itself and the letter shows through.
+    function photoOver(src) {
+        return src ? '<img src="' + esc(src) + '" alt="" loading="lazy" onerror="this.remove()">' : '';
+    }
+
+    var PROFILE_LABEL = {
+        ppr_6pt:  'Full PPR · 6pt pass TD',
+        ppr_4pt:  'Full PPR · 4pt pass TD',
+        half_6pt: 'Half PPR · 6pt pass TD',
+        half_4pt: 'Half PPR · 4pt pass TD',
+        std_6pt:  'Standard · 6pt pass TD',
+        std_4pt:  'Standard · 4pt pass TD',
+    };
+
+    var TEAMS = {}, ORDER = [], AVATARS = {}, PROFILE = 'ppr_6pt', SUPERFLEX = false;
+    var activeUid = null;
+    var alumniOpen = false;
+    var squadSheet = null;
+
+    var body = document.getElementById('atBody');
+    var subEl = document.getElementById('atSub');
+
+    // ── Boot ─────────────────────────────────────────────────────────────
+    Promise.all([
+        grab('data/league.json'),
+        grab('data/all_time_pool.json'),
+        grab('data/managers_directory.json'),
+    ]).then(function (res) {
+        var league = res[0], pool = res[1], dir = res[2];
+        if (league && league.draft_scoring_profile) PROFILE = league.draft_scoring_profile;
+        if (league) SUPERFLEX = !!league.superflex;
+        if (dir && dir.managers) {
+            dir.managers.forEach(function (m) {
+                if (m.user_id != null) AVATARS[m.user_id] = m.avatar || '';
+            });
+        }
+        if (!pool || !pool.managers || !pool.managers.length) {
+            if (window.__DC && window.__DC.leagueTier === 'udfa') return renderLocked();
+            return renderEmpty('No team sheets yet.',
+                'The archive needs at least one synced draft or season before a squad can be built.');
+        }
+
+        var years = {};
+        pool.managers.forEach(function (m) {
+            (m.seasons || []).forEach(function (se) { years[se.year] = 1; });
+        });
+        var yearList = Object.keys(years).map(Number).sort();
+        var ranks = {};
+        return Promise.all(yearList.map(function (y) {
+            return grab('/data/fantasy_ranks/' + PROFILE + '/' + y + '.json').then(function (d) {
+                if (d && d.players) ranks[y] = ATT.buildRankLookup(d.players);
+            });
+        })).then(function () {
+            if (!Object.keys(ranks).length) {
+                return renderEmpty('The rankings are missing.',
+                    'Season finish data could not be loaded, so the team sheet cannot be built.');
+            }
+            var built = ATT.buildAll(pool.managers, { ranks: ranks, superflex: SUPERFLEX });
+            TEAMS = built.teams;
+            ORDER = built.order;
+            if (!ORDER.length) {
+                return renderEmpty('Nothing to show.', 'No manager has enough history to field a team.');
+            }
+            var requested = new URLSearchParams(window.location.search).get('id');
+            renderShell();
+            select(TEAMS[requested] ? requested : ORDER[0], true);
+        });
+    }).catch(function () {
+        renderEmpty('The case would not open.', 'Something went wrong loading this page. Please report it.');
+    });
+
+    function slotCount() { return SUPERFLEX ? 'eight' : 'seven'; }
+    function rankOf(uid) { return ORDER.indexOf(uid) + 1; }
+
+    // ── Shell ────────────────────────────────────────────────────────────
+    function renderShell() {
+        subEl.innerHTML = '<b>' + ORDER.length + '</b> squads on file · ' + esc(PROFILE_LABEL[PROFILE] || PROFILE);
+        body.innerHTML =
+            '<div class="at-pick">' +
+                '<button class="at-step" id="atPrev" aria-label="Previous squad">' +
+                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14 5 7 12 14 19"/></svg>' +
+                '</button>' +
+                '<button class="at-plate" id="atPlate" aria-haspopup="dialog">' +
+                    '<span class="at-plate-ava" id="atPlateAva"></span>' +
+                    '<span class="at-plate-main">' +
+                        '<span class="at-plate-name" id="atPlateName"></span>' +
+                        '<span class="at-plate-sub m-mono" id="atPlateSub"></span>' +
+                    '</span>' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+                '</button>' +
+                '<button class="at-step" id="atNext" aria-label="Next squad">' +
+                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 5 17 12 10 19"/></svg>' +
+                '</button>' +
+            '</div>' +
+
+            '<div class="m-statgrid" id="atStats"></div>' +
+            '<div class="at-scouted m-mono" id="atScouted"></div>' +
+
+            '<section class="m-section">' +
+                '<div class="m-section-head">' +
+                    '<div><div class="m-kicker">The Starters</div>' +
+                    '<h2 class="m-h2" id="atStartHead">The starting ' + slotCount() + '</h2></div>' +
+                '</div>' +
+                '<div class="m-mono" style="margin:-.35rem 0 .55rem">Tap a card for the scouting note</div>' +
+                '<div class="at-cards" id="atStarters"></div>' +
+            '</section>' +
+
+            '<section class="m-section">' +
+                '<div class="m-kicker">The Reserves</div>' +
+                '<h2 class="m-h2">Next six in the queue</h2>' +
+                '<div id="atBench"></div>' +
+            '</section>' +
+
+            '<section class="m-section">' +
+                '<div class="m-kicker">The Gallery</div>' +
+                '<h2 class="m-h2">Every squad, <em>ranked</em></h2>' +
+                '<div class="m-mono" style="margin:-.4rem 0 .55rem">By starting-' + slotCount() + ' points · tap to open a squad</div>' +
+                '<div id="atGallery"></div>' +
+            '</section>' +
+
+            '<div class="at-note" id="atNote">' +
+                '<button class="at-note-head" aria-expanded="false">' +
+                    '<span>How the squad is picked</span>' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+                '</button>' +
+                '<div class="at-note-body"><p>' +
+                    'Every player a manager <b>drafted or started</b> is scouted, credited with his single best ' +
+                    'season on that roster. Seasons are scored league-wide by <b>' + esc(PROFILE_LABEL[PROFILE] || PROFILE) + '</b> ' +
+                    'totals, and each player fills one slot only. Positional finishes (WR1, RB14) are that ' +
+                    'year&rsquo;s league-wide ranks, not this league&rsquo;s. The ★ marks the captain: the squad&rsquo;s ' +
+                    'best positional finish, points breaking ties.' +
+                '</p></div>' +
+            '</div>';
+
+        document.getElementById('atPrev').addEventListener('click', function () { step(-1); });
+        document.getElementById('atNext').addEventListener('click', function () { step(1); });
+        document.getElementById('atPlate').addEventListener('click', openSquadSheet);
+
+        var note = document.getElementById('atNote');
+        note.querySelector('.at-note-head').addEventListener('click', function () {
+            var open = note.classList.toggle('is-open');
+            this.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        // One flip handler for the whole deck.
+        document.getElementById('atStarters').addEventListener('click', function (e) {
+            var card = e.target.closest('.at-card');
+            if (card) card.classList.toggle('is-flipped');
+        });
+
+        document.getElementById('atGallery').addEventListener('click', function (e) {
+            var toggle = e.target.closest('.at-alum-toggle');
+            if (toggle) {
+                alumniOpen = !alumniOpen;
+                document.getElementById('atAlumniRows').hidden = !alumniOpen;
+                toggle.querySelector('b').textContent = alumniOpen ? '−' : '+';
+                return;
+            }
+            var row = e.target.closest('.at-gal-row');
+            if (!row) return;
+            select(row.getAttribute('data-uid'));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    function step(dir) {
+        var i = ORDER.indexOf(activeUid);
+        if (i < 0) return;
+        var next = i + dir;
+        if (next < 0 || next >= ORDER.length) return;
+        select(ORDER[next]);
+    }
+
+    // ── Select a squad ───────────────────────────────────────────────────
+    function select(uid, first) {
+        var team = TEAMS[uid];
+        if (!team) return;
+        activeUid = uid;
+
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.set('id', uid);
+            history.replaceState(null, '', url);
+        } catch (_) { /* non-critical */ }
+
+        document.title = team.name + ' · The All-Time Team · The Lakeside League';
+
+        var rank = rankOf(uid);
+        document.getElementById('atPlateAva').innerHTML = initial(team.name) + photoOver(AVATARS[uid]);
+        document.getElementById('atPlateName').textContent = team.name;
+        document.getElementById('atPlateSub').textContent =
+            ordinal(rank) + ' of ' + ORDER.length + ' · ' + team.total.toFixed(1) + ' pts';
+
+        document.getElementById('atStats').innerHTML =
+            stat(ordinal(rank), 'Squad rank') +
+            stat(team.total.toFixed(1), 'Starting ' + slotCount()) +
+            stat(team.ppw.toFixed(1), 'Team PPG');
+        document.getElementById('atScouted').textContent =
+            team.seasonsScouted + ' season' + (team.seasonsScouted === 1 ? '' : 's') +
+            ' scouted · ' + team.poolSize + ' players considered';
+        document.getElementById('atStartHead').textContent =
+            team.name + '’s starting ' + slotCount();
+
+        renderStarters(team);
+        renderBench(team);
+        renderGallery();
+        if (!first) syncSquadSheet();
+        var prev = document.getElementById('atPrev');
+        var next = document.getElementById('atNext');
+        if (prev) prev.disabled = rank <= 1;
+        if (next) next.disabled = rank >= ORDER.length;
+    }
+
+    function stat(num, label) {
+        return '<div class="m-stat"><div class="m-stat-num">' + num + '</div>' +
+            '<div class="m-stat-lbl">' + label + '</div></div>';
+    }
+
+    // ── II · The starters ────────────────────────────────────────────────
+    function acqShort(p) {
+        return p.src === 'draft' ? 'Rd ' + p.round + ' · Pk ' + p.roundPick : 'In-season add';
+    }
+
+    function renderStarters(team) {
+        document.getElementById('atStarters').innerHTML = team.slots.map(function (s, i) {
+            var p = s.player;
+            if (!p) {
+                return '<div class="at-vacant"><span class="vs">' + s.slot + '</span>' +
+                    '<span class="vi">Position never filled.</span></div>';
+            }
+            var pos = ' pos-' + p.pos.toLowerCase();
+            var ttl = p.teamRank === 1 ? '<span class="at-ttl">★ Title yr</span>' : '';
+            return '<button class="at-card" style="--i:' + i + '" aria-label="' + esc(p.name) + ', turn card">' +
+                '<span class="at-inner">' +
+                    '<span class="at-face at-front">' +
+                        (p.key === team.captainKey ? '<span class="at-cap" title="Captain">★</span>' : '') +
+                        '<span class="at-photo">' + esc(initials(p.name)) +
+                            photoOver(p.pid ? headshot(p.pid) : '') + '</span>' +
+                        '<span class="at-body">' +
+                            '<span class="at-top">' +
+                                '<span class="at-slot' + pos + '">' + s.slot + '</span>' +
+                                '<span class="at-year">' + p.year + '</span>' +
+                            '</span>' +
+                            '<span class="at-name">' + esc(p.name) + '</span>' +
+                            '<span class="at-fin' + pos + '"><b>' + p.pos + p.posRank + '</b>' +
+                                '<span>that season</span></span>' +
+                            '<span class="at-foot">' +
+                                '<span class="at-pts">' + p.fpts.toFixed(1) + ' <i>PTS</i></span>' +
+                                (ttl || '<span class="at-acq' + (p.src === 'pickup' ? ' is-pickup' : '') + '">' +
+                                    acqShort(p) + '</span>') +
+                            '</span>' +
+                        '</span>' +
+                    '</span>' +
+                    '<span class="at-face at-back">' +
+                        '<span class="at-bhead">' +
+                            '<span class="at-bslot">Scouting note · ' + s.slot + '</span>' +
+                            '<span class="at-bname">' + esc(p.name) + '</span>' +
+                        '</span>' +
+                        '<span class="at-brule"></span>' +
+                        backRows(p) +
+                        '<span class="at-bfoot">Tap to turn back</span>' +
+                    '</span>' +
+                '</span>' +
+            '</button>';
+        }).join('');
+    }
+
+    // Five rows at most: the card back is cut to the same height as the
+    // front, so the note keeps only what the front left out.
+    function backRows(p) {
+        var rows = [
+            ['Season', p.year + ' · ' + p.pos + p.posRank + ' · No. ' + p.overall + ' overall'],
+            ['Acquired', p.src === 'draft'
+                ? 'Rd ' + p.round + ', Pk ' + p.roundPick + ' (No. ' + p.overallPick + ')'
+                : 'Trade or waiver'],
+        ];
+        if (p.starts) {
+            rows.push(['Started', p.starts + ' week' + (p.starts === 1 ? '' : 's') +
+                (p.startPts ? ' · ' + p.startPts.toFixed(1) + ' pts for you' : '')]);
+        }
+        if (p.teamRank != null) {
+            rows.push(['Your finish', p.teamRank === 1 ? '★ Champion' : '#' + p.teamRank]);
+        }
+        return rows.map(function (r) {
+            return '<span class="at-brow"><span class="at-blabel">' + r[0] + '</span>' +
+                '<span class="at-bdots"></span><span class="at-bval">' + esc(r[1]) + '</span></span>';
+        }).join('');
+    }
+
+    // ── III · The reserves ───────────────────────────────────────────────
+    function renderBench(team) {
+        var mount = document.getElementById('atBench');
+        if (!team.bench.length) {
+            mount.innerHTML = '<div class="m-empty">The bench is bare. Every scouted player made the starting ' +
+                slotCount() + '.</div>';
+            return;
+        }
+        mount.innerHTML = '<div class="m-list">' + team.bench.map(function (p) {
+            return '<div class="m-list-row">' +
+                '<span class="at-res-thumb">' + esc(initials(p.name)) +
+                    photoOver(p.pid ? headshotThumb(p.pid) : '') + '</span>' +
+                '<span class="at-res-name">' + esc(p.name) +
+                    '<small>' + p.year + (p.starts ? ' · ' + p.starts + ' starts' : '') +
+                    ' · ' + (p.src === 'draft' ? 'Rd ' + p.round : 'In-season') + '</small></span>' +
+                '<span class="at-res-fin pos-' + p.pos.toLowerCase() + '">' + p.pos + p.posRank + '</span>' +
+                '<span class="at-res-pts">' + p.fpts.toFixed(0) + '</span>' +
+            '</div>';
+        }).join('') + '</div>';
+    }
+
+    // ── IV · The gallery ─────────────────────────────────────────────────
+    function renderGallery() {
+        var max = ORDER.length ? TEAMS[ORDER[0]].total : 1;
+        var current = ORDER.filter(function (u) { return TEAMS[u].isCurrent; });
+        var alumni = ORDER.filter(function (u) { return !TEAMS[u].isCurrent; });
+        // Reading an alumnus's squad opens their group so the active row is
+        // never hidden behind the fold.
+        if (activeUid && TEAMS[activeUid] && !TEAMS[activeUid].isCurrent) alumniOpen = true;
+
+        function row(u) {
+            var t = TEAMS[u];
+            var rank = rankOf(u);
+            var pct = max > 0 ? Math.max(4, Math.round((t.total / max) * 100)) : 4;
+            return '<div class="m-list-row at-gal-row' +
+                    (u === activeUid ? ' is-active' : '') + (rank === 1 ? ' is-top' : '') +
+                    '" data-uid="' + esc(u) + '">' +
+                '<span class="at-gal-rank">' + rank + '</span>' +
+                '<span class="at-gal-main">' +
+                    '<span class="at-gal-name">' + esc(t.name) + '</span>' +
+                    '<span class="at-gal-track"><span class="at-gal-fill" style="width:' + pct + '%"></span></span>' +
+                    '<span class="at-gal-sub m-mono">' + t.ppw.toFixed(1) + ' ppg · ' + t.poolSize + ' scouted</span>' +
+                '</span>' +
+                '<span class="at-gal-pts">' + t.total.toFixed(1) + '</span>' +
+            '</div>';
+        }
+
+        document.getElementById('atGallery').innerHTML =
+            '<div class="m-list">' + current.map(row).join('') + '</div>' +
+            (alumni.length
+                ? '<button class="at-alum-toggle"><span><b>' + (alumniOpen ? '−' : '+') +
+                      '</b> Alumni · ' + alumni.length + '</span></button>' +
+                  '<div class="m-list" id="atAlumniRows"' + (alumniOpen ? '' : ' hidden') + '>' +
+                      alumni.map(row).join('') + '</div>'
+                : '');
+    }
+
+    // ── The squad sheet: every team on file, one tap away ─────────────────
+    function openSquadSheet() {
+        if (!squadSheet) {
+            squadSheet = document.createElement('dialog');
+            squadSheet.className = 'm-sheet';
+            squadSheet.id = 'm-sheet-squads';
+            squadSheet.innerHTML =
+                '<div class="m-sheet-handle" aria-hidden></div>' +
+                '<div class="m-sheet-title">Choose a <em>squad.</em></div>' +
+                '<div id="atSheetRows"></div>';
+            document.body.appendChild(squadSheet);
+            squadSheet.addEventListener('click', function (e) {
+                if (e.target === squadSheet) { close(); return; }
+                var row = e.target.closest('.at-sheet-row');
+                if (!row) return;
+                select(row.getAttribute('data-uid'));
+                window.scrollTo({ top: 0, behavior: 'auto' });
+                close();
+            });
+            squadSheet.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
+            if (window.__MA && window.__MA.wireSheetDrag) window.__MA.wireSheetDrag(squadSheet);
+        }
+        syncSquadSheet();
+        if (window.__MA && window.__MA.openSheet) window.__MA.openSheet(squadSheet);
+        else squadSheet.showModal();
+    }
+    function close() {
+        if (!squadSheet) return;
+        if (window.__MA && window.__MA.closeSheet) window.__MA.closeSheet(squadSheet);
+        else squadSheet.close();
+    }
+
+    function syncSquadSheet() {
+        var mount = squadSheet && document.getElementById('atSheetRows');
+        if (!mount) return;
+        var current = ORDER.filter(function (u) { return TEAMS[u].isCurrent; });
+        var alumni = ORDER.filter(function (u) { return !TEAMS[u].isCurrent; });
+        function row(u) {
+            var t = TEAMS[u];
+            var rank = rankOf(u);
+            return '<button class="m-sheet-row at-sheet-row' +
+                    (u === activeUid ? ' is-active' : '') + (rank === 1 ? ' is-top' : '') +
+                    '" data-uid="' + esc(u) + '">' +
+                '<span class="at-sheet-rank">' + rank + '</span>' +
+                '<span class="at-sheet-ava">' + initial(t.name) + photoOver(AVATARS[u]) + '</span>' +
+                '<span class="at-sheet-name">' + esc(t.name) + '</span>' +
+                '<span class="at-sheet-pts">' + t.total.toFixed(1) + '</span>' +
+            '</button>';
+        }
+        mount.innerHTML = current.map(row).join('') +
+            (alumni.length
+                ? '<div class="m-sheet-divider"></div>' +
+                  '<span class="m-sheet-label">Alumni</span>' + alumni.map(row).join('')
+                : '');
+    }
+
+    // ── States ───────────────────────────────────────────────────────────
+    function renderEmpty(title, msg) {
+        subEl.textContent = title;
+        body.innerHTML = '<div class="m-empty">' + esc(msg) + '</div>';
+    }
+    function renderLocked() {
+        subEl.textContent = 'Sealed on the free tier';
+        body.innerHTML =
+            '<div class="at-locked">' +
+                '<div class="m-kicker" style="color:var(--gold)">★ Paid Tier ★</div>' +
+                '<h2>The display case is sealed.</h2>' +
+                '<p>Every manager&rsquo;s history, distilled to the best season at every position. ' +
+                'Unlocks when this league&rsquo;s commissioner is on a paid plan.</p>' +
+                '<a href="/pricing" target="_top">Upgrade to unlock</a>' +
+            '</div>';
+    }
+})();
+</script>
+</body>
+</html>

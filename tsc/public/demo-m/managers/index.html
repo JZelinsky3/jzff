@@ -81,6 +81,33 @@
 .mg-rings { flex: none; color: var(--gold); font-size: .7rem; letter-spacing: .08em; }
 .mg-rec { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--cream-soft); text-align: right; }
 .mg-rec small { display: block; font-weight: 400; font-size: .56rem; color: var(--cream-mute); }
+/* ── Special-collection entry: the All-Time Team lives one tap off the
+      society index, same as the desktop feature panel. ── */
+.mg-feature {
+    display: flex; align-items: center; gap: .75rem;
+    margin-top: .5rem;
+    background: linear-gradient(135deg, var(--ink-card), var(--ink-soft));
+    border: 1px solid var(--gold-deep);
+    border-radius: 10px;
+    padding: .7rem .85rem;
+    text-decoration: none; color: inherit;
+}
+.mg-feature:active { background: var(--ink-soft); }
+.mg-feature svg { flex: none; }
+.mg-feature-main { min-width: 0; flex: 1; }
+.mg-feature-title {
+    display: block;
+    font-family: var(--serif);
+    font-size: 1.02rem; color: var(--cream);
+}
+.mg-feature-title em { font-style: italic; color: var(--gold); }
+.mg-feature-desc {
+    display: block;
+    font-size: .72rem; line-height: 1.35;
+    color: var(--cream-mute);
+    margin-top: 1px;
+}
+
 .mg-alumni { opacity: .82; }
 .mg-alumni .mg-name, .mg-alumni .mg-ava { color: var(--cream-mute); }
 </style>
@@ -98,6 +125,21 @@
         <h1 class="mg-title">The <em>Managers.</em></h1>
         <div class="m-mono" id="mgCount" style="margin-top:.35rem"></div>
     </header>
+
+    <a class="mg-feature" href="managers/all-time.html">
+        <svg width="26" height="26" viewBox="0 0 42 42" fill="none" aria-hidden="true">
+            <rect x="16.5" y="3"  width="9" height="7" rx="1.5" stroke="#e8c889" stroke-width="2" />
+            <rect x="4"    y="17" width="9" height="7" rx="1.5" stroke="rgba(244,235,216,.5)" stroke-width="1.8" />
+            <rect x="16.5" y="17" width="9" height="7" rx="1.5" stroke="rgba(244,235,216,.5)" stroke-width="1.8" />
+            <rect x="29"   y="17" width="9" height="7" rx="1.5" stroke="rgba(244,235,216,.5)" stroke-width="1.8" />
+            <rect x="10"   y="31" width="9" height="7" rx="1.5" stroke="#6b8aa8" stroke-width="1.8" />
+            <rect x="23"   y="31" width="9" height="7" rx="1.5" stroke="#6b8aa8" stroke-width="1.8" />
+        </svg>
+        <span class="mg-feature-main">
+            <span class="mg-feature-title">The All-Time <em>Team</em></span>
+            <span class="mg-feature-desc">The best squad every manager ever iced, position by position.</span>
+        </span>
+    </a>
 
     <section id="currentSection" hidden class="m-section" style="margin-top:0">
         <div class="m-kicker">Current Members</div>
