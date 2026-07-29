@@ -989,7 +989,7 @@ button.m-card:active { background: var(--ink-soft); }
                     esc(PROFILE_LABEL[gradeProfile] || gradeProfile) + '</div>' +
                 '<div class="m-seg gr-seg" id="grSeg">' +
                     viewBtn('transcript', 'Transcript') +
-                    viewBtn('records.html', 'Records') +
+                    viewBtn('records', 'Records') +
                     viewBtn('years', 'By Year') +
                 '</div>' +
                 '<div id="grBody"></div>';
@@ -1004,7 +1004,7 @@ button.m-card:active { background: var(--ink-soft); }
     function renderGradeView() {
         var mount = document.getElementById('grBody');
         if (!mount) return;
-        if (gradeView === 'records.html') mount.innerHTML = transcriptRecords();
+        if (gradeView === 'records') mount.innerHTML = transcriptRecords();
         else if (gradeView === 'years') mount.innerHTML = gradeOpenYear == null ? yearCards() : yearOpen();
         else mount.innerHTML = transcriptView();
     }

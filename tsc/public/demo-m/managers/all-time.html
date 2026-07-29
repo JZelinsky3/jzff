@@ -27,7 +27,7 @@
     --ink-print-mute: #7f7154;
     --gold-print:     #7a5c14;
     --rust-print:     #8c2b1e;
-    --at-h: 140px;    /* card height — both faces are cut to it */
+    --at-h: 122px;    /* card height — both faces are cut to it */
 }
 
 .at-head { text-align: center; padding: 1.1rem 0 .9rem; }
@@ -173,14 +173,25 @@
 
 .at-front { display: flex; align-items: stretch; }
 .at-photo {
-    flex: none; width: 92px;
+    flex: none; width: 80px;
     position: relative; overflow: hidden;
     background: var(--paper-soft);
     border-right: 1px solid var(--paper-line);
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--serif); font-style: italic;
-    font-size: 1.7rem; color: var(--gold-print);
 }
+/* Monogram fallback. It sits UNDER the photo, and the photo blends with
+   mix-blend-mode: multiply for the halftone print look — which means dark
+   text underneath bleeds straight through it. So the monogram is hidden
+   whenever a photo is being loaded and only revealed if that photo 404s
+   (the <img>'s onerror stamps .no-photo on this element). */
+.at-photo .mono, .at-res-thumb .mono {
+    position: absolute; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    font-family: var(--serif); font-style: italic;
+    color: var(--gold-print);
+}
+.at-photo .mono { font-size: 1.5rem; }
+.at-photo.no-photo .mono, .at-res-thumb.no-photo .mono { display: flex; }
 .at-photo img {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
@@ -199,7 +210,7 @@
 .at-body {
     flex: 1; min-width: 0;
     display: flex; flex-direction: column;
-    padding: .5rem .65rem .45rem;
+    padding: .42rem .6rem .38rem;
 }
 .at-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
 .at-slot {
@@ -210,18 +221,18 @@
     padding: .14rem .42rem;
     border-radius: 2px;
 }
-.at-year { font-family: var(--serif); font-style: italic; font-size: .95rem; color: var(--gold-print); }
+.at-year { font-family: var(--serif); font-style: italic; font-size: .86rem; color: var(--gold-print); }
 .at-name {
-    margin-top: .3rem;
+    margin-top: .22rem;
     font-family: var(--serif);
-    font-size: 1.05rem; line-height: 1.1;
+    font-size: .96rem; line-height: 1.1;
     color: var(--ink-print);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .at-fin { display: flex; align-items: baseline; gap: .4rem; margin-top: .2rem; }
 .at-fin b {
     font-family: var(--serif); font-style: italic; font-weight: 400;
-    font-size: 1.3rem; line-height: 1;
+    font-size: 1.12rem; line-height: 1;
     color: var(--gold-print);
 }
 .at-fin span {
@@ -232,10 +243,10 @@
 .at-foot {
     margin-top: auto;
     display: flex; align-items: baseline; justify-content: space-between; gap: .5rem;
-    padding-top: .35rem;
+    padding-top: .28rem;
     border-top: 1px solid var(--paper-line-soft);
 }
-.at-pts { font-family: var(--mono); font-weight: 700; font-size: .68rem; color: var(--ink-print); }
+.at-pts { font-family: var(--mono); font-weight: 700; font-size: .62rem; color: var(--ink-print); }
 .at-pts i { font-style: normal; font-size: .5rem; color: var(--ink-print-mute); letter-spacing: .1em; }
 .at-acq {
     font-family: var(--mono);
@@ -245,8 +256,8 @@
 }
 .at-acq.is-pickup { color: var(--rust-print); }
 .at-cap {
-    position: absolute; top: 5px; left: 5px; z-index: 2;
-    width: 20px; height: 20px; border-radius: 50%;
+    position: absolute; top: 4px; left: 4px; z-index: 2;
+    width: 18px; height: 18px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     background: var(--gold-print); color: var(--paper);
     font-size: .62rem;
@@ -271,7 +282,7 @@
 .at-fin.pos-te b { color: #5f4380; }
 
 /* Card back: the scouting note, same dotted-leader rows as the annual. */
-.at-back { display: flex; flex-direction: column; padding: .5rem .7rem .4rem; }
+.at-back { display: flex; flex-direction: column; padding: .42rem .65rem .32rem; }
 .at-bhead { text-align: center; }
 .at-bslot {
     display: block;
@@ -282,14 +293,14 @@
 .at-bname {
     display: block;
     font-family: var(--serif);
-    font-size: .98rem; line-height: 1.1;
+    font-size: .9rem; line-height: 1.1;
     color: var(--ink-print);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.at-brule { max-width: 80px; margin: .25rem auto .2rem; border-top: 1px solid var(--paper-line); border-bottom: 2px double var(--paper-line); height: 4px; }
+.at-brule { max-width: 72px; margin: .2rem auto .16rem; border-top: 1px solid var(--paper-line); border-bottom: 2px double var(--paper-line); height: 4px; }
 .at-brow {
     display: flex; align-items: baseline; gap: .4rem;
-    padding: .18rem 0;
+    padding: .11rem 0;
 }
 .at-brow + .at-brow { border-top: 1px solid var(--paper-line-soft); }
 .at-blabel {
@@ -301,15 +312,8 @@
 .at-bdots { flex: 1; border-bottom: 1px dotted var(--paper-line); transform: translateY(-3px); }
 .at-bval {
     flex: none;
-    font-weight: 600; font-size: .66rem; color: var(--ink-print);
+    font-weight: 600; font-size: .62rem; color: var(--ink-print);
     text-align: right;
-}
-.at-bfoot {
-    margin-top: auto; padding-top: .25rem;
-    text-align: center;
-    font-family: var(--mono);
-    font-size: .46rem; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--ink-print-mute);
 }
 
 /* Vacant slot: a dashed plate the same height as the stock. */
@@ -331,10 +335,8 @@
     border-radius: 50%;
     border: 1px solid var(--ink-line);
     background: var(--ink-soft);
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--serif); font-style: italic;
-    font-size: .78rem; color: var(--gold);
 }
+.at-res-thumb .mono { font-size: .68rem; color: var(--gold); }
 .at-res-thumb img {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
@@ -372,12 +374,17 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .at-gal-row.is-active .at-gal-name { color: var(--gold); }
+/* display:block matters on all three: they are <span>s inside another span,
+   so without it the track collapses and the ppg line runs on after the name
+   instead of stacking under it. */
 .at-gal-track {
+    display: block;
     height: 5px; margin-top: .3rem;
     background: rgba(232, 200, 137, .08);
     border-radius: 1px; overflow: hidden;
 }
 .at-gal-fill {
+    display: block;
     height: 100%;
     background: linear-gradient(90deg, #8a651c, var(--gold));
     border-radius: 1px;
@@ -387,7 +394,11 @@
 @keyframes at-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .at-gal-fill { animation: none; } }
 .at-gal-pts { flex: none; font-family: var(--mono); font-weight: 700; font-size: .72rem; color: var(--cream-soft); }
-.at-gal-sub { margin-top: .15rem; }
+.at-gal-sub {
+    display: block;
+    margin-top: .2rem;
+    font-size: .5rem; letter-spacing: .1em;
+}
 
 /* Alumni always sit in their own group at the foot of the list. */
 .at-alum-toggle {
@@ -506,10 +517,23 @@
     }
     function headshot(pid) { return 'https://sleepercdn.com/content/nfl/players/' + pid + '.jpg'; }
     function headshotThumb(pid) { return 'https://sleepercdn.com/content/nfl/players/thumb/' + pid + '.jpg'; }
-    // Every avatar/headshot is a monogram with the photo laid over it, so a
-    // 404 just needs the <img> to remove itself and the letter shows through.
+    // Manager avatars: a monogram with the photo laid over it. These are opaque
+    // (no blend mode), so a 404 only needs the <img> to remove itself and the
+    // letter underneath shows through.
     function photoOver(src) {
         return src ? '<img src="' + esc(src) + '" alt="" loading="lazy" onerror="this.remove()">' : '';
+    }
+    // Player photos: same idea, but the card art multiplies the photo over the
+    // paper, which would let the monogram bleed through it. So the monogram
+    // starts hidden and the error handler stamps .no-photo to reveal it. Class
+    // is set on the wrapper up front when there's no player id at all.
+    // (Set the class BEFORE remove() — after it, parentNode is null.)
+    function playerPhoto(wrapCls, src, letters) {
+        var mono = '<span class="mono">' + esc(letters) + '</span>';
+        if (!src) return '<span class="' + wrapCls + ' no-photo">' + mono + '</span>';
+        return '<span class="' + wrapCls + '">' + mono +
+            '<img src="' + esc(src) + '" alt="" loading="lazy"' +
+            ' onerror="this.parentNode.classList.add(\'no-photo\');this.remove()"></span>';
     }
 
     var PROFILE_LABEL = {
@@ -743,8 +767,7 @@
                 '<span class="at-inner">' +
                     '<span class="at-face at-front">' +
                         (p.key === team.captainKey ? '<span class="at-cap" title="Captain">★</span>' : '') +
-                        '<span class="at-photo">' + esc(initials(p.name)) +
-                            photoOver(p.pid ? headshot(p.pid) : '') + '</span>' +
+                        playerPhoto('at-photo', p.pid ? headshot(p.pid) : '', initials(p.name)) +
                         '<span class="at-body">' +
                             '<span class="at-top">' +
                                 '<span class="at-slot' + pos + '">' + s.slot + '</span>' +
@@ -767,7 +790,6 @@
                         '</span>' +
                         '<span class="at-brule"></span>' +
                         backRows(p) +
-                        '<span class="at-bfoot">Tap to turn back</span>' +
                     '</span>' +
                 '</span>' +
             '</button>';
@@ -806,8 +828,7 @@
         }
         mount.innerHTML = '<div class="m-list">' + team.bench.map(function (p) {
             return '<div class="m-list-row">' +
-                '<span class="at-res-thumb">' + esc(initials(p.name)) +
-                    photoOver(p.pid ? headshotThumb(p.pid) : '') + '</span>' +
+                playerPhoto('at-res-thumb', p.pid ? headshotThumb(p.pid) : '', initials(p.name)) +
                 '<span class="at-res-name">' + esc(p.name) +
                     '<small>' + p.year + (p.starts ? ' · ' + p.starts + ' starts' : '') +
                     ' · ' + (p.src === 'draft' ? 'Rd ' + p.round : 'In-season') + '</small></span>' +

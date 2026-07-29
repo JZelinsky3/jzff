@@ -8,12 +8,18 @@ import { updateSession } from '@/lib/supabase/middleware'
 // prod serving identical paths.
 const STATIC_INDEX_TREES = /^\/(demo|demo-m|old)(\/|$)/
 
-// Within those trees these two pages are flat files (standings.html,
-// records.html) rather than directories with an index. The shared almanac
-// nav links to them with clean URLs (/demo/standings), which the live league
-// route resolves via a .html fallback but the static demo can't — the clean
-// URL would rewrite to <name>/index.html and 404. Map it to the sibling file.
-const STATIC_FLAT_PAGES = /\/(standings|records)\/?$/
+// Within those trees these pages are flat files (standings.html,
+// records.html, managers/all-time.html, managers/visualizer.html) rather than
+// directories with an index. The shared almanac nav links to them with clean
+// URLs (/demo/standings, /demo/managers/all-time), which the live league route
+// resolves via a .html fallback but the static demo can't — the clean URL would
+// rewrite to <name>/index.html and 404. Map it to the sibling file.
+//
+// all-time + visualizer were added 2026-07-29: the demo's two Special
+// Collection panels have linked them with clean URLs since the 2026-07-21
+// resync, so /demo/managers/all-time and /demo/managers/visualizer were both
+// live 404s. The mobile More sheet now links all-time the same way.
+const STATIC_FLAT_PAGES = /\/(standings|records|all-time|visualizer)\/?$/
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
