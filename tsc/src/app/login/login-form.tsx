@@ -16,7 +16,7 @@ type Status = 'idle' | 'submitting' | 'sent' | 'error'
 // OAuth is on both tabs — Supabase creates the account on first sign-in
 // either way, so there's no functional difference between "sign in with
 // Google" and "sign up with Google" beyond the button label.
-type ReferralChannel = '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'ai' | 'other'
+type ReferralChannel = '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'instagram' | 'google' | 'ai' | 'other'
 
 export function LoginForm({ next, initialMode = 'signin' }: { next?: string; initialMode?: Mode }) {
   const [mode, setMode] = useState<Mode>(initialMode)
@@ -311,6 +311,8 @@ export function LoginForm({ next, initialMode = 'signin' }: { next?: string; ini
               <option value="reddit">Reddit</option>
               <option value="twitter">Twitter / X</option>
               <option value="facebook">Facebook</option>
+              <option value="instagram">Instagram</option>
+              <option value="google">Google (search or ad)</option>
               <option value="ai">AI (ChatGPT, Claude, etc.)</option>
               <option value="other">Other</option>
             </select>

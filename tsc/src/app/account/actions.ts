@@ -132,7 +132,7 @@ export async function updateBackupEmail(_prev: Result | null, formData: FormData
 // profiles (not user_metadata) so it's queryable from admin. The CHECK
 // constraint on the column enforces the same allow-list as the schema.
 
-const REFERRAL_CHANNELS = ['discord', 'reddit', 'twitter', 'facebook', 'ai', 'other'] as const
+const REFERRAL_CHANNELS = ['discord', 'reddit', 'twitter', 'facebook', 'instagram', 'google', 'ai', 'other'] as const
 const ReferralSchema = z.object({
   channel: z.enum(['', ...REFERRAL_CHANNELS]).default(''),
   other: z.string().trim().max(120, 'Keep it under 120 characters.').default(''),

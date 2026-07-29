@@ -54,7 +54,7 @@ declare global {
 }
 
 const SCRIPT_SRC = 'https://accounts.google.com/gsi/client'
-const REFERRAL_CHANNELS = new Set(['discord', 'reddit', 'twitter', 'facebook', 'ai', 'other'])
+const REFERRAL_CHANNELS = new Set(['discord', 'reddit', 'twitter', 'facebook', 'instagram', 'google', 'ai', 'other'])
 
 export function isGoogleClientConfigured(): boolean {
   return !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID

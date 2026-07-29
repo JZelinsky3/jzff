@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isSiteAdmin } from '@/lib/siteAdmin'
 import { isLifetimeUser, TIER_LABELS } from '@/lib/stripe'
-import { GrantCompButton, RevokeCompButton } from './controls'
+import { GrantCompButton, RevokeCompButton, PagedRows } from './controls'
 
 type ProfileRow = {
   id: string
@@ -23,8 +23,20 @@ const REFERRAL_LABELS: Record<string, string> = {
   reddit: 'Reddit',
   twitter: 'Twitter/X',
   facebook: 'Facebook',
+  instagram: 'Instagram',
+  google: 'Google',
   ai: 'AI',
   other: 'Other',
+}
+
+// Render signup timestamps in Joey's timezone, not the server's (UTC on
+// Vercel would shift late-evening signups to the next day).
+const ADMIN_TZ = 'America/New_York'
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', { timeZone: ADMIN_TZ, month: 'short', day: 'numeric', year: 'numeric' })
+}
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-US', { timeZone: ADMIN_TZ, hour: 'numeric', minute: '2-digit' })
 }
 
 type LeagueRow = {
@@ -130,7 +142,7 @@ export default async function AdminPage() {
         </div>
       </section>
 
-      <section className="section" style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 1.25rem 2rem' }}>
+      <section className="section" style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 1.25rem 2rem' }}>
         <h2 style={{ fontFamily: 'var(--mono)', fontSize: '.7rem', letterSpacing: '.22em', textTransform: 'uppercase', color: 'var(--gold)', margin: '1.5rem 0 .75rem' }}>
           Profiles &amp; subscriptions
         </h2>
@@ -141,6 +153,7 @@ export default async function AdminPage() {
                 <th style={th}>User</th>
                 <th style={th}>Email</th>
                 <th style={th}>Code</th>
+                <th style={th}>Joined</th>
                 <th style={th}>Leagues</th>
                 <th style={th}>Heard via</th>
                 <th style={th}>Subscription</th>
@@ -148,8 +161,7 @@ export default async function AdminPage() {
                 <th style={th}></th>
               </tr>
             </thead>
-            <tbody>
-              {profiles.map((p) => {
+            <PagedRows cols={9} rows={profiles.map((p) => {
                 const sub = subByUser.get(p.id)
                 const comp = compByUser.get(p.id)
                 const envComp = isLifetimeUser(p.id)
@@ -162,6 +174,10 @@ export default async function AdminPage() {
                     <td style={td}>{p.email ?? '—'}</td>
                     <td style={{ ...td, fontFamily: 'var(--mono)', letterSpacing: '.1em', color: 'var(--cream)' }}>
                       {p.member_code ?? '—'}
+                    </td>
+                    <td style={td}>
+                      <div>{fmtDate(p.created_at)}</div>
+                      <div style={{ opacity: 0.6, fontSize: '.7rem' }}>{fmtTime(p.created_at)} ET</div>
                     </td>
                     <td style={td}>{leagueCountByOwner.get(p.id) ?? 0}</td>
                     <td style={td}>
@@ -206,8 +222,7 @@ export default async function AdminPage() {
                     </td>
                   </tr>
                 )
-              })}
-            </tbody>
+              })} />
           </table>
         </div>
 
@@ -225,8 +240,7 @@ export default async function AdminPage() {
                 <th style={th}>State</th>
               </tr>
             </thead>
-            <tbody>
-              {leagues.map((l) => {
+            <PagedRows cols={5} rows={leagues.map((l) => {
                 const owner = profileById.get(l.owner_id)
                 const grace = l.grace_period_ends_at
                 // Per-league state — mirrors resolveLeagueTier:
@@ -311,8 +325,7 @@ export default async function AdminPage() {
                     </td>
                   </tr>
                 )
-              })}
-            </tbody>
+              })} />
           </table>
         </div>
       </section>

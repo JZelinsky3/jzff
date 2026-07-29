@@ -700,14 +700,16 @@ function describeSubscription(s: SubscriptionSummary): {
 // with whatever they picked on the signup form. "Other" reveals a 120-char
 // free-form input; switching away clears the detail on save.
 
-const REFERRAL_OPTIONS: { value: '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'ai' | 'other'; label: string }[] = [
-  { value: '',         label: 'Prefer not to say' },
-  { value: 'discord',  label: 'Discord' },
-  { value: 'reddit',   label: 'Reddit' },
-  { value: 'twitter',  label: 'Twitter / X' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'ai',       label: 'AI (ChatGPT, Claude, etc.)' },
-  { value: 'other',    label: 'Other' },
+const REFERRAL_OPTIONS: { value: '' | 'discord' | 'reddit' | 'twitter' | 'facebook' | 'instagram' | 'google' | 'ai' | 'other'; label: string }[] = [
+  { value: '',          label: 'Prefer not to say' },
+  { value: 'discord',   label: 'Discord' },
+  { value: 'reddit',    label: 'Reddit' },
+  { value: 'twitter',   label: 'Twitter / X' },
+  { value: 'facebook',  label: 'Facebook' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'google',    label: 'Google (search or ad)' },
+  { value: 'ai',        label: 'AI (ChatGPT, Claude, etc.)' },
+  { value: 'other',     label: 'Other' },
 ]
 
 function ReferralForm({ initialSource, initialOther }: { initialSource: string | null; initialOther: string }) {
