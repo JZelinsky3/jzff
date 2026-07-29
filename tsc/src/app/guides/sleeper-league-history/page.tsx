@@ -3,9 +3,9 @@ import Link from "next/link"
 import { GuideShell, faqSchema, howToSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "How to archive your Sleeper league history",
+  title: "How to see your Sleeper league history",
   description:
-    "Walk back through every season your Sleeper fantasy football league has ever played. Champions, drafts, matchups, rivalries. Pulled from any Sleeper league ID in 30 seconds.",
+    "See every past season your Sleeper fantasy football league has played: champions, drafts, matchups, rivalries. View the previous seasons Sleeper's history tab leaves out, and archive them from any league ID in 30 seconds.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/sleeper-league-history/" },
 }
 
@@ -34,7 +34,7 @@ export default function Page() {
   ])
 
   const howTo = howToSchema({
-    name: "How to archive Sleeper fantasy football league history",
+    name: "How to see Sleeper fantasy football league history (every past season)",
     description:
       "Pull every season of a Sleeper fantasy football league into a single public almanac using The Sunday Chronicle.",
     totalTime: "PT2M",
@@ -66,9 +66,9 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Sleeper · Full history walk"
-      title="How to archive your"
+      title="How to see your"
       titleEm="Sleeper league history."
-      subtitle="Every season your Sleeper league has played (champions, drafts, head-to-head records, rivalries) pulled from a single league ID in 30 seconds."
+      subtitle="Every past season your Sleeper league has played (champions, drafts, head-to-head records, rivalries) pulled from a single league ID in 30 seconds."
       breadcrumbSlug="sleeper-league-history"
       datePublished="2026-01-15"
       dateModified="2026-06-22"

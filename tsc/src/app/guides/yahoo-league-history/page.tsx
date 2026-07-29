@@ -3,9 +3,9 @@ import Link from "next/link"
 import { GuideShell, faqSchema, howToSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "How to archive your Yahoo fantasy league history",
+  title: "How to see your Yahoo fantasy league history",
   description:
-    "Pull every season your Yahoo fantasy football league has ever played into a clean public almanac (champions, drafts, head-to-head records, rivalries) without screenshots or spreadsheets.",
+    "See every past season your Yahoo fantasy football league has played: champions, drafts, head-to-head records, rivalries. View the previous seasons Yahoo's 2019 migration left behind, and archive them in a clean public almanac without screenshots or spreadsheets.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/yahoo-league-history/" },
 }
 
@@ -38,7 +38,7 @@ export default function Page() {
   ])
 
   const howTo = howToSchema({
-    name: "How to archive Yahoo fantasy football league history",
+    name: "How to see Yahoo fantasy football league history (every past season)",
     description:
       "Pull every season of a Yahoo fantasy football league into a single public almanac using The Sunday Chronicle's Yahoo OAuth flow.",
     totalTime: "PT5M",
@@ -74,9 +74,9 @@ export default function Page() {
   return (
     <GuideShell
       kicker="Yahoo · Full history walk"
-      title="How to archive your"
+      title="How to see your"
       titleEm="Yahoo league history."
-      subtitle="Every season your Yahoo fantasy football league has played (champions, drafts, head-to-head records, rivalries) pulled into a public almanac after a one-time Yahoo sign-in."
+      subtitle="Every past season your Yahoo fantasy football league has played (champions, drafts, head-to-head records, rivalries) pulled into a public almanac after a one-time Yahoo sign-in."
       breadcrumbSlug="yahoo-league-history"
       datePublished="2026-01-15"
       dateModified="2026-06-22"

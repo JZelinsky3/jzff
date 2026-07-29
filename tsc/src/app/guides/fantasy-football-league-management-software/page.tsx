@@ -5,7 +5,7 @@ import { GuideShell, faqSchema, H2, P } from "../_layout"
 export const metadata: Metadata = {
   title: "Fantasy football league management software in 2026",
   description:
-    "Software for running a fantasy football league: where the host platforms (Sleeper, ESPN, Yahoo, NFL.com) end and where third-party tools start. Reviews of the active services for commissioners, The Sunday Chronicle, FantasyPros, and dedicated commissioner tools.",
+    "Software for running a fantasy football league: where the host platforms (Sleeper, ESPN, Yahoo, NFL.com) end and where third-party tools start. Honest reviews of the active services for commissioners: The Sunday Chronicle, League Legacy, LeagueMint, Fantasy Hub, FantasyPros, and LeagueSafe.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/fantasy-football-league-management-software/" },
 }
 
@@ -17,7 +17,7 @@ export default function Page() {
     },
     {
       q: "What is the best fantasy football league management software?",
-      a: "It depends on the gap you're filling. For league history and a permanent public almanac, The Sunday Chronicle is the most complete option. For rankings, projections, and trade analysis, FantasyPros is the standard. For dues collection, LeagueSafe is the dominant tool. Most commissioners run two to three of these in parallel: the host platform plus the gaps it doesn't cover.",
+      a: "It depends on the gap you're filling. For a designed, permanent public league history plus live-season tools, The Sunday Chronicle. For history combined with commissioner operations (dues, rules, schedules) or for leagues on Fleaflicker, MyFantasyLeague, CBS, or RealTimeSports, League Legacy at $36/year per league. For ESPN leagues that need governance (dues tracking, a digital constitution, member voting), LeagueMint. For rankings, projections, and trade analysis, FantasyPros. For dues escrow specifically, LeagueSafe. Most commissioners run two to three of these in parallel: the host platform plus the gaps it doesn't cover.",
     },
     {
       q: "How much does fantasy football league management software cost?",
@@ -41,7 +41,7 @@ export default function Page() {
       subtitle="What the host platforms cover, what they don't, and which third-party tools commissioners actually use to fill the gaps. Honest reviews of the active 2026 options."
       breadcrumbSlug="fantasy-football-league-management-software"
       datePublished="2026-06-22"
-      dateModified="2026-06-22"
+      dateModified="2026-07-29"
       faqJsonLd={faq}
     >
       <P>
@@ -70,7 +70,16 @@ export default function Page() {
         Host platforms expose minimal historical views. If you want every draft board, every weekly matchup, every champion, every rivalry head-to-head from year one onward presented as a readable almanac, you need third-party software.
       </P>
       <P>
-        <strong><Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link></strong> is the dominant tool here. One league ID (Sleeper, ESPN, NFL.com, or Yahoo) produces a full public almanac with standings archives, draft boards, manager dossiers, all-time records, rivalries, weekly recaps, and live-season tools. Multi-platform leagues can combine sources under one archive. Free tier covers one league forever; paid plans from $3/month. The most complete option in this category in 2026.
+        <strong><Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link></strong> (ours). One league ID (Sleeper, ESPN, NFL.com, or Yahoo) produces a full public almanac with standings archives, draft boards, manager dossiers, all-time records, rivalries, weekly recaps, and live-season tools. Multi-platform leagues can combine sources under one archive. Free tier covers one league forever, the only permanent free plan in this category; paid plans from $3/month ($15/year). Strongest on design and on the live-season layer. Weakest on breadth: four platforms, and no league administration at all.
+      </P>
+      <P>
+        <strong><a href="https://leaguelegacy.io/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)" }}>League Legacy</a></strong> is the direct competitor and beats us on coverage. It imports from eight hosts (Yahoo, ESPN, Sleeper, Fleaflicker, MyFantasyLeague, RealTimeSports, CBS, NFL.com) with manual entry as a fallback, merges them into unified records, and bundles commissioner tools for finances, rules, and schedules with newsletters and a gamecenter. $36/year per league, unlimited members, 7-day trial without a card. If you want history and league ops on one bill, this is the pick.
+      </P>
+      <P>
+        <strong><a href="https://fantasyhub.io/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)" }}>Fantasy Hub</a></strong> covers ESPN, Sleeper, and Yahoo with records, leaderboards, rivalries, and draft, game, and payout history for a flat $24/year covering the whole league. The free tier gives 24 hours of full access, then limits features.
+      </P>
+      <P>
+        <strong><a href="https://www.leaguehistory.app/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)" }}>League History</a></strong> covers Yahoo, Sleeper, and ESPN with platform merging, and adds a research mode over player-stat archives. Pricing isn&apos;t published up front.
       </P>
 
       <H2>Gap 2: Rankings, projections, draft prep</H2>
@@ -81,9 +90,15 @@ export default function Page() {
         <strong>FTN Fantasy:</strong> advanced metrics, projections, DFS overlap. Subscription product. Better for managers who want quantitative edges than for commissioners running the league itself.
       </P>
 
-      <H2>Gap 3: Dues collection and payouts</H2>
+      <H2>Gap 3: Dues, payouts, and league governance</H2>
       <P>
-        <strong>LeagueSafe:</strong> the dominant choice. Collects buy-ins, holds the pot in escrow, distributes payouts at the end of the season. Takes a percentage but solves the trust problem.
+        <strong>LeagueSafe:</strong> the dominant choice for escrow. Collects buy-ins, holds the pot, distributes payouts at the end of the season. Takes a percentage but solves the trust problem.
+      </P>
+      <P>
+        <strong><a href="https://www.leaguemint.com/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)" }}>LeagueMint</a>:</strong> ESPN-only, and built around this gap rather than around history. Prize-pool visualization, real-time dues tracking, a digital constitution with signature tracking, member voting on trades and rule changes, and last-place punishment documentation, with a trophy case and imported ESPN history alongside. Pricing isn&apos;t published. If governance is your actual pain point, this covers ground neither we nor LeagueSafe do.
+      </P>
+      <P>
+        <strong>League Legacy</strong> also handles finances and rules as part of its commissioner toolset, which is worth weighing if you&apos;d rather not run a separate subscription for it.
       </P>
       <P>
         <strong>Venmo / Zelle:</strong> free but the commissioner is on the hook for collecting from everyone every year. Works in small, trusting leagues.
@@ -105,17 +120,17 @@ export default function Page() {
       </P>
       <P>
        · Host platform: <strong>Sleeper or ESPN</strong> (free)<br />
-       · League history + live-season tools + weekly recaps: <strong><Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link></strong> (free → $3–15/month)<br />
+       · League history + live-season tools + weekly recaps: <strong><Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link></strong> (free → $3–15/month), or <strong>League Legacy</strong> ($36/year) if you want history and league ops bundled<br />
        · Draft prep + in-season research: <strong>FantasyPros</strong> (free → $8/month per manager)<br />
-       · Dues: <strong>LeagueSafe</strong> (percentage of pot)
+       · Dues: <strong>LeagueSafe</strong> (percentage of pot), or <strong>LeagueMint</strong> if you&apos;re on ESPN and want voting and a constitution alongside
       </P>
       <P>
-        Total commissioner cost: $0–$50/year. Most of the value is in the archive and recap layer: that&apos;s what the league actually reads weekly and what survives the league outliving any one platform.
+        Total commissioner cost: $0–$50/year. Most of the value is in the archive and recap layer: that&apos;s what the league actually reads weekly and what survives the league outliving any one platform. Note that the two-subscription version of this stack (an archive tool plus a governance tool) often costs the same as one bundled tool that does both less elegantly, so price the whole stack before assuming a specialist beats a bundle.
       </P>
 
       <H2>How to evaluate any league management tool</H2>
       <P>
-        <strong>Multi-platform support.</strong> If a tool only works with one host, you&apos;re locked in. The good ones support Sleeper, ESPN, Yahoo, and NFL.com.
+        <strong>Multi-platform support.</strong> If a tool only works with one host, you&apos;re locked in. Most credible options cover Sleeper, ESPN, and Yahoo; fewer add NFL.com; only League Legacy reaches Fleaflicker, MyFantasyLeague, CBS, and RealTimeSports. Check your own league&apos;s history against that list before anything else, because it eliminates most of the field for you.
       </P>
       <P>
         <strong>Automation.</strong> Anything that requires manual entry every week stops getting used. Look for tools that pull from the league ID automatically.

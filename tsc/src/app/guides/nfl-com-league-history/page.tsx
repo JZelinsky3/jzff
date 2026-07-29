@@ -3,9 +3,9 @@ import Link from "next/link"
 import { GuideShell, faqSchema, howToSchema, H2, P } from "../_layout"
 
 export const metadata: Metadata = {
-  title: "How to archive your NFL.com fantasy league history",
+  title: "How to see your NFL.com fantasy league history",
   description:
-    "Pull every season your NFL.com fantasy football league has ever played into a clean public almanac (champions, drafts, head-to-head records, rivalries) without screenshots or spreadsheets.",
+    "See every past season your NFL.com fantasy football league has played: champions, drafts, head-to-head records, rivalries. View previous seasons NFL.com buries in a dated interface, and archive them in a clean public almanac without screenshots or spreadsheets.",
   alternates: { canonical: "https://thesundaychronicle.app/guides/nfl-com-league-history/" },
 }
 
@@ -38,7 +38,7 @@ export default function Page() {
   ])
 
   const howTo = howToSchema({
-    name: "How to archive NFL.com fantasy football league history",
+    name: "How to see NFL.com fantasy football league history (every past season)",
     description:
       "Pull every season of an NFL.com fantasy football league into a single public almanac using The Sunday Chronicle. No sign-in required. NFL.com exposes league data publicly.",
     totalTime: "PT3M",
@@ -70,9 +70,9 @@ export default function Page() {
   return (
     <GuideShell
       kicker="NFL.com · Full history walk"
-      title="How to archive your"
+      title="How to see your"
       titleEm="NFL.com league history."
-      subtitle="Every season your NFL.com fantasy football league has played (champions, drafts, head-to-head records, rivalries) pulled from a single league ID. NFL.com's public league data means no sign-in, no exports."
+      subtitle="Every past season your NFL.com fantasy football league has played (champions, drafts, head-to-head records, rivalries) pulled from a single league ID. NFL.com's public league data means no sign-in, no exports."
       breadcrumbSlug="nfl-com-league-history"
       datePublished="2026-01-15"
       dateModified="2026-06-22"

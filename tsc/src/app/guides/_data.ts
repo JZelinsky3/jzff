@@ -169,15 +169,16 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "sleeper-league-history",
-        title: "Sleeper: archive your league history",
+        title: "Sleeper: see your full league history",
         chip: "How-to",
-        tagline: "Every season, every draft, every champion, pulled from any Sleeper league ID in 30 seconds.",
+        tagline: "Every past season, every draft, every champion, pulled from any Sleeper league ID in 30 seconds.",
         snippet:
-          "Step-by-step instructions to archive a Sleeper fantasy football league's full history: finding your league ID, pasting it into The Sunday Chronicle, and publishing the public almanac. No installation, no manual exports.",
+          "Step-by-step instructions to see a Sleeper fantasy football league's full history: finding your league ID, pasting it into The Sunday Chronicle, and publishing the public almanac. Covers the past seasons Sleeper's history tab leaves out. No installation, no manual exports.",
         searchTerms: [
           "sleeper", "sleeper api", "previous_league_id",
           "how to", "setup", "instructions", "walkthrough",
           "league id", "sleeper league id", "import sleeper",
+          "see", "view", "find", "past seasons", "previous seasons", "old seasons",
         ],
       },
       {
@@ -195,28 +196,30 @@ export const SECTIONS: Section[] = [
       },
       {
         slug: "yahoo-league-history",
-        title: "Yahoo: archive your fantasy league history",
+        title: "Yahoo: see your full fantasy league history",
         chip: "How-to",
-        tagline: "Yahoo needs a one-time OAuth sign-in. After that, every season your league has played comes back as a clean public almanac.",
+        tagline: "Yahoo needs a one-time OAuth sign-in. After that, every past season your league has played comes back as a clean public almanac.",
         snippet:
-          "Archive a Yahoo fantasy football league's full history via OAuth sign-in. Step-by-step from sign-up through Yahoo authorization to a published public almanac.",
+          "See a Yahoo fantasy football league's full history via OAuth sign-in. Step-by-step from sign-up through Yahoo authorization to a published public almanac, including past seasons affected by Yahoo's 2019 migration.",
         searchTerms: [
           "yahoo", "yahoo fantasy", "oauth", "yahoo league id",
           "yahoo sign in", "authorize", "how to", "instructions",
           "import yahoo",
+          "see", "view", "find", "past seasons", "previous seasons", "old seasons",
         ],
       },
       {
         slug: "nfl-com-league-history",
-        title: "NFL.com: archive your league history",
+        title: "NFL.com: see your full league history",
         chip: "How-to",
-        tagline: "NFL.com exposes league data publicly behind the league ID. Paste it, no sign-in needed, every season back to the league's founding.",
+        tagline: "NFL.com exposes league data publicly behind the league ID. Paste it, no sign-in needed, every past season back to the league's founding.",
         snippet:
-          "Archive an NFL.com fantasy football league's full history. NFL.com exposes league data publicly so no sign-in is needed. Paste your league ID and every season the league has played gets imported.",
+          "See an NFL.com fantasy football league's full history. NFL.com exposes league data publicly so no sign-in is needed. Paste your league ID and every past season the league has played gets imported.",
         searchTerms: [
           "nfl.com", "nfl fantasy", "nfl league id",
           "fantasy.nfl.com", "how to", "instructions",
           "import nfl.com", "no sign in",
+          "see", "view", "find", "past seasons", "previous seasons", "old seasons",
         ],
       },
     ],
