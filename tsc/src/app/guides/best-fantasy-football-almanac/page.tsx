@@ -163,8 +163,8 @@ export default function Page() {
           pricing="Free tier · paid from $3/mo ($15/yr)"
           pitch={
             <>
-              Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and every season (drafts, matchups, standings, transactions, playoffs) gets imported and published at a permanent public URL that needs no login to read. Manager dossiers, rivalries, all-time records, weekly recaps, and a live-season layer with matchup previews, best-coach tracking, and a Sunday command center.{" "}
-              <strong>Where it loses:</strong> four platforms only, no dues, rules, or schedule administration, and it&apos;s the newest product here with the least track record.
+              Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and every season gets imported and published at a permanent public URL that needs no login to read. The import goes to pick-level and week-level granularity: every draft pick, every weekly lineup including who sat on the bench, every trade, every playoff bracket. That depth is what makes the derived pages possible, since best-coach tracking and manager-tendency analysis can&apos;t be computed from final scores alone. Manager dossiers, rivalries, all-time records, weekly recaps, and a live-season layer on top.{" "}
+              <strong>Where it loses:</strong> four platforms only, no manual entry for seasons we can&apos;t reach, no dues, rules, or schedule administration, and it&apos;s the newest product here with the least track record.
             </>
           }
         />

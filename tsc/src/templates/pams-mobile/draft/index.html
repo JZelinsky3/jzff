@@ -205,6 +205,262 @@
     color: var(--cream-mute);
 }
 .dr-finish.is-champ { color: var(--gold); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE REPORT CARD — pocket edition of the Annual's chapter V. Same
+   flex-VOR engine (draft-grade.js), three views instead of three stacked
+   blocks so no single screen carries the whole registrar's office:
+     Transcript — every drafter ranked, with each year's grade
+     Records    — best & worst drafts, then best & worst picks by position
+     By Year    — one report card per season, opened for the full class
+   ══════════════════════════════════════════════════════════════════════ */
+.gr-note { text-align: center; margin: -.15rem 0 .6rem; }
+/* Cards that are also tap targets: strip the UA button chrome so they read
+   exactly like the .m-card divs beside them. */
+button.m-card {
+    width: 100%; display: block; text-align: left;
+    font: inherit; color: inherit;
+    -webkit-appearance: none; appearance: none;
+}
+button.m-card:active { background: var(--ink-soft); }
+.gr-seg { margin-bottom: .75rem; }
+
+/* Letter-grade chip — palette lifted from the desktop annual so a class
+   graded B reads the same green on both. */
+.grade-chip {
+    flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 1.9rem; padding: .1rem .3rem; border-radius: 3px;
+    font-family: var(--mono); font-weight: 700; font-size: .66rem;
+    border: 1px solid transparent;
+}
+.grade-A  { background: rgba(232,200,137,.16); color: #e8c889; border-color: rgba(232,200,137,.4); }
+.grade-Ap { background: rgba(232,200,137,.24); color: #f2d488; border-color: rgba(232,200,137,.6); }
+.grade-B  { background: rgba(109,194,140,.15); color: #6dc28c; border-color: rgba(109,194,140,.35); }
+.grade-C  { background: rgba(138,172,204,.13); color: #8aaccc; border-color: rgba(138,172,204,.3); }
+.grade-D  { background: rgba(200,140,110,.14); color: #d19878; border-color: rgba(200,140,110,.32); }
+.grade-F  { background: rgba(200,96,80,.16);   color: #d47060; border-color: rgba(200,96,80,.4); }
+/* S tier: the four-digit classes. Black cloth, cream-foil serif S. */
+.grade-S {
+    background: linear-gradient(155deg, #141210, #0b0a08 55%, #12100d);
+    color: #f0e9d8;
+    border-color: rgba(240,233,216,.75);
+    box-shadow: 0 0 8px rgba(240,233,216,.2);
+    font-family: var(--serif); font-style: italic;
+}
+
+/* Signed score: green for value banked, red for value lost. */
+.gr-pos  { color: #6dc28c; font-family: var(--mono); font-weight: 700; }
+.gr-neg  { color: #d47060; font-family: var(--mono); font-weight: 700; }
+.gr-zero { color: var(--cream-mute); font-family: var(--mono); font-weight: 700; }
+
+/* ── Transcript ── */
+.gr-dr-top { display: flex; align-items: center; gap: .6rem; }
+.gr-dr-rank {
+    flex: none; width: 1.3rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: 1.05rem; color: var(--cream-mute);
+    text-align: center;
+}
+.gr-dr.is-top .gr-dr-rank { color: var(--gold); }
+.gr-dr-name { flex: 1; min-width: 0; font-weight: 600; font-size: .9rem; }
+.gr-dr-name small {
+    display: block;
+    font-weight: 400; font-size: .64rem; color: var(--cream-mute);
+    margin-top: 1px;
+}
+.gr-dr-avg {
+    flex: none; text-align: right;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .95rem; color: var(--gold);
+}
+.gr-dr-avg small {
+    display: block;
+    font-weight: 400; font-size: .46rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+    margin-top: 1px;
+}
+/* One column per graded season, scrolling sideways when the league runs
+   deeper than the screen. */
+.gr-chips {
+    display: flex; gap: .4rem;
+    margin-top: .6rem; padding-top: .55rem;
+    border-top: 1px solid var(--ink-line-soft);
+    overflow-x: auto; scrollbar-width: none;
+}
+.gr-chips::-webkit-scrollbar { display: none; }
+.gr-yr { flex: none; text-align: center; }
+.gr-yr b, .gr-yr i {
+    display: block;
+    font-family: var(--mono); font-weight: 700; font-style: normal;
+    font-size: .46rem; letter-spacing: .1em;
+    color: var(--cream-mute);
+}
+.gr-yr b { margin-bottom: 3px; }
+.gr-yr i { margin-top: 3px; font-weight: 400; }
+.gr-yr-empty {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 1.9rem; padding: .1rem .3rem;
+    color: var(--ink-line);
+    font-family: var(--mono); font-size: .66rem;
+}
+
+/* ── Records ── */
+.gr-rec-yr {
+    flex: none; width: 1.9rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; color: var(--gold-deep);
+}
+.gr-rec-main { flex: 1; min-width: 0; }
+.gr-rec-who {
+    display: block;
+    font-weight: 600; font-size: .85rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gr-rec-sub {
+    display: block;
+    font-size: .66rem; line-height: 1.35; color: var(--cream-mute);
+    margin-top: 1px;
+}
+.gr-rec-side { flex: none; text-align: right; }
+.gr-rec-side .gr-rec-score { display: block; font-size: .72rem; margin-top: 3px; }
+.gr-pos-pills { display: flex; gap: .3rem; margin: .1rem 0 .6rem; }
+.gr-pos-pill {
+    flex: 1;
+    padding: .38rem 0;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-soft);
+    color: var(--cream-mute);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .1em;
+}
+.gr-pos-pill.is-active { border-color: var(--gold-deep); background: rgba(232,200,137,.1); color: var(--gold); }
+
+/* ── By Year ── */
+.gr-yc-top {
+    display: flex; align-items: baseline; justify-content: space-between; gap: .6rem;
+    padding-bottom: .4rem; margin-bottom: .3rem;
+    border-bottom: 1px solid var(--ink-line-soft);
+}
+.gr-yc-year { font-family: var(--serif); font-size: 1.4rem; line-height: 1; color: var(--cream); }
+.gr-yc-line { display: flex; align-items: center; gap: .4rem; padding: .2rem 0; }
+.gr-yc-tag {
+    flex: none;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.gr-yc-dots { flex: 1; border-bottom: 1px dotted var(--ink-line); transform: translateY(-3px); }
+.gr-yc-who { flex: none; display: flex; align-items: center; gap: .35rem; min-width: 0; max-width: 62%; }
+.gr-yc-who .n {
+    min-width: 0;
+    font-size: .8rem; color: var(--cream-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gr-yc-who .n.is-champ { color: var(--gold); }
+.gr-yc-who .s { flex: none; font-family: var(--mono); font-size: .6rem; }
+.gr-yc-open {
+    display: block;
+    margin-top: .55rem; padding-top: .45rem;
+    border-top: 1px solid var(--ink-line-soft);
+    text-align: center;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .52rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--gold);
+}
+
+/* Year open: back row + the year strip */
+.gr-open-head { display: flex; gap: .4rem; align-items: center; margin-bottom: .7rem; }
+.gr-back {
+    flex: none;
+    display: flex; align-items: center; gap: .3rem;
+    padding: .4rem .65rem;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-soft);
+    color: var(--gold);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .54rem; letter-spacing: .12em; text-transform: uppercase;
+}
+.gr-yrtabs { flex: 1; display: flex; gap: .3rem; overflow-x: auto; scrollbar-width: none; }
+.gr-yrtabs::-webkit-scrollbar { display: none; }
+.gr-yrtab {
+    flex: none;
+    padding: .38rem .6rem;
+    border-radius: 999px;
+    border: 1px solid var(--ink-line);
+    background: var(--ink-soft);
+    color: var(--cream-mute);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .06em;
+}
+.gr-yrtab.is-active { border-color: var(--gold-deep); background: rgba(232,200,137,.1); color: var(--gold); }
+
+/* Registrar's summary for the open year */
+.gr-sum { margin-bottom: .7rem; }
+.gr-sum-row {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .35rem 0;
+}
+.gr-sum-row + .gr-sum-row { border-top: 1px solid var(--ink-line-soft); }
+.gr-sum-label {
+    flex: none; width: 5.4rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .48rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cream-mute);
+}
+.gr-sum-val { flex: 1; min-width: 0; display: flex; align-items: center; gap: .35rem; }
+.gr-sum-val .n {
+    min-width: 0;
+    font-weight: 600; font-size: .82rem; color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gr-sum-val .s { flex: none; font-family: var(--mono); font-size: .58rem; color: var(--cream-mute); }
+
+/* One drawer per class in the open year (reuses .dr-round). */
+.gr-cls-head-main { flex: 1; min-width: 0; text-align: left; }
+.gr-cls-rank {
+    flex: none; width: 1.6rem;
+    font-family: var(--serif); font-style: italic;
+    font-size: .95rem; color: var(--cream-mute);
+    text-transform: none; letter-spacing: 0;
+}
+.gr-cls-name {
+    display: block;
+    font-family: var(--sans); font-weight: 600;
+    font-size: .88rem; letter-spacing: 0; text-transform: none;
+    color: var(--cream);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gr-cls-name .champ { color: var(--gold); font-family: var(--mono); font-size: .5rem; letter-spacing: .1em; }
+.gr-cls-score { flex: none; font-family: var(--mono); font-weight: 700; font-size: .68rem; letter-spacing: 0; }
+
+/* Pick rows inside a class drawer */
+.gr-pick { align-items: baseline; }
+.gr-pick-slot {
+    flex: none; width: 2.4rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .58rem; color: var(--cream-mute);
+}
+.gr-pick-main { flex: 1; min-width: 0; }
+.gr-pick-name {
+    display: block;
+    font-weight: 600; font-size: .82rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gr-pick-move { display: block; font-family: var(--mono); font-size: .58rem; margin-top: 1px; }
+.gr-pick-move .rate { color: var(--cream-mute); }
+.gr-pick-score { flex: none; font-size: .72rem; }
+.gr-pick.is-ungraded .gr-pick-name, .gr-pick.is-ungraded .gr-pick-move { color: var(--cream-mute); }
+.gr-pick.is-ungraded .gr-pick-score {
+    font-family: var(--mono); font-size: .5rem; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--cream-mute);
+}
+.gr-move-QB { color: #8aaccc; }
+.gr-move-RB { color: #6dc28c; }
+.gr-move-WR { color: var(--gold); }
+.gr-move-TE { color: #c4a3e8; }
 </style>
 </head>
 <body>
@@ -212,6 +468,7 @@
 
 <nav id="site-nav" data-page="draft" data-chapter="Ch. VI · Draft History" data-back-href="./"></nav>
 <script src="/pams-template/assets/js/mobile-app.js"></script>
+<script src="/pams-template/assets/js/draft-grade.js"></script>
 
 <main class="m-main">
     <header class="dr-head">
@@ -229,7 +486,8 @@
         </div>
         <div class="m-seg" id="secSeg">
             <button data-sec="board" class="is-active">Board</button>
-            <button data-sec="r1">1st Round</button>
+            <button data-sec="grades">Grades</button>
+            <button data-sec="r1">1st Rd</button>
             <button data-sec="order">Order</button>
             <button data-sec="loyalty">Loyalty</button>
         </div>
@@ -325,6 +583,7 @@
         if (section === 'board') renderBoard(activeYear);
         else if (section === 'r1') renderRoundOne();
         else if (section === 'loyalty') renderLoyalty();
+        else if (section === 'grades') renderGrades();
         else renderOrder();
     }
 
@@ -590,6 +849,472 @@
             box.innerHTML = blocks || '<div class="m-empty">No draft order on file.</div>';
         });
     }
+
+    // ══ THE REPORT CARD ══════════════════════════════════════════════════
+    // Grades come from the shared flex-VOR engine (draft-grade.js) that the
+    // desktop Annual and the Hall's Manager-of-the-Year ballot also call, so
+    // a class graded B here is the same B everywhere. This section only does
+    // presentation: three views, one visible at a time.
+
+    var PROFILE_LABEL = {
+        ppr_6pt:  'Full PPR · 6pt pass TD',
+        ppr_4pt:  'Full PPR · 4pt pass TD',
+        half_6pt: 'Half PPR · 6pt pass TD',
+        half_4pt: 'Half PPR · 4pt pass TD',
+        std_6pt:  'Standard · 6pt pass TD',
+        std_4pt:  'Standard · 4pt pass TD',
+    };
+
+    var gradePromise = null;   // one build per pageload, shared by all views
+    var gradeData = null;      // DraftGrade.compute() output
+    var gradeProfile = 'ppr_6pt';
+    var gradeYearData = {};    // year -> raw picks (for slots + ungraded picks)
+    var gradeFinishes = {};    // year -> { manager: final finish }
+    var retiredNames = {};     // manager names no longer in the league
+    var gradeView = 'transcript';
+    var gradePos = 'QB';
+    var gradeOpenYear = null;  // year whose full class is open, in the By Year view
+
+    function loadGrades() {
+        if (gradePromise) return gradePromise;
+        gradePromise = Promise.all([
+            grab('data/league.json'),
+            loadAllYears(),
+            grab('data/managers_directory.json'),
+        ]).then(function (res) {
+            var league = res[0];
+            var drafts = (res[1] || []).filter(Boolean);
+            var dir = res[2];
+            gradeProfile = (league && league.draft_scoring_profile) || 'ppr_6pt';
+            retiredNames = {};
+            (((dir || {}).managers) || []).forEach(function (m) {
+                if (m && !m.is_current && m.name) retiredNames[m.name] = 1;
+            });
+
+            var byYear = {};
+            drafts.forEach(function (d) { if (d.year != null) byYear[d.year] = d; });
+            var yrs = Object.keys(byYear).map(Number).sort(function (a, b) { return a - b; });
+            if (!yrs.length) return null;
+
+            // One rank file per season, in the league's own scoring profile.
+            return Promise.all(yrs.map(function (y) {
+                return grab('/data/fantasy_ranks/' + gradeProfile + '/' + y + '.json')
+                    .then(function (file) { return { year: y, file: file }; });
+            })).then(function (files) {
+                var rankData = {}, draftPosRanks = {}, yearTeamCount = {};
+                gradeYearData = {};
+                gradeFinishes = {};
+                files.forEach(function (r) {
+                    var d = byYear[r.year];
+                    if (!d || !r.file || !r.file.players) return;
+                    rankData[r.year] = DraftGrade.buildRankLookup(r.file.players);
+                    draftPosRanks[r.year] = DraftGrade.buildDraftPosRanks(d.picks || [], r.year);
+                    yearTeamCount[r.year] = d.team_count || 0;
+                    gradeYearData[r.year] = d.picks || [];
+                    gradeFinishes[r.year] = d.finishes || {};
+                });
+                gradeData = DraftGrade.compute({
+                    years: yrs,
+                    rankData: rankData,
+                    draftPosRanks: draftPosRanks,
+                    yearTeamCount: yearTeamCount,
+                    yearData: gradeYearData,
+                    yearFinishes: gradeFinishes,
+                });
+                return gradeData;
+            });
+        }).catch(function () { return null; });
+        return gradePromise;
+    }
+
+    function gradeCls(letter) {
+        return letter === 'A+' ? 'grade-Ap' : 'grade-' + String(letter).charAt(0);
+    }
+    function chip(letter) {
+        return '<span class="grade-chip ' + gradeCls(letter) + '">' + esc(letter) + '</span>';
+    }
+    function grScore(n) {
+        var v = Math.round(n);
+        if (v > 0) return '<span class="gr-pos">+' + v + '</span>';
+        if (v < 0) return '<span class="gr-neg">−' + Math.abs(v) + '</span>';
+        return '<span class="gr-zero">0</span>';
+    }
+    function yy(year) { return '’' + String(year).slice(2); }
+    // "WR14 → WR3": what the pick cost against what it returned. NR = the
+    // season never placed in the rank file at all.
+    function move(p) {
+        var fin = p.pos_final_rank ? p.pos + p.pos_final_rank : 'NR';
+        return '<span class="gr-move-' + esc(p.pos) + '">' + esc(p.pos) + p.pos_draft_rank +
+            ' → ' + esc(fin) + '</span>';
+    }
+    function champOf(year) {
+        var champ = null;
+        var fin = gradeFinishes[year] || {};
+        Object.keys(fin).forEach(function (m) { if (fin[m] === 1) champ = m; });
+        return champ;
+    }
+    function classesOf(year) {
+        return ((gradeData.classesByYear || {})[year] || []).slice()
+            .sort(function (a, b) { return a.yearRank - b.yearRank; });
+    }
+    // Best and worst single pick anywhere in a year's classes.
+    function edgePicks(list) {
+        var best = null, worst = null;
+        list.forEach(function (c) {
+            c.picks.forEach(function (p) {
+                if (!best || p.score > best.p.score) best = { p: p, mgr: c.manager };
+                if (!worst || p.score < worst.p.score) worst = { p: p, mgr: c.manager };
+            });
+        });
+        return { best: best, worst: worst };
+    }
+
+    function renderGrades() {
+        var box = document.getElementById('board');
+        box.innerHTML = '<div class="m-empty">Marking the report cards…</div>';
+        loadGrades().then(function (data) {
+            if (section !== 'grades') return;   // stale
+            if (!data || !data.years || !data.years.length) {
+                box.innerHTML = '<div class="m-empty">Grades need season finish data, ' +
+                    'and none could be loaded for this league.</div>';
+                return;
+            }
+            var ny = data.years.length;
+            box.innerHTML =
+                '<div class="gr-note m-mono">' + ny + ' season' + (ny === 1 ? '' : 's') +
+                    ' graded · ' + data.total + ' classes · ' +
+                    esc(PROFILE_LABEL[gradeProfile] || gradeProfile) + '</div>' +
+                '<div class="m-seg gr-seg" id="grSeg">' +
+                    viewBtn('transcript', 'Transcript') +
+                    viewBtn('records', 'Records') +
+                    viewBtn('years', 'By Year') +
+                '</div>' +
+                '<div id="grBody"></div>';
+            renderGradeView();
+        });
+    }
+    function viewBtn(v, label) {
+        return '<button data-gv="' + v + '"' + (gradeView === v ? ' class="is-active"' : '') + '>' +
+            label + '</button>';
+    }
+
+    function renderGradeView() {
+        var mount = document.getElementById('grBody');
+        if (!mount) return;
+        if (gradeView === 'records') mount.innerHTML = transcriptRecords();
+        else if (gradeView === 'years') mount.innerHTML = gradeOpenYear == null ? yearCards() : yearOpen();
+        else mount.innerHTML = transcriptView();
+    }
+
+    // ── Transcript: every drafter, ranked by average class rank ──────────
+    function transcriptView() {
+        var data = gradeData;
+        // Newest season first so the chip strip opens on the recent drafts.
+        var years = data.years.slice().sort(function (a, b) { return b - a; });
+        var active = [], alumni = [];
+        data.drafters.forEach(function (m) {
+            (retiredNames[m.manager] ? alumni : active).push(m);
+        });
+
+        function card(m, i) {
+            var chips = years.map(function (y) {
+                var cell = (data.byMgrYear[m.manager] || {})[y];
+                return '<span class="gr-yr"><b>' + yy(y) + '</b>' +
+                    (cell && cell.grade
+                        ? chip(cell.grade) + '<i>' + ord(cell.yearRank) + '</i>'
+                        : '<span class="gr-yr-empty">·</span><i>&nbsp;</i>') +
+                '</span>';
+            }).join('');
+            return '<div class="m-card gr-dr' + (i === 0 ? ' is-top' : '') + '">' +
+                '<div class="gr-dr-top">' +
+                    '<span class="gr-dr-rank">' + (i + 1) + '</span>' +
+                    '<span class="gr-dr-name">' + esc(m.manager) +
+                        '<small>' + m.classes + ' class' + (m.classes === 1 ? '' : 'es') +
+                        ' · best ' + ord(m.best) +
+                        ' · ' + Math.round(m.totalScore).toLocaleString() + ' career' +
+                        (m.qualified ? '' : ' · provisional') + '</small></span>' +
+                    '<span class="gr-dr-avg">' + m.avgRank.toFixed(1) + '<small>avg rank</small></span>' +
+                '</div>' +
+                '<div class="gr-chips">' + chips + '</div>' +
+            '</div>';
+        }
+
+        // Alumni keep their own group at the foot of the board, folded away.
+        return '<div class="m-mono" style="margin-bottom:.5rem">Ranked by average class rank · tap a year in Records or By Year for the detail</div>' +
+            active.map(card).join('') +
+            (alumni.length
+                ? '<div class="dr-round" style="margin-top:.8rem">' +
+                    '<button class="dr-round-head" aria-expanded="false">' +
+                        '<span class="dr-round-n">Alumni</span>' +
+                        '<span class="dr-round-count">' + alumni.length + '</span>' +
+                        chevron() +
+                    '</button>' +
+                    '<div class="dr-round-body" style="padding-top:.55rem">' +
+                        alumni.map(function (m, i) { return card(m, i + active.length); }).join('') +
+                    '</div>' +
+                  '</div>'
+                : '');
+    }
+
+    function chevron() {
+        return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+            'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="6 9 12 15 18 9"/></svg>';
+    }
+
+    // Top n and bottom n of an already-sorted list, guaranteed not to overlap:
+    // a young league with only six classes on file shouldn't see the same
+    // draft filed under both "best of all time" and "worst of all time".
+    function headTail(list, n) {
+        return {
+            head: list.slice(0, n),
+            tail: list.slice(Math.max(n, list.length - n)).reverse(),
+        };
+    }
+
+    // ── Records: best & worst drafts, then best & worst picks by position ─
+    function transcriptRecords() {
+        var data = gradeData;
+        var split = headTail(data.classes, 5);
+        var best = split.head, worst = split.tail;
+
+        function classRow(c) {
+            var top = c.picks[0];
+            var bust = c.picks[c.picks.length - 1];
+            var sub = ord(c.yearRank) + ' of ' + c.year + ' · score ' + Math.round(c.score) +
+                ' · ' + c.picks.length + ' graded';
+            if (top) sub += '<br>Best ' + esc(top.player_name) + ' ' + move(top);
+            if (bust && bust !== top) sub += '<br>Bust ' + esc(bust.player_name) + ' ' + move(bust);
+            return '<button class="m-list-row gr-rec-row" data-gr-year="' + c.year + '">' +
+                '<span class="gr-rec-yr">' + yy(c.year) + '</span>' +
+                '<span class="gr-rec-main">' +
+                    '<span class="gr-rec-who">' + esc(c.manager) + '</span>' +
+                    '<span class="gr-rec-sub">' + sub + '</span>' +
+                '</span>' +
+                '<span class="gr-rec-side">' + chip(c.grade) + '</span>' +
+            '</button>';
+        }
+
+        var pool = [];
+        data.classes.forEach(function (c) {
+            c.picks.forEach(function (p) {
+                if (p.pos === gradePos) pool.push({ p: p, mgr: c.manager, year: c.year });
+            });
+        });
+        pool.sort(function (a, b) { return b.p.score - a.p.score; });
+
+        function pickRow(r) {
+            var p = r.p;
+            var sub = esc(r.mgr) + ' · ' + move(p) +
+                (p.fpts ? ' · ' + Math.round(p.fpts) + ' pts' : '') +
+                (p.gp ? ' · ' + p.gp + 'g' : '');
+            return '<button class="m-list-row gr-rec-row" data-gr-year="' + r.year + '">' +
+                '<span class="gr-rec-yr">' + yy(r.year) + '</span>' +
+                '<span class="gr-rec-main">' +
+                    '<span class="gr-rec-who">' + esc(p.player_name) + '</span>' +
+                    '<span class="gr-rec-sub">' + sub + '</span>' +
+                '</span>' +
+                '<span class="gr-rec-side">' + grScore(p.score) + '</span>' +
+            '</button>';
+        }
+
+        function block(label, rows) {
+            return '<div class="m-kicker" style="margin:1.1rem 0 .35rem">' + label + '</div>' +
+                (rows.length ? '<div class="m-list">' + rows + '</div>'
+                             : '<div class="m-empty">Nothing on file.</div>');
+        }
+
+        var pills = DraftGrade.GRADER_POS.map(function (p) {
+            return '<button class="gr-pos-pill' + (p === gradePos ? ' is-active' : '') +
+                '" data-gr-pos="' + p + '">' + p + '</button>';
+        }).join('');
+
+        var picks = headTail(pool, 5);
+        return '<div class="m-mono" style="margin-bottom:.2rem">Tap any row to open that year&rsquo;s class</div>' +
+            block('Best drafts of all time', best.map(classRow).join('')) +
+            block('Worst drafts of all time', worst.map(classRow).join('')) +
+            '<div class="m-kicker" style="margin:1.3rem 0 .45rem">Picks of record</div>' +
+            '<div class="gr-pos-pills">' + pills + '</div>' +
+            block('Best ' + gradePos + ' picks', picks.head.map(pickRow).join('')) +
+            block('Worst ' + gradePos + ' picks', picks.tail.map(pickRow).join(''));
+    }
+
+    // ── By Year: one report card per season ──────────────────────────────
+    function yearCards() {
+        var years = gradeData.years.slice().sort(function (a, b) { return b - a; });
+        var html = years.map(function (y) {
+            var list = classesOf(y);
+            if (!list.length) return '';
+            var edge = edgePicks(list);
+            var champ = champOf(y);
+            var champClass = champ ? list.filter(function (c) { return c.manager === champ; })[0] : null;
+
+            function draftLine(tag, c, isChamp) {
+                return '<span class="gr-yc-line"><span class="gr-yc-tag">' + tag + '</span>' +
+                    '<span class="gr-yc-dots"></span>' +
+                    '<span class="gr-yc-who">' + chip(c.grade) +
+                        '<span class="n' + (isChamp ? ' is-champ' : '') + '">' +
+                        (isChamp ? '✦ ' : '') + esc(c.manager) + '</span></span></span>';
+            }
+            function pickLine(tag, rec) {
+                if (!rec) return '';
+                return '<span class="gr-yc-line"><span class="gr-yc-tag">' + tag + '</span>' +
+                    '<span class="gr-yc-dots"></span>' +
+                    '<span class="gr-yc-who"><span class="n">' + esc(rec.p.player_name) + '</span>' +
+                    '<span class="s">' + grScore(rec.p.score) + '</span></span></span>';
+            }
+
+            return '<button class="m-card gr-yc" data-gr-year="' + y + '">' +
+                '<span class="gr-yc-top">' +
+                    '<span class="gr-yc-year">' + y + '</span>' +
+                    '<span class="m-mono">' + list.length + ' classes</span>' +
+                '</span>' +
+                draftLine('Best class', list[0]) +
+                draftLine('Worst class', list[list.length - 1]) +
+                (champClass ? draftLine('League champ', champClass, true) : '') +
+                pickLine('Pick of the year', edge.best) +
+                pickLine('Whiff of the year', edge.worst) +
+                '<span class="gr-yc-open">Open the class</span>' +
+            '</button>';
+        }).join('');
+        return html || '<div class="m-empty">No graded seasons on file.</div>';
+    }
+
+    function yearOpen() {
+        var year = gradeOpenYear;
+        var list = classesOf(year);
+        var years = gradeData.years.slice().sort(function (a, b) { return b - a; });
+        var champ = champOf(year);
+        var edge = edgePicks(list);
+
+        // Round.pick for every player taken that year, so each row can show
+        // the slot the pick actually came from.
+        var slotAt = {};
+        (gradeYearData[year] || []).forEach(function (p) {
+            slotAt[DraftGrade.normName(p.player_name)] = p.round
+                ? p.round + '.' + String(p.round_pick).padStart(2, '0')
+                : '';
+        });
+
+        function sumRow(label, valHtml) {
+            return '<div class="gr-sum-row"><span class="gr-sum-label">' + label + '</span>' +
+                '<span class="gr-sum-val">' + valHtml + '</span></div>';
+        }
+        function draftVal(c) {
+            return chip(c.grade) + '<span class="n">' + esc(c.manager) + '</span>' +
+                '<span class="s">' + Math.round(c.score) + '</span>';
+        }
+        function pickVal(rec) {
+            return '<span class="n">' + esc(rec.p.player_name) + '</span>' +
+                '<span class="s">' + move(rec.p) + '</span>';
+        }
+
+        var summary = '<div class="m-card gr-sum">' +
+            sumRow('Classes', '<span class="n">' + list.length + '</span>' +
+                '<span class="s">graded, ' + year + '</span>') +
+            (list.length ? sumRow('Best draft', draftVal(list[0])) : '') +
+            (list.length > 1 ? sumRow('Worst draft', draftVal(list[list.length - 1])) : '') +
+            (edge.best ? sumRow('Best pick', pickVal(edge.best)) : '') +
+            (edge.worst ? sumRow('Worst pick', pickVal(edge.worst)) : '') +
+        '</div>';
+
+        var cards = list.map(function (c, i) {
+            var isChamp = champ && c.manager === champ;
+            var picks = c.picks.map(function (p) {
+                // RB/WR are graded on the combined flex board, so show that
+                // move too: it is what actually produced the score.
+                var flx = p.flex_dr ? ' · FLEX ' + p.flex_dr + ' → ' + (p.flex_fr || 'NR') : '';
+                var rate = (p.gp && p.fpts)
+                    ? ' <span class="rate">' + (p.fpts / p.gp).toFixed(1) + ' ppg · ' + p.gp + 'g</span>'
+                    : '';
+                return '<div class="m-list-row gr-pick">' +
+                    '<span class="gr-pick-slot">' +
+                        esc(slotAt[DraftGrade.normName(p.player_name)] || '') + '</span>' +
+                    '<span class="gr-pick-main">' +
+                        '<span class="gr-pick-name">' + esc(p.player_name) + '</span>' +
+                        '<span class="gr-pick-move">' + move(p) + flx + rate + '</span>' +
+                    '</span>' +
+                    '<span class="gr-pick-score">' + grScore(p.score) + '</span>' +
+                '</div>';
+            }).join('');
+            // Kickers, defenses, anything outside the skill positions: listed
+            // so the card accounts for the manager's whole draft.
+            var extras = (gradeYearData[year] || []).filter(function (p) {
+                return p.manager_name === c.manager
+                    && DraftGrade.GRADER_POS.indexOf((p.position || '').toUpperCase()) < 0;
+            }).sort(function (a, b) { return a.overall_pick - b.overall_pick; })
+              .map(function (p) {
+                return '<div class="m-list-row gr-pick is-ungraded">' +
+                    '<span class="gr-pick-slot">' +
+                        esc(slotAt[DraftGrade.normName(p.player_name)] || '') + '</span>' +
+                    '<span class="gr-pick-main">' +
+                        '<span class="gr-pick-name">' + esc(p.player_name) + '</span>' +
+                        '<span class="gr-pick-move">' + esc((p.position || '?').toUpperCase()) + '</span>' +
+                    '</span>' +
+                    '<span class="gr-pick-score">not graded</span>' +
+                '</div>';
+            }).join('');
+            return '<div class="dr-round' + (i === 0 ? ' is-open' : '') + '">' +
+                '<button class="dr-round-head" aria-expanded="' + (i === 0 ? 'true' : 'false') + '">' +
+                    '<span class="gr-cls-rank">' + ord(c.yearRank) + '</span>' +
+                    '<span class="gr-cls-head-main"><span class="gr-cls-name">' + esc(c.manager) +
+                        (isChamp ? ' <span class="champ">✦ Champion</span>' : '') + '</span></span>' +
+                    '<span class="gr-cls-score">' + Math.round(c.score) + '</span>' +
+                    chip(c.grade) +
+                    chevron() +
+                '</button>' +
+                '<div class="dr-round-body"><div class="m-list">' + picks + extras + '</div></div>' +
+            '</div>';
+        }).join('');
+
+        return '<div class="gr-open-head">' +
+                '<button class="gr-back" data-gr-back="1">All years</button>' +
+                '<div class="gr-yrtabs">' + years.map(function (ty) {
+                    return '<button class="gr-yrtab' + (ty === year ? ' is-active' : '') +
+                        '" data-gr-year="' + ty + '">' + yy(ty) + '</button>';
+                }).join('') + '</div>' +
+            '</div>' +
+            '<div class="m-kicker" style="margin-bottom:.4rem">The Class of ' + year + '</div>' +
+            summary +
+            (cards || '<div class="m-empty">No classes graded for ' + year + '.</div>');
+    }
+
+    // ── Grades interactions ─────────────────────────────────────────────
+    // Delegated off #board, which every section re-renders into. The drawer
+    // handler above already covers the .dr-round-head heads these views emit.
+    document.getElementById('board').addEventListener('click', function (e) {
+        var viewBtnEl = e.target.closest('#grSeg button[data-gv]');
+        if (viewBtnEl) {
+            gradeView = viewBtnEl.dataset.gv;
+            if (gradeView !== 'years') gradeOpenYear = null;
+            document.querySelectorAll('#grSeg button').forEach(function (b) {
+                b.classList.toggle('is-active', b === viewBtnEl);
+            });
+            renderGradeView();
+            return;
+        }
+        var pill = e.target.closest('[data-gr-pos]');
+        if (pill) { gradePos = pill.dataset.grPos; renderGradeView(); return; }
+        var back = e.target.closest('[data-gr-back]');
+        if (back) { gradeOpenYear = null; renderGradeView(); return; }
+        var yearEl = e.target.closest('[data-gr-year]');
+        if (yearEl) {
+            var wasTab = !!e.target.closest('.gr-yrtab');
+            gradeOpenYear = parseInt(yearEl.dataset.grYear, 10);
+            gradeView = 'years';
+            document.querySelectorAll('#grSeg button').forEach(function (b) {
+                b.classList.toggle('is-active', b.dataset.gv === 'years');
+            });
+            renderGradeView();
+            // Switching years from the strip shouldn't yank the page; arriving
+            // from a record row or a year card should show the top of the class.
+            if (!wasTab) {
+                var body = document.getElementById('grBody');
+                if (body && body.scrollIntoView) body.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    });
+
 })();
 </script>
 </body>

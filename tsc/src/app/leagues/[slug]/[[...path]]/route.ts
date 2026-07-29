@@ -292,6 +292,11 @@ const MOBILE_PRELOADS_BY_FILE: Record<string, string[]> = {
   'records.html': ['data/record_book.json'],
   'draft/index.html': ['data/drafts/drafts_directory.json'],
   'managers/index.html': ['data/managers_directory.json'],
+  'managers/all-time.html': [
+    'data/league.json',
+    'data/all_time_pool.json',
+    'data/managers_directory.json',
+  ],
   'rivalries/index.html': ['data/rivalries.json'],
   'rivalries/rivalry.html': ['data/rivalries.json'],
   'seasons/index.html': ['data/seasons_directory.json'],

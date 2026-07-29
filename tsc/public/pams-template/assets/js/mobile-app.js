@@ -94,6 +94,7 @@
         seasons: 'history', season: 'history',
         records: 'history', draft: 'history',
         managers: 'more', manager: 'more',
+        'manager-all-time': 'more',
         rivalries: 'more', rivalry: 'more',
         'live': 'live', 'matchup-preview': 'live', pickems: 'live',
         powerrank: 'live', 'best-coach': 'live', 'records-watch': 'live',
@@ -121,6 +122,7 @@
         standings: 'standings',
         seasons: 'history', season: 'history',
         managers: 'managers', manager: 'managers',
+        'manager-all-time': 'managers',
         records: 'more', draft: 'more',
         rivalries: 'more', rivalry: 'more',
         'live': 'more', 'matchup-preview': 'more', pickems: 'more',
@@ -647,6 +649,7 @@
               '<span class="m-sheet-label">With a paid plan</span>' +
               sheetRow('records', 'Record Book', { locked: true }) +
               sheetRow('draft/', 'Draft History', { locked: true }) +
+              sheetRow('managers/all-time', 'All-Time Team', { locked: true }) +
               sheetRow('live/', 'Live Season', { locked: true })
             : liveMode
             ? '<span class="m-sheet-label">The Almanac</span>' +
@@ -655,9 +658,11 @@
               sheetRow('records', 'Record Book') +
               sheetRow('draft/', 'Draft History') +
               sheetRow('managers/', 'Managers') +
+              sheetRow('managers/all-time', 'All-Time Team') +
               sheetRow('rivalries/', 'Rivalries')
             : '<span class="m-sheet-label">The Society</span>' +
               sheetRow('managers/', 'Managers') +
+              sheetRow('managers/all-time', 'All-Time Team') +
               sheetRow('rivalries/', 'Rivalries');
 
         var more = document.createElement('dialog');

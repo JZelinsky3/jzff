@@ -82,7 +82,10 @@ export default function Page() {
         <Link href="/" style={{ color: "var(--gold)" }}>The Sunday Chronicle</Link> is our product, so read this section with that in mind and check the others below. One league ID (Sleeper, ESPN, NFL.com, or Yahoo) produces a full almanac: season archives back to year one, draft boards, head-to-head records, manager dossiers, all-time records, rivalries, and weekly matchups. Multi-platform leagues (started on ESPN, moved to Sleeper) can combine sources under one archive. During the NFL season, the same site stays in sync with a Sunday command center, matchup previews, best-coach tracker, manager DNA, milestone watching, and weekly recaps. Free tier covers one league forever; paid plans from $3/month ($15/year) with a 7-day trial.
       </P>
       <P>
-        <strong>Where it falls short:</strong> four platforms only, so leagues on Fleaflicker, MyFantasyLeague, CBS, or RealTimeSports are out of luck. No dues collection, rules ratification, or schedule administration. And it launched in 2026, which makes it the least proven option in this list.
+        <strong>Where it goes deeper than most:</strong> the import keeps pick-level and week-level detail, not just season outcomes. Every draft pick, every weekly lineup including the players left on the bench, every trade, every playoff bracket. Bench data is the one worth checking for when you compare tools, because anything that reports on decisions rather than results (best-coach tracking, lineup tendencies, points left on the table) is impossible to compute from final scores alone. Most tools in this category document standings and matchup history without saying whether they retain lineups.
+      </P>
+      <P>
+        <strong>Where it falls short:</strong> four platforms only, so leagues on Fleaflicker, MyFantasyLeague, CBS, or RealTimeSports are out of luck, and there&apos;s no manual-entry fallback for seasons we can&apos;t reach. No dues collection, rules ratification, or schedule administration. And it launched in 2026, which makes it the least proven option in this list.
       </P>
 
       <H2>League Legacy</H2>
