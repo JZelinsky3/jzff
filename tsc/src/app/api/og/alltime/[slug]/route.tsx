@@ -1,14 +1,17 @@
 // OG image generator for The All-Time Team (managers/all-time.html).
 // URL: /api/og/alltime/<slug>[?id=<uid>]
 //
-// Renders the page's own scene: a lit display case, navy chrome, with the
-// featured squad's three best cards fanned on the shelf in the same cream
-// card stock the page prints (paper tokens + position inks lifted from
-// all-time.html). Text left, cards right.
+// Renders the page's own scene: a lit display case, navy chrome, with three
+// cards fanned on the shelf in the same cream card stock the page prints
+// (paper tokens + position inks lifted from all-time.html). Text left,
+// cards right.
 //
-//   no ?id=  — the league's #1 ranked squad, i.e. one card for the whole
-//              league. This is what a bare share of the page gets.
-//   ?id=<uid> — that manager's squad, so a link copied after switching
+//   no ?id=  — the house all-stars: the best season anyone in the league
+//              ever got at QB, RB and WR, each stamped with whose roster it
+//              was on. Neutral on purpose — a bare share shouldn't crown
+//              one manager's squad, and the hook is that every manager has
+//              a squad of their own to go and look at.
+//   ?id=<uid> — that manager's own squad, so a link copied after switching
 //              squads previews the squad the sharer was looking at.
 //
 // Squads are built by the same rules the browser uses: the shared
@@ -302,44 +305,120 @@ export async function GET(
   const pool = bundle['all_time_pool.json'] as { managers?: PoolManager[] } | undefined
   const managers = (pool?.managers ?? []).filter((m) => m && m.user_id)
   const builder = managers.length > 0 ? await loadSquadBuilder(origin) : null
-  if (!builder) return renderCard({ ...shell, squadCount: 0, team: null, rank: 0, portraits: {} }, fonts)
+  if (!builder) return renderCard({ ...shell, squadCount: 0, feature: null, portraits: {} }, fonts)
 
   const years = [...new Set(managers.flatMap((m) => (m.seasons ?? []).map((s) => s.year)))]
   const ranks = await loadRanks(years, profile, builder, origin)
   const { teams, order } = builder.buildAll(managers, { ranks, superflex })
   if (order.length === 0) {
-    return renderCard({ ...shell, squadCount: 0, team: null, rank: 0, portraits: {} }, fonts)
+    return renderCard({ ...shell, squadCount: 0, feature: null, portraits: {} }, fonts)
   }
 
-  // ?id= is the manager the sharer had open; anything unknown (or absent)
-  // falls back to the league's top squad so the bare page still previews.
+  // ?id= is the manager the sharer had open — a link copied after switching
+  // squads previews that squad. A bare share gets the house all-stars
+  // instead of one manager's team: nobody's squad is "the" squad, and the
+  // hook is that every manager has one of these to go and look at.
   const requested = req.nextUrl.searchParams.get('id')
-  const uid = requested && teams[requested] ? requested : order[0]!
-  const team = teams[uid]!
+  const team = requested ? teams[requested] : undefined
+  const feature = team
+    ? personalFeature(team, order.indexOf(team.uid) + 1, order.length)
+    : houseFeature(teams, order.length, data.name)
 
-  // Three cards go on the shelf: the squad's best positional finishes,
-  // captain first (the captain IS the best finish, so it leads the list).
-  const featured = featuredThree(team)
-  const portraitList = await Promise.all(featured.map((f) => loadPortrait(f.player.pid)))
+  const portraitList = await Promise.all(feature.cards.map((c) => loadPortrait(c.player.pid)))
   const portraits: Record<string, string> = {}
-  featured.forEach((f, i) => {
+  feature.cards.forEach((c, i) => {
     const url = portraitList[i]
-    if (url) portraits[f.player.key] = url
+    if (url) portraits[c.player.key] = url
   })
 
-  return renderCard(
-    { ...shell, squadCount: order.length, team, rank: order.indexOf(uid) + 1, portraits },
-    fonts,
-    { personal: !!(requested && teams[requested]) },
-  )
+  return renderCard({ ...shell, squadCount: order.length, feature, portraits }, fonts)
 }
 
-function featuredThree(team: Squad): Array<{ slot: string; player: SquadPlayer }> {
-  return team.slots
-    .filter((s): s is { slot: string; player: SquadPlayer } => !!s.player)
+// One card on the shelf. `owner` is set only on the house all-stars, where
+// whose roster the season was on is the whole point.
+type ShelfCard = { slot: string; player: SquadPlayer; owner?: string }
+
+type Feature = {
+  kick: string
+  headline: string
+  sub: string
+  cards: ShelfCard[]
+  captainKey: string | null
+  stats: { lead: string; rest: string; restGold?: boolean }
+}
+
+// Best positional finish in the middle of the fan, the other two flanking
+// it — the same "captain" rule the page stars a card with.
+function arrangeFan(cards: ShelfCard[]): ShelfCard[] {
+  const ranked = cards
     .slice()
     .sort((a, b) => a.player.posRank - b.player.posRank || b.player.fpts - a.player.fpts)
     .slice(0, 3)
+  return ranked.length === 3 ? [ranked[1]!, ranked[0]!, ranked[2]!] : ranked
+}
+
+function bestFinish(cards: ShelfCard[]): string | null {
+  let best: SquadPlayer | null = null
+  for (const c of cards) {
+    if (!best || c.player.posRank < best.posRank || (c.player.posRank === best.posRank && c.player.fpts > best.fpts)) {
+      best = c.player
+    }
+  }
+  return best?.key ?? null
+}
+
+// The neutral card: the single best season anyone in the league ever got at
+// QB, RB and WR, each stamped with whose roster it was on. A season that's
+// the league's best at a position is necessarily its owner's best there
+// too, so it always sits in that manager's own starting slot.
+function houseFeature(teams: Record<string, Squad>, squadCount: number, leagueName: string): Feature {
+  const best = new Map<string, ShelfCard>()
+  for (const team of Object.values(teams)) {
+    for (const s of team.slots) {
+      const p = s.player
+      if (!p) continue
+      const cur = best.get(p.pos)
+      if (!cur || p.fpts > cur.player.fpts) best.set(p.pos, { slot: p.pos, player: p, owner: team.name })
+    }
+  }
+  // TE stands in only if the league somehow never rostered one of the big three.
+  const cards = ['QB', 'RB', 'WR', 'TE']
+    .map((pos) => best.get(pos))
+    .filter((c): c is ShelfCard => !!c)
+    .slice(0, 3)
+
+  return {
+    kick: 'The house all-stars',
+    headline: 'The best anyone ever had',
+    sub: `The best season at every position, for every manager who ever ran a team in ${clip(leagueName, 24)}.`,
+    cards: arrangeFan(cards),
+    captainKey: bestFinish(cards),
+    stats: {
+      lead: `All ${squadCount} squads on file`,
+      rest: '·  See yours',
+      restGold: true,
+    },
+  }
+}
+
+// The personal card: the squad the sharer had open, its three best
+// positional finishes on the shelf.
+function personalFeature(team: Squad, rank: number, squadCount: number): Feature {
+  const cards: ShelfCard[] = team.slots
+    .filter((s): s is { slot: string; player: SquadPlayer } => !!s.player)
+    .map((s) => ({ slot: s.slot, player: s.player }))
+
+  return {
+    kick: `${ordinal(rank)} of ${squadCount} squads`,
+    headline: clip(team.name, 24),
+    sub: `The best season at every position ever to play for ${clip(team.name, 22)}.`,
+    cards: arrangeFan(cards),
+    captainKey: team.captainKey,
+    stats: {
+      lead: `${pts(team.total)} PTS`,
+      rest: `${team.ppw.toFixed(1)} PPG  ·  ${team.seasonsScouted} SEASON${team.seasonsScouted === 1 ? '' : 'S'} SCOUTED`,
+    },
+  }
 }
 
 type CardData = {
@@ -348,8 +427,7 @@ type CardData = {
   profileLabel: string
   superflex: boolean
   squadCount: number
-  team: Squad | null
-  rank: number
+  feature: Feature | null
   portraits: Record<string, string>
 }
 
@@ -364,11 +442,11 @@ type CardData = {
 // kills the response mid-flight rather than throwing where we could catch
 // it. Render to a buffer first, and if that fails, deal the same cards
 // again with monograms instead of photos.
-async function renderCard(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}) {
+async function renderCard(d: CardData, fonts: Fonts) {
   try {
-    return await materialize(renderCardInner(d, fonts, opts))
+    return await materialize(renderCardInner(d, fonts))
   } catch {
-    return await materialize(renderCardInner({ ...d, portraits: {} }, fonts, opts))
+    return await materialize(renderCardInner({ ...d, portraits: {} }, fonts))
   }
 }
 
@@ -377,16 +455,12 @@ async function materialize(res: ImageResponse): Promise<Response> {
   return new Response(buf, { headers: res.headers })
 }
 
-function renderCardInner(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}) {
-  const { team } = d
+function renderCardInner(d: CardData, fonts: Fonts) {
+  const f = d.feature
   const lineup = d.superflex ? 'eight' : 'seven'
-  const featured = team ? featuredThree(team) : []
-  // Captain in the middle of the fan, the other two flanking it.
-  const fan = featured.length === 3 ? [featured[1]!, featured[0]!, featured[2]!] : featured
-
-  const sub = opts.personal && team
-    ? `The best season at every position ever to play for ${clip(team.name, 22)}.`
-    : `The best season at every position, for every manager who ever ran a team in ${clip(d.leagueName, 24)}.`
+  const fan = f?.cards ?? []
+  const sub = f?.sub
+    ?? `The best season at every position, for every manager who ever ran a team in ${clip(d.leagueName, 24)}.`
 
   // Kept to one line: the scoring profile already carries a middot.
   const wire = [
@@ -505,37 +579,34 @@ function renderCardInner(d: CardData, fonts: Fonts, opts: { personal?: boolean }
                 color: GOLD,
               }}
             >
-              {team
-                ? opts.personal
-                  ? `${ordinal(d.rank)} of ${d.squadCount} squads`
-                  : `The No. 1 squad on file`
-                : 'The case is being filled'}
+              {f ? f.kick : 'The case is being filled'}
             </div>
             <div
               style={{
                 display: 'flex',
                 fontFamily: 'DMSerif',
-                fontSize: team && team.name.length > 15 ? '32px' : '40px',
+                fontSize: f && f.headline.length > 17 ? '32px' : '40px',
                 lineHeight: 1.05,
                 color: CREAM,
                 marginTop: '8px',
               }}
             >
-              {team ? clip(team.name, 24) : 'No squads yet'}
+              {f ? f.headline : 'No squads yet'}
             </div>
 
             {/* The fan */}
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', height: '272px', marginTop: '18px' }}>
               {fan.length > 0
-                ? fan.map((f, i) => {
+                ? fan.map((c, i) => {
                     const center = fan.length === 3 ? i === 1 : i === 0
                     return (
                       <TradingCard
-                        key={f.player.key}
-                        slot={f.slot}
-                        p={f.player}
-                        captain={team?.captainKey === f.player.key}
-                        portrait={d.portraits[f.player.key] ?? null}
+                        key={c.player.key}
+                        slot={c.slot}
+                        p={c.player}
+                        owner={c.owner ?? null}
+                        captain={f?.captainKey === c.player.key}
+                        portrait={d.portraits[c.player.key] ?? null}
                         scale={center ? 1.08 : 1}
                         tilt={fan.length === 3 ? [-6, 0, 6][i]! : 0}
                         lift={center ? 16 : 0}
@@ -566,12 +637,11 @@ function renderCardInner(d: CardData, fonts: Fonts, opts: { personal?: boolean }
                 color: CREAM_MUTE,
               }}
             >
-              {team ? (
+              {f ? (
                 <>
-                  <span style={{ display: 'flex', color: CREAM }}>{pts(team.total)} PTS</span>
-                  <span style={{ display: 'flex', marginLeft: '14px' }}>
-                    {team.ppw.toFixed(1)} PPG  ·  {team.seasonsScouted} SEASON
-                    {team.seasonsScouted === 1 ? '' : 'S'} SCOUTED
+                  <span style={{ display: 'flex', color: CREAM }}>{f.stats.lead}</span>
+                  <span style={{ display: 'flex', marginLeft: '14px', color: f.stats.restGold ? GOLD : CREAM_MUTE }}>
+                    {f.stats.rest}
                   </span>
                 </>
               ) : (
@@ -612,12 +682,14 @@ function renderCardInner(d: CardData, fonts: Fonts, opts: { personal?: boolean }
   )
 }
 
-/* One card front: slot chip, year, sepia portrait (or monogram), name,
-   positional finish, points, and how he was acquired. Same furniture as
-   .tcard-face in all-time.html, scaled to fit the shelf. */
+/* One card front: slot chip, year, portrait (or monogram), name, positional
+   finish, points, and — on the house all-stars — whose roster the season was
+   on, standing in for the draft-slot line. Same furniture as .tcard-face in
+   all-time.html, scaled to fit the shelf. */
 function TradingCard({
   slot,
   p,
+  owner,
   captain,
   portrait,
   scale,
@@ -627,6 +699,7 @@ function TradingCard({
 }: {
   slot: string
   p: SquadPlayer
+  owner: string | null
   captain: boolean
   portrait: string | null
   scale: number
@@ -641,6 +714,9 @@ function TradingCard({
   const photoH = Math.round(84 * scale)
   const photoW = w - Math.round(18 * scale)
   const acq = p.src === 'draft' && p.round ? `RD ${p.round} · PK ${p.roundPick ?? '—'}` : 'IN-SEASON ADD'
+  // On the house all-stars the owner replaces the draft slot, and reads as
+  // a possessive so a bare name can't be mistaken for the NFL team.
+  const footNote = owner ? `${clip(owner, 10).toUpperCase()}'S` : acq
 
   return (
     <div
@@ -780,11 +856,13 @@ function TradingCard({
           style={{
             display: 'flex',
             fontSize: px(8),
+            fontWeight: owner ? 700 : 400,
             letterSpacing: '0.06em',
-            color: p.src === 'draft' ? INK_PRINT_MUTE : RUST_PRINT,
+            whiteSpace: 'nowrap',
+            color: owner ? GOLD_PRINT : p.src === 'draft' ? INK_PRINT_MUTE : RUST_PRINT,
           }}
         >
-          {acq}
+          {footNote}
         </div>
       </div>
 

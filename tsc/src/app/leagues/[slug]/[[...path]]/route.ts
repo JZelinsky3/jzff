@@ -523,12 +523,13 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     }
   }
   // All-Time Team: /leagues/<slug>/managers/all-time.html?id=<uid>
-  // Display-case card with the featured squad's three best trading cards
-  // fanned on the shelf. Bare page previews the league's No. 1 squad; ?id=
-  // previews that manager's squad, so a link copied after switching squads
-  // shows the squad the sharer was looking at. The image route renders an
-  // empty-case variant when nothing has been scouted yet, so this never
-  // loses its preview.
+  // Display-case card with three trading cards fanned on the shelf. The
+  // bare page previews the house all-stars (the best season anyone in the
+  // league ever got at QB/RB/WR, each stamped with whose roster it was on)
+  // rather than crowning one manager's squad; ?id= previews that manager's
+  // own squad, so a link copied after switching squads shows the squad the
+  // sharer was looking at. The image route renders an empty-case variant
+  // when nothing has been scouted yet, so this never loses its preview.
   if (file === 'managers/all-time.html') {
     const uid = req.nextUrl.searchParams.get('id')
     const url = new URL(
