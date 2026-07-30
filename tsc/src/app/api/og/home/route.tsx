@@ -80,7 +80,7 @@ export async function GET() {
         />
 
         {/* Gold sash strips — the site's identity stripe, top and bottom. */}
-        <div style={{ display: 'flex', height: '14px', background: GOLD }} />
+        <div style={{ display: 'flex', height: '16px', background: GOLD }} />
 
         {/* Body */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 0 0 84px' }}>
@@ -307,29 +307,6 @@ export async function GET() {
             </div>
 
             {/* Rust volume seal overlapping the cover corner */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '76px',
-                right: '30px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '92px',
-                height: '92px',
-                borderRadius: '92px',
-                border: `3px solid ${RUST}`,
-                background: `${CREAM}e6`,
-                color: RUST,
-                fontSize: '14px',
-                fontWeight: 700,
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
-                transform: 'rotate(12deg)',
-              }}
-            >
-              Vol. II
-            </div>
           </div>
         </div>
 

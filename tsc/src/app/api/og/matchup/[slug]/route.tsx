@@ -95,16 +95,221 @@ export async function GET(
     return renderOffseasonCard(league.name, fonts)
   }
 
-  // ?m=<uid> picks that manager's game; otherwise the Game of the Week
-  // (falling back to the first game on the slate).
+  // ?m=<uid> features that manager's game. A bare share deliberately does
+  // NOT crown one fixture: it shows the whole slate, the same call as the
+  // All-Time card, because a neutral card with a hook travels further than
+  // one that puts a single game (and a single pair of names) on blast.
+  //
+  // NOTE: uid here is whatever id the preview was built with. In leagues
+  // migrated from NFL.com the preview keys managers by their NFL.com id
+  // while managers_directory.json keys them by their platform user_id, so
+  // the two are NOT interchangeable when testing this by hand.
   const mUid = req.nextUrl.searchParams.get('m')
-  let card: MatchupCard | undefined
-  if (mUid) {
-    card = preview.matchups.find((c) => c.a.uid === mUid || c.b.uid === mUid)
-  }
-  if (!card) card = preview.matchups[preview.gotwIdx ?? 0] ?? preview.matchups[0]
+  const card = mUid
+    ? preview.matchups.find((c) => c.a.uid === mUid || c.b.uid === mUid)
+    : undefined
 
+  if (!card) return renderSlateCard(league.name, preview.week, preview.matchups, fonts)
   return renderMatchupCard(league.name, preview.week, card, fonts)
+}
+
+
+/* ============================================================
+   THE CARD — the neutral share. Petrol field, a fan of ticket
+   stubs, one per fixture, nobody featured.
+   ============================================================ */
+const PETROL      = '#0c1812'  // --mp-bg
+const PETROL_SOFT = '#142a20'  // --mp-card
+const FOOT_GREEN  = '#1a3528'  // --mp-card-hi, the foot bar
+const TICKET      = '#efe6d2'
+const TICKET_INK  = '#16241c'
+const BRASS       = '#c89d5c'  // --mp-brass
+const BRASS_HI    = '#e6bb78'  // --mp-brass-hi
+const BRASS_DEEP  = '#8d6a37'  // --mp-brass-deep
+const CREAM_T     = '#f4ebd8'  // --mp-cream
+const CREAM_TSOFT = '#9eb5a2'  // --mp-mute
+
+function TStar({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6L12 2z" />
+    </svg>
+  )
+}
+
+function cut(s: string, max: number): string {
+  const t = (s ?? '').trim()
+  return t.length <= max ? t : `${t.slice(0, max - 1).trim()}…`
+}
+
+function renderSlateCard(
+  leagueName: string,
+  week: number,
+  cards: MatchupCard[],
+  fonts: Awaited<ReturnType<typeof loadFonts>>,
+) {
+  const games = cards.slice(0, 6)
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '1200px',
+          height: '630px',
+          display: 'flex',
+          flexDirection: 'column',
+          background: `linear-gradient(155deg, #081109 0%, ${PETROL} 46%, ${PETROL_SOFT} 100%)`,
+          color: CREAM_T,
+          fontFamily: 'JetBrains',
+          position: 'relative',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            background: `radial-gradient(circle at 20% 28%, ${BRASS}1c 0%, transparent 46%), radial-gradient(circle at 86% 84%, ${BRASS_DEEP}26 0%, transparent 44%)`,
+          }}
+        />
+
+        <div style={{ display: 'flex', height: '16px', background: FOOT_GREEN }} />
+
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 56px 0 84px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '24px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                fontSize: '16px',
+                fontWeight: 700,
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                color: BRASS,
+              }}
+            >
+              <TStar size={15} color={BRASS} />
+              <span style={{ display: 'flex' }}>Week {week} · Admit One</span>
+              <TStar size={15} color={BRASS} />
+            </div>
+
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '96px', lineHeight: 1.02, color: CREAM_T, marginTop: '24px' }}>
+              This Week&apos;s
+            </div>
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '96px', lineHeight: 1.02, color: BRASS }}>
+              Card.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: '120px',
+                height: '3px',
+                background: `linear-gradient(90deg, ${BRASS_DEEP}, transparent)`,
+                marginTop: '26px',
+              }}
+            />
+
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '29px',
+                lineHeight: 1.32,
+                color: CREAM_TSOFT,
+                marginTop: '20px',
+                maxWidth: '470px',
+              }}
+            >
+              Every game in {cut(leagueName, 22)} this week, with the ledger behind it.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '14px',
+                fontWeight: 700,
+                letterSpacing: '0.26em',
+                textTransform: 'uppercase',
+                color: CREAM_TSOFT,
+                marginTop: '26px',
+              }}
+            >
+              {games.length} GAME{games.length === 1 ? '' : 'S'} ON THE SLATE · SEE YOURS
+            </div>
+          </div>
+
+          {/* Right — the stubs */}
+          <div style={{ display: 'flex', flexDirection: 'column', width: '452px', gap: '9px' }}>
+            {games.map((g, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '11px 16px',
+                  background: TICKET,
+                  color: TICKET_INK,
+                  borderRadius: '3px',
+                  borderLeft: `4px solid ${g.gotw ? BRASS : 'rgba(23,35,38,0.25)'}`,
+                  boxShadow: '0 10px 22px rgba(0,0,0,0.35)',
+                }}
+              >
+                <span style={{ display: 'flex', width: '166px', fontFamily: 'DMSerif', fontSize: '24px' }}>
+                  {cut(g.a.name, 11)}
+                </span>
+                <span
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    width: '48px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    color: '#6b7a7d',
+                  }}
+                >
+                  vs
+                </span>
+                <span style={{ display: 'flex', width: '166px', justifyContent: 'flex-end', fontFamily: 'DMSerif', fontSize: '24px' }}>
+                  {cut(g.b.name, 11)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 84px',
+            background: FOOT_GREEN,
+            color: BRASS_HI,
+            fontSize: '14px',
+            fontWeight: 700,
+            letterSpacing: '0.28em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span style={{ display: 'flex' }}>Form · Projections · The All-Time Ledger</span>
+          <span style={{ display: 'flex' }}>{'thesundaychronicle.app'}</span>
+        </div>
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 630,
+      fonts,
+      headers: {
+        'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
+      },
+    },
+  )
 }
 
 function streakStr(s: Side['streak']): string | null {
@@ -118,97 +323,45 @@ function renderMatchupCard(
   c: MatchupCard,
   fonts: Awaited<ReturnType<typeof loadFonts>>,
 ) {
-  const accent = c.gotw ? '#e8c850' : '#e8c889'
   const projA = c.projected.a.toFixed(1)
   const projB = c.projected.b.toFixed(1)
 
-  // Format the last-meeting cell with the score so the h2h ledger reads as
-  // a real ledger line, not just a date. Winner-side score leads so it's
-  // visually obvious who took the previous one.
-  const lastMeetingStr = (() => {
+  const favLine = (() => {
+    const sp = Math.abs(c.projected.spread)
+    if (sp < 0.5) return "PICK 'EM"
+    if (c.projected.favorite === 'a') return `${cut(c.a.name, 12).toUpperCase()} BY ${sp.toFixed(1)}`
+    if (c.projected.favorite === 'b') return `${cut(c.b.name, 12).toUpperCase()} BY ${sp.toFixed(1)}`
+    return null
+  })()
+
+  const lastMeeting = (() => {
     const r = c.h2h.recent[0]
     if (!r) return null
     const a = r.scoreA.toFixed(1)
     const b = r.scoreB.toFixed(1)
-    const score = r.winner === 'b' ? `${b}—${a}` : `${a}—${b}`
-    return `LAST ${r.year} W${r.week} · ${score}`
-  })()
-  const h2hLine = c.h2h.meetings > 0
-    ? [
-        `ALL-TIME ${c.h2h.winsA}—${c.h2h.winsB}${c.h2h.ties ? `—${c.h2h.ties}` : ''}`,
-        `${c.h2h.meetings} MEETING${c.h2h.meetings === 1 ? '' : 'S'}`,
-        lastMeetingStr,
-      ].filter(Boolean).join('  ·  ')
-    : 'FIRST CAREER MEETING'
-
-  // Favorite/spread badge under PROJ. "PICK 'EM" when within 0.5 pts.
-  // Otherwise call out the favored side by name + the spread in points.
-  const favLine = (() => {
-    const sp = Math.abs(c.projected.spread)
-    if (sp < 0.5) return 'PICK ‘EM'
-    if (c.projected.favorite === 'a') return `${c.a.name.toUpperCase()} FAVORED BY ${sp.toFixed(1)}`
-    if (c.projected.favorite === 'b') return `${c.b.name.toUpperCase()} FAVORED BY ${sp.toFixed(1)}`
-    return null
+    return `${r.year} W${r.week} · ${a}–${b}`
   })()
 
-  const gridiron = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
-  )
+  // Current run in the series: how many in a row the last winner has taken.
+  const streak = (() => {
+    const rs = c.h2h.recent ?? []
+    const first = rs[0]
+    if (!first || first.winner === 't') return null
+    let n = 0
+    for (const r of rs) {
+      if (r.winner !== first.winner) break
+      n++
+    }
+    if (n < 1) return null
+    const who = first.winner === 'a' ? c.a.name : c.b.name
+    return `${cut(who, 10)} W${n}`
+  })()
 
-  const side = (s: Side, align: 'flex-end' | 'flex-start') => (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: align,
-        gap: '14px',
-        minWidth: 0,
-      }}
-    >
-      <div
-        style={{
-          fontFamily: 'DMSerif',
-          fontSize: s.name.length > 12 ? '64px' : '84px',
-          lineHeight: 1,
-          color: '#f3f4f6',
-          display: 'flex',
-          textAlign: align === 'flex-end' ? 'right' : 'left',
-        }}
-      >
-        {s.name}
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          gap: '18px',
-          fontSize: '18px',
-          fontWeight: 700,
-          letterSpacing: '0.22em',
-          color: '#9ca3af',
-          textTransform: 'uppercase',
-        }}
-      >
-        <span style={{ display: 'flex', color: accent }}>{s.record}</span>
-        <span style={{ display: 'flex' }}>{s.ppgSeason ? `${s.ppgSeason.toFixed(1)} PPG` : ''}</span>
-        {streakStr(s.streak) && <span style={{ display: 'flex' }}>{streakStr(s.streak)}</span>}
-      </div>
-      {s.ppg5 > 0 && Math.abs(s.ppg5 - s.ppgSeason) >= 0.5 && (
-        <div
-          style={{
-            display: 'flex',
-            fontSize: '14px',
-            fontWeight: 700,
-            letterSpacing: '0.28em',
-            color: s.ppg5 > s.ppgSeason ? accent : '#6b7280',
-            textTransform: 'uppercase',
-          }}
-        >
-          L5 · {s.ppg5.toFixed(1)} PPG
-        </div>
-      )}
-    </div>
-  )
+  const form = (s: Side, mirrored = false) => {
+    const parts = [s.record, s.ppg5 ? `${s.ppg5.toFixed(1)} L5` : null, streakStr(s.streak)]
+      .filter(Boolean)
+    return (mirrored ? parts.reverse() : parts).join('  ·  ')
+  }
 
   return new ImageResponse(
     (
@@ -218,8 +371,10 @@ function renderMatchupCard(
           height: '630px',
           display: 'flex',
           flexDirection: 'column',
-          background: '#0a0a0a',
-          color: '#f3f4f6',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: `linear-gradient(155deg, #081109 0%, ${PETROL} 46%, ${PETROL_SOFT} 100%)`,
+          color: CREAM_T,
           fontFamily: 'JetBrains',
           position: 'relative',
         }}
@@ -229,141 +384,240 @@ function renderMatchupCard(
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            opacity: 0.5,
-            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            background: `radial-gradient(circle at 12% 25%, ${accent}2e 0%, transparent 48%), radial-gradient(circle at 88% 75%, ${accent}1a 0%, transparent 48%)`,
+            background: `radial-gradient(circle at 20% 24%, ${BRASS}1c 0%, transparent 46%), radial-gradient(circle at 84% 86%, ${BRASS_DEEP}26 0%, transparent 44%)`,
           }}
         />
 
-        {/* Top bar */}
+        {/* The ticket */}
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '32px 56px 0',
-            fontSize: '17px',
-            letterSpacing: '0.3em',
-            color: accent,
-            textTransform: 'uppercase',
-            zIndex: 2,
+            width: '1020px',
+            background: TICKET,
+            color: TICKET_INK,
+            borderRadius: '4px',
+            boxShadow: '0 30px 70px rgba(0,0,0,0.6)',
           }}
         >
-          <span style={{ display: 'flex' }}>{leagueName.toUpperCase()} · WEEK {week} PREVIEW</span>
-          <span style={{ display: 'flex', color: '#9ca3af', letterSpacing: '0.32em' }}>
-            THE SUNDAY CHRONICLE
-          </span>
-        </div>
+          {/* Main body */}
+          <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', padding: '30px 34px 26px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '13px',
+                fontWeight: 700,
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+                color: '#6b7a7d',
+              }}
+            >
+              <span style={{ display: 'flex' }}>{cut(leagueName, 24).toUpperCase()}</span>
+              <span style={{ display: 'flex', color: BRASS_DEEP }}>
+                {c.gotw ? `WEEK ${week} · GAME OF THE WEEK` : `WEEK ${week} PREVIEW`}
+              </span>
+            </div>
 
-        {/* GOTW banner */}
-        {c.gotw && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '22px', zIndex: 2 }}>
+            <div style={{ display: 'flex', height: '2px', background: 'rgba(23,35,38,0.65)', marginTop: '12px' }} />
+            <div style={{ display: 'flex', height: '1px', background: 'rgba(23,35,38,0.3)', marginTop: '2px' }} />
+
+            {/* The two sides */}
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '26px' }}>
+              <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: c.a.name.length > 11 ? '52px' : '66px', lineHeight: 1.02 }}>
+                  {cut(c.a.name, 14)}
+                </span>
+                <span
+                  style={{
+                    display: 'flex',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    letterSpacing: '0.16em',
+                    color: '#5d6c6f',
+                    marginTop: '8px',
+                  }}
+                >
+                  {form(c.a)}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '150px' }}>
+                <span style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '30px', color: '#8a999c' }}>
+                  vs
+                </span>
+              </div>
+
+              <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: c.b.name.length > 11 ? '52px' : '66px', lineHeight: 1.02 }}>
+                  {cut(c.b.name, 14)}
+                </span>
+                <span
+                  style={{
+                    display: 'flex',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    letterSpacing: '0.16em',
+                    color: '#5d6c6f',
+                    marginTop: '8px',
+                  }}
+                >
+                  {form(c.b, true)}
+                </span>
+              </div>
+            </div>
+
+            {/* Projection band */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
-                padding: '8px 26px',
-                border: `2px solid ${accent}88`,
-                fontSize: '18px',
-                fontWeight: 700,
-                letterSpacing: '0.4em',
-                color: accent,
-                textTransform: 'uppercase',
+                justifyContent: 'center',
+                gap: '22px',
+                marginTop: '28px',
+                padding: '14px 0',
+                borderTop: '1px solid rgba(23,35,38,0.18)',
+                borderBottom: '1px solid rgba(23,35,38,0.18)',
               }}
             >
-              <div style={{ display: 'flex', width: '10px', height: '10px', background: accent, transform: 'rotate(45deg)' }} />
-              <span style={{ display: 'flex' }}>GAME OF THE WEEK</span>
-              <div style={{ display: 'flex', width: '10px', height: '10px', background: accent, transform: 'rotate(45deg)' }} />
+              <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '42px', color: BRASS_DEEP }}>{projA}</span>
+              <span
+                style={{
+                  display: 'flex',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '0.3em',
+                  textTransform: 'uppercase',
+                  color: '#6b7a7d',
+                }}
+              >
+                Projected
+              </span>
+              <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '42px', color: BRASS_DEEP }}>{projB}</span>
             </div>
-          </div>
-        )}
 
-        {/* Tale of the tape */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '44px',
-            padding: '0 64px',
-            zIndex: 2,
-          }}
-        >
-          {side(c.a, 'flex-end')}
+            {favLine ? (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  letterSpacing: '0.26em',
+                  textTransform: 'uppercase',
+                  color: '#5d6c6f',
+                  marginTop: '12px',
+                }}
+              >
+                {favLine}
+              </div>
+            ) : null}
+          </div>
+
+          {/* Perforation + stub */}
           <div
             style={{
               display: 'flex',
-              fontFamily: 'DMSerif',
-              fontStyle: 'italic',
-              fontSize: '44px',
-              color: accent,
+              flexDirection: 'column',
+              width: '250px',
+              padding: '30px 26px 26px',
+              borderLeft: '2px dashed rgba(23,35,38,0.28)',
             }}
           >
-            vs.
-          </div>
-          {side(c.b, 'flex-start')}
-        </div>
-
-        {/* Projection + H2H ledger */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '0 56px 28px',
-            zIndex: 2,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '16px',
-              fontFamily: 'DMSerif',
-              fontSize: '40px',
-              color: accent,
-            }}
-          >
-            <span style={{ display: 'flex' }}>{projA}</span>
-            <span style={{ display: 'flex', fontSize: '24px', color: '#6b7280', fontFamily: 'JetBrains', letterSpacing: '0.3em' }}>PROJ</span>
-            <span style={{ display: 'flex' }}>{projB}</span>
-          </div>
-          {favLine && (
-            <div
+            <span
               style={{
                 display: 'flex',
-                fontSize: '13px',
+                fontSize: '11px',
                 fontWeight: 700,
-                letterSpacing: '0.32em',
-                color: accent,
+                letterSpacing: '0.3em',
                 textTransform: 'uppercase',
+                color: '#6b7a7d',
               }}
             >
-              {favLine}
-            </div>
-          )}
-          <div
-            style={{
-              display: 'flex',
-              fontSize: '15px',
-              fontWeight: 700,
-              letterSpacing: '0.28em',
-              color: '#9ca3af',
-              textTransform: 'uppercase',
-            }}
-          >
-            {h2hLine}
+              The Ledger
+            </span>
+
+            <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '46px', lineHeight: 1.05, marginTop: '10px' }}>
+              {c.h2h.meetings > 0 ? `${c.h2h.winsA}–${c.h2h.winsB}` : '—'}
+            </span>
+            <span
+              style={{
+                display: 'flex',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: '#5d6c6f',
+                marginTop: '6px',
+              }}
+            >
+              {c.h2h.meetings > 0
+                ? `${c.h2h.meetings} meeting${c.h2h.meetings === 1 ? '' : 's'}`
+                : 'First meeting'}
+            </span>
+
+            {streak ? (
+              <div style={{ display: 'flex', flexDirection: 'column', marginTop: '16px' }}>
+                <span
+                  style={{
+                    display: 'flex',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    letterSpacing: '0.26em',
+                    textTransform: 'uppercase',
+                    color: '#7b8a7f',
+                  }}
+                >
+                  Current run
+                </span>
+                <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '22px', marginTop: '3px' }}>
+                  {streak}
+                </span>
+              </div>
+            ) : null}
+
+            {lastMeeting ? (
+              <div style={{ display: 'flex', flexDirection: 'column', marginTop: 'auto' }}>
+                <span
+                  style={{
+                    display: 'flex',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    letterSpacing: '0.26em',
+                    textTransform: 'uppercase',
+                    color: '#6b7a7d',
+                  }}
+                >
+                  Last time
+                </span>
+                <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '20px', marginTop: '4px' }}>
+                  {lastMeeting}
+                </span>
+              </div>
+            ) : null}
           </div>
+        </div>
+
+        {/* Foot */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '1200px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 84px 26px',
+            color: BRASS_HI,
+            fontSize: '14px',
+            fontWeight: 700,
+            letterSpacing: '0.28em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span style={{ display: 'flex' }}>Form · Projections · The All-Time Ledger</span>
+          <span style={{ display: 'flex' }}>thesundaychronicle.app</span>
         </div>
       </div>
     ),
@@ -372,14 +626,12 @@ function renderMatchupCard(
       height: 630,
       fonts,
       headers: {
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
+        'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
       },
     },
   )
 }
 
-// Offseason / no-live-week fallback — keeps shared links from losing their
-// preview image when the slate is empty.
 function renderOffseasonCard(
   leagueName: string,
   fonts: Awaited<ReturnType<typeof loadFonts>>,

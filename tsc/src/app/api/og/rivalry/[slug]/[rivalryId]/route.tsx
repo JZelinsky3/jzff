@@ -1,11 +1,16 @@
 // OG image generator for individual rivalry pages.
 // URL: /api/og/rivalry/<slug>/<rivalryId>
 //
-// Renders a 1200x630 PNG "tale of the tape" card. Layout, fonts, and
-// imagery are designed to match the rivalry detail page's editorial vibe
-// and to actually carry product signal — the character pair is chosen by
-// rivalry STATS (blowout vs deadlocked vs high-scoring vs ancient feud)
-// rather than dropped in as decoration. See `pickRivalryTheme`.
+// Renders a 1200x630 "fight bill": both managers as monogram medallions
+// either side of the series score, a tale of the tape underneath, and the
+// meeting history along the foot. Oxblood and cream on near-black, the
+// same room as the Rivalries chapter card.
+//
+// The theme from `pickRivalryTheme` still drives the accent and the stamp
+// label, because it is chosen from rivalry STATS (blowout vs deadlocked vs
+// high-scoring vs ancient feud) and is real signal. Its emoji character
+// pairs are deliberately NOT rendered: emoji read as cheap next to the
+// rest of the site.
 //
 // CDN-cached per (slug, rivalryId); busted only when the league bundle's
 // `league-<id>` tag is revalidated by sync.
@@ -35,7 +40,7 @@ type RivalrySide = {
 
 type Rivalry = RivalrySummary & {
   name: string
-  last_meeting: { year: number; week: number } | null
+  last_meeting: { year: number; week: number; a_score?: number; b_score?: number } | null
   leader_name: string | null
   ties_count: number
   manager_a: RivalrySide
@@ -87,31 +92,77 @@ export async function GET(
   }
 
   const themeCtx = buildThemeContext(rivalriesData!.rivalries)
-  const { theme, pair } = pickRivalryTheme(rivalry, themeCtx)
+  // Only the theme is used; its emoji `pair` is intentionally ignored.
+  const { theme } = pickRivalryTheme(rivalry, themeCtx)
   const fonts = await loadFonts()
 
-  return renderRivalryCard(league.name, rivalry, theme, pair, fonts)
+  return renderRivalryCard(league.name, rivalry, theme, fonts)
+}
+
+
+const INK        = '#140d0b'
+const INK_SOFT   = '#1d1310'
+const CREAM      = '#f4ebd8'
+const CREAM_SOFT = '#c9c0ad'
+const CREAM_MUTE = '#96705f'
+const OXBLOOD    = '#c86848'
+const OXBLOOD_DEEP = '#7e3a26'
+const DOMAIN     = 'thesundaychronicle.app'
+
+function Star({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6L12 2z" />
+    </svg>
+  )
+}
+
+function monogram(name: string): string {
+  return (
+    (name ?? '')
+      .replace(/[^A-Za-z\s]/g, '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]!.toUpperCase())
+      .join('') || '★'
+  )
+}
+
+function clip(s: string, max: number): string {
+  const t = (s ?? '').trim()
+  return t.length <= max ? t : `${t.slice(0, max - 1).trim()}…`
 }
 
 function renderRivalryCard(
   leagueName: string,
   rv: Rivalry,
   theme: ReturnType<typeof pickRivalryTheme>['theme'],
-  pair: readonly [string, string],
   fonts: Awaited<ReturnType<typeof loadFonts>>,
 ) {
-  const aWins = rv.manager_a.wins
-  const bWins = rv.manager_b.wins
-  const ties = rv.ties_count
+  const a = rv.manager_a
+  const b = rv.manager_b
+  const aWins = a.wins
+  const bWins = b.wins
   const aLeads = aWins > bWins
   const bLeads = bWins > aWins
   const isDeadlocked = rv.is_deadlocked && rv.total_meetings > 0
+  // The theme palette is web red/amber; warm it into the oxblood room so
+  // the accent reads editorial rather than alert-box.
+  const ACCENT_MAP: Record<string, string> = {
+    '#ef4444': '#c4553a',
+    '#dc2626': '#b8462f',
+    '#d97706': '#c07a2e',
+    '#9ca3af': '#a08d80',
+    '#e8c889': '#d8a962',
+  }
+  const accent = ACCENT_MAP[theme.accent] ?? theme.accent
 
   const verdict = rv.total_meetings === 0
-    ? 'NEVER MET'
+    ? 'Never met'
     : isDeadlocked
-      ? `DEADLOCKED ${aWins}—${bWins}`
-      : `${(rv.leader_name ?? '').toUpperCase()} LEADS`
+      ? 'Dead level'
+      : `${clip(rv.leader_name ?? '', 12)} leads`
 
   const meetingsLine = rv.total_meetings === 0
     ? 'NO MEETINGS ON RECORD'
@@ -119,13 +170,78 @@ function renderRivalryCard(
         rv.first_meeting_year ? `FIRST MET ${rv.first_meeting_year}` : null,
         `${rv.total_meetings} MEETING${rv.total_meetings === 1 ? '' : 'S'}`,
         rv.last_meeting ? `LAST ${rv.last_meeting.year} W${rv.last_meeting.week}` : null,
-      ].filter(Boolean).join(' · ')
+      ].filter(Boolean).join('  ·  ')
 
-  // Background: editorial dark wash with theme-accent corner glows + a
-  // subtle gridiron rule pattern overlay so the card doesn't read as a
-  // flat black rectangle.
-  const gridiron = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
+  // Tale of the tape. Each row is [left, label, right]; the winning side
+  // of each row is tinted so the card can be read at a glance.
+  const lm = rv.last_meeting
+  const lmA = typeof lm?.a_score === 'number' ? lm.a_score : null
+  const lmB = typeof lm?.b_score === 'number' ? lm.b_score : null
+  const lmWinner: 'a' | 'b' | null =
+    lmA == null || lmB == null ? null : lmA === lmB ? null : lmA > lmB ? 'a' : 'b'
+
+  const tape: Array<[string, string, string, 'a' | 'b' | null]> = [
+    // The series score already sits above, so a Wins row would just repeat
+    // it. The last meeting is the fact the card was missing.
+    [
+      lmA != null ? lmA.toFixed(1) : '—',
+      'Last game',
+      lmB != null ? lmB.toFixed(1) : '—',
+      lmWinner,
+    ],
+    [
+      a.avg_ppg ? a.avg_ppg.toFixed(1) : '—',
+      'Avg PPG',
+      b.avg_ppg ? b.avg_ppg.toFixed(1) : '—',
+      a.avg_ppg === b.avg_ppg ? null : a.avg_ppg > b.avg_ppg ? 'a' : 'b',
+    ],
+    [
+      a.high_score ? a.high_score.score.toFixed(1) : '—',
+      'Best',
+      b.high_score ? b.high_score.score.toFixed(1) : '—',
+      !a.high_score || !b.high_score
+        ? null
+        : a.high_score.score === b.high_score.score
+          ? null
+          : a.high_score.score > b.high_score.score
+            ? 'a'
+            : 'b',
+    ],
+  ]
+
+  const side = (name: string, leads: boolean) => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '300px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '104px',
+          height: '104px',
+          borderRadius: '104px',
+          border: `2px solid ${leads ? accent : OXBLOOD_DEEP}`,
+          background: leads ? `${accent}1a` : 'rgba(200,104,72,0.06)',
+          boxShadow: leads ? `0 0 0 6px ${accent}12` : 'none',
+          fontFamily: 'DMSerif',
+          fontSize: '42px',
+          color: leads ? accent : CREAM_SOFT,
+        }}
+      >
+        {monogram(name)}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          fontFamily: 'DMSerif',
+          fontSize: '44px',
+          lineHeight: 1.05,
+          color: CREAM,
+          marginTop: '16px',
+        }}
+      >
+        {clip(name, 12)}
+      </div>
+    </div>
   )
 
   return new ImageResponse(
@@ -136,194 +252,185 @@ function renderRivalryCard(
           height: '630px',
           display: 'flex',
           flexDirection: 'column',
-          background: '#0a0a0a',
-          color: '#f3f4f6',
+          background: `linear-gradient(155deg, ${INK} 0%, #17100d 46%, ${INK_SOFT} 100%)`,
+          color: CREAM,
           fontFamily: 'JetBrains',
           position: 'relative',
         }}
       >
-        {/* Gridiron rule overlay */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            opacity: 0.5,
-            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
-        {/* Theme-accent corner glows */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            background: `radial-gradient(circle at 10% 20%, ${theme.accent}33 0%, transparent 45%), radial-gradient(circle at 90% 80%, ${theme.accent}1f 0%, transparent 45%)`,
+            background: `radial-gradient(circle at 20% 26%, ${accent}20 0%, transparent 46%), radial-gradient(circle at 82% 84%, ${OXBLOOD_DEEP}2e 0%, transparent 46%)`,
           }}
         />
 
-        {/* TOP BAR: league kicker + masthead */}
+        {/* Top bar */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '32px 56px 0',
-            fontSize: '17px',
+            padding: '26px 60px 0',
+            fontSize: '15px',
+            fontWeight: 700,
             letterSpacing: '0.3em',
-            color: theme.accent,
             textTransform: 'uppercase',
-            zIndex: 2,
+            color: CREAM_MUTE,
           }}
         >
-          <span style={{ display: 'flex' }}>{leagueName.toUpperCase()} · HEAD-TO-HEAD</span>
-          <span style={{ display: 'flex', color: '#9ca3af', letterSpacing: '0.32em' }}>
-            THE SUNDAY CHRONICLE
-          </span>
+          <span style={{ display: 'flex' }}>{clip(leagueName, 26).toUpperCase()} · HEAD-TO-HEAD</span>
+          <span style={{ display: 'flex' }}>THE SUNDAY CHRONICLE</span>
         </div>
 
-        {/* THEME BANNER */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '14px',
-            zIndex: 2,
-          }}
-        >
+        {/* Theme stamp */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '18px' }}>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '16px',
-              padding: '7px 22px',
-              border: `1px solid ${theme.accent}66`,
-              background: `${theme.accent}12`,
-              fontSize: '15px',
-              letterSpacing: '0.4em',
-              color: theme.accent,
-              textTransform: 'uppercase',
+              gap: '12px',
+              padding: '7px 20px',
+              border: `1px solid ${accent}`,
+              fontSize: '13px',
               fontWeight: 700,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              color: accent,
             }}
           >
-            <div style={{ display: 'flex', width: '24px', height: '1px', background: theme.accent }} />
-            <span style={{ display: 'flex' }}>{theme.label}</span>
-            <div style={{ display: 'flex', width: '24px', height: '1px', background: theme.accent }} />
+            <Star size={12} color={accent} />
+            <span style={{ display: 'flex' }}>{clip(rv.name || theme.label, 26)}</span>
+            <Star size={12} color={accent} />
           </div>
         </div>
 
-        {/* MAIN TALE OF THE TAPE */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 60px',
-            zIndex: 2,
-          }}
-        >
-          {/* LEFT SIDE */}
-          <Side
-            emoji={pair[0]}
-            name={rv.manager_a.name}
-            wins={aWins}
-            ppg={rv.manager_a.avg_ppg}
-            highScore={rv.manager_a.high_score?.score ?? null}
-            leading={aLeads}
-            accent={theme.accent}
-            align="left"
-          />
+        {/* Bill + tape, centred in the space between bar and foot. */}
+        <div style={{ display: 'flex', flexGrow: 1, flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {side(a.name, aLeads)}
 
-          {/* CENTER: verdict block */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '6px',
-              minWidth: '260px',
-            }}
-          >
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '220px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '76px', lineHeight: 1, color: aLeads ? accent : CREAM }}>
+                {aWins}
+              </span>
+              <span
+                style={{
+                  display: 'flex',
+                  fontFamily: 'DMSerif',
+                  fontSize: '58px',
+                  lineHeight: 1,
+                  color: CREAM_MUTE,
+                  padding: '0 6px',
+                }}
+              >
+                &#8211;
+              </span>
+              <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '76px', lineHeight: 1, color: bLeads ? accent : CREAM }}>
+                {bWins}
+              </span>
+            </div>
             <div
               style={{
+                display: 'flex',
                 fontFamily: 'DMSerif',
                 fontStyle: 'italic',
-                fontSize: '34px',
-                color: theme.accent,
-                marginBottom: '4px',
-                display: 'flex',
-              }}
-            >
-              vs.
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '20px',
-                fontFamily: 'DMSerif',
-              }}
-            >
-              <span style={{ display: 'flex', fontSize: '108px', lineHeight: 1, color: aLeads ? '#f3f4f6' : '#6b7280' }}>{aWins}</span>
-              <div style={{ display: 'flex', width: '34px', height: '6px', background: '#4b5563', borderRadius: '3px' }} />
-              <span style={{ display: 'flex', fontSize: '108px', lineHeight: 1, color: bLeads ? '#f3f4f6' : '#6b7280' }}>{bWins}</span>
-              {ties > 0 && (
-                <>
-                  <div style={{ display: 'flex', width: '34px', height: '6px', background: '#4b5563', borderRadius: '3px' }} />
-                  <span style={{ display: 'flex', fontSize: '108px', lineHeight: 1, color: '#6b7280' }}>{ties}</span>
-                </>
-              )}
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                padding: '6px 14px',
-                marginTop: '10px',
-                border: `1px solid ${theme.accent}`,
-                background: `${theme.accent}1a`,
-                color: theme.accent,
-                fontFamily: 'JetBrains',
-                fontWeight: 700,
-                fontSize: '15px',
-                letterSpacing: '0.22em',
-                textTransform: 'uppercase',
+                fontSize: '22px',
+                color: CREAM_MUTE,
+                marginTop: '8px',
               }}
             >
               {verdict}
             </div>
           </div>
 
-          {/* RIGHT SIDE */}
-          <Side
-            emoji={pair[1]}
-            name={rv.manager_b.name}
-            wins={bWins}
-            ppg={rv.manager_b.avg_ppg}
-            highScore={rv.manager_b.high_score?.score ?? null}
-            leading={bLeads}
-            accent={theme.accent}
-            align="right"
-          />
+          {side(b.name, bLeads)}
         </div>
 
-        {/* FOOTER */}
+        {/* Tale of the tape */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '760px',
+            marginTop: '30px',
+            marginLeft: '220px',
+          }}
+        >
+          {tape.map(([left, label, right, winner], i) => (
+            <div
+              key={label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '9px 0',
+                borderTop: i === 0 ? `1px solid rgba(200,104,72,0.22)` : 'none',
+                borderBottom: `1px solid rgba(200,104,72,0.22)`,
+              }}
+            >
+              <span
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  width: '290px',
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  color: winner === 'a' ? accent : CREAM_SOFT,
+                }}
+              >
+                {left}
+              </span>
+              <span
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  width: '180px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '0.28em',
+                  textTransform: 'uppercase',
+                  color: CREAM_MUTE,
+                }}
+              >
+                {label}
+              </span>
+              <span
+                style={{
+                  display: 'flex',
+                  width: '290px',
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  color: winner === 'b' ? accent : CREAM_SOFT,
+                }}
+              >
+                {right}
+              </span>
+            </div>
+          ))}
+        </div>
+        </div>
+
+        {/* Foot */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '0 56px 28px',
+            padding: '0 60px 26px',
             fontSize: '13px',
-            letterSpacing: '0.28em',
-            color: '#6b7280',
+            fontWeight: 700,
+            letterSpacing: '0.26em',
             textTransform: 'uppercase',
-            zIndex: 2,
+            color: CREAM_MUTE,
           }}
         >
           <span style={{ display: 'flex' }}>{meetingsLine}</span>
-          <span style={{ display: 'flex', color: theme.accent, fontWeight: 700 }}>JZFF.ONLINE</span>
+          <span style={{ display: 'flex', color: OXBLOOD }}>{DOMAIN}</span>
         </div>
       </div>
     ),
@@ -331,96 +438,9 @@ function renderRivalryCard(
       width: 1200,
       height: 630,
       fonts,
-      emoji: 'twemoji',
       headers: {
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
+        'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
       },
     },
-  )
-}
-
-function Side(props: {
-  emoji: string
-  name: string
-  wins: number
-  ppg: number
-  highScore: number | null
-  leading: boolean
-  accent: string
-  align: 'left' | 'right'
-}) {
-  const { emoji, name, wins, ppg, highScore, leading, accent, align } = props
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: align === 'left' ? 'flex-start' : 'flex-end',
-        gap: '14px',
-        width: '320px',
-      }}
-    >
-      {/* Character emoji in a glowing ring */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '200px',
-          height: '200px',
-          borderRadius: '50%',
-          border: leading ? `3px solid ${accent}` : '2px solid #272727',
-          background: leading
-            ? `radial-gradient(circle, ${accent}33 0%, #0a0a0a 70%)`
-            : 'radial-gradient(circle, #1a1a1a 0%, #0a0a0a 70%)',
-          fontSize: '128px',
-          lineHeight: 1,
-          boxShadow: leading ? `0 0 60px ${accent}55` : 'none',
-        }}
-      >
-        {emoji}
-      </div>
-
-      {/* Name */}
-      <div
-        style={{
-          fontFamily: 'DMSerif',
-          fontSize: '40px',
-          lineHeight: 1,
-          color: leading ? '#f3f4f6' : '#d1d5db',
-          maxWidth: '320px',
-          textAlign: align,
-          display: 'flex',
-        }}
-      >
-        {name}
-      </div>
-
-      {/* Stats line */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: align === 'left' ? 'flex-start' : 'flex-end',
-          gap: '4px',
-          fontFamily: 'JetBrains',
-          fontSize: '15px',
-          letterSpacing: '0.18em',
-          color: '#9ca3af',
-          textTransform: 'uppercase',
-        }}
-      >
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <span style={{ display: 'flex', color: '#f3f4f6', fontWeight: 700 }}>{wins} W</span>
-          <span style={{ display: 'flex' }}>·</span>
-          <span style={{ display: 'flex' }}>{ppg.toFixed(1)} PPG</span>
-        </div>
-        {highScore !== null && (
-          <div style={{ display: 'flex', color: '#6b7280' }}>
-            BEST: {highScore.toFixed(1)}
-          </div>
-        )}
-      </div>
-    </div>
   )
 }

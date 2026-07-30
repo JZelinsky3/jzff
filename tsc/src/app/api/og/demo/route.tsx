@@ -124,7 +124,7 @@ export async function GET() {
         />
 
         {/* Gold sash strips — the site's identity stripe, top and bottom. */}
-        <div style={{ display: 'flex', height: '14px', background: GOLD }} />
+        <div style={{ display: 'flex', height: '16px', background: GOLD }} />
 
         {/* Body */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 0 0 84px' }}>
@@ -407,29 +407,6 @@ export async function GET() {
 
             {/* Rust seal overlapping the cover corner — where a real league
                 carries its volume number, the demo declares itself. */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '76px',
-                right: '30px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '92px',
-                height: '92px',
-                borderRadius: '92px',
-                border: `3px solid ${RUST}`,
-                background: `${CREAM}e6`,
-                color: RUST,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                transform: 'rotate(12deg)',
-              }}
-            >
-              <span style={{ display: 'flex', fontSize: '13px', letterSpacing: '0.2em' }}>Live</span>
-              <span style={{ display: 'flex', fontSize: '13px', letterSpacing: '0.2em', marginTop: '2px' }}>Demo</span>
-            </div>
           </div>
         </div>
 

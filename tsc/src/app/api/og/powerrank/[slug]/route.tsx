@@ -82,6 +82,14 @@ export async function GET(
   return renderPodiumCard(league.name, latest.week, top, fonts)
 }
 
+function Star({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6L12 2z" />
+    </svg>
+  )
+}
+
 function backgroundLayers() {
   // Faint diamond grid in gold-deep + radial corner washes — same restraint
   // as the on-page glow so the cream paper stays the dominant surface.
@@ -191,11 +199,11 @@ function renderPodiumCard(
               marginBottom: '6px',
             }}
           >
-            <span style={{ display: 'flex' }}>★</span>
+            <Star size={28} color={BLACK} />
             <span style={{ display: 'flex' }}>{weekLabel}</span>
             <span style={{ display: 'flex' }}>·</span>
             <span style={{ display: 'flex' }}>THE BOARD</span>
-            <span style={{ display: 'flex' }}>★</span>
+            <Star size={28} color={BLACK} />
           </div>
           <div
             style={{

@@ -35,7 +35,11 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // `/api/support` is the Support widget's inbox — league members browsing a
 // public almanac are usually signed out and must still be able to send a
 // note. The handler has its own honeypot + throttle.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/']
+// `/see/` is the share hub's public landing pages. They exist to be sent to
+// people who have no account, so a /login bounce would defeat the point.
+// The index that lists them (/admin/share) is NOT public — it sits behind
+// the same site-admin gate as the rest of /admin.
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })

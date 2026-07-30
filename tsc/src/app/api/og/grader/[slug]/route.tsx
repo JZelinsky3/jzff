@@ -326,12 +326,14 @@ function renderFrontPageCard(leagueName: string, tradeCount: number, fonts: Font
           position: 'relative',
         }}
       >
-        {/* red corner tag, like the page's "Deal of the season" */}
+        {/* Red corner tag, like the page's "Deal of the season". Sits above
+            the paper's top edge as a tab: at its old y it landed on top of
+            "Official wire edition" and clipped it. */}
         <div
           style={{
             position: 'absolute',
-            top: '26px',
-            right: '-12px',
+            top: '-18px',
+            right: '-14px',
             display: 'flex',
             background: SIREN,
             color: '#fdf3e4',

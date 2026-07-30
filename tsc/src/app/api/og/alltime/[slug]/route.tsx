@@ -493,7 +493,9 @@ function renderCardInner(d: CardData, fonts: Fonts) {
         />
 
         {/* Gold band + hairline: the page's double rule, on the case lid. */}
-        <div style={{ display: 'flex', height: '9px', background: GOLD }} />
+        {/* Top sash in the same card stock as the foot strip, so the
+            card is bracketed by one material rather than two. */}
+        <div style={{ display: 'flex', height: '16px', background: PAPER }} />
         <div style={{ display: 'flex', height: '1px', background: GOLD_DEEP, marginTop: '3px', opacity: 0.6 }} />
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 56px 0 84px', gap: '34px' }}>

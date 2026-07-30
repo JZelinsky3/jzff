@@ -20,7 +20,6 @@ export const runtime = 'nodejs'
 
 const FONT_DIR = path.join(process.cwd(), 'public', 'og', 'fonts')
 const GOLD = '#e8c889'
-const RED = '#dc2626'
 
 async function loadFonts() {
   const [serif, serifItalic, mono, monoBold] = await Promise.all([
@@ -108,12 +107,36 @@ function pickFeatured(data: NonNullable<RecordsWatchFile>): Featured {
   return { mode: 'empty' }
 }
 
-function kickerFor(mode: Mode): { label: string; color: string } {
+// Lifted from the records-watch page's :root: carbon-maroon canvas with
+// the cool blue tracker accent, not the midnight blue I had invented.
+const NIGHT      = '#0f0a0c'  // --rw-bg
+const NIGHT_SOFT = '#1d141a'  // --rw-card
+const RW_CREAM   = '#f4ebd8'  // --rw-cream
+const RW_MUTE    = '#c6a89e'  // --rw-mute
+const RW_LINE    = '#3a2128'  // --rw-line
+
+function RWStar({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6L12 2z" />
+    </svg>
+  )
+}
+
+function rcut(s: string, max: number): string {
+  const t = (s ?? '').trim()
+  return t.length <= max ? t : `${t.slice(0, max - 1).trim()}…`
+}
+
+// The pace board's accent per mode. The old kicker palette was web red /
+// grey; these sit in the same room as the rest of the site.
+function paceAccent(mode: Mode | 'empty'): { label: string; color: string } {
   switch (mode) {
-    case 'broken':      return { label: 'RECORD BROKEN', color: RED }
-    case 'brink':       return { label: 'AT THE BRINK',  color: GOLD }
-    case 'on_pace':     return { label: 'ON PACE',       color: GOLD }
-    case 'just_missed': return { label: 'JUST MISSED',   color: '#9ca3af' }
+    case 'broken':      return { label: 'Record broken', color: '#a4c4d6' }  // --rw-ember-hi
+    case 'brink':       return { label: 'At the brink',  color: '#7fa8bd' }  // --rw-ember
+    case 'on_pace':     return { label: 'On pace',       color: '#7fa8bd' }
+    case 'just_missed': return { label: 'Just missed',   color: '#4a7d96' }  // --rw-ember-deep
+    default:            return { label: 'The watch',     color: '#7fa8bd' }
   }
 }
 
@@ -123,13 +146,20 @@ function renderCard(
   f: Featured,
   fonts: Awaited<ReturnType<typeof loadFonts>>,
 ) {
-  const gridiron = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
-  )
+  // THE PACE BOARD — the chase drawn as a bar running at the record line.
   const isEmpty = f.mode === 'empty'
-  const kicker = isEmpty ? null : kickerFor((f as { mode: Mode }).mode)
-  const accent = isEmpty ? GOLD : kicker!.color
   const item = isEmpty ? null : (f as { item: WatchItem }).item
+  const { label, color } = paceAccent(f.mode)
+
+  // Clamp so a runaway projection can't draw past the track.
+  const pct = item ? Math.max(4, Math.min(100, Math.round(item.pct))) : 0
+
+  const counts: Array<[number, string]> = [
+    [meter.broken, 'Broken'],
+    [meter.on_pace, 'On pace'],
+    [meter.brink, 'Brink'],
+    [meter.just_missed, 'Just missed'],
+  ]
 
   return new ImageResponse(
     (
@@ -139,8 +169,8 @@ function renderCard(
           height: '630px',
           display: 'flex',
           flexDirection: 'column',
-          background: '#0a0a0a',
-          color: '#f3f4f6',
+          background: `linear-gradient(155deg, #0a0608 0%, ${NIGHT} 46%, ${NIGHT_SOFT} 100%)`,
+          color: RW_CREAM,
           fontFamily: 'JetBrains',
           position: 'relative',
         }}
@@ -150,222 +180,231 @@ function renderCard(
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            opacity: 0.5,
-            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            background: `radial-gradient(circle at 14% 22%, ${accent}26 0%, transparent 50%), radial-gradient(circle at 86% 82%, ${accent}14 0%, transparent 50%)`,
+            background: `radial-gradient(circle at 22% 28%, ${color}22 0%, transparent 46%), radial-gradient(circle at 84% 84%, ${color}18 0%, transparent 44%)`,
           }}
         />
 
-        {/* Top bar */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '32px 56px 0',
-            fontSize: '17px',
-            letterSpacing: '0.3em',
-            color: GOLD,
-            textTransform: 'uppercase',
-            zIndex: 2,
-          }}
-        >
-          <span style={{ display: 'flex' }}>{leagueName.toUpperCase()} · RECORDS WATCH</span>
-          <span style={{ display: 'flex', color: '#9ca3af', letterSpacing: '0.32em' }}>
-            THE SUNDAY CHRONICLE
-          </span>
-        </div>
+        <div style={{ display: 'flex', height: '16px', background: color }} />
 
-        {/* Kicker badge */}
-        {kicker && (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              marginTop: '36px',
-              zIndex: 2,
-            }}
-          >
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 56px 0 84px' }}>
+          {/* Left — masthead */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '28px' }}>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '14px',
-                padding: '8px 22px',
-                border: `2px solid ${accent}88`,
-                fontSize: '17px',
+                fontSize: '16px',
                 fontWeight: 700,
                 letterSpacing: '0.4em',
-                color: accent,
                 textTransform: 'uppercase',
+                color: color,
               }}
             >
-              <div style={{ display: 'flex', width: '8px', height: '8px', background: accent, transform: 'rotate(45deg)' }} />
-              <span style={{ display: 'flex' }}>{kicker.label}</span>
-              <div style={{ display: 'flex', width: '8px', height: '8px', background: accent, transform: 'rotate(45deg)' }} />
+              <RWStar size={15} color={color} />
+              <span style={{ display: 'flex' }}>{rcut(leagueName, 22)}</span>
+              <RWStar size={15} color={color} />
             </div>
-          </div>
-        )}
 
-        {/* Feature block */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: isEmpty ? '120px 96px 0' : '24px 80px 0',
-            zIndex: 2,
-            textAlign: 'center',
-            gap: '12px',
-          }}
-        >
-          {item && (
-            <>
-              <div
-                style={{
-                  display: 'flex',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  letterSpacing: '0.32em',
-                  color: '#9ca3af',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {item.category}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  fontFamily: 'DMSerif',
-                  fontSize: '62px',
-                  lineHeight: 1.05,
-                  color: '#f3f4f6',
-                  maxWidth: '1020px',
-                }}
-              >
-                {stripTags(item.title_html)}
-              </div>
-              {/* Holder line */}
-              <div
-                style={{
-                  display: 'flex',
-                  marginTop: '10px',
-                  alignItems: 'baseline',
-                  gap: '14px',
-                  fontFamily: 'DMSerif',
-                  fontStyle: 'italic',
-                  fontSize: '30px',
-                  color: '#d1d5db',
-                }}
-              >
-                <span style={{ display: 'flex' }}>{item.holder}</span>
-                <span
-                  style={{
-                    display: 'flex',
-                    fontFamily: 'JetBrains',
-                    fontStyle: 'normal',
-                    fontSize: '15px',
-                    fontWeight: 700,
-                    letterSpacing: '0.28em',
-                    color: '#6b7280',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {item.holder_when}
-                </span>
-              </div>
-              {/* Chaser line */}
-              <div
-                style={{
-                  display: 'flex',
-                  marginTop: '14px',
-                  alignItems: 'baseline',
-                  gap: '14px',
-                  fontFamily: 'DMSerif',
-                  fontSize: '34px',
-                  color: accent,
-                }}
-              >
-                <span style={{ display: 'flex' }}>{item.chaser}</span>
-                <span
-                  style={{
-                    display: 'flex',
-                    fontFamily: 'JetBrains',
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    letterSpacing: '0.22em',
-                    color: '#9ca3af',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {item.chaser_value}
-                </span>
-              </div>
-              {item.chaser_projection && (
-                <div
-                  style={{
-                    display: 'flex',
-                    marginTop: '2px',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    letterSpacing: '0.28em',
-                    color: '#6b7280',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {item.chaser_projection}
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '86px', lineHeight: 1.02, color: RW_CREAM, marginTop: '22px' }}>
+              Records
+            </div>
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '86px', lineHeight: 1.02, color: color }}>
+              Watch.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: '120px',
+                height: '3px',
+                background: `linear-gradient(90deg, ${color}, transparent)`,
+                marginTop: '24px',
+              }}
+            />
+
+            {/* Meter counts */}
+            <div style={{ display: 'flex', gap: '30px', marginTop: '24px' }}>
+              {counts.map(([n, cl]) => (
+                <div key={cl} style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '34px', color: n > 0 ? RW_CREAM : RW_MUTE }}>
+                    {n}
+                  </span>
+                  <span
+                    style={{
+                      display: 'flex',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      color: RW_MUTE,
+                      marginTop: '4px',
+                    }}
+                  >
+                    {cl}
+                  </span>
                 </div>
-              )}
-            </>
-          )}
-          {isEmpty && (
-            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '76px', color: '#f3f4f6' }}>
-              No records in reach.
+              ))}
             </div>
-          )}
-        </div>
 
-        {/* Meter strip */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 56,
-            right: 56,
-            bottom: 28,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingTop: '14px',
-            borderTop: '1px solid #272727',
-            zIndex: 2,
-          }}
-        >
-          <div style={{ display: 'flex', gap: '28px' }}>
-            {meterCell(meter.broken,      'BROKEN',      RED)}
-            {meterCell(meter.on_pace,     'ON PACE',     GOLD)}
-            {meterCell(meter.brink,       'BRINK',       GOLD)}
-            {meterCell(meter.just_missed, 'JUST MISSED', '#9ca3af')}
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '13px',
+                fontWeight: 700,
+                letterSpacing: '0.26em',
+                textTransform: 'uppercase',
+                color: RW_MUTE,
+                marginTop: '26px',
+              }}
+            >
+              THROUGH {meter.through.toUpperCase()}
+            </div>
           </div>
+
+          {/* Right — the pace board */}
           <div
             style={{
               display: 'flex',
-              fontSize: '14px',
-              fontWeight: 700,
-              letterSpacing: '0.3em',
-              color: '#6b7280',
-              textTransform: 'uppercase',
+              flexDirection: 'column',
+              width: '470px',
+              padding: '24px 26px 22px',
+              background: 'rgba(29,20,26,0.78)',
+              border: `1px solid ${RW_LINE}`,
+              borderRadius: '10px',
+              boxShadow: '0 26px 60px rgba(0,0,0,0.6)',
             }}
           >
-            THROUGH {meter.through.toUpperCase()}
+            <span
+              style={{
+                display: 'flex',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.32em',
+                textTransform: 'uppercase',
+                color: color,
+              }}
+            >
+              {label}
+            </span>
+
+            <span
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontSize: '30px',
+                lineHeight: 1.14,
+                color: RW_CREAM,
+                marginTop: '10px',
+              }}
+            >
+              {item ? rcut(stripTags(item.title_html), 46) : 'Nothing on the board yet'}
+            </span>
+
+            <div style={{ display: 'flex', height: '1px', background: RW_LINE, marginTop: '16px' }} />
+
+            {/* The chase track: fill to the chaser's pace, record line at 100% */}
+            <div style={{ display: 'flex', flexDirection: 'column', marginTop: '18px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  letterSpacing: '0.22em',
+                  textTransform: 'uppercase',
+                  color: RW_MUTE,
+                }}
+              >
+                <span style={{ display: 'flex' }}>{item ? rcut(item.chaser, 14) : '—'}</span>
+                <span style={{ display: 'flex' }}>{item ? `${pct}% of record` : ''}</span>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  width: '418px',
+                  height: '16px',
+                  background: 'rgba(244,235,216,0.08)',
+                  borderRadius: '2px',
+                  marginTop: '9px',
+                  position: 'relative',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    width: `${Math.round(418 * (pct / 100))}px`,
+                    height: '16px',
+                    background: color,
+                    borderRadius: '2px',
+                  }}
+                />
+                {/* The record line itself */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '-5px',
+                    display: 'flex',
+                    width: '2px',
+                    height: '26px',
+                    background: RW_CREAM,
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  color: RW_MUTE,
+                  marginTop: '9px',
+                }}
+              >
+                <span style={{ display: 'flex' }}>{item ? rcut(item.chaser_value, 26) : ''}</span>
+                <span style={{ display: 'flex', color: RW_CREAM }}>
+                  {item ? `${rcut(item.holder, 10)} ${rcut(item.holder_when, 6)}` : ''}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', height: '1px', background: RW_LINE, marginTop: '18px' }} />
+
+            <span
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '20px',
+                color: RW_MUTE,
+                marginTop: '14px',
+              }}
+            >
+              {item ? rcut(item.record_value, 40) : 'Check back once the season is running.'}
+            </span>
           </div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 84px',
+            background: color,
+            color: '#0f0a0c',
+            fontSize: '14px',
+            fontWeight: 700,
+            letterSpacing: '0.28em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span style={{ display: 'flex' }}>Broken · On Pace · At the Brink</span>
+          <span style={{ display: 'flex' }}>thesundaychronicle.app</span>
         </div>
       </div>
     ),
@@ -374,31 +413,9 @@ function renderCard(
       height: 630,
       fonts,
       headers: {
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
+        'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
       },
     },
-  )
-}
-
-function meterCell(value: number, label: string, valColor: string) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '36px', color: valColor, lineHeight: 1 }}>
-        {value}
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          fontSize: '11px',
-          fontWeight: 700,
-          letterSpacing: '0.28em',
-          color: '#9ca3af',
-          textTransform: 'uppercase',
-        }}
-      >
-        {label}
-      </div>
-    </div>
   )
 }
 

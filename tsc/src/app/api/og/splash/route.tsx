@@ -90,23 +90,32 @@ export async function GET(req: Request) {
           }}
         />
 
-        {/* Inner hairline frame (the same gold-on-ink frame the icon uses) */}
+        {/* Inner hairline frame.
+            Geometry here is set by the hardware, not by taste. The display's
+            own corner radius is ~55pt and it masks whatever sits under it,
+            so the old 20pt inset with a 2.7pt radius had its mitred corners
+            sliced off and read as a broken frame. This sits the frame inside
+            the curve and gives it a radius that echoes the screen instead of
+            fighting it. The top inset is larger than the sides because the
+            Dynamic Island occupies roughly the first 59pt and would cut the
+            top run in half. px(n) is device px at a 1290-wide reference, so
+            divide by 3 for pt. */}
         <div
           style={{
             position: 'absolute',
-            top: px(60), right: px(60), bottom: px(60), left: px(60),
+            top: px(200), right: px(110), bottom: px(150), left: px(110),
             border: `${px(2)}px solid ${GOLD_DEEP}`,
-            borderRadius: px(8),
+            borderRadius: px(90),
             display: 'flex',
           }}
         />
 
-        {/* Corner crest tick marks — small decorative gold ornaments */}
+        {/* Crest ornaments. Formerly four, one per corner, which is exactly
+            where the display's radius eats them; now two, centred astride
+            the top and bottom runs where the frame is straight. */}
         {[
-          { top: px(50), left: px(50) },
-          { top: px(50), right: px(50) },
-          { bottom: px(50), left: px(50) },
-          { bottom: px(50), right: px(50) },
+          { top: `${px(200) - px(11)}px`, left: `${Math.round(w / 2) - px(11)}px` },
+          { bottom: `${px(150) - px(11)}px`, left: `${Math.round(w / 2) - px(11)}px` },
         ].map((pos, i) => (
           <div
             key={i}
@@ -129,7 +138,7 @@ export async function GET(req: Request) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: `${px(120)}px ${px(80)}px`,
+            padding: `${px(150)}px ${px(120)}px`,
           }}
         >
           {/* Top kicker — diamond bullets instead of ★ because JetBrains
@@ -172,8 +181,8 @@ export async function GET(req: Request) {
               lineHeight: 1,
             }}
           >
-            <span style={{ color: CREAM, fontSize: px(180) }}>The Sunday</span>
-            <span style={{ color: GOLD, fontStyle: 'italic', fontSize: px(220), marginTop: px(10) }}>
+            <span style={{ color: CREAM, fontSize: px(158) }}>The Sunday</span>
+            <span style={{ color: GOLD, fontStyle: 'italic', fontSize: px(192), marginTop: px(10) }}>
               Chronicle.
             </span>
           </div>

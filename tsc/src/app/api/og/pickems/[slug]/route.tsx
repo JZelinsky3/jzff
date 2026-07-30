@@ -81,6 +81,14 @@ export async function GET(
 // Mirror of the template's renderRecords() scoring: count correct/incorrect
 // picks across all weeks with known winners, excluding the picker's own game.
 // Sort by right desc, wrong asc, then name.
+function Star({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6L12 2z" />
+    </svg>
+  )
+}
+
 function buildLeaderboard(state: Extract<Awaited<ReturnType<typeof getPickemsState>>, { status: 'ok' }>): Row[] {
   const byUser = new Map<string, { name: string; teamId: string | null; right: number; wrong: number }>()
   for (const p of state.profiles) {
@@ -226,10 +234,10 @@ function renderLeaderboardCard(
               marginBottom: '14px',
             }}
           >
-            <span style={{ display: 'flex' }}>★</span>
+            <Star size={22} color={MAGENTA_HI} />
             <span style={{ display: 'flex' }}>WEEK {currentWeek}</span>
             <span style={{ display: 'flex' }}>PICK&apos;EMS</span>
-            <span style={{ display: 'flex' }}>★</span>
+            <Star size={22} color={MAGENTA_HI} />
           </div>
           <div
             style={{
@@ -274,14 +282,16 @@ function renderLeaderboardCard(
           </div>
         )}
 
-        {/* Footer line */}
+        {/* Spacer, so the footer sits on the baseline in normal flow. */}
+        <div style={{ display: 'flex', flexGrow: 1 }} />
+
+        {/* Footer line. Kept in normal flow rather than absolutely
+            positioned: satori never resolved a width for the absolute box,
+            so space-between had no slack and ran "LOWEST" into "TAP IN". */}
         <div
           style={{
-            position: 'absolute',
-            bottom: 28,
-            left: 60,
-            right: 60,
             display: 'flex',
+            padding: '0 60px 28px',
             justifyContent: 'space-between',
             alignItems: 'center',
             fontSize: '20px',
@@ -292,23 +302,19 @@ function renderLeaderboardCard(
             zIndex: 2,
           }}
         >
-          {hasRows ? (
-            <>
-              <span style={{ display: 'flex', color: CHAMPAGNE }}>
-                LEADER · {leader!.name.toUpperCase()} · {pct}% RIGHT
-              </span>
-              <span style={{ display: 'flex', textAlign: 'right' }}>
-                {rows.length} PICKER{rows.length === 1 ? '' : 'S'} · NO LOGIN
-              </span>
-            </>
-          ) : (
-            <>
-              <span style={{ display: 'flex', color: CHAMPAGNE }}>
-                EVERY MATCHUP · HIGHEST · LOWEST
-              </span>
-              <span style={{ display: 'flex', textAlign: 'right' }}>TAP IN · NO LOGIN</span>
-            </>
-          )}
+          {/* Two direct children, never a fragment: satori counts a
+              fragment as ONE flex child, so space-between had nothing to
+              separate and the halves rendered flush against each other. */}
+          <span style={{ display: 'flex', color: CHAMPAGNE }}>
+            {hasRows
+              ? `LEADER · ${leader!.name.toUpperCase()} · ${pct}% RIGHT`
+              : 'EVERY MATCHUP · HIGHEST · LOWEST'}
+          </span>
+          <span style={{ display: 'flex' }}>
+            {hasRows
+              ? `${rows.length} PICKER${rows.length === 1 ? '' : 'S'} · NO LOGIN`
+              : 'TAP IN · NO LOGIN'}
+          </span>
         </div>
       </div>
     ),

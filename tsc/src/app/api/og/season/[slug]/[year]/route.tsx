@@ -67,20 +67,6 @@ async function loadFonts() {
   ]
 }
 
-function toRoman(n: number): string {
-  if (!Number.isFinite(n) || n <= 0) return ''
-  const map: Array<[number, string]> = [
-    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
-    [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
-    [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
-  ]
-  let out = ''
-  let v = Math.floor(n)
-  for (const [val, sym] of map) {
-    while (v >= val) { out += sym; v -= val }
-  }
-  return out
-}
 
 export async function GET(
   _req: NextRequest,
@@ -137,10 +123,12 @@ export async function GET(
     isFirstTimeChamp,
   }
 
-  const { theme, glyph } = pickChampionTheme(input)
+  // Only the theme is used. Its emoji glyphs are deliberately dropped:
+  // a colour-emoji crown reads cheap next to the rest of the almanac.
+  const { theme } = pickChampionTheme(input)
   const fonts = await loadFonts()
 
-  return renderChampionCard(league.name, season, glyph, theme, allYears, fonts)
+  return renderChampionCard(league.name, season, theme, allYears, fonts)
 }
 
 function computeChampionStreak(
@@ -173,31 +161,83 @@ function computeIsFirstTimeChamp(
   return true
 }
 
+const MAHOG      = '#2a140e'
+const MAHOG_DEEP = '#1b0d09'
+const MAHOG_SOFT = '#381c13'
+const SGOLD      = '#e8c889'
+const SGOLD_DEEP = '#a88a4a'
+const SCREAM     = '#f4ebd8'
+const SCREAM_SOFT = '#c2b49c'
+const SCREAM_MUTE = '#9a7f68'
+
+function SStar({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6L12 2z" />
+    </svg>
+  )
+}
+
+function scut(s: string, max: number): string {
+  const t = (s ?? '').trim()
+  return t.length <= max ? t : `${t.slice(0, max - 1).trim()}…`
+}
+
+function roman(n: number): string {
+  const table: Array<[number, string]> = [
+    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'],
+    [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+  ]
+  let v = Math.max(1, Math.floor(n))
+  let out = ''
+  for (const [num, sym] of table) {
+    while (v >= num) { out += sym; v -= num }
+  }
+  return out
+}
+
 function renderChampionCard(
   leagueName: string,
   season: SeasonFile,
-  glyph: string,
   theme: ReturnType<typeof pickChampionTheme>['theme'],
   allYears: number[],
   fonts: Awaited<ReturnType<typeof loadFonts>>,
 ) {
+  // THE VOLUME — the season as a bound mahogany volume with a gold plate
+  // struck on the cover. The detail view of the Seasons bookshelf card.
   const champion = season.champion!
   const teamName = (champion.team_name ?? champion.owner_name ?? 'Champion').toString()
   const ownerName = (champion.owner_name ?? '').toString()
   const record = champion.record || ''
   const pf = champion.points_for ? champion.points_for.toFixed(1) : null
-  const defeatedLine = season.runner_up?.owner_name
-    ? `defeated ${season.runner_up.owner_name}`
-    : null
+  const defeated = season.runner_up?.owner_name ?? null
 
-  // Volume number relative to league's first recorded year — keeps the
-  // editorial "Volume X · MMXXV" framing the templates use everywhere.
   const firstYear = allYears.length > 0 ? allYears[0] : season.year
   const volume = Math.max(1, season.year - firstYear + 1)
 
-  const gridiron = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
-  )
+  // Plate inner width, less its horizontal padding.
+  const PLATE_TEXT_W = 232
+
+  // A flat average advance is not good enough here: DM Serif runs ~0.42em
+  // for a lowercase-heavy word like "Rizzlers" but ~0.56em for "Bateman",
+  // which is how "Bateman" ended up breaking its final "n" onto a third
+  // line. Weight per character class instead and solve for the size that
+  // fits the longest single word (a word cannot wrap, so it sets the cap).
+  const advance = (ch: string): number => {
+    if (/[A-Z]/.test(ch)) return 0.68
+    if (/[mw]/.test(ch)) return 0.85
+    if (/[iljtfr]/.test(ch)) return 0.32
+    if (/[ .'-]/.test(ch)) return 0.28
+    return 0.52
+  }
+  const wordWidth = (word: string) =>
+    word.split('').reduce((sum, ch) => sum + advance(ch), 0)
+
+  const longestWord = teamName.split(/\s+/).reduce((a, b) => (wordWidth(b) > wordWidth(a) ? b : a), '')
+  // 1.08 keeps a little air rather than sitting exactly on the boundary.
+  const fitForWord = Math.floor(PLATE_TEXT_W / (Math.max(0.5, wordWidth(longestWord)) * 1.08))
+  const fitForWhole = teamName.length > 18 ? 40 : teamName.length > 13 ? 50 : 60
+  const teamSize = Math.max(20, Math.min(fitForWhole, fitForWord))
 
   return new ImageResponse(
     (
@@ -207,199 +247,234 @@ function renderChampionCard(
           height: '630px',
           display: 'flex',
           flexDirection: 'column',
-          background: '#0a0a0a',
-          color: '#f3f4f6',
+          background: `linear-gradient(155deg, ${MAHOG_DEEP} 0%, ${MAHOG} 48%, ${MAHOG_SOFT} 100%)`,
+          color: SCREAM,
           fontFamily: 'JetBrains',
           position: 'relative',
         }}
       >
-        {/* Gridiron rule overlay */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            opacity: 0.5,
-            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
-        {/* Theme-accent radial halo behind the glyph */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            background: `radial-gradient(circle at 50% 45%, ${theme.accent}33 0%, transparent 38%), radial-gradient(circle at 10% 90%, ${theme.accent}1a 0%, transparent 45%), radial-gradient(circle at 90% 10%, ${theme.accent}1a 0%, transparent 45%)`,
+            background: `radial-gradient(circle at 24% 30%, ${SGOLD}1e 0%, transparent 46%), radial-gradient(circle at 84% 82%, ${theme.accent}1c 0%, transparent 44%)`,
           }}
         />
 
-        {/* TOP BAR */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '32px 56px 0',
-            fontSize: '17px',
-            letterSpacing: '0.3em',
-            color: theme.accent,
-            textTransform: 'uppercase',
-            zIndex: 2,
-          }}
-        >
-          <span style={{ display: 'flex' }}>{leagueName.toUpperCase()} · CHAMPION</span>
-          <span style={{ display: 'flex', color: '#9ca3af', letterSpacing: '0.32em' }}>
-            THE SUNDAY CHRONICLE
-          </span>
-        </div>
+        <div style={{ display: 'flex', height: '16px', background: SGOLD }} />
 
-        {/* THEME BANNER */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '14px',
-            zIndex: 2,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              padding: '7px 22px',
-              border: `1px solid ${theme.accent}66`,
-              background: `${theme.accent}12`,
-              fontSize: '15px',
-              letterSpacing: '0.4em',
-              color: theme.accent,
-              textTransform: 'uppercase',
-              fontWeight: 700,
-            }}
-          >
-            <div style={{ display: 'flex', width: '24px', height: '1px', background: theme.accent }} />
-            <span style={{ display: 'flex' }}>{theme.label} · {season.year}</span>
-            <div style={{ display: 'flex', width: '24px', height: '1px', background: theme.accent }} />
-          </div>
-        </div>
-
-        {/* MAIN — single-focus coronation */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0 60px',
-            zIndex: 2,
-          }}
-        >
-          {/* Trophy/crown glyph in glowing ring */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '210px',
-              height: '210px',
-              borderRadius: '50%',
-              border: `3px solid ${theme.accent}`,
-              background: `radial-gradient(circle, ${theme.accent}33 0%, #0a0a0a 70%)`,
-              boxShadow: `0 0 80px ${theme.accent}66`,
-              fontSize: '140px',
-              lineHeight: 1,
-              marginBottom: '24px',
-            }}
-          >
-            {glyph}
-          </div>
-
-          {/* Team name (huge serif) */}
-          <div
-            style={{
-              fontFamily: 'DMSerif',
-              fontSize: '64px',
-              lineHeight: 1,
-              color: '#f3f4f6',
-              textAlign: 'center',
-              maxWidth: '1000px',
-              display: 'flex',
-              marginBottom: '8px',
-            }}
-          >
-            {teamName}
-          </div>
-
-          {/* Owner */}
-          {ownerName && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 56px 0 84px' }}>
+          {/* Left — the season masthead */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '28px' }}>
             <div
               style={{
-                fontFamily: 'DMSerif',
-                fontStyle: 'italic',
-                fontSize: '26px',
-                color: theme.accent,
-                marginBottom: '20px',
                 display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                fontSize: '15px',
+                fontWeight: 700,
+                letterSpacing: '0.38em',
+                textTransform: 'uppercase',
+                color: SGOLD,
               }}
             >
-              {ownerName}
+              <SStar size={14} color={SGOLD} />
+              <span style={{ display: 'flex' }}>{scut(leagueName, 20)} · {theme.label}</span>
+              <SStar size={14} color={SGOLD} />
             </div>
-          )}
 
-          {/* Record line */}
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '104px', lineHeight: 1.0, color: SCREAM, marginTop: '20px' }}>
+              {season.year}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '44px',
+                lineHeight: 1.05,
+                color: SGOLD,
+                marginTop: '2px',
+              }}
+            >
+              Champion.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: '120px',
+                height: '3px',
+                background: `linear-gradient(90deg, ${SGOLD_DEEP}, transparent)`,
+                marginTop: '24px',
+              }}
+            />
+
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '27px',
+                lineHeight: 1.3,
+                color: SCREAM_SOFT,
+                marginTop: '20px',
+                maxWidth: '430px',
+              }}
+            >
+              {defeated ? `${ownerName || teamName} defeated ${defeated}.` : `${ownerName || teamName} took the title.`}
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '14px',
+                fontWeight: 700,
+                letterSpacing: '0.26em',
+                textTransform: 'uppercase',
+                color: SCREAM_MUTE,
+                marginTop: '24px',
+              }}
+            >
+              {[record, pf ? `${pf} PF` : null, `${season.total_teams} TEAMS`].filter(Boolean).join('  ·  ')}
+            </div>
+          </div>
+
+          {/* Right — the bound volume with its struck plate */}
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '18px',
-              fontFamily: 'JetBrains',
-              fontSize: '17px',
-              letterSpacing: '0.28em',
-              color: '#d1d5db',
-              textTransform: 'uppercase',
-              fontWeight: 700,
+              width: '392px',
+              height: '430px',
+              transform: 'rotate(2deg)',
+              boxShadow: '0 30px 70px rgba(0,0,0,0.7)',
+              borderRadius: '5px',
             }}
           >
-            {record && <span style={{ display: 'flex' }}>{record}</span>}
-            {record && pf && <span style={{ display: 'flex', color: '#374151' }}>·</span>}
-            {pf && <span style={{ display: 'flex' }}>{pf} PF</span>}
-          </div>
-
-          {/* Defeated line */}
-          {defeatedLine && (
+            {/* Spine */}
             <div
               style={{
-                marginTop: '10px',
-                fontFamily: 'DMSerif',
-                fontStyle: 'italic',
-                fontSize: '20px',
-                color: '#9ca3af',
                 display: 'flex',
+                width: '26px',
+                background: 'linear-gradient(180deg, #4a1f14 0%, #2a110b 40%, #3a1810 72%, #4a1f14 100%)',
+                borderRadius: '5px 0 0 5px',
+                border: '1px solid #5a2a1a',
+                borderRight: 'none',
+              }}
+            />
+            {/* Cover */}
+            <div
+              style={{
+                flexGrow: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(150deg, #4a2016 0%, #33150e 52%, #24100a 100%)',
+                border: `1px solid ${SGOLD_DEEP}66`,
+                borderRadius: '0 5px 5px 0',
+                padding: '26px',
               }}
             >
-              {defeatedLine}
+              {/* The struck plate */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: '272px',
+                  padding: '22px 20px 20px',
+                  background: `linear-gradient(150deg, ${SGOLD} 0%, #d3b071 44%, ${SGOLD_DEEP} 100%)`,
+                  borderRadius: '3px',
+                  boxShadow: '0 10px 26px rgba(0,0,0,0.45)',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'flex',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    letterSpacing: '0.34em',
+                    textTransform: 'uppercase',
+                    color: '#3a2a10',
+                    opacity: 0.8,
+                  }}
+                >
+                  Volume {roman(volume)}
+                </span>
+
+                <div style={{ display: 'flex', width: '48px', height: '1px', background: '#3a2a1099', marginTop: '12px' }} />
+
+                <span
+                  style={{
+                    display: 'flex',
+                    fontFamily: 'DMSerif',
+                    fontSize: `${teamSize}px`,
+                    lineHeight: 1.06,
+                    color: '#2b1e0b',
+                    marginTop: '12px',
+                    textAlign: 'center',
+                    // Backstop for a pathological single word.
+                    maxWidth: `${PLATE_TEXT_W}px`,
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {scut(teamName, 26)}
+                </span>
+
+                {ownerName ? (
+                  <span
+                    style={{
+                      display: 'flex',
+                      fontFamily: 'DMSerif',
+                      fontStyle: 'italic',
+                      fontSize: '22px',
+                      color: '#4a3714',
+                      marginTop: '6px',
+                    }}
+                  >
+                    {scut(ownerName, 18)}
+                  </span>
+                ) : null}
+
+                <div style={{ display: 'flex', width: '48px', height: '1px', background: '#3a2a1099', marginTop: '14px' }} />
+
+                <span
+                  style={{
+                    display: 'flex',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    color: '#3a2a10',
+                    marginTop: '12px',
+                  }}
+                >
+                  {season.year} · {record}
+                </span>
+              </div>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* FOOTER */}
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '0 56px 28px',
-            fontSize: '13px',
+            justifyContent: 'space-between',
+            padding: '12px 84px',
+            background: SGOLD,
+            color: '#22120b',
+            fontSize: '14px',
+            fontWeight: 700,
             letterSpacing: '0.28em',
-            color: '#6b7280',
             textTransform: 'uppercase',
-            zIndex: 2,
           }}
         >
-          <span style={{ display: 'flex' }}>VOLUME {toRoman(volume)} · {toRoman(season.year)}</span>
-          <span style={{ display: 'flex', color: theme.accent, fontWeight: 700 }}>JZFF.ONLINE</span>
+          <span style={{ display: 'flex' }}>Standings · Champions · The Stories Between</span>
+          <span style={{ display: 'flex' }}>thesundaychronicle.app</span>
         </div>
       </div>
     ),
@@ -407,9 +482,8 @@ function renderChampionCard(
       width: 1200,
       height: 630,
       fonts,
-      emoji: 'twemoji',
       headers: {
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
+        'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
       },
     },
   )

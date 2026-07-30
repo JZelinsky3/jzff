@@ -64,7 +64,15 @@ type MilestonesFile = {
 // for the OG render — the underlying text still reads cleanly.
 function stripTags(s: string | undefined): string {
   if (!s) return ''
-  return s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+  return s
+    // Sibling spans carry separate facts ("W17 · 120.5 pts vs Connie" and
+    // "5-5 H2H") with no separator between them, so stripping tags ran the
+    // two together. Put the separator back before the tags go.
+    .replace(/<\/span>\s*<span/g, '</span> · <span')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+·/g, ' ·')
+    .trim()
 }
 
 export async function GET(
@@ -160,20 +168,53 @@ function etaPct(eta: string | undefined): number {
   return m ? Number(m[1]) : 0
 }
 
+// Lifted straight from the milestones page's :root so the share reads as
+// the same room: violet-black canvas, violet accent, bronze for the plate.
+const GRAPHITE      = '#110a18'  // --ml-bg
+const GRAPHITE_SOFT = '#1c1428'  // --ml-card
+const BRASS_HI      = '#ebbf8e'  // --ml-bronze-hi
+const BRASS_MID     = '#d4a574'  // --ml-bronze
+const BRASS_LOW     = '#a07845'  // bronze, darkened for the plate's low side
+const VIOLET        = '#b58cff'  // --ml-violet
+const VIOLET_HI     = '#cdb1ff'  // --ml-violet-hi
+const VIOLET_DEEP   = '#7d50d4'  // --ml-violet-deep
+const ENGRAVE       = '#f4ebd8'  // plate type, cream on deep violet
+const MCREAM        = '#f4ebd8'  // --ml-cream
+const MCREAM_SOFT   = '#c2b6d6'  // --ml-mute
+
+function MStar({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6L12 2z" />
+    </svg>
+  )
+}
+
+function mcut(s: string, max: number): string {
+  const t = (s ?? '').trim()
+  return t.length <= max ? t : `${t.slice(0, max - 1).trim()}…`
+}
+
 function renderCard(
   leagueName: string,
   meter: NonNullable<MilestonesFile>['meter'],
   f: Featured,
   fonts: Awaited<ReturnType<typeof loadFonts>>,
 ) {
-  const gridiron = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><path d="M0 40h80M40 0v80" stroke="#1e1e1e" stroke-width="1"/></svg>`
-  )
+  // THE PLAQUE — a struck brass plate on a graphite wall. Whatever the
+  // page is currently featuring gets engraved on it.
   const kicker =
-    f.mode === 'crossed' ? 'CROSSED THIS WEEK'
-    : f.mode === 'imminent' ? 'ON THE BRINK'
-    : f.mode === 'horizon' ? 'ON THE WATCHLIST'
-    : 'NOTHING IMMINENT'
+    f.mode === 'crossed' ? 'Just crossed'
+      : f.mode === 'imminent' ? 'On the brink'
+        : f.mode === 'horizon' ? 'On the horizon'
+          : 'The watchlist'
+
+  const name = f.mode === 'empty' ? '' : f.name
+  const line = f.mode === 'crossed' ? f.achievement : f.mode === 'empty' ? '' : f.copy
+  const sub  = f.mode === 'crossed' ? f.meta : f.mode === 'empty' ? '' : f.stats
+  const eta  = f.mode === 'imminent' || f.mode === 'horizon' ? f.eta : ''
+
+  const nameSize = name.length > 14 ? 40 : name.length > 10 ? 48 : 58
 
   return new ImageResponse(
     (
@@ -183,8 +224,8 @@ function renderCard(
           height: '630px',
           display: 'flex',
           flexDirection: 'column',
-          background: '#0a0a0a',
-          color: '#f3f4f6',
+          background: `linear-gradient(155deg, #121417 0%, ${GRAPHITE} 46%, ${GRAPHITE_SOFT} 100%)`,
+          color: MCREAM,
           fontFamily: 'JetBrains',
           position: 'relative',
         }}
@@ -194,191 +235,197 @@ function renderCard(
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            opacity: 0.5,
-            backgroundImage: `url("data:image/svg+xml;utf8,${gridiron}")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            background: `radial-gradient(circle at 88% 18%, ${GOLD}26 0%, transparent 50%), radial-gradient(circle at 12% 88%, ${GOLD}14 0%, transparent 50%)`,
+            background: `radial-gradient(circle at 22% 28%, ${VIOLET}22 0%, transparent 46%), radial-gradient(circle at 84% 82%, ${VIOLET_DEEP}2e 0%, transparent 44%)`,
           }}
         />
 
-        {/* Top bar */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '32px 56px 0',
-            fontSize: '17px',
-            letterSpacing: '0.3em',
-            color: GOLD,
-            textTransform: 'uppercase',
-            zIndex: 2,
-          }}
-        >
-          <span style={{ display: 'flex' }}>{leagueName.toUpperCase()} · MILESTONES</span>
-          <span style={{ display: 'flex', color: '#9ca3af', letterSpacing: '0.32em' }}>
-            THE SUNDAY CHRONICLE
-          </span>
-        </div>
+        <div style={{ display: 'flex', height: '16px', background: VIOLET }} />
 
-        {/* Kicker */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '54px',
-            fontSize: '16px',
-            fontWeight: 700,
-            letterSpacing: '0.4em',
-            color: GOLD,
-            textTransform: 'uppercase',
-            zIndex: 2,
-          }}
-        >
-          {kicker}
-        </div>
-
-        {/* Feature block */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '24px 96px 0',
-            zIndex: 2,
-            textAlign: 'center',
-            gap: '14px',
-          }}
-        >
-          {f.mode !== 'empty' && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 56px 0 84px' }}>
+          {/* Left — masthead */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '28px' }}>
             <div
               style={{
                 display: 'flex',
-                fontFamily: 'DMSerif',
-                fontSize: '76px',
-                lineHeight: 1.05,
-                color: '#f3f4f6',
+                alignItems: 'center',
+                gap: '14px',
+                fontSize: '16px',
+                fontWeight: 700,
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                color: VIOLET,
               }}
             >
-              {f.name}
+              <MStar size={15} color={VIOLET} />
+              <span style={{ display: 'flex' }}>{mcut(leagueName, 22)}</span>
+              <MStar size={15} color={VIOLET} />
             </div>
-          )}
-          {f.mode === 'crossed' && (
+
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '92px', lineHeight: 1.02, color: MCREAM, marginTop: '24px' }}>
+              The
+            </div>
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '92px', lineHeight: 1.02, color: VIOLET_HI }}>
+              Milestones.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: '120px',
+                height: '3px',
+                background: `linear-gradient(90deg, ${VIOLET_DEEP}, transparent)`,
+                marginTop: '26px',
+              }}
+            />
+
             <div
               style={{
                 display: 'flex',
                 fontFamily: 'DMSerif',
                 fontStyle: 'italic',
-                fontSize: '38px',
-                color: GOLD,
-                lineHeight: 1.2,
-                maxWidth: '900px',
-                textAlign: 'center',
+                fontSize: '28px',
+                lineHeight: 1.3,
+                color: MCREAM_SOFT,
+                marginTop: '20px',
+                maxWidth: '440px',
               }}
             >
-              {f.achievement}
+              Career marks, struck as they fall.
             </div>
-          )}
-          {(f.mode === 'imminent' || f.mode === 'horizon') && (
-            <div
-              style={{
-                display: 'flex',
-                fontFamily: 'DMSerif',
-                fontStyle: 'italic',
-                fontSize: '40px',
-                color: GOLD,
-                lineHeight: 1.2,
-                maxWidth: '980px',
-                textAlign: 'center',
-              }}
-            >
-              {f.copy}
-            </div>
-          )}
-          {(f.mode === 'imminent' || f.mode === 'horizon') && f.stats && (
-            <div
-              style={{
-                display: 'flex',
-                marginTop: '6px',
-                fontSize: '17px',
-                fontWeight: 700,
-                letterSpacing: '0.22em',
-                color: '#9ca3af',
-                textTransform: 'uppercase',
-              }}
-            >
-              {f.stats}
-            </div>
-          )}
-          {f.mode === 'crossed' && f.meta && (
-            <div
-              style={{
-                display: 'flex',
-                marginTop: '6px',
-                fontSize: '17px',
-                fontWeight: 700,
-                letterSpacing: '0.22em',
-                color: '#9ca3af',
-                textTransform: 'uppercase',
-              }}
-            >
-              {f.meta}
-            </div>
-          )}
-          {f.mode === 'empty' && (
-            <div
-              style={{
-                display: 'flex',
-                marginTop: '40px',
-                fontFamily: 'DMSerif',
-                fontSize: '68px',
-                color: '#f3f4f6',
-              }}
-            >
-              Nothing imminent.
-            </div>
-          )}
-        </div>
 
-        {/* Meter strip */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 56,
-            right: 56,
-            bottom: 28,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingTop: '14px',
-            borderTop: '1px solid #272727',
-            zIndex: 2,
-          }}
-        >
-          <div style={{ display: 'flex', gap: '32px' }}>
-            {meterCell(meter.week, 'THIS WEEK')}
-            {meterCell(meter.season, 'THIS SEASON')}
-            {meterCell(meter.imminent, 'IMMINENT')}
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '14px',
+                fontWeight: 700,
+                letterSpacing: '0.26em',
+                textTransform: 'uppercase',
+                color: MCREAM_SOFT,
+                marginTop: '26px',
+              }}
+            >
+              THROUGH {meter.through.toUpperCase()}{meter.imminent ? ` · ${meter.imminent} IMMINENT` : ''}
+            </div>
           </div>
+
+          {/* Right — the brass plaque */}
           <div
             style={{
               display: 'flex',
-              fontSize: '14px',
-              fontWeight: 700,
-              letterSpacing: '0.3em',
-              color: '#6b7280',
-              textTransform: 'uppercase',
+              flexDirection: 'column',
+              width: '470px',
+              padding: '6px',
+              background: `linear-gradient(150deg, #8a5ee0 0%, #6b3fc0 48%, #452a80 100%)`,
+              borderRadius: '4px',
+              boxShadow: '0 28px 62px rgba(0,0,0,0.65)',
             }}
           >
-            THROUGH {meter.through.toUpperCase()}
+            {/* Inner bevel: the engraved face */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '26px 28px 24px',
+                border: `1px solid ${ENGRAVE}3d`,
+                borderRadius: '2px',
+              }}
+            >
+              <span
+                style={{
+                  display: 'flex',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '0.34em',
+                  textTransform: 'uppercase',
+                  color: ENGRAVE,
+                  opacity: 0.75,
+                }}
+              >
+                {kicker}
+              </span>
+
+              <span
+                style={{
+                  display: 'flex',
+                  fontFamily: 'DMSerif',
+                  fontSize: `${nameSize}px`,
+                  lineHeight: 1.05,
+                  color: ENGRAVE,
+                  marginTop: '10px',
+                }}
+              >
+                {mcut(name, 20)}
+              </span>
+
+              <div style={{ display: 'flex', height: '1px', background: `${ENGRAVE}3d`, marginTop: '14px' }} />
+
+              <span
+                style={{
+                  display: 'flex',
+                  fontFamily: 'DMSerif',
+                  fontStyle: 'italic',
+                  fontSize: '25px',
+                  lineHeight: 1.28,
+                  color: ENGRAVE,
+                  marginTop: '14px',
+                }}
+              >
+                {mcut(line, 70)}
+              </span>
+
+              {sub ? (
+                <span
+                  style={{
+                    display: 'flex',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: ENGRAVE,
+                    opacity: 0.72,
+                    marginTop: '16px',
+                  }}
+                >
+                  {mcut(sub, 44)}
+                </span>
+              ) : null}
+
+              {eta ? (
+                <span
+                  style={{
+                    display: 'flex',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    letterSpacing: '0.24em',
+                    textTransform: 'uppercase',
+                    color: ENGRAVE,
+                    opacity: 0.9,
+                    marginTop: '10px',
+                  }}
+                >
+                  ETA {mcut(eta, 24)}
+                </span>
+              ) : null}
+            </div>
           </div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 84px',
+            background: VIOLET,
+            color: '#1a1024',
+            fontSize: '14px',
+            fontWeight: 700,
+            letterSpacing: '0.28em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span style={{ display: 'flex' }}>Crossed · Imminent · On the Horizon</span>
+          <span style={{ display: 'flex' }}>thesundaychronicle.app</span>
         </div>
       </div>
     ),
@@ -387,31 +434,9 @@ function renderCard(
       height: 630,
       fonts,
       headers: {
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
+        'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
       },
     },
-  )
-}
-
-function meterCell(value: number, label: string) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '38px', color: GOLD, lineHeight: 1 }}>
-        {value}
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          fontSize: '12px',
-          fontWeight: 700,
-          letterSpacing: '0.28em',
-          color: '#9ca3af',
-          textTransform: 'uppercase',
-        }}
-      >
-        {label}
-      </div>
-    </div>
   )
 }
 

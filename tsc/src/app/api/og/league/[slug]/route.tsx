@@ -42,6 +42,23 @@ type LeagueFile = {
   } | null
 }
 
+type RivalryEntry = {
+  name: string
+  total_meetings: number
+  leader_name: string | null
+  leader_record: string | null
+  is_deadlocked: boolean
+  manager_a: { name: string } | null
+  manager_b: { name: string } | null
+}
+
+type RivalrySummary = {
+  active_feuds?: number
+  total_meetings?: number
+  leaders?: number
+  deadlocked?: number
+}
+
 type DirectoryManager = {
   name: string
   wins: number
@@ -69,7 +86,6 @@ type DraftEntry = { year: number; total_picks: number; rounds: number }
 const INK = '#0e1620'
 const INK_DEEP = '#0a1119'
 const INK_SOFT = '#16202c'
-const INK_CARD = '#1a2532'
 const INK_LINE = '#2a3645'
 const CREAM = '#f4ebd8'
 const CREAM_SOFT = '#c9c0ad'
@@ -207,6 +223,17 @@ export async function GET(
       if (drafts.length > 0) return renderDraftCard(data, drafts, fonts)
       break
     }
+    case 'rivalries': {
+      const rv = bundle['rivalries.json'] as
+        | { rivalries?: RivalryEntry[]; summary?: RivalrySummary }
+        | undefined
+      const feuds = rv?.rivalries ?? []
+      if (feuds.length > 0) return renderRivalriesCard(data, feuds, rv?.summary ?? {}, fonts)
+      break
+    }
+    case 'live': {
+      return renderLiveCard(data, fonts)
+    }
     case 'seasons': {
       const sd = bundle['seasons_directory.json'] as { seasons?: SeasonEntry[] } | undefined
       const seasons = (sd?.seasons ?? []).slice().sort((a, b) => a.year - b.year)
@@ -228,7 +255,6 @@ export async function GET(
    ============================================================ */
 function renderStandingsCard(d: LeagueFile, managers: DirectoryManager[], fonts: Fonts) {
   const founded = d.founded ?? d.current_season ?? new Date().getFullYear()
-  const top3 = managers.slice(0, 3)
   const stats = [
     `EST. ${founded}`,
     d.total_seasons != null ? `${d.total_seasons} SEASON${d.total_seasons === 1 ? '' : 'S'}` : null,
@@ -346,108 +372,122 @@ function renderStandingsCard(d: LeagueFile, managers: DirectoryManager[], fonts:
             </div>
           </div>
 
-          {/* Right — the winners' podium, top three by career wins */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '440px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '14px' }}>
-              {[
-                { m: top3[1], place: 2, h: 148, color: STEEL },
-                { m: top3[0], place: 1, h: 214, color: GOLD_DEEP },
-                { m: top3[2], place: 3, h: 112, color: RUST },
-              ]
-                .filter((p) => p.m)
-                .map((p) => (
-                  <div key={p.place} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '134px' }}>
-                    {p.place === 1 && (
-                      <div style={{ display: 'flex', marginBottom: '8px' }}>
-                        <Star size={22} color={GOLD_DEEP} />
-                      </div>
-                    )}
-                    <div
-                      style={{
-                        display: 'flex',
-                        fontFamily: 'DMSerif',
-                        fontSize: p.place === 1 ? '27px' : '23px',
-                        color: INK,
-                      }}
-                    >
-                      {clip(p.m!.name, 10)}
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        color: '#55482e',
-                        marginTop: '3px',
-                        marginBottom: '10px',
-                      }}
-                    >
-                      {p.m!.total_record}
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '134px',
-                        height: `${p.h}px`,
-                        background: p.color,
-                        boxShadow: '0 14px 30px rgba(14,22,32,0.25)',
-                        borderRadius: '3px 3px 0 0',
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          fontFamily: 'DMSerif',
-                          fontStyle: 'italic',
-                          fontSize: p.place === 1 ? '64px' : '48px',
-                          color: CREAM,
-                        }}
-                      >
-                        {p.place}
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          letterSpacing: '0.26em',
-                          textTransform: 'uppercase',
-                          color: 'rgba(244,235,216,0.75)',
-                          marginTop: '2px',
-                        }}
-                      >
-                        {pct(p.m!.win_pct)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-            {/* Podium base */}
+          {/* Right — the ledger sheet. Replaces the old three-bar podium,
+              which read as a generic chart rather than a record. */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '470px',
+              background: 'rgba(255,252,244,0.72)',
+              border: '1px solid rgba(14,22,32,0.14)',
+              boxShadow: '0 22px 50px rgba(14,22,32,0.18)',
+              padding: '20px 24px 16px',
+            }}
+          >
+            {/* Column heads */}
             <div
               style={{
                 display: 'flex',
-                width: '440px',
-                height: '12px',
-                background: INK,
-                borderRadius: '2px',
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                fontSize: '11px',
+                alignItems: 'center',
+                fontSize: '10px',
                 fontWeight: 700,
-                letterSpacing: '0.28em',
+                letterSpacing: '0.26em',
                 textTransform: 'uppercase',
-                color: CREAM_MUTE,
-                marginTop: '14px',
+                color: '#8a7c5c',
+                paddingBottom: '9px',
               }}
             >
-              Ranked by career wins
+              <span style={{ display: 'flex', width: '46px' }}>No.</span>
+              <span style={{ display: 'flex', flexGrow: 1 }}>Manager</span>
+              <span style={{ display: 'flex', width: '104px' }}>Record</span>
+              <span style={{ display: 'flex', width: '58px' }}>Pct</span>
+            </div>
+
+            {/* Ledger double rule */}
+            <div style={{ display: 'flex', height: '2px', background: 'rgba(14,22,32,0.55)' }} />
+            <div style={{ display: 'flex', height: '1px', background: 'rgba(14,22,32,0.28)', marginTop: '2px' }} />
+
+            {managers.slice(0, 5).map((m, i) => (
+              <div
+                key={m.name}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '11px 0 10px',
+                  borderBottom: '1px solid rgba(14,22,32,0.10)',
+                  background: i === 0 ? 'rgba(168,138,74,0.10)' : 'transparent',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'flex',
+                    width: '46px',
+                    fontFamily: 'DMSerif',
+                    fontStyle: 'italic',
+                    fontSize: '26px',
+                    color: i === 0 ? GOLD_DEEP : '#7c6f52',
+                  }}
+                >
+                  {i + 1}
+                </span>
+                <span
+                  style={{
+                    display: 'flex',
+                    flexGrow: 1,
+                    alignItems: 'center',
+                    gap: '9px',
+                    fontFamily: 'DMSerif',
+                    fontSize: '27px',
+                    color: INK,
+                  }}
+                >
+                  {clip(m.name, 13)}
+                  {m.championships > 0 ? <Star size={13} color={GOLD_DEEP} /> : null}
+                </span>
+                <span
+                  style={{
+                    display: 'flex',
+                    width: '104px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    color: '#55482e',
+                  }}
+                >
+                  {m.total_record}
+                </span>
+                <span
+                  style={{
+                    display: 'flex',
+                    width: '58px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    color: i === 0 ? GOLD_DEEP : '#55482e',
+                  }}
+                >
+                  {pct(m.win_pct)}
+                </span>
+              </div>
+            ))}
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: '12px',
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: '#8a7c5c',
+              }}
+            >
+              <span style={{ display: 'flex' }}>Ranked by career wins</span>
+              <span style={{ display: 'flex' }}>
+                {managers.length > 5 ? `+${managers.length - 5} on the books` : `${managers.length} on the books`}
+              </span>
             </div>
           </div>
         </div>
@@ -536,8 +576,6 @@ function renderRecordsCard(d: LeagueFile, top: RecordEntry, fonts: Fonts) {
         />
 
         {/* Gold sash — the site's identity stripe. */}
-        <div style={{ display: 'flex', height: '14px', background: GOLD }} />
-
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 64px 0 84px', gap: '30px' }}>
           {/* Left — masthead */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -760,22 +798,27 @@ function renderRecordsCard(d: LeagueFile, top: RecordEntry, fonts: Fonts) {
    credential card fanned over two others. Matches managers/index.html.
    ============================================================ */
 function renderManagersCard(d: LeagueFile, managers: DirectoryManager[], fonts: Fonts) {
+  // THE MEMBERSHIP ROLL — a wall of member monograms, nobody featured.
+  // This card used to run the credential design with the top manager on
+  // it, which crowned whoever led the roll; that design now lives on the
+  // per-manager card and this one stays neutral to the whole league.
   const founded = d.founded ?? d.current_season ?? new Date().getFullYear()
-  const current = managers.filter((m) => m.is_current).length
-  const alumni = managers.length - current
-  const byWins = managers.slice().sort((a, b) => b.wins - a.wins)
-  const top = byWins[0]
-  const initials = (top.name ?? '')
-    .replace(/[^A-Za-z\s]/g, '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('') || '★'
+  const current = managers.filter((m) => m.is_current)
+  const alumni = managers.filter((m) => !m.is_current)
+
+  // One plate per seated member, three to a row, four rows max so the
+  // board keeps its proportions in a league with a big roster.
+  const PLATE_COLS = 3
+  const PLATE_ROWS = 4
+  const plateCount = Math.min(current.length, PLATE_COLS * PLATE_ROWS)
+  const plateRows: number[][] = []
+  for (let i = 0; i < plateCount; i += PLATE_COLS) {
+    plateRows.push(Array.from({ length: Math.min(PLATE_COLS, plateCount - i) }, (_, k) => i + k + 1))
+  }
 
   const stats = [
-    `${current} MEMBER${current === 1 ? '' : 'S'}`,
-    alumni > 0 ? `${alumni} ALUMNI` : null,
+    `${current.length} MEMBER${current.length === 1 ? '' : 'S'}`,
+    alumni.length > 0 ? `${alumni.length} ALUMNI` : null,
     `EST. ${founded}`,
   ].filter(Boolean).join('  ·  ')
 
@@ -802,11 +845,11 @@ function renderManagersCard(d: LeagueFile, managers: DirectoryManager[], fonts: 
           }}
         />
 
-        <div style={{ display: 'flex', height: '14px', background: GOLD }} />
+        <div style={{ display: 'flex', height: '16px', background: GOLD }} />
 
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 40px 0 84px' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 56px 0 84px' }}>
           {/* Left — masthead */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '20px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '24px' }}>
             <div
               style={{
                 display: 'flex',
@@ -848,7 +891,7 @@ function renderManagersCard(d: LeagueFile, managers: DirectoryManager[], fonts: 
                 lineHeight: 1.35,
                 color: CREAM_SOFT,
                 marginTop: '22px',
-                maxWidth: '560px',
+                maxWidth: '520px',
               }}
             >
               Every manager who ever ran a team in {clip(d.name, 26)}.
@@ -869,178 +912,100 @@ function renderManagersCard(d: LeagueFile, managers: DirectoryManager[], fonts: 
             </div>
           </div>
 
-          {/* Right — fanned membership credentials */}
-          <div style={{ display: 'flex', width: '440px', height: '100%', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-            <div
-              style={{
-                position: 'absolute',
-                display: 'flex',
-                width: '250px',
-                height: '330px',
-                background: '#141d28',
-                border: `1px solid ${INK_LINE}`,
-                borderRadius: '10px',
-                transform: 'rotate(-9deg) translateX(-72px)',
-                boxShadow: '0 14px 34px rgba(0,0,0,0.45)',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                display: 'flex',
-                width: '250px',
-                height: '330px',
-                background: '#141d28',
-                border: `1px solid ${INK_LINE}`,
-                borderRadius: '10px',
-                transform: 'rotate(8deg) translateX(74px)',
-                boxShadow: '0 14px 34px rgba(0,0,0,0.45)',
-              }}
-            />
-
+          {/* Right — the members' board: one engraved plate per seated
+              member, mounted on the club wall. Numbers only, no names and
+              no monograms, so nobody is featured; alumni are counted on
+              the plaque at the foot rather than given a plate. */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '452px',
+              padding: '22px 22px 18px',
+              background: 'linear-gradient(165deg, rgba(22,32,44,0.92) 0%, rgba(14,22,32,0.92) 100%)',
+              border: `1px solid ${INK_LINE}`,
+              borderRadius: '8px',
+              boxShadow: '0 26px 60px rgba(0,0,0,0.6)',
+            }}
+          >
             <div
               style={{
                 display: 'flex',
-                flexDirection: 'column',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                width: '278px',
-                height: '386px',
-                background: `linear-gradient(165deg, ${INK_CARD} 0%, #141d28 100%)`,
-                border: `1.5px solid ${GOLD_DEEP}`,
-                borderRadius: '10px',
-                padding: '24px 24px 20px',
-                boxShadow: '0 26px 60px rgba(0,0,0,0.65)',
-                position: 'relative',
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+                color: GOLD_DEEP,
+                paddingBottom: '12px',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  letterSpacing: '0.32em',
-                  textTransform: 'uppercase',
-                  color: STEEL,
-                }}
-              >
-                Member No. 001
-              </div>
+              <span style={{ display: 'flex' }}>Members of record</span>
+              <span style={{ display: 'flex' }}>Est. {founded}</span>
+            </div>
 
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '86px',
-                  height: '86px',
-                  borderRadius: '86px',
-                  border: `2px solid ${GOLD}`,
-                  boxShadow: `0 0 0 5px rgba(232,200,137,0.14)`,
-                  fontFamily: 'DMSerif',
-                  fontSize: '36px',
-                  color: GOLD,
-                  marginTop: '20px',
-                }}
-              >
-                {initials}
-              </div>
+            <div style={{ display: 'flex', height: '1px', background: `${GOLD_DEEP}66` }} />
 
-              <div
-                style={{
-                  display: 'flex',
-                  fontFamily: 'DMSerif',
-                  fontSize: '31px',
-                  color: CREAM,
-                  marginTop: '16px',
-                }}
-              >
-                {clip(top.name, 14)}
-              </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  width: '90px',
-                  height: '2px',
-                  background: `linear-gradient(90deg, transparent, ${GOLD_DEEP}, transparent)`,
-                  marginTop: '14px',
-                }}
-              />
-
-              <div
-                style={{
-                  display: 'flex',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  letterSpacing: '0.18em',
-                  color: CREAM_SOFT,
-                  marginTop: '16px',
-                }}
-              >
-                {top.total_record}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  letterSpacing: '0.28em',
-                  textTransform: 'uppercase',
-                  color: CREAM_MUTE,
-                  marginTop: '5px',
-                }}
-              >
-                Career record
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '16px' }}>
-                {top.championships > 0 ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {Array.from({ length: Math.min(top.championships, 5) }).map((_, i) => (
-                      <Star key={i} size={15} color={GOLD} />
-                    ))}
-                    <span
+            {/* Plates, three to a row. */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+              {plateRows.map((row, ri) => (
+                <div key={ri} style={{ display: 'flex', gap: '10px' }}>
+                  {row.map((n) => (
+                    <div
+                      key={n}
                       style={{
                         display: 'flex',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        letterSpacing: '0.22em',
-                        textTransform: 'uppercase',
-                        color: GOLD,
-                        marginLeft: '4px',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        width: '128px',
+                        height: '52px',
+                        background: 'linear-gradient(160deg, #e2c68d 0%, #c9a86a 46%, #9c7f45 100%)',
+                        borderRadius: '2px',
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.45)',
                       }}
                     >
-                      {top.championships} Title{top.championships === 1 ? '' : 's'}
-                    </span>
-                  </div>
-                ) : (
-                  <span
-                    style={{
-                      display: 'flex',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      letterSpacing: '0.22em',
-                      textTransform: 'uppercase',
-                      color: CREAM_MUTE,
-                    }}
-                  >
-                    Chasing the first ring
-                  </span>
-                )}
-              </div>
+                      <span
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '104px',
+                          height: '26px',
+                          border: '1px solid rgba(58,42,16,0.38)',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          letterSpacing: '0.24em',
+                          color: '#3a2a10',
+                        }}
+                      >
+                        No. {String(n).padStart(3, '0')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
 
-              <div
-                style={{
-                  display: 'flex',
-                  fontFamily: 'DMSerif',
-                  fontStyle: 'italic',
-                  fontSize: '15px',
-                  color: GOLD_DEEP,
-                  marginTop: 'auto',
-                }}
-              >
-                In good standing since {founded}
-              </div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: '18px',
+                paddingTop: '12px',
+                borderTop: `1px solid ${INK_LINE}`,
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: CREAM_MUTE,
+              }}
+            >
+              <span style={{ display: 'flex' }}>{current.length} seated</span>
+              <span style={{ display: 'flex' }}>
+                {alumni.length > 0 ? `${alumni.length} alumni on file` : 'No alumni yet'}
+              </span>
             </div>
           </div>
         </div>
@@ -1069,21 +1034,609 @@ function renderManagersCard(d: LeagueFile, managers: DirectoryManager[], fonts: 
   )
 }
 
+/* ------------------------------------------------------------------
+   Draft card, right-hand panel: the report card.
+
+   The letter grades are a fixed decorative sequence, identical for
+   every league. Real per-class grades live in the client-side Draft
+   Grader and would cost ~260KB of draft + stats fetches per render, so
+   the marks here are deliberately ornament, not a claim about a draft.
+   ------------------------------------------------------------------ */
+
+// Fixed marks. Same for every league on purpose — decoration, not a claim.
+const REPORT_MARKS = ['A-', 'B+', 'A', 'B', 'A-']
+
+function reportCardPanel(
+  d: LeagueFile,
+  drafts: DraftEntry[],
+  c: { AN_LINE: string; AN_MUTE: string; CRIMSON: string },
+) {
+  const PAPER = '#e7ddc4'
+  const PAPER_HI = '#f1e9d5'
+  const PAPER_INK = '#2c2721'
+  const rows = drafts.slice(-5).reverse()
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '392px',
+        background: `linear-gradient(168deg, ${PAPER_HI} 0%, ${PAPER} 100%)`,
+        border: `1px solid #cbbf9f`,
+        boxShadow: '0 26px 62px rgba(0,0,0,0.72)',
+        transform: 'rotate(-1.4deg)',
+        color: PAPER_INK,
+        padding: '22px 26px 18px',
+      }}
+    >
+      {/* Masthead */}
+      <div
+        style={{
+          display: 'flex',
+          fontSize: '10px',
+          fontWeight: 700,
+          letterSpacing: '0.3em',
+          textTransform: 'uppercase',
+          color: '#8a7f68',
+        }}
+      >
+        {clip(d.name, 24)}
+      </div>
+      <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '34px', lineHeight: 1.05, marginTop: '2px' }}>
+        Report Card
+      </div>
+
+      {/* Crimson double rule, same registrar's mark as the cover */}
+      <div style={{ display: 'flex', flexDirection: 'column', marginTop: '12px' }}>
+        <div style={{ display: 'flex', height: '1px', background: c.CRIMSON }} />
+        <div style={{ display: 'flex', height: '1px', background: c.CRIMSON, marginTop: '3px', opacity: 0.55 }} />
+      </div>
+
+      {/* Column heads */}
+      <div
+        style={{
+          display: 'flex',
+          marginTop: '12px',
+          fontSize: '9px',
+          fontWeight: 700,
+          letterSpacing: '0.26em',
+          textTransform: 'uppercase',
+          color: '#95886f',
+        }}
+      >
+        <span style={{ display: 'flex', width: '78px' }}>Class</span>
+        <span style={{ display: 'flex', flexGrow: 1 }}>Picks</span>
+        <span style={{ display: 'flex' }}>Mark</span>
+      </div>
+
+      {/* Subject rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', marginTop: '2px' }}>
+        {rows.map((dr, i) => (
+          <div
+            key={dr.year}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '9px 0 8px',
+              borderBottom: '1px solid rgba(140,128,102,0.32)',
+            }}
+          >
+            <span style={{ display: 'flex', width: '78px', fontFamily: 'DMSerif', fontSize: '24px' }}>
+              {dr.year}
+            </span>
+            <span
+              style={{
+                display: 'flex',
+                flexGrow: 1,
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                color: '#6d6353',
+              }}
+            >
+              {dr.rounds > 0 ? `${dr.rounds} RDS · ` : ''}{dr.total_picks}
+            </span>
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '38px',
+                height: '30px',
+                border: `1.5px solid rgba(150,62,44,0.75)`,
+                fontFamily: 'DMSerif',
+                fontSize: '21px',
+                color: '#963e2c',
+              }}
+            >
+              {REPORT_MARKS[i % REPORT_MARKS.length]}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Registrar's remark + signature rule */}
+      <div style={{ display: 'flex', flexDirection: 'column', marginTop: '14px' }}>
+        <span
+          style={{
+            display: 'flex',
+            fontSize: '9px',
+            fontWeight: 700,
+            letterSpacing: '0.26em',
+            textTransform: 'uppercase',
+            color: '#95886f',
+          }}
+        >
+          Registrar&apos;s remark
+        </span>
+        <span
+          style={{
+            display: 'flex',
+            fontFamily: 'DMSerif',
+            fontStyle: 'italic',
+            fontSize: '19px',
+            marginTop: '3px',
+            color: '#4a4238',
+          }}
+        >
+          Graded against league history.
+        </span>
+      </div>
+    </div>
+  )
+}
+
+
 /* ============================================================
-   THE DRAFT ARCHIVE — black-cloth Draft Annual: embossed hairline
-   frame, crimson registrar's rule, the Official Transcript card.
-   Matches draft/index.html: --an-* cloth palette.
+   THE RIVALRIES — the tally wall. Oxblood on ink, one stroke per
+   meeting, the leader's strokes in cream and the trailing side's in
+   oxblood. Named feuds only, no single rivalry crowned.
    ============================================================ */
+const OXBLOOD = '#c86848'
+const OXBLOOD_DEEP = '#7e3a26'
+
+// "6–4" (en dash) or "6-4" → [6, 4]. Anything unparseable falls back to
+// splitting the meeting count evenly, so the wall always draws.
+function splitSeries(record: string | null, meetings: number): [number, number] {
+  const m = (record ?? '').match(/(\d+)\D+(\d+)/)
+  if (m) return [Number(m[1]), Number(m[2])]
+  const half = Math.floor(meetings / 2)
+  return [half, meetings - half]
+}
+
+function renderRivalriesCard(
+  d: LeagueFile,
+  feuds: RivalryEntry[],
+  summary: RivalrySummary,
+  fonts: Fonts,
+) {
+  const founded = d.founded ?? d.current_season ?? new Date().getFullYear()
+  // Longest-running feuds first; that is a property of the league, not a
+  // ranking of who is best.
+  const top = feuds.slice().sort((a, b) => b.total_meetings - a.total_meetings).slice(0, 3)
+
+  const stats = [
+    summary.active_feuds != null ? `${summary.active_feuds} ACTIVE FEUDS` : null,
+    summary.total_meetings != null ? `${summary.total_meetings} MEETINGS` : null,
+    summary.deadlocked ? `${summary.deadlocked} DEADLOCKED` : null,
+  ].filter(Boolean).join('  ·  ')
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '1200px',
+          height: '630px',
+          display: 'flex',
+          flexDirection: 'column',
+          background: `linear-gradient(155deg, #140d0b 0%, #17100d 46%, #1d1310 100%)`,
+          color: CREAM,
+          fontFamily: 'JetBrains',
+          position: 'relative',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            background: `radial-gradient(circle at 22% 30%, ${OXBLOOD}26 0%, transparent 48%), radial-gradient(circle at 84% 82%, ${OXBLOOD_DEEP}30 0%, transparent 46%)`,
+          }}
+        />
+
+        <div style={{ display: 'flex', height: '16px', background: OXBLOOD }} />
+
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 56px 0 84px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '24px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                fontSize: '16px',
+                fontWeight: 700,
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                color: OXBLOOD,
+              }}
+            >
+              <Star size={15} color={OXBLOOD} />
+              <span style={{ display: 'flex' }}>The Grudge Book</span>
+              <Star size={15} color={OXBLOOD} />
+            </div>
+
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '96px', lineHeight: 1.02, color: CREAM, marginTop: '24px' }}>
+              The
+            </div>
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '96px', lineHeight: 1.02, color: OXBLOOD }}>
+              Rivalries.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: '120px',
+                height: '3px',
+                background: `linear-gradient(90deg, ${OXBLOOD_DEEP}, transparent)`,
+                marginTop: '26px',
+              }}
+            />
+
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '29px',
+                lineHeight: 1.32,
+                color: CREAM_SOFT,
+                marginTop: '20px',
+                maxWidth: '500px',
+              }}
+            >
+              Every grudge in {clip(d.name, 24)}, kept meeting by meeting.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '14px',
+                fontWeight: 700,
+                letterSpacing: '0.26em',
+                textTransform: 'uppercase',
+                color: '#96705f',
+                marginTop: '28px',
+              }}
+            >
+              {stats}
+            </div>
+          </div>
+
+          {/* Right — the tally wall */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '452px',
+              gap: '20px',
+              padding: '24px 26px 20px',
+              background: 'rgba(30,19,16,0.6)',
+              border: '1px solid rgba(200,104,72,0.22)',
+              borderRadius: '10px',
+              boxShadow: '0 26px 60px rgba(0,0,0,0.6)',
+            }}
+          >
+            {top.map((r) => {
+              const [aw, bw] = splitSeries(r.leader_record, r.total_meetings)
+              return (
+                <div key={r.name} style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color: OXBLOOD,
+                    }}
+                  >
+                    <span style={{ display: 'flex' }}>{clip(r.name, 22)}</span>
+                    <span style={{ display: 'flex', color: '#96705f' }}>
+                      {r.is_deadlocked ? 'Level' : `${clip(r.leader_name ?? '', 10)} leads`}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
+                      {Array.from({ length: Math.max(0, Math.min(aw, 12)) }).map((_, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: 'flex',
+                            flexShrink: 0,
+                            width: '3px',
+                            height: '22px',
+                            background: CREAM,
+                            marginRight: (i + 1) % 5 === 0 ? '7px' : '0px',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '20px', color: '#96705f' }}>
+                      {aw}&#8211;{bw}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
+                      {Array.from({ length: Math.max(0, Math.min(bw, 12)) }).map((_, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: 'flex',
+                            flexShrink: 0,
+                            width: '3px',
+                            height: '22px',
+                            background: OXBLOOD_DEEP,
+                            marginRight: (i + 1) % 5 === 0 ? '7px' : '0px',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      height: '1px',
+                      background: 'rgba(200,104,72,0.18)',
+                      marginTop: '14px',
+                    }}
+                  />
+                </div>
+              )
+            })}
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: '#7c5c4e',
+              }}
+            >
+              <span style={{ display: 'flex' }}>One stroke, one meeting</span>
+              <span style={{ display: 'flex' }}>Est. {founded}</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 84px',
+            background: OXBLOOD,
+            color: '#1a100d',
+            fontSize: '14px',
+            fontWeight: 700,
+            letterSpacing: '0.28em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span style={{ display: 'flex' }}>Feuds · Ledgers · Meeting by Meeting</span>
+          <span style={{ display: 'flex' }}>{DOMAIN}</span>
+        </div>
+      </div>
+    ),
+    imageOptions(fonts),
+  )
+}
+
+/* ============================================================
+   THE LIVE SEASON — the split-flap board. Amber on ink, one slat per
+   live-season room, the way a departures board lists services.
+   ============================================================ */
+// From the live hub's :root: deep moss canvas, gold "live" lamp.
+const MOSS       = '#15201b'  // --ls-bg
+const MOSS_CARD  = '#1d2a23'  // --ls-card
+const MOSS_DEEP  = '#0f1713'
+const MOSS_BAND  = '#101a14'
+const MOSS_LINE  = '#2e3d34'  // --ls-line
+const MOSS_MUTE  = '#7d8c81'  // --ls-mute
+const AMBER = '#d4a94c'       // --ls-live
+const AMBER_DEEP = '#8a7526'
+
+function renderLiveCard(d: LeagueFile, fonts: Fonts) {
+  const season = d.current_season ?? d.founded ?? new Date().getFullYear()
+  const slats = [
+    'Power Rankings',
+    "Pick'ems",
+    'Records Watch',
+    'Milestones',
+    'The Trade Desk',
+  ]
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '1200px',
+          height: '630px',
+          display: 'flex',
+          flexDirection: 'column',
+          background: `linear-gradient(155deg, ${MOSS_DEEP} 0%, ${MOSS} 48%, ${MOSS_CARD} 100%)`,
+          color: CREAM,
+          fontFamily: 'JetBrains',
+          position: 'relative',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            background: `radial-gradient(circle at 22% 28%, ${AMBER}1f 0%, transparent 46%), radial-gradient(circle at 86% 84%, ${AMBER_DEEP}2a 0%, transparent 44%)`,
+          }}
+        />
+
+        <div style={{ display: 'flex', height: '16px', background: MOSS_BAND }} />
+
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 56px 0 84px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingRight: '24px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                fontSize: '16px',
+                fontWeight: 700,
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                color: AMBER,
+              }}
+            >
+              <Star size={15} color={AMBER} />
+              <span style={{ display: 'flex' }}>Now Departing · {season}</span>
+              <Star size={15} color={AMBER} />
+            </div>
+
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '96px', lineHeight: 1.02, color: CREAM, marginTop: '24px' }}>
+              The Live
+            </div>
+            <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '96px', lineHeight: 1.02, color: AMBER }}>
+              Season.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                width: '120px',
+                height: '3px',
+                background: `linear-gradient(90deg, ${AMBER_DEEP}, transparent)`,
+                marginTop: '26px',
+              }}
+            />
+
+            <div
+              style={{
+                display: 'flex',
+                fontFamily: 'DMSerif',
+                fontStyle: 'italic',
+                fontSize: '29px',
+                lineHeight: 1.32,
+                color: CREAM_SOFT,
+                marginTop: '20px',
+                maxWidth: '500px',
+              }}
+            >
+              {clip(d.name, 24)} as it happens, week by week.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                fontSize: '14px',
+                fontWeight: 700,
+                letterSpacing: '0.26em',
+                textTransform: 'uppercase',
+                color: MOSS_MUTE,
+                marginTop: '28px',
+              }}
+            >
+              Updated every Tuesday night
+            </div>
+          </div>
+
+          {/* Right — the board */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '452px',
+              padding: '18px',
+              background: MOSS_DEEP,
+              border: `1px solid ${MOSS_LINE}`,
+              borderRadius: '8px',
+              boxShadow: '0 26px 60px rgba(0,0,0,0.7)',
+            }}
+          >
+            {slats.map((label, i) => (
+              <div
+                key={label}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '15px 16px',
+                  marginTop: i === 0 ? '0px' : '7px',
+                  background: `linear-gradient(180deg, ${MOSS_CARD} 0%, #16211b 49%, #121b16 51%, #1a271f 100%)`,
+                  borderRadius: '3px',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'flex',
+                    fontFamily: 'DMSerif',
+                    fontSize: '25px',
+                    color: CREAM,
+                  }}
+                >
+                  {label}
+                </span>
+                <span
+                  style={{
+                    display: 'flex',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    letterSpacing: '0.24em',
+                    textTransform: 'uppercase',
+                    color: AMBER,
+                  }}
+                >
+                  Live
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 84px',
+            background: MOSS_BAND,
+            color: AMBER,
+            fontSize: '14px',
+            fontWeight: 700,
+            letterSpacing: '0.28em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span style={{ display: 'flex' }}>Rankings · Picks · Records · Trades</span>
+          <span style={{ display: 'flex' }}>{DOMAIN}</span>
+        </div>
+      </div>
+    ),
+    imageOptions(fonts),
+  )
+}
+
 function renderDraftCard(d: LeagueFile, drafts: DraftEntry[], fonts: Fonts) {
   const AN_BG = '#0c0c0b'
-  const AN_CARD = '#191917'
   const AN_LINE = '#3c3a34'
   const AN_MUTE = '#8a7a60'
   const CRIMSON = 'rgba(178,84,62,0.65)'
 
   const founded = d.founded ?? d.current_season ?? new Date().getFullYear()
   const totalPicks = drafts.reduce((a, b) => a + (b.total_picks || 0), 0)
-  const rows = drafts.slice(-5).reverse()
   const stats = [
     `${drafts.length} DRAFT${drafts.length === 1 ? '' : 'S'} ON FILE`,
     `${totalPicks} PICKS RECORDED`,
@@ -1204,96 +1757,8 @@ function renderDraftCard(d: LeagueFile, drafts: DraftEntry[], fonts: Fonts) {
             </div>
           </div>
 
-          {/* Right — the Official Transcript */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              width: '380px',
-              background: AN_CARD,
-              border: `1px solid ${AN_LINE}`,
-              boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '20px 24px 16px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '44px',
-                  border: `1.5px solid ${GOLD}`,
-                  boxShadow: `0 0 0 4px rgba(232,200,137,0.16)`,
-                }}
-              >
-                <Star size={17} color={GOLD} />
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    letterSpacing: '0.3em',
-                    textTransform: 'uppercase',
-                    color: AN_MUTE,
-                  }}
-                >
-                  {clip(d.name, 22)}
-                </div>
-                <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '24px', color: CREAM, marginTop: '3px' }}>
-                  Official Transcript
-                </div>
-              </div>
-            </div>
-
-            {/* Crimson double rule under the transcript masthead */}
-            <div style={{ display: 'flex', flexDirection: 'column', margin: '0 24px' }}>
-              <div style={{ display: 'flex', height: '1px', background: CRIMSON }} />
-              <div style={{ display: 'flex', height: '1px', background: CRIMSON, marginTop: '3px', opacity: 0.55 }} />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', padding: '10px 24px 14px' }}>
-              {rows.map((dr) => (
-                <div key={dr.year} style={{ display: 'flex', alignItems: 'baseline', gap: '14px', padding: '10px 0' }}>
-                  <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: '25px', color: GOLD_BRIGHT }}>
-                    {dr.year}
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', borderBottom: `1px dashed ${AN_LINE}`, marginBottom: '6px' }} />
-                  <div
-                    style={{
-                      display: 'flex',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      letterSpacing: '0.14em',
-                      textTransform: 'uppercase',
-                      color: CREAM_SOFT,
-                    }}
-                  >
-                    {dr.rounds > 0 ? `${dr.rounds} RDS · ` : ''}{dr.total_picks} PICKS
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                padding: '11px 24px',
-                borderTop: `1px solid ${AN_LINE}`,
-                fontSize: '10px',
-                fontWeight: 700,
-                letterSpacing: '0.28em',
-                textTransform: 'uppercase',
-                color: AN_MUTE,
-              }}
-            >
-              Graded against league history
-            </div>
-          </div>
+          {/* Right — the report card */}
+          {reportCardPanel(d, drafts, { AN_LINE, AN_MUTE, CRIMSON })}
         </div>
 
         {/* Bottom strip — inside the cloth, hairline above. */}
@@ -1371,8 +1836,6 @@ function renderSeasonsCard(d: LeagueFile, seasons: SeasonEntry[], fonts: Fonts) 
             background: `radial-gradient(circle at 78% 55%, ${GOLD}1c 0%, transparent 46%), radial-gradient(circle at 22% 30%, ${GOLD}18 0%, transparent 44%)`,
           }}
         />
-
-        <div style={{ display: 'flex', height: '14px', background: GOLD }} />
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 64px 0 84px', gap: '30px' }}>
           {/* Left — masthead */}
@@ -1571,7 +2034,7 @@ function renderSeasonsCard(d: LeagueFile, seasons: SeasonEntry[], fonts: Fonts) 
    ink field, gold sash strips, masthead on the left and the
    leather league book on the right — but personalized. The
    league's own name is the masthead and the emboss on the book,
-   the seal carries its real volume number, and the left column
+   the left column
    cites the defending champion and career totals.
    Used for the bare URL and the rivalries/live chapter stamps.
    ============================================================ */
@@ -1582,7 +2045,6 @@ function renderLeagueCard(
 ) {
   const founded = d.founded ?? d.current_season ?? new Date().getFullYear()
   const currentSeason = d.current_season ?? founded
-  const volume = Math.max(1, currentSeason - founded + 1)
   const yearSpan = currentSeason > founded ? `${founded}-${currentSeason}` : `${founded}`
 
   // Spell the league name as headlines do: split the last word off so the
@@ -1609,7 +2071,6 @@ function renderLeagueCard(
   const champ = d.defending_champion
   const champName = champ?.owner_name ? clip(champ.owner_name, 22) : null
 
-  const sealAccent = chapter?.accent ?? RUST
 
   return new ImageResponse(
     (
@@ -1636,7 +2097,7 @@ function renderLeagueCard(
         />
 
         {/* Gold sash strips — the site's identity stripe, top and bottom. */}
-        <div style={{ display: 'flex', height: '14px', background: GOLD }} />
+        <div style={{ display: 'flex', height: '17px', background: GOLD }} />
 
         {/* Body */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 0 0 84px' }}>
@@ -1918,33 +2379,6 @@ function renderLeagueCard(
               </div>
             </div>
 
-            {/* Volume seal overlapping the cover corner — the league's real
-                volume count; chapter stamps tint it their accent. */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '76px',
-                right: '30px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '92px',
-                height: '92px',
-                borderRadius: '92px',
-                border: `3px solid ${sealAccent}`,
-                background: `${CREAM}e6`,
-                color: sealAccent,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                transform: 'rotate(12deg)',
-              }}
-            >
-              <span style={{ display: 'flex', fontSize: '12px', letterSpacing: '0.22em' }}>Vol.</span>
-              <span style={{ display: 'flex', fontSize: '17px', letterSpacing: '0.1em', marginTop: '2px' }}>
-                {toRoman(volume)}
-              </span>
-            </div>
           </div>
         </div>
 
