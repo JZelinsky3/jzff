@@ -237,6 +237,17 @@ async function loadRanks(
   return ranks
 }
 
+// Sleeper's headshot URLs end in .jpg and are served as image/jpeg, but the
+// bytes are actually PNG. Satori picks its decoder off the data URI's mime,
+// so trusting either would blow up the render — sniff the magic bytes.
+function sniffMime(buf: Buffer): string | null {
+  if (buf.length < 12) return null
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'image/png'
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg'
+  if (buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return 'image/webp'
+  return null
+}
+
 // Sleeper headshots, inlined as data URIs. Satori can fetch remote images
 // itself, but a 404 there kills the whole render — pre-fetching lets a
 // missing portrait fall back to the card's monogram instead.
@@ -249,7 +260,9 @@ async function loadPortrait(pid: string | null): Promise<string | null> {
     if (!r.ok) return null
     const buf = Buffer.from(await r.arrayBuffer())
     if (buf.byteLength < 512) return null // Sleeper serves a stub for unknown ids
-    return `data:image/jpeg;base64,${buf.toString('base64')}`
+    const mime = sniffMime(buf)
+    if (!mime) return null
+    return `data:${mime};base64,${buf.toString('base64')}`
   } catch {
     return null
   }
@@ -346,7 +359,25 @@ type CardData = {
    cream card stock. Matches all-time.html: --an-* navy case,
    --paper card front, position inks on the slot chips.
    ============================================================ */
-function renderCard(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}) {
+// Portraits are the one part of the scene that comes from someone else's
+// server. Satori decodes them while streaming, so a byte it can't parse
+// kills the response mid-flight rather than throwing where we could catch
+// it. Render to a buffer first, and if that fails, deal the same cards
+// again with monograms instead of photos.
+async function renderCard(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}) {
+  try {
+    return await materialize(renderCardInner(d, fonts, opts))
+  } catch {
+    return await materialize(renderCardInner({ ...d, portraits: {} }, fonts, opts))
+  }
+}
+
+async function materialize(res: ImageResponse): Promise<Response> {
+  const buf = await res.arrayBuffer()
+  return new Response(buf, { headers: res.headers })
+}
+
+function renderCardInner(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}) {
   const { team } = d
   const lineup = d.superflex ? 'eight' : 'seven'
   const featured = team ? featuredThree(team) : []
@@ -357,11 +388,11 @@ function renderCard(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}
     ? `The best season at every position ever to play for ${clip(team.name, 22)}.`
     : `The best season at every position, for every manager who ever ran a team in ${clip(d.leagueName, 24)}.`
 
+  // Kept to one line: the scoring profile already carries a middot.
   const wire = [
-    `${d.squadCount} SQUAD${d.squadCount === 1 ? '' : 'S'} ON FILE`,
+    d.squadCount > 0 ? `${d.squadCount} SQUAD${d.squadCount === 1 ? '' : 'S'} ON FILE` : null,
     d.profileLabel.toUpperCase(),
-    'EVERY SEASON SCOUTED',
-  ].join('  ·  ')
+  ].filter(Boolean).join('  ·  ')
 
   return new ImageResponse(
     (
@@ -383,7 +414,7 @@ function renderCard(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}
             position: 'absolute',
             inset: 0,
             display: 'flex',
-            background: `radial-gradient(ellipse 460px 330px at 74% 40%, rgba(232,200,137,0.20) 0%, transparent 70%), radial-gradient(circle at 8% 8%, rgba(232,200,137,0.10) 0%, transparent 42%)`,
+            background: `radial-gradient(circle at 74% 40%, rgba(232,200,137,0.20) 0%, transparent 52%), radial-gradient(circle at 8% 8%, rgba(232,200,137,0.10) 0%, transparent 42%)`,
           }}
         />
 
@@ -463,7 +494,7 @@ function renderCard(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}
           </div>
 
           {/* Right — the shelf */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '474px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '486px' }}>
             <div
               style={{
                 display: 'flex',
@@ -505,20 +536,21 @@ function renderCard(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}
                         p={f.player}
                         captain={team?.captainKey === f.player.key}
                         portrait={d.portraits[f.player.key] ?? null}
-                        scale={center ? 1.1 : 1}
-                        tilt={fan.length === 3 ? [-8, 0, 8][i]! : 0}
+                        scale={center ? 1.08 : 1}
+                        tilt={fan.length === 3 ? [-6, 0, 6][i]! : 0}
                         lift={center ? 16 : 0}
-                        overlap={i === 0 ? 0 : -18}
+                        overlap={i === 0 ? 0 : 6}
                       />
                     )
                   })
-                : [0, 1, 2].map((i) => <EmptySlot key={i} tilt={[-8, 0, 8][i]!} lift={i === 1 ? 16 : 0} overlap={i === 0 ? 0 : -18} />)}
+                : [0, 1, 2].map((i) => <EmptySlot key={i} tilt={[-6, 0, 6][i]!} lift={i === 1 ? 16 : 0} overlap={i === 0 ? 0 : 6} />)}
             </div>
 
-            {/* Shelf edge, lit from above */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '430px', marginTop: '14px' }}>
-              <div style={{ display: 'flex', height: '2px', background: `linear-gradient(90deg, transparent, ${GOLD_DEEP}, transparent)` }} />
-              <div style={{ display: 'flex', height: '10px', background: `linear-gradient(180deg, rgba(232,200,137,0.10), transparent)` }} />
+            {/* Shelf edge, lit from above. Sits clear of the tilted cards'
+                bottom corners, which dip below their own boxes. */}
+            <div style={{ display: 'flex', flexDirection: 'column', width: '440px', marginTop: '20px' }}>
+              <div style={{ display: 'flex', height: '2px', background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }} />
+              <div style={{ display: 'flex', height: '14px', background: `linear-gradient(180deg, rgba(232,200,137,0.16), transparent)` }} />
             </div>
 
             <div
@@ -537,10 +569,10 @@ function renderCard(d: CardData, fonts: Fonts, opts: { personal?: boolean } = {}
               {team ? (
                 <>
                   <span style={{ display: 'flex', color: CREAM }}>{pts(team.total)} PTS</span>
-                  <span style={{ display: 'flex', color: GOLD_DEEP }}>·</span>
-                  <span style={{ display: 'flex' }}>{team.ppw.toFixed(1)} PPG</span>
-                  <span style={{ display: 'flex', color: GOLD_DEEP }}>·</span>
-                  <span style={{ display: 'flex' }}>{team.seasonsScouted} SEASONS SCOUTED</span>
+                  <span style={{ display: 'flex', marginLeft: '14px' }}>
+                    {team.ppw.toFixed(1)} PPG  ·  {team.seasonsScouted} SEASON
+                    {team.seasonsScouted === 1 ? '' : 'S'} SCOUTED
+                  </span>
                 </>
               ) : (
                 <span style={{ display: 'flex' }}>Sync a draft or a season to deal the first squad</span>
@@ -718,7 +750,7 @@ function TradingCard({
           color: INK_PRINT,
         }}
       >
-        {cardName(p.name, 15)}
+        {cardName(p.name, 13)}
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: px(5), padding: `${px(3)} ${px(9)} 0` }}>
         <div style={{ display: 'flex', fontFamily: 'DMSerif', fontStyle: 'italic', fontSize: px(21), lineHeight: 1, color: ink }}>
