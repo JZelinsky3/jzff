@@ -274,13 +274,18 @@
     background: var(--gold-print); color: var(--paper);
     font-size: .62rem;
 }
-.at-ttl {
-    display: inline-flex; align-items: center;
-    padding: 0 4px; border-radius: 3px;
-    border: 1px solid rgba(122, 92, 20, .5);
-    color: var(--gold-print);
+/* How the manager's own season went, sat under the player's positional
+   finish. A normal finish stays quiet; a title year is allowed to speak up. */
+.at-teamfin {
+    display: block;
+    margin-top: .26rem;
     font-family: var(--mono); font-weight: 700;
-    font-size: .48rem; letter-spacing: .08em; text-transform: uppercase;
+    font-size: .48rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-print-mute);
+}
+.at-teamfin.is-champ {
+    font-size: .52rem;
+    color: var(--gold-print);
 }
 
 /* Position inks — print set for the paper cards. */
@@ -774,7 +779,15 @@
                     '<span class="vi">Position never filled.</span></div>';
             }
             var pos = ' pos-' + p.pos.toLowerCase();
-            var ttl = p.teamRank === 1 ? '<span class="at-ttl">★ Title yr</span>' : '';
+            // The manager's finish that season lives under the player's rank now,
+            // which frees the bottom-right corner to always carry how he was
+            // acquired instead of trading places with the title flag.
+            var teamFin = '';
+            if (p.teamRank != null) {
+                teamFin = p.teamRank === 1
+                    ? '<span class="at-teamfin is-champ">★ Title season</span>'
+                    : '<span class="at-teamfin">Finished ' + ordinal(p.teamRank) + '</span>';
+            }
             return '<button class="at-card" style="--i:' + i + '" aria-label="' + esc(p.name) + ', turn card">' +
                 '<span class="at-inner">' +
                     '<span class="at-face at-front">' +
@@ -788,10 +801,11 @@
                             '<span class="at-name">' + esc(p.name) + '</span>' +
                             '<span class="at-fin' + pos + '"><b>' + p.pos + p.posRank + '</b>' +
                                 '<span>' + p.ppg.toFixed(1) + ' ppg</span></span>' +
+                            teamFin +
                             '<span class="at-foot">' +
                                 '<span class="at-pts">' + p.fpts.toFixed(1) + ' <i>PTS</i></span>' +
-                                (ttl || '<span class="at-acq' + (p.src === 'pickup' ? ' is-pickup' : '') + '">' +
-                                    acqShort(p) + '</span>') +
+                                '<span class="at-acq' + (p.src === 'pickup' ? ' is-pickup' : '') + '">' +
+                                    acqShort(p) + '</span>' +
                             '</span>' +
                         '</span>' +
                     '</span>' +
@@ -820,9 +834,6 @@
         if (p.starts) {
             rows.push(['Started', p.starts + ' week' + (p.starts === 1 ? '' : 's') +
                 (p.startPts ? ' · ' + p.startPts.toFixed(1) + ' pts for you' : '')]);
-        }
-        if (p.teamRank != null) {
-            rows.push(['Your finish', p.teamRank === 1 ? '★ Champion' : '#' + p.teamRank]);
         }
         return rows.map(function (r) {
             return '<span class="at-brow"><span class="at-blabel">' + r[0] + '</span>' +

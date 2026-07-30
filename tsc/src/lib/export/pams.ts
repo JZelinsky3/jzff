@@ -594,6 +594,62 @@ function madePlayoffs(season: SeasonRow, finalRank: number | null, hadPlayoffMat
   return hadPlayoffMatchup
 }
 
+// ── Seating the final standings ─────────────────────────────────────────────
+// The product rule is "if you didn't make the playoffs, your final standing is
+// your regular-season finish" — a consolation bracket that places a 9th-place
+// team 7th because they won the 7th-place game is just confusing.
+//
+// Applied one row at a time, that rule collides with itself. A playoff team's
+// bracket placement and a non-playoff team's regular-season rank are drawn from
+// the same 1..N pool, so overwriting one with the other duplicates numbers and
+// drops others. pams 2021 rendered two 6th places and no 10th (Mason finished
+// 10th but was 6th in the regular season, colliding with the real 6th); 2025
+// rendered two 4ths and two 5ths with no 7th or 8th.
+//
+// So seat the whole season at once rather than rewriting ranks individually:
+// playoff teams keep their bracket order at the top, everyone else is sorted by
+// regular-season finish and dealt the places that remain. Same intent, and the
+// result is always a gapless 1..N over exactly the teams passed in — callers
+// must therefore hand us the visible rows only (hidden profiles filtered out),
+// or the seats will skip.
+type SeatableRow = {
+  manager_id: string
+  wins: number
+  points_for: number | string
+  final_rank: number | null
+  regular_rank: number | null
+}
+function seatFinalStandings(
+  season: SeasonRow,
+  rows: SeatableRow[],
+  hadPlayoffMatchup: Set<string>,
+): Map<string, number> {
+  const playoff: SeatableRow[] = []
+  const rest: SeatableRow[] = []
+  for (const r of rows) {
+    const inPlayoffs = madePlayoffs(season, r.final_rank ?? null, hadPlayoffMatchup.has(r.manager_id))
+    ;(inPlayoffs ? playoff : rest).push(r)
+  }
+  // Rank ascending, nulls last, then the usual record/points tiebreak so the
+  // order is deterministic even when a platform gave us nothing to sort on.
+  const by = (key: (r: SeatableRow) => number | null) => (a: SeatableRow, b: SeatableRow) => {
+    const av = key(a)
+    const bv = key(b)
+    if (av != null && bv != null && av !== bv) return av - bv
+    if (av != null && bv == null) return -1
+    if (av == null && bv != null) return 1
+    if (b.wins !== a.wins) return b.wins - a.wins
+    return Number(b.points_for) - Number(a.points_for)
+  }
+  playoff.sort(by((r) => r.final_rank ?? null))
+  rest.sort(by((r) => r.regular_rank ?? null))
+
+  const seats = new Map<string, number>()
+  let seat = 1
+  for (const r of [...playoff, ...rest]) seats.set(r.manager_id, seat++)
+  return seats
+}
+
 
 // ============================================================
 // Profile groups — one entry per real person after merging.
@@ -956,26 +1012,24 @@ function buildSeasonFile(s: Snapshot, season: SeasonRow): unknown {
     if (m.manager_a_id) hadPlayoffMatchup.add(m.manager_a_id)
     if (m.manager_b_id) hadPlayoffMatchup.add(m.manager_b_id)
   }
-  const standings = ms
+  // Seat the visible rows first: seatFinalStandings deals a gapless 1..N over
+  // exactly what it is given, so hidden profiles have to be dropped up front.
+  const visibleMs = ms.filter((row) => !resolveByManagerId(row.manager_id)?.hidden)
+  const seats = seatFinalStandings(season, visibleMs, hadPlayoffMatchup)
+  const standings = visibleMs
     .map((row) => {
       const mgr = s.managers.get(row.manager_id)
       const resolved = resolveByManagerId(row.manager_id)
-      if (resolved?.hidden) return null
       const total = row.wins + row.losses + row.ties
       const division =
         row.division_index != null && row.division_index < s.league.division_names.length
           ? s.league.division_names[row.division_index]
           : null
-      // Non-playoff teams: their final_rank is whatever Sleeper/Yahoo
-      // assigned via the consolation bracket, which is usually wrong and
-      // confusing (a team that finished 9th can show as 7th because they
-      // won the 7th-place placement game). User-preferred behavior: if you
-      // didn't make the playoffs, your final standing is your regular-season
-      // finish. Done at the JSON layer so every surface inherits the fix.
-      const inPlayoffs = madePlayoffs(season, row.final_rank ?? null, hadPlayoffMatchup.has(row.manager_id))
-      const effectiveFinalRank = inPlayoffs
-        ? (row.final_rank ?? row.regular_rank ?? null)
-        : (row.regular_rank ?? row.final_rank ?? null)
+      // Playoff teams keep their bracket placement, everyone else is ordered by
+      // regular-season finish — see seatFinalStandings for why this is decided
+      // for the whole season at once instead of per row. Done at the JSON layer
+      // so every surface inherits it.
+      const effectiveFinalRank = seats.get(row.manager_id) ?? row.final_rank ?? null
       return {
         final_rank: effectiveFinalRank,
         reg_season_rank: row.regular_rank ?? null,
@@ -7378,15 +7432,22 @@ function buildVisualizer(s: Snapshot): unknown {
     // Ranks per group — a merged profile has at most one identity per season,
     // so the first manager_seasons row found inside the group wins.
     const rankByIdx = new Map<number, { final: number | null; reg: number | null }>()
-    for (const row of s.managerSeasonsBySeason.get(season.id) ?? []) {
+    // Same seating as the season files (one gapless 1..N per season) so a chart
+    // and a standings table never disagree about who finished where.
+    const seasonRows = (s.managerSeasonsBySeason.get(season.id) ?? [])
+      .filter((row) => {
+        const g = managerToGroup.get(row.manager_id)
+        return g != null && idxByGroup.get(g) != null
+      })
+    const seats = seatFinalStandings(season, seasonRows, hadPlayoffMatchup)
+    for (const row of seasonRows) {
       const g = managerToGroup.get(row.manager_id)
       const idx = g ? idxByGroup.get(g) : undefined
       if (idx == null) continue
-      const inPlayoffs = madePlayoffs(season, row.final_rank ?? null, hadPlayoffMatchup.has(row.manager_id))
-      const effectiveFinal = inPlayoffs
-        ? (row.final_rank ?? row.regular_rank ?? null)
-        : (row.regular_rank ?? row.final_rank ?? null)
-      rankByIdx.set(idx, { final: effectiveFinal, reg: row.regular_rank ?? null })
+      rankByIdx.set(idx, {
+        final: seats.get(row.manager_id) ?? row.final_rank ?? null,
+        reg: row.regular_rank ?? null,
+      })
     }
 
     const teamIdxs = new Set<number>([...gamesByIdx.keys(), ...rankByIdx.keys()])
