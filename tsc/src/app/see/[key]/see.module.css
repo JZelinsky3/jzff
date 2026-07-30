@@ -1,0 +1,275 @@
+/* Chrome + layout for the public share pages.
+   Colours come from the chapter's theme, handed in as CSS variables on the
+   page root, so one stylesheet serves black cloth, oxblood, moss and cream. */
+
+.page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(165deg, var(--bg) 0%, var(--bg2) 100%);
+  color: var(--ink);
+  padding: 0 20px 64px;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: 100vw;
+  margin: 0 -20px;
+  padding: 0 20px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.headerRow {
+  max-width: 880px;
+  margin: 0 auto;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Wordmark doubles as the way home. */
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.34em;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.wordmarkTail {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.menuBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.menuBtn:hover { border-color: var(--accent); }
+
+.menuIcon { display: inline-flex; flex-direction: column; gap: 3px; }
+.menuIcon i {
+  display: block;
+  width: 15px;
+  height: 1.5px;
+  background: var(--accent);
+}
+
+/* Panel drops under the header on every size; no floating trigger. */
+.panel {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  left: auto;
+  width: min(320px, calc(100vw - 40px));
+  padding: 14px;
+  background: var(--bg2);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 10px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.panelLink {
+  padding: 11px 12px;
+  border-radius: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 14px;
+}
+.panelLink:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+.panelPrimary {
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--onAccent);
+  text-align: center;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.panelHead {
+  margin: 10px 0 2px;
+  padding: 0 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+/* ------------------------------------------------------------------ body */
+
+.body { width: 100%; max-width: 880px; display: flex; flex-direction: column; align-items: center; }
+
+.title {
+  margin: 56px 0 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(34px, 8vw, 68px);
+  line-height: 1.05;
+  font-weight: 400;
+  text-align: center;
+}
+
+.rule { width: 96px; height: 2px; background: var(--accent); opacity: 0.6; margin: 22px 0 0; }
+
+.deck {
+  margin: 22px 0 0;
+  max-width: 560px;
+  text-align: center;
+  font-size: clamp(15px, 4vw, 19px);
+  line-height: 1.5;
+  color: var(--mute);
+}
+
+.hero {
+  width: 100%;
+  margin: 34px 0 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+  line-height: 0;
+}
+.hero img { width: 100%; height: auto; display: block; }
+
+.caption {
+  margin: 16px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+  text-align: center;
+}
+
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 34px 0 0; width: 100%; }
+
+.btnPrimary,
+.btnGhost {
+  display: inline-block;
+  padding: 15px 28px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+}
+.btnPrimary { background: var(--accent); color: var(--onAccent); }
+.btnGhost { border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); color: var(--ink); }
+
+.fine { margin: 22px 0 0; font-size: 13px; color: var(--mute); text-align: center; line-height: 1.5; }
+
+/* -------------------------------------------------------- also in the book
+   A ruled index rather than a stack of pills: the almanac's own table of
+   contents is the closer match to the rest of the site. */
+
+.tocWrap { width: 100%; margin: 54px 0 0; }
+
+.tocHead {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--mute);
+  text-align: center;
+}
+
+.tocRules { height: 1px; background: color-mix(in srgb, var(--accent) 40%, transparent); margin: 14px 0 0; }
+.tocRulesThin { height: 1px; background: color-mix(in srgb, var(--accent) 18%, transparent); margin: 2px 0 0; }
+
+.toc {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 34px;
+  margin: 6px 0 0;
+}
+
+.tocRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 13px 2px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--ink);
+  text-decoration: none;
+}
+.tocRow:hover .tocName { color: var(--accent); }
+
+.tocName {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The leader dots between title and page mark. */
+.tocLeader {
+  flex: 1;
+  border-bottom: 1px dotted color-mix(in srgb, var(--mute) 55%, transparent);
+  transform: translateY(-4px);
+  min-width: 12px;
+}
+
+.tocMark {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+.foot { margin: 44px 0 0; font-size: 12px; color: var(--mute); text-align: center; }
+.footLink { color: var(--accent); text-decoration: none; }
+
+@media (max-width: 640px) {
+  .page { padding: 0 16px 52px; }
+  .header { margin: 0 -16px; padding: 0 16px; }
+  .panel { right: 16px; }
+  .headerRow { height: 54px; }
+  .wordmark { font-size: 16px; }
+  .menuBtn { padding: 8px 11px; letter-spacing: 0.14em; }
+  .title { margin-top: 40px; }
+  .hero { margin-top: 26px; }
+  .ctas { flex-direction: column; }
+  .btnPrimary,
+  .btnGhost { width: 100%; }
+  /* One column: two columns of leader dots is unreadable on a phone. */
+  .toc { grid-template-columns: minmax(0, 1fr); }
+  .tocName { font-size: 16px; }
+}

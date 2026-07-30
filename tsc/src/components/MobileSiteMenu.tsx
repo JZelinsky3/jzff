@@ -156,6 +156,12 @@ export function MobileSiteMenu({
     return true
   })
 
+  // The public share pages (/see/...) carry their own header with a nav
+  // button in the layout, so a second trigger floating over them would be
+  // two menus on one screen. Hooks above run unconditionally; only the
+  // render bails.
+  if (pathname.startsWith('/see')) return null
+
   return (
     <div ref={rootRef} className={`msm-root${isLanding ? ' msm-root--landing' : ''}${open ? ' is-open' : ''}`}>
       <button
