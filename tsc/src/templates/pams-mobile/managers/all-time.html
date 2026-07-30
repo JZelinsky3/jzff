@@ -121,6 +121,15 @@
 
 /* ══ Squad line ═══════════════════════════════════════════════════════ */
 .at-scouted { text-align: center; margin-top: .45rem; }
+/* Two share targets: the neutral case card and the squad on screen. */
+.at-share { display: flex; justify-content: center; gap: .5rem; margin-top: .7rem; }
+.at-share button {
+    font: inherit; font-family: var(--mono, monospace); font-weight: 700;
+    font-size: .58rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--cream-soft); background: rgba(255,255,255,.04);
+    border: 1px solid var(--ink-line); border-radius: 999px;
+    padding: .42rem .8rem;
+}
 
 /* ══ II · The starters ════════════════════════════════════════════════
    Landscape card stock: photo down the left, the numbers on the right.
@@ -653,6 +662,10 @@
 
             '<div class="m-statgrid" id="atStats"></div>' +
             '<div class="at-scouted m-mono" id="atScouted"></div>' +
+            '<div class="at-share">' +
+                '<button type="button" id="atShareCase">Share case</button>' +
+                '<button type="button" id="atShareSquad">Share squad</button>' +
+            '</div>' +
 
             '<section class="m-section">' +
                 '<div class="m-section-head">' +
@@ -693,6 +706,7 @@
         document.getElementById('atPrev').addEventListener('click', function () { step(-1); });
         document.getElementById('atNext').addEventListener('click', function () { step(1); });
         document.getElementById('atPlate').addEventListener('click', openSquadSheet);
+        wireShare();
 
         var note = document.getElementById('atNote');
         note.querySelector('.at-note-head').addEventListener('click', function () {
@@ -727,6 +741,44 @@
         var next = i + dir;
         if (next < 0 || next >= ORDER.length) return;
         select(ORDER[next]);
+    }
+
+    // ── Sharing ──────────────────────────────────────────────────────────
+    // The case is the neutral house-all-stars card and is what any copied
+    // URL previews. The squad card needs an explicit &share=squad, because
+    // this page writes ?id= into the address bar itself.
+    function shareConfig(kind) {
+        var base = location.origin + location.pathname;
+        if (kind === 'squad' && activeUid && TEAMS[activeUid]) {
+            var team = TEAMS[activeUid];
+            var q = '?id=' + encodeURIComponent(activeUid) + '&share=squad';
+            return {
+                ogPath: '/api/og/alltime/{{LEAGUE_SLUG}}' + q,
+                shareUrl: base + q,
+                title: team.name + '\u2019s All-Time Team',
+                sub: '{{LEAGUE_NAME}} · ' + ordinal(rankOf(activeUid)) + ' of ' + ORDER.length + ' squads',
+                downloadName: team.name + ' all-time team'
+            };
+        }
+        return {
+            ogPath: '/api/og/alltime/{{LEAGUE_SLUG}}',
+            shareUrl: base,
+            title: '{{LEAGUE_NAME}} · The All-Time Team',
+            sub: 'The house all-stars: the best season anyone ever had',
+            downloadName: '{{LEAGUE_NAME}} all-time team'
+        };
+    }
+    function wireShare() {
+        var row = document.querySelector('.at-share');
+        if (!row) return;
+        // Static demo build ships no share module and no card route.
+        if (!window.TSCShare) { row.style.display = 'none'; return; }
+        document.getElementById('atShareCase').addEventListener('click', function () {
+            window.TSCShare.open(shareConfig('case'));
+        });
+        document.getElementById('atShareSquad').addEventListener('click', function () {
+            window.TSCShare.open(shareConfig('squad'));
+        });
     }
 
     // ── Select a squad ───────────────────────────────────────────────────

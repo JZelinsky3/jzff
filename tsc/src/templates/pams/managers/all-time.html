@@ -1067,6 +1067,7 @@ function renderShell() {
         ' · every season scouted';
     renderTabs();
     renderGallery();
+    wireShare();
     document.getElementById('finePrint').innerHTML =
         'How the team is picked: every player a manager <b>drafted or started</b> is scouted, ' +
         'each one credited with his single best season while on that roster. Seasons are scored ' +
@@ -1148,6 +1149,8 @@ function selectManager(uid, replaceUrl) {
     var rank = leagueRank(uid);
     document.getElementById('mastSub').innerHTML =
         'The best season at every position ever to play for <b>' + esc(team.name) + '</b>.';
+    var squadBtn = document.getElementById('shareSquad');
+    if (squadBtn) squadBtn.textContent = 'Share ' + team.name.split(/\s+/)[0] + '\u2019s squad';
     function sq(val, label) {
         return '<span class="sq-item"><span class="sq-val">' + val + '</span>' +
             '<span class="sq-label">' + label + '</span></span>';
@@ -1175,6 +1178,44 @@ function selectManager(uid, replaceUrl) {
     renderBench(team);
     renderGallery();
     countUp(document.getElementById('wireTotal'), team.total);
+}
+
+/* ── Sharing ───────────────────────────────────────────────────
+   Two targets. The case is the neutral house-all-stars card, and is what
+   any copied URL previews. The squad card needs an explicit &share=squad:
+   this page writes ?id= into the address bar itself, so an id on its own
+   says nothing about what the sharer meant to send. ── */
+function shareConfig(kind) {
+    var base = location.origin + location.pathname;
+    if (kind === 'squad' && activeUid && TEAMS[activeUid]) {
+        var team = TEAMS[activeUid];
+        var q = '?id=' + encodeURIComponent(activeUid) + '&share=squad';
+        return {
+            ogPath: '/api/og/alltime/{{LEAGUE_SLUG}}' + q,
+            shareUrl: base + q,
+            title: team.name + '\u2019s All-Time Team',
+            sub: '{{LEAGUE_NAME}} · ' + ordinal(leagueRank(activeUid)) + ' of ' + ORDER.length + ' squads',
+            downloadName: team.name + ' all-time team'
+        };
+    }
+    return {
+        ogPath: '/api/og/alltime/{{LEAGUE_SLUG}}',
+        shareUrl: base,
+        title: '{{LEAGUE_NAME}} · The All-Time Team',
+        sub: 'The house all-stars: the best season anyone ever had',
+        downloadName: '{{LEAGUE_NAME}} all-time team'
+    };
+}
+function wireShare() {
+    var row = document.querySelector('.mast-share');
+    // The dialog is injected by the server for this page only; the static
+    // demo build has no share module and no card route behind it.
+    if (!row) return;
+    if (!window.TSCShare) { row.style.display = 'none'; return; }
+    var caseBtn = document.getElementById('shareCase');
+    var squadBtn = document.getElementById('shareSquad');
+    if (caseBtn) caseBtn.addEventListener('click', function () { window.TSCShare.open(shareConfig('case')); });
+    if (squadBtn) squadBtn.addEventListener('click', function () { window.TSCShare.open(shareConfig('squad')); });
 }
 
 /* ── Starters ──────────────────────────────────────────────── */
