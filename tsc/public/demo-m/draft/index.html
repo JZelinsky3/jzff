@@ -43,20 +43,7 @@
     align-items: stretch;
     margin-bottom: .8rem;
 }
-.dr-year-wrap { flex: none; position: relative; display: flex; }
-.dr-year-wrap[hidden] { display: none; }
-.dr-year-btn {
-    display: flex; align-items: center; gap: .4rem;
-    padding: .5rem .8rem;
-    border-radius: 999px;
-    border: 1px solid var(--gold-deep);
-    background: var(--ink-card);
-    color: var(--gold);
-    font-family: var(--mono); font-weight: 700;
-    font-size: .72rem; letter-spacing: .08em;
-}
-.dr-year-btn svg { transition: transform .15s ease; }
-.dr-year-wrap.is-open .dr-year-btn svg { transform: rotate(180deg); }
+.dr-year-wrap { position: relative; display: inline-flex; }
 /* Tabs flex to fill the row; if more sections land later they overflow
    into a horizontal scroll instead of squeezing. */
 .dr-controls .m-seg { flex: 1; overflow-x: auto; scrollbar-width: none; }
@@ -65,23 +52,38 @@
    once the year pill leaves; with the pill (board) they may scroll a touch. */
 .dr-controls .m-seg button { flex: 1 0 auto; padding-left: .5rem; padding-right: .5rem; }
 
-/* Board header: first-overall card + year picker on one line. */
-.dr-board-head {
-    display: flex; align-items: stretch; gap: .5rem;
-    margin-bottom: .9rem;
+#firstSlot[hidden] { display: none; }
+/* Kicker line of the first-overall card: the year is the control. It reads as
+   the card's own label rather than a pill, so nothing stretches and the tab row
+   keeps the full width. */
+.dr-first-top {
+    display: flex; align-items: baseline; gap: .4rem;
+    margin-bottom: .1rem;
 }
-.dr-board-head[hidden] { display: none; }
-.dr-first-slot { flex: 1; min-width: 0; }
-/* The card carries the row's spacing now, not its own bottom margin. */
-.dr-first-slot .dr-first { margin-bottom: 0; height: 100%; }
-.dr-board-head .dr-year-wrap { align-items: stretch; }
-.dr-board-head .dr-year-btn { height: 100%; }
+.dr-first-kick {
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--gold-deep);
+}
+.dr-year-btn {
+    display: inline-flex; align-items: center; gap: .25rem;
+    padding: 0;
+    background: none; border: none;
+    color: var(--gold);
+    font-family: var(--mono); font-weight: 700;
+    font-size: .56rem; letter-spacing: .18em;
+    border-bottom: 1px dashed var(--gold-deep);
+}
+.dr-year-btn svg { transition: transform .15s ease; }
+.dr-year-wrap.is-open .dr-year-btn svg { transform: rotate(180deg); }
+/* The player line is the link; the year button sits outside it so we never
+   nest one interactive element inside another. */
+.dr-first-body { display: block; color: inherit; text-decoration: none; }
 
-/* Year picker panel — anchored to the pill's right edge now that the pill
-   sits at the right of the row, so the menu opens inward. */
+/* Year picker panel — hangs off the year text at the card's top-left. */
 .dr-year-menu {
     position: absolute;
-    top: calc(100% + 6px); right: 0;
+    top: calc(100% + 6px); left: 0;
     z-index: 30;
     min-width: 7rem;
     max-height: 14rem;
@@ -117,6 +119,7 @@
     background: linear-gradient(90deg, transparent, var(--gold), transparent);
 }
 .dr-first-player {
+    display: block;
     font-family: var(--serif);
     font-size: 1.35rem;
     color: var(--cream);
@@ -513,19 +516,10 @@ button.m-card:active { background: var(--ink-soft); }
         </div>
     </div>
 
-    <!-- Board header: the year picker rides beside the first-overall card so the
-         tab row keeps the full width. Both live OUTSIDE #board, which every
-         section overwrites, so the picker keeps its listeners. -->
-    <div class="dr-board-head" id="boardHead" hidden>
-        <div class="dr-first-slot" id="firstSlot"></div>
-        <div class="dr-year-wrap" id="yearBtn">
-            <button class="dr-year-btn" aria-haspopup="true">
-                <span id="yearLabel">—</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <div class="dr-year-menu" id="yearMenu"></div>
-        </div>
-    </div>
+    <!-- Board header: the first-overall card carries the year picker in its own
+         kicker line, where the year was already printed. Lives OUTSIDE #board,
+         which every section overwrites. -->
+    <div id="firstSlot" hidden></div>
 
     <div id="board"><div class="m-empty">Unrolling the big board…</div></div>
 </main>
@@ -567,38 +561,51 @@ button.m-card:active { background: var(--ink-soft); }
         }
         var fromQuery = parseInt(new URLSearchParams(window.location.search).get('year'), 10);
         activeYear = years.indexOf(fromQuery) !== -1 ? fromQuery : years[0];
-        buildYearMenu();
         renderSection();
     });
 
-    // ── Year dropdown ────────────────────────────────────────────────────
-    var yearBtn = document.getElementById('yearBtn');
-    function buildYearMenu() {
-        document.getElementById('boardHead').hidden = false;
-        document.getElementById('yearLabel').textContent = activeYear;
-        document.getElementById('yearMenu').innerHTML = years.map(function (y) {
-            return '<button class="dr-year-opt' + (y === activeYear ? ' is-active' : '') + '" data-year="' + y + '">' + y + '</button>';
-        }).join('');
+    // ── Year picker ──────────────────────────────────────────────────────
+    // It is rendered inside the first-overall card, which renderBoard rewrites,
+    // so the element itself is disposable: handlers are delegated off #firstSlot
+    // and the markup is rebuilt with the card.
+    var firstSlot = document.getElementById('firstSlot');
+    function yearPickerHtml() {
+        return '<span class="dr-year-wrap">' +
+            '<button class="dr-year-btn" aria-haspopup="true">' + activeYear +
+                '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+            '</button>' +
+            '<span class="dr-year-menu">' +
+                years.map(function (y) {
+                    return '<button class="dr-year-opt' + (y === activeYear ? ' is-active' : '') +
+                        '" data-year="' + y + '">' + y + '</button>';
+                }).join('') +
+            '</span>' +
+        '</span>';
     }
-    yearBtn.addEventListener('click', function (e) {
+    firstSlot.addEventListener('click', function (e) {
         var opt = e.target.closest('button[data-year]');
         if (opt) {
             activeYear = parseInt(opt.dataset.year, 10);
-            buildYearMenu();
-            yearBtn.classList.remove('is-open');
             renderSection();
             try {
                 var url = new URL(window.location.href);
                 url.searchParams.set('year', String(activeYear));
                 history.replaceState(null, '', url);
             } catch (_) { /* non-critical */ }
+            e.preventDefault();
             e.stopPropagation();
             return;
         }
-        yearBtn.classList.toggle('is-open');
+        var btn = e.target.closest('.dr-year-btn');
+        if (btn) {
+            btn.parentNode.classList.toggle('is-open');
+            e.preventDefault();
+            e.stopPropagation();
+        }
     });
     document.addEventListener('click', function (e) {
-        if (!yearBtn.contains(e.target)) yearBtn.classList.remove('is-open');
+        var wrap = firstSlot.querySelector('.dr-year-wrap');
+        if (wrap && !wrap.contains(e.target)) wrap.classList.remove('is-open');
     });
 
     // ── Section tabs ─────────────────────────────────────────────────────
@@ -607,11 +614,12 @@ button.m-card:active { background: var(--ink-soft); }
         if (!btn) return;
         section = btn.dataset.sec;
         this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
-        // The board header (first-overall card + year picker) only belongs to
-        // the board; the history tabs span every year.
-        var head = document.getElementById('boardHead');
-        head.hidden = section !== 'board' || !years.length;
-        if (section !== 'board') document.getElementById('firstSlot').innerHTML = '';
+        // The first-overall card (and the year picker it carries) belongs to the
+        // board only; the history tabs span every year.
+        if (section !== 'board') {
+            firstSlot.hidden = true;
+            firstSlot.innerHTML = '';
+        }
         renderSection();
     });
 
@@ -632,7 +640,10 @@ button.m-card:active { background: var(--ink-soft); }
             if (section !== 'board' || year !== activeYear) return; // stale
             var picks = (draft && draft.picks) || [];
             if (!picks.length) {
-                slot.innerHTML = '';
+                // Keep the picker on screen so a bare year is escapable.
+                slot.hidden = false;
+                slot.innerHTML = '<div class="m-card dr-first"><div class="dr-first-top">' +
+                    yearPickerHtml() + '<span class="dr-first-kick">· No picks on file</span></div></div>';
                 box.innerHTML = '<div class="m-empty">No picks recorded for ' + year + '.</div>';
                 return;
             }
@@ -643,17 +654,22 @@ button.m-card:active { background: var(--ink-soft); }
             });
             var rounds = Object.keys(byRound).map(Number).sort(function (a, b) { return a - b; });
 
-            // The first-overall card sits in the board header alongside the year
-            // picker; the rounds fill #board underneath.
+            // The card is the board header: its kicker line reads "<year> · First
+            // Overall" with the year itself as the picker.
+            slot.hidden = false;
             slot.innerHTML =
-                '<a class="m-card dr-first" href="managers/manager.html?id=' + encodeURIComponent(first.user_id) + '">' +
-                    '<div class="m-kicker">' + year + ' · First Overall</div>' +
-                    '<div class="dr-first-player"><em>' + esc(first.player_name) + '</em></div>' +
-                    '<div class="m-mono" style="margin-top:.3rem">' +
-                        esc(first.position || '') + (first.nfl_team ? ' · ' + esc(first.nfl_team) : '') +
-                        ' · to ' + esc(first.manager_name) +
+                '<div class="m-card dr-first">' +
+                    '<div class="dr-first-top">' + yearPickerHtml() +
+                        '<span class="dr-first-kick">· First Overall</span>' +
                     '</div>' +
-                '</a>';
+                    '<a class="dr-first-body" href="managers/manager.html?id=' + encodeURIComponent(first.user_id) + '">' +
+                        '<span class="dr-first-player"><em>' + esc(first.player_name) + '</em></span>' +
+                        '<span class="m-mono" style="display:block;margin-top:.3rem">' +
+                            esc(first.position || '') + (first.nfl_team ? ' · ' + esc(first.nfl_team) : '') +
+                            ' · to ' + esc(first.manager_name) +
+                        '</span>' +
+                    '</a>' +
+                '</div>';
 
             // Round 1 ships open; every round is a drawer you can fold away.
             var html = rounds.map(function (r) {
