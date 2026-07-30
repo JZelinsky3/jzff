@@ -159,9 +159,9 @@
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     background: linear-gradient(168deg, var(--paper) 0%, var(--paper) 72%, var(--paper-soft) 100%);
-    border: 1px solid #47402f;
+    border: 1px solid rgba(71, 64, 47, .5);
     border-radius: 9px;
-    box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 4px rgba(122,92,20,.14);
+    box-shadow: 0 5px 14px rgba(0,0,0,.4), inset 0 0 0 2px rgba(122,92,20,.09);
     overflow: hidden;
     text-align: left;
 }
@@ -198,6 +198,18 @@
     object-fit: cover; object-position: center top;
     filter: grayscale(1) sepia(.42) contrast(1.06) brightness(1.03);
     mix-blend-mode: multiply;
+}
+/* Some Sleeper cutouts are framed taller than this column, so a `cover` crop
+   leaves the photo's own pale backdrop along the bottom edge (Mahomes, Gibbs
+   and Kelce all show it). Fade the bottom into the card stock so the join
+   reads as printing rather than a stray grey band. */
+.at-photo::before {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 34%;
+    z-index: 2;
+    background: linear-gradient(to bottom, rgba(230, 218, 189, 0), var(--paper-soft));
+    pointer-events: none;
 }
 /* Halftone dots — the printed-card tell, kept faint at this size. */
 .at-photo::after {
@@ -775,7 +787,7 @@
                             '</span>' +
                             '<span class="at-name">' + esc(p.name) + '</span>' +
                             '<span class="at-fin' + pos + '"><b>' + p.pos + p.posRank + '</b>' +
-                                '<span>that season</span></span>' +
+                                '<span>' + p.ppg.toFixed(1) + ' ppg</span></span>' +
                             '<span class="at-foot">' +
                                 '<span class="at-pts">' + p.fpts.toFixed(1) + ' <i>PTS</i></span>' +
                                 (ttl || '<span class="at-acq' + (p.src === 'pickup' ? ' is-pickup' : '') + '">' +

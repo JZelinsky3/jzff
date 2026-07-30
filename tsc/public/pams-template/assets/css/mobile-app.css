@@ -41,6 +41,19 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Tapping chrome must not start a text selection. On iOS a tap that lingers
+   even slightly turns into a long-press, and the label under the finger gets
+   the blue selection wash — most visible on the sheets, where the row you
+   just chose stays highlighted. Applies to controls only; body copy, stats
+   and tables stay selectable so readers can still copy a number out. */
+.m-appbar, .m-tabbar, .m-sheet, .m-seg, .m-tab,
+.m-list-row, .m-sheet-row, .m-sheet-cta, .m-sheet-link, .m-pill,
+a.m-card, button {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
 html { -webkit-text-size-adjust: 100%; }
 
 body {

@@ -20,7 +20,8 @@
 //   -> { teams: { <uid>: team }, order: [ <uid> ... ] }   // order = by total
 //
 // A team carries: uid, name, isCurrent, seasonsScouted, poolSize, slots
-// (7, or 8 in superflex), bench, total, ppw, captainKey.
+// (7, or 8 in superflex), bench, total, ppw, captainKey. Each player carries
+// gp + ppg alongside its season totals.
 // ============================================================
 (function (root) {
 'use strict';
@@ -58,6 +59,7 @@ function buildRankLookup(players) {
                 overall: p.rank,
                 pid: p.player_id || null,
                 pos: pos,
+                gp: p.gp != null ? p.gp : null,
             };
         });
     });
@@ -82,6 +84,12 @@ function buildTeam(mgr, opts) {
                 name: p.name, key: key,
                 pos: lk.pos, year: se.year,
                 fpts: lk.fpts, posRank: lk.posRank, overall: lk.overall, pid: lk.pid,
+                // Games played comes from the rank file. Per-game rate is the
+                // honest read on a season: 300 points over 17 games is a very
+                // different player from 300 over 11.
+                gp: lk.gp,
+                ppg: lk.gp ? Math.round((lk.fpts / lk.gp) * 10) / 10
+                           : Math.round((lk.fpts / (se.year >= 2021 ? 17 : 16)) * 10) / 10,
                 src: p.source,
                 round: p.round, roundPick: p.round_pick, overallPick: p.overall,
                 starts: p.weeks_started || 0, startPts: p.started_pts || 0,

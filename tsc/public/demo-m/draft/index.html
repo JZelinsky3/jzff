@@ -65,10 +65,23 @@
    once the year pill leaves; with the pill (board) they may scroll a touch. */
 .dr-controls .m-seg button { flex: 1 0 auto; padding-left: .5rem; padding-right: .5rem; }
 
-/* Year picker panel */
+/* Board header: first-overall card + year picker on one line. */
+.dr-board-head {
+    display: flex; align-items: stretch; gap: .5rem;
+    margin-bottom: .9rem;
+}
+.dr-board-head[hidden] { display: none; }
+.dr-first-slot { flex: 1; min-width: 0; }
+/* The card carries the row's spacing now, not its own bottom margin. */
+.dr-first-slot .dr-first { margin-bottom: 0; height: 100%; }
+.dr-board-head .dr-year-wrap { align-items: stretch; }
+.dr-board-head .dr-year-btn { height: 100%; }
+
+/* Year picker panel — anchored to the pill's right edge now that the pill
+   sits at the right of the row, so the menu opens inward. */
 .dr-year-menu {
     position: absolute;
-    top: calc(100% + 6px); left: 0;
+    top: calc(100% + 6px); right: 0;
     z-index: 30;
     min-width: 7rem;
     max-height: 14rem;
@@ -265,7 +278,16 @@ button.m-card:active { background: var(--ink-soft); }
     text-align: center;
 }
 .gr-dr.is-top .gr-dr-rank { color: var(--gold); }
+/* Name row: the class count rides alongside the name so the line beneath it
+   is not a third stacked stat. */
 .gr-dr-name { flex: 1; min-width: 0; font-weight: 600; font-size: .9rem; }
+.gr-dr-classes {
+    margin-left: .45rem;
+    font-family: var(--mono); font-weight: 700;
+    font-size: .5rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gold-deep);
+    white-space: nowrap;
+}
 .gr-dr-name small {
     display: block;
     font-weight: 400; font-size: .64rem; color: var(--cream-mute);
@@ -324,6 +346,8 @@ button.m-card:active { background: var(--ink-soft); }
     font-size: .66rem; line-height: 1.35; color: var(--cream-mute);
     margin-top: 1px;
 }
+.gr-rec-line { display: block; }
+.gr-rec-line + .gr-rec-line { margin-top: .22rem; }
 .gr-rec-side { flex: none; text-align: right; }
 .gr-rec-side .gr-rec-score { display: block; font-size: .72rem; margin-top: 3px; }
 .gr-pos-pills { display: flex; gap: .3rem; margin: .1rem 0 .6rem; }
@@ -480,19 +504,26 @@ button.m-card:active { background: var(--ink-soft); }
     </header>
 
     <div class="dr-controls">
-        <div class="dr-year-wrap" id="yearBtn" hidden>
-            <button class="dr-year-btn" aria-haspopup="true">
-                <span id="yearLabel">—</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <div class="dr-year-menu" id="yearMenu"></div>
-        </div>
         <div class="m-seg" id="secSeg">
             <button data-sec="board" class="is-active">Board</button>
             <button data-sec="grades">Grades</button>
             <button data-sec="r1">1st Rd</button>
             <button data-sec="order">Order</button>
             <button data-sec="loyalty">Loyalty</button>
+        </div>
+    </div>
+
+    <!-- Board header: the year picker rides beside the first-overall card so the
+         tab row keeps the full width. Both live OUTSIDE #board, which every
+         section overwrites, so the picker keeps its listeners. -->
+    <div class="dr-board-head" id="boardHead" hidden>
+        <div class="dr-first-slot" id="firstSlot"></div>
+        <div class="dr-year-wrap" id="yearBtn">
+            <button class="dr-year-btn" aria-haspopup="true">
+                <span id="yearLabel">—</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="dr-year-menu" id="yearMenu"></div>
         </div>
     </div>
 
@@ -543,7 +574,7 @@ button.m-card:active { background: var(--ink-soft); }
     // ── Year dropdown ────────────────────────────────────────────────────
     var yearBtn = document.getElementById('yearBtn');
     function buildYearMenu() {
-        yearBtn.hidden = false;
+        document.getElementById('boardHead').hidden = false;
         document.getElementById('yearLabel').textContent = activeYear;
         document.getElementById('yearMenu').innerHTML = years.map(function (y) {
             return '<button class="dr-year-opt' + (y === activeYear ? ' is-active' : '') + '" data-year="' + y + '">' + y + '</button>';
@@ -576,9 +607,11 @@ button.m-card:active { background: var(--ink-soft); }
         if (!btn) return;
         section = btn.dataset.sec;
         this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
-        // The year picker only steers the board; history tabs span all years,
-        // so it leaves the row entirely and the tabs take the full width.
-        yearBtn.hidden = section !== 'board';
+        // The board header (first-overall card + year picker) only belongs to
+        // the board; the history tabs span every year.
+        var head = document.getElementById('boardHead');
+        head.hidden = section !== 'board' || !years.length;
+        if (section !== 'board') document.getElementById('firstSlot').innerHTML = '';
         renderSection();
     });
 
@@ -593,11 +626,13 @@ button.m-card:active { background: var(--ink-soft); }
     // ── Board ────────────────────────────────────────────────────────────
     function renderBoard(year) {
         var box = document.getElementById('board');
+        var slot = document.getElementById('firstSlot');
         box.innerHTML = '<div class="m-empty">Unrolling the big board…</div>';
         loadDraft(year).then(function (draft) {
             if (section !== 'board' || year !== activeYear) return; // stale
             var picks = (draft && draft.picks) || [];
             if (!picks.length) {
+                slot.innerHTML = '';
                 box.innerHTML = '<div class="m-empty">No picks recorded for ' + year + '.</div>';
                 return;
             }
@@ -608,7 +643,9 @@ button.m-card:active { background: var(--ink-soft); }
             });
             var rounds = Object.keys(byRound).map(Number).sort(function (a, b) { return a - b; });
 
-            var html =
+            // The first-overall card sits in the board header alongside the year
+            // picker; the rounds fill #board underneath.
+            slot.innerHTML =
                 '<a class="m-card dr-first" href="managers/manager.html?id=' + encodeURIComponent(first.user_id) + '">' +
                     '<div class="m-kicker">' + year + ' · First Overall</div>' +
                     '<div class="dr-first-player"><em>' + esc(first.player_name) + '</em></div>' +
@@ -619,7 +656,7 @@ button.m-card:active { background: var(--ink-soft); }
                 '</a>';
 
             // Round 1 ships open; every round is a drawer you can fold away.
-            html += rounds.map(function (r) {
+            var html = rounds.map(function (r) {
                 return '<div class="dr-round' + (r === 1 ? ' is-open' : '') + '">' +
                     '<button class="dr-round-head" aria-expanded="' + (r === 1 ? 'true' : 'false') + '">' +
                         '<span class="dr-round-n">Round ' + r + '</span>' +
@@ -1012,8 +1049,8 @@ button.m-card:active { background: var(--ink-soft); }
     // ── Transcript: every drafter, ranked by average class rank ──────────
     function transcriptView() {
         var data = gradeData;
-        // Newest season first so the chip strip opens on the recent drafts.
-        var years = data.years.slice().sort(function (a, b) { return b - a; });
+        // Oldest first: the strip reads left to right as a career.
+        var years = data.years.slice().sort(function (a, b) { return a - b; });
         var active = [], alumni = [];
         data.drafters.forEach(function (m) {
             (retiredNames[m.manager] ? alumni : active).push(m);
@@ -1032,8 +1069,9 @@ button.m-card:active { background: var(--ink-soft); }
                 '<div class="gr-dr-top">' +
                     '<span class="gr-dr-rank">' + (i + 1) + '</span>' +
                     '<span class="gr-dr-name">' + esc(m.manager) +
-                        '<small>' + m.classes + ' class' + (m.classes === 1 ? '' : 'es') +
-                        ' · best ' + ord(m.best) +
+                        '<span class="gr-dr-classes">' + m.classes +
+                            ' class' + (m.classes === 1 ? '' : 'es') + '</span>' +
+                        '<small>best ' + ord(m.best) +
                         ' · ' + Math.round(m.totalScore).toLocaleString() + ' career' +
                         (m.qualified ? '' : ' · provisional') + '</small></span>' +
                     '<span class="gr-dr-avg">' + m.avgRank.toFixed(1) + '<small>avg rank</small></span>' +
@@ -1084,10 +1122,10 @@ button.m-card:active { background: var(--ink-soft); }
         function classRow(c) {
             var top = c.picks[0];
             var bust = c.picks[c.picks.length - 1];
-            var sub = ord(c.yearRank) + ' of ' + c.year + ' · score ' + Math.round(c.score) +
-                ' · ' + c.picks.length + ' graded';
-            if (top) sub += '<br>Best ' + esc(top.player_name) + ' ' + move(top);
-            if (bust && bust !== top) sub += '<br>Bust ' + esc(bust.player_name) + ' ' + move(bust);
+            var sub = '<span class="gr-rec-line">' + ord(c.yearRank) + ' of ' + c.year +
+                ' · score ' + Math.round(c.score) + ' · ' + c.picks.length + ' graded</span>';
+            if (top) sub += '<span class="gr-rec-line">Best ' + esc(top.player_name) + ' ' + move(top) + '</span>';
+            if (bust && bust !== top) sub += '<span class="gr-rec-line">Bust ' + esc(bust.player_name) + ' ' + move(bust) + '</span>';
             return '<button class="m-list-row gr-rec-row" data-gr-year="' + c.year + '">' +
                 '<span class="gr-rec-yr">' + yy(c.year) + '</span>' +
                 '<span class="gr-rec-main">' +

@@ -1186,7 +1186,8 @@ function renderStarters(team) {
         }
         var backRows =
             tcbRow('Season', p.year + ' · ' + p.pos + p.posRank + ' overall No. ' + p.overall) +
-            tcbRow('Points', p.fpts.toFixed(1) + ' · ' + PROFILE_LABEL[PROFILE]) +
+            tcbRow('Points', p.fpts.toFixed(1) + ' · ' + p.ppg.toFixed(1) + ' ppg'
+                + (p.gp ? ' over ' + p.gp + 'g' : '')) +
             tcbRow('Acquired', p.src === 'draft'
                 ? 'Draft · Rd ' + p.round + ', Pick ' + p.roundPick + ' (No. ' + p.overallPick + ')'
                 : 'In-season · trade or waiver') +
@@ -1199,7 +1200,8 @@ function renderStarters(team) {
                     '<div class="tc-top"><span class="tc-slot' + posCls + '">' + s.slot + '</span><span class="tc-year">' + p.year + '</span></div>' +
                     '<div class="tc-photo">' + (isCaptain ? '<span class="tc-captain" title="Captain · the squad&#39;s best positional finish">★</span>' : '') + photo + '</div>' +
                     '<div class="tc-name">' + esc(p.name) + '</div>' +
-                    '<div class="tc-finish' + posCls + '"><b>' + p.pos + p.posRank + '</b><span>that season</span></div>' +
+                    '<div class="tc-finish' + posCls + '"><b>' + p.pos + p.posRank + '</b>' +
+                        '<span>that season &middot; ' + p.ppg.toFixed(1) + ' ppg</span></div>' +
                     teamFin +
                     '<div class="tc-bottom">' +
                         '<span class="tc-pts">' + p.fpts.toFixed(1) + ' <i>PTS</i></span>' +
