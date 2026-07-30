@@ -314,12 +314,12 @@ export async function GET(
     return renderCard({ ...shell, squadCount: 0, feature: null, portraits: {} }, fonts)
   }
 
-  // ?id= is the manager the sharer had open — a link copied after switching
-  // squads previews that squad. A bare share gets the house all-stars
-  // instead of one manager's team: nobody's squad is "the" squad, and the
-  // hook is that every manager has one of these to go and look at.
+  // Personal card only on an explicit &share=squad — see the header note on
+  // why a bare ?id= can't be trusted as intent. Everything else, including
+  // an unknown id, gets the house all-stars.
   const requested = req.nextUrl.searchParams.get('id')
-  const team = requested ? teams[requested] : undefined
+  const wantsSquad = req.nextUrl.searchParams.get('share') === 'squad'
+  const team = requested && wantsSquad ? teams[requested] : undefined
   const feature = team
     ? personalFeature(team, order.indexOf(team.uid) + 1, order.length)
     : houseFeature(teams, order.length, data.name)

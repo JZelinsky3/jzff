@@ -15,6 +15,13 @@
 // hook (e.g. SPAs that change the share target after navigation). init()
 // can be called multiple times — each call idempotently rewires the
 // SAME dialog/button with new metadata.
+//
+// `TSCShare.open({...})` rewires and opens the dialog in one go, for pages
+// that trigger sharing from their own in-layout controls instead of the
+// floating pill. Those pages ship the pill with data-pill="off" so it stays
+// hidden; one page can then offer several share targets (e.g. the All-Time
+// Team's neutral card vs the squad on screen) by passing a different config
+// per button.
 
 (function () {
   'use strict';
@@ -49,7 +56,8 @@
     if (titleEl) titleEl.textContent = opts.title || '';
     if (subEl && opts.sub) subEl.textContent = opts.sub;
     if (preview) preview.src = ogUrl;
-    btn.hidden = false;
+    // Pages with their own in-layout triggers ship the pill switched off.
+    if (btn.getAttribute('data-pill') !== 'off') btn.hidden = false;
 
     // Replace listeners idempotently by cloning each element.
     function rebind(el) {
@@ -136,6 +144,15 @@
     }
   }
 
+  // Rewire to this target and show the dialog. The pill's own handler is
+  // what wire() binds, so clicking it is the one code path that opens the
+  // dialog — hidden or not.
+  function open(opts) {
+    wire(opts);
+    var btn = document.getElementById('tsc-share-btn');
+    if (btn) btn.click();
+  }
+
   function bootFromConfig() {
     if (pendingInit) {
       wire(pendingInit);
@@ -153,5 +170,5 @@
     bootFromConfig();
   }
 
-  window.TSCShare = { init: init };
+  window.TSCShare = { init: init, open: open };
 })();

@@ -413,8 +413,9 @@ function injectOgTags(html: string, meta: LeagueMeta, file: string, req: NextReq
   // button — useful on phones where "Add to Home Screen" hides the
   // browser share button, and especially on the two pages members are
   // supposed to share with their league.
-  if (SHARE_BUTTON_FILES.has(file)) {
-    const shareBlock = `${shareModuleMarkup()}\n${shareInitScript(ogImage, meta, req)}`
+  if (SHARE_BUTTON_FILES.has(file) || SHARE_DIALOG_FILES.has(file)) {
+    const pill = SHARE_BUTTON_FILES.has(file)
+    const shareBlock = `${shareModuleMarkup(pill)}\n${shareInitScript(ogImage, meta, req)}`
     if (/<\/body>/i.test(out)) {
       out = out.replace(/<\/body>/i, `${shareBlock}\n</body>`)
     } else {
@@ -435,6 +436,15 @@ const SHARE_BUTTON_FILES = new Set<string>([
   // game actions row), so it no longer needs the floating pill.
 ])
 
+// Pages that get the share dialog WITHOUT the floating pill: they trigger it
+// from their own in-layout controls via TSCShare.open(). The All-Time Team
+// needs this because it has two things worth sending — the neutral house
+// card and the squad currently on screen — which one floating button can't
+// express.
+const SHARE_DIALOG_FILES = new Set<string>([
+  'managers/all-time.html',
+])
+
 type OgImage = { url: string; title: string; description: string; downloadName?: string; shareSub?: string }
 
 // Markup injected by the public-almanac route into every page that has an
@@ -442,10 +452,10 @@ type OgImage = { url: string; title: string; description: string; downloadName?:
 // the JS module at /pams-template/assets/js/share.js handles the dialog
 // behaviour and gets initialized with this page's metadata via a tiny
 // inline <script> we also inject.
-function shareModuleMarkup(): string {
+function shareModuleMarkup(pill: boolean): string {
   return `
 <link rel="stylesheet" href="/pams-template/assets/css/share.css">
-<button type="button" class="tsc-share-btn" id="tsc-share-btn" hidden aria-label="Share this page">
+<button type="button" class="tsc-share-btn" id="tsc-share-btn" hidden${pill ? '' : ' data-pill="off"'} aria-label="Share this page">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
     <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
@@ -531,9 +541,13 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
   // sharer was looking at. The image route renders an empty-case variant
   // when nothing has been scouted yet, so this never loses its preview.
   if (file === 'managers/all-time.html') {
+    // The page writes ?id= into the address bar itself, so an id alone is
+    // not a request to feature that squad — only an explicit &share=squad
+    // is. Without it every copied URL previews the neutral house card.
     const uid = req.nextUrl.searchParams.get('id')
+    const personal = !!uid && req.nextUrl.searchParams.get('share') === 'squad'
     const url = new URL(
-      `/api/og/alltime/${meta.slug}${uid ? `?id=${encodeURIComponent(uid)}` : ''}`,
+      `/api/og/alltime/${meta.slug}${personal ? `?id=${encodeURIComponent(uid!)}&share=squad` : ''}`,
       req.nextUrl.origin,
     ).toString()
     return {
