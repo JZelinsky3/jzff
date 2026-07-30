@@ -522,6 +522,25 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       }
     }
   }
+  // All-Time Team: /leagues/<slug>/managers/all-time.html?id=<uid>
+  // Display-case card with the featured squad's three best trading cards
+  // fanned on the shelf. Bare page previews the league's No. 1 squad; ?id=
+  // previews that manager's squad, so a link copied after switching squads
+  // shows the squad the sharer was looking at. The image route renders an
+  // empty-case variant when nothing has been scouted yet, so this never
+  // loses its preview.
+  if (file === 'managers/all-time.html') {
+    const uid = req.nextUrl.searchParams.get('id')
+    const url = new URL(
+      `/api/og/alltime/${meta.slug}${uid ? `?id=${encodeURIComponent(uid)}` : ''}`,
+      req.nextUrl.origin,
+    ).toString()
+    return {
+      url,
+      title: `${meta.name} · The All-Time Team`,
+      description: `The best season at every position, for every manager in ${meta.name} — one all-time lineup each, ranked.`,
+    }
+  }
   // Matchup preview: /leagues/<slug>/live/matchup-preview/?m=<uid>
   // Gets a fight-poster card for that manager's game (no ?m= → Game of
   // the Week). The image route falls back to an offseason card when no
@@ -650,11 +669,9 @@ const OG_CHAPTERS: Record<string, { page: string; label: string; desc: (name: st
     label: 'The Manager File',
     desc: (n) => `One manager's complete file from ${n}'s archives — record, rings, rivalries, and tendencies.`,
   },
-  'managers/all-time.html': {
-    page: 'managers',
-    label: 'The All-Time Team',
-    desc: (n) => `The best season at every position, for every manager in ${n} — one all-time lineup each, ranked.`,
-  },
+  // NOTE: managers/all-time.html is handled above by buildOgImageUrl —
+  // it gets its own display-case card from /api/og/alltime, not a chapter
+  // stamp, so it deliberately has no entry here.
   'managers/visualizer.html': {
     page: 'managers',
     label: 'The Chart Room',
