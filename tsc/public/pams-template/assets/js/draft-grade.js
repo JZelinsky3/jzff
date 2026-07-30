@@ -118,20 +118,40 @@ var CLIMB_GP_W = 0.02; var CLIMB_GP_MAX = 4;
 // within a year never changes.
 var FLX_HEIST_W = 0.5; var FLX_HEIST_CAP = 25;
 // A flex pick from the top of the draft whose season fell below the startable
-// line is nearly always injury, not a bad read. Soften those, don't erase.
-// A top-10 flex pick who still finished startable but way under cost gets the
-// same forgiveness IF the games-played data shows real missed time (Lamb 25
-// WR2 -> WR22 in 14 games); a healthy season that just underperformed is a
-// read the manager got wrong and eats the full penalty.
-var INJURY_W = 0.65;
-var INJURY_PARTIAL_W = 0.65;
-var INJURY_GP_MAX = 14; // played this many games or fewer = missed real time
-// A healthy top-10 flex pick that busted is a missed read and eats most of
-// the penalty — but not every last point of it (Jefferson 25 at full freight
-// felt cruel). A finish still inside the positional top-12 (WR11 from a WR2
-// slot) means the flex board soured, not the position call; trim what's left.
-var HEALTHY_BUST_W = 0.93;
+// line is often injury rather than a bad read, so those get softened — but how
+// much depends on how much of the season the pick actually missed. This used to
+// be one flat 0.65 for anyone below the line, which meant a 4-game season and a
+// full 17-game flop landed on the same number (Nabers 25 WR5 -> WR102 in 4
+// games and Hill 24 WR2 -> WR18 over a full year both graded -177). Showing up
+// every week and producing nothing is a read the manager got wrong, and it cost
+// them the whole season rather than part of it, so the curve ends at 1.00: no
+// discount at all. Barely playing stays mostly variance.
+//   games played -> multiplier applied to a negative score (lower = forgiven)
+var INJURY_STEPS = [
+    { gp: 2,  w: 0.45 },   // a game or two: essentially unknowable
+    { gp: 5,  w: 0.60 },
+    { gp: 9,  w: 0.75 },
+    { gp: 13, w: 0.90 },
+];
+var INJURY_W_FULL    = 1.00;  // played the year and busted: full penalty
+var INJURY_W_UNKNOWN = 0.72;  // no games-played data: benefit of the doubt
 var POS_STARTER_W = 0.8;
+// Missed-time rate relief. A flex pick who played roughly half the year and
+// produced while he was out there still won you those weeks, but a season total
+// judges him as if the missing weeks were zeroes — so a strong rate over half a
+// year can land under the replacement line and eat the full down-move penalty.
+// Rice 25 is the case this exists for: 8 games at ~18.8ppg behind a 6-game
+// suspension, a top-10 rate, graded like a washout.
+//
+// Two gates keep it honest. RATE_MIN_GP means a week-1 spike who then vanished
+// earns nothing (he helped nobody), and the credit is scaled by the share of the
+// season actually played, so 8 of 17 games claims under half of it. Capped, and
+// only ever applied to a negative score: this softens a grade, never rescues
+// one. Flex only — QB/TE score off a rank ladder, not points, so the same
+// projection would not mean the same thing there.
+var RATE_MIN_GP = 7;
+var RATE_W = 0.25;
+var RATE_CAP = 45;
 // Below the startable line both VOR terms floor at 0, so sub-line movement is
 // scored on dampened raw points. Climbs stay token (a WR80 who reaches WR70
 // still never starts); vanishing acts bleed real points, scaled by how much
@@ -143,6 +163,16 @@ var BUST_W  = 0.12; var BUST_CAP  = 250;
 // Name key shared by the draft files and the fantasy-rank files. The two
 // feeds disagree about punctuation and generational suffixes, so both sides
 // get flattened to the same shape before they are matched.
+// Games played -> how much of a negative score survives. Walks INJURY_STEPS and
+// falls through to the full penalty for anyone who played a full season.
+function injuryWeight(gp) {
+    if (gp == null) return INJURY_W_UNKNOWN;
+    for (var i = 0; i < INJURY_STEPS.length; i++) {
+        if (gp <= INJURY_STEPS[i].gp) return INJURY_STEPS[i].w;
+    }
+    return INJURY_W_FULL;
+}
+
 function normName(name) {
     return (name || '').toLowerCase()
         .replace(/[.\u2018\u2019']/g, '')
@@ -366,6 +396,7 @@ function compute(input) {
                 // a different planet than one drafted a rank before it.
                 var bustPts  = Math.max(0, Math.min(repl, expF) - actualF);
                 var climbPts = Math.max(0, Math.min(repl, actualF) - expF);
+                var seasonG = y >= 2021 ? 17 : 16;
                 score += CLIMB_W * Math.min(climbPts, CLIMB_CAP)
                        - BUST_W  * Math.min(bustPts,  BUST_CAP);
                 // Production kickers (see TOP_MARGIN_W / NEAR_REFUND): points buy
@@ -394,17 +425,32 @@ function compute(input) {
                 if (isFlex && finPosRank && finPosRank <= d.pos_draft_rank) {
                     score = Math.max(score, finPosRank < d.pos_draft_rank ? 0 : -3);
                 }
-                // Injury forgiveness: a flex pick from the first ~1.7 rounds whose
-                // season landed below the startable line almost certainly got hurt.
-                // That's variance, not a read the manager blew. Soften the hit.
-                // The startable-but-way-under-cost tier is gated on games played
-                // (missing gp data forgives, benefit of the doubt): actual missed
-                // time earns the discount, a healthy bust doesn't.
+                // Missed-time rate credit (see RATE_MIN_GP / RATE_W / RATE_CAP).
+                // Give back a slice of the value his per-game rate implies over a
+                // full season, scaled by the share of the year he actually played,
+                // so half a season of real production reads differently from half
+                // a season of nothing. Bounded, and only on a grade that is
+                // already negative.
+                if (isFlex && score < 0 && fin && fin.gp
+                    && fin.gp >= RATE_MIN_GP && fin.gp < seasonG) {
+                    var projF = (actualF / fin.gp) * seasonG;
+                    var rateGain = vorOf(projF) - actualVor;
+                    if (rateGain > 0) {
+                        score += Math.min(RATE_CAP, RATE_W * rateGain * (fin.gp / seasonG));
+                        if (score > 0) score = 0;   // softens, never rescues
+                    }
+                }
+                // Injury forgiveness (see INJURY_STEPS): a flex pick from the
+                // first ~1.7 rounds whose season landed below the startable line
+                // was often hurt rather than misread, so soften the hit in
+                // proportion to the time he actually missed. One curve now covers
+                // both the below-the-line case and the startable-but-way-under-
+                // cost case; a pick who played the whole year gets no discount.
                 if (isFlex && score < 0 && dr <= Math.round(1.7 * (teams > 0 ? teams : 12))) {
                     var ffr = flexFinalRank[nn] || null;
-                    var hurtGp = !fin || fin.gp == null || fin.gp <= INJURY_GP_MAX;
-                    if (!ffr || ffr > flexReplRank) score *= INJURY_W;
-                    else if (dr <= 10) score *= hurtGp ? INJURY_PARTIAL_W : HEALTHY_BUST_W;
+                    if (!ffr || ffr > flexReplRank || dr <= 10) {
+                        score *= injuryWeight(fin && fin.gp != null ? fin.gp : null);
+                    }
                 }
                 // Positional-starter relief: still a weekly starter at his own
                 // position despite the flex slide.
