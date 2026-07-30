@@ -52,41 +52,45 @@
    once the year pill leaves; with the pill (board) they may scroll a touch. */
 .dr-controls .m-seg button { flex: 1 0 auto; padding-left: .5rem; padding-right: .5rem; }
 
+/* The slot is the positioning context for the year pill, and it deliberately
+   does NOT clip: the open menu has to be able to hang below the card. */
+#firstSlot { position: relative; }
 #firstSlot[hidden] { display: none; }
-/* Kicker line of the first-overall card: the year is the control. It reads as
-   the card's own label rather than a pill, so nothing stretches and the tab row
-   keeps the full width. */
-.dr-first-top {
-    display: flex; align-items: baseline; gap: .4rem;
-    margin-bottom: .1rem;
-}
-.dr-first-kick {
-    font-family: var(--mono); font-weight: 700;
-    font-size: .56rem; letter-spacing: .26em; text-transform: uppercase;
-    color: var(--gold-deep);
+/* Year pill: its own size, centred against the card's right edge. Sits as a
+   SIBLING of the card rather than inside it, so it is neither stretched by the
+   card's layout nor clipped by its overflow, and a tap on it can't trigger the
+   card's link. */
+.dr-year-wrap {
+    position: absolute;
+    right: .8rem; top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    display: inline-flex;
 }
 .dr-year-btn {
-    display: inline-flex; align-items: center; gap: .25rem;
-    padding: 0;
-    background: none; border: none;
+    display: flex; align-items: center; gap: .4rem;
+    padding: .5rem .8rem;
+    border-radius: 999px;
+    border: 1px solid var(--gold-deep);
+    background: var(--ink-card);
     color: var(--gold);
     font-family: var(--mono); font-weight: 700;
-    font-size: .56rem; letter-spacing: .18em;
-    border-bottom: 1px dashed var(--gold-deep);
+    font-size: .72rem; letter-spacing: .08em;
 }
 .dr-year-btn svg { transition: transform .15s ease; }
 .dr-year-wrap.is-open .dr-year-btn svg { transform: rotate(180deg); }
-/* The player line is the link; the year button sits outside it so we never
-   nest one interactive element inside another. */
-.dr-first-body { display: block; color: inherit; text-decoration: none; }
+/* Leave room on the card so the first-overall text never runs under the pill. */
+.dr-first { padding-right: 5.6rem; }
 
-/* Year picker panel — hangs off the year text at the card's top-left. */
+/* Year picker panel — hangs off the pill and out over the rounds below. */
 .dr-year-menu {
     position: absolute;
-    top: calc(100% + 6px); left: 0;
+    top: calc(100% + 6px); right: 0;
     z-index: 30;
     min-width: 7rem;
-    max-height: 14rem;
+    /* Tall enough for a deep league without ever running off screen. The old
+       14rem, inside a card that clipped, showed about two years at a time. */
+    max-height: min(60vh, 22rem);
     overflow-y: auto;
     background: var(--ink-card);
     border: 1px solid var(--ink-line);
@@ -119,7 +123,6 @@
     background: linear-gradient(90deg, transparent, var(--gold), transparent);
 }
 .dr-first-player {
-    display: block;
     font-family: var(--serif);
     font-size: 1.35rem;
     color: var(--cream);
@@ -572,7 +575,7 @@ button.m-card:active { background: var(--ink-soft); }
     function yearPickerHtml() {
         return '<span class="dr-year-wrap">' +
             '<button class="dr-year-btn" aria-haspopup="true">' + activeYear +
-                '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+                '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
             '</button>' +
             '<span class="dr-year-menu">' +
                 years.map(function (y) {
@@ -642,8 +645,10 @@ button.m-card:active { background: var(--ink-soft); }
             if (!picks.length) {
                 // Keep the picker on screen so a bare year is escapable.
                 slot.hidden = false;
-                slot.innerHTML = '<div class="m-card dr-first"><div class="dr-first-top">' +
-                    yearPickerHtml() + '<span class="dr-first-kick">· No picks on file</span></div></div>';
+                slot.innerHTML = '<div class="m-card dr-first">' +
+                    '<div class="m-kicker">' + year + ' · First Overall</div>' +
+                    '<div class="m-mono" style="margin-top:.3rem">No picks on file</div>' +
+                    '</div>' + yearPickerHtml();
                 box.innerHTML = '<div class="m-empty">No picks recorded for ' + year + '.</div>';
                 return;
             }
@@ -654,22 +659,21 @@ button.m-card:active { background: var(--ink-soft); }
             });
             var rounds = Object.keys(byRound).map(Number).sort(function (a, b) { return a - b; });
 
-            // The card is the board header: its kicker line reads "<year> · First
-            // Overall" with the year itself as the picker.
+            // Card first, then the year pill as its sibling: the pill overlays the
+            // card's right edge but is not inside it, so the card's overflow
+            // can't clip the open menu and a tap on the pill can't follow the
+            // card's link.
             slot.hidden = false;
             slot.innerHTML =
-                '<div class="m-card dr-first">' +
-                    '<div class="dr-first-top">' + yearPickerHtml() +
-                        '<span class="dr-first-kick">· First Overall</span>' +
+                '<a class="m-card dr-first" href="managers/manager.html?id=' + encodeURIComponent(first.user_id) + '">' +
+                    '<div class="m-kicker">' + year + ' · First Overall</div>' +
+                    '<div class="dr-first-player"><em>' + esc(first.player_name) + '</em></div>' +
+                    '<div class="m-mono" style="margin-top:.3rem">' +
+                        esc(first.position || '') + (first.nfl_team ? ' · ' + esc(first.nfl_team) : '') +
+                        ' · to ' + esc(first.manager_name) +
                     '</div>' +
-                    '<a class="dr-first-body" href="managers/manager.html?id=' + encodeURIComponent(first.user_id) + '">' +
-                        '<span class="dr-first-player"><em>' + esc(first.player_name) + '</em></span>' +
-                        '<span class="m-mono" style="display:block;margin-top:.3rem">' +
-                            esc(first.position || '') + (first.nfl_team ? ' · ' + esc(first.nfl_team) : '') +
-                            ' · to ' + esc(first.manager_name) +
-                        '</span>' +
-                    '</a>' +
-                '</div>';
+                '</a>' +
+                yearPickerHtml();
 
             // Round 1 ships open; every round is a drawer you can fold away.
             var html = rounds.map(function (r) {

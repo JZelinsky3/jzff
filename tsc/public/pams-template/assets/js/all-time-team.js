@@ -21,7 +21,8 @@
 //
 // A team carries: uid, name, isCurrent, seasonsScouted, poolSize, slots
 // (7, or 8 in superflex), bench, total, ppw, captainKey. Each player carries
-// gp + ppg alongside its season totals.
+// gp + ppg alongside its season totals; `ppw` is the sum of the starters' ppg,
+// i.e. what the lineup projects for a single week.
 // ============================================================
 (function (root) {
 'use strict';
@@ -154,9 +155,18 @@ function buildTeam(mgr, opts) {
     slots.forEach(function (s) {
         if (!s.player) return;
         total += s.player.fpts;
-        // Weekly-output estimate: each starter's season total spread over
-        // that season's schedule (17 games from 2021 on, 16 before).
-        ppw += s.player.fpts / (s.player.year >= 2021 ? 17 : 16);
+        // One-week projection: what this lineup puts up if it plays a single
+        // week, so it is the sum of the starters' per-game rates. Deliberately
+        // adds the ALREADY-ROUNDED per-player ppg, so the seven numbers printed
+        // on the cards total exactly the figure shown for the squad.
+        //
+        // It used to divide each season total by that season's schedule length
+        // (16 or 17), which charged the squad for weeks a starter missed. That
+        // read as a season-long average and, worse, meant the cards did not add
+        // up to the team figure — Lamar's 15-game 2019 showed 32.9 on his card
+        // while contributing 30.9. The lineup has no K or DEF anyway, so a
+        // true weekly total was never the claim.
+        ppw += s.player.ppg;
         // Captain: the squad's best positional finish, not raw points --
         // raw totals would pin the star on the QB every time. Ties break
         // on points.

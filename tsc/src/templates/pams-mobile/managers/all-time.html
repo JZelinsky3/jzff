@@ -281,9 +281,20 @@
     font-size: .48rem; letter-spacing: .14em; text-transform: uppercase;
     color: var(--ink-print-mute);
 }
+/* Title year gets a struck stamp rather than a starred line: a hairline box in
+   gold-print that reads as part of the card's own printing. align-self keeps it
+   hugging its text — it is a flex item, so it would otherwise stretch the whole
+   width of the card. */
 .at-teamfin.is-champ {
-    font-size: .52rem;
+    align-self: flex-start;
+    display: inline-flex; align-items: center;
+    margin-top: .22rem;
+    padding: .1rem .38rem;
+    border: 1px solid rgba(122, 92, 20, .55);
+    border-radius: 2px;
+    background: rgba(122, 92, 20, .08);
     color: var(--gold-print);
+    font-size: .45rem; letter-spacing: .2em;
 }
 
 /* Position inks — print set for the paper cards. */
@@ -782,7 +793,7 @@
             var teamFin = '';
             if (p.teamRank != null) {
                 teamFin = p.teamRank === 1
-                    ? '<span class="at-teamfin is-champ">★ Title season</span>'
+                    ? '<span class="at-teamfin is-champ">Title season</span>'
                     : '<span class="at-teamfin">Finished ' + ordinal(p.teamRank) + '</span>';
             }
             return '<button class="at-card" style="--i:' + i + '" aria-label="' + esc(p.name) + ', turn card">' +
