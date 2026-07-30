@@ -14,6 +14,7 @@ import { ImageResponse } from 'next/og'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isDemoSlug, DEMO_NAME } from '@/lib/og/demoBundle'
 import { getPickemsState } from '@/lib/pickems'
 
 export const runtime = 'nodejs'
@@ -56,6 +57,13 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
+
+  // Slug "demo" is the static demo tree, not a DB league. It has no live
+  // week in either table, so it renders the same preseason card a real
+  // league sees before its first scored week.
+  if (isDemoSlug(slug)) {
+    return renderQuietCard(DEMO_NAME, await loadFonts())
+  }
 
   const db = createAdminClient()
   const { data: league } = await db

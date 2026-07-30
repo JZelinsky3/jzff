@@ -27,6 +27,7 @@ import { readFile } from 'fs/promises'
 import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLeagueBundle } from '@/lib/leagueBundleCache'
+import { isDemoSlug, loadDemoBundle, DEMO_NAME } from '@/lib/og/demoBundle'
 
 export const runtime = 'nodejs'
 
@@ -277,17 +278,27 @@ export async function GET(
 ) {
   const { slug } = await params
 
-  const db = createAdminClient()
-  const { data: league } = await db
-    .from('leagues')
-    .select('id, name, slug, published_at')
-    .eq('slug', slug)
-    .maybeSingle()
-  if (!league || !league.published_at) {
-    return new Response('Not found', { status: 404 })
+  // Slug "demo" renders the static demo tree instead of a DB league, so
+  // the share hub's landing pages can lead with The Lakeside League rather
+  // than putting a real league's managers on a public marketing page.
+  let leagueName: string
+  let bundle: Record<string, unknown>
+  if (isDemoSlug(slug)) {
+    leagueName = DEMO_NAME
+    bundle = await loadDemoBundle()
+  } else {
+    const db = createAdminClient()
+    const { data: league } = await db
+      .from('leagues')
+      .select('id, name, slug, published_at')
+      .eq('slug', slug)
+      .maybeSingle()
+    if (!league || !league.published_at) {
+      return new Response('Not found', { status: 404 })
+    }
+    leagueName = league.name
+    bundle = await getLeagueBundle(league.id, league.slug)
   }
-
-  const bundle = await getLeagueBundle(league.id, league.slug)
   const data = bundle['league.json'] as LeagueFile | undefined
   if (!data) return new Response('No league data', { status: 404 })
 
@@ -613,10 +624,19 @@ function renderCardInner(d: CardData, fonts: Fonts) {
                         tilt={fan.length === 3 ? [-6, 0, 6][i]! : 0}
                         lift={center ? 16 : 0}
                         overlap={i === 0 ? 0 : 6}
+                        z={center ? 3 : i === 0 ? 1 : 2}
                       />
                     )
                   })
-                : [0, 1, 2].map((i) => <EmptySlot key={i} tilt={[-6, 0, 6][i]!} lift={i === 1 ? 16 : 0} overlap={i === 0 ? 0 : 6} />)}
+                : [0, 1, 2].map((i) => (
+                    <EmptySlot
+                      key={i}
+                      tilt={[-6, 0, 6][i]!}
+                      lift={i === 1 ? 16 : 0}
+                      overlap={i === 0 ? 0 : 6}
+                      z={i === 1 ? 3 : i === 0 ? 1 : 2}
+                    />
+                  ))}
             </div>
 
             {/* Shelf edge, lit from above. Sits clear of the tilted cards'
@@ -698,6 +718,7 @@ function TradingCard({
   tilt,
   lift,
   overlap,
+  z,
 }: {
   slot: string
   p: SquadPlayer
@@ -708,6 +729,7 @@ function TradingCard({
   tilt: number
   lift: number
   overlap: number
+  z: number
 }) {
   const px = (n: number) => `${Math.round(n * scale)}px`
   const w = Math.round(150 * scale)
@@ -730,6 +752,7 @@ function TradingCard({
         height: `${h}px`,
         marginLeft: `${overlap}px`,
         marginBottom: `${lift}px`,
+        zIndex: z,
         transform: `rotate(${tilt}deg)`,
         background: `linear-gradient(168deg, ${PAPER} 0%, ${PAPER} 72%, ${PAPER_SOFT} 100%)`,
         border: '1px solid #47402f',
@@ -876,7 +899,7 @@ function TradingCard({
 
 /* Empty case: a league with nothing scouted yet still gets the scene,
    just with the sleeves waiting to be filled. */
-function EmptySlot({ tilt, lift, overlap }: { tilt: number; lift: number; overlap: number }) {
+function EmptySlot({ tilt, lift, overlap, z }: { tilt: number; lift: number; overlap: number; z: number }) {
   return (
     <div
       style={{
@@ -885,6 +908,7 @@ function EmptySlot({ tilt, lift, overlap }: { tilt: number; lift: number; overla
         height: '228px',
         marginLeft: `${overlap}px`,
         marginBottom: `${lift}px`,
+        zIndex: z,
         transform: `rotate(${tilt}deg)`,
         borderRadius: '7px',
         border: `1px dashed ${INK_LINE}`,

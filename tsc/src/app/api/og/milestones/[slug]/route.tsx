@@ -15,6 +15,7 @@ import { readFile } from 'fs/promises'
 import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLeagueBundle } from '@/lib/leagueBundleCache'
+import { isDemoSlug, loadDemoBundle, DEMO_NAME } from '@/lib/og/demoBundle'
 
 export const runtime = 'nodejs'
 
@@ -36,18 +37,23 @@ async function loadFonts() {
   ]
 }
 
+// The live export ships pre-formatted *_html; the demo tree ships the same
+// facts as plain fields. Accept both so one renderer serves both.
 type Crossed = {
   glyph: string
   tier: string
   name: string
   achievement_html?: string
+  achievement?: string
   meta_html?: string
   when?: string
+  context?: string
 }
 type Approach = {
   glyph: string
   name: string
   copy_html?: string
+  copy?: string
   stats_html?: string
   eta?: string
   eta_unit?: string
@@ -81,23 +87,33 @@ export async function GET(
 ) {
   const { slug } = await params
 
-  const db = createAdminClient()
-  const { data: league } = await db
-    .from('leagues')
-    .select('id, name, slug, published_at')
-    .eq('slug', slug)
-    .maybeSingle()
-  if (!league || !league.published_at) {
-    return new Response('Not found', { status: 404 })
+  // Slug "demo" renders the static demo tree instead of a DB league, so
+  // the share hub's landing pages can lead with The Lakeside League rather
+  // than putting a real league's managers on a public marketing page.
+  let leagueName: string
+  let bundle: Record<string, unknown>
+  if (isDemoSlug(slug)) {
+    leagueName = DEMO_NAME
+    bundle = await loadDemoBundle()
+  } else {
+    const db = createAdminClient()
+    const { data: league } = await db
+      .from('leagues')
+      .select('id, name, slug, published_at')
+      .eq('slug', slug)
+      .maybeSingle()
+    if (!league || !league.published_at) {
+      return new Response('Not found', { status: 404 })
+    }
+    leagueName = league.name
+    bundle = await getLeagueBundle(league.id, league.slug)
   }
-
-  const bundle = await getLeagueBundle(league.id, league.slug)
   const data = bundle['milestones.json'] as MilestonesFile | undefined
 
   const fonts = await loadFonts()
 
   if (!data || !data.meter) {
-    return renderQuietCard(league.name, fonts)
+    return renderQuietCard(leagueName, fonts)
   }
 
   // Picking the featured item:
@@ -107,7 +123,7 @@ export async function GET(
   //      picking the one with the highest progress (highest eta %)
   //   3. Otherwise the top horizon chase
   const featured = pickFeatured(data)
-  return renderCard(league.name, data.meter, featured, fonts)
+  return renderCard(leagueName, data.meter, featured, fonts)
 }
 
 type Featured =
@@ -122,8 +138,8 @@ function pickFeatured(data: NonNullable<MilestonesFile>): Featured {
     return {
       mode: 'crossed',
       name: c.name,
-      achievement: stripTags(c.achievement_html),
-      meta: stripTags(c.meta_html),
+      achievement: stripTags(c.achievement_html) || c.achievement || '',
+      meta: stripTags(c.meta_html) || [c.when, c.context].filter(Boolean).join(' · '),
     }
   }
   // Imminent: pick the highest-progress (highest eta %) item across cats.
@@ -138,7 +154,7 @@ function pickFeatured(data: NonNullable<MilestonesFile>): Featured {
     return {
       mode: 'imminent',
       name: a.name,
-      copy: stripTags(a.copy_html),
+      copy: stripTags(a.copy_html) || a.copy || '',
       stats: stripTags(a.stats_html),
       eta: a.eta ?? '',
     }
@@ -154,7 +170,7 @@ function pickFeatured(data: NonNullable<MilestonesFile>): Featured {
     return {
       mode: 'horizon',
       name: h.name,
-      copy: stripTags(h.copy_html),
+      copy: stripTags(h.copy_html) || h.copy || '',
       stats: stripTags(h.stats_html),
       eta: h.eta ?? '',
     }

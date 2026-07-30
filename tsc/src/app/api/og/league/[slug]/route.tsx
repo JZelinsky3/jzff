@@ -25,6 +25,7 @@ import { readFile } from 'fs/promises'
 import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLeagueBundle } from '@/lib/leagueBundleCache'
+import { isDemoSlug, loadDemoBundle, DEMO_NAME } from '@/lib/og/demoBundle'
 
 export const runtime = 'nodejs'
 
@@ -178,17 +179,27 @@ export async function GET(
 ) {
   const { slug } = await params
 
-  const db = createAdminClient()
-  const { data: league } = await db
-    .from('leagues')
-    .select('id, name, slug, published_at')
-    .eq('slug', slug)
-    .maybeSingle()
-  if (!league || !league.published_at) {
-    return new Response('Not found', { status: 404 })
+  // Slug "demo" renders the static demo tree instead of a DB league, so
+  // the share hub's landing pages can lead with The Lakeside League rather
+  // than putting a real league's managers on a public marketing page.
+  let leagueName: string
+  let bundle: Record<string, unknown>
+  if (isDemoSlug(slug)) {
+    leagueName = DEMO_NAME
+    bundle = await loadDemoBundle()
+  } else {
+    const db = createAdminClient()
+    const { data: league } = await db
+      .from('leagues')
+      .select('id, name, slug, published_at')
+      .eq('slug', slug)
+      .maybeSingle()
+    if (!league || !league.published_at) {
+      return new Response('Not found', { status: 404 })
+    }
+    leagueName = league.name
+    bundle = await getLeagueBundle(league.id, league.slug)
   }
-
-  const bundle = await getLeagueBundle(league.id, league.slug)
   const data = bundle['league.json'] as LeagueFile | undefined
   if (!data) return new Response('No league data', { status: 404 })
 

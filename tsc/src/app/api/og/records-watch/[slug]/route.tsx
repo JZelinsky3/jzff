@@ -15,6 +15,7 @@ import { readFile } from 'fs/promises'
 import path from 'path'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLeagueBundle } from '@/lib/leagueBundleCache'
+import { isDemoSlug, loadDemoBundle, DEMO_NAME } from '@/lib/og/demoBundle'
 
 export const runtime = 'nodejs'
 
@@ -36,20 +37,26 @@ async function loadFonts() {
   ]
 }
 
+// Same two shapes as milestones: the live export has title_html, the demo
+// tree carries the plain category instead.
 type WatchItem = {
   category: string
-  pct: number
+  pct?: number
   flag: string
-  title_html: string
-  holder: string
-  record_value: string
-  holder_when: string
+  title_html?: string
+  holder?: string
+  record_value?: string
+  holder_when?: string
   chaser: string
   chaser_value: string
   chaser_when: string
   chaser_projection?: string
   chaser_sub?: string
   realized?: boolean
+  // Demo-tree spellings for the same facts.
+  previous?: string
+  when?: string
+  copy?: string
 }
 
 type RecordsWatchFile = {
@@ -71,27 +78,37 @@ export async function GET(
 ) {
   const { slug } = await params
 
-  const db = createAdminClient()
-  const { data: league } = await db
-    .from('leagues')
-    .select('id, name, slug, published_at')
-    .eq('slug', slug)
-    .maybeSingle()
-  if (!league || !league.published_at) {
-    return new Response('Not found', { status: 404 })
+  // Slug "demo" renders the static demo tree instead of a DB league, so
+  // the share hub's landing pages can lead with The Lakeside League rather
+  // than putting a real league's managers on a public marketing page.
+  let leagueName: string
+  let bundle: Record<string, unknown>
+  if (isDemoSlug(slug)) {
+    leagueName = DEMO_NAME
+    bundle = await loadDemoBundle()
+  } else {
+    const db = createAdminClient()
+    const { data: league } = await db
+      .from('leagues')
+      .select('id, name, slug, published_at')
+      .eq('slug', slug)
+      .maybeSingle()
+    if (!league || !league.published_at) {
+      return new Response('Not found', { status: 404 })
+    }
+    leagueName = league.name
+    bundle = await getLeagueBundle(league.id, league.slug)
   }
-
-  const bundle = await getLeagueBundle(league.id, league.slug)
   const data = bundle['records_watch.json'] as RecordsWatchFile | undefined
 
   const fonts = await loadFonts()
 
   if (!data || !data.meter) {
-    return renderQuietCard(league.name, fonts)
+    return renderQuietCard(leagueName, fonts)
   }
 
   const featured = pickFeatured(data)
-  return renderCard(league.name, data.meter, featured, fonts)
+  return renderCard(leagueName, data.meter, featured, fonts)
 }
 
 type Mode = 'broken' | 'brink' | 'on_pace' | 'just_missed'
@@ -151,8 +168,24 @@ function renderCard(
   const item = isEmpty ? null : (f as { item: WatchItem }).item
   const { label, color } = paceAccent(f.mode)
 
-  // Clamp so a runaway projection can't draw past the track.
-  const pct = item ? Math.max(4, Math.min(100, Math.round(item.pct))) : 0
+  // Not every source carries a percentage: the demo tree's broken records
+  // record the fact, not the chase. Draw the track only when there is a
+  // real number, and treat an already-broken record as a full bar.
+  const rawPct = item && Number.isFinite(item.pct) ? Number(item.pct) : null
+  const pct = rawPct != null
+    ? Math.max(4, Math.min(100, Math.round(rawPct)))
+    : f.mode === 'broken' ? 100 : null
+
+  // "Tyler · Crosstown Comets" in the demo, a bare name in the live export.
+  const chaserName = item ? (item.chaser ?? '').split('·')[0].trim() : ''
+  // Who held it: the live export names the holder, the demo puts the old
+  // mark in `previous`.
+  const holderLine = item
+    ? item.holder
+      ? `${rcut(item.holder, 10)} ${rcut(item.holder_when ?? '', 6)}`.trim()
+      : rcut(item.previous ?? '', 22)
+    : ''
+  const footLine = item ? (item.record_value || item.copy || item.previous || '') : ''
 
   const counts: Array<[number, string]> = [
     [meter.broken, 'Broken'],
@@ -298,7 +331,7 @@ function renderCard(
                 marginTop: '10px',
               }}
             >
-              {item ? rcut(stripTags(item.title_html), 46) : 'Nothing on the board yet'}
+              {item ? rcut(stripTags(item.title_html) || item.category, 46) : 'Nothing on the board yet'}
             </span>
 
             <div style={{ display: 'flex', height: '1px', background: RW_LINE, marginTop: '16px' }} />
@@ -316,8 +349,8 @@ function renderCard(
                   color: RW_MUTE,
                 }}
               >
-                <span style={{ display: 'flex' }}>{item ? rcut(item.chaser, 14) : '—'}</span>
-                <span style={{ display: 'flex' }}>{item ? `${pct}% of record` : ''}</span>
+                <span style={{ display: 'flex' }}>{item ? rcut(chaserName, 16) : '—'}</span>
+                <span style={{ display: 'flex' }}>{pct != null ? `${pct}% of record` : item?.when ?? ''}</span>
               </div>
 
               <div
@@ -334,7 +367,7 @@ function renderCard(
                 <div
                   style={{
                     display: 'flex',
-                    width: `${Math.round(418 * (pct / 100))}px`,
+                    width: `${Math.round(418 * ((pct ?? 0) / 100))}px`,
                     height: '16px',
                     background: color,
                     borderRadius: '2px',
@@ -365,10 +398,8 @@ function renderCard(
                   marginTop: '9px',
                 }}
               >
-                <span style={{ display: 'flex' }}>{item ? rcut(item.chaser_value, 26) : ''}</span>
-                <span style={{ display: 'flex', color: RW_CREAM }}>
-                  {item ? `${rcut(item.holder, 10)} ${rcut(item.holder_when, 6)}` : ''}
-                </span>
+                <span style={{ display: 'flex' }}>{item ? rcut(item.chaser_value ?? '', 26) : ''}</span>
+                <span style={{ display: 'flex', color: RW_CREAM }}>{holderLine}</span>
               </div>
             </div>
 
@@ -384,7 +415,7 @@ function renderCard(
                 marginTop: '14px',
               }}
             >
-              {item ? rcut(item.record_value, 40) : 'Check back once the season is running.'}
+              {footLine ? rcut(footLine, 46) : 'Check back once the season is running.'}
             </span>
           </div>
         </div>

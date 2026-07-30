@@ -7,11 +7,12 @@
 //   - the OG image that acts as the landing page's hero
 //   - where "view in the demo" should land
 //
-// The hero images are rendered from a real league rather than the demo
-// tree, because the demo is a static site with no OG chapter routes. That
-// league's almanac is already public, so nothing here exposes anything a
-// link preview would not.
-export const SHOWCASE_SLUG = 'pams'
+// The heroes render The Lakeside League from the static demo tree (slug
+// "demo", see lib/og/demoBundle). Two reasons: a public marketing page
+// aimed at strangers should not lead with a real league's managers and
+// scores, and the visitor's next click is "View in the demo" — so the
+// numbers they just looked at are the numbers they then get to browse.
+export const SHOWCASE_SLUG = 'demo'
 
 export type SharePage = {
   key: string
@@ -90,15 +91,6 @@ export const SHARE_PAGES: SharePage[] = [
     theme: { bg: '#0e1620', bg2: '#2a140e', ink: '#f4ebd8', mute: '#c2b49c', accent: '#e8c889', onAccent: '#2a140e' },
   },
   {
-    key: 'rivalries',
-    title: 'The Rivalries',
-    deck: 'Every grudge in the league, kept meeting by meeting.',
-    og: `/api/og/league/${s}?page=rivalries&v=3`,
-    demo: '/demo/rivalries/',
-    group: 'The almanac',
-    theme: { bg: '#140d0b', bg2: '#1d1310', ink: '#f4ebd8', mute: '#96705f', accent: '#c86848', onAccent: '#140d0b' },
-  },
-  {
     key: 'all-time',
     title: 'The All-Time Team',
     deck: 'The best season at every position, for every manager who ever ran a team.',
@@ -154,6 +146,10 @@ export const SHARE_PAGES: SharePage[] = [
   },
 ]
 
+// NOTE: there is no 'rivalries' entry. public/demo/data/rivalries.json
+// ships with an empty array, so that card falls back to the generic front
+// cover and the hero would not match the page it is selling. Add the entry
+// back once the demo tree carries rivalries.
 export function findSharePage(key: string): SharePage | undefined {
   return SHARE_PAGES.find((p) => p.key === key)
 }
