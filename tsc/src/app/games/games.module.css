@@ -48,8 +48,25 @@
 
 @media (max-width: 700px) {
   .head {
-    padding: 1.5rem 0 1.1rem;
-    margin-bottom: 1.1rem;
+    padding: 0.9rem 0 0.7rem;
+    margin-bottom: 0.7rem;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+  }
+
+  /* The pitch has done its job by the time someone is playing; on a phone
+     it is just pushing the board below the fold. */
+  .head .lede {
+    display: none;
+  }
+
+  .title {
+    font-size: 1.6rem;
+  }
+
+  .kicker {
+    font-size: 0.52rem;
+    letter-spacing: 0.2em;
   }
 }
 
@@ -483,6 +500,103 @@
 
 /* ── Roster: FIXED HEIGHT, scrolls internally ─────────────── */
 
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--gp-line);
+  background: rgba(0, 0, 0, 0.24);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filterBar::-webkit-scrollbar {
+  display: none;
+}
+
+.filterChip {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.34rem 0.6rem;
+  border-radius: 3px;
+  border: 1px solid var(--gp-line);
+  border-left: 2px solid var(--pos, var(--gp-line));
+  background: transparent;
+  color: var(--gp-soft);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.filterChip:hover {
+  border-color: var(--gp-gold);
+  color: var(--gp-cream);
+}
+
+.filterChip[data-locked] {
+  opacity: 0.45;
+}
+
+.filterChipOn {
+  composes: filterChip;
+  border-color: var(--gp-gold);
+  background: rgba(232, 200, 137, 0.14);
+  color: var(--gp-bright);
+}
+
+.filterCount {
+  font-size: 0.54rem;
+  font-weight: 400;
+  color: var(--gp-mute);
+  letter-spacing: 0.04em;
+}
+
+.filterSpin {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding-left: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  color: var(--gp-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.btnQuiet {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--gp-line);
+  background: transparent;
+  color: var(--gp-mute);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.btnQuiet:hover {
+  color: var(--gp-cream);
+  border-color: var(--gp-soft);
+}
+
+.resumeNote {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-green);
+}
+
 .rosterBar {
   display: flex;
   align-items: center;
@@ -510,16 +624,19 @@
   gap: 0.3rem;
 }
 
+/* On phones the lineup sheet is replaced by the HUD above, so the roster
+   gets the rest of the screen. Viewport-relative rather than a fixed rem
+   height: a small phone shouldn't show three players and a big one nine. */
 @media (max-width: 940px) {
   .roster {
-    height: 24rem;
+    height: clamp(18rem, 52vh, 34rem);
   }
 }
 
 @media (max-width: 560px) {
   .roster {
-    height: 21rem;
-    padding: 0.45rem 0.4rem 0.7rem;
+    padding: 0.4rem 0.35rem 0.7rem;
+    gap: 0.35rem;
   }
 }
 
@@ -771,6 +888,43 @@
   letter-spacing: -0.02em;
 }
 
+.pickHit {
+  /* placeholder kept for ordering */
+}
+
+@media (max-width: 560px) {
+  .pick {
+    grid-template-columns: 3rem minmax(0, 1fr) auto;
+    padding: 0.55rem 0.7rem 0.55rem 0.6rem;
+    gap: 0.65rem;
+  }
+
+  .shot {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .pickName {
+    font-size: 0.95rem;
+  }
+
+  .pickPpg {
+    font-size: 1.25rem;
+  }
+
+  .compact {
+    padding: 0.42rem 0.6rem 0.42rem 0.5rem;
+  }
+
+  .compactName {
+    font-size: 0.84rem;
+  }
+
+  .compactPpg {
+    font-size: 0.86rem;
+  }
+}
+
 .pickPpgUnit {
   font-size: 0.5rem;
   letter-spacing: 0.16em;
@@ -1009,85 +1163,161 @@
   white-space: nowrap;
 }
 
-/* ── Mobile slot strip ────────────────────────────────────── */
-/* On phones the sheet is too tall to keep in view, so the seven slots
-   collapse into a sticky strip above the board. Same state, less room. */
+/* ── Mobile HUD ───────────────────────────────────────────── */
+/* On phones the lineup sheet is too tall to keep in view, so it collapses
+   into a sticky two-part bar: the score line, and the seven slots as a grid
+   that FITS the width. The old version scrolled horizontally, which meant
+   half the lineup was always off screen and the thing you most needed to
+   see while picking was the thing you had to go looking for. */
 
-.strip {
+.hud {
   display: none;
 }
 
 @media (max-width: 940px) {
-  .strip {
-    display: flex;
-    gap: 0.3rem;
-    overflow-x: auto;
-    padding: 0.5rem 0.15rem;
+  .hud {
+    display: block;
     position: sticky;
     top: 0;
-    z-index: 5;
+    z-index: 6;
     background: var(--gp-ink);
     border-bottom: 1px solid var(--gp-line);
     margin-bottom: 0.6rem;
-    scrollbar-width: none;
-  }
-
-  .strip::-webkit-scrollbar {
-    display: none;
+    padding-bottom: 0.4rem;
   }
 }
 
-.stripCell {
-  flex: 1 0 auto;
-  min-width: 3.5rem;
+.hudTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.1rem 0.45rem;
+}
+
+.hudScore {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.hudRec {
+  font-family: var(--mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--gp-cream);
+  font-variant-numeric: tabular-nums;
+}
+
+.hudPpg {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gp-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.hudUnit {
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  color: var(--gp-mute);
+  font-weight: 400;
+  margin-left: 0.15rem;
+}
+
+.hudTarget {
+  font-family: var(--mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  text-align: right;
+}
+
+.hudTargetVal {
+  display: block;
+  color: var(--gp-gold);
+  font-weight: 700;
+  font-size: 0.7rem;
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Seven columns, always. No scrolling — the whole lineup is one glance. */
+.hudSlots {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.22rem;
+}
+
+.hudCell {
   border: 1px solid var(--gp-line);
+  border-top: 2px solid var(--gp-line);
   border-radius: 3px;
-  padding: 0.3rem 0.4rem;
+  padding: 0.28rem 0.1rem 0.3rem;
   text-align: center;
   background: var(--gp-panel);
+  min-width: 0;
 }
 
-.stripCellNext {
-  composes: stripCell;
-  border-color: var(--gp-gold);
-  background: rgba(232, 200, 137, 0.1);
+.hudCellFilled {
+  composes: hudCell;
+  border-top-color: var(--pos, var(--gp-gold));
+  background: var(--gp-panel-2);
 }
 
-.stripCellFilled {
-  composes: stripCell;
-  border-color: var(--pos, var(--gp-line));
-}
-
-.stripCellHover {
-  composes: stripCell;
+.hudCellHover {
+  composes: hudCell;
   border-color: var(--gp-bright);
+  border-top-color: var(--gp-bright);
   background: rgba(232, 200, 137, 0.18);
 }
 
-.stripId {
+.hudId {
+  display: block;
   font-family: var(--mono);
-  font-size: 0.5rem;
+  font-size: 0.46rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--gp-gold);
-  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.stripVal {
+.hudVal {
+  display: block;
   font-family: var(--mono);
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--gp-bright);
   font-variant-numeric: tabular-nums;
-  display: block;
-  margin-top: 0.12rem;
+  margin-top: 0.1rem;
 }
 
-.stripEmpty {
-  composes: stripVal;
-  color: var(--gp-mute);
+.hudEmpty {
+  composes: hudVal;
+  color: var(--gp-line);
   font-weight: 400;
+}
+
+/* The desktop sheet's slot list duplicates the HUD on phones — the tallies
+   underneath it (pool, scoring, seed) don't, so only the list is dropped. */
+@media (max-width: 940px) {
+  /* All three are already in the HUD above — the sheet keeps only the
+     tallies (pool, scoring, rerolls, seed), which aren't. */
+  .sheetHead,
+  .slots,
+  .targetRow {
+    display: none;
+  }
+
+  .sheet {
+    border-top: 1px solid var(--gp-line);
+  }
 }
 
 /* ── Recap ────────────────────────────────────────────────── */

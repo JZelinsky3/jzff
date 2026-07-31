@@ -37,7 +37,7 @@ type Filled = {
 const POS_LIST: PoolPosition[] = ['QB', 'RB', 'WR', 'TE']
 
 /** Full cards per position before the rest of the group collapses. */
-const FULL_CARDS_PER_POS = 4
+const FULL_CARDS_PER_POS = 6
 
 function ordinal(n: number): string {
   const v = n % 100
@@ -61,6 +61,77 @@ const round1 = (n: number) => Math.round(n * 10) / 10
 /** Sleeper serves headshots for retired players too, so 2012 gets faces. */
 function headshot(playerId: string | null): string | null {
   return playerId ? `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg` : null
+}
+
+// ── Saving a run in progress ────────────────────────────────
+//
+// The seed lives in the URL so a wheel can be shared, which used to mean a
+// mid-game refresh re-dealt the same nine squads and threw the lineup away.
+// Now the run itself is saved locally against (pool, seed) and picked back
+// up where it left off.
+//
+// Only what can't be re-derived is stored: which slot holds which player,
+// off which squad. Everything else comes back out of the deal. And only
+// runs in progress are restored — a finished one starts over, so a friend
+// replaying a shared link isn't handed your old result.
+
+const SAVE_KEY = 'tsc-roulette-run'
+
+type SavedRun = {
+  pool: string
+  seed: string
+  spinIndex: number
+  rerollsLeft: number
+  /** slot -> [squad key, player name] */
+  picks: [SlotId, [string, string]][]
+}
+
+function saveRun(run: SavedRun) {
+  try {
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(run))
+  } catch {
+    /* private mode / quota — the game just won't resume */
+  }
+}
+
+function clearRun() {
+  try {
+    window.localStorage.removeItem(SAVE_KEY)
+  } catch {
+    /* nothing to do */
+  }
+}
+
+function readRun(pool: string, seed: string): SavedRun | null {
+  try {
+    const raw = window.localStorage.getItem(SAVE_KEY)
+    if (!raw) return null
+    const run = JSON.parse(raw) as SavedRun
+    if (run?.pool !== pool || run?.seed !== seed) return null
+    if (!Array.isArray(run.picks)) return null
+    return run
+  } catch {
+    return null
+  }
+}
+
+/** Rebuilds the lineup from saved (squad, player) references. */
+function restoreLineup(
+  deal: Deal,
+  picks: SavedRun['picks']
+): Partial<Record<SlotId, Filled>> {
+  const byKey = new Map(deal.spins.map((sq) => [sq.key, sq]))
+  const out: Partial<Record<SlotId, Filled>> = {}
+  for (const [slotId, [squadKey, playerName]] of picks) {
+    const squad = byKey.get(squadKey)
+    const player = squad?.players.find((p) => p.name === playerName)
+    if (!squad || !player) continue
+    // bestAvailable only feeds the end-of-run "what you walked past" line;
+    // recomputing it exactly would need the slot state at the time of the
+    // pick, so a resumed run reports the pick itself and nothing missed.
+    out[slotId] = { player, squad, bestAvailable: player.ppg }
+  }
+  return out
 }
 
 export function RosterRoulette({
@@ -90,10 +161,47 @@ export function RosterRoulette({
   // Next wheel, fetched while this one is being played so "New wheel" is
   // instant instead of a second of staring at a spinner.
   const [nextDeal, setNextDeal] = useState<Deal | null>(null)
+  // Set when this run was picked back up after a refresh, so the board can
+  // say so rather than silently looking half-played.
+  const [resumed, setResumed] = useState(false)
+  // Roster filter. Null shows every position; otherwise just the one.
+  // Deep-churn rosters run past thirty players and scrolling for the one
+  // receiver you want is the slowest part of a spin.
+  const [posFilter, setPosFilter] = useState<PoolPosition | null>(null)
 
   const spinTimer = useRef<number | null>(null)
   const flickerTimer = useRef<number | null>(null)
   const rosterRef = useRef<HTMLDivElement | null>(null)
+  // Guards the restore so it runs once, on the wheel the page opened with.
+  const restored = useRef(false)
+
+  // Pick a refreshed run back up.
+  //
+  // This has to be an effect, and the setState-in-effect rule is disabled
+  // below on purpose: localStorage doesn't exist during SSR, so the saved
+  // run cannot be read while rendering. Restoring any earlier would make the
+  // client's first render disagree with the server's HTML and blow up
+  // hydration. Reading an external store after mount is exactly what effects
+  // are for; it just isn't something the rule can tell apart.
+  useEffect(() => {
+    if (restored.current || !initialDeal) return
+    restored.current = true
+    const saved = readRun(initialDeal.pool.id, initialDeal.seed)
+    if (!saved) return
+    const picks = restoreLineup(initialDeal, saved.picks)
+    // A finished run starts over: the point of this is not losing progress,
+    // and resuming a completed one would show a stranger your old result.
+    if (Object.keys(picks).length >= initialDeal.slots.length) {
+      clearRun()
+      return
+    }
+    if (Object.keys(picks).length === 0) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- see above
+    setLineup(picks)
+    setSpinIndex(Math.max(0, Math.min(initialDeal.spins.length, saved.spinIndex)))
+    setRerollsLeft(Math.max(0, Math.min(initialDeal.rerolls, saved.rerollsLeft)))
+    setResumed(true)
+  }, [initialDeal])
 
   // ── Loading a deal ──────────────────────────────────────────
 
@@ -119,6 +227,8 @@ export function RosterRoulette({
       setTeaser(null)
       setCopied(false)
       setHoverPlayer(null)
+      setResumed(false)
+      clearRun()
     } catch {
       setError('Could not reach the wheel. Check your connection and try again.')
     } finally {
@@ -158,8 +268,32 @@ export function RosterRoulette({
     }
   }, [picksMade, nextDeal, poolId])
 
+  // Persist after every pick, reroll, or spin so a refresh resumes here.
+  // Cleared once the run is finished — a completed lineup has nothing left
+  // to resume, and leaving it would make a shared link replay someone
+  // else's result.
+  useEffect(() => {
+    if (!deal) return
+    const picks = Object.entries(lineup)
+      .filter(([, f]) => f)
+      .map(([slotId, f]) => [slotId, [f!.squad.key, f!.player.name]]) as SavedRun['picks']
+    if (picks.length === 0 || picks.length >= deal.slots.length) {
+      if (picks.length >= deal.slots.length) clearRun()
+      return
+    }
+    saveRun({
+      pool: deal.pool.id,
+      seed: deal.seed,
+      spinIndex,
+      rerollsLeft,
+      picks,
+    })
+  }, [deal, lineup, spinIndex, rerollsLeft])
+
   // Swap in the prefetched wheel, or fetch one if it isn't ready yet.
   const newWheel = useCallback(() => {
+    clearRun()
+    setResumed(false)
     if (nextDeal && nextDeal.pool.id === poolId) {
       setDeal(nextDeal)
       setNextDeal(null)
@@ -258,6 +392,11 @@ export function RosterRoulette({
       .sort((a, b) => Number(a.usable ? 0 : 1) - Number(b.usable ? 0 : 1))
   }, [current, eligiblePositions])
 
+  const shownGroups = useMemo(
+    () => (posFilter ? groups.filter((g) => g.pos === posFilter) : groups),
+    [groups, posFilter]
+  )
+
   const firstLockedPos = useMemo(
     () => groups.find((g) => !g.usable)?.pos ?? null,
     [groups]
@@ -306,6 +445,7 @@ export function RosterRoulette({
   const advance = useCallback(() => {
     setRevealed(false)
     setSpinIndex((i) => i + 1)
+    setPosFilter(null)
     // Next squad starts at the top of its roster, not wherever the last
     // scroll left off.
     if (rosterRef.current) rosterRef.current.scrollTop = 0
@@ -418,31 +558,54 @@ export function RosterRoulette({
         </div>
       )}
 
-      {/* Phones get the lineup as a sticky strip; the full sheet is hidden
-          at this width because it would push the board off screen. */}
-      <div className={styles.strip}>
-        {slots.map((s) => {
-          const f = lineup[s.id]
-          const cls = f
-            ? styles.stripCellFilled
-            : hoverSlot === s.id
-              ? styles.stripCellHover
-              : styles.stripCell
-          return (
-            <div
-              key={s.id}
-              className={cls}
-              style={f ? ({ ['--pos' as string]: `var(--pos-${f.player.pos})` }) : undefined}
-            >
-              <span className={styles.stripId}>{s.label}</span>
-              {f ? (
-                <span className={styles.stripVal}>{round1(f.player.ppg)}</span>
-              ) : (
-                <span className={styles.stripEmpty}>—</span>
-              )}
-            </div>
-          )
-        })}
+      {/* Phones get the lineup as a sticky HUD: the score line, then the
+          seven slots as a grid that fits the width. The desktop sheet is
+          hidden at this size, so this is the only view of the lineup while
+          picking and it has to be readable without scrolling. */}
+      <div className={styles.hud}>
+        <div className={styles.hudTop}>
+          <span className={styles.hudScore}>
+            {deal.benchmark && (
+              <span className={styles.hudRec}>
+                {wins}-{GAMES - wins}
+              </span>
+            )}
+            <span className={styles.hudPpg}>
+              {round1(ppg)}
+              <span className={styles.hudUnit}>PPG</span>
+            </span>
+          </span>
+          {deal.benchmark && (
+            <span className={styles.hudTarget}>
+              17-0 needs
+              <span className={styles.hudTargetVal}>{deal.benchmark.target}</span>
+            </span>
+          )}
+        </div>
+        <div className={styles.hudSlots}>
+          {slots.map((s) => {
+            const f = lineup[s.id]
+            const cls = f
+              ? styles.hudCellFilled
+              : hoverSlot === s.id
+                ? styles.hudCellHover
+                : styles.hudCell
+            return (
+              <div
+                key={s.id}
+                className={cls}
+                style={f ? ({ ['--pos' as string]: `var(--pos-${f.player.pos})` }) : undefined}
+              >
+                <span className={styles.hudId}>{s.label}</span>
+                {f ? (
+                  <span className={styles.hudVal}>{round1(f.player.ppg)}</span>
+                ) : (
+                  <span className={styles.hudEmpty}>—</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       <div className={styles.board}>
@@ -505,6 +668,14 @@ export function RosterRoulette({
                 {openSlots.length} slot{openSlots.length === 1 ? '' : 's'} open · {rerollsLeft} reroll
                 {rerollsLeft === 1 ? '' : 's'} left
               </div>
+              {resumed && (
+                <div className={styles.resumeNote}>Picked up where you left off</div>
+              )}
+              {Object.keys(lineup).length > 0 && (
+                <button type="button" className={styles.btnQuiet} onClick={newWheel}>
+                  Start a new wheel
+                </button>
+              )}
             </div>
           ) : current ? (
             <>
@@ -545,13 +716,36 @@ export function RosterRoulette({
                 </div>
               </div>
 
-              <div className={styles.rosterBar}>
-                <span>Take one · {current.players.length} rostered</span>
-                <span>Spin {spinIndex + 1} of {deal.spins.length}</span>
+              {/* Filter rail. Doubles as the roster's contents at a glance:
+                  each chip carries how many of that position are on the
+                  squad, and a position with no slot open reads dimmed. */}
+              <div className={styles.filterBar}>
+                <button
+                  type="button"
+                  className={posFilter === null ? styles.filterChipOn : styles.filterChip}
+                  onClick={() => setPosFilter(null)}
+                >
+                  All <span className={styles.filterCount}>{current.players.length}</span>
+                </button>
+                {groups.map((g) => (
+                  <button
+                    key={g.pos}
+                    type="button"
+                    className={posFilter === g.pos ? styles.filterChipOn : styles.filterChip}
+                    style={{ ['--pos' as string]: `var(--pos-${g.pos})` }}
+                    data-locked={!g.usable || undefined}
+                    onClick={() => setPosFilter(posFilter === g.pos ? null : g.pos)}
+                  >
+                    {g.pos} <span className={styles.filterCount}>{g.players.length}</span>
+                  </button>
+                ))}
+                <span className={styles.filterSpin}>
+                  {spinIndex + 1}/{deal.spins.length}
+                </span>
               </div>
 
               <div className={styles.roster} ref={rosterRef}>
-                {groups.map((g) => (
+                {shownGroups.map((g) => (
                   <div key={g.pos} className={styles.posGroup}>
                     {g.pos === firstLockedPos && (
                       <div className={styles.lockDivider}>No slot open</div>
@@ -590,14 +784,19 @@ export function RosterRoulette({
                 <span className={styles.footNote}>
                   {openSlots.length} slot{openSlots.length === 1 ? '' : 's'} left
                 </span>
-                <button
-                  type="button"
-                  className={styles.btnGhost}
-                  onClick={reroll}
-                  disabled={rerollsLeft <= 0 || spinsLeft <= openSlots.length}
-                >
-                  Reroll ({rerollsLeft})
-                </button>
+                <span className={styles.btnRow}>
+                  <button type="button" className={styles.btnQuiet} onClick={newWheel}>
+                    Start over
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.btnGhost}
+                    onClick={reroll}
+                    disabled={rerollsLeft <= 0 || spinsLeft <= openSlots.length}
+                  >
+                    Reroll ({rerollsLeft})
+                  </button>
+                </span>
               </div>
             </>
           ) : (
