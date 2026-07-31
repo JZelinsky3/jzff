@@ -25,7 +25,6 @@ import { recordFor, recordHeadline, GAMES } from '@/lib/minigames/record'
 import styles from '../games.module.css'
 
 type Deal = DealtGame
-type PoolChoice = { id: string; label: string }
 
 type Filled = {
   player: SquadPlayer
@@ -137,14 +136,14 @@ function restoreLineup(
 export function RosterRoulette({
   initialDeal,
   initialError,
-  pools,
 }: {
   /** Opening wheel, dealt during SSR so the board is up on first paint. */
   initialDeal: Deal | null
   initialError: string | null
-  pools: PoolChoice[]
 }) {
-  const [poolId, setPoolId] = useState(initialDeal?.pool.id ?? 'site')
+  // Fixed for the life of the page: changing league means going back to the
+  // Games Page, so every wheel dealt here stays in the same pool.
+  const poolId = initialDeal?.pool.id ?? 'site'
   const [deal, setDeal] = useState<Deal | null>(initialDeal)
   const [error, setError] = useState<string | null>(initialError)
   const [loading, setLoading] = useState(false)
@@ -168,6 +167,9 @@ export function RosterRoulette({
   // Deep-churn rosters run past thirty players and scrolling for the one
   // receiver you want is the slowest part of a spin.
   const [posFilter, setPosFilter] = useState<PoolPosition | null>(null)
+  // Mobile lineup bar: collapsed to a single line by default so it takes
+  // the least room while picking, expanded on demand.
+  const [hudOpen, setHudOpen] = useState(false)
 
   const spinTimer = useRef<number | null>(null)
   const flickerTimer = useRef<number | null>(null)
@@ -418,29 +420,45 @@ export function RosterRoulette({
 
   // ── The spin ────────────────────────────────────────────────
 
-  const spin = useCallback(() => {
-    if (!deal || spinning || revealed || done) return
-    setSpinning(true)
-    setCopied(false)
+  // Spins the wheel onto a specific index. Taking the index as an argument
+  // rather than reading spinIndex is what lets a reroll advance and start
+  // spinning in the same handler: waiting for the state to settle first put
+  // a dead "press Spin again" screen between the button and the wheel.
+  const startSpin = useCallback(
+    (atIndex: number) => {
+      if (!deal || atIndex >= deal.spins.length) return
+      setCopied(false)
+      setRevealed(false)
+      setSpinning(true)
 
-    // The wheel is theatre, not chance — the squad was decided by the seed
-    // before the page loaded. The flicker cycles other squads so it reads as
-    // a wheel slowing down rather than a spinner.
-    const others = deal.spins.filter((_, i) => i !== spinIndex)
-    let tick = 0
-    flickerTimer.current = window.setInterval(() => {
-      setTeaser(others[tick % others.length] ?? null)
-      tick++
-    }, 90)
-
-    spinTimer.current = window.setTimeout(() => {
+      if (spinTimer.current) window.clearTimeout(spinTimer.current)
       if (flickerTimer.current) window.clearInterval(flickerTimer.current)
-      flickerTimer.current = null
-      setTeaser(null)
-      setSpinning(false)
-      setRevealed(true)
-    }, 1100)
-  }, [deal, spinning, revealed, done, spinIndex])
+
+      // The wheel is theatre, not chance: the squad was decided by the seed
+      // before the page loaded. The flicker cycles other squads so it reads
+      // as a wheel slowing down rather than a spinner.
+      const others = deal.spins.filter((_, i) => i !== atIndex)
+      let tick = 0
+      flickerTimer.current = window.setInterval(() => {
+        setTeaser(others[tick % others.length] ?? null)
+        tick++
+      }, 90)
+
+      spinTimer.current = window.setTimeout(() => {
+        if (flickerTimer.current) window.clearInterval(flickerTimer.current)
+        flickerTimer.current = null
+        setTeaser(null)
+        setSpinning(false)
+        setRevealed(true)
+      }, 1100)
+    },
+    [deal]
+  )
+
+  const spin = useCallback(() => {
+    if (spinning || revealed || done) return
+    startSpin(spinIndex)
+  }, [spinning, revealed, done, spinIndex, startSpin])
 
   const advance = useCallback(() => {
     setRevealed(false)
@@ -472,11 +490,14 @@ export function RosterRoulette({
     [current, revealed, slots, lineup, advance, slotFor]
   )
 
+  // Rerolling spins straight into the next squad. It costs a reroll either
+  // way, so making the player press Spin again afterwards was pure friction.
   const reroll = useCallback(() => {
     if (rerollsLeft <= 0 || !revealed) return
     setRerollsLeft((r) => r - 1)
     advance()
-  }, [rerollsLeft, revealed, advance])
+    startSpin(spinIndex + 1)
+  }, [rerollsLeft, revealed, advance, startSpin, spinIndex])
 
   // The share link carries the finished run, so the preview a friend sees is
   // a scoreboard with the record on it rather than a generic card — and the
@@ -489,32 +510,44 @@ export function RosterRoulette({
     url.searchParams.set('seed', deal.seed)
     if (deal.benchmark) url.searchParams.set('w', String(wins))
     url.searchParams.set('ppg', String(round1(ppg)))
+    // The lineup itself, so the link preview shows who was drafted rather
+    // than a bare score. Surnames only: it reads like a depth chart and
+    // keeps the URL short enough to survive a group chat.
+    const rows = deal.slots
+      .map((slot) => {
+        const f = lineup[slot.id]
+        if (!f) return null
+        const parts = f.player.name.split(/\s+/)
+        const surname = (parts.length > 1 ? parts.slice(1).join(' ') : parts[0]).replace(/[,;]/g, '')
+        return `${slot.label},${surname},${round1(f.player.ppg)}`
+      })
+      .filter(Boolean)
+    if (rows.length > 0) url.searchParams.set('l', rows.join(';'))
     return url.toString()
-  }, [deal, wins, ppg])
+  }, [deal, wins, ppg, lineup])
 
   const shareRun = useCallback(async () => {
     if (!deal) return
     const url = shareUrl()
     const rec = deal.benchmark ? `${wins}-${GAMES - wins}` : `${round1(ppg)} PPG`
-    const text =
-      `${rec} on Roster Roulette — ${round1(ppg)} PPG${deal.benchmark ? `, 17-0 needs ${deal.benchmark.target}` : ''}. ` +
-      `Same nine squads: ${url}`
-    // Native share sheet on phones (where most of this gets sent), clipboard
-    // everywhere else.
+    // The link is passed separately to the share sheet, which appends it
+    // itself. Including it in the text too is what was producing two copies
+    // of the URL in the shared message.
+    const line = `I went ${rec} on Roster Roulette, ${round1(ppg)} points per game. Same nine teams, same order. Beat it.`
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Roster Roulette', text, url })
+        await navigator.share({ title: 'Roster Roulette', text: line, url })
         return
       }
     } catch {
-      // Cancelled or unavailable — fall through to the clipboard.
+      // Cancelled or unavailable, fall through to the clipboard.
     }
     try {
-      await navigator.clipboard.writeText(text)
+      await navigator.clipboard.writeText(`${line} ${url}`)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 2200)
     } catch {
-      /* clipboard blocked — the seed is on screen either way */
+      /* clipboard blocked, the seed is on screen either way */
     }
   }, [deal, ppg, wins, shareUrl])
 
@@ -538,32 +571,17 @@ export function RosterRoulette({
 
   return (
     <>
-      {pools.length > 1 && (
-        <div className={styles.pools}>
-          {pools.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={p.id === poolId ? styles.poolChipOn : styles.poolChip}
-              onClick={() => {
-                if (p.id === poolId) return
-                setPoolId(p.id)
-                setNextDeal(null)
-                void load(p.id, null)
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Phones get the lineup as a sticky HUD: the score line, then the
-          seven slots as a grid that fits the width. The desktop sheet is
-          hidden at this size, so this is the only view of the lineup while
-          picking and it has to be readable without scrolling. */}
+      {/* Phones get the lineup as a fixed bar at the bottom of the screen,
+          collapsed to one line by default. The desktop sheet is hidden at
+          this size, so this is the only view of the lineup while picking
+          and it has to be legible without scrolling or hunting. */}
       <div className={styles.hud}>
-        <div className={styles.hudTop}>
+        <button
+          type="button"
+          className={styles.hudBar}
+          onClick={() => setHudOpen((v) => !v)}
+          aria-expanded={hudOpen}
+        >
           <span className={styles.hudScore}>
             {deal.benchmark && (
               <span className={styles.hudRec}>
@@ -575,37 +593,41 @@ export function RosterRoulette({
               <span className={styles.hudUnit}>PPG</span>
             </span>
           </span>
-          {deal.benchmark && (
-            <span className={styles.hudTarget}>
-              17-0 needs
-              <span className={styles.hudTargetVal}>{deal.benchmark.target}</span>
-            </span>
-          )}
-        </div>
-        <div className={styles.hudSlots}>
-          {slots.map((s) => {
-            const f = lineup[s.id]
-            const cls = f
-              ? styles.hudCellFilled
-              : hoverSlot === s.id
-                ? styles.hudCellHover
-                : styles.hudCell
-            return (
-              <div
-                key={s.id}
-                className={cls}
-                style={f ? ({ ['--pos' as string]: `var(--pos-${f.player.pos})` }) : undefined}
-              >
-                <span className={styles.hudId}>{s.label}</span>
-                {f ? (
-                  <span className={styles.hudVal}>{round1(f.player.ppg)}</span>
-                ) : (
-                  <span className={styles.hudEmpty}>—</span>
-                )}
-              </div>
-            )
-          })}
-        </div>
+          <span className={styles.hudFilled}>
+            {slots.length - openSlots.length}/{slots.length} set
+          </span>
+          <span className={hudOpen ? styles.hudChevronOpen : styles.hudChevron} aria-hidden>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          </span>
+        </button>
+        {hudOpen && (
+          <div className={styles.hudSlots}>
+            {slots.map((s) => {
+              const f = lineup[s.id]
+              const cls = f
+                ? styles.hudCellFilled
+                : hoverSlot === s.id
+                  ? styles.hudCellHover
+                  : styles.hudCell
+              return (
+                <div
+                  key={s.id}
+                  className={cls}
+                  style={f ? ({ ['--pos' as string]: `var(--pos-${f.player.pos})` }) : undefined}
+                >
+                  <span className={styles.hudId}>{s.label}</span>
+                  {f ? (
+                    <span className={styles.hudVal}>{round1(f.player.ppg)}</span>
+                  ) : (
+                    <span className={styles.hudEmpty}>·</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <div className={styles.board}>
@@ -857,12 +879,6 @@ export function RosterRoulette({
               )
             })}
           </div>
-          {deal.benchmark && (
-            <div className={styles.targetRow}>
-              <span>17-0 needs</span>
-              <span className={styles.targetVal}>{deal.benchmark.target} PPG</span>
-            </div>
-          )}
           <div className={styles.sheetFoot}>
             <div className={styles.tally}>
               <span>Pool</span>
@@ -959,8 +975,8 @@ function PlayerCard({
   )
 }
 
-// The deep bench. One line, no headshot — still takeable, just not
-// competing for attention with the players anyone would actually start.
+// The deep bench. Same card, less height, headshot kept so a player further
+// down the list still reads as a player rather than a table row.
 function CompactPlayer({
   player,
   disabled,
@@ -972,6 +988,8 @@ function CompactPlayer({
   onTake: () => void
   onHover: (p: SquadPlayer | null) => void
 }) {
+  const [imgOk, setImgOk] = useState(true)
+  const src = headshot(player.playerId)
   const hoverProps = disabled
     ? {}
     : {
@@ -989,12 +1007,26 @@ function CompactPlayer({
       onClick={onTake}
       {...hoverProps}
     >
-      <span className={styles.compactPos}>
-        {player.pos}
-        {player.posRank}
+      <span className={styles.compactShot}>
+        {src && imgOk ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className={styles.compactShotImg}
+            src={src}
+            alt=""
+            loading="lazy"
+            onError={() => setImgOk(false)}
+          />
+        ) : (
+          <span className={styles.compactShotFallback}>{initials(player.name)}</span>
+        )}
       </span>
-      <span className={styles.compactName}>
-        {player.name}
+      <span className={styles.compactMain}>
+        <span className={styles.compactPos}>
+          {player.pos}
+          {player.posRank}
+        </span>
+        <span className={styles.compactName}>{player.name}</span>
         {player.nflTeam && <span className={styles.compactTeam}>{player.nflTeam}</span>}
       </span>
       <span className={styles.compactPpg}>{round1(player.ppg)}</span>

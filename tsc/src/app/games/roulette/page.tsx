@@ -5,7 +5,7 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { dealGame } from '@/lib/minigames/deal'
 import { GAMES } from '@/lib/minigames/record'
-import { loadPoolsForViewer, SITE_POOL } from '../pools'
+import { SITE_POOL } from '../pools'
 import { RosterRoulette } from './RosterRoulette'
 import styles from '../games.module.css'
 
@@ -24,17 +24,24 @@ const NEUTRAL_DESC =
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ pool?: string; seed?: string; w?: string; ppg?: string }>
+  searchParams: Promise<{
+    pool?: string
+    seed?: string
+    w?: string
+    ppg?: string
+    l?: string
+  }>
 }): Promise<Metadata> {
   const sp = await searchParams
   const wins = Number(sp.w)
   const ppg = Number(sp.ppg)
   const hasResult = Number.isFinite(wins) && wins >= 0 && wins <= GAMES
 
-  const og = new URLSearchParams({ v: '1' })
+  const og = new URLSearchParams({ v: '2' })
   if (hasResult) {
     og.set('w', String(Math.round(wins)))
     if (Number.isFinite(ppg) && ppg > 0) og.set('ppg', String(Math.round(ppg * 10) / 10))
+    if (sp.l) og.set('l', sp.l.slice(0, 400))
   }
   const image = `/api/og/games?${og}`
 
@@ -42,7 +49,7 @@ export async function generateMetadata({
     ? `${Math.round(wins)}-${GAMES - Math.round(wins)} on Roster Roulette · Beat it`
     : NEUTRAL_TITLE
   const description = hasResult
-    ? 'Same nine squads, same order. Build a better lineup than this one.'
+    ? 'Same nine teams, same order. Build a better lineup than this one.'
     : NEUTRAL_DESC
 
   return {
@@ -64,14 +71,12 @@ export async function generateMetadata({
 export default async function RoulettePage({
   searchParams,
 }: {
-  searchParams: Promise<{ pool?: string; seed?: string; w?: string; ppg?: string }>
+  searchParams: Promise<{ pool?: string; seed?: string; w?: string; ppg?: string; l?: string }>
 }) {
   const sp = await searchParams
-  const { leaguePools } = await loadPoolsForViewer()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const pools = [SITE_POOL, ...leaguePools.map((p) => ({ id: p.id, label: p.label }))]
   // A ?pool= naming a league the viewer has no card for is still dealt — a
   // published almanac is public, and a link shared into a group chat should
   // work for everyone in it. dealGame does the real access check; this only
@@ -88,10 +93,6 @@ export default async function RoulettePage({
   const opening = dealt.ok ? dealt : fallback?.ok ? fallback : null
   const openingError = opening ? null : dealt.ok ? null : dealt.error
 
-  const chips =
-    opening && !pools.some((p) => p.id === opening.pool.id)
-      ? [...pools, { id: opening.pool.id, label: opening.pool.label }]
-      : pools
 
   return (
     <main>
@@ -118,20 +119,24 @@ export default async function RoulettePage({
       </nav>
 
       <div className={styles.wrap}>
+        {/* The pool being played is the headline. Switching leagues means
+            going back to the Games Page, rather than carrying a rail of
+            other people's leagues through every spin. */}
         <div className={styles.head}>
-          <div className={styles.kicker}>★ Spin · Take one · Repeat ★</div>
+          <div className={styles.kicker}>★ Roster Roulette ★</div>
           <h1 className={styles.title}>
-            Can you go <em>17-0?</em>
+            {opening ? opening.pool.label : 'Roster Roulette'}
           </h1>
-          <p className={styles.lede}>
-            The wheel lands on somebody&apos;s real team from a real season. Take one
-            player off it, set him in a slot, and keep going until the lineup is
-            full. Everyone scores the points per game he actually averaged. Two
-            rerolls, no take-backs.
+          <p className={styles.headSub}>
+            {opening ? opening.pool.sublabel : 'Build a lineup out of real teams'}
+            {' · '}
+            <Link href="/games/" className={styles.headSwitch}>
+              Change league
+            </Link>
           </p>
         </div>
 
-        <RosterRoulette initialDeal={opening} initialError={openingError} pools={chips} />
+        <RosterRoulette initialDeal={opening} initialError={openingError} />
       </div>
 
       <SiteFooter />

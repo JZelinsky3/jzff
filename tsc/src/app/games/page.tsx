@@ -112,7 +112,7 @@ export default async function GamesPage() {
         {!signedIn ? (
           <div className={styles.empty}>
             <Link href="/login">Sign in</Link> and every league you run or follow
-            becomes its own wheel — spins land on your league-mates&apos; real teams
+            becomes its own wheel, so spins land on your league-mates&apos; real teams
             instead of strangers&apos;.
           </div>
         ) : leaguePools.length === 0 ? (

@@ -85,6 +85,22 @@ export async function GET(req: Request) {
   const poolLabel = clean(params.get('pool'), 34)
   const perfect = hasResult && wins === GAMES
 
+  // The lineup rides in one param: slot,name,ppg;slot,name,ppg;...
+  // Surnames only, which keeps a shareable URL to a sane length and reads
+  // like a depth chart anyway.
+  const lineup = (clean(params.get('l'), 400) ?? '')
+    .split(';')
+    .map((row) => row.split(','))
+    .filter((parts) => parts.length === 3 && parts[0] && parts[1])
+    .slice(0, 7)
+    .map(([slot, name, ppg]) => ({
+      slot: slot.slice(0, 5),
+      name: name.slice(0, 18),
+      ppg: ppg.slice(0, 6),
+      color:
+        POS.find((p) => p.label === slot.replace(/\d/g, ''))?.color ?? GOLD,
+    }))
+
   return new ImageResponse(
     (
       <div
@@ -114,9 +130,17 @@ export async function GET(req: Request) {
           style={{
             flex: 1,
             display: 'flex',
+            alignItems: 'center',
+            padding: '0 68px',
+          }}
+        >
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: '0 84px',
+            paddingRight: lineup.length > 0 ? '28px' : '0',
           }}
         >
           <div
@@ -185,13 +209,13 @@ export async function GET(req: Request) {
               <div
                 style={{
                   display: 'flex',
-                  fontSize: '19px',
-                  letterSpacing: '0.12em',
+                  fontSize: '17px',
+                  letterSpacing: '0.1em',
                   color: CREAM_SOFT,
-                  marginTop: '18px',
+                  marginTop: '16px',
                 }}
               >
-                Same nine squads, same order{poolLabel ? ` · ${poolLabel}` : ''}
+                Same nine teams{poolLabel ? ` · ${poolLabel}` : ''}
               </div>
             </div>
           ) : (
@@ -236,31 +260,108 @@ export async function GET(req: Request) {
             </div>
           )}
 
-          {/* The seven slots, as a depth chart. Says what the game is at a glance. */}
-          <div style={{ display: 'flex', gap: '10px', marginTop: '38px' }}>
-            {POS.map((s, i) => (
+          {/* Empty slots as a depth chart, only when there's no real lineup
+              to show in its place. */}
+          {lineup.length === 0 && (
+            <div style={{ display: 'flex', gap: '9px', marginTop: '38px' }}>
+              {POS.map((s, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '92px',
+                    height: '46px',
+                    border: `1px solid ${s.color}66`,
+                    borderLeft: `3px solid ${s.color}`,
+                    borderRadius: '4px',
+                    background: '#00000038',
+                    color: s.color,
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    letterSpacing: '0.16em',
+                  }}
+                >
+                  {s.label}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* The team you actually built. The right half was dead space, and
+            the names are the part anyone in a league chat wants to argue
+            with. */}
+        {lineup.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '440px',
+              border: `1px solid ${GOLD}44`,
+              borderRadius: '6px',
+              background: '#00000040',
+              padding: '14px 16px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '13px',
+                fontWeight: 700,
+                letterSpacing: '0.26em',
+                textTransform: 'uppercase',
+                color: GOLD,
+                paddingBottom: '9px',
+                borderBottom: `1px solid ${GOLD}33`,
+              }}
+            >
+              <span style={{ display: 'flex' }}>The lineup</span>
+              <span style={{ display: 'flex' }}>PPG</span>
+            </div>
+            {lineup.map((row, i) => (
               <div
                 key={i}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '104px',
-                  height: '46px',
-                  border: `1px solid ${s.color}66`,
-                  borderLeft: `3px solid ${s.color}`,
-                  borderRadius: '4px',
-                  background: '#00000038',
-                  color: s.color,
-                  fontSize: '17px',
-                  fontWeight: 700,
-                  letterSpacing: '0.16em',
+                  gap: '12px',
+                  padding: '7px 0 6px',
+                  borderBottom: i < lineup.length - 1 ? `1px solid ${CREAM}12` : 'none',
                 }}
               >
-                {s.label}
+                <span
+                  style={{
+                    display: 'flex',
+                    width: '46px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    color: row.color,
+                  }}
+                >
+                  {row.slot}
+                </span>
+                <span
+                  style={{
+                    display: 'flex',
+                    flex: 1,
+                    fontSize: '20px',
+                    color: CREAM,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {row.name}
+                </span>
+                <span style={{ display: 'flex', fontSize: '19px', fontWeight: 700, color: GOLD }}>
+                  {row.ppg}
+                </span>
               </div>
             ))}
           </div>
+        )}
         </div>
 
         <div

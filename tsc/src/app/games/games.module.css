@@ -56,7 +56,26 @@
 
   /* The pitch has done its job by the time someone is playing; on a phone
      it is just pushing the board below the fold. */
-  .head .lede {
+  .head .headSub {
+  margin: 0.7rem auto 0;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.headSwitch {
+  color: var(--gp-gold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(232, 200, 137, 0.35);
+}
+
+.headSwitch:hover {
+  color: var(--gp-bright);
+}
+
+.lede {
     display: none;
   }
 
@@ -91,6 +110,25 @@
   color: var(--gp-gold);
 }
 
+.headSub {
+  margin: 0.7rem auto 0;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.headSwitch {
+  color: var(--gp-gold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(232, 200, 137, 0.35);
+}
+
+.headSwitch:hover {
+  color: var(--gp-bright);
+}
+
 .lede {
   max-width: 48ch;
   margin: 1.1rem auto 0;
@@ -100,7 +138,26 @@
 }
 
 @media (max-width: 700px) {
-  .lede {
+  .headSub {
+  margin: 0.7rem auto 0;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.headSwitch {
+  color: var(--gp-gold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(232, 200, 137, 0.35);
+}
+
+.headSwitch:hover {
+  color: var(--gp-bright);
+}
+
+.lede {
     font-size: 0.85rem;
     margin-top: 0.7rem;
   }
@@ -684,48 +741,88 @@
   color: var(--gp-mute);
 }
 
-/* Compact row — the deep bench. Every player a manager rostered stays on
-   the board (seeing that you once had eleven running backs is half the
-   fun), but the ones nobody is going to start give up their headshot and
-   most of their height. */
+/* Compact row: the deep bench. Every player a manager rostered stays on the
+   board (seeing you once had eleven running backs is half the fun), but past
+   the first six at a position they give up some height. Deliberately only a
+   little smaller than a full card, with the headshot kept, because dropping
+   them to a bare line made them read as a different kind of thing rather
+   than the same players further down the list. */
 .compact {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 1.85rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.6rem;
   width: 100%;
   text-align: left;
-  background: transparent;
-  border: 0;
-  border-left: 2px solid var(--pos);
-  border-radius: 2px;
-  padding: 0.2rem 0.6rem 0.2rem 0.5rem;
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid transparent;
+  border-left: 3px solid var(--pos);
+  border-radius: 3px;
+  padding: 0.32rem 0.65rem 0.32rem 0.5rem;
   color: var(--gp-soft);
   font: inherit;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
 .compact:hover:not(:disabled) {
-  background: rgba(232, 200, 137, 0.08);
+  background: rgba(232, 200, 137, 0.09);
+  border-color: var(--gp-gold);
+  border-left-color: var(--pos);
   color: var(--gp-cream);
 }
 
 .compact:disabled {
-  opacity: 0.3;
+  opacity: 0.32;
   cursor: not-allowed;
+  filter: grayscale(0.7);
+}
+
+.compactShot {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--gp-raise);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.compactShotImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+.compactShotFallback {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--pos);
+}
+
+.compactMain {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
 }
 
 .compactPos {
   font-family: var(--mono);
-  font-size: 0.55rem;
+  font-size: 0.56rem;
   font-weight: 700;
   color: var(--pos);
   letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 
 .compactName {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -735,12 +832,12 @@
   font-family: var(--mono);
   font-size: 0.52rem;
   color: var(--gp-mute);
-  margin-left: 0.4rem;
+  flex-shrink: 0;
 }
 
 .compactPpg {
   font-family: var(--mono);
-  font-size: 0.76rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--gp-soft);
   font-variant-numeric: tabular-nums;
@@ -913,15 +1010,21 @@
   }
 
   .compact {
-    padding: 0.42rem 0.6rem 0.42rem 0.5rem;
+    grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+    padding: 0.4rem 0.6rem 0.4rem 0.5rem;
+  }
+
+  .compactShot {
+    width: 2.1rem;
+    height: 2.1rem;
   }
 
   .compactName {
-    font-size: 0.84rem;
+    font-size: 0.88rem;
   }
 
   .compactPpg {
-    font-size: 0.86rem;
+    font-size: 1rem;
   }
 }
 
@@ -1164,11 +1267,13 @@
 }
 
 /* ── Mobile HUD ───────────────────────────────────────────── */
-/* On phones the lineup sheet is too tall to keep in view, so it collapses
-   into a sticky two-part bar: the score line, and the seven slots as a grid
-   that FITS the width. The old version scrolled horizontally, which meant
-   half the lineup was always off screen and the thing you most needed to
-   see while picking was the thing you had to go looking for. */
+/* On phones the lineup lives in a fixed bar at the BOTTOM of the screen,
+   where a thumb is, the way an app's tab bar does. It sat at the top
+   first, which put the thing you check on every pick furthest from the
+   hand holding the phone.
+   Collapsed it is one line: record, PPG, and a chevron. Tap the chevron
+   and the seven slots open underneath it, in a grid that fits the width
+   with no scrolling. */
 
 .hud {
   display: none;
@@ -1177,33 +1282,49 @@
 @media (max-width: 940px) {
   .hud {
     display: block;
-    position: sticky;
-    top: 0;
-    z-index: 6;
-    background: var(--gp-ink);
-    border-bottom: 1px solid var(--gp-line);
-    margin-bottom: 0.6rem;
-    padding-bottom: 0.4rem;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    background: rgba(11, 17, 25, 0.97);
+    backdrop-filter: blur(8px);
+    border-top: 2px solid var(--gp-gold);
+    padding: 0 0.75rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Clear the bar so the last roster row and the footer buttons are never
+     trapped underneath it. */
+  .wrap {
+    padding-bottom: 7rem;
   }
 }
 
-.hudTop {
+.hudBar {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.5rem 0.1rem 0.45rem;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 0.55rem 0.1rem 0.5rem;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 
 .hudScore {
   display: flex;
   align-items: baseline;
-  gap: 0.55rem;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .hudRec {
   font-family: var(--mono);
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.02em;
@@ -1213,50 +1334,61 @@
 
 .hudPpg {
   font-family: var(--mono);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--gp-bright);
   font-variant-numeric: tabular-nums;
 }
 
 .hudUnit {
-  font-size: 0.5rem;
+  font-size: 0.48rem;
   letter-spacing: 0.14em;
   color: var(--gp-mute);
   font-weight: 400;
   margin-left: 0.15rem;
 }
 
-.hudTarget {
+.hudFilled {
+  margin-left: auto;
   font-family: var(--mono);
   font-size: 0.54rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--gp-mute);
-  text-align: right;
+  white-space: nowrap;
 }
 
-.hudTargetVal {
-  display: block;
+.hudChevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--gp-line);
   color: var(--gp-gold);
-  font-weight: 700;
-  font-size: 0.7rem;
-  margin-top: 0.15rem;
-  font-variant-numeric: tabular-nums;
+  transition: transform 0.18s;
 }
 
-/* Seven columns, always. No scrolling — the whole lineup is one glance. */
+.hudChevronOpen {
+  composes: hudChevron;
+  transform: rotate(180deg);
+}
+
+/* Seven columns, always. No scrolling: the whole lineup is one glance. */
 .hudSlots {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.22rem;
+  padding-bottom: 0.45rem;
 }
 
 .hudCell {
   border: 1px solid var(--gp-line);
   border-top: 2px solid var(--gp-line);
   border-radius: 3px;
-  padding: 0.28rem 0.1rem 0.3rem;
+  padding: 0.3rem 0.1rem 0.32rem;
   text-align: center;
   background: var(--gp-panel);
   min-width: 0;
@@ -1291,7 +1423,7 @@
 .hudVal {
   display: block;
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: var(--gp-bright);
   font-variant-numeric: tabular-nums;
@@ -1304,11 +1436,9 @@
   font-weight: 400;
 }
 
-/* The desktop sheet's slot list duplicates the HUD on phones — the tallies
-   underneath it (pool, scoring, seed) don't, so only the list is dropped. */
+/* The desktop sheet duplicates the HUD on phones; only the tallies
+   underneath it (pool, scoring, rerolls, seed) don't, so the rest goes. */
 @media (max-width: 940px) {
-  /* All three are already in the HUD above — the sheet keeps only the
-     tallies (pool, scoring, rerolls, seed), which aren't. */
   .sheetHead,
   .slots,
   .targetRow {

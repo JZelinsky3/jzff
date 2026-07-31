@@ -131,6 +131,66 @@ function loadRanks() {
 }
 
 /**
+ * Positional baselines, used by the strong agent below. A quarterback
+ * averages several points a week more than a receiver, so ranking a board by
+ * raw PPG always reaches for the QB first and burns the one slot he can fill
+ * on whoever happens to be there. Measuring each man against his own
+ * position's average is what a thinking player does instead.
+ */
+function positionBaselines(playable) {
+  const sums = {}
+  const counts = {}
+  for (const sq of playable) {
+    for (const p of sq.players) {
+      sums[p.pos] = (sums[p.pos] ?? 0) + p.ppg
+      counts[p.pos] = (counts[p.pos] ?? 0) + 1
+    }
+  }
+  const out = {}
+  for (const pos of POSITIONS) out[pos] = counts[pos] ? sums[pos] / counts[pos] : 0
+  return out
+}
+
+/**
+ * How a good player actually plays: take the man who is furthest ahead of
+ * what his position normally gives you, not the biggest raw number. This
+ * beats raw-PPG greed comfortably, and it is the level the 17-0 bar is set
+ * against — a bar calibrated to greed alone is one a thoughtful player
+ * clears far too often.
+ */
+function playSmart(spins, baselines) {
+  const filled = new Array(SLOTS.length).fill(null)
+  let rerolls = SPINS_PER_GAME - SLOTS.length
+  let placed = 0
+  for (const squad of spins) {
+    if (placed === SLOTS.length) break
+    const openIdx = SLOTS.map((_, i) => i).filter((i) => filled[i] === null)
+    const okPos = new Set(openIdx.flatMap((i) => SLOTS[i]))
+    const legal = squad.filter((p) => okPos.has(p.pos))
+    if (legal.length === 0) {
+      if (rerolls > 0) rerolls--
+      continue
+    }
+    let best = legal[0]
+    let bestVal = -Infinity
+    for (const p of legal) {
+      const val = p.ppg - (baselines[p.pos] ?? 0)
+      if (val > bestVal) {
+        bestVal = val
+        best = p
+      }
+    }
+    const target =
+      openIdx.find((i) => SLOTS[i].length === 1 && SLOTS[i].includes(best.pos)) ??
+      openIdx.find((i) => SLOTS[i].includes(best.pos))
+    filled[target] = best
+    placed++
+  }
+  if (placed < SLOTS.length) return 0
+  return filled.reduce((sum, p) => sum + p.ppg, 0)
+}
+
+/**
  * Plays one dealt wheel and returns the lineup's total PPG (0 if the wheel
  * couldn't be filled). Slot assignment mirrors the client's: a dedicated
  * slot before the FLEX, always.
@@ -260,6 +320,8 @@ async function main() {
     // exactly as dealRefs does, then plays them out.
     const samples = []
     const pars = []
+    const smarts = []
+    const baselines = positionBaselines(playable)
     for (let n = 0; n < SIMULATIONS; n++) {
       const spins = []
       const seenManagers = new Set()
@@ -277,13 +339,16 @@ async function main() {
       const skill = Math.random() ** 0.4
       const ppg = playWheel(spins, skill)
       if (ppg > 0) samples.push(ppg)
-      // Also record the ceiling for this wheel — perfect play, seeing all
-      // nine squads at once. The 17-0 bar is set off this distribution.
+      // Raw-PPG-greedy ceiling, kept for reference.
       const best = playWheel(spins, 1)
       if (best > 0) pars.push(best)
+      // Strong play. The 17-0 bar is set off THIS distribution.
+      const smart = playSmart(spins, baselines)
+      if (smart > 0) smarts.push(smart)
     }
     samples.sort((a, b) => a - b)
     pars.sort((a, b) => a - b)
+    smarts.sort((a, b) => a - b)
 
     const at = (q) => samples[Math.min(samples.length - 1, Math.round(q * (samples.length - 1)))]
     const parAt = (q) => pars[Math.min(pars.length - 1, Math.round(q * (pars.length - 1)))]
