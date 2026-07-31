@@ -9,6 +9,7 @@
 // row. This makes someone who shows up on both Sleeper + NFL count once.
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { canonicalDraftIds } from '@/lib/canonicalDraft'
 
 export type ManagerLite = {
   id: string                 // manager row id (per-platform identity)
@@ -135,11 +136,15 @@ export async function getLeaguePresentationData(leagueId: string, leagueName: st
       .select('season_id, week, manager_a_id, manager_b_id, score_a, score_b, is_playoff, is_championship')
       .in('season_id', inIds),
     db.from('drafts')
-      .select('id, season_id, rounds')
+      .select('id, season_id, rounds, external_id')
       .in('season_id', inIds),
   ])
 
-  const draftIds = (draftsRaw ?? []).map((d) => d.id)
+  // One draft per season. A season can hold a hand-authored upload alongside
+  // the platform's own scrape (pams 2019), and reading both meant every pick
+  // that year appeared twice in whatever this feeds. See @/lib/canonicalDraft.
+  const canonicalDrafts = canonicalDraftIds(draftsRaw ?? [])
+  const draftIds = [...canonicalDrafts]
   const inDraftIds = draftIds.length > 0 ? draftIds : ['00000000-0000-0000-0000-000000000000']
   const { data: draftPicksRaw } = await db
     .from('draft_picks')
@@ -213,11 +218,13 @@ export async function getLeaguePresentationData(leagueId: string, leagueName: st
     managerBId: r.manager_b_id,
   }))
 
-  const drafts: DraftLite[] = (draftsRaw ?? []).map((d) => ({
-    id: d.id,
-    seasonId: d.season_id,
-    rounds: d.rounds ?? null,
-  }))
+  const drafts: DraftLite[] = (draftsRaw ?? [])
+    .filter((d) => canonicalDrafts.has(d.id))
+    .map((d) => ({
+      id: d.id,
+      seasonId: d.season_id,
+      rounds: d.rounds ?? null,
+    }))
 
   const draftPicks: DraftPickLite[] = (draftPicksRaw ?? []).map((p) => ({
     draftId: p.draft_id,

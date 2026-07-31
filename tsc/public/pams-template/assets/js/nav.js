@@ -396,9 +396,11 @@
         // read the almanac you can play its squads.
         var gamesGroup = '';
         if (ctx.slug) {
+            var poolQs = '/?pool=' + encodeURIComponent(ctx.slug);
             gamesGroup =
                 '<span class="nav-drop-label">Games</span>' +
-                '<a href="/games/roulette/?pool=' + encodeURIComponent(ctx.slug) + '">Roster Roulette</a>' +
+                '<a href="/games/roulette' + poolQs + '">Roster Roulette</a>' +
+                '<a href="/games/blind-item' + poolQs + '">Blind Item</a>' +
                 '<a href="/games/">All games</a>';
         }
 

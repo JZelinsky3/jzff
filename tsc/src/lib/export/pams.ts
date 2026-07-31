@@ -5,6 +5,7 @@
 // a response, or compare against a fixture.
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { canonicalDraftBySeason } from '@/lib/canonicalDraft'
 import { simulateSeason, type SimTeam } from '@/lib/powerSim'
 import { resolveCurrentWeek } from '@/lib/liveSeason'
 
@@ -330,17 +331,14 @@ async function loadSnapshot(leagueId: string): Promise<Snapshot> {
     pushTo(matchupsByManager, m.manager_b_id, m)
   }
 
-  const draftsBySeason = new Map<string, DraftRow>()
-  for (const d of drafts ?? []) {
-    if (!seasonIds.has(d.season_id)) continue
-    // Hand-authored drafts (external_id 'curated-*') outrank whatever the
-    // platform scrape landed for the same season — otherwise query order
-    // decides which draft the almanac shows.
-    const existing = draftsBySeason.get(d.season_id)
-    const isCurated = (row: DraftRow) => String(row.external_id ?? '').startsWith('curated-')
-    if (existing && isCurated(existing) && !isCurated(d)) continue
-    draftsBySeason.set(d.season_id, d)
-  }
+  // Hand-authored drafts (external_id 'curated-*') outrank whatever the
+  // platform scrape landed for the same season, otherwise query order decides
+  // which draft the almanac shows. The rule used to live here and nowhere
+  // else, which is exactly why other readers disagreed with this one; it now
+  // lives in @/lib/canonicalDraft and every reader shares it.
+  const draftsBySeason = canonicalDraftBySeason(
+    (drafts ?? []).filter((d) => seasonIds.has(d.season_id))
+  )
   const picksByDraft = groupBy(picks ?? [], (p) => p.draft_id)
 
   // Rivalries (commissioner-curated). Pre-migration leagues with no rivalries

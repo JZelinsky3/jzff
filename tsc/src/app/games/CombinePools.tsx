@@ -13,7 +13,18 @@ import Link from 'next/link'
 import type { GamePool } from './pools'
 import styles from './games.module.css'
 
-export function CombinePools({ pools, max }: { pools: GamePool[]; max: number }) {
+export function CombinePools({
+  pools,
+  max,
+  base,
+}: {
+  pools: GamePool[]
+  max: number
+  /** The game this mixture is for. Only games whose GameDef allows combining
+      render this, but the route is passed in rather than hardcoded so it
+      can't silently keep pointing at Roulette if that ever changes. */
+  base: string
+}) {
   const [picked, setPicked] = useState<string[]>([])
 
   const toggle = (id: string) => {
@@ -29,7 +40,7 @@ export function CombinePools({ pools, max }: { pools: GamePool[]; max: number })
   const ready = picked.length >= 2
   // Sorted so the same mixture is always the same link, which is what makes
   // it one cache entry and one seed space on the server.
-  const href = `/games/roulette/?pool=${encodeURIComponent([...picked].sort().join(','))}`
+  const href = `${base}?pool=${encodeURIComponent([...picked].sort().join(','))}`
   const full = picked.length >= max
 
   return (

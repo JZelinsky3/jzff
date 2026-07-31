@@ -1,0 +1,622 @@
+/* ============================================================
+   BLIND ITEM
+   The gossip column trick: a story printed with the name taken
+   out. Same broadsheet bones as the rest of the Games Page —
+   cream on ink, brass rules, tabular numerals — but the card
+   itself is set like a redacted document, so the blank where
+   the name should be reads as deliberate.
+
+   Colour tokens (--gp-*, --pos-*) are inherited from .wrap in
+   games.module.css, which every page using this file sits in.
+   ============================================================ */
+
+.board {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+/* ── Running header ───────────────────────────────────────── */
+
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+  margin-bottom: 1.1rem;
+}
+
+.stripRounds {
+  display: flex;
+  gap: 0.34rem;
+}
+
+.pip,
+.pipNow,
+.pipSweep,
+.pipHalf,
+.pipMiss {
+  width: 1.5rem;
+  height: 0.3rem;
+  border-radius: 1px;
+  background: var(--gp-raise);
+}
+
+.pipNow {
+  background: var(--gp-gold);
+}
+
+.pipSweep {
+  background: var(--gp-green);
+}
+
+.pipHalf {
+  background: var(--gp-soft);
+}
+
+.pipMiss {
+  background: var(--gp-red);
+  opacity: 0.55;
+}
+
+.stripScore {
+  font-family: var(--mono);
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.stripScoreNum {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-bright);
+}
+
+.stripScoreOf {
+  font-size: 0.7rem;
+  color: var(--gp-mute);
+}
+
+/* ── The card ─────────────────────────────────────────────── */
+
+.card {
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+  padding: 1.4rem 1.4rem 1.1rem;
+}
+
+.cardHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 3px double var(--gp-line);
+  flex-wrap: wrap;
+}
+
+.cardNo {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+}
+
+.cardKind {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.cardLede {
+  margin: 0.85rem 0 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--gp-soft);
+}
+
+.picks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pick {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr auto 2.6rem;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.52rem 0.2rem;
+  border-bottom: 1px solid var(--gp-line-soft);
+}
+
+.pick:last-child {
+  border-bottom: 0;
+}
+
+.pickRound {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-mute);
+}
+
+.pickName {
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  color: var(--gp-cream);
+  line-height: 1.2;
+}
+
+.pickPos {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  padding: 0.18rem 0.36rem;
+  border-radius: 2px;
+  color: var(--gp-ink);
+  background: var(--gp-soft);
+}
+
+.pickPos[data-pos='QB'] {
+  background: var(--pos-QB);
+}
+.pickPos[data-pos='RB'] {
+  background: var(--pos-RB);
+}
+.pickPos[data-pos='WR'] {
+  background: var(--pos-WR);
+}
+.pickPos[data-pos='TE'] {
+  background: var(--pos-TE);
+}
+
+.pickTeam {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: var(--gp-mute);
+  text-align: right;
+}
+
+@media (max-width: 560px) {
+  .card {
+    padding: 1.1rem 0.9rem 0.9rem;
+  }
+
+  .pick {
+    grid-template-columns: 2rem 1fr auto;
+    gap: 0.5rem;
+  }
+
+  /* The NFL team is the first thing to go on a phone: it's the least
+     load-bearing clue on the card and the name needs the room. */
+  .pickTeam {
+    display: none;
+  }
+
+  .pickName {
+    font-size: 0.95rem;
+  }
+}
+
+/* ── Answering ────────────────────────────────────────────── */
+
+.answers {
+  margin-top: 1.3rem;
+}
+
+.ask {
+  margin-bottom: 1.2rem;
+}
+
+.askLabel {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+  margin-bottom: 0.6rem;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pill,
+.pillOn,
+.pillNum,
+.pillOnNum {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  padding: 0.46rem 0.72rem;
+  border-radius: 2px;
+  border: 1px solid var(--gp-line);
+  background: var(--gp-panel-2);
+  color: var(--gp-soft);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.pillNum,
+.pillOnNum {
+  font-variant-numeric: tabular-nums;
+}
+
+.pill:hover,
+.pillNum:hover {
+  border-color: var(--gp-gold);
+  color: var(--gp-cream);
+}
+
+.pillOn,
+.pillOnNum {
+  background: var(--gp-gold);
+  border-color: var(--gp-bright);
+  color: var(--gp-ink);
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+
+.btn,
+.btnOff,
+.btnGhost {
+  display: inline-block;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.9rem 1rem;
+  border-radius: 2px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.btn {
+  background: var(--gp-gold);
+  color: var(--gp-ink);
+}
+
+.btn:hover {
+  background: var(--gp-bright);
+}
+
+.btnOff {
+  background: var(--gp-panel-2);
+  border-color: var(--gp-line);
+  color: var(--gp-mute);
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  background: transparent;
+  border-color: var(--gp-line);
+  color: var(--gp-soft);
+}
+
+.btnGhost:hover {
+  border-color: var(--gp-gold);
+  color: var(--gp-cream);
+}
+
+/* ── The reveal ───────────────────────────────────────────── */
+
+.reveal {
+  margin-top: 1.3rem;
+  padding: 1.3rem;
+  background: var(--gp-panel-2);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+}
+
+.revealHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.revealTag,
+.revealTagSweep {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.revealTagSweep {
+  color: var(--gp-green);
+}
+
+.revealPts {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-bright);
+}
+
+.revealAnswer {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.revealName {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 5vw, 2.1rem);
+  line-height: 1.05;
+  color: var(--gp-cream);
+}
+
+.revealYear {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-gold);
+}
+
+.revealTeam {
+  margin-top: 0.28rem;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--gp-soft);
+}
+
+.revealLine {
+  margin-top: 0.5rem;
+  font-size: 0.86rem;
+  color: var(--gp-mute);
+}
+
+.revealGuesses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin: 1.1rem 0;
+}
+
+.guessHit,
+.guessMiss {
+  padding: 0.6rem 0.7rem;
+  border-radius: 2px;
+  border-left: 3px solid var(--gp-line);
+  background: var(--gp-panel);
+}
+
+.guessHit {
+  border-left-color: var(--gp-green);
+}
+
+.guessMiss {
+  border-left-color: var(--gp-red);
+}
+
+.guessLabel {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  margin-bottom: 0.2rem;
+}
+
+.guessValue {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--gp-cream);
+}
+
+/* ── The final card ───────────────────────────────────────── */
+
+.final {
+  text-align: center;
+  padding: 2rem 1.2rem;
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+}
+
+.finalKicker {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+}
+
+.finalScore {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 14vw, 5.4rem);
+  line-height: 1;
+  color: var(--gp-cream);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.4rem;
+}
+
+.finalOf {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: var(--gp-mute);
+  margin-left: 0.5rem;
+}
+
+.finalTitle {
+  font-family: var(--serif);
+  font-size: clamp(1.3rem, 4.5vw, 1.8rem);
+  color: var(--gp-bright);
+  margin: 0.7rem 0 0.3rem;
+}
+
+.finalLine {
+  font-size: 0.9rem;
+  color: var(--gp-soft);
+  margin: 0 auto;
+  max-width: 34rem;
+}
+
+.finalStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin: 1.6rem 0 1.4rem;
+}
+
+.finalStat {
+  padding: 0.8rem 0.4rem;
+  background: var(--gp-panel-2);
+  border: 1px solid var(--gp-line-soft);
+  border-radius: 2px;
+}
+
+.finalStatNum {
+  display: block;
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-cream);
+}
+
+.finalStatLabel {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  margin-top: 0.3rem;
+}
+
+.ledger {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  text-align: left;
+  border-top: 1px solid var(--gp-line);
+}
+
+.ledgerRow {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr auto 1.6rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.2rem;
+  border-bottom: 1px solid var(--gp-line-soft);
+}
+
+.ledgerNum {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--gp-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.ledgerName {
+  font-family: var(--serif);
+  font-size: 0.94rem;
+  color: var(--gp-cream);
+}
+
+.ledgerMarks {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.markHit,
+.markMiss {
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.16rem 0.32rem;
+  border-radius: 2px;
+}
+
+.markHit {
+  background: var(--gp-green);
+  color: var(--gp-ink);
+}
+
+.markMiss {
+  background: var(--gp-raise);
+  color: var(--gp-mute);
+}
+
+.ledgerPts {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-bright);
+  text-align: right;
+}
+
+.finalActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+@media (max-width: 520px) {
+  .finalActions {
+    grid-template-columns: 1fr;
+  }
+
+  .ledgerRow {
+    grid-template-columns: 1.4rem 1fr auto;
+  }
+
+  .ledgerPts {
+    display: none;
+  }
+}
+
+.seedNote {
+  margin-top: 1rem;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--gp-mute);
+}
+
+/* ── Errors ───────────────────────────────────────────────── */
+
+.err {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 1.6rem;
+  text-align: center;
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+  color: var(--gp-soft);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.errLink {
+  display: inline-block;
+  margin-top: 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+}

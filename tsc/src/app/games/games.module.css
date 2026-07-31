@@ -182,6 +182,167 @@
   }
 }
 
+/* ── Game cards (the hub's top billing) ───────────────────────
+   Deliberately bigger and warmer than a pool card. The hub asks
+   one question now — which game — so its cards get the room to
+   answer it, and the pool cards on the next screen stay plain
+   so the two steps never look like the same list twice.
+   ------------------------------------------------------------ */
+
+.gameCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: linear-gradient(180deg, var(--gp-panel-2), var(--gp-panel));
+  border: 1px solid var(--gp-line);
+  border-top: 3px solid var(--gp-gold);
+  border-radius: 4px;
+  padding: 1.6rem 1.4rem 1.2rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.gameCard:hover {
+  border-color: var(--gp-line);
+  border-top-color: var(--gp-bright);
+  transform: translateY(-2px);
+}
+
+.gameTitle {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 4vw, 1.95rem);
+  line-height: 1.1;
+  color: var(--gp-cream);
+}
+
+.gameTitle em {
+  font-style: italic;
+  color: var(--gp-bright);
+}
+
+.gameBody {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--gp-soft);
+}
+
+/* The three beats, as a rule-separated list. Enough to know whether you
+   want to play before committing to a second screen. */
+.gameHow {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--gp-line-soft);
+  margin-top: 0.2rem;
+}
+
+.gameStep {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: var(--gp-mute);
+  padding: 0.5rem 0 0.5rem 0.9rem;
+  border-bottom: 1px solid var(--gp-line-soft);
+  position: relative;
+}
+
+.gameStep::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--gp-gold);
+}
+
+.gameStep:last-child {
+  border-bottom: 0;
+}
+
+.gameFoot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+
+.gameAccess {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.gameGo {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+}
+
+.gameCard:hover .gameGo {
+  color: var(--gp-bright);
+}
+
+/* ── The brief (top of a game's lobby) ────────────────────── */
+
+.brief {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 1.6rem;
+  align-items: start;
+  padding: 1.4rem 0 0.2rem;
+}
+
+@media (max-width: 720px) {
+  .brief {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.briefBlurb {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--gp-soft);
+}
+
+.briefHow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--gp-line);
+}
+
+@media (max-width: 720px) {
+  .briefHow {
+    border-left: 0;
+    border-top: 1px solid var(--gp-line);
+    padding-top: 0.4rem;
+  }
+}
+
+.briefStep {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.4rem 0 0.4rem 1rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--gp-mute);
+}
+
+.briefNum {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--gp-gold);
+  flex: none;
+}
+
 /* ── Hub cards ────────────────────────────────────────────── */
 
 .rail {

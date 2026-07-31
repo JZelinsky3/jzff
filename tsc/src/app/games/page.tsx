@@ -3,22 +3,20 @@ import Link from 'next/link'
 import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
-import { loadPoolsForViewer } from './pools'
-import { CombinePools } from './CombinePools'
-import { MAX_COMBINED_LEAGUES } from '@/lib/minigames/deal'
+import { GAMES } from './gameDefs'
 import styles from './games.module.css'
 
 export const metadata: Metadata = {
   title: 'The Games Page · Fantasy football minigames built on real league history',
   description:
-    'Diversions built out of real fantasy league archives. Roster Roulette deals you random teams from seasons that actually happened and asks you to build a lineup good enough to go 17-0.',
+    'Diversions built out of real fantasy league archives. Roster Roulette deals you random teams from seasons that actually happened; Blind Item hands you a draft with the names taken out and asks whose it was.',
   alternates: { canonical: 'https://thesundaychronicle.app/games/' },
   openGraph: {
     type: 'website',
     url: 'https://thesundaychronicle.app/games/',
     title: 'The Games Page · The Sunday Chronicle',
     description:
-      'Diversions built out of real fantasy league archives. Spin for a real team from a real season and see if your lineup goes 17-0.',
+      'Diversions built out of real fantasy league archives. Play them on the whole site, on a demo league, or on your own.',
     siteName: 'The Sunday Chronicle',
     images: [{ url: '/api/og/games?v=1', width: 1200, height: 630, alt: 'The Games Page' }],
   },
@@ -31,10 +29,16 @@ export const metadata: Metadata = {
 
 // Games that aren't built yet but are worth telling readers about, so the
 // page reads as a section with a future rather than one toy on a shelf.
+//
+// "Guess the Season" used to live here as its own game and doesn't any more:
+// asking only for the year gives a five-season league five possible answers
+// and burns out in five rounds. It became the year half of Blind Item, which
+// asks for the manager too. The lineup card below is the same game with a
+// different exhibit, not a new game.
 const COMING_SOON = [
   {
-    title: 'Guess the Season',
-    body: 'A final standings table with the names stripped out. Work out which year of your league you are looking at.',
+    title: 'Blind Item: the lineup card',
+    body: 'A starting lineup from the last week of a season, no name attached. Blocked until more leagues have their weekly lineups on the books.',
   },
   {
     title: 'Bust or Boom',
@@ -43,7 +47,6 @@ const COMING_SOON = [
 ]
 
 export default async function GamesPage() {
-  const { signedIn, leaguePools } = await loadPoolsForViewer()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -84,89 +87,39 @@ export default async function GamesPage() {
           </p>
         </div>
 
+        {/* Games only. Which league you play one ON is the next screen —
+            mixing the two questions into one rail made every league appear
+            once per game and left it hard to tell what was what. */}
         <div className={styles.sectionHead}>
           <span className={styles.sectionNum}>§ 01</span>
-          <span className={styles.sectionTitle}>Open to everyone</span>
-          <span className={styles.sectionMeta}>No account needed</span>
+          <span className={styles.sectionTitle}>Pick a game</span>
+          <span className={styles.sectionMeta}>{GAMES.length} to play</span>
         </div>
 
         <div className={styles.rail}>
-          <Link href="/games/roulette/?pool=site" className={styles.card}>
-            <span className={styles.cardTag}>Roster Roulette</span>
-            <span className={styles.cardTitle}>The whole site</span>
-            <span className={styles.cardBody}>
-              The wheel pulls from every published almanac here. Spin, take one
-              player off whoever&apos;s team lands, fill seven slots, and see whether
-              the lineup goes 17-0.
-            </span>
-            <span className={styles.cardFoot}>Play now</span>
-          </Link>
-
-          {/* One league's whole history, for anyone without one of their own.
-              The site-wide wheel deals a different league every spin, so it
-              never shows what playing YOUR league is like. */}
-          <Link href="/games/roulette/?pool=demo" className={styles.card}>
-            <span className={styles.cardTag}>Roster Roulette</span>
-            <span className={styles.cardTitle}>The demo league</span>
-            <span className={styles.cardBody}>
-              Seven seasons of one league, the way it feels when the wheel keeps
-              landing on people you know. Real teams and real numbers, under the
-              demo&apos;s names.
-            </span>
-            <span className={styles.cardFoot}>Try it without an account</span>
-          </Link>
+          {GAMES.map((g) => (
+            <Link key={g.id} href={g.href} className={styles.gameCard}>
+              <span className={styles.gameTitle}>
+                {g.title} <em>{g.titleEm}</em>
+              </span>
+              <span className={styles.gameBody}>{g.short}</span>
+              <span className={styles.gameHow}>
+                {g.how.map((step) => (
+                  <span key={step} className={styles.gameStep}>
+                    {step}
+                  </span>
+                ))}
+              </span>
+              <span className={styles.gameFoot}>
+                <span className={styles.gameAccess}>{g.access}</span>
+                <span className={styles.gameGo}>Choose a league</span>
+              </span>
+            </Link>
+          ))}
         </div>
 
         <div className={styles.sectionHead}>
           <span className={styles.sectionNum}>§ 02</span>
-          <span className={styles.sectionTitle}>Your leagues</span>
-          <span className={styles.sectionMeta}>
-            {signedIn ? `${leaguePools.length} available` : 'Sign in'}
-          </span>
-        </div>
-
-        {!signedIn ? (
-          <div className={styles.empty}>
-            <Link href="/login">Sign in</Link>{' '}and every league you run or follow
-            becomes its own wheel, so spins land on your league-mates&apos; real teams
-            instead of strangers&apos;.
-          </div>
-        ) : leaguePools.length === 0 ? (
-          <div className={styles.empty}>
-            No leagues on your shelf yet.{' '}
-            <Link href="/dashboard/new">Build an almanac</Link>{' '}and its whole history
-            becomes a wheel you can spin.
-          </div>
-        ) : (
-          <>
-            <div className={styles.rail}>
-              {leaguePools.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/games/roulette/?pool=${encodeURIComponent(p.id)}`}
-                  className={styles.card}
-                >
-                  <span className={styles.cardTag}>Roster Roulette</span>
-                  <span className={styles.cardTitle}>{p.label}</span>
-                  <span className={styles.cardBody}>
-                    Every completed season your league has on the books, one squad per
-                    manager per year. Spins land on people you actually know.
-                  </span>
-                  <span className={styles.cardFoot}>{p.note}</span>
-                </Link>
-              ))}
-            </div>
-
-            {/* Needs two leagues to mean anything, so it stays out of the
-                way of anyone who only has one. */}
-            {leaguePools.length > 1 && (
-              <CombinePools pools={leaguePools} max={MAX_COMBINED_LEAGUES} />
-            )}
-          </>
-        )}
-
-        <div className={styles.sectionHead}>
-          <span className={styles.sectionNum}>§ 03</span>
           <span className={styles.sectionTitle}>On the drawing board</span>
           <span className={styles.sectionMeta}>Not built yet</span>
         </div>

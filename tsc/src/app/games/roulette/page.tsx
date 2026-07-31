@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/server'
 import { dealGame } from '@/lib/minigames/deal'
 import { GAMES } from '@/lib/minigames/record'
 import { SITE_POOL } from '../pools'
+import { GameLobby } from '../GameLobby'
+import { ROSTER_ROULETTE } from '../gameDefs'
 import { RosterRoulette } from './RosterRoulette'
 import styles from '../games.module.css'
 
@@ -80,24 +82,28 @@ export default async function RoulettePage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // No pool means nobody has chosen a league yet, so this route is the lobby
+  // rather than the board. It used to default to the site wheel, which made
+  // /games/roulette/ start a game you never asked for and left the site pool
+  // looking like the only one there was.
+  //
   // A ?pool= naming a league the viewer has no card for is still dealt, and
   // no account is needed to deal it: a wheel gets shared into a group chat
   // and has to work for everyone in it. The signed-in user is read only to
   // pick the right nav button.
   const requested = (sp.pool ?? '').toLowerCase()
-  const initialPool = requested || SITE_POOL.id
 
-  const dealt = await dealGame(initialPool, sp.seed ?? null)
+  const dealt = requested ? await dealGame(requested, sp.seed ?? null) : null
   // Falling back to the site wheel keeps a bad link playable instead of
   // dead-ending on an error page. But the swap is announced: someone sent a
   // link to a specific league, and quietly handing them a different wheel
   // under a different name is worse than telling them why.
-  const fallback = !dealt.ok && initialPool !== SITE_POOL.id
+  const fallback = dealt && !dealt.ok && requested !== SITE_POOL.id
     ? await dealGame(SITE_POOL.id, null)
     : null
-  const opening = dealt.ok ? dealt : fallback?.ok ? fallback : null
-  const openingError = opening ? null : dealt.ok ? null : dealt.error
-  const swapped = !dealt.ok && opening ? dealt.error : null
+  const opening = dealt?.ok ? dealt : fallback?.ok ? fallback : null
+  const openingError = opening || !dealt ? null : dealt.ok ? null : dealt.error
+  const swapped = dealt && !dealt.ok && opening ? dealt.error : null
 
 
   return (
@@ -134,20 +140,36 @@ export default async function RoulettePage({
         <div className={styles.head} data-rr-head>
           <div className={styles.kicker}>★ Roster Roulette ★</div>
           <h1 className={styles.title}>
-            {opening ? opening.pool.label : 'Roster Roulette'}
+            {opening ? (
+              opening.pool.label
+            ) : (
+              <>
+                {ROSTER_ROULETTE.title} <em>{ROSTER_ROULETTE.titleEm}</em>
+              </>
+            )}
           </h1>
           <p className={styles.headSub}>
-            {opening ? opening.pool.sublabel : 'Build a lineup out of real teams'}
-            {' · '}
-            <Link href="/games/" className={styles.headSwitch}>
-              Change league
-            </Link>
+            {opening ? (
+              <>
+                {opening.pool.sublabel}
+                {' · '}
+                <Link href={ROSTER_ROULETTE.href} className={styles.headSwitch}>
+                  Change league
+                </Link>
+              </>
+            ) : (
+              'Build a lineup out of real teams'
+            )}
           </p>
         </div>
 
         {swapped && <p className={styles.swap}>{swapped} Playing the site-wide wheel instead.</p>}
 
-        <RosterRoulette initialDeal={opening} initialError={openingError} />
+        {requested ? (
+          <RosterRoulette initialDeal={opening} initialError={openingError} />
+        ) : (
+          <GameLobby game={ROSTER_ROULETTE} />
+        )}
       </div>
 
       <SiteFooter />

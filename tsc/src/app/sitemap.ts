@@ -77,10 +77,12 @@ const STATIC_PAGES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequenc
   ['/hub/records/', 'weekly', 0.6],
   ['/hub/numbers/', 'weekly', 0.5],
   ['/hub/whats-new/', 'weekly', 0.5],
-  // The Games Page. The hub is worth indexing; the wheel itself deals a
-  // fresh random game per request, so it has no stable content to rank on.
+  // The Games Page. The hub is worth indexing, and each game's route is too
+  // now that it opens on a lobby describing the game rather than dealing a
+  // random board — that lobby is stable content; a dealt board never was.
   ['/games/', 'monthly', 0.6],
   ['/games/roulette/', 'monthly', 0.55],
+  ['/games/blind-item/', 'monthly', 0.55],
   ['/privacy/', 'yearly', 0.3],
   ['/terms/', 'yearly', 0.3],
 ]

@@ -31,6 +31,7 @@
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { containsHateSpeech } from '@/lib/contentModeration'
+import { canonicalDraftIds } from '@/lib/canonicalDraft'
 import {
   getRankLookup,
   normPlayerName,
@@ -137,13 +138,22 @@ const TEAM_ALIASES: Record<string, string> = {
   CLV: 'CLE', HST: 'HOU',
 }
 
+/** The `drafts` row embedded on a pick, enough to apply the canonical rule. */
+type DraftEmbed = { id: string; season_id: string; external_id: string | null }
+
+/** PostgREST sends a to-one embed as a bare object; supabase-js types it as an array. */
+function draftEmbed(raw: DraftEmbed[] | DraftEmbed | null | undefined): DraftEmbed | null {
+  if (!raw) return null
+  return Array.isArray(raw) ? (raw[0] ?? null) : raw
+}
+
 function normNflTeam(raw: string | null | undefined): string | null {
   const t = (raw ?? '').trim().toUpperCase()
   if (!t || t === 'FA' || t === 'NONE' || t === 'null') return null
   return TEAM_ALIASES[t] ?? t
 }
 
-async function pageAll<T>(
+export async function pageAll<T>(
   build: () => { range: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }> }
 ): Promise<T[]> {
   const out: T[] = []
@@ -390,11 +400,15 @@ export async function loadSquadRosters(refs: SquadRef[]): Promise<Squad[]> {
       nfl_team: string | null
       // supabase-js types an embedded relation as an array even when the
       // join is to-one; PostgREST sends back a bare object. Accept both.
-      drafts: { season_id: string }[] | { season_id: string } | null
+      // `id` and `external_id` ride along so the canonical-draft rule can be
+      // applied without a second round trip for the drafts themselves.
+      drafts: DraftEmbed[] | DraftEmbed | null
     }>(() =>
       db
         .from('draft_picks')
-        .select('round, manager_id, player_name, position, nfl_team, drafts!inner(season_id)')
+        .select(
+          'round, manager_id, player_name, position, nfl_team, drafts!inner(id, season_id, external_id)'
+        )
         .in('drafts.season_id', seasonIds)
         .in('manager_id', managerIds)
         .in('position', POOL_POSITIONS)
@@ -445,14 +459,32 @@ export async function loadSquadRosters(refs: SquadRef[]): Promise<Squad[]> {
     return m
   }
 
+  // One draft per season before anything is read off it. pams 2019 carries a
+  // hand-authored upload AND the NFL.com scrape of the same year, and without
+  // this the round number and the draft/pickup label came from whichever of
+  // the two happened to hold the lower overall pick for that player. The
+  // name-keyed dedupe below hid the duplication but not the wrong rounds.
+  //
+  // Counts here are position-filtered (the query keeps skill positions only),
+  // so they're a rough tie-break rather than a true pick total. That only
+  // matters for two SCRAPED drafts; the curated rule decides the real case.
+  const draftsSeen = new Map<string, DraftEmbed>()
+  const draftPickCount = new Map<string, number>()
+  for (const pick of pickRows) {
+    const d = draftEmbed(pick.drafts)
+    if (!d) continue
+    if (!draftsSeen.has(d.id)) draftsSeen.set(d.id, d)
+    draftPickCount.set(d.id, (draftPickCount.get(d.id) ?? 0) + 1)
+  }
+  const canonicalDrafts = canonicalDraftIds([...draftsSeen.values()], draftPickCount)
+
   // Drafted players first, so the round is on the entry before any start
   // rows fold into it.
   for (const pick of pickRows) {
     if (!pick.manager_id || !pick.player_name) continue
-    const seasonId = Array.isArray(pick.drafts)
-      ? pick.drafts[0]?.season_id
-      : pick.drafts?.season_id
-    if (!seasonId) continue
+    const draft = draftEmbed(pick.drafts)
+    if (!draft || !canonicalDrafts.has(draft.id)) continue
+    const seasonId = draft.season_id
     const pos = (pick.position ?? '').toUpperCase()
     if (!POOL_POSITION_SET.has(pos)) continue
     const m = bucket(seasonId, pick.manager_id)
