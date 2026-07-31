@@ -20,7 +20,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DealtGame } from '@/lib/minigames/deal'
 import type { SquadPlayer, PoolPosition, Squad } from '@/lib/minigames/pool'
 import type { SlotDef, SlotId } from '@/lib/minigames/roulette'
-import { parForDeal } from '@/lib/minigames/roulette'
 import { recordFor, recordHeadline, GAMES } from '@/lib/minigames/record'
 import styles from '../games.module.css'
 
@@ -228,10 +227,11 @@ export function RosterRoulette({
     () => Object.values(lineup).reduce((sum, f) => sum + (f?.player.fpts ?? 0), 0),
     [lineup]
   )
+  const bestPick = useMemo(
+    () => Object.values(lineup).reduce((top, f) => Math.max(top, f?.player.ppg ?? 0), 0),
+    [lineup]
+  )
 
-  // Ceiling for these exact nine squads, in PPG. Held back until the run is
-  // over — showing it mid-game would just be the answer key.
-  const par = useMemo(() => (deal ? parForDeal(deal.spins, deal.slots) : 0), [deal])
   const wins = useMemo(
     () => (deal ? recordFor(ppg, deal.benchmark) : 0),
     [ppg, deal]
@@ -570,13 +570,11 @@ export function RosterRoulette({
                   <span className={styles.recapNumLbl}>Season pts</span>
                 </div>
                 <div className={styles.recapNum}>
-                  <span className={styles.recapNumVal}>
-                    {par > 0 ? `${Math.round((ppg / par) * 100)}%` : '·'}
-                  </span>
-                  <span className={styles.recapNumLbl}>Of this wheel</span>
+                  <span className={styles.recapNumVal}>{round1(bestPick)}</span>
+                  <span className={styles.recapNumLbl}>Best pick</span>
                 </div>
               </div>
-              <Runback lineup={lineup} slots={slots} par={par} />
+              <Runback lineup={lineup} slots={slots} />
               <div className={styles.btnRow}>
                 <button type="button" className={styles.btn} onClick={newWheel}>
                   New wheel
@@ -984,32 +982,34 @@ function CompactPlayer({
   )
 }
 
-// What the run cost: how much of the wheel's ceiling you captured, and the
-// PPG you walked past on squads you did take from.
+// What the run cost, in terms of the player's own decisions only.
+//
+// Deliberately says nothing about what the wheel could have paid at best.
+// Quoting that ceiling tells anyone whose wheel came in under the 17-0 bar
+// that they were never in it, which is a miserable thing to be told and
+// takes the point out of the next spin. Losing because the squads were thin
+// is fine; being shown the receipt for it isn't.
 function Runback({
   lineup,
   slots,
-  par,
 }: {
   lineup: Partial<Record<SlotId, Filled>>
   slots: SlotDef[]
-  par: number
 }) {
   const filled = slots.map((s) => lineup[s.id]).filter((f): f is Filled => f != null)
+  if (filled.length === 0) return null
   const left = filled.reduce((sum, f) => sum + (f.bestAvailable - f.player.ppg), 0)
-  if (par <= 0) return null
   if (left < 0.1) {
     return (
       <p className={styles.missed}>
-        You took the best man available on every single spin. The best this wheel
-        could ever have paid was <b>{round1(par)}</b> PPG.
+        You took the best man available on every single spin.
       </p>
     )
   }
   return (
     <p className={styles.missed}>
-      The best possible lineup out of those nine squads was worth <b>{round1(par)}</b> PPG.
-      You walked past <b>{round1(left)}</b> PPG that was sitting on squads you took from.
+      You walked past <b>{round1(left)}</b> points a week that were sitting on
+      squads you took from.
     </p>
   )
 }

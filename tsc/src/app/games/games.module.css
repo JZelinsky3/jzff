@@ -128,25 +128,57 @@
    riding the same class keeps the league title in step instead of leaving
    a full-size block of type sitting above the board. */
 @media (max-width: 940px) {
+  /* Animate the collapse rather than snapping between two layouts.
+     Only properties that actually interpolate are touched here: an earlier
+     version also swapped font-family and text-transform, which cannot
+     transition and so re-flowed the title in one jump partway through. */
+  .head {
+    transition: padding 0.18s ease, margin-bottom 0.18s ease;
+  }
+
+  .title {
+    transition: font-size 0.18s ease, opacity 0.18s ease, color 0.18s ease;
+  }
+
+  .kicker,
+  .headSub {
+    overflow: hidden;
+    transition: max-height 0.18s ease, opacity 0.18s ease, margin 0.18s ease;
+    max-height: 3rem;
+  }
+
   :global(body.tsc-hdr-collapsed) .head {
-    padding: 0.1rem 0 0.15rem;
-    margin-bottom: 0.3rem;
+    padding: 0.35rem 0 0.4rem;
+    margin-bottom: 0.35rem;
     border-bottom-color: var(--gp-line-soft);
   }
 
+  /* Collapsed out by height rather than display:none, so it animates
+     instead of vanishing between frames. */
   :global(body.tsc-hdr-collapsed) .kicker,
   :global(body.tsc-hdr-collapsed) .headSub {
-    display: none;
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
   }
 
   /* Down to a rail: the league name and nothing else. */
   :global(body.tsc-hdr-collapsed) .title {
-    font-size: 0.72rem;
-    font-family: var(--mono);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--gp-mute);
+    font-size: 0.9rem;
+    color: var(--gp-soft);
+    opacity: 0.8;
     margin: 0;
+  }
+}
+
+/* Someone who has asked not to be animated at gets the end states with no
+   tween, which is also the steadier result on a low-end phone. */
+@media (max-width: 940px) and (prefers-reduced-motion: reduce) {
+  .head,
+  .title,
+  .kicker,
+  .headSub {
+    transition: none;
   }
 }
 

@@ -28,10 +28,21 @@ export function MobileHeaderCollapse() {
     // and always re-expand close to the top.
     const MIN_Y = 90
 
-    // Landing page wants the collapse to "stick" — only re-expand when
-    // the user actually returns to the top of the page, not on every
-    // little upward scroll. Other mobile pages keep the original behavior.
-    const stickyCollapse = pathname === '/'
+    // Some pages want the collapse to "stick" — only re-expand when the
+    // user actually returns to the top of the page, not on every little
+    // upward scroll. Other mobile pages keep the original behavior.
+    //
+    // The landing page wants it for feel. /games needs it: its header
+    // collapses hard (down to a title rail) and the page is short, so the
+    // ~60px the collapse removes shrinks the maximum scroll position. The
+    // browser then clamps scrollY down to fit, which reads here as an
+    // upward scroll, which re-expands the header, which restores the
+    // height... and the thing flickers the whole way down the page.
+    // Dropping the re-expand-on-any-upward-scroll branch breaks the loop.
+    const STICKY_PATHS = ['/', '/games']
+    const stickyCollapse = STICKY_PATHS.some(
+      (p) => pathname === p || (p !== '/' && pathname.startsWith(`${p}/`))
+    )
 
     const onScroll = () => {
       if (ticking) return
