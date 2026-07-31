@@ -533,7 +533,7 @@ export function RosterRoulette({
     // The link is passed separately to the share sheet, which appends it
     // itself. Including it in the text too is what was producing two copies
     // of the URL in the shared message.
-    const line = `I went ${rec} on Roster Roulette, ${round1(ppg)} points per game. Same nine teams, same order. Beat it.`
+    const line = `I went ${rec} on Roster Roulette, ${round1(ppg)} points per game. Beat it!`
     try {
       if (navigator.share) {
         await navigator.share({ title: 'Roster Roulette', text: line, url })

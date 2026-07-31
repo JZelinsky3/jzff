@@ -215,7 +215,7 @@ export async function GET(req: Request) {
                   marginTop: '16px',
                 }}
               >
-                Same nine teams{poolLabel ? ` · ${poolLabel}` : ''}
+                {poolLabel ?? 'Roster Roulette'}
               </div>
             </div>
           ) : (

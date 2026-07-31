@@ -45,12 +45,12 @@ export async function generateMetadata({
   }
   const image = `/api/og/games?${og}`
 
+  const ppgLabel =
+    Number.isFinite(ppg) && ppg > 0 ? `, ${Math.round(ppg * 10) / 10} points per game` : ''
   const title = hasResult
-    ? `${Math.round(wins)}-${GAMES - Math.round(wins)} on Roster Roulette · Beat it`
+    ? `I went ${Math.round(wins)}-${GAMES - Math.round(wins)} on Roster Roulette${ppgLabel}`
     : NEUTRAL_TITLE
-  const description = hasResult
-    ? 'Same nine teams, same order. Build a better lineup than this one.'
-    : NEUTRAL_DESC
+  const description = hasResult ? 'Beat it!' : NEUTRAL_DESC
 
   return {
     title,
