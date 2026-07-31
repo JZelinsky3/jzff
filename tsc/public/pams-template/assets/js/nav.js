@@ -400,7 +400,7 @@
             gamesGroup =
                 '<span class="nav-drop-label">Games</span>' +
                 '<a href="/games/roulette' + poolQs + '">Roster Roulette</a>' +
-                '<a href="/games/blind-item' + poolQs + '">Blind Item</a>' +
+                '<a href="/games/guess-the-draft' + poolQs + '">Guess the Draft</a>' +
                 '<a href="/games/">All games</a>';
         }
 

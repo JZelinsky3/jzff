@@ -8,6 +8,7 @@
 import Link from 'next/link'
 import { loadPoolsForViewer } from './pools'
 import { CombinePools } from './CombinePools'
+import { ownLeagueHref } from './OwnLeagueCta'
 import { MAX_COMBINED_LEAGUES } from '@/lib/minigames/deal'
 import type { GameDef } from './gameDefs'
 import styles from './games.module.css'
@@ -54,7 +55,7 @@ export async function GameLobby({ game }: { game: GameDef }) {
 
         {/* One league's whole history, for anyone without one of their own.
             For Roulette the site wheel deals a different league every spin,
-            so it never shows what playing YOUR league is like; for Blind Item
+            so it never shows what playing YOUR league is like; for Guess the Draft
             there is no site pool at all and this is the only way in. */}
         <Link href={poolHref('demo')} className={styles.card}>
           <span className={styles.cardTag}>Demo</span>
@@ -68,20 +69,25 @@ export async function GameLobby({ game }: { game: GameDef }) {
         <span className={styles.sectionNum}>§ 02</span>
         <span className={styles.sectionTitle}>Your leagues</span>
         <span className={styles.sectionMeta}>
-          {signedIn ? `${leaguePools.length} available` : 'Sign in'}
+          {signedIn ? `${leaguePools.length} available` : 'Free to add'}
         </span>
       </div>
 
+      {/* "Sign in" was the wrong verb here. Most people reading this arrived
+          from a link and have never had an account, so an invitation to sign
+          in reads as a wall in front of the game rather than an offer — and
+          it drops them on the password tab of a form they can't use yet. */}
       {!signedIn ? (
         <div className={styles.empty}>
-          <Link href="/login">Sign in</Link> and every league you run or follow
-          becomes its own board, played on people you actually know instead of
-          strangers.
+          <Link href={ownLeagueHref(false)}>Connect your league</Link> and its whole
+          history becomes its own board, played on people you actually know
+          instead of strangers. Syncing is free.
         </div>
       ) : leaguePools.length === 0 ? (
         <div className={styles.empty}>
-          No leagues on your shelf yet. <Link href="/dashboard/new">Build an almanac</Link>{' '}
-          and its whole history becomes something you can play.
+          No leagues on your shelf yet.{' '}
+          <Link href={ownLeagueHref(true)}>Add your league</Link> and its whole
+          history becomes something you can play.
         </div>
       ) : (
         <>

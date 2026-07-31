@@ -82,7 +82,7 @@ const STATIC_PAGES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequenc
   // random board — that lobby is stable content; a dealt board never was.
   ['/games/', 'monthly', 0.6],
   ['/games/roulette/', 'monthly', 0.55],
-  ['/games/blind-item/', 'monthly', 0.55],
+  ['/games/guess-the-draft/', 'monthly', 0.55],
   ['/privacy/', 'yearly', 0.3],
   ['/terms/', 'yearly', 0.3],
 ]

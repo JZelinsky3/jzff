@@ -1,8 +1,8 @@
 'use client'
 
-// Blind Item — the board.
+// Guess the Draft — the board.
 //
-// Eight redacted manager-seasons arrive in one call to /api/games/blind-item
+// Eight redacted manager-seasons arrive in one call to /api/games/guess-the-draft
 // and the whole run is played in the browser from there. Each round shows one
 // team's evidence with the name taken out, and the reader answers twice: whose
 // team, and which year. Both are locked in together, because answering them
@@ -20,15 +20,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import type { BlindDeal } from '@/lib/minigames/blindItem'
+import type { GuessDraftDeal } from '@/lib/minigames/guessDraft'
 import {
   ROUNDS,
   PTS_MANAGER,
   PTS_YEAR,
   PTS_SWEEP,
   PTS_PERFECT,
-} from '@/lib/minigames/blindItem'
-import styles from './blind.module.css'
+} from '@/lib/minigames/guessDraft'
+import { OwnLeagueCta } from '../OwnLeagueCta'
+import styles from './guess.module.css'
 
 type Verdict = { manager: boolean; year: boolean }
 
@@ -81,15 +82,19 @@ function clearSeedFromUrl() {
   }
 }
 
-export function BlindItem({
+export function GuessTheDraft({
   initialDeal,
   initialError,
+  signedIn,
 }: {
   /** Opening card, dealt during SSR so the board is up on first paint. */
-  initialDeal: BlindDeal | null
+  initialDeal: GuessDraftDeal | null
   initialError: string | null
+  /** Read on the server, so the final card's CTA can skip the signup step
+      for someone who already has an account. */
+  signedIn: boolean
 }) {
-  const [deal, setDeal] = useState<BlindDeal | null>(initialDeal)
+  const [deal, setDeal] = useState<GuessDraftDeal | null>(initialDeal)
   const [error, setError] = useState<string | null>(initialError)
   const [loading, setLoading] = useState(false)
 
@@ -137,14 +142,14 @@ export function BlindItem({
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/games/blind-item?pool=${encodeURIComponent(deal.pool.id)}`, {
+      const res = await fetch(`/api/games/guess-the-draft?pool=${encodeURIComponent(deal.pool.id)}`, {
         cache: 'no-store',
       })
       const body = await res.json()
       if (!res.ok || !body?.ok) {
         setError(body?.error ?? 'Could not deal a new card.')
       } else {
-        setDeal(body as BlindDeal)
+        setDeal(body as GuessDraftDeal)
         setRound(0)
         setVerdicts([])
         setPickedManager(null)
@@ -167,7 +172,7 @@ export function BlindItem({
     url.search = ''
     url.searchParams.set('pool', deal.pool.id)
     url.searchParams.set('seed', deal.seed)
-    const line = `I scored ${score} out of ${PTS_PERFECT} on Blind Item, ${sweeps} clean calls. Your turn.`
+    const line = `I scored ${score} out of ${PTS_PERFECT} on Guess the Draft, ${sweeps} clean calls. Your turn.`
     try {
       if (navigator.share) {
         await navigator.share({ text: line, url: url.toString() })
@@ -259,6 +264,15 @@ export function BlindItem({
           <p className={styles.seedNote}>
             Card {deal.seed}, dealt from {deal.deckSize} seasons on the books.
           </p>
+          {/* The demo is the ONLY pool this game offers without a league of
+              your own, so on a demo run the pitch isn't a pitch: the version
+              worth playing is the one with names you recognise. */}
+          {deal.pool.id === 'demo' && (
+            <OwnLeagueCta
+              signedIn={signedIn}
+              line="You just guessed at strangers. On your own league these are people you drafted against."
+            />
+          )}
         </div>
       </div>
     )
@@ -301,7 +315,7 @@ export function BlindItem({
       <div className={styles.card}>
         <div className={styles.cardHead}>
           <span className={styles.cardNo}>
-            Blind item no. {round + 1} of {ROUNDS}
+            Draft no. {round + 1} of {ROUNDS}
           </span>
           <span className={styles.cardKind}>A draft, redacted</span>
         </div>

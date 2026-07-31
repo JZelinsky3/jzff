@@ -9,7 +9,7 @@ import styles from './games.module.css'
 export const metadata: Metadata = {
   title: 'The Games Page · Fantasy football minigames built on real league history',
   description:
-    'Diversions built out of real fantasy league archives. Roster Roulette deals you random teams from seasons that actually happened; Blind Item hands you a draft with the names taken out and asks whose it was.',
+    'Diversions built out of real fantasy league archives. Roster Roulette deals you random teams from seasons that actually happened; Guess the Draft hands you a draft with the names taken out and asks whose it was.',
   alternates: { canonical: 'https://thesundaychronicle.app/games/' },
   openGraph: {
     type: 'website',
@@ -32,13 +32,16 @@ export const metadata: Metadata = {
 //
 // "Guess the Season" used to live here as its own game and doesn't any more:
 // asking only for the year gives a five-season league five possible answers
-// and burns out in five rounds. It became the year half of Blind Item, which
-// asks for the manager too. The lineup card below is the same game with a
-// different exhibit, not a new game.
+// and burns out in five rounds. It became the year half of Guess the Draft,
+// which asks for the manager too.
+//
+// Guess the Lineup is the same question with different evidence, and it's
+// listed as its own game rather than a mode because the shipped one is named
+// for what it shows.
 const COMING_SOON = [
   {
-    title: 'Blind Item: the lineup card',
-    body: 'A starting lineup from the last week of a season, no name attached. Blocked until more leagues have their weekly lineups on the books.',
+    title: 'Guess the Lineup',
+    body: 'A starting lineup from the last week of a season, no name attached, same two answers. Blocked until more leagues have their weekly lineups on the books.',
   },
   {
     title: 'Bust or Boom',

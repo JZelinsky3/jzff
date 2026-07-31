@@ -1,7 +1,7 @@
-// Blind Item — building the deck, and dealing a card.
+// Guess the Draft — building the deck, and dealing a card.
 //
 // Server half of the game. The rules, the scoring constants and the wire
-// shapes live in ./blindItem, which is deliberately import-free so the board
+// shapes live in ./guessDraft, which is deliberately import-free so the board
 // can read them in the browser without pulling any of this along.
 //
 // A "deck" is one league's whole draft history, one entry per manager-season,
@@ -21,19 +21,19 @@ import {
   PICKS_SHOWN,
   MIN_MANAGERS,
   MIN_YEARS,
-  type BlindPick,
-  type BlindCard,
-  type BlindDeal,
-  type BlindError,
-} from './blindItem'
+  type CluePick,
+  type DraftCard,
+  type GuessDraftDeal,
+  type GuessDraftError,
+} from './guessDraft'
 
 // ============================================================
 // The deck
 // ============================================================
 
-type DeckEntry = BlindCard['answer'] & {
+type DeckEntry = DraftCard['answer'] & {
   key: string
-  picks: BlindPick[]
+  picks: CluePick[]
 }
 
 type Deck = {
@@ -142,7 +142,7 @@ async function buildLeagueDeck(slug: string): Promise<Deck | null> {
   }
   const canonical = canonicalDraftIds(draftRows, pickCount)
 
-  const picksByPair = new Map<string, BlindPick[]>()
+  const picksByPair = new Map<string, CluePick[]>()
   for (const row of pickRows) {
     if (!row.manager_id || !row.player_name) continue
     if (!canonical.has(row.draft_id)) continue
@@ -268,7 +268,7 @@ async function buildDemoDeck(): Promise<Deck | null> {
 
     const champion = standings.find((s) => s.final_rank === 1)?.owner_user_id ?? null
 
-    const byManager = new Map<number, BlindPick[]>()
+    const byManager = new Map<number, CluePick[]>()
     for (const p of [...draft.picks].sort((a, b) => a.overall_pick - b.overall_pick)) {
       if (!p.player_name) continue
       if (p.manager_name && !managerName.has(p.user_id)) managerName.set(p.user_id, p.manager_name)
@@ -325,14 +325,14 @@ async function buildDemoDeck(): Promise<Deck | null> {
 // keep dealing by rules the code no longer follows.
 function loadDeck(poolId: string): Promise<Deck | null> {
   if (poolId === DEMO_POOL_ID) {
-    return unstable_cache(async () => buildDemoDeck(), ['minigame-blind-deck', 'v3', 'demo'], {
+    return unstable_cache(async () => buildDemoDeck(), ['minigame-guess-draft-deck', 'v3', 'demo'], {
       tags: ['minigame-pool'],
       revalidate: 60 * 60 * 12,
     })()
   }
   return unstable_cache(
     async () => buildLeagueDeck(poolId),
-    ['minigame-blind-deck', 'v3', poolId],
+    ['minigame-guess-draft-deck', 'v3', poolId],
     { tags: ['minigame-pool'], revalidate: 60 * 60 * 12 }
   )()
 }
@@ -411,10 +411,10 @@ function dealCards(deck: Deck, seed: string, count: number): DeckEntry[] {
   return picked
 }
 
-export async function dealBlindItem(
+export async function dealGuessDraft(
   poolParam: string,
   seedParam: string | null
-): Promise<BlindDeal | BlindError> {
+): Promise<GuessDraftDeal | GuessDraftError> {
   const poolId = (poolParam ?? '').trim().toLowerCase()
   const seed = normalizeSeed(seedParam) ?? newSeed()
 
@@ -428,7 +428,7 @@ export async function dealBlindItem(
     return {
       ok: false,
       status: 400,
-      error: 'Blind Item is played one league at a time. You can only place people you know.',
+      error: 'Guess the Draft is played one league at a time. You can only place people you know.',
     }
   }
   // Shape-checked before the query so a hand-typed pool can't smuggle filter
@@ -449,7 +449,7 @@ export async function dealBlindItem(
       error:
         deck.entries.length === 0
           ? "This league's drafts haven't come across from its old platform, so there's nothing to redact yet."
-          : 'This league needs a few more completed seasons on the books before a blind item is worth guessing.',
+          : 'This league needs a few more completed seasons on the books before there is a draft worth guessing.',
     }
   }
   if (deck.entries.length < ROUNDS) {

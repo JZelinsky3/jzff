@@ -21,6 +21,7 @@ import type { DealtGame } from '@/lib/minigames/deal'
 import type { SquadPlayer, PoolPosition, Squad } from '@/lib/minigames/pool'
 import type { SlotDef, SlotId } from '@/lib/minigames/roulette'
 import { recordFor, recordHeadline, GAMES } from '@/lib/minigames/record'
+import { OwnLeagueCta } from '../OwnLeagueCta'
 import styles from '../games.module.css'
 
 type Deal = DealtGame
@@ -85,14 +86,22 @@ function clearSeedFromUrl() {
 export function RosterRoulette({
   initialDeal,
   initialError,
+  signedIn,
 }: {
   /** Opening wheel, dealt during SSR so the board is up on first paint. */
   initialDeal: Deal | null
   initialError: string | null
+  /** Read on the server, so the recap's CTA can skip the signup step for
+      someone who already has an account. */
+  signedIn: boolean
 }) {
   // Fixed for the life of the page: changing league means going back to the
   // Games Page, so every wheel dealt here stays in the same pool.
   const poolId = initialDeal?.pool.id ?? 'site'
+  // The borrowed pools. A run on either means the player has just watched the
+  // game work on strangers, which is the whole argument for connecting their
+  // own league; a run on their OWN league has no such pitch to make.
+  const borrowedPool = poolId === 'site' || poolId === 'demo'
   const [deal, setDeal] = useState<Deal | null>(initialDeal)
   const [error, setError] = useState<string | null>(initialError)
   const [loading, setLoading] = useState(false)
@@ -691,6 +700,12 @@ export function RosterRoulette({
               <div className={styles.seedLine}>
                 Seed <b>{deal.seed}</b>
               </div>
+              {borrowedPool && (
+                <OwnLeagueCta
+                  signedIn={signedIn}
+                  line="These were strangers. Point the wheel at your own league and it lands on people you actually know."
+                />
+              )}
             </div>
           ) : !revealed ? (
             <div className={`${styles.wheel} ${spinning ? styles.spinning : ''}`}>

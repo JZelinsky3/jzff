@@ -10,7 +10,7 @@
 // upload. Nothing on the read side knew, so every consumer picked its own
 // winner and they disagreed: the Draft Annual applied the rule, the
 // presentation tree read BOTH drafts at once, Roster Roulette took whichever
-// row won a race on overall pick, and Blind Item preferred the draft with
+// row won a race on overall pick, and Guess the Draft preferred the draft with
 // more picks (a coin flip when both have 210). That is why the same season
 // showed different picks on different pages.
 //

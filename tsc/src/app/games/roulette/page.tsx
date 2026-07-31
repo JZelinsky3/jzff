@@ -166,7 +166,11 @@ export default async function RoulettePage({
         {swapped && <p className={styles.swap}>{swapped} Playing the site-wide wheel instead.</p>}
 
         {requested ? (
-          <RosterRoulette initialDeal={opening} initialError={openingError} />
+          <RosterRoulette
+            initialDeal={opening}
+            initialError={openingError}
+            signedIn={!!user}
+          />
         ) : (
           <GameLobby game={ROSTER_ROULETTE} />
         )}

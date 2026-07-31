@@ -1,9 +1,7 @@
-// Blind Item — the rules, and the deal.
+// Guess the Draft — the rules, and the deal.
 //
-// A newspaper blind item is a story printed with the name taken out. This is
-// the same trick played on a league's own archive: you're shown one team's
-// evidence with the identifying details stripped, and you name the manager
-// AND the year.
+// One manager's draft, printed with the name and the year taken off the top.
+// You read the picks and say whose board that was, and when.
 //
 // Guessing only the year is the version this replaced, and it doesn't work.
 // A league with five seasons has five possible answers and is exhausted in
@@ -12,20 +10,17 @@
 // league — and the two halves lean on each other: the players date the year,
 // and the year narrows who was even in the league.
 //
-// Three kinds of evidence are planned; this ships the first:
+// Drafts are the evidence because they're the evidence that EXISTS: a draft
+// is the one thing every platform export brings across, and the players date
+// themselves, which is what makes the year half guessable at all. The other
+// two ideas from the drawing board are a starting lineup (blocked, about two
+// in five published seasons carry no weekly lineup history at all — see
+// `lineupsKnown` in ./pool) and a bare standings line.
 //
-//   • draft   — the manager's first eight picks that year. Best data
-//               coverage of the three (a draft is the one thing every
-//               platform export brings across) and the most recognisable,
-//               since players date themselves.
-//   • lineup  — an end-of-year starting lineup. Blocked on coverage: about
-//               two in five published seasons carry no weekly lineup history
-//               at all. See `lineupsKnown` in ./pool.
-//   • season  — record, points for and against, final finish. Hardest, and
-//               the one closest to the original idea.
-//
-// The card `kind` field exists so the other two can be added to the same
-// shell, the same scoreboard and the same deal without a second game.
+// The card `kind` field is kept so this shell, its scoring and its deal can
+// back one of those if the data ever arrives. It would be a SIBLING game
+// rather than a mode, though: the game is named for its evidence now, and a
+// lineup round inside something called Guess the Draft would be a lie.
 //
 // Unlike Roster Roulette this is a LEAGUE game and cannot be played site-wide
 // or combined: naming a stranger off their draft is not a puzzle, it's a
@@ -35,7 +30,7 @@
 // This file is the RULES and the shapes, and holds no imports on purpose: the
 // board is a client component and needs the scoring constants, so anything
 // reaching for `fs` or the database in here would drag the whole server half
-// into the browser bundle. The dealer lives next door in ./blindDeal, the
+// into the browser bundle. The dealer lives next door in ./guessDraftDeal, the
 // same way ./roulette and ./deal split Roster Roulette.
 
 /** Cards dealt per game. */
@@ -57,7 +52,7 @@ export const PTS_PERFECT = ROUNDS * PTS_PER_ROUND
 export const MIN_MANAGERS = 4
 export const MIN_YEARS = 2
 
-export type BlindPick = {
+export type CluePick = {
   round: number
   name: string
   pos: string
@@ -65,10 +60,10 @@ export type BlindPick = {
 }
 
 /** What the reader is shown, with the answer taken out. */
-export type BlindCard = {
+export type DraftCard = {
   key: string
   kind: 'draft'
-  picks: BlindPick[]
+  picks: CluePick[]
   /** The answer. Sent with the card — see the note on cheating below. */
   answer: {
     managerId: string
@@ -82,7 +77,7 @@ export type BlindCard = {
   }
 }
 
-export type BlindDeal = {
+export type GuessDraftDeal = {
   ok: true
   seed: string
   pool: { id: string; label: string; sublabel: string; leagueSlug: string | null }
@@ -90,12 +85,12 @@ export type BlindDeal = {
   managers: { id: string; name: string }[]
   /** The answer set for the year half, oldest first. */
   years: number[]
-  cards: BlindCard[]
+  cards: DraftCard[]
   /** How many manager-seasons the deck could have dealt from. */
   deckSize: number
 }
 
-export type BlindError = { ok: false; error: string; status: number }
+export type GuessDraftError = { ok: false; error: string; status: number }
 
 // The answers ride down with the cards, which means a determined reader can
 // read them out of the page source. That's a deliberate trade and the same

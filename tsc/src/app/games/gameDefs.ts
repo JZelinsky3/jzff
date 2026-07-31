@@ -1,7 +1,7 @@
 // The games, described once.
 //
 // The Games Page used to be a flat rail of POOLS — "Roster Roulette · the
-// whole site", "Blind Item · the demo league", then one card per league per
+// whole site", "Guess the Draft · the demo league", then one card per league per
 // game. Two games in, that rail was mixing two different questions (which
 // game? whose league?) into one list, and every league you owned appeared
 // twice under names that only differed by a small tag.
@@ -11,8 +11,8 @@
 // straight to the board, so nothing shared into a group chat changed.
 //
 // Each game declares which pools it can offer, because they genuinely differ:
-// Roulette can be played site-wide and across a mixture of leagues, Blind
-// Item can be neither (you can't name a stranger off their draft).
+// Roulette can be played site-wide and across a mixture of leagues, Guess the
+// Draft can be neither (you can't name a stranger off their draft).
 
 export type GameDef = {
   id: string
@@ -61,15 +61,15 @@ export const ROSTER_ROULETTE: GameDef = {
     'Every completed season your league has on the books, one squad per manager per year. Spins land on people you actually know.',
 }
 
-export const BLIND_ITEM: GameDef = {
-  id: 'blind-item',
-  href: '/games/blind-item/',
-  title: 'Blind',
-  titleEm: 'Item',
+export const GUESS_THE_DRAFT: GameDef = {
+  id: 'guess-the-draft',
+  href: '/games/guess-the-draft/',
+  title: 'Guess the',
+  titleEm: 'Draft',
   short:
     'A draft from your league’s history with every name taken out. Say who made the picks and what year it was.',
   blurb:
-    'A blind item is a story printed with the name removed. Eight of them, each one a manager’s first eight picks from a season that happened. You answer twice, and both halves count: the players date the year, and the year narrows who was even in the league then.',
+    'Eight drafts, each one a manager’s first eight picks from a season that actually happened, with the name and the year taken off the top. You answer twice, and both halves count: the players date the year, and the year narrows who was even in the league then.',
   how: [
     'Read eight picks with the name and the year stripped out',
     'Name the manager and date the season, locked in together',
@@ -84,4 +84,4 @@ export const BLIND_ITEM: GameDef = {
     'Eight drafts pulled from every completed season on your books, with the names taken out. Managers you know, years you were there for.',
 }
 
-export const GAMES: GameDef[] = [ROSTER_ROULETTE, BLIND_ITEM]
+export const GAMES: GameDef[] = [ROSTER_ROULETTE, GUESS_THE_DRAFT]
