@@ -32,17 +32,22 @@ export type ScoringProfile = (typeof SCORING_PROFILES)[number]
 // draft_scoring_profile so a squad's numbers match what that league's
 // almanac prints; the site pool has no single league to inherit from, so
 // it pins one profile and every cross-league run stays comparable.
-export const SITE_PROFILE: ScoringProfile = 'half_4pt'
+//
+// Full PPR with 6pt passing TDs (Joey's call, 2026-07-31). It was half_4pt,
+// which is the stingiest of the four common formats and made the site wheel
+// print numbers well below what anyone's own league shows — a stranger's
+// first look at the game shouldn't be its least generous scoring. The
+// benchmark is computed per profile off this same pool, so the 17-0 bar
+// moves with it (141.5 -> 164.2) and the difficulty is unchanged.
+export const SITE_PROFILE: ScoringProfile = 'ppr_6pt'
 
 export function isScoringProfile(v: string | null | undefined): v is ScoringProfile {
   return !!v && (SCORING_PROFILES as readonly string[]).includes(v)
 }
 
-// Rank files exist for these years only. Published leagues currently reach
-// back to 2014, and the current season has no finished stat line, so the
-// pool clamps to this window rather than silently dealing empty squads.
+// The oldest year with rank files. Published leagues currently reach back
+// to 2014, so this is slack rather than a real boundary.
 export const FIRST_RANK_YEAR = 2009
-export const LAST_RANK_YEAR = 2025
 
 export type RankEntry = {
   fpts: number
@@ -94,6 +99,49 @@ export function normPlayerName(name: string | null | undefined): string {
 const RANKS_ROOT = path.join(process.cwd(), 'public', 'data', 'fantasy_ranks')
 
 const cache = new Map<string, Promise<RankLookup>>()
+
+/**
+ * The newest season the game can score, read off the rank files that are
+ * actually on disk rather than a constant someone has to remember to bump.
+ *
+ * A season with no rank file can't be scored at all, so the pool has to be
+ * clamped to what exists — but the clamp used to be a hand-maintained
+ * number, which meant adding a finished season was two edits and a silent
+ * no-op if you only did one of them. Now shipping
+ * public/data/fantasy_ranks/<profile>/<year>.json for every profile is the
+ * whole job, and the pool picks the year up on the deploy that carries the
+ * files.
+ *
+ * All six profiles must have the year before it counts. A partial
+ * generation (`--only=`) would otherwise open the pool to a season that
+ * some leagues can be scored on and others can't, and the ones that can't
+ * would deal empty squads.
+ *
+ * This is NOT a guard against dealing an unfinished season — squads only
+ * enter the pool once their season has a champion on the books, which is
+ * the real gate. It only decides which years are scorable.
+ */
+let latestYear: Promise<number> | null = null
+export function latestRankYear(): Promise<number> {
+  latestYear ??= (async () => {
+    const has = async (profile: ScoringProfile, year: number) => {
+      try {
+        await fs.access(path.join(RANKS_ROOT, profile, `${year}.json`))
+        return true
+      } catch {
+        return false
+      }
+    }
+    // Walks down from the current calendar year, so files dropped in the
+    // January after a season ends are live on that deploy.
+    for (let year = new Date().getUTCFullYear(); year >= FIRST_RANK_YEAR; year--) {
+      const covered = await Promise.all(SCORING_PROFILES.map((p) => has(p, year)))
+      if (covered.every(Boolean)) return year
+    }
+    return FIRST_RANK_YEAR
+  })()
+  return latestYear
+}
 
 async function readLookup(profile: ScoringProfile, year: number): Promise<RankLookup> {
   const file = path.join(RANKS_ROOT, profile, `${year}.json`)

@@ -124,7 +124,11 @@ export async function GET(req: Request) {
           }}
         />
 
-        <div style={{ display: 'flex', height: '16px', background: GOLD }} />
+        {/* The gold sash and the filled footer belong to the result card,
+            where they frame a scoreboard. On the neutral card they were two
+            solid bands of colour around what is really a title page, and
+            they crowded it. */}
+        {hasResult && <div style={{ display: 'flex', height: '16px', background: GOLD }} />}
 
         <div
           style={{
@@ -140,7 +144,9 @@ export async function GET(req: Request) {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            paddingRight: lineup.length > 0 ? '28px' : '0',
+            // Both states now carry a right-hand panel, so the gutter is
+            // unconditional.
+            paddingRight: '32px',
           }}
         >
           <div
@@ -244,25 +250,34 @@ export async function GET(req: Request) {
               >
                 17-0?
               </div>
+              {/* One line. A card gets read in the half second before
+                  someone scrolls past it, next to whatever the sender
+                  typed — three sentences of rules is not what wins that
+                  half second, and the slot panel opposite already shows
+                  what the game is. */}
               <div
                 style={{
                   display: 'flex',
+                  // Sized to hold the line on ONE line in a 0.6em-advance
+                  // mono at the width the left column actually has. Bigger
+                  // and it wraps after "real", which reads like a mistake.
                   fontSize: '21px',
-                  lineHeight: 1.5,
+                  lineHeight: 1.4,
                   color: CREAM_SOFT,
-                  marginTop: '24px',
-                  maxWidth: '760px',
+                  marginTop: '26px',
+                  maxWidth: '560px',
                 }}
               >
-                Spin for a real fantasy team from a real season. Take one player off
-                it. Fill seven slots and see what the lineup is worth.
+                One player off each of seven real teams.
               </div>
             </div>
           )}
 
-          {/* Empty slots as a depth chart, only when there's no real lineup
-              to show in its place. */}
-          {lineup.length === 0 && (
+          {/* A result card that arrived without its lineup keeps the slots
+              as a strip under the score. The neutral card puts them in the
+              right-hand panel instead, where they fill the half of the
+              image that was empty. */}
+          {hasResult && lineup.length === 0 && (
             <div style={{ display: 'flex', gap: '9px', marginTop: '38px' }}>
               {POS.map((s, i) => (
                 <div
@@ -289,6 +304,74 @@ export async function GET(req: Request) {
             </div>
           )}
         </div>
+
+        {/* The blank team sheet you are being invited to fill in. Same frame
+            as the result card's lineup panel on purpose: the two cards are
+            the before and after of one game, and a stranger who sees this
+            one first should recognise the shape when a filled one lands in
+            the same chat later. */}
+        {!hasResult && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '420px',
+              border: `1px solid ${GOLD}44`,
+              borderRadius: '6px',
+              background: '#00000040',
+              padding: '16px 18px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '13px',
+                fontWeight: 700,
+                letterSpacing: '0.26em',
+                textTransform: 'uppercase',
+                color: GOLD,
+                paddingBottom: '11px',
+                borderBottom: `1px solid ${GOLD}33`,
+              }}
+            >
+              <span style={{ display: 'flex' }}>Your lineup</span>
+              <span style={{ display: 'flex' }}>{POS.length} slots</span>
+            </div>
+            {POS.map((s, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '10px 0 9px',
+                  borderBottom: i < POS.length - 1 ? `1px solid ${CREAM}12` : 'none',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'flex',
+                    width: '52px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    color: s.color,
+                  }}
+                >
+                  {s.label}
+                </span>
+                {/* A ruled line where a name goes, in the slot's own colour.
+                    Reads as a team sheet waiting to be filled rather than as
+                    seven empty boxes. */}
+                <span style={{ display: 'flex', flex: 1, height: '2px', background: `${s.color}33` }} />
+                <span style={{ display: 'flex', fontSize: '18px', fontWeight: 700, color: `${CREAM}30` }}>
+                  ·
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* The team you actually built. The right half was dead space, and
             the names are the part anyone in a league chat wants to argue
@@ -369,9 +452,10 @@ export async function GET(req: Request) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '12px 84px',
-            background: GOLD,
-            color: INK,
+            padding: hasResult ? '12px 84px' : '20px 68px',
+            background: hasResult ? GOLD : 'transparent',
+            borderTop: hasResult ? 'none' : `1px solid ${GOLD}2e`,
+            color: hasResult ? INK : CREAM_SOFT,
             fontSize: '15px',
             fontWeight: 700,
             letterSpacing: '0.3em',
@@ -379,7 +463,9 @@ export async function GET(req: Request) {
           }}
         >
           <span style={{ display: 'flex' }}>Free · No account needed</span>
-          <span style={{ display: 'flex' }}>thesundaychronicle.app/games</span>
+          <span style={{ display: 'flex', color: hasResult ? INK : GOLD }}>
+            thesundaychronicle.app/games
+          </span>
         </div>
       </div>
     ),

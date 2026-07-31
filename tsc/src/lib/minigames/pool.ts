@@ -37,7 +37,7 @@ import {
   isScoringProfile,
   SITE_PROFILE,
   FIRST_RANK_YEAR,
-  LAST_RANK_YEAR,
+  latestRankYear,
   type ScoringProfile,
 } from './ranks'
 
@@ -208,7 +208,10 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
   // Completed seasons only. Per the house rule, "completed" means a champion
   // is on the books — never is_live, which only steers the /live/ tree and
   // has wrongly hidden whole finished seasons before. The year clamp keeps
-  // us inside the span the rank files actually cover.
+  // us inside the span the rank files actually cover: a season in progress
+  // is kept out by the champion check, and a finished one nobody has
+  // generated ranks for yet is kept out by the clamp.
+  const lastYear = await latestRankYear()
   const seasons = await pageAll<{
     id: string
     league_id: string
@@ -221,7 +224,7 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
       .in('league_id', leagueIds)
       .not('champion_manager_id', 'is', null)
       .gte('year', FIRST_RANK_YEAR)
-      .lte('year', LAST_RANK_YEAR)
+      .lte('year', lastYear)
       .order('id')
   )
   if (seasons.length === 0) return []
@@ -303,15 +306,21 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
   return out
 }
 
-export function loadSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
+export async function loadSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
   const tag = scope.kind === 'site' ? 'site' : `league:${scope.slug}`
+  // The newest scorable year is part of the key, so the first deploy that
+  // carries a new season's rank files invalidates the index by itself.
+  // Without it a freshly added year would sit behind up to twelve hours of
+  // cache with no way to tell it apart from an empty pool.
+  const lastYear = await latestRankYear()
   // Bump the version when the index's shape or its filters change — a
   // half-day-old cache built by the previous rules would otherwise keep
   // dealing from a pool that no longer matches the code.
-  return unstable_cache(async () => buildSquadIndex(scope), ['minigame-squad-index', 'v2', tag], {
-    tags: ['minigame-pool'],
-    revalidate: 60 * 60 * 12,
-  })()
+  return unstable_cache(
+    async () => buildSquadIndex(scope),
+    ['minigame-squad-index', 'v2', tag, String(lastYear)],
+    { tags: ['minigame-pool'], revalidate: 60 * 60 * 12 }
+  )()
 }
 
 // ============================================================

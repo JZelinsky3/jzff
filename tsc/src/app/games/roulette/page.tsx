@@ -14,8 +14,9 @@ import styles from '../games.module.css'
 export const dynamic = 'force-dynamic'
 
 const NEUTRAL_TITLE = 'Roster Roulette · Can you go 17-0?'
-const NEUTRAL_DESC =
-  'Spin for a real fantasy team from a real season, take one player off it, and fill seven slots. No account needed.'
+// Sits directly under the card in a chat, where it competes with whatever
+// the sender typed. One clause, no rules, no repeat of the title.
+const NEUTRAL_DESC = 'One player off each of seven real teams. No account needed.'
 
 // A shared wheel is opened by people who have never heard of the site, so
 // the default preview sells the game and names nobody. When the share button
