@@ -12,12 +12,22 @@ import { usePathname } from 'next/navigation'
 //
 // The class toggles at every width; all visual effects live behind a
 // max-width media query, so desktop never changes. Renders nothing.
+// Routes that manage `tsc-hdr-collapsed` themselves.
+const MANUAL_PATHS = ['/games/roulette']
+
 export function MobileHeaderCollapse() {
   const pathname = usePathname()
 
   useEffect(() => {
     // Route changes reset scroll to top — start every page expanded.
     document.body.classList.remove('tsc-hdr-collapsed')
+
+    // Pages that drive the header themselves. Roster Roulette collapses on
+    // the spin and holds it while you pick, because its board is sized to
+    // fit one screen: there is almost nothing to scroll, so a scroll-driven
+    // header would simply never collapse. Bail out entirely rather than
+    // have two owners fighting over the same class.
+    if (MANUAL_PATHS.some((m) => pathname.startsWith(m))) return
 
     let lastY = window.scrollY
     let ticking = false

@@ -116,6 +116,37 @@ export function RosterRoulette({
   // Mobile lineup bar: collapsed to a single line by default so it takes
   // the least room while picking, expanded on demand.
   const [hudOpen, setHudOpen] = useState(false)
+  // Whether the page masthead and site nav are slimmed. Driven by the game
+  // rather than by scrolling: the board is sized to fit one screen, so
+  // there is barely any page to scroll and a scroll-driven header would
+  // never actually collapse. See MANUAL_PATHS in MobileHeaderCollapse.
+  const [hdrSlim, setHdrSlim] = useState(false)
+
+  // Mirrors hdrSlim onto <body>, which is where the CSS looks. Pure DOM
+  // sync, and it releases the class on unmount so leaving the game never
+  // strands another page with a collapsed header.
+  useEffect(() => {
+    const cls = 'tsc-hdr-collapsed'
+    if (hdrSlim) document.body.classList.add(cls)
+    else document.body.classList.remove(cls)
+    return () => document.body.classList.remove(cls)
+  }, [hdrSlim])
+
+  // Scrolling the PAGE brings the header back. Scrolling the roster does
+  // not, because that is a container scroll and never reaches the window —
+  // which is exactly the distinction wanted: reading down the board keeps
+  // the header out of the way, deliberately leaving it does not.
+  useEffect(() => {
+    if (!hdrSlim) return
+    let lastY = Math.max(0, window.scrollY)
+    const onScroll = () => {
+      const y = Math.max(0, window.scrollY)
+      if (y < lastY - 8 || y < 4) setHdrSlim(false)
+      lastY = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [hdrSlim])
 
   const spinTimer = useRef<number | null>(null)
   const flickerTimer = useRef<number | null>(null)
@@ -145,6 +176,7 @@ export function RosterRoulette({
       setTeaser(null)
       setCopied(false)
       setHoverPlayer(null)
+      setHdrSlim(false)
       clearSeedFromUrl()
     } catch {
       setError('Could not reach the wheel. Check your connection and try again.')
@@ -189,6 +221,7 @@ export function RosterRoulette({
 
   // Swap in the prefetched wheel, or fetch one if it isn't ready yet.
   const newWheel = useCallback(() => {
+    setHdrSlim(false)
     // Drop any shared seed from the address bar. Otherwise a refresh after
     // this would re-deal whichever wheel the link arrived with instead of
     // the one now on screen.
@@ -313,6 +346,7 @@ export function RosterRoulette({
       setCopied(false)
       setRevealed(false)
       setSpinning(true)
+      setHdrSlim(true)
 
       if (spinTimer.current) window.clearTimeout(spinTimer.current)
       if (flickerTimer.current) window.clearInterval(flickerTimer.current)
@@ -368,6 +402,9 @@ export function RosterRoulette({
 
       setHoverPlayer(null)
       setLineup((prev) => ({ ...prev, [targetId]: { player, squad: current, bestAvailable } }))
+      // That pick finishes the lineup, so the board is done and the header
+      // comes back for the recap.
+      if (Object.keys(lineup).length + 1 >= slots.length) setHdrSlim(false)
       advance()
     },
     [current, revealed, slots, lineup, advance, slotFor]
@@ -416,10 +453,10 @@ export function RosterRoulette({
     // The link is passed separately to the share sheet, which appends it
     // itself. Including it in the text too is what was producing two copies
     // of the URL in the shared message.
-    const line = `I went ${rec} on Roster Roulette, ${round1(ppg)} points per game. Beat it!`
+    const line = `I went ${rec} on Roster Roulette, ${round1(ppg)} ppg. Beat it!`
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Roster Roulette', text: line, url })
+        await navigator.share({ text: line, url })
         return
       }
     } catch {
@@ -1008,7 +1045,7 @@ function Runback({
   }
   return (
     <p className={styles.missed}>
-      You walked past <b>{round1(left)}</b> points a week that were sitting on
+      You walked past <b>{round1(left)}</b>{' '}points a week that were sitting on
       squads you took from.
     </p>
   )

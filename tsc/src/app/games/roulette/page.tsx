@@ -45,12 +45,14 @@ export async function generateMetadata({
   }
   const image = `/api/og/games?${og}`
 
-  const ppgLabel =
-    Number.isFinite(ppg) && ppg > 0 ? `, ${Math.round(ppg * 10) / 10} points per game` : ''
-  const title = hasResult
-    ? `I went ${Math.round(wins)}-${GAMES - Math.round(wins)} on Roster Roulette${ppgLabel}`
-    : NEUTRAL_TITLE
-  const description = hasResult ? 'Beat it!' : NEUTRAL_DESC
+  // The card's TEXT deliberately never repeats the sender's message. Both
+  // get read together in a chat, and the record was appearing three times
+  // over: once in what the sender typed, once as the preview title, once as
+  // its description. The numbers live in the card IMAGE, which shows the
+  // record, the PPG and the whole lineup; the words next to it are better
+  // spent telling someone who has never seen the game what it is.
+  const title = NEUTRAL_TITLE
+  const description = NEUTRAL_DESC
 
   return {
     title,

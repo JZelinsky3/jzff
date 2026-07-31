@@ -125,14 +125,14 @@ export default async function GamesPage() {
 
         {!signedIn ? (
           <div className={styles.empty}>
-            <Link href="/login">Sign in</Link> and every league you run or follow
+            <Link href="/login">Sign in</Link>{' '}and every league you run or follow
             becomes its own wheel, so spins land on your league-mates&apos; real teams
             instead of strangers&apos;.
           </div>
         ) : leaguePools.length === 0 ? (
           <div className={styles.empty}>
             No leagues on your shelf yet.{' '}
-            <Link href="/dashboard/new">Build an almanac</Link> and its whole history
+            <Link href="/dashboard/new">Build an almanac</Link>{' '}and its whole history
             becomes a wheel you can spin.
           </div>
         ) : (
