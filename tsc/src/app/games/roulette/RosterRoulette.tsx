@@ -122,14 +122,64 @@ export function RosterRoulette({
   // never actually collapse. See MANUAL_PATHS in MobileHeaderCollapse.
   const [hdrSlim, setHdrSlim] = useState(false)
 
-  // Mirrors hdrSlim onto <body>, which is where the CSS looks. Pure DOM
-  // sync, and it releases the class on unmount so leaving the game never
-  // strands another page with a collapsed header.
+  // The board, used as the fixed point the header collapse is measured
+  // against.
+  const boardRef = useRef<HTMLDivElement | null>(null)
+  // True only while the collapse is animating and its scroll compensation is
+  // running, so the scroll listener can tell our own writes from the user's.
+  const settling = useRef(false)
+  const mounted = useRef(false)
+
+  // Mirrors hdrSlim onto <body>, which is where the CSS looks, and holds the
+  // board still while the masthead folds.
+  //
+  // Collapsing takes ~90px of layout out from ABOVE the board, and on a page
+  // that is scrolled at all it also shortens the document enough that the
+  // browser clamps scrollY. Between the two, pressing Spin shoved everything
+  // you were looking at down the screen. Pinning the board's viewport
+  // position through the transition means the header folds away and nothing
+  // else moves — which is all the collapse was ever supposed to do.
+  //
+  // It has to ride the transition rather than correct once: the height comes
+  // out over ~250ms of CSS easing, so a single post-toggle adjustment would
+  // be wrong by the very next frame.
   useEffect(() => {
     const cls = 'tsc-hdr-collapsed'
+    const anchor = boardRef.current
+    const from = anchor?.getBoundingClientRect().top ?? null
+
     if (hdrSlim) document.body.classList.add(cls)
     else document.body.classList.remove(cls)
-    return () => document.body.classList.remove(cls)
+
+    // First run only mirrors state that was already there — nothing moved,
+    // so there is nothing to hold still.
+    if (!mounted.current) {
+      mounted.current = true
+      return () => document.body.classList.remove(cls)
+    }
+    if (!anchor || from == null) return () => document.body.classList.remove(cls)
+
+    settling.current = true
+    let raf = 0
+    const until = performance.now() + 420
+    const step = (now: number) => {
+      const drift = anchor.getBoundingClientRect().top - from
+      // Sub-pixel drift isn't worth a scroll write; chasing it just fights
+      // the browser's own rounding.
+      if (Math.abs(drift) > 0.5) window.scrollBy(0, drift)
+      if (now < until) {
+        raf = requestAnimationFrame(step)
+      } else {
+        settling.current = false
+      }
+    }
+    raf = requestAnimationFrame(step)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      settling.current = false
+      document.body.classList.remove(cls)
+    }
   }, [hdrSlim])
 
   // Scrolling the PAGE brings the header back. Scrolling the roster does
@@ -141,6 +191,13 @@ export function RosterRoulette({
     let lastY = Math.max(0, window.scrollY)
     const onScroll = () => {
       const y = Math.max(0, window.scrollY)
+      // Our own compensation scrolls the window, and it scrolls UP as often
+      // as down. Reading those frames as the user scrolling up would reopen
+      // the header the instant it started closing.
+      if (settling.current) {
+        lastY = y
+        return
+      }
       if (y < lastY - 8 || y < 4) setHdrSlim(false)
       lastY = y
     }
@@ -586,7 +643,7 @@ export function RosterRoulette({
         )}
       </div>
 
-      <div className={styles.board}>
+      <div className={styles.board} ref={boardRef}>
         <div className={styles.stage}>
           {done ? (
             <div className={styles.recap}>
