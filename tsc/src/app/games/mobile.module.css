@@ -1,21 +1,22 @@
 /* ============================================================
-   THE GAMES PAGE — MOBILE
-   The hub and the two lobbies get their own tree on phones,
-   the way /about, /guides and the clubhouse do, rather than
-   the desktop broadsheet shrunk down. Same ink-and-brass
-   palette, but laid out as an app: full-bleed tap rows, one
-   column, nothing that needs a cursor.
+   THE GAMES PAGE — MOBILE (the Pocket Games Page)
+   Built on the Pocket Clubhouse's shapes, not the broadsheet's:
+   a compact sticky bar with square icon buttons, a fixed bottom
+   dock instead of the hamburger sheet, left-set heroes, § rules,
+   and door-list rows. Compare src/styles/hub-mobile.css — same
+   grammar, this section's palette.
 
-   The BOARDS stay responsive (one game engine, two layouts) —
-   only their chrome is forked, via MobileGameBar below.
+   Two rules learned the hard way and worth keeping:
+   · No circled buttons. Nothing else in the mobile trees has
+     one, and a round back arrow is the tell of a desktop page
+     wearing a phone costume.
+   · The bar's side columns are the SAME width. An auto-sized
+     spacer opposite a 2.1rem button pushes the title off centre
+     by exactly the difference.
    ============================================================ */
 
-.root {
-  /* The gp- tokens live on .wrap in games.module.css, which this tree is
-     deliberately outside of. Restated in full rather than trimmed to what
-     these files use: CombinePools renders inside here and is styled from
-     games.module.css, so it inherits this set and a missing token would
-     silently paint it wrong. */
+.root,
+.boardRoot {
   --gp-ink: #0b1119;
   --gp-panel: #121c27;
   --gp-panel-2: #182533;
@@ -36,94 +37,383 @@
   --pos-TE: #c9a9ea;
 }
 
-/* Passed to MobilePageShell as bodyClassName. The shell's .mpg-body is
-   padded for prose; these surfaces are rows and cards that pad themselves,
-   and inheriting the gutter as well left every one of them inset twice. */
-.body {
-  padding: 0 0 0.75rem;
+.root {
+  display: block;
+  /* Room for the fixed dock plus the home-indicator inset. */
+  padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
 }
 
-/* ── Section rules ────────────────────────────────────────── */
-
-.sec {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 1.35rem 1.05rem 0.6rem;
+/* The hamburger sheet is the old site-wide nav and these pages replace it:
+   the hub and the lobbies with the dock, the boards with the bar's own
+   left button. Same move .mpg makes in globals.css, and it only works
+   because <main> is a preceding sibling of the fixed .msm-root. */
+.root ~ :global(.msm-root),
+.boardRoot ~ :global(.msm-root) {
+  display: none !important;
 }
 
-.secNum {
+/* ── Top bar ──────────────────────────────────────────────── */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 2.1rem 1fr 2.1rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  background: rgba(11, 17, 25, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--gp-line);
+  transition: padding 0.25s ease;
+}
+
+:global(body.tsc-hdr-collapsed) .bar {
+  padding: 0.3rem 0.8rem;
+}
+
+.barIco {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid var(--gp-line);
+  /* Square with a hairline radius. Never a disc. */
+  border-radius: 2px;
+  color: var(--gp-gold);
+  text-decoration: none;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.barIco:active {
+  background: rgba(232, 200, 137, 0.12);
+}
+
+.barCenter {
+  text-align: center;
+  min-width: 0;
+}
+
+.barKicker {
   font-family: var(--mono);
-  font-size: 0.55rem;
-  letter-spacing: 0.18em;
+  font-weight: 700;
+  font-size: 0.44rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  margin-bottom: 0.1rem;
+}
+
+.barTitle {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.1;
+  color: var(--gp-cream);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barTitle em {
+  font-style: italic;
   color: var(--gp-gold);
 }
 
-.secTitle {
-  font-family: var(--mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--gp-cream);
+/* ── Bottom dock ──────────────────────────────────────────── */
+/* Three destinations: the shelf and the two games. Replaces the
+   hamburger outright — on a section this small the whole map fits at
+   the thumb, so a sheet to hold it was always a sheet too many. */
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 0.38rem 0.3rem calc(0.42rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(9, 14, 20, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(232, 200, 137, 0.28);
 }
 
-.secMeta {
-  margin-left: auto;
+.dockItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.34rem 0 0.2rem;
+  color: #7d8a99;
+  text-decoration: none;
   font-family: var(--mono);
-  font-size: 0.52rem;
+  font-weight: 700;
+  font-size: 0.44rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dockItem svg {
+  display: block;
+}
+
+.dockOn {
+  color: var(--gp-gold);
+}
+
+.dockOn::before {
+  content: '';
+  position: absolute;
+  top: -0.42rem;
+  left: 28%;
+  right: 28%;
+  height: 2px;
+  background: var(--gp-gold);
+}
+
+/* ── Hero ─────────────────────────────────────────────────── */
+
+.hero {
+  padding: 1.5rem 1.1rem 1.2rem;
+}
+
+.heroSup {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.5rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+  margin-bottom: 0.6rem;
+}
+
+.heroTitle {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 2.05rem;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--gp-cream);
+  margin: 0;
+}
+
+.heroTitle em {
+  font-style: italic;
+  color: var(--gp-gold);
+}
+
+.heroSub {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--gp-soft);
+  margin: 0.7rem 0 0;
+}
+
+.heroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.7rem;
+  margin-top: 0.85rem;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.54rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--gp-mute);
 }
 
-/* ── The list of games (hub) ──────────────────────────────── */
+/* ── Sections ─────────────────────────────────────────────── */
 
-.list {
+.sec {
+  padding: 0 1.1rem;
+  margin-top: 1.7rem;
+}
+
+.secHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.7rem;
+  border-bottom: 1px solid var(--gp-line);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.secNum {
+  display: block;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.48rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+  margin-bottom: 0.25rem;
+}
+
+.secTitle {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  line-height: 1.15;
+  color: var(--gp-cream);
+}
+
+.secSide {
+  flex: none;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  white-space: nowrap;
+  padding-bottom: 0.1rem;
+}
+
+/* ── Game cards ───────────────────────────────────────────── */
+/* Each card draws its own game rather than describing it. Roulette gets
+   the spin window, Guess the Draft gets a redacted pick list — so the two
+   are told apart at a glance, in the second before any copy is read, which
+   is all a phone gets. The accent comes off the GameDef as --accent. */
+
+.games {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  padding: 0 1.05rem;
+  gap: 0.75rem;
 }
 
 .game {
   display: block;
-  position: relative;
-  padding: 1rem 1.05rem 0.85rem;
-  background: linear-gradient(180deg, var(--gp-panel-2), var(--gp-panel));
+  background: var(--gp-panel);
   border: 1px solid var(--gp-line);
-  border-top: 2px solid var(--gp-gold);
+  border-top: 2px solid var(--accent);
   border-radius: 4px;
+  overflow: hidden;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.12s ease, border-color 0.12s ease;
+  transition: transform 0.12s ease;
 }
 
-/* Phones have no hover, so the press itself has to answer. */
-.game:active,
-.pool:active,
-.soon:active {
-  transform: scale(0.985);
+.game:active {
+  transform: scale(0.99);
+}
+
+.mark {
+  display: block;
+  padding: 0.85rem 0.9rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 9%, transparent),
+      transparent
+    ),
+    var(--gp-ink);
+  border-bottom: 1px solid var(--gp-line-soft);
+}
+
+/* Roulette: the spin window, mid-spin. */
+.markWheel {
+  /* It's a <span> holding block children (a link can't nest a <div>), so
+     without this it stays an inline box, splits into fragments around them,
+     and paints its brass rules as a stray sliver down the left edge. */
+  display: block;
+  border-top: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  padding: 0.5rem 0.6rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.12));
+  text-align: center;
+}
+
+.markWheelYear {
+  display: block;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.5rem;
+  letter-spacing: 0.24em;
+  color: var(--accent);
+}
+
+.markWheelName {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.15;
+  color: var(--gp-cream);
+  margin-top: 0.15rem;
+}
+
+/* Guess the Draft: three picks with the names inked out. */
+.markPicks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.34rem;
+}
+
+.markPick {
+  display: grid;
+  grid-template-columns: 1.35rem 1fr 1.5rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.markPickRd {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  color: var(--gp-mute);
+}
+
+.markPickBar {
+  height: 0.62rem;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 55%, #0b1119),
+    color-mix(in srgb, var(--accent) 22%, #0b1119)
+  );
+}
+
+.markPickPos {
+  font-family: var(--mono);
+  font-size: 0.46rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--gp-ink);
+  background: var(--gp-soft);
+  border-radius: 1px;
+  padding: 0.1rem 0;
+}
+
+.gameBody {
+  display: block;
+  padding: 0.8rem 0.9rem 0.7rem;
 }
 
 .gameTitle {
   display: block;
   font-family: var(--serif);
-  font-size: 1.45rem;
+  font-size: 1.3rem;
   line-height: 1.1;
   color: var(--gp-cream);
 }
 
 .gameTitle em {
   font-style: italic;
-  color: var(--gp-gold);
+  color: var(--accent);
 }
 
-.gameBody {
+.gameLine {
   display: block;
-  margin-top: 0.4rem;
-  font-size: 0.88rem;
+  margin-top: 0.3rem;
+  font-size: 0.76rem;
   line-height: 1.5;
-  color: var(--gp-soft);
+  color: var(--gp-mute);
 }
 
 .gameFoot {
@@ -131,140 +421,76 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
-  margin-top: 0.8rem;
-  padding-top: 0.7rem;
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
   border-top: 1px solid var(--gp-line-soft);
-  font-family: var(--mono);
-  font-size: 0.55rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
-.gameAccess {
-  color: var(--gp-mute);
+.chip {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.46rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 1px;
+  padding: 0.2rem 0.4rem;
 }
 
 .gameGo {
-  color: var(--gp-gold);
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-}
-
-/* ── Not-built-yet rows ───────────────────────────────────── */
-
-.soon {
-  display: block;
-  padding: 0.85rem 1.05rem;
-  background: var(--gp-panel);
-  border: 1px dashed var(--gp-line);
-  border-radius: 4px;
-  opacity: 0.72;
-}
-
-.soonTitle {
-  display: block;
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  color: var(--gp-cream);
-}
-
-.soonBody {
-  display: block;
-  margin-top: 0.3rem;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  color: var(--gp-mute);
-}
-
-/* ── How it's played (lobby) ──────────────────────────────── */
-
-.brief {
-  padding: 1.1rem 1.05rem 0;
-}
-
-.briefBlurb {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.48rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--gp-soft);
 }
 
-.steps {
-  list-style: none;
-  margin: 0.9rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+/* ── Door list (leagues, and the drawing board) ───────────── */
 
-.step {
-  display: grid;
-  grid-template-columns: 1.35rem 1fr;
-  align-items: start;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  line-height: 1.45;
-  color: var(--gp-cream);
-}
-
-.stepNum {
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  line-height: 1.7;
-  color: var(--gp-gold);
+.doors {
   border: 1px solid var(--gp-line);
-  border-radius: 999px;
+  border-radius: 4px;
+  background: var(--gp-panel);
+  overflow: hidden;
+}
+
+.door {
+  display: grid;
+  grid-template-columns: 1.9rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid var(--gp-line-soft);
+  text-decoration: none;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.door:last-child {
+  border-bottom: none;
+}
+
+.door:active {
+  background: rgba(232, 200, 137, 0.07);
+}
+
+.doorNum {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--gp-gold);
   text-align: center;
 }
 
-/* ── Pool rows (lobby) ────────────────────────────────────── */
-/* A row, not a card: choosing a league is a list decision, and a phone
-   reads a list faster than it reads eight stacked cards. */
-
-.pools {
-  display: flex;
-  flex-direction: column;
-  border-top: 1px solid var(--gp-line-soft);
-}
-
-.pool {
-  display: grid;
-  grid-template-columns: 1fr 0.75rem;
-  align-items: center;
-  gap: 0.75rem;
-  min-height: 3.5rem;
-  padding: 0.75rem 1.05rem;
-  border-bottom: 1px solid var(--gp-line-soft);
-  background: transparent;
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.12s ease, transform 0.12s ease;
-}
-
-.pool:active {
-  background: var(--gp-panel);
-}
-
-.poolMain {
-  min-width: 0;
-}
-
-.poolTag {
-  display: block;
-  font-family: var(--mono);
-  font-size: 0.52rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--gp-gold);
-  margin-bottom: 0.15rem;
-}
-
-.poolLabel {
+.doorName {
   display: block;
   font-family: var(--serif);
-  font-size: 1.08rem;
+  font-size: 1.02rem;
   line-height: 1.2;
   color: var(--gp-cream);
   overflow: hidden;
@@ -272,28 +498,69 @@
   white-space: nowrap;
 }
 
-.poolNote {
+.doorDesc {
   display: block;
-  margin-top: 0.2rem;
-  font-size: 0.78rem;
-  line-height: 1.4;
+  font-size: 0.66rem;
+  line-height: 1.45;
+  color: var(--gp-mute);
+  margin-top: 0.12rem;
+}
+
+.doorArrow {
+  color: var(--gp-gold);
+  display: flex;
+}
+
+/* Not built yet: the same list, with the arrow and the tap taken off. */
+.doorSoon {
+  opacity: 0.6;
+}
+
+.doorSoonTag {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.44rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--gp-mute);
 }
 
-.chev {
-  color: var(--gp-mute);
-  justify-self: end;
+/* ── How it's played (lobby) ──────────────────────────────── */
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 0.79rem;
+  line-height: 1.45;
+  color: var(--gp-soft);
+}
+
+.stepNum {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.55rem;
+  color: var(--gp-gold);
 }
 
 /* ── Empty / signed-out ───────────────────────────────────── */
 
 .empty {
-  margin: 0.4rem 1.05rem 0;
-  padding: 0.95rem 1.05rem;
+  padding: 0.9rem 0.95rem;
   background: rgba(232, 200, 137, 0.05);
   border: 1px solid var(--gp-line);
   border-radius: 4px;
-  font-size: 0.86rem;
+  font-size: 0.79rem;
   line-height: 1.55;
   color: var(--gp-soft);
 }
@@ -302,27 +569,40 @@
   color: var(--gp-gold);
 }
 
-/* Room under the last row so the shell's footer doesn't crowd it. */
-.tail {
-  height: 1.5rem;
+/* ── Footer ───────────────────────────────────────────────── */
+
+.foot {
+  margin-top: 2rem;
+  padding: 1.2rem 1.1rem 0.4rem;
+  border-top: 1px solid var(--gp-line);
+  text-align: center;
 }
 
-/* Gutter for anything borrowed from the desktop tree. CombinePools styles
-   itself out of games.module.css, where the page's own padding supplies the
-   margin it doesn't carry; full-bleed here, it would touch both edges. */
-.inset {
-  padding: 0 1.05rem;
+.footBrand {
+  font-family: var(--serif);
+  font-size: 0.8rem;
+  color: var(--gp-mute);
 }
 
-/* ── Board chrome ─────────────────────────────────────────── */
-/* The boards keep their responsive layout; what they lose on a phone is
-   the desktop .nav grid, which is three columns of link clusters nobody
-   can tap. This is the same bar the rest of the mobile site wears
-   (.mpg-bar in globals.css) — restated as a module class only where the
-   games palette differs. */
+.footBrand em {
+  font-style: italic;
+  color: var(--gp-soft);
+}
 
-.barWrap {
-  position: sticky;
-  top: 0;
-  z-index: 50;
+.footLinks {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.6rem;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.5rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.footLinks a {
+  color: var(--gp-gold);
+  text-decoration: none;
 }

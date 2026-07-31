@@ -1,19 +1,68 @@
 import Link from 'next/link'
-import { MobilePageShell } from '@/components/mobile/MobilePageShell'
-import { GAMES } from './gameDefs'
+import { GAMES, ROSTER_ROULETTE, GUESS_THE_DRAFT } from './gameDefs'
 import type { GameDef } from './gameDefs'
-import styles from './mobile.module.css'
+import { MobileGameBar, Chevron } from './MobileGameBar'
+import { MobileGamesDock } from './MobileGamesDock'
+import { MobileGamesFoot } from './MobileGamesFoot'
+import s from './mobile.module.css'
 
 // The Games Page on a phone.
 //
-// Same two-step as desktop (pick a game, then a league) but shaped like the
-// rest of the mobile site: the shared app shell for the bar, hero and
-// footer, then one full-width tap card per game.
+// The first pass at this was the shared content shell (/about, /guides)
+// with the desktop copy poured into it, and it read as two identical
+// paragraphs stacked in two identical boxes. Two things fix that, and both
+// are about a phone showing both games at once with no hover and no rail:
 //
-// The three how-it's-played beats are NOT repeated here. They're on the very
-// next screen, above the league list, where someone is deciding whether to
-// play rather than which game to look at, and stacking them on a phone made
-// two cards fill a screen and a half.
+//  · Each card DRAWS its game — Roulette gets the spin window, Guess the
+//    Draft gets a redacted pick list — so they're told apart before a word
+//    is read.
+//  · The copy is one line each (GameDef.pocket), and the footer is a
+//    two-word chip. The desktop card's three-clause pitch and its sentence
+//    of access terms filled the bottom of the card between the reader and
+//    the thing they were trying to tap.
+
+/** The spin window as it actually looks on the board: two brass rules with
+    a landed team between them. An earlier version stacked clipped "ghost"
+    rows above and below to suggest the drum turning; at this size they read
+    as text cut in half rather than as motion. */
+function WheelMark() {
+  return (
+    <span className={s.mark}>
+      <span className={s.markWheel}>
+        <span className={s.markWheelYear}>2019 · 11-3</span>
+        <span className={s.markWheelName}>The Turk Store</span>
+      </span>
+    </span>
+  )
+}
+
+/** Three picks with the names inked out, which is the whole game. */
+function RedactedMark() {
+  const rows: [string, string, string][] = [
+    ['R1', '78%', 'RB'],
+    ['R2', '92%', 'WR'],
+    ['R3', '64%', 'QB'],
+  ]
+  return (
+    <span className={s.mark}>
+      <span className={s.markPicks}>
+        {rows.map(([rd, width, pos]) => (
+          <span key={rd} className={s.markPick}>
+            <span className={s.markPickRd}>{rd}</span>
+            <span className={s.markPickBar} style={{ width }} />
+            <span className={s.markPickPos}>{pos}</span>
+          </span>
+        ))}
+      </span>
+    </span>
+  )
+}
+
+function Mark({ id }: { id: string }) {
+  if (id === ROSTER_ROULETTE.id) return <WheelMark />
+  if (id === GUESS_THE_DRAFT.id) return <RedactedMark />
+  return null
+}
 
 export function MobileGames({
   signedIn,
@@ -23,77 +72,86 @@ export function MobileGames({
   comingSoon: { title: string; body: string }[]
 }) {
   return (
-    <MobilePageShell
-      backHref="/"
-      barTitle="The"
-      barTitleEm="Games Page"
-      signedIn={signedIn}
-      kicker="The back page"
-      heroTitle="Games, built out of"
-      heroTitleEm="real seasons."
-      heroSub="Every almanac here is a pile of teams that actually existed. These are the things worth doing with it."
-      bodyClassName={styles.body}
-    >
-      <div className={styles.root}>
-        <div className={styles.sec}>
-          <span className={styles.secNum}>§ 01</span>
-          <span className={styles.secTitle}>Pick a game</span>
-          <span className={styles.secMeta}>{GAMES.length} to play</span>
+    <main className={s.root}>
+      <MobileGameBar left="home" kicker="The back page" title="The" titleEm="Games Page" signedIn={signedIn} />
+
+      <section className={s.hero}>
+        <div className={s.heroSup}>★ Est. 2026 ★</div>
+        <h1 className={s.heroTitle}>
+          Games, built out of <em>real seasons.</em>
+        </h1>
+        <p className={s.heroSub}>
+          Every almanac here is a pile of teams that actually existed.
+        </p>
+        <div className={s.heroMeta}>
+          <span>{GAMES.length} games</span>
+          <span>Free to play</span>
+        </div>
+      </section>
+
+      <section className={s.sec}>
+        <div className={s.secHead}>
+          <div>
+            <span className={s.secNum}>§ 01 · On the table</span>
+            <span className={s.secTitle}>Pick a game</span>
+          </div>
+          <span className={s.secSide}>{GAMES.length} to play</span>
         </div>
 
-        <div className={styles.list}>
+        <div className={s.games}>
           {GAMES.map((g: GameDef) => (
-            <Link key={g.id} href={g.href} className={styles.game}>
-              <span className={styles.gameTitle}>
-                {g.title} <em>{g.titleEm}</em>
-              </span>
-              <span className={styles.gameBody}>{g.short}</span>
-              <span className={styles.gameFoot}>
-                <span className={styles.gameAccess}>{g.access}</span>
-                <span className={styles.gameGo}>
-                  Choose a league
-                  <Chevron />
+            <Link
+              key={g.id}
+              href={g.href}
+              className={s.game}
+              style={{ '--accent': g.accent } as React.CSSProperties}
+            >
+              <Mark id={g.id} />
+              <span className={s.gameBody}>
+                <span className={s.gameTitle}>
+                  {g.title} <em>{g.titleEm}</em>
+                </span>
+                <span className={s.gameLine}>{g.pocket}</span>
+                <span className={s.gameFoot}>
+                  <span className={s.chip}>{g.pocketAccess}</span>
+                  <span className={s.gameGo}>
+                    Play
+                    <Chevron />
+                  </span>
                 </span>
               </span>
             </Link>
           ))}
         </div>
+      </section>
 
-        <div className={styles.sec}>
-          <span className={styles.secNum}>§ 02</span>
-          <span className={styles.secTitle}>On the drawing board</span>
-          <span className={styles.secMeta}>Not built yet</span>
+      <section className={s.sec}>
+        <div className={s.secHead}>
+          <div>
+            <span className={s.secNum}>§ 02 · The bench</span>
+            <span className={s.secTitle}>On the drawing board</span>
+          </div>
+          <span className={s.secSide}>Not built</span>
         </div>
 
-        <div className={styles.list}>
+        <div className={s.doors}>
           {comingSoon.map((g) => (
-            <div key={g.title} className={styles.soon}>
-              <span className={styles.soonTitle}>{g.title}</span>
-              <span className={styles.soonBody}>{g.body}</span>
+            <div key={g.title} className={`${s.door} ${s.doorSoon}`}>
+              <span className={s.doorNum} aria-hidden>
+                ✦
+              </span>
+              <span>
+                <span className={s.doorName}>{g.title}</span>
+                <span className={s.doorDesc}>{g.body}</span>
+              </span>
+              <span className={s.doorSoonTag}>Soon</span>
             </div>
           ))}
         </div>
+      </section>
 
-        <div className={styles.tail} />
-      </div>
-    </MobilePageShell>
-  )
-}
-
-export function Chevron() {
-  return (
-    <svg
-      viewBox="0 0 8 14"
-      width="7"
-      height="12"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <polyline points="1 1 7 7 1 13" />
-    </svg>
+      <MobileGamesFoot signedIn={signedIn} />
+      <MobileGamesDock />
+    </main>
   )
 }

@@ -11,6 +11,7 @@ import { MobileGameBar } from '../MobileGameBar'
 import { GUESS_THE_DRAFT } from '../gameDefs'
 import { GuessTheDraft } from './GuessTheDraft'
 import styles from '../games.module.css'
+import mobileStyles from '../mobile.module.css'
 
 // The card is dealt per request (seeded off ?seed= or freshly rolled), so
 // this page can never be prerendered.
@@ -61,12 +62,16 @@ export default async function GuessTheDraftPage({
   }
 
   return (
-    <main>
+    // No dock on a board: the answer bar already holds the bottom of the
+    // screen. `boardRoot` takes the hamburger sheet off the page.
+    <main className={mobile ? mobileStyles.boardRoot : undefined}>
       {mobile ? (
         <MobileGameBar
-          backHref="/games/"
+          left="back"
+          kicker="The Games Page"
           title={GUESS_THE_DRAFT.title}
           titleEm={GUESS_THE_DRAFT.titleEm}
+          signedIn={!!user}
         />
       ) : (
       <nav className="nav">

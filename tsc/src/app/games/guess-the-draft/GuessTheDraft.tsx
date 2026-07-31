@@ -322,9 +322,13 @@ export function GuessTheDraft({
           <span className={styles.cardKind}>A draft, redacted</span>
         </div>
 
+        {/* The tail drops on a phone. The league is already the page's H1
+            two inches above, and three lines of preamble sat between the
+            reader and the evidence they came for. */}
         <p className={styles.cardLede}>
-          These were the first {card.picks.length} picks one manager made in one season of{' '}
-          {deal.pool.label}. Everything else has been taken out.
+          These were the first {card.picks.length} picks one manager made in one season.
+          <span className={styles.ledeTail}> The league is {deal.pool.label}, and everything
+          else has been taken out.</span>
         </p>
 
         <ol className={styles.picks}>

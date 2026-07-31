@@ -13,6 +13,7 @@ import { MobileGameBar } from '../MobileGameBar'
 import { ROSTER_ROULETTE } from '../gameDefs'
 import { RosterRoulette } from './RosterRoulette'
 import styles from '../games.module.css'
+import mobileStyles from '../mobile.module.css'
 
 // The opening wheel is dealt per request (seeded off ?seed= or freshly
 // rolled), so this page can never be prerendered.
@@ -117,14 +118,17 @@ export default async function RoulettePage({
   }
 
   return (
-    <main>
+    // The board owns the bottom of the screen with its lineup HUD, so it
+    // gets no dock — the bar's left button is the way out. `boardRoot` is
+    // what takes the hamburger sheet off the page.
+    <main className={mobile ? mobileStyles.boardRoot : undefined}>
       {mobile ? (
-        // Out to the Games Page, matching the desktop back button. The
-        // lobby has its own way in, the "Change league" link under the title.
         <MobileGameBar
-          backHref="/games/"
+          left="back"
+          kicker="The Games Page"
           title={ROSTER_ROULETTE.title}
           titleEm={ROSTER_ROULETTE.titleEm}
+          signedIn={!!user}
         />
       ) : (
       <nav className="nav">

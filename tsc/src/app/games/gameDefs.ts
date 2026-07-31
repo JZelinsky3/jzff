@@ -23,6 +23,17 @@ export type GameDef = {
   titleEm: string
   /** One line on the hub card. What the game IS, not how it's played. */
   short: string
+  /** The same idea for a phone, in a breath. The desktop `short` runs to
+      three clauses, which on a 390px card is five lines of body text before
+      you reach the thing you tap. */
+  pocket: string
+  /** Two words for the phone card's footer chip. `access` is a sentence and
+      filled the whole bottom of the card on its own. */
+  pocketAccess: string
+  /** The game's own colour. The phone hub shows both games at once with no
+      hover, no rail and no room for chrome, so the only thing telling them
+      apart is how they LOOK — this and the mark each card draws. */
+  accent: string
   /** The longer pitch, shown once a game has been chosen. */
   blurb: string
   /** Three beats, in play order. Kept to a phrase each. */
@@ -45,6 +56,9 @@ export const ROSTER_ROULETTE: GameDef = {
   titleEm: 'Roulette',
   short:
     'The wheel lands on somebody’s real team from a real season. Take one player off it, fill seven slots, and see whether the lineup goes 17-0.',
+  pocket: 'Eight real teams. One player off each. Seven slots.',
+  pocketAccess: 'No account',
+  accent: '#e8c889',
   blurb:
     'Every almanac on this site is a pile of teams that actually existed. The wheel picks one of them at random, you take a single player, and it spins again. Eight spins, seven slots, one reroll if it deals you nothing you can use.',
   how: [
@@ -68,6 +82,11 @@ export const GUESS_THE_DRAFT: GameDef = {
   titleEm: 'Draft',
   short:
     'A draft from your league’s history with every name taken out. Say who made the picks and what year it was.',
+  pocket: 'A draft with the name blacked out. Whose was it?',
+  pocketAccess: 'Needs a league',
+  // Terracotta against Roulette's brass. The two cards sit one above the
+  // other on a phone and a shared gold made them read as one list.
+  accent: '#e29278',
   blurb:
     'Eight drafts, each one a manager’s first eight picks from a season that actually happened, with the name and the year taken off the top. You answer twice, and both halves count: the players date the year, and the year narrows who was even in the league then.',
   how: [
