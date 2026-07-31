@@ -678,14 +678,6 @@
   border-color: var(--gp-soft);
 }
 
-.resumeNote {
-  font-family: var(--mono);
-  font-size: 0.55rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--gp-green);
-}
-
 .roster {
   /* The point of the fixed height: the board never grows down the page,
      you scroll the roster inside it. Header, bar, and footer stay put. */

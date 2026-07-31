@@ -33,7 +33,7 @@ export const SLOTS: SlotDef[] = [
   { id: 'FLEX', label: 'FLEX', accepts: ['RB', 'WR', 'TE'] },
 ]
 
-export const REROLLS = 2
+export const REROLLS = 1
 
 /** Squads dealt per game: one per slot, plus one in reserve per reroll. */
 export const SPINS_PER_GAME = SLOTS.length + REROLLS

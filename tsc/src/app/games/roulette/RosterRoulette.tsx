@@ -62,75 +62,25 @@ function headshot(playerId: string | null): string | null {
   return playerId ? `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg` : null
 }
 
-// ── Saving a run in progress ────────────────────────────────
-//
-// The seed lives in the URL so a wheel can be shared, which used to mean a
-// mid-game refresh re-dealt the same nine squads and threw the lineup away.
-// Now the run itself is saved locally against (pool, seed) and picked back
-// up where it left off.
-//
-// Only what can't be re-derived is stored: which slot holds which player,
-// off which squad. Everything else comes back out of the deal. And only
-// runs in progress are restored — a finished one starts over, so a friend
-// replaying a shared link isn't handed your old result.
-
-const SAVE_KEY = 'tsc-roulette-run'
-
-type SavedRun = {
-  pool: string
-  seed: string
-  spinIndex: number
-  rerollsLeft: number
-  /** slot -> [squad key, player name] */
-  picks: [SlotId, [string, string]][]
-}
-
-function saveRun(run: SavedRun) {
+/**
+ * Takes the seed back out of the address bar.
+ *
+ * The seed used to be written to the URL on every deal, which quietly made
+ * a mess of two things: refreshing re-dealt the wheel you had just finished
+ * instead of giving you a new one, and the back arrow walked you through
+ * every wheel you had played rather than leaving the game. The seed is only
+ * a URL concern when a run is being SHARED — the share link builds its own —
+ * so the address bar is left holding nothing but the pool.
+ */
+function clearSeedFromUrl() {
   try {
-    window.localStorage.setItem(SAVE_KEY, JSON.stringify(run))
+    const url = new URL(window.location.href)
+    if (!url.searchParams.has('seed')) return
+    for (const key of ['seed', 'w', 'ppg', 'l']) url.searchParams.delete(key)
+    window.history.replaceState(null, '', url)
   } catch {
-    /* private mode / quota — the game just won't resume */
+    /* no history access — harmless */
   }
-}
-
-function clearRun() {
-  try {
-    window.localStorage.removeItem(SAVE_KEY)
-  } catch {
-    /* nothing to do */
-  }
-}
-
-function readRun(pool: string, seed: string): SavedRun | null {
-  try {
-    const raw = window.localStorage.getItem(SAVE_KEY)
-    if (!raw) return null
-    const run = JSON.parse(raw) as SavedRun
-    if (run?.pool !== pool || run?.seed !== seed) return null
-    if (!Array.isArray(run.picks)) return null
-    return run
-  } catch {
-    return null
-  }
-}
-
-/** Rebuilds the lineup from saved (squad, player) references. */
-function restoreLineup(
-  deal: Deal,
-  picks: SavedRun['picks']
-): Partial<Record<SlotId, Filled>> {
-  const byKey = new Map(deal.spins.map((sq) => [sq.key, sq]))
-  const out: Partial<Record<SlotId, Filled>> = {}
-  for (const [slotId, [squadKey, playerName]] of picks) {
-    const squad = byKey.get(squadKey)
-    const player = squad?.players.find((p) => p.name === playerName)
-    if (!squad || !player) continue
-    // bestAvailable only feeds the end-of-run "what you walked past" line;
-    // recomputing it exactly would need the slot state at the time of the
-    // pick, so a resumed run reports the pick itself and nothing missed.
-    out[slotId] = { player, squad, bestAvailable: player.ppg }
-  }
-  return out
 }
 
 export function RosterRoulette({
@@ -160,9 +110,6 @@ export function RosterRoulette({
   // Next wheel, fetched while this one is being played so "New wheel" is
   // instant instead of a second of staring at a spinner.
   const [nextDeal, setNextDeal] = useState<Deal | null>(null)
-  // Set when this run was picked back up after a refresh, so the board can
-  // say so rather than silently looking half-played.
-  const [resumed, setResumed] = useState(false)
   // Roster filter. Null shows every position; otherwise just the one.
   // Deep-churn rosters run past thirty players and scrolling for the one
   // receiver you want is the slowest part of a spin.
@@ -174,36 +121,6 @@ export function RosterRoulette({
   const spinTimer = useRef<number | null>(null)
   const flickerTimer = useRef<number | null>(null)
   const rosterRef = useRef<HTMLDivElement | null>(null)
-  // Guards the restore so it runs once, on the wheel the page opened with.
-  const restored = useRef(false)
-
-  // Pick a refreshed run back up.
-  //
-  // This has to be an effect, and the setState-in-effect rule is disabled
-  // below on purpose: localStorage doesn't exist during SSR, so the saved
-  // run cannot be read while rendering. Restoring any earlier would make the
-  // client's first render disagree with the server's HTML and blow up
-  // hydration. Reading an external store after mount is exactly what effects
-  // are for; it just isn't something the rule can tell apart.
-  useEffect(() => {
-    if (restored.current || !initialDeal) return
-    restored.current = true
-    const saved = readRun(initialDeal.pool.id, initialDeal.seed)
-    if (!saved) return
-    const picks = restoreLineup(initialDeal, saved.picks)
-    // A finished run starts over: the point of this is not losing progress,
-    // and resuming a completed one would show a stranger your old result.
-    if (Object.keys(picks).length >= initialDeal.slots.length) {
-      clearRun()
-      return
-    }
-    if (Object.keys(picks).length === 0) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- see above
-    setLineup(picks)
-    setSpinIndex(Math.max(0, Math.min(initialDeal.spins.length, saved.spinIndex)))
-    setRerollsLeft(Math.max(0, Math.min(initialDeal.rerolls, saved.rerollsLeft)))
-    setResumed(true)
-  }, [initialDeal])
 
   // ── Loading a deal ──────────────────────────────────────────
 
@@ -229,8 +146,7 @@ export function RosterRoulette({
       setTeaser(null)
       setCopied(false)
       setHoverPlayer(null)
-      setResumed(false)
-      clearRun()
+      clearSeedFromUrl()
     } catch {
       setError('Could not reach the wheel. Check your connection and try again.')
     } finally {
@@ -238,6 +154,8 @@ export function RosterRoulette({
     }
   }, [])
 
+  // Clear any in-flight animation timers on unmount so a spin that's still
+  // running can't call setState against a dead component.
   useEffect(
     () => () => {
       if (spinTimer.current) window.clearTimeout(spinTimer.current)
@@ -270,32 +188,12 @@ export function RosterRoulette({
     }
   }, [picksMade, nextDeal, poolId])
 
-  // Persist after every pick, reroll, or spin so a refresh resumes here.
-  // Cleared once the run is finished — a completed lineup has nothing left
-  // to resume, and leaving it would make a shared link replay someone
-  // else's result.
-  useEffect(() => {
-    if (!deal) return
-    const picks = Object.entries(lineup)
-      .filter(([, f]) => f)
-      .map(([slotId, f]) => [slotId, [f!.squad.key, f!.player.name]]) as SavedRun['picks']
-    if (picks.length === 0 || picks.length >= deal.slots.length) {
-      if (picks.length >= deal.slots.length) clearRun()
-      return
-    }
-    saveRun({
-      pool: deal.pool.id,
-      seed: deal.seed,
-      spinIndex,
-      rerollsLeft,
-      picks,
-    })
-  }, [deal, lineup, spinIndex, rerollsLeft])
-
   // Swap in the prefetched wheel, or fetch one if it isn't ready yet.
   const newWheel = useCallback(() => {
-    clearRun()
-    setResumed(false)
+    // Drop any shared seed from the address bar. Otherwise a refresh after
+    // this would re-deal whichever wheel the link arrived with instead of
+    // the one now on screen.
+    clearSeedFromUrl()
     if (nextDeal && nextDeal.pool.id === poolId) {
       setDeal(nextDeal)
       setNextDeal(null)
@@ -311,21 +209,6 @@ export function RosterRoulette({
     }
     void load(poolId, null)
   }, [nextDeal, poolId, load])
-
-  // Keep the address bar on the seed being played, so a refresh (or a copied
-  // URL) replays this exact wheel rather than dealing a stranger's.
-  useEffect(() => {
-    if (!deal) return
-    const url = new URL(window.location.href)
-    url.searchParams.set('pool', deal.pool.id)
-    url.searchParams.set('seed', deal.seed)
-    // Someone arriving from a shared result carries the sharer's score in
-    // the URL. It has already done its job (the link preview), and leaving
-    // it would attach their record to this player's run.
-    url.searchParams.delete('w')
-    url.searchParams.delete('ppg')
-    window.history.replaceState(null, '', url)
-  }, [deal])
 
   // ── Derived state ───────────────────────────────────────────
 
@@ -726,9 +609,6 @@ export function RosterRoulette({
                 {openSlots.length} slot{openSlots.length === 1 ? '' : 's'} open · {rerollsLeft} reroll
                 {rerollsLeft === 1 ? '' : 's'} left
               </div>
-              {resumed && (
-                <div className={styles.resumeNote}>Picked up where you left off</div>
-              )}
               {Object.keys(lineup).length > 0 && (
                 <button type="button" className={styles.btnQuiet} onClick={newWheel}>
                   Start a new wheel

@@ -67,7 +67,7 @@ const POSITIONS = ['QB', 'RB', 'WR', 'TE']
 const GAMES = 17
 const FIRST_YEAR = 2009
 const LAST_YEAR = 2025
-const SPINS_PER_GAME = 9
+const SPINS_PER_GAME = 8
 const MIN_SQUAD_PLAYERS = 8
 /** Simulated deals per profile. A few thousand settles the quantiles. */
 const SIMULATIONS = 8000

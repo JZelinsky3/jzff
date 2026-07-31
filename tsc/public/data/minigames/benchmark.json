@@ -1,48 +1,48 @@
 {
-  "generatedAt": "2026-07-31T04:07:57.956Z",
+  "generatedAt": "2026-07-31T05:27:36.592Z",
   "games": 17,
   "profiles": {
     "ppr_6pt": {
       "sampleSize": 8000,
       "squadsAvailable": 1290,
-      "floor": 79.1,
-      "target": 164,
-      "medianPlay": 121.5
+      "floor": 79.3,
+      "target": 164.2,
+      "medianPlay": 121.8
     },
     "ppr_4pt": {
       "sampleSize": 8000,
       "squadsAvailable": 1290,
-      "floor": 79.1,
-      "target": 159.9,
-      "medianPlay": 119.5
+      "floor": 80,
+      "target": 159.4,
+      "medianPlay": 119.7
     },
     "half_6pt": {
       "sampleSize": 8000,
       "squadsAvailable": 1290,
-      "floor": 68.2,
-      "target": 146.4,
+      "floor": 68,
+      "target": 146.6,
       "medianPlay": 107.3
     },
     "half_4pt": {
       "sampleSize": 8000,
       "squadsAvailable": 1290,
-      "floor": 67.2,
-      "target": 142.1,
-      "medianPlay": 104.6
+      "floor": 67.4,
+      "target": 141.5,
+      "medianPlay": 104.5
     },
     "std_6pt": {
       "sampleSize": 8000,
       "squadsAvailable": 1291,
-      "floor": 57.6,
-      "target": 129,
-      "medianPlay": 93.3
+      "floor": 57.4,
+      "target": 129.1,
+      "medianPlay": 93.2
     },
     "std_4pt": {
       "sampleSize": 8000,
       "squadsAvailable": 1291,
-      "floor": 55.8,
-      "target": 124.5,
-      "medianPlay": 90.2
+      "floor": 56.2,
+      "target": 124.7,
+      "medianPlay": 90.5
     }
   }
 }
