@@ -4,6 +4,7 @@ import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { dealGame } from '@/lib/minigames/deal'
+import { GAMES } from '@/lib/minigames/record'
 import { loadPoolsForViewer, SITE_POOL } from '../pools'
 import { RosterRoulette } from './RosterRoulette'
 import styles from '../games.module.css'
@@ -12,17 +13,58 @@ import styles from '../games.module.css'
 // rolled), so this page can never be prerendered.
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Roster Roulette · Build a lineup out of other people’s teams',
-  description:
-    'Spin for a random fantasy team from a real league’s history, take one player off it, and repeat until your lineup is full. Scored on the points per game each player actually averaged — build a lineup good enough to go 17-0.',
-  alternates: { canonical: 'https://thesundaychronicle.app/games/roulette/' },
+const NEUTRAL_TITLE = 'Roster Roulette · Can you go 17-0?'
+const NEUTRAL_DESC =
+  'Spin for a real fantasy team from a real season, take one player off it, and fill seven slots. No account needed.'
+
+// A shared wheel is opened by people who have never heard of the site, so
+// the default preview sells the game and names nobody. When the share button
+// hands over a finished run (?w=&ppg=), the card becomes a scoreboard and
+// the link reads as a challenge instead.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ pool?: string; seed?: string; w?: string; ppg?: string }>
+}): Promise<Metadata> {
+  const sp = await searchParams
+  const wins = Number(sp.w)
+  const ppg = Number(sp.ppg)
+  const hasResult = Number.isFinite(wins) && wins >= 0 && wins <= GAMES
+
+  const og = new URLSearchParams({ v: '1' })
+  if (hasResult) {
+    og.set('w', String(Math.round(wins)))
+    if (Number.isFinite(ppg) && ppg > 0) og.set('ppg', String(Math.round(ppg * 10) / 10))
+  }
+  const image = `/api/og/games?${og}`
+
+  const title = hasResult
+    ? `${Math.round(wins)}-${GAMES - Math.round(wins)} on Roster Roulette · Beat it`
+    : NEUTRAL_TITLE
+  const description = hasResult
+    ? 'Same nine squads, same order. Build a better lineup than this one.'
+    : NEUTRAL_DESC
+
+  return {
+    title,
+    description,
+    alternates: { canonical: 'https://thesundaychronicle.app/games/roulette/' },
+    openGraph: {
+      type: 'website',
+      url: 'https://thesundaychronicle.app/games/roulette/',
+      title,
+      description,
+      siteName: 'The Sunday Chronicle',
+      images: [{ url: image, width: 1200, height: 630, alt: 'Roster Roulette' }],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [image] },
+  }
 }
 
 export default async function RoulettePage({
   searchParams,
 }: {
-  searchParams: Promise<{ pool?: string; seed?: string }>
+  searchParams: Promise<{ pool?: string; seed?: string; w?: string; ppg?: string }>
 }) {
   const sp = await searchParams
   const { leaguePools } = await loadPoolsForViewer()

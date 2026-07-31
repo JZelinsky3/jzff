@@ -532,6 +532,103 @@
   border-radius: 4px;
 }
 
+.posGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.posHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0.2rem 0.1rem;
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--posc, var(--gp-mute));
+}
+
+.posHead::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gp-line-soft);
+}
+
+.posHeadCount {
+  color: var(--gp-mute);
+  letter-spacing: 0.12em;
+}
+
+.posHeadLocked {
+  composes: posHead;
+  color: var(--gp-mute);
+}
+
+/* Compact row — the deep bench. Every player a manager rostered stays on
+   the board (seeing that you once had eleven running backs is half the
+   fun), but the ones nobody is going to start give up their headshot and
+   most of their height. */
+.compact {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid var(--pos);
+  border-radius: 2px;
+  padding: 0.2rem 0.6rem 0.2rem 0.5rem;
+  color: var(--gp-soft);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.compact:hover:not(:disabled) {
+  background: rgba(232, 200, 137, 0.08);
+  color: var(--gp-cream);
+}
+
+.compact:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.compactPos {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--pos);
+  letter-spacing: 0.04em;
+}
+
+.compactName {
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compactTeam {
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  color: var(--gp-mute);
+  margin-left: 0.4rem;
+}
+
+.compactPpg {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--gp-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 .lockDivider {
   display: flex;
   align-items: center;
@@ -806,6 +903,42 @@
   box-shadow: inset 3px 0 0 var(--gp-gold);
 }
 
+/* Where the player under the cursor would land. Replaces the old
+   "next open slot in order" highlight, which always lit QB first and
+   read as advice to draft one. */
+.slotHover {
+  opacity: 1;
+  background: rgba(232, 200, 137, 0.16);
+  box-shadow: inset 3px 0 0 var(--gp-bright);
+}
+
+.slotGhost {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gp-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.targetRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 1.05rem;
+  border-top: 1px solid var(--gp-line);
+  background: rgba(232, 200, 137, 0.06);
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.targetVal {
+  color: var(--gp-gold);
+  font-weight: 700;
+}
+
 .slotId {
   font-family: var(--mono);
   font-size: 0.56rem;
@@ -923,6 +1056,12 @@
 .stripCellFilled {
   composes: stripCell;
   border-color: var(--pos, var(--gp-line));
+}
+
+.stripCellHover {
+  composes: stripCell;
+  border-color: var(--gp-bright);
+  background: rgba(232, 200, 137, 0.18);
 }
 
 .stripId {

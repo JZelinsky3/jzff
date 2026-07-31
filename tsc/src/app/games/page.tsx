@@ -11,6 +11,20 @@ export const metadata: Metadata = {
   description:
     'Diversions built out of real fantasy league archives. Roster Roulette deals you random teams from seasons that actually happened and asks you to build a lineup good enough to go 17-0.',
   alternates: { canonical: 'https://thesundaychronicle.app/games/' },
+  openGraph: {
+    type: 'website',
+    url: 'https://thesundaychronicle.app/games/',
+    title: 'The Games Page · The Sunday Chronicle',
+    description:
+      'Diversions built out of real fantasy league archives. Spin for a real team from a real season and see if your lineup goes 17-0.',
+    siteName: 'The Sunday Chronicle',
+    images: [{ url: '/api/og/games?v=1', width: 1200, height: 630, alt: 'The Games Page' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'The Games Page · The Sunday Chronicle',
+    images: ['/api/og/games?v=1'],
+  },
 }
 
 // Games that aren't built yet but are worth telling readers about, so the

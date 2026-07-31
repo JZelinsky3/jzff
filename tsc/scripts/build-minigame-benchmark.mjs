@@ -28,9 +28,17 @@
 // scores sit well above a standard league's and grading one against the
 // other would be nonsense.
 //
-// Output: public/data/minigames/benchmark.json — seventeen PPG thresholds
-// per profile, one per opponent, drawn at evenly spaced quantiles. Beat a
-// threshold, win that game. Beat all seventeen and you are 17-0.
+// Output: public/data/minigames/benchmark.json — two fixed PPG numbers per
+// profile. `target` is what a lineup must be worth to go 17-0; `floor` is
+// where the record starts at 0-17; wins scale linearly between them. Both
+// are constants the game shows the player up front ("17-0 needs 120.6 PPG"),
+// so you are chasing a stated bar rather than a moving field.
+//
+// The two numbers come from the simulation: `target` is the 90th percentile
+// of PERFECT play, so hitting it takes both a good wheel and no mistakes on
+// it, and `floor` is the 10th percentile of ordinary play, so only a genuinely
+// poor run goes winless. Everything in between lands where you'd want —
+// median play comes out near .500.
 //
 // Run:  node scripts/build-minigame-benchmark.mjs
 // Rerun when a lot of new leagues have joined; the shape moves slowly.
@@ -155,9 +163,15 @@ function playWheel(spins, skill) {
       continue
     }
     // Rank-biased draw: exponent 1 is uniform over the board, and climbs
-    // with skill until the top card is all but certain.
-    const exponent = 1 + skill * 7
-    const choice = legal[Math.floor(Math.random() ** exponent * legal.length)]
+    // with skill until the top card is all but certain. skill 1 is special
+    // cased to be exactly the best card — the 17-0 bar is set off this
+    // branch, and a "perfect" agent that still slipped to the second-best
+    // now and then measured a ceiling well under what a real player who
+    // always takes the top number reaches, which made 17-0 far too cheap.
+    const choice =
+      skill >= 1
+        ? legal[0]
+        : legal[Math.floor(Math.random() ** (1 + skill * 7) * legal.length)]
     const target =
       openIdx.find((i) => SLOTS[i].length === 1 && SLOTS[i].includes(choice.pos)) ??
       openIdx.find((i) => SLOTS[i].includes(choice.pos))
@@ -245,6 +259,7 @@ async function main() {
     // Simulate deals. Each one draws nine squads with no manager repeated,
     // exactly as dealRefs does, then plays them out.
     const samples = []
+    const pars = []
     for (let n = 0; n < SIMULATIONS; n++) {
       const spins = []
       const seenManagers = new Set()
@@ -262,31 +277,32 @@ async function main() {
       const skill = Math.random() ** 0.4
       const ppg = playWheel(spins, skill)
       if (ppg > 0) samples.push(ppg)
+      // Also record the ceiling for this wheel — perfect play, seeing all
+      // nine squads at once. The 17-0 bar is set off this distribution.
+      const best = playWheel(spins, 1)
+      if (best > 0) pars.push(best)
     }
     samples.sort((a, b) => a - b)
+    pars.sort((a, b) => a - b)
 
-    // Seventeen opponents at evenly spaced quantiles. The (i+0.5)/17
-    // offset centres each one inside its slice, so opponent 17 sits near
-    // the 97th percentile rather than demanding you beat the single best
-    // team ever recorded.
-    const thresholds = []
-    for (let i = 0; i < GAMES; i++) {
-      const q = (i + 0.5) / GAMES
-      const idx = Math.min(samples.length - 1, Math.max(0, Math.round(q * (samples.length - 1))))
-      thresholds.push(Math.round(samples[idx] * 100) / 100)
-    }
-    const at = (q) =>
-      Math.round(samples[Math.min(samples.length - 1, Math.round(q * (samples.length - 1)))] * 100) / 100
+    const at = (q) => samples[Math.min(samples.length - 1, Math.round(q * (samples.length - 1)))]
+    const parAt = (q) => pars[Math.min(pars.length - 1, Math.round(q * (pars.length - 1)))]
+    const floor = Math.round(at(0.1) * 10) / 10
+    const target = Math.round(parAt(0.9) * 10) / 10
+
     out.profiles[profile] = {
       sampleSize: samples.length,
       squadsAvailable: playable.length,
-      median: at(0.5),
-      thresholds,
+      floor,
+      target,
+      medianPlay: Math.round(at(0.5) * 10) / 10,
     }
+    const winsAt = (ppg) =>
+      Math.max(0, Math.min(GAMES, Math.round(((ppg - floor) / (target - floor)) * GAMES)))
     console.log(
-      `  ${profile.padEnd(9)} n=${String(samples.length).padStart(5)}  ` +
-        `median=${at(0.5).toFixed(1)}  p10=${at(0.1).toFixed(1)}  p90=${at(0.9).toFixed(1)}  ` +
-        `17th=${thresholds[16].toFixed(1)}`
+      `  ${profile.padEnd(9)} floor=${floor.toFixed(1)}  target=${target.toFixed(1)}  ` +
+        `median play ${at(0.5).toFixed(1)} -> ${winsAt(at(0.5))}-${GAMES - winsAt(at(0.5))}  ` +
+        `perfect median ${parAt(0.5).toFixed(1)} -> ${winsAt(parAt(0.5))}-${GAMES - winsAt(parAt(0.5))}`
     )
   }
 

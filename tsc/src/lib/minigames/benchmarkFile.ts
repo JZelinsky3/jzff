@@ -11,11 +11,14 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import type { ScoringProfile } from './ranks'
-import { GAMES, type Benchmark } from './record'
+import type { Benchmark } from './record'
 
 type BenchmarkFile = {
   games: number
-  profiles: Record<string, { thresholds: number[]; median: number; sampleSize: number }>
+  profiles: Record<
+    string,
+    { floor: number; target: number; medianPlay: number; sampleSize: number }
+  >
 }
 
 const FILE = path.join(process.cwd(), 'public', 'data', 'minigames', 'benchmark.json')
@@ -41,8 +44,12 @@ function readFile(): Promise<BenchmarkFile | null> {
 export async function loadBenchmark(profile: ScoringProfile): Promise<Benchmark | null> {
   const file = await readFile()
   const entry = file?.profiles?.[profile]
-  if (!entry || !Array.isArray(entry.thresholds) || entry.thresholds.length !== GAMES) {
-    return null
+  if (!entry || typeof entry.target !== 'number' || typeof entry.floor !== 'number') return null
+  if (entry.target <= entry.floor) return null
+  return {
+    profile,
+    target: entry.target,
+    floor: entry.floor,
+    medianPlay: entry.medianPlay ?? 0,
   }
-  return { profile, thresholds: entry.thresholds, median: entry.median }
 }

@@ -34,7 +34,10 @@ type Filled = {
   bestAvailable: number
 }
 
-const POS_ORDER: Record<PoolPosition, number> = { QB: 0, RB: 1, WR: 2, TE: 3 }
+const POS_LIST: PoolPosition[] = ['QB', 'RB', 'WR', 'TE']
+
+/** Full cards per position before the rest of the group collapses. */
+const FULL_CARDS_PER_POS = 4
 
 function ordinal(n: number): string {
   const v = n % 100
@@ -82,6 +85,11 @@ export function RosterRoulette({
   const [lineup, setLineup] = useState<Partial<Record<SlotId, Filled>>>({})
   const [teaser, setTeaser] = useState<Squad | null>(null)
   const [copied, setCopied] = useState(false)
+  // The player under the cursor, so the sheet can show where he'd land.
+  const [hoverPlayer, setHoverPlayer] = useState<SquadPlayer | null>(null)
+  // Next wheel, fetched while this one is being played so "New wheel" is
+  // instant instead of a second of staring at a spinner.
+  const [nextDeal, setNextDeal] = useState<Deal | null>(null)
 
   const spinTimer = useRef<number | null>(null)
   const flickerTimer = useRef<number | null>(null)
@@ -110,6 +118,7 @@ export function RosterRoulette({
       setLineup({})
       setTeaser(null)
       setCopied(false)
+      setHoverPlayer(null)
     } catch {
       setError('Could not reach the wheel. Check your connection and try again.')
     } finally {
@@ -125,6 +134,48 @@ export function RosterRoulette({
     []
   )
 
+  // Fetch the follow-up wheel in the background while this one is being
+  // played, so pressing "New wheel" swaps it in with no wait. Deliberately
+  // held until the first pick: someone who opens the page and leaves
+  // shouldn't cost a second deal.
+  const picksMade = Object.keys(lineup).length
+  useEffect(() => {
+    if (picksMade !== 1 || nextDeal) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch(`/api/games/roulette/?pool=${encodeURIComponent(poolId)}`, {
+          cache: 'no-store',
+        })
+        const body = await res.json()
+        if (!cancelled && res.ok && body?.ok) setNextDeal(body as Deal)
+      } catch {
+        /* the button falls back to fetching on demand */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [picksMade, nextDeal, poolId])
+
+  // Swap in the prefetched wheel, or fetch one if it isn't ready yet.
+  const newWheel = useCallback(() => {
+    if (nextDeal && nextDeal.pool.id === poolId) {
+      setDeal(nextDeal)
+      setNextDeal(null)
+      setSpinIndex(0)
+      setRevealed(false)
+      setSpinning(false)
+      setRerollsLeft(nextDeal.rerolls)
+      setLineup({})
+      setTeaser(null)
+      setCopied(false)
+      setHoverPlayer(null)
+      return
+    }
+    void load(poolId, null)
+  }, [nextDeal, poolId, load])
+
   // Keep the address bar on the seed being played, so a refresh (or a copied
   // URL) replays this exact wheel rather than dealing a stranger's.
   useEffect(() => {
@@ -132,6 +183,11 @@ export function RosterRoulette({
     const url = new URL(window.location.href)
     url.searchParams.set('pool', deal.pool.id)
     url.searchParams.set('seed', deal.seed)
+    // Someone arriving from a shared result carries the sharer's score in
+    // the URL. It has already done its job (the link preview), and leaving
+    // it would attach their record to this player's run.
+    url.searchParams.delete('w')
+    url.searchParams.delete('ppg')
     window.history.replaceState(null, '', url)
   }, [deal])
 
@@ -171,22 +227,55 @@ export function RosterRoulette({
     return set
   }, [openSlots, slots])
 
-  // Roster order: everyone you can still use first, in position order and
-  // best-first inside each; then everyone you can't, in the same order. So a
-  // locked position sinks to the bottom without scrambling the reading order.
-  const orderedPlayers = useMemo(() => {
+  // Roster, grouped by position. Groups you can still use come first in
+  // QB-RB-WR-TE order; groups with no open slot sink to the bottom keeping
+  // that same order, so nothing moves around unpredictably as slots fill.
+  //
+  // Inside a group the top few get full cards and the rest collapse to one
+  // line each. Some managers churn thirty running backs through a season and
+  // a board of thirty full cards is unreadable — but they all stay on it,
+  // because seeing everyone you once rostered is half the appeal.
+  const groups = useMemo(() => {
     if (!current) return []
-    const rank = (p: SquadPlayer) =>
-      (eligiblePositions.has(p.pos) ? 0 : 1000) + POS_ORDER[p.pos]
-    return current.players
-      .slice()
-      .sort((a, b) => rank(a) - rank(b) || b.ppg - a.ppg)
+    const byPos = new Map<PoolPosition, SquadPlayer[]>()
+    for (const p of current.players) {
+      const bucket = byPos.get(p.pos)
+      if (bucket) bucket.push(p)
+      else byPos.set(p.pos, [p])
+    }
+    return POS_LIST.filter((pos) => byPos.has(pos))
+      .map((pos) => {
+        const players = (byPos.get(pos) ?? []).slice().sort((a, b) => b.ppg - a.ppg)
+        const usable = eligiblePositions.has(pos)
+        return {
+          pos,
+          usable,
+          // A locked group is reference material, so it goes fully compact.
+          fullCount: usable ? FULL_CARDS_PER_POS : 0,
+          players,
+        }
+      })
+      .sort((a, b) => Number(a.usable ? 0 : 1) - Number(b.usable ? 0 : 1))
   }, [current, eligiblePositions])
 
-  const firstLockedIdx = useMemo(
-    () => orderedPlayers.findIndex((p) => !eligiblePositions.has(p.pos)),
-    [orderedPlayers, eligiblePositions]
+  const firstLockedPos = useMemo(
+    () => groups.find((g) => !g.usable)?.pos ?? null,
+    [groups]
   )
+
+  // Which slot a given player would land in — the single source of truth for
+  // both taking him and previewing where he'd go on hover.
+  const slotFor = useCallback(
+    (pos: PoolPosition): SlotId | null => {
+      const target =
+        slots.find((s) => !lineup[s.id] && s.accepts.length === 1 && s.accepts.includes(pos)) ??
+        slots.find((s) => !lineup[s.id] && s.accepts.includes(pos))
+      return target?.id ?? null
+    },
+    [slots, lineup]
+  )
+
+  const hoverSlot = hoverPlayer ? slotFor(hoverPlayer.pos) : null
 
   // ── The spin ────────────────────────────────────────────────
 
@@ -228,20 +317,19 @@ export function RosterRoulette({
       // Dedicated slot before FLEX, always. Putting a running back in RB2
       // rather than FLEX can never cost points and always leaves the more
       // permissive slot open, so there's no decision worth handing over.
-      const target =
-        slots.find((s) => !lineup[s.id] && s.accepts.length === 1 && s.accepts.includes(player.pos)) ??
-        slots.find((s) => !lineup[s.id] && s.accepts.includes(player.pos))
-      if (!target) return
+      const targetId = slotFor(player.pos)
+      if (!targetId) return
 
       const legal = current.players.filter((p) =>
         slots.some((s) => !lineup[s.id] && s.accepts.includes(p.pos))
       )
       const bestAvailable = legal.length ? Math.max(...legal.map((p) => p.ppg)) : 0
 
-      setLineup((prev) => ({ ...prev, [target.id]: { player, squad: current, bestAvailable } }))
+      setHoverPlayer(null)
+      setLineup((prev) => ({ ...prev, [targetId]: { player, squad: current, bestAvailable } }))
       advance()
     },
-    [current, revealed, slots, lineup, advance]
+    [current, revealed, slots, lineup, advance, slotFor]
   )
 
   const reroll = useCallback(() => {
@@ -250,15 +338,37 @@ export function RosterRoulette({
     advance()
   }, [rerollsLeft, revealed, advance])
 
-  const shareRun = useCallback(async () => {
-    if (!deal) return
+  // The share link carries the finished run, so the preview a friend sees is
+  // a scoreboard with the record on it rather than a generic card — and the
+  // seed means they play the identical nine squads, in the identical order.
+  const shareUrl = useCallback(() => {
+    if (!deal) return ''
     const url = new URL(window.location.href)
+    url.search = ''
     url.searchParams.set('pool', deal.pool.id)
     url.searchParams.set('seed', deal.seed)
+    if (deal.benchmark) url.searchParams.set('w', String(wins))
+    url.searchParams.set('ppg', String(round1(ppg)))
+    return url.toString()
+  }, [deal, wins, ppg])
+
+  const shareRun = useCallback(async () => {
+    if (!deal) return
+    const url = shareUrl()
     const rec = deal.benchmark ? `${wins}-${GAMES - wins}` : `${round1(ppg)} PPG`
     const text =
-      `${rec} on Roster Roulette — ${round1(ppg)} PPG (${deal.pool.label}, seed ${deal.seed}). ` +
-      `Same nine squads, beat it: ${url}`
+      `${rec} on Roster Roulette — ${round1(ppg)} PPG${deal.benchmark ? `, 17-0 needs ${deal.benchmark.target}` : ''}. ` +
+      `Same nine squads: ${url}`
+    // Native share sheet on phones (where most of this gets sent), clipboard
+    // everywhere else.
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Roster Roulette', text, url })
+        return
+      }
+    } catch {
+      // Cancelled or unavailable — fall through to the clipboard.
+    }
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
@@ -266,7 +376,7 @@ export function RosterRoulette({
     } catch {
       /* clipboard blocked — the seed is on screen either way */
     }
-  }, [deal, ppg, wins])
+  }, [deal, ppg, wins, shareUrl])
 
   // ── Render ──────────────────────────────────────────────────
 
@@ -285,7 +395,6 @@ export function RosterRoulette({
 
   const shown = spinning ? teaser : null
   const spinsLeft = deal.spins.length - spinIndex
-  const nextOpen = openSlots[0]
 
   return (
     <>
@@ -299,6 +408,7 @@ export function RosterRoulette({
               onClick={() => {
                 if (p.id === poolId) return
                 setPoolId(p.id)
+                setNextDeal(null)
                 void load(p.id, null)
               }}
             >
@@ -315,8 +425,8 @@ export function RosterRoulette({
           const f = lineup[s.id]
           const cls = f
             ? styles.stripCellFilled
-            : s.id === nextOpen && revealed
-              ? styles.stripCellNext
+            : hoverSlot === s.id
+              ? styles.stripCellHover
               : styles.stripCell
           return (
             <div
@@ -364,7 +474,7 @@ export function RosterRoulette({
               </div>
               <Runback lineup={lineup} slots={slots} par={par} />
               <div className={styles.btnRow}>
-                <button type="button" className={styles.btn} onClick={() => void load(poolId, null)}>
+                <button type="button" className={styles.btn} onClick={newWheel}>
                   New wheel
                 </button>
                 <button type="button" className={styles.btnGhost} onClick={() => void shareRun()}>
@@ -436,22 +546,44 @@ export function RosterRoulette({
               </div>
 
               <div className={styles.rosterBar}>
-                <span>Take one · {orderedPlayers.length} on the roster</span>
+                <span>Take one · {current.players.length} rostered</span>
                 <span>Spin {spinIndex + 1} of {deal.spins.length}</span>
               </div>
 
               <div className={styles.roster} ref={rosterRef}>
-                {orderedPlayers.map((p, i) => {
-                  const usable = eligiblePositions.has(p.pos)
-                  return (
-                    <div key={`${p.name}-${p.pos}-${i}`}>
-                      {i === firstLockedIdx && firstLockedIdx > 0 && (
-                        <div className={styles.lockDivider}>No slot open</div>
-                      )}
-                      <PlayerCard player={p} disabled={!usable} onTake={() => take(p)} />
+                {groups.map((g) => (
+                  <div key={g.pos} className={styles.posGroup}>
+                    {g.pos === firstLockedPos && (
+                      <div className={styles.lockDivider}>No slot open</div>
+                    )}
+                    <div
+                      className={g.usable ? styles.posHead : styles.posHeadLocked}
+                      style={g.usable ? ({ ['--posc' as string]: `var(--pos-${g.pos})` }) : undefined}
+                    >
+                      {g.pos}
+                      <span className={styles.posHeadCount}>{g.players.length}</span>
                     </div>
-                  )
-                })}
+                    {g.players.map((p, i) =>
+                      i < g.fullCount ? (
+                        <PlayerCard
+                          key={`${p.name}-${i}`}
+                          player={p}
+                          disabled={!g.usable}
+                          onTake={() => take(p)}
+                          onHover={setHoverPlayer}
+                        />
+                      ) : (
+                        <CompactPlayer
+                          key={`${p.name}-${i}`}
+                          player={p}
+                          disabled={!g.usable}
+                          onTake={() => take(p)}
+                          onHover={setHoverPlayer}
+                        />
+                      )
+                    )}
+                  </div>
+                ))}
               </div>
 
               <div className={styles.stageFoot}>
@@ -489,11 +621,11 @@ export function RosterRoulette({
           <div className={styles.slots}>
             {slots.map((s) => {
               const filled = lineup[s.id]
-              const isNext = !filled && revealed && current != null && nextOpen === s.id
+              const isHover = !filled && hoverSlot === s.id
               return (
                 <div
                   key={s.id}
-                  className={`${styles.slot} ${!filled ? styles.slotOpen : ''} ${isNext ? styles.slotNext : ''}`}
+                  className={`${styles.slot} ${!filled ? styles.slotOpen : ''} ${isHover ? styles.slotHover : ''}`}
                 >
                   <span className={styles.slotId}>{s.label}</span>
                   {filled ? (
@@ -505,6 +637,14 @@ export function RosterRoulette({
                         </span>
                       </span>
                       <span className={styles.slotPts}>{round1(filled.player.ppg)}</span>
+                    </>
+                  ) : isHover && hoverPlayer ? (
+                    <>
+                      <span className={styles.slotName} style={{ color: 'var(--gp-gold)' }}>
+                        {hoverPlayer.name}
+                        <span className={styles.slotFrom}>Would go here</span>
+                      </span>
+                      <span className={styles.slotGhost}>{round1(hoverPlayer.ppg)}</span>
                     </>
                   ) : (
                     <>
@@ -518,6 +658,12 @@ export function RosterRoulette({
               )
             })}
           </div>
+          {deal.benchmark && (
+            <div className={styles.targetRow}>
+              <span>17-0 needs</span>
+              <span className={styles.targetVal}>{deal.benchmark.target} PPG</span>
+            </div>
+          )}
           <div className={styles.sheetFoot}>
             <div className={styles.tally}>
               <span>Pool</span>
@@ -547,13 +693,24 @@ function PlayerCard({
   player,
   disabled,
   onTake,
+  onHover,
 }: {
   player: SquadPlayer
   disabled: boolean
   onTake: () => void
+  onHover: (p: SquadPlayer | null) => void
 }) {
   const [imgOk, setImgOk] = useState(true)
   const src = headshot(player.playerId)
+  // Focus mirrors hover so the slot preview works from the keyboard too.
+  const hoverProps = disabled
+    ? {}
+    : {
+        onMouseEnter: () => onHover(player),
+        onMouseLeave: () => onHover(null),
+        onFocus: () => onHover(player),
+        onBlur: () => onHover(null),
+      }
   return (
     <button
       type="button"
@@ -561,6 +718,7 @@ function PlayerCard({
       style={{ ['--pos' as string]: `var(--pos-${player.pos})` }}
       disabled={disabled}
       onClick={onTake}
+      {...hoverProps}
     >
       <span className={styles.shot}>
         {src && imgOk ? (
@@ -598,6 +756,49 @@ function PlayerCard({
         </span>
         <span className={styles.pickTotal}>{Math.round(player.fpts)} pts</span>
       </span>
+    </button>
+  )
+}
+
+// The deep bench. One line, no headshot — still takeable, just not
+// competing for attention with the players anyone would actually start.
+function CompactPlayer({
+  player,
+  disabled,
+  onTake,
+  onHover,
+}: {
+  player: SquadPlayer
+  disabled: boolean
+  onTake: () => void
+  onHover: (p: SquadPlayer | null) => void
+}) {
+  const hoverProps = disabled
+    ? {}
+    : {
+        onMouseEnter: () => onHover(player),
+        onMouseLeave: () => onHover(null),
+        onFocus: () => onHover(player),
+        onBlur: () => onHover(null),
+      }
+  return (
+    <button
+      type="button"
+      className={styles.compact}
+      style={{ ['--pos' as string]: `var(--pos-${player.pos})` }}
+      disabled={disabled}
+      onClick={onTake}
+      {...hoverProps}
+    >
+      <span className={styles.compactPos}>
+        {player.pos}
+        {player.posRank}
+      </span>
+      <span className={styles.compactName}>
+        {player.name}
+        {player.nflTeam && <span className={styles.compactTeam}>{player.nflTeam}</span>}
+      </span>
+      <span className={styles.compactPpg}>{round1(player.ppg)}</span>
     </button>
   )
 }
