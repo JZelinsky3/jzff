@@ -122,58 +122,69 @@ export function RosterRoulette({
   // never actually collapse. See MANUAL_PATHS in MobileHeaderCollapse.
   const [hdrSlim, setHdrSlim] = useState(false)
 
-  // The board, used as the fixed point the header collapse is measured
-  // against.
-  const boardRef = useRef<HTMLDivElement | null>(null)
-  // True only while the collapse is animating and its scroll compensation is
-  // running, so the scroll listener can tell our own writes from the user's.
+  // True only while the collapse is running its own scroll, so the scroll
+  // listener can tell our writes from the user's.
   const settling = useRef(false)
 
-  // Mirrors hdrSlim onto <body>, which is where the CSS looks, and holds the
-  // board still while the masthead folds.
+  // Mirrors hdrSlim onto <body>, which is where the CSS looks, and puts the
+  // page where the collapse was meant to leave it.
   //
-  // Collapsing takes ~90px of layout out from ABOVE the board, and on a page
-  // that is scrolled at all it also shortens the document enough that the
-  // browser clamps scrollY. Between the two, pressing Spin shoved everything
-  // you were looking at down the screen. Pinning the board's viewport
-  // position through the fold means the header goes away and nothing else
-  // moves — which is all the collapse was ever supposed to do.
+  // Pressing Spin folds the masthead to make room for the board, so the
+  // board is what should be on screen afterwards: the slimmed league title
+  // parked directly under the sticky nav, the whole draft area below it.
+  // That is a deliberate destination, not a nudge — an earlier version tried
+  // to hold the board wherever it happened to be sitting, which meant a spin
+  // from halfway down the page left you halfway down a page that had just
+  // got shorter.
   //
-  // It has to ride the transition rather than correct once: the height comes
-  // out over ~250ms of CSS easing, so a single post-toggle adjustment would
-  // be wrong by the very next frame.
+  // The target is recomputed every frame because the nav is still shrinking
+  // underneath it; the scroll eases into it over the same beat as the fold,
+  // so the two read as one movement instead of a fold followed by a jump.
   //
-  // Only the fold is compensated, never the unfold. The header comes back
-  // because the user scrolled up, so counter-scrolling to hold the board
-  // still would be pushing against a gesture still under their thumb.
+  // Only the fold moves the page, never the unfold. The header comes back
+  // because the user scrolled up, and scrolling them somewhere else mid
+  // gesture is exactly the thing being fixed here.
   useEffect(() => {
     const cls = 'tsc-hdr-collapsed'
-    const anchor = boardRef.current
-    const from = anchor?.getBoundingClientRect().top ?? null
-
     if (hdrSlim) document.body.classList.add(cls)
     else document.body.classList.remove(cls)
 
-    if (!hdrSlim || !anchor || from == null) return () => document.body.classList.remove(cls)
+    const head = document.querySelector<HTMLElement>('[data-rr-head]')
+    // Nothing collapses above this width, so nothing should move either.
+    const narrow = window.matchMedia('(max-width: 940px)').matches
+    if (!hdrSlim || !head || !narrow) return () => document.body.classList.remove(cls)
 
+    const nav = document.querySelector<HTMLElement>('nav.nav')
+    const start = window.scrollY
+    const t0 = performance.now()
+    const dur = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260
+
+    // Held for the whole scroll and a beat past its last write, because the
+    // listener below would otherwise read our own movement as the user
+    // scrolling up and hand the header straight back.
     settling.current = true
     let raf = 0
-    const until = performance.now() + 420
+    let tail = 0
+
     const step = (now: number) => {
-      const drift = anchor.getBoundingClientRect().top - from
-      // Sub-pixel drift isn't worth a scroll write; chasing it just fights
-      // the browser's own rounding.
-      if (Math.abs(drift) > 0.5) window.scrollBy(0, drift)
-      if (now < until) {
+      const navH = nav ? nav.getBoundingClientRect().height : 0
+      const target = Math.max(0, window.scrollY + head.getBoundingClientRect().top - navH - 2)
+      const t = dur > 0 ? Math.min(1, (now - t0) / dur) : 1
+      const eased = 1 - Math.pow(1 - t, 3)
+      window.scrollTo(0, start + (target - start) * eased)
+      if (t < 1) {
         raf = requestAnimationFrame(step)
       } else {
-        settling.current = false
+        tail = window.setTimeout(() => {
+          settling.current = false
+        }, 160)
       }
     }
     raf = requestAnimationFrame(step)
 
     return () => {
       cancelAnimationFrame(raf)
+      window.clearTimeout(tail)
       settling.current = false
       document.body.classList.remove(cls)
     }
@@ -188,14 +199,17 @@ export function RosterRoulette({
     let lastY = Math.max(0, window.scrollY)
     const onScroll = () => {
       const y = Math.max(0, window.scrollY)
-      // Our own compensation scrolls the window, and it scrolls UP as often
-      // as down. Reading those frames as the user scrolling up would reopen
-      // the header the instant it started closing.
+      // The spin scroll drives the window itself, mostly upward. Reading
+      // those frames as the user scrolling up is what made the header close,
+      // reopen and close again on a spin from low down the page.
       if (settling.current) {
         lastY = y
         return
       }
-      if (y < lastY - 8 || y < 4) setHdrSlim(false)
+      // Deliberately only a real upward drag. This used to also restore on
+      // `y < 4`, which the spin scroll now trips on its way to parking the
+      // title at the top — the header would reopen the moment it arrived.
+      if (y < lastY - 8) setHdrSlim(false)
       lastY = y
     }
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -640,7 +654,7 @@ export function RosterRoulette({
         )}
       </div>
 
-      <div className={styles.board} ref={boardRef}>
+      <div className={styles.board}>
         <div className={styles.stage}>
           {done ? (
             <div className={styles.recap}>

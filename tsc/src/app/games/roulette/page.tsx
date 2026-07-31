@@ -127,7 +127,10 @@ export default async function RoulettePage({
         {/* The pool being played is the headline. Switching leagues means
             going back to the Games Page, rather than carrying a rail of
             other people's leagues through every spin. */}
-        <div className={styles.head}>
+        {/* Tagged so the game can scroll to it: pressing Spin parks the
+            collapsed title at the top of the screen with the whole board
+            under it. A hashed CSS-module class is no good to query for. */}
+        <div className={styles.head} data-rr-head>
           <div className={styles.kicker}>★ Roster Roulette ★</div>
           <h1 className={styles.title}>
             {opening ? opening.pool.label : 'Roster Roulette'}
