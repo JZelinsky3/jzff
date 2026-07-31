@@ -17,6 +17,7 @@ export function MobilePageShell({
   heroTitleEm,
   heroSub,
   signedIn = false,
+  bodyClassName,
   children,
 }: {
   backHref: string
@@ -29,6 +30,10 @@ export function MobilePageShell({
   heroTitleEm?: string
   heroSub?: React.ReactNode
   signedIn?: boolean
+  /** Extra class on .mpg-body. The games tree uses it to drop the body's
+      own side padding, because its rows are full-bleed and pad themselves;
+      without it every row sat inside two sets of gutters. */
+  bodyClassName?: string
   children: React.ReactNode
 }) {
   return (
@@ -62,7 +67,7 @@ export function MobilePageShell({
         </section>
       )}
 
-      <div className="mpg-body">{children}</div>
+      <div className={bodyClassName ? `mpg-body ${bodyClassName}` : 'mpg-body'}>{children}</div>
 
       <div className="mpg-footer">
         <Link href="/" className="mpg-footer-link">Home</Link>

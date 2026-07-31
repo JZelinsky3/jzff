@@ -1,0 +1,328 @@
+/* ============================================================
+   THE GAMES PAGE — MOBILE
+   The hub and the two lobbies get their own tree on phones,
+   the way /about, /guides and the clubhouse do, rather than
+   the desktop broadsheet shrunk down. Same ink-and-brass
+   palette, but laid out as an app: full-bleed tap rows, one
+   column, nothing that needs a cursor.
+
+   The BOARDS stay responsive (one game engine, two layouts) —
+   only their chrome is forked, via MobileGameBar below.
+   ============================================================ */
+
+.root {
+  /* The gp- tokens live on .wrap in games.module.css, which this tree is
+     deliberately outside of. Restated in full rather than trimmed to what
+     these files use: CombinePools renders inside here and is styled from
+     games.module.css, so it inherits this set and a missing token would
+     silently paint it wrong. */
+  --gp-ink: #0b1119;
+  --gp-panel: #121c27;
+  --gp-panel-2: #182533;
+  --gp-raise: #1e2d3d;
+  --gp-line: #2a3d51;
+  --gp-line-soft: #1d2b3a;
+  --gp-cream: #f4ebd8;
+  --gp-soft: #c2bba9;
+  --gp-mute: #7d8a99;
+  --gp-gold: #e8c889;
+  --gp-bright: #f7dfaa;
+  --gp-green: #7ac795;
+  --gp-red: #d2544a;
+
+  --pos-QB: #8fb3d6;
+  --pos-RB: #7ac795;
+  --pos-WR: #e29278;
+  --pos-TE: #c9a9ea;
+}
+
+/* Passed to MobilePageShell as bodyClassName. The shell's .mpg-body is
+   padded for prose; these surfaces are rows and cards that pad themselves,
+   and inheriting the gutter as well left every one of them inset twice. */
+.body {
+  padding: 0 0 0.75rem;
+}
+
+/* ── Section rules ────────────────────────────────────────── */
+
+.sec {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 1.35rem 1.05rem 0.6rem;
+}
+
+.secNum {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  color: var(--gp-gold);
+}
+
+.secTitle {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-cream);
+}
+
+.secMeta {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+/* ── The list of games (hub) ──────────────────────────────── */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0 1.05rem;
+}
+
+.game {
+  display: block;
+  position: relative;
+  padding: 1rem 1.05rem 0.85rem;
+  background: linear-gradient(180deg, var(--gp-panel-2), var(--gp-panel));
+  border: 1px solid var(--gp-line);
+  border-top: 2px solid var(--gp-gold);
+  border-radius: 4px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+/* Phones have no hover, so the press itself has to answer. */
+.game:active,
+.pool:active,
+.soon:active {
+  transform: scale(0.985);
+}
+
+.gameTitle {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  line-height: 1.1;
+  color: var(--gp-cream);
+}
+
+.gameTitle em {
+  font-style: italic;
+  color: var(--gp-gold);
+}
+
+.gameBody {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--gp-soft);
+}
+
+.gameFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--gp-line-soft);
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.gameAccess {
+  color: var(--gp-mute);
+}
+
+.gameGo {
+  color: var(--gp-gold);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ── Not-built-yet rows ───────────────────────────────────── */
+
+.soon {
+  display: block;
+  padding: 0.85rem 1.05rem;
+  background: var(--gp-panel);
+  border: 1px dashed var(--gp-line);
+  border-radius: 4px;
+  opacity: 0.72;
+}
+
+.soonTitle {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--gp-cream);
+}
+
+.soonBody {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--gp-mute);
+}
+
+/* ── How it's played (lobby) ──────────────────────────────── */
+
+.brief {
+  padding: 1.1rem 1.05rem 0;
+}
+
+.briefBlurb {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--gp-soft);
+}
+
+.steps {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 1.35rem 1fr;
+  align-items: start;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--gp-cream);
+}
+
+.stepNum {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  line-height: 1.7;
+  color: var(--gp-gold);
+  border: 1px solid var(--gp-line);
+  border-radius: 999px;
+  text-align: center;
+}
+
+/* ── Pool rows (lobby) ────────────────────────────────────── */
+/* A row, not a card: choosing a league is a list decision, and a phone
+   reads a list faster than it reads eight stacked cards. */
+
+.pools {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--gp-line-soft);
+}
+
+.pool {
+  display: grid;
+  grid-template-columns: 1fr 0.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.5rem;
+  padding: 0.75rem 1.05rem;
+  border-bottom: 1px solid var(--gp-line-soft);
+  background: transparent;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+
+.pool:active {
+  background: var(--gp-panel);
+}
+
+.poolMain {
+  min-width: 0;
+}
+
+.poolTag {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+  margin-bottom: 0.15rem;
+}
+
+.poolLabel {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.2;
+  color: var(--gp-cream);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.poolNote {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--gp-mute);
+}
+
+.chev {
+  color: var(--gp-mute);
+  justify-self: end;
+}
+
+/* ── Empty / signed-out ───────────────────────────────────── */
+
+.empty {
+  margin: 0.4rem 1.05rem 0;
+  padding: 0.95rem 1.05rem;
+  background: rgba(232, 200, 137, 0.05);
+  border: 1px solid var(--gp-line);
+  border-radius: 4px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--gp-soft);
+}
+
+.empty a {
+  color: var(--gp-gold);
+}
+
+/* Room under the last row so the shell's footer doesn't crowd it. */
+.tail {
+  height: 1.5rem;
+}
+
+/* Gutter for anything borrowed from the desktop tree. CombinePools styles
+   itself out of games.module.css, where the page's own padding supplies the
+   margin it doesn't carry; full-bleed here, it would touch both edges. */
+.inset {
+  padding: 0 1.05rem;
+}
+
+/* ── Board chrome ─────────────────────────────────────────── */
+/* The boards keep their responsive layout; what they lose on a phone is
+   the desktop .nav grid, which is three columns of link clusters nobody
+   can tap. This is the same bar the rest of the mobile site wears
+   (.mpg-bar in globals.css) — restated as a module class only where the
+   games palette differs. */
+
+.barWrap {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}

@@ -284,7 +284,9 @@ export function GuessTheDraft({
   const record = `${answer.wins}-${answer.losses}${answer.ties ? `-${answer.ties}` : ''}`
 
   return (
-    <div className={styles.board}>
+    // `playing` only marks the rounds, not the final card: on a phone it
+    // reserves the strip of page the fixed answer bar sits over.
+    <div className={`${styles.board} ${styles.playing}`}>
       {/* Running header: which round, and what it has cost so far. */}
       <div className={styles.strip}>
         <div className={styles.stripRounds}>
@@ -376,9 +378,11 @@ export function GuessTheDraft({
             </div>
           </div>
 
-          <button type="button" className={styles.btn} onClick={nextRound}>
-            {round + 1 >= deal.cards.length ? 'See the final' : 'Next item'}
-          </button>
+          <div className={styles.actionBar}>
+            <button type="button" className={styles.btn} onClick={nextRound}>
+              {round + 1 >= deal.cards.length ? 'See the final' : 'Next item'}
+            </button>
+          </div>
         </div>
       ) : (
         <div className={styles.answers}>
@@ -401,7 +405,9 @@ export function GuessTheDraft({
 
           <div className={styles.ask}>
             <span className={styles.askLabel}>What year?</span>
-            <div className={styles.pills}>
+            {/* Its own class so the mobile grid can size four digits as four
+                digits instead of stretching them to a manager's name. */}
+            <div className={styles.pillsNum}>
               {deal.years.map((y) => (
                 <button
                   key={y}
@@ -418,21 +424,26 @@ export function GuessTheDraft({
 
           {/* Both halves lock together. Answering one at a time would let the
               first be revised once the second gave it away, which is the
-              whole difficulty of the game. */}
-          <button
-            type="button"
-            className={pickedManager !== null && pickedYear !== null ? styles.btn : styles.btnOff}
-            onClick={lockIn}
-            disabled={pickedManager === null || pickedYear === null}
-          >
-            {pickedManager === null && pickedYear === null
-              ? 'Name them and date it'
-              : pickedManager === null
-                ? 'Still need a name'
-                : pickedYear === null
-                  ? 'Still need a year'
-                  : 'Lock it in'}
-          </button>
+              whole difficulty of the game.
+              On a phone this bar is fixed to the bottom of the screen, so
+              its label doubles as the prompt for whichever half is still
+              missing without anything having to scroll to say so. */}
+          <div className={styles.actionBar}>
+            <button
+              type="button"
+              className={pickedManager !== null && pickedYear !== null ? styles.btn : styles.btnOff}
+              onClick={lockIn}
+              disabled={pickedManager === null || pickedYear === null}
+            >
+              {pickedManager === null && pickedYear === null
+                ? 'Name them and date it'
+                : pickedManager === null
+                  ? 'Still need a name'
+                  : pickedYear === null
+                    ? 'Still need a year'
+                    : 'Lock it in'}
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -3,8 +3,11 @@ import Link from 'next/link'
 import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 import { dealGuessDraft } from '@/lib/minigames/guessDraftDeal'
 import { GameLobby } from '../GameLobby'
+import { MobileGameLobby } from '../MobileGameLobby'
+import { MobileGameBar } from '../MobileGameBar'
 import { GUESS_THE_DRAFT } from '../gameDefs'
 import { GuessTheDraft } from './GuessTheDraft'
 import styles from '../games.module.css'
@@ -49,8 +52,23 @@ export default async function GuessTheDraftPage({
   const opening = dealt?.ok ? dealt : null
   const openingError = dealt && !dealt.ok ? dealt.error : null
 
+  const mobile = (await getViewMode()) === 'mobile'
+
+  // Lobby on a phone is a list of leagues, so it gets the full mobile shell
+  // rather than the board's bare app bar.
+  if (mobile && !requested) {
+    return <MobileGameLobby game={GUESS_THE_DRAFT} />
+  }
+
   return (
     <main>
+      {mobile ? (
+        <MobileGameBar
+          backHref="/games/"
+          title={GUESS_THE_DRAFT.title}
+          titleEm={GUESS_THE_DRAFT.titleEm}
+        />
+      ) : (
       <nav className="nav">
         <BackButton fallbackHref="/games/" ariaLabel="Back" />
         <div className="nav-center">
@@ -72,10 +90,13 @@ export default async function GuessTheDraftPage({
           )}
         </div>
       </nav>
+      )}
 
       <div className={styles.wrap}>
         <div className={styles.head}>
-          <div className={styles.kicker}>★ Guess the Draft ★</div>
+          {/* Named in the bar above on a phone; repeating it here costs the
+              board a line of the fold. */}
+          {!mobile && <div className={styles.kicker}>★ Guess the Draft ★</div>}
           <h1 className={styles.title}>
             {opening ? (
               opening.pool.label
@@ -111,7 +132,9 @@ export default async function GuessTheDraftPage({
         )}
       </div>
 
-      <SiteFooter />
+      {/* The mobile board answers from a fixed bottom bar, so a site footer
+          under it is a second footer nobody scrolls past the first to read. */}
+      {!mobile && <SiteFooter />}
     </main>
   )
 }

@@ -163,7 +163,12 @@ export function RosterRoulette({
     const narrow = window.matchMedia('(max-width: 940px)').matches
     if (!hdrSlim || !head || !narrow) return () => document.body.classList.remove(cls)
 
-    const nav = document.querySelector<HTMLElement>('nav.nav')
+    // Either masthead: the desktop `.nav` grid, or the mobile app bar that
+    // replaces it below 940px. Both are sticky, so whichever is on the page
+    // is the thing the parked title has to clear — querying only for
+    // `nav.nav` left navH at 0 on a phone and parked the title underneath
+    // the bar.
+    const nav = document.querySelector<HTMLElement>('nav.nav, [data-game-bar]')
     const start = window.scrollY
     const t0 = performance.now()
     const dur = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260
@@ -905,6 +910,15 @@ export function RosterRoulette({
                     <>
                       <span className={styles.slotName} style={{ color: 'var(--gp-mute)' }}>
                         Open
+                        {/* Holds the second line open. A filled or hovered slot
+                            carries a sub-line and an empty one doesn't, and with
+                            `.slot { flex: 1 }` the taller rows freeze at their
+                            content height while the rest shrink around them — so
+                            a slot appeared to grow the moment it was taken. The
+                            row is the same height in all three states now. */}
+                        <span className={styles.slotFrom} aria-hidden>
+                          &nbsp;
+                        </span>
                       </span>
                       <span className={styles.slotDash}>·</span>
                     </>

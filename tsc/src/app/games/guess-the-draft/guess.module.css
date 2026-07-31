@@ -227,7 +227,8 @@
   margin-bottom: 0.6rem;
 }
 
-.pills {
+.pills,
+.pillsNum {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
@@ -594,6 +595,121 @@
   font-size: 0.6rem;
   letter-spacing: 0.1em;
   color: var(--gp-mute);
+}
+
+/* ============================================================
+   MOBILE
+   The board keeps one engine and forks its layout, the way
+   Roulette does. Two things change on a phone and everything
+   else is density:
+
+   1. The answer button leaves the bottom of the document and
+      becomes a FIXED bar at the bottom of the screen, where a
+      thumb is. The card is a screen and a half tall on a
+      phone, so an inline button meant reading, scrolling to
+      the pills, picking, and then hunting for the control
+      that commits it.
+   2. The pills stop being a wrapped flex row of ~34px targets
+      and become a grid of full-height ones. A wrapped row put
+      a two-word manager name and a four-digit year in boxes
+      of wildly different widths, which read as importance.
+   ============================================================ */
+
+.actionBar {
+  margin-top: 1rem;
+}
+
+@media (max-width: 940px) {
+  /* Only while a round is live — the final card has no fixed bar under it
+     and would just end in five rems of nothing. */
+  .playing {
+    /* Clears the fixed bar, plus the home-indicator strip under it. */
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .actionBar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    margin-top: 0;
+    padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(11, 17, 25, 0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--gp-line);
+  }
+
+  /* The reveal owns the screen once an answer is in, so its own button
+     rides the same bar rather than sitting at the end of the panel. */
+  .reveal {
+    margin-top: 1rem;
+    padding: 1.05rem 0.95rem;
+  }
+
+  .strip {
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .pip,
+  .pipNow,
+  .pipSweep,
+  .pipHalf,
+  .pipMiss {
+    width: 1.15rem;
+  }
+
+  .cardLede {
+    margin: 0.7rem 0 0.9rem;
+    font-size: 0.84rem;
+  }
+
+  .answers {
+    margin-top: 1.1rem;
+  }
+
+  .askLabel {
+    font-size: 0.58rem;
+  }
+
+  /* Grid, not a wrapped row: every option gets the same box and the same
+     44px of height to be tapped at. */
+  .pills {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+    gap: 0.45rem;
+  }
+
+  .pillsNum {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr));
+    gap: 0.45rem;
+  }
+
+  .pill,
+  .pillOn,
+  .pillNum,
+  .pillOnNum {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 2.75rem;
+    padding: 0.45rem 0.5rem;
+    line-height: 1.25;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .pill:active,
+  .pillNum:active {
+    background: var(--gp-raise);
+  }
+
+  .finalStatNum {
+    font-size: 1.25rem;
+  }
 }
 
 /* ── Errors ───────────────────────────────────────────────── */

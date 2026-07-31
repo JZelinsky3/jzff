@@ -5,8 +5,11 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { dealGame } from '@/lib/minigames/deal'
 import { GAMES } from '@/lib/minigames/record'
+import { getViewMode } from '@/lib/viewMode'
 import { SITE_POOL } from '../pools'
 import { GameLobby } from '../GameLobby'
+import { MobileGameLobby } from '../MobileGameLobby'
+import { MobileGameBar } from '../MobileGameBar'
 import { ROSTER_ROULETTE } from '../gameDefs'
 import { RosterRoulette } from './RosterRoulette'
 import styles from '../games.module.css'
@@ -105,9 +108,25 @@ export default async function RoulettePage({
   const openingError = opening || !dealt ? null : dealt.ok ? null : dealt.error
   const swapped = dealt && !dealt.ok && opening ? dealt.error : null
 
+  const mobile = (await getViewMode()) === 'mobile'
+
+  // With no pool chosen this route is the lobby, and the lobby is a list of
+  // leagues — a page, not a board. It gets the full mobile shell.
+  if (mobile && !requested) {
+    return <MobileGameLobby game={ROSTER_ROULETTE} />
+  }
 
   return (
     <main>
+      {mobile ? (
+        // Out to the Games Page, matching the desktop back button. The
+        // lobby has its own way in, the "Change league" link under the title.
+        <MobileGameBar
+          backHref="/games/"
+          title={ROSTER_ROULETTE.title}
+          titleEm={ROSTER_ROULETTE.titleEm}
+        />
+      ) : (
       <nav className="nav">
         <BackButton fallbackHref="/games/" ariaLabel="Back" />
         <div className="nav-center">
@@ -129,6 +148,7 @@ export default async function RoulettePage({
           )}
         </div>
       </nav>
+      )}
 
       <div className={styles.wrap}>
         {/* The pool being played is the headline. Switching leagues means
@@ -138,7 +158,9 @@ export default async function RoulettePage({
             collapsed title at the top of the screen with the whole board
             under it. A hashed CSS-module class is no good to query for. */}
         <div className={styles.head} data-rr-head>
-          <div className={styles.kicker}>★ Roster Roulette ★</div>
+          {/* The mobile bar above already says which game this is, and on a
+              phone the head is competing with the board for the fold. */}
+          {!mobile && <div className={styles.kicker}>★ Roster Roulette ★</div>}
           <h1 className={styles.title}>
             {opening ? (
               opening.pool.label
@@ -176,7 +198,9 @@ export default async function RoulettePage({
         )}
       </div>
 
-      <SiteFooter />
+      {/* The mobile board ends in a fixed bottom HUD. A full site footer
+          underneath it is a second footer nobody can see past the first. */}
+      {!mobile && <SiteFooter />}
     </main>
   )
 }

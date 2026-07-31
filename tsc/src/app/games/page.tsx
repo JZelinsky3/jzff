@@ -3,7 +3,9 @@ import Link from 'next/link'
 import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
+import { getViewMode } from '@/lib/viewMode'
 import { GAMES } from './gameDefs'
+import { MobileGames } from './MobileGames'
 import styles from './games.module.css'
 
 export const metadata: Metadata = {
@@ -52,6 +54,13 @@ const COMING_SOON = [
 export default async function GamesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Phones get their own tree, the way /about and /guides do. The desktop
+  // page below is a broadsheet — double rules, a rail of poster cards — and
+  // shrinking it was never the same thing as designing it for a thumb.
+  if ((await getViewMode()) === 'mobile') {
+    return <MobileGames signedIn={!!user} comingSoon={COMING_SOON} />
+  }
 
   return (
     <main>
