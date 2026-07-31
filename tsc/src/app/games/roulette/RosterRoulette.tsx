@@ -749,7 +749,8 @@ export function RosterRoulette({
                     </span>
                   </div>
                 </div>
-                <div className={styles.plateStats}>
+                <div className={styles.plateRight}>
+                  <div className={styles.plateStats}>
                   <span className={styles.plateRec}>
                     {current.wins}-{current.losses}
                     {current.ties ? `-${current.ties}` : ''}
@@ -771,6 +772,10 @@ export function RosterRoulette({
                   >
                     {current.leagueName}
                   </a>
+                  </div>
+                  <button type="button" className={styles.plateNew} onClick={newWheel}>
+                    New draft
+                  </button>
                 </div>
               </div>
 
@@ -800,9 +805,6 @@ export function RosterRoulette({
                 <span className={styles.filterSpin}>
                   {spinIndex + 1}/{deal.spins.length}
                 </span>
-                <button type="button" className={styles.filterNew} onClick={newWheel}>
-                  New
-                </button>
               </div>
 
               <div className={styles.roster} ref={rosterRef}>
@@ -826,6 +828,7 @@ export function RosterRoulette({
                           disabled={!g.usable}
                           onTake={() => take(p)}
                           onHover={setHoverPlayer}
+                          lineupsKnown={current.lineupsKnown}
                         />
                       ) : (
                         <CompactPlayer
@@ -941,11 +944,14 @@ function PlayerCard({
   disabled,
   onTake,
   onHover,
+  lineupsKnown,
 }: {
   player: SquadPlayer
   disabled: boolean
   onTake: () => void
   onHover: (p: SquadPlayer | null) => void
+  /** False when the season has no lineup history to report. */
+  lineupsKnown: boolean
 }) {
   const [imgOk, setImgOk] = useState(true)
   const src = headshot(player.playerId)
@@ -994,6 +1000,12 @@ function PlayerCard({
             {player.source === 'draft' && player.draftRound ? ` · Rd ${player.draftRound}` : ''}
             {player.source === 'pickup' ? ' · Added in-season' : ''}
           </span>
+          {lineupsKnown &&
+            (player.weeksStarted > 0 ? (
+              <span className={styles.startedTag}>Started {player.weeksStarted}</span>
+            ) : (
+              <span className={styles.benchedTag}>Never started</span>
+            ))}
         </span>
       </span>
       <span className={styles.pickNums}>

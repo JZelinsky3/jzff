@@ -88,7 +88,19 @@ export type SquadPlayer = {
   weeksStarted: number
 }
 
-export type Squad = SquadRef & { players: SquadPlayer[] }
+export type Squad = SquadRef & {
+  players: SquadPlayer[]
+  /**
+   * Whether this season's weekly lineups made it into the archive.
+   *
+   * Roughly two in five published seasons have draft picks but no lineup
+   * history at all (NFL.com and older ESPN imports bring the draft across
+   * and nothing else). For those, `weeksStarted` is zero for everyone and
+   * means "unknown", not "benched" — so anything reading it has to check
+   * this first or it will accuse a whole league of never playing anyone.
+   */
+  lineupsKnown: boolean
+}
 
 function squadKey(seasonId: string, managerId: string): string {
   // Both halves are uuids; first segment is unique enough to keep the key
@@ -456,7 +468,7 @@ export async function loadSquadRosters(refs: SquadRef[]): Promise<Squad[]> {
       })
     }
     players.sort((a, b) => b.ppg - a.ppg)
-    out.push({ ...ref, players })
+    out.push({ ...ref, players, lineupsKnown: players.some((p) => p.weeksStarted > 0) })
   }
   return out
 }
