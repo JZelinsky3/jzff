@@ -285,6 +285,114 @@
   pointer-events: none;
 }
 
+/* ── Combined wheel builder ──────────────────────────────────
+   Sits under the league rail, deliberately in a different frame from the
+   cards: the cards are things to press, this is a thing to assemble. */
+
+.combine {
+  margin-top: 1rem;
+  border: 1px solid var(--gp-line);
+  border-radius: 4px;
+  background: var(--gp-panel);
+  padding: 1.2rem 1.25rem 1.25rem;
+}
+
+.combineHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--gp-line-soft);
+  padding-bottom: 0.7rem;
+}
+
+.combineTitle {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  color: var(--gp-cream);
+}
+
+.combineHint {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.combineBody {
+  margin: 0.85rem 0 0;
+  color: var(--gp-soft);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.combineChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.combineChip,
+.combineChipOn {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 0.5rem 0.85rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.combineChip {
+  border: 1px solid var(--gp-line);
+  background: transparent;
+  color: var(--gp-soft);
+}
+
+.combineChip:hover {
+  border-color: var(--gp-gold);
+  color: var(--gp-cream);
+}
+
+.combineChipOn {
+  border: 1px solid var(--gp-gold);
+  background: rgba(232, 200, 137, 0.12);
+  color: var(--gp-bright);
+}
+
+.combineGo,
+.combineGoOff {
+  display: inline-block;
+  margin-top: 1.1rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.6rem 1.1rem;
+  border-radius: 3px;
+  text-decoration: none;
+}
+
+.combineGo {
+  border: 1px solid var(--gp-gold);
+  background: var(--gp-gold);
+  color: var(--gp-ink);
+}
+
+.combineGo:hover {
+  background: var(--gp-bright);
+}
+
+/* Not a disabled button — there is nothing to press until two leagues are
+   ticked, so it reads as a label of what is missing. */
+.combineGoOff {
+  border: 1px solid var(--gp-line);
+  background: transparent;
+  color: var(--gp-mute);
+}
+
 .empty {
   border: 1px dashed var(--gp-line);
   border-radius: 4px;

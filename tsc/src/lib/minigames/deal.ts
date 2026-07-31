@@ -47,11 +47,33 @@ export type DealtGame = {
 
 export type DealError = { ok: false; error: string; status: number }
 
+/** How many leagues one combined wheel may span. */
+export const MAX_COMBINED_LEAGUES = 6
+
+/**
+ * A pool param is either one of the two reserved words or a comma-separated
+ * list of league slugs. Sorted and de-duplicated so `pams,fontain` and
+ * `fontain,pams` are one pool with one cache entry and one seed space.
+ *
+ * Comma rather than plus: a `+` in a query string decodes to a space.
+ */
+function parsePool(raw: string): string[] {
+  const parts = raw
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+  if (parts.length <= 1) return parts
+  // The reserved words only mean anything alone. Silently dropping them from
+  // a mixture beats erroring on a link someone hand-edited.
+  return [...new Set(parts.filter((s) => s !== 'site' && s !== DEMO_POOL_ID))].sort()
+}
+
 export async function dealGame(
   poolParam: string,
   seedParam: string | null
 ): Promise<DealtGame | DealError> {
-  const pool = (poolParam || 'site').trim().toLowerCase()
+  const slugs = parsePool(poolParam || 'site')
+  const pool = slugs.length > 0 ? slugs.join(',') : 'site'
   const seed = normalizeSeed(seedParam) ?? newSeed()
   const isSite = pool === 'site'
 
@@ -101,8 +123,15 @@ export async function dealGame(
   } else {
     // Slug shape is enforced before it reaches the query so a hand-typed
     // pool param can't smuggle filter syntax into PostgREST.
-    if (!/^[a-z0-9-]{1,80}$/.test(pool)) {
+    if (!slugs.every((s) => /^[a-z0-9-]{1,80}$/.test(s))) {
       return { ok: false, error: 'No league on this site goes by that name.', status: 404 }
+    }
+    if (slugs.length > MAX_COMBINED_LEAGUES) {
+      return {
+        ok: false,
+        status: 400,
+        error: `A combined wheel can hold at most ${MAX_COMBINED_LEAGUES} leagues.`,
+      }
     }
     // A league wheel is playable by anyone holding its slug, signed in or
     // not, published almanac or not. A wheel gets shared into a group chat
@@ -118,25 +147,48 @@ export async function dealGame(
     // wasn't asked for, so the Games Page shows a stranger's league to
     // nobody.
     const db = createAdminClient()
-    const { data: league } = await db
-      .from('leagues')
-      .select('slug, name')
-      .eq('slug', pool)
-      .maybeSingle()
-    if (!league) return { ok: false, error: 'No league on this site goes by that name.', status: 404 }
-    label = league.name as string
-    sublabel = 'League history'
-    leagueSlug = league.slug as string
+    const { data: rows } = await db.from('leagues').select('slug, name').in('slug', slugs)
+    const found = rows ?? []
+    const missing = slugs.filter((s) => !found.some((l) => l.slug === s))
+    if (found.length === 0 || missing.length > 0) {
+      return {
+        ok: false,
+        status: 404,
+        error:
+          missing.length === slugs.length
+            ? 'No league on this site goes by that name.'
+            : `Couldn't find ${missing.join(', ')}.`,
+      }
+    }
+
+    // Names in the order the slugs were given, so the masthead reads the
+    // same way every time a mixture is opened.
+    const names = slugs.map((s) => found.find((l) => l.slug === s)!.name as string)
+    if (slugs.length === 1) {
+      label = names[0]
+      sublabel = 'League history'
+      leagueSlug = slugs[0]
+    } else {
+      // Three or more names would run past the masthead on a phone, so past
+      // two it counts them instead of listing them.
+      label = names.length <= 2 ? names.join(' + ') : `${names.length} leagues, combined`
+      sublabel = names.length <= 2 ? 'Combined wheel' : names.join(' · ')
+      // Deliberately null: a combined wheel is not any one league's page, so
+      // there is nothing single to link back to.
+      leagueSlug = null
+    }
   }
 
-  const index = await loadSquadIndex(isSite ? { kind: 'site' } : { kind: 'league', slug: pool })
+  const index = await loadSquadIndex(isSite ? { kind: 'site' } : { kind: 'leagues', slugs })
   if (index.length < SLOTS.length) {
     return {
       ok: false,
       status: 409,
       error: isSite
         ? 'Not enough league history on the site yet to fill a wheel.'
-        : 'This league needs a few more completed seasons before it can fill a wheel.',
+        : slugs.length > 1
+          ? 'These leagues need a few more completed seasons between them to fill a wheel.'
+          : 'This league needs a few more completed seasons before it can fill a wheel.',
     }
   }
 

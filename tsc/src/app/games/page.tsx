@@ -4,6 +4,8 @@ import { BackButton } from '@/components/BackButton'
 import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { loadPoolsForViewer } from './pools'
+import { CombinePools } from './CombinePools'
+import { MAX_COMBINED_LEAGUES } from '@/lib/minigames/deal'
 import styles from './games.module.css'
 
 export const metadata: Metadata = {
@@ -136,23 +138,31 @@ export default async function GamesPage() {
             becomes a wheel you can spin.
           </div>
         ) : (
-          <div className={styles.rail}>
-            {leaguePools.map((p) => (
-              <Link
-                key={p.id}
-                href={`/games/roulette/?pool=${encodeURIComponent(p.id)}`}
-                className={styles.card}
-              >
-                <span className={styles.cardTag}>Roster Roulette</span>
-                <span className={styles.cardTitle}>{p.label}</span>
-                <span className={styles.cardBody}>
-                  Every completed season your league has on the books, one squad per
-                  manager per year. Spins land on people you actually know.
-                </span>
-                <span className={styles.cardFoot}>{p.note}</span>
-              </Link>
-            ))}
-          </div>
+          <>
+            <div className={styles.rail}>
+              {leaguePools.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/games/roulette/?pool=${encodeURIComponent(p.id)}`}
+                  className={styles.card}
+                >
+                  <span className={styles.cardTag}>Roster Roulette</span>
+                  <span className={styles.cardTitle}>{p.label}</span>
+                  <span className={styles.cardBody}>
+                    Every completed season your league has on the books, one squad per
+                    manager per year. Spins land on people you actually know.
+                  </span>
+                  <span className={styles.cardFoot}>{p.note}</span>
+                </Link>
+              ))}
+            </div>
+
+            {/* Needs two leagues to mean anything, so it stays out of the
+                way of anyone who only has one. */}
+            {leaguePools.length > 1 && (
+              <CombinePools pools={leaguePools} max={MAX_COMBINED_LEAGUES} />
+            )}
+          </>
         )}
 
         <div className={styles.sectionHead}>

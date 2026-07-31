@@ -160,7 +160,12 @@ async function pageAll<T>(
 // The index
 // ============================================================
 
-type IndexScope = { kind: 'site' } | { kind: 'league'; slug: string }
+/**
+ * `leagues` covers one league and a hand-picked mixture alike — a combined
+ * wheel is the same query with more slugs in it, so there is no separate
+ * code path for the two to drift apart on.
+ */
+export type IndexScope = { kind: 'site' } | { kind: 'leagues'; slugs: string[] }
 
 type LeagueRow = {
   id: string
@@ -178,8 +183,8 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
     .from('leagues')
     .select('id, slug, name, abbreviation, draft_scoring_profile, published_at')
     .eq('manager_view', false)
-  if (scope.kind === 'league') {
-    leagueQuery = leagueQuery.eq('slug', scope.slug)
+  if (scope.kind === 'leagues') {
+    leagueQuery = leagueQuery.in('slug', scope.slugs)
   } else {
     // Site pool: published almanacs in good standing.
     //
@@ -267,7 +272,28 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
   // swearing is left alone; this only catches slurs. A league's OWN wheel is
   // left unscreened, because its members already see these names on their
   // own almanac and it isn't this game's place to censor them to each other.
-  const screen = scope.kind === 'site'
+  //
+  // A COMBINED wheel is screened for the same reason the site pool is: the
+  // moment a second league is in the drum, one league's members are being
+  // shown another league's names, and they never agreed to that.
+  const screen = scope.kind === 'site' || scope.slugs.length > 1
+
+  // Cross-league runs are only comparable if every squad is scored the same
+  // way, so any pool spanning more than one league pins a single profile.
+  // A mixture that happens to agree keeps its own — combining two ppr_6pt
+  // leagues shouldn't quietly restate everyone's numbers in half PPR — and
+  // one that disagrees falls back to the site profile.
+  let pinned: ScoringProfile | null = null
+  if (scope.kind === 'site') {
+    pinned = SITE_PROFILE
+  } else if (leagues.length > 1) {
+    const found = new Set(
+      leagues.map((l) =>
+        isScoringProfile(l.draft_scoring_profile) ? l.draft_scoring_profile : SITE_PROFILE
+      )
+    )
+    pinned = found.size === 1 ? [...found][0] : SITE_PROFILE
+  }
 
   const out: SquadRef[] = []
   for (const row of msRows) {
@@ -290,9 +316,7 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
       leagueSlug: league.slug,
       leagueName: league.name,
       leagueAbbr: league.abbreviation,
-      // Cross-league runs are only comparable if every squad is scored the
-      // same way, so the site pool overrides each league's own profile.
-      profile: scope.kind === 'site' ? SITE_PROFILE : profile,
+      profile: pinned ?? profile,
       year: season.year,
       managerName: name,
       teamName,
@@ -307,7 +331,9 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
 }
 
 export async function loadSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
-  const tag = scope.kind === 'site' ? 'site' : `league:${scope.slug}`
+  // Slugs arrive sorted, so one mixture is one cache entry however the
+  // player happened to order the checkboxes.
+  const tag = scope.kind === 'site' ? 'site' : `leagues:${scope.slugs.join(',')}`
   // The newest scorable year is part of the key, so the first deploy that
   // carries a new season's rank files invalidates the index by itself.
   // Without it a freshly added year would sit behind up to twelve hours of
