@@ -106,15 +106,27 @@ export async function dealGame(
   // never made it across from an old platform (or who joined mid-season)
   // can't field a lineup, and there's no way to know that from the index
   // alone — so the wheel skips them here rather than dealing a dead spin.
-  const candidates = dealRefs(index, seed, Math.min(index.length, SPINS_PER_GAME * 3))
-  const hydrated = await loadSquadRosters(candidates)
-  const byKey = new Map(hydrated.map((s) => [s.key, s]))
-  const spins: Squad[] = []
-  for (const ref of candidates) {
-    const squad = byKey.get(ref.key)
-    if (!squad || !isPlayableSquad(squad)) continue
-    spins.push(sortSquadPlayers(squad))
+  //
+  // About 93% of squads are playable, so a first pass of 14 clears nine
+  // almost every time. It used to over-deal 27 flat, which meant hauling
+  // three times the roster rows on every single wheel to cover a case that
+  // rarely happens. Topping up is deterministic: dealRefs returns a seeded
+  // prefix, so asking for more yields the same first 14 plus the next ones.
+  let spins: Squad[] = []
+  for (const take of [14, SPINS_PER_GAME * 4]) {
+    const candidates = dealRefs(index, seed, Math.min(index.length, take))
+    const hydrated = await loadSquadRosters(candidates)
+    const byKey = new Map(hydrated.map((s) => [s.key, s]))
+    spins = []
+    for (const ref of candidates) {
+      const squad = byKey.get(ref.key)
+      if (!squad || !isPlayableSquad(squad)) continue
+      spins.push(sortSquadPlayers(squad))
+      if (spins.length === SPINS_PER_GAME) break
+    }
     if (spins.length === SPINS_PER_GAME) break
+    // Short — widen and redo from scratch. Rare enough that the wasted first
+    // pass costs less than over-fetching on every wheel would.
   }
 
   if (spins.length < SLOTS.length) {

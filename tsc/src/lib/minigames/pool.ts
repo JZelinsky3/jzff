@@ -281,53 +281,51 @@ export function loadSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
 
 // Fills in the players for a specific handful of squads.
 //
-// Filtering is by exact (season, manager) pair rather than
-// `season_id.in(...) AND manager_id.in(...)`: the latter is a cross product,
-// and on a nine-squad deal it would ask for up to eighty-one squads' worth
-// of lineup rows to throw most of them away — enough to blow past the row
-// cap on the reads that matter.
+// Two reads, issued in parallel, and that parallelism is the whole point:
+// every sequential round trip to Supabase costs 150-400ms, and this call is
+// the one thing standing between a player and their next wheel.
+//
+// Lineups filter by exact (season, manager) pair. The obvious alternative,
+// `season_id.in(...) AND manager_id.in(...)`, is a cross product that asks
+// for many times the rows it keeps — and it benchmarks slower besides
+// (405ms vs 162ms on a 27-pair deal).
+//
+// Draft picks can't be filtered that way, because a pick knows its draft and
+// not its season. Rather than resolve drafts in a preceding round trip, they
+// ride an inner join to drafts and get the season back inline. The
+// (season, manager) cross product is safe here: managers only exist inside
+// their own league, so most of the extra combinations don't exist at all,
+// and the bucketing below drops any that do.
 export async function loadSquadRosters(refs: SquadRef[]): Promise<Squad[]> {
   if (refs.length === 0) return []
   const db = createAdminClient()
 
   const seasonIds = [...new Set(refs.map((r) => r.seasonId))]
+  const managerIds = [...new Set(refs.map((r) => r.managerId))]
   const wanted = new Map(refs.map((r) => [`${r.seasonId}|${r.managerId}`, r]))
   const pairFilter = refs
     .map((r) => `and(season_id.eq.${r.seasonId},manager_id.eq.${r.managerId})`)
     .join(',')
 
-  // Drafts are keyed by season, and draft_picks only knows its draft — so
-  // resolve the season's drafts first, then pair-filter the picks by
-  // (draft, manager).
-  const drafts = await pageAll<{ id: string; season_id: string }>(() =>
-    db.from('drafts').select('id, season_id').in('season_id', seasonIds).order('id')
-  )
-  const seasonOfDraft = new Map(drafts.map((d) => [d.id, d.season_id]))
-  const draftPairFilter = drafts
-    .flatMap((d) => {
-      const managers = refs.filter((r) => r.seasonId === d.season_id).map((r) => r.managerId)
-      return managers.map((m) => `and(draft_id.eq.${d.id},manager_id.eq.${m})`)
-    })
-    .join(',')
-
   const [pickRows, lineupRows] = await Promise.all([
-    draftPairFilter
-      ? pageAll<{
-          draft_id: string
-          round: number | null
-          manager_id: string | null
-          player_name: string | null
-          position: string | null
-          nfl_team: string | null
-        }>(() =>
-          db
-            .from('draft_picks')
-            .select('draft_id, round, manager_id, player_name, position, nfl_team')
-            .or(draftPairFilter)
-            .in('position', POOL_POSITIONS)
-            .order('pick')
-        )
-      : Promise.resolve([]),
+    pageAll<{
+      round: number | null
+      manager_id: string | null
+      player_name: string | null
+      position: string | null
+      nfl_team: string | null
+      // supabase-js types an embedded relation as an array even when the
+      // join is to-one; PostgREST sends back a bare object. Accept both.
+      drafts: { season_id: string }[] | { season_id: string } | null
+    }>(() =>
+      db
+        .from('draft_picks')
+        .select('round, manager_id, player_name, position, nfl_team, drafts!inner(season_id)')
+        .in('drafts.season_id', seasonIds)
+        .in('manager_id', managerIds)
+        .in('position', POOL_POSITIONS)
+        .order('pick')
+    ),
     pageAll<{
       season_id: string
       manager_id: string
@@ -377,7 +375,9 @@ export async function loadSquadRosters(refs: SquadRef[]): Promise<Squad[]> {
   // rows fold into it.
   for (const pick of pickRows) {
     if (!pick.manager_id || !pick.player_name) continue
-    const seasonId = seasonOfDraft.get(pick.draft_id)
+    const seasonId = Array.isArray(pick.drafts)
+      ? pick.drafts[0]?.season_id
+      : pick.drafts?.season_id
     if (!seasonId) continue
     const pos = (pick.position ?? '').toUpperCase()
     if (!POOL_POSITION_SET.has(pos)) continue
