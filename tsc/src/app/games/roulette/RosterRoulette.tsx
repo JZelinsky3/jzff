@@ -128,7 +128,6 @@ export function RosterRoulette({
   // True only while the collapse is animating and its scroll compensation is
   // running, so the scroll listener can tell our own writes from the user's.
   const settling = useRef(false)
-  const mounted = useRef(false)
 
   // Mirrors hdrSlim onto <body>, which is where the CSS looks, and holds the
   // board still while the masthead folds.
@@ -137,12 +136,16 @@ export function RosterRoulette({
   // that is scrolled at all it also shortens the document enough that the
   // browser clamps scrollY. Between the two, pressing Spin shoved everything
   // you were looking at down the screen. Pinning the board's viewport
-  // position through the transition means the header folds away and nothing
-  // else moves — which is all the collapse was ever supposed to do.
+  // position through the fold means the header goes away and nothing else
+  // moves — which is all the collapse was ever supposed to do.
   //
   // It has to ride the transition rather than correct once: the height comes
   // out over ~250ms of CSS easing, so a single post-toggle adjustment would
   // be wrong by the very next frame.
+  //
+  // Only the fold is compensated, never the unfold. The header comes back
+  // because the user scrolled up, so counter-scrolling to hold the board
+  // still would be pushing against a gesture still under their thumb.
   useEffect(() => {
     const cls = 'tsc-hdr-collapsed'
     const anchor = boardRef.current
@@ -151,13 +154,7 @@ export function RosterRoulette({
     if (hdrSlim) document.body.classList.add(cls)
     else document.body.classList.remove(cls)
 
-    // First run only mirrors state that was already there — nothing moved,
-    // so there is nothing to hold still.
-    if (!mounted.current) {
-      mounted.current = true
-      return () => document.body.classList.remove(cls)
-    }
-    if (!anchor || from == null) return () => document.body.classList.remove(cls)
+    if (!hdrSlim || !anchor || from == null) return () => document.body.classList.remove(cls)
 
     settling.current = true
     let raf = 0

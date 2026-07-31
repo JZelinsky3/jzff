@@ -102,7 +102,7 @@ export async function dealGame(
     // Slug shape is enforced before it reaches the query so a hand-typed
     // pool param can't smuggle filter syntax into PostgREST.
     if (!/^[a-z0-9-]{1,80}$/.test(pool)) {
-      return { ok: false, error: 'Unknown pool', status: 404 }
+      return { ok: false, error: 'No league on this site goes by that name.', status: 404 }
     }
     // A league wheel is playable by anyone holding its slug, signed in or
     // not, published almanac or not. A wheel gets shared into a group chat
@@ -123,7 +123,7 @@ export async function dealGame(
       .select('slug, name')
       .eq('slug', pool)
       .maybeSingle()
-    if (!league) return { ok: false, error: 'Unknown pool', status: 404 }
+    if (!league) return { ok: false, error: 'No league on this site goes by that name.', status: 404 }
     label = league.name as string
     sublabel = 'League history'
     leagueSlug = league.slug as string
