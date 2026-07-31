@@ -389,6 +389,19 @@
                 navLinks;
         }
 
+        // Games group. The Games Page lives on the main site rather than in
+        // the archive, so it can't be a chapbar tab — but a wheel spun on
+        // THIS league's history is the version worth offering from inside
+        // it, so the link carries the slug. Shown to everyone: if you can
+        // read the almanac you can play its squads.
+        var gamesGroup = '';
+        if (ctx.slug) {
+            gamesGroup =
+                '<span class="nav-drop-label">Games</span>' +
+                '<a href="/games/roulette/?pool=' + encodeURIComponent(ctx.slug) + '">Roster Roulette</a>' +
+                '<a href="/games/">All games</a>';
+        }
+
         // Theme picker: commish-only, on theme-eligible pages
         var themePicker = '';
         var themePage = document.body.getAttribute('data-page');
@@ -414,7 +427,7 @@
             themePicker += '</div></div>';
         }
 
-        var sectionBodies = [dcFooter, visitorCta, themePicker].filter(function (s) { return !!s; });
+        var sectionBodies = [dcFooter, visitorCta, gamesGroup, themePicker].filter(function (s) { return !!s; });
         var dropBody = sectionBodies.join('<div class="nav-drop-divider"></div>');
 
         var dropMenu = '<div class="nav-drop nav-drop-right" id="nav-drop" style="justify-self:end;margin-left:auto;">'

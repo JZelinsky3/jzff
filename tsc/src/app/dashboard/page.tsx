@@ -589,8 +589,44 @@ export default async function DashboardPage({
         </div>
       )}
 
+      {/* The Games Page. Placed last on purpose: it's the back page of the
+          paper, not a reason anyone came to the dashboard. Shown to
+          everyone — the site-wide wheel plays with no leagues on the shelf. */}
+      <div className="section">
+        <div className="section-header">
+          <span className="section-num">§ {(showDemoCard ? 1 : 0) + (bookmarks.length > 0 ? 3 : 2)} · The back page</span>
+          <span className="section-title">Games —</span>
+          <span className="section-meta">built out of real seasons</span>
+        </div>
+        <div className="card-grid dc-dashboard-grid">
+          <GamesCard hasLeague={hasLeague} />
+        </div>
+      </div>
+
       <SiteFooter />
     </main>
+  )
+}
+
+function GamesCard({ hasLeague }: { hasLeague: boolean }) {
+  return (
+    <a href="/games/" className="card">
+      <div className="card-roman">✦</div>
+      <div className="card-title">
+        The Games <em>Page.</em>
+      </div>
+      <div className="card-desc">
+        Roster Roulette deals you a random team out of a real season, you take one
+        player off it, and you keep going until your lineup is full. Then it tells
+        you whether that lineup goes 17-0.
+        {hasLeague
+          ? ' Spin your own league, or the whole site.'
+          : ' Play the site-wide wheel with no league of your own.'}
+      </div>
+      <div className="card-cta">
+        Play <span className="card-arrow">→</span>
+      </div>
+    </a>
   )
 }
 

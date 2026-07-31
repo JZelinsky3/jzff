@@ -10,7 +10,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // /api/view is the mobile/desktop view toggle — signed-out visitors on the
 // public landing must be able to flip to the desktop layout, so it can't be
 // behind the auth gate.
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/demo-m', '/old', '/hub', '/api/view', '/privacy', '/terms', '/gameday', '/new']
+const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/guides', '/demo', '/demo-m', '/old', '/hub', '/api/view', '/privacy', '/terms', '/gameday', '/new', '/games']
 // /api/cron/ is reached by Vercel's cron infra (no Supabase session); the
 // route handler itself enforces auth via the CRON_SECRET bearer header.
 // /api/stripe/webhook is hit by Stripe; the handler verifies the request
@@ -39,7 +39,12 @@ const PUBLIC_PATHS = ['/', '/login', '/auth/callback', '/pricing', '/about', '/g
 // people who have no account, so a /login bounce would defeat the point.
 // The index that lists them (/admin/share) is NOT public — it sits behind
 // the same site-admin gate as the rest of /admin.
-const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/']
+// `/games/` and `/api/games/` are the Games Page. The whole point of the
+// site-wide pool is that anyone can play without an account, so a /login
+// bounce would defeat it. League pools are still gated — the deal handler
+// checks that the league published its almanac (or that the caller owns it)
+// before it hands over anyone's roster history.
+const PUBLIC_PREFIXES = ['/leagues/', '/pams-template/', '/demo/', '/demo-m/', '/old/', '/data/', '/design/', '/guides/', '/about/', '/pricing/', '/api/cron/', '/api/og/', '/api/stripe/webhook', '/api/leagues/', '/api/mock-board', '/api/support', '/hub/', '/api/hub/', '/see/', '/games/', '/api/games/']
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
