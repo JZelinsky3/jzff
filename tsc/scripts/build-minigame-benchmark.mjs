@@ -70,7 +70,20 @@ const LAST_YEAR = 2025
 const SPINS_PER_GAME = 9
 const MIN_SQUAD_PLAYERS = 8
 /** Simulated deals per profile. A few thousand settles the quantiles. */
-const SIMULATIONS = 4000
+const SIMULATIONS = 8000
+/** One perfect season per this many wheels, for a player who plays well. */
+const TARGET_ODDS = 40
+/**
+ * Uplift applied on top of the simulated strong agent's quantile.
+ *
+ * The agent picks by value over positional average, which is the right idea
+ * but still a crude model of someone actually thinking. Measured against a
+ * real player on the ppr_6pt pool: he averages 145-150 where the agent's
+ * median is 141, roughly four percent better. Without this correction the
+ * bar lands where a good human clears it every few wheels rather than every
+ * forty.
+ */
+const HUMAN_EDGE = 1.04
 
 // Mirrors normPlayerName in src/lib/minigames/ranks.ts.
 function normName(name) {
@@ -352,8 +365,18 @@ async function main() {
 
     const at = (q) => samples[Math.min(samples.length - 1, Math.round(q * (samples.length - 1)))]
     const parAt = (q) => pars[Math.min(pars.length - 1, Math.round(q * (pars.length - 1)))]
-    const floor = Math.round(at(0.1) * 10) / 10
-    const target = Math.round(parAt(0.9) * 10) / 10
+    const smartAt = (q) => smarts[Math.min(smarts.length - 1, Math.round(q * (smarts.length - 1)))]
+    // Floor is derived from the target rather than picked independently, so
+    // that raising the 17-0 bar doesn't silently drag everyone's record down
+    // with it. Solving wins(medianPlay) = 8.5 gives floor = 2*median - target,
+    // which pins an ordinary run at .500 whatever the top of the ladder is.
+    const floorRaw = 2 * at(0.5) - smartAt(1 - 1 / TARGET_ODDS) * HUMAN_EDGE
+    const floor = Math.round(Math.max(0, floorRaw) * 10) / 10
+    // 17-0 should land for a strong player about once in forty wheels, so
+    // the bar is that player's 97.5th percentile. Setting it off raw-PPG
+    // greed instead put it around one wheel in three for anyone doing
+    // positional maths, which is most people who play twice.
+    const target = Math.round(smartAt(1 - 1 / TARGET_ODDS) * HUMAN_EDGE * 10) / 10
 
     out.profiles[profile] = {
       sampleSize: samples.length,
@@ -364,10 +387,13 @@ async function main() {
     }
     const winsAt = (ppg) =>
       Math.max(0, Math.min(GAMES, Math.round(((ppg - floor) / (target - floor)) * GAMES)))
+    const smartHits = smarts.filter((v) => v >= target).length
     console.log(
-      `  ${profile.padEnd(9)} floor=${floor.toFixed(1)}  target=${target.toFixed(1)}  ` +
-        `median play ${at(0.5).toFixed(1)} -> ${winsAt(at(0.5))}-${GAMES - winsAt(at(0.5))}  ` +
-        `perfect median ${parAt(0.5).toFixed(1)} -> ${winsAt(parAt(0.5))}-${GAMES - winsAt(parAt(0.5))}`
+      `  ${profile.padEnd(9)} floor=${floor.toFixed(1)} target=${target.toFixed(1)}  |  ` +
+        `typical ${at(0.5).toFixed(1)}->${winsAt(at(0.5))}W  ` +
+        `greedy ${parAt(0.5).toFixed(1)}->${winsAt(parAt(0.5))}W  ` +
+        `strong ${smartAt(0.5).toFixed(1)}->${winsAt(smartAt(0.5))}W  ` +
+        `17-0 for strong play: 1 in ${(smarts.length / Math.max(1, smartHits)).toFixed(0)}`
     )
   }
 

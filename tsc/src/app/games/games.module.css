@@ -46,49 +46,6 @@
   margin-bottom: 2rem;
 }
 
-@media (max-width: 700px) {
-  .head {
-    padding: 0.9rem 0 0.7rem;
-    margin-bottom: 0.7rem;
-    border-bottom-width: 1px;
-    border-bottom-style: solid;
-  }
-
-  /* The pitch has done its job by the time someone is playing; on a phone
-     it is just pushing the board below the fold. */
-  .head .headSub {
-  margin: 0.7rem auto 0;
-  font-family: var(--mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--gp-mute);
-}
-
-.headSwitch {
-  color: var(--gp-gold);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(232, 200, 137, 0.35);
-}
-
-.headSwitch:hover {
-  color: var(--gp-bright);
-}
-
-.lede {
-    display: none;
-  }
-
-  .title {
-    font-size: 1.6rem;
-  }
-
-  .kicker {
-    font-size: 0.52rem;
-    letter-spacing: 0.2em;
-  }
-}
-
 .kicker {
   font-family: var(--mono);
   font-size: 0.62rem;
@@ -138,28 +95,52 @@
 }
 
 @media (max-width: 700px) {
+  .head {
+    padding: 0.9rem 0 0.7rem;
+    margin-bottom: 0.7rem;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+  }
+
+  /* The pitch has done its job by the time someone is playing; on a phone
+     it is just pushing the board below the fold. */
+  .lede {
+    display: none;
+  }
+
+  .title {
+    font-size: 1.6rem;
+  }
+
+  .kicker {
+    font-size: 0.52rem;
+    letter-spacing: 0.2em;
+  }
+
   .headSub {
-  margin: 0.7rem auto 0;
-  font-family: var(--mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--gp-mute);
+    margin-top: 0.45rem;
+    font-size: 0.55rem;
+  }
 }
 
-.headSwitch {
-  color: var(--gp-gold);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(232, 200, 137, 0.35);
-}
+/* Shrink with the site header. MobileHeaderCollapse already toggles
+   `tsc-hdr-collapsed` on <body> as you scroll (it slims the sticky nav);
+   riding the same class keeps the league title in step instead of leaving
+   a full-size block of type sitting above the board. */
+@media (max-width: 940px) {
+  :global(body.tsc-hdr-collapsed) .head {
+    padding: 0.25rem 0 0.3rem;
+    margin-bottom: 0.4rem;
+  }
 
-.headSwitch:hover {
-  color: var(--gp-bright);
-}
+  :global(body.tsc-hdr-collapsed) .kicker,
+  :global(body.tsc-hdr-collapsed) .headSub {
+    display: none;
+  }
 
-.lede {
-    font-size: 0.85rem;
-    margin-top: 0.7rem;
+  :global(body.tsc-hdr-collapsed) .title {
+    font-size: 0.95rem;
+    opacity: 0.75;
   }
 }
 
@@ -439,9 +420,22 @@
 }
 
 @media (max-width: 560px) {
+  .plate {
+    padding: 0.6rem 0.7rem;
+    gap: 0.65rem;
+  }
+
   .plateYear {
-    font-size: 1.2rem;
-    padding-right: 0.7rem;
+    font-size: 1.1rem;
+    padding-right: 0.6rem;
+  }
+
+  .plateTeam {
+    font-size: 1rem;
+  }
+
+  .plateCred {
+    margin-top: 0.22rem;
   }
 }
 
@@ -615,6 +609,28 @@
   letter-spacing: 0.04em;
 }
 
+.filterNew {
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.34rem 0.65rem;
+  border-radius: 3px;
+  border: 1px solid var(--gp-line);
+  background: transparent;
+  color: var(--gp-mute);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.filterNew:hover {
+  color: var(--gp-cream);
+  border-color: var(--gp-soft);
+}
+
 .filterSpin {
   margin-left: auto;
   flex-shrink: 0;
@@ -654,21 +670,6 @@
   color: var(--gp-green);
 }
 
-.rosterBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.5rem 1.15rem;
-  border-bottom: 1px solid var(--gp-line);
-  background: rgba(0, 0, 0, 0.22);
-  font-family: var(--mono);
-  font-size: 0.55rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--gp-mute);
-}
-
 .roster {
   /* The point of the fixed height: the board never grows down the page,
      you scroll the roster inside it. Header, bar, and footer stay put. */
@@ -684,16 +685,28 @@
 /* On phones the lineup sheet is replaced by the HUD above, so the roster
    gets the rest of the screen. Viewport-relative rather than a fixed rem
    height: a small phone shouldn't show three players and a big one nine. */
+/* Sized so the plate, the filter rail, a screenful of players AND the
+   footer controls all fit without scrolling the page. At 52vh the reroll
+   button sat below the fold, and reaching it pushed the top of the board
+   off the other end. */
 @media (max-width: 940px) {
   .roster {
-    height: clamp(18rem, 52vh, 34rem);
+    height: clamp(13rem, 38vh, 24rem);
   }
 }
 
 @media (max-width: 560px) {
   .roster {
-    padding: 0.4rem 0.35rem 0.7rem;
-    gap: 0.35rem;
+    padding: 0.35rem 0.3rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .filterBar {
+    padding: 0.35rem 0.5rem;
+  }
+
+  .stageFoot {
+    padding: 0.5rem 0.7rem;
   }
 }
 
@@ -985,46 +998,47 @@
   letter-spacing: -0.02em;
 }
 
-.pickHit {
-  /* placeholder kept for ordering */
-}
-
 @media (max-width: 560px) {
   .pick {
-    grid-template-columns: 3rem minmax(0, 1fr) auto;
-    padding: 0.55rem 0.7rem 0.55rem 0.6rem;
-    gap: 0.65rem;
+    grid-template-columns: 2.3rem minmax(0, 1fr) auto;
+    padding: 0.38rem 0.6rem 0.38rem 0.5rem;
+    gap: 0.55rem;
   }
 
   .shot {
-    width: 3rem;
-    height: 3rem;
+    width: 2.3rem;
+    height: 2.3rem;
   }
 
   .pickName {
-    font-size: 0.95rem;
+    font-size: 0.86rem;
+  }
+
+  .pickMeta {
+    font-size: 0.5rem;
+    margin-top: 0.14rem;
   }
 
   .pickPpg {
-    font-size: 1.25rem;
+    font-size: 1.02rem;
   }
 
   .compact {
-    grid-template-columns: 2.1rem minmax(0, 1fr) auto;
-    padding: 0.4rem 0.6rem 0.4rem 0.5rem;
+    grid-template-columns: 1.7rem minmax(0, 1fr) auto;
+    padding: 0.28rem 0.55rem 0.28rem 0.45rem;
   }
 
   .compactShot {
-    width: 2.1rem;
-    height: 2.1rem;
+    width: 1.7rem;
+    height: 1.7rem;
   }
 
   .compactName {
-    font-size: 0.88rem;
+    font-size: 0.8rem;
   }
 
   .compactPpg {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 }
 
@@ -1154,12 +1168,6 @@
   opacity: 0.4;
 }
 
-.slotNext {
-  opacity: 1;
-  background: rgba(232, 200, 137, 0.07);
-  box-shadow: inset 3px 0 0 var(--gp-gold);
-}
-
 /* Where the player under the cursor would land. Replaces the old
    "next open slot in order" highlight, which always lit QB first and
    read as advice to draft one. */
@@ -1175,25 +1183,6 @@
   font-weight: 700;
   color: var(--gp-gold);
   font-variant-numeric: tabular-nums;
-}
-
-.targetRow {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.55rem 1.05rem;
-  border-top: 1px solid var(--gp-line);
-  background: rgba(232, 200, 137, 0.06);
-  font-family: var(--mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--gp-mute);
-}
-
-.targetVal {
-  color: var(--gp-gold);
-  font-weight: 700;
 }
 
 .slotId {
@@ -1322,16 +1311,6 @@
   min-width: 0;
 }
 
-.hudRec {
-  font-family: var(--mono);
-  font-size: 1.3rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--gp-cream);
-  font-variant-numeric: tabular-nums;
-}
-
 .hudPpg {
   font-family: var(--mono);
   font-size: 0.92rem;
@@ -1434,6 +1413,100 @@
   composes: hudVal;
   color: var(--gp-line);
   font-weight: 400;
+}
+
+/* Expanded state: the same seven slots as full rows with faces and names.
+   Bigger, but still sized to leave the board visible behind it. */
+.hudRows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  padding-bottom: 0.45rem;
+  max-height: 58vh;
+  overflow-y: auto;
+}
+
+.hudRow {
+  display: grid;
+  grid-template-columns: 2.5rem 1.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 3px;
+  border-left: 3px solid var(--pos, var(--gp-line));
+  background: var(--gp-panel);
+}
+
+.hudRowHover {
+  background: rgba(232, 200, 137, 0.16);
+}
+
+.hudRowId {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+}
+
+.hudRowShot,
+.hudRowBlank {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--gp-raise);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hudRowBlank {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hudRowImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+.hudRowInitials {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: var(--pos, var(--gp-soft));
+}
+
+.hudRowName {
+  min-width: 0;
+  font-size: 0.86rem;
+  color: var(--gp-cream);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hudRowSub {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  margin-top: 0.1rem;
+}
+
+.hudRowPpg {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gp-bright);
+  font-variant-numeric: tabular-nums;
 }
 
 /* The desktop sheet duplicates the HUD on phones; only the tallies
@@ -1569,54 +1642,3 @@
   color: var(--gp-gold);
 }
 
-/* ── Pool switcher ────────────────────────────────────────── */
-
-.pools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  justify-content: center;
-  margin-bottom: 1.25rem;
-}
-
-@media (max-width: 700px) {
-  .pools {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    justify-content: flex-start;
-    scrollbar-width: none;
-  }
-
-  .pools::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-.poolChip {
-  font-family: var(--mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 0.45rem 0.95rem;
-  border-radius: 999px;
-  border: 1px solid var(--gp-line);
-  background: transparent;
-  color: var(--gp-soft);
-  text-decoration: none;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: border-color 0.15s, color 0.15s;
-}
-
-.poolChip:hover {
-  border-color: var(--gp-gold);
-  color: var(--gp-gold);
-}
-
-.poolChipOn {
-  composes: poolChip;
-  border-color: var(--gp-gold);
-  background: rgba(232, 200, 137, 0.12);
-  color: var(--gp-bright);
-}

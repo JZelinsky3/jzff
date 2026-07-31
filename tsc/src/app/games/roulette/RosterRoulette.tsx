@@ -572,22 +572,20 @@ export function RosterRoulette({
   return (
     <>
       {/* Phones get the lineup as a fixed bar at the bottom of the screen,
-          collapsed to one line by default. The desktop sheet is hidden at
-          this size, so this is the only view of the lineup while picking
-          and it has to be legible without scrolling or hunting. */}
+          where a thumb is. Resting state is the seven slots as a grid that
+          fits the width; the chevron opens it into full rows with faces and
+          names, for when you want to actually look at the team you've built.
+          The record is deliberately absent from both: knowing you're on for
+          14-3 with two slots left gives away the ending. */}
       <div className={styles.hud}>
         <button
           type="button"
           className={styles.hudBar}
           onClick={() => setHudOpen((v) => !v)}
           aria-expanded={hudOpen}
+          aria-label={hudOpen ? 'Collapse lineup' : 'Expand lineup'}
         >
           <span className={styles.hudScore}>
-            {deal.benchmark && (
-              <span className={styles.hudRec}>
-                {wins}-{GAMES - wins}
-              </span>
-            )}
             <span className={styles.hudPpg}>
               {round1(ppg)}
               <span className={styles.hudUnit}>PPG</span>
@@ -602,7 +600,45 @@ export function RosterRoulette({
             </svg>
           </span>
         </button>
-        {hudOpen && (
+
+        {hudOpen ? (
+          <div className={styles.hudRows}>
+            {slots.map((s) => {
+              const f = lineup[s.id]
+              return (
+                <div
+                  key={s.id}
+                  className={`${styles.hudRow} ${hoverSlot === s.id ? styles.hudRowHover : ''}`}
+                  style={f ? ({ ['--pos' as string]: `var(--pos-${f.player.pos})` }) : undefined}
+                >
+                  <span className={styles.hudRowId}>{s.label}</span>
+                  {f ? (
+                    <>
+                      <HudFace player={f.player} />
+                      <span className={styles.hudRowName}>
+                        {f.player.name}
+                        <span className={styles.hudRowSub}>
+                          {f.player.nflTeam ?? '·'} · {f.squad.year}
+                        </span>
+                      </span>
+                      <span className={styles.hudRowPpg}>{round1(f.player.ppg)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className={styles.hudRowBlank} />
+                      <span className={styles.hudRowName} style={{ color: 'var(--gp-mute)' }}>
+                        Open
+                      </span>
+                      <span className={styles.hudRowPpg} style={{ color: 'var(--gp-line)' }}>
+                        ·
+                      </span>
+                    </>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
           <div className={styles.hudSlots}>
             {slots.map((s) => {
               const f = lineup[s.id]
@@ -652,7 +688,7 @@ export function RosterRoulette({
                 </div>
                 <div className={styles.recapNum}>
                   <span className={styles.recapNumVal}>
-                    {par > 0 ? `${Math.round((ppg / par) * 100)}%` : '—'}
+                    {par > 0 ? `${Math.round((ppg / par) * 100)}%` : '·'}
                   </span>
                   <span className={styles.recapNumLbl}>Of this wheel</span>
                 </div>
@@ -764,6 +800,9 @@ export function RosterRoulette({
                 <span className={styles.filterSpin}>
                   {spinIndex + 1}/{deal.spins.length}
                 </span>
+                <button type="button" className={styles.filterNew} onClick={newWheel}>
+                  New
+                </button>
               </div>
 
               <div className={styles.roster} ref={rosterRef}>
@@ -806,19 +845,14 @@ export function RosterRoulette({
                 <span className={styles.footNote}>
                   {openSlots.length} slot{openSlots.length === 1 ? '' : 's'} left
                 </span>
-                <span className={styles.btnRow}>
-                  <button type="button" className={styles.btnQuiet} onClick={newWheel}>
-                    Start over
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.btnGhost}
-                    onClick={reroll}
-                    disabled={rerollsLeft <= 0 || spinsLeft <= openSlots.length}
-                  >
-                    Reroll ({rerollsLeft})
-                  </button>
-                </span>
+                <button
+                  type="button"
+                  className={styles.btnGhost}
+                  onClick={reroll}
+                  disabled={rerollsLeft <= 0 || spinsLeft <= openSlots.length}
+                >
+                  Reroll ({rerollsLeft})
+                </button>
               </div>
             </>
           ) : (
@@ -828,9 +862,7 @@ export function RosterRoulette({
 
         <div className={styles.sheet}>
           <div className={styles.sheetHead}>
-            <span className={styles.sheetTitle}>
-              {deal.benchmark && Object.keys(lineup).length > 0 ? `${wins}-${GAMES - wins}` : 'Your lineup'}
-            </span>
+            <span className={styles.sheetTitle}>Your lineup</span>
             <span className={styles.sheetTotals}>
               <span className={styles.sheetPpg}>
                 {round1(ppg)}
@@ -872,7 +904,7 @@ export function RosterRoulette({
                       <span className={styles.slotName} style={{ color: 'var(--gp-mute)' }}>
                         Open
                       </span>
-                      <span className={styles.slotDash}>—</span>
+                      <span className={styles.slotDash}>·</span>
                     </>
                   )}
                 </div>
@@ -972,6 +1004,28 @@ function PlayerCard({
         <span className={styles.pickTotal}>{Math.round(player.fpts)} pts</span>
       </span>
     </button>
+  )
+}
+
+// Small headshot for the expanded mobile lineup.
+function HudFace({ player }: { player: SquadPlayer }) {
+  const [imgOk, setImgOk] = useState(true)
+  const src = headshot(player.playerId)
+  return (
+    <span className={styles.hudRowShot}>
+      {src && imgOk ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          className={styles.hudRowImg}
+          src={src}
+          alt=""
+          loading="lazy"
+          onError={() => setImgOk(false)}
+        />
+      ) : (
+        <span className={styles.hudRowInitials}>{initials(player.name)}</span>
+      )}
+    </span>
   )
 }
 
