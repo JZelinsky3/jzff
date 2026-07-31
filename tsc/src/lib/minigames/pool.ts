@@ -30,6 +30,7 @@
 
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { containsHateSpeech } from '@/lib/contentModeration'
 import {
   getRankLookup,
   normPlayerName,
@@ -100,6 +101,16 @@ export type Squad = SquadRef & {
    * this first or it will accuse a whole league of never playing anyone.
    */
   lineupsKnown: boolean
+  /**
+   * Whether this season's draft made it into the archive.
+   *
+   * UDFA leagues skip the drafts stage at ingest entirely (see the
+   * `isLeagueLocked` branch in /api/leagues/[id]/sync), so a free-tier
+   * league's squads are built from started lineups alone. Without this
+   * flag every player on them would be labelled "Added in-season", which
+   * is true of none of them and misleading about all of them.
+   */
+  draftsKnown: boolean
 }
 
 function squadKey(seasonId: string, managerId: string): string {
@@ -242,14 +253,30 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
 
   const managerName = new Map(managerRows.map((m) => [m.id, m.display_name]))
 
+  // Team names and manager display names come straight off the platform and
+  // have never been screened — unlike league names, which are checked at
+  // creation. In the site-wide pool those get shown to strangers who have no
+  // connection to that league, so they're screened here.
+  //
+  // Masked rather than dropped: binning the squad would delete a real
+  // manager-season from the game over one season's team name, and the
+  // display already falls back cleanly (team name -> manager name). Ordinary
+  // swearing is left alone; this only catches slurs. A league's OWN wheel is
+  // left unscreened, because its members already see these names on their
+  // own almanac and it isn't this game's place to censor them to each other.
+  const screen = scope.kind === 'site'
+
   const out: SquadRef[] = []
   for (const row of msRows) {
     const season = seasonById.get(row.season_id)
     if (!season) continue
     const league = leagueById.get(season.league_id)
     if (!league) continue
-    const name = managerName.get(row.manager_id)
-    if (!name) continue
+    const rawName = managerName.get(row.manager_id)
+    if (!rawName) continue
+    const name = screen && containsHateSpeech(rawName) ? 'Manager' : rawName
+    const teamName =
+      screen && containsHateSpeech(row.team_name) ? null : row.team_name
     const profile = isScoringProfile(league.draft_scoring_profile)
       ? league.draft_scoring_profile
       : SITE_PROFILE
@@ -265,7 +292,7 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
       profile: scope.kind === 'site' ? SITE_PROFILE : profile,
       year: season.year,
       managerName: name,
-      teamName: row.team_name,
+      teamName,
       wins: row.wins ?? 0,
       losses: row.losses ?? 0,
       ties: row.ties ?? 0,
@@ -468,7 +495,12 @@ export async function loadSquadRosters(refs: SquadRef[]): Promise<Squad[]> {
       })
     }
     players.sort((a, b) => b.ppg - a.ppg)
-    out.push({ ...ref, players, lineupsKnown: players.some((p) => p.weeksStarted > 0) })
+    out.push({
+      ...ref,
+      players,
+      lineupsKnown: players.some((p) => p.weeksStarted > 0),
+      draftsKnown: players.some((p) => p.source === 'draft'),
+    })
   }
   return out
 }

@@ -8,6 +8,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { loadSquadIndex, loadSquadRosters, isPlayableSquad, type Squad } from './pool'
+import { loadDemoSquads, DEMO_POOL_ID, DEMO_POOL_LABEL } from './demoPool'
 import { SITE_PROFILE, type ScoringProfile } from './ranks'
 import { loadBenchmark } from './benchmarkFile'
 import type { Benchmark } from './record'
@@ -66,6 +67,42 @@ export async function dealGame(
   if (isSite) {
     label = 'The Whole Site'
     sublabel = 'Every published almanac'
+  } else if (pool === DEMO_POOL_ID) {
+    // The demo wheel needs no league, no account and no database: its
+    // squads come off the static demo tree. Handled before the lookup
+    // below because there is no `demo` row in `leagues` to find.
+    const squads = await loadDemoSquads()
+    if (squads.length < SPINS_PER_GAME) {
+      return { ok: false, status: 409, error: 'The demo wheel is not available right now.' }
+    }
+    const picked = dealRefs(squads, seed, Math.min(squads.length, SPINS_PER_GAME * 2))
+    const byKey = new Map(squads.map((sq) => [sq.key, sq]))
+    const demoSpins: Squad[] = []
+    for (const ref of picked) {
+      const squad = byKey.get(ref.key)
+      if (!squad) continue
+      demoSpins.push(sortSquadPlayers(squad))
+      if (demoSpins.length === SPINS_PER_GAME) break
+    }
+    if (demoSpins.length < SPINS_PER_GAME) {
+      return { ok: false, status: 409, error: 'The demo wheel is not available right now.' }
+    }
+    return {
+      ok: true,
+      seed,
+      pool: {
+        id: DEMO_POOL_ID,
+        label: DEMO_POOL_LABEL,
+        sublabel: 'Demo league',
+        leagueSlug: null,
+        profile: demoSpins[0].profile,
+        squadCount: squads.length,
+      },
+      slots: SLOTS,
+      rerolls: REROLLS,
+      spins: demoSpins,
+      benchmark: await loadBenchmark(demoSpins[0].profile),
+    }
   } else {
     // Slug shape is enforced before it reaches the query so a hand-typed
     // pool param can't smuggle filter syntax into PostgREST.

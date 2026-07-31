@@ -99,6 +99,20 @@ export default async function GamesPage() {
             </span>
             <span className={styles.cardFoot}>Play now</span>
           </Link>
+
+          {/* One league's whole history, for anyone without one of their own.
+              The site-wide wheel deals a different league every spin, so it
+              never shows what playing YOUR league is like. */}
+          <Link href="/games/roulette/?pool=demo" className={styles.card}>
+            <span className={styles.cardTag}>Roster Roulette</span>
+            <span className={styles.cardTitle}>The demo league</span>
+            <span className={styles.cardBody}>
+              Seven seasons of one league, the way it feels when the wheel keeps
+              landing on people you know. Real teams and real numbers, under the
+              demo&apos;s names.
+            </span>
+            <span className={styles.cardFoot}>Try it without an account</span>
+          </Link>
         </div>
 
         <div className={styles.sectionHead}>

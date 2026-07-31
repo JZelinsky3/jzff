@@ -829,6 +829,7 @@ export function RosterRoulette({
                           onTake={() => take(p)}
                           onHover={setHoverPlayer}
                           lineupsKnown={current.lineupsKnown}
+                          draftsKnown={current.draftsKnown}
                         />
                       ) : (
                         <CompactPlayer
@@ -945,6 +946,7 @@ function PlayerCard({
   onTake,
   onHover,
   lineupsKnown,
+  draftsKnown,
 }: {
   player: SquadPlayer
   disabled: boolean
@@ -952,6 +954,8 @@ function PlayerCard({
   onHover: (p: SquadPlayer | null) => void
   /** False when the season has no lineup history to report. */
   lineupsKnown: boolean
+  /** False when the season's draft was never ingested (free-tier leagues). */
+  draftsKnown: boolean
 }) {
   const [imgOk, setImgOk] = useState(true)
   const src = headshot(player.playerId)
@@ -998,7 +1002,7 @@ function PlayerCard({
           <span className={styles.metaDim}>
             {player.gp} G
             {player.source === 'draft' && player.draftRound ? ` · Rd ${player.draftRound}` : ''}
-            {player.source === 'pickup' ? ' · Added in-season' : ''}
+            {draftsKnown && player.source === 'pickup' ? ' · Added in-season' : ''}
           </span>
           {lineupsKnown &&
             (player.weeksStarted > 0 ? (

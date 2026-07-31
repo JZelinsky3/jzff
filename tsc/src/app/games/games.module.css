@@ -129,8 +129,9 @@
    a full-size block of type sitting above the board. */
 @media (max-width: 940px) {
   :global(body.tsc-hdr-collapsed) .head {
-    padding: 0.25rem 0 0.3rem;
-    margin-bottom: 0.4rem;
+    padding: 0.1rem 0 0.15rem;
+    margin-bottom: 0.3rem;
+    border-bottom-color: var(--gp-line-soft);
   }
 
   :global(body.tsc-hdr-collapsed) .kicker,
@@ -138,9 +139,14 @@
     display: none;
   }
 
+  /* Down to a rail: the league name and nothing else. */
   :global(body.tsc-hdr-collapsed) .title {
-    font-size: 0.95rem;
-    opacity: 0.75;
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gp-mute);
+    margin: 0;
   }
 }
 
@@ -991,6 +997,15 @@
   composes: startedTag;
   background: rgba(255, 255, 255, 0.05);
   color: var(--gp-mute);
+}
+
+/* Desktop only. On a phone the meta line is already carrying position,
+   team and games played; a fourth chip pushes the rest off the row. */
+@media (max-width: 940px) {
+  .startedTag,
+  .benchedTag {
+    display: none;
+  }
 }
 
 .teamTag {
