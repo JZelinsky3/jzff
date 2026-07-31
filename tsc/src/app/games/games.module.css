@@ -1694,6 +1694,22 @@
   letter-spacing: 0.24em;
 }
 
+/* Shown when a link asked for a league wheel we couldn't deal and the
+   site-wide wheel stood in for it. Rare, so it stays quiet rather than
+   becoming a red banner over the board. */
+.swap {
+  max-width: 44rem;
+  margin: 0 auto 1.25rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--gp-line-soft);
+  border-left: 3px solid var(--gp-gold);
+  background: var(--gp-panel);
+  color: var(--gp-soft);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .err {
   padding: 3rem 1.5rem;
   text-align: center;

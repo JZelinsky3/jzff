@@ -10,17 +10,17 @@
 // this route serves every wheel after that. Access rules live in dealGame.
 
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { dealGame } from '@/lib/minigames/deal'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
-  const result = await dealGame(params.get('pool') ?? 'site', params.get('seed'), user?.id ?? null)
+  // No auth read at all: every wheel is dealt the same way for everyone, so
+  // a link shared into a group chat plays identically for the people in it
+  // who have accounts and the people who don't.
+  const result = await dealGame(params.get('pool') ?? 'site', params.get('seed'))
 
   if (!result.ok) {
     return NextResponse.json(

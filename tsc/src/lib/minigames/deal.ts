@@ -47,14 +47,9 @@ export type DealtGame = {
 
 export type DealError = { ok: false; error: string; status: number }
 
-/**
- * @param viewerId Signed-in user, if any. Only consulted to let an owner
- *   play their own league before it has published an almanac.
- */
 export async function dealGame(
   poolParam: string,
-  seedParam: string | null,
-  viewerId: string | null
+  seedParam: string | null
 ): Promise<DealtGame | DealError> {
   const pool = (poolParam || 'site').trim().toLowerCase()
   const seed = normalizeSeed(seedParam) ?? newSeed()
@@ -109,20 +104,26 @@ export async function dealGame(
     if (!/^[a-z0-9-]{1,80}$/.test(pool)) {
       return { ok: false, error: 'Unknown pool', status: 404 }
     }
+    // A league wheel is playable by anyone holding its slug, signed in or
+    // not, published almanac or not. A wheel gets shared into a group chat
+    // and has to work for every person in it — a friend who bounced off a
+    // sign-in wall, or got silently handed the site-wide wheel instead of
+    // the league they were sent, has simply not played the game.
+    //
+    // The trade this makes, deliberately: an UNPUBLISHED almanac's manager
+    // names, team names and rosters become reachable by anyone who knows or
+    // guesses its slug, through the game if not through /leagues. Nothing
+    // here is a secret worth a login, but it is more open than the almanac
+    // itself. The wheel is still the only door — it never lists a league it
+    // wasn't asked for, so the Games Page shows a stranger's league to
+    // nobody.
     const db = createAdminClient()
     const { data: league } = await db
       .from('leagues')
-      .select('slug, name, owner_id, published_at')
+      .select('slug, name')
       .eq('slug', pool)
       .maybeSingle()
     if (!league) return { ok: false, error: 'Unknown pool', status: 404 }
-    if (!league.published_at && viewerId !== league.owner_id) {
-      return {
-        ok: false,
-        error: 'That league has not published its almanac yet.',
-        status: 403,
-      }
-    }
     label = league.name as string
     sublabel = 'League history'
     leagueSlug = league.slug as string

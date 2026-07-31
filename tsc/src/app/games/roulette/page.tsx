@@ -79,21 +79,24 @@ export default async function RoulettePage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // A ?pool= naming a league the viewer has no card for is still dealt — a
-  // published almanac is public, and a link shared into a group chat should
-  // work for everyone in it. dealGame does the real access check; this only
-  // decides which chip lights up.
+  // A ?pool= naming a league the viewer has no card for is still dealt, and
+  // no account is needed to deal it: a wheel gets shared into a group chat
+  // and has to work for everyone in it. The signed-in user is read only to
+  // pick the right nav button.
   const requested = (sp.pool ?? '').toLowerCase()
   const initialPool = requested || SITE_POOL.id
 
-  const dealt = await dealGame(initialPool, sp.seed ?? null, user?.id ?? null)
+  const dealt = await dealGame(initialPool, sp.seed ?? null)
   // Falling back to the site wheel keeps a bad link playable instead of
-  // dead-ending on an error page.
+  // dead-ending on an error page. But the swap is announced: someone sent a
+  // link to a specific league, and quietly handing them a different wheel
+  // under a different name is worse than telling them why.
   const fallback = !dealt.ok && initialPool !== SITE_POOL.id
-    ? await dealGame(SITE_POOL.id, null, user?.id ?? null)
+    ? await dealGame(SITE_POOL.id, null)
     : null
   const opening = dealt.ok ? dealt : fallback?.ok ? fallback : null
   const openingError = opening ? null : dealt.ok ? null : dealt.error
+  const swapped = !dealt.ok && opening ? dealt.error : null
 
 
   return (
@@ -137,6 +140,8 @@ export default async function RoulettePage({
             </Link>
           </p>
         </div>
+
+        {swapped && <p className={styles.swap}>{swapped} Playing the site-wide wheel instead.</p>}
 
         <RosterRoulette initialDeal={opening} initialError={openingError} />
       </div>
