@@ -46,6 +46,10 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+// Shared with the app, deliberately. This script rebuilds the squad pool from
+// scratch to calibrate the bar, so anything it decides differently from
+// src/lib/minigames/pool.ts calibrates the game against a game nobody plays.
+import { canonicalDraftIds } from '../src/lib/canonicalDraft.mjs'
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -275,7 +279,10 @@ async function main() {
   const seasonById = new Map(seasons.map((s) => [s.id, s]))
   const seasonIds = seasons.map((s) => s.id)
 
-  const drafts = await pageAll(`drafts?select=id,season_id&season_id=in.(${seasonIds.join(',')})&order=id`, 'drafts')
+  const drafts = await pageAll(
+    `drafts?select=id,season_id,external_id&season_id=in.(${seasonIds.join(',')})&order=id`,
+    'drafts'
+  )
   const seasonOfDraft = new Map(drafts.map((d) => [d.id, d.season_id]))
 
   const picks = await pageAll(
@@ -283,11 +290,21 @@ async function main() {
       `&draft_id=in.(${drafts.map((d) => d.id).join(',')})&position=in.(${POSITIONS.join(',')})&order=id`,
     'draft_picks'
   )
+  // NOT filtered to starters, and that has to stay in step with
+  // loadSquadRosters() in src/lib/minigames/pool.ts. This script exists to
+  // calibrate the 17-0 bar against the pool the wheel actually deals from, so
+  // any difference in how a squad is built here quietly calibrates the game
+  // against a game nobody is playing.
   const lineups = await pageAll(
     `weekly_lineups?select=season_id,manager_id,player_name,position` +
-      `&season_id=in.(${seasonIds.join(',')})&is_starter=is.true&position=in.(${POSITIONS.join(',')})&order=id`,
+      `&season_id=in.(${seasonIds.join(',')})&position=in.(${POSITIONS.join(',')})&order=id`,
     'weekly_lineups'
   )
+
+  // One draft per season, same rule the app uses. Without it pams 2019 folds
+  // BOTH its drafts into one squad — the hand-authored upload and the NFL.com
+  // scrape — and hands that squad a roster it never had.
+  const canonical = canonicalDraftIds(drafts)
 
   // Fold into squads: pair key -> set of normalized player names.
   const squads = new Map()
@@ -298,7 +315,10 @@ async function main() {
     if (!set) squads.set(key, (set = new Set()))
     set.add(normName(name))
   }
-  for (const p of picks) add(seasonOfDraft.get(p.draft_id), p.manager_id, p.player_name)
+  for (const p of picks) {
+    if (!canonical.has(p.draft_id)) continue
+    add(seasonOfDraft.get(p.draft_id), p.manager_id, p.player_name)
+  }
   for (const r of lineups) add(r.season_id, r.manager_id, r.player_name)
   console.log(`  squads: ${squads.size}`)
 

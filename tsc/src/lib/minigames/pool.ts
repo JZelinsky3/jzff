@@ -23,10 +23,20 @@
 // that already 504s elsewhere in this codebase. Dealing first and fetching
 // second keeps the cost flat as leagues are added.
 //
-// Roster contents mirror buildAllTimePool() in src/lib/export/pams.ts: the
-// players a manager drafted that year, plus anyone they actually started at
-// least one week (trades and waiver pickups — the ledger can't tell which).
-// Skill positions only; the rank files don't cover K/DEF.
+// A squad is the manager's WHOLE roster for that year: everyone they drafted,
+// plus everyone who appeared on their roster in any week, started or benched.
+//
+// It used to be drafted-plus-started, which quietly dropped about ten skill
+// players per team per season on pams — every waiver add who never cracked the
+// lineup and every deadline trade who rode the bench. Those are real players
+// the manager really rostered, and they're where the funny teams live, so the
+// `is_starter` filter came off (2026-07-31). The bench rows were always in the
+// database; all four ingesters write them.
+//
+// Consequence to keep in mind: `weeksStarted` is now counted from the starter
+// rows SPECIFICALLY, not from the row count, or "Started N" on a player card
+// would silently become "weeks rostered" and everyone would look like a
+// starter. Skill positions only; the rank files don't cover K/DEF.
 
 import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -420,12 +430,12 @@ export async function loadSquadRosters(refs: SquadRef[]): Promise<Squad[]> {
       player_name: string | null
       position: string | null
       nfl_team: string | null
+      is_starter: boolean | null
     }>(() =>
       db
         .from('weekly_lineups')
-        .select('season_id, manager_id, player_name, position, nfl_team')
+        .select('season_id, manager_id, player_name, position, nfl_team, is_starter')
         .or(pairFilter)
-        .eq('is_starter', true)
         .in('position', POOL_POSITIONS)
         .order('week')
     ),
@@ -501,9 +511,9 @@ export async function loadSquadRosters(refs: SquadRef[]): Promise<Squad[]> {
     })
   }
 
-  // Then anyone actually started. Folds into the drafted entry when the
-  // names line up (ids can't be trusted across platforms, names can),
-  // otherwise records an in-season addition.
+  // Then everyone who was on the roster in any week, benched or starting.
+  // Folds into the drafted entry when the names line up (ids can't be trusted
+  // across platforms, names can), otherwise records an in-season addition.
   for (const row of lineupRows) {
     if (!row.player_name) continue
     const pos = (row.position ?? '').toUpperCase()
@@ -525,10 +535,13 @@ export async function loadSquadRosters(refs: SquadRef[]): Promise<Squad[]> {
       m.set(key, entry)
     }
     // Draft rows win when they have a team (they're 100% populated); a
-    // started row fills the gap for anyone added after the draft, and for
+    // lineup row fills the gap for anyone added after the draft, and for
     // the handful of drafts that came across without one.
     if (!entry.nflTeam) entry.nflTeam = normNflTeam(row.nfl_team)
-    entry.weeksStarted++
+    // Counted off the STARTER rows only. The loop now walks bench rows too,
+    // so incrementing on every row would turn "Started 12" into "rostered 12"
+    // and make every waiver flyer look like a season-long starter.
+    if (row.is_starter) entry.weeksStarted++
   }
 
   // Join each entry against that year's rank file for its season total and
