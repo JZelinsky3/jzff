@@ -29,8 +29,8 @@ function WheelMark() {
   return (
     <span className={s.mark}>
       <span className={s.markWheel}>
-        <span className={s.markWheelYear}>2019 · 11-3</span>
-        <span className={s.markWheelName}>The Turk Store</span>
+        <span className={s.markWheelYear}>TSC.</span>
+        <span className={s.markWheelName}>Can you go 17-0?</span>
       </span>
     </span>
   )
