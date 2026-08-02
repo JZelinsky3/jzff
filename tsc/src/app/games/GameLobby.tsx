@@ -8,6 +8,7 @@
 import Link from 'next/link'
 import { loadPoolsForViewer } from './pools'
 import { CombinePools } from './CombinePools'
+import { LeagueDeck, HouseDeck, type HousePool } from './LeagueDeck'
 import { ownLeagueHref } from './OwnLeagueCta'
 import { MAX_COMBINED_LEAGUES } from '@/lib/minigames/deal'
 import type { GameDef } from './gameDefs'
@@ -16,6 +17,36 @@ import styles from './games.module.css'
 export async function GameLobby({ game }: { game: GameDef }) {
   const { signedIn, leaguePools } = await loadPoolsForViewer()
   const poolHref = (id: string) => `${game.href}?pool=${encodeURIComponent(id)}`
+
+  // A game with neither a site pool nor a demo has nothing to put under
+  // "Open to everyone", and an empty section under that heading reads as a
+  // page that failed to load rather than as a game with an entry fee.
+  const openToEveryone = game.allowsSite || game.allowsDemo
+
+  // The house's own cards, in the same shape as a league's. Their stat line
+  // is the thing that makes them worth taking: how much history is behind
+  // each, which is the only comparison that matters before you play.
+  const housePools: HousePool[] = []
+  if (game.allowsSite) {
+    housePools.push({
+      id: 'site',
+      label: 'The Whole Site',
+      monogram: 'TSC',
+      note: 'Every published almanac',
+      statTop: 'All',
+      statBottom: 'leagues on the site',
+    })
+  }
+  if (game.allowsDemo) {
+    housePools.push({
+      id: 'demo',
+      label: 'The Lakeside League',
+      monogram: 'LL',
+      note: 'Demo · no account needed',
+      statTop: '7',
+      statBottom: 'seasons · 2019–2025',
+    })
+  }
 
   return (
     <>
@@ -34,39 +65,20 @@ export async function GameLobby({ game }: { game: GameDef }) {
         </ol>
       </div>
 
-      <div className={styles.sectionHead}>
-        <span className={styles.sectionNum}>§ 01</span>
-        <span className={styles.sectionTitle}>Open to everyone</span>
-        <span className={styles.sectionMeta}>No account needed</span>
-      </div>
+      {openToEveryone && (
+        <>
+          <div className={styles.sectionHead}>
+            <span className={styles.sectionNum}>§ 01</span>
+            <span className={styles.sectionTitle}>Open to everyone</span>
+            <span className={styles.sectionMeta}>No account needed</span>
+          </div>
 
-      <div className={styles.rail}>
-        {game.allowsSite && (
-          <Link href={poolHref('site')} className={styles.card}>
-            <span className={styles.cardTag}>Everyone</span>
-            <span className={styles.cardTitle}>The whole site</span>
-            <span className={styles.cardBody}>
-              Deals from every published almanac here, so the teams come from
-              leagues you have never heard of.
-            </span>
-            <span className={styles.cardFoot}>Play now</span>
-          </Link>
-        )}
-
-        {/* One league's whole history, for anyone without one of their own.
-            For Roulette the site wheel deals a different league every spin,
-            so it never shows what playing YOUR league is like; for Guess the Draft
-            there is no site pool at all and this is the only way in. */}
-        <Link href={poolHref('demo')} className={styles.card}>
-          <span className={styles.cardTag}>Demo</span>
-          <span className={styles.cardTitle}>The Lakeside League</span>
-          <span className={styles.cardBody}>{game.demoBody}</span>
-          <span className={styles.cardFoot}>Try it without an account</span>
-        </Link>
-      </div>
+          <HouseDeck pools={housePools} href={poolHref} />
+        </>
+      )}
 
       <div className={styles.sectionHead}>
-        <span className={styles.sectionNum}>§ 02</span>
+        <span className={styles.sectionNum}>{openToEveryone ? '§ 02' : '§ 01'}</span>
         <span className={styles.sectionTitle}>Your leagues</span>
         <span className={styles.sectionMeta}>
           {signedIn ? `${leaguePools.length} available` : 'Free to add'}
@@ -91,16 +103,7 @@ export async function GameLobby({ game }: { game: GameDef }) {
         </div>
       ) : (
         <>
-          <div className={styles.rail}>
-            {leaguePools.map((p) => (
-              <Link key={p.id} href={poolHref(p.id)} className={styles.card}>
-                <span className={styles.cardTag}>Your league</span>
-                <span className={styles.cardTitle}>{p.label}</span>
-                <span className={styles.cardBody}>{game.leagueBody}</span>
-                <span className={styles.cardFoot}>{p.note}</span>
-              </Link>
-            ))}
-          </div>
+          <LeagueDeck pools={leaguePools} href={poolHref} />
 
           {/* Needs two leagues to mean anything, so it stays out of the way
               of anyone who only has one, and only for games where mixing

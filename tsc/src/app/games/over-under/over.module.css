@@ -1,0 +1,707 @@
+/* ============================================================
+   THE OVER/UNDER
+   A bet slip, not a quiz. The hierarchy is deliberately upside
+   down from a stat page: the team and the week are small print
+   and the LINE is the largest thing in the frame, because the
+   number is what's being argued with.
+
+   The two call buttons are identical in size and weight. Any
+   asymmetry between them reads as a hint, and the premise of
+   the game is that it's a coin unless you know something.
+
+   Colour tokens (--gp-*) are inherited from .wrap in
+   games.module.css, which every page using this file sits in.
+   ============================================================ */
+
+.board {
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* ── Running header ───────────────────────────────────────── */
+
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+  margin-bottom: 1.1rem;
+}
+
+.stripLabel {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.stripRecord {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stripHits {
+  color: var(--gp-green);
+}
+
+.stripSep {
+  color: var(--gp-mute);
+}
+
+.stripMisses {
+  color: var(--gp-red);
+}
+
+/* ── The ticket ───────────────────────────────────────────────
+   A betting stub, not a quiz card. Dashed rules top and bottom
+   of the number stand in for a perforation, the week and the
+   season are printed on the stub directly above the team, and
+   the line is the only thing set large.
+
+   The week used to live in a header row with the team two
+   blocks below it and the number below that, so the three
+   things the call is actually about were spread over the whole
+   card. They read as one block now.
+   ------------------------------------------------------------ */
+
+.ticket {
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-top: 3px solid var(--accent, var(--gp-gold));
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Same rule as The Gauntlet's fixture: the card takes the colour of the
+   answer, so the result registers at a glance before a word is read. */
+.ticketHit {
+  border-color: var(--gp-green);
+  border-top-color: var(--gp-green);
+  box-shadow: 0 0 0 1px var(--gp-green), 0 0 22px -8px var(--gp-green);
+}
+
+.ticketMiss {
+  border-color: var(--gp-red);
+  border-top-color: var(--gp-red);
+  box-shadow: 0 0 0 1px var(--gp-red), 0 0 22px -8px var(--gp-red);
+}
+
+.tickHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(180deg, rgba(201, 169, 234, 0.12), transparent);
+  border-bottom: 1px dashed var(--gp-line);
+}
+
+.tickNo {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gp-cream);
+}
+
+.tickFlag {
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.tickFlagBig {
+  composes: tickFlag;
+  color: var(--gp-ink);
+  background: var(--gp-gold);
+  border-radius: 2px;
+  padding: 0.2rem 0.45rem;
+}
+
+.tickTeam {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.1rem 1.1rem 0.3rem;
+}
+
+.face {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--gp-raise);
+  border: 1px solid var(--gp-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.faceImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.faceLetter {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  color: var(--gp-mute);
+}
+
+.tickTeamText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.tickTeamName {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  line-height: 1.15;
+  color: var(--gp-cream);
+}
+
+.tickManager {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+/* Who they played. Shown before the call because it says WHICH game this
+   was, which is often the thing that shakes the memory loose. */
+.tickOpp {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+  color: var(--gp-soft);
+}
+
+/* The perforated middle. The dashes are the ticket, and they are what stop
+   the number reading as a scoreboard result — which is exactly what it must
+   not read as, because it is the one number on the page that never happened. */
+.tickLine {
+  margin: 0.9rem 1rem 1.1rem;
+  padding: 0.8rem 0;
+  border-top: 1px dashed var(--gp-line);
+  border-bottom: 1px dashed var(--gp-line);
+  text-align: center;
+}
+
+.tickLineNum {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(2.6rem, 12vw, 3.8rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent, var(--gp-bright));
+}
+
+/* The week's league average — the one real piece of help on the board, and
+   what makes a line readable to somebody who can't remember whether that
+   week was a shootout. Set small and quiet: it's a reference, not a verdict. */
+.tickAvg {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+/* ── The gauge ────────────────────────────────────────────────
+   The line is pinned at the centre and the two calls own the
+   halves either side, so over and under are PLACES rather than
+   two words. After the call the real score drops onto the
+   track, which turns a right answer into something you watch
+   happen instead of something you read.
+   ------------------------------------------------------------ */
+
+.gauge {
+  margin: 0 1.1rem 1.1rem;
+}
+
+.gaugeTrack {
+  position: relative;
+  display: flex;
+  height: 0.55rem;
+  border-radius: 2px;
+  overflow: visible;
+  background: var(--gp-ink);
+  border: 1px solid var(--gp-line);
+}
+
+.gaugeUnder,
+.gaugeOver {
+  flex: 1;
+}
+
+.gaugeUnder {
+  background: linear-gradient(90deg, rgba(210, 84, 74, 0.28), transparent);
+}
+
+.gaugeOver {
+  background: linear-gradient(270deg, rgba(122, 199, 149, 0.28), transparent);
+}
+
+/* The line itself, dead centre. */
+.gaugeTick {
+  position: absolute;
+  top: -0.25rem;
+  bottom: -0.25rem;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--accent, var(--gp-gold));
+}
+
+.gaugeDotOver,
+.gaugeDotUnder {
+  position: absolute;
+  top: 50%;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin: -0.425rem 0 0 -0.425rem;
+  border-radius: 50%;
+  border: 2px solid var(--gp-ink);
+  animation: gaugeDrop 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.gaugeDotOver {
+  background: var(--gp-green);
+}
+
+.gaugeDotUnder {
+  background: var(--gp-red);
+}
+
+@keyframes gaugeDrop {
+  from {
+    transform: translateY(-1.4rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.gaugeDotNum {
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-cream);
+  white-space: nowrap;
+}
+
+.gaugeEnds {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.gaugeMid {
+  color: var(--accent, var(--gp-gold));
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── The two calls ────────────────────────────────────────── */
+
+.calls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--gp-line);
+  border-top: 1px solid var(--gp-line);
+}
+
+/* Identical in size and weight on purpose. Any asymmetry between them reads
+   as a hint, and the premise is that it's a coin unless you know something. */
+.callOver,
+.callUnder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  padding: 1.05rem 1rem;
+  border: 0;
+  background: var(--gp-panel-2);
+  color: var(--gp-cream);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.callOver:hover,
+.callUnder:hover {
+  background: var(--gp-raise);
+  color: var(--accent, var(--gp-gold));
+}
+
+.callWord {
+  display: block;
+}
+
+.callTick {
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  color: var(--gp-mute);
+}
+
+/* The arrows point the way the gauge does, so the buttons and the track
+   agree about which end is which. */
+.callUnder:hover .callTick {
+  color: var(--gp-red);
+}
+
+.callOver:hover .callTick {
+  color: var(--gp-green);
+}
+
+.callOver:hover .callTick,
+.callUnder:hover .callTick {
+  color: var(--accent, var(--gp-gold));
+}
+
+/* ── The reveal ───────────────────────────────────────────────
+   The result itself is the shared ./Verdict band. All that is
+   left here is the footnote: who they played and what that side
+   put up, which is flavour rather than answer and belongs under
+   the band rather than in it.
+   ------------------------------------------------------------ */
+
+.revealOpp {
+  padding: 0.6rem 1rem 0.75rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--gp-mute);
+  background: var(--gp-panel-2);
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+
+/* Wears the GAME's colour rather than the section's gold: each board has an
+   accent running through the card, the plate and the marks, and the one
+   button you press every round was the only thing still ignoring it.
+
+   The corner is SOFTENED, not rounded off. A full pill was the first attempt
+   and read as a web app's primary action dropped onto a broadsheet; 4px
+   agrees with the cards it sits under without pretending to be a different
+   kind of page. */
+.btn,
+.btnGhost {
+  display: inline-block;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.95rem 1rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, border-color 0.14s, transform 0.14s;
+}
+
+.btn {
+  background: var(--accent, var(--gp-gold));
+  color: var(--gp-ink);
+}
+
+.btn:hover:enabled {
+  /* Lightened toward cream rather than swapped for a second token, so every
+     board's hover is the same gesture in its own colour. */
+  background: color-mix(in srgb, var(--accent, #e8c889) 78%, #f4ebd8);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  background: transparent;
+  border-color: var(--gp-line);
+  color: var(--gp-mute);
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  background: transparent;
+  border-color: var(--gp-line);
+  color: var(--gp-soft);
+}
+
+.btnGhost:hover {
+  border-color: var(--accent, var(--gp-gold));
+  color: var(--gp-cream);
+}
+
+.actionBar {
+  margin-top: 1rem;
+}
+
+/* ── The final card ───────────────────────────────────────── */
+
+.final {
+  text-align: center;
+  padding: 2rem 1.2rem;
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+}
+
+.finalKicker {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent, var(--gp-gold));
+}
+
+.finalScore {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 14vw, 5.4rem);
+  line-height: 1;
+  color: var(--gp-cream);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.4rem;
+}
+
+.finalOf {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: var(--gp-mute);
+  margin-left: 0.5rem;
+}
+
+.finalTitle {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  color: var(--gp-cream);
+  margin-top: 1rem;
+}
+
+.finalLine {
+  margin-top: 0.4rem;
+  color: var(--gp-soft);
+  font-size: 0.94rem;
+}
+
+/* Ten rows: what was offered, what happened, what you said. Four
+   columns on a grid so the numbers stack into readable columns
+   instead of drifting with the length of a team name. */
+.slip {
+  margin-top: 1.5rem;
+  text-align: left;
+  border-top: 1px solid var(--gp-line);
+}
+
+.slipRow {
+  display: grid;
+  grid-template-columns: 1fr 3.6rem 4rem 3.4rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.3rem;
+  border-bottom: 1px solid var(--gp-line-soft);
+}
+
+.slipTeam {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.86rem;
+  color: var(--gp-cream);
+  min-width: 0;
+}
+
+.slipWhen {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.slipLine,
+.slipScore {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.slipLine {
+  color: var(--gp-mute);
+}
+
+.slipScore {
+  color: var(--gp-cream);
+}
+
+.slipHit,
+.slipMiss {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-align: center;
+  padding: 0.2rem 0.1rem;
+  border-radius: 2px;
+}
+
+.slipHit {
+  color: var(--gp-green);
+  background: rgba(122, 199, 149, 0.12);
+}
+
+.slipMiss {
+  color: var(--gp-red);
+  background: rgba(210, 84, 74, 0.12);
+}
+
+.finalActions {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+}
+
+.seedNote {
+  margin-top: 1rem;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--gp-mute);
+}
+
+/* ============================================================
+   MOBILE
+   Same fork as the other two boards: the advance button leaves
+   the document for a fixed bar under the thumb, and the two
+   calls stay side by side because Over and Under are a pair.
+   ============================================================ */
+
+@media (max-width: 940px) {
+  .playing {
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .actionBar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    margin-top: 0;
+    padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(11, 17, 25, 0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--gp-line);
+  }
+
+  .strip {
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .tickHead {
+    padding: 0.55rem 0.8rem;
+  }
+
+  .tickNo {
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+  }
+
+  .tickTeam {
+    padding: 0.9rem 0.85rem 0.3rem;
+    gap: 0.7rem;
+  }
+
+  .face {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .tickTeamName {
+    font-size: 1.12rem;
+  }
+
+  .gauge {
+    margin: 0 0.85rem 0.9rem;
+  }
+
+  .tickLine {
+    margin: 0.75rem 0.8rem 0.9rem;
+    padding: 0.65rem 0;
+  }
+
+  .revealScore {
+    font-size: 2.2rem;
+  }
+
+  /* The slip's team column gets what's left after the numbers, and the
+     numbers are what people compare. */
+  .slipRow {
+    grid-template-columns: 1fr 3rem 3.4rem 3rem;
+    gap: 0.35rem;
+    padding: 0.5rem 0.15rem;
+  }
+
+  .slipTeam {
+    font-size: 0.78rem;
+  }
+}
+
+/* ── Errors ───────────────────────────────────────────────── */
+
+.err {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 1.6rem;
+  text-align: center;
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+  color: var(--gp-soft);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.errLink {
+  display: inline-block;
+  margin-top: 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+}

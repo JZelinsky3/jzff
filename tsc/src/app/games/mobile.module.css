@@ -304,91 +304,9 @@
   transform: scale(0.99);
 }
 
-.mark {
-  display: block;
-  padding: 0.85rem 0.9rem;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent) 9%, transparent),
-      transparent
-    ),
-    var(--gp-ink);
-  border-bottom: 1px solid var(--gp-line-soft);
-}
+/* The per-game marks moved to ./marks.module.css when the desktop hub
+   started drawing them too — one copy, two sizes. See ./GameMark.tsx. */
 
-/* Roulette: the spin window, mid-spin. */
-.markWheel {
-  /* It's a <span> holding block children (a link can't nest a <div>), so
-     without this it stays an inline box, splits into fragments around them,
-     and paints its brass rules as a stray sliver down the left edge. */
-  display: block;
-  border-top: 2px solid var(--accent);
-  border-bottom: 2px solid var(--accent);
-  padding: 0.5rem 0.6rem;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.12));
-  text-align: center;
-}
-
-.markWheelYear {
-  display: block;
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 0.5rem;
-  letter-spacing: 0.24em;
-  color: var(--accent);
-}
-
-.markWheelName {
-  display: block;
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  line-height: 1.15;
-  color: var(--gp-cream);
-  margin-top: 0.15rem;
-}
-
-/* Guess the Draft: three picks with the names inked out. */
-.markPicks {
-  display: flex;
-  flex-direction: column;
-  gap: 0.34rem;
-}
-
-.markPick {
-  display: grid;
-  grid-template-columns: 1.35rem 1fr 1.5rem;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.markPickRd {
-  font-family: var(--mono);
-  font-size: 0.5rem;
-  color: var(--gp-mute);
-}
-
-.markPickBar {
-  height: 0.62rem;
-  border-radius: 1px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent) 55%, #0b1119),
-    color-mix(in srgb, var(--accent) 22%, #0b1119)
-  );
-}
-
-.markPickPos {
-  font-family: var(--mono);
-  font-size: 0.46rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-align: center;
-  color: var(--gp-ink);
-  background: var(--gp-soft);
-  border-radius: 1px;
-  padding: 0.1rem 0;
-}
 
 .gameBody {
   display: block;

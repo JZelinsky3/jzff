@@ -1,0 +1,717 @@
+/* ============================================================
+   THE GAUNTLET
+   Two teams, one week, one call. The board is deliberately the
+   emptiest thing on the Games Page: a streak game wants nothing
+   in the frame except the thing at stake and the thing being
+   asked, so there is no ledger, no round pips and no running
+   total beyond the streak itself.
+
+   The question is set as a BOX SCORE: a header bar carrying the
+   week and the season, two full-width team rows under it, a
+   "vs" between them and a score column that is present but
+   blank until the call. Two side-by-side panels were the first
+   attempt and read as multiple choice; a fixture reads as a
+   result you are being asked to remember.
+
+   Colour tokens (--gp-*) are inherited from .wrap in
+   games.module.css, which every page using this file sits in.
+   ============================================================ */
+
+.board {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* ── The streak strip ─────────────────────────────────────── */
+
+.strip {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+  margin-bottom: 1.1rem;
+}
+
+.stripSide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.stripSide:last-child {
+  text-align: right;
+}
+
+.stripNum {
+  font-family: var(--serif);
+  font-size: 1.8rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent, var(--gp-gold));
+}
+
+.stripLabel {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.stripMid {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gp-soft);
+  text-align: center;
+}
+
+/* ── The question, as a box score ─────────────────────────────
+   Two full-width rows with a "vs" between them, under a header
+   bar carrying the week and the season. The point of the shape
+   is that the WHEN is welded to the WHO: it used to sit in its
+   own line above a pair of side-by-side panels, far enough
+   from the teams that you had to look twice to remember which
+   week you were being asked about.
+
+   The score column is present and empty before the call, so
+   the card reads as a result waiting to be filled in — and so
+   nothing moves when the numbers land.
+   ------------------------------------------------------------ */
+
+.fixture {
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* The whole card takes the colour of the answer, not just the band at the
+   bottom of it. At arm's length the outline is what registers first, before
+   any word is read — which is the point, because the answer is the payoff and
+   it used to arrive in 10px mono caps. */
+.fixtureHit {
+  border-color: var(--gp-green);
+  box-shadow: 0 0 0 1px var(--gp-green), 0 0 22px -8px var(--gp-green);
+}
+
+.fixtureMiss {
+  border-color: var(--gp-red);
+  box-shadow: 0 0 0 1px var(--gp-red), 0 0 22px -8px var(--gp-red);
+}
+
+.fixHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.7rem 1rem;
+  background: linear-gradient(180deg, rgba(143, 179, 214, 0.13), transparent);
+  border-bottom: 2px solid var(--accent, var(--gp-gold));
+}
+
+.fixWhen {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gp-cream);
+}
+
+.fixFlag {
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  border: 1px solid var(--gp-line);
+  border-radius: 2px;
+  padding: 0.2rem 0.45rem;
+}
+
+.fixFlagBig {
+  composes: fixFlag;
+  color: var(--gp-ink);
+  background: var(--gp-gold);
+  border-color: var(--gp-gold);
+}
+
+/* ── A team row ───────────────────────────────────────────── */
+
+.row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  text-align: left;
+  padding: 1.05rem 1rem;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.row:hover:enabled {
+  background: var(--gp-raise);
+}
+
+.row:disabled {
+  cursor: default;
+}
+
+/* No left spine here either. The tint carries the winning row on its own —
+   it's a shade stronger than it was precisely so it can, now that the bar
+   isn't doing half the work. */
+.rowWon {
+  background: rgba(122, 199, 149, 0.15);
+}
+
+.rowLost {
+  opacity: 0.58;
+}
+
+/* Marks what the player picked, on top of won/lost — a correct call is both,
+   and this is what says the green row was yours rather than the house's. */
+.rowChosen .rowTeam::after {
+  content: 'your call';
+  display: inline-block;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  font-family: var(--mono);
+  font-size: 0.48rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-ink);
+  background: var(--accent, var(--gp-gold));
+  border-radius: 999px;
+  padding: 0.16rem 0.45rem;
+  white-space: nowrap;
+}
+
+/* The face. Two names and a number is a spreadsheet; a face is the cheapest
+   thing that makes a fixture look like a fixture. Per-season, so a 2019
+   question shows the avatar that team actually had. */
+.face {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--gp-raise);
+  border: 1px solid var(--gp-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.faceImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.faceLetter {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--gp-mute);
+}
+
+.rowNames {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+/* The margin, drawn. Two numbers a foot apart make the reader do the
+   subtraction; two bars make "he got buried" land instantly, which is the
+   reaction worth having. Only exists after the call. */
+.bar {
+  display: block;
+  height: 0.28rem;
+  margin-top: 0.4rem;
+  background: var(--gp-line-soft);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.barFill,
+.barFillWon {
+  display: block;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--gp-mute);
+  /* Grows from nothing when the scores land. */
+  animation: barGrow 0.45s ease-out;
+}
+
+.barFillWon {
+  background: var(--gp-green);
+}
+
+@keyframes barGrow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.barFill,
+.barFillWon {
+  transform-origin: left;
+}
+
+.rowTeam {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  line-height: 1.15;
+  color: var(--gp-cream);
+}
+
+.rowUnder {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  /* Holds the line before the record arrives, so revealing it can't shove
+     the row taller under the reader's thumb. */
+  min-height: 0.9rem;
+}
+
+.rowRecord {
+  color: var(--gp-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowScore,
+.rowScoreEmpty {
+  font-family: var(--mono);
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-bright);
+  min-width: 4.6rem;
+  text-align: right;
+}
+
+/* An empty box where the number will be, so the card is visibly a result
+   sheet with the result withheld rather than a pair of buttons. */
+.rowScoreEmpty::after {
+  content: '';
+  display: block;
+  margin-left: auto;
+  width: 2.6rem;
+  height: 0.12rem;
+  background: var(--gp-line);
+}
+
+/* The divider between the two teams.
+ *
+ * It was a full-width strip with a rule above and below and the word floating
+ * in it, which read as a SEPARATOR — two unrelated rows with a bar between
+ * them — when the whole point is that these two played each other. A hairline
+ * broken by a struck disc reads as a connector instead: the line runs from one
+ * team to the other and the badge sits on it, which is how every fixture card
+ * ever printed does it.
+ */
+.vs {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  /* Pulled into the rows either side so the disc straddles the boundary
+     rather than occupying a band of its own. */
+  margin: -0.35rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.vs::before,
+.vs::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gp-line-soft);
+}
+
+.vsBadge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gp-soft);
+  background: var(--gp-ink);
+  border: 1px solid var(--gp-line);
+}
+
+.fixFoot {
+  padding: 0.7rem 1rem;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  border-top: 1px solid var(--gp-line-soft);
+}
+
+/* ── Mode switch ──────────────────────────────────────────────
+   Sudden death alone was a bad deal: a run can end four seconds
+   in, and then you wait on a deck before trying again. The card
+   of ten is the mode a new player should meet first, so it sits
+   first.
+   ------------------------------------------------------------ */
+
+.modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-top: 1.6rem;
+  padding: 0.3rem;
+  background: var(--gp-panel-2);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+}
+
+.mode,
+.modeOn {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.6rem 0.5rem;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.mode {
+  background: transparent;
+  color: var(--gp-mute);
+}
+
+.mode:hover {
+  color: var(--gp-cream);
+}
+
+.modeOn {
+  background: var(--gp-raise);
+  color: var(--accent, var(--gp-gold));
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+
+/* Wears the GAME's colour rather than the section's gold: each board has an
+   accent running through the card, the plate and the marks, and the one
+   button you press every round was the only thing still ignoring it.
+
+   The corner is SOFTENED, not rounded off. A full pill was the first attempt
+   and read as a web app's primary action dropped onto a broadsheet; 4px
+   agrees with the cards it sits under without pretending to be a different
+   kind of page. */
+.btn,
+.btnGhost {
+  display: inline-block;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.95rem 1rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, border-color 0.14s, transform 0.14s;
+}
+
+.btn {
+  background: var(--accent, var(--gp-gold));
+  color: var(--gp-ink);
+}
+
+.btn:hover:enabled {
+  /* Lightened toward cream rather than swapped for a second token, so every
+     board's hover is the same gesture in its own colour. */
+  background: color-mix(in srgb, var(--accent, #e8c889) 78%, #f4ebd8);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  background: transparent;
+  border-color: var(--gp-line);
+  color: var(--gp-mute);
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  background: transparent;
+  border-color: var(--gp-line);
+  color: var(--gp-soft);
+}
+
+.btnGhost:hover {
+  border-color: var(--accent, var(--gp-gold));
+  color: var(--gp-cream);
+}
+
+.actionBar {
+  margin-top: 1rem;
+}
+
+/* ── The final card ───────────────────────────────────────── */
+
+.final {
+  text-align: center;
+  padding: 2rem 1.2rem;
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+}
+
+.finalKicker {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent, var(--gp-gold));
+}
+
+.finalScore {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 14vw, 5.4rem);
+  line-height: 1;
+  color: var(--gp-cream);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.4rem;
+}
+
+.finalOf {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: var(--gp-mute);
+  margin-left: 0.5rem;
+}
+
+.finalTitle {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  color: var(--gp-cream);
+  margin-top: 1rem;
+}
+
+.finalLine {
+  margin-top: 0.4rem;
+  color: var(--gp-soft);
+  font-size: 0.94rem;
+}
+
+/* The question that ended the run. Set as a result rather than as a
+   question — the blanks are filled in and the winner is green, because
+   this is the moment the game stops asking and starts telling. */
+.tomb {
+  margin-top: 1.5rem;
+  padding: 1rem 1.1rem;
+  text-align: left;
+  background: var(--gp-panel-2);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+}
+
+.tombHead {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--gp-line-soft);
+}
+
+.tombRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.tombWin {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--gp-green);
+}
+
+.tombLose {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--gp-soft);
+}
+
+.tombScore {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-cream);
+}
+
+.tombNote {
+  margin-top: 0.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--gp-line-soft);
+  font-size: 0.8rem;
+  color: var(--gp-mute);
+}
+
+.finalActions {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+}
+
+.seedNote {
+  margin-top: 1rem;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--gp-mute);
+}
+
+/* ============================================================
+   MOBILE
+   One engine, two layouts, same as the other two boards. The
+   call button leaves the document and fixes to the bottom so
+   it's under a thumb, and the two sides stay side by side —
+   stacking them would put one team above the fold and one
+   below, which reads as a list rather than a fixture.
+   ============================================================ */
+
+@media (max-width: 940px) {
+  /* Only while a question is live. The final card has no fixed bar under
+     it and would otherwise end in five rems of nothing. */
+  .playing {
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .actionBar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    margin-top: 0;
+    padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(11, 17, 25, 0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--gp-line);
+  }
+
+  .strip {
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .stripStreak {
+    font-size: 1.7rem;
+  }
+
+  .fixHead {
+    padding: 0.6rem 0.8rem;
+  }
+
+  .fixWhen {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+  }
+
+  /* Stays a two-column row: the score belongs beside the team, not under
+     it, and the rows are already tall enough to thumb at this padding. */
+  .row {
+    padding: 0.9rem 0.8rem;
+    gap: 0.7rem;
+  }
+
+  .row {
+    grid-template-columns: auto 1fr auto;
+    gap: 0.6rem;
+  }
+
+  .vs {
+    padding: 0 0.85rem;
+    gap: 0.6rem;
+  }
+
+  .vsBadge {
+    width: 1.65rem;
+    height: 1.65rem;
+    font-size: 0.46rem;
+  }
+
+  .face {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .rowTeam {
+    font-size: 1.02rem;
+  }
+
+  .rowScore,
+  .rowScoreEmpty {
+    font-size: 1.1rem;
+    min-width: 3.8rem;
+  }
+
+  .verdictHit,
+  .verdictMiss {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+}
+
+/* ── Errors ───────────────────────────────────────────────── */
+
+.err {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 1.6rem;
+  text-align: center;
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 3px;
+  color: var(--gp-soft);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.errLink {
+  display: inline-block;
+  margin-top: 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+}

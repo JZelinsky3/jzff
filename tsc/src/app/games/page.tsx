@@ -5,13 +5,14 @@ import { SiteFooter } from '@/components/SiteFooter'
 import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 import { GAMES } from './gameDefs'
+import { GameMark } from './GameMark'
 import { MobileGames } from './MobileGames'
 import styles from './games.module.css'
 
 export const metadata: Metadata = {
   title: 'The Games Page · Fantasy football minigames built on real league history',
   description:
-    'Diversions built out of real fantasy league archives. Roster Roulette deals you random teams from seasons that actually happened; Guess the Draft hands you a draft with the names taken out and asks whose it was.',
+    'Diversions built out of real fantasy league archives. Deal a lineup from teams that actually existed, name a manager off a redacted draft, call old results until you miss, beat a line, or redraft a board knowing how it went.',
   alternates: { canonical: 'https://thesundaychronicle.app/games/' },
   openGraph: {
     type: 'website',
@@ -108,23 +109,38 @@ export default async function GamesPage() {
           <span className={styles.sectionMeta}>{GAMES.length} to play</span>
         </div>
 
-        <div className={styles.rail}>
-          {GAMES.map((g) => (
-            <Link key={g.id} href={g.href} className={styles.gameCard}>
-              <span className={styles.gameTitle}>
-                {g.title} <em>{g.titleEm}</em>
-              </span>
-              <span className={styles.gameBody}>{g.short}</span>
-              <span className={styles.gameHow}>
-                {g.how.map((step) => (
-                  <span key={step} className={styles.gameStep}>
-                    {step}
-                  </span>
-                ))}
-              </span>
-              <span className={styles.gameFoot}>
-                <span className={styles.gameAccess}>{g.access}</span>
-                <span className={styles.gameGo}>Choose a league</span>
+        {/* Laid out as a back page, not as a phone list stacked wider.
+            The first game runs the full width with its art at poster size;
+            the rest sit two-up beside it. Cards are HORIZONTAL — plate on
+            the left, name and one line on the right — because a desktop
+            card's spare dimension is width, and stacking art on top of text
+            is the shape a 390px screen forces, not one this page has any
+            reason to copy.
+
+            Everything the pointer can do is used here and nowhere on the
+            phone: the numeral, the accent flood and the rule under the name
+            all move on hover. */}
+        <div className={styles.gameRail}>
+          {GAMES.map((g, i) => (
+            <Link
+              key={g.id}
+              href={g.href}
+              className={i === 0 ? `${styles.gameCard} ${styles.gameLead}` : styles.gameCard}
+              style={{ '--accent': g.accent } as React.CSSProperties}
+            >
+              <GameMark id={g.id} variant={i === 0 ? 'lead' : 'poster'} />
+              <span className={styles.gameCardBody}>
+                <span className={styles.gameNo} aria-hidden>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className={styles.gameTitle}>
+                  {g.title} <em>{g.titleEm}</em>
+                </span>
+                <span className={styles.gameLine}>{g.tagline}</span>
+                <span className={styles.gameFoot}>
+                  <span className={styles.gameAccess}>{g.accessTag}</span>
+                  <span className={styles.gameGo}>Play</span>
+                </span>
               </span>
             </Link>
           ))}

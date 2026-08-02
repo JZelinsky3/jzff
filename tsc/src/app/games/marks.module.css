@@ -1,0 +1,289 @@
+/* ============================================================
+   GAME MARKS
+   Each game draws itself. A hub listing five games cannot tell
+   them apart with prose — every card ends up the same shape,
+   the same length and the same voice, and the reader skims
+   past all five. The mark is the thing that says which game
+   this is before a word is read.
+
+   Everything here is sized in `em` off .mark's own font-size,
+   so the same art serves a 390px phone card and a desktop
+   poster by changing one number. --accent comes from the
+   GameDef and is set on the card.
+   ============================================================ */
+
+.mark {
+  display: block;
+  font-size: 1rem;
+  padding: 0.85em 0.9em;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 9%, transparent),
+      transparent
+    ),
+    var(--gp-ink, #0b1119);
+  border-bottom: 1px solid var(--gp-line-soft, #1d2b3a);
+}
+
+/* Desktop variants. The art is a PLATE on the left of a horizontal card
+   rather than a banner on top of a stacked one, so the frame fills its
+   column's height and rules against the body on its right edge instead of
+   its bottom. One font-size drives everything below it. */
+.poster,
+.lead {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-bottom: 0;
+  border-right: 1px solid var(--gp-line-soft, #1d2b3a);
+}
+
+.poster {
+  font-size: 1.15rem;
+  padding: 1.1em 1em;
+}
+
+/* The lead game gets the back page's top billing and the art to match. */
+.lead {
+  font-size: 1.7rem;
+  padding: 1.1em 1.2em;
+}
+
+/* ── Roster Roulette: the landed spin, and the sheet ──────────
+   NAMES NO TEAM, on purpose. It used to print one, first a real
+   name lifted out of the site pool (a stranger's private joke,
+   unreadable to anyone else) and then an invented one — which
+   only moved the problem, since a made-up team on a site whose
+   whole promise is real history reads as a placeholder the
+   moment you notice it.
+
+   A season and a record identify the landed squad without
+   naming anybody, and the slot row underneath says what you
+   actually DO with it: seven slots, three of them filled. The
+   two halves together are the entire game in one picture.
+   ------------------------------------------------------------ */
+
+.wheel {
+  display: block;
+  border-top: 0.125em solid var(--accent);
+  border-bottom: 0.125em solid var(--accent);
+  padding: 0.42em 0.6em;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.12));
+  text-align: center;
+}
+
+.wheelYear {
+  display: block;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.46em;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.wheelRec {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.15em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  margin-top: 0.1em;
+}
+
+.slots {
+  display: flex;
+  gap: 0.18em;
+  margin-top: 0.5em;
+}
+
+.slot,
+.slotOn {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.4em;
+  letter-spacing: 0.06em;
+  text-align: center;
+  padding: 0.34em 0;
+  border-radius: 1px;
+}
+
+.slot {
+  color: var(--gp-mute);
+  border: 1px solid var(--gp-line, #2a3d51);
+}
+
+.slotOn {
+  color: #0b1119;
+  background: color-mix(in srgb, var(--accent) 78%, #0b1119);
+  border: 1px solid transparent;
+}
+
+/* ── Guess the Draft: names inked out ─────────────────────── */
+
+.picks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.34em;
+}
+
+.pick {
+  display: grid;
+  grid-template-columns: 1.35em 1fr 1.5em;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.pickRd {
+  font-family: var(--mono);
+  font-size: 0.5em;
+  color: var(--gp-mute);
+}
+
+.pickBar {
+  height: 0.62em;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 55%, #0b1119),
+    color-mix(in srgb, var(--accent) 22%, #0b1119)
+  );
+}
+
+.pickPos {
+  font-family: var(--mono);
+  font-size: 0.46em;
+  letter-spacing: 0.1em;
+  color: var(--gp-mute);
+  text-align: right;
+}
+
+/* ── The Gauntlet: a fixture, result withheld ──────────────── */
+
+.fix {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+}
+
+.fixRow {
+  display: grid;
+  grid-template-columns: 1fr 1.1em;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.fixBar {
+  height: 0.62em;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 55%, #0b1119),
+    color-mix(in srgb, var(--accent) 22%, #0b1119)
+  );
+}
+
+.fixScore {
+  font-family: var(--mono);
+  font-size: 0.72em;
+  text-align: center;
+  color: var(--accent);
+}
+
+.fixVs {
+  font-family: var(--mono);
+  font-size: 0.46em;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  padding-left: 0.1em;
+}
+
+/* ── The Over/Under: a quoted price ───────────────────────── */
+
+.line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.lineNum {
+  font-family: var(--serif);
+  font-size: 1.5em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.lineCalls {
+  display: flex;
+  gap: 0.35em;
+}
+
+.lineCall {
+  font-family: var(--mono);
+  font-size: 0.48em;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gp-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 1px;
+  padding: 0.16em 0.42em;
+}
+
+/* ── Redraft: on the clock ────────────────────────────────── */
+
+.clock {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5em;
+  padding-bottom: 0.4em;
+  margin-bottom: 0.4em;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.clockPick {
+  font-family: var(--serif);
+  font-size: 1.15em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.clockLabel {
+  font-family: var(--mono);
+  font-size: 0.46em;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.clockRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-top: 0.24em;
+}
+
+.clockDisc {
+  flex: none;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 40%, #0b1119);
+}
+
+.clockBar {
+  height: 0.5em;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 48%, #0b1119),
+    color-mix(in srgb, var(--accent) 18%, #0b1119)
+  );
+}

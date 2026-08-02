@@ -21,29 +21,33 @@ export type GameDef = {
   /** Masthead title, split so the second half can be set in italic. */
   title: string
   titleEm: string
-  /** One line on the hub card. What the game IS, not how it's played. */
-  short: string
-  /** The same idea for a phone, in a breath. The desktop `short` runs to
-      three clauses, which on a 390px card is five lines of body text before
-      you reach the thing you tap. */
-  pocket: string
-  /** Two words for the phone card's footer chip. `access` is a sentence and
-      filled the whole bottom of the card on its own. */
-  pocketAccess: string
-  /** The game's own colour. The phone hub shows both games at once with no
-      hover, no rail and no room for chrome, so the only thing telling them
-      apart is how they LOOK — this and the mark each card draws. */
+  /** The whole pitch, in a breath. ONE line, on every hub — the cards used
+      to carry a three-clause version of this plus the three how-to-play
+      beats, which at five games was a wall of identical prose nobody read.
+      The long pitch is `blurb`, on the game's own page. */
+  tagline: string
+  /** Two words for the hub card's footer chip. */
+  accessTag: string
+  /** The game's own colour. Both hubs show every game at once, so the thing
+      telling them apart is how they LOOK — this and the mark each card
+      draws (see ./GameMark). It carries through to the game's own board as
+      --accent on the page wrap. */
   accent: string
   /** The longer pitch, shown once a game has been chosen. */
   blurb: string
   /** Three beats, in play order. Kept to a phrase each. */
   how: string[]
-  /** Shown on the hub card's footer, so the ask is clear before the click. */
-  access: string
   /** Whether the site-wide pool is meaningful for this game. */
   allowsSite: boolean
   /** Whether several leagues can be dealt as one pool. */
   allowsCombine: boolean
+  /** Whether the demo league can back this game.
+   *
+   * Not a taste call — the static demo tree carries drafts and standings but
+   * no week-by-week schedule, so the games that ask about a single result
+   * have nothing to read there. When the demo export grows matchups this
+   * turns true for The Gauntlet and Over/Under and nothing else changes. */
+  allowsDemo: boolean
   /** Copy for the pool cards in the lobby. */
   demoBody: string
   leagueBody: string
@@ -54,10 +58,11 @@ export const ROSTER_ROULETTE: GameDef = {
   href: '/games/roulette/',
   title: 'Roster',
   titleEm: 'Roulette',
-  short:
-    'The wheel lands on somebody’s real team from a real season. Take one player off it, fill seven slots, and see whether the lineup goes 17-0.',
-  pocket: 'Eight real teams. One player off each. Seven slots.',
-  pocketAccess: 'No account',
+  // Ends on the question, not on a count of slots. "Seven slots" is a rule;
+  // the card has one line to give somebody a reason to tap, and the reason is
+  // the record. The mark above draws the wheel, so the line doesn't have to.
+  tagline: 'Eight real teams. One player off each. Can you go 17-0?',
+  accessTag: 'No account',
   accent: '#e8c889',
   blurb:
     'Every almanac on this site is a pile of teams that actually existed. The wheel picks one of them at random, you take a single player, and it spins again. Eight spins, seven slots, one reroll if it deals you nothing you can use.',
@@ -66,9 +71,9 @@ export const ROSTER_ROULETTE: GameDef = {
     'Take one player off that team into a slot he fits',
     'Fill the lineup, then play it against seventeen games',
   ],
-  access: 'No account needed',
   allowsSite: true,
   allowsCombine: true,
+  allowsDemo: true,
   demoBody:
     'Seven seasons of one league, the way it feels when the wheel keeps landing on people you know. Real teams and real numbers, under the demo’s names.',
   leagueBody:
@@ -80,10 +85,8 @@ export const GUESS_THE_DRAFT: GameDef = {
   href: '/games/guess-the-draft/',
   title: 'Guess the',
   titleEm: 'Draft',
-  short:
-    'A draft from your league’s history with every name taken out. Say who made the picks and what year it was.',
-  pocket: 'A draft with the name blacked out. Whose was it?',
-  pocketAccess: 'Needs a league',
+  tagline: 'A draft with the name blacked out. Whose was it?',
+  accessTag: 'Needs a league',
   // Terracotta against Roulette's brass. The two cards sit one above the
   // other on a phone and a shared gold made them read as one list.
   accent: '#e29278',
@@ -92,15 +95,103 @@ export const GUESS_THE_DRAFT: GameDef = {
   how: [
     'Read eight picks with the name and the year stripped out',
     'Name the manager and date the season, locked in together',
-    'A point for each, a third for getting both in one round',
+    'Three for the manager, one for the year, one more for both',
   ],
-  access: 'Best with a league of your own',
   allowsSite: false,
   allowsCombine: false,
+  allowsDemo: true,
   demoBody:
     'Eight drafts from seven seasons of one league. The quickest way to see what the game is before you point it at your own.',
   leagueBody:
     'Eight drafts pulled from every completed season on your books, with the names taken out. Managers you know, years you were there for.',
 }
 
-export const GAMES: GameDef[] = [ROSTER_ROULETTE, GUESS_THE_DRAFT]
+export const THE_GAUNTLET: GameDef = {
+  id: 'gauntlet',
+  href: '/games/gauntlet/',
+  title: 'The',
+  titleEm: 'Gauntlet',
+  tagline: 'Two teams. One week. Who won?',
+  accessTag: 'Needs a league',
+  // Steel blue against Roulette's brass and Guess the Draft's terracotta.
+  // Warm colours read as invitations and this is the game where you lose.
+  accent: '#8fb3d6',
+  blurb:
+    'One question at a time, and always the same question. Two teams from your league met in a real week of a real season, and you get their names and nothing else. Say who won. Get it right and you are asked again. Get it wrong and the run is over, so the only number this game keeps is how far you got.',
+  how: [
+    'Two teams and the week they met. No records, no hints',
+    'Call the winner, then see the scores and where they stood',
+    'One wrong ends the run, so the score is how long you lasted',
+  ],
+  allowsSite: false,
+  allowsCombine: false,
+  // The demo tree publishes standings but no schedule. Said plainly in the
+  // dealer too, so a hand-typed ?pool=demo gets a reason rather than a stall.
+  allowsDemo: false,
+  demoBody: '',
+  leagueBody:
+    'Every game your league has ever played, one at a time, in an order nobody can revise. Needs one completed season and nothing else.',
+}
+
+export const OVER_UNDER: GameDef = {
+  id: 'over-under',
+  href: '/games/over-under/',
+  title: 'The',
+  titleEm: 'Over/Under',
+  tagline: 'Ten real weeks. Ten lines. Over or under?',
+  accessTag: 'Needs a league',
+  // Violet, to stay clear of the brass, the terracotta and the Gauntlet's
+  // steel. Four games on one phone screen and the mark is only half the
+  // difference between them.
+  accent: '#c9a9ea',
+  blurb:
+    'Every line on this board is hung near what the team actually scored, so none of them are free. You get the team, the week and the number, and nothing else until you call it. Ten calls, and the only question that matters is whether you can beat a coin over ten.',
+  how: [
+    'A real team from a real week, and a line to beat',
+    'Call it over or under, then see what they actually put up',
+    'Ten calls, and five is what guessing gets you',
+  ],
+  allowsSite: false,
+  allowsCombine: false,
+  // Lines are scaled to one league's scoring spread, and the demo tree has no
+  // week-by-week scores to measure that spread from.
+  allowsDemo: false,
+  demoBody: '',
+  leagueBody:
+    'Every week your league has ever played, priced against how much your scores actually move. Needs one completed season and nothing else.',
+}
+
+export const REDRAFT: GameDef = {
+  id: 'redraft',
+  href: '/games/redraft/',
+  title: 'The',
+  titleEm: 'Redraft',
+  tagline: 'A real draft slot. Pick again, with hindsight.',
+  accessTag: 'Needs a league',
+  // Sage, and the last of the five that reads clearly against the others.
+  accent: '#9ec8a8',
+  blurb:
+    'You are on the clock at a real pick from a real draft, looking at six players who were genuinely still on the board. Take one, and find out what they did that year. Do it for a whole draft and your team gets set against the one that actually got built, per game, in your league’s own scoring.',
+  how: [
+    'You get a real slot: whole draft, or the whole first round',
+    'Six players who were actually there. Take one',
+    'Your team against theirs, per game, when it’s done',
+  ],
+  allowsSite: false,
+  allowsCombine: false,
+  // The demo tree ships its drafts, so this one IS playable signed-out —
+  // unlike the two games that need a week-by-week schedule.
+  allowsDemo: true,
+  demoBody:
+    'Seven drafts from one league, and every player’s real season behind them. The quickest way to see the game before pointing it at your own.',
+  leagueBody:
+    'Your own drafts, board by board, with hindsight you did not have at the time. Needs your drafts to have come across from your platform.',
+}
+
+export const GAMES: GameDef[] = [
+  ROSTER_ROULETTE,
+  GUESS_THE_DRAFT,
+  THE_GAUNTLET,
+  OVER_UNDER,
+  REDRAFT,
+]

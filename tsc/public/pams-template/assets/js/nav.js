@@ -401,6 +401,9 @@
                 '<span class="nav-drop-label">Games</span>' +
                 '<a href="/games/roulette' + poolQs + '">Roster Roulette</a>' +
                 '<a href="/games/guess-the-draft' + poolQs + '">Guess the Draft</a>' +
+                '<a href="/games/gauntlet' + poolQs + '">The Gauntlet</a>' +
+                '<a href="/games/over-under' + poolQs + '">The Over/Under</a>' +
+                '<a href="/games/redraft' + poolQs + '">Redraft</a>' +
                 '<a href="/games/">All games</a>';
         }
 

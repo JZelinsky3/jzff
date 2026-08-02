@@ -9,11 +9,11 @@
 // one at a time would let the first answer be walked back once the second one
 // made it obvious.
 //
-// Scored three ways on purpose. A point for the manager and a point for the
-// year mean a half-right round still counts for something, and the third
-// point for getting both in the same round is what makes a clean call feel
-// like one. Sixteen out of twenty-four is a good night; twenty-four is a
-// story.
+// Scored three ways on purpose, and not evenly. Three for the manager, one
+// for the year, one more for taking both in the same round: a half-right
+// round still counts for something, the sweep is what makes a clean call feel
+// like one, and the weighting says which half was the hard one. Twenty-six
+// out of forty is a good night; forty is a story.
 //
 // The deal is seeded, so a run is a link: anyone opening ?seed=XXXX plays the
 // identical eight cards in the identical order and can be beaten honestly.

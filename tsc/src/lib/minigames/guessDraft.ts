@@ -39,8 +39,19 @@ export const ROUNDS = 8
 /** How many of a manager's picks the draft card shows. */
 export const PICKS_SHOWN = 8
 
-/** Points for naming the manager, the year, and both in one round. */
-export const PTS_MANAGER = 1
+/** Points for naming the manager, the year, and both in one round.
+ *
+ * The two halves are NOT worth the same, and were for about a day. Dating the
+ * season is the easy half — a league has a handful of years, the players date
+ * themselves, and a reader who knows nothing about the league can still get
+ * close off the names alone. Naming the manager is the half that needs to have
+ * been there. Paying both a point made a run of pure year guesses score
+ * respectably, which flattered the wrong reader.
+ *
+ * So the manager is worth three, the year one, and the sweep one on top: a
+ * clean call is five, the manager alone is more than half a round, and the
+ * year alone is the consolation it should be. */
+export const PTS_MANAGER = 3
 export const PTS_YEAR = 1
 export const PTS_SWEEP = 1
 export const PTS_PER_ROUND = PTS_MANAGER + PTS_YEAR + PTS_SWEEP

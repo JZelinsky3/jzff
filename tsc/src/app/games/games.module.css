@@ -183,78 +183,149 @@
 }
 
 /* ── Game cards (the hub's top billing) ───────────────────────
-   Deliberately bigger and warmer than a pool card. The hub asks
-   one question now — which game — so its cards get the room to
-   answer it, and the pool cards on the next screen stay plain
-   so the two steps never look like the same list twice.
+   Laid out as a back page rather than as the phone's list made
+   wider. Three things here exist only because this is a desktop
+   page, and none of them have a mobile equivalent:
+
+   · A LEAD. The first game runs the full width with its art at
+     poster size; the rest sit two-up under it. A rail of five
+     equal cards has no entry point and reads as a menu.
+   · HORIZONTAL cards. Plate on the left, name and one line on
+     the right. Stacking art above text is what a 390px screen
+     forces; a desktop card's spare dimension is width, so using
+     it is the whole difference between designing for the screen
+     and scaling up someone else's design.
+   · HOVER. The numeral, the accent flood and the rule under the
+     name all move under the pointer. A phone has none of this
+     and the layout shouldn't pretend otherwise.
    ------------------------------------------------------------ */
 
+.gameRail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .gameCard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  background: linear-gradient(180deg, var(--gp-panel-2), var(--gp-panel));
+  position: relative;
+  display: grid;
+  grid-template-columns: 13.5rem minmax(0, 1fr);
+  background: var(--gp-panel);
   border: 1px solid var(--gp-line);
-  border-top: 3px solid var(--gp-gold);
   border-radius: 4px;
-  padding: 1.6rem 1.4rem 1.2rem;
+  overflow: hidden;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s, transform 0.15s;
+  transition: border-color 0.16s, transform 0.16s;
+}
+
+/* The accent arrives as a spine that grows out of the top-left corner on
+   hover, rather than a static coloured border. A permanent 3px bar on five
+   cards is five bars; one that only lights under the pointer is a pointer. */
+.gameCard::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--accent, var(--gp-gold));
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.22s ease;
+  z-index: 2;
 }
 
 .gameCard:hover {
-  border-color: var(--gp-line);
-  border-top-color: var(--gp-bright);
+  border-color: color-mix(in srgb, var(--accent, #e8c889) 50%, transparent);
   transform: translateY(-2px);
+}
+
+.gameCard:hover::before {
+  transform: scaleY(1);
+}
+
+/* Full width, bigger art, bigger name. */
+.gameLead {
+  grid-column: 1 / -1;
+  grid-template-columns: 20rem minmax(0, 1fr);
+}
+
+.gameCardBody {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1.15rem 1.3rem 1rem;
+}
+
+.gameLead .gameCardBody {
+  padding: 1.7rem 1.8rem 1.4rem;
+  gap: 0.6rem;
+}
+
+/* Set in the corner as a plate number. Nearly invisible at rest and lit by
+   the accent on hover, so the rail reads as a numbered set without five
+   loud digits competing with five titles. */
+.gameNo {
+  position: absolute;
+  top: 0.85rem;
+  right: 1.1rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: var(--gp-line);
+  transition: color 0.16s;
+}
+
+.gameCard:hover .gameNo {
+  color: var(--accent, var(--gp-gold));
 }
 
 .gameTitle {
   font-family: var(--serif);
-  font-size: clamp(1.5rem, 4vw, 1.95rem);
+  font-size: 1.45rem;
   line-height: 1.1;
   color: var(--gp-cream);
+  /* Room for the numeral, so a long name never runs under it. */
+  padding-right: 2.4rem;
+}
+
+.gameLead .gameTitle {
+  font-size: 2.1rem;
 }
 
 .gameTitle em {
   font-style: italic;
-  color: var(--gp-bright);
+  color: var(--accent, var(--gp-bright));
 }
 
-.gameBody {
-  font-size: 0.9rem;
-  line-height: 1.6;
+/* A hairline that draws itself in from the left under the name. The only
+   piece of motion on the card that isn't colour, and the thing that makes a
+   hover feel like the card answered. */
+.gameTitle::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 1px;
+  margin-top: 0.55rem;
+  background: var(--accent, var(--gp-gold));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.28s ease;
+}
+
+.gameCard:hover .gameTitle::after {
+  transform: scaleX(1);
+}
+
+.gameLine {
+  font-size: 0.86rem;
+  line-height: 1.55;
   color: var(--gp-soft);
 }
 
-/* The three beats, as a rule-separated list. Enough to know whether you
-   want to play before committing to a second screen. */
-.gameHow {
-  display: flex;
-  flex-direction: column;
-  border-top: 1px solid var(--gp-line-soft);
-  margin-top: 0.2rem;
-}
-
-.gameStep {
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  line-height: 1.45;
-  color: var(--gp-mute);
-  padding: 0.5rem 0 0.5rem 0.9rem;
-  border-bottom: 1px solid var(--gp-line-soft);
-  position: relative;
-}
-
-.gameStep::before {
-  content: '▸';
-  position: absolute;
-  left: 0;
-  color: var(--gp-gold);
-}
-
-.gameStep:last-child {
-  border-bottom: 0;
+.gameLead .gameLine {
+  font-size: 1rem;
+  max-width: 34rem;
 }
 
 .gameFoot {
@@ -262,28 +333,51 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 0.8rem;
-  flex-wrap: wrap;
-  margin-top: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.9rem;
 }
 
 .gameAccess {
   font-family: var(--mono);
-  font-size: 0.58rem;
-  letter-spacing: 0.16em;
+  font-size: 0.54rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--gp-mute);
 }
 
 .gameGo {
   font-family: var(--mono);
-  font-size: 0.64rem;
-  letter-spacing: 0.18em;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--gp-gold);
+  color: var(--accent, var(--gp-gold));
 }
 
-.gameCard:hover .gameGo {
-  color: var(--gp-bright);
+/* Narrow desktop / tablet: the plate stops earning its column before the
+   text does, so the cards go one-up and keep the horizontal shape rather
+   than collapsing into the phone's stack. Phones never reach this file —
+   they get MobileGames. */
+@media (max-width: 1000px) {
+  .gameRail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gameCard,
+  .gameLead {
+    grid-template-columns: 11rem minmax(0, 1fr);
+  }
+
+  .gameLead .gameTitle {
+    font-size: 1.6rem;
+  }
+
+  .gameLead .gameCardBody {
+    padding: 1.15rem 1.3rem 1rem;
+  }
+
+  .gameLead .gameLine {
+    font-size: 0.86rem;
+  }
 }
 
 /* ── "Play it on your own league" (recap footer) ──────────────

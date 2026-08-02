@@ -1,68 +1,27 @@
 import Link from 'next/link'
-import { GAMES, ROSTER_ROULETTE, GUESS_THE_DRAFT } from './gameDefs'
+import { GAMES } from './gameDefs'
 import type { GameDef } from './gameDefs'
 import { MobileGameBar, Chevron } from './MobileGameBar'
 import { MobileGamesDock } from './MobileGamesDock'
 import { MobileGamesFoot } from './MobileGamesFoot'
+import { GameMark } from './GameMark'
 import s from './mobile.module.css'
 
 // The Games Page on a phone.
 //
 // The first pass at this was the shared content shell (/about, /guides)
-// with the desktop copy poured into it, and it read as two identical
-// paragraphs stacked in two identical boxes. Two things fix that, and both
-// are about a phone showing both games at once with no hover and no rail:
+// with the desktop copy poured into it, and it read as identical paragraphs
+// stacked in identical boxes. Two things fix that, and both are about a
+// screen showing every game at once with no hover and no rail:
 //
-//  · Each card DRAWS its game — Roulette gets the spin window, Guess the
-//    Draft gets a redacted pick list — so they're told apart before a word
-//    is read.
-//  · The copy is one line each (GameDef.pocket), and the footer is a
-//    two-word chip. The desktop card's three-clause pitch and its sentence
-//    of access terms filled the bottom of the card between the reader and
-//    the thing they were trying to tap.
-
-/** The spin window as it actually looks on the board: two brass rules with
-    a landed team between them. An earlier version stacked clipped "ghost"
-    rows above and below to suggest the drum turning; at this size they read
-    as text cut in half rather than as motion. */
-function WheelMark() {
-  return (
-    <span className={s.mark}>
-      <span className={s.markWheel}>
-        <span className={s.markWheelYear}>TSC.</span>
-        <span className={s.markWheelName}>Can you go 17-0?</span>
-      </span>
-    </span>
-  )
-}
-
-/** Three picks with the names inked out, which is the whole game. */
-function RedactedMark() {
-  const rows: [string, string, string][] = [
-    ['R1', '78%', 'RB'],
-    ['R2', '92%', 'WR'],
-    ['R3', '64%', 'QB'],
-  ]
-  return (
-    <span className={s.mark}>
-      <span className={s.markPicks}>
-        {rows.map(([rd, width, pos]) => (
-          <span key={rd} className={s.markPick}>
-            <span className={s.markPickRd}>{rd}</span>
-            <span className={s.markPickBar} style={{ width }} />
-            <span className={s.markPickPos}>{pos}</span>
-          </span>
-        ))}
-      </span>
-    </span>
-  )
-}
-
-function Mark({ id }: { id: string }) {
-  if (id === ROSTER_ROULETTE.id) return <WheelMark />
-  if (id === GUESS_THE_DRAFT.id) return <RedactedMark />
-  return null
-}
+//  · Each card DRAWS its game, via the shared ./GameMark — so they're told
+//    apart before a word is read.
+//  · The copy is one line each (GameDef.tagline), and the footer is a
+//    two-word chip. The pitch and the rules belong on the game's own page,
+//    not stacked five times on the way to it.
+//
+// The desktop hub reached the same conclusion later and now shares both the
+// marks and this shape. See ./page.tsx.
 
 export function MobileGames({
   signedIn,
@@ -106,14 +65,14 @@ export function MobileGames({
               className={s.game}
               style={{ '--accent': g.accent } as React.CSSProperties}
             >
-              <Mark id={g.id} />
+              <GameMark id={g.id} />
               <span className={s.gameBody}>
                 <span className={s.gameTitle}>
                   {g.title} <em>{g.titleEm}</em>
                 </span>
-                <span className={s.gameLine}>{g.pocket}</span>
+                <span className={s.gameLine}>{g.tagline}</span>
                 <span className={s.gameFoot}>
-                  <span className={s.chip}>{g.pocketAccess}</span>
+                  <span className={s.chip}>{g.accessTag}</span>
                   <span className={s.gameGo}>
                     Play
                     <Chevron />

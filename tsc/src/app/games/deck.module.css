@@ -1,0 +1,231 @@
+/* ============================================================
+   THE LEAGUE PICKER
+   Second step of the two-step: /games picked the game, this
+   picks whose history to play it on.
+
+   It has been three things. A rail of prose boxes (read like a
+   settings screen). Then small vertical playing cards with
+   corner marks and a tilt — game-flavoured, but tiny, and
+   speaking a language nothing else on the page spoke.
+
+   Now it's the SAME CARD the hub uses to pick a game:
+   monogram plate on the left, name and stat line on the right,
+   accent spine and hairline on hover. Two screens of one
+   two-step flow should not be two different design languages,
+   and the shape is already proven at this width.
+
+   Tokens (--gp-*) come from the page wrap in both trees.
+   ============================================================ */
+
+.deck {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  background: var(--gp-panel);
+  border: 1px solid var(--gp-line);
+  border-radius: 4px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.16s, transform 0.16s;
+}
+
+/* Same gesture as the hub's game cards: the accent grows out of the top-left
+   corner under the pointer rather than sitting there permanently. */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--accent, var(--gp-gold));
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.22s ease;
+  z-index: 2;
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--accent, #e8c889) 50%, transparent);
+  transform: translateY(-2px);
+}
+
+.card:hover::before {
+  transform: scaleY(1);
+}
+
+/* The house's own entries — the whole site, the demo league. Marked apart
+   because they aren't yours, and somebody scanning for their own league
+   shouldn't have to read two names to work out which is which. */
+.house .plate {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 6px,
+      rgba(255, 255, 255, 0.022) 6px 12px
+    ),
+    var(--gp-ink);
+}
+
+.house {
+  border-style: dashed;
+}
+
+/* ── The plate ────────────────────────────────────────────── */
+
+.plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.1rem 0.6rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent, #e8c889) 10%, transparent), transparent),
+    var(--gp-ink);
+  border-right: 1px solid var(--gp-line-soft);
+}
+
+.plateText {
+  font-family: var(--serif);
+  font-size: 1.85rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--gp-cream);
+  text-align: center;
+  word-break: break-word;
+}
+
+/* ── The body ─────────────────────────────────────────────── */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.95rem 1.05rem 0.85rem;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  line-height: 1.15;
+  color: var(--gp-cream);
+}
+
+/* The hairline draws itself in from the left on hover — the one piece of
+   motion that isn't colour, and what makes the card feel like it answered. */
+.name::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 1px;
+  margin-top: 0.45rem;
+  background: var(--accent, var(--gp-gold));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.28s ease;
+}
+
+.card:hover .name::after {
+  transform: scaleX(1);
+}
+
+.note {
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  line-height: 1.5;
+}
+
+.stats {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 0.7rem;
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.statNum {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-bright);
+}
+
+.statLabel {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  line-height: 1.3;
+}
+
+.deal {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  transition: color 0.16s;
+}
+
+.card:hover .deal {
+  color: var(--accent, var(--gp-gold));
+}
+
+/* One-up below the point where two horizontal cards start squeezing the
+   name. The card keeps its shape rather than collapsing into a tile — the
+   plate is what identifies a league at a glance and it works at any width. */
+@media (max-width: 900px) {
+  .deck {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .deck {
+    gap: 0.6rem;
+  }
+
+  .card {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+  }
+
+  .plate {
+    padding: 0.85rem 0.4rem;
+  }
+
+  .plateText {
+    font-size: 1.35rem;
+  }
+
+  .body {
+    padding: 0.8rem 0.85rem 0.7rem;
+  }
+
+  .name {
+    font-size: 1rem;
+  }
+
+  /* No hover on a phone, so the lift would only fire on tap and read as a
+     glitch. */
+  .card:hover {
+    transform: none;
+  }
+}

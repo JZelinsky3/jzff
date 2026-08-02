@@ -1,27 +1,58 @@
 // The league picker for one game, on a phone.
 //
-// Whose history to play on is a LIST decision — the names are what's being
-// read — so it's the Clubhouse's door list, not a rail of cards with a
-// paragraph in each. The game's own pitch is already spent by the time
-// anyone reaches this screen (they tapped the card that made it), so what
-// survives here is the three beats of how it's played and nothing else.
+// The game's own pitch is already spent by the time anyone reaches this
+// screen — they tapped the card that made it — so what survives here is the
+// three beats of how it's played, and then the deck.
+//
+// The leagues were a Clubhouse door list until 2026-08-02. They're the shared
+// ./LeagueDeck now, same component as the desktop lobby: on a page whose whole
+// job is games, a list of rows read like a settings screen, and every game
+// here DEALS from a league. Two-up at 390px, which the card is sized for.
 
 import Link from 'next/link'
 import { loadPoolsForViewer } from './pools'
 import { CombinePools } from './CombinePools'
+import { LeagueDeck, HouseDeck, type HousePool } from './LeagueDeck'
 import { ownLeagueHref } from './OwnLeagueCta'
-import { MobileGameBar, Chevron } from './MobileGameBar'
+import { MobileGameBar } from './MobileGameBar'
 import { MobileGamesDock } from './MobileGamesDock'
 import { MobileGamesFoot } from './MobileGamesFoot'
 import { MAX_COMBINED_LEAGUES } from '@/lib/minigames/deal'
 import type { GameDef } from './gameDefs'
 import s from './mobile.module.css'
 
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
-
 export async function MobileGameLobby({ game }: { game: GameDef }) {
   const { signedIn, leaguePools } = await loadPoolsForViewer()
   const poolHref = (id: string) => `${game.href}?pool=${encodeURIComponent(id)}`
+
+  // See the note in GameLobby: a game with neither pool has nothing to list
+  // here, and the empty section reads as a broken page.
+  const openToEveryone = game.allowsSite || game.allowsDemo
+
+  // Same house cards as the desktop lobby. The deck is one component in both
+  // trees — the card is legible at half a 390px screen because the plate does
+  // the identifying, so there was no reason to design a second one.
+  const housePools: HousePool[] = []
+  if (game.allowsSite) {
+    housePools.push({
+      id: 'site',
+      label: 'The Whole Site',
+      monogram: 'TSC',
+      note: 'Every published almanac',
+      statTop: 'All',
+      statBottom: 'leagues on the site',
+    })
+  }
+  if (game.allowsDemo) {
+    housePools.push({
+      id: 'demo',
+      label: 'The Lakeside League',
+      monogram: 'LL',
+      note: 'Demo · no account',
+      statTop: '7',
+      statBottom: 'seasons · 2019–2025',
+    })
+  }
 
   return (
     <main className={s.root} style={{ '--accent': game.accent } as React.CSSProperties}>
@@ -50,50 +81,24 @@ export async function MobileGameLobby({ game }: { game: GameDef }) {
         </ol>
       </section>
 
-      <section className={s.sec}>
-        <div className={s.secHead}>
-          <div>
-            <span className={s.secNum}>§ 01 · Open to everyone</span>
-            <span className={s.secTitle}>Play it now</span>
+      {openToEveryone && (
+        <section className={s.sec}>
+          <div className={s.secHead}>
+            <div>
+              <span className={s.secNum}>§ 01 · Open to everyone</span>
+              <span className={s.secTitle}>Play it now</span>
+            </div>
+            <span className={s.secSide}>No account</span>
           </div>
-          <span className={s.secSide}>No account</span>
-        </div>
 
-        <div className={s.doors}>
-          {game.allowsSite && (
-            <Link href={poolHref('site')} className={s.door}>
-              <span className={s.doorNum} aria-hidden>
-                I
-              </span>
-              <span>
-                <span className={s.doorName}>The whole site</span>
-                <span className={s.doorDesc}>Teams from leagues you have never heard of.</span>
-              </span>
-              <span className={s.doorArrow}>
-                <Chevron />
-              </span>
-            </Link>
-          )}
-
-          <Link href={poolHref('demo')} className={s.door}>
-            <span className={s.doorNum} aria-hidden>
-              {game.allowsSite ? 'II' : 'I'}
-            </span>
-            <span>
-              <span className={s.doorName}>The Lakeside League</span>
-              <span className={s.doorDesc}>Seven seasons of one league, under borrowed names.</span>
-            </span>
-            <span className={s.doorArrow}>
-              <Chevron />
-            </span>
-          </Link>
-        </div>
-      </section>
+          <HouseDeck pools={housePools} href={poolHref} />
+        </section>
+      )}
 
       <section className={s.sec}>
         <div className={s.secHead}>
           <div>
-            <span className={s.secNum}>§ 02 · Your shelf</span>
+            <span className={s.secNum}>{openToEveryone ? '§ 02' : '§ 01'} · Your shelf</span>
             <span className={s.secTitle}>People you know</span>
           </div>
           <span className={s.secSide}>
@@ -114,22 +119,7 @@ export async function MobileGameLobby({ game }: { game: GameDef }) {
           </div>
         ) : (
           <>
-            <div className={s.doors}>
-              {leaguePools.map((p, i) => (
-                <Link key={p.id} href={poolHref(p.id)} className={s.door}>
-                  <span className={s.doorNum} aria-hidden>
-                    {ROMAN[i] ?? i + 1}
-                  </span>
-                  <span>
-                    <span className={s.doorName}>{p.label}</span>
-                    <span className={s.doorDesc}>{p.note}</span>
-                  </span>
-                  <span className={s.doorArrow}>
-                    <Chevron />
-                  </span>
-                </Link>
-              ))}
-            </div>
+            <LeagueDeck pools={leaguePools} href={poolHref} />
 
             {game.allowsCombine && leaguePools.length > 1 && (
               <CombinePools pools={leaguePools} max={MAX_COMBINED_LEAGUES} base={game.href} />
