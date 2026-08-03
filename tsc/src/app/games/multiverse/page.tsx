@@ -22,19 +22,63 @@ const TITLE = 'The Multiverse Draft · Every player is three players'
 const DESC =
   'Draft players across every season your league rostered them, then play out fourteen weeks where each one rolls a different year.'
 
-export const metadata: Metadata = {
-  title: TITLE,
-  description: DESC,
-  alternates: { canonical: 'https://thesundaychronicle.app/games/multiverse/' },
-  openGraph: {
-    type: 'website',
-    url: 'https://thesundaychronicle.app/games/multiverse/',
-    title: TITLE,
-    description: DESC,
-    siteName: 'The Sunday Chronicle',
-    images: [{ url: '/api/og/games?v=1', width: 1200, height: 630, alt: 'The Multiverse Draft' }],
-  },
-  twitter: { card: 'summary_large_image', title: TITLE, description: DESC, images: ['/api/og/games?v=1'] },
+/**
+ * Two previews, off the same route.
+ *
+ * A bare link gets the game's own card — it used to get /api/og/games, which
+ * is Roster Roulette's 17-0 scoreboard, so every game on the site posted the
+ * same picture and none of them was this one.
+ *
+ * A link off the share button carries the season on it (?w, ?s, ?po), and the
+ * card becomes the record plus fourteen weeks of marks. Nothing is read from
+ * the database to render it, which is what lets a crawler with no session
+ * scrape the finished season: the numbers are in the URL the sharer wrote.
+ * They are boasts, not verified stats — the board is where a claim gets
+ * checked, and nothing here is posted anywhere.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ w?: string; s?: string; m?: string; po?: string }>
+}): Promise<Metadata> {
+  const sp = await searchParams
+
+  const wins = Number(sp.w)
+  const hasResult = sp.w !== undefined && Number.isFinite(wins) && wins >= 0 && wins <= 14
+  const marks = /^[WLwl]{14}$/.test(sp.s ?? '') ? (sp.s as string).toUpperCase() : null
+  const margins = /^[0-9a-yA-Y]{14}$/.test(sp.m ?? '') ? (sp.m as string).toLowerCase() : null
+  const po = ['champion', 'final', 'out'].includes(sp.po ?? '') ? sp.po : null
+
+  const og = new URLSearchParams()
+  if (hasResult) {
+    og.set('w', String(Math.round(wins)))
+    if (marks) og.set('s', marks)
+    if (margins) og.set('m', margins)
+    if (po) og.set('po', po)
+  }
+  const image = `/api/og/multiverse${og.size ? `?${og}` : ''}`
+
+  const title = hasResult
+    ? `${Math.round(wins)}-${14 - Math.round(wins)} in The Multiverse Draft`
+    : TITLE
+  const desc = hasResult
+    ? 'Same cards, same dice. See what you can do with them.'
+    : DESC
+
+  return {
+    title,
+    description: desc,
+    alternates: { canonical: 'https://thesundaychronicle.app/games/multiverse/' },
+    openGraph: {
+      type: 'website',
+      url: 'https://thesundaychronicle.app/games/multiverse/',
+      title,
+      description: desc,
+      siteName: 'The Sunday Chronicle',
+      images: [{ url: image, width: 1200, height: 630, alt: 'The Multiverse Draft' }],
+    },
+    twitter: { card: 'summary_large_image', title, description: desc, images: [image] },
+  }
 }
 
 export default async function MultiversePage({

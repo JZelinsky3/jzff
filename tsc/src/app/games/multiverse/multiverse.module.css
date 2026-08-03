@@ -49,6 +49,35 @@
   min-height: 100vh;
 }
 
+/* The phone's chrome, in this game's colours.
+ *
+ * The mobile masthead (MobileGameBar) reads the same --gp-* tokens the
+ * desktop nav does, but it is a <header> rather than a <div>, so the child
+ * rule below never reached it — a teal board sat under a navy-and-brass bar.
+ * Setting the tokens on the theme element itself covers every descendant.
+ *
+ * Doubled deliberately. mobile.module.css's .boardRoot lands on the SAME
+ * element (the page's <main>) and sets these same tokens, so at equal
+ * specificity the winner would be whichever stylesheet the bundler happened
+ * to emit second. Two classes beats one, in every build.
+ */
+.theme.theme {
+  --gp-ink: #061414;
+  --gp-panel: #0b1f20;
+  --gp-panel-2: #102a2b;
+  --gp-raise: #16383a;
+  --gp-line: #1f4a4d;
+  --gp-line-soft: #16383a;
+  --gp-cream: #e9f3f0;
+  --gp-soft: #a9c4c1;
+  --gp-mute: #6d8b8a;
+  --gp-gold: #5fc9bd;
+  --gp-bright: #92e2d6;
+  /* The bar's own ground. Hardcoded navy in the shared sheet until this
+     game needed it; it reads a token now, and this is the token. */
+  --gp-bar: rgba(6, 20, 20, 0.93);
+}
+
 /* The shared furniture, retuned. Every one of these is a token
    games.module.css already reads; nothing here restyles a rule it owns. */
 .theme :global(.nav),
@@ -760,6 +789,10 @@
   grid-template-columns: minmax(0, 13rem);
 }
 
+.actions[data-three='yes'] {
+  grid-template-columns: repeat(3, minmax(0, 11rem));
+}
+
 .primary,
 .ghost {
   font-family: var(--mono);
@@ -788,6 +821,16 @@
   background: transparent;
   border: 1px solid var(--mv-line);
   color: var(--mv-soft);
+}
+
+/* The same button, as a link. Only the box model differs — an <a> has no
+   button's centring to inherit. */
+.ghostLink {
+  composes: ghost;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .ghost:hover {
@@ -926,7 +969,14 @@
   gap: 0.3rem;
 }
 
+/* Each season, filled to the share of the year it actually took.
+   The counts were already printed ("×7"), and a number is a poor way to say
+   "this is the one you got, most weeks". The fill says it before the number
+   is read, which is the whole job of this section: a card dealt 21 / 12 / 18
+   was worth whatever the dice picked most often. */
 .recapChip {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -934,6 +984,21 @@
   padding: 0.2rem 0.25rem;
   background: var(--mv-panel-2);
   border-top: 2px solid var(--mv-line);
+}
+
+.recapChip::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--share, 0%);
+  background: color-mix(in srgb, var(--mv-teal) 15%, transparent);
+}
+
+.recapChip > * {
+  position: relative;
+  z-index: 1;
 }
 
 .recapChipYear {
@@ -1095,6 +1160,494 @@
   color: var(--mv-teal);
 }
 
+/* ============================================================
+   THE PHONE'S OWN FURNITURE
+
+   Two pieces below that the desktop board has no version of.
+   They are rendered only when the server has already decided
+   this is a phone (see getViewMode in the page), so they are
+   NOT behind a media query — if they are in the document they
+   are meant to be on screen.
+   ============================================================ */
+
+/* ── The draft deck ─────────────────────────────────────────
+   Five cards as five full-width rows, with the three seasons
+   running ACROSS. See DraftRow for why: a phone's spare
+   dimension is the width of a row, and three bands side by
+   side at ~100px keep the rank and the games played that the
+   two-column grid had to drop.
+   ──────────────────────────────────────────────────────────── */
+
+.deck {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.dRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.65rem;
+  background: var(--mv-panel);
+  border: 1px solid var(--mv-line);
+  border-left: 3px solid var(--mv-line);
+  border-radius: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.1s ease;
+}
+
+.dRow:active:not(:disabled) {
+  background: var(--mv-panel-2);
+  border-left-color: var(--mv-teal);
+  transform: scale(0.995);
+}
+
+.dRow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dHead {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.dWho {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.dName {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  line-height: 1.1;
+  color: var(--mv-cream);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.06em;
+  color: var(--mv-mute);
+}
+
+.dMeta b {
+  color: var(--mv-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Where he'd land. The desktop card says this under the name; here it is
+   the row's right edge, which is the one place a scanning thumb is not
+   already reading a number. */
+.dSlot {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mv-teal);
+  border: 1px solid color-mix(in srgb, var(--mv-teal) 45%, transparent);
+  padding: 0.2rem 0.35rem;
+}
+
+.dSlot[data-none='yes'] {
+  color: var(--mv-mute);
+  border-color: var(--mv-line);
+}
+
+.dBands {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.dBand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.04rem;
+  padding: 0.3rem 0.4rem;
+  background: var(--mv-panel-2);
+  border-left: 2px solid var(--mv-line);
+  min-width: 0;
+}
+
+.dBandYear {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  color: var(--mv-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.dBandPpg {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  line-height: 1.05;
+  color: var(--mv-cream);
+  font-variant-numeric: tabular-nums;
+}
+
+.dBandRank {
+  font-family: var(--mono);
+  font-size: 0.44rem;
+  color: var(--mv-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── The lineup bar ─────────────────────────────────────────
+   Roster Roulette's HUD, in this game's colours and doing one
+   more job: the week's action and the week's result live here
+   too, so playing out a season never moves the board. See the
+   Hud component for the whole argument.
+   ──────────────────────────────────────────────────────────── */
+
+.hud {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  background: color-mix(in srgb, var(--mv-ink) 96%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 2px solid var(--mv-teal);
+  box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.55);
+  padding: 0 0.6rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Matches .board, so a phone-mode view on a wide screen doesn't stretch the
+   bar to 1400px while the board it belongs to stays at 900. */
+.hudInner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.hudBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0 0.42rem;
+}
+
+.hudToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hudHeadline {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mv-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hudHeadline b {
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  color: var(--mv-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.hudDot {
+  color: var(--mv-line);
+}
+
+.hudRes {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid currentColor;
+  color: var(--mv-red);
+}
+
+.hudRes[data-won='yes'] {
+  color: var(--mv-green);
+}
+
+.hudChev {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  border: 1px solid var(--mv-line);
+  color: var(--mv-teal);
+  transition: transform 0.18s ease;
+}
+
+.hudChevOpen {
+  composes: hudChev;
+  transform: rotate(180deg);
+}
+
+/* The week, played from the bar. This is the whole point of the rework:
+   the button that advances the season is under the thumb that has to press
+   it fourteen times, not at the bottom of the page. */
+.hudGo {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.55rem 0.75rem;
+  background: var(--mv-teal);
+  border: 1px solid var(--mv-teal);
+  color: var(--mv-ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hudGo:active {
+  background: var(--mv-bright);
+  border-color: var(--mv-bright);
+}
+
+/* Closed: seven cells. During the draft each one is the card's average, which
+   is the roster filling up; once a week has been played it is what that slot
+   actually put up, which is the answer to the only question the button
+   raises. Same seven boxes, so the eye doesn't have to relearn them. */
+.hudCells {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  padding-bottom: 0.35rem;
+}
+
+.hudCell {
+  padding: 0.26rem 0.1rem 0.3rem;
+  text-align: center;
+  background: var(--mv-panel);
+  border-top: 2px solid var(--mv-line);
+  min-width: 0;
+}
+
+.hudCellOn {
+  composes: hudCell;
+  border-top-color: var(--pos, var(--mv-teal));
+  background: var(--mv-panel-2);
+}
+
+.hudCells[data-live='yes'] .hudCellOn {
+  animation: mvTick 0.4s ease-out both;
+  animation-delay: calc(var(--slot, 0) * 0.05s);
+}
+
+@keyframes mvTick {
+  0% {
+    opacity: 0.3;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hudCellId {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.44rem;
+  letter-spacing: 0.06em;
+  color: var(--mv-teal);
+}
+
+.hudCellVal {
+  display: block;
+  margin-top: 0.1rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--mv-cream);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Open: the same seven, with every season each card can still roll. This is
+   where the fire animation lives on a phone — the desktop prints it in the
+   result block, which on a phone is a scroll away from the button. */
+.hudRows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 0.4rem;
+  max-height: 56vh;
+  overflow-y: auto;
+}
+
+.hudRow {
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    'id name pts'
+    'bands bands bands';
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  padding: 0.35rem 0.45rem 0.4rem;
+  background: var(--mv-panel);
+  border-left: 3px solid var(--pos, var(--mv-line));
+}
+
+.hudRowOff {
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.45rem;
+  background: var(--mv-panel);
+  border-left: 3px solid var(--mv-line);
+  opacity: 0.45;
+}
+
+.hudRowId {
+  grid-area: id;
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: var(--mv-teal);
+}
+
+.hudRowName {
+  grid-area: name;
+  min-width: 0;
+  font-family: var(--serif);
+  font-size: 0.85rem;
+  color: var(--mv-cream);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hudRowOpen {
+  font-family: var(--mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mv-mute);
+}
+
+.hudRowPts {
+  grid-area: pts;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--mv-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.hudRowBands {
+  grid-area: bands;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.hudBand {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.28rem;
+  padding: 0.2rem 0.25rem;
+  background: var(--mv-panel-2);
+  border-left: 2px solid var(--mv-line);
+  min-width: 0;
+}
+
+.hudBand[data-fired='yes'] {
+  background: color-mix(in srgb, var(--mv-teal) 16%, transparent);
+  border-left-color: var(--mv-teal);
+  animation: mvFire 0.5s ease-out both;
+  animation-delay: calc(var(--slot, 0) * 0.06s);
+}
+
+.hudBand[data-fired='no'] {
+  animation: mvFade 0.4s ease-out both;
+  animation-delay: calc(var(--slot, 0) * 0.06s);
+}
+
+.hudBandYear {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  color: var(--mv-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.hudBandPpg {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--mv-cream);
+  font-variant-numeric: tabular-nums;
+}
+
+.hudBandRank {
+  font-family: var(--mono);
+  font-size: 0.44rem;
+  color: var(--mv-mute);
+}
+
+.hudSecondary {
+  margin-top: 0.2rem;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--mv-line);
+  color: var(--mv-soft);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hudBand[data-fired='yes'],
+  .hudBand[data-fired='no'],
+  .hudCells[data-live='yes'] .hudCellOn {
+    animation: none;
+  }
+  .hudBand[data-fired='no'] {
+    opacity: 0.3;
+  }
+}
+
 /* ── Phone ────────────────────────────────────────────────── */
 
 @media (max-width: 760px) {
@@ -1199,21 +1752,50 @@
     grid-template-columns: 1fr;
   }
 
+  /* "What they actually gave you", on a phone.
+     The desktop row is four columns — slot, name, three chips, realised PPG —
+     and folding that to a phone by shrinking the columns left the chips at
+     about 60px each with a stacked year over a number over a count, which is
+     three lines of type in a box the width of a thumbnail. So the row breaks
+     into two: the man and what he was worth on top, his three seasons across
+     the full width underneath, each one a single line that reads left to
+     right like a sentence. */
   .recapRow {
-    grid-template-columns: 2.4rem minmax(0, 1fr) 4rem;
-    row-gap: 0.5rem;
+    grid-template-columns: 2.2rem minmax(0, 1fr) auto;
+    row-gap: 0.45rem;
+    padding: 0.7rem 0.8rem;
   }
 
   .recapTl {
     grid-column: 1 / -1;
     grid-auto-columns: 1fr;
+    gap: 2px;
+  }
+
+  .recapChip {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.2rem;
+  }
+
+  .recapHead {
+    padding: 0.8rem 0.8rem 0.6rem;
+  }
+
+  .recapFoot {
+    padding: 0.7rem 0.8rem;
+    font-size: 0.55rem;
+    line-height: 1.5;
   }
 
   .slatePlot {
     height: 76px;
   }
 
-  .actions {
+  .actions,
+  .actions[data-three='yes'] {
     grid-template-columns: minmax(0, 1fr);
   }
 }

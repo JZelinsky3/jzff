@@ -63,7 +63,10 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.5rem 0.8rem;
-  background: rgba(11, 17, 25, 0.92);
+  /* A token, because a game with its own page theme has to be able to move
+     the masthead with the rest of the page — the Multiverse Draft sets it
+     teal. Everything else gets the section's navy. */
+  background: var(--gp-bar, rgba(11, 17, 25, 0.92));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--gp-line);

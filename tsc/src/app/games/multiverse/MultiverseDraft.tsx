@@ -161,6 +161,232 @@ function Card({
   )
 }
 
+/**
+ * The draft, on a phone: one card per ROW, three seasons abreast.
+ *
+ * The desktop board deals five cards across. A phone got that same grid folded
+ * to two columns, which left each card about 158px with its three bands stacked
+ * inside it — so the positional rank had to be dropped for want of width, and
+ * comparing all five meant scrolling a screen and a half of near-identical
+ * tiles.
+ *
+ * A phone's spare dimension is the WIDTH of a row, not the number of columns.
+ * So the bands run across instead of down: three seasons side by side at about
+ * 100px each, which is enough to keep the rank and the games played, and a card
+ * that is three players finally reads as three things at one glance. Five rows
+ * down the screen also compare the way the desktop's five columns do — the
+ * decision this game is actually about is the SHAPE of the three numbers, and
+ * shapes only compare when they're drawn the same size in a row.
+ */
+function DraftRow({
+  card,
+  onTake,
+  disabled,
+  slotLabel,
+}: {
+  card: MvCard
+  onTake: () => void
+  disabled?: boolean
+  slotLabel: string | null
+}) {
+  return (
+    <button type="button" className={styles.dRow} onClick={onTake} disabled={disabled}>
+      <span className={styles.dHead}>
+        <Face name={card.name} playerId={card.playerId} />
+        <span className={styles.dWho}>
+          <span className={styles.dName}>{card.name}</span>
+          <span className={styles.dMeta}>
+            <span className={styles.pos} data-pos={card.pos}>
+              {card.pos}
+            </span>
+            <span>
+              avg <b>{card.mean.toFixed(1)}</b>
+            </span>
+            <span className={styles.spread} data-wide={card.spread >= 8 ? 'yes' : undefined}>
+              ±{card.spread.toFixed(1)}
+            </span>
+          </span>
+        </span>
+        <span className={styles.dSlot} data-none={slotLabel == null ? 'yes' : undefined}>
+          {slotLabel ?? 'no slot'}
+        </span>
+      </span>
+
+      <span className={styles.dBands}>
+        {card.timelines.map((t) => (
+          <span key={t.year} className={styles.dBand}>
+            <span className={styles.dBandYear}>{t.year}</span>
+            <span className={styles.dBandPpg}>{t.ppg.toFixed(1)}</span>
+            <span className={styles.dBandRank}>
+              {card.pos}
+              {t.posRank} · {t.gp}g
+            </span>
+          </span>
+        ))}
+      </span>
+    </button>
+  )
+}
+
+/** What one slot did in the week just played: the seasons it could have
+    rolled, which one came up, and what that was worth. Null before a week
+    has been played, which is when the HUD falls back to the card's average. */
+type HudRoll = { shown: MvCard['timelines']; idx: number; pts: number }
+
+/**
+ * The lineup, at the thumb.
+ *
+ * Lifted from Roster Roulette's HUD (see .hud in games.module.css) because it
+ * solved the same problem: on a phone the thing you consult on every single
+ * decision was living at the bottom of a scroll. Here it does one more job.
+ *
+ * Playing a week used to be a round trip — scroll down to the button, tap,
+ * scroll up to find out whether you won, scroll back down for the next one,
+ * fourteen times. So the week's action lives in the bar, and so does its
+ * result: the seven cells that show each slot's average while you draft show
+ * what that slot actually PUT UP once the week has been played. Open it and
+ * every card shows all three seasons with the one that came up lit, which is
+ * the only question the collapsed number leaves ("was that his good year?").
+ *
+ * The board above it never has to move, so the slate and the record stay where
+ * they were.
+ */
+function Hud({
+  roster,
+  open,
+  onToggle,
+  rolls,
+  replay,
+  headline,
+  action,
+  secondary,
+}: {
+  roster: (MvCard | null)[]
+  open: boolean
+  onToggle: () => void
+  /** Per slot. Null during the draft and before week one. */
+  rolls: (HudRoll | null)[] | null
+  /** Bumped every week so the fire animation replays down the rows. */
+  replay: number
+  headline: React.ReactNode
+  action?: { label: string; onClick: () => void }
+  secondary?: { label: string; onClick: () => void }
+}) {
+  return (
+    <div className={styles.hud}>
+      <div className={styles.hudInner}>
+        <div className={styles.hudBar}>
+          <button
+            type="button"
+            className={styles.hudToggle}
+            onClick={onToggle}
+            aria-expanded={open}
+            aria-label={open ? 'Collapse the lineup' : 'Expand the lineup'}
+          >
+            <span className={styles.hudHeadline}>{headline}</span>
+            <span className={open ? styles.hudChevOpen : styles.hudChev} aria-hidden>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+            </span>
+          </button>
+          {action && (
+            <button type="button" className={styles.hudGo} onClick={action.onClick}>
+              {action.label}
+            </button>
+          )}
+        </div>
+
+        {open ? (
+          <div className={styles.hudRows}>
+            {SLOTS.map((s, i) => {
+              const card = roster[i]
+              if (!card) {
+                return (
+                  <div key={s.id} className={styles.hudRowOff}>
+                    <span className={styles.hudRowId}>{s.label}</span>
+                    <span className={styles.hudRowOpen}>Open</span>
+                  </div>
+                )
+              }
+              const r = rolls?.[i] ?? null
+              const bands = r ? r.shown : card.timelines
+              return (
+                <div
+                  // Re-keyed per week, which is what replays the reveal.
+                  key={`${s.id}-${replay}`}
+                  className={styles.hudRow}
+                  style={
+                    {
+                      '--pos': `var(--pos-${card.pos})`,
+                      '--slot': i,
+                    } as React.CSSProperties
+                  }
+                >
+                  <span className={styles.hudRowId}>{s.label}</span>
+                  <span className={styles.hudRowName}>{card.name}</span>
+                  <span className={styles.hudRowPts}>{(r ? r.pts : card.mean).toFixed(1)}</span>
+                  <span className={styles.hudRowBands}>
+                    {bands.map((t, ti) => (
+                      <span
+                        key={t.year}
+                        className={styles.hudBand}
+                        data-fired={r ? (ti === r.idx ? 'yes' : 'no') : undefined}
+                      >
+                        <span className={styles.hudBandYear}>{t.year}</span>
+                        <span className={styles.hudBandPpg}>{t.ppg.toFixed(1)}</span>
+                        <span className={styles.hudBandRank}>
+                          {card.pos}
+                          {t.posRank}
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              )
+            })}
+            {secondary && (
+              <button type="button" className={styles.hudSecondary} onClick={secondary.onClick}>
+                {secondary.label}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className={styles.hudCells}>
+            {SLOTS.map((s, i) => {
+              const card = roster[i]
+              const r = rolls?.[i] ?? null
+              return (
+                <div
+                  key={s.id}
+                  className={card ? styles.hudCellOn : styles.hudCell}
+                  style={
+                    card ? ({ '--pos': `var(--pos-${card.pos})` } as React.CSSProperties) : undefined
+                  }
+                >
+                  <span className={styles.hudCellId}>{s.label}</span>
+                  <span className={styles.hudCellVal}>
+                    {r ? r.pts.toFixed(1) : card ? card.mean.toFixed(1) : '·'}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 type WeekLine = { week: number; mine: number; theirs: number; won: boolean; name: string; paper: number }
 
 /**
@@ -176,10 +402,14 @@ type WeekLine = { week: number; mine: number; theirs: number; won: boolean; name
  * should be the same kind of mark; only the height differs, which is exactly
  * what the reader wants to compare down the row.
  *
- * Before a week is played the bar carries the same ratio off paper, which is
- * why an undrafted board reads as fourteen near-identical bars just over the
- * line: the opponents are all within a few points of each other, so the
- * shape only appears once the dice start landing.
+ * An UNPLAYED week sits exactly on the line. It used to carry a projected
+ * ratio off paper, and the projection was never worth what it cost: opponents
+ * land within a few points of each other, so fourteen unplayed weeks drew
+ * fourteen near-identical bars a hair off parity — close enough to read as a
+ * result, different enough to look like one week was going better than
+ * another before a single die had been thrown. Flat says the true thing. The
+ * row then fills in as it is played, and the shape that appears is entirely
+ * made of weeks that actually happened.
  *
  * One measure, one hue, no legend. The win/loss colours are the site's
  * reserved status tokens and mean only what they mean everywhere else.
@@ -198,19 +428,15 @@ function Slate({
   played: number
   mobile: boolean
 }) {
-  // Your points as a share of theirs. 1 is parity, and the line is drawn at 1.
+  // Your points as a share of theirs. 1 is parity, and the line is drawn at 1
+  // — so an unplayed week, which has no share of anything yet, is exactly 1.
   const ratios = lines.map((l, i) =>
-    i < played
-      ? l.theirs > 0
-        ? l.mine / l.theirs
-        : 1
-      : l.paper > 0
-        ? myPpg / l.paper
-        : 1
+    i < played ? (l.theirs > 0 ? l.mine / l.theirs : 1) : 1
   )
   // Scaled off the biggest deviation actually present, with a floor so a
-  // quiet season doesn't get magnified into a dramatic one.
-  const spread = Math.max(0.1, ...ratios.map((r) => Math.abs(r - 1)))
+  // quiet season doesn't get magnified into a dramatic one. Played weeks
+  // only: the flat ones would just pull the maximum to the floor.
+  const spread = Math.max(0.1, ...ratios.slice(0, played).map((r) => Math.abs(r - 1)))
 
   return (
     <div className={styles.slate}>
@@ -297,11 +523,17 @@ export function MultiverseDraft({
   const [picks, setPicks] = useState<number[]>([])
   const [round, setRound] = useState(0)
   const [played, setPlayed] = useState(0)
+  /** Week fourteen has to be read before the season is allowed to end. */
+  const [seasonClosed, setSeasonClosed] = useState(false)
   const [poPlayed, setPoPlayed] = useState(0)
   const [poOpen, setPoOpen] = useState(false)
   const [poClosed, setPoClosed] = useState(false)
   const [copied, setCopied] = useState(false)
   const [post, setPost] = useState<PostState>({ state: 'idle' })
+  // The phone's lineup bar. Closed is the seven cells, which already answer
+  // "what did each of them put up" — open is the three-seasons detail, which
+  // is a question you ask a few times a season rather than every week.
+  const [hudOpen, setHudOpen] = useState(false)
 
   useEffect(() => {
     clearSeedFromUrl()
@@ -387,12 +619,42 @@ export function MultiverseDraft({
     [poGames, poPlayed]
   )
 
+  /** What each slot rolled in the week just played, for the phone's HUD.
+      Null until a week has been played, which is when the bar shows the
+      card's average instead — there is no result to report yet. */
+  const seasonRolls = useMemo<(HudRoll | null)[] | null>(() => {
+    if (!deal || played === 0) return null
+    return roster.map((card, slot) => {
+      if (!card) return null
+      const idx = (deal.rolls[slot]?.[played - 1] ?? 0) % card.timelines.length
+      return { shown: card.timelines, idx, pts: card.timelines[idx]?.ppg ?? 0 }
+    })
+  }, [deal, roster, played])
+
+  /** The same, for the postseason — where every card has been cut down to its
+      best seasons, so the three bands are not the three it was drafted with. */
+  const poRolls = useMemo<(HudRoll | null)[] | null>(() => {
+    if (!deal || poPlayed === 0) return null
+    return roster.map((card, slot) => {
+      if (!card) return null
+      const kept = bestTimelines(card, deal.playoffs.keep)
+      const idx = (deal.playoffs.rolls[slot]?.[poPlayed - 1] ?? 0) % kept.length
+      return { shown: kept, idx, pts: kept[idx]?.ppg ?? 0 }
+    })
+  }, [deal, roster, poPlayed])
+
   const seasonOver = played >= WEEKS
-  // A postseason has to be CLOSED by the player, not just finished. Deriving
-  // the end from `poPlayed >= poLimit` sent a knocked-out run straight to the
-  // recap the instant the losing game resolved, so the game you lost was the
-  // one game you never saw.
-  const done = seasonOver && (!madeIt || poClosed)
+  // Both endings have to be CLOSED by the player, not just reached.
+  //
+  // The postseason learned this first: deriving the end from `poPlayed >=
+  // poLimit` sent a knocked-out run to the recap the instant the losing game
+  // resolved, so the game you lost was the one game you never saw. Week
+  // fourteen had exactly the same hole and it was worse, because every run
+  // has a week fourteen — `played >= WEEKS` flipped the moment the button was
+  // pressed, and the fourteenth week's score went past on the way to the
+  // postseason banner. You could go 9-5 without ever seeing the week that
+  // made it 9-5.
+  const done = seasonOver && seasonClosed && (!madeIt || poClosed)
 
   // ── The board ───────────────────────────────────────────────
   // A finished run posts itself. No submit button: the only thing one would
@@ -462,6 +724,7 @@ export function MultiverseDraft({
         setPicks([])
         setRound(0)
         setPlayed(0)
+        setSeasonClosed(false)
         setPoPlayed(0)
         setPoOpen(false)
         setPoClosed(false)
@@ -481,6 +744,37 @@ export function MultiverseDraft({
     url.search = ''
     url.searchParams.set('pool', deal.pool.id)
     url.searchParams.set('seed', deal.seed)
+    // The season, written onto the link so the preview card can draw it
+    // without a database or a session. The board ignores all three.
+    url.searchParams.set('w', String(finalWins))
+    url.searchParams.set('s', weekly.map((w) => (w.won ? 'W' : 'L')).join(''))
+    // Each week's height on the slate, so the preview draws the season's own
+    // shape rather than fourteen identical bars. It is the SHARE the slate
+    // plots (your points over theirs), not the margin, because the card
+    // redraws that chart and the two have to agree.
+    //
+    // One base36 digit per week: two-percent steps off parity, offset by 17,
+    // which puts ±34% inside one character and the season inside fourteen.
+    url.searchParams.set(
+      'm',
+      weekly
+        .map((w) => {
+          const share = w.theirs > 0 ? w.mine / w.theirs : 1
+          const step = Math.round((share - 1) * 50)
+          return Math.max(0, Math.min(34, step + 17)).toString(36)
+        })
+        .join('')
+    )
+    if (madeIt) {
+      url.searchParams.set(
+        'po',
+        poWins >= PLAYOFF_ROUNDS
+          ? 'champion'
+          : poPlayed >= PLAYOFF_ROUNDS
+            ? 'final'
+            : 'out'
+      )
+    }
     const tail =
       madeIt && poWins >= PLAYOFF_ROUNDS
         ? `went ${finalWins}-${WEEKS - finalWins} and won the whole thing`
@@ -503,7 +797,7 @@ export function MultiverseDraft({
     } catch {
       /* clipboard blocked, the seed is on screen either way */
     }
-  }, [deal, madeIt, poWins, finalWins])
+  }, [deal, madeIt, poWins, poPlayed, finalWins, weekly])
 
   // ── Render ──────────────────────────────────────────────────
 
@@ -567,30 +861,74 @@ export function MultiverseDraft({
 
         <Slate lines={weekly} myPpg={myPpg} played={0} mobile={mobile} />
 
-        <div className={styles.cards}>
-          {current.cards.map((card, i) => {
-            const slot = slotFor(card)
-            return (
-              <Card
-                key={card.key}
-                card={card}
-                onTake={() => take(card, i)}
-                disabled={slot == null}
-                slotLabel={slot == null ? 'no slot open' : SLOTS[slot].label}
-              />
-            )
-          })}
-        </div>
+        {mobile ? (
+          <div className={styles.deck}>
+            {current.cards.map((card, i) => {
+              const slot = slotFor(card)
+              return (
+                <DraftRow
+                  key={card.key}
+                  card={card}
+                  onTake={() => take(card, i)}
+                  disabled={slot == null}
+                  slotLabel={slot == null ? null : SLOTS[slot].label}
+                />
+              )
+            })}
+          </div>
+        ) : (
+          <div className={styles.cards}>
+            {current.cards.map((card, i) => {
+              const slot = slotFor(card)
+              return (
+                <Card
+                  key={card.key}
+                  card={card}
+                  onTake={() => take(card, i)}
+                  disabled={slot == null}
+                  slotLabel={slot == null ? 'no slot open' : SLOTS[slot].label}
+                />
+              )
+            })}
+          </div>
+        )}
 
-        {rosterRail}
+        {/* The rail is the phone's HUD instead: same seven slots, fixed at the
+            thumb, so the roster fills in view of the cards being chosen rather
+            than a screen below them. */}
+        {mobile ? (
+          <Hud
+            roster={roster}
+            open={hudOpen}
+            onToggle={() => setHudOpen((v) => !v)}
+            rolls={null}
+            replay={round}
+            headline={
+              <>
+                <b>{myPpg.toFixed(1)}</b> on paper
+                <span className={styles.hudDot}>·</span>
+                {roster.filter(Boolean).length}/{SLOTS.length} set
+              </>
+            }
+          />
+        ) : (
+          rosterRail
+        )}
       </div>
     )
   }
 
   // ── Playing it out ─────────────────────────────────────────
-  if (!seasonOver) {
+  // Stays on screen after the fourteenth week is played, until the player
+  // closes it. See `done` above.
+  if (!seasonOver || !seasonClosed) {
     const last = played > 0 ? weekly[played - 1] : null
-    const next = weekly[played]
+    const next = played < WEEKS ? weekly[played] : null
+    const myWeekly = weekly.reduce((a, w) => a + w.mine, 0) / WEEKS
+    // Deliberately not "you're in" / "you're out" — the fourteenth week is
+    // still being read at this point, and the banner is where the season is
+    // totted up.
+    const closeLabel = 'See where that leaves you'
     return (
       <div className={styles.board}>
         <div className={styles.strip}>
@@ -601,11 +939,18 @@ export function MultiverseDraft({
             <span className={styles.stripLabel}>Record</span>
           </div>
           <div className={styles.stripMid}>
-            Week {played + 1} of {WEEKS}
+            {next ? `Week ${played + 1} of ${WEEKS}` : `All ${WEEKS} played`}
           </div>
           <div className={styles.stripSide}>
-            <span className={styles.stripNum}>{next.paper.toFixed(1)}</span>
-            <span className={styles.stripLabel}>{next.name} on paper</span>
+            {/* Nothing here says whether the season was enough. That is the
+                banner's reveal on the next tap, and printing "In" beside the
+                fourteenth week's score would take it away. */}
+            <span className={styles.stripNum}>
+              {next ? next.paper.toFixed(1) : myWeekly.toFixed(1)}
+            </span>
+            <span className={styles.stripLabel}>
+              {next ? `${next.name} on paper` : 'Your week'}
+            </span>
           </div>
         </div>
 
@@ -622,31 +967,86 @@ export function MultiverseDraft({
                 {last.theirs.toFixed(1)}
               </span>
             </div>
-            <div className={styles.fired}>
-              {roster.map((card, slot) =>
-                card ? (
-                  // Keyed by week so the reveal animation replays each time.
-                  <Card
-                    key={`${card.key}-${slot}-${played}`}
-                    card={card}
-                    compact
-                    slot={slot}
-                    fired={deal.rolls[slot][played - 1] % card.timelines.length}
-                  />
-                ) : null
-              )}
-            </div>
+            {/* The seven reveals are the HUD's job on a phone — printing them
+                here as well is the same information twice on a screen that
+                then needs scrolling to reach the button. */}
+            {!mobile && (
+              <div className={styles.fired}>
+                {roster.map((card, slot) =>
+                  card ? (
+                    // Keyed by week so the reveal animation replays each time.
+                    <Card
+                      key={`${card.key}-${slot}-${played}`}
+                      card={card}
+                      compact
+                      slot={slot}
+                      fired={deal.rolls[slot][played - 1] % card.timelines.length}
+                    />
+                  ) : null
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        <div className={styles.actions}>
-          <button type="button" className={styles.primary} onClick={() => setPlayed((p) => p + 1)}>
-            Play week {played + 1}
-          </button>
-          <button type="button" className={styles.ghost} onClick={() => setPlayed(WEEKS)}>
-            Play out the season
-          </button>
-        </div>
+        {mobile ? (
+          <Hud
+            roster={roster}
+            open={hudOpen}
+            onToggle={() => setHudOpen((v) => !v)}
+            rolls={seasonRolls}
+            replay={played}
+            headline={
+              last ? (
+                <>
+                  <span className={styles.hudRes} data-won={last.won ? 'yes' : 'no'}>
+                    {last.won ? 'W' : 'L'}
+                  </span>
+                  <b>{last.mine.toFixed(1)}</b> vs {last.theirs.toFixed(1)}
+                </>
+              ) : (
+                <>
+                  <b>{myPpg.toFixed(1)}</b> on paper
+                  <span className={styles.hudDot}>·</span>
+                  {WEEKS} to play
+                </>
+              )
+            }
+            action={
+              next
+                ? { label: `Play week ${played + 1}`, onClick: () => setPlayed((p) => p + 1) }
+                : { label: closeLabel, onClick: () => setSeasonClosed(true) }
+            }
+            secondary={
+              next ? { label: 'Play out the season', onClick: () => setPlayed(WEEKS) } : undefined
+            }
+          />
+        ) : (
+          <div className={styles.actions} data-single={next ? undefined : 'yes'}>
+            {next ? (
+              <>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  onClick={() => setPlayed((p) => p + 1)}
+                >
+                  Play week {played + 1}
+                </button>
+                <button type="button" className={styles.ghost} onClick={() => setPlayed(WEEKS)}>
+                  Play out the season
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className={styles.primary}
+                onClick={() => setSeasonClosed(true)}
+              >
+                {closeLabel}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -742,20 +1142,22 @@ export function MultiverseDraft({
                 {last.theirs.toFixed(1)}
               </span>
             </div>
-            <div className={styles.fired}>
-              {roster.map((card, slot) =>
-                card ? (
-                  <Card
-                    key={`${card.key}-${slot}-po${poPlayed}`}
-                    card={card}
-                    compact
-                    slot={slot}
-                    only={keptIdx(card)}
-                    fired={deal.playoffs.rolls[slot][poPlayed - 1] % deal.playoffs.keep}
-                  />
-                ) : null
-              )}
-            </div>
+            {!mobile && (
+              <div className={styles.fired}>
+                {roster.map((card, slot) =>
+                  card ? (
+                    <Card
+                      key={`${card.key}-${slot}-po${poPlayed}`}
+                      card={card}
+                      compact
+                      slot={slot}
+                      only={keptIdx(card)}
+                      fired={deal.playoffs.rolls[slot][poPlayed - 1] % deal.playoffs.keep}
+                    />
+                  ) : null
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -786,21 +1188,53 @@ export function MultiverseDraft({
           </div>
         )}
 
-        <div className={styles.actions} data-single="yes">
-          {more ? (
-            <button
-              type="button"
-              className={styles.primary}
-              onClick={() => setPoPlayed((p) => p + 1)}
-            >
-              Play the {PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}
-            </button>
-          ) : (
-            <button type="button" className={styles.primary} onClick={() => setPoClosed(true)}>
-              See how the season read
-            </button>
-          )}
-        </div>
+        {mobile ? (
+          <Hud
+            roster={roster}
+            open={hudOpen}
+            onToggle={() => setHudOpen((v) => !v)}
+            rolls={poRolls}
+            replay={100 + poPlayed}
+            headline={
+              last ? (
+                <>
+                  <span className={styles.hudRes} data-won={last.won ? 'yes' : 'no'}>
+                    {last.won ? 'W' : 'L'}
+                  </span>
+                  <b>{last.mine.toFixed(1)}</b> vs {last.theirs.toFixed(1)}
+                </>
+              ) : (
+                <>
+                  Best {deal.playoffs.keep === 1 ? 'season' : `${deal.playoffs.keep} seasons`} only
+                </>
+              )
+            }
+            action={
+              more
+                ? {
+                    label: `Play the ${PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}`,
+                    onClick: () => setPoPlayed((p) => p + 1),
+                  }
+                : { label: 'See how the season read', onClick: () => setPoClosed(true) }
+            }
+          />
+        ) : (
+          <div className={styles.actions} data-single="yes">
+            {more ? (
+              <button
+                type="button"
+                className={styles.primary}
+                onClick={() => setPoPlayed((p) => p + 1)}
+              >
+                Play the {PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}
+              </button>
+            ) : (
+              <button type="button" className={styles.primary} onClick={() => setPoClosed(true)}>
+                See how the season read
+              </button>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -875,7 +1309,9 @@ export function MultiverseDraft({
         <div className={styles.recapHead}>
           <h3 className={styles.recapTitle}>What they actually gave you</h3>
           <p className={styles.recapSub}>
-            Season PPG across the {WEEKS} weeks, against the seasons the card was dealt.
+            {mobile
+              ? `Season PPG, against the ${deal.timelines} he was dealt.`
+              : `Season PPG across the ${WEEKS} weeks, against the seasons the card was dealt.`}
           </p>
         </div>
         <div className={styles.recapRows}>
@@ -894,7 +1330,15 @@ export function MultiverseDraft({
                 </span>
                 <span className={styles.recapTl}>
                   {card.timelines.map((t, i) => (
-                    <span key={t.year} className={styles.recapChip}>
+                    <span
+                      key={t.year}
+                      className={styles.recapChip}
+                      // Filled to the share of the season it took. See the
+                      // ::before in the stylesheet.
+                      style={
+                        { '--share': `${(r.counts[i] / WEEKS) * 100}%` } as React.CSSProperties
+                      }
+                    >
                       <span className={styles.recapChipYear}>{t.year}</span>
                       <span className={styles.recapChipPpg}>{t.ppg.toFixed(1)}</span>
                       <span className={styles.recapChipCount}>×{r.counts[i]}</span>
@@ -941,10 +1385,20 @@ export function MultiverseDraft({
         ))}
       </div>
 
-      <div className={styles.actions}>
+      {/* The board, offered whatever happened to the run. It used to appear
+          only inside the "posted" line, which meant a signed-out player, a
+          shared season, or anyone whose post didn't land was told a board
+          existed and given no way to it. */}
+      <div className={styles.actions} data-three="yes">
         <button type="button" className={styles.primary} onClick={() => void deal_(deal.pool.id)}>
           Draft another season
         </button>
+        <Link
+          href={`/games/multiverse/board/?pool=${encodeURIComponent(deal.pool.id)}`}
+          className={styles.ghostLink}
+        >
+          See the board
+        </Link>
         <button type="button" className={styles.ghost} onClick={() => void shareRun()}>
           {copied ? 'Link copied' : 'Share this season'}
         </button>
