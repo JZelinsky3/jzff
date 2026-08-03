@@ -367,6 +367,20 @@ function Hud({
   action?: { label: string; onClick: () => void }
   secondary?: { label: string; onClick: () => void }
 }) {
+  /**
+   * What a slot is worth right now, before the week has been rolled.
+   *
+   * Off the seasons still IN PLAY, not off all three. In January a card has
+   * been cut to its best two and the third is drawn greyed beside them — so an
+   * average that still counted the greyed one was quietly the wrong number,
+   * and lower than either season the reader could actually see.
+   */
+  const paperFor = (card: MvCard): number => {
+    if (!keep) return card.mean
+    const best = bestTimelines(card, keep)
+    return best.reduce((a, t) => a + t.ppg, 0) / (best.length || 1)
+  }
+
   return (
     <div className={styles.hud}>
       <div className={styles.hudInner}>
@@ -437,7 +451,7 @@ function Hud({
                 >
                   <span className={styles.hudRowId}>{s.label}</span>
                   <span className={styles.hudRowName}>{card.name}</span>
-                  <span className={styles.hudRowPts}>{(r ? r.pts : card.mean).toFixed(1)}</span>
+                  <span className={styles.hudRowPts}>{(r ? r.pts : paperFor(card)).toFixed(1)}</span>
                   <span className={styles.hudRowBands}>
                     {bands.map((t, ti) => (
                       <span
@@ -481,7 +495,7 @@ function Hud({
                 >
                   <span className={styles.hudCellId}>{s.label}</span>
                   <span className={styles.hudCellVal}>
-                    {r ? r.pts.toFixed(1) : card ? card.mean.toFixed(1) : '·'}
+                    {r ? r.pts.toFixed(1) : card ? paperFor(card).toFixed(1) : '·'}
                   </span>
                 </div>
               )
