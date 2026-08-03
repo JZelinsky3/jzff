@@ -46,7 +46,7 @@ function statFor(game: GameId, row: BestRow): { big: string; small: string } {
       // rate, then scoring) and printing it would put a ten-digit number on
       // the board. The record is the display and it always exists.
       return {
-        big: d.record ?? '—',
+        big: d.record ?? '·',
         small: d.round ? `${d.round} · ${d.ppg ?? 0} PPG` : `${d.ppg ?? 0} PPG`,
       }
     default:

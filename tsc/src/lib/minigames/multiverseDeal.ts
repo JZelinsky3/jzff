@@ -693,7 +693,7 @@ export async function dealMultiverse(
       ok: false,
       status: 409,
       error:
-        `Not enough of this league's history repeats itself yet — too few ${thin.join('/')} ` +
+        `Not enough of this league's history repeats itself yet. Too few ${thin.join('/')} ` +
         `have played ${count} of its seasons and scored enough to be worth a card. ` +
         `Come back when there is another year on the books.`,
     }

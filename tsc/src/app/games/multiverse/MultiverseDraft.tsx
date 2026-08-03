@@ -826,7 +826,7 @@ export function MultiverseDraft({
         return (
           <div key={slot.id} className={card ? styles.railOn : styles.railOff}>
             <span className={styles.railSlot}>{slot.label}</span>
-            <span className={styles.railName}>{card ? card.name : '—'}</span>
+            <span className={styles.railName}>{card ? card.name : '·'}</span>
             <span className={styles.railNum}>{card ? card.mean.toFixed(1) : ''}</span>
           </div>
         )
@@ -1084,7 +1084,7 @@ export function MultiverseDraft({
           <p className={styles.poLine}>
             Three rounds, single elimination. Every card cuts down to its best{' '}
             {deal.playoffs.keep === 1 ? 'season' : `${deal.playoffs.keep} seasons`}, so the numbers
-            go up — and so does everybody else&rsquo;s, because the field left is the strongest the
+            go up, and so does everybody else&rsquo;s, because the field left is the strongest the
             league can put out.
           </p>
         </div>
