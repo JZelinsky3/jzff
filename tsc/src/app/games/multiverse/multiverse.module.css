@@ -1098,8 +1098,86 @@
 /* ── Phone ────────────────────────────────────────────────── */
 
 @media (max-width: 760px) {
+  .board {
+    /* Nothing on this board may push the page sideways. The slate is a
+       fourteen-column grid and the cards are a two-column one, so a single
+       unbreakable string anywhere in them would do it. */
+    overflow-x: hidden;
+  }
+
   .cards {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* A draft card is about 158px on a phone, and the band row wants year +
+     points + "RB12 · 16g" inside 123px of it. The rank is the part a reader
+     can do without: the three numbers are the card. */
+  .tlRank {
+    display: none;
+  }
+
+  .card {
+    padding: 0.6rem 0.5rem;
+  }
+
+  .timeline {
+    padding: 0.24rem 0.3rem;
+    gap: 0.3rem;
+  }
+
+  .cardFoot {
+    font-size: 0.5rem;
+  }
+
+  /* The week panel's mini cards get three to a row, which leaves ~45px for a
+     name once the headshot has taken its 30. The name is what identifies the
+     man; the face is decoration at that size. */
+  .cardMini .face {
+    display: none;
+  }
+
+  .cardMini .cardName {
+    font-size: 0.74rem;
+  }
+
+  .strip {
+    padding: 0.6rem 0.7rem;
+    gap: 0.5rem;
+  }
+
+  .stripMid {
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+  }
+
+  .stripNum {
+    font-size: 1rem;
+  }
+
+  .slate {
+    padding: 0.75rem 0.6rem 0.6rem;
+  }
+
+  .slateHead {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .poLeg {
+    padding: 0.5rem 0.45rem;
+  }
+
+  .poLegName {
+    font-size: 0.44rem;
+    letter-spacing: 0.1em;
+  }
+
+  .poLegOpp {
+    font-size: 0.72rem;
+  }
+
+  .poLegScore {
+    font-size: 0.55rem;
   }
 
   /* The fifth card is the wildcard and it is the one that can be dropped to

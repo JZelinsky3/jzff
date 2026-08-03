@@ -191,10 +191,12 @@ function Slate({
   lines,
   myPpg,
   played,
+  mobile,
 }: {
   lines: WeekLine[]
   myPpg: number
   played: number
+  mobile: boolean
 }) {
   // Your points as a share of theirs. 1 is parity, and the line is drawn at 1.
   const ratios = lines.map((l, i) =>
@@ -217,7 +219,11 @@ function Slate({
         <span className={styles.slateNote}>
           {played > 0 ? (
             <>
-              you against them · <b>{played}</b> played
+              <b>{played}</b> played
+            </>
+          ) : mobile ? (
+            <>
+              projected · <b>{myPpg.toFixed(1)}</b>
             </>
           ) : (
             <>
@@ -255,7 +261,7 @@ function Slate({
         })}
       </div>
       <div className={styles.slateFoot}>
-        <span>Bars above the line are wins</span>
+        <span>{mobile ? 'Above the line is a win' : 'Bars above the line are wins'}</span>
         <span>{played > 0 ? `${lines.slice(0, played).filter((l) => l.won).length} so far` : ''}</span>
       </div>
     </div>
@@ -274,11 +280,13 @@ export function MultiverseDraft({
   initialError,
   signedIn,
   shared,
+  mobile,
 }: {
   initialDeal: MultiverseDeal | null
   initialError: string | null
   signedIn: boolean
   shared: boolean
+  mobile: boolean
 }) {
   const [deal, setDeal] = useState<MultiverseDeal | null>(initialDeal)
   const [error, setError] = useState<string | null>(initialError)
@@ -546,7 +554,9 @@ export function MultiverseDraft({
             <span className={styles.stripLabel}>Round</span>
           </div>
           <div className={styles.stripMid}>
-            {deal.timelines} seasons per player · {deal.years[0]}–{deal.years[deal.years.length - 1]}
+            {mobile
+              ? `${deal.timelines} seasons each`
+              : `${deal.timelines} seasons per player · ${deal.years[0]}–${deal.years[deal.years.length - 1]}`}
             <span className={styles.tierNote}>{current.tier}</span>
           </div>
           <div className={styles.stripSide}>
@@ -555,7 +565,7 @@ export function MultiverseDraft({
           </div>
         </div>
 
-        <Slate lines={weekly} myPpg={myPpg} played={0} />
+        <Slate lines={weekly} myPpg={myPpg} played={0} mobile={mobile} />
 
         <div className={styles.cards}>
           {current.cards.map((card, i) => {
@@ -599,7 +609,7 @@ export function MultiverseDraft({
           </div>
         </div>
 
-        <Slate lines={weekly} myPpg={myPpg} played={played} />
+        <Slate lines={weekly} myPpg={myPpg} played={played} mobile={mobile} />
 
         {last && (
           <div className={styles.result} data-won={last.won ? 'yes' : 'no'}>
@@ -852,7 +862,7 @@ export function MultiverseDraft({
       )}
       {post.state === 'refused' && <div className={styles.posted}>{post.why}</div>}
 
-      <Slate lines={weekly} myPpg={myPpg} played={WEEKS} />
+      <Slate lines={weekly} myPpg={myPpg} played={WEEKS} mobile={mobile} />
 
       {madeIt && bracket}
 

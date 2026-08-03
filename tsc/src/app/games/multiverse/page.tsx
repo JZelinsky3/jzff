@@ -135,6 +135,10 @@ export default async function MultiversePage({
             // somebody has already played, which is the definition of a run
             // that cannot be ranked. The board refuses it out loud.
             shared={!!sp.seed}
+            // Layout is handled in CSS; this is for COPY. A phone gets the
+            // short version of every caption, because the long ones wrap to
+            // three lines in a header that is two lines tall.
+            mobile={mobile}
           />
         ) : (
           <GameLobby game={MULTIVERSE_DRAFT} />
