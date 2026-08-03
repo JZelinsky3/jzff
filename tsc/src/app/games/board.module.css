@@ -217,12 +217,45 @@
   white-space: nowrap;
 }
 
+/* The line under a name: when the run happened, and how far it got. Two
+   short things side by side rather than one long sentence sharing the
+   row's small print with the score. */
+.sub {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
 .date {
   font-family: var(--mono);
   font-size: 0.56rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--gp-mute);
+  white-space: nowrap;
+}
+
+/* Where a Multiverse run ended: QF, SF, Final, Champ. Two or three
+   characters, because the alternative was "Out in the semi-final" wrapping
+   inside 90px of a phone. */
+.roundChip {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.48rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.28rem;
+  border: 1px solid var(--gp-line);
+  color: var(--gp-mute);
+  white-space: nowrap;
+}
+
+/* Winning it is the only one worth colour. */
+.roundChip[data-won='yes'] {
+  border-color: var(--gp-gold);
+  color: var(--gp-gold);
 }
 
 .stat {

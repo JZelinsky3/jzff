@@ -482,6 +482,18 @@
   animation-delay: calc(var(--slot, 0) * 0.07s);
 }
 
+/* Cut by the postseason: not a season that failed to come up this week, a
+   season that cannot come up at all any more. Quieter than an unfired band
+   and struck through, so the two states are never confused for each other. */
+.timeline[data-cut='yes'],
+.hudBand[data-cut='yes'] {
+  opacity: 0.34;
+  border-left-style: dashed;
+  text-decoration: line-through;
+  text-decoration-color: var(--mv-mute);
+  text-decoration-thickness: 1px;
+}
+
 @keyframes mvFire {
   0% {
     opacity: 0.35;
@@ -764,6 +776,17 @@
   font-size: 0.9rem;
   color: var(--mv-soft);
   margin: 0.4rem auto 0;
+  max-width: 46ch;
+}
+
+/* Why the draw is the shape it is. Short, and in the accent, because it is
+   the one line on the banner that is about THIS run rather than the rules. */
+.poSeed {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--mv-teal);
+  margin: 0.75rem auto 0;
   max-width: 46ch;
 }
 

@@ -29,6 +29,28 @@ function when(iso: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+/**
+ * How far a Multiverse run got, in two or three characters.
+ *
+ * The row printed the whole sentence — "Out in the semi-final · 122.8 PPG" —
+ * into the same small line as the PPG, next to a date, and on a phone the
+ * three of them fought over about 90px. It is a chip beside the date now, and
+ * the small line is just the scoring.
+ *
+ * Read off the stored sentence rather than a new field, so the runs already
+ * on the board get chips too. The phrasing is fixed by verifyRun in this same
+ * repo; anything unrecognised simply gets no chip.
+ */
+function playoffChip(round: string | undefined): { label: string; won: boolean } | null {
+  if (!round) return null
+  const r = round.toLowerCase()
+  if (r.includes('won')) return { label: 'Champ', won: true }
+  if (r.includes('quarter')) return { label: 'QF', won: false }
+  if (r.includes('semi')) return { label: 'SF', won: false }
+  if (r.includes('champ') || r.includes('final')) return { label: 'Final', won: false }
+  return null
+}
+
 /** What a row prints on the right, per game. */
 function statFor(game: GameId, row: BestRow): { big: string; small: string } {
   const d = row.display
@@ -45,10 +67,8 @@ function statFor(game: GameId, row: BestRow): { big: string; small: string } {
       // Never `row.score`: that one is a packed sort key (wins, then win
       // rate, then scoring) and printing it would put a ten-digit number on
       // the board. The record is the display and it always exists.
-      return {
-        big: d.record ?? '·',
-        small: d.round ? `${d.round} · ${d.ppg ?? 0} PPG` : `${d.ppg ?? 0} PPG`,
-      }
+      // The round goes in a chip next to the date; this line stays one fact.
+      return { big: d.record ?? '·', small: `${d.ppg ?? 0} PPG` }
     default:
       return { big: `${d.correct ?? row.score}/${d.asked ?? 10}`, small: 'correct' }
   }
@@ -109,13 +129,21 @@ export function BoardTable({
 
 function Row({ row, game, mine }: { row: BestRow; game: GameId; mine: boolean }) {
   const stat = statFor(game, row)
+  const chip = game === 'multiverse' ? playoffChip(row.display.round as string | undefined) : null
   return (
     <li className={`${styles.row} ${mine ? styles.rowMine : ''}`}>
       <span className={styles.rank}>{row.rank}</span>
       <BoardFace name={row.name} avatar={row.avatar} />
       <span className={styles.who}>
         <span className={styles.name}>{row.name}</span>
-        <span className={styles.date}>{when(row.at)}</span>
+        <span className={styles.sub}>
+          <span className={styles.date}>{when(row.at)}</span>
+          {chip && (
+            <span className={styles.roundChip} data-won={chip.won ? 'yes' : undefined}>
+              {chip.label}
+            </span>
+          )}
+        </span>
       </span>
       <span className={styles.stat}>
         <span className={styles.statBig}>{stat.big}</span>

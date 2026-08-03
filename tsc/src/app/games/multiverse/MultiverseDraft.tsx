@@ -144,7 +144,13 @@ function Card({
   /** Postseason: the seasons still in play, when the card has been cut down. */
   only?: number[] | null
 }) {
-  const shown = only ? card.timelines.filter((_, i) => only.includes(i)) : card.timelines
+  // The postseason cuts every card to its best seasons, and the ones it cut
+  // are still worth drawing: an empty third of the card says nothing, whereas
+  // a greyed year says "this one is out of play now". Kept first, dropped
+  // last, so the two that count read as a pair.
+  const kept = only ? card.timelines.filter((_, i) => only.includes(i)) : card.timelines
+  const dropped = only ? card.timelines.filter((_, i) => !only.includes(i)) : []
+  const shown = [...kept, ...dropped]
   const firedYear =
     fired != null && only
       ? card.timelines[only[fired]]?.year
@@ -168,11 +174,18 @@ function Card({
       </span>
 
       <span className={styles.timelines} style={{ '--slot': slot } as React.CSSProperties}>
-        {shown.map((t) => (
+        {shown.map((t, i) => (
           <span
             key={t.year}
             className={styles.timeline}
-            data-fired={firedYear == null ? undefined : firedYear === t.year ? 'yes' : 'no'}
+            data-cut={i >= kept.length ? 'yes' : undefined}
+            data-fired={
+              i >= kept.length || firedYear == null
+                ? undefined
+                : firedYear === t.year
+                  ? 'yes'
+                  : 'no'
+            }
           >
             <span className={styles.tlYear}>{t.year}</span>
             <span className={styles.tlPpg}>{t.ppg.toFixed(1)}</span>
@@ -336,12 +349,17 @@ function Hud({
   headline,
   action,
   secondary,
+  keep,
 }: {
   roster: (MvCard | null)[]
   open: boolean
   onToggle: () => void
   /** Per slot. Null during the draft and before week one. */
   rolls: (HudRoll | null)[] | null
+  /** Postseason only: how many seasons a card still has in play. The rest are
+      drawn greyed at the end of the row rather than left out, so the cut is
+      visible BEFORE the round is played rather than inferred from a gap. */
+  keep?: number
   /** Bumped every week so the fire animation replays down the rows. */
   replay: number
   headline: React.ReactNode
@@ -399,7 +417,11 @@ function Hud({
                 )
               }
               const r = rolls?.[i] ?? null
-              const bands = r ? r.shown : card.timelines
+              const live = r ? r.shown : keep ? bestTimelines(card, keep) : card.timelines
+              const cut = keep
+                ? card.timelines.filter((t) => !live.some((k) => k.year === t.year))
+                : []
+              const bands = [...live, ...cut]
               return (
                 <div
                   // Re-keyed per week, which is what replays the reveal.
@@ -420,7 +442,10 @@ function Hud({
                       <span
                         key={t.year}
                         className={styles.hudBand}
-                        data-fired={r ? (ti === r.idx ? 'yes' : 'no') : undefined}
+                        data-cut={ti >= live.length ? 'yes' : undefined}
+                        data-fired={
+                          ti >= live.length || !r ? undefined : ti === r.idx ? 'yes' : 'no'
+                        }
                       >
                         <span className={styles.hudBandYear}>{t.year}</span>
                         <span className={styles.hudBandPpg}>{t.ppg.toFixed(1)}</span>
@@ -674,12 +699,36 @@ export function MultiverseDraft({
 
   /** The postseason, and how far it can possibly go: it stops at the first
       loss, because it is single elimination. */
+  /**
+   * Where your record puts you in the bracket.
+   *
+   * The dealer hands back the three sides weakest-first and cannot do better
+   * than that: it builds the postseason before anybody has drafted, so it has
+   * no idea what record the player will bring to it. Seeding is therefore
+   * done here, at the point the season is over and the record is known.
+   *
+   * The SAME three teams either way. Scraping in at eight wins puts the best
+   * side left in front of you immediately; a 12-2 season opens against the
+   * softest and climbs. So the field you have to beat to win it is identical
+   * whatever your seed — three opponents averaging the same — and all the
+   * record buys you is the order they arrive in, which is exactly what a seed
+   * is worth in a real bracket.
+   */
+  const poOrder = useMemo(() => {
+    if (finalWins >= 12) return [0, 1, 2]
+    if (finalWins >= 10) return [1, 0, 2]
+    return [2, 0, 1]
+  }, [finalWins])
+
   const poGames = useMemo<WeekLine[]>(() => {
     if (!deal) return []
-    return deal.playoffs.opponents.map((opp, r) => {
+    return poOrder.map((oi, r) => {
+      const opp = deal.playoffs.opponents[oi]
       const mine = playoffScore(roster, deal.playoffs.rolls, r, deal.playoffs.keep)
       return {
-        week: opp.week,
+        // The round decides the week, not the opponent: they have been
+        // reordered, and a quarter-final is week fifteen whoever is in it.
+        week: WEEKS + r + 1,
         mine,
         theirs: opp.score,
         won: mine > opp.score,
@@ -687,7 +736,7 @@ export function MultiverseDraft({
         paper: opp.ppg,
       }
     })
-  }, [deal, roster])
+  }, [deal, roster, poOrder])
 
   const poLimit = useMemo(() => {
     for (let i = 0; i < poGames.length; i++) if (!poGames[i].won) return i + 1
@@ -1185,6 +1234,15 @@ export function MultiverseDraft({
             go up, and so does everybody else&rsquo;s, because the field left is the strongest the
             league can put out.
           </p>
+          {/* Why the draw looks the way it does. Same three teams at every
+              seed, so this is about order and nothing else. */}
+          <p className={styles.poSeed}>
+            {finalWins >= 12
+              ? 'Top seed. You open against the softest side left, and it hardens from there.'
+              : finalWins >= 10
+                ? 'Middle seed. You open in the middle of the field, and the best of it waits.'
+                : 'Low seed. The best team left is in front of you in round one.'}
+          </p>
         </div>
         {bracket}
         <div className={styles.actions} data-single="yes">
@@ -1317,6 +1375,7 @@ export function MultiverseDraft({
             open={hudOpen}
             onToggle={() => setHudOpen((v) => !v)}
             rolls={poRolls}
+            keep={deal.playoffs.keep}
             replay={100 + poPlayed}
             headline={
               last ? (
@@ -1335,10 +1394,10 @@ export function MultiverseDraft({
             action={
               more
                 ? {
-                    label: `Play the ${PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}`,
+                    label: `Play ${PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}`,
                     onClick: () => setPoPlayed((p) => p + 1),
                   }
-                : { label: 'See how the season read', onClick: () => setPoClosed(true) }
+                : { label: 'End season', onClick: () => setPoClosed(true) }
             }
           />
         ) : (
@@ -1349,11 +1408,11 @@ export function MultiverseDraft({
                 className={styles.primary}
                 onClick={() => setPoPlayed((p) => p + 1)}
               >
-                Play the {PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}
+                Play {PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}
               </button>
             ) : (
               <button type="button" className={styles.primary} onClick={() => setPoClosed(true)}>
-                See how the season read
+                End season
               </button>
             )}
           </div>
