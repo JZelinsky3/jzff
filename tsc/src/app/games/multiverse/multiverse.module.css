@@ -619,6 +619,79 @@
   border-left-color: var(--mv-green);
 }
 
+/* A knockout result is not week nine. Same block, turned up: the score is
+   the biggest number on the screen and the rule down the side is a band. */
+.result[data-po='yes'] {
+  border-left-width: 5px;
+  padding: 1.1rem 1rem;
+}
+
+.result[data-po='yes'] .resultScore {
+  font-size: clamp(1.4rem, 6vw, 2rem);
+}
+
+.result[data-po='yes'] .resultTag {
+  font-size: 0.62rem;
+  color: var(--mv-cream);
+}
+
+/* ── Winning it ───────────────────────────────────────────────
+   Falls once, out of the top of the screen, and is gone. Fixed
+   over everything and never in the way of a tap.
+   ──────────────────────────────────────────────────────────── */
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bit {
+  position: absolute;
+  top: -14px;
+  height: 13px;
+  background: var(--mv-teal);
+  opacity: 0;
+  animation: mvDrop var(--dur, 3s) cubic-bezier(0.25, 0.6, 0.5, 1) var(--delay, 0s) forwards;
+}
+
+/* The game's own four, so the celebration belongs to this board and not to
+   some party-supply palette. */
+.bit[data-tone='1'] {
+  background: var(--mv-bright);
+}
+.bit[data-tone='2'] {
+  background: var(--mv-green);
+}
+.bit[data-tone='3'] {
+  background: var(--mv-cream);
+}
+
+@keyframes mvDrop {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(102vh) rotate(var(--tilt, 180deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    display: none;
+  }
+}
+
 .resultHead {
   display: flex;
   align-items: baseline;
@@ -722,6 +795,89 @@
   font-family: var(--serif);
   font-size: 0.88rem;
   color: var(--mv-soft);
+}
+
+/* ── The postseason, announced ─────────────────────────────────
+   Three games decide the run and the slate is gone from these
+   screens, so the space it left goes on saying which game this
+   is. A round that arrives as another row of the bracket feels
+   like week fifteen; this is the part where one loss ends it.
+   ──────────────────────────────────────────────────────────── */
+
+.poStage {
+  text-align: center;
+  padding: 1.5rem 1rem 1.35rem;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--mv-teal) 14%, transparent),
+      transparent 62%
+    ),
+    var(--mv-panel);
+  border: 1px solid var(--mv-line);
+  border-top: 3px solid var(--mv-teal);
+  margin-bottom: 1.1rem;
+}
+
+.poStageKicker {
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--mv-teal);
+}
+
+.poStageTitle {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 7vw, 3rem);
+  line-height: 1.02;
+  color: var(--mv-cream);
+  margin: 0.5rem 0 0;
+}
+
+.poStageVs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.7rem;
+  margin-top: 0.85rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mv-soft);
+}
+
+.poStageTeam {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 44%;
+}
+
+.poStageV {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--mv-mute);
+}
+
+.poStageLine {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--mv-mute);
+  margin-top: 0.8rem;
+}
+
+.poStageLine b {
+  color: var(--mv-bright);
+  font-variant-numeric: tabular-nums;
 }
 
 .poBracket {

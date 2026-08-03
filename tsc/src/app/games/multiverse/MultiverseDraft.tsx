@@ -42,17 +42,63 @@ function headshot(playerId: string | null): string | null {
   return playerId ? `https://sleepercdn.com/content/nfl/players/thumb/${playerId}.jpg` : null
 }
 
-/** Takes the seed back out of the address bar — see the other boards. A
-    refresh should deal a new season, not replay the last one. */
+/** Takes the shared run back out of the address bar — see the other boards.
+    A refresh should deal a new season, not replay the last one, and the
+    sharer's record has no business sitting in the reader's URL once the
+    preview that needed it has been scraped. */
 function clearSeedFromUrl() {
   try {
     const url = new URL(window.location.href)
-    if (!url.searchParams.has('seed')) return
-    url.searchParams.delete('seed')
+    const junk = ['seed', 'w', 's', 'm', 'po']
+    if (!junk.some((k) => url.searchParams.has(k))) return
+    for (const k of junk) url.searchParams.delete(k)
     window.history.replaceState(null, '', url)
   } catch {
     /* no URL to tidy, which is fine */
   }
+}
+
+/**
+ * Winning it, briefly.
+ *
+ * The one moment in the game that deserves motion, and the only one that
+ * gets it. Fixed over everything, pointer-events off, and it falls out of
+ * the top of the screen once and does not repeat.
+ *
+ * Deterministic rather than random: every value is derived from the index, so
+ * there is nothing here that could differ between a server render and a
+ * client one. In this game's colours, because a burst of party primaries over
+ * a cold teal board would look like somebody else's component.
+ */
+function Confetti() {
+  const bits = Array.from({ length: 46 }, (_, i) => ({
+    left: (i * 37) % 100,
+    delay: ((i * 29) % 90) / 100,
+    dur: 2.4 + (((i * 53) % 70) / 100) * 2,
+    tilt: (((i * 71) % 100) - 50) * 6,
+    tone: i % 4,
+    wide: i % 3 === 0,
+  }))
+  return (
+    <div className={styles.confetti} aria-hidden>
+      {bits.map((b, i) => (
+        <span
+          key={i}
+          className={styles.bit}
+          data-tone={b.tone}
+          style={
+            {
+              left: `${b.left}%`,
+              width: b.wide ? '9px' : '5px',
+              '--delay': `${b.delay}s`,
+              '--dur': `${b.dur}s`,
+              '--tilt': `${b.tilt}deg`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </div>
+  )
 }
 
 function Face({ name, playerId }: { name: string; playerId: string | null }) {
@@ -760,7 +806,12 @@ export function MultiverseDraft({
     const url = new URL(window.location.href)
     url.search = ''
     url.searchParams.set('pool', deal.pool.id)
-    url.searchParams.set('seed', deal.seed)
+    // NO SEED, for the reason Roster Roulette gives: a challenge means "play
+    // until you beat this", not "replay my exact draft". Handing over the seed
+    // sent a friend to a board that could never be posted — a seeded deal is a
+    // replay, and the run banker refuses replays — so the one link anybody
+    // actually shares was the one link that led somewhere that did not count.
+    // They land on a fresh draft with the record to beat in the preview.
     // The season, written onto the link so the preview card can draw it
     // without a database or a session. The board ignores all three.
     url.searchParams.set('w', String(finalWins))
@@ -798,7 +849,9 @@ export function MultiverseDraft({
         : madeIt
           ? `went ${finalWins}-${WEEKS - finalWins} and made the postseason`
           : `went ${finalWins}-${WEEKS - finalWins}`
-    const line = `I drafted across ${deal.years.length} seasons of ${deal.pool.label} at once and ${tail}. Same cards, same dice, your turn.`
+    // The invitation is to DRAFT, not to replay: the link carries no seed, so
+    // whoever opens it gets their own board and a number to beat.
+    const line = `I drafted across ${deal.years.length} seasons of ${deal.pool.label} at once and ${tail}. Draft your own and beat it.`
     try {
       if (navigator.share) {
         await navigator.share({ text: line, url: url.toString() })
@@ -1069,6 +1122,17 @@ export function MultiverseDraft({
   }
 
   // ── The postseason ─────────────────────────────────────────
+
+  /** Whether the run is over: the losing game has been played, or the final
+      has. Not `poPlayed >= poLimit` used as a FORECAST — see below. */
+  const poEnded = poPlayed >= poLimit
+
+  // A round nobody has played yet is quoted on paper, whether or not it will
+  // ever be reached. It used to say "not reached" for any round past the
+  // first loss, which read the result out before the game did: three rounds
+  // priced on paper meant you were going to win the first two, and "not
+  // reached" sitting under round two meant you were about to lose round one.
+  // Only a run that has actually ENDED knows which rounds went unplayed.
   const bracket = (
     <div className={styles.poBracket}>
       {poGames.map((g, r) => {
@@ -1080,9 +1144,9 @@ export function MultiverseDraft({
             <span className={styles.poLegScore}>
               {r < poPlayed
                 ? `${g.mine.toFixed(1)} vs ${g.theirs.toFixed(1)}`
-                : r < poLimit
-                  ? `${g.paper.toFixed(1)} on paper`
-                  : 'not reached'}
+                : poEnded && r >= poLimit
+                  ? 'not reached'
+                  : `${g.paper.toFixed(1)} on paper`}
             </span>
           </div>
         )
@@ -1144,10 +1208,33 @@ export function MultiverseDraft({
           </div>
         </div>
 
+        {/* The postseason has no slate, and that space is the point: three
+            games decide the run, so each one gets announced rather than
+            appearing as another row. */}
+        {more && (
+          <div className={styles.poStage}>
+            <div className={styles.poStageKicker}>
+              Round {poPlayed + 1} of {PLAYOFF_ROUNDS} · single elimination
+            </div>
+            <h2 className={styles.poStageTitle}>{PLAYOFF_ROUND_NAMES[poPlayed]}</h2>
+            <div className={styles.poStageVs}>
+              <span className={styles.poStageTeam}>Your seven</span>
+              <span className={styles.poStageV}>vs</span>
+              <span className={styles.poStageTeam}>{poGames[poPlayed].name}</span>
+            </div>
+            <div className={styles.poStageLine}>
+              <b>{poGames[poPlayed].paper.toFixed(1)}</b> on paper
+              {poPlayed + 1 === PLAYOFF_ROUNDS
+                ? '. Win this and you have won it.'
+                : '. Lose and the season ends here.'}
+            </div>
+          </div>
+        )}
+
         {bracket}
 
         {last && (
-          <div className={styles.result} data-won={last.won ? 'yes' : 'no'}>
+          <div className={styles.result} data-won={last.won ? 'yes' : 'no'} data-po="yes">
             <div className={styles.resultHead}>
               <span className={styles.resultTag}>
                 {last.won ? 'Won' : 'Lost'} the {PLAYOFF_ROUND_NAMES[poPlayed - 1].toLowerCase()}
@@ -1200,6 +1287,8 @@ export function MultiverseDraft({
                 <span className={styles.poOutLine}>
                   Three rounds, all of them on your best years, and none of them let you down.
                 </span>
+                {/* The moment it happens, not two screens later on the recap. */}
+                <Confetti />
               </>
             )}
           </div>

@@ -62,7 +62,7 @@ export async function generateMetadata({
     ? `${Math.round(wins)}-${14 - Math.round(wins)} in The Multiverse Draft`
     : TITLE
   const desc = hasResult
-    ? 'Same cards, same dice. See what you can do with them.'
+    ? 'Draft your own board out of the same league and beat it.'
     : DESC
 
   return {
