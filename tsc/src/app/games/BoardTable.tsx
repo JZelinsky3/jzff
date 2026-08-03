@@ -24,9 +24,24 @@ function ordinal(n: number): string {
   return n + ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th')
 }
 
+/**
+ * When the run happened, with the year on it.
+ *
+ * It was "Aug 3", which is fine on a board a month old and wrong on one that
+ * has been collecting runs across seasons: a top ten with 2026 and 2028 in it
+ * reads as ten runs from the same fortnight. Nothing in the database had to
+ * change — `at` has always been a full timestamp; the year was being thrown
+ * away here.
+ *
+ * Zero-padded and numeric because the column is mono and every row should be
+ * the same width down it, which is the whole reason to set a date in numbers
+ * rather than "Aug 3, 2026" that shifts a pixel per month.
+ */
 function when(iso: string): string {
   const d = new Date(iso)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${pad(d.getFullYear() % 100)}`
 }
 
 /**
