@@ -178,11 +178,11 @@ export async function GuideShell({
           </Link>
           {user ? (
             <Link href="/dashboard" className="pricing-nav-cta">
-              Library <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+              Library
             </Link>
           ) : (
             <Link href="/login" className="pricing-nav-cta">
-              Login <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+              Login
             </Link>
           )}
         </div>

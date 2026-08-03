@@ -2134,6 +2134,133 @@
   font-weight: 400;
 }
 
+/* Where the finished run landed on the leaderboard. Sits between the runback
+   and the buttons, and stays a single quiet line on purpose: another wheel is
+   still what the recap most wants, and a board is one tap away for anyone who
+   wants it. */
+.boardLine {
+  font-size: 0.82rem;
+  color: var(--gp-soft);
+  line-height: 1.6;
+  max-width: 44ch;
+}
+
+.boardLine b {
+  color: var(--gp-gold);
+  font-weight: 400;
+}
+
+.boardLink {
+  color: var(--gp-soft);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--gp-gold) 45%, transparent);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.boardLink:hover {
+  color: var(--gp-gold);
+  border-bottom-color: var(--gp-gold);
+}
+
+/* "Which manager are you in this league?", asked in the recap the first time
+   a run posts to a league board. Sits inside the recap's rhythm rather than
+   becoming a modal: it is a question worth asking once and worth ignoring
+   without consequence. */
+.claim {
+  width: 100%;
+  max-width: 30rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--gp-line-soft);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--gp-panel-2) 60%, transparent);
+}
+
+.claimAsk {
+  font-size: 0.8rem;
+  color: var(--gp-soft);
+  line-height: 1.55;
+  margin: 0 0 0.7rem;
+}
+
+.claimAsk b {
+  color: var(--gp-gold);
+  font-weight: 400;
+}
+
+.claimList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.claimBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--gp-cream);
+  background: transparent;
+  border: 1px solid var(--gp-line);
+  border-radius: 4px;
+  padding: 0.42rem 0.7rem;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.claimBtn:hover:not(:disabled) {
+  color: var(--gp-gold);
+  border-color: var(--gp-gold);
+}
+
+.claimBtn:disabled {
+  color: var(--gp-mute);
+  cursor: default;
+}
+
+/* The name currently on the board, inside the list of names. Marked so the
+   list reads as "this one, and these others" rather than as a question that
+   was never answered. */
+.claimBtnOn {
+  composes: claimBtn;
+  color: var(--gp-gold);
+  border-color: var(--gp-gold);
+  background: color-mix(in srgb, var(--gp-gold) 10%, transparent);
+}
+
+/* "Not you?" — the way back into the list once a claim exists. A link in the
+   sentence rather than a button beside it: it is a correction, not an
+   action the page wants anyone to take. */
+.claimSwitch {
+  font: inherit;
+  font-size: inherit;
+  color: var(--gp-gold);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--gp-gold) 40%, transparent);
+  padding: 0;
+  cursor: pointer;
+}
+
+.claimSwitch:hover {
+  color: var(--gp-bright);
+  border-bottom-color: var(--gp-bright);
+}
+
+.claimTaken {
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.claimErr {
+  font-size: 0.75rem;
+  color: var(--gp-red);
+  margin: 0.6rem 0 0;
+}
+
 .seedLine {
   font-family: var(--mono);
   font-size: 0.56rem;

@@ -143,11 +143,11 @@ export default async function RoulettePage({
           </Link>
           {user ? (
             <Link href="/dashboard" className="pricing-nav-cta">
-              Library <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+              Library
             </Link>
           ) : (
             <Link href="/login" className="pricing-nav-cta">
-              Login <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+              Login
             </Link>
           )}
         </div>
@@ -179,6 +179,17 @@ export default async function RoulettePage({
               <>
                 {opening.pool.sublabel}
                 {' · '}
+                {/* The board used to be reachable only from the line under a
+                    finished run, which meant you could not look at it without
+                    playing one first. It is the reason the wheel has stakes,
+                    so it is named on the page the whole time. */}
+                <Link
+                  href={`${ROSTER_ROULETTE.href}board/?pool=${encodeURIComponent(opening.pool.id)}`}
+                  className={styles.headSwitch}
+                >
+                  The board
+                </Link>
+                {' · '}
                 <Link href={ROSTER_ROULETTE.href} className={styles.headSwitch}>
                   Change league
                 </Link>
@@ -196,6 +207,7 @@ export default async function RoulettePage({
             initialDeal={opening}
             initialError={openingError}
             signedIn={!!user}
+            initialShared={!!sp.seed}
           />
         ) : (
           <GameLobby game={ROSTER_ROULETTE} />

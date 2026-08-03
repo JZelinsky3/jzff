@@ -22,15 +22,38 @@ import type { SquadPlayer, PoolPosition, Squad } from '@/lib/minigames/pool'
 import type { SlotDef, SlotId } from '@/lib/minigames/roulette'
 import { recordFor, recordHeadline, GAMES } from '@/lib/minigames/record'
 import { OwnLeagueCta } from '../OwnLeagueCta'
+import { bankRun, claimBank, postRun } from '../runBank'
+import { ClaimPrompt } from '../ClaimPrompt'
 import styles from '../games.module.css'
 
 type Deal = DealtGame
+
+/**
+ * Where a finished run stands with the leaderboard.
+ *
+ * `banked` is not a failure: the run is verified and waiting in localStorage
+ * for an account to hang it on. `refused` is, and always carries a reason in
+ * words the recap can print unedited.
+ */
+type PostState =
+  | { state: 'idle' }
+  | { state: 'sending' }
+  | { state: 'posted'; rank: number | null; total: number }
+  | { state: 'banked' }
+  | { state: 'refused'; why: string }
 
 type Filled = {
   player: SquadPlayer
   squad: Squad
   /** Best PPG this squad could have given the slots that were open. */
   bestAvailable: number
+  /** Which spin he came off, and where he sat on that squad's roster.
+      Both are what the leaderboard posts: the server re-deals the seed and
+      replays these, so it derives the score rather than being told it. An
+      INDEX rather than a name or an id because `playerId` is null for
+      anyone Sleeper has no record of, and names repeat. */
+  spin: number
+  playerIdx: number
 }
 
 const POS_LIST: PoolPosition[] = ['QB', 'RB', 'WR', 'TE']
@@ -87,6 +110,7 @@ export function RosterRoulette({
   initialDeal,
   initialError,
   signedIn,
+  initialShared = false,
 }: {
   /** Opening wheel, dealt during SSR so the board is up on first paint. */
   initialDeal: Deal | null
@@ -94,6 +118,11 @@ export function RosterRoulette({
   /** Read on the server, so the recap's CTA can skip the signup step for
       someone who already has an account. */
   signedIn: boolean
+  /** Whether the opening wheel came from a `?seed=` link. Those replay a
+      deal somebody else has already played, so they never post to a board.
+      Only the OPENING wheel can be one: every wheel dealt after it is
+      fresh, which is why this clears on the first new wheel. */
+  initialShared?: boolean
 }) {
   // Fixed for the life of the page: changing league means going back to the
   // Games Page, so every wheel dealt here stays in the same pool.
@@ -105,6 +134,12 @@ export function RosterRoulette({
   const [deal, setDeal] = useState<Deal | null>(initialDeal)
   const [error, setError] = useState<string | null>(initialError)
   const [loading, setLoading] = useState(false)
+  // Cleared by the first new wheel: only the deal the link arrived with is
+  // a replay, and everything after it is dealt fresh and posts normally.
+  const [shared, setShared] = useState(initialShared)
+  // Where the finished run stands with the leaderboard. Declared up here
+  // with the rest of the state because `load` and `newWheel` both reset it.
+  const [post, setPost] = useState<PostState>({ state: 'idle' })
 
   const [spinIndex, setSpinIndex] = useState(0)
   const [revealed, setRevealed] = useState(false)
@@ -180,13 +215,23 @@ export function RosterRoulette({
     let raf = 0
     let tail = 0
 
+    // The bar is still shrinking when the ease ends — its padding transition
+    // runs 0.25s, the head's 0.18s — so the position that was correct on the
+    // last frame is a few pixels off by the time everything has settled, and
+    // the title comes to rest lower than the bar it was meant to be tucked
+    // under. Holding the recomputed target for a beat past the ease lands it
+    // where it was aimed instead of where it was aimed a quarter-second ago.
+    const HOLD = 300
     const step = (now: number) => {
       const navH = nav ? nav.getBoundingClientRect().height : 0
       const target = Math.max(0, window.scrollY + head.getBoundingClientRect().top - navH - 2)
       const t = dur > 0 ? Math.min(1, (now - t0) / dur) : 1
       const eased = 1 - Math.pow(1 - t, 3)
-      window.scrollTo(0, start + (target - start) * eased)
       if (t < 1) {
+        window.scrollTo(0, start + (target - start) * eased)
+        raf = requestAnimationFrame(step)
+      } else if (now - t0 < dur + HOLD) {
+        if (Math.abs(target - window.scrollY) > 0.5) window.scrollTo(0, target)
         raf = requestAnimationFrame(step)
       } else {
         tail = window.setTimeout(() => {
@@ -259,6 +304,10 @@ export function RosterRoulette({
       setCopied(false)
       setHoverPlayer(null)
       setHdrSlim(false)
+      // A wheel asked for by seed is a replay and never posts; any other is
+      // freshly dealt and does.
+      setShared(!!seed)
+      setPost({ state: 'idle' })
       clearSeedFromUrl()
     } catch {
       setError('Could not reach the wheel. Check your connection and try again.')
@@ -319,6 +368,8 @@ export function RosterRoulette({
       setTeaser(null)
       setCopied(false)
       setHoverPlayer(null)
+      setShared(false)
+      setPost({ state: 'idle' })
       return
     }
     void load(poolId, null)
@@ -351,6 +402,77 @@ export function RosterRoulette({
     () => (deal ? recordFor(ppg, deal.benchmark) : 0),
     [ppg, deal]
   )
+
+  // ── The board ───────────────────────────────────────────────
+  //
+  // A finished run posts itself. There is no "submit" button, because the
+  // only thing a button would add is a way to leave a bad run off the board,
+  // and a board you can opt out of after seeing the number is not a board.
+  useEffect(() => {
+    if (!done || !deal) return
+    if (post.state !== 'idle') return
+
+    let cancelled = false
+    // The whole body runs inside the async call rather than around it, so
+    // none of these land as a synchronous setState in an effect body.
+    void (async () => {
+      // A shared wheel is a replay of a deal somebody has already played, so
+      // it stays off the board by design. Said out loud rather than silently
+      // skipped, or the recap just looks broken.
+      if (shared) {
+        if (!cancelled) {
+          setPost({
+            state: 'refused',
+            why: 'A shared wheel is a replay, so it stays off the board.',
+          })
+        }
+        return
+      }
+
+      const picks = slots
+        .map((s) => {
+          const f = lineup[s.id]
+          return f ? { spin: f.spin, player: f.playerIdx, slot: s.id } : null
+        })
+        .filter((p): p is { spin: number; player: number; slot: SlotId } => p != null)
+
+      const run = { game: 'roulette', mode: null, pool: poolId, seed: deal.seed, picks }
+
+      if (!signedIn) {
+        // Banked, not lost. The account is asked for at the first moment
+        // skipping it costs the player something, which is a better ask
+        // than the lobby's.
+        bankRun({ ...run, at: Date.now() })
+        if (!cancelled) setPost({ state: 'banked' })
+        return
+      }
+
+      if (!cancelled) setPost({ state: 'sending' })
+      const out = await postRun(run)
+      if (cancelled) return
+      if (out.ok) {
+        setPost({ state: 'posted', rank: out.rank ?? null, total: out.total ?? 0 })
+      } else if (out.needsAuth) {
+        // The session lapsed between dealing and finishing. Bank it and ask.
+        bankRun({ ...run, at: Date.now() })
+        setPost({ state: 'banked' })
+      } else {
+        setPost({ state: 'refused', why: out.error ?? 'Could not reach the board.' })
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [done, deal, post.state, shared, slots, lineup, poolId, signedIn])
+
+  // Anything banked while signed out goes up the moment there's an account
+  // to hang it on. Runs first, so a player who signs in from the recap sees
+  // the board with their history already on it.
+  useEffect(() => {
+    if (!signedIn) return
+    void claimBank()
+  }, [signedIn])
 
   const eligiblePositions = useMemo(() => {
     const set = new Set<PoolPosition>()
@@ -483,13 +605,22 @@ export function RosterRoulette({
       const bestAvailable = legal.length ? Math.max(...legal.map((p) => p.ppg)) : 0
 
       setHoverPlayer(null)
-      setLineup((prev) => ({ ...prev, [targetId]: { player, squad: current, bestAvailable } }))
+      setLineup((prev) => ({
+        ...prev,
+        [targetId]: {
+          player,
+          squad: current,
+          bestAvailable,
+          spin: spinIndex,
+          playerIdx: current.players.indexOf(player),
+        },
+      }))
       // That pick finishes the lineup, so the board is done and the header
       // comes back for the recap.
       if (Object.keys(lineup).length + 1 >= slots.length) setHdrSlim(false)
       advance()
     },
-    [current, revealed, slots, lineup, advance, slotFor]
+    [current, revealed, slots, lineup, advance, slotFor, spinIndex]
   )
 
   // Rerolling spins straight into the next squad. It costs a reroll either
@@ -509,7 +640,10 @@ export function RosterRoulette({
     const url = new URL(window.location.href)
     url.search = ''
     url.searchParams.set('pool', deal.pool.id)
-    url.searchParams.set('seed', deal.seed)
+    // No seed. A challenge means "play until you beat this", not "replay my
+    // exact nine squads" — and a replayed deal can never go on a board, so
+    // handing one to a friend would send them somewhere that doesn't count.
+    // They land on a fresh wheel with the number to beat above it.
     if (deal.benchmark) url.searchParams.set('w', String(wins))
     url.searchParams.set('ppg', String(round1(ppg)))
     // The lineup itself, so the link preview shows who was drafted rather
@@ -694,6 +828,11 @@ export function RosterRoulette({
                 </div>
               </div>
               <Runback lineup={lineup} slots={slots} />
+              <BoardLine post={post} poolId={poolId} signedIn={signedIn} />
+              {/* Only after the run is actually on the board. Asked before
+                  that, it would be a form standing between the player and
+                  their score. */}
+              {post.state === 'posted' && <ClaimPrompt poolId={poolId} />}
               <div className={styles.btnRow}>
                 <button type="button" className={styles.btn} onClick={newWheel}>
                   New wheel
@@ -1146,6 +1285,70 @@ function Runback({
       squads you took from.
     </p>
   )
+}
+
+/**
+ * Where this run landed on the board, in one line under the recap.
+ *
+ * Deliberately one line and deliberately quiet. The recap's job is still to
+ * make you want another wheel; a full leaderboard dropped in here would be
+ * the loudest thing on the page and the wrong thing to have made loudest.
+ * The rank links out to the board for anyone who wants the rest of it.
+ */
+function BoardLine({
+  post,
+  poolId,
+  signedIn,
+}: {
+  post: PostState
+  poolId: string
+  signedIn: boolean
+}) {
+  const boardHref = `/games/roulette/board/?pool=${encodeURIComponent(poolId)}`
+
+  if (post.state === 'idle' || post.state === 'sending') {
+    return <p className={styles.boardLine}>Putting this on the board…</p>
+  }
+
+  if (post.state === 'posted') {
+    const { rank, total } = post
+    return (
+      <p className={styles.boardLine}>
+        {rank === 1 ? (
+          <>
+            <b>Best run on the board.</b>{' '}
+          </>
+        ) : rank != null ? (
+          <>
+            <b>{ordinal(rank)}</b> of {total.toLocaleString()} runs.{' '}
+          </>
+        ) : null}
+        <a href={boardHref} className={styles.boardLink}>
+          See the board
+        </a>
+      </p>
+    )
+  }
+
+  if (post.state === 'banked') {
+    // Not a failure and not phrased as one: the run is verified and waiting.
+    // Asked here rather than in the lobby because this is the first moment
+    // skipping the account costs the player something.
+    return (
+      <p className={styles.boardLine}>
+        This run is saved on this device.{' '}
+        <a
+          href={`/login?mode=signup&next=${encodeURIComponent(boardHref)}`}
+          className={styles.boardLink}
+        >
+          {signedIn ? 'Sign in again' : 'Make an account'}
+        </a>{' '}
+        to put it on the board.
+      </p>
+    )
+  }
+
+  return <p className={styles.boardLine}>{post.why}</p>
 }
 
 function profileLabel(profile: string): string {

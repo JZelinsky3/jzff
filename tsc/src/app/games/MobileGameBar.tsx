@@ -106,7 +106,11 @@ export function MobileGameBar({
   signedIn: boolean
 }) {
   return (
-    <header className={s.bar}>
+    // Tagged because it is the sticky masthead on a phone, and the games that
+    // park a collapsed title under it have to measure its height. The desktop
+    // `nav.nav` isn't on the page here, so without this hook they measured
+    // nothing and scrolled the title behind the bar.
+    <header className={s.bar} data-game-bar>
       {left === 'home' ? (
         <Link href="/" className={s.barIco} aria-label="The Sunday Chronicle">
           <HomeIcon />

@@ -9199,11 +9199,6 @@ a.g-decision-pick-name:hover { text-decoration: underline; }
     border-color: var(--gold);
     transform: translateY(-1px);
 }
-.pricing-nav-cta-arrow {
-    display: inline-block;
-    transition: transform .2s ease-out;
-}
-.pricing-nav-cta:hover .pricing-nav-cta-arrow { transform: translateX(3px); }
 
 @media (max-width: 600px) {
     .pricing-nav-right { gap: .7rem; }
@@ -25848,11 +25843,6 @@ a.g-decision-pick-name:hover { text-decoration: underline; }
     border-color: var(--gold);
     transform: translateY(-1px);
 }
-.pricing-nav-cta-arrow {
-    display: inline-block;
-    transition: transform .2s ease-out;
-}
-.pricing-nav-cta:hover .pricing-nav-cta-arrow { transform: translateX(3px); }
 
 @media (max-width: 600px) {
     .pricing-nav-right { gap: .7rem; }

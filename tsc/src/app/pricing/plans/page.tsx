@@ -147,7 +147,7 @@ export default async function PlansPage() {
             <span className="pricing-nav-link-text">Pricing</span>
           </Link>
           <Link href="/login" className="pricing-nav-cta">
-            Login <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+            Login
           </Link>
         </div>
       </nav>

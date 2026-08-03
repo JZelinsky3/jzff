@@ -1,0 +1,328 @@
+/* ============================================================
+   THE BOARD
+   A leaderboard on the back page. Same bones as the rest of the
+   games section — cream, brass, mono numerals, hairline rules —
+   but laid out as an AGATE COLUMN rather than as cards: this is
+   a standings table, and a standings table is read down.
+   ============================================================ */
+
+.wrap {
+  --gp-ink: #0b1119;
+  --gp-panel: #121c27;
+  --gp-panel-2: #182533;
+  --gp-line: #2a3d51;
+  --gp-line-soft: #1d2b3a;
+  --gp-cream: #f4ebd8;
+  --gp-soft: #c2bba9;
+  --gp-mute: #7d8a99;
+  --gp-gold: #e8c889;
+  --gp-bright: #f7dfaa;
+  /* Only read by the claim prompt, which is borrowed from the games sheet
+     and looks its colours up on whatever wrap it lands in. */
+  --gp-red: #d2544a;
+
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 1.25rem 5rem;
+}
+
+@media (max-width: 700px) {
+  .wrap {
+    padding: 0 0.75rem 3rem;
+  }
+}
+
+/* ── Masthead ─────────────────────────────────────────────── */
+
+.head {
+  text-align: center;
+  padding: 2.75rem 0 1.6rem;
+  border-bottom: 3px double var(--gp-line);
+  margin-bottom: 1.4rem;
+}
+
+.kicker {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+}
+
+.title {
+  font-family: var(--serif);
+  font-size: clamp(1.9rem, 6vw, 3.2rem);
+  line-height: 1.04;
+  color: var(--gp-cream);
+  margin: 0.4rem 0 0.35rem;
+}
+
+.title em {
+  font-style: italic;
+  color: var(--gp-gold);
+}
+
+.headSub {
+  font-size: 0.82rem;
+  color: var(--gp-soft);
+  margin: 0;
+}
+
+.headSwitch {
+  color: var(--gp-soft);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--gp-gold) 45%, transparent);
+}
+
+.headSwitch:hover {
+  color: var(--gp-gold);
+}
+
+/* ── Tabs ─────────────────────────────────────────────────── */
+
+/* Three boards measuring three different things, so they are TABS rather
+   than a filter: switching is switching question, not narrowing a list. */
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-bottom: 1.6rem;
+  flex-wrap: wrap;
+}
+
+/* "Which manager are you?", between the tabs and the table. Centred on the
+   column and given the table's own bottom margin so it reads as part of the
+   board's furniture rather than as a banner dropped on top of it. Empty
+   until the prompt has something to ask, hence no border of its own. */
+.claimSlot {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.4rem;
+}
+
+.claimSlot:empty {
+  display: none;
+}
+
+.tab {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  text-decoration: none;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--gp-line-soft);
+  border-radius: 4px;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--gp-soft);
+  border-color: var(--gp-line);
+}
+
+.tabOn {
+  color: var(--gp-ink);
+  background: var(--gp-gold);
+  border-color: var(--gp-gold);
+}
+
+.tabOn:hover {
+  color: var(--gp-ink);
+  border-color: var(--gp-gold);
+}
+
+/* ── Rows ─────────────────────────────────────────────────── */
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2.2rem auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.62rem 0.75rem;
+  border-bottom: 1px solid var(--gp-line-soft);
+}
+
+.row:first-child {
+  border-top: 1px solid var(--gp-line);
+}
+
+/* The viewer's own runs. A tint and nothing else: a coloured spine down the
+   left was tried on the game boards and cut, and it would be no better here. */
+.rowMine {
+  background: color-mix(in srgb, var(--gp-gold) 8%, transparent);
+}
+
+.rank {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-mute);
+  text-align: right;
+}
+
+.row:first-child .rank {
+  color: var(--gp-gold);
+}
+
+/* Faces are a league-board thing: on the site pool there's no manager
+   identity to draw, so every row shows a monogram and the column still
+   holds its rhythm. A square plate, not a circle, to agree with the rest
+   of the section's credential plates. */
+.face {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--gp-panel-2);
+  border: 1px solid var(--gp-line-soft);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.faceImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.faceInitials {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: var(--gp-mute);
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.name {
+  font-size: 0.94rem;
+  color: var(--gp-cream);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.statBig {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gp-bright);
+}
+
+.statSmall {
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+/* The break above a pinned row that fell off the end of the page. Dashes
+   rather than a solid rule: the rows either side are not adjacent, and the
+   gap should say so. */
+.gap {
+  height: 1.5rem;
+  border-bottom: 1px dashed var(--gp-line);
+  margin-bottom: -1px;
+}
+
+.scale,
+.lede {
+  font-size: 0.8rem;
+  color: var(--gp-soft);
+  margin: 0.9rem 0 0;
+  text-align: center;
+}
+
+.lede {
+  margin: 0 0 1rem;
+}
+
+.subhead {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+  margin: 1.8rem 0 0.5rem;
+  text-align: center;
+}
+
+.empty {
+  text-align: center;
+  color: var(--gp-soft);
+  font-size: 0.92rem;
+  padding: 3rem 1rem;
+  border-top: 1px solid var(--gp-line);
+  border-bottom: 1px solid var(--gp-line);
+}
+
+/* ── Footer actions ───────────────────────────────────────── */
+
+.foot {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.btn {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gp-ink);
+  background: var(--gp-gold);
+  border: 1px solid var(--gp-gold);
+  border-radius: 4px;
+  padding: 0.72rem 1.3rem;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: var(--gp-bright);
+  border-color: var(--gp-bright);
+}
+
+.btnGhost {
+  composes: btn;
+  color: var(--gp-soft);
+  background: transparent;
+  border-color: var(--gp-line);
+}
+
+.btnGhost:hover {
+  background: transparent;
+  color: var(--gp-gold);
+  border-color: var(--gp-gold);
+}

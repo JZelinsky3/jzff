@@ -80,8 +80,10 @@
   justify-content: center;
   width: 2.1rem;
   height: 2.1rem;
-  border: 1px solid var(--gp-line);
-  /* Square with a hairline radius. Never a disc. */
+  /* No box around the glyph. The bar is already a bounded strip, so a
+     hairline square around a back arrow is a second frame inside the first;
+     the arrow reads as a button on its own. Never a disc either. */
+  border: 0;
   border-radius: 2px;
   color: var(--gp-gold);
   text-decoration: none;

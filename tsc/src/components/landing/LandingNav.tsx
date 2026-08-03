@@ -284,7 +284,7 @@ export function LandingNav({ signedIn, admin = false }: { signedIn: boolean; adm
                     onMouseEnter={() => enter(t.column)}
                     onClick={closeAll}
                   >
-                    {t.label} <span className="pricing-nav-cta-arrow" aria-hidden>→</span>
+                    {t.label}
                   </Link>
                 )
               }
