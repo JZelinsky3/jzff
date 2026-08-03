@@ -148,10 +148,12 @@ export async function GameBoardPage({
 
       {/* The board is where a wrong name is actually visible, so it is also
           where the name gets set or corrected. Only on a single league's
-          board and only when signed in: everywhere else there is no manager
-          to claim. The component itself renders nothing until it has an
+          board: everywhere else there is no manager to claim. Signed OUT
+          too, because somebody who has just played three runs on this wheel
+          is exactly who the question is for, and their answer waits on the
+          device with the runs. The component renders nothing until it has an
           answer worth showing. */}
-      {user && soleLeagueSlug(poolId) && (
+      {soleLeagueSlug(poolId) && (
         <div className={styles.claimSlot}>
           <ClaimPrompt poolId={poolId} />
         </div>

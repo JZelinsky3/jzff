@@ -355,7 +355,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         host.innerHTML = items.map(function (it) {
             var cls = outlookClass(it)
             var summary = it.lastYear != null
-                ? '<strong>' + (it.lastYear) + '</strong> · ' + escapeHtml(it.lastRecord || '—') + ' · finished ' + outlookTag(it)
+                ? '<strong>' + (it.lastYear) + '</strong> · ' + escapeHtml(it.lastRecord || '·') + ' · finished ' + outlookTag(it)
                 : 'No prior season.'
             return '<div class="o-card ' + cls + '">' +
                 '<div class="o-mast">' +
@@ -375,7 +375,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         .then(function (live) {
             if (!live) {
                 document.getElementById('live-leagues').innerHTML =
-                    '<div class="empty">Live feed unavailable — try a refresh.</div>'
+                    '<div class="empty">Live feed unavailable, try a refresh.</div>'
                 return
             }
             renderForm(live.leagues || [])
@@ -404,7 +404,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         if (leagues.length === 0) { host.innerHTML = ''; return }
         host.innerHTML = leagues.map(function (l) {
             var f = l.myForm
-            var ppg = f.ppg != null ? f.ppg.toFixed(1) : '—'
+            var ppg = f.ppg != null ? f.ppg.toFixed(1) : '·'
             var pf = Math.round(f.pointsFor || 0).toLocaleString('en-US')
             var rec = (f.wins || 0) + '-' + (f.losses || 0) + (f.ties ? '-' + f.ties : '')
             var streakHtml = ''
@@ -429,7 +429,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         var host = document.getElementById('live-leagues')
         if (!host) return
         if (leagues.length === 0) {
-            host.innerHTML = '<div class="empty">No Sleeper leagues linked yet — the Wire goes live once one is connected.</div>'
+            host.innerHTML = '<div class="empty">No Sleeper leagues linked yet, the Wire goes live once one is connected.</div>'
             return
         }
         var withMatchups = leagues.filter(function (l) { return l.matchups && l.matchups.length > 0 })
@@ -466,7 +466,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         var bIsMe = !!(myOwnerId && m.b && m.b.ownerId === myOwnerId)
         var aSide = sideHtml(m.a, aLead, aIsMe)
         var bSide = m.b ? sideHtml(m.b, bLead, bIsMe)
-            : '<div class="mu-side"><div class="mu-team" style="color: var(--cream-mute); font-style: normal;">Bye</div><div class="mu-pts">—</div></div>'
+            : '<div class="mu-side"><div class="mu-team" style="color: var(--cream-mute); font-style: normal;">Bye</div><div class="mu-pts">·</div></div>'
         return '<div class="mu-card' + (m.isMine ? ' mine' : '') + '">' +
             '<div class="mu-mast">' +
                 '<span>Matchup #' + m.matchupId + '</span>' +

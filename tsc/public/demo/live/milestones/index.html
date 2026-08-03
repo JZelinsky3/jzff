@@ -726,7 +726,7 @@ body { background: var(--ml-bg); }
     <div class="page-kicker"><span class="star">✦</span>Live · LSL · Honors Roll</div>
     <h1 class="page-title">Milestone <em>Tracker.</em></h1>
     <p class="page-sub">
-        The personal stuff — career win counts, points totals, anniversaries, signature
+        The personal stuff, career win counts, points totals, anniversaries, signature
         moments. When a manager crosses a line that matters, the chronicle notes it.
     </p>
 </header>
@@ -736,17 +736,17 @@ body { background: var(--ml-bg); }
     <div class="ml-meter" id="ml-meter">
         <div class="ml-meter-stat glow">
             <span class="lbl">This week</span>
-            <span class="val" id="m-week">—</span>
+            <span class="val" id="m-week">·</span>
         </div>
         <div class="ml-meter-sep"></div>
         <div class="ml-meter-stat">
             <span class="lbl">This season</span>
-            <span class="val" id="m-season">—</span>
+            <span class="val" id="m-season">·</span>
         </div>
         <div class="ml-meter-sep"></div>
         <div class="ml-meter-stat">
             <span class="lbl">One game away</span>
-            <span class="val" id="m-imminent">—</span>
+            <span class="val" id="m-imminent">·</span>
         </div>
         <div class="ml-meter-foot" id="m-foot">Tracking starts Week 1</div>
     </div>
@@ -754,7 +754,7 @@ body { background: var(--ml-bg); }
     <section class="ml-section">
         <div class="ml-section-head">
             <span class="ml-section-num">§ 01 · Crossed</span>
-            <span class="ml-section-title">Just <em>Achieved —</em></span>
+            <span class="ml-section-title">Just <em>Achieved ·</em></span>
             <span class="ml-section-note">Last 2 weeks</span>
         </div>
         <div id="crossed-body">
@@ -762,7 +762,7 @@ body { background: var(--ml-bg); }
                 <div class="glyph">✦</div>
                 <h3>The honors roll <em>begins Week 1.</em></h3>
                 <p>
-                    Every milestone gets its own card the week it's hit — manager name, the
+                    Every milestone gets its own card the week it's hit, manager name, the
                     accolade, the game it happened in. No emails, no extra steps; it shows up
                     here and on the league hub.
                 </p>
@@ -796,7 +796,7 @@ body { background: var(--ml-bg); }
     <section class="ml-section">
         <div class="ml-section-head">
             <span class="ml-section-num">§ 02 · Imminent</span>
-            <span class="ml-section-title">One Game <em>Away —</em></span>
+            <span class="ml-section-title">One Game <em>Away ·</em></span>
             <span class="ml-section-note">Could cross next week</span>
         </div>
         <div id="imminent-body">
@@ -813,7 +813,7 @@ body { background: var(--ml-bg); }
     <section class="ml-section">
         <div class="ml-section-head">
             <span class="ml-section-num">§ 03 · Horizon</span>
-            <span class="ml-section-title">On the <em>Horizon —</em></span>
+            <span class="ml-section-title">On the <em>Horizon ·</em></span>
             <span class="ml-section-note">Within reach this season</span>
         </div>
         <div id="horizon-body">
@@ -829,22 +829,22 @@ body { background: var(--ml-bg); }
                 <div class="ml-ladder-item">
                     <div class="tier">Tier · Bronze</div>
                     <h4>Round-number wins</h4>
-                    <p>50, 100, 150, 200 career wins — every 50-win mark stamped with the date.</p>
+                    <p>50, 100, 150, 200 career wins, every 50-win mark stamped with the date.</p>
                 </div>
                 <div class="ml-ladder-item">
                     <div class="tier">Tier · Silver</div>
                     <h4>Lifetime points</h4>
-                    <p>10k, 25k, 50k, 75k career PF — the long-haul scoring marks.</p>
+                    <p>10k, 25k, 50k, 75k career PF, the long-haul scoring marks.</p>
                 </div>
                 <div class="ml-ladder-item">
                     <div class="tier">Tier · Gold</div>
                     <h4>Streak hits</h4>
-                    <p>5, 10, 15 in a row — wins, losses, weekly tops, every notable run.</p>
+                    <p>5, 10, 15 in a row, wins, losses, weekly tops, every notable run.</p>
                 </div>
                 <div class="ml-ladder-item">
                     <div class="tier">Tier · Loyalty</div>
                     <h4>Time in league</h4>
-                    <p>5, 10, 15, 20 seasons of service — the alumni-meter anniversaries.</p>
+                    <p>5, 10, 15, 20 seasons of service, the alumni-meter anniversaries.</p>
                 </div>
             </div>
         </div>
@@ -940,7 +940,7 @@ body { background: var(--ml-bg); }
         '<article class="ml-crossed">' +
           '<div class="ml-medal">' + avatarMarkup(it) + '</div>' +
           '<div class="who">' + esc(it.tier || 'Milestone') + '</div>' +
-          '<div class="name">' + (it.name_html || esc(it.name || '—')) + '</div>' +
+          '<div class="name">' + (it.name_html || esc(it.name || '·')) + '</div>' +
           '<div class="achievement">' + (it.achievement_html || esc(it.achievement || '')) + '</div>' +
           (it.stats_html ? '<div class="stats">' + it.stats_html + '</div>' : '') +
           '<div class="meta">' + metaContent + '</div>' +
@@ -973,7 +973,7 @@ body { background: var(--ml-bg); }
           '<div class="ml-approach-row' + (imminent ? ' imminent' : '') + '">' +
             '<div class="ml-approach-glyph">' + avatarMarkup(it) + '</div>' +
             '<div class="ml-approach-head">' +
-              '<div class="ml-approach-name">' + esc(it.name || '—') + '</div>' +
+              '<div class="ml-approach-name">' + esc(it.name || '·') + '</div>' +
               '<div class="ml-approach-eta">' + esc(it.eta || '') +
                 '<span class="of">' + esc(it.eta_unit || 'to go') + '</span>' +
               '</div>' +

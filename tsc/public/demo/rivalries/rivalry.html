@@ -762,7 +762,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     return new URLSearchParams(window.location.search).get(name);
   }
   function fmtScore(n) {
-    return typeof n === 'number' ? n.toFixed(1) : '—';
+    return typeof n === 'number' ? n.toFixed(1) : '·';
   }
 
   function buildSide(side, sideLetter, isLeading) {
@@ -771,7 +771,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
         <div class="rv-wins${isLeading ? ' hot' : ''}">${side.wins}</div>
         <div class="rv-wins-lbl">Wins</div>
         <div class="rv-name">${escapeHtml(side.name)}</div>
-        <div class="rv-ppg">${side.avg_ppg ? side.avg_ppg.toFixed(1) + ' avg PPG' : '—'}</div>
+        <div class="rv-ppg">${side.avg_ppg ? side.avg_ppg.toFixed(1) + ' avg PPG' : '·'}</div>
         <div class="rv-rec">Reg ${escapeHtml(side.reg_record)} &nbsp;·&nbsp; Playoff ${escapeHtml(side.playoff_record)}</div>
       </div>
     `;
@@ -792,7 +792,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       : rv.leader_name
         ? `${escapeHtml(rv.leader_name)} Leads · ${escapeHtml(rv.leader_record)}`
         : 'No games yet';
-    const lastGameStr = rv.last_meeting ? `${rv.last_meeting.year} · W${rv.last_meeting.week}` : '—';
+    const lastGameStr = rv.last_meeting ? `${rv.last_meeting.year} · W${rv.last_meeting.week}` : '·';
 
     return `
       <div class="rv-card">
@@ -810,7 +810,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
               <div class="rv-bar" style="${barStyle}"></div>
               <div class="rv-bar-nums"><span>${rv.manager_a.wins}</span><span>${rv.manager_b.wins}</span></div>
             </div>
-            <div class="rv-series-lbl">${rv.is_deadlocked ? 'Deadlocked' : rv.leader_name ? `${escapeHtml(rv.leader_name)} Leads` : '—'}</div>
+            <div class="rv-series-lbl">${rv.is_deadlocked ? 'Deadlocked' : rv.leader_name ? `${escapeHtml(rv.leader_name)} Leads` : '·'}</div>
             <div class="rv-last-game">Last: <span>${lastGameStr}</span></div>
           </div>
           ${buildSide(rv.manager_b, 'b', bLeading)}
@@ -947,14 +947,14 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   function tidyRecord(rec) {
     const parts = (rec || '').split('-');
     if (parts.length === 3 && parts[2] === '0') return parts.slice(0, 2).join('-');
-    return rec || '—';
+    return rec || '·';
   }
 
   function buildRivalryCard(side, opp, rv, dirEntry, profile) {
     // Win pct against THIS opponent (not career). Ties count against both
     // the wins and losses denominator.
     const totalH2H = side.wins + opp.wins + (rv.ties_count || 0);
-    const winPct = totalH2H > 0 ? ((side.wins / totalH2H) * 100).toFixed(1) + '%' : '—';
+    const winPct = totalH2H > 0 ? ((side.wins / totalH2H) * 100).toFixed(1) + '%' : '·';
 
     const bestW = biggestByResult(side, 'W');
     const worstL = biggestByResult(side, 'L');
@@ -978,7 +978,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     // When the bundle hasn't been rebuilt yet (older cached value) we
     // gracefully fall back to "—" instead of breaking.
     const hi = side.high_score;
-    const hiValue = hi && typeof hi.score === 'number' ? hi.score.toFixed(1) : '—';
+    const hiValue = hi && typeof hi.score === 'number' ? hi.score.toFixed(1) : '·';
     const hiSub = hi
       ? `${hi.year} · W${hi.week}${hi.is_playoff ? ' · PO' : ''}`
       : 'No games on file';
@@ -999,12 +999,12 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
           </div>
           <div class="rv-career-cell">
             <div class="rv-career-cell-label">Best win</div>
-            <div class="rv-career-cell-value">${bestW ? '+' + bestW.margin.toFixed(1) : '—'}</div>
+            <div class="rv-career-cell-value">${bestW ? '+' + bestW.margin.toFixed(1) : '·'}</div>
             <div class="rv-career-cell-sub">${bestW ? `${bestW.year} · W${bestW.week}${bestW.is_playoff ? ' · PO' : ''}` : 'No wins yet'}</div>
           </div>
           <div class="rv-career-cell">
             <div class="rv-career-cell-label">Toughest loss</div>
-            <div class="rv-career-cell-value">${worstL ? '−' + worstL.margin.toFixed(1) : '—'}</div>
+            <div class="rv-career-cell-value">${worstL ? '−' + worstL.margin.toFixed(1) : '·'}</div>
             <div class="rv-career-cell-sub">${worstL ? `${worstL.year} · W${worstL.week}${worstL.is_playoff ? ' · PO' : ''}` : 'No losses yet'}</div>
           </div>
           <div class="rv-career-cell">
@@ -1014,7 +1014,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
           </div>
           <div class="rv-career-cell">
             <div class="rv-career-cell-label">Avg in series</div>
-            <div class="rv-career-cell-value">${rivAvg != null ? rivAvg.toFixed(1) : '—'}</div>
+            <div class="rv-career-cell-value">${rivAvg != null ? rivAvg.toFixed(1) : '·'}</div>
             <div class="rv-career-cell-sub">${escapeHtml(avgSub)}</div>
           </div>
           <div class="rv-career-cell">
@@ -1072,21 +1072,21 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
 
   function buildStatStrip(rv) {
     const seriesValue = rv.is_deadlocked
-      ? `${rv.manager_a.wins}<em>—</em>${rv.manager_b.wins}`
+      ? `${rv.manager_a.wins}<em>·</em>${rv.manager_b.wins}`
       : rv.leader_record
-        ? escapeHtml(rv.leader_record).replace(/[-–]/g, '<em>—</em>')
-        : '—';
+        ? escapeHtml(rv.leader_record).replace(/[-–]/g, '<em>·</em>')
+        : '·';
     const seriesSub = rv.is_deadlocked
       ? 'Deadlocked'
       : rv.leader_name
         ? `${escapeHtml(rv.leader_name)} leads`
         : 'No games yet';
-    const sinceVal = rv.first_meeting_year ? rv.first_meeting_year : '—';
+    const sinceVal = rv.first_meeting_year ? rv.first_meeting_year : '·';
     const streak = activeStreak(rv);
-    const streakVal = streak ? `${streak.count}` : '—';
+    const streakVal = streak ? `${streak.count}` : '·';
     const streakSub = streak ? `${escapeHtml(streak.winner)} · in a row` : 'No active streak';
     const avg = avgMargin(rv);
-    const avgVal = avg != null ? avg.toFixed(1) : '—';
+    const avgVal = avg != null ? avg.toFixed(1) : '·';
     const po = postseasonCount(rv);
     const poSub = rv.manager_a.last5.length
       ? `${po} of last ${rv.manager_a.last5.length}`

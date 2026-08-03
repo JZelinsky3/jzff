@@ -46,7 +46,7 @@ export default async function ScoutPage({ params }: { params: Promise<{ slug: st
         <div className="mh-box rust">
           <div className="mh-box-mast">Wire warning · {report.errors.length} league{report.errors.length === 1 ? '' : 's'} couldn&apos;t load</div>
           {report.errors.map((e, i) => (
-            <div key={i} className="mh-row-line"><span className="lbl">{e}</span><span className="val" style={{ color: 'var(--rust)' }}>—</span></div>
+            <div key={i} className="mh-row-line"><span className="lbl">{e}</span><span className="val" style={{ color: 'var(--rust)' }}>, </span></div>
           ))}
         </div>
       )}
@@ -100,18 +100,18 @@ function LeadStory({ report }: { report: ScoutReport }) {
             : <><em>{report.totals.weakSpots}</em> weak spots across {report.totals.leagues} {report.totals.leagues === 1 ? 'league' : 'leagues'}.</>}
         </h3>
         <p className="mh-story-dek">
-          Each position rated relative to the league median — same currency every team in that league plays in.
+          Each position rated relative to the league median, same currency every team in that league plays in.
         </p>
         <div className="mh-story-body">
           <p>
             <span className="dropcap">A</span>cross {report.totals.leagues} live {report.totals.leagues === 1 ? 'roster' : 'rosters'}, the Scout flagged{' '}
-            <strong>{report.totals.weakSpots}</strong> position{report.totals.weakSpots === 1 ? '' : 's'} where you sit below the median —
+            <strong>{report.totals.weakSpots}</strong> position{report.totals.weakSpots === 1 ? '' : 's'} where you sit below the median,
             and <strong>{report.totals.strongSpots}</strong> where you sit above. The desk built{' '}
             <strong>{report.totals.recommendations}</strong> trade target{report.totals.recommendations === 1 ? '' : 's'} from those imbalances.
           </p>
           {worst && (
             <p>
-              Most urgent: <strong>{worst.position}</strong> in <strong>{worst.leagueName}</strong> — rated <em>{TIER_LABEL[worst.rating.tier]}</em>{' '}
+              Most urgent: <strong>{worst.position}</strong> in <strong>{worst.leagueName}</strong>, rated <em>{TIER_LABEL[worst.rating.tier]}</em>{' '}
               ({fmtPct(worst.rating.diffPct)} vs the league median). {worst.rating.topPlayers[0] ? (
                 <>The top piece carrying that group is <strong>{worst.rating.topPlayers[0].name}</strong>.</>
               ) : <>The bench is empty at that slot.</>}
@@ -119,13 +119,13 @@ function LeadStory({ report }: { report: ScoutReport }) {
           )}
           {best && (
             <p>
-              Greatest surplus: <strong>{best.position}</strong> in <strong>{best.leagueName}</strong> — <em>{TIER_LABEL[best.rating.tier]}</em>{' '}
+              Greatest surplus: <strong>{best.position}</strong> in <strong>{best.leagueName}</strong>, <em>{TIER_LABEL[best.rating.tier]}</em>{' '}
               ({fmtPct(best.rating.diffPct)}). Asset to deal from when chasing a need.
             </p>
           )}
           {lopsided && (
             <p>
-              Most lopsided roster: <strong>{lopsided.lg.builderLeague.leagueName}</strong> — extremes between best and worst position are wide enough that even a single
+              Most lopsided roster: <strong>{lopsided.lg.builderLeague.leagueName}</strong>, extremes between best and worst position are wide enough that even a single
               cross-position trade could rebalance the team meaningfully.
             </p>
           )}
@@ -216,7 +216,7 @@ function PerLeagueScout({ report }: { report: ScoutReport }) {
       </div>
       <p className="mh-section-intro">
         The narrative version of the matrix. Each league gets a lede summarizing the needs and the
-        surpluses, plus a sidebar with the full position breakdown — starter value, league median,
+        surpluses, plus a sidebar with the full position breakdown, starter value, league median,
         the three top names carrying each slot. Use this when you're prepping a single team for
         Sunday.
       </p>
@@ -264,7 +264,7 @@ function LeagueScoutCard({ lg }: { lg: ScoutLeague }) {
           )}
           {lg.recommendations.length > 0 && (
             <p>
-              <strong>{lg.recommendations.length}</strong> trade target{lg.recommendations.length === 1 ? '' : 's'} surfaced — see the recommendations section below.
+              <strong>{lg.recommendations.length}</strong> trade target{lg.recommendations.length === 1 ? '' : 's'} surfaced, see the recommendations section below.
             </p>
           )}
         </div>
@@ -294,7 +294,7 @@ function PositionDetail({ r }: { r: PositionRating }) {
       </div>
       {r.topPlayers.slice(0, 3).map((p) => (
         <div key={p.playerId} className="mh-row-line">
-          <span className="lbl" style={{ color: 'var(--cream)', fontFamily: 'var(--serif)', fontSize: '.9rem' }}>{p.name} <span style={{ color: 'var(--cream-mute)', fontSize: '.55rem', letterSpacing: '.15em' }}>{p.team ?? '—'}</span></span>
+          <span className="lbl" style={{ color: 'var(--cream)', fontFamily: 'var(--serif)', fontSize: '.9rem' }}>{p.name} <span style={{ color: 'var(--cream-mute)', fontSize: '.55rem', letterSpacing: '.15em' }}>{p.team ?? '·'}</span></span>
           <span className="val">{p.value.toLocaleString()}</span>
         </div>
       ))}
@@ -323,7 +323,7 @@ function TopRecommendations({ report, slug }: { report: ScoutReport; slug: strin
         <span className="mh-shead-meta">{top.length} highest-confidence swap{top.length === 1 ? '' : 's'} · take to the Trade Desk</span>
       </div>
       <p className="mh-section-intro">
-        The Scout's shortlist — swaps where the tier deltas line up cleanly enough to recommend.
+        The Scout's shortlist, swaps where the tier deltas line up cleanly enough to recommend.
         These aren't verdicts, they're starting points. Click through to the Trade Desk to model
         the actual swap and read the full grade.
       </p>
@@ -344,13 +344,13 @@ function RecommendationCard({ r, slug }: { r: TradeRecommendation; slug: string 
         <div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: '.52rem', letterSpacing: '.25em', textTransform: 'uppercase', color: 'var(--rust)' }}>Send · from {r.givePosition} {TIER_LABEL[r.giveTier]}</div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)', marginTop: '.2rem' }}>{r.give.name}</div>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--cream-mute)' }}>{r.give.position} · {r.give.team ?? '—'} · {r.give.value.toLocaleString()}</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--cream-mute)' }}>{r.give.position} · {r.give.team ?? '·'} · {r.give.value.toLocaleString()}</div>
         </div>
         <div style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: '1.8rem', color: bandColor }}>↔</div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: '.52rem', letterSpacing: '.25em', textTransform: 'uppercase', color: 'var(--gold)' }}>Get · for your {r.getPosition} need</div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: '1.05rem', color: 'var(--cream)', marginTop: '.2rem' }}>{r.get.name}</div>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--cream-mute)' }}>{r.get.position} · {r.get.team ?? '—'} · {r.get.value.toLocaleString()}</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: '.62rem', letterSpacing: '.12em', color: 'var(--cream-mute)' }}>{r.get.position} · {r.get.team ?? '·'} · {r.get.value.toLocaleString()}</div>
         </div>
       </div>
       <div className="mh-row-line"><span className="lbl">Value delta</span><span className="val" style={{ color: bandColor }}>{r.valueDelta > 0 ? '+' : ''}{Math.round(r.valueDelta).toLocaleString()} ({fmtPct(r.valueDeltaPct)})</span></div>

@@ -219,7 +219,7 @@ body { background: var(--cream); color: var(--ink); }
         });
     }
     function num(n, d) {
-        if (n == null || isNaN(n)) return '—';
+        if (n == null || isNaN(n)) return '·';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
     // "59-42-0" → "59-42" when there are no ties to show.
@@ -265,7 +265,7 @@ body { background: var(--cream); color: var(--ink); }
                     var bv = b.avg_finish == null ? 99 : b.avg_finish;
                     return av - bv;
                 },
-                function (m) { return m.avg_finish == null ? '—' : num(m.avg_finish, 1); }],
+                function (m) { return m.avg_finish == null ? '·' : num(m.avg_finish, 1); }],
         ],
     };
     var DEFAULT_SORT = { record: 'all', points: 'pf', career: 'yrs' };
@@ -354,7 +354,7 @@ body { background: var(--cream); color: var(--ink); }
                     cell(rec(m.reg_record || ''), 'Reg season') +
                     cell(rec(m.playoff_record || '0-0'), 'Playoffs') +
                     cell(num(ppgOf(m), 1), 'PPG') +
-                    cell(m.avg_finish == null ? '—' : num(m.avg_finish, 1), 'Avg finish') +
+                    cell(m.avg_finish == null ? '·' : num(m.avg_finish, 1), 'Avg finish') +
                 '</div>' +
                 '<a class="st-profile-link" href="managers/manager?id=' + encodeURIComponent(m.user_id) + '">Full profile</a>' +
             '</div>' +

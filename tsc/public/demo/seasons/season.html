@@ -1162,12 +1162,12 @@ function buildStandingsSection(s, luck) {
         if (delta !== null) {
             if (delta > 0)      deltaHTML = `<span class="rank-delta up">↑${delta}</span>`;
             else if (delta < 0) deltaHTML = `<span class="rank-delta down">↓${Math.abs(delta)}</span>`;
-            else                deltaHTML = `<span class="rank-delta same">—</span>`;
+            else                deltaHTML = `<span class="rank-delta same">·</span>`;
         }
         let luckHTML = '';
         if (luck) {
             const lv = luck[String(t.owner_user_id)];
-            luckHTML = lv == null ? '<td class="num">—</td>' :
+            luckHTML = lv == null ? '<td class="num">·</td>' :
                 `<td class="num ${lv > .25 ? 'luck-pos' : lv < -.25 ? 'luck-neg' : ''}"
                     title="Actual wins minus all-play expected wins">${lv >= 0 ? '+' : ''}${lv.toFixed(1)}</td>`;
         }
@@ -1180,7 +1180,7 @@ function buildStandingsSection(s, luck) {
             <td class="num ${pfCls}">${t.points_for.toFixed(1)}</td>
             <td class="num">${t.points_against.toFixed(1)}</td>
             <td class="num ${diffCls}">${diff >= 0 ? '+' : ''}${diff.toFixed(1)}</td>
-            <td class="num">${t.reg_season_rank ?? '—'}</td>
+            <td class="num">${t.reg_season_rank ?? '·'}</td>
             <td class="num">${deltaHTML}</td>
             ${luckHTML}
         </tr>`;
@@ -1392,7 +1392,7 @@ async function loadSeason() {
                 </div>
                 <div class="strip-cell">
                     <div class="strip-label">Champ Record</div>
-                    <div class="strip-val">${s.champion?.record ?? '—'}</div>
+                    <div class="strip-val">${s.champion?.record ?? '·'}</div>
                 </div>
             </div>
         </div>

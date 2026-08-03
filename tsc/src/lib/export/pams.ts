@@ -3443,34 +3443,34 @@ function buildHubRecords(top: {
     value: h.score.toString(),
     name: `<em>${h.owner}</em>, untouchable`,
     detail: `${h.season} · W${h.week} · vs ${h.opp_owner}`,
-    prose: `<strong>${h.owner}</strong> dropped ${h.score} on ${h.opp_owner} in week ${h.week} of the ${h.season} season — the high-water mark.`,
-    gameContext: `${h.season} · Week ${h.week} · ${h.score}—${h.opp_score}`,
+    prose: `<strong>${h.owner}</strong> dropped ${h.score} on ${h.opp_owner} in week ${h.week} of the ${h.season} season, the high-water mark.`,
+    gameContext: `${h.season} · Week ${h.week} · ${h.score}, ${h.opp_score}`,
   })
   const b = top.biggest_blowouts[0]
   if (b) hub.push({
     label: 'Biggest Blowout',
     value: b.margin.toString(),
     name: `<em>${b.owner}</em> over ${b.opp_owner}`,
-    detail: `${b.season} · W${b.week} · ${b.score}—${b.opp_score}`,
-    prose: `<strong>${b.owner}</strong> hung ${b.score} on ${b.opp_owner} in week ${b.week} of ${b.season}, ${b.margin} points clear — the most lopsided beating in league history.`,
-    gameContext: `${b.season} · Week ${b.week} · ${b.score}—${b.opp_score}`,
+    detail: `${b.season} · W${b.week} · ${b.score}, ${b.opp_score}`,
+    prose: `<strong>${b.owner}</strong> hung ${b.score} on ${b.opp_owner} in week ${b.week} of ${b.season}, ${b.margin} points clear, the most lopsided beating in league history.`,
+    gameContext: `${b.season} · Week ${b.week} · ${b.score}, ${b.opp_score}`,
   })
   const w = top.longest_win_streaks[0]
   if (w) hub.push({
     label: 'Longest Win Streak',
     value: w.length.toString(),
-    name: `<em>${w.owner}</em> — ${w.start_season} run`,
+    name: `<em>${w.owner}</em>, ${w.start_season} run`,
     detail: `Weeks ${w.start_week} through ${w.end_week}, undefeated`,
-    prose: `<strong>${w.owner}</strong> ran the table for ${w.length} straight, weeks ${w.start_week} ${w.start_season} through ${w.end_week} ${w.end_season} — the longest unbroken stretch any manager has put together.`,
+    prose: `<strong>${w.owner}</strong> ran the table for ${w.length} straight, weeks ${w.start_week} ${w.start_season} through ${w.end_week} ${w.end_season}, the longest unbroken stretch any manager has put together.`,
     gameContext: `${w.start_season} · W${w.start_week} → W${w.end_week} · ${w.length} straight wins`,
   })
   const sp = top.highest_season_pf[0]
   if (sp) hub.push({
     label: 'Highest Season Total',
     value: Math.round(sp.total_pf).toLocaleString(),
-    name: `<em>${sp.owner}</em> — "${sp.team_name ?? ''}"`,
+    name: `<em>${sp.owner}</em>, "${sp.team_name ?? ''}"`,
     detail: `${sp.season} · ${sp.avg_ppg} ppg avg`,
-    prose: `<strong>${sp.owner}</strong>'s ${sp.season} "${sp.team_name ?? ''}" squad piled up ${Math.round(sp.total_pf).toLocaleString()} points across the year, averaging ${Math.round(sp.avg_ppg)} a game — the highest single-season output in league history.`,
+    prose: `<strong>${sp.owner}</strong>'s ${sp.season} "${sp.team_name ?? ''}" squad piled up ${Math.round(sp.total_pf).toLocaleString()} points across the year, averaging ${Math.round(sp.avg_ppg)} a game, the highest single-season output in league history.`,
     gameContext: `${sp.season} Season · ${Math.round(sp.total_pf).toLocaleString()} PF · ${sp.avg_ppg} ppg`,
   })
   const c = top.closest_games[0]
@@ -3478,9 +3478,9 @@ function buildHubRecords(top: {
     label: 'Closest Game Ever',
     value: c.margin.toString(),
     name: `<em>${c.owner}</em> over ${c.opp_owner}`,
-    detail: `${c.season} · W${c.week} · ${c.score}—${c.opp_score}`,
-    prose: `<strong>${c.owner}</strong> edged ${c.opp_owner} by ${c.margin} in week ${c.week} of ${c.season} — the smallest margin in league history.`,
-    gameContext: `${c.season} · Week ${c.week} · ${c.score}—${c.opp_score}`,
+    detail: `${c.season} · W${c.week} · ${c.score}, ${c.opp_score}`,
+    prose: `<strong>${c.owner}</strong> edged ${c.opp_owner} by ${c.margin} in week ${c.week} of ${c.season}, the smallest margin in league history.`,
+    gameContext: `${c.season} · Week ${c.week} · ${c.score}, ${c.opp_score}`,
   })
   const u = top.unluckiest_losses[0]
   if (u) hub.push({
@@ -3489,16 +3489,16 @@ function buildHubRecords(top: {
     name: `<em>${u.owner}</em>, defeated`,
     detail: `${u.season} · W${u.week} · Lost to ${u.opp_owner} (${u.opp_score})`,
     prose: `<strong>${u.owner}</strong> put up ${u.score} points in week ${u.week} of ${u.season} and still lost to ${u.opp_owner}, who somehow scored ${u.opp_score}.`,
-    gameContext: `${u.season} · Week ${u.week} · ${u.score}—${u.opp_score} L`,
+    gameContext: `${u.season} · Week ${u.week} · ${u.score}, ${u.opp_score} L`,
   })
   const co = top.highest_combined_score[0]
   if (co) hub.push({
     label: 'Shootout (Highest Combined)',
     value: (co.combined_score ?? 0).toString(),
     name: `<em>${co.owner}</em> vs ${co.opp_owner}`,
-    detail: `${co.season} · W${co.week} · ${co.score}—${co.opp_score}`,
-    prose: `<strong>${co.owner}</strong> and <strong>${co.opp_owner}</strong> combined for ${co.combined_score} points in week ${co.week} of ${co.season} — the highest-scoring matchup ever played in the league.`,
-    gameContext: `${co.season} · Week ${co.week} · ${co.score}—${co.opp_score}`,
+    detail: `${co.season} · W${co.week} · ${co.score}, ${co.opp_score}`,
+    prose: `<strong>${co.owner}</strong> and <strong>${co.opp_owner}</strong> combined for ${co.combined_score} points in week ${co.week} of ${co.season}, the highest-scoring matchup ever played in the league.`,
+    gameContext: `${co.season} · Week ${co.week} · ${co.score}, ${co.opp_score}`,
   })
   const l = top.longest_loss_streaks[0]
   if (l) hub.push({
@@ -3506,7 +3506,7 @@ function buildHubRecords(top: {
     value: l.length.toString(),
     name: `<em>${l.owner}</em>'s nightmare`,
     detail: `W${l.start_week} ${l.start_season} → W${l.end_week} ${l.end_season}`,
-    prose: `<strong>${l.owner}</strong> went on a brutal ${l.length}-game losing slide — the longest cold stretch any manager has endured.`,
+    prose: `<strong>${l.owner}</strong> went on a brutal ${l.length}-game losing slide, the longest cold stretch any manager has endured.`,
     gameContext: `${l.start_season}–${l.end_season} · ${l.length} straight losses`,
   })
   return hub
@@ -3648,7 +3648,7 @@ function buildH2HMatrix(s: Snapshot): unknown {
   // digits stripped so e.g. "Joey_Z18" → "JOEY".
   function abbrFor(name: string): string {
     const clean = String(name).replace(/[^A-Za-z]/g, '')
-    if (!clean) return '—'
+    if (!clean) return '·'
     return clean.slice(0, 4).toUpperCase()
   }
 
@@ -4083,7 +4083,7 @@ function buildMatchupPreview(s: Snapshot): unknown {
 
   function abbrFor(name: string): string {
     const clean = String(name).replace(/[^A-Za-z]/g, '')
-    if (!clean) return '—'
+    if (!clean) return '·'
     return clean.slice(0, 4).toUpperCase()
   }
 
@@ -4475,8 +4475,8 @@ function buildPlayoffOddsPreview(
     const pf = teamPf.get(t.teamId) ?? 0
     return {
       manager_id: t.teamId,
-      team_name: ms?.team_name ?? mgr?.team_name ?? mgr?.display_name ?? '—',
-      manager: mgr?.display_name ?? '—',
+      team_name: ms?.team_name ?? mgr?.team_name ?? mgr?.display_name ?? '·',
+      manager: mgr?.display_name ?? '·',
       wins,
       losses,
       pf: round2(pf),
@@ -5522,7 +5522,7 @@ function buildLiveSeasonPreviews(
   function statsFor(c: Career, cat: Category): string {
     const record = `<strong>${c.winsAfter}-${c.lossesAfter}</strong>`
     const pf = Math.round(c.pfAfter).toLocaleString()
-    const ppg = c.gamesAfter > 0 ? (c.pfAfter / c.gamesAfter).toFixed(1) : '—'
+    const ppg = c.gamesAfter > 0 ? (c.pfAfter / c.gamesAfter).toFixed(1) : '·'
     if (cat === 'wins') {
       return `Career · ${record} · ${c.gamesAfter}G`
     }
@@ -6963,7 +6963,7 @@ function buildManagerDna(s: Snapshot): unknown {
         key: 'trade_hawk',
         name: 'The Trade Hawk',
         tagline: 'Always on the phone',
-        blurb: `Trades at ${signals.trades_per_season.toFixed(1)} deals per season — well above league baseline. The roster is never finished.`,
+        blurb: `Trades at ${signals.trades_per_season.toFixed(1)} deals per season, well above league baseline. The roster is never finished.`,
         strength: z_trade / 1.0,
         soft: z_trade < 1.0,
       })
@@ -6984,7 +6984,7 @@ function buildManagerDna(s: Snapshot): unknown {
         tagline: 'Draft-and-hold disciple',
         blurb: signals.trades_total === 0
           ? `Zero completed trades across ${signals.career_seasons} season${signals.career_seasons === 1 ? '' : 's'}. What's drafted is what's kept.`
-          : `Only ${signals.trades_total} trade${signals.trades_total === 1 ? '' : 's'} across ${signals.career_seasons} seasons (${tradeRate}/yr) — well under one a year. Drafts the roster and lives with it.`,
+          : `Only ${signals.trades_total} trade${signals.trades_total === 1 ? '' : 's'} across ${signals.career_seasons} seasons (${tradeRate}/yr), well under one a year. Drafts the roster and lives with it.`,
         // Threshold = 1 trade/season. Headroom = how far below that they
         // actually sit. 0 trades → ∞ in the limit, so cap at 2.0.
         strength: Math.min(2.0, 1 / Math.max(0.25, signals.trades_total / signals.career_seasons)),
@@ -6997,7 +6997,7 @@ function buildManagerDna(s: Snapshot): unknown {
         key: 'the_optimizer',
         name: 'The Optimizer',
         tagline: 'Squeezes every last point',
-        blurb: `Career lineup efficiency of ${signals.efficiency_pct.toFixed(1)}% — top of the league at starting the right names.`,
+        blurb: `Career lineup efficiency of ${signals.efficiency_pct.toFixed(1)}%, top of the league at starting the right names.`,
         strength: z_eff / 1.0,
         soft: z_eff < 1.0,
       })
@@ -7017,7 +7017,7 @@ function buildManagerDna(s: Snapshot): unknown {
         key: 'set_and_forget',
         name: 'The Set-and-Forget',
         tagline: 'Drafted in August, started in January',
-        blurb: `Touches the lineup the least in the league — only ~${(signals.lineup_churn_pct ?? 0).toFixed(0)}% turnover week to week.`,
+        blurb: `Touches the lineup the least in the league, only ~${(signals.lineup_churn_pct ?? 0).toFixed(0)}% turnover week to week.`,
         strength: Math.abs(z_churn) / 1.0,
         soft: z_churn > -1.0,
       })
@@ -7028,7 +7028,7 @@ function buildManagerDna(s: Snapshot): unknown {
         key: 'coin_flipper',
         name: 'The Coin-Flipper',
         tagline: 'Boom one week, bust the next',
-        blurb: `Score swings ±${signals.volatility_pct.toFixed(0)}% week to week — most volatile output in the league.`,
+        blurb: `Score swings ±${signals.volatility_pct.toFixed(0)}% week to week, most volatile output in the league.`,
         strength: z_vol / 1.2,
         soft: z_vol < 1.2,
       })
@@ -7038,7 +7038,7 @@ function buildManagerDna(s: Snapshot): unknown {
         key: 'steady_hand',
         name: 'The Steady Hand',
         tagline: 'Same number every week',
-        blurb: `Lowest week-to-week swing in the league — predictable ${signals.pf_per_game?.toFixed(0) ?? '—'} most Sundays.`,
+        blurb: `Lowest week-to-week swing in the league, predictable ${signals.pf_per_game?.toFixed(0) ?? '·'} most Sundays.`,
         strength: Math.abs(z_vol) / 1.0,
         soft: z_vol > -1.0,
       })
@@ -7070,7 +7070,7 @@ function buildManagerDna(s: Snapshot): unknown {
         key: 'steamroller',
         name: 'The Steamroller',
         tagline: 'When they win, they win big',
-        blurb: `${signals.blowout_record.w}–${signals.blowout_record.l} in ≥30-pt games. No cruise control — pedal stays floored.`,
+        blurb: `${signals.blowout_record.w}–${signals.blowout_record.l} in ≥30-pt games. No cruise control, pedal stays floored.`,
         strength: blowWinRate / 0.70,
         soft: blowWinRate < 0.70,
       })
@@ -7088,7 +7088,7 @@ function buildManagerDna(s: Snapshot): unknown {
         key: 'zero_rb',
         name: 'The Zero-RB Prophet',
         tagline: 'Pass-catchers first, RBs later',
-        blurb: `Only ${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — well below the league norm. Believer in the WR-first build.`,
+        blurb: `Only ${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs, well below the league norm. Believer in the WR-first build.`,
         strength: Math.abs(z_rb) / 1.5,
         soft: z_rb > -1.5,
       })
@@ -7098,7 +7098,7 @@ function buildManagerDna(s: Snapshot): unknown {
         key: 'hog_mollie',
         name: 'The Hog Mollie',
         tagline: 'RBs first, RBs always',
-        blurb: `${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs — the most run-heavy build in the league.`,
+        blurb: `${signals.draft_rb_share_pct.toFixed(0)}% of early picks were RBs, the most run-heavy build in the league.`,
         strength: z_rb / 1.5,
         soft: z_rb < 1.5,
       })
@@ -7169,7 +7169,7 @@ function buildManagerDna(s: Snapshot): unknown {
     key: 'the_average_joe',
     name: 'The Average Joe',
     tagline: 'Defies categorization',
-    blurb: 'Sits in the middle of every distribution — no extreme behaviors, no obvious tells. Quietly competitive.',
+    blurb: 'Sits in the middle of every distribution, no extreme behaviors, no obvious tells. Quietly competitive.',
     strength: 0,
   }
   const selectedIdx = builds.map(() => 0)

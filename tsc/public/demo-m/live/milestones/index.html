@@ -231,9 +231,9 @@ body { background: var(--ml-bg); color: var(--ml-cream); }
     </header>
 
     <div class="ml-meter">
-        <div class="ml-meter-stat glow"><span class="val" id="m-week">—</span><span class="lbl">This week</span></div>
-        <div class="ml-meter-stat"><span class="val" id="m-season">—</span><span class="lbl">This season</span></div>
-        <div class="ml-meter-stat"><span class="val" id="m-imminent">—</span><span class="lbl">1 game away</span></div>
+        <div class="ml-meter-stat glow"><span class="val" id="m-week">·</span><span class="lbl">This week</span></div>
+        <div class="ml-meter-stat"><span class="val" id="m-season">·</span><span class="lbl">This season</span></div>
+        <div class="ml-meter-stat"><span class="val" id="m-imminent">·</span><span class="lbl">1 game away</span></div>
     </div>
 
     <section>
@@ -242,7 +242,7 @@ body { background: var(--ml-bg); color: var(--ml-cream); }
             <div class="ml-empty">
                 <div class="glyph">✦</div>
                 <h3>The honors roll <em>begins Week 1.</em></h3>
-                <p>Every milestone gets a card the week it's hit — manager, accolade, and the game it happened in.</p>
+                <p>Every milestone gets a card the week it's hit, manager, accolade, and the game it happened in.</p>
             </div>
             <div class="ml-tally" id="ml-preview">
                 <div class="ml-tally-item">
@@ -285,17 +285,17 @@ body { background: var(--ml-bg); color: var(--ml-cream); }
                 <div class="ml-ladder-item">
                     <div class="tier">Tier · Bronze</div>
                     <h4>Career wins</h4>
-                    <p>10 through 300 career wins — every tier stamped with the date.</p>
+                    <p>10 through 300 career wins, every tier stamped with the date.</p>
                 </div>
                 <div class="ml-ladder-item">
                     <div class="tier">Tier · Silver</div>
                     <h4>Lifetime points</h4>
-                    <p>2,500 to 30,000 career PF — a new mark every 2,500 points.</p>
+                    <p>2,500 to 30,000 career PF, a new mark every 2,500 points.</p>
                 </div>
                 <div class="ml-ladder-item">
                     <div class="tier">Tier · Gold</div>
                     <h4>Personal-best streaks</h4>
-                    <p>Active win streaks that pass — or match — a manager's career best.</p>
+                    <p>Active win streaks that pass, or match, a manager's career best.</p>
                 </div>
             </div>
         </div>
@@ -376,7 +376,7 @@ body { background: var(--ml-bg); color: var(--ml-cream); }
         '<article class="ml-crossed">' +
           '<div class="ml-medal">' + avatarMarkup(it) + '</div>' +
           '<div class="who">' + esc(it.tier || 'Milestone') + '</div>' +
-          '<div class="name">' + (it.name_html || esc(it.name || '—')) + '</div>' +
+          '<div class="name">' + (it.name_html || esc(it.name || '·')) + '</div>' +
           '<div class="achievement">' + (it.achievement_html || esc(it.achievement || '')) + '</div>' +
           (it.stats_html ? '<div class="stats">' + it.stats_html + '</div>' : '') +
           '<div class="meta">' + metaContent + '</div>' +
@@ -407,7 +407,7 @@ body { background: var(--ml-bg); color: var(--ml-cream); }
           '<div class="ml-approach-row' + (imminent ? ' imminent' : '') + '">' +
             '<div class="ml-approach-glyph">' + avatarMarkup(it) + '</div>' +
             '<div class="ml-approach-head">' +
-              '<div class="ml-approach-name">' + esc(it.name || '—') + '</div>' +
+              '<div class="ml-approach-name">' + esc(it.name || '·') + '</div>' +
               '<div class="ml-approach-eta">' + esc(it.eta || '') +
                 '<span class="of">' + esc(it.eta_unit || 'to go') + '</span>' +
               '</div>' +

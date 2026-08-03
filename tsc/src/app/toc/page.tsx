@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getViewMode } from "@/lib/viewMode"
 
 export const metadata: Metadata = {
-  title: "Table of Contents — every page in The Sunday Chronicle",
+  title: "Table of Contents: every page in The Sunday Chronicle",
   description:
     "Every page, tab, and section across the league management dashboard and the public almanac.",
   alternates: { canonical: "https://thesundaychronicle.app/toc/" },
@@ -95,7 +95,7 @@ function TocContent() {
         <Sub>raw bundle inspector — schemas, warnings array, parser diagnostics</Sub>
 
         {/* ════════════ LEAGUES HOME (PUBLIC ALMANAC) ════════════ */}
-        <H1 style={{ marginTop: "3rem" }}>Leagues — Public Almanac</H1>
+        <H1 style={{ marginTop: "3rem" }}>Leagues, Public Almanac</H1>
         <Meta>/leagues/{`{slug}`}/* — the public-facing site your visitors read</Meta>
 
         <Item>League Home — <Path>/leagues/{`{slug}`}/</Path></Item>

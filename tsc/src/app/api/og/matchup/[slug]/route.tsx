@@ -538,7 +538,7 @@ function renderMatchupCard(
             </span>
 
             <span style={{ display: 'flex', fontFamily: 'DMSerif', fontSize: '46px', lineHeight: 1.05, marginTop: '10px' }}>
-              {c.h2h.meetings > 0 ? `${c.h2h.winsA}–${c.h2h.winsB}` : '—'}
+              {c.h2h.meetings > 0 ? `${c.h2h.winsA}–${c.h2h.winsB}` : '·'}
             </span>
             <span
               style={{
@@ -691,7 +691,7 @@ function renderOffseasonCard(
             color: '#9ca3af',
           }}
         >
-          Previews return when the season does — The Sunday Chronicle
+          Previews return when the season does, The Sunday Chronicle
         </div>
       </div>
     ),

@@ -12,6 +12,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { pageAll } from './pool'
 import { DEMO_POOL_ID } from './demoPool'
 import { makeRng, newSeed, normalizeSeed } from './roulette'
+import { loadManagerNames } from './managerNames'
 import {
   ROUNDS,
   MIN_DECK,
@@ -96,10 +97,10 @@ async function buildLeagueDeck(slug: string): Promise<Deck | null> {
   const yearBySeason = new Map(seasons.map((s) => [s.id, s.year]))
   const seasonIds = seasons.map((s) => s.id)
 
-  const [managerRows, msRows, matchRows] = await Promise.all([
-    pageAll<{ id: string; display_name: string }>(() =>
-      db.from('managers').select('id, display_name').eq('league_id', league.id).order('id')
-    ),
+  const [nameById, msRows, matchRows] = await Promise.all([
+    // The league's own name for each manager (renames and merges applied),
+    // not the platform's. See ./managerNames.
+    loadManagerNames(db, [league.id]),
     pageAll<{
       season_id: string
       manager_id: string
@@ -121,7 +122,6 @@ async function buildLeagueDeck(slug: string): Promise<Deck | null> {
     ),
   ])
 
-  const nameById = new Map(managerRows.map((m) => [m.id, m.display_name]))
   // Per-season team names, for the same reason The Gauntlet uses them: a
   // manager's current team name on a 2019 question is an anachronism, and
   // anyone who remembers when he renamed it gets a free read on the year.

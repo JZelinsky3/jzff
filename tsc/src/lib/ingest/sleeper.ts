@@ -244,7 +244,7 @@ export async function ingestSleeperSource(
       warnings.push(`Season ${year}: Sleeper returned no users for league ${lg.league_id}. Matchups will be skipped.`)
     }
     if (!rostersThis || rostersThis.length === 0) {
-      warnings.push(`Season ${year}: Sleeper returned no rosters for league ${lg.league_id}. Without rosters we can't map matchups to managers — matchups will be skipped.`)
+      warnings.push(`Season ${year}: Sleeper returned no rosters for league ${lg.league_id}. Without rosters we can't map matchups to managers, matchups will be skipped.`)
     }
     const rosterToUserId = new Map<number, string>()
     let rostersWithoutOwner = 0

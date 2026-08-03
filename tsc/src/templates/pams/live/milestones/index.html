@@ -689,17 +689,17 @@ body { background: var(--ml-bg); }
     <div class="ml-meter" id="ml-meter">
         <div class="ml-meter-stat glow">
             <span class="lbl">This week</span>
-            <span class="val" id="m-week">—</span>
+            <span class="val" id="m-week">·</span>
         </div>
         <div class="ml-meter-sep"></div>
         <div class="ml-meter-stat">
             <span class="lbl">This season</span>
-            <span class="val" id="m-season">—</span>
+            <span class="val" id="m-season">·</span>
         </div>
         <div class="ml-meter-sep"></div>
         <div class="ml-meter-stat">
             <span class="lbl">One game away</span>
-            <span class="val" id="m-imminent">—</span>
+            <span class="val" id="m-imminent">·</span>
         </div>
         <div class="ml-meter-foot" id="m-foot">Tracking starts Week 1</div>
     </div>
@@ -707,7 +707,7 @@ body { background: var(--ml-bg); }
     <section class="ml-section">
         <div class="ml-section-head">
             <span class="ml-section-num">§ 01 · Crossed</span>
-            <span class="ml-section-title">Just <em>Achieved —</em></span>
+            <span class="ml-section-title">Just <em>Achieved ·</em></span>
             <span class="ml-section-note">Last 2 weeks</span>
         </div>
         <div id="crossed-body">
@@ -744,7 +744,7 @@ body { background: var(--ml-bg); }
     <section class="ml-section">
         <div class="ml-section-head">
             <span class="ml-section-num">§ 02 · Imminent</span>
-            <span class="ml-section-title">One Game <em>Away —</em></span>
+            <span class="ml-section-title">One Game <em>Away ·</em></span>
             <span class="ml-section-note">Could cross next week</span>
         </div>
         <div id="imminent-body">
@@ -761,7 +761,7 @@ body { background: var(--ml-bg); }
     <section class="ml-section">
         <div class="ml-section-head">
             <span class="ml-section-num">§ 03 · Horizon</span>
-            <span class="ml-section-title">On the <em>Horizon —</em></span>
+            <span class="ml-section-title">On the <em>Horizon ·</em></span>
             <span class="ml-section-note">Within reach this season</span>
         </div>
         <div id="horizon-body">
@@ -883,7 +883,7 @@ body { background: var(--ml-bg); }
         '<article class="ml-crossed">' +
           '<div class="ml-medal">' + avatarMarkup(it) + '</div>' +
           '<div class="who">' + esc(it.tier || 'Milestone') + '</div>' +
-          '<div class="name">' + (it.name_html || esc(it.name || '—')) + '</div>' +
+          '<div class="name">' + (it.name_html || esc(it.name || '·')) + '</div>' +
           '<div class="achievement">' + (it.achievement_html || esc(it.achievement || '')) + '</div>' +
           (it.stats_html ? '<div class="stats">' + it.stats_html + '</div>' : '') +
           '<div class="meta">' + metaContent + '</div>' +
@@ -916,7 +916,7 @@ body { background: var(--ml-bg); }
           '<div class="ml-approach-row' + (imminent ? ' imminent' : '') + '">' +
             '<div class="ml-approach-glyph">' + avatarMarkup(it) + '</div>' +
             '<div class="ml-approach-head">' +
-              '<div class="ml-approach-name">' + esc(it.name || '—') + '</div>' +
+              '<div class="ml-approach-name">' + esc(it.name || '·') + '</div>' +
               '<div class="ml-approach-eta">' + esc(it.eta || '') +
                 '<span class="of">' + esc(it.eta_unit || 'to go') + '</span>' +
               '</div>' +

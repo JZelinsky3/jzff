@@ -49,7 +49,7 @@ export async function fetchDocket(limit: number, userId: string | null): Promise
   // em dashes (house style bans them), so clean stored copy at read time:
   // "upgrade — the starters" reads "upgrade. The starters".
   const deDash = (s: string | null) =>
-    s ? s.replace(/\s*—\s*(\S)/g, (_, c: string) => `. ${c.toUpperCase()}`) : s
+    s ? s.replace(/\s*, \s*(\S)/g, (_, c: string) => `. ${c.toUpperCase()}`) : s
   for (const t of trades) {
     t.verdict_a = deDash(t.verdict_a)
     t.verdict_b = deDash(t.verdict_b)

@@ -79,7 +79,7 @@ function extractValue(raw: RawKTC, superflex: boolean): { name: string; position
   const r = raw as Record<string, unknown>
   const name = (r['name'] ?? r['playerName']) as string | undefined
   if (!name) return null
-  const position = String(r['position'] ?? '').toUpperCase() || '—'
+  const position = String(r['position'] ?? '').toUpperCase() || '·'
   const team = (r['team'] as string | undefined) ?? null
   const age = (r['age'] as number | null | undefined) ?? null
   const tier = (r['tier'] as string | null | undefined) ?? null

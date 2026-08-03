@@ -108,7 +108,7 @@
             var seasons = (dir && dir.seasons) || [];
             var box = document.getElementById('rows');
             if (!seasons.length) {
-                box.innerHTML = '<div class="m-empty">No completed seasons yet — the first chapter is still being written.</div>';
+                box.innerHTML = '<div class="m-empty">No completed seasons yet, the first chapter is still being written.</div>';
                 return;
             }
             // Newest first; the newest complete season gets the feature card.
@@ -142,7 +142,7 @@
                     : esc(s.champion_team_name || '') + ' · champion';
                 return '<a class="m-list-row se-row' + (partial ? ' se-row-partial' : '') + '" href="seasons/season.html?year=' + s.year + '">' +
                     '<span class="se-year">' + s.year + '</span>' +
-                    '<span class="se-row-name">' + esc(s.champion_name || '—') + '<small>' + sub + '</small></span>' +
+                    '<span class="se-row-name">' + esc(s.champion_name || '·') + '<small>' + sub + '</small></span>' +
                     '<span class="se-row-rec">' + esc(rec(s.champion_record || '')) + '</span>' +
                     '<svg class="m-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg>' +
                 '</a>';

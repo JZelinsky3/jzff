@@ -311,7 +311,7 @@ async function ingestSeason(args: {
     try {
       standings = await fetchStandings(externalLeagueId, year)
       if (standings.length === 0) {
-        result.warnings.push(`Season ${year} standings: parser returned 0 rows — playoff records and final finishes will be blank for this year. Likely a markup change on NFL.com's standings page.`)
+        result.warnings.push(`Season ${year} standings: parser returned 0 rows, playoff records and final finishes will be blank for this year. Likely a markup change on NFL.com's standings page.`)
       }
     } catch (err) {
       result.warnings.push(`Season ${year} standings: ${(err as Error).message}`)

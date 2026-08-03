@@ -56,7 +56,7 @@ export async function POST(
   if (state.status !== 'ok') return fail('Pick’ems are not open right now.', 409)
 
   if (week !== state.currentWeek) {
-    return fail('That week is locked — only the current week is open for picks.', 409)
+    return fail('That week is locked, only the current week is open for picks.', 409)
   }
   const weekObj = state.weeks.find((w) => w.week === week)
   if (!weekObj) return fail('No matchups for that week.', 409)

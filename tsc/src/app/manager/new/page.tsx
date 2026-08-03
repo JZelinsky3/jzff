@@ -248,7 +248,7 @@ const STYLES = `
 .newl-shead-title em { color: var(--gold); }
 .newl-shead-meta { font-family: var(--mono); font-size: .58rem; letter-spacing: .22em; text-transform: uppercase; color: var(--cream-mute); }
 .newl-section-intro { font-family: var(--serif); font-style: italic; font-size: 1rem; line-height: 1.6; color: var(--cream-soft); max-width: 72ch; margin: 0 0 1.75rem; }
-.newl-section-intro::before { content: '— '; color: var(--gold); font-style: normal; }
+.newl-section-intro::before { content: ', '; color: var(--gold); font-style: normal; }
 
 .newl-card { background: linear-gradient(180deg, rgba(232,200,137,.03), transparent), var(--ink-card); border: 1px solid var(--ink-line); padding: 2rem 1.85rem 1.75rem; position: relative; }
 .newl-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--gold); }

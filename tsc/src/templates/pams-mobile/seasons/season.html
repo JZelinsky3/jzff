@@ -137,7 +137,7 @@
         });
     }
     function num(n, d) {
-        if (n == null || isNaN(n)) return '—';
+        if (n == null || isNaN(n)) return '·';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
     function toRoman(n) {
@@ -196,9 +196,9 @@
         // Stat chips: teams, weeks high score, champion PF — keep to what we have.
         var champ = s.champion || {};
         var cells = [
-            [s.total_teams || standings.length || '—', 'Teams'],
-            [champ.record ? esc(champ.record) : '—', 'Title Run'],
-            [champ.points_for ? num(champ.points_for, 0) : '—', 'Champ PF'],
+            [s.total_teams || standings.length || '·', 'Teams'],
+            [champ.record ? esc(champ.record) : '·', 'Title Run'],
+            [champ.points_for ? num(champ.points_for, 0) : '·', 'Champ PF'],
         ];
         document.getElementById('statGrid').innerHTML = cells.map(function (c) {
             return '<div class="m-stat"><div class="m-stat-num">' + c[0] + '</div><div class="m-stat-lbl">' + esc(c[1]) + '</div></div>';
@@ -232,7 +232,7 @@
                     var diff = t.reg_season_rank - t.final_rank;
                     if (diff > 0) move = '<span class="sn-move up">▲' + diff + '</span>';
                     else if (diff < 0) move = '<span class="sn-move down">▼' + (-diff) + '</span>';
-                    else move = '<span class="sn-move">—</span>';
+                    else move = '<span class="sn-move">·</span>';
                 }
                 return '<a class="m-list-row" href="' + mgrHref(t.owner_user_id) + '">' +
                     '<span class="sn-rank">' + t.final_rank + '</span>' +

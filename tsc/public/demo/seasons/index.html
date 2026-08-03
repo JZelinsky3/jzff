@@ -522,13 +522,13 @@
     <div class="ticker-track">
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> SEASON ARCHIVES · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item ticker-stat" data-stat="seasons-range">★ — SEASONS</span>
-            <span class="ticker-item ticker-stat" data-stat="champions">★ — CHAMPIONS CROWNED</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-range">★ · SEASONS</span>
+            <span class="ticker-item ticker-stat" data-stat="champions">★ · CHAMPIONS CROWNED</span>
         </div>
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> SEASON ARCHIVES · THE LAKESIDE LEAGUE</span>
-            <span class="ticker-item ticker-stat" data-stat="seasons-range">★ — SEASONS</span>
-            <span class="ticker-item ticker-stat" data-stat="champions">★ — CHAMPIONS CROWNED</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-range">★ · SEASONS</span>
+            <span class="ticker-item ticker-stat" data-stat="champions">★ · CHAMPIONS CROWNED</span>
         </div>
     </div>
 </div>
@@ -889,10 +889,10 @@ function populateChrome(seasons) {
     }
     document.querySelectorAll('.ticker-stat[data-stat="seasons-range"]').forEach(el => {
         const range = (minY && maxY && minY !== maxY) ? ` · ${minY} – ${maxY}` : (minY ? ` · ${minY}` : '');
-        el.innerHTML = `<span class="ticker-star">★</span> ${seasonCount || '—'} SEASON${seasonCount === 1 ? '' : 'S'}${range}`;
+        el.innerHTML = `<span class="ticker-star">★</span> ${seasonCount || '·'} SEASON${seasonCount === 1 ? '' : 'S'}${range}`;
     });
     document.querySelectorAll('.ticker-stat[data-stat="champions"]').forEach(el => {
-        el.innerHTML = `<span class="ticker-star">★</span> ${champCount || '—'} DIFFERENT CHAMPION${champCount === 1 ? '' : 'S'} CROWNED`;
+        el.innerHTML = `<span class="ticker-star">★</span> ${champCount || '·'} DIFFERENT CHAMPION${champCount === 1 ? '' : 'S'} CROWNED`;
     });
 }
 
@@ -906,8 +906,8 @@ function buildEntry(s, isFeatured, volNum, colors, boutHTML) {
         badge = isFeatured
             ? `<span class="entry-badge current">★ Reigning Champion</span>`
             : `<span class="entry-badge champ">★ Champion</span>`;
-        teamLine = s.champion.team_name ?? '—';
-        ownerLine = s.champion.owner_name ?? '—';
+        teamLine = s.champion.team_name ?? '·';
+        ownerLine = s.champion.owner_name ?? '·';
     } else {
         badge = `<span class="entry-badge progress">Season in progress</span>`;
         teamLine = 'Champion to be decided';

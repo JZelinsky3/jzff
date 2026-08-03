@@ -425,7 +425,7 @@ export default async function DashboardPage({
         <div className="section" style={{ marginTop: '4rem' }}>
           <div className="section-header">
             <span className="section-num">§ 01 · The shelf</span>
-            <span className="section-title">Every league you keep —</span>
+            <span className="section-title">Every league you keep,</span>
             <span className="section-meta">Tap a spine to open it</span>
           </div>
           <Bookshelf
@@ -447,7 +447,7 @@ export default async function DashboardPage({
             <CollapsedSection
               plain
               num="The checkout desk"
-              title="Pull a lending card —"
+              title="Pull a lending card,"
               meta={`${leagues.length} on file`}
             >
           <div className="card-grid dc-dashboard-grid">
@@ -534,7 +534,7 @@ export default async function DashboardPage({
         <div className="section">
           <div className="section-header">
             <span className="section-num">§ {bookmarks.length > 0 ? '02' : '01'} · Your leagues</span>
-            <span className="section-title">Nothing on the shelf —</span>
+            <span className="section-title">Nothing on the shelf,</span>
             <span className="section-meta">Yet</span>
           </div>
           <div className="dc-empty">
@@ -551,7 +551,7 @@ export default async function DashboardPage({
         <div className="section">
           <div className="section-header">
             <span className="section-num">§ 02 · Bookmarked</span>
-            <span className="section-title">Leagues you follow —</span>
+            <span className="section-title">Leagues you follow,</span>
             <span className="section-meta">{bookmarks.length} on the shelf</span>
           </div>
           <div className="card-grid dc-dashboard-grid">
@@ -580,7 +580,7 @@ export default async function DashboardPage({
         <div className="section">
           <div className="section-header">
             <span className="section-num">§ {bookmarks.length > 0 ? '03' : '02'} · See it live</span>
-            <span className="section-title">Tour a finished almanac —</span>
+            <span className="section-title">Tour a finished almanac,</span>
             <span className="section-meta">a real league&apos;s seven-year history</span>
           </div>
           <div className="card-grid dc-dashboard-grid">
@@ -595,7 +595,7 @@ export default async function DashboardPage({
       <div className="section">
         <div className="section-header">
           <span className="section-num">§ {(showDemoCard ? 1 : 0) + (bookmarks.length > 0 ? 3 : 2)} · The back page</span>
-          <span className="section-title">Games —</span>
+          <span className="section-title">Games,</span>
           <span className="section-meta">built out of real seasons</span>
         </div>
         <div className="card-grid dc-dashboard-grid">

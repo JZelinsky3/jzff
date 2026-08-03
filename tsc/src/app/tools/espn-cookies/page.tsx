@@ -7,9 +7,9 @@ import { createClient } from '@/lib/supabase/server'
 import { getViewMode } from '@/lib/viewMode'
 
 export const metadata: Metadata = {
-  title: 'ESPN cookie grabber — The Sunday Chronicle',
+  title: 'ESPN cookie grabber, The Sunday Chronicle',
   description:
-    "One-click bookmarklet that reads your SWID and espn_s2 cookies from a logged-in fantasy.espn.com tab — no DevTools required.",
+    "One-click bookmarklet that reads your SWID and espn_s2 cookies from a logged-in fantasy.espn.com tab, no DevTools required.",
   alternates: { canonical: 'https://thesundaychronicle.app/tools/espn-cookies/' },
   robots: { index: true, follow: true },
 }
@@ -69,7 +69,7 @@ export default async function Page() {
     'cursor:grab',
     'letter-spacing:.02em',
   ].join(';')
-  const dragAnchor = `<a style="${anchorStyle}" href="${BOOKMARKLET.replace(/"/g, '&quot;')}" onclick="event.preventDefault(); alert('Drag this link onto your bookmarks bar — don\\'t click it here. It only works when run on fantasy.espn.com.'); return false;">★ Get ESPN cookies</a>`
+  const dragAnchor = `<a style="${anchorStyle}" href="${BOOKMARKLET.replace(/"/g, '&quot;')}" onclick="event.preventDefault(); alert('Drag this link onto your bookmarks bar, don\\'t click it here. It only works when run on fantasy.espn.com.'); return false;">★ Get ESPN cookies</a>`
 
   if ((await getViewMode()) === 'mobile') {
     const supabase = await createClient()
@@ -120,7 +120,7 @@ export default async function Page() {
           <div className="mpg-card-body">
             <p style={{ marginBottom: '.55rem' }}>
               No network calls. Reads two cookies, copies them. Browser cookies
-              are domain-scoped — this can only read cookies for whichever site
+              are domain-scoped, this can only read cookies for whichever site
               you&apos;re on.
             </p>
             <pre style={{
@@ -165,7 +165,7 @@ export default async function Page() {
         <p className="hero-sub" style={{ maxWidth: '62ch', margin: '0 auto' }}>
           Drag the link below onto your bookmarks bar. When you&apos;re signed in
           to fantasy.espn.com, one click copies your <code>SWID</code> and
-          <code> espn_s2</code> to the clipboard — ready to paste into a new
+          <code> espn_s2</code> to the clipboard, ready to paste into a new
           league setup.
         </p>
       </section>
@@ -209,7 +209,7 @@ export default async function Page() {
           </p>
           <ul style={{ paddingLeft: '1.4rem', lineHeight: 1.7, opacity: 0.8, fontSize: '.92rem' }}>
             <li><strong>iOS Safari:</strong> bookmark any page, then edit the bookmark and replace its URL with the code below.</li>
-            <li><strong>Android Chrome:</strong> same idea — create a bookmark, edit it, paste the code as the URL.</li>
+            <li><strong>Android Chrome:</strong> same idea, create a bookmark, edit it, paste the code as the URL.</li>
           </ul>
           <p style={{ lineHeight: 1.7, opacity: 0.65, marginTop: '.75rem', fontSize: '.85rem' }}>
             After installing, visit <code>fantasy.espn.com</code> in the mobile browser
@@ -223,7 +223,7 @@ export default async function Page() {
           </div>
           <p style={{ lineHeight: 1.7, opacity: 0.85, marginBottom: '.75rem' }}>
             We want you to trust this. No network calls, no third-party extension,
-            no data leaves your browser. Here&apos;s the entire source — it reads
+            no data leaves your browser. Here&apos;s the entire source, it reads
             two cookies and copies them:
           </p>
           <pre style={{
@@ -240,7 +240,7 @@ export default async function Page() {
 {SOURCE}
           </pre>
           <p style={{ lineHeight: 1.7, opacity: 0.65, marginTop: '.75rem', fontSize: '.85rem' }}>
-            Browser cookies are domain-scoped — this can only ever read cookies for whichever
+            Browser cookies are domain-scoped, this can only ever read cookies for whichever
             site you&apos;re currently on. Running it anywhere except fantasy.espn.com gets
             nothing useful.
           </p>

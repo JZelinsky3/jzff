@@ -717,7 +717,7 @@ async function ingestSeason(args: {
     result.warnings.push(
       `Season ${year} weekly_lineups: ${lineupUpserted} rows upserted across ${latestScored - lineupWeeksEmpty}/${latestScored} weeks` +
       (lineupErrors > 0 ? `, ${lineupErrors} chunk errors` : '') +
-      (lineupWeeksEmpty > 0 ? ` (${lineupWeeksEmpty} weeks returned no roster data — likely a historical season ESPN can't slice by scoring period)` : '')
+      (lineupWeeksEmpty > 0 ? ` (${lineupWeeksEmpty} weeks returned no roster data, likely a historical season ESPN can't slice by scoring period)` : '')
     )
   }
 
@@ -751,7 +751,7 @@ async function ingestSeason(args: {
         const ids = picks.map((p) => p.playerId).filter((id): id is number => typeof id === 'number')
         playerLookup = await fetchPlayers(year, ids, auth)
       } catch (err) {
-        result.warnings.push(`Season ${year} player lookup: ${(err as Error).message} — draft picks will have null names`)
+        result.warnings.push(`Season ${year} player lookup: ${(err as Error).message}, draft picks will have null names`)
       }
 
       // Batched on (draft_id, pick); dedupe by overall pick number so a
@@ -818,7 +818,7 @@ async function ingestSeason(args: {
     txs = await fetchTransactions(String(lg.id), year, auth)
   } catch (err) {
     // Some old seasons 404 on mTransactions2 — non-fatal.
-    result.warnings.push(`Season ${year} transactions: ${(err as Error).message} — skipping trade ingest for this year`)
+    result.warnings.push(`Season ${year} transactions: ${(err as Error).message}, skipping trade ingest for this year`)
   }
   const trades = filterExecutedTrades(txs)
   if (trades.length > 0) {
@@ -837,7 +837,7 @@ async function ingestSeason(args: {
       try {
         tradePlayers = await fetchPlayers(year, [...tradePlayerIds], auth)
       } catch (err) {
-        result.warnings.push(`Season ${year} trade player lookup: ${(err as Error).message} — names will be null`)
+        result.warnings.push(`Season ${year} trade player lookup: ${(err as Error).message}, names will be null`)
       }
     }
 

@@ -452,11 +452,11 @@ button.dk-btn { width: 100%; }
         <div class="bd" id="mp-board-host"></div>
         <div class="cond" id="mp-conductor" hidden>
             <div class="cond-title">Pull <em>your ticket.</em></div>
-            <p class="cond-sub">Pick your name — we'll pull the H2H ledger, your form, and a projection.</p>
+            <p class="cond-sub">Pick your name, we'll pull the H2H ledger, your form, and a projection.</p>
             <div class="cond-row">
                 <div class="cond-select-wrap">
                     <select class="cond-select" id="mp-conductor-select" aria-label="Choose your manager">
-                        <option value="">— Choose your name —</option>
+                        <option value="">· Choose your name ·</option>
                     </select>
                 </div>
                 <button type="button" class="cond-go" id="mp-conductor-go" disabled>Board</button>
@@ -468,7 +468,7 @@ button.dk-btn { width: 100%; }
     <section id="mp-desk"></section>
 
     <div class="m-empty" id="mp-empty" hidden>
-        No live slate — the season hasn't started, or every game this week is in the books.
+        No live slate, the season hasn't started, or every game this week is in the books.
     </div>
 
     <div class="m-mono mp-foot-line">LSL · Departures · 2019</div>
@@ -500,7 +500,7 @@ button.dk-btn { width: 100%; }
     }
     function fmtPts(n) {
         var v = Number(n);
-        return isFinite(v) ? v.toFixed(1) : '—';
+        return isFinite(v) ? v.toFixed(1) : '·';
     }
     // Long team names crowd the board's half-width columns and clip the
     // favorite ★ off the right-hand side. Names past the cap collapse to
@@ -552,7 +552,7 @@ button.dk-btn { width: 100%; }
         copyToClipboard(url, title);
     }
     function copyToClipboard(url, title) {
-        var payload = title ? title + ' — ' + url : url;
+        var payload = title ? title + ' · ' + url : url;
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(payload).then(function () {
                 showToast('Link copied');
@@ -600,7 +600,7 @@ button.dk-btn { width: 100%; }
             ? 'H2H · <strong>' + m.h2h.winsA + '–' + m.h2h.winsB + (m.h2h.ties ? '–' + m.h2h.ties : '') + '</strong> in ' + m.h2h.meetings + ' meeting' + (m.h2h.meetings === 1 ? '' : 's')
             : 'First meeting on the board.';
         host.innerHTML =
-            '<div class="mq" aria-label="Featured matchup — The Main Line">' +
+            '<div class="mq" aria-label="Featured matchup, The Main Line">' +
                 '<div class="mq-ribbon"><span class="lamp"></span> ★ The Main Line ★ <span class="lamp"></span></div>' +
                 '<div class="mq-grid">' +
                     '<div>' +
@@ -666,7 +666,7 @@ button.dk-btn { width: 100%; }
         if (!selEl || !goBtn || !condEl) return;
         var mgrs = (data.managers || []).slice();
         if (!mgrs.length) { condEl.hidden = true; return; }
-        var opts = ['<option value="">— Choose your name —</option>'];
+        var opts = ['<option value="">· Choose your name ·</option>'];
         mgrs.forEach(function (m) {
             opts.push('<option value="' + esc(m.uid) + '">' + esc(m.name) + ' · ' + esc(m.team) + '</option>');
         });
@@ -758,7 +758,7 @@ button.dk-btn { width: 100%; }
         return '<div class="h2h-recent-row">' +
                  '<span class="yr">' + esc(r.year) + '</span>' +
                  '<span class="wk">Wk ' + esc(r.week) + '</span>' +
-                 '<span class="score"><span class="' + cls + '">' + fmtPts(selfScore) + '</span> — ' + fmtPts(oppScore) + '</span>' +
+                 '<span class="score"><span class="' + cls + '">' + fmtPts(selfScore) + '</span> · ' + fmtPts(oppScore) + '</span>' +
                '</div>';
     }
 
@@ -801,7 +801,7 @@ button.dk-btn { width: 100%; }
         var spread = m.projected.spread;
         var projMsg;
         if (m.projected.favorite === 'pp') {
-            projMsg = 'A coin flip — neither side has separated.';
+            projMsg = 'A coin flip, neither side has separated.';
         } else if (favSelf) {
             projMsg = 'Form has you favored by <strong>' + fmtPts(spread) + '</strong>.';
         } else {
@@ -834,7 +834,7 @@ button.dk-btn { width: 100%; }
             '<div class="dk-card">' +
                 '<div class="dk-num">§ I · The Archive</div>' +
                 '<div class="dk-title">All-time <em>H2H.</em></div>' +
-                '<div class="h2h-big"><span>' + selfWins + '</span><span class="dash">—</span><span>' + oppWins + '</span></div>' +
+                '<div class="h2h-big"><span>' + selfWins + '</span><span class="dash">·</span><span>' + oppWins + '</span></div>' +
                 '<div class="h2h-meta">' +
                     (h2h.meetings === 0 ? 'No prior meetings' :
                         esc(h2h.meetings) + ' meeting' + (h2h.meetings === 1 ? '' : 's') +
@@ -846,7 +846,7 @@ button.dk-btn { width: 100%; }
 
             '<div class="dk-card">' +
                 '<div class="dk-num">§ II · The Forecast</div>' +
-                '<div class="dk-title">On <em>form —</em></div>' +
+                '<div class="dk-title">On <em>form ·</em></div>' +
                 '<div class="pj-row">' +
                     '<span class="pj-name">' + esc(self.name) + '</span>' +
                     '<span class="pj-wrap"><span class="pj-bar' + (favSelf ? ' fav' : '') + '" style="width:' + widthSelf + '%"></span></span>' +
@@ -866,7 +866,7 @@ button.dk-btn { width: 100%; }
 
             '<div class="dk-card">' +
                 '<div class="dk-num">§ III · The Run</div>' +
-                '<div class="dk-title">Last <em>five —</em></div>' +
+                '<div class="dk-title">Last <em>five ·</em></div>' +
                 formRow(self) +
                 formRow(opp) +
                 highsFooter(self, opp) +

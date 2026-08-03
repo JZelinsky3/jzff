@@ -364,14 +364,14 @@ export function managerById(data: LeaguePresentationData, id: string | null | un
 
 // Display name for a manager, preferring its canonical profile name if linked.
 export function nameForManager(data: LeaguePresentationData, id: string | null | undefined): string {
-  if (!id) return '—'
+  if (!id) return '·'
   const m = managerById(data, id)
-  if (!m) return '—'
+  if (!m) return '·'
   if (m.profileId) {
     const p = data.profiles.find((x) => x.id === m.profileId)
     if (p?.canonicalName) return p.canonicalName
   }
-  return m.displayName || '—'
+  return m.displayName || '·'
 }
 
 export function profileById(data: LeaguePresentationData, id: string | null | undefined): ProfileLite | null {
@@ -416,7 +416,7 @@ export function profileTotals(data: LeaguePresentationData): ProfileTotals[] {
       const p = data.profiles.find((x) => x.id === pid)
       row = {
         profileId: pid,
-        canonicalName: p?.canonicalName ?? '—',
+        canonicalName: p?.canonicalName ?? '·',
         avatarUrl: p?.avatarUrl ?? null,
         wins: 0, losses: 0, ties: 0,
         pointsFor: 0, pointsAgainst: 0,
@@ -724,7 +724,7 @@ export function longestWinStreak(data: LeaguePresentationData): StreakResult | n
       const p = data.profiles.find((x) => x.id === pid)
       best = {
         profileId: pid,
-        canonicalName: p?.canonicalName ?? '—',
+        canonicalName: p?.canonicalName ?? '·',
         avatarUrl: p?.avatarUrl ?? null,
         length: bestLen,
         startYear: bestStart?.year ?? 0,

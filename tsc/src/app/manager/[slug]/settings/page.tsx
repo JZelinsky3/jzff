@@ -73,7 +73,7 @@ export default async function ManagerSettingsPage({
 
   const linkCount = linkRows.length
   const deck = linkCount === 0
-    ? 'No leagues linked yet — start the chronicle by adding one.'
+    ? 'No leagues linked yet, start the chronicle by adding one.'
     : `${linkCount} league${linkCount === 1 ? '' : 's'} linked. Rename, re-sync, or remove any of them below.`
 
   const intro = (
@@ -81,7 +81,7 @@ export default async function ManagerSettingsPage({
       Three sections, all chronicle-scoped. <strong style={{ color: 'var(--gold)', fontFamily: 'var(--sans)', fontWeight: 600, fontStyle: 'normal' }}>Linked Leagues</strong> covers add/remove,
       hub aliases, and year-range sources. <strong style={{ color: 'var(--gold)', fontFamily: 'var(--sans)', fontWeight: 600, fontStyle: 'normal' }}>Chronicle Details</strong> edits the
       title and subtitle that show up on the front page. The <strong style={{ color: 'var(--rust)', fontFamily: 'var(--sans)', fontWeight: 600, fontStyle: 'normal' }}>Danger Zone</strong> at the
-      bottom is the kill-switch — deletes the chronicle and sweeps any hub-only leagues that no other chronicle is using.
+      bottom is the kill-switch, deletes the chronicle and sweeps any hub-only leagues that no other chronicle is using.
     </>
   )
 
@@ -195,7 +195,7 @@ export default async function ManagerSettingsPage({
           <span className="mh-shead-meta">Title &amp; subtitle</span>
         </div>
         <p className="mh-section-intro">
-          What renders at the top of every issue — the chronicle's display name (used as
+          What renders at the top of every issue, the chronicle's display name (used as
           &ldquo;The {summary.chronicle.displayName} Chronicle&rdquo; throughout) and the optional
           subtitle that anchors the Grand Chronicle masthead. Keep the title short; let the
           subtitle do the framing.
@@ -217,7 +217,7 @@ export default async function ManagerSettingsPage({
           archives you own stay untouched.
         </p>
         <div className="mh-box rust">
-          <div className="mh-box-mast" style={{ color: 'var(--rust)' }}>Permanent — no undo</div>
+          <div className="mh-box-mast" style={{ color: 'var(--rust)' }}>Permanent, no undo</div>
           <p style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: '1rem', lineHeight: 1.6, color: 'var(--cream-soft)', marginBottom: '1rem' }}>
             Once you delete &ldquo;{summary.chronicle.displayName},&rdquo; the front page, every
             issue, the per-year deep-dives, and the manager hub URL are all gone. Re-syncing a

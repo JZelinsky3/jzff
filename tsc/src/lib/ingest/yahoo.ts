@@ -636,7 +636,7 @@ export async function ingestYahooSource(
     try {
       yahooTxs = await getLeagueTransactions(accessToken, lg.league_key)
     } catch (err) {
-      warnings.push(`Season ${year} transactions: ${(err as Error).message} — skipping trade ingest for this year`)
+      warnings.push(`Season ${year} transactions: ${(err as Error).message}, skipping trade ingest for this year`)
     }
     for (const t of yahooTxs) {
       // Both sides must resolve to managers we know about.

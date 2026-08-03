@@ -88,7 +88,7 @@ export default async function TradeBuilderPage({
   )
 
   const deck = builderLeagues.length === 0
-    ? 'No Sleeper leagues linked yet — connect one to start trading.'
+    ? 'No Sleeper leagues linked yet, connect one to start trading.'
     : `${builderLeagues.length} live league${builderLeagues.length === 1 ? '' : 's'} valuated.  Pick a league, pick a counterparty, build a trade.`
 
   // Toggle options follow the FIRST league's mode (most users have a single
@@ -102,7 +102,7 @@ export default async function TradeBuilderPage({
     <>
       Build a trade, get a verdict. Pick a league at the top, choose a counterparty, drop players
       on each side, and the value engine grades the swap by tier and scarcity. Verdicts read like
-      Sunday-paper takes — not just "Side A wins" but where each side's roster shape moves.
+      Sunday-paper takes, not just "Side A wins" but where each side's roster shape moves.
       Currently scoped to Sleeper leagues; the value source toggle controls which provider feeds
       the grading.
     </>
@@ -114,7 +114,7 @@ export default async function TradeBuilderPage({
         <div className="mh-box rust">
           <div className="mh-box-mast">Wire warning · {floor.errors.length} league{floor.errors.length === 1 ? '' : 's'} couldn&apos;t load</div>
           {floor.errors.map((e, i) => (
-            <div key={i} className="mh-row-line"><span className="lbl">{e}</span><span className="val" style={{ color: 'var(--rust)' }}>—</span></div>
+            <div key={i} className="mh-row-line"><span className="lbl">{e}</span><span className="val" style={{ color: 'var(--rust)' }}>, </span></div>
           ))}
         </div>
       )}

@@ -1225,7 +1225,7 @@ body { background: var(--mp-bg); }
     <section id="mp-hub">
         <div class="mp-section-header">
             <span class="mp-section-num">§ 01 · The Board</span>
-            <span class="mp-section-title" id="mp-board-section-title">This week's <em>departures —</em></span>
+            <span class="mp-section-title" id="mp-board-section-title">This week's <em>departures ·</em></span>
             <span class="mp-section-meta" id="mp-board-section-meta">Updated weekly</span>
             <button type="button" class="mp-share in-meta" id="mp-share-hub" hidden aria-label="Share the departures board">
                 <span class="mp-share-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
@@ -1251,7 +1251,7 @@ body { background: var(--mp-bg); }
             <div class="mp-conductor-row">
                 <div class="mp-conductor-select-wrap">
                     <select class="mp-conductor-select" id="mp-conductor-select" aria-label="Choose your manager">
-                        <option value="">— Choose your name —</option>
+                        <option value="">· Choose your name ·</option>
                     </select>
                 </div>
                 <button type="button" class="mp-conductor-go" id="mp-conductor-go" disabled>Board</button>
@@ -1302,7 +1302,7 @@ body { background: var(--mp-bg); }
   }
   function fmtPts(n) {
     var v = Number(n);
-    if (!isFinite(v)) return '—';
+    if (!isFinite(v)) return '·';
     return v.toFixed(1);
   }
 
@@ -1446,7 +1446,7 @@ body { background: var(--mp-bg); }
   }
 
   function renderBoard(data) {
-    sectionTitle.innerHTML = 'Week <em>' + esc(data.week) + ' Departures —</em>';
+    sectionTitle.innerHTML = 'Week <em>' + esc(data.week) + ' Departures ·</em>';
     sectionMeta.innerHTML = esc(data.year) + ' season · Wk ' + esc(data.week) +
       (data.pinned ? ' · <span style="color:var(--mp-amber);letter-spacing:.16em">Pinned</span>' : '');
 
@@ -1511,7 +1511,7 @@ body { background: var(--mp-bg); }
     if (!selEl || !goBtn || !condEl) return;
     var mgrs = (data.managers || []).slice();
     if (!mgrs.length) { condEl.hidden = true; return; }
-    var opts = ['<option value="">— Choose your name —</option>'];
+    var opts = ['<option value="">· Choose your name ·</option>'];
     mgrs.forEach(function (m) {
       opts.push('<option value="' + esc(m.uid) + '">' + esc(m.name) + ' · ' + esc(m.team) + '</option>');
     });
@@ -1732,7 +1732,7 @@ body { background: var(--mp-bg); }
           '<div class="mp-stat-title">All-time <em>H2H.</em></div>' +
           '<div class="mp-h2h-big">' +
             '<span class="mp-h2h-win">' + selfWins + '</span>' +
-            '<span class="mp-h2h-dash">—</span>' +
+            '<span class="mp-h2h-dash">·</span>' +
             '<span class="mp-h2h-win">' + oppWins + '</span>' +
           '</div>' +
           '<div class="mp-h2h-meta">' +
@@ -1747,7 +1747,7 @@ body { background: var(--mp-bg); }
         // Projection
         '<div class="mp-stat-card">' +
           '<div class="mp-stat-num">§ II · The Forecast</div>' +
-          '<div class="mp-stat-title">On <em>form —</em></div>' +
+          '<div class="mp-stat-title">On <em>form ·</em></div>' +
           '<div class="mp-proj-bars">' +
             '<div class="mp-proj-bar-row">' +
               '<span class="mp-proj-name">' + esc(self.name) + '</span>' +
@@ -1772,7 +1772,7 @@ body { background: var(--mp-bg); }
         // ppg and a small "season high" footer comparing both sides.
         '<div class="mp-stat-card">' +
           '<div class="mp-stat-num">§ III · The Run</div>' +
-          '<div class="mp-stat-title">Last <em>five —</em></div>' +
+          '<div class="mp-stat-title">Last <em>five ·</em></div>' +
           formRow(self) +
           formRow(opp) +
           highsFooter(self, opp) +

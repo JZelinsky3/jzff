@@ -85,7 +85,7 @@ function entryToValue(e: FCEntry, scoreField: 'dynasty' | 'redraft', dynastyAwar
   if (!sid) return null
   const rawValue = scoreField === 'dynasty' ? e.value : (e.redraftValue ?? e.value)
   if (!Number.isFinite(rawValue) || rawValue <= 0) return null
-  const position = e.player.position ?? '—'
+  const position = e.player.position ?? '·'
   const tier = e.positionRank != null ? `${position}${tierBucket(e.positionRank)}` : null
   return {
     playerId: sid,

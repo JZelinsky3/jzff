@@ -192,10 +192,10 @@ body { background: var(--bc-bg); color: var(--bc-chalk); }
 <div class="bc-page">
 
     <header class="bc-head">
-        <div class="m-kicker">Best Coach Board · Week <span id="bc-week-kicker">—</span></div>
+        <div class="m-kicker">Best Coach Board · Week <span id="bc-week-kicker">·</span></div>
         <h1 class="bc-title">Who left points <em>on the bench?</em></h1>
         <div class="m-mono bc-meta">
-            <strong id="bc-year">—</strong> · thru wk <strong id="bc-week">—</strong> · <span id="bc-tilecount">—</span> graded
+            <strong id="bc-year">·</strong> · thru wk <strong id="bc-week">·</strong> · <span id="bc-tilecount">·</span> graded
         </div>
         <div><span class="bc-mode-tag" id="bc-mode-tag" hidden>★ Preview · Most recent completed season ★</span></div>
     </header>
@@ -279,7 +279,7 @@ body { background: var(--bc-bg); color: var(--bc-chalk); }
         const empty = document.createElement('section');
         empty.className = 'bc-empty';
         empty.innerHTML = `
-            <div class="bc-empty-marquee">— NO DATA ON THE BOARD —</div>
+            <div class="bc-empty-marquee">· NO DATA ON THE BOARD ·</div>
             <p class="bc-empty-msg">Chalk's not down yet.</p>
             <p class="bc-empty-body">${message}</p>
         `;
@@ -300,7 +300,7 @@ body { background: var(--bc-bg); color: var(--bc-chalk); }
         return pct >= 15 ? 'is-bad' : '';
     }
     function fmt(n, digits) {
-        if (n == null || isNaN(n)) return '—';
+        if (n == null || isNaN(n)) return '·';
         return Number(n).toFixed(digits == null ? 1 : digits);
     }
     function escapeHtml(s) {
@@ -379,7 +379,7 @@ body { background: var(--bc-bg); color: var(--bc-chalk); }
         const worst = m.worst_week;
         const note = worst && worst.left > 0
             ? `Worst week: <em>−${fmt(worst.left)} pts</em> in Week <strong>${worst.week}</strong>.`
-            : `No bench left behind — a perfectly coached season.`;
+            : `No bench left behind, a perfectly coached season.`;
         return `
             <div class="bc-drill-cap">${escapeHtml(m.display_name)} · ${note}</div>
             <div class="bc-weeks">${weeks}</div>
@@ -436,12 +436,12 @@ body { background: var(--bc-bg); color: var(--bc-chalk); }
         .then(r => r.ok ? r.json() : null)
         .then(data => {
             if (!data || !data.managers || data.managers.length === 0) {
-                renderEmpty('No weekly lineup data on file yet. NFL.com leagues don\'t qualify — their archive returns the final roster for every week. Mix in a Sleeper, ESPN, or Yahoo source and the board will chalk itself.');
+                renderEmpty('No weekly lineup data on file yet. NFL.com leagues don\'t qualify, their archive returns the final roster for every week. Mix in a Sleeper, ESPN, or Yahoo source and the board will chalk itself.');
                 return;
             }
-            yearEl.textContent = data.year ?? '—';
-            weekEl.textContent = data.throughWeek ?? '—';
-            if (weekKickerEl) weekKickerEl.textContent = data.throughWeek ?? '—';
+            yearEl.textContent = data.year ?? '·';
+            weekEl.textContent = data.throughWeek ?? '·';
+            if (weekKickerEl) weekKickerEl.textContent = data.throughWeek ?? '·';
             countEl.textContent = String(data.managers.length);
             if (data.is_live === false) {
                 modeTag.hidden = false;

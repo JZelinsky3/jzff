@@ -488,13 +488,13 @@ tr.detail-row > td {
     <div class="ticker-track">
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> ALL-TIME STANDINGS · {{LEAGUE_NAME_UPPER}}</span>
-            <span class="ticker-item ticker-stat" data-stat="seasons-managers">★ — SEASONS · — MANAGERS</span>
-            <span class="ticker-item ticker-stat" data-stat="matchups-champs">★ — MATCHUPS · — CHAMPIONS</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-managers">★ · SEASONS · · MANAGERS</span>
+            <span class="ticker-item ticker-stat" data-stat="matchups-champs">★ · MATCHUPS · · CHAMPIONS</span>
         </div>
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> ALL-TIME STANDINGS · {{LEAGUE_NAME_UPPER}}</span>
-            <span class="ticker-item ticker-stat" data-stat="seasons-managers">★ — SEASONS · — MANAGERS</span>
-            <span class="ticker-item ticker-stat" data-stat="matchups-champs">★ — MATCHUPS · — CHAMPIONS</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-managers">★ · SEASONS · · MANAGERS</span>
+            <span class="ticker-item ticker-stat" data-stat="matchups-champs">★ · MATCHUPS · · CHAMPIONS</span>
         </div>
     </div>
 </div>
@@ -522,27 +522,27 @@ tr.detail-row > td {
     <div class="league-totals" id="league-totals">
         <div class="total-item">
             <div class="total-label">Managers</div>
-            <div class="total-value" data-count id="tot-managers">—</div>
+            <div class="total-value" data-count id="tot-managers">·</div>
         </div>
         <div class="total-item">
             <div class="total-label">Seasons</div>
-            <div class="total-value" data-count id="tot-seasons">—</div>
+            <div class="total-value" data-count id="tot-seasons">·</div>
         </div>
         <div class="total-item">
             <div class="total-label">Total Matchups</div>
-            <div class="total-value" data-count id="tot-matchups">—</div>
+            <div class="total-value" data-count id="tot-matchups">·</div>
         </div>
         <div class="total-item">
             <div class="total-label">Different Champions</div>
-            <div class="total-value" data-count id="tot-champs">—</div>
+            <div class="total-value" data-count id="tot-champs">·</div>
         </div>
         <div class="total-item">
             <div class="total-label">Total Points Scored</div>
-            <div class="total-value" data-count id="tot-pf">—</div>
+            <div class="total-value" data-count id="tot-pf">·</div>
         </div>
         <div class="total-item">
             <div class="total-label">Total Prize Pool</div>
-            <div class="total-value" id="tot-prize-pool">—</div>
+            <div class="total-value" id="tot-prize-pool">·</div>
         </div>
     </div>
 </div>
@@ -680,8 +680,8 @@ async function loadData() {
             detailsByUid[String(m.user_id)] = d;
             return {
                 ...m,
-                reg_record:      d.reg_record      || '—',
-                playoff_record:  d.playoff_record  || '—',
+                reg_record:      d.reg_record      || '·',
+                playoff_record:  d.playoff_record  || '·',
                 reg_win_pct:     d.reg_win_pct     ?? null,
                 playoff_win_pct: d.playoff_win_pct ?? null,
                 high_score:      d.high_score      ?? null,
@@ -725,7 +725,7 @@ function populateTotals() {
         const seasonCount = leagueMeta.total_seasons ?? (leagueMeta.all_seasons?.length ?? 0);
         if (seasonCount) setCount('tot-seasons', seasonCount);
         const tpp = document.getElementById('tot-prize-pool');
-        if (tpp) tpp.textContent = leagueMeta.prize_pool || '—';
+        if (tpp) tpp.textContent = leagueMeta.prize_pool || '·';
 
         const years = leagueMeta.all_seasons || [];
         const minY = years.length ? Math.min(...years) : null;
@@ -740,7 +740,7 @@ function populateTotals() {
         if (sub && seasonCount) {
             sub.textContent = seasonCount === 1 ? 'one season' : `${seasonCount} seasons`;
         }
-        const matchupsStr = leagueMeta.total_matchups != null ? leagueMeta.total_matchups.toLocaleString() : '—';
+        const matchupsStr = leagueMeta.total_matchups != null ? leagueMeta.total_matchups.toLocaleString() : '·';
         document.querySelectorAll('.ticker-stat[data-stat="seasons-managers"]').forEach(el => {
             el.innerHTML = `<span class="ticker-star">★</span> ${seasonCount} SEASONS · ${allManagers.length} MANAGERS`;
         });
@@ -768,7 +768,7 @@ function wireCountUp() {
         strip.querySelectorAll('[data-count]').forEach(el => {
             const target = parseInt(el.dataset.target || '0', 10);
             const suffix = el.dataset.suffix || '';
-            if (!target) { el.textContent = (el.dataset.target ?? '—') + suffix; return; }
+            if (!target) { el.textContent = (el.dataset.target ?? '·') + suffix; return; }
             const t0 = performance.now(), dur = 850;
             (function tick(t) {
                 const p = Math.min(1, (t - t0) / dur);
@@ -986,12 +986,12 @@ function sortManagers(managers) {
 }
 
 function fmtPct(p) {
-    if (p == null) return '—';
+    if (p == null) return '·';
     return p.toFixed(3).replace(/^0\./, '.');
 }
 
 function chipBadges(m) {
-    if (m.championships === 0) return `<span class="chip-count-zero">—</span>`;
+    if (m.championships === 0) return `<span class="chip-count-zero">·</span>`;
     return `<div class="chip-badges">${m.championship_seasons.map(y =>
         `<span class="chip-badge">★ ${y}</span>`
     ).join('')}</div>`;
@@ -1006,18 +1006,18 @@ function cellValue(key, m, leagueAvgPct) {
         case 'all_record': return `${m.wins}–${m.losses}${m.ties ? '–' + m.ties : ''}`;
         case 'winpct': return fmtPct(m.win_pct);
         case 'pf':  return m.total_pf.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-        case 'pa':  return m.total_pa != null ? m.total_pa.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—';
+        case 'pa':  return m.total_pa != null ? m.total_pa.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '·';
         case 'ppg': return (games(m) ? m.total_pf / games(m) : 0).toFixed(1);
-        case 'high': return m.high_score != null ? m.high_score.toFixed(1) : '—';
-        case 'low':  return m.low_score  != null ? m.low_score.toFixed(1)  : '—';
-        case 'streak': return m.win_streak ? `W${m.win_streak}` : '—';
-        case 'po_winpct': return m.playoff_win_pct != null ? fmtPct(m.playoff_win_pct) : '—';
+        case 'high': return m.high_score != null ? m.high_score.toFixed(1) : '·';
+        case 'low':  return m.low_score  != null ? m.low_score.toFixed(1)  : '·';
+        case 'streak': return m.win_streak ? `W${m.win_streak}` : '·';
+        case 'po_winpct': return m.playoff_win_pct != null ? fmtPct(m.playoff_win_pct) : '·';
         case 'seasons': return m.seasons_played;
         case 'playoffs': return m.playoff_appearances;
-        case 'top3': return m.top_three_finishes ?? '—';
-        case 'avgfinish': return m.avg_final_finish != null ? m.avg_final_finish.toFixed(1) : '—';
+        case 'top3': return m.top_three_finishes ?? '·';
+        case 'avgfinish': return m.avg_final_finish != null ? m.avg_final_finish.toFixed(1) : '·';
         case 'chips': return chipBadges(m);
-        default: return '—';
+        default: return '·';
     }
 }
 

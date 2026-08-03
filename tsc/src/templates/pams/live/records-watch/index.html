@@ -1265,19 +1265,19 @@ body { background: var(--rw-bg); }
         <div class="rw-mast-right">
             <div class="rw-mast-stat alert">
                 <span class="lbl">Broken</span>
-                <span class="val" id="m-broken">—</span>
+                <span class="val" id="m-broken">·</span>
             </div>
             <div class="rw-mast-stat steel">
                 <span class="lbl">Brink</span>
-                <span class="val" id="m-brink">—</span>
+                <span class="val" id="m-brink">·</span>
             </div>
             <div class="rw-mast-stat">
                 <span class="lbl">On pace</span>
-                <span class="val" id="m-onpace">—</span>
+                <span class="val" id="m-onpace">·</span>
             </div>
             <div class="rw-mast-stat steel">
                 <span class="lbl">Missed</span>
-                <span class="val" id="m-missed">—</span>
+                <span class="val" id="m-missed">·</span>
             </div>
         </div>
         <div class="rw-mast-foot">
@@ -1550,7 +1550,7 @@ body { background: var(--rw-bg); }
                 var hw = String(it.holder_when || '');
                 var stack = hw.indexOf('–') !== -1;
                 return '<div class="rw-mark-credit' + (stack ? ' stack' : '') + '">' +
-                  '<strong>' + esc(it.holder || '—') + '</strong>' +
+                  '<strong>' + esc(it.holder || '·') + '</strong>' +
                   (hw ? (stack ? '<br>' : ' · ') + esc(hw) : '') +
                   '</div>';
               })() +
@@ -1558,7 +1558,7 @@ body { background: var(--rw-bg); }
             '<div class="rw-block-plot">' +
               '<div class="rw-plot-head">' +
                 '<div>' +
-                  '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
+                  '<span class="chaser">' + esc(it.chaser || '·') + '</span>' +
                   (it.chaser_sub ? '<span class="chaser-sub">' + esc(it.chaser_sub) + '</span>' : '') +
                 '</div>' +
               '</div>' +
@@ -1634,7 +1634,7 @@ body { background: var(--rw-bg); }
         '</div>' +
         '<div class="rw-broken-prior">' +
           '<span>' + esc(whenDisplay) + '</span>' +
-          '<span class="prior-line">prior · ' + esc(it.previous || '—') + '</span>' +
+          '<span class="prior-line">prior · ' + esc(it.previous || '·') + '</span>' +
         '</div>' +
       '</article>';
   }
@@ -1660,7 +1660,7 @@ body { background: var(--rw-bg); }
         '<span class="mini-num">' + readNumHtml + esc(readUnit) + '</span>' +
         '<div class="mini-body">' +
           '<div class="mini-cat">' + esc(it.category || '') + '</div>' +
-          '<div class="mini-name">' + esc(it.chaser || '—') + '</div>' +
+          '<div class="mini-name">' + esc(it.chaser || '·') + '</div>' +
         '</div>' +
         '<div class="mini-when">' + esc(whenDisplay) + '</div>' +
       '</div>';
@@ -1723,7 +1723,7 @@ body { background: var(--rw-bg); }
           '<div class="rw-onpace-grid">' +
             '<div class="rw-onpace-col chasing">' +
               '<div class="col-lbl">Chasing</div>' +
-              '<div class="col-name">' + esc(it.chaser || '—') +
+              '<div class="col-name">' + esc(it.chaser || '·') +
                 (it.chaser_sub ? ' <span class="col-sub-tag">' + esc(it.chaser_sub) + '</span>' : '') +
               '</div>' +
               '<div class="col-val">' + esc(cv) + '</div>' +
@@ -1731,7 +1731,7 @@ body { background: var(--rw-bg); }
             '</div>' +
             '<div class="rw-onpace-col mark">' +
               '<div class="col-lbl">The mark</div>' +
-              '<div class="col-name">' + esc(it.holder || '—') + '</div>' +
+              '<div class="col-name">' + esc(it.holder || '·') + '</div>' +
               '<div class="col-val">' + esc(it.record_value || '') + '</div>' +
               '<div class="col-sub">' + esc(it.holder_when || '') + '</div>' +
             '</div>' +
@@ -1763,14 +1763,14 @@ body { background: var(--rw-bg); }
             '<span class="flag">' + esc(it.flag || 'PACE') + '</span>' +
           '</div>' +
           '<div class="rw-side-tile-row">' +
-            '<span class="rw-side-tile-chaser">' + esc(it.chaser || '—') + '</span>' +
+            '<span class="rw-side-tile-chaser">' + esc(it.chaser || '·') + '</span>' +
             '<span class="rw-side-tile-val">' + esc(it.chaser_value || '') + '</span>' +
           '</div>' +
           '<div class="rw-side-tile-bar">' +
             '<div class="fill' + (over ? ' over' : '') + '" style="width:' + fill.toFixed(2) + '%"></div>' +
           '</div>' +
           '<div class="rw-side-tile-foot">' +
-            '<span>vs ' + esc(it.record_value || '—') + ' · ' + esc(it.holder || '') + '</span>' +
+            '<span>vs ' + esc(it.record_value || '·') + ' · ' + esc(it.holder || '') + '</span>' +
             '<span class="gap' + (over ? ' over' : '') + '">' + esc(it.gap || '') + '</span>' +
           '</div>' +
         '</div>';
@@ -1794,7 +1794,7 @@ body { background: var(--rw-bg); }
           '</div>' +
           '<div class="rw-side-miss-copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
           '<div class="rw-side-miss-foot">' +
-            '<span>vs ' + esc(it.record_value || '—') + '</span>' +
+            '<span>vs ' + esc(it.record_value || '·') + '</span>' +
             '<span>' + esc(it.gap || '') + '</span>' +
           '</div>' +
         '</div>';

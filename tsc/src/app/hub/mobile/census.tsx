@@ -12,7 +12,7 @@ export function MobileCensus({ c }: { c: HubCensus }) {
       ? c.earliestYear === c.latestYear
         ? String(c.earliestYear)
         : `${c.earliestYear} – ${c.latestYear}`
-      : '—'
+      : '·'
 
   return (
     <main className="mhb">
@@ -96,7 +96,7 @@ export function MobileCensus({ c }: { c: HubCensus }) {
               <div className="mhb-tile-lbl">Seasons archived</div>
               <div className="mhb-tile-val"><CountUp value={c.seasons} /></div>
               <div className="mhb-tile-det">
-                Back to <strong>{c.earliestYear ?? '—'}</strong>.
+                Back to <strong>{c.earliestYear ?? '·'}</strong>.
               </div>
             </div>
           </div>
@@ -117,7 +117,7 @@ export function MobileCensus({ c }: { c: HubCensus }) {
             <div className="mhb-tile">
               <div className="mhb-tile-lbl">Avg game total</div>
               <div className="mhb-tile-val">
-                {c.avgGameTotal !== null ? <CountUp value={c.avgGameTotal} decimals={1} /> : '—'}
+                {c.avgGameTotal !== null ? <CountUp value={c.avgGameTotal} decimals={1} /> : '·'}
                 <span className="unit">pts</span>
               </div>
               <div className="mhb-tile-det">Both teams combined.</div>
@@ -125,7 +125,7 @@ export function MobileCensus({ c }: { c: HubCensus }) {
             <div className="mhb-tile">
               <div className="mhb-tile-lbl">Avg margin</div>
               <div className="mhb-tile-val">
-                {c.avgMargin !== null ? <CountUp value={c.avgMargin} decimals={1} /> : '—'}
+                {c.avgMargin !== null ? <CountUp value={c.avgMargin} decimals={1} /> : '·'}
                 <span className="unit">pts</span>
               </div>
               <div className="mhb-tile-det">Handshake to heartbreak.</div>
@@ -133,7 +133,7 @@ export function MobileCensus({ c }: { c: HubCensus }) {
             <div className="mhb-tile">
               <div className="mhb-tile-lbl">Blowout rate</div>
               <div className="mhb-tile-val">
-                {c.blowoutPct !== null ? <CountUp value={c.blowoutPct} decimals={1} /> : '—'}
+                {c.blowoutPct !== null ? <CountUp value={c.blowoutPct} decimals={1} /> : '·'}
                 <span className="unit">%</span>
               </div>
               <div className="mhb-tile-det">Decided by 40 or more.</div>
@@ -141,7 +141,7 @@ export function MobileCensus({ c }: { c: HubCensus }) {
             <div className="mhb-tile">
               <div className="mhb-tile-lbl">Photo finishes</div>
               <div className="mhb-tile-val">
-                {c.photoFinishPct !== null ? <CountUp value={c.photoFinishPct} decimals={1} /> : '—'}
+                {c.photoFinishPct !== null ? <CountUp value={c.photoFinishPct} decimals={1} /> : '·'}
                 <span className="unit">%</span>
               </div>
               <div className="mhb-tile-det">Decided by fewer than 3.</div>

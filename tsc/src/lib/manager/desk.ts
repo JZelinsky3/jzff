@@ -215,7 +215,7 @@ export async function loadPlayerDesk(slug: string, ownerId: string): Promise<Pla
           entry = {
             playerId: pid,
             name: playerName(p, pid),
-            position: p?.position ?? '—',
+            position: p?.position ?? '·',
             team: p?.team ?? null,
             injuryStatus: p?.injury_status ?? null,
             injuryBodyPart: p?.injury_body_part ?? null,
@@ -258,7 +258,7 @@ export async function loadPlayerDesk(slug: string, ownerId: string): Promise<Pla
     leagueName: l.league_alias?.trim() || l.league.name,
     leagueSlug: l.league.slug,
     platform: l.league.platform,
-    reason: 'Live roster sync coming — Sleeper only for now.',
+    reason: 'Live roster sync coming, Sleeper only for now.',
   }))
 
   // Build position buckets across all leagues, deduped.

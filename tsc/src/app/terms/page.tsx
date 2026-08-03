@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getViewMode } from "@/lib/viewMode"
 
 export const metadata: Metadata = {
-  title: "Terms of Service — The Sunday Chronicle",
+  title: "Terms of Service, The Sunday Chronicle",
   description:
     "The terms that govern your use of The Sunday Chronicle.",
   alternates: { canonical: "https://thesundaychronicle.app/terms/" },
@@ -100,8 +100,8 @@ function TermsBody() {
 
       <h2>7. Our content</h2>
       <p>
-        Everything else — the design, code, copy, logos, AI-generated grades
-        and summaries, and aggregated stat compositions — belongs to us. You
+        Everything else (the design, code, copy, logos, AI-generated grades
+        and summaries, and aggregated stat compositions) belongs to us. You
         may not reproduce or redistribute it without permission.
       </p>
 

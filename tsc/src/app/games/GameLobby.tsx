@@ -17,6 +17,12 @@ import styles from './games.module.css'
 export async function GameLobby({ game }: { game: GameDef }) {
   const { signedIn, leaguePools } = await loadPoolsForViewer()
   const poolHref = (id: string) => `${game.href}?pool=${encodeURIComponent(id)}`
+  // A board is worth reading before you play — it is the reason the run has
+  // stakes — so the lobby links to it directly rather than making you deal a
+  // wheel to find the way in.
+  const boardHref = game.hasBoard
+    ? (id: string) => `${game.href}board/?pool=${encodeURIComponent(id)}`
+    : undefined
 
   // A game with neither a site pool nor a demo has nothing to put under
   // "Open to everyone", and an empty section under that heading reads as a
@@ -73,7 +79,7 @@ export async function GameLobby({ game }: { game: GameDef }) {
             <span className={styles.sectionMeta}>No account needed</span>
           </div>
 
-          <HouseDeck pools={housePools} href={poolHref} />
+          <HouseDeck pools={housePools} href={poolHref} boardHref={boardHref} />
         </>
       )}
 
@@ -103,7 +109,7 @@ export async function GameLobby({ game }: { game: GameDef }) {
         </div>
       ) : (
         <>
-          <LeagueDeck pools={leaguePools} href={poolHref} />
+          <LeagueDeck pools={leaguePools} href={poolHref} boardHref={boardHref} />
 
           {/* Needs two leagues to mean anything, so it stays out of the way
               of anyone who only has one, and only for games where mixing

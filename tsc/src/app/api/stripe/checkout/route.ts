@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   // UI hides the cards but guard the API too in case they bypass it.
   if (await isCompUser(user.id)) {
     return NextResponse.json(
-      { error: 'You have lifetime access — nothing to subscribe to.' },
+      { error: 'You have lifetime access, nothing to subscribe to.' },
       { status: 400 }
     )
   }

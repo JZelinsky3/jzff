@@ -1897,22 +1897,22 @@ main { counter-reset: folio; }
 
 <!-- MASTHEAD -->
 <header class="mast">
-    <div class="mast-kick" id="pageKicker">{{LEAGUE_NAME}} · —</div>
+    <div class="mast-kick" id="pageKicker">{{LEAGUE_NAME}} · ·</div>
     <div class="mast-orn" aria-hidden="true">✦ ✦ ✦</div>
     <h1 class="mast-title">The Draft <em>Annual.</em></h1>
     <p class="mast-sub">Picks, patterns, and poor decisions.</p>
     <div class="mast-wire" id="mastWire">★ EVERY PICK · EVERY ROUND · EVERY YEAR ★</div>
     <div class="mast-stats">
         <div class="mast-stat">
-            <div class="mast-stat-num" id="heroSeasons">—</div>
+            <div class="mast-stat-num" id="heroSeasons">·</div>
             <div class="mast-stat-label">Seasons</div>
         </div>
         <div class="mast-stat">
-            <div class="mast-stat-num" id="heroTotalPicks">—</div>
+            <div class="mast-stat-num" id="heroTotalPicks">·</div>
             <div class="mast-stat-label">Picks Logged</div>
         </div>
         <div class="mast-stat">
-            <div class="mast-stat-num" id="heroManagers">—</div>
+            <div class="mast-stat-num" id="heroManagers">·</div>
             <div class="mast-stat-label">Drafters</div>
         </div>
     </div>
@@ -2235,11 +2235,11 @@ Promise.all([
         var kicker = document.getElementById('pageKicker');
         if (kicker) {
             var name = league.name || '';
-            var yrSpan = minY && maxY ? (minY === maxY ? String(minY) : minY + ' – ' + maxY) : '—';
+            var yrSpan = minY && maxY ? (minY === maxY ? String(minY) : minY + ' – ' + maxY) : '·';
             kicker.textContent = name + ' · ' + yrSpan;
         }
         var heroSeasons = document.getElementById('heroSeasons');
-        if (heroSeasons) heroSeasons.textContent = (league.total_seasons != null ? league.total_seasons : (allYears.length || '—'));
+        if (heroSeasons) heroSeasons.textContent = (league.total_seasons != null ? league.total_seasons : (allYears.length || '·'));
     }
     if (mgrs) {
         var heroMgrs = document.getElementById('heroManagers');
@@ -2248,7 +2248,7 @@ Promise.all([
     if (dir) {
         var totalPicks = (dir.drafts || []).reduce(function (acc, d) { return acc + (d.total_picks || 0); }, 0);
         var heroTotalPicks = document.getElementById('heroTotalPicks');
-        if (heroTotalPicks) heroTotalPicks.textContent = totalPicks ? totalPicks.toLocaleString() : '—';
+        if (heroTotalPicks) heroTotalPicks.textContent = totalPicks ? totalPicks.toLocaleString() : '·';
         var ledgerNote = document.getElementById('ledgerNote');
         if (ledgerNote) {
             var n = YEARS.length;
@@ -2482,7 +2482,7 @@ function onAllLoaded() {
 
 // ── Chapter I: the open page ──────────────────────────────────────────────
 function truncName(name) {
-    if (!name) return '—';
+    if (!name) return '·';
     var parts = name.trim().split(' ');
     if (parts.length >= 2 && name.length > 15) {
         return parts[0][0] + '. ' + parts.slice(1).join(' ');
@@ -2534,7 +2534,7 @@ function renderSpread(year) {
         var pos = (p.position || '?').toUpperCase();
         posCount[pos] = (posCount[pos] || 0) + 1;
     });
-    var lean = Object.keys(posCount).sort(function (a, b) { return posCount[b] - posCount[a]; })[0] || '—';
+    var lean = Object.keys(posCount).sort(function (a, b) { return posCount[b] - posCount[a]; })[0] || '·';
 
     var champ = null;
     var fin = yearFinishes[year] || {};
@@ -3004,7 +3004,7 @@ window.setOracleSlot = function (slot) {
         var pc = POS_COLORS[pos] || POS_COLORS['K'];
         return '<div class="wr-or-row"><span class="wr-or-year">' + e.y + '</span>'
              + '<span class="wr-or-player" style="color:' + pc.text + '">' + esc(e.p.player_name) + '</span>'
-             + '<span class="wr-or-move" style="color:' + pc.text + '">' + (e.value != null ? moveStr(e) : '—') + '</span>'
+             + '<span class="wr-or-move" style="color:' + pc.text + '">' + (e.value != null ? moveStr(e) : '·') + '</span>'
              + '<span class="wr-or-mgr">' + esc(e.p.manager_name || '') + '</span></div>';
     }).join('');
 

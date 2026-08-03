@@ -1692,7 +1692,7 @@ body {
             var ma = rv.manager_a || {}, mb = rv.manager_b || {};
             var aW = (ma.record_total && ma.record_total.wins) != null ? ma.record_total.wins : (ma.wins || 0);
             var bW = (mb.record_total && mb.record_total.wins) != null ? mb.record_total.wins : (mb.wins || 0);
-            return '<div><b>' + esc(first(ma.name) || '—') + '</b><u>vs</u><b>' + esc(first(mb.name) || '—') + '</b>' +
+            return '<div><b>' + esc(first(ma.name) || '·') + '</b><u>vs</u><b>' + esc(first(mb.name) || '·') + '</b>' +
                    '<i>' + aW + '–' + bW + '</i></div>';
           });
         }

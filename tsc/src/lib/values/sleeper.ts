@@ -100,7 +100,7 @@ function valueFromPlayer(p: SleeperPlayer, ctx: LeagueValuationContext): number 
   const curved = Math.pow(linear, 1.4)
   const base = curved * TOP_VALUE
 
-  const pos = p.position ?? '—'
+  const pos = p.position ?? '·'
   const ageMul = ageMultiplier(ctx.mode, pos, p.age ?? null)
   const posMul = positionScarcity(ctx.mode, pos, ctx.qbStarters)
 
@@ -122,7 +122,7 @@ export const sleeperValueSource: ValueSource = {
     for (const [pid, p] of Object.entries(players)) {
       const v = valueFromPlayer(p, ctx)
       if (v <= 0) continue
-      const pos = p.position ?? '—'
+      const pos = p.position ?? '·'
       const name = p.full_name ?? (`${p.first_name ?? ''} ${p.last_name ?? ''}`.trim() || `Player ${pid}`)
       out.set(pid, {
         playerId: pid,

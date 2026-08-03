@@ -57,7 +57,7 @@ export async function setLatestSeasonLive(input: z.infer<typeof ToggleSchema>): 
       .order('year', { ascending: false })
       .limit(1)
       .maybeSingle()
-    if (!latest) return { ok: false, error: 'No seasons yet — sync a source first.' }
+    if (!latest) return { ok: false, error: 'No seasons yet, sync a source first.' }
     const { error: setErr } = await db
       .from('seasons')
       .update({ is_live: true })

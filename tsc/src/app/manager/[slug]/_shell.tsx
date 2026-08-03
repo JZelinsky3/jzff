@@ -199,7 +199,7 @@ const SHELL_STYLES = `
 .mh-shead-title em { color: var(--gold); }
 .mh-shead-meta { font-family: var(--mono); font-size: .58rem; letter-spacing: .24em; text-transform: uppercase; color: var(--cream-mute); }
 .mh-section-intro { font-family: var(--serif); font-style: italic; font-size: 1rem; line-height: 1.6; color: var(--cream-soft); max-width: 72ch; margin: 0 0 1.5rem; }
-.mh-section-intro::before { content: '— '; color: var(--rust); font-style: normal; }
+.mh-section-intro::before { content: ', '; color: var(--rust); font-style: normal; }
 .mh-card-context { font-family: var(--serif); font-style: italic; font-size: .92rem; line-height: 1.5; color: var(--cream-soft); padding-top: .65rem; margin-top: .85rem; border-top: 1px dotted var(--ink-line); }
 
 .mh-clip { max-width: 820px; margin: 0 auto; background: var(--ink-card); border: 1px solid var(--ink-line); padding: 2rem 2rem 1.75rem; position: relative; box-shadow: 5px 5px 0 rgba(0,0,0,.2); }

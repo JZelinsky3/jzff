@@ -20,7 +20,7 @@
 // Boards are never merged across pools or modes.
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { resolveBoardIdentities, type BoardIdentity } from './boardIdentity'
+import { resolveBoardIdentities, soleLeagueSlug, type BoardIdentity } from './boardIdentity'
 
 export type GameId = 'roulette' | 'guess-the-draft' | 'gauntlet' | 'over-under' | 'redraft'
 
@@ -45,8 +45,24 @@ export type BoardKey = {
   poolId: string
 }
 
-/** Rows shown before the board is cut off. League boards rarely reach it. */
+/** Rows shown before the board is cut off, on the site-wide and combined
+    boards where the field is everybody. */
 export const BOARD_ROWS = 50
+
+/**
+ * Rows on ONE league's board.
+ *
+ * Shorter on purpose. A league is a dozen people, so fifty rows is the same
+ * handful of names over and over down a page nobody scrolls; twenty is the
+ * part anyone reads, and your own best run is pinned underneath at its true
+ * rank whether or not it made the cut.
+ */
+export const LEAGUE_BOARD_ROWS = 20
+
+/** How long a given pool's board runs. */
+export function boardRowsFor(poolId: string): number {
+  return soleLeagueSlug(poolId) ? LEAGUE_BOARD_ROWS : BOARD_ROWS
+}
 
 /** Runs a player needs before they appear on the career board. */
 export const CAREER_MIN_RUNS = 10
@@ -224,7 +240,7 @@ export async function loadBoard(
   opts: { limit?: number; offset?: number; week?: string } = {}
 ): Promise<Board> {
   const db = createAdminClient()
-  const limit = opts.limit ?? BOARD_ROWS
+  const limit = opts.limit ?? boardRowsFor(key.poolId)
   const offset = opts.offset ?? 0
 
   if (kind === 'career') {

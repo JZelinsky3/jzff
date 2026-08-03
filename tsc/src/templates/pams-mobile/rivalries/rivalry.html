@@ -142,7 +142,7 @@
         });
     }
     function num(n, d) {
-        if (n == null || isNaN(n)) return '—';
+        if (n == null || isNaN(n)) return '·';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
 
@@ -187,9 +187,9 @@
         var rows = [
             ['Series wins', a.wins || 0, b.wins || 0, true],
             ['Avg points', num(a.avg_ppg), num(b.avg_ppg), true],
-            ['High score', a.high_score ? num(a.high_score.score) : '—', b.high_score ? num(b.high_score.score) : '—', true],
-            ['Regular season', esc(a.reg_record || '—'), esc(b.reg_record || '—'), false],
-            ['Playoffs', esc(a.playoff_record || '—'), esc(b.playoff_record || '—'), false],
+            ['High score', a.high_score ? num(a.high_score.score) : '·', b.high_score ? num(b.high_score.score) : '·', true],
+            ['Regular season', esc(a.reg_record || '·'), esc(b.reg_record || '·'), false],
+            ['Playoffs', esc(a.playoff_record || '·'), esc(b.playoff_record || '·'), false],
         ];
         document.getElementById('cmpSection').hidden = false;
         document.getElementById('cmp').innerHTML = rows.map(function (row) {

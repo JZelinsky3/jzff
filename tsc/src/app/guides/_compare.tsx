@@ -157,7 +157,7 @@ export function Pullquote({ children, attribution }: { children: React.ReactNode
   return (
     <figure className="g-pullquote">
       <blockquote>{children}</blockquote>
-      {attribution && <figcaption>— {attribution}</figcaption>}
+      {attribution && <figcaption>, {attribution}</figcaption>}
     </figure>
   )
 }

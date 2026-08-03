@@ -134,7 +134,7 @@ export default async function AdminPage() {
         </h1>
         <p className="hero-sub">
           Oversee accounts and leagues across the site. Comp grants here flow
-          straight into the paywall — recipient gets unlimited-league access
+          straight into the paywall, recipient gets unlimited-league access
           without a Stripe subscription.
         </p>
         <div className="hero-meta">
@@ -168,12 +168,12 @@ export default async function AdminPage() {
                 return (
                   <tr key={p.id} style={{ borderTop: '1px solid var(--ink-line)' }}>
                     <td style={td}>
-                      <div style={{ color: 'var(--cream)' }}>{p.display_name || '—'}</div>
+                      <div style={{ color: 'var(--cream)' }}>{p.display_name || '·'}</div>
                       <div style={{ opacity: 0.5, fontFamily: 'var(--mono)', fontSize: '.65rem' }}>{p.id.slice(0, 8)}…</div>
                     </td>
-                    <td style={td}>{p.email ?? '—'}</td>
+                    <td style={td}>{p.email ?? '·'}</td>
                     <td style={{ ...td, fontFamily: 'var(--mono)', letterSpacing: '.1em', color: 'var(--cream)' }}>
-                      {p.member_code ?? '—'}
+                      {p.member_code ?? '·'}
                     </td>
                     <td style={td}>
                       <div>{fmtDate(p.created_at)}</div>
@@ -189,7 +189,7 @@ export default async function AdminPage() {
                           )}
                         </>
                       ) : (
-                        <span style={{ opacity: 0.4 }}>—</span>
+                        <span style={{ opacity: 0.4 }}>, </span>
                       )}
                     </td>
                     <td style={td}>
@@ -199,7 +199,7 @@ export default async function AdminPage() {
                           <div style={{ opacity: 0.6, fontSize: '.7rem' }}>{sub.status}</div>
                         </>
                       ) : (
-                        <span style={{ opacity: 0.5 }}>—</span>
+                        <span style={{ opacity: 0.5 }}>, </span>
                       )}
                     </td>
                     <td style={td}>
@@ -208,7 +208,7 @@ export default async function AdminPage() {
                       ) : comp ? (
                         <span style={{ color: 'var(--gold)' }}>★ granted</span>
                       ) : (
-                        <span style={{ opacity: 0.4 }}>—</span>
+                        <span style={{ opacity: 0.4 }}>, </span>
                       )}
                     </td>
                     <td style={{ ...td, textAlign: 'right' }}>
@@ -280,14 +280,14 @@ export default async function AdminPage() {
                       <div style={{ opacity: 0.5, fontFamily: 'var(--mono)', fontSize: '.65rem' }}>{l.slug}</div>
                     </td>
                     <td style={td}>
-                      <div>{owner?.display_name || '—'}</div>
-                      <div style={{ opacity: 0.6, fontSize: '.7rem' }}>{owner?.email ?? '—'}</div>
+                      <div>{owner?.display_name || '·'}</div>
+                      <div style={{ opacity: 0.6, fontSize: '.7rem' }}>{owner?.email ?? '·'}</div>
                     </td>
                     <td style={td}>{l.platform}</td>
                     <td style={td}>{new Date(l.created_at).toLocaleDateString()}</td>
                     <td style={td}>
                       {tags.length === 0 ? (
-                        <span style={{ opacity: 0.4 }}>—</span>
+                        <span style={{ opacity: 0.4 }}>, </span>
                       ) : (
                         tags.map((t) => {
                           // Color the state chip so the trial/UDFA call-outs

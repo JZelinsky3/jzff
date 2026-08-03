@@ -58,7 +58,7 @@ export default async function DispatchPage() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 01 · What&apos;s new</span>
-          <span className="hub-section-title">Already in your almanac —</span>
+          <span className="hub-section-title">Already in your almanac,</span>
           <span className="hub-section-meta">Newest first</span>
         </div>
         <DispatchList entries={DISPATCH} variant="desktop" />
@@ -68,7 +68,7 @@ export default async function DispatchPage() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 02 · Coming soon</span>
-          <span className="hub-section-title">Still on the press —</span>
+          <span className="hub-section-title">Still on the press,</span>
           <span className="hub-section-meta">Windows, not promises</span>
         </div>
         <div className="hub-dispatch">

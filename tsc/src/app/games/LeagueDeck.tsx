@@ -34,8 +34,14 @@ export type HousePool = {
   statBottom: string
 }
 
+// The card is a DIV, not a link, and the league name is the link — stretched
+// over the whole card by a pseudo-element. That is the only shape that lets a
+// card carry two destinations: the board has to be reachable without dealing
+// a wheel first ("is it possible to open the leaderboard without entering the
+// game"), and an anchor cannot be nested inside another anchor.
 function Card({
   href,
+  boardHref,
   monogram,
   label,
   note,
@@ -44,6 +50,8 @@ function Card({
   house,
 }: {
   href: string
+  /** The board for this pool, when the game has one. */
+  boardHref?: string
   monogram: string
   label: string
   note: string
@@ -52,33 +60,46 @@ function Card({
   house?: boolean
 }) {
   return (
-    <Link href={href} className={house ? `${s.card} ${s.house}` : s.card}>
+    <div className={house ? `${s.card} ${s.house}` : s.card}>
       <span className={s.plate}>
         <span className={s.plateText}>{monogram}</span>
       </span>
 
       <span className={s.body}>
-        <span className={s.name}>{label}</span>
+        <Link href={href} className={s.name}>
+          {label}
+        </Link>
         <span className={s.note}>{note}</span>
         <span className={s.stats}>
           <span className={s.stat}>
             <span className={s.statNum}>{statTop}</span>
             <span className={s.statLabel}>{statBottom}</span>
           </span>
-          <span className={s.deal}>Deal</span>
+          <span className={s.acts}>
+            {boardHref && (
+              <Link href={boardHref} className={s.board}>
+                Board
+              </Link>
+            )}
+            <span className={s.deal}>Deal</span>
+          </span>
         </span>
       </span>
-    </Link>
+    </div>
   )
 }
 
 export function LeagueDeck({
   pools,
   href,
+  boardHref,
 }: {
   pools: GamePool[]
   /** Builds the play link for a pool id. */
   href: (id: string) => string
+  /** Builds the board link for a pool id. Omitted for games with no board
+      yet, which is every game but Roulette. */
+  boardHref?: (id: string) => string
 }) {
   return (
     <div className={s.deck}>
@@ -86,10 +107,11 @@ export function LeagueDeck({
         <Card
           key={p.id}
           href={href(p.id)}
+          boardHref={boardHref?.(p.id)}
           monogram={p.monogram}
           label={p.label}
           note={p.note}
-          statTop={p.seasons > 0 ? String(p.seasons) : '—'}
+          statTop={p.seasons > 0 ? String(p.seasons) : '·'}
           statBottom={
             p.seasons === 0
               ? 'no finished seasons'
@@ -103,13 +125,22 @@ export function LeagueDeck({
   )
 }
 
-export function HouseDeck({ pools, href }: { pools: HousePool[]; href: (id: string) => string }) {
+export function HouseDeck({
+  pools,
+  href,
+  boardHref,
+}: {
+  pools: HousePool[]
+  href: (id: string) => string
+  boardHref?: (id: string) => string
+}) {
   return (
     <div className={s.deck}>
       {pools.map((p) => (
         <Card
           key={p.id}
           href={href(p.id)}
+          boardHref={boardHref?.(p.id)}
           monogram={p.monogram}
           label={p.label}
           note={p.note}

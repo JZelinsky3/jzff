@@ -514,7 +514,7 @@ function renderQuietCard(
             color: '#9ca3af',
           }}
         >
-          Milestones return when the season does — The Sunday Chronicle
+          Milestones return when the season does, The Sunday Chronicle
         </div>
       </div>
     ),

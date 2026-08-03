@@ -68,7 +68,7 @@ export default async function TradeRoomPage() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 01 · The analyzer</span>
-          <span className="hub-section-title">Weigh a deal —</span>
+          <span className="hub-section-title">Weigh a deal,</span>
           <span className="hub-section-meta">Quick by names · deeper with rosters</span>
         </div>
         {signedIn ? (
@@ -104,7 +104,7 @@ export default async function TradeRoomPage() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 02 · The docket</span>
-          <span className="hub-section-title">Hottest arguments —</span>
+          <span className="hub-section-title">Hottest arguments,</span>
           <span className="hub-section-meta">{signedIn ? 'Sign it or shred it' : 'Sign in to vote'}</span>
         </div>
         {isAdmin && <AdminRegrade />}

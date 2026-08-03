@@ -266,11 +266,11 @@
       +     '<div class="buttons">'
       +       '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.home) + '">'
       +         '<span class="vote-name">' + esc(A ? A.name : m.home) + '</span>'
-      +         '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.home) + '">—</span>'
+      +         '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.home) + '">·</span>'
       +       '</button>'
       +       '<button class="vote-btn" data-matchup="' + esc(m.id) + '" data-team="' + esc(m.away) + '">'
       +         '<span class="vote-name">' + esc(B ? B.name : m.away) + '</span>'
-      +         '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.away) + '">—</span>'
+      +         '<span class="vote-pct" id="vp-' + esc(w.id) + '-' + esc(m.id) + '-' + esc(m.away) + '">·</span>'
       +       '</button>'
       +     '</div>'
       +     '<div class="bar2" id="bar-' + esc(w.id) + '-' + esc(m.id) + '">'
@@ -329,8 +329,8 @@
       var pB = 100 - pA;
       left.style.width = pA + '%';
       rgt.style.width = pB + '%';
-      if (vpA) vpA.textContent = reveal ? pA + '%' : '—';
-      if (vpB) vpB.textContent = reveal ? pB + '%' : '—';
+      if (vpA) vpA.textContent = reveal ? pA + '%' : '·';
+      if (vpB) vpB.textContent = reveal ? pB + '%' : '·';
       if (bar) bar.title = reveal
         ? (teamName(m.home) + ' ' + pA + '% · ' + teamName(m.away) + ' ' + pB + '% · ' + tot + ' picks')
         : 'Picks hidden until you lock in';
@@ -427,7 +427,7 @@
     if (missing.length > 0) submitHint.textContent = 'Pick ' + missing.length + ' more matchup' + (missing.length === 1 ? '' : 's');
     else if (!hlOK) submitHint.textContent = 'Pick Highest + Lowest scorer';
     else if (sameHL) submitHint.textContent = 'Highest and Lowest must differ';
-    else submitHint.textContent = 'Ready — locking in is final';
+    else submitHint.textContent = 'Ready, locking in is final';
   }
 
   async function onSubmitPicks() {
@@ -466,7 +466,7 @@
       renderTally(w);
       renderRecords();
     } catch (e) {
-      submitHint.textContent = 'Network error — try again.';
+      submitHint.textContent = 'Network error, try again.';
       submitBtn.disabled = false;
     }
   }
@@ -522,7 +522,7 @@
   // ── Auth (no login — profile dropdown) ──────────────────────────────────────
   function initAuthUI() {
     if (elAuthSel) {
-      elAuthSel.innerHTML = '<option value="">— pick your name —</option>'
+      elAuthSel.innerHTML = '<option value="">· pick your name ·</option>'
         + state.profiles.map(function (p) {
             return '<option value="' + esc(p.profileId) + '">' + esc(p.name) + '</option>';
           }).join('');

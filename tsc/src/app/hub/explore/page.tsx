@@ -165,7 +165,7 @@ export default async function NewsstandPage() {
         <div className="hub-section">
           <div className="hub-section-header">
             <span className="hub-section-num">{nextNum()} · Readers&apos; choice</span>
-            <span className="hub-section-title">Most bookmarked —</span>
+            <span className="hub-section-title">Most bookmarked,</span>
             <span className="hub-section-meta">As followed by members</span>
           </div>
           <Reveal>
@@ -182,7 +182,7 @@ export default async function NewsstandPage() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">{nextNum()} · On the market</span>
-          <span className="hub-section-title">Leagues promoting themselves —</span>
+          <span className="hub-section-title">Leagues promoting themselves,</span>
           <span className="hub-section-meta">{promoted.length} listed · Commissioner opt-in</span>
         </div>
         {promoted.length === 0 && !(ownPublished.length > 0 && !hasActiveListing) ? (
@@ -251,7 +251,7 @@ export default async function NewsstandPage() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">{nextNum()} · Your shelf</span>
-          <span className="hub-section-title">Almanacs you follow —</span>
+          <span className="hub-section-title">Almanacs you follow,</span>
           <span className="hub-section-meta">{bookmarks.length} bookmarked</span>
         </div>
         {bookmarks.length === 0 ? (
@@ -288,7 +288,7 @@ export default async function NewsstandPage() {
       <div className="hub-section" id="promote">
         <div className="hub-section-header">
           <span className="hub-section-num">{nextNum()} · Self-promotion</span>
-          <span className="hub-section-title">Put yours on the rack —</span>
+          <span className="hub-section-title">Put yours on the rack,</span>
           <span className="hub-section-meta">One listing per account</span>
         </div>
         <Reveal>

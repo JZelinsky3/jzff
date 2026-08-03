@@ -72,8 +72,8 @@ function side(c: RawCompetitor | undefined, fallback: 'home' | 'away'): NflTeamS
   const rec = c?.records?.find((r) => r.type === 'total') ?? c?.records?.[0]
   return {
     abbr: normTeam(t.abbreviation),
-    name: t.displayName ?? t.shortDisplayName ?? '—',
-    short: t.shortDisplayName ?? t.abbreviation ?? '—',
+    name: t.displayName ?? t.shortDisplayName ?? '·',
+    short: t.shortDisplayName ?? t.abbreviation ?? '·',
     logo: t.logo ?? null,
     color: t.color ? `#${t.color.replace(/^#/, '')}` : null,
     score: Number(c?.score ?? 0) || 0,

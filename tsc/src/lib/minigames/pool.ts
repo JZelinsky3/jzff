@@ -42,6 +42,7 @@ import { unstable_cache } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { containsHateSpeech } from '@/lib/contentModeration'
 import { canonicalDraftIds } from '@/lib/canonicalDraft'
+import { loadManagerNames } from './managerNames'
 import {
   getRankLookup,
   normPlayerName,
@@ -257,7 +258,7 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
   const seasonById = new Map(seasons.map((s) => [s.id, s]))
   const seasonIds = seasons.map((s) => s.id)
 
-  const [msRows, managerRows] = await Promise.all([
+  const [msRows, managerName] = await Promise.all([
     pageAll<{
       season_id: string
       manager_id: string
@@ -274,12 +275,10 @@ async function buildSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
         .order('season_id')
         .order('manager_id')
     ),
-    pageAll<{ id: string; display_name: string }>(() =>
-      db.from('managers').select('id, display_name').in('league_id', leagueIds).order('id')
-    ),
+    // The league's own name for each manager, not the platform's. See
+    // ./managerNames.
+    loadManagerNames(db, leagueIds),
   ])
-
-  const managerName = new Map(managerRows.map((m) => [m.id, m.display_name]))
 
   // Team names and manager display names come straight off the platform and
   // have never been screened — unlike league names, which are checked at
@@ -364,7 +363,9 @@ export async function loadSquadIndex(scope: IndexScope): Promise<SquadRef[]> {
   // dealing from a pool that no longer matches the code.
   return unstable_cache(
     async () => buildSquadIndex(scope),
-    ['minigame-squad-index', 'v2', tag, String(lastYear)],
+    // v3: manager names come from the league's profiles now, so a v2 entry
+    // would keep dealing the platform's name for half a day.
+    ['minigame-squad-index', 'v3', tag, String(lastYear)],
     { tags: ['minigame-pool'], revalidate: 60 * 60 * 12 }
   )()
 }

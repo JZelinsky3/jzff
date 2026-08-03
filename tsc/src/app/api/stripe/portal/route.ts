@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const sub = await getUserSubscription(user.id)
   if (!sub?.stripe_customer_id) {
     return NextResponse.json(
-      { error: 'No subscription on file — visit /pricing to start one.' },
+      { error: 'No subscription on file, visit /pricing to start one.' },
       { status: 400 }
     )
   }

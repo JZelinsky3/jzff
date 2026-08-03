@@ -41,8 +41,8 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error: paid
-          ? 'Board limit reached — 5 posted trades per day.'
-          : 'Board limit reached — 2 posted trades per day. Upgrade for 5.',
+          ? 'Board limit reached, 5 posted trades per day.'
+          : 'Board limit reached, 2 posted trades per day. Upgrade for 5.',
       },
       { status: 429 },
     )
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       verdictLength: 'brief',
     })
   } catch {
-    return NextResponse.json({ error: 'Valuation engine unavailable — try again shortly.' }, { status: 502 })
+    return NextResponse.json({ error: 'Valuation engine unavailable, try again shortly.' }, { status: 502 })
   }
 
   // Writes go through the user's own client so hub_trades RLS (insert own)

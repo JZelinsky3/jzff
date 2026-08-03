@@ -215,7 +215,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 <section class="lede">
     <div class="lede-frame">
         <div class="lede-mast"><span class="star">★</span> The Editor's Lede <span class="star">★</span></div>
-        <div class="lede-body" id="lede-body"><span class="dropcap">T</span>he Vault is where the numbers go to stand still — career totals, single games that wouldn't quit, the streaks that made or broke a year. Read it like the back of a baseball card.</div>
+        <div class="lede-body" id="lede-body"><span class="dropcap">T</span>he Vault is where the numbers go to stand still, career totals, single games that wouldn't quit, the streaks that made or broke a year. Read it like the back of a baseball card.</div>
     </div>
 </section>
 
@@ -225,7 +225,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         <h2 class="section-title">Career, in Five Numbers</h2>
         <span class="section-meta" id="headline-meta"></span>
     </div>
-    <p class="section-intro" id="headline-intro">The five (or six) totals that frame the whole chronicle. Cumulative across every league synced into the bundle — bigger sample sizes get heavier weight.</p>
+    <p class="section-intro" id="headline-intro">The five (or six) totals that frame the whole chronicle. Cumulative across every league synced into the bundle, bigger sample sizes get heavier weight.</p>
     <div class="records" id="headlines"><div class="loading">Loading…</div></div>
 </section>
 
@@ -259,12 +259,12 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
     <div class="pedigree">
         <div>
             <div class="aside-title">Drafted Most Often</div>
-            <p class="aside-deck">The names you keep punching tickets for, across years and leagues. Sample sizes are small in fantasy — these guys have stuck.</p>
+            <p class="aside-deck">The names you keep punching tickets for, across years and leagues. Sample sizes are small in fantasy, these guys have stuck.</p>
             <div class="repeat-list" id="ped-repeat"><div class="empty">Loading…</div></div>
         </div>
         <aside>
             <div class="aside-title">Earliest Picks on File</div>
-            <p class="aside-deck">The franchise cornerstones — every R1 / early-R2 pick you've ever made, sorted by overall draft slot.</p>
+            <p class="aside-deck">The franchise cornerstones, every R1 / early-R2 pick you've ever made, sorted by overall draft slot.</p>
             <table class="early-tab" id="ped-early-tab" hidden>
                 <thead><tr><th class="num">Pick</th><th>Year</th><th>Player</th><th>Pos</th></tr></thead>
                 <tbody id="ped-early"></tbody>
@@ -284,7 +284,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
     <div class="coming">
         <div class="coming-mast">★ Records Watch ★</div>
         <div class="coming-head">Streaks &amp; paces, tracked <em>live.</em></div>
-        <div class="coming-body" id="watch-body">Active win streaks, points-per-game windows, win-rate streaks — anything currently in motion that could move the Vault. Goes live when the in-season pipeline lands.</div>
+        <div class="coming-body" id="watch-body">Active win streaks, points-per-game windows, win-rate streaks, anything currently in motion that could move the Vault. Goes live when the in-season pipeline lands.</div>
         <div class="coming-note" id="watch-note">Ships with Phase 6 · The War Room</div>
     </div>
 </section>
@@ -439,7 +439,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
                 '<td class="num">' + p.overall + '</td>' +
                 '<td>' + p.year + '</td>' +
                 '<td class="player">' + escapeHtml(p.player) + '</td>' +
-                '<td class="pos">' + escapeHtml(p.position || '—') + '</td>' +
+                '<td class="pos">' + escapeHtml(p.position || '·') + '</td>' +
                 '</tr>'
         }).join('')
     }

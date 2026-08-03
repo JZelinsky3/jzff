@@ -93,7 +93,7 @@ body{ background:var(--ink); }
 (function(){
     'use strict';
     function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-    function num(n,d){if(n==null||isNaN(n))return '—';return Number(n).toLocaleString('en-US',{maximumFractionDigits:d==null?1:d});}
+    function num(n,d){if(n==null||isNaN(n))return '·';return Number(n).toLocaleString('en-US',{maximumFractionDigits:d==null?1:d});}
 
     function mergeClutch(wins, losses){
         var map={};
@@ -183,9 +183,9 @@ body{ background:var(--ink); }
             return '<div class="pd-card card-x" data-x>'+
                 '<div class="pd-cap"><div class="lbl">'+esc(rec.label)+'</div></div>'+
                 '<div class="podium">'+
-                    '<div class="step s2"><div class="medal">2ND</div><div class="who">'+esc(s.name||'—')+'</div><div class="vl">'+esc(s.val||'')+'</div></div>'+
-                    '<div class="step s1"><div class="medal">1ST</div><div class="who">'+esc(g.name||'—')+'</div><div class="vl">'+esc(g.val||'')+'</div></div>'+
-                    '<div class="step s3"><div class="medal">3RD</div><div class="who">'+esc(b.name||'—')+'</div><div class="vl">'+esc(b.val||'')+'</div></div>'+
+                    '<div class="step s2"><div class="medal">2ND</div><div class="who">'+esc(s.name||'·')+'</div><div class="vl">'+esc(s.val||'')+'</div></div>'+
+                    '<div class="step s1"><div class="medal">1ST</div><div class="who">'+esc(g.name||'·')+'</div><div class="vl">'+esc(g.val||'')+'</div></div>'+
+                    '<div class="step s3"><div class="medal">3RD</div><div class="who">'+esc(b.name||'·')+'</div><div class="vl">'+esc(b.val||'')+'</div></div>'+
                 '</div>'+
                 expandBlock(r)+
             '</div>';

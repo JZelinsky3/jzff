@@ -219,7 +219,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 
 <header class="year-hero">
     <div class="year-sup"><span class="star">★</span> The <em>{{MGR_NAME_UPPER}}</em> Season Files <span class="star">★</span></div>
-    <h1 class="year-big" id="year-big">—</h1>
+    <h1 class="year-big" id="year-big">·</h1>
     <p class="year-deck" id="year-deck">Loading season…</p>
     <div class="year-rule"></div>
     <div class="year-nav" id="year-nav"></div>
@@ -250,7 +250,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 </div>
 
 <footer class="foot">
-    <div>End of <span id="foot-year">—</span> · The Season Files</div>
+    <div>End of <span id="foot-year">·</span> · The Season Files</div>
     <div style="margin-top:.5rem;">The <em>{{MGR_NAME}}</em> Chronicle · The <em>jzFF</em> Dispatch</div>
 </footer>
 
@@ -281,7 +281,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         })
     }
     function suf(n) { var s = ['th','st','nd','rd'], v = n % 100; return s[(v-20)%10] || s[v] || s[0] }
-    function fmtPts(n) { return n == null ? '—' : (Math.round(n * 10) / 10).toFixed(1) }
+    function fmtPts(n) { return n == null ? '·' : (Math.round(n * 10) / 10).toFixed(1) }
 
     var params = new URLSearchParams(window.location.search)
     var year = parseInt(params.get('year') || '0', 10)
@@ -402,8 +402,8 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
                 '<td class="num">' + p.overall + '</td>' +
                 '<td>R' + p.round + '.' + p.roundPick + '</td>' +
                 '<td class="player">' + escapeHtml(p.player) + '</td>' +
-                '<td class="pos">' + escapeHtml(p.position || '—') + '</td>' +
-                '<td class="pos">' + escapeHtml(p.nflTeam || '—') + '</td>' +
+                '<td class="pos">' + escapeHtml(p.position || '·') + '</td>' +
+                '<td class="pos">' + escapeHtml(p.nflTeam || '·') + '</td>' +
                 '</tr>'
         }).join('')
         var draftHtml = draftRows
@@ -420,7 +420,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 
         var hiBlock = l.weekly && l.weekly.highScore != null
             ? '<div class="box-big">' + fmtPts(l.weekly.highScore) + '</div>' +
-              '<div class="box-big-sub">Week ' + (l.weekly.highWeek || '—') + ' high</div>'
+              '<div class="box-big-sub">Week ' + (l.weekly.highWeek || '·') + ' high</div>'
             : '<div class="box-empty">No high recorded.</div>'
 
         var loBlock = l.weekly && l.weekly.lowScore != null
@@ -436,7 +436,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
                 '</div>' +
                 '<div class="lg-record">' +
                     '<div class="lg-rec-val">' + escapeHtml(l.record) + '</div>' +
-                    '<div class="lg-rec-lbl">' + (l.rank != null ? l.rank + suf(l.rank) + ' place' : '—') + '</div>' +
+                    '<div class="lg-rec-lbl">' + (l.rank != null ? l.rank + suf(l.rank) + ' place' : '·') + '</div>' +
                 '</div>' +
             '</div>' +
             ttlBanner +

@@ -1378,12 +1378,12 @@ table.ledger tbody tr:hover { background: rgba(46,120,58,.06); }
     <div class="ticker-track">
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> THE RECORD BOOK · {{LEAGUE_NAME_UPPER}}</span>
-            <span class="ticker-item ticker-stat" data-stat="seasons-record">★ — SEASONS · EVERY RECORD</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-record">★ · SEASONS · EVERY RECORD</span>
             <span class="ticker-item"><span class="ticker-star">★</span> WIN STREAKS · SEASON BESTS · ALL-TIME MARKS</span>
         </div>
         <div class="ticker-group">
             <span class="ticker-item"><span class="ticker-star">★</span> THE RECORD BOOK · {{LEAGUE_NAME_UPPER}}</span>
-            <span class="ticker-item ticker-stat" data-stat="seasons-record">★ — SEASONS · EVERY RECORD</span>
+            <span class="ticker-item ticker-stat" data-stat="seasons-record">★ · SEASONS · EVERY RECORD</span>
             <span class="ticker-item"><span class="ticker-star">★</span> WIN STREAKS · SEASON BESTS · ALL-TIME MARKS</span>
         </div>
     </div>
@@ -1519,14 +1519,14 @@ function populateChrome(managers) {
         DIRMAP.forEach(m => { pts += m.total_pf || 0; });
         const games = leagueMeta.total_matchups ? leagueMeta.total_matchups.toLocaleString() : null;
         wire.innerHTML = [
-            `<strong>${seasonCount || '—'}</strong> SEASONS`,
+            `<strong>${seasonCount || '·'}</strong> SEASONS`,
             games ? `<strong>${games}</strong> MATCHUPS` : null,
             pts ? `<strong>${fmtPts(pts)}</strong> POINTS SCRIBED` : null,
             CROWN_COUNT ? `<strong>${CROWN_COUNT}</strong> CROWNS` : null,
         ].filter(Boolean).join(' &nbsp;·&nbsp; ');
     }
     document.querySelectorAll('.ticker-stat[data-stat="seasons-record"]').forEach(el => {
-        el.innerHTML = `<span class="ticker-star">★</span> ${seasonCount || '—'} SEASONS · EVERY RECORD`;
+        el.innerHTML = `<span class="ticker-star">★</span> ${seasonCount || '·'} SEASONS · EVERY RECORD`;
     });
 }
 
@@ -1582,7 +1582,7 @@ function mgrAttr(...ids) {
     return list.length ? ` data-mgr="${list.join(' ')}"` : '';
 }
 function ordinal(n) {
-    if (!n) return '—';
+    if (!n) return '·';
     const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
@@ -1856,32 +1856,32 @@ function seasonColsPF() {
         { h: 'Manager', cls: 'name-link', cell: r => mgrLink(r.user_id, r.owner) },
         { h: 'Reg PF', cls: 'num hi', cell: r => fmtPts(r.reg_pf) },
         { h: 'PPG', cls: 'num', cell: r => (r.reg_ppg ?? 0).toFixed(1) },
-        { h: 'Record', cls: 'num', cell: r => r.reg_record?.replace(/-0$/, '') ?? '—' },
+        { h: 'Record', cls: 'num', cell: r => r.reg_record?.replace(/-0$/, '') ?? '·' },
         { h: 'Year', cls: 'num', cell: r => r.season },
-        { h: 'Team', cls: '', cell: r => r.team_name || '—' },
-        { h: 'Finish', cls: 'num', cell: r => r.final_rank ? ordinal(r.final_rank) : '—' },
+        { h: 'Team', cls: '', cell: r => r.team_name || '·' },
+        { h: 'Finish', cls: 'num', cell: r => r.final_rank ? ordinal(r.final_rank) : '·' },
     ];
 }
 function seasonColsTotalPF() {
     return [
         { h: 'Manager', cls: 'name-link', cell: r => mgrLink(r.user_id, r.owner) },
         { h: 'Total PF', cls: 'num hi', cell: r => fmtPts(r.total_pf) },
-        { h: 'Games', cls: 'num', cell: r => r.total_games ?? '—' },
-        { h: 'Full Record', cls: 'num', cell: r => r.total_record?.replace(/-0$/, '') ?? '—' },
+        { h: 'Games', cls: 'num', cell: r => r.total_games ?? '·' },
+        { h: 'Full Record', cls: 'num', cell: r => r.total_record?.replace(/-0$/, '') ?? '·' },
         { h: 'Year', cls: 'num', cell: r => r.season },
-        { h: 'Team', cls: '', cell: r => r.team_name || '—' },
-        { h: 'Finish', cls: 'num', cell: r => r.final_rank ? ordinal(r.final_rank) : '—' },
+        { h: 'Team', cls: '', cell: r => r.team_name || '·' },
+        { h: 'Finish', cls: 'num', cell: r => r.final_rank ? ordinal(r.final_rank) : '·' },
     ];
 }
 function seasonColsRecord() {
     return [
         { h: 'Manager', cls: 'name-link', cell: r => mgrLink(r.user_id, r.owner) },
-        { h: 'Record', cls: 'num hi', cell: r => r.reg_record?.replace(/-0$/, '') ?? '—' },
+        { h: 'Record', cls: 'num hi', cell: r => r.reg_record?.replace(/-0$/, '') ?? '·' },
         { h: 'Win %', cls: 'num', cell: r => fmtPct(r.reg_win_pct) },
         { h: 'Reg PF', cls: 'num', cell: r => fmtPts(r.reg_pf) },
         { h: 'Year', cls: 'num', cell: r => r.season },
-        { h: 'Team', cls: '', cell: r => r.team_name || '—' },
-        { h: 'Finish', cls: 'num', cell: r => r.final_rank ? ordinal(r.final_rank) : '—' },
+        { h: 'Team', cls: '', cell: r => r.team_name || '·' },
+        { h: 'Finish', cls: 'num', cell: r => r.final_rank ? ordinal(r.final_rank) : '·' },
     ];
 }
 function seasonColsPPG() {
@@ -1889,9 +1889,9 @@ function seasonColsPPG() {
         { h: 'Manager', cls: 'name-link', cell: r => mgrLink(r.user_id, r.owner) },
         { h: 'PPG', cls: 'num hi', cell: r => (r.reg_ppg ?? 0).toFixed(2) },
         { h: 'Reg PF', cls: 'num', cell: r => fmtPts(r.reg_pf) },
-        { h: 'Record', cls: 'num', cell: r => r.reg_record?.replace(/-0$/, '') ?? '—' },
+        { h: 'Record', cls: 'num', cell: r => r.reg_record?.replace(/-0$/, '') ?? '·' },
         { h: 'Year', cls: 'num', cell: r => r.season },
-        { h: 'Team', cls: '', cell: r => r.team_name || '—' },
+        { h: 'Team', cls: '', cell: r => r.team_name || '·' },
     ];
 }
 function seasonColsPA() {
@@ -1899,9 +1899,9 @@ function seasonColsPA() {
         { h: 'Manager', cls: 'name-link', cell: r => mgrLink(r.user_id, r.owner) },
         { h: 'Points Against', cls: 'num hi', cell: r => fmtPts(r.reg_pa) },
         { h: 'PA / Game', cls: 'num', cell: r => (r.reg_pa_ppg ?? 0).toFixed(1) },
-        { h: 'Record', cls: 'num', cell: r => r.reg_record?.replace(/-0$/, '') ?? '—' },
+        { h: 'Record', cls: 'num', cell: r => r.reg_record?.replace(/-0$/, '') ?? '·' },
         { h: 'Year', cls: 'num', cell: r => r.season },
-        { h: 'Team', cls: '', cell: r => r.team_name || '—' },
+        { h: 'Team', cls: '', cell: r => r.team_name || '·' },
     ];
 }
 
@@ -2014,7 +2014,7 @@ function buildWireChapter(book) {
             <div class="wp-mast">
                 <div class="wp-title">The Weekly Wire</div>
                 <div class="wp-dateline">
-                    <span>Vol. ${vol || '—'}${est ? ' · Est. ' + est : ''}</span>
+                    <span>Vol. ${vol || '·'}${est ? ' · Est. ' + est : ''}</span>
                     <span>All the scores fit to print</span>
                     <span>Price: one waiver claim</span>
                 </div>
@@ -2277,25 +2277,25 @@ function buildCareerChapter(managers, active, alumni, book, managerHighs) {
     const icard = (label, value, name, detail, userId) => `
         <div class="icard"${mgrAttr(userId)}>
             <div class="ic-label">${label}</div>
-            <div class="ic-value">${value ?? '—'}</div>
-            <div class="ic-holder">${userId ? mgrLink(userId, name) : (name ?? '—')}</div>
+            <div class="ic-value">${value ?? '·'}</div>
+            <div class="ic-holder">${userId ? mgrLink(userId, name) : (name ?? '·')}</div>
             <div class="ic-detail">${detail ?? ''}</div>
         </div>`;
 
     const cards = `
         <div class="icards">
-            ${icard('Most Career Wins', atWins?.wins ?? '—', atWins?.name,
+            ${icard('Most Career Wins', atWins?.wins ?? '·', atWins?.name,
                 `${atWins?.wins||0}–${atWins?.losses||0} all-time`, atWins?.user_id)}
             ${icard('Most Career Points', fmtPts(atPF?.total_pf || 0), atPF?.name,
-                `across ${atPF?.seasons_played || '—'} seasons`, atPF?.user_id)}
+                `across ${atPF?.seasons_played || '·'} seasons`, atPF?.user_id)}
             ${icard('Highest Game Ever', (atHigh?.score || 0).toFixed(2), atHigh?.owner,
                 atHigh ? `${whenStr(atHigh.season, atHigh.week)} · vs ${atHigh.opp_owner}` : '', atHigh?.user_id)}
             ${icard('Lowest Game Ever', (atLow?.score || 0).toFixed(2), atLow?.owner,
                 atLow ? `${whenStr(atLow.season, atLow.week)}${atLow.opp_owner ? ' · vs ' + atLow.opp_owner : ''}` : '', atLow?.user_id)}
-            ${icard('Most Championships', atChips?.championships ?? '—', atChips?.name,
-                atChips?.championship_seasons?.join(', ') || '—', atChips?.user_id)}
-            ${icard('Most Playoff Trips', atPlayoff?.playoff_appearances ?? '—', atPlayoff?.name,
-                `${atPlayoff?.seasons_played || '—'} seasons`, atPlayoff?.user_id)}
+            ${icard('Most Championships', atChips?.championships ?? '·', atChips?.name,
+                atChips?.championship_seasons?.join(', ') || '·', atChips?.user_id)}
+            ${icard('Most Playoff Trips', atPlayoff?.playoff_appearances ?? '·', atPlayoff?.name,
+                `${atPlayoff?.seasons_played || '·'} seasons`, atPlayoff?.user_id)}
         </div>`;
 
     const byWins = [...active].sort((a, b) => b.wins - a.wins);
@@ -2348,7 +2348,7 @@ function buildLeadersTable(managers) {
             <td class="num">${qualPct}</td>
             <td class="num">${fmtPts(m.total_pf)}</td>
             <td class="num">${m.playoff_appearances}</td>
-            <td class="num">${m.championships > 0 ? '★'.repeat(m.championships) : '—'}</td>
+            <td class="num">${m.championships > 0 ? '★'.repeat(m.championships) : '·'}</td>
         </tr>`;
     }).join('');
     return `
@@ -2374,16 +2374,16 @@ function buildPlayoffTable(managers) {
     const rows = managers.map((m, i) => {
         const pr = parseRecord(m.playoff_record || '0-0-0');
         const pct = pr.w + pr.l + pr.t > 0
-            ? fmtPct((pr.w + pr.t * 0.5) / (pr.w + pr.l + pr.t)) : '—';
+            ? fmtPct((pr.w + pr.t * 0.5) / (pr.w + pr.l + pr.t)) : '·';
         return `<tr${mgrAttr(m.user_id)}>
             <td class="r${i === 0 ? ' gold' : ''}">${i + 1}</td>
             <td class="name-link">${mgrLink(m.user_id, m.name)}</td>
-            <td class="num">${m.playoff_record || '—'}</td>
+            <td class="num">${m.playoff_record || '·'}</td>
             <td class="num hi">${pct}</td>
             <td class="num">${fmtPts(m.playoff_pf || 0)}</td>
             <td class="num">${fmtPts(m.playoff_pa || 0)}</td>
             <td class="num">${m.playoff_appearances}</td>
-            <td class="num">${m.championships > 0 ? '★'.repeat(m.championships) : '—'}</td>
+            <td class="num">${m.championships > 0 ? '★'.repeat(m.championships) : '·'}</td>
         </tr>`;
     }).join('');
     return `
@@ -2418,7 +2418,7 @@ function buildH2HTable(managers) {
         .sort((a, b) => b.h2h_pct - a.h2h_pct);
 
     const rows = sorted.map((m, i) => {
-        let bestPct = -1, bestName = '—', worstPct = 2, worstName = '—';
+        let bestPct = -1, bestName = '·', worstPct = 2, worstName = '·';
         m.h2h.forEach(opp => {
             const r = parseRecord(opp.total_record);
             if (opp.total_games >= 4) {
@@ -2488,7 +2488,7 @@ function buildPBTable(m) {
         <td>${g.opp_name}</td>
         <td class="num">${g.season}</td>
         <td class="num">W${g.week}</td>
-        <td>${g.team || '—'}</td>
+        <td>${g.team || '·'}</td>
     </tr>`).join('');
     return `
         <div class="ledger-wrap"${mgrAttr(m.user_id)}>
@@ -2521,13 +2521,13 @@ function buildAlumniTable(alumni) {
         .map((m, i) => `<tr${mgrAttr(m.user_id)}>
             <td class="r">${i + 1}</td>
             <td class="name-link">${mgrLink(m.user_id, m.name)}</td>
-            <td class="num">${m.seasons_played ?? '—'}</td>
+            <td class="num">${m.seasons_played ?? '·'}</td>
             <td class="num">${m.wins ?? 0}–${m.losses ?? 0}${m.ties ? '–' + m.ties : ''}</td>
             <td class="num">${fmtPct(m.win_pct)}</td>
             <td class="num">${fmtPts(m.total_pf)}</td>
             <td class="num">${m.playoff_appearances ?? 0}</td>
             <td class="num">${m.top_three_finishes ?? 0}</td>
-            <td class="num">${(m.championships || 0) > 0 ? '★'.repeat(m.championships) : '—'}</td>
+            <td class="num">${(m.championships || 0) > 0 ? '★'.repeat(m.championships) : '·'}</td>
         </tr>`).join('');
     return `
         <div class="ledger-wrap">
@@ -2694,7 +2694,7 @@ function buildGauntletTier(managers, tier) {
                 : `${p.remaining.length} left`;
         return `
             <div class="milestone-row gauntlet-progress"${mgrAttr(m.user_id)}>
-                <span class="milestone-rank">—</span>
+                <span class="milestone-rank">·</span>
                 <div class="milestone-name-col">
                     <div class="milestone-name">${mgrLink(m.user_id, m.name)}</div>
                     <div class="milestone-when">${p.achieved}/${p.total}${remainTxt ? ' · ' + remainTxt : ''}</div>
@@ -2782,7 +2782,7 @@ function buildClutchRows(rows) {
             firstZeroEmitted = true;
             return `${head}
                 <div class="milestone-row clutch-zero"${mgrAttr(r.user_id)}>
-                    <span class="milestone-rank">—</span>
+                    <span class="milestone-rank">·</span>
                     <div class="milestone-name-col">
                         <div class="milestone-name">${mgrLink(r.user_id, r.name)}</div>
                     </div>
@@ -2865,7 +2865,7 @@ function buildBoomRows(rows, tone, word) {
             firstZeroEmitted = true;
             return `${head}
                 <div class="milestone-row clutch-zero"${mgrAttr(r.user_id)}>
-                    <span class="milestone-rank">—</span>
+                    <span class="milestone-rank">·</span>
                     <div class="milestone-name-col">
                         <div class="milestone-name">${mgrLink(r.user_id, r.name)}</div>
                     </div>

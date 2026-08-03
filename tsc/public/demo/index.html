@@ -23,14 +23,14 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The Sunday Chronicle">
 <meta property="og:title" content="The Lakeside League · Live Demo">
-<meta property="og:description" content="Live demo of The Sunday Chronicle — a fantasy league's full history rendered as a public almanac. Champions, drafts, rivalries, records, live tools.">
+<meta property="og:description" content="Live demo of The Sunday Chronicle, a fantasy league's full history rendered as a public almanac. Champions, drafts, rivalries, records, live tools.">
 <meta property="og:url" content="https://thesundaychronicle.app/demo/">
 <meta property="og:image" content="https://thesundaychronicle.app/api/og/demo?v=1">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The Lakeside League · Live Demo">
-<meta name="twitter:description" content="Live demo of The Sunday Chronicle — a fantasy league's full history rendered as a public almanac.">
+<meta name="twitter:description" content="Live demo of The Sunday Chronicle, a fantasy league's full history rendered as a public almanac.">
 <meta name="twitter:image" content="https://thesundaychronicle.app/api/og/demo?v=1">
 <style>
 /* ============================================================
@@ -1721,7 +1721,7 @@ body {
             var ma = rv.manager_a || {}, mb = rv.manager_b || {};
             var aW = (ma.record_total && ma.record_total.wins) != null ? ma.record_total.wins : (ma.wins || 0);
             var bW = (mb.record_total && mb.record_total.wins) != null ? mb.record_total.wins : (mb.wins || 0);
-            return '<div><b>' + esc(first(ma.name) || '—') + '</b><u>vs</u><b>' + esc(first(mb.name) || '—') + '</b>' +
+            return '<div><b>' + esc(first(ma.name) || '·') + '</b><u>vs</u><b>' + esc(first(mb.name) || '·') + '</b>' +
                    '<i>' + aW + '–' + bW + '</i></div>';
           });
         }

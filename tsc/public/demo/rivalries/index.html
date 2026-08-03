@@ -1502,7 +1502,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
         <div class="rv-wins${isLeading ? ' hot' : ''}">${side.wins}</div>
         <div class="rv-wins-lbl">Wins</div>
         <div class="rv-name">${escapeHtml(side.name)}</div>
-        <div class="rv-ppg">${side.avg_ppg ? side.avg_ppg.toFixed(1) + ' avg PPG' : '—'}</div>
+        <div class="rv-ppg">${side.avg_ppg ? side.avg_ppg.toFixed(1) + ' avg PPG' : '·'}</div>
         <div class="rv-rec">Reg ${escapeHtml(side.reg_record)} &nbsp;·&nbsp; Playoff ${escapeHtml(side.playoff_record)}</div>
         <div class="rv-dots">${dots}</div>
         <div class="rv-dots-label">Last 5</div>
@@ -1528,7 +1528,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
     const bLeading = !rv.is_deadlocked && rv.leader_name === rv.manager_b.name;
     const lastGameStr = rv.last_meeting
       ? `${rv.last_meeting.year} · W${rv.last_meeting.week}`
-      : '—';
+      : '·';
 
     // Bar segments: A from left (in red if A leads, charcoal otherwise), B from right.
     const aColor = aLeading ? '#dc2626' : '#1f2937';
@@ -1559,7 +1559,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
                 <div class="rv-bar" style="${barStyle}"></div>
                 <div class="rv-bar-nums"><span>${rv.manager_a.wins}</span><span>${rv.manager_b.wins}</span></div>
               </div>
-              <div class="rv-series-lbl">${rv.is_deadlocked ? 'Deadlocked' : rv.leader_name ? `${escapeHtml(rv.leader_name)} Leads` : '—'}</div>
+              <div class="rv-series-lbl">${rv.is_deadlocked ? 'Deadlocked' : rv.leader_name ? `${escapeHtml(rv.leader_name)} Leads` : '·'}</div>
               <div class="rv-last-game">Last: <span>${lastGameStr}</span></div>
             </div>
             ${buildSide(rv.manager_b, 'b', bLeading)}
@@ -1731,7 +1731,7 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
   function tidy(rec) {
     const parts = (rec || '').split('-');
     if (parts.length === 3 && parts[2] === '0') return parts.slice(0, 2).join('-');
-    return rec || '—';
+    return rec || '·';
   }
 
   // Returns 'a' | 'b' | null indicating which side has the higher value
@@ -1822,18 +1822,18 @@ body { font-family: var(--sans); background: var(--rv-bg); color: var(--rv-white
       { label: 'Regular Season', a: tidy(a.reg_record), b: tidy(b.reg_record), cmp: regCmp },
       { label: 'Playoff Series', a: tidy(a.playoff_record), b: tidy(b.playoff_record), cmp: poCmp },
       { label: 'Avg PPG',
-        a: typeof a.avg_ppg === 'number' && a.avg_ppg > 0 ? a.avg_ppg.toFixed(1) : '—',
-        b: typeof b.avg_ppg === 'number' && b.avg_ppg > 0 ? b.avg_ppg.toFixed(1) : '—',
+        a: typeof a.avg_ppg === 'number' && a.avg_ppg > 0 ? a.avg_ppg.toFixed(1) : '·',
+        b: typeof b.avg_ppg === 'number' && b.avg_ppg > 0 ? b.avg_ppg.toFixed(1) : '·',
         cmp: ppgCmp },
       { label: 'High Score',
-        a: aHigh != null ? aHigh.toFixed(1) : '—',
-        b: bHigh != null ? bHigh.toFixed(1) : '—',
+        a: aHigh != null ? aHigh.toFixed(1) : '·',
+        b: bHigh != null ? bHigh.toFixed(1) : '·',
         aSub: a.high_score ? `${a.high_score.year} W${a.high_score.week}` : '',
         bSub: b.high_score ? `${b.high_score.year} W${b.high_score.week}` : '',
         cmp: highCmp },
       { label: 'Best Win Margin',
-        a: aBest ? '+' + aBest.margin.toFixed(1) : '—',
-        b: bBest ? '+' + bBest.margin.toFixed(1) : '—',
+        a: aBest ? '+' + aBest.margin.toFixed(1) : '·',
+        b: bBest ? '+' + bBest.margin.toFixed(1) : '·',
         aSub: aBest ? `${aBest.year} W${aBest.week}` : '',
         bSub: bBest ? `${bBest.year} W${bBest.week}` : '',
         cmp: bestCmp },

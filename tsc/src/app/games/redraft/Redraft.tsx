@@ -262,11 +262,11 @@ export function Redraft({
                     {s.round}.{String(s.overallPick).padStart(2, '0')}
                   </span>
                   <span className={won ? styles.ledgerMine : styles.ledgerMineLose}>
-                    {mineC?.name ?? '—'}
+                    {mineC?.name ?? '·'}
                     <span className={styles.ledgerPpg}>{(mineC?.ppg ?? 0).toFixed(1)}</span>
                   </span>
                   <span className={styles.ledgerReal}>
-                    {realC?.name ?? '—'}
+                    {realC?.name ?? '·'}
                     <span className={styles.ledgerPpg}>{(realC?.ppg ?? 0).toFixed(1)}</span>
                   </span>
                 </li>
@@ -398,7 +398,7 @@ export function Redraft({
               <div className={styles.revealBest}>
                 Best on that list was {best.name}, {best.ppg.toFixed(2)} a game
                 {best.overallPick > slot.overallPick
-                  ? ` — he actually went at ${best.overallPick}.`
+                  ? `, and he actually went at ${best.overallPick}.`
                   : '.'}
               </div>
             )}

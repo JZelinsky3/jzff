@@ -1269,7 +1269,7 @@ body { background: var(--ls-bg); }
     <section class="dash-section">
         <div class="dash-section-head">
             <span class="dash-section-num">§ 01 · The Pulse</span>
-            <span class="dash-section-title">A read on <em>right now —</em></span>
+            <span class="dash-section-title">A read on <em>right now ·</em></span>
             <span class="dash-section-meta">Standings · Form · Power</span>
         </div>
         <div class="dash-snapshot">
@@ -1322,7 +1322,7 @@ body { background: var(--ls-bg); }
     <section class="dash-section">
         <div class="dash-section-head">
             <span class="dash-section-num">§ 02 · This Week</span>
-            <span class="dash-section-title">Featured <em>games &amp; voices —</em></span>
+            <span class="dash-section-title">Featured <em>games &amp; voices ·</em></span>
             <span class="dash-section-meta">GOTW · Matchups · Pick'ems · Mill</span>
         </div>
         <div class="dash-weekly">
@@ -1370,7 +1370,7 @@ body { background: var(--ls-bg); }
                 <div class="gotw-h2h-block">
                     <div class="gotw-h2h-side">
                         <div class="gotw-h2h-side-label">Avg PPG</div>
-                        <div class="gotw-h2h-side-val" id="gotw-a-h2h-ppg">—</div>
+                        <div class="gotw-h2h-side-val" id="gotw-a-h2h-ppg">·</div>
                     </div>
                     <div class="gotw-h2h-center">
                         <div class="gotw-h2h-title">All-time H2H</div>
@@ -1378,7 +1378,7 @@ body { background: var(--ls-bg); }
                     </div>
                     <div class="gotw-h2h-side">
                         <div class="gotw-h2h-side-label">Avg PPG</div>
-                        <div class="gotw-h2h-side-val" id="gotw-b-h2h-ppg">—</div>
+                        <div class="gotw-h2h-side-val" id="gotw-b-h2h-ppg">·</div>
                     </div>
                 </div>
                 <div class="gotw-h2h-note-center" id="gotw-h2h-note"></div>
@@ -1408,7 +1408,7 @@ body { background: var(--ls-bg); }
                             <div class="weekly-quick-status"><span class="status-pip"></span><span class="status-label">Incomplete</span></div>
                         </div>
                         <h3 class="weekly-quick-title">Make your <em>picks</em></h3>
-                        <p class="weekly-quick-desc">Pick the winner of every matchup. Honor-system — claim your name and vote.</p>
+                        <p class="weekly-quick-desc">Pick the winner of every matchup. Honor-system, claim your name and vote.</p>
                     </a>
                     <div class="weekly-quick-foot">
                         <button class="weekly-quick-skip" type="button" data-action="skip">Skip this week</button>
@@ -1436,7 +1436,7 @@ body { background: var(--ls-bg); }
     <section class="dash-section">
         <div class="dash-section-head">
             <span class="dash-section-num">§ 03 · The Watch</span>
-            <span class="dash-section-title">Records, milestones, <em>coaching —</em></span>
+            <span class="dash-section-title">Records, milestones, <em>coaching ·</em></span>
             <span class="dash-section-meta">Just broken · One away</span>
         </div>
         <div class="dash-watch">
@@ -1497,7 +1497,7 @@ body { background: var(--ls-bg); }
     <section class="dash-section">
         <div class="dash-section-head">
             <span class="dash-section-num">§ 04 · Trade Desk</span>
-            <span class="dash-section-title">Recent <em>deals &amp; tools —</em></span>
+            <span class="dash-section-title">Recent <em>deals &amp; tools ·</em></span>
             <span class="dash-section-meta">League trades · Analyzer · Finder</span>
         </div>
 
@@ -1596,12 +1596,12 @@ function snapAbbrev(s) {
     var meta = document.getElementById('snap-standings-meta');
     if (!host) return;
     if (!data || !data.rows || !data.rows.length) {
-      host.innerHTML = '<div class="snap-empty">Standings are quiet — check back once the season opens.</div>';
+      host.innerHTML = '<div class="snap-empty">Standings are quiet, check back once the season opens.</div>';
       if (meta) meta.textContent = '';
       return;
     }
     host.innerHTML = data.rows.map(function (r, i) {
-      var nm = snapFitName(r.team || r.name || '—');
+      var nm = snapFitName(r.team || r.name || '·');
       var rec  = (r.wins || 0) + '-' + (r.losses || 0) + ((r.ties || 0) > 0 ? '-' + r.ties : '');
       var podium = i < 3 ? ' podium-' + (i + 1) : (i === 0 ? ' leader' : '');
       return '<div class="snap-row' + podium + '">' +
@@ -1646,7 +1646,7 @@ function snapAbbrev(s) {
     });
 
     host.innerHTML = sortedRows.map(function (r, idx) {
-      var nm = snapFitName(r.team || r.name || '—', true);
+      var nm = snapFitName(r.team || r.name || '·', true);
       // Form arrays come oldest-first; reverse so the most recent week
       // reads left in the pill strip (matches the standings page).
       var form = (r.form || []).slice().reverse();
@@ -1659,7 +1659,7 @@ function snapAbbrev(s) {
         else                pills += '<i class="e">·</i>';
       }
       var ppg = (typeof r.ppg5 === 'number') ? r.ppg5.toFixed(1)
-              : (typeof r.ppg  === 'number') ? r.ppg.toFixed(1) : '—';
+              : (typeof r.ppg  === 'number') ? r.ppg.toFixed(1) : '·';
       var podium = idx < 3 ? ' podium-' + (idx + 1) : '';
       return '<div class="snap-form-row' + podium + '">' +
                '<span class="snap-pos">' + (idx + 1) + '.</span>' +
@@ -1696,10 +1696,10 @@ function snapAbbrev(s) {
       return;
     }
     host.innerHTML = teams.map(function (r, idx) {
-      var nm = snapFitName(r.team_name || r.manager || '—');
+      var nm = snapFitName(r.team_name || r.manager || '·');
       var d = typeof r.delta === 'number' ? r.delta : 0;
       var deltaCls = d > 0 ? 'up' : d < 0 ? 'down' : 'same';
-      var deltaTxt = d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + Math.abs(d) : '—';
+      var deltaTxt = d > 0 ? '↑ ' + d : d < 0 ? '↓ ' + Math.abs(d) : '·';
       var score = (typeof r.score === 'number') ? r.score.toFixed(1) : '';
       var podium = idx < 3 ? ' podium-' + (idx + 1) : '';
       return '<div class="snap-row' + podium + '">' +
@@ -1754,10 +1754,10 @@ function snapAbbrev(s) {
     function set(id, val) { var el = document.getElementById(id); if (el && val != null) el.textContent = val; }
     function setHtml(id, val) { var el = document.getElementById(id); if (el && val != null) el.innerHTML = val; }
 
-    set('gotw-a-name',   a.team || a.name || '—');
+    set('gotw-a-name',   a.team || a.name || '·');
     set('gotw-a-owner',  a.name || '');
     set('gotw-a-record', a.record || '');
-    set('gotw-b-name',   b.team || b.name || '—');
+    set('gotw-b-name',   b.team || b.name || '·');
     set('gotw-b-owner',  b.name || '');
     set('gotw-b-record', b.record || '');
 
@@ -1770,7 +1770,7 @@ function snapAbbrev(s) {
     } else {
       var fav = proj.favorite === 'a' ? (a.name || a.team) : (b.name || b.team);
       var sprd = typeof proj.spread === 'number' ? proj.spread.toFixed(1) : '';
-      headline = '<em>' + escHtml(fav || '—') + '</em> favored by ' + sprd + '.';
+      headline = '<em>' + escHtml(fav || '·') + '</em> favored by ' + sprd + '.';
     }
     setHtml('gotw-headline', headline);
 
@@ -1789,17 +1789,17 @@ function snapAbbrev(s) {
       return '<span class="snap-pills">' + out + '</span>';
     }
     function streakStr(s) {
-      if (!s || !s.kind || !s.count) return '—';
+      if (!s || !s.kind || !s.count) return '·';
       return s.count + s.kind;
     }
     function shighStr(sh) {
-      if (!sh || typeof sh.pts !== 'number') return '—';
+      if (!sh || typeof sh.pts !== 'number') return '·';
       return sh.pts.toFixed(1) + ' (W' + sh.week + ')';
     }
     function fillSide(prefix, side, projVal) {
       setHtml(prefix + '-form', pillsFor(side.form));
-      set(prefix + '-ppg5',  (typeof side.ppg5 === 'number') ? side.ppg5.toFixed(1) : '—');
-      set(prefix + '-proj',  (projVal != null) ? Number(projVal).toFixed(1) : '—');
+      set(prefix + '-ppg5',  (typeof side.ppg5 === 'number') ? side.ppg5.toFixed(1) : '·');
+      set(prefix + '-proj',  (projVal != null) ? Number(projVal).toFixed(1) : '·');
       set(prefix + '-streak', streakStr(side.streak));
       set(prefix + '-shigh',  shighStr(side.seasonHigh));
     }
@@ -1823,8 +1823,8 @@ function snapAbbrev(s) {
       set('gotw-a-h2h-ppg', (pfA / totalMeetings).toFixed(1));
       set('gotw-b-h2h-ppg', (pfB / totalMeetings).toFixed(1));
     } else {
-      set('gotw-a-h2h-ppg', '—');
-      set('gotw-b-h2h-ppg', '—');
+      set('gotw-a-h2h-ppg', '·');
+      set('gotw-b-h2h-ppg', '·');
     }
 
     var note = '';
@@ -1873,7 +1873,7 @@ function snapAbbrev(s) {
         // the dashboard only — the full Records Watch page keeps the
         // breakdown, but it runs too long for the teaser rows here.
         var copy = (r.copy_html || r.copy || '').replace(/\s*\([^)]*\)\s*$/, '');
-        if (!copy) copy = escHtml(r.holder || r.chaser || '—');
+        if (!copy) copy = escHtml(r.holder || r.chaser || '·');
         // The actual number carried by whichever schema: record_value on
         // the live export, chaser_value on the demo feed. A broken record
         // that only names what fell (not to what) reads as half a sentence.
@@ -1923,7 +1923,7 @@ function snapAbbrev(s) {
       //     (demo) plus a `when` week — e.g. "Noah · 100th career win".
       //     Without it the row just says a name completed something unnamed.
       //   · Imminent: carries copy_html + an eta to the next tier.
-      var name = r.name || '—';
+      var name = r.name || '·';
       var isCrossed = !r.eta && (r.achievement_html || r.achievement);
       var body, rightCol;
       if (isCrossed) {
@@ -1991,7 +1991,7 @@ function snapAbbrev(s) {
     }
     var top = data.rankings && data.rankings.by_efficiency_desc && data.rankings.by_efficiency_desc[0];
     if (!top) {
-      head.innerHTML = 'No coaching standings yet — check back after Sunday.';
+      head.innerHTML = 'No coaching standings yet, check back after Sunday.';
       sub.textContent = '';
       return;
     }
@@ -2003,7 +2003,7 @@ function snapAbbrev(s) {
     var pf = (mgrRow && typeof mgrRow.season_actual === 'number' && typeof mgrRow.season_optimal === 'number')
            ? mgrRow.season_actual.toFixed(1) + ' / ' + mgrRow.season_optimal.toFixed(1)
            : '';
-    head.innerHTML = '<em>' + escHtml(top.name || '—') + '</em> leads the coaching board' +
+    head.innerHTML = '<em>' + escHtml(top.name || '·') + '</em> leads the coaching board' +
                      (pctStr ? ' at <em>' + pctStr + '</em>' : '') + '.';
     sub.textContent = pf ? ('Actual / optimal · ' + pf) :
                       (data.throughWeek ? ('Through W' + data.throughWeek) : '');
@@ -2034,7 +2034,7 @@ function snapAbbrev(s) {
       return;
     }
     if (data.status === 'no-trades') {
-      host.innerHTML = '<div class="trades-empty">The market\'s been quiet — no trades on the books.</div>';
+      host.innerHTML = '<div class="trades-empty">The market\'s been quiet, no trades on the books.</div>';
       if (meta) meta.textContent = '';
       return;
     }
@@ -2042,7 +2042,7 @@ function snapAbbrev(s) {
       .concat(data.current_trades || [])
       .concat(data.past_trades || []);
     if (!all.length) {
-      host.innerHTML = '<div class="trades-empty">The market\'s been quiet — no trades on the books.</div>';
+      host.innerHTML = '<div class="trades-empty">The market\'s been quiet, no trades on the books.</div>';
       if (meta) meta.textContent = '';
       return;
     }
@@ -2058,16 +2058,16 @@ function snapAbbrev(s) {
     host.setAttribute('data-count', String(rows.length));
 
     function fmtAssets(assets) {
-      if (!assets || !assets.length) return '<span style="opacity:.5">—</span>';
+      if (!assets || !assets.length) return '<span style="opacity:.5">·</span>';
       // Stack each asset on its own line; position tag overrides the
       // serif parent with mono so it reads as a typographic caption
       // next to the bigger serif player name.
       return assets.slice(0, 5).map(function (a) {
         var line;
-        if (a.kind === 'player')   line = escHtml(a.name || '—') + (a.position ? ' <span style="font-family:var(--mono);opacity:.6;font-size:.6em;letter-spacing:.1em;vertical-align:.15em">' + escHtml(a.position) + '</span>' : '');
+        if (a.kind === 'player')   line = escHtml(a.name || '·') + (a.position ? ' <span style="font-family:var(--mono);opacity:.6;font-size:.6em;letter-spacing:.1em;vertical-align:.15em">' + escHtml(a.position) + '</span>' : '');
         else if (a.kind === 'pick') line = escHtml(a.season_year + ' R' + a.round + ' pick');
         else if (a.kind === 'faab') line = '$' + (a.amount || 0) + ' FAAB';
-        else                        line = '—';
+        else                        line = '·';
         return '<div>' + line + '</div>';
       }).join('');
     }
@@ -2078,8 +2078,8 @@ function snapAbbrev(s) {
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
     function sideMgrName(side) {
-      if (!side || !side.manager) return '—';
-      return side.manager.display_name || side.manager.team_name || '—';
+      if (!side || !side.manager) return '·';
+      return side.manager.display_name || side.manager.team_name || '·';
     }
 
     host.innerHTML = rows.map(function (t) {

@@ -39,7 +39,7 @@ function computeVerdict(youSendValue: number, youGetValue: number): Verdict {
       marginValue: Math.abs(margin),
       marginPct,
       headline: 'Fair trade.',
-      blurb: `Both sides land inside ${FAIR_THRESHOLD_PCT}% — defensible either way.`,
+      blurb: `Both sides land inside ${FAIR_THRESHOLD_PCT}%, defensible either way.`,
     }
   }
   if (margin > 0) {
@@ -47,7 +47,7 @@ function computeVerdict(youSendValue: number, youGetValue: number): Verdict {
       kind: 'you',
       marginValue: margin,
       marginPct,
-      headline: marginPct >= STEAL_THRESHOLD_PCT ? 'You win — by a lot.' : 'You come out ahead.',
+      headline: marginPct >= STEAL_THRESHOLD_PCT ? 'You win, by a lot.' : 'You come out ahead.',
       blurb: `You gain ${Math.round(margin).toLocaleString()} in trade value (+${marginPct.toFixed(1)}%).`,
     }
   }
@@ -204,7 +204,7 @@ export function TradeBuilder({ leagues }: { leagues: BuilderLeague[] }) {
           <div className="tb-control">
             <label htmlFor="tb-opp">Counterparty</label>
             <select id="tb-opp" value={opponentIdx} onChange={(e) => onOpponentChange(Number(e.target.value))} disabled={otherRosters.length === 0}>
-              {otherRosters.length === 0 && <option>— no other rosters —</option>}
+              {otherRosters.length === 0 && <option>, no other rosters,</option>}
               {otherRosters.map((r, i) => (
                 <option key={r.ownerId} value={i}>{r.teamName} · {r.ownerName}</option>
               ))}
@@ -233,7 +233,7 @@ export function TradeBuilder({ leagues }: { leagues: BuilderLeague[] }) {
           <SideColumn
             kind="get"
             heading="You get"
-            team={opponent?.teamName ?? '—'}
+            team={opponent?.teamName ?? '·'}
             players={getList}
             selectedIds={getSel}
             query={getQ}

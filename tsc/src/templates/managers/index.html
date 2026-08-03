@@ -552,7 +552,7 @@ body {
     <div class="hero-sup"><span class="star">★</span> The Career of {{MGR_NAME_UPPER}} <span class="star">★</span></div>
     <h1 class="hero-title">{{MGR_NAME_HEAD}}<em>{{MGR_NAME_TAIL}}.</em></h1>
     <p class="hero-sub" id="hero-sub">{{MGR_SUBTITLE}}</p>
-    <div class="hero-meta" id="hero-meta">— Present</div>
+    <div class="hero-meta" id="hero-meta">Present</div>
     <div class="hero-rule"></div>
 </header>
 
@@ -561,7 +561,7 @@ body {
 <section class="lede">
     <div class="lede-frame">
         <div class="lede-mast"><span class="star">★</span> The Editor's Lede <span class="star">★</span></div>
-        <div class="lede-body" id="lede-body"><span class="dropcap">T</span>he Grand Chronicle is the cover page — every league, every season, every ring, folded into one front matter. Issues II–VI weave the rest of the story.</div>
+        <div class="lede-body" id="lede-body"><span class="dropcap">T</span>he Grand Chronicle is the cover page, every league, every season, every ring, folded into one front matter. Issues II–VI weave the rest of the story.</div>
     </div>
 </section>
 
@@ -571,7 +571,7 @@ body {
         <h2 class="section-title">By the Numbers</h2>
         <span class="section-meta">Career Totals</span>
     </div>
-    <p class="section-intro" id="numbers-intro">Eight tiles, eight totals — every regular-season point and every championship-bracket game, rolled up cumulative.</p>
+    <p class="section-intro" id="numbers-intro">Eight tiles, eight totals, every regular-season point and every championship-bracket game, rolled up cumulative.</p>
     <div class="numbers-grid" id="numbers-grid">
         <div class="loading">Loading career totals…</div>
     </div>
@@ -653,7 +653,7 @@ body {
         <div class="editor-note-mast"><span class="star">★</span> The jzFF Dispatch <span class="star">★</span></div>
         <div class="editor-note-byline">Front Page · {{MGR_NAME_UPPER}}</div>
         <div class="editor-note-body" id="editor-body">
-            <span class="dropcap">T</span>his is the Grand Chronicle — the bound front matter of a career spanning {{MGR_NAME_UPPER}}'s every league, every season, every ring. Pages II through VI weave the rest: the rise from rookie to contender, the dynasty portfolios, the seasons of glory and the seasons of heartbreak, the records vault, and the live war room. The story doesn't end on this page — it just opens here.
+            <span class="dropcap">T</span>his is the Grand Chronicle, the bound front matter of a career spanning {{MGR_NAME_UPPER}}'s every league, every season, every ring. Pages II through VI weave the rest: the rise from rookie to contender, the dynasty portfolios, the seasons of glory and the seasons of heartbreak, the records vault, and the live war room. The story doesn't end on this page, it just opens here.
         </div>
     </div>
 </section>
@@ -715,7 +715,7 @@ body {
             if (meta && c.yearsActive) {
                 var f = c.yearsActive.first
                 var l = c.yearsActive.last
-                if (f != null && l != null) meta.textContent = (f === l ? String(f) : f + ' — ' + l)
+                if (f != null && l != null) meta.textContent = (f === l ? String(f) : f + '–' + l)
             }
             if (!c.subtitle) {
                 var sub = document.getElementById('hero-sub')
@@ -766,7 +766,7 @@ body {
             if (tm) tm.textContent = trophies.length + (trophies.length === 1 ? ' piece' : ' pieces')
             if (tg) {
                 if (trophies.length === 0) {
-                    tg.innerHTML = '<div class="trophy-empty">No hardware on the mantle — yet.</div>'
+                    tg.innerHTML = '<div class="trophy-empty">No hardware on the mantle, yet.</div>'
                 } else {
                     tg.innerHTML = trophies.map(function (tr) {
                         var cls = tr.kind === 'champion' ? '' : tr.kind === 'runner-up' ? ' runner' : ' bronze'
@@ -822,7 +822,7 @@ body {
                     : r.runnerUp ? '🥈 2nd'
                     : r.thirdPlace ? '🥉 3rd'
                     : r.finalRank ? r.finalRank + suf(r.finalRank)
-                    : '—'
+                    : '·'
                 return '<a href="/manager/{{MGR_SLUG}}/seasons/' + r.year + '" class="' + cls + '">' +
                     '<div class="timeline-yr">' + r.year + '</div>' +
                     '<div class="timeline-rank">' + rank + '</div>' +

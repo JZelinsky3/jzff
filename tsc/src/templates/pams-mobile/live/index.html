@@ -260,7 +260,7 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
             <span class="lv-bar"></span>
             <span class="lv-body">
                 <span class="lv-row-title">Matchup <em>Preview.</em></span>
-                <span class="lv-row-desc">This week's board — H2H history, form, projections.</span>
+                <span class="lv-row-desc">This week's board, H2H history, form, projections.</span>
             </span>
             <span class="lv-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></span>
         </a>
@@ -381,7 +381,7 @@ a.lv-row:active { background: rgba(232, 200, 137, .05); }
     function chg(n) {
         if (n > 0) return '<span class="fs-chg up">▲' + n + '</span>';
         if (n < 0) return '<span class="fs-chg down">▼' + Math.abs(n) + '</span>';
-        return '<span class="fs-chg same">—</span>';
+        return '<span class="fs-chg same">·</span>';
     }
     function pills(form) {
         // Always 5 slots; missing weeks render as dashed empties so an

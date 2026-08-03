@@ -194,7 +194,7 @@ export function OverUnder({
                   <span className={styles.slipLine}>{q.line.toFixed(1)}</span>
                   <span className={styles.slipScore}>{q.score.toFixed(2)}</span>
                   <span className={hit ? styles.slipHit : styles.slipMiss}>
-                    {c ? c.toUpperCase() : '—'}
+                    {c ? c.toUpperCase() : '·'}
                   </span>
                 </li>
               )
@@ -347,7 +347,7 @@ export function OverUnder({
               headline={correct ? 'Good call' : 'The book wins'}
               detail={
                 <>
-                  {question.score.toFixed(2)} — {question.answer} by{' '}
+                  {question.score.toFixed(2)}, {question.answer.toLowerCase()} by{' '}
                   {Math.abs(question.score - question.line).toFixed(2)}. You said {called}.
                 </>
               }

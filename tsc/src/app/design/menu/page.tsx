@@ -5,7 +5,7 @@ import { IndexPalette } from '@/components/menu-previews/IndexPalette'
 import { MegaMenu } from '@/components/menu-previews/MegaMenu'
 
 export const metadata: Metadata = {
-  title: 'Menu preview · v2 — internal',
+  title: 'Menu preview · v2, internal',
   robots: { index: false, follow: false },
 }
 
@@ -21,7 +21,7 @@ export default function MenuPreviewPage() {
           </h1>
           <p className="mp-page-sub">
             The earlier round (A polished dropdown, B vintage drawer, C inline horizontal)
-            are already in use. These three are different patterns — built for sites with
+            are already in use. These three are different patterns, built for sites with
             many destinations, leaning into &ldquo;designed publication&rdquo; rather than
             &ldquo;hamburger menu.&rdquo; Each is fully working below.
           </p>
@@ -32,7 +32,7 @@ export default function MenuPreviewPage() {
           name="Chapter section bar"
           effort="Low–medium effort"
           recommended
-          notes="A thin sub-row of chapters under the masthead. Newspaper section-bar shape — every destination is visible without a click. Active chapter is underlined in gold. Most 'publication chrome' of the three. Drawback: adds a second row of chrome on every page; overflows horizontally on phones."
+          notes="A thin sub-row of chapters under the masthead. Newspaper section-bar shape, every destination is visible without a click. Active chapter is underlined in gold. Most 'publication chrome' of the three. Drawback: adds a second row of chrome on every page; overflows horizontally on phones."
           belowMasthead={<ChapterBar />}
         />
 
@@ -53,7 +53,7 @@ export default function MenuPreviewPage() {
         />
 
         <div className="mp-page-foot">
-          Tell me which letter — D, E, F, or a combination — and I&apos;ll wire it through.
+          Tell me which letter, D, E, F, or a combination, and I&apos;ll wire it through.
         </div>
       </div>
     </main>
@@ -87,7 +87,7 @@ function Demo({
 
       <div className="mp-stage">
         <div className="mp-stage-nav">
-          <span className="mp-stage-back" aria-hidden="true">—</span>
+          <span className="mp-stage-back" aria-hidden="true">, </span>
           <div className="mp-stage-center">
             <div className="mp-stage-kicker">Vol. II · The League Almanac</div>
             <div className="mp-stage-title">The Sunday <em>Chronicle.</em></div>

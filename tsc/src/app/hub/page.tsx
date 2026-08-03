@@ -114,7 +114,7 @@ export default async function HubFrontDesk() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 01 · The wire</span>
-          <span className="hub-section-title">Across every league we keep —</span>
+          <span className="hub-section-title">Across every league we keep,</span>
           <span className="hub-section-meta">Updated hourly</span>
         </div>
         <Reveal>
@@ -154,7 +154,7 @@ export default async function HubFrontDesk() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 02 · The rooms</span>
-          <span className="hub-section-title">Pick a door —</span>
+          <span className="hub-section-title">Pick a door,</span>
           <span className="hub-section-meta">Five wings, one clubhouse</span>
         </div>
         <div className="hub-card-grid hub-doors">
@@ -225,7 +225,7 @@ export default async function HubFrontDesk() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 03 · Fresh ink</span>
-          <span className="hub-section-title">Latest from the press —</span>
+          <span className="hub-section-title">Latest from the press,</span>
           <Link href="/hub/whats-new" className="hub-section-meta" style={{ textDecoration: 'none', color: 'var(--hb-gold)' }}>
             All entries →
           </Link>
@@ -252,7 +252,7 @@ export default async function HubFrontDesk() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 04 · Your shelf</span>
-          <span className="hub-section-title">Where you left off —</span>
+          <span className="hub-section-title">Where you left off,</span>
           <span className="hub-section-meta">Quick exits</span>
         </div>
         {ownLeagues.length === 0 ? (

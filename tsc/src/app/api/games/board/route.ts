@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import {
   loadBoard,
   isGameId,
-  BOARD_ROWS,
+  boardRowsFor,
   type BoardKind,
 } from '@/lib/minigames/leaderboard'
 
@@ -34,8 +34,9 @@ export async function GET(req: NextRequest) {
   const kind = (KINDS as string[]).includes(kindParam) ? (kindParam as BoardKind) : 'best'
   const mode = params.get('mode') || null
 
-  // Offsets exist for "show 50 more" on the site board. League boards are
-  // bounded by how much their members have played and rarely reach one page.
+  // Offsets exist for "show more" on the site board. League boards are
+  // bounded by how much their members have played and rarely reach one page,
+  // which is also why they run shorter — see boardRowsFor.
   const offset = Math.max(0, Math.min(5000, Number(params.get('offset') ?? 0) || 0))
 
   const supabase = await createClient()
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
   } = await supabase.auth.getUser()
 
   const board = await loadBoard(kind, { game, mode, poolId }, user?.id ?? null, {
-    limit: BOARD_ROWS,
+    limit: boardRowsFor(poolId),
     offset,
   })
 

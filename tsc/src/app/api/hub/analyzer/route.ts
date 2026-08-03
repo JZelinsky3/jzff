@@ -30,6 +30,6 @@ export async function POST(req: Request) {
     })
     return NextResponse.json({ analysis })
   } catch {
-    return NextResponse.json({ error: 'Valuation engine unavailable — try again shortly.' }, { status: 502 })
+    return NextResponse.json({ error: 'Valuation engine unavailable, try again shortly.' }, { status: 502 })
   }
 }

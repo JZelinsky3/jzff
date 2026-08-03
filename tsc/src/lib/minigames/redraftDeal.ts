@@ -15,6 +15,7 @@ import { canonicalDraftIds } from '@/lib/canonicalDraft'
 import { pageAll } from './pool'
 import { DEMO_POOL_ID, DEMO_POOL_LABEL } from './demoPool'
 import { makeRng, newSeed, normalizeSeed } from './roulette'
+import { loadManagerNames } from './managerNames'
 import {
   getRankLookup,
   latestRankYear,
@@ -166,10 +167,10 @@ async function buildLeaguePool(slug: string): Promise<Pool | null> {
   if (seasons.length === 0) return null
 
   const seasonIds = seasons.map((s) => s.id)
-  const [managerRows, msRows, draftRows] = await Promise.all([
-    pageAll<{ id: string; display_name: string }>(() =>
-      db.from('managers').select('id, display_name').eq('league_id', league.id).order('id')
-    ),
+  const [nameById, msRows, draftRows] = await Promise.all([
+    // The league's own name for each manager (renames and merges applied),
+    // not the platform's. See ./managerNames.
+    loadManagerNames(db, [league.id]),
     pageAll<{ season_id: string; manager_id: string; team_name: string | null }>(() =>
       db
         .from('manager_seasons')
@@ -208,7 +209,6 @@ async function buildLeaguePool(slug: string): Promise<Pool | null> {
   const canonical = canonicalDraftIds(draftRows, pickCount)
   const seasonByDraft = new Map(draftRows.map((d) => [d.id, d.season_id]))
 
-  const nameById = new Map(managerRows.map((m) => [m.id, m.display_name]))
   const teamBySeasonManager = new Map(
     msRows.map((r) => [`${r.season_id}|${r.manager_id}`, r.team_name])
   )

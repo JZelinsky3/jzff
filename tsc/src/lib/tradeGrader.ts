@@ -224,7 +224,7 @@ export async function gradeTrade(tradeId: string): Promise<GradeResult> {
     analyzerData = load.data
     effective = load.data.effective
   } else {
-    warnings.push(`league context: ${load.error.kind} — grading without roster context`)
+    warnings.push(`league context: ${load.error.kind}, grading without roster context`)
     effective = mergeEffective(parseSettings(league?.trade_desk_settings), {
       mode: leagueType as LeagueMode,
       lineupType: null,
@@ -396,7 +396,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
   }
 
   if (!trade.ai_summary) {
-    warnings.push(`trade ${tradeId}: no initial grade — grade it before revisiting`)
+    warnings.push(`trade ${tradeId}: no initial grade, grade it before revisiting`)
     return { trade_id: tradeId, graded_sides: 0, warnings }
   }
 
@@ -551,7 +551,7 @@ export async function revisitTrade(tradeId: string): Promise<GradeResult> {
       continue
     }
     if ((count ?? 0) === 0) {
-      warnings.push(`side ${g.side_id} has no initial grade row — skipping revisit`)
+      warnings.push(`side ${g.side_id} has no initial grade row, skipping revisit`)
       continue
     }
     revised++
@@ -772,10 +772,10 @@ type PromptArgs = {
 function buildPrompt(args: PromptArgs): { system: string; user: string } {
   const typeNote =
     args.leagueType === 'dynasty'
-      ? 'This is a DYNASTY league — weight long-term player value, draft picks (especially early-round), and youth heavily. Rest-of-season production matters less than future seasons.'
+      ? 'This is a DYNASTY league: weight long-term player value, draft picks (especially early-round), and youth heavily. Rest-of-season production matters less than future seasons.'
       : args.leagueType === 'keeper'
-      ? 'This is a KEEPER league — players retained from year to year. Weight both rest-of-season production AND keeper value (cheap young talent is more valuable).'
-      : 'This is a REDRAFT league — only current-season value matters. Players reset every year. Draft picks (if present) are for next year only.'
+      ? 'This is a KEEPER league: players retained from year to year. Weight both rest-of-season production AND keeper value (cheap young talent is more valuable).'
+      : 'This is a REDRAFT league: only current-season value matters. Players reset every year. Draft picks (if present) are for next year only.'
 
   // Calibration matters: without explicit anchors the model tends to grade
   // every trade as a blowout (A on one side, D/F on the other). Real fantasy
@@ -787,21 +787,21 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
   // time. The summary is a grading RATIONALE, not a play-by-play.
   const system =
     [
-      'You are an experienced fantasy football trade analyst writing for a league archive. The summary you write is a GRADING RATIONALE — it must explain WHY the grades came out the way they did, not just restate who received what.',
+      'You are an experienced fantasy football trade analyst writing for a league archive. The summary you write is a GRADING RATIONALE: it must explain WHY the grades came out the way they did, not just restate who received what.',
       typeNote,
       '',
       'GRADING SCALE (use only these grades): A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F.',
       '',
-      'GRADE CALIBRATION — value-anchored:',
+      'GRADE CALIBRATION (value-anchored):',
       '• Use the consensus market value and position rank on each player line as your primary anchor. Values sit on a roughly 0-10000 scale blended from FantasyCalc, KeepTradeCut, DynastyProcess, and FantasyPros, calibrated to this league\'s format. Lower rank number = more valuable player.',
-      '• A trade with very small rank gaps between sides is roughly even — both sides earn comparable grades.',
+      '• A trade with very small rank gaps between sides is roughly even: both sides earn comparable grades.',
       '• A trade where one side acquires meaningfully better-ranked players earns a higher grade for that side.',
-      '• When BOTH sides acquired top-24 positional starters they can use, BOTH sides can earn A-range grades. Mutual wins are real — A/A is a correct grade for a trade where both teams hit a real need without losing value.',
+      '• When BOTH sides acquired top-24 positional starters they can use, BOTH sides can earn A-range grades. Mutual wins are real. A/A is a correct grade for a trade where both teams hit a real need without losing value.',
       '• Grades on opposing sides do NOT need to mirror. A trade can be A-/B (clear winner + the other side still got fair value), A/A (both sides won), or A/C (one side significantly stole value).',
       '• Use D / D- / F ONLY when a side got dramatically worse players (huge rank gap) without addressing positional scarcity.',
       '• Don\'t default to B+/B for everything just because trades "should be balanced." If the data shows a real gap, grade accordingly.',
       '',
-      'WRITING THE RATIONALE — 3 to 4 sentences total. Follow these rules:',
+      'WRITING THE RATIONALE. 3 to 4 sentences total. Follow these rules:',
       '',
     '1. NEVER start with "The X won this trade", "X won the trade", or any variation of who-won-the-trade as the opening line. The user message names a LEAD ANGLE for this specific write-up: open from that angle, then broaden into the full rationale. Never open with a verdict statement.',
       '',
@@ -809,7 +809,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '',
       '3. Vary sentence structure and vocabulary. Do not use the same opening template twice.',
       '',
-      'BANNED PHRASES — never write any of these:',
+      'BANNED PHRASES. Never write any of these:',
       '• "won this trade" / "won the trade" / "got the better end"',
       '• "primarily due to" / "primarily because"',
       '• "added depth" / "upgrades the position" / "addressed a need" as the entire reason',
@@ -817,19 +817,19 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '• Any sentence whose only purpose is to restate who received whom',
       '• The em dash character. Never use an em dash anywhere in your writing; use commas, periods, or parentheses instead.',
       '',
-      'EXAMPLES — study these carefully:',
+      'EXAMPLES. Study these carefully:',
       '',
       'GOOD (varied openings, real analysis):',
       '• "Christian McCaffrey is the bet here: an elite RB1 ceiling if he stays healthy, but the Sinkaroos are paying full freight in 2026 picks for a 29-year-old with a calf history. Horsecocks come away with the cleaner long-term profile via two firsts and Jahmyr Gibbs, who has three years of cost control ahead of him. In a dynasty timeline that values youth and picks, Horsecocks built equity. A win-now manager would defend the McCaffrey side."',
-      '• "Trading down from a top-six pick for two thirds and a depth piece looks fine on paper, but the tier break at pick 6 is real — that\'s where the season-altering RBs go. Joey\'s thirds are lottery tickets, not equivalents. The Sinkaroos give up the most leverage they had at the deadline and walk away with role players."',
+      '• "Trading down from a top-six pick for two thirds and a depth piece looks fine on paper, but the tier break at pick 6 is real: that\'s where the season-altering RBs go. Joey\'s thirds are lottery tickets, not equivalents. The Sinkaroos give up the most leverage they had at the deadline and walk away with role players."',
       '',
       'BAD (formulaic, restates the trade):',
       '• "The Sinkaroos won this trade, primarily due to acquiring Christian McCaffrey, who upgrades their RB position. Horsecocks added depth via Jahmyr Gibbs and two picks. Solid move for both teams."',
       '• "Joey won the trade because he got a better player. He gave up two picks but added a top RB. The other side gained some picks but lost their best player."',
       '',
       'USING THE VALUE DATA + ROSTER CONTEXT:',
-      '• Each player line shows the player\'s consensus position rank (e.g. "RB3" = the 3rd-most-valuable RB on the market), consensus market value, age, and injury status when known. Position rank is your primary anchor — a player with rank "RB12" is a strong starter; "RB48" is depth. Market value settles close calls: RB11 vs RB13 with near-equal values is a wash.',
-      '• Each side also has a "Current roster" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). Use this to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. NOTE: this is the current roster, which may differ from the at-trade roster for historical trades — when the trade is recent (within a week or two), trust the roster; for older trades, treat it as a rough proxy.',
+      '• Each player line shows the player\'s consensus position rank (e.g. "RB3" = the 3rd-most-valuable RB on the market), consensus market value, age, and injury status when known. Position rank is your primary anchor: a player with rank "RB12" is a strong starter; "RB48" is depth. Market value settles close calls: RB11 vs RB13 with near-equal values is a wash.',
+      '• Each side also has a "Current roster" line showing positional depth (e.g. "RB(4): McCaffrey (RB3), Hall (RB8), Mostert (RB42) +1 | WR(3): Chase (WR2)..."). Use this to weigh need: a side acquiring an RB while already deep at RB is paying retail; the same RB to a side thin at the position is a real win. NOTE: this is the current roster, which may differ from the at-trade roster for historical trades. When the trade is recent (within a week or two), trust the roster; for older trades, treat it as a rough proxy.',
       '• Tier reference: pos_rank 1-12 = elite starter at the position; 13-24 = solid starter; 25-48 = bye-week filler / handcuff; 49+ = deep depth / waiver.',
       '• Calibrate the grade gap to the rank gap:',
       '  - Both sides got comparable tiers (e.g. RB10 traded for RB14) → roughly even, both B+/B (or A-/A- if both filled real needs).',
@@ -837,9 +837,9 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
       '  - Two+ tiers apart (RB4 vs RB28) → big swing, A/C+ or larger.',
       '• When BOTH sides acquired top-24 positional starters they can use, BOTH can earn A-range grades. A/A is correct when both teams hit a real need without overpaying. Mutual wins are real.',
       '• Age matters more for dynasty/keeper than redraft. For dynasty: under-25 = ascending; 29+ = declining. Bump grades accordingly. For redraft: only current-year production matters.',
-      '• Picks have no rank data — treat next-year 1st rounders as ~top-50 positional value, 2nds as ~top-100, 3rds as ~top-150, 4th+ as depth. Future-year picks (2027+) are worth ~70% of next-year picks.',
+      '• Picks have no rank data: treat next-year 1st rounders as ~top-50 positional value, 2nds as ~top-100, 3rds as ~top-150, 4th+ as depth. Future-year picks (2027+) are worth ~70% of next-year picks.',
       '',
-      'OUTPUT: strict JSON only — no prose before/after, no markdown fences. Shape:',
+      'OUTPUT: strict JSON only, no prose before/after, no markdown fences. Shape:',
       '{ "summary": "<grading rationale, 3-4 sentences>", "sides": [{ "side_id": "<uuid>", "grade": "<letter>" }, ...] }',
     ].join('\n')
 
@@ -849,7 +849,7 @@ function buildPrompt(args: PromptArgs): { system: string; user: string } {
         ? '  (nothing)'
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.bundle, args.sidByAsset)}`).join('\n')
       const roster = s.roster_summary ? `\n   Current roster: ${s.roster_summary}` : ''
-      return `Side ${idx + 1} — ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${roster}`
+      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}${roster}`
     })
     .join('\n\n')
 
@@ -898,14 +898,14 @@ type RevisitPromptArgs = {
 function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: string } {
   const typeNote =
     args.leagueType === 'dynasty'
-      ? 'This is a DYNASTY league — long-term value matters more than rest-of-season.'
+      ? 'This is a DYNASTY league: long-term value matters more than rest-of-season.'
       : args.leagueType === 'keeper'
-      ? 'This is a KEEPER league — both rest-of-season and next-year value matter.'
-      : 'This is a REDRAFT league — only current-season value matters.'
+      ? 'This is a KEEPER league: both rest-of-season and next-year value matter.'
+      : 'This is a REDRAFT league: only current-season value matters.'
 
   const system =
     [
-      'You are an experienced fantasy football trade analyst writing a retrospective on a trade graded 4 weeks ago. The retrospective you write is a GRADING RATIONALE — it must explain WHY the (possibly revised) grades are what they are, not just restate the trade.',
+      'You are an experienced fantasy football trade analyst writing a retrospective on a trade graded 4 weeks ago. The retrospective you write is a GRADING RATIONALE: it must explain WHY the (possibly revised) grades are what they are, not just restate the trade.',
       typeNote,
       '',
       'You are given the original recap and the original per-side letter grades.',
@@ -918,7 +918,7 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       '• When you do shift, move one or two notches (e.g. B+ → A-, not B+ → F). Dramatic regrades require a clearly different read.',
       '• Most retrospectives will keep the original grade. That is the correct outcome when nothing about the deal looks different now.',
       '',
-      'WRITING THE RETROSPECTIVE — 3 to 4 sentences. Follow these rules:',
+      'WRITING THE RETROSPECTIVE. 3 to 4 sentences. Follow these rules:',
       '',
       '1. Vary your openings. NEVER start two retrospectives with the same phrase. SPECIFICALLY BANNED openers: "Four weeks after", "Four weeks into the season", "Four weeks later", "In hindsight", "Looking back", "The X side\'s grade holds up", "X won the trade in hindsight", or any verdict-first formula.',
       '',
@@ -926,7 +926,7 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       '',
       '3. The retrospective must EXPLAIN the (possibly revised) grade. Reference what has changed (or held) about specific players, picks, or roster contexts. Be specific.',
       '',
-      'Example good openers (vary your voice — do not copy these verbatim):',
+      'Example good openers (vary your voice, do not copy these verbatim):',
       '• "The Saquon bet has paid off in a way few saw coming..."',
       '• "Pollard\'s ankle changes the calculus here..."',
       '• "Pittsburgh\'s offense has cratered and so has this trade for..."',
@@ -936,9 +936,9 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
       '',
       'BANNED PHRASES (same as initial grading): "won this trade", "primarily due to", "added depth", "upgrades the position", "solid move", "fair deal". The em dash character is also banned everywhere; use commas, periods, or parentheses instead.',
       '',
-      'Reference managers by team name. Retrospective voice is optional and should be used sparingly — most sentences should be present-tense analysis.',
+      'Reference managers by team name. Retrospective voice is optional and should be used sparingly, most sentences should be present-tense analysis.',
       '',
-      'OUTPUT: strict JSON only — { "summary": "<retrospective rationale>", "sides": [{ "side_id", "grade" }, ...] }',
+      'OUTPUT: strict JSON only, { "summary": "<retrospective rationale>", "sides": [{ "side_id", "grade" }, ...] }',
     ].join('\n')
 
   const sidesText = args.sides
@@ -948,7 +948,7 @@ function buildRevisitPrompt(args: RevisitPromptArgs): { system: string; user: st
         : s.assets.map((a) => `  - ${formatAssetWithValue(a, args.bundle, args.sidByAsset)}`).join('\n')
       const rosterLine = s.roster_summary ? `   Current roster: ${s.roster_summary}\n` : ''
       const originalGradeLine = s.original_grade ? `   Original grade: ${s.original_grade}\n` : ''
-      return `Side ${idx + 1} — ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}\n${rosterLine}${originalGradeLine}`
+      return `Side ${idx + 1}, ${s.manager_name} (side_id: ${s.side_id}) received:\n${assets}\n${rosterLine}${originalGradeLine}`
     })
     .join('\n')
 
@@ -982,7 +982,7 @@ function formatAsset(a: Record<string, unknown>): string {
   const kind = a.kind as string
   if (kind === 'player') {
     const name = (a.name as string) || `Player ${a.player_id}`
-    const pos = (a.position as string) || '—'
+    const pos = (a.position as string) || '·'
     const team = (a.team as string) || '?'
     return `${pos} ${name} (${team})`
   }
@@ -1011,10 +1011,10 @@ function formatAssetWithValue(
   if (kind !== 'player') return formatAsset(a)
 
   const name = (a.name as string) || `Player ${a.player_id}`
-  const pos = (a.position as string) || '—'
+  const pos = (a.position as string) || '·'
   const team = (a.team as string) || '?'
   const sid = sidByAsset.get(a)
-  if (!sid) return `${name} — ${pos} on ${team} (no value data)`
+  if (!sid) return `${name}, ${pos} on ${team} (no value data)`
 
   const cv = bundle.consensus.get(sid)
   const meta = bundle.meta.get(sid)
@@ -1026,8 +1026,8 @@ function formatAssetWithValue(
   if (age != null) traits.push(`age ${age}`)
   const injury = meta?.injury_status ?? null
   if (injury && injury !== 'Healthy') traits.push(`injury: ${injury}`)
-  if (traits.length === 0) return `${name} — ${pos} on ${team} (no value data)`
-  return `${name} — ${pos} on ${team}, ${traits.join(', ')}`
+  if (traits.length === 0) return `${name}, ${pos} on ${team} (no value data)`
+  return `${name}, ${pos} on ${team}, ${traits.join(', ')}`
 }
 
 function ordinal(n: number): string {

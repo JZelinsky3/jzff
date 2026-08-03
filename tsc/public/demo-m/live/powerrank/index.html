@@ -306,7 +306,7 @@ body { background: #f0e5c8; color: var(--ink); }
     <div class="pr-factor-row"><span class="pr-factor-pts">30</span><span class="pr-factor-label">Points For</span><span class="pr-factor-note">percentile rank among this season's teams</span></div>
     <div class="pr-factor-row"><span class="pr-factor-pts">20</span><span class="pr-factor-label">Form</span><span class="pr-factor-note">win % over your last 3 completed weeks</span></div>
     <div class="pr-factor-row"><span class="pr-factor-pts">17</span><span class="pr-factor-label">Conference</span><span class="pr-factor-note">rank within your division</span></div>
-    <p class="pr-formula-note">No divisions? Conference is dropped and the rest rescale — Record 40 · Points For 35 · Form 25.</p>
+    <p class="pr-formula-note">No divisions? Conference is dropped and the rest rescale, Record 40 · Points For 35 · Form 25.</p>
 </dialog>
 
 <script>
@@ -447,7 +447,7 @@ body { background: #f0e5c8; color: var(--ink); }
         return '<img class="' + cls + '" src="' + esc(t.logo || '') + '" alt="" onerror="this.style.opacity=0">';
     }
     function deltaHTML(delta) {
-        if (!delta || delta === 0) return '<span class="pr-delta same">—</span>';
+        if (!delta || delta === 0) return '<span class="pr-delta same">·</span>';
         var cls = delta > 0 ? 'up' : 'down';
         var sym = delta > 0 ? '▲' : '▼';
         return '<span class="pr-delta ' + cls + '">' + sym + Math.abs(delta) + '</span>';
@@ -574,7 +574,7 @@ body { background: #f0e5c8; color: var(--ink); }
         if (!state.data.hasProjections) { section.hidden = true; return; }
         section.hidden = false;
         byId('projBody').innerHTML = teams.map(function (t) {
-            var projWL = t.proj_wins != null && t.proj_losses != null ? t.proj_wins + '–' + t.proj_losses : '—';
+            var projWL = t.proj_wins != null && t.proj_losses != null ? t.proj_wins + '–' + t.proj_losses : '·';
             var pp = t.playoff_pct;
             var barW = pp != null ? Math.min(100, pp) : 0;
             var barCls = pp >= 60 ? 'bar-elite' : pp >= 50 ? 'bar-good' : pp >= 38 ? 'bar-mid' : 'bar-low';
@@ -583,7 +583,7 @@ body { background: #f0e5c8; color: var(--ink); }
                 '<span class="pj-name">' + esc(t.manager) + '</span>' +
                 '<span class="pj-wl">' + projWL + '</span>' +
                 '<span class="pj-bar-wrap"><span class="pj-bar ' + barCls + '" style="width:' + barW + '%"></span></span>' +
-                '<span class="pj-pct">' + (pp != null ? pp + '%' : '—') + bye + '</span>' +
+                '<span class="pj-pct">' + (pp != null ? pp + '%' : '·') + bye + '</span>' +
             '</div>';
         }).join('');
     }

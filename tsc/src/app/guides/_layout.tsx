@@ -61,7 +61,7 @@ export async function GuideShell({
   // don't have to repeat themselves. Strip trailing punctuation /
   // em-dash that reads naturally inline but looks odd in a breadcrumb.
   const crumbTitle = (breadcrumbTitle ?? `${title} ${titleEm}`)
-    .replace(/[—\-—.\s]+$/, "")
+    .replace(/[, \-, .\s]+$/, "")
     .trim()
 
   // Composite Article + BreadcrumbList graph. Article schema feeds AI

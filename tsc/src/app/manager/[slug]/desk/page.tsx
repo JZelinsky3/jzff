@@ -58,7 +58,7 @@ function ErrorStrip({ errors }: { errors: string[] }) {
     <div className="mh-box rust">
       <div className="mh-box-mast">Wire warning · {errors.length} league{errors.length === 1 ? '' : 's'} couldn&apos;t load</div>
       {errors.map((e, i) => (
-        <div key={i} className="mh-row-line"><span className="lbl">{e}</span><span className="val" style={{ color: 'var(--rust)' }}>—</span></div>
+        <div key={i} className="mh-row-line"><span className="lbl">{e}</span><span className="val" style={{ color: 'var(--rust)' }}>, </span></div>
       ))}
     </div>
   )
@@ -157,11 +157,11 @@ function InjuryRow({ p }: { p: DeskPlayer }) {
       <span className="lbl" style={{ display: 'flex', flexDirection: 'column', gap: '.15rem' }}>
         <span style={{ color: 'var(--cream)', fontFamily: 'var(--serif)', fontSize: '.95rem' }}>{p.name}</span>
         <span style={{ fontSize: '.55rem', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--cream-mute)' }}>
-          {detail || '—'} · {p.slots.map((s) => s.leagueName).join(', ')}
+          {detail || '·'} · {p.slots.map((s) => s.leagueName).join(', ')}
           {p.injuryBodyPart ? ` · ${p.injuryBodyPart}` : ''}
         </span>
       </span>
-      <span className="val" style={{ color: statusBadgeColor(p.injuryStatus) }}>{p.injuryStatus ?? '—'}</span>
+      <span className="val" style={{ color: statusBadgeColor(p.injuryStatus) }}>{p.injuryStatus ?? '·'}</span>
     </div>
   )
 }
@@ -212,7 +212,7 @@ function PositionCard({ pos, players }: { pos: string; players: DeskPlayer[] }) 
                 )}
               </span>
               <span style={{ fontSize: '.52rem', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--cream-mute)' }}>
-                {(p.team ?? '—')} · {p.slots.length === 1 ? p.slots[0].leagueName : `${p.slots.length} leagues`}
+                {(p.team ?? '·')} · {p.slots.length === 1 ? p.slots[0].leagueName : `${p.slots.length} leagues`}
               </span>
             </span>
             <span className="val" style={{ fontSize: '.6rem' }}>
@@ -235,7 +235,7 @@ function LeagueRosters({ desk }: { desk: PlayerDesk }) {
       </div>
       <p className="mh-section-intro">
         One sheet per league. Starters listed first, then bench, IR, and taxi (when applicable).
-        The almanac link in each footer jumps to the public league archive — useful when you need
+        The almanac link in each footer jumps to the public league archive, useful when you need
         the broader context behind a roster move.
       </p>
       <div className="mh-row mh-row-2">
@@ -271,7 +271,7 @@ function RosterGroup({ label, players, accent }: { label: string; players: DeskP
       {players.map((p) => (
         <div key={p.playerId} className="mh-row-line">
           <span className="lbl" style={{ display: 'flex', alignItems: 'baseline', gap: '.5rem' }}>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: '.55rem', letterSpacing: '.18em', color: 'var(--gold)', minWidth: '2.2rem' }}>{p.position || '—'}</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: '.55rem', letterSpacing: '.18em', color: 'var(--gold)', minWidth: '2.2rem' }}>{p.position || '·'}</span>
             <span style={{ color: 'var(--cream)', fontFamily: 'var(--serif)', fontSize: '.93rem' }}>{p.name}</span>
             {p.injuryStatus && (
               <span style={{ fontSize: '.5rem', letterSpacing: '.18em', color: statusBadgeColor(p.injuryStatus) }}>
@@ -279,7 +279,7 @@ function RosterGroup({ label, players, accent }: { label: string; players: DeskP
               </span>
             )}
           </span>
-          <span className="val" style={{ fontSize: '.62rem' }}>{p.team ?? '—'}</span>
+          <span className="val" style={{ fontSize: '.62rem' }}>{p.team ?? '·'}</span>
         </div>
       ))}
     </div>
@@ -291,7 +291,7 @@ function UnsupportedNotice({ desk }: { desk: PlayerDesk }) {
     <div className="mh-box steel">
       <div className="mh-box-mast">Pending Platform Support · {desk.unsupported.length}</div>
       <p style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', color: 'var(--cream-soft)', fontSize: '.95rem', lineHeight: 1.6, marginBottom: '.75rem' }}>
-        Live roster sync is Sleeper-first. ESPN, NFL.com, and Yahoo connectors for the Player Desk are next on the roadmap — their league histories already feed the chronicle, but live rosters need new ingest paths.
+        Live roster sync is Sleeper-first. ESPN, NFL.com, and Yahoo connectors for the Player Desk are next on the roadmap, their league histories already feed the chronicle, but live rosters need new ingest paths.
       </p>
       {desk.unsupported.map((u, i) => (
         <div key={`${u.leagueSlug}-${i}`} className="mh-row-line">

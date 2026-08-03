@@ -15,7 +15,7 @@ export function getStripe(): Stripe {
   if (_stripe) return _stripe
   const key = process.env.STRIPE_SECRET_KEY
   if (!key) {
-    throw new Error('STRIPE_SECRET_KEY is not set — add it to .env.local')
+    throw new Error('STRIPE_SECRET_KEY is not set, add it to .env.local')
   }
   // Let the SDK use its default API version (pinned by the package). Bumping
   // the stripe package is the right way to move API versions — keeping the

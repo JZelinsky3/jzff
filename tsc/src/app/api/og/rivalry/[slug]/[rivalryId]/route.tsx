@@ -184,21 +184,21 @@ function renderRivalryCard(
     // The series score already sits above, so a Wins row would just repeat
     // it. The last meeting is the fact the card was missing.
     [
-      lmA != null ? lmA.toFixed(1) : '—',
+      lmA != null ? lmA.toFixed(1) : '·',
       'Last game',
-      lmB != null ? lmB.toFixed(1) : '—',
+      lmB != null ? lmB.toFixed(1) : '·',
       lmWinner,
     ],
     [
-      a.avg_ppg ? a.avg_ppg.toFixed(1) : '—',
+      a.avg_ppg ? a.avg_ppg.toFixed(1) : '·',
       'Avg PPG',
-      b.avg_ppg ? b.avg_ppg.toFixed(1) : '—',
+      b.avg_ppg ? b.avg_ppg.toFixed(1) : '·',
       a.avg_ppg === b.avg_ppg ? null : a.avg_ppg > b.avg_ppg ? 'a' : 'b',
     ],
     [
-      a.high_score ? a.high_score.score.toFixed(1) : '—',
+      a.high_score ? a.high_score.score.toFixed(1) : '·',
       'Best',
-      b.high_score ? b.high_score.score.toFixed(1) : '—',
+      b.high_score ? b.high_score.score.toFixed(1) : '·',
       !a.high_score || !b.high_score
         ? null
         : a.high_score.score === b.high_score.score

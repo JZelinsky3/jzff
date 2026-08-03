@@ -130,12 +130,12 @@ function composeFrontIntro(c: CareerChronicle, first: number | null, last: numbe
     ? (first === last ? `${first}` : `${first}–${last}`)
     : 'on the calendar'
   if (t.championships > 0) {
-    return `${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'}, ${t.seasonsPlayed} seasons, ${t.championships} ${t.championships === 1 ? 'ring' : 'rings'} — the bound front matter of a career running ${range}. ` +
+    return `${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'}, ${t.seasonsPlayed} seasons, ${t.championships} ${t.championships === 1 ? 'ring' : 'rings'}, the bound front matter of a career running ${range}. ` +
       `The Grand Chronicle is the cover page; Issues II–VI weave the rest of the story.`
   }
   if (t.playoffAppearances > 0) {
     return `${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'}, ${t.seasonsPlayed} seasons, ${t.playoffAppearances} playoff ${t.playoffAppearances === 1 ? 'appearance' : 'appearances'} across ${range}. ` +
-      `Still chasing the first ring — the Grand Chronicle is the front matter, the rest of the books carry the receipts.`
+      `Still chasing the first ring, the Grand Chronicle is the front matter, the rest of the books carry the receipts.`
   }
   return `${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'}, ${t.seasonsPlayed} seasons, running ${range}. ` +
     `Early chapters of a chronicle still being written. Issues II–VI fill in the story.`
@@ -146,12 +146,12 @@ function composeFrontSectionIntros(c: CareerChronicle): CareerJson['sectionIntro
   return {
     numbers:
       `Eight tiles, eight totals. Every regular-season point, every championship-bracket game, ` +
-      `every ring in the case — rolled up across ${t.leagues || 'all'} ${t.leagues === 1 ? 'league' : 'leagues'} into ` +
+      `every ring in the case, rolled up across ${t.leagues || 'all'} ${t.leagues === 1 ? 'league' : 'leagues'} into ` +
       `one cumulative read. Consolation games sit out by design (the almanac rule).`,
     trophies: t.championships + t.runnerUps + t.thirdPlaces > 0
       ? `Hardware, year by year. Gold for champion, rust for runner-up, steel for bronze. ` +
         `Each piece links back to the season that earned it.`
-      : `No podium finishes on file yet — when the first one lands, this is where it gets cataloged.`,
+      : `No podium finishes on file yet, when the first one lands, this is where it gets cataloged.`,
     timeline:
       `Every active season, side by side. Champion years glow gold, runners and bronze get their ` +
       `own borders, missed-bracket years run dashed. Click any tile for the full per-year deep ` +
@@ -449,31 +449,31 @@ function composeNarrative(
   let deck = ''
   switch (bucket.id) {
     case 'origins':
-      headline = span === 1 ? `The Rookie Season — ${yearLabel}` : `The Early Years — ${yearLabel}`
+      headline = span === 1 ? `The Rookie Season, ${yearLabel}` : `The Early Years, ${yearLabel}`
       deck = champCount > 0
         ? `A debut written in gold: ${champCount} ${champCount === 1 ? 'ring' : 'rings'} before the ink dried.`
         : playoffYears > 0
           ? `${playoffYears} playoff ${playoffYears === 1 ? 'appearance' : 'appearances'} out of the gate.`
-          : 'The first chapters — finding the league, finding a system.'
+          : 'The first chapters, finding the league, finding a system.'
       break
     case 'reign':
-      headline = champCount > 1 ? `The Reign — ${champCount} Rings, ${yearLabel}` : `The Title Year — ${yearLabel}`
+      headline = champCount > 1 ? `The Reign, ${champCount} Rings, ${yearLabel}` : `The Title Year, ${yearLabel}`
       deck = `Hardware in hand, the rest of the league played catch-up.`
       break
     case 'present':
-      headline = `Recent Form — ${yearLabel}`
+      headline = `Recent Form, ${yearLabel}`
       deck = champCount > 0
         ? `Still adding hardware. ${champCount} more ${champCount === 1 ? 'ring' : 'rings'} in this stretch.`
         : playoffYears > 0
           ? `${playoffYears} playoff ${playoffYears === 1 ? 'run' : 'runs'} in the current era.`
-          : `Reload mode — the game between the rings.`
+          : `Reload mode, the game between the rings.`
       break
     case 'middle':
-      headline = `The Body of Work — ${yearLabel}`
+      headline = `The Body of Work, ${yearLabel}`
       deck = `${playoffYears} playoff trips across ${span} seasons.`
       break
     case 'climb':
-      headline = `The Climb — ${yearLabel}`
+      headline = `The Climb, ${yearLabel}`
       deck = `Stacking the foundation.`
       break
   }
@@ -484,7 +484,7 @@ function composeNarrative(
     const lead = finishes.find((f) => f.champion) ?? finishes.find((f) => f.runnerUp) ?? finishes.find((f) => f.madePlayoffs) ?? finishes[0]
     if (lead && lead.champion) {
       body.push(
-        `It opened in <strong>${lead.year}</strong> with a championship in <em>${lead.leagueName}</em> — a <strong>${lead.record}</strong> regular season that turned into the only finish that matters.`,
+        `It opened in <strong>${lead.year}</strong> with a championship in <em>${lead.leagueName}</em>, a <strong>${lead.record}</strong> regular season that turned into the only finish that matters.`,
       )
     } else if (lead && lead.runnerUp) {
       body.push(
@@ -492,7 +492,7 @@ function composeNarrative(
       )
     } else if (lead) {
       body.push(
-        `${lead.year} kicked it off in <em>${lead.leagueName}</em> — a <strong>${lead.record}</strong> finish at <strong>${lead.rank ? ordinal(lead.rank) : '—'}</strong>.`,
+        `${lead.year} kicked it off in <em>${lead.leagueName}</em>, a <strong>${lead.record}</strong> finish at <strong>${lead.rank ? ordinal(lead.rank) : '·'}</strong>.`,
       )
     }
   }
@@ -505,7 +505,7 @@ function composeNarrative(
       )
     } else {
       body.push(
-        `<strong>${t.year}</strong>: another ring in <em>${t.leagueName}</em> — <strong>${t.regRecord}</strong> regular, <strong>${t.playoffRecord}</strong> in the playoffs.`,
+        `<strong>${t.year}</strong>: another ring in <em>${t.leagueName}</em>, <strong>${t.regRecord}</strong> regular, <strong>${t.playoffRecord}</strong> in the playoffs.`,
       )
     }
   }
@@ -514,13 +514,13 @@ function composeNarrative(
     const lines = picks
       .map((p) => `<strong>${p.year} R${p.round}.${(p.overall % 100) || p.overall}</strong> ${p.player}${p.position ? ` (${p.position})` : ''}`)
       .join(', ')
-    body.push(`The board took shape early — ${lines}.`)
+    body.push(`The board took shape early, ${lines}.`)
   }
 
   if (body.length === 0 && finishes.length > 0) {
     const list = finishes
       .slice(0, 4)
-      .map((f) => `<strong>${f.year}</strong> ${f.record} (${f.rank ? ordinal(f.rank) : '—'})`)
+      .map((f) => `<strong>${f.year}</strong> ${f.record} (${f.rank ? ordinal(f.rank) : '·'})`)
       .join(' · ')
     body.push(`Across the stretch: ${list}.`)
   }
@@ -534,11 +534,11 @@ function buildRivalries(c: CareerChronicle): LegacyRivalry[] {
     const winPct = decided > 0 ? r.wins / decided : 0
     let narrative = ''
     if (r.games >= 10 && winPct >= 0.6) {
-      narrative = `Owned ${r.opponent} across ${r.games} meetings — ${(winPct * 100).toFixed(0)}% win rate, ${r.playoffGames} of them in the playoffs.`
+      narrative = `Owned ${r.opponent} across ${r.games} meetings, ${(winPct * 100).toFixed(0)}% win rate, ${r.playoffGames} of them in the playoffs.`
     } else if (r.games >= 10 && winPct <= 0.4) {
       narrative = `${r.opponent} had the number: ${r.wins}-${r.losses} across ${r.games} matchups${r.playoffGames > 0 ? `, including ${r.playoffGames} in the bracket.` : '.'}`
     } else if (r.playoffGames >= 2) {
-      narrative = `A true playoff rival — ${r.playoffGames} bracket meetings inside ${r.games} total.`
+      narrative = `A true playoff rival, ${r.playoffGames} bracket meetings inside ${r.games} total.`
     } else {
       narrative = `${r.games} meetings, ${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ''}.`
     }
@@ -584,7 +584,7 @@ function buildLegacy(c: CareerChronicle, career: CareerJson): LegacyJson {
         `${totalRings} ${totalRings === 1 ? 'ring' : 'rings'} along the way. Each era pulls finishes, ` +
         `drafts, and rivalries from the same calendar window so the story reads as one through-line.`
       : `Origins, the climb, and the seasons in between. ${eras.length} ${eras.length === 1 ? 'act' : 'acts'} ` +
-        `tracking the chronicle's arc through finishes, drafts, and rivalries — same calendar window, ` +
+        `tracking the chronicle's arc through finishes, drafts, and rivalries, same calendar window, ` +
         `one through-line.`
 
   return {
@@ -612,7 +612,7 @@ function buildLegacy(c: CareerChronicle, career: CareerJson): LegacyJson {
         `record. Rust = the one who had your number. The narrative line is auto-derived from the ` +
         `record shape (lopsided, even, playoff-heavy).`,
       moments:
-        `Six tiles, six single-incident highlights — the loudest win, the worst loss, weekly ` +
+        `Six tiles, six single-incident highlights, the loudest win, the worst loss, weekly ` +
         `highs/lows, and the longest streaks. Bigger context for these numbers lives in Issue V ` +
         `(The Record Vault).`,
     },
@@ -778,7 +778,7 @@ function buildDynasty(c: CareerChronicle): DynastyJson {
     ? `Dynasty Files open once at least one league is linked. The shape will read: per-league ` +
       `arcs, draft anchors, portfolio value over time.`
     : `${leagues.length} ${leagues.length === 1 ? 'file' : 'files'} on the franchise. ` +
-      `${totalChamps > 0 ? `${totalChamps} ${totalChamps === 1 ? 'ring' : 'rings'} across them — ` : ''}` +
+      `${totalChamps > 0 ? `${totalChamps} ${totalChamps === 1 ? 'ring' : 'rings'} across them, ` : ''}` +
       `each one is a portfolio with its own arc and its own draft anchors. KTC valuation history ` +
       `and the cross-league trade analyzer ride in once those pipelines land.`
 
@@ -800,12 +800,12 @@ function buildDynasty(c: CareerChronicle): DynastyJson {
     sectionIntros: {
       portfolio:
         `Portfolio value over time, scored by KeepTradeCut. Once the KTC ingest lands, this is ` +
-        `where you watch the franchise rise and fall — every trade and every draft as a tick on ` +
+        `where you watch the franchise rise and fall, every trade and every draft as a tick on ` +
         `the line. The skeleton below shows the eventual shape.`,
       files:
         `One file per league. Totals across the top (seasons / rings / playoffs / best finish), ` +
         `the year-by-year arc with gold tiles on ring years, and a sidebar listing the draft ` +
-        `anchors that built the team — every R1 and early R2 pick on record.`,
+        `anchors that built the team, every R1 and early R2 pick on record.`,
       tradeDesk:
         `Cross-league trade history scored against what the analyzer would have recommended at ` +
         `the time. Receipts + the take, side by side. Ships alongside the in-season pipeline.`,
@@ -906,7 +906,7 @@ function buildSeasonsHub(c: CareerChronicle): SeasonsHubJson {
     ? `Seasons open once the first finish is on the books. Every year will land here, ` +
       `sorted by the story it tells.`
     : `${all.length} ${all.length === 1 ? 'season' : 'seasons'} across ${years.length} ${years.length === 1 ? 'year' : 'years'}, ` +
-      `sorted by the story each one tells. Click any year card for the full deep-dive — draft + ` +
+      `sorted by the story each one tells. Click any year card for the full deep-dive, draft + ` +
       `roster + h2h + extremes for that season, in one place.`
 
   return {
@@ -928,12 +928,12 @@ function buildSeasonsHub(c: CareerChronicle): SeasonsHubJson {
         `(playoffs, no ring), Rebuilds (missed the bracket), and Multi-League years (2+ leagues ` +
         `active that calendar). Click any number to scroll to the grouped editions below.`,
       years:
-        `Every year, every league, on one card. Border color flags the dominant theme — gold ` +
+        `Every year, every league, on one card. Border color flags the dominant theme, gold ` +
         `for a podium year, steel for a playoff run, rust for a rebuild. Multi-league years carry ` +
         `a footer note showing how many ran in parallel.`,
       specialEditions:
         `The same seasons, regrouped thematically. Use this view when you're hunting a specific ` +
-        `kind of year — every podium finish in one place, every near-miss in another.`,
+        `kind of year, every podium finish in one place, every near-miss in another.`,
     },
   }
 }
@@ -1072,24 +1072,24 @@ function buildSeasonDeepDive(c: CareerChronicle, year: number): SeasonDeepDive {
   let headline = `${year} Season`
   let deck = ''
   if (champs > 0 && multiLeague) {
-    headline = `${year} — ${champs}× Champion`
+    headline = `${year}, ${champs}× Champion`
     deck = `${champs} ring${champs === 1 ? '' : 's'} across ${leagues.length} leagues. The year of the double crown${champs === 2 ? '' : '+'}.`
   } else if (champs > 0) {
-    headline = `${year} — Champion`
+    headline = `${year}, Champion`
     deck = `Hardware. ${combinedRecord} on the road to a ring.`
   } else if (multiLeague) {
-    headline = `${year} — Multi-League Mayhem`
+    headline = `${year}, Multi-League Mayhem`
     deck = `Active in ${leagues.length} leagues simultaneously. A ${combinedRecord} combined.`
   } else if (leagues.length > 0) {
     const l = leagues[0]!
     if (l.runnerUp) {
-      headline = `${year} — Runner-Up`
+      headline = `${year}, Runner-Up`
       deck = `${l.record} in ${l.leagueName}, one game short.`
     } else if (l.madePlayoffs) {
-      headline = `${year} — Playoff Run`
-      deck = `${l.record} in ${l.leagueName}, ${l.rank ? ordinal(l.rank) : '—'} place finish.`
+      headline = `${year}, Playoff Run`
+      deck = `${l.record} in ${l.leagueName}, ${l.rank ? ordinal(l.rank) : '·'} place finish.`
     } else {
-      headline = `${year} — The Rebuild`
+      headline = `${year}, The Rebuild`
       deck = `${l.record} in ${l.leagueName}.`
     }
   }
@@ -1099,17 +1099,17 @@ function buildSeasonDeepDive(c: CareerChronicle, year: number): SeasonDeepDive {
   if (champs > 0 && multiLeague) {
     intro =
       `${year} ran in ${leagues.length} leagues simultaneously and ended with ${champs} ` +
-      `${champs === 1 ? 'ring' : 'rings'} in hand — combined ${combinedRecord} across them. ` +
+      `${champs === 1 ? 'ring' : 'rings'} in hand, combined ${combinedRecord} across them. ` +
       `Each file below is the full per-league rundown: draft + finish + rivals faced + the loudest week.`
   } else if (champs > 0) {
     const l = leagues[0]!
     intro =
-      `${year} ended in gold for ${l.leagueName} — ${l.record} regular, then the bracket run that ` +
+      `${year} ended in gold for ${l.leagueName}, ${l.record} regular, then the bracket run that ` +
       `closed the deal. The file below carries the draft picks that fueled it, the rivals along the ` +
       `way, and the title game on the scoreboard.`
   } else if (multiLeague) {
     intro =
-      `${year} ran in ${leagues.length} leagues simultaneously — ${combinedRecord} combined. ` +
+      `${year} ran in ${leagues.length} leagues simultaneously, ${combinedRecord} combined. ` +
       `Each file below is its own rundown: draft + finish + rivals + weekly extremes.`
   } else if (leagues.length > 0) {
     const l = leagues[0]!
@@ -1120,7 +1120,7 @@ function buildSeasonDeepDive(c: CareerChronicle, year: number): SeasonDeepDive {
       : 'a regular-season campaign'
     intro =
       `${year} in ${l.leagueName}: ${l.record} on the way to ${arc}. The file carries the draft ` +
-      `picks, the rivals faced, and the weekly extremes — everything the season turned on, in one place.`
+      `picks, the rivals faced, and the weekly extremes, everything the season turned on, in one place.`
   } else {
     intro = `No file on record for ${year}.`
   }
@@ -1193,7 +1193,7 @@ type VaultJson = {
 }
 
 function fmtPts(n: number | null | undefined): string {
-  if (n == null) return '—'
+  if (n == null) return '·'
   return (Math.round(n * 10) / 10).toFixed(1)
 }
 
@@ -1202,7 +1202,7 @@ function buildVault(c: CareerChronicle): VaultJson {
   const yrFirst = Math.min(...c.leagues.map((l) => l.firstYear ?? 9999))
   const yrLast = Math.max(...c.leagues.map((l) => l.lastYear ?? 0))
   const yrRange = (yrFirst === 9999 || yrLast === 0)
-    ? '—'
+    ? '·'
     : (yrFirst === yrLast ? `${yrFirst}` : `${yrFirst}–${yrLast}`)
 
   // ─── Headline records ───────────────────────────────────────────
@@ -1212,7 +1212,7 @@ function buildVault(c: CareerChronicle): VaultJson {
   headlines.push({
     label: 'Total Points',
     value: Math.round(t.pointsFor).toLocaleString('en-US'),
-    context: `Across ${t.seasonsPlayed} seasons and ${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'} — every regular-season point you've banked, cumulative.`,
+    context: `Across ${t.seasonsPlayed} seasons and ${t.leagues} ${t.leagues === 1 ? 'league' : 'leagues'}, every regular-season point you've banked, cumulative.`,
     meta: `${yrRange} · all leagues`,
     flavor: 'gold',
   })
@@ -1220,7 +1220,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     label: 'Lifetime Record',
     value: t.ties ? `${t.wins}-${t.losses}-${t.ties}` : `${t.wins}-${t.losses}`,
     context: decided > 0
-      ? `A ${(t.winPct * 100).toFixed(1)}% win rate across ${decided} decisions. Consolation games are excluded — only championship-bracket playoff games count.`
+      ? `A ${(t.winPct * 100).toFixed(1)}% win rate across ${decided} decisions. Consolation games are excluded, only championship-bracket playoff games count.`
       : 'No decided games on record yet.',
     meta: `${yrRange} · regular + playoff`,
     flavor: 'cream',
@@ -1229,7 +1229,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     headlines.push({
       label: 'Championships',
       value: String(t.championships),
-      context: `Banked hardware. ${t.runnerUps} runner-up finish${t.runnerUps === 1 ? '' : 'es'} and ${t.thirdPlaces} bronze on top of that — ${t.championships + t.runnerUps + t.thirdPlaces} podium appearance${t.championships + t.runnerUps + t.thirdPlaces === 1 ? '' : 's'} total.`,
+      context: `Banked hardware. ${t.runnerUps} runner-up finish${t.runnerUps === 1 ? '' : 'es'} and ${t.thirdPlaces} bronze on top of that, ${t.championships + t.runnerUps + t.thirdPlaces} podium appearance${t.championships + t.runnerUps + t.thirdPlaces === 1 ? '' : 's'} total.`,
       meta: `Trophy case · ${yrRange}`,
       flavor: 'gold',
     })
@@ -1238,7 +1238,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     label: 'Playoff Apps',
     value: String(t.playoffAppearances),
     context: t.playoffAppearances > 0
-      ? `Punched ${t.playoffAppearances} brackets and went ${t.playoffWins}-${t.playoffLosses} in championship-bracket games — that's the rule the almanac uses (no consolation noise).`
+      ? `Punched ${t.playoffAppearances} brackets and went ${t.playoffWins}-${t.playoffLosses} in championship-bracket games, that's the rule the almanac uses (no consolation noise).`
       : `Still chasing the first bracket appearance.`,
     meta: `${t.playoffWins}-${t.playoffLosses} in bracket games`,
     flavor: 'steel',
@@ -1254,7 +1254,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     headlines.push({
       label: 'Podium Finishes',
       value: String(t.runnerUps + t.thirdPlaces + t.championships),
-      context: `Champion, runner-up, or bronze. The seasons that ended on a podium — the close calls + the closers.`,
+      context: `Champion, runner-up, or bronze. The seasons that ended on a podium, the close calls + the closers.`,
       meta: `${t.championships} 1st · ${t.runnerUps} 2nd · ${t.thirdPlaces} 3rd`,
       flavor: 'gold',
     })
@@ -1297,7 +1297,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     sg.push({
       label: 'Lowest Week',
       value: fmtPts(lo.score),
-      context: `The number you'd rather forget. Every team has one — this is yours.`,
+      context: `The number you'd rather forget. Every team has one, this is yours.`,
       meta: `${lo.leagueName} · ${lo.year}`,
       flavor: 'rust',
     })
@@ -1321,7 +1321,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     wks.push({
       label: 'Longest Win Streak',
       value: `${winStreak.length} W`,
-      context: `${winStreak.length} games on the bounce — when ${winStreak.leagueName} couldn't find an answer.`,
+      context: `${winStreak.length} games on the bounce, when ${winStreak.leagueName} couldn't find an answer.`,
       meta: `${winStreak.leagueName} · ${winStreak.when}`,
       flavor: 'gold',
     })
@@ -1331,7 +1331,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     wks.push({
       label: 'Longest Losing Streak',
       value: `${lossStreak.length} L`,
-      context: `${lossStreak.length} straight defeats — the kind of skid the rebuild years are made of.`,
+      context: `${lossStreak.length} straight defeats, the kind of skid the rebuild years are made of.`,
       meta: `${lossStreak.leagueName} · ${lossStreak.when}`,
       flavor: 'rust',
     })
@@ -1379,7 +1379,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     intro:
       `Everything that holds a place in the books. Career totals on top, the loudest single ` +
       `games below that, the streaks that defined the rebuilds and the runs, and the players ` +
-      `who kept showing up on draft day. The Vault doesn't move — but new entries get filed every Sunday.`,
+      `who kept showing up on draft day. The Vault doesn't move, but new entries get filed every Sunday.`,
     totalRecords: headlines.length + sg.length + wks.length,
     headlines,
     singleGame: {
@@ -1397,7 +1397,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     pedigree: {
       intro:
         `The closest thing this chronicle has to a Hall of Fame: players drafted across ` +
-        `multiple years and leagues — the names you keep coming back to — and the earliest ` +
+        `multiple years and leagues, the names you keep coming back to, and the earliest ` +
         `picks on file, the franchise cornerstones laid round-one and round-two.`,
       repeatPicks,
       earliestPicks,
@@ -1405,7 +1405,7 @@ function buildVault(c: CareerChronicle): VaultJson {
     watch: {
       enabled: false,
       intro:
-        `Records aren't just historic — some are live. Active streaks, points pace, win-rate ` +
+        `Records aren't just historic, some are live. Active streaks, points pace, win-rate ` +
         `windows you're currently inside. The Watch lights up once the in-season pipeline lands.`,
       note: 'Live records tracking ships with Phase 6 (The War Room).',
     },
@@ -1490,7 +1490,7 @@ function buildWarRoom(c: CareerChronicle): WarRoomJson {
       oneLiner: 'Build a trade. Get a verdict.',
       body:
         `Pick a counterparty roster, drop players on each side, and the value engine grades ` +
-        `the swap by tier and scarcity. Verdicts read like Sunday-paper takes — not just ` +
+        `the swap by tier and scarcity. Verdicts read like Sunday-paper takes, not just ` +
         `"Side A wins."`,
       href: `/manager/${slug}/trade-builder`,
       status: 'sleeper-only',
@@ -1506,7 +1506,7 @@ function buildWarRoom(c: CareerChronicle): WarRoomJson {
   } else if (sleeperLeagues > 0 && otherLeagues > 0) {
     note = `${sleeperLeagues} Sleeper ${sleeperLeagues === 1 ? 'league' : 'leagues'} live. ${otherLeagues} non-Sleeper ${otherLeagues === 1 ? 'league' : 'leagues'} read-only for now.`
   } else if (sleeperLeagues === 0 && otherLeagues > 0) {
-    note = `No Sleeper leagues linked — the desks won't have live data until at least one Sleeper league is added.`
+    note = `No Sleeper leagues linked, the desks won't have live data until at least one Sleeper league is added.`
   } else {
     note = `No leagues ready yet. Add one to wake the desks up.`
   }
@@ -1515,7 +1515,7 @@ function buildWarRoom(c: CareerChronicle): WarRoomJson {
   return {
     name: c.chronicle.displayName,
     intro:
-      `Welcome to the working side of the chronicle. Issues I–V are the archive — what was. ` +
+      `Welcome to the working side of the chronicle. Issues I–V are the archive, what was. ` +
       `The War Room is what is: live rosters, position scouting, trade verdicts, and the in-` +
       `season Wire. Stop here when it's Sunday night and you've got a decision to make.`,
     desks,
@@ -1526,7 +1526,7 @@ function buildWarRoom(c: CareerChronicle): WarRoomJson {
       note,
     },
     closer:
-      `The desks here still wear the old chapter design — they're being repainted in this ` +
+      `The desks here still wear the old chapter design, they're being repainted in this ` +
       `volume's editorial style. Functionally they're the same tools the chronicle has shipped ` +
       `since launch. New copy on a familiar floor.`,
   }
@@ -1582,11 +1582,11 @@ function buildWire(c: CareerChronicle): WireJson {
       if (last?.champion) {
         outlook = `Reigning champion in ${lg.leagueName}. The target is on the back this year.`
       } else if (last?.rank === 2) {
-        outlook = `One game from the ring last time out. Built a contender — needs the close.`
+        outlook = `One game from the ring last time out. Built a contender, needs the close.`
       } else if (last?.madePlayoffs) {
         outlook = `Punched the bracket last year. The roster shape suggests another run is on the table.`
       } else if (last) {
-        outlook = `Missed the bracket last season. Reload cycle — anchors stay, role players turn over.`
+        outlook = `Missed the bracket last season. Reload cycle, anchors stay, role players turn over.`
       } else {
         outlook = `No prior season on file. Fresh ink.`
       }
@@ -1622,20 +1622,20 @@ function buildWire(c: CareerChronicle): WireJson {
   chasing.push({
     label: 'Lifetime Points',
     value: Math.round(t.pointsFor).toLocaleString('en-US'),
-    context: `Every regular-season point clocked in. Compounding — this only goes up.`,
+    context: `Every regular-season point clocked in. Compounding, this only goes up.`,
   })
 
   return {
     name: c.chronicle.displayName,
     intro:
-      `The Wire is the live ledger — what's happening this week, this season, right now. ` +
+      `The Wire is the live ledger, what's happening this week, this season, right now. ` +
       `Outlooks per league lean on last year's finish until the in-season pipeline lands; ` +
       `matchups and records-watch go live the moment that data is flowing.`,
     recentForm: {
       intro:
         `Read each league's recent form like a beat reporter sketching expectations: champion ` +
         `defends, runner-up closes, missed-bracket reloads. Outlooks are derived from last year ` +
-        `only — they'll deepen as the in-season pipeline fills in.`,
+        `only, they'll deepen as the in-season pipeline fills in.`,
       items: recentForm,
     },
     records: {

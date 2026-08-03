@@ -121,7 +121,7 @@
   // ── Card rendering ─────────────────────────────────────────────────────
   function renderAsset(a) {
     if (a.kind === 'player') {
-      var pos = a.position || '—';
+      var pos = a.position || '·';
       var team = a.team ? ' · ' + escapeHtml(a.team) : '';
       var name = a.name || ('Player ' + (a.player_id || ''));
       return '<div class="tr-asset kind-player">' +
@@ -149,7 +149,7 @@
     if (opts && opts.showRevisit && s.revisit_grade) {
       return '<div class="tr-grade tr-grade-revisit">' +
         '<div class="tr-grade-row">' +
-          '<span class="tr-grade-letter tr-grade-then ' + gradeClass(s.grade) + '">' + escapeHtml(s.grade || '—') + '</span>' +
+          '<span class="tr-grade-letter tr-grade-then ' + gradeClass(s.grade) + '">' + escapeHtml(s.grade || '·') + '</span>' +
           '<span class="tr-grade-arrow">→</span>' +
           '<span class="tr-grade-letter ' + gradeClass(s.revisit_grade) + '">' + escapeHtml(s.revisit_grade) + '</span>' +
         '</div>' +
@@ -238,7 +238,7 @@
     return (
       renderSection({
         num: '§ 01 · This Week',
-        title: 'Just <em>landed —</em>',
+        title: 'Just <em>landed ·</em>',
         meta: trades.length > 0 ? trades.length + ' trade' + (trades.length === 1 ? '' : 's') : 'Last 7 days',
         trades: trades,
         alwaysRender: true,
@@ -246,7 +246,7 @@
       }) +
       renderSection({
         num: '§ 02 · The Verdict',
-        title: 'Four weeks <em>later —</em>',
+        title: 'Four weeks <em>later ·</em>',
         meta: verdicts.length > 0 ? 'How they actually played out' : 'Revisits land 4 weeks after each trade',
         trades: verdicts,
         cardOpts: { showRevisit: true },
@@ -266,7 +266,7 @@
     }
     return renderSection({
       num: '§ 01 · Archive',
-      title: 'Older <em>trades —</em>',
+      title: 'Older <em>trades ·</em>',
       meta: trades.length + ' trade' + (trades.length === 1 ? '' : 's'),
       trades: trades,
       alwaysRender: true,
@@ -278,12 +278,12 @@
     if (verdicts.length === 0) {
       return '<div class="tr-empty">' +
         '<h2>No verdicts yet</h2>' +
-        '<p>Verdicts land 4 weeks after each trade. Once we revisit some, they all show up here — newest first.</p>' +
+        '<p>Verdicts land 4 weeks after each trade. Once we revisit some, they all show up here, newest first.</p>' +
       '</div>';
     }
     return renderSection({
       num: '§ 01 · Retrospectives',
-      title: 'Every <em>verdict —</em>',
+      title: 'Every <em>verdict ·</em>',
       meta: verdicts.length + ' revisited',
       trades: verdicts,
       cardOpts: { showRevisit: true },

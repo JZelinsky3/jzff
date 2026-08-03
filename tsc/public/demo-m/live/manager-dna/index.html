@@ -326,7 +326,7 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
     <header class="dna-head">
         <div class="m-kicker">Genome Lab · Behavioral DNA</div>
         <h1 class="dna-title">Tested by the league. Built by <em>DNA.</em></h1>
-        <div class="m-mono dna-sub" id="dna-meta">Specimens sequenced <strong id="dna-count">—</strong></div>
+        <div class="m-mono dna-sub" id="dna-meta">Specimens sequenced <strong id="dna-count">·</strong></div>
     </header>
 
     <section id="dna-strand" hidden>
@@ -365,7 +365,7 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
 
     <section id="dna-genome-map" hidden>
         <div class="dna-label"><span class="t">§ V · Genome Map</span> The Spread</div>
-        <span class="dna-label-note" id="dna-genome-axes">—</span>
+        <span class="dna-label-note" id="dna-genome-axes">·</span>
         <div class="dna-genome-wrap" id="dna-genome-body"></div>
     </section>
 
@@ -403,7 +403,7 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
             </div>
         </div>
         <div class="dna-legend-foot">
-            NFL.com leagues fall back to Margin and Clutch — NFL's archive doesn't preserve per-week starters, so Eff and Churn can't be derived.
+            NFL.com leagues fall back to Margin and Clutch, NFL's archive doesn't preserve per-week starters, so Eff and Churn can't be derived.
         </div>
     </section>
 
@@ -873,8 +873,8 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
                 wa = (na / (na + nb)) * 100;
                 wb = 100 - wa;
             }
-            const fmtA = av == null ? '—' : spec.fmt(av);
-            const fmtB = bv == null ? '—' : spec.fmt(bv);
+            const fmtA = av == null ? '·' : spec.fmt(av);
+            const fmtB = bv == null ? '·' : spec.fmt(bv);
             const shareA = wa.toFixed(0);
             const shareB = wb.toFixed(0);
             return `
@@ -892,7 +892,7 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
         }).filter(Boolean).join('');
 
         return `
-            <div class="dna-compare-hint">Cyan = ${escapeHtml(a.name)} · Magenta = ${escapeHtml(b.name)} — each bar splits into shares that sum to 100%.</div>
+            <div class="dna-compare-hint">Cyan = ${escapeHtml(a.name)} · Magenta = ${escapeHtml(b.name)} · each bar splits into shares that sum to 100%.</div>
             <div class="dna-compare-grid">
                 <div>
                     <div class="dna-compare-col-name">${escapeHtml(a.name)}</div>
@@ -975,7 +975,7 @@ body { background: var(--dna-bg); color: var(--dna-cream); }
         .then(r => r.ok ? r.json() : null)
         .then(data => {
             if (!data || !data.managers || data.managers.length === 0) {
-                renderEmpty('Sync at least one season with weekly lineup data — the genome lab runs on what your league has done, not what they say they\'ll do.');
+                renderEmpty('Sync at least one season with weekly lineup data, the genome lab runs on what your league has done, not what they say they\'ll do.');
                 return;
             }
             const current = data.managers.filter(m => m.is_current);

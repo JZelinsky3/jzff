@@ -349,7 +349,7 @@ function renderCard(
                   color: RW_MUTE,
                 }}
               >
-                <span style={{ display: 'flex' }}>{item ? rcut(chaserName, 16) : '—'}</span>
+                <span style={{ display: 'flex' }}>{item ? rcut(chaserName, 16) : '·'}</span>
                 <span style={{ display: 'flex' }}>{pct != null ? `${pct}% of record` : item?.when ?? ''}</span>
               </div>
 
@@ -508,7 +508,7 @@ function renderQuietCard(
             color: '#9ca3af',
           }}
         >
-          Records watch returns when the season does — The Sunday Chronicle
+          Records watch returns when the season does, The Sunday Chronicle
         </div>
       </div>
     ),

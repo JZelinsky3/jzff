@@ -1254,10 +1254,10 @@ main { position: relative; z-index: 1; }
         <div class="dna-mast-sup">Genome Lab · Behavioral DNA</div>
         <h1 class="dna-mast-title">Tested by the league. Built by <em>DNA.</em></h1>
         <p class="dna-mast-sub">
-            Every transaction, every lineup, every draft pick leaves a trace. We sequenced the league —
+            Every transaction, every lineup, every draft pick leaves a trace. We sequenced the league ·
             here's what came back. Updates as the season writes new behavior.
         </p>
-        <div class="dna-mast-meta" id="dna-meta">SPECIMENS SEQUENCED <strong id="dna-count">—</strong></div>
+        <div class="dna-mast-meta" id="dna-meta">SPECIMENS SEQUENCED <strong id="dna-count">·</strong></div>
     </header>
 
     <!-- LEAGUE STRAND -->
@@ -1313,7 +1313,7 @@ main { position: relative; z-index: 1; }
         <div class="dna-genome-map-head">
             <span class="dna-genome-map-num">§ IV · Genome Map</span>
             <span class="dna-genome-map-title">The <em>spread.</em></span>
-            <span class="dna-genome-map-note" id="dna-genome-axes">—</span>
+            <span class="dna-genome-map-note" id="dna-genome-axes">·</span>
         </div>
         <div id="dna-genome-body"></div>
     </section>
@@ -1943,8 +1943,8 @@ main { position: relative; z-index: 1; }
                 wa = (na / (na + nb)) * 100;
                 wb = 100 - wa;
             }
-            const fmtA = av == null ? '—' : spec.fmt(av);
-            const fmtB = bv == null ? '—' : spec.fmt(bv);
+            const fmtA = av == null ? '·' : spec.fmt(av);
+            const fmtB = bv == null ? '·' : spec.fmt(bv);
             const shareA = wa.toFixed(0);
             const shareB = wb.toFixed(0);
             return `

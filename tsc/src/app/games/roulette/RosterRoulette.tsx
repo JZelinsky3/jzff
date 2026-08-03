@@ -22,7 +22,7 @@ import type { SquadPlayer, PoolPosition, Squad } from '@/lib/minigames/pool'
 import type { SlotDef, SlotId } from '@/lib/minigames/roulette'
 import { recordFor, recordHeadline, GAMES } from '@/lib/minigames/record'
 import { OwnLeagueCta } from '../OwnLeagueCta'
-import { bankRun, claimBank, postRun } from '../runBank'
+import { bankRun, claimBank, claimPendingIdentities, postRun } from '../runBank'
 import { ClaimPrompt } from '../ClaimPrompt'
 import styles from '../games.module.css'
 
@@ -468,10 +468,14 @@ export function RosterRoulette({
 
   // Anything banked while signed out goes up the moment there's an account
   // to hang it on. Runs first, so a player who signs in from the recap sees
-  // the board with their history already on it.
+  // the board with their history already on it; then the name they picked
+  // for that board while they were still a stranger to it.
   useEffect(() => {
     if (!signedIn) return
-    void claimBank()
+    void (async () => {
+      await claimBank()
+      await claimPendingIdentities()
+    })()
   }, [signedIn])
 
   const eligiblePositions = useMemo(() => {
@@ -829,10 +833,14 @@ export function RosterRoulette({
               </div>
               <Runback lineup={lineup} slots={slots} />
               <BoardLine post={post} poolId={poolId} signedIn={signedIn} />
-              {/* Only after the run is actually on the board. Asked before
-                  that, it would be a form standing between the player and
-                  their score. */}
-              {post.state === 'posted' && <ClaimPrompt poolId={poolId} />}
+              {/* Only once the run has somewhere to go: posted for a signed-in
+                  player, banked for a signed-out one. Asked any earlier it
+                  would be a form standing between the player and their score,
+                  and asked on a refused run it would be asking about a board
+                  they aren't on. */}
+              {(post.state === 'posted' || post.state === 'banked') && (
+                <ClaimPrompt poolId={poolId} />
+              )}
               <div className={styles.btnRow}>
                 <button type="button" className={styles.btn} onClick={newWheel}>
                   New wheel
@@ -1306,21 +1314,28 @@ function BoardLine({
 }) {
   const boardHref = `/games/roulette/board/?pool=${encodeURIComponent(poolId)}`
 
+  // The wait used to read "Putting this on the board…", which spent the line
+  // on the one thing the player already knows: every finished run posts
+  // itself, there is no button. What they don't know is where it landed, so
+  // the line says it is working that out and then answers it in place.
   if (post.state === 'idle' || post.state === 'sending') {
-    return <p className={styles.boardLine}>Putting this on the board…</p>
+    return <p className={styles.boardLine}>Working out where this ranks…</p>
   }
 
   if (post.state === 'posted') {
     const { rank, total } = post
+    // Named as Best runs rather than left as "the board", because the board
+    // has more than one tab and this rank is only true on that one: Career
+    // ranks people by rate, not runs, and would put the same run somewhere
+    // else entirely.
     return (
       <p className={styles.boardLine}>
-        {rank === 1 ? (
+        {rank != null ? (
           <>
-            <b>Best run on the board.</b>{' '}
-          </>
-        ) : rank != null ? (
-          <>
-            <b>{ordinal(rank)}</b> of {total.toLocaleString()} runs.{' '}
+            <b>
+              {ordinal(rank)} of {total.toLocaleString()}
+            </b>{' '}
+            in Best runs{rank === 1 ? ', and nobody has beaten it' : ''}.{' '}
           </>
         ) : null}
         <a href={boardHref} className={styles.boardLink}>

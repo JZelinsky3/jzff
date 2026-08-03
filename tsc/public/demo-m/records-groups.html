@@ -77,7 +77,7 @@ body{ background:var(--ink); }
 (function(){
     'use strict';
     function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-    function num(n,d){if(n==null||isNaN(n))return '—';return Number(n).toLocaleString('en-US',{maximumFractionDigits:d==null?1:d});}
+    function num(n,d){if(n==null||isNaN(n))return '·';return Number(n).toLocaleString('en-US',{maximumFractionDigits:d==null?1:d});}
     function rec(r){return String(r==null?'':r).replace(/^(\d+-\d+)-0$/,'$1');}
     function ctx(e){return e.season+' · '+(e.team_name||'')+(e.reg_record?' · '+rec(e.reg_record):'');}
 
@@ -115,7 +115,7 @@ body{ background:var(--ink); }
             var sub=cf.sub?cf.sub(lead):'';
             var gtag=cf.games&&lead.total_games!=null?' <i class="rb-name-g">'+lead.total_games+'g</i>':'';
             var hero='<div class="rb-hero"><div class="rb-hero-top">'+
-                '<span class="rb-hero-who"><b>'+esc(lead.owner||lead.name||'—')+'</b>'+gtag+
+                '<span class="rb-hero-who"><b>'+esc(lead.owner||lead.name||'·')+'</b>'+gtag+
                     '<small>'+esc(ctx(lead))+'</small></span>'+
                 '<span class="rb-hero-val'+(sub?' has-sub':'')+'">'+esc(cf.val(lead))+(sub?'<small>'+esc(sub)+'</small>':'')+'</span>'+
                 '</div></div>';
@@ -125,7 +125,7 @@ body{ background:var(--ink); }
                 return '<div class="rb-bar-row">'+
                     '<span class="rb-bar-rank">'+(i+2)+'</span>'+
                     '<span class="rb-bar-main">'+
-                        '<span class="rb-bar-name">'+esc(e.owner||e.name||'—')+'</span>'+
+                        '<span class="rb-bar-name">'+esc(e.owner||e.name||'·')+'</span>'+
                         '<span class="rb-bar-track"><span class="rb-bar-fill" style="width:'+w.toFixed(1)+'%"></span></span>'+
                         '<span class="rb-bar-sub">'+esc(e.season)+'</span>'+
                     '</span>'+

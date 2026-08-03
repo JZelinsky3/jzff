@@ -229,10 +229,10 @@
     if (!state.data.hasProjections) { if (section) section.hidden = true; return }
     if (section) section.hidden = false
     byId('projBody').innerHTML = teams.map(function (t) {
-      var projWL = t.proj_wins != null && t.proj_losses != null ? t.proj_wins + '–' + t.proj_losses : '—'
+      var projWL = t.proj_wins != null && t.proj_losses != null ? t.proj_wins + '–' + t.proj_losses : '·'
       var pp = t.playoff_pct
-      var playStr = pp != null ? pp + '%' : '—'
-      var byeStr = t.bye_pct != null ? t.bye_pct + '%' : '—'
+      var playStr = pp != null ? pp + '%' : '·'
+      var byeStr = t.bye_pct != null ? t.bye_pct + '%' : '·'
       var barW = pp != null ? Math.min(100, pp) : 0
       var barCls = pp >= 60 ? 'bar-elite' : pp >= 50 ? 'bar-good' : pp >= 38 ? 'bar-mid' : 'bar-low'
       return '<tr>'
@@ -268,7 +268,7 @@
       return '<section class="pr-section">'
         + '<div class="pr-section-header">'
         +   '<span class="pr-section-num">§ 03' + String.fromCharCode(97 + idx) + ' · ' + esc(d.name) + '</span>'
-        +   '<span class="pr-section-title">' + esc(d.name) + ' <em> —</em></span>'
+        +   '<span class="pr-section-title">' + esc(d.name) + ' <em> ·</em></span>'
         +   '<span class="pr-section-meta">title odds</span>'
         + '</div>'
         + '<div class="pr-table-wrap"><table class="pr-table"><thead><tr>'
@@ -281,7 +281,7 @@
 
   // ── Delta badge ─────────────────────────────────────────────────────────
   function deltaHTML(delta) {
-    if (!delta || delta === 0) return '<span class="rank-delta delta-same">—</span>'
+    if (!delta || delta === 0) return '<span class="rank-delta delta-same">·</span>'
     var abs = Math.abs(delta)
     var cls = delta > 0 ? 'delta-up' : 'delta-down'
     var sym = delta > 0 ? '↑' : '↓'

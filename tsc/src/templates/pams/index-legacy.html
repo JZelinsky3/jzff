@@ -899,9 +899,9 @@ table.data tbody tr.highlight {
     </h1>
     <p class="hero-sub">
         Champions, blowouts, and grudge matches. Every record, every rivalry,
-        every Sunday — kept in the books.
+        every Sunday, kept in the books.
     </p>
-    <div class="hero-meta" id="dc-hero-meta">{{LEAGUE_FOUNDED}} — Present</div>
+    <div class="hero-meta" id="dc-hero-meta">{{LEAGUE_FOUNDED}}–Present</div>
 </div>
 
 
@@ -909,7 +909,7 @@ table.data tbody tr.highlight {
 <div class="section">
     <div class="section-header">
         <span class="section-num">§ 01 · Benchmarks</span>
-        <span class="section-title">The records of record —</span>
+        <span class="section-title">The records of record ·</span>
         <span class="section-meta">Who will be next</span>
     </div>
 
@@ -931,7 +931,7 @@ table.data tbody tr.highlight {
 <div class="section">
     <div class="section-header">
         <span class="section-num">§ 02 · The Almanac</span>
-        <span class="section-title">Table of contents —</span>
+        <span class="section-title">Table of contents ·</span>
         <span class="section-meta">seven chapters</span>
     </div>
 
@@ -967,7 +967,7 @@ table.data tbody tr.highlight {
             <div class="toc-chapter">Ch. III</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">Season <em>Archives.</em></div>
-                <div class="toc-desc">Year by year — standings, champions, and the games that defined each campaign.</div>
+                <div class="toc-desc">Year by year, standings, champions, and the games that defined each campaign.</div>
             </div>
             <span class="toc-badge sage" id="dc-seasons-badge">Years</span>
             <div class="toc-arrow">→</div>
@@ -987,7 +987,7 @@ table.data tbody tr.highlight {
             <div class="toc-chapter">Ch. V</div>
             <div class="toc-title-wrap">
                 <div class="toc-title">Live <em>Season.</em></div>
-                <div class="toc-desc">Pick'ems, power rankings, records watch, weekly recap, and trade grades — everything that happens during the season.</div>
+                <div class="toc-desc">Pick'ems, power rankings, records watch, weekly recap, and trade grades, everything that happens during the season.</div>
             </div>
             <span class="toc-badge ember">2026 Live</span>
             <div class="toc-arrow">→</div>
@@ -1036,7 +1036,7 @@ table.data tbody tr.highlight {
 <div class="section" id="dc-champion-section" hidden>
     <div class="section-header">
         <span class="section-num">§ 03 · Reigning</span>
-        <span class="section-title">The defending champion —</span>
+        <span class="section-title">The defending champion ·</span>
         <span class="section-meta" id="dc-champion-meta"></span>
     </div>
     <div class="champion-row" id="dc-champion-row">
@@ -1129,7 +1129,7 @@ table.data tbody tr.highlight {
     var meta = el('dc-hero-meta');
     if (meta) {
       var parts = [];
-      if (firstYear && lastYear) parts.push(firstYear === lastYear ? String(firstYear) : firstYear + ' — ' + lastYear);
+      if (firstYear && lastYear) parts.push(firstYear === lastYear ? String(firstYear) : firstYear + '–' + lastYear);
       else if (firstYear) parts.push(String(firstYear));
       if (league.total_matchups) parts.push(league.total_matchups + ' MATCHUPS');
       if (managers.length) parts.push(managers.length + ' MANAGERS');
@@ -1167,7 +1167,7 @@ table.data tbody tr.highlight {
         '<div class="champion-text-block">' +
           '<div class="champion-kicker">★ ' + escapeAttr(champ.year + ' · Reigning Champion') + ' ★</div>' +
           '<h2 class="champion-name">' + (teamHead ? escapeAttr(teamHead) + ' <em>' + escapeAttr(teamTail) + '.</em>' : '<em>' + escapeAttr(teamTail) + '.</em>') + '</h2>' +
-          '<p class="champion-blurb"><strong>' + escapeAttr(champ.owner_name || '') + '</strong> claimed the ' + champ.year + ' title' + (champ.record ? ' — ' + escapeAttr(champ.record) : '') + (champ.points_for ? ' · ' + champ.points_for + ' PF' : '') + '.</p>' +
+          '<p class="champion-blurb"><strong>' + escapeAttr(champ.owner_name || '') + '</strong> claimed the ' + champ.year + ' title' + (champ.record ? ' · ' + escapeAttr(champ.record) : '') + (champ.points_for ? ' · ' + champ.points_for + ' PF' : '') + '.</p>' +
           '<a href="seasons/season?year=' + champ.year + '" class="champion-link"><span>View the ' + champ.year + ' season</span><span class="arrow">→</span></a>' +
         '</div>';
     }

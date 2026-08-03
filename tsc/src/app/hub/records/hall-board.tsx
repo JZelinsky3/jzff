@@ -215,7 +215,7 @@ export function HallBoard({
               className={`hub-filter-chip${selected.has('fmt-1qb') ? ' active' : ''}`}
               onClick={() => toggleKey('fmt-1qb')}
               aria-pressed={selected.has('fmt-1qb')}
-              title="Most leagues run one quarterback — the closest thing to a default"
+              title="Most leagues run one quarterback, the closest thing to a default"
             >
               1-QB only
               <span className="hub-filter-count">{leagueCount.get('fmt-1qb')}</span>
@@ -282,7 +282,7 @@ export function HallBoard({
           <div className="hub-section">
             <div className="hub-section-header">
               <span className="hub-section-num">§ 01 · The marquee</span>
-              <span className="hub-section-title">The record of records —</span>
+              <span className="hub-section-title">The record of records,</span>
               <span className="hub-section-meta">
                 {adjusted ? 'Adjusted' : 'Raw'} · {leaguesInView} {leaguesInView === 1 ? 'league' : 'leagues'} in view
               </span>
@@ -297,7 +297,7 @@ export function HallBoard({
           <div className="hub-section">
             <div className="hub-section-header">
               <span className="hub-section-num">§ 02 · The wall</span>
-              <span className="hub-section-title">Plaques in good standing —</span>
+              <span className="hub-section-title">Plaques in good standing,</span>
               <span className="hub-section-meta">Until somebody takes them</span>
             </div>
             <div className="hub-plaque-grid">

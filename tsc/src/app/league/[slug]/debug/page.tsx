@@ -208,7 +208,7 @@ export default async function DebugPage({ params }: { params: Promise<{ slug: st
               <td style={{ color: r.matchups === 0 ? 'var(--rust)' : undefined }}>{r.matchups}</td>
               <td style={{ color: r.playoffMatchups === 0 ? 'var(--rust)' : undefined }}>{r.playoffMatchups}</td>
               <td>{r.weeks.join(',')}</td>
-              <td>{r.playoffWeeks.join(',') || '—'}</td>
+              <td>{r.playoffWeeks.join(',') || '·'}</td>
               <td>
                 {Object.entries(r.finalRanks)
                   .sort(([a], [b]) => Number(a) - Number(b))
@@ -254,10 +254,10 @@ export default async function DebugPage({ params }: { params: Promise<{ slug: st
       </div>
 
       <h2 style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem', marginTop: '2.5rem', marginBottom: '.5rem' }}>
-        Sample manager probe — reproducing loadSnapshot path
+        Sample manager probe, reproducing loadSnapshot path
       </h2>
       <div style={{ padding: '.8rem 1rem', background: 'rgba(255,255,255,.03)', borderRadius: '2px', marginBottom: '1.5rem' }}>
-        <div>Sample manager: <strong>{sampleMgr?.display_name ?? 'none'}</strong> · id: <code style={{ fontSize: '.7em' }}>{sampleMgr?.id ?? '—'}</code></div>
+        <div>Sample manager: <strong>{sampleMgr?.display_name ?? 'none'}</strong> · id: <code style={{ fontSize: '.7em' }}>{sampleMgr?.id ?? '·'}</code></div>
         <div>manager_seasons rows with that exact manager_id (admin direct query): <strong>{sampleMs.length}</strong></div>
         <div>Their id IS a key in a Map built from the same query: <strong>{String(sampleMgrIdInMsByManager)}</strong></div>
         <div style={{ marginTop: '.4rem', fontSize: '.75em', opacity: 0.7 }}>
@@ -284,7 +284,7 @@ export default async function DebugPage({ params }: { params: Promise<{ slug: st
       </pre>
 
       <h2 style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem', marginTop: '2.5rem', marginBottom: '1rem' }}>
-        Exporter output — managers
+        Exporter output, managers
       </h2>
       <p style={{ opacity: 0.7, marginBottom: '1rem' }}>
         What standings.html and managers.html actually receive. If reg_record looks right but playoff_record is 0-0-0 everywhere, the bug is in the aggregator&apos;s playoff filter.

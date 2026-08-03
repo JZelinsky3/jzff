@@ -2175,11 +2175,27 @@
   background: color-mix(in srgb, var(--gp-panel-2) 60%, transparent);
 }
 
+/* Once the question is answered the panel is one sentence, so it stops
+   reserving the width the list of names needed and shrinks to what it is
+   actually saying. Pressing "Not you?" puts the list back and the panel goes
+   back to full width with it. */
+.claimSettled {
+  composes: claim;
+  width: fit-content;
+  max-width: 100%;
+}
+
 .claimAsk {
   font-size: 0.8rem;
   color: var(--gp-soft);
   line-height: 1.55;
   margin: 0 0 0.7rem;
+}
+
+/* The gap under the sentence is there to clear the list of names. With no
+   list under it, it is just an empty inch at the bottom of the card. */
+.claimAsk:last-child {
+  margin-bottom: 0;
 }
 
 .claimAsk b {

@@ -151,11 +151,11 @@ async function fetchEspn<T>(url: string, auth?: EspnAuth): Promise<T> {
   if (!res.ok) {
     if (res.status === 401) {
       throw new Error(auth?.swid
-        ? 'ESPN auth failed — your SWID/espn_s2 cookies may have expired. Grab fresh ones from a logged-in ESPN tab.'
-        : 'ESPN auth required — this league is private. Check the "private league" box and paste your SWID + espn_s2 cookies.')
+        ? 'ESPN auth failed, your SWID/espn_s2 cookies may have expired. Grab fresh ones from a logged-in ESPN tab.'
+        : 'ESPN auth required, this league is private. Check the "private league" box and paste your SWID + espn_s2 cookies.')
     }
-    if (res.status === 403) throw new Error('ESPN forbidden (403) — cookies are valid but this league or season is restricted.')
-    if (res.status === 404) throw new Error(`ESPN 404 — league not found for that season. Double-check the league ID and try an older year if this is a long-dormant league.`)
+    if (res.status === 403) throw new Error('ESPN forbidden (403), cookies are valid but this league or season is restricted.')
+    if (res.status === 404) throw new Error(`ESPN 404, league not found for that season. Double-check the league ID and try an older year if this is a long-dormant league.`)
     throw new Error(`ESPN ${url} → HTTP ${res.status}`)
   }
   return (await res.json()) as T

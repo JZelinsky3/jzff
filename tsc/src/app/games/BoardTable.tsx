@@ -7,8 +7,9 @@
 //    ten, they hold four of the top ten. Playing a lot to get there is the
 //    board working, not a loophole in it.
 //  - The pinned row is a real lookup, not a search of the page. The whole
-//    point is the case where your best ISN'T in the fifty shown: you are
-//    77th, and the board says 77th rather than saying nothing.
+//    point is the case where your best ISN'T in the rows shown (twenty on a
+//    league board, fifty site-wide): you are 77th, and the board says 77th
+//    rather than saying nothing.
 //
 // The career tab is the other question — who is actually good, as a rate
 // over every run, with a minimum so one hot wheel can't top it.

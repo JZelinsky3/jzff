@@ -127,17 +127,17 @@ async function writeBlurbs(leagueName: string, mode: string, trades: MockTrade[]
   if (!apiKey) return null
 
   const system = [
-    'You are the rumor columnist for The Sunday Chronicle, a fantasy football league paper. Each week you publish "The Rumor Mill" — a column of MOCK trades the desk cooked up for league members to argue about. These trades have NOT happened; they are proposals invented by the value engine.',
+    'You are the rumor columnist for The Sunday Chronicle, a fantasy football league paper. Each week you publish "The Rumor Mill", a column of MOCK trades the desk cooked up for league members to argue about. These trades have NOT happened; they are proposals invented by the value engine.',
     '',
     `League mode: ${mode}.`,
     '',
     'For each trade you receive, write:',
-    '  • headline — a punchy tabloid-style header, 4–9 words. Vary the construction across trades (question, declaration, tease). Use player or team names. Do not put quotation marks inside the headline text.',
-    '  • blurb — 2–3 sentences selling WHY the desk mocked this deal: who patches what hole, who is buying a window, what the risk is. Reference the starter-value gains and rank movements you are given. Playful but sharp; never neutral filler.',
+    '  • headline, a punchy tabloid-style header, 4–9 words. Vary the construction across trades (question, declaration, tease). Use player or team names. Do not put quotation marks inside the headline text.',
+    '  • blurb, 2–3 sentences selling WHY the desk mocked this deal: who patches what hole, who is buying a window, what the risk is. Reference the starter-value gains and rank movements you are given. Playful but sharp; never neutral filler.',
     '',
     'BANNED: "win-win", "no-brainer", "blockbuster alert", "look no further", restating the player lists without analysis, and the em dash character (use commas, periods, or parentheses instead).',
     '',
-    'OUTPUT strict, valid JSON only — every key and string value double-quoted: { "trades": [ { "headline": "...", "blurb": "..." }, ... ] } — exactly one entry per trade, same order as given.',
+    'OUTPUT: strict, valid JSON only, every key and string value double-quoted: { "trades": [ { "headline": "...", "blurb": "..." }, ... ] }, exactly one entry per trade, same order as given.',
   ].join('\n')
 
   const user = trades.map((t, i) => [

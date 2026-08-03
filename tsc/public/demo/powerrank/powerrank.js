@@ -232,9 +232,9 @@ function renderProjections(teams) {
     const pl = t.proj_losses !== "-" ? t.proj_losses : null;
     const pp = t.playoff_pct !== "-" ? t.playoff_pct : null;
     const bp = t.bye_pct     !== "-" ? t.bye_pct     : null;
-    const projWL  = pw !== null && pl !== null ? `${pw}–${pl}` : "—";
-    const playStr = pp !== null ? pp + "%" : "—";
-    const byeStr  = bp !== null ? bp + "%" : "—";
+    const projWL  = pw !== null && pl !== null ? `${pw}–${pl}` : "·";
+    const playStr = pp !== null ? pp + "%" : "·";
+    const byeStr  = bp !== null ? bp + "%" : "·";
     const barW    = pp !== null ? Math.min(100, pp) : 0;
     const barCls  = pp >= 60 ? "bar-elite" : pp >= 50 ? "bar-good" : pp >= 38 ? "bar-mid" : "bar-low";
     return `
@@ -302,7 +302,7 @@ function renderConfTable(tbodyId, teams) {
 
 // ── Delta badge ───────────────────────────────────────────────────────────
 function deltaHTML(delta) {
-  if (!delta || delta === 0) return `<span class="rank-delta delta-same">—</span>`;
+  if (!delta || delta === 0) return `<span class="rank-delta delta-same">·</span>`;
   const abs = Math.abs(delta);
   const cls = delta > 0 ? "delta-up" : "delta-down";
   const sym = delta > 0 ? "↑" : "↓";

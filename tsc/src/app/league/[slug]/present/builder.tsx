@@ -143,7 +143,7 @@ export function Builder({
           <div className="present-builder-kicker">Presentation mode</div>
           <h1 className="present-builder-title">Build a deck</h1>
           <p className="present-builder-sub">
-            Pick slides, edit them, then present. Nothing here saves — close the tab and it&apos;s gone.
+            Pick slides, edit them, then present. Nothing here saves, close the tab and it&apos;s gone.
           </p>
         </div>
         <div className="present-builder-actions">
@@ -235,7 +235,7 @@ export function Builder({
           </div>
           {deck.slides.length === 0 ? (
             <div className="present-deck-empty">
-              <div style={{ marginBottom: '1rem' }}>Click a block from the catalog to start your deck —</div>
+              <div style={{ marginBottom: '1rem' }}>Click a block from the catalog to start your deck,</div>
               <div style={{ marginBottom: '1rem', color: 'var(--cream-mute)', fontSize: '.78rem' }}>or jump in with a pre-built deck:</div>
               <button
                 type="button"
@@ -335,7 +335,7 @@ export function Builder({
                         value={value}
                         onChange={(e) => updateValue(selected.id, key, e.target.value)}
                       >
-                        <option value="">— pick —</option>
+                        <option value="">, pick,</option>
                         {choices.map((c) => (
                           <option key={c.value} value={c.value}>{c.label}</option>
                         ))}

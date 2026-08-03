@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'The Sunday Chronicle',
     short_name: 'TSC',
     description:
-      "Your fantasy football league's full history as a polished public almanac — plus the Sunday Live game-day companion.",
+      "Your fantasy football league's full history as a polished public almanac, plus the Sunday Live game-day companion.",
     id: '/',
     start_url: '/',
     scope: '/',

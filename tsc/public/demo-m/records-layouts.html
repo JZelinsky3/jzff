@@ -94,7 +94,7 @@ body{ background:var(--ink); }
 (function(){
     'use strict';
     function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-    function num(n,d){if(n==null||isNaN(n))return '—';return Number(n).toLocaleString('en-US',{maximumFractionDigits:d==null?1:d});}
+    function num(n,d){if(n==null||isNaN(n))return '·';return Number(n).toLocaleString('en-US',{maximumFractionDigits:d==null?1:d});}
 
     fetch('data/record_book.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
     .then(function(data){
@@ -104,7 +104,7 @@ body{ background:var(--ink); }
             var arr=c[key]||[];
             return {
                 label:label,
-                rows:arr.slice(0,3).map(function(e){return {name:e.owner||e.name||'—', val:valf(e), sub:subf?subf(e):''};}),
+                rows:arr.slice(0,3).map(function(e){return {name:e.owner||e.name||'·', val:valf(e), sub:subf?subf(e):''};}),
             };
         }
         var seasons=function(e){return e.seasons_played?e.seasons_played+(e.seasons_played===1?' season':' seasons'):'';};
@@ -117,7 +117,7 @@ body{ background:var(--ink); }
             pick('best_avg_finish','Best Avg Finish',function(e){return num(e.avg_final_rank);},seasons),
         ].filter(function(r){return r.rows.length;});
 
-        function lead(r){return r.rows[0]||{name:'—',val:'—',sub:''};}
+        function lead(r){return r.rows[0]||{name:'·',val:'·',sub:''};}
 
         // ---- Concept A: mosaic ----
         function conceptA(){
@@ -167,7 +167,7 @@ body{ background:var(--ink); }
         function conceptC(){
             var f=recs[0];
             var r=f.rows;
-            var g=r[0]||{name:'—',val:''}, s=r[1]||{name:'—',val:''}, b=r[2]||{name:'—',val:''};
+            var g=r[0]||{name:'·',val:''}, s=r[1]||{name:'·',val:''}, b=r[2]||{name:'·',val:''};
             var html='<div class="C-podium-cap">'+esc(f.label)+'</div>'+
             '<div class="C-podium">'+
                 '<div class="C-step C-2"><div class="C-medal">2ND</div><div class="lp-holder">'+esc(s.name)+'</div><div class="lp-val">'+esc(s.val)+'</div></div>'+

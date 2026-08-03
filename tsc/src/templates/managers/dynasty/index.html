@@ -263,14 +263,14 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 <header class="edition">
     <div class="edition-sup"><span class="star">★</span> Issue III · The Dynasty Files <span class="star">★</span></div>
     <h1 class="edition-title">Portfolios &amp; <em>Franchises.</em></h1>
-    <p class="edition-deck" id="dynasty-deck">One file per league — the arc, the hardware, the anchors that built the team.</p>
+    <p class="edition-deck" id="dynasty-deck">One file per league, the arc, the hardware, the anchors that built the team.</p>
     <div class="edition-rule"></div>
 </header>
 
 <section class="lede">
     <div class="lede-frame">
         <div class="lede-mast"><span class="star">★</span> The Editor's Lede <span class="star">★</span></div>
-        <div class="lede-body" id="lede-body"><span class="dropcap">O</span>ne file per league — the arc, the hardware, the anchors that built the team. KTC portfolio and the cross-league trade analyzer ship in once those pipelines land.</div>
+        <div class="lede-body" id="lede-body"><span class="dropcap">O</span>ne file per league, the arc, the hardware, the anchors that built the team. KTC portfolio and the cross-league trade analyzer ship in once those pipelines land.</div>
     </div>
 </section>
 
@@ -284,7 +284,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
     <div id="portfolio-warn-host"></div>
     <div class="portfolio" id="portfolio"><div class="loading">Loading portfolio snapshot…</div></div>
     <div class="pf-tsnote">
-        — <em>Coming soon:</em> portfolio value <em>over time</em> as a real line chart. Needs per-season KTC snapshots; landing in a follow-up.
+        · <em>Coming soon:</em> portfolio value <em>over time</em> as a real line chart. Needs per-season KTC snapshots; landing in a follow-up.
     </div>
 </section>
 
@@ -307,10 +307,10 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
     <p class="section-intro" id="trade-desk-intro">Every completed trade across every linked Sleeper league this season, you on one side or the other. Yours sit gold; the rest run cream so you can scan the floor without your moves blending in.</p>
     <div id="trade-warn-host"></div>
     <div class="trade-totals" id="trade-totals" hidden>
-        <div class="tt"><div class="tt-label">Your Trades</div><div class="tt-value" id="tt-trades">—</div></div>
-        <div class="tt"><div class="tt-label">Players In</div><div class="tt-value" id="tt-in">—</div></div>
-        <div class="tt"><div class="tt-label">Players Out</div><div class="tt-value" id="tt-out">—</div></div>
-        <div class="tt"><div class="tt-label">Picks Net</div><div class="tt-value" id="tt-picks">—</div></div>
+        <div class="tt"><div class="tt-label">Your Trades</div><div class="tt-value" id="tt-trades">·</div></div>
+        <div class="tt"><div class="tt-label">Players In</div><div class="tt-value" id="tt-in">·</div></div>
+        <div class="tt"><div class="tt-label">Players Out</div><div class="tt-value" id="tt-out">·</div></div>
+        <div class="tt"><div class="tt-label">Picks Net</div><div class="tt-value" id="tt-picks">·</div></div>
     </div>
     <div class="trades" id="trades"><div class="loading">Loading trade history…</div></div>
 </section>
@@ -416,7 +416,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         .catch(function () { return null })
         .then(function (snap) {
             if (!snap) {
-                document.getElementById('portfolio').innerHTML = '<div class="empty">Portfolio feed unavailable — try a refresh.</div>'
+                document.getElementById('portfolio').innerHTML = '<div class="empty">Portfolio feed unavailable, try a refresh.</div>'
                 return
             }
             renderPortfolioWarnings(snap.errors || [], snap.unsupported || [])
@@ -443,7 +443,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         .catch(function () { return null })
         .then(function (history) {
             if (!history) {
-                document.getElementById('trades').innerHTML = '<div class="trade-empty">Trade feed unavailable — try a refresh.</div>'
+                document.getElementById('trades').innerHTML = '<div class="trade-empty">Trade feed unavailable, try a refresh.</div>'
                 return
             }
             renderTradeWarnings(history.errors || [], history.unsupported || [])
@@ -530,7 +530,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
     function playerLine(p) {
         return '<div class="trade-pl">' +
             '<span class="nm">' + escapeHtml(p.name) + '</span>' +
-            '<span class="pos">' + escapeHtml(p.position || '—') + (p.team ? ' · ' + escapeHtml(p.team) : '') + '</span>' +
+            '<span class="pos">' + escapeHtml(p.position || '·') + (p.team ? ' · ' + escapeHtml(p.team) : '') + '</span>' +
         '</div>'
     }
 
@@ -538,7 +538,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         var host = document.getElementById('portfolio')
         if (!host) return
         if (leagues.length === 0) {
-            host.innerHTML = '<div class="empty">No Sleeper leagues linked yet — link one to wake the portfolio feed.</div>'
+            host.innerHTML = '<div class="empty">No Sleeper leagues linked yet, link one to wake the portfolio feed.</div>'
             return
         }
         var meta = document.getElementById('portfolio-meta')
@@ -551,9 +551,9 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
             var ordinal = suf(l.myRank)
             var assetsHtml = (l.topAssets || []).map(function (p) {
                 return '<div class="pf-asset">' +
-                    '<span class="pf-asset-pos">' + escapeHtml(p.position || '—') + '</span>' +
+                    '<span class="pf-asset-pos">' + escapeHtml(p.position || '·') + '</span>' +
                     '<span><span class="pf-asset-nm">' + escapeHtml(p.name) + '</span> ' +
-                        '<span class="pf-asset-meta">· ' + escapeHtml(p.team || '—') + (p.age ? ' · age ' + p.age : '') + '</span></span>' +
+                        '<span class="pf-asset-meta">· ' + escapeHtml(p.team || '·') + (p.age ? ' · age ' + p.age : '') + '</span></span>' +
                     '<span class="pf-asset-val">' + Math.round(p.value).toLocaleString('en-US') + '</span>' +
                 '</div>'
             }).join('')
@@ -585,7 +585,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         host.innerHTML = leagues.map(function (l) {
             var arcHtml = (l.arc || []).map(function (a) {
                 var cls = 'arc-yr' + (a.champion ? ' champ' : '')
-                var rk = a.champion ? '★ 1st' : (a.rank != null ? a.rank + suf(a.rank) : '—')
+                var rk = a.champion ? '★ 1st' : (a.rank != null ? a.rank + suf(a.rank) : '·')
                 return '<div class="' + cls + '"><div class="yr">' + a.year + '</div><div class="rk">' + rk + '</div></div>'
             }).join('') || '<div class="empty">No seasons recorded.</div>'
 
@@ -599,7 +599,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 
             var years = l.firstYear != null && l.lastYear != null
                 ? (l.firstYear === l.lastYear ? String(l.firstYear) : l.firstYear + '–' + l.lastYear)
-                : '—'
+                : '·'
 
             return '<article class="file' + (l.championships > 0 ? ' gold' : '') + '">' +
                 '<div>' +
@@ -611,7 +611,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
                         '<div class="ft"><div class="ft-label">Seasons</div><div class="ft-value">' + l.yearsActive + '</div></div>' +
                         '<div class="ft"><div class="ft-label">Rings</div><div class="ft-value gold">' + l.championships + '</div></div>' +
                         '<div class="ft"><div class="ft-label">Playoffs</div><div class="ft-value">' + l.playoffAppearances + '</div></div>' +
-                        '<div class="ft"><div class="ft-label">Best</div><div class="ft-value steel">' + (l.bestFinish != null ? l.bestFinish + suf(l.bestFinish) : '—') + '</div></div>' +
+                        '<div class="ft"><div class="ft-label">Best</div><div class="ft-value steel">' + (l.bestFinish != null ? l.bestFinish + suf(l.bestFinish) : '·') + '</div></div>' +
                     '</div>' +
                     '<div class="arc-mast">The Arc</div>' +
                     '<div class="arc">' + arcHtml + '</div>' +

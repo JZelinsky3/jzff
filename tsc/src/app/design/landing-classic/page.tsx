@@ -28,7 +28,7 @@ export default async function LandingClassicPage() {
     'New · Live Season Hub · Matchup Preview · Best Coach Tracker',
     'New · Trade Grader · Milestone Tracker · Records Watch',
     'New · Manager DNA · Live-season tendencies + tells',
-    'New · Free tier — one league, forever',
+    'New · Free tier, one league, forever',
     'Soon · Weekly Recap · Underdog Fantasy',
     'Sleeper · ESPN · Yahoo · NFL.com',
   ]
@@ -55,7 +55,7 @@ export default async function LandingClassicPage() {
       </div>
 
       <nav className="nav">
-        <span className="nav-back" style={{ visibility: 'hidden' }}>—</span>
+        <span className="nav-back" style={{ visibility: 'hidden' }}>, </span>
         <div className="nav-center">
           <div className="nav-kicker">Vol. II · The League Almanac</div>
           <div className="nav-title lp-nav-title">The Sunday <em>Chronicle.</em></div>
@@ -110,11 +110,11 @@ export default async function LandingClassicPage() {
       <div className="section lp-demo-section">
         <div className="section-header">
           <span className="section-num">§ 03 · See it live</span>
-          <span className="section-title">Tour a finished almanac —</span>
+          <span className="section-title">Tour a finished almanac,</span>
           <span className="section-meta">no signup required</span>
         </div>
         <p className="lp-demo-lede">
-          Pull the demo below to walk a real league&apos;s seven-year history — every page populated,
+          Pull the demo below to walk a real league&apos;s seven-year history, every page populated,
           every link working. It&apos;s the exact almanac you&apos;ll get for your league.
         </p>
         <DemoViewer />
@@ -124,7 +124,7 @@ export default async function LandingClassicPage() {
       <div className="section">
         <div className="section-header">
           <span className="section-num">§ 04 · Platforms</span>
-          <span className="section-title">Bring your league from —</span>
+          <span className="section-title">Bring your league from,</span>
           <span className="section-meta">more on the way</span>
         </div>
         <div className="lp-platforms">
@@ -170,8 +170,8 @@ export default async function LandingClassicPage() {
             <p>
               <strong>The Sunday Chronicle is a fantasy football league history almanac.</strong>{' '}
               Paste a Sleeper, ESPN, NFL.com, or Yahoo league ID and it imports every season the
-              league has ever existed — drafts, weekly matchups, standings, transactions, playoff
-              brackets — then publishes a polished public site your whole league can read at one
+              league has ever existed, drafts, weekly matchups, standings, transactions, playoff
+              brackets, then publishes a polished public site your whole league can read at one
               permanent URL.
             </p>
             <p>
@@ -182,9 +182,9 @@ export default async function LandingClassicPage() {
               every year back to year one. Designed like a publication, not a data dump.
             </p>
             <p>
-              During the live NFL season, the same almanac stays in sync — Sunday command
+              During the live NFL season, the same almanac stays in sync, Sunday command
               center, matchup previews, best-coach tracking, manager DNA, milestone watches,
-              weekly recaps — all updated automatically. Free tier covers one league forever.
+              weekly recaps, all updated automatically. Free tier covers one league forever.
               Paid plans from $3/month with a 7-day trial. <Link href="/about/" className="lp-colophon-link">Read more →</Link>
             </p>
           </div>

@@ -59,7 +59,7 @@ const titleBlock: BlockDef = {
   id: 'title',
   label: 'Title slide',
   category: 'cover',
-  description: 'Big opening — league name, subtitle, optional kicker.',
+  description: 'Big opening, league name, subtitle, optional kicker.',
   options: {
     kicker: { kind: 'text', label: 'Kicker', placeholder: 'A presentation', default: '' },
     headline: { kind: 'text', label: 'Headline', placeholder: 'League name', default: '' },
@@ -155,7 +155,7 @@ const closingBlock: BlockDef = {
   render: ({ values }) => (
     <div className="present-slide present-slide--cover">
       <h1 className="present-display">{values.headline || "That's a wrap."}</h1>
-      {values.signoff ? <p className="present-sub">— {values.signoff}</p> : null}
+      {values.signoff ? <p className="present-sub">, {values.signoff}</p> : null}
     </div>
   ),
 }
@@ -196,8 +196,8 @@ const customTextBlock: BlockDef = {
   render: ({ values }) => (
     <div className="present-slide present-slide--text">
       {values.eyebrow ? <div className="present-eyebrow">{values.eyebrow}</div> : null}
-      <div className="present-body">{values.body || '—'}</div>
-      {values.attribution ? <div className="present-attrib">— {values.attribution}</div> : null}
+      <div className="present-body">{values.body || '·'}</div>
+      {values.attribution ? <div className="present-attrib">, {values.attribution}</div> : null}
     </div>
   ),
 }
@@ -206,7 +206,7 @@ const customImageBlock: BlockDef = {
   id: 'custom-image',
   label: 'Image slide',
   category: 'custom',
-  description: 'Full-bleed image from any URL. Nothing uploaded — pure URL paste.',
+  description: 'Full-bleed image from any URL. Nothing uploaded, pure URL paste.',
   options: {
     url: { kind: 'imageUrl', label: 'Image URL', placeholder: 'https://…', default: '' },
     caption: { kind: 'text', label: 'Caption', placeholder: 'optional', default: '' },
@@ -274,7 +274,7 @@ function CountUp({
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
   }, [value, duration])
-  const formatted = Number.isFinite(display) ? display.toFixed(decimals) : '—'
+  const formatted = Number.isFinite(display) ? display.toFixed(decimals) : '·'
   return <>{prefix}{formatted}{suffix}</>
 }
 
@@ -283,7 +283,7 @@ function CountUp({
 // blocks where the owner typed "12-2" or "187K" still display correctly.
 function MaybeCountUp({ text }: { text: string }) {
   const trimmed = (text ?? '').trim()
-  if (!trimmed) return <>—</>
+  if (!trimmed) return <>, </>
   // Strip leading non-digit characters (so things like "$1,234" still work,
   // but stop before parsing weird mixed strings).
   const numericMatch = trimmed.match(/^(-?\d+(?:\.\d+)?)(.*)$/)
@@ -386,7 +386,7 @@ const finalStandingsBlock: BlockDef = {
   id: 'final-standings',
   label: 'Final standings',
   category: 'standings',
-  description: 'Final standings table for a chosen season — wins, losses, points-for.',
+  description: 'Final standings table for a chosen season, wins, losses, points-for.',
   options: {
     season: { kind: 'pick', label: 'Season', source: 'finishedSeason' },
     title: { kind: 'text', label: 'Title', placeholder: 'Final standings', default: '' },
@@ -401,7 +401,7 @@ const finalStandingsBlock: BlockDef = {
       return <MissingData reason="Pick a finished season in the inspector to populate this slide." />
     }
     if (!season.isFinished) {
-      return <MissingData reason={`${season.year} is still in progress — final standings will appear once the season is decided.`} />
+      return <MissingData reason={`${season.year} is still in progress, final standings will appear once the season is decided.`} />
     }
     const limit = Math.max(0, Math.min(30, parseInt(values.limit || '0', 10) || 0))
     const allRows = data.standings
@@ -586,7 +586,7 @@ const allTimePointsBlock: BlockDef = {
                   </span>
                 </td>
                 <td style={{ textAlign: 'right' }}>{r.pointsFor.toFixed(1)}</td>
-                <td style={{ textAlign: 'right' }}>{r.seasons > 0 ? (r.pointsFor / r.seasons).toFixed(1) : '—'}</td>
+                <td style={{ textAlign: 'right' }}>{r.seasons > 0 ? (r.pointsFor / r.seasons).toFixed(1) : '·'}</td>
                 <td style={{ textAlign: 'right' }}>{r.seasons}</td>
               </tr>
             ))}
@@ -789,7 +789,7 @@ const lowestScoreBlock: BlockDef = {
   id: 'lowest-score',
   label: 'Lowest-scoring week',
   category: 'highlights',
-  description: 'The cellar — smallest single team-week on file.',
+  description: 'The cellar, smallest single team-week on file.',
   options: {
     title: { kind: 'text', label: 'Title', placeholder: 'Lowest single week', default: '' },
   },
@@ -911,7 +911,7 @@ const careerCardBlock: BlockDef = {
   id: 'career-card',
   label: 'Career stat card',
   category: 'managers',
-  description: 'Pick a manager — show their career W-L, points, seasons, and titles.',
+  description: 'Pick a manager, show their career W-L, points, seasons, and titles.',
   options: {
     profile: { kind: 'pick', label: 'Manager', source: 'manager' },
     title: { kind: 'text', label: 'Title override', placeholder: '(uses manager name)', default: '' },
@@ -963,7 +963,7 @@ const headToHeadBlock: BlockDef = {
   id: 'head-to-head',
   label: 'Head-to-head',
   category: 'managers',
-  description: 'Pick two managers — show their all-time record against each other.',
+  description: 'Pick two managers, show their all-time record against each other.',
   options: {
     profileA: { kind: 'pick', label: 'Manager A', source: 'manager' },
     profileB: { kind: 'pick', label: 'Manager B', source: 'manager' },
@@ -1027,7 +1027,7 @@ const featuredRivalryBlock: BlockDef = {
   id: 'featured-rivalry',
   label: 'Featured rivalry',
   category: 'rivalry',
-  description: 'Pick a curated rivalry — show its title and the all-time record.',
+  description: 'Pick a curated rivalry, show its title and the all-time record.',
   options: {
     rivalry: { kind: 'pick', label: 'Rivalry', source: 'rivalry' },
   },
@@ -1035,7 +1035,7 @@ const featuredRivalryBlock: BlockDef = {
   render: ({ values, data }) => {
     if (!data) return <MissingData reason="Sync your league first." />
     if (data.rivalries.length === 0) {
-      return <MissingData reason="No rivalries curated yet — add some on the Rivalries page." />
+      return <MissingData reason="No rivalries curated yet. Add some on the Rivalries page." />
     }
     const r = data.rivalries.find((x) => x.id === values.rivalry)
     if (!r) return <MissingData reason="Pick a rivalry in the inspector." />
@@ -1079,7 +1079,7 @@ const mostLopsidedRivalryBlock: BlockDef = {
   render: ({ values, data }) => {
     if (!data) return <MissingData reason="Sync your league first." />
     if (data.rivalries.length === 0) {
-      return <MissingData reason="No rivalries curated yet — add some on the Rivalries page." />
+      return <MissingData reason="No rivalries curated yet. Add some on the Rivalries page." />
     }
     let bestGap = -1
     let bestRivalry: { name: string; h2h: NonNullable<ReturnType<typeof rivalryRecord>> } | null = null
@@ -1125,7 +1125,7 @@ const managerOfYearBlock: BlockDef = {
   id: 'manager-of-year',
   label: 'Manager of the year',
   category: 'managers',
-  description: 'Owner-curated MVP slide — pick a season, pick a manager, write your case.',
+  description: 'Owner-curated MVP slide, pick a season, pick a manager, write your case.',
   options: {
     season: { kind: 'pick', label: 'Season', source: 'season' },
     profile: { kind: 'pick', label: 'Manager', source: 'manager' },
@@ -1185,9 +1185,9 @@ const firstRoundBlock: BlockDef = {
               <div key={p.pick} className="present-draft-card">
                 <div className="present-draft-pick">{p.pick}</div>
                 <div className="present-draft-body">
-                  <div className="present-draft-player">{p.playerName || '—'}</div>
+                  <div className="present-draft-player">{p.playerName || '·'}</div>
                   <div className="present-draft-meta">
-                    {[p.position, p.nflTeam].filter(Boolean).join(' · ') || '—'}
+                    {[p.position, p.nflTeam].filter(Boolean).join(' · ') || '·'}
                   </div>
                   <div className="present-draft-team">
                     <Avatar url={avatar} name={name} size={22} />
@@ -1226,7 +1226,7 @@ const firstOverallHistoryBlock: BlockDef = {
       if (!first) continue
       rows.push({
         year,
-        player: first.playerName || '—',
+        player: first.playerName || '·',
         manager: nameForManager(data, first.managerId),
         avatar: avatarForManager(data, first.managerId),
       })
@@ -1259,7 +1259,7 @@ const curatedPickBlock: BlockDef = {
   id: 'curated-pick',
   label: 'Standout pick',
   category: 'draft',
-  description: 'Owner-curated draft pick slide — name your steal or your bust.',
+  description: 'Owner-curated draft pick slide, name your steal or your bust.',
   options: {
     label: { kind: 'text', label: 'Label', placeholder: 'Steal of the draft', default: '' },
     player: { kind: 'text', label: 'Player', placeholder: 'Player name', default: '' },
@@ -1275,7 +1275,7 @@ const curatedPickBlock: BlockDef = {
       <div className="present-slide present-slide--mvp">
         {values.label ? <div className="present-eyebrow">{values.label}</div> : null}
         <div className="present-card-title" style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)' }}>
-          {values.player || '—'}
+          {values.player || '·'}
         </div>
         {values.detail ? <div className="present-sub">{values.detail}</div> : null}
         {profile ? (

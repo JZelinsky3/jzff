@@ -238,7 +238,7 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
                 ★ Yahoo connection
               </div>
               <p style={{ margin: 0, lineHeight: 1.55, color: 'var(--cream)' }}>
-                Yahoo needs a one-time login so we can read your leagues. Read-only — no roster moves.
+                Yahoo needs a one-time login so we can read your leagues. Read-only, no roster moves.
               </p>
               <a href="/api/yahoo/authorize" className="dc-btn" style={{ marginTop: '.85rem', display: 'inline-block' }}>
                 Connect Yahoo →
@@ -299,7 +299,7 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
                   </button>
                 </div>
                 <span className="dc-checkbox-hint">
-                  We list every Sleeper league you&apos;ve been in since 2020 — and because it&apos;s
+                  We list every Sleeper league you&apos;ve been in since 2020, and because it&apos;s
                   your handle, we already know which manager is you.
                 </span>
                 {sleeperUserLeagues && sleeperUserLeagues.length > 0 && (
@@ -363,7 +363,7 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
                   {isLooking ? 'Finding…' : 'Find members'}
                 </button>
               </div>
-              {platform === 'nfl' && <span className="dc-checkbox-hint">fantasy.nfl.com/league/<strong>7528632</strong> — league must be public.</span>}
+              {platform === 'nfl' && <span className="dc-checkbox-hint">fantasy.nfl.com/league/<strong>7528632</strong>. The league must be public.</span>}
               {platform === 'espn' && <span className="dc-checkbox-hint">fantasy.espn.com/football/league?leagueId=<strong>47847</strong></span>}
             </div>
           )}
@@ -397,7 +397,7 @@ export function AddToHubForm({ yahooConnected }: { yahooConnected: boolean }) {
               </div>
               <span className="dc-checkbox-hint">
                 Playoff rules apply to this whole range. If yours changed over time, add the
-                league once per era — re-run this with a different year range and these settings,
+                league once per era, re-run this with a different year range and these settings,
                 and both will sync into one league.
               </span>
             </div>

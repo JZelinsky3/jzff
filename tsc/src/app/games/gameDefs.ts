@@ -48,6 +48,13 @@ export type GameDef = {
    * have nothing to read there. When the demo export grows matchups this
    * turns true for The Gauntlet and Over/Under and nothing else changes. */
   allowsDemo: boolean
+  /** Whether `<href>board/` exists yet.
+   *
+   * A run only reaches a board if the server can re-score it, and the run
+   * verifier is written per game — only Roulette's exists. Until the other
+   * four have one, their lobbies must not offer a board link: an empty board
+   * is a disappointment, a 404 is a bug report. */
+  hasBoard: boolean
   /** Copy for the pool cards in the lobby. */
   demoBody: string
   leagueBody: string
@@ -74,6 +81,7 @@ export const ROSTER_ROULETTE: GameDef = {
   allowsSite: true,
   allowsCombine: true,
   allowsDemo: true,
+  hasBoard: true,
   demoBody:
     'Seven seasons of one league, the way it feels when the wheel keeps landing on people you know. Real teams and real numbers, under the demo’s names.',
   leagueBody:
@@ -100,6 +108,7 @@ export const GUESS_THE_DRAFT: GameDef = {
   allowsSite: false,
   allowsCombine: false,
   allowsDemo: true,
+  hasBoard: false,
   demoBody:
     'Eight drafts from seven seasons of one league. The quickest way to see what the game is before you point it at your own.',
   leagueBody:
@@ -128,6 +137,7 @@ export const THE_GAUNTLET: GameDef = {
   // The demo tree publishes standings but no schedule. Said plainly in the
   // dealer too, so a hand-typed ?pool=demo gets a reason rather than a stall.
   allowsDemo: false,
+  hasBoard: false,
   demoBody: '',
   leagueBody:
     'Every game your league has ever played, one at a time, in an order nobody can revise. Needs one completed season and nothing else.',
@@ -156,6 +166,7 @@ export const OVER_UNDER: GameDef = {
   // Lines are scaled to one league's scoring spread, and the demo tree has no
   // week-by-week scores to measure that spread from.
   allowsDemo: false,
+  hasBoard: false,
   demoBody: '',
   leagueBody:
     'Every week your league has ever played, priced against how much your scores actually move. Needs one completed season and nothing else.',
@@ -182,6 +193,7 @@ export const REDRAFT: GameDef = {
   // The demo tree ships its drafts, so this one IS playable signed-out —
   // unlike the two games that need a week-by-week schedule.
   allowsDemo: true,
+  hasBoard: false,
   demoBody:
     'Seven drafts from one league, and every player’s real season behind them. The quickest way to see the game before pointing it at your own.',
   leagueBody:

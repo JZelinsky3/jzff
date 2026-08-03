@@ -6,6 +6,6 @@ import type { LivePlatform, PlatformFrame, PlatformLeagueRef } from '../platform
 export const espnPlatform: LivePlatform = {
   async fetchFrame(_ref: PlatformLeagueRef): Promise<PlatformFrame> {
     void _ref
-    return { supported: false, reason: 'ESPN live coming soon — showing last sync.' }
+    return { supported: false, reason: 'ESPN live coming soon, showing last sync.' }
   },
 }

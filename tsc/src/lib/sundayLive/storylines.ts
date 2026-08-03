@@ -42,7 +42,7 @@ function renderCopy(template: string, vars: Record<string, string | number>): st
     return v == null ? '' : String(v)
   })
   if (process.env.NODE_ENV !== 'production') {
-    if (/[–—]/.test(out)) throw new Error(`storyline copy contains an em/en dash: ${out}`)
+    if (/[–, ]/.test(out)) throw new Error(`storyline copy contains an em/en dash: ${out}`)
     if (/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u.test(out)) throw new Error(`storyline copy contains an emoji: ${out}`)
   }
   return out

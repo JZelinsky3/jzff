@@ -16,7 +16,7 @@ export default async function CensusPage() {
       ? c.earliestYear === c.latestYear
         ? String(c.earliestYear)
         : `${c.earliestYear} – ${c.latestYear}`
-      : '—'
+      : '·'
 
   return (
     <main>
@@ -40,7 +40,7 @@ export default async function CensusPage() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 01 · The big board</span>
-          <span className="hub-section-title">What the network has put up —</span>
+          <span className="hub-section-title">What the network has put up,</span>
           <span className="hub-section-meta">All platforms combined</span>
         </div>
         <Reveal>
@@ -103,7 +103,7 @@ export default async function CensusPage() {
             <div className="hub-stat">
               <div className="hub-stat-label">Seasons archived</div>
               <div className="hub-stat-value"><CountUp value={c.seasons} /></div>
-              <div className="hub-stat-detail">Reaching back to <strong>{c.earliestYear ?? '—'}</strong>.</div>
+              <div className="hub-stat-detail">Reaching back to <strong>{c.earliestYear ?? '·'}</strong>.</div>
             </div>
           </div>
         </Reveal>
@@ -113,7 +113,7 @@ export default async function CensusPage() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 02 · Game character</span>
-          <span className="hub-section-title">How the games actually play —</span>
+          <span className="hub-section-title">How the games actually play,</span>
           <span className="hub-section-meta">From final scores only</span>
         </div>
         <Reveal>
@@ -121,7 +121,7 @@ export default async function CensusPage() {
             <div className="hub-stat">
               <div className="hub-stat-label">Average game total</div>
               <div className="hub-stat-value">
-                {c.avgGameTotal !== null ? <CountUp value={c.avgGameTotal} decimals={1} /> : '—'}
+                {c.avgGameTotal !== null ? <CountUp value={c.avgGameTotal} decimals={1} /> : '·'}
                 <span className="unit">pts</span>
               </div>
               <div className="hub-stat-detail">Both teams combined, league average across the network.</div>
@@ -129,7 +129,7 @@ export default async function CensusPage() {
             <div className="hub-stat">
               <div className="hub-stat-label">Average margin</div>
               <div className="hub-stat-value">
-                {c.avgMargin !== null ? <CountUp value={c.avgMargin} decimals={1} /> : '—'}
+                {c.avgMargin !== null ? <CountUp value={c.avgMargin} decimals={1} /> : '·'}
                 <span className="unit">pts</span>
               </div>
               <div className="hub-stat-detail">The typical gap between handshake and heartbreak.</div>
@@ -137,7 +137,7 @@ export default async function CensusPage() {
             <div className="hub-stat">
               <div className="hub-stat-label">Blowout rate</div>
               <div className="hub-stat-value">
-                {c.blowoutPct !== null ? <CountUp value={c.blowoutPct} decimals={1} /> : '—'}
+                {c.blowoutPct !== null ? <CountUp value={c.blowoutPct} decimals={1} /> : '·'}
                 <span className="unit">%</span>
               </div>
               <div className="hub-stat-detail">Games decided by 40 or more. No mercy rule in fantasy.</div>
@@ -145,7 +145,7 @@ export default async function CensusPage() {
             <div className="hub-stat">
               <div className="hub-stat-label">Photo finishes</div>
               <div className="hub-stat-value">
-                {c.photoFinishPct !== null ? <CountUp value={c.photoFinishPct} decimals={1} /> : '—'}
+                {c.photoFinishPct !== null ? <CountUp value={c.photoFinishPct} decimals={1} /> : '·'}
                 <span className="unit">%</span>
               </div>
               <div className="hub-stat-detail">
@@ -160,7 +160,7 @@ export default async function CensusPage() {
       <div className="hub-section">
         <div className="hub-section-header">
           <span className="hub-section-num">§ 03 · Network DNA</span>
-          <span className="hub-section-title">One archetype for all of it —</span>
+          <span className="hub-section-title">One archetype for all of it,</span>
           <span className="hub-section-meta">Same math as Manager DNA</span>
         </div>
         <Reveal>

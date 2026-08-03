@@ -109,6 +109,86 @@ export async function postRun(run: Omit<PendingRun, 'at'>): Promise<PostOutcome>
   }
 }
 
+// ============================================================
+// The name you picked before you had an account
+// ============================================================
+//
+// A signed-out player can answer "which manager are you?" on the board, and
+// the answer waits here until there is an account to write it against. It
+// cannot be written any sooner: a claim belongs to a profile, and a claim
+// keyed to a browser instead would let anyone take any name in a league they
+// have never been in, with nothing to take it back with.
+//
+// So this is an INTENTION, not a claim. It is worth keeping anyway, because
+// it is the difference between "sign in and then go and find that question
+// again" and "sign in and the board already knows you".
+
+const CLAIM_KEY = 'tsc_game_claim_v1'
+
+export type PendingClaim = { pool: string; managerId: string; at: number }
+
+export function readPendingClaims(): PendingClaim[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(CLAIM_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    if (!Array.isArray(parsed)) return []
+    const cutoff = Date.now() - BANK_TTL_MS
+    return (parsed as PendingClaim[]).filter(
+      (c) => c && typeof c.pool === 'string' && typeof c.managerId === 'string' && c.at > cutoff
+    )
+  } catch {
+    return []
+  }
+}
+
+/** One pending answer per league, so changing your mind replaces it. */
+export function bankClaim(pool: string, managerId: string) {
+  if (typeof window === 'undefined') return
+  const kept = readPendingClaims().filter((c) => c.pool !== pool)
+  try {
+    window.localStorage.setItem(
+      CLAIM_KEY,
+      JSON.stringify([...kept, { pool, managerId, at: Date.now() }].slice(-10))
+    )
+  } catch {
+    /* private browsing — the pick is lost, the game is not */
+  }
+}
+
+/**
+ * Write any pending answers now that there's an account.
+ *
+ * Failures are dropped rather than retried: the likeliest one is that
+ * somebody else claimed that manager in the meantime, which will fail the
+ * same way forever, and the board asks the question again anyway.
+ */
+export async function claimPendingIdentities(): Promise<number> {
+  const pending = readPendingClaims()
+  if (pending.length === 0) return 0
+  let done = 0
+  for (const c of pending) {
+    try {
+      const res = await fetch('/api/games/claim/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pool: c.pool, managerId: c.managerId }),
+      })
+      // Still signed out: leave the whole lot for next time.
+      if (res.status === 401) return done
+      if (res.ok) done += 1
+    } catch {
+      return done
+    }
+  }
+  try {
+    window.localStorage.removeItem(CLAIM_KEY)
+  } catch {
+    /* nothing to do */
+  }
+  return done
+}
+
 /**
  * Send everything banked while signed out, then empty the bank.
  *

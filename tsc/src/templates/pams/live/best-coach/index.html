@@ -664,13 +664,13 @@ body::before {
     <!-- ──────────────── MASTHEAD (full width above the layout) ──────────────── -->
     <header class="bc-mast">
         <div class="bc-mast-kicker">
-            BEST COACH BOARD<span class="dot">·</span>WEEK <span id="bc-week-kicker">—</span>
+            BEST COACH BOARD<span class="dot">·</span>WEEK <span id="bc-week-kicker">·</span>
         </div>
         <h1 class="bc-mast-title">Who left points on the bench?</h1>
         <div class="bc-mast-meta">
-            SEASON <strong id="bc-year">—</strong>
-            &nbsp;·&nbsp; THROUGH WEEK <strong id="bc-week">—</strong>
-            &nbsp;·&nbsp; <span id="bc-tilecount">—</span> MANAGERS GRADED
+            SEASON <strong id="bc-year">·</strong>
+            &nbsp;·&nbsp; THROUGH WEEK <strong id="bc-week">·</strong>
+            &nbsp;·&nbsp; <span id="bc-tilecount">·</span> MANAGERS GRADED
         </div>
         <div><span class="bc-mode-tag" id="bc-mode-tag" hidden>★ Preview · Most recent completed season ★</span></div>
     </header>
@@ -789,7 +789,7 @@ body::before {
         const empty = document.createElement('section');
         empty.className = 'bc-empty';
         empty.innerHTML = `
-            <div class="bc-empty-marquee">— NO DATA ON THE BOARD —</div>
+            <div class="bc-empty-marquee">· NO DATA ON THE BOARD ·</div>
             <p class="bc-empty-msg">Chalk's not down yet.</p>
             <p class="bc-empty-body">${message}</p>
         `;
@@ -810,7 +810,7 @@ body::before {
         return pct >= 15 ? 'is-bad' : '';
     }
     function fmt(n, digits) {
-        if (n == null || isNaN(n)) return '—';
+        if (n == null || isNaN(n)) return '·';
         return Number(n).toFixed(digits == null ? 1 : digits);
     }
     function escapeHtml(s) {
@@ -953,9 +953,9 @@ body::before {
                 renderEmpty('No weekly lineup data on file yet. NFL.com leagues don\'t qualify. Their history archive returns the season\'s final roster for every week, so Best Coach can\'t score it. Mix in a Sleeper, ESPN, or Yahoo source (or sync a current Sleeper season) and the board will chalk itself.');
                 return;
             }
-            yearEl.textContent = data.year ?? '—';
-            weekEl.textContent = data.throughWeek ?? '—';
-            if (weekKickerEl) weekKickerEl.textContent = data.throughWeek ?? '—';
+            yearEl.textContent = data.year ?? '·';
+            weekEl.textContent = data.throughWeek ?? '·';
+            if (weekKickerEl) weekKickerEl.textContent = data.throughWeek ?? '·';
             countEl.textContent = String(data.managers.length);
             if (data.is_live === false) {
                 modeTag.hidden = false;

@@ -435,7 +435,7 @@ function buildWire(
           key: `inactive-${p.playerId}`,
           at: new Date().toISOString(),
           kind: 'inactive',
-          headline: `${p.name} ruled ${p.injuryStatus} — started by ${s.ownerName}`,
+          headline: `${p.name} ruled ${p.injuryStatus}, started by ${s.ownerName}`,
           detail: null,
           affiliation: 'league',
         })

@@ -119,7 +119,7 @@ export function GuessTheDraft({
   const sweeps = useMemo(() => verdicts.filter((v) => v.manager && v.year).length, [verdicts])
 
   const managerName = useCallback(
-    (id: string | null) => deal?.managers.find((m) => m.id === id)?.name ?? '—',
+    (id: string | null) => deal?.managers.find((m) => m.id === id)?.name ?? '·',
     [deal]
   )
 
@@ -378,7 +378,7 @@ export function GuessTheDraft({
             </div>
             <div className={thisVerdict.year ? styles.guessHit : styles.guessMiss}>
               <span className={styles.guessLabel}>You said</span>
-              <span className={styles.guessValue}>{pickedYear ?? '—'}</span>
+              <span className={styles.guessValue}>{pickedYear ?? '·'}</span>
             </div>
           </div>
 

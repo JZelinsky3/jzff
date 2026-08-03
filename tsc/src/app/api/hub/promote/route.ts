@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   }
 
   if (!league.published_at) {
-    return NextResponse.json({ error: 'Publish the league first — only public almanacs can be promoted.' }, { status: 400 })
+    return NextResponse.json({ error: 'Publish the league first, only public almanacs can be promoted.' }, { status: 400 })
   }
   const pitch = (text ?? '').trim()
   if (pitch.length < 10) {

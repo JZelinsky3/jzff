@@ -269,14 +269,14 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
 <header class="edition">
     <div class="edition-sup"><span class="star">★</span> Issue II · Rise &amp; Legacy <span class="star">★</span></div>
     <h1 class="edition-title">The Story of <em>{{MGR_NAME}}.</em></h1>
-    <p class="edition-deck" id="legacy-deck">Origins, the climb, the title runs — woven from every season, every draft, every rival.</p>
+    <p class="edition-deck" id="legacy-deck">Origins, the climb, the title runs, woven from every season, every draft, every rival.</p>
     <div class="edition-rule"></div>
 </header>
 
 <section class="lede">
     <div class="lede-frame">
         <div class="lede-mast"><span class="star">★</span> The Editor's Lede <span class="star">★</span></div>
-        <div class="lede-body" id="lede-body"><span class="dropcap">O</span>rigins, the climb, the title runs — woven from every season, every draft, every rival. One through-line, three or four acts.</div>
+        <div class="lede-body" id="lede-body"><span class="dropcap">O</span>rigins, the climb, the title runs, woven from every season, every draft, every rival. One through-line, three or four acts.</div>
     </div>
 </section>
 
@@ -312,7 +312,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         <h2 class="section-title">Single Games, Single Streaks</h2>
         <span class="section-meta">From the desk</span>
     </div>
-    <p class="section-intro" id="moments-intro">Single-incident highlights — the loudest win, the worst loss, weekly extremes, and the longest streaks.</p>
+    <p class="section-intro" id="moments-intro">Single-incident highlights, the loudest win, the worst loss, weekly extremes, and the longest streaks.</p>
     <div class="moments-grid" id="moments"><div class="loading">Loading moments…</div></div>
 </section>
 
@@ -380,7 +380,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
         var rest = intro.slice(1)
         el.innerHTML = '<span class="dropcap">' + escapeHtml(first) + '</span>' + escapeHtml(rest)
     }
-    function fmtPts(n) { return n == null ? '—' : Math.round(n).toLocaleString('en-US') }
+    function fmtPts(n) { return n == null ? '·' : Math.round(n).toLocaleString('en-US') }
 
     fetch('data/legacy.json', { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : null })
@@ -459,7 +459,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
             }).join('')
 
             var finishLines = (e.finishes || []).slice(0, 8).map(function (f) {
-                var rank = f.champion ? '🏆 1st' : (f.runnerUp ? '🥈 2nd' : (f.thirdPlace ? '🥉 3rd' : (f.rank != null ? f.rank + suf(f.rank) : '—')))
+                var rank = f.champion ? '🏆 1st' : (f.runnerUp ? '🥈 2nd' : (f.thirdPlace ? '🥉 3rd' : (f.rank != null ? f.rank + suf(f.rank) : '·')))
                 return '<div class="box-line">' +
                     '<span class="yr">' + f.year + '</span>' +
                     '<span class="lbl">' + escapeHtml(f.leagueName) + '</span>' +
@@ -511,7 +511,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
             var winning = r.wins > r.losses
             var leagues = (r.leagues || []).map(function (l) { return '<span>' + escapeHtml(l) + '</span>' }).join('')
             return '<div class="rivalry' + (winning ? ' won' : '') + '">' +
-                '<div class="rivalry-mast">' + (winning ? 'Mark — Owned' : 'Mark — Owed') + '</div>' +
+                '<div class="rivalry-mast">' + (winning ? 'Mark, Owned' : 'Mark, Owed') + '</div>' +
                 '<div class="rivalry-opp">' + escapeHtml(r.opponent) + '</div>' +
                 '<div class="rivalry-line">' +
                     '<span><strong>' + r.wins + '-' + r.losses + (r.ties ? '-' + r.ties : '') + '</strong></span>' +
@@ -578,7 +578,7 @@ body { font-family: var(--sans); background: var(--ink); color: var(--cream); mi
             })
         }
         if (tiles.length === 0) {
-            host.innerHTML = '<div class="moment-empty">No moments to report yet — sync a league.</div>'
+            host.innerHTML = '<div class="moment-empty">No moments to report yet, sync a league.</div>'
             return
         }
         host.innerHTML = tiles.map(function (t) {

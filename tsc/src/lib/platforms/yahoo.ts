@@ -454,7 +454,7 @@ export async function getLeagueTeamsStandings(
   const raw = await yahooFetchJson<any>(accessToken, `/league/${leagueKey}/standings`)
   const leagueArr = raw?.fantasy_content?.league
   if (!leagueArr) {
-    diagOut?.push(`standings(${leagueKey}): fantasy_content.league missing — top keys: ${Object.keys(raw?.fantasy_content ?? {}).join(',') || '(none)'}`)
+    diagOut?.push(`standings(${leagueKey}): fantasy_content.league missing, top keys: ${Object.keys(raw?.fantasy_content ?? {}).join(',') || '(none)'}`)
     return []
   }
   // /standings shape: leagueArr = [ {...meta...}, { standings: [ { teams: { 0:{team:[...]}, 1:..., count } } ] } ]
@@ -471,7 +471,7 @@ export async function getLeagueTeamsStandings(
     ? (standingsNode[0] as any)?.teams
     : (standingsNode as any)?.teams
   if (!teamsNode) {
-    diagOut?.push(`standings(${leagueKey}): teams node missing — standingsBlock keys: ${Object.keys((standingsBlock ?? {}) as object).join(',') || '(none)'}`)
+    diagOut?.push(`standings(${leagueKey}): teams node missing, standingsBlock keys: ${Object.keys((standingsBlock ?? {}) as object).join(',') || '(none)'}`)
     return []
   }
 
@@ -575,7 +575,7 @@ export async function getLeagueTeamsStandings(
         ? `len=${firstTeamFrag.length}, [0]=${Array.isArray(firstTeamFrag[0]) ? 'array' : typeof firstTeamFrag[0]}`
         : typeof firstTeamFrag
       diagOut.push(
-        `standings(${leagueKey}): all ${out.length} teams parsed with 0-0 record and 0 PF — team_standings structure not where the parser is looking. teamFrag shape: ${shape}`
+        `standings(${leagueKey}): all ${out.length} teams parsed with 0-0 record and 0 PF, team_standings structure not where the parser is looking. teamFrag shape: ${shape}`
       )
     }
   }
@@ -624,7 +624,7 @@ export async function getLeagueScoreboard(
   if (!matchupsNode) {
     if (diagOut && week === 1) {
       const sbKeys = sbNode && typeof sbNode === 'object' ? Object.keys(sbNode).join(',') : typeof sbNode
-      diagOut.push(`scoreboard(${leagueKey}, w${week}): matchups missing — scoreboard keys: [${sbKeys || '(empty)'}]`)
+      diagOut.push(`scoreboard(${leagueKey}, w${week}): matchups missing, scoreboard keys: [${sbKeys || '(empty)'}]`)
     }
     return []
   }
@@ -649,7 +649,7 @@ export async function getLeagueScoreboard(
         const mfKeys = matchupFrag && typeof matchupFrag === 'object'
           ? Object.keys(matchupFrag as object).join(',')
           : '(n/a)'
-        diagOut.push(`scoreboard(${leagueKey}, w${week}): matchup is missing the teams node — matchupFrag=${mfShape} · matchupFrag_keys=[${mfKeys}] · meta_keys=[${Object.keys(meta).join(',')}]`)
+        diagOut.push(`scoreboard(${leagueKey}, w${week}): matchup is missing the teams node, matchupFrag=${mfShape} · matchupFrag_keys=[${mfKeys}] · meta_keys=[${Object.keys(meta).join(',')}]`)
       }
       continue
     }
@@ -678,7 +678,7 @@ export async function getLeagueScoreboard(
     })
   }
   if (diagOut && week === 1 && out.length === 0) {
-    diagOut.push(`scoreboard(${leagueKey}, w${week}): 0 matchups parsed — every matchup frag was missing the teams node. See the shape line above.`)
+    diagOut.push(`scoreboard(${leagueKey}, w${week}): 0 matchups parsed, every matchup frag was missing the teams node. See the shape line above.`)
   }
   return out
 }

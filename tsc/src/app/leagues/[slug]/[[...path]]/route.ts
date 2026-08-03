@@ -310,7 +310,7 @@ function injectBaseTag(html: string, meta: LeagueMeta, file: string, servedMobil
   // Meta description is injected for crawlers — without it Bing flags
   // every almanac page as missing one.
   const safeName = escapeHtml(meta.name)
-  const description = `Public almanac for ${safeName} — full fantasy football league history, season archives, draft results, head-to-head records, rivalries, and weekly pick'ems.`
+  const description = `Public almanac for ${safeName}, full fantasy football league history, season archives, draft results, head-to-head records, rivalries, and weekly pick'ems.`
   // The preload hints MUST come after <base> so the browser resolves them
   // against /leagues/<slug>/ — otherwise a relative href like
   // data/league.json resolves against the document URL and can hit a path
@@ -398,7 +398,7 @@ function injectOgTags(html: string, meta: LeagueMeta, file: string, req: NextReq
     `<meta property="og:image" content="${escapeHtml(ogImage.url)}">`,
     `<meta property="og:image:width" content="1200">`,
     `<meta property="og:image:height" content="630">`,
-    `<meta property="og:image:alt" content="${safeName} — ${safeTitle}">`,
+    `<meta property="og:image:alt" content="${safeName}, ${safeTitle}">`,
     `<meta name="twitter:card" content="summary_large_image">`,
     `<meta name="twitter:title" content="${safeTitle}">`,
     `<meta name="twitter:description" content="${safeDesc}">`,
@@ -528,7 +528,7 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
       return {
         url,
         title: `${meta.name} · The Manager File`,
-        description: `One manager's complete file from ${meta.name}'s archives — record, rings, rivalries, and tendencies.`,
+        description: `One manager's complete file from ${meta.name}'s archives, record, rings, rivalries, and tendencies.`,
       }
     }
   }
@@ -553,7 +553,7 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     return {
       url,
       title: `${meta.name} · The All-Time Team`,
-      description: `The best season at every position, for every manager in ${meta.name} — one all-time lineup each, ranked.`,
+      description: `The best season at every position, for every manager in ${meta.name}, one all-time lineup each, ranked.`,
     }
   }
   // Matchup preview: /leagues/<slug>/live/matchup-preview/?m=<uid>
@@ -569,7 +569,7 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     return {
       url,
       title: `${meta.name} · This Week's Matchup`,
-      description: `An upcoming head-to-head in ${meta.name} — records, form, projections, and the all-time ledger.`,
+      description: `An upcoming head-to-head in ${meta.name}, records, form, projections, and the all-time ledger.`,
     }
   }
   // The Grader: /leagues/<slug>/live/trades/grader/
@@ -581,7 +581,7 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     return {
       url,
       title: `${meta.name} · The Grader`,
-      description: `Every trade in ${meta.name} hits the wire — announced, graded on arrival, revisited four weeks later.`,
+      description: `Every trade in ${meta.name} hits the wire, announced, graded on arrival, revisited four weeks later.`,
     }
   }
   // Power Rankings: /leagues/<slug>/live/powerrank/
@@ -593,7 +593,7 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     return {
       url,
       title: `${meta.name} · Power Rankings`,
-      description: `${meta.name}'s power rankings — auto-calculated weekly from record, points for, form, and conference standing.`,
+      description: `${meta.name}'s power rankings, auto-calculated weekly from record, points for, form, and conference standing.`,
     }
   }
   // Pick'ems: /leagues/<slug>/live/pickems/
@@ -604,7 +604,7 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     return {
       url,
       title: `${meta.name} · Pick'ems`,
-      description: `${meta.name}'s pick'em pool — every matchup, plus Highest and Lowest scorer. Lock in your picks before kickoff.`,
+      description: `${meta.name}'s pick'em pool, every matchup, plus Highest and Lowest scorer. Lock in your picks before kickoff.`,
     }
   }
   // Milestones: /leagues/<slug>/live/milestones/
@@ -615,7 +615,7 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     return {
       url,
       title: `${meta.name} · Milestones`,
-      description: `Career milestones across ${meta.name} — what's just crossed, what's on the brink, and what's on the watchlist.`,
+      description: `Career milestones across ${meta.name}, what's just crossed, what's on the brink, and what's on the watchlist.`,
     }
   }
   // Records Watch: /leagues/<slug>/live/records-watch/
@@ -625,7 +625,7 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     return {
       url,
       title: `${meta.name} · Records Watch`,
-      description: `Live records watch for ${meta.name} — what's broken, what's on pace, and what's just out of reach.`,
+      description: `Live records watch for ${meta.name}, what's broken, what's on pace, and what's just out of reach.`,
     }
   }
   // Season detail: /leagues/<slug>/seasons/season.html?year=YYYY
@@ -656,7 +656,7 @@ function buildOgImageUrl(meta: LeagueMeta, file: string, req: NextRequest): OgIm
     title: `${meta.name} · ${chapter?.label ?? 'The Chronicle'}`,
     description: chapter
       ? chapter.desc(meta.name)
-      : `The full history of ${meta.name} — seasons, champions, rivalries, records — on The Sunday Chronicle.`,
+      : `The full history of ${meta.name}, seasons, champions, rivalries, records, on The Sunday Chronicle.`,
   }
 }
 
@@ -667,22 +667,22 @@ const OG_CHAPTERS: Record<string, { page: string; label: string; desc: (name: st
   'standings.html': {
     page: 'standings',
     label: 'The Standings',
-    desc: (n) => `All-time standings for ${n} — every win, loss, and point ever scored, ranked.`,
+    desc: (n) => `All-time standings for ${n}, every win, loss, and point ever scored, ranked.`,
   },
   'records.html': {
     page: 'records',
     label: 'The Record Book',
-    desc: (n) => `The records of record in ${n} — single-week scorchers, season highs, and career marks.`,
+    desc: (n) => `The records of record in ${n}, single-week scorchers, season highs, and career marks.`,
   },
   'managers/index.html': {
     page: 'managers',
     label: 'The Managers',
-    desc: (n) => `Every manager who's ever run a team in ${n} — careers, trophies, and head-to-head ledgers.`,
+    desc: (n) => `Every manager who's ever run a team in ${n}, careers, trophies, and head-to-head ledgers.`,
   },
   'managers/manager.html': {
     page: 'managers',
     label: 'The Manager File',
-    desc: (n) => `One manager's complete file from ${n}'s archives — record, rings, rivalries, and tendencies.`,
+    desc: (n) => `One manager's complete file from ${n}'s archives, record, rings, rivalries, and tendencies.`,
   },
   // NOTE: managers/all-time.html is handled above by buildOgImageUrl —
   // it gets its own display-case card from /api/og/alltime, not a chapter
@@ -690,12 +690,12 @@ const OG_CHAPTERS: Record<string, { page: string; label: string; desc: (name: st
   'managers/visualizer.html': {
     page: 'managers',
     label: 'The Chart Room',
-    desc: (n) => `${n}, drawn in ink — points races, standings trajectories, luck lines, and every score ever posted, charted.`,
+    desc: (n) => `${n}, drawn in ink, points races, standings trajectories, luck lines, and every score ever posted, charted.`,
   },
   'draft/index.html': {
     page: 'draft',
     label: 'The Draft Archive',
-    desc: (n) => `Every draft in ${n}'s history — round by round, steal by steal, bust by bust.`,
+    desc: (n) => `Every draft in ${n}'s history, round by round, steal by steal, bust by bust.`,
   },
   'draft/mock.html': {
     page: 'draft',
@@ -705,17 +705,17 @@ const OG_CHAPTERS: Record<string, { page: string; label: string; desc: (name: st
   'rivalries/index.html': {
     page: 'rivalries',
     label: 'The Rivalries',
-    desc: (n) => `The feuds of ${n} — every grudge match tracked meeting by meeting.`,
+    desc: (n) => `The feuds of ${n}, every grudge match tracked meeting by meeting.`,
   },
   'seasons/index.html': {
     page: 'seasons',
     label: 'The Seasons',
-    desc: (n) => `Season by season through ${n}'s history — champions, standings, and the stories between.`,
+    desc: (n) => `Season by season through ${n}'s history, champions, standings, and the stories between.`,
   },
   'live/index.html': {
     page: 'live',
     label: 'The Live Season',
-    desc: (n) => `${n}'s season as it happens — power rankings, pick'ems, records watch, and the trade desk.`,
+    desc: (n) => `${n}'s season as it happens, power rankings, pick'ems, records watch, and the trade desk.`,
   },
 }
 
@@ -868,7 +868,7 @@ function setupPlaceholderHtml(meta: LeagueMeta): string {
     <div class="hero-sup">★ Setup in progress ★</div>
     <h1 class="hero-title">${name}</h1>
     <p class="hero-sub" style="margin-top:1.5rem;">
-      The commissioner is still putting the almanac together — merging cross-platform
+      The commissioner is still putting the almanac together, merging cross-platform
       identities, reviewing alumni, finalizing the roster. Check back once it's published.
     </p>
     <p style="margin-top:2rem;font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-mute);">
@@ -902,7 +902,7 @@ function notFoundHtml(slug: string): string {
     <div class="hero-sup">★ Corrections Desk · No. 404 ★</div>
     <h1 class="hero-title">This edition <em>doesn't exist.</em></h1>
     <p class="hero-sub" style="margin-top:1.5rem;">
-      No almanac is printed at this address — the link may have a typo,
+      No almanac is printed at this address, the link may have a typo,
       or the league hasn't published yet.
     </p>
     <p style="margin-top:2rem;font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-mute);">

@@ -360,10 +360,10 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
     </header>
 
     <div class="rw-meter">
-        <div class="rw-meter-stat alert"><span class="val" id="m-broken">—</span><span class="lbl">Broken</span></div>
-        <div class="rw-meter-stat"><span class="val" id="m-brink">—</span><span class="lbl">Brink</span></div>
-        <div class="rw-meter-stat"><span class="val" id="m-onpace">—</span><span class="lbl">On pace</span></div>
-        <div class="rw-meter-stat"><span class="val" id="m-missed">—</span><span class="lbl">Missed</span></div>
+        <div class="rw-meter-stat alert"><span class="val" id="m-broken">·</span><span class="lbl">Broken</span></div>
+        <div class="rw-meter-stat"><span class="val" id="m-brink">·</span><span class="lbl">Brink</span></div>
+        <div class="rw-meter-stat"><span class="val" id="m-onpace">·</span><span class="lbl">On pace</span></div>
+        <div class="rw-meter-stat"><span class="val" id="m-missed">·</span><span class="lbl">Missed</span></div>
     </div>
 
     <div class="rw-label"><span class="t">§ 01 · Claimed</span> Records Broken</div>
@@ -371,7 +371,7 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
         <div class="rw-empty">
             <div class="glyph">◈</div>
             <h3>No records <em>broken yet.</em></h3>
-            <p>A record lands here the moment it's surpassed — a new single-week high, a streak past the all-time mark, or a Quickest-to-X hit early.</p>
+            <p>A record lands here the moment it's surpassed, a new single-week high, a streak past the all-time mark, or a Quickest-to-X hit early.</p>
         </div>
     </div>
 
@@ -526,12 +526,12 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
               '<span class="rw-mark-label">The mark</span>' +
               '<span class="rw-mark-num">' + esc(markNum) + '</span>' +
               (markUnit ? '<span class="rw-mark-unit">' + esc(markUnit) + '</span>' : '') +
-              '<span class="rw-mark-credit"><strong>' + esc(it.holder || '—') + '</strong>' +
+              '<span class="rw-mark-credit"><strong>' + esc(it.holder || '·') + '</strong>' +
                 (it.holder_when ? ' · ' + esc(it.holder_when) : '') + '</span>' +
             '</div>' +
             '<div class="rw-block-plot">' +
               '<div class="rw-plot-head">' +
-                '<span class="chaser">' + esc(it.chaser || '—') + '</span>' +
+                '<span class="chaser">' + esc(it.chaser || '·') + '</span>' +
                 (it.chaser_sub ? '<span class="chaser-sub">' + esc(it.chaser_sub) + '</span>' : '') +
               '</div>' +
               '<div class="rw-plot-labels">' +
@@ -598,7 +598,7 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
         '</div>' +
         '<div class="rw-broken-prior">' +
           '<span>' + esc(whenDisplay) + '</span>' +
-          '<span class="prior-line">prior · ' + esc(it.previous || '—') + '</span>' +
+          '<span class="prior-line">prior · ' + esc(it.previous || '·') + '</span>' +
         '</div>' +
       '</article>';
   }
@@ -621,7 +621,7 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
         '<span class="mini-num">' + readNumHtml + esc(readUnit) + '</span>' +
         '<div class="mini-body">' +
           '<div class="mini-cat">' + esc(it.category || '') + '</div>' +
-          '<div class="mini-name">' + esc(it.chaser || '—') + '</div>' +
+          '<div class="mini-name">' + esc(it.chaser || '·') + '</div>' +
         '</div>' +
         '<div class="mini-when">' + esc(whenDisplay) + '</div>' +
       '</div>';
@@ -668,7 +668,7 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
           '<div class="rw-onpace-grid">' +
             '<div class="rw-onpace-col chasing">' +
               '<div class="col-lbl">Chasing</div>' +
-              '<div class="col-name">' + esc(it.chaser || '—') +
+              '<div class="col-name">' + esc(it.chaser || '·') +
                 (it.chaser_sub ? ' <span class="col-sub-tag">' + esc(it.chaser_sub) + '</span>' : '') +
               '</div>' +
               '<div class="col-val">' + esc(cv) + '</div>' +
@@ -676,7 +676,7 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
             '</div>' +
             '<div class="rw-onpace-col mark">' +
               '<div class="col-lbl">The mark</div>' +
-              '<div class="col-name">' + esc(it.holder || '—') + '</div>' +
+              '<div class="col-name">' + esc(it.holder || '·') + '</div>' +
               '<div class="col-val">' + esc(it.record_value || '') + '</div>' +
               '<div class="col-sub">' + esc(it.holder_when || '') + '</div>' +
             '</div>' +
@@ -705,7 +705,7 @@ body { background: var(--rw-bg); color: var(--rw-cream); }
           '</div>' +
           '<div class="rw-side-miss-copy">' + (it.copy_html || esc(it.copy || '')) + '</div>' +
           '<div class="rw-side-miss-foot">' +
-            '<span>vs ' + esc(it.record_value || '—') + '</span>' +
+            '<span>vs ' + esc(it.record_value || '·') + '</span>' +
             '<span>' + esc(it.gap || '') + '</span>' +
           '</div>' +
         '</div>';

@@ -737,7 +737,7 @@ function TradingCard({
   const ink = POS_INK[p.pos] ?? GOLD_PRINT
   const photoH = Math.round(84 * scale)
   const photoW = w - Math.round(18 * scale)
-  const acq = p.src === 'draft' && p.round ? `RD ${p.round} · PK ${p.roundPick ?? '—'}` : 'IN-SEASON ADD'
+  const acq = p.src === 'draft' && p.round ? `RD ${p.round} · PK ${p.roundPick ?? '·'}` : 'IN-SEASON ADD'
   // On the house all-stars the owner replaces the draft slot, and reads as
   // a possessive so a bare name can't be mistaken for the NFL team.
   const footNote = owner ? `${clip(owner, 10).toUpperCase()}'S` : acq

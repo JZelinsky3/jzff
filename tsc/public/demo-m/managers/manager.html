@@ -135,7 +135,7 @@
         });
     }
     function num(n, d) {
-        if (n == null || isNaN(n)) return '—';
+        if (n == null || isNaN(n)) return '·';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
     // "59-42-0" → "59-42" when the league has no ties on the books.
@@ -178,10 +178,10 @@
 
         // Stat grid (3×2)
         var stats = [
-            [esc(rec(m.reg_record) || '—'), 'Record'],
-            [m.reg_win_pct != null ? (m.reg_win_pct * 100).toFixed(0) + '%' : '—', 'Win pct'],
+            [esc(rec(m.reg_record) || '·'), 'Record'],
+            [m.reg_win_pct != null ? (m.reg_win_pct * 100).toFixed(0) + '%' : '·', 'Win pct'],
             [num(m.avg_ppg), 'Avg PPG'],
-            [esc(rec(m.playoff_record) || '—'), 'Playoffs'],
+            [esc(rec(m.playoff_record) || '·'), 'Playoffs'],
             [num(m.high_score), 'High'],
             [num(m.low_score), 'Low'],
         ];

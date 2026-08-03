@@ -155,7 +155,7 @@
         });
     }
     function num(n, d) {
-        if (n == null || isNaN(n)) return '—';
+        if (n == null || isNaN(n)) return '·';
         return Number(n).toLocaleString('en-US', { maximumFractionDigits: d == null ? 1 : d });
     }
 
@@ -202,10 +202,10 @@
 
         // Stat grid (3×2)
         var stats = [
-            [esc(m.reg_record || '—'), 'Record'],
-            [m.reg_win_pct != null ? (m.reg_win_pct * 100).toFixed(0) + '%' : '—', 'Win pct'],
+            [esc(m.reg_record || '·'), 'Record'],
+            [m.reg_win_pct != null ? (m.reg_win_pct * 100).toFixed(0) + '%' : '·', 'Win pct'],
             [num(m.avg_ppg), 'Avg PPG'],
-            [esc(m.playoff_record || '—'), 'Playoffs'],
+            [esc(m.playoff_record || '·'), 'Playoffs'],
             [num(m.high_score), 'High'],
             [num(m.low_score), 'Low'],
         ];

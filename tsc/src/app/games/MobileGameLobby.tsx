@@ -24,6 +24,11 @@ import s from './mobile.module.css'
 export async function MobileGameLobby({ game }: { game: GameDef }) {
   const { signedIn, leaguePools } = await loadPoolsForViewer()
   const poolHref = (id: string) => `${game.href}?pool=${encodeURIComponent(id)}`
+  // Same reasoning as the desktop lobby: the board is readable without
+  // dealing a wheel first. See GameLobby.
+  const boardHref = game.hasBoard
+    ? (id: string) => `${game.href}board/?pool=${encodeURIComponent(id)}`
+    : undefined
 
   // See the note in GameLobby: a game with neither pool has nothing to list
   // here, and the empty section reads as a broken page.
@@ -91,7 +96,7 @@ export async function MobileGameLobby({ game }: { game: GameDef }) {
             <span className={s.secSide}>No account</span>
           </div>
 
-          <HouseDeck pools={housePools} href={poolHref} />
+          <HouseDeck pools={housePools} href={poolHref} boardHref={boardHref} />
         </section>
       )}
 
@@ -119,7 +124,7 @@ export async function MobileGameLobby({ game }: { game: GameDef }) {
           </div>
         ) : (
           <>
-            <LeagueDeck pools={leaguePools} href={poolHref} />
+            <LeagueDeck pools={leaguePools} href={poolHref} boardHref={boardHref} />
 
             {game.allowsCombine && leaguePools.length > 1 && (
               <CombinePools pools={leaguePools} max={MAX_COMBINED_LEAGUES} base={game.href} />

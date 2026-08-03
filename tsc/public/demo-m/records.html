@@ -311,7 +311,7 @@
         });
     }
     function num(n, d) {
-        if (n == null || isNaN(n)) return '—';
+        if (n == null || isNaN(n)) return '·';
         // Fixed precision (min == max) so a whole number still prints its
         // trailing .0 — keeps the PPG / score columns vertically aligned
         // instead of integers rendering narrower than decimals.
@@ -319,7 +319,7 @@
         return Number(n).toLocaleString('en-US', { minimumFractionDigits: fd, maximumFractionDigits: fd });
     }
     function ord(n) {
-        if (n == null || isNaN(n)) return '—';
+        if (n == null || isNaN(n)) return '·';
         n = Math.round(n);
         var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
@@ -338,7 +338,7 @@
 
     // Per-record config: label + how to read value/context out of an entry.
     function gameCtx(e) {
-        return e.season + ' · W' + e.week + ' · vs ' + (e.opp_owner || '—') + ' · ' + num(e.score) + '–' + num(e.opp_score);
+        return e.season + ' · W' + e.week + ' · vs ' + (e.opp_owner || '·') + ' · ' + num(e.score) + '–' + num(e.opp_score);
     }
     var DEFS = {
         weekly: [
@@ -405,8 +405,8 @@
         if (section !== 'weekly' && section !== 'season') return '';
         return TONE_GOOD[key] ? 'is-good' : (TONE_BAD[key] ? 'is-bad' : '');
     }
-    function countVal(e) { return String(e.count != null ? e.count : (e.value != null ? e.value : '—')); }
-    function countOf(e, key) { return String(e[key] != null ? e[key] : (e.count != null ? e.count : '—')); }
+    function countVal(e) { return String(e.count != null ? e.count : (e.value != null ? e.value : '·')); }
+    function countOf(e, key) { return String(e[key] != null ? e[key] : (e.count != null ? e.count : '·')); }
     // "59-42-0" → "59-42" when there are no ties to show.
     function rec(r) { return String(r == null ? '' : r).replace(/^(\d+-\d+)-0$/, '$1'); }
     function seasonCtx(e) { return e.season + ' · ' + (e.team_name || '') + (e.reg_record ? ' · ' + rec(e.reg_record) : ''); }
@@ -522,7 +522,7 @@
         return src[key];
     }
 
-    function holderName(e) { return e.owner || e.name || e.holder || '—'; }
+    function holderName(e) { return e.owner || e.name || e.holder || '·'; }
     // Returns escaped HTML, not plain text — combined-score games show both
     // managers, with the opponent demoted to a smaller, dimmer tail.
     function holderHtmlFor(key, e) {
@@ -689,11 +689,11 @@
                 (statTag ? '<small>' + statTag + '</small>' : '') + '</span>' +
             '<div class="rb-gcard">' +
                 '<div class="rb-gline' + (hi1 ? ' is-win' : '') + '">' +
-                    '<span class="rb-gline-name">' + esc(n1 || '—') + '</span>' +
+                    '<span class="rb-gline-name">' + esc(n1 || '·') + '</span>' +
                     '<span class="rb-gline-score">' + num(s1) + '</span>' +
                 '</div>' +
                 '<div class="rb-gline' + (!hi1 ? ' is-win' : '') + '">' +
-                    '<span class="rb-gline-name">' + esc(n2 || '—') + '</span>' +
+                    '<span class="rb-gline-name">' + esc(n2 || '·') + '</span>' +
                     '<span class="rb-gline-score">' + num(s2) + '</span>' +
                 '</div>' +
                 '<div class="rb-gstamp">' + esc(e.season + ' · Week ' + e.week) + '</div>' +
@@ -724,7 +724,7 @@
                 ? e.championship_years.join(' · ') : '';
         }
         function step(e, cls, medal) {
-            if (!e) return '<div class="rb-step ' + cls + '"><div class="rb-step-medal">' + medal + '</div><div class="rb-step-name">—</div></div>';
+            if (!e) return '<div class="rb-step ' + cls + '"><div class="rb-step-medal">' + medal + '</div><div class="rb-step-name">·</div></div>';
             var sub = stepSub(e);
             return '<div class="rb-step ' + cls + '">' +
                 '<div class="rb-step-medal">' + medal + '</div>' +
@@ -780,7 +780,7 @@
                 ? '<small>' + e.seasons_played + (e.seasons_played === 1 ? ' szn' : ' szns') + '</small>' : '';
             return '<div class="rb-nopod-row">' +
                 '<span class="rb-nopod-name">' + esc(holderName(e)) + sp + '</span>' +
-                '<span class="rb-nopod-best">Best <b>' + (e.best_finish ? ord(e.best_finish) : '—') + '</b></span>' +
+                '<span class="rb-nopod-best">Best <b>' + (e.best_finish ? ord(e.best_finish) : '·') + '</b></span>' +
             '</div>';
         }).join('');
         return '<div class="m-card rb-card">' +

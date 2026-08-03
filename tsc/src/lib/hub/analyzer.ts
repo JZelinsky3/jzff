@@ -212,7 +212,7 @@ export async function analyzeHubTrade(args: {
     return {
       id,
       name: v?.name ?? p?.name ?? 'Unknown player',
-      position: v?.position ?? p?.position ?? '—',
+      position: v?.position ?? p?.position ?? '·',
       team: v?.team ?? p?.team ?? null,
       value: Math.round(v?.value ?? 0),
     }

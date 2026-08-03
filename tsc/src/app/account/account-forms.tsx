@@ -168,14 +168,14 @@ export function AccountForms({
           <div>
             <div className="section-header">
               <span className="section-num">§ 01 · Communication</span>
-              <span className="section-title">What we send you —</span>
+              <span className="section-title">What we send you,</span>
             </div>
             <MarketingForm initialOptIn={marketingOptIn} email={email} />
           </div>
           <div>
             <div className="section-header">
               <span className="section-num">§ 02 · Referral</span>
-              <span className="section-title">Where you heard of us —</span>
+              <span className="section-title">Where you heard of us,</span>
             </div>
             <ReferralForm initialSource={referralSource} initialOther={referralOther} />
           </div>
@@ -185,7 +185,7 @@ export function AccountForms({
       <div className="section">
         <div className="section-header">
           <span className="section-num">§ 03 · Sign out</span>
-          <span className="section-title">See you next time —</span>
+          <span className="section-title">See you next time,</span>
           <span className="section-meta">Ends this session</span>
         </div>
         <form action="/auth/signout" method="post" className="dc-card-row">

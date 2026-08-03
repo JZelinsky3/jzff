@@ -16,6 +16,7 @@ import { canonicalDraftIds } from '@/lib/canonicalDraft'
 import { pageAll } from './pool'
 import { DEMO_POOL_ID, DEMO_POOL_LABEL } from './demoPool'
 import { makeRng, newSeed, normalizeSeed } from './roulette'
+import { loadManagerIdentities } from './managerNames'
 import {
   ROUNDS,
   PICKS_SHOWN,
@@ -80,10 +81,12 @@ async function buildLeagueDeck(slug: string): Promise<Deck | null> {
   const seasonById = new Map(seasons.map((s) => [s.id, s]))
   const seasonIds = seasons.map((s) => s.id)
 
-  const [managerRows, msRows, draftRows] = await Promise.all([
-    pageAll<{ id: string; display_name: string }>(() =>
-      db.from('managers').select('id, display_name').eq('league_id', league.id).order('display_name')
-    ),
+  const [identities, msRows, draftRows] = await Promise.all([
+    // The league's own names, plus which manager rows are the same person.
+    // Both matter here: the pills are the answer sheet, so a renamed manager
+    // must read the way the league knows him, and a merged one must appear
+    // ONCE or half his cards are unanswerable. See ./managerNames.
+    loadManagerIdentities(db, [league.id]),
     pageAll<{
       season_id: string
       manager_id: string
@@ -163,7 +166,7 @@ async function buildLeagueDeck(slug: string): Promise<Deck | null> {
     list.push({
       round: row.round,
       name: row.player_name,
-      pos: (row.position ?? '').toUpperCase() || '—',
+      pos: (row.position ?? '').toUpperCase() || '·',
       nflTeam: normTeam(row.nfl_team),
     })
   }
@@ -179,7 +182,9 @@ async function buildLeagueDeck(slug: string): Promise<Deck | null> {
     entries.push({
       key: `${ms.season_id.slice(0, 8)}-${ms.manager_id.slice(0, 8)}`,
       picks,
-      managerId: ms.manager_id,
+      // The PERSON, not the platform row: the answer is checked against the
+      // pill that was offered, and one person offers one pill.
+      managerId: identities.get(ms.manager_id)?.groupId ?? ms.manager_id,
       year: season.year,
       teamName: ms.team_name,
       wins: ms.wins ?? 0,
@@ -196,11 +201,18 @@ async function buildLeagueDeck(slug: string): Promise<Deck | null> {
   const usedManagers = new Set(entries.map((e) => e.managerId))
   const usedYears = [...new Set(entries.map((e) => e.year))].sort((a, b) => a - b)
 
+  // One pill per person, in name order, and only for people the deck can
+  // actually ask about.
+  const pills = new Map<string, string>()
+  for (const { name, groupId } of identities.values()) {
+    if (usedManagers.has(groupId)) pills.set(groupId, name)
+  }
+
   return {
     label: league.name,
-    managers: managerRows
-      .filter((m) => usedManagers.has(m.id))
-      .map((m) => ({ id: m.id, name: m.display_name })),
+    managers: [...pills]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
     years: usedYears,
     entries,
   }
@@ -281,7 +293,7 @@ async function buildDemoDeck(): Promise<Deck | null> {
       list.push({
         round: p.round,
         name: p.player_name,
-        pos: (p.position ?? '').toUpperCase() || '—',
+        pos: (p.position ?? '').toUpperCase() || '·',
         nflTeam: normTeam(p.nfl_team),
       })
     }

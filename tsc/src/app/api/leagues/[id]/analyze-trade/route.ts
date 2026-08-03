@@ -81,7 +81,7 @@ function fallbackVerdict(deltaPct: number, perspective: 'sender' | 'receiver'): 
   if (abs < 0.03)              return 'Essentially even on consensus value.'
   if (pct > 0 && abs < 0.08)   return 'A slight value win on paper.'
   if (pct > 0 && abs < 0.15)   return 'Comes out ahead on raw value.'
-  if (pct > 0)                 return 'Clear value haul — wins on paper.'
+  if (pct > 0)                 return 'Clear value haul, wins on paper.'
   if (abs < 0.08)              return 'Gives up a touch of value.'
   if (abs < 0.15)              return 'Loses noticeably on value.'
   return 'Loses badly on raw value.'
@@ -124,34 +124,34 @@ function fmtMovements(d: TeamDepthDelta): string {
 function buildAnalyzerPrompt(ctx: PromptCtx): { system: string; user: string } {
   const typeNote =
     ctx.mode === 'dynasty'
-      ? 'DYNASTY league — long-term player value, draft picks, and youth weighted heavily.'
+      ? 'DYNASTY league: long-term player value, draft picks, and youth weighted heavily.'
       : ctx.mode === 'keeper'
-      ? 'KEEPER league — both rest-of-season production AND keeper value matter.'
-      : 'REDRAFT league — only current-season production matters.'
+      ? 'KEEPER league: both rest-of-season production AND keeper value matter.'
+      : 'REDRAFT league: only current-season production matters.'
 
   const winner =
     ctx.delta > 0 ? ctx.teamA.teamName :
     ctx.delta < 0 ? ctx.teamB.teamName : null
 
   const system = [
-    'You are a trade analyst for The Sunday Chronicle — a fantasy football league archive. The Analyzer evaluates HYPOTHETICAL trades a manager is considering, not completed ones. Your job is the narrative around a grade that has already been determined by hard value math; you do not assign the grade.',
+    'You are a trade analyst for The Sunday Chronicle, a fantasy football league archive. The Analyzer evaluates HYPOTHETICAL trades a manager is considering, not completed ones. Your job is the narrative around a grade that has already been determined by hard value math; you do not assign the grade.',
     '',
     typeNote,
     '',
-    'GRADE LOCK — the grades you receive in the user message are FACTS, not suggestions. Each side\'s grade comes from a deterministic rubric on that side\'s score: 0.5 x (its own starting-lineup change %) + 0.5 x (the marginal gap between the two sides). Bands: >=+18% A+ · +12..18% A · +5..12% A- · +2..5% B+ · -2..+2% B · -5..-2% B- · -8..-5% C+ · -12..-8% C · -16..-12% C- · -20..-16% D · below -20% F.',
+    'GRADE LOCK: the grades you receive in the user message are FACTS, not suggestions. Each side\'s grade comes from a deterministic rubric on that side\'s score: 0.5 x (its own starting-lineup change %) + 0.5 x (the marginal gap between the two sides). Bands: >=+18% A+ · +12..18% A · +5..12% A- · +2..5% B+ · -2..+2% B · -5..-2% B- · -8..-5% C+ · -12..-8% C · -16..-12% C- · -20..-16% D · below -20% F.',
     '',
     'Because the rubric blends each side\'s own lineup change with the relative gap, grades do NOT have to mirror. A deal where both lineups improve can print B+/B+ or A-/B+; a lopsided one prints A/C. Write the narrative to match the pairing you are given.',
     '',
-    'IMPORTANT — the grade is NOT raw asset value delta. It is built on the change in each team\'s STARTING LINEUP value (sum of best starters at QB/RB/WR/TE including FLEX + SF), before vs after the trade. This naturally captures:',
-    '  • Position scarcity — a 4th elite WR added to a team that starts 2 displaces nothing and earns ~0 marginal value, even if his asset value is huge.',
-    '  • Real team need — patching a weak position is worth far more than padding a strong one.',
-    '  • Package deal nerf — 3-for-1s where the team getting 3 only counts whichever of them cracks the starter tier; the team sending the elite player loses a real starter and gets nothing back to replace him.',
+    'IMPORTANT: the grade is NOT raw asset value delta. It is built on the change in each team\'s STARTING LINEUP value (sum of best starters at QB/RB/WR/TE including FLEX + SF), before vs after the trade. This naturally captures:',
+    '  • Position scarcity, a 4th elite WR added to a team that starts 2 displaces nothing and earns ~0 marginal value, even if his asset value is huge.',
+    '  • Real team need, patching a weak position is worth far more than padding a strong one.',
+    '  • Package deal nerf, 3-for-1s where the team getting 3 only counts whichever of them cracks the starter tier; the team sending the elite player loses a real starter and gets nothing back to replace him.',
     '',
     'Do NOT propose different grades. Your narrative MUST be consistent with the grades shown. When one grade is clearly higher, that team improved more; when both grades sit in the B+/A range, frame it as a deal both sides should take.',
     '',
-    'WRITING THE NARRATIVE — 4 to 6 sentences total. Follow these rules:',
+    'WRITING THE NARRATIVE. 4 to 6 sentences total. Follow these rules:',
     '',
-    '1. Lead with the most interesting observation: a player\'s situation, an age/contention-window mismatch, a positional scarcity, an opportunity cost — anything except a verdict statement. NEVER start with "X wins this trade" or any variation.',
+    '1. Lead with the most interesting observation: a player\'s situation, an age/contention-window mismatch, a positional scarcity, an opportunity cost, anything except a verdict statement. NEVER start with "X wins this trade" or any variation.',
     '',
     '2. EXPLAIN WHY the grades came out the way they did. Reference consensus value totals, positional rank movements (e.g. "Team A jumps from WR rank 5 to WR rank 3"), age curves (dynasty), or roster fit. Be specific.',
     '',
@@ -159,7 +159,7 @@ function buildAnalyzerPrompt(ctx: PromptCtx): { system: string; user: string } {
     '',
     '4. Vary sentence structure. Do not use the same opening template twice across runs.',
     '',
-    'BANNED PHRASES — never write any of these:',
+    'BANNED PHRASES. Never write any of these:',
     '• "won this trade" / "won the trade" / "got the better end"',
     '• "primarily due to" / "primarily because"',
     '• "added depth" or "addressed a need" as the entire reason',
@@ -167,9 +167,9 @@ function buildAnalyzerPrompt(ctx: PromptCtx): { system: string; user: string } {
     '• Any sentence whose only purpose is to restate who received whom',
     '• The em dash character. Never use an em dash anywhere; use commas, periods, or parentheses instead.',
     '',
-    'PER-TEAM VERDICTS — one sentence each. The verdict is the takeaway tagline for that team (e.g. "Wins big on consensus value but skews older at WR" or "Loses real value for a positional bet that probably doesn\'t pay off"). NOT another grade — that\'s already determined.',
+    'PER-TEAM VERDICTS. One sentence each. The verdict is the takeaway tagline for that team (e.g. "Wins big on consensus value but skews older at WR" or "Loses real value for a positional bet that probably doesn\'t pay off"). NOT another grade. That is already determined.',
     '',
-    'OUTPUT: strict JSON only — no prose before/after, no markdown fences. Shape:',
+    'OUTPUT: strict JSON only, no prose before/after, no markdown fences. Shape:',
     '{ "narrative": "<4-6 sentences>", "teamA_verdict": "<one sentence>", "teamB_verdict": "<one sentence>" }',
   ].join('\n')
 
@@ -182,7 +182,7 @@ function buildAnalyzerPrompt(ctx: PromptCtx): { system: string; user: string } {
       : s.sent.map((p) => `    - ${p.name} (${p.position ?? '?'}) · value ${Math.round(p.value)}`).join('\n')
     const marginalSign = s.marginalGain >= 0 ? '+' : ''
     return [
-      `Team ${sideLabel} — ${s.teamName} (grade ${s.grade}):`,
+      `Team ${sideLabel}, ${s.teamName} (grade ${s.grade}):`,
       `  Sends (raw asset value ${Math.round(s.sentValue)}):`,
       sentList,
       `  Receives (raw asset value ${Math.round(s.receivedValue)}):`,

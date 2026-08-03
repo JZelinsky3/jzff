@@ -298,11 +298,11 @@ function matchHTML(w, m, locked, isGOTW) {
         <div class="buttons">
           <button class="vote-btn" data-matchup="${m.id}" data-team="${m.home}">
             <span class="vote-name">${esc(A?.name || m.home)}</span>
-            <span class="vote-pct" id="vp-${w.id}-${m.id}-${esc(m.home)}">—</span>
+            <span class="vote-pct" id="vp-${w.id}-${m.id}-${esc(m.home)}">·</span>
           </button>
           <button class="vote-btn" data-matchup="${m.id}" data-team="${m.away}">
             <span class="vote-name">${esc(B?.name || m.away)}</span>
-            <span class="vote-pct" id="vp-${w.id}-${m.id}-${esc(m.away)}">—</span>
+            <span class="vote-pct" id="vp-${w.id}-${m.id}-${esc(m.away)}">·</span>
           </button>
         </div>
         <div class="bar2" id="bar-${w.id}-${m.id}">
@@ -350,7 +350,7 @@ async function onSubmitPicks() {
 
   disableWeekInputs(w.id);
   submitBtn.disabled = true;
-  submitHint.textContent = "Picks submitted! (Demo — not saved)";
+  submitHint.textContent = "Picks submitted! (Demo, not saved)";
 }
 
 // DEMO: nothing to load — picks aren't persisted in demo mode.
@@ -416,8 +416,8 @@ function liveTally(w, revealAt) {
     const pB = 100 - pA;
     left.style.width = pA + "%";
     rgt.style.width  = pB + "%";
-    if (vpA) vpA.textContent = show ? pA + "%" : "—";
-    if (vpB) vpB.textContent = show ? pB + "%" : "—";
+    if (vpA) vpA.textContent = show ? pA + "%" : "·";
+    if (vpB) vpB.textContent = show ? pB + "%" : "·";
     bar.title = show
       ? `${state.teams[m.home]?.name || m.home} ${pA}% · ${state.teams[m.away]?.name || m.away} ${pB}% · ${tot} votes`
       : "Votes hidden until reveal";

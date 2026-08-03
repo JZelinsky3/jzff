@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getViewMode } from "@/lib/viewMode"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — The Sunday Chronicle",
+  title: "Privacy Policy, The Sunday Chronicle",
   description:
     "How The Sunday Chronicle collects, uses, and protects your data.",
   alternates: { canonical: "https://thesundaychronicle.app/privacy/" },
@@ -41,7 +41,7 @@ function PrivacyBody() {
       <p>
         To build your league&apos;s almanac we ingest league, manager, roster,
         matchup, draft, and transaction data from the fantasy platforms you
-        connect — Sleeper, ESPN, NFL.com, and Yahoo. For Yahoo we use OAuth and
+        connect, Sleeper, ESPN, NFL.com, and Yahoo. For Yahoo we use OAuth and
         store the resulting access and refresh tokens, scoped to your account
         and protected by row-level security plus Supabase&apos;s at-rest disk
         encryption. For ESPN and NFL.com we accept the cookies you choose to
@@ -67,7 +67,7 @@ function PrivacyBody() {
       <h2>2. How we use your data</h2>
       <p>To:</p>
       <ul>
-        <li>Run the service you signed up for — sync your leagues, render the almanac, send transactional emails.</li>
+        <li>Run the service you signed up for, sync your leagues, render the almanac, send transactional emails.</li>
         <li>Bill you and keep your subscription in good standing.</li>
         <li>Investigate bugs, abuse, and platform errors.</li>
         <li>Contact you about your account or material changes to the service.</li>
@@ -81,11 +81,11 @@ function PrivacyBody() {
       <h2>3. Who we share with</h2>
       <p>We share data with the following processors, only as needed to operate the service:</p>
       <ul>
-        <li><strong>Supabase</strong> — our database and authentication provider (US-hosted).</li>
-        <li><strong>Vercel</strong> — our hosting and edge-network provider.</li>
-        <li><strong>Stripe</strong> — payment processing and subscription management.</li>
-        <li><strong>Google</strong> — only if you sign in with Google; we receive identity, they receive nothing from us about your league activity.</li>
-        <li><strong>Groq</strong> — used to generate AI trade summaries when that feature is enabled; only the trade in question is sent, never your account identity.</li>
+        <li><strong>Supabase</strong>, our database and authentication provider (US-hosted).</li>
+        <li><strong>Vercel</strong>, our hosting and edge-network provider.</li>
+        <li><strong>Stripe</strong>, payment processing and subscription management.</li>
+        <li><strong>Google</strong>, only if you sign in with Google; we receive identity, they receive nothing from us about your league activity.</li>
+        <li><strong>Groq</strong>, used to generate AI trade summaries when that feature is enabled; only the trade in question is sent, never your account identity.</li>
       </ul>
       <p>
         We disclose data when required by a valid legal request, or to protect
