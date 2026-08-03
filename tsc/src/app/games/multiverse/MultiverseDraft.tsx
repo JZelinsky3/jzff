@@ -1061,10 +1061,12 @@ export function MultiverseDraft({
     const last = played > 0 ? weekly[played - 1] : null
     const next = played < WEEKS ? weekly[played] : null
     const myWeekly = weekly.reduce((a, w) => a + w.mine, 0) / WEEKS
-    // Deliberately not "you're in" / "you're out" — the fourteenth week is
-    // still being read at this point, and the banner is where the season is
-    // totted up.
-    const closeLabel = 'See where that leaves you'
+    // Says which way it went, because by now the screen already has: the
+    // record is in the strip and eight wins is a rule the game states in the
+    // lobby, on the banner and in the recap. Keeping the label coy protected
+    // a reveal the player had already made for themselves, and cost five
+    // words to do it.
+    const closeLabel = madeIt ? 'Begin playoffs' : 'End season'
     return (
       <div className={styles.board}>
         <div className={styles.strip}>
@@ -1154,7 +1156,7 @@ export function MultiverseDraft({
                 : { label: closeLabel, onClick: () => setSeasonClosed(true) }
             }
             secondary={
-              next ? { label: 'Play out the season', onClick: () => setPlayed(WEEKS) } : undefined
+              next ? { label: 'Play it out', onClick: () => setPlayed(WEEKS) } : undefined
             }
           />
         ) : (
@@ -1169,7 +1171,7 @@ export function MultiverseDraft({
                   Play week {played + 1}
                 </button>
                 <button type="button" className={styles.ghost} onClick={() => setPlayed(WEEKS)}>
-                  Play out the season
+                  Play it out
                 </button>
               </>
             ) : (
@@ -1247,7 +1249,7 @@ export function MultiverseDraft({
         {bracket}
         <div className={styles.actions} data-single="yes">
           <button type="button" className={styles.primary} onClick={() => setPoOpen(true)}>
-            Into the postseason
+            Play {PLAYOFF_ROUND_NAMES[0].toLowerCase()}
           </button>
         </div>
       </div>
