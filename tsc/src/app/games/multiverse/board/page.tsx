@@ -11,12 +11,26 @@
 // a 9-5 that never got there on wins alone.
 
 import { redirect } from 'next/navigation'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { GameBoardPage } from '../../GameBoardPage'
 import { MULTIVERSE_DRAFT } from '../../gameDefs'
 import type { BoardKind } from '@/lib/minigames/leaderboard'
 
 export const dynamic = 'force-dynamic'
+
+// Safari tints its toolbar from <meta name="theme-color">, and this game
+// re-skins the whole page rather than a component inside it — a navy bar and
+// a navy home indicator either side of a teal board is the same mismatch the
+// Clubhouse fixed for its own dock. Same move here: the browser chrome takes
+// the board's ink, so the screen reads as one piece top to bottom.
+export const viewport: Viewport = {
+  themeColor: '#061414',
+  // Re-declared from the root layout on purpose — don't rely on viewport
+  // merge semantics for the field that keeps phones on a real viewport.
+  width: 'device-width',
+  initialScale: 1,
+}
+
 
 export const metadata: Metadata = {
   title: 'The Board · The Multiverse Draft',

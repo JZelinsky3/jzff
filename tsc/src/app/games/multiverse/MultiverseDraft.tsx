@@ -1508,9 +1508,15 @@ export function MultiverseDraft({
                 <span className={styles.recapSlot}>{SLOTS[slot].label}</span>
                 <span className={styles.recapWho}>
                   <span className={styles.recapName}>{card.name}</span>
-                  <span className={styles.pos} data-pos={card.pos}>
-                    {card.pos}
-                  </span>
+                  {/* The slot is already printed to the left of the name, and
+                      for six of the seven it IS the position — "QB · Josh
+                      Allen · QB". Only the flex needs saying, because that is
+                      the one slot whose label does not tell you what he is. */}
+                  {SLOTS[slot].label !== card.pos && (
+                    <span className={styles.pos} data-pos={card.pos}>
+                      {card.pos}
+                    </span>
+                  )}
                 </span>
                 <span className={styles.recapTl}>
                   {card.timelines.map((t, i) => (

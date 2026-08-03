@@ -1440,11 +1440,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The line is a LIST — position, shape, and where he'd land — and two
-   uppercase mono words with a gap between them read as one phrase:
-   "SWINGS TO FLEX" is not a thing. A rule between them, in the panel line
-   colour so it separates without being read. */
-.dMeta > * + *::before {
+/* One rule, and only where two WORDS meet: "SWINGS TO FLEX" reads as one
+   phrase without it. The position needs no dot after it — it is a bordered
+   plate, which separates itself. */
+.dHint::before {
   content: '·';
   margin-right: 0.36rem;
   color: var(--mv-line);
@@ -2031,11 +2030,18 @@
       'tl tl tl';
     align-items: center;
     row-gap: 0.5rem;
+    /* Tight between the slot and the name. The column has to be wide enough
+       for FLEX, so a left-set "QB" left half a column of air before the name
+       on five rows out of seven. */
+    column-gap: 0.5rem;
     padding: 0.7rem 0.8rem;
   }
 
+  /* Flush to the name it labels, so the gap is the same on every row
+     whatever the slot is called. */
   .recapSlot {
     grid-area: slot;
+    text-align: right;
   }
 
   .recapWho {
