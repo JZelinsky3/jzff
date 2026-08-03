@@ -630,30 +630,33 @@ const OPPONENT_NOISE = [7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5, 0.25, 0]
 /**
  * How many teams each postseason round is the best of.
  *
- * The regular season's ladder is tuned so eight wins is a real bar and a
- * competent drafter clears it about two runs in five. What that leaves is the
- * title, and a title has to be the thing you keep playing for rather than the
- * thing that happens when you draft well once.
+ * The shape matters as much as the total. A postseason where every round is
+ * equally hard is three coin flips in a row, and three coin flips is a wall
+ * rather than a run — nobody feels themselves getting deeper into anything.
+ * So the rounds are meant to get progressively harder: the quarter-final is a
+ * side you should usually beat, and the final is the hardest team the dealer
+ * can build out of this league.
  *
- * Against a single drafted opponent per round, a side good enough to reach
- * January won each round about 61% of the time — a ring every twelve runs.
- * Best-of raises the field without touching a number the player can see: the
- * quarter-final is a strong team, the final is the strongest one the dealer
- * can build out of this league, and the climb between them is the postseason
- * getting harder the way a postseason should.
+ * Best-of is the whole mechanism. One draft is the best team on ONE board and
+ * a board is a random deal; the best of eighty is near the top of what the
+ * pool can produce. Nothing the player sees changes, and no number is faked —
+ * these are all teams that could have been drafted.
  *
- * Measured on the demo pool over 900 dealt seasons. At this setting a
- * competent drafter still reaches January 39.6% of the time — the regular
- * season is deliberately untouched — and then wins the three rounds 30.3%,
- * 29.6% and 37.5% of the time, which is a title every 75 runs. Somebody
- * drafting on the biggest average alone is rarer still. Before it, a ring was
- * one run in twelve.
+ * Measured on the demo pool over 800 dealt seasons, for a drafter taking the
+ * best card against its position's average:
  *
- * (The third round reads easier than the first because of who is left: a side
- * that has won two knockouts is a strong side. The field sizes are what stop
- * that from compounding.)
+ *      make the postseason   40.8%
+ *      win the quarter-final 55.2%   →  22.5% of all runs
+ *      win the semi-final    28.9%   →   6.5%
+ *      win the final         23.1%   →   1.5%,  a title every 67 runs
+ *
+ * The final resists going much below that: best-of climbs with the log of the
+ * field, so eighty to two hundred is worth about a point of paper. It is also
+ * fighting a selection effect — a side that has won two knockouts is a good
+ * side — which is why the last round reads easier than the arithmetic
+ * suggests it should.
  */
-const PLAYOFF_FIELD = [6, 14, 30]
+const PLAYOFF_FIELD = [1, 12, 80]
 
 export async function dealMultiverse(
   poolParam: string,
