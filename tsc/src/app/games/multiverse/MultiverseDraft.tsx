@@ -245,6 +245,18 @@ function DraftRow({
   const hint =
     slotLabel == null ? 'no slot' : slotLabel === card.pos ? null : `to ${slotLabel.toLowerCase()}`
 
+  // What SHAPE the three numbers are, which is the decision this game is
+  // actually about and the one thing the row never said out loud. The bands
+  // below hold all three seasons and the spread holds the gap, but reading a
+  // card off them takes a second per card and there are five of them on
+  // screen — this is that second, spent once, at the front.
+  //
+  // Measured against the card's own average rather than a flat points
+  // threshold: eight points between a quarterback's best and worst year is
+  // ordinary, and on a tight end it is the whole player.
+  const swing = card.mean > 0 ? card.spread / card.mean : 0
+  const shape = swing < 0.28 ? 'steady' : swing < 0.55 ? 'swings' : 'wild'
+
   return (
     <button type="button" className={styles.dRow} onClick={onTake} disabled={disabled}>
       <span className={styles.dHead}>
@@ -255,8 +267,8 @@ function DraftRow({
             <span className={styles.pos} data-pos={card.pos}>
               {card.pos}
             </span>
-            <span className={styles.spread} data-wide={card.spread >= 8 ? 'yes' : undefined}>
-              ±{card.spread.toFixed(1)}
+            <span className={styles.dShape} data-shape={shape}>
+              {shape}
             </span>
             {hint && (
               <span className={styles.dHint} data-none={slotLabel == null ? 'yes' : undefined}>
@@ -267,7 +279,12 @@ function DraftRow({
         </span>
         <span className={styles.dAvg}>
           <span className={styles.dAvgNum}>{card.mean.toFixed(1)}</span>
-          <span className={styles.dAvgLabel}>avg</span>
+          <span className={styles.dAvgFoot}>
+            <span className={styles.dAvgLabel}>avg</span>
+            <span className={styles.spread} data-wide={card.spread >= 8 ? 'yes' : undefined}>
+              ±{card.spread.toFixed(1)}
+            </span>
+          </span>
         </span>
       </span>
 

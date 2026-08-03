@@ -1417,6 +1417,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The line is a LIST — position, shape, and where he'd land — and two
+   uppercase mono words with a gap between them read as one phrase:
+   "SWINGS TO FLEX" is not a thing. A rule between them, in the panel line
+   colour so it separates without being read. */
+.dMeta > * + *::before {
+  content: '·';
+  margin-right: 0.36rem;
+  color: var(--mv-line);
+}
+
 /* The average, at the end of the row. Every card on the board gets compared
    on this one number, so it sits where the eye finishes rather than inside
    the small print under the name. */
@@ -1435,13 +1445,40 @@
   font-variant-numeric: tabular-nums;
 }
 
-.dAvgLabel {
+/* "AVG ±4.7" on one line under the number. The spread is the same weight as
+   the label and belongs beside it: it qualifies the average, and it was
+   sitting in the meta line under the name qualifying nothing. */
+.dAvgFoot {
+  display: flex;
+  align-items: baseline;
+  gap: 0.32rem;
+  margin-top: 0.2rem;
   font-family: var(--mono);
   font-size: 0.44rem;
+  letter-spacing: 0.1em;
+  color: var(--mv-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.dAvgLabel {
   letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+/* One word for the shape of the three numbers. Steady is the quiet default
+   and takes the muted colour; the two that are worth noticing take the
+   accent, because a wild card is a decision rather than a detail. */
+.dShape {
+  font-family: var(--mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--mv-mute);
-  margin-top: 0.2rem;
+}
+
+.dShape[data-shape='swings'],
+.dShape[data-shape='wild'] {
+  color: var(--mv-teal);
 }
 
 /* Only shown when the slot is NOT the position: the flex, or no room left.
