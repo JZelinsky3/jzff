@@ -200,10 +200,43 @@ export const REDRAFT: GameDef = {
     'Your own drafts, board by board, with hindsight you did not have at the time. Needs your drafts to have come across from your platform.',
 }
 
+export const MULTIVERSE_DRAFT: GameDef = {
+  id: 'multiverse',
+  href: '/games/multiverse/',
+  title: 'The Multiverse',
+  titleEm: 'Draft',
+  tagline: 'Every player is three players. Draft seven, play fourteen weeks.',
+  accessTag: 'Needs a league',
+  // Teal, and the last colour that reads clearly against the brass, the
+  // terracotta, the steel, the violet and the sage. It carries onto a board
+  // that is deliberately not the navy the other five share — see
+  // multiverse.module.css.
+  accent: '#5fc9bd',
+  blurb:
+    'Every card on the board is one player carrying three of the seasons your league actually rostered him for, each with what he really scored per game that year. Take him and you take all three: every week he rolls one of them, so 2019 Lamar and 2025 Bijan can end up on the same team and neither is a fixed number. Seven slots, fourteen weeks, and eight wins makes the postseason.',
+  how: [
+    'Five cards a round, each one a player in three different seasons',
+    'Fill seven slots knowing what every card can and cannot give you',
+    'Play fourteen weeks where each man rolls one of his years',
+  ],
+  allowsSite: false,
+  allowsCombine: false,
+  // The demo tree ships seven drafts, and this game never asks about a
+  // week-by-week schedule — its opponents are drafted rather than remembered
+  // — so unlike The Gauntlet and the Over/Under it is playable signed-out.
+  allowsDemo: true,
+  hasBoard: false,
+  demoBody:
+    'Seven seasons of one league, so most of the good players carry three of them. The quickest way to see what a card looks like before pointing it at your own.',
+  leagueBody:
+    'Your own league, and players you watched for years, each one dealt three of the seasons you had him. Needs two completed seasons, and reads best with four or more.',
+}
+
 export const GAMES: GameDef[] = [
   ROSTER_ROULETTE,
   GUESS_THE_DRAFT,
   THE_GAUNTLET,
   OVER_UNDER,
   REDRAFT,
+  MULTIVERSE_DRAFT,
 ]

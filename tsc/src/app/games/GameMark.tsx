@@ -19,6 +19,7 @@ import {
   THE_GAUNTLET,
   OVER_UNDER,
   REDRAFT,
+  MULTIVERSE_DRAFT,
 } from './gameDefs'
 import s from './marks.module.css'
 
@@ -131,12 +132,43 @@ function ClockMark() {
   )
 }
 
+/**
+ * One card, which is one player, which is three numbers.
+ *
+ * Nobody is named. A real name would date the card to whatever the reader
+ * knows about that player's actual years, and the whole point of the mark is
+ * that the three seasons are interchangeable until the week rolls. The lit
+ * band is the one that came up; the other two are just as available.
+ */
+function BandsMark() {
+  const bands: [string, string, boolean][] = [
+    ['2019', '21.4', false],
+    ['2022', '12.1', true],
+    ['2024', '17.8', false],
+  ]
+  return (
+    <>
+      <span className={s.bandsHead}>
+        <span className={s.bandsPos}>RB</span>
+        <span className={s.bandsLabel}>Three seasons</span>
+      </span>
+      {bands.map(([year, ppg, lit]) => (
+        <span key={year} className={lit ? s.bandOn : s.band}>
+          <span className={s.bandYear}>{year}</span>
+          <span className={s.bandPpg}>{ppg}</span>
+        </span>
+      ))}
+    </>
+  )
+}
+
 function Art({ id }: { id: string }) {
   if (id === ROSTER_ROULETTE.id) return <WheelMark />
   if (id === GUESS_THE_DRAFT.id) return <RedactedMark />
   if (id === THE_GAUNTLET.id) return <FixtureMark />
   if (id === OVER_UNDER.id) return <LineMark />
   if (id === REDRAFT.id) return <ClockMark />
+  if (id === MULTIVERSE_DRAFT.id) return <BandsMark />
   return null
 }
 

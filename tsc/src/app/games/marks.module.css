@@ -287,3 +287,76 @@
     color-mix(in srgb, var(--accent) 18%, #0b1119)
   );
 }
+
+/* ── The Multiverse Draft: one card, three seasons ────────── */
+
+.bandsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5em;
+  padding-bottom: 0.34em;
+  margin-bottom: 0.34em;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.bandsPos {
+  font-family: var(--mono);
+  font-size: 0.46em;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 1px;
+  padding: 0.16em 0.42em;
+}
+
+.bandsLabel {
+  font-family: var(--mono);
+  font-size: 0.46em;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gp-mute);
+}
+
+/* The two dim bands and the lit one differ only in weight, not in kind —
+   which is the point. Any of the three could have been the one that came up. */
+.band,
+.bandOn {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5em;
+  margin-top: 0.2em;
+  padding: 0.2em 0.42em;
+  border-left: 0.14em solid color-mix(in srgb, var(--accent) 28%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.bandOn {
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.bandYear {
+  font-family: var(--mono);
+  font-size: 0.46em;
+  color: var(--gp-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.bandOn .bandYear {
+  color: var(--gp-soft);
+}
+
+.bandPpg {
+  font-family: var(--serif);
+  font-size: 0.78em;
+  line-height: 1;
+  color: var(--gp-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.bandOn .bandPpg {
+  color: var(--accent);
+}
