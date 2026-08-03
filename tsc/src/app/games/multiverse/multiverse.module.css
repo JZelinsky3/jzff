@@ -1261,23 +1261,46 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Where he'd land. The desktop card says this under the name; here it is
-   the row's right edge, which is the one place a scanning thumb is not
-   already reading a number. */
-.dSlot {
+/* The average, at the end of the row. Every card on the board gets compared
+   on this one number, so it sits where the eye finishes rather than inside
+   the small print under the name. */
+.dAvg {
   flex: none;
-  font-family: var(--mono);
-  font-size: 0.46rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--mv-teal);
-  border: 1px solid color-mix(in srgb, var(--mv-teal) 45%, transparent);
-  padding: 0.2rem 0.35rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
 }
 
-.dSlot[data-none='yes'] {
+.dAvgNum {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  color: var(--mv-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.dAvgLabel {
+  font-family: var(--mono);
+  font-size: 0.44rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--mv-mute);
-  border-color: var(--mv-line);
+  margin-top: 0.2rem;
+}
+
+/* Only shown when the slot is NOT the position: the flex, or no room left.
+   Saying "QB" beside a card already labelled QB was the duplicate. */
+.dHint {
+  font-family: var(--mono);
+  font-size: 0.46rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mv-teal);
+}
+
+/* "No slot" is not an offer, it is the reason the row cannot be pressed. */
+.dHint[data-none='yes'] {
+  color: var(--mv-mute);
 }
 
 .dBands {

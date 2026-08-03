@@ -189,6 +189,16 @@ function DraftRow({
   disabled?: boolean
   slotLabel: string | null
 }) {
+  // The right of the row used to be the slot this card would fill, which for
+  // six of the seven slots is the word already sitting under the name: a QB
+  // card read "QB … QB". The slot is only worth saying when it ISN'T the
+  // position — the flex, or nowhere at all — so it says it then, next to the
+  // position, and the right of the row carries the average instead. That is
+  // the number every card gets compared on, and it belongs where the eye ends
+  // up rather than buried in a line of small type.
+  const hint =
+    slotLabel == null ? 'no slot' : slotLabel === card.pos ? null : `to ${slotLabel.toLowerCase()}`
+
   return (
     <button type="button" className={styles.dRow} onClick={onTake} disabled={disabled}>
       <span className={styles.dHead}>
@@ -199,16 +209,19 @@ function DraftRow({
             <span className={styles.pos} data-pos={card.pos}>
               {card.pos}
             </span>
-            <span>
-              avg <b>{card.mean.toFixed(1)}</b>
-            </span>
             <span className={styles.spread} data-wide={card.spread >= 8 ? 'yes' : undefined}>
               ±{card.spread.toFixed(1)}
             </span>
+            {hint && (
+              <span className={styles.dHint} data-none={slotLabel == null ? 'yes' : undefined}>
+                {hint}
+              </span>
+            )}
           </span>
         </span>
-        <span className={styles.dSlot} data-none={slotLabel == null ? 'yes' : undefined}>
-          {slotLabel ?? 'no slot'}
+        <span className={styles.dAvg}>
+          <span className={styles.dAvgNum}>{card.mean.toFixed(1)}</span>
+          <span className={styles.dAvgLabel}>avg</span>
         </span>
       </span>
 
@@ -285,9 +298,13 @@ function Hud({
           >
             <span className={styles.hudHeadline}>{headline}</span>
             <span className={open ? styles.hudChevOpen : styles.hudChev} aria-hidden>
+              {/* 12, not 13. The box is 24 inside its border, so an odd glyph
+                  leaves a 6.5px gap either side — a half pixel, which the
+                  browser has to round somewhere, and it rounds it the same way
+                  every time. It read as the arrow sitting a pixel right. */}
               <svg
-                width="13"
-                height="13"
+                width="12"
+                height="12"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
