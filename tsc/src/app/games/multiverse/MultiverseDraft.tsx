@@ -2,21 +2,21 @@
 
 // The Multiverse Draft — the board.
 //
-// Three surfaces in one component, because they are one run: you draft, you
-// play it out, you read what happened. Nothing about the draft is hidden —
-// every card shows all three of its seasons up front, and the whole game is
-// deciding which shape of number you want rather than guessing at one.
+// Four surfaces in one component, because they are one run: you draft, you
+// play fourteen weeks, you play the postseason if you earned it, and you read
+// what happened. Nothing about the draft is hidden — every card shows all
+// three of its seasons up front, and the whole game is deciding which SHAPE of
+// number you want rather than guessing at one.
 //
-// The slate is the strategic surface and it is on screen from the first round.
-// Fourteen opponents, what each is worth on paper, and your own paper total
-// drawn across them once you have cards. That comparison is the decision the
-// game is actually about: a roster that is behind the slate wants volatile
-// cards, and one that is ahead of it wants anchors. Hiding it would leave
-// nothing to think about but the biggest average.
+// The slate is the strategic surface and it is on screen from the first round,
+// drawn as the margin either side of a fixed line. That comparison is the
+// decision the game is about: a roster behind the slate wants volatile cards,
+// one ahead of it wants anchors. Hiding it would leave nothing to think about
+// but the biggest average.
 //
 // The dice arrive with the board (deal.rolls, one row per slot) rather than
-// being rolled here, so a shared link plays the identical season and a
-// refresh cannot reroll a bad week.
+// being rolled here, so a shared link plays the identical season and a refresh
+// cannot reroll a bad week.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -24,12 +24,17 @@ import {
   SLOTS,
   WEEKS,
   PLAYOFF_LINE,
+  PLAYOFF_ROUNDS,
+  PLAYOFF_ROUND_NAMES,
   weekScore,
+  playoffScore,
+  bestTimelines,
   realized,
   grade,
   type MultiverseDeal,
   type MvCard,
 } from '@/lib/minigames/multiverse'
+import { bankRun, postRun } from '../runBank'
 import { OwnLeagueCta } from '../OwnLeagueCta'
 import styles from './multiverse.module.css'
 
@@ -70,8 +75,8 @@ function Face({ name, playerId }: { name: string; playerId: string | null }) {
 /**
  * One card, with every season it carries on the front.
  *
- * `fired` lights the season that came up this week and dims the others, which
- * is the only animation this game needs: three numbers, one of them true.
+ * `fired` lights the season that came up and dims the rest. `slot` only feeds
+ * the animation's stagger, so the roster resolves one man at a time.
  */
 function Card({
   card,
@@ -80,6 +85,8 @@ function Card({
   slotLabel,
   fired,
   compact,
+  slot = 0,
+  only,
 }: {
   card: MvCard
   onTake?: () => void
@@ -87,7 +94,18 @@ function Card({
   slotLabel?: string | null
   fired?: number | null
   compact?: boolean
+  slot?: number
+  /** Postseason: the seasons still in play, when the card has been cut down. */
+  only?: number[] | null
 }) {
+  const shown = only ? card.timelines.filter((_, i) => only.includes(i)) : card.timelines
+  const firedYear =
+    fired != null && only
+      ? card.timelines[only[fired]]?.year
+      : fired != null
+        ? card.timelines[fired]?.year
+        : null
+
   const body = (
     <>
       <span className={styles.cardHead}>
@@ -103,12 +121,12 @@ function Card({
         </span>
       </span>
 
-      <span className={styles.timelines}>
-        {card.timelines.map((t, i) => (
+      <span className={styles.timelines} style={{ '--slot': slot } as React.CSSProperties}>
+        {shown.map((t) => (
           <span
             key={t.year}
             className={styles.timeline}
-            data-fired={fired == null ? undefined : fired === i ? 'yes' : 'no'}
+            data-fired={firedYear == null ? undefined : firedYear === t.year ? 'yes' : 'no'}
           >
             <span className={styles.tlYear}>{t.year}</span>
             <span className={styles.tlPpg}>{t.ppg.toFixed(1)}</span>
@@ -143,88 +161,113 @@ function Card({
   )
 }
 
+type WeekLine = { week: number; mine: number; theirs: number; won: boolean; name: string; paper: number }
+
 /**
- * The fourteen weeks, as a magnitude strip.
+ * The fourteen weeks, as a DIVERGING chart around a fixed line.
  *
- * One series and one hue — every bar is the same measure (what that opponent
- * is worth on paper), so colouring them differently would be decoration
- * pretending to be information. Your own paper total is a rule drawn across
- * them, because the only thing worth reading here is which side of it each
- * week falls on. Played weeks take the win/loss tokens, which are the site's
- * reserved status colours and are never used for anything else on this board.
+ * The line is the zero and it never moves; a bar is the margin. Green above is
+ * how far you won by, red below how far you lost by. Before a week is played
+ * the same bar carries the projected margin off paper, held back in the
+ * accent so a read number never passes for a played one — the encoding stays
+ * put and only the certainty changes.
+ *
+ * One measure, so no legend: the two hues are the poles of a single axis, and
+ * the caption above names them.
  */
 function Slate({
-  deal,
+  lines,
   myPpg,
   played,
-  results,
 }: {
-  deal: MultiverseDeal
-  myPpg: number | null
+  lines: WeekLine[]
+  myPpg: number
   played: number
-  results: boolean[]
 }) {
-  const max = Math.max(...deal.schedule.map((o) => o.ppg), myPpg ?? 0) * 1.06
+  const margins = lines.map((l, i) => (i < played ? l.mine - l.theirs : myPpg - l.paper))
+  const scale = Math.max(12, ...margins.map((m) => Math.abs(m))) * 1.08
+
   return (
     <div className={styles.slate}>
       <div className={styles.slateHead}>
         <span className={styles.slateTitle}>The slate</span>
         <span className={styles.slateNote}>
-          {myPpg != null ? (
+          {played > 0 ? (
             <>
-              your team <b>{myPpg.toFixed(1)}</b> on paper
+              margin by week · <b>{played}</b> played
             </>
           ) : (
-            'what each week is worth on paper'
+            <>
+              projected margin · your <b>{myPpg.toFixed(1)}</b> against theirs
+            </>
           )}
         </span>
       </div>
-      <div className={styles.slatePlot}>
-        {myPpg != null && (
-          <span
-            className={styles.slateRule}
-            style={{ bottom: `${(myPpg / max) * 100}%` }}
-            aria-hidden
-          />
-        )}
-        {deal.schedule.map((opp, i) => (
-          <span
-            key={opp.week}
-            className={styles.slateCol}
-            title={`Week ${opp.week} · ${opp.name} · ${opp.ppg.toFixed(1)} on paper${
-              i < played ? ` · put up ${opp.score.toFixed(1)}` : ''
-            }`}
-          >
+      <div className={styles.slatePlot} style={{ '--cols': lines.length } as React.CSSProperties}>
+        <span className={styles.slateZero} aria-hidden />
+        {lines.map((l, i) => {
+          const m = margins[i]
+          const done = i < played
+          return (
             <span
-              className={styles.slateBar}
-              data-state={i < played ? (results[i] ? 'won' : 'lost') : undefined}
-              style={{ height: `${(opp.ppg / max) * 100}%` }}
-            />
-            <span className={styles.slateWeek}>{opp.week}</span>
-          </span>
-        ))}
+              key={l.week}
+              className={styles.slateCol}
+              title={
+                done
+                  ? `Week ${l.week} · ${l.name} · ${l.mine.toFixed(1)} to ${l.theirs.toFixed(1)} (${m > 0 ? '+' : ''}${m.toFixed(1)})`
+                  : `Week ${l.week} · ${l.name} · ${l.paper.toFixed(1)} on paper (${m > 0 ? '+' : ''}${m.toFixed(1)} projected)`
+              }
+            >
+              <span
+                className={styles.slateBar}
+                data-dir={m >= 0 ? 'up' : 'down'}
+                data-state={done ? (l.won ? 'won' : 'lost') : 'projected'}
+                style={{ height: `${Math.min(50, (Math.abs(m) / scale) * 50)}%` }}
+              />
+              <span className={styles.slateWeek}>{l.week}</span>
+            </span>
+          )
+        })}
+      </div>
+      <div className={styles.slateFoot}>
+        <span>Ahead</span>
+        <span>Behind</span>
       </div>
     </div>
   )
 }
 
+type PostState =
+  | { state: 'idle' }
+  | { state: 'sending' }
+  | { state: 'banked' }
+  | { state: 'posted'; rank: number | null; total: number }
+  | { state: 'refused'; why: string }
+
 export function MultiverseDraft({
   initialDeal,
   initialError,
   signedIn,
+  shared,
 }: {
   initialDeal: MultiverseDeal | null
   initialError: string | null
   signedIn: boolean
+  shared: boolean
 }) {
   const [deal, setDeal] = useState<MultiverseDeal | null>(initialDeal)
   const [error, setError] = useState<string | null>(initialError)
   const [loading, setLoading] = useState(false)
+  const [isShared, setIsShared] = useState(shared)
 
   const [roster, setRoster] = useState<(MvCard | null)[]>(() => SLOTS.map(() => null))
+  const [picks, setPicks] = useState<number[]>([])
   const [round, setRound] = useState(0)
   const [played, setPlayed] = useState(0)
+  const [poPlayed, setPoPlayed] = useState(0)
+  const [poOpen, setPoOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [post, setPost] = useState<PostState>({ state: 'idle' })
 
   useEffect(() => {
     clearSeedFromUrl()
@@ -232,9 +275,11 @@ export function MultiverseDraft({
 
   const drafting = round < (deal?.rounds.length ?? 0)
 
-  /** Where a card would go: the most restrictive open slot it fits.
-      Filling tight slots before the flex is strictly better — it keeps the
-      flex open for whatever comes — so there is nothing to ask the player. */
+  /** Where a card would go: the most restrictive open slot it fits. Filling
+      tight slots before the flex is strictly better — it keeps the flex open
+      for whatever comes — so there is nothing to ask the player. The verifier
+      replays this exact rule, which is why a run only has to post its card
+      choices and not its slot assignments. */
   const slotFor = useCallback(
     (card: MvCard): number | null => {
       const open = SLOTS.map((_, i) => i).filter((i) => roster[i] === null)
@@ -246,7 +291,7 @@ export function MultiverseDraft({
   )
 
   const take = useCallback(
-    (card: MvCard) => {
+    (card: MvCard, index: number) => {
       const slot = slotFor(card)
       if (slot == null) return
       setRoster((r) => {
@@ -254,32 +299,115 @@ export function MultiverseDraft({
         next[slot] = card
         return next
       })
+      setPicks((p) => [...p, index])
       setRound((r) => r + 1)
     },
     [slotFor]
   )
 
-  /** Paper value of the roster so far. During the draft the unfilled slots
-      are simply absent, which is honest — it reads as "what I have", and the
-      slate rule climbs towards the bars as the board fills. */
-  const myPpg = useMemo(
-    () => roster.reduce((a, c) => a + (c?.mean ?? 0), 0),
-    [roster]
-  )
+  const myPpg = useMemo(() => roster.reduce((a, c) => a + (c?.mean ?? 0), 0), [roster])
 
-  const weekly = useMemo(() => {
+  const weekly = useMemo<WeekLine[]>(() => {
     if (!deal) return []
     return deal.schedule.map((opp, w) => {
       const mine = weekScore(roster, deal.rolls, w)
-      return { week: opp.week, mine, theirs: opp.score, won: mine > opp.score, opp }
+      return {
+        week: opp.week,
+        mine,
+        theirs: opp.score,
+        won: mine > opp.score,
+        name: opp.name,
+        paper: opp.ppg,
+      }
     })
   }, [deal, roster])
 
-  const results = useMemo(() => weekly.map((w) => w.won), [weekly])
-  const wins = useMemo(
-    () => weekly.slice(0, played).filter((w) => w.won).length,
-    [weekly, played]
+  const wins = useMemo(() => weekly.slice(0, played).filter((w) => w.won).length, [weekly, played])
+  const finalWins = useMemo(() => weekly.filter((w) => w.won).length, [weekly])
+  const madeIt = finalWins >= PLAYOFF_LINE
+
+  /** The postseason, and how far it can possibly go: it stops at the first
+      loss, because it is single elimination. */
+  const poGames = useMemo<WeekLine[]>(() => {
+    if (!deal) return []
+    return deal.playoffs.opponents.map((opp, r) => {
+      const mine = playoffScore(roster, deal.playoffs.rolls, r, deal.playoffs.keep)
+      return {
+        week: opp.week,
+        mine,
+        theirs: opp.score,
+        won: mine > opp.score,
+        name: opp.name,
+        paper: opp.ppg,
+      }
+    })
+  }, [deal, roster])
+
+  const poLimit = useMemo(() => {
+    for (let i = 0; i < poGames.length; i++) if (!poGames[i].won) return i + 1
+    return poGames.length
+  }, [poGames])
+
+  const poWins = useMemo(
+    () => poGames.slice(0, poPlayed).filter((g) => g.won).length,
+    [poGames, poPlayed]
   )
+
+  const seasonOver = played >= WEEKS
+  const postseasonOver = !madeIt || poPlayed >= poLimit
+  const done = seasonOver && postseasonOver && (!madeIt || poOpen)
+
+  // ── The board ───────────────────────────────────────────────
+  // A finished run posts itself. No submit button: the only thing one would
+  // add is a way to leave a bad run off the board, and a board you can opt
+  // out of after seeing the number is not a board.
+  useEffect(() => {
+    if (!done || !deal) return
+    if (post.state !== 'idle') return
+
+    let cancelled = false
+    void (async () => {
+      if (isShared) {
+        if (!cancelled) {
+          setPost({
+            state: 'refused',
+            why: 'A shared season is a replay, so it stays off the board.',
+          })
+        }
+        return
+      }
+
+      const run = {
+        game: 'multiverse',
+        mode: null,
+        pool: deal.pool.id,
+        seed: deal.seed,
+        picks: { cards: picks, playoffs: madeIt ? poPlayed : 0 },
+      }
+
+      if (!signedIn) {
+        bankRun({ ...run, at: Date.now() })
+        if (!cancelled) setPost({ state: 'banked' })
+        return
+      }
+
+      if (!cancelled) setPost({ state: 'sending' })
+      const out = await postRun(run)
+      if (cancelled) return
+      if (out.ok) {
+        setPost({ state: 'posted', rank: out.rank ?? null, total: out.total ?? 0 })
+      } else if (out.needsAuth) {
+        bankRun({ ...run, at: Date.now() })
+        setPost({ state: 'banked' })
+      } else {
+        setPost({ state: 'refused', why: out.error ?? 'Could not reach the board.' })
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [done, deal, post.state, isShared, picks, madeIt, poPlayed, signedIn])
 
   const deal_ = useCallback(async (poolId: string) => {
     setLoading(true)
@@ -294,8 +422,13 @@ export function MultiverseDraft({
       } else {
         setDeal(body as MultiverseDeal)
         setRoster(SLOTS.map(() => null))
+        setPicks([])
         setRound(0)
         setPlayed(0)
+        setPoPlayed(0)
+        setPoOpen(false)
+        setPost({ state: 'idle' })
+        setIsShared(false)
       }
     } catch {
       setError('Could not reach the press room. Try again.')
@@ -310,10 +443,13 @@ export function MultiverseDraft({
     url.search = ''
     url.searchParams.set('pool', deal.pool.id)
     url.searchParams.set('seed', deal.seed)
-    const line =
-      wins >= PLAYOFF_LINE
-        ? `I drafted across ${deal.years.length} seasons of ${deal.pool.label} at once and went ${wins}-${WEEKS - wins}. Same cards, same dice, your turn.`
-        : `I drafted across ${deal.years.length} seasons of ${deal.pool.label} at once and went ${wins}-${WEEKS - wins}. Beat that.`
+    const tail =
+      madeIt && poWins >= PLAYOFF_ROUNDS
+        ? `went ${finalWins}-${WEEKS - finalWins} and won the whole thing`
+        : madeIt
+          ? `went ${finalWins}-${WEEKS - finalWins} and made the postseason`
+          : `went ${finalWins}-${WEEKS - finalWins}`
+    const line = `I drafted across ${deal.years.length} seasons of ${deal.pool.label} at once and ${tail}. Same cards, same dice, your turn.`
     try {
       if (navigator.share) {
         await navigator.share({ text: line, url: url.toString() })
@@ -329,7 +465,7 @@ export function MultiverseDraft({
     } catch {
       /* clipboard blocked, the seed is on screen either way */
     }
-  }, [deal, wins])
+  }, [deal, madeIt, poWins, finalWins])
 
   // ── Render ──────────────────────────────────────────────────
 
@@ -344,6 +480,11 @@ export function MultiverseDraft({
         </Link>
       </div>
     )
+  }
+
+  const keptIdx = (card: MvCard): number[] => {
+    const best = bestTimelines(card, deal.playoffs.keep)
+    return best.map((t) => card.timelines.findIndex((x) => x.year === t.year))
   }
 
   const rosterRail = (
@@ -376,6 +517,7 @@ export function MultiverseDraft({
           </div>
           <div className={styles.stripMid}>
             {deal.timelines} seasons per player · {deal.years[0]}–{deal.years[deal.years.length - 1]}
+            <span className={styles.tierNote}>{current.tier}</span>
           </div>
           <div className={styles.stripSide}>
             <span className={styles.stripNum}>{myPpg.toFixed(1)}</span>
@@ -383,16 +525,16 @@ export function MultiverseDraft({
           </div>
         </div>
 
-        <Slate deal={deal} myPpg={myPpg > 0 ? myPpg : null} played={0} results={results} />
+        <Slate lines={weekly} myPpg={myPpg} played={0} />
 
         <div className={styles.cards}>
-          {current.cards.map((card) => {
+          {current.cards.map((card, i) => {
             const slot = slotFor(card)
             return (
               <Card
                 key={card.key}
                 card={card}
-                onTake={() => take(card)}
+                onTake={() => take(card, i)}
                 disabled={slot == null}
                 slotLabel={slot == null ? 'no slot open' : SLOTS[slot].label}
               />
@@ -406,7 +548,7 @@ export function MultiverseDraft({
   }
 
   // ── Playing it out ─────────────────────────────────────────
-  if (played < WEEKS) {
+  if (!seasonOver) {
     const last = played > 0 ? weekly[played - 1] : null
     const next = weekly[played]
     return (
@@ -418,19 +560,23 @@ export function MultiverseDraft({
             </span>
             <span className={styles.stripLabel}>Record</span>
           </div>
-          <div className={styles.stripMid}>Week {played + 1} of {WEEKS}</div>
+          <div className={styles.stripMid}>
+            Week {played + 1} of {WEEKS}
+          </div>
           <div className={styles.stripSide}>
-            <span className={styles.stripNum}>{next.opp.ppg.toFixed(1)}</span>
-            <span className={styles.stripLabel}>{next.opp.name} on paper</span>
+            <span className={styles.stripNum}>{next.paper.toFixed(1)}</span>
+            <span className={styles.stripLabel}>{next.name} on paper</span>
           </div>
         </div>
 
-        <Slate deal={deal} myPpg={myPpg} played={played} results={results} />
+        <Slate lines={weekly} myPpg={myPpg} played={played} />
 
         {last && (
           <div className={styles.result} data-won={last.won ? 'yes' : 'no'}>
             <div className={styles.resultHead}>
-              <span className={styles.resultTag}>{last.won ? 'Won' : 'Lost'} week {last.week}</span>
+              <span className={styles.resultTag}>
+                {last.won ? 'Won' : 'Lost'} week {last.week} · {last.name}
+              </span>
               <span className={styles.resultScore}>
                 {last.mine.toFixed(1)} <span className={styles.resultV}>vs</span>{' '}
                 {last.theirs.toFixed(1)}
@@ -439,10 +585,12 @@ export function MultiverseDraft({
             <div className={styles.fired}>
               {roster.map((card, slot) =>
                 card ? (
+                  // Keyed by week so the reveal animation replays each time.
                   <Card
-                    key={`${card.key}-${slot}`}
+                    key={`${card.key}-${slot}-${played}`}
                     card={card}
                     compact
+                    slot={slot}
                     fired={deal.rolls[slot][played - 1] % card.timelines.length}
                   />
                 ) : null
@@ -463,31 +611,176 @@ export function MultiverseDraft({
     )
   }
 
+  // ── The postseason ─────────────────────────────────────────
+  const bracket = (
+    <div className={styles.poBracket}>
+      {poGames.map((g, r) => {
+        const state = r < poPlayed ? (g.won ? 'won' : 'lost') : 'pending'
+        return (
+          <div key={g.week} className={styles.poLeg} data-state={state}>
+            <span className={styles.poLegName}>{PLAYOFF_ROUND_NAMES[r]}</span>
+            <span className={styles.poLegOpp}>{g.name}</span>
+            <span className={styles.poLegScore}>
+              {r < poPlayed
+                ? `${g.mine.toFixed(1)} vs ${g.theirs.toFixed(1)}`
+                : r < poLimit
+                  ? `${g.paper.toFixed(1)} on paper`
+                  : 'not reached'}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+
+  if (madeIt && !poOpen) {
+    return (
+      <div className={styles.board}>
+        <div className={styles.poBanner}>
+          <div className={styles.poKicker}>You are in</div>
+          <h2 className={styles.poTitle}>
+            {finalWins}-{WEEKS - finalWins}, and through
+          </h2>
+          <p className={styles.poLine}>
+            Three rounds, single elimination. Every card cuts down to its best{' '}
+            {deal.playoffs.keep === 1 ? 'season' : `${deal.playoffs.keep} seasons`}, so the numbers
+            go up — and so does everybody else&rsquo;s, because the field left is the strongest the
+            league can put out.
+          </p>
+        </div>
+        {bracket}
+        <div className={styles.actions} data-single="yes">
+          <button type="button" className={styles.primary} onClick={() => setPoOpen(true)}>
+            Into the postseason
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (madeIt && poPlayed < poLimit) {
+    const last = poPlayed > 0 ? poGames[poPlayed - 1] : null
+    return (
+      <div className={styles.board}>
+        <div className={styles.strip}>
+          <div className={styles.stripSide}>
+            <span className={styles.stripNum}>
+              {finalWins}-{WEEKS - finalWins}
+            </span>
+            <span className={styles.stripLabel}>Regular season</span>
+          </div>
+          <div className={styles.stripMid}>{PLAYOFF_ROUND_NAMES[poPlayed]}</div>
+          <div className={styles.stripSide}>
+            <span className={styles.stripNum}>{poGames[poPlayed].paper.toFixed(1)}</span>
+            <span className={styles.stripLabel}>{poGames[poPlayed].name} on paper</span>
+          </div>
+        </div>
+
+        {bracket}
+
+        {last && (
+          <div className={styles.result} data-won={last.won ? 'yes' : 'no'}>
+            <div className={styles.resultHead}>
+              <span className={styles.resultTag}>
+                {last.won ? 'Won' : 'Lost'} the {PLAYOFF_ROUND_NAMES[poPlayed - 1].toLowerCase()}
+              </span>
+              <span className={styles.resultScore}>
+                {last.mine.toFixed(1)} <span className={styles.resultV}>vs</span>{' '}
+                {last.theirs.toFixed(1)}
+              </span>
+            </div>
+            <div className={styles.fired}>
+              {roster.map((card, slot) =>
+                card ? (
+                  <Card
+                    key={`${card.key}-${slot}-po${poPlayed}`}
+                    card={card}
+                    compact
+                    slot={slot}
+                    only={keptIdx(card)}
+                    fired={deal.playoffs.rolls[slot][poPlayed - 1] % deal.playoffs.keep}
+                  />
+                ) : null
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className={styles.actions} data-single="yes">
+          <button type="button" className={styles.primary} onClick={() => setPoPlayed((p) => p + 1)}>
+            Play the {PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // ── The recap ──────────────────────────────────────────────
-  const g = grade(wins)
-  const madeIt = wins >= PLAYOFF_LINE
+  const g = grade(finalWins, madeIt ? poWins : null)
+  const champion = madeIt && poWins >= PLAYOFF_ROUNDS
+  const tape = [
+    ...weekly.map((w) => ({ ...w, po: false })),
+    ...(madeIt ? poGames.slice(0, poPlayed).map((w) => ({ ...w, po: true })) : []),
+  ]
+
   return (
     <div className={styles.board}>
       <div className={styles.final}>
-        <div className={styles.finalKicker}>{madeIt ? 'Postseason' : 'Season over'}</div>
+        <div className={styles.finalKicker}>
+          {champion ? 'Champions' : madeIt ? 'Postseason' : 'Season over'}
+        </div>
         <div className={styles.finalScore}>
-          {wins}-{WEEKS - wins}
+          {finalWins}-{WEEKS - finalWins}
         </div>
         <h2 className={styles.finalTitle}>{g.title}</h2>
         <p className={styles.finalLine}>{g.line}</p>
         <p className={styles.finalCut}>
           {madeIt
-            ? `${PLAYOFF_LINE} wins made it. You had ${wins}.`
-            : `${PLAYOFF_LINE} wins made it. You finished ${PLAYOFF_LINE - wins} short.`}
+            ? `${PLAYOFF_LINE} wins made it. You had ${finalWins}, then went ${poWins}-${poPlayed - poWins} in January.`
+            : `${PLAYOFF_LINE} wins made it. You finished ${PLAYOFF_LINE - finalWins} short.`}
         </p>
       </div>
 
-      <Slate deal={deal} myPpg={myPpg} played={WEEKS} results={results} />
+      {post.state === 'posted' && (
+        <div className={styles.posted}>
+          {post.rank ? (
+            <>
+              <b>
+                {post.rank}
+                {post.rank === 1 ? 'st' : post.rank === 2 ? 'nd' : post.rank === 3 ? 'rd' : 'th'}
+              </b>{' '}
+              of {post.total} on the board ·{' '}
+              <Link href={`/games/multiverse/board/?pool=${deal.pool.id}`} className={styles.postedLink}>
+                See it
+              </Link>
+            </>
+          ) : (
+            <>
+              Posted ·{' '}
+              <Link href={`/games/multiverse/board/?pool=${deal.pool.id}`} className={styles.postedLink}>
+                See the board
+              </Link>
+            </>
+          )}
+        </div>
+      )}
+      {post.state === 'banked' && (
+        <div className={styles.posted}>
+          This run is saved. <Link href="/login" className={styles.postedLink}>Sign in</Link> and it
+          goes on the board.
+        </div>
+      )}
+      {post.state === 'refused' && <div className={styles.posted}>{post.why}</div>}
+
+      <Slate lines={weekly} myPpg={myPpg} played={WEEKS} />
+
+      {madeIt && bracket}
 
       {/* The thing the whole game is for: what each card was actually worth
           once the dice had finished with it. A man dealt 21 / 12 / 18 is not
           a 17 to you — he is whatever came up, and the front of the card
-          never said which. */}
+          never said which. Regular season only, which is the fourteen weeks
+          every run has. */}
       <div className={styles.recap}>
         <div className={styles.recapHead}>
           <h3 className={styles.recapTitle}>What they actually gave you</h3>
@@ -535,16 +828,21 @@ export function MultiverseDraft({
         <div className={styles.recapFoot}>
           <span>
             Team <b>{(weekly.reduce((a, w) => a + w.mine, 0) / WEEKS).toFixed(1)}</b> a week, against
-            a slate worth <b>{(deal.schedule.reduce((a, o) => a + o.ppg, 0) / WEEKS).toFixed(1)}</b>
+            a slate worth <b>{(weekly.reduce((a, w) => a + w.paper, 0) / WEEKS).toFixed(1)}</b>
           </span>
         </div>
       </div>
 
       <div className={styles.tape}>
-        {weekly.map((w) => (
-          <div key={w.week} className={styles.tapeRow} data-won={w.won ? 'yes' : 'no'}>
-            <span className={styles.tapeWeek}>{w.week}</span>
-            <span className={styles.tapeName}>{w.opp.name}</span>
+        {tape.map((w) => (
+          <div
+            key={w.week}
+            className={styles.tapeRow}
+            data-won={w.won ? 'yes' : 'no'}
+            data-po={w.po ? 'yes' : undefined}
+          >
+            <span className={styles.tapeWeek}>{w.po ? 'PO' : w.week}</span>
+            <span className={styles.tapeName}>{w.name}</span>
             <span className={styles.tapeScore}>
               {w.mine.toFixed(1)} <span className={styles.resultV}>vs</span> {w.theirs.toFixed(1)}
             </span>

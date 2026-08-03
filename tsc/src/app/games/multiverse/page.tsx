@@ -12,6 +12,7 @@ import { MULTIVERSE_DRAFT } from '../gameDefs'
 import { MultiverseDraft } from './MultiverseDraft'
 import styles from '../games.module.css'
 import mobileStyles from '../mobile.module.css'
+import mv from './multiverse.module.css'
 
 // The season is dealt per request (seeded off ?seed= or freshly rolled), so
 // this page can never be prerendered.
@@ -60,7 +61,7 @@ export default async function MultiversePage({
   }
 
   return (
-    <main className={mobile ? mobileStyles.boardRoot : undefined}>
+    <main className={`${mv.theme} ${mobile ? mobileStyles.boardRoot : ''}`.trim()}>
       {mobile ? (
         <MobileGameBar
           left="back"
@@ -130,6 +131,10 @@ export default async function MultiversePage({
             initialDeal={opening}
             initialError={openingError}
             signedIn={!!user}
+            // A season opened off a shared ?seed= is a replay of a deal
+            // somebody has already played, which is the definition of a run
+            // that cannot be ranked. The board refuses it out loud.
+            shared={!!sp.seed}
           />
         ) : (
           <GameLobby game={MULTIVERSE_DRAFT} />

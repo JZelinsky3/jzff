@@ -22,7 +22,13 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveBoardIdentities, soleLeagueSlug, type BoardIdentity } from './boardIdentity'
 
-export type GameId = 'roulette' | 'guess-the-draft' | 'gauntlet' | 'over-under' | 'redraft'
+export type GameId =
+  | 'roulette'
+  | 'guess-the-draft'
+  | 'gauntlet'
+  | 'over-under'
+  | 'redraft'
+  | 'multiverse'
 
 export const GAME_IDS: GameId[] = [
   'roulette',
@@ -30,6 +36,7 @@ export const GAME_IDS: GameId[] = [
   'gauntlet',
   'over-under',
   'redraft',
+  'multiverse',
 ]
 
 export function isGameId(v: string): v is GameId {
@@ -83,6 +90,8 @@ export type RunDisplay = {
   streak?: number
   /** Redraft: points ahead of the opponent, per game. */
   margin?: number
+  /** Multiverse: how far the postseason went, e.g. "Won it" or "Semi-final". */
+  round?: string
 }
 
 export type BestRow = {

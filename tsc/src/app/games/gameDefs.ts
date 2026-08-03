@@ -225,7 +225,7 @@ export const MULTIVERSE_DRAFT: GameDef = {
   // week-by-week schedule — its opponents are drafted rather than remembered
   // — so unlike The Gauntlet and the Over/Under it is playable signed-out.
   allowsDemo: true,
-  hasBoard: false,
+  hasBoard: true,
   demoBody:
     'Seven seasons of one league, so most of the good players carry three of them. The quickest way to see what a card looks like before pointing it at your own.',
   leagueBody:

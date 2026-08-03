@@ -73,9 +73,58 @@ export const TIMELINES_SHORT = 2
 /** A league needs this many completed seasons to deal three timelines. */
 export const FULL_HISTORY_SEASONS = 4
 
+/**
+ * The average a dealt card has to clear at its position.
+ *
+ * Measured on the card's OWN dealt seasons, not on the player's career, so a
+ * card can carry one bad year — that is the whole point of the game — as long
+ * as the three of them together are worth a roster spot. Without this the
+ * board filled up with players averaging three points, which is not a
+ * decision, it is a round you click through.
+ *
+ * Set per position because the positions do not score alike: a 9 PPG
+ * quarterback is unplayable and a 9 PPG tight end is a starter. On pams these
+ * take the pool from 275 cards to 228 and leave every position with several
+ * times the depth a board needs.
+ */
+export const MIN_MEAN_PPG: Record<MvPosition, number> = {
+  QB: 15,
+  RB: 9,
+  WR: 9,
+  TE: 6,
+}
+
 /** Wins that make the postseason. Eight of fourteen: a winning record, and
     the number the whole draft is quietly aiming at. */
 export const PLAYOFF_LINE = 8
+
+/** Postseason games, once you are in. Win all three and you have won it. */
+export const PLAYOFF_ROUNDS = 3
+
+export const PLAYOFF_ROUND_NAMES = ['Quarter-final', 'Semi-final', 'Championship']
+
+/**
+ * How many seasons a card keeps in the postseason: its best two of three, or
+ * its best one of two.
+ *
+ * January is supposed to feel different. Cutting each card to its good years
+ * lifts every score, and the postseason opponents are the strongest teams the
+ * dealer builds and are cut the same way — so the numbers go up on both sides
+ * and the games stay close. A boom-or-bust roster that scraped in at 8-6 is
+ * suddenly playing to its ceiling, which is the right reward for having built
+ * one.
+ */
+export function playoffKeep(timelines: number): number {
+  return Math.max(1, timelines - 1)
+}
+
+/** A card's best `keep` seasons, best first. */
+export function bestTimelines(card: MvCard, keep: number): MvTimeline[] {
+  return card.timelines
+    .slice()
+    .sort((a, b) => b.ppg - a.ppg)
+    .slice(0, keep)
+}
 
 /** One season of one player, as dealt. The position in the array IS the
     universe index, and it is shuffled per card so a man's best year is
@@ -104,6 +153,10 @@ export type MvCard = {
 export type MvRound = {
   round: number
   cards: MvCard[]
+  /** What tier of the board this round is drawing from, in words. The board
+      descends like a draft and the header should say so rather than leaving
+      it to be inferred over several games. */
+  tier: string
 }
 
 /** One week's opponent: a team drafted off the same pool, which rolls its own
@@ -144,6 +197,18 @@ export type MultiverseDeal = {
    */
   rolls: number[][]
   schedule: MvOpponent[]
+  /**
+   * The postseason, dealt with everything else and simply not reached unless
+   * the record earns it. Its own dice, because a playoff card is rolling over
+   * a shorter list of seasons than a regular-season one.
+   */
+  playoffs: {
+    /** Seasons each card keeps in January. */
+    keep: number
+    /** `rolls[slotIndex][round]`, indexes into the kept seasons. */
+    rolls: number[][]
+    opponents: MvOpponent[]
+  }
 }
 
 export type MultiverseError = { ok: false; error: string; status: number }
@@ -192,14 +257,47 @@ export function realized(
   }
 }
 
+/** Points a roster puts up in one postseason game, off its kept seasons. */
+export function playoffScore(
+  roster: (MvCard | null)[],
+  rolls: number[][],
+  round: number,
+  keep: number
+): number {
+  let total = 0
+  for (let slot = 0; slot < roster.length; slot++) {
+    const card = roster[slot]
+    if (!card) continue
+    const kept = bestTimelines(card, keep)
+    const idx = (rolls[slot]?.[round] ?? 0) % kept.length
+    total += kept[idx]?.ppg ?? 0
+  }
+  return Math.round(total * 10) / 10
+}
+
 /**
- * What a finished season is called.
+ * What a finished run is called.
  *
- * Keyed on wins, and the postseason line is named in the copy rather than
- * implied, because eight is the number you were drafting towards and the
- * board should say so when you miss it by one.
+ * Read off the postseason first when there was one, because "won it" and
+ * "went 11-3 and lost in the quarter-final" are different seasons and a
+ * grade keyed on regular-season wins alone would call them the same thing.
  */
-export function grade(wins: number): { title: string; line: string } {
+export function grade(
+  wins: number,
+  playoffWins: number | null = null
+): { title: string; line: string } {
+  if (playoffWins != null) {
+    if (playoffWins >= PLAYOFF_ROUNDS) {
+      return { title: 'Champions', line: 'Three rounds on your best years, and none of them let you down.' }
+    }
+    if (playoffWins === PLAYOFF_ROUNDS - 1) {
+      return { title: 'Lost the final', line: 'One game from it, on a roster good enough to win it.' }
+    }
+    if (playoffWins === 1) {
+      return { title: 'Out in the semi-final', line: 'January was kind for a week and then it was not.' }
+    }
+    return { title: 'One and done', line: 'In, and straight back out against the best team on the slate.' }
+  }
   if (wins >= 13) return { title: 'A season they will talk about', line: 'Every universe broke your way and you had built for all of them.' }
   if (wins >= 11) return { title: 'Ran away with it', line: 'The draft did that, not the dice.' }
   if (wins >= 9) return { title: 'Comfortably in', line: 'Built well, and never really in trouble.' }
@@ -208,4 +306,19 @@ export function grade(wins: number): { title: string; line: string } {
   if (wins >= 5) return { title: 'Short of it', line: 'The slate was there to be beaten and the roster could not do it.' }
   if (wins >= 3) return { title: 'A long fourteen weeks', line: 'Too many of these cards were only good in one universe.' }
   return { title: 'Nothing came up', line: 'Drafted for a version of the season that never arrived.' }
+}
+
+/**
+ * The single number a run is ranked by: wins, then win rate, then scoring.
+ *
+ * Packed into one integer because the board sorts on one column. Wins lead;
+ * win rate only separates runs that played a different number of games, which
+ * is exactly what the postseason produces (14 through 17); average points
+ * settle the rest. Bounded so the parts cannot bleed into each other — win
+ * rate is 0..10000 and PPG is 0..2000 at one decimal, both well inside their
+ * decades, and the whole thing stays an exact integer in a double.
+ */
+export function rankScore(wins: number, games: number, ppg: number): number {
+  const rate = games > 0 ? Math.round((wins / games) * 10000) : 0
+  return wins * 1e9 + rate * 1e4 + Math.min(20000, Math.round(ppg * 10))
 }

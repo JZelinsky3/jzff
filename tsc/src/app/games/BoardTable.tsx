@@ -41,6 +41,14 @@ function statFor(game: GameId, row: BestRow): { big: string; small: string } {
         : { big: `${d.correct ?? row.score}/${d.asked ?? 10}`, small: 'correct' }
     case 'redraft':
       return { big: d.record ?? String(row.score), small: `${d.margin ?? 0} a game` }
+    case 'multiverse':
+      // Never `row.score`: that one is a packed sort key (wins, then win
+      // rate, then scoring) and printing it would put a ten-digit number on
+      // the board. The record is the display and it always exists.
+      return {
+        big: d.record ?? '—',
+        small: d.round ? `${d.round} · ${d.ppg ?? 0} PPG` : `${d.ppg ?? 0} PPG`,
+      }
     default:
       return { big: `${d.correct ?? row.score}/${d.asked ?? 10}`, small: 'correct' }
   }

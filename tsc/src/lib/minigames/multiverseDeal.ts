@@ -35,6 +35,10 @@ import {
   TIMELINES,
   TIMELINES_SHORT,
   FULL_HISTORY_SEASONS,
+  MIN_MEAN_PPG,
+  PLAYOFF_ROUNDS,
+  playoffKeep,
+  bestTimelines,
   type MvPosition,
   type MvCard,
   type MvRound,
@@ -55,6 +59,28 @@ const SCORABLE = new Set<string>(POSITIONS)
  * top or the last rounds repeat themselves. Ten is that with room to spare.
  */
 const MIN_PER_POSITION = 10
+
+/**
+ * How wide a slice of a ranked position list one round draws from, as a
+ * multiple of an even seventh.
+ *
+ * 1.0 would be seven clean tiers with no overlap at all; this leaves just
+ * enough that a good player can slip a round or two, which is where the
+ * "how is he still here" pick comes from. It was 1.6 first, which blurred
+ * the tiers enough that round one and round three felt like the same board.
+ */
+const TIER_WIDTH = 1.15
+
+/** What each round is drawing from, said plainly in the header. */
+const TIER_NOTES = [
+  'The top of the board',
+  'Second-round talent',
+  'Third-round talent',
+  'The middle rounds',
+  'Starters, with a flaw each',
+  'Depth and dice rolls',
+  'Late-round fliers',
+]
 
 /** One player, with every scorable season he was rostered for in this league. */
 type PoolPlayer = {
@@ -356,9 +382,38 @@ function shuffle<T>(arr: T[], rng: () => number): T[] {
  * leaving the seasons in calendar order would mean a card's best year sat in
  * a predictable slot, and after two games anybody would notice.
  */
+const meanOf = (t: MvTimeline[]) => t.reduce((a, s) => a + s.ppg, 0) / t.length
+
+/** A player's best `count` seasons — the most any dealt card of him can be
+    worth, and therefore the test of whether he can clear his minimum at all. */
+function bestCombination(player: PoolPlayer, count: number): MvTimeline[] {
+  return player.seasons
+    .slice()
+    .sort((a, b) => b.ppg - a.ppg)
+    .slice(0, count)
+}
+
 function makeCard(player: PoolPlayer, count: number, rng: () => number, key: string): MvCard {
-  const timelines = shuffle(player.seasons, rng).slice(0, count)
-  const mean = timelines.reduce((a, t) => a + t.ppg, 0) / timelines.length
+  // Resample until the dealt seasons clear the position's minimum. Roughly
+  // one triple in ten comes up short on pams, and the alternative to
+  // resampling is either dropping the player (which would quietly cut the
+  // volatile cards this game is built around — they are the ones most likely
+  // to draw a bad set) or shipping the dud. The pool is pre-filtered so that
+  // a qualifying combination exists for everyone in it, and the fallback is
+  // that combination, so this always terminates.
+  let timelines: MvTimeline[] | null = null
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const candidate = shuffle(player.seasons, rng).slice(0, count)
+    if (meanOf(candidate) >= MIN_MEAN_PPG[player.pos]) {
+      timelines = candidate
+      break
+    }
+  }
+  // Shuffled even in the fallback: the array position is the universe index,
+  // and handing back a set ordered by points would put every fallback card's
+  // best year in universe one.
+  if (!timelines) timelines = shuffle(bestCombination(player, count), rng)
+
   const ppgs = timelines.map((t) => t.ppg)
   return {
     key,
@@ -366,7 +421,7 @@ function makeCard(player: PoolPlayer, count: number, rng: () => number, key: str
     pos: player.pos,
     playerId: player.playerId,
     timelines,
-    mean: Math.round(mean * 10) / 10,
+    mean: Math.round(meanOf(timelines) * 10) / 10,
     spread: Math.round((Math.max(...ppgs) - Math.min(...ppgs)) * 10) / 10,
   }
 }
@@ -406,7 +461,7 @@ function dealRounds(
    * design, so a genuine steal can still fall to round four.
    */
   const window = (list: PoolPlayer[], round: number): PoolPlayer[] => {
-    const size = Math.max(8, Math.ceil((list.length / ROUNDS) * 1.6))
+    const size = Math.max(7, Math.ceil((list.length / ROUNDS) * TIER_WIDTH))
     if (size >= list.length) return list
     const start = Math.floor((round * (list.length - size)) / (ROUNDS - 1))
     return list.slice(start, start + size)
@@ -436,6 +491,7 @@ function dealRounds(
     }
     rounds.push({
       round: round + 1,
+      tier: TIER_NOTES[round] ?? `Round ${round + 1}`,
       cards: shuffle(picked, rng).map((p, i) => makeCard(p, count, rng, `r${round + 1}-${i}`)),
     })
   }
@@ -515,6 +571,10 @@ function draftOpponent(
  * left a competent drafter at 57.6%, because tiering lifts everyone's floor
  * and the bots have to climb with it.
  *
+ * Re-verified after the position minimums and the tighter tiers went in:
+ * both lift every team's floor (the slate moved from 91.5 to 98.4 paper PPG)
+ * but they lift the bots by the same amount, so the ladder held.
+ *
  * At this setting a competent drafter (take the best card measured against
  * its position's average) goes 7.5-6.5 and reaches the postseason 50.1% of
  * the time, a sloppy one 6.6-7.4 and 36.6%, a careless one 5.5-8.5 and
@@ -570,6 +630,11 @@ export async function dealMultiverse(
   // descend by talent rather than by that.
   const eligible = pool.players
     .filter((p) => p.seasons.length >= count)
+    // A player is only in the pool if SOME set of `count` of his seasons
+    // clears his position's minimum. Tested on his best combination, so a
+    // volatile card stays in on the strength of his good years and simply
+    // gets resampled when the deal hands him a bad set — see makeCard.
+    .filter((p) => meanOf(bestCombination(p, count)) >= MIN_MEAN_PPG[p.pos])
     .sort(
       (a, b) =>
         b.seasons.reduce((x, s) => x + s.ppg, 0) / b.seasons.length -
@@ -590,7 +655,8 @@ export async function dealMultiverse(
       status: 409,
       error:
         `Not enough of this league's history repeats itself yet — too few ${thin.join('/')} ` +
-        `have played ${count} of its seasons. Come back when there is another year on the books.`,
+        `have played ${count} of its seasons and scored enough to be worth a card. ` +
+        `Come back when there is another year on the books.`,
     }
   }
 
@@ -633,6 +699,49 @@ export async function dealMultiverse(
     })
   }
 
+  // ── The postseason ────────────────────────────────────────
+  //
+  // Dealt whether or not it is reached, so that reaching it costs no second
+  // request and a shared seed carries the same January as the season it
+  // belongs to.
+  const keep = playoffKeep(count)
+  const playoffRolls: number[][] = []
+  for (let slot = 0; slot < SLOTS.length; slot++) {
+    const row: number[] = []
+    for (let r = 0; r < PLAYOFF_ROUNDS; r++) row.push(Math.floor(rng() * keep))
+    playoffRolls.push(row)
+  }
+
+  const playoffOpponents: MvOpponent[] = []
+  for (let r = 0; r < PLAYOFF_ROUNDS; r++) {
+    // Noise 0: the postseason field is the best the dealer builds, and it
+    // gets sharper each round rather than being drawn at random like the
+    // regular season's ladder.
+    const roster = draftOpponent(byPosition, eligible, count, base, r === 0 ? 1.5 : 0, rng)
+    let score = 0
+    const fired: number[] = []
+    for (const card of roster) {
+      const kept = bestTimelines(card, keep)
+      const idx = Math.floor(rng() * kept.length)
+      fired.push(idx)
+      score += kept[idx]?.ppg ?? 0
+    }
+    playoffOpponents.push({
+      week: WEEKS + r + 1,
+      name: names.length > 0 ? names[(WEEKS + r) % names.length] : `Seed ${r + 1}`,
+      teamName: null,
+      // Their paper number is also off their kept seasons, so the slate a
+      // player reads in January is on the same footing as their own team.
+      ppg:
+        Math.round(
+          roster.reduce((a, c) => a + meanOf(bestTimelines(c, keep)), 0) * 10
+        ) / 10,
+      score: Math.round(score * 10) / 10,
+      roster,
+      fired,
+    })
+  }
+
   return {
     ok: true,
     seed,
@@ -643,5 +752,6 @@ export async function dealMultiverse(
     rounds,
     rolls,
     schedule,
+    playoffs: { keep, rolls: playoffRolls, opponents: playoffOpponents },
   }
 }
