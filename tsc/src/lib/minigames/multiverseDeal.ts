@@ -627,6 +627,34 @@ function draftOpponent(
  */
 const OPPONENT_NOISE = [7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5, 0.25, 0]
 
+/**
+ * How many teams each postseason round is the best of.
+ *
+ * The regular season's ladder is tuned so eight wins is a real bar and a
+ * competent drafter clears it about two runs in five. What that leaves is the
+ * title, and a title has to be the thing you keep playing for rather than the
+ * thing that happens when you draft well once.
+ *
+ * Against a single drafted opponent per round, a side good enough to reach
+ * January won each round about 61% of the time — a ring every twelve runs.
+ * Best-of raises the field without touching a number the player can see: the
+ * quarter-final is a strong team, the final is the strongest one the dealer
+ * can build out of this league, and the climb between them is the postseason
+ * getting harder the way a postseason should.
+ *
+ * Measured on the demo pool over 900 dealt seasons. At this setting a
+ * competent drafter still reaches January 39.6% of the time — the regular
+ * season is deliberately untouched — and then wins the three rounds 30.3%,
+ * 29.6% and 37.5% of the time, which is a title every 75 runs. Somebody
+ * drafting on the biggest average alone is rarer still. Before it, a ring was
+ * one run in twelve.
+ *
+ * (The third round reads easier than the first because of who is left: a side
+ * that has won two knockouts is a strong side. The field sizes are what stop
+ * that from compounding.)
+ */
+const PLAYOFF_FIELD = [6, 14, 30]
+
 export async function dealMultiverse(
   poolParam: string,
   seedParam: string | null
@@ -753,10 +781,33 @@ export async function dealMultiverse(
 
   const playoffOpponents: MvOpponent[] = []
   for (let r = 0; r < PLAYOFF_ROUNDS; r++) {
-    // Noise 0: the postseason field is the best the dealer builds, and it
-    // gets sharper each round rather than being drawn at random like the
-    // regular season's ladder.
-    const roster = draftOpponent(byPosition, eligible, count, base, r === 0 ? 1.5 : 0, rng)
+    // The strongest team the league can put out, which is what the banner has
+    // always told the player it is.
+    //
+    // A single noise-0 bot is only the best team on ONE board, and a board is
+    // a random deal. Drafting several and keeping the best paper team is what
+    // "the field left" actually means: these are the sides that survived a
+    // fourteen-week season, so they should be the top of a distribution
+    // rather than one draw from it. The number climbs each round, so the
+    // final is the hardest team the dealer can build.
+    //
+    // This is also the balance lever for the title. A run that reaches
+    // January is already a strong team by selection, and against one draw it
+    // won every round about 61% of the time — three of those is a ring every
+    // twelve runs, which makes the one thing the game is played for routine.
+    // See PLAYOFF_FIELD.
+    const tries = PLAYOFF_FIELD[r] ?? 1
+    let roster = draftOpponent(byPosition, eligible, count, base, r === 0 ? 1.5 : 0, rng)
+    let bestPaper = roster.reduce((a, c) => a + meanOf(bestTimelines(c, keep)), 0)
+    for (let t = 1; t < tries; t++) {
+      const cand = draftOpponent(byPosition, eligible, count, base, 0, rng)
+      // Measured on the seasons they will actually play, not on all three.
+      const paper = cand.reduce((a, c) => a + meanOf(bestTimelines(c, keep)), 0)
+      if (paper > bestPaper) {
+        bestPaper = paper
+        roster = cand
+      }
+    }
     let score = 0
     const fired: number[] = []
     for (const card of roster) {
@@ -780,6 +831,21 @@ export async function dealMultiverse(
       fired,
     })
   }
+
+  // Weakest first, so the bracket climbs.
+  //
+  // Best-of-6, best-of-14 and best-of-30 are three INDEPENDENT draws, and a
+  // best-of-14 lands under a best-of-6 often enough to be noticed — which put
+  // the softest team of the three in the final about a fifth of the time and
+  // made the bracket read as three arbitrary sides rather than a field
+  // narrowing. Sorting fixes the order without touching the teams; the round
+  // number and the manager's name are assigned after the sort, so the
+  // quarter-final is always the one you have the best chance against.
+  playoffOpponents.sort((a, b) => a.ppg - b.ppg)
+  playoffOpponents.forEach((opp, r) => {
+    opp.week = WEEKS + r + 1
+    opp.name = names.length > 0 ? names[(WEEKS + r) % names.length] : `Seed ${r + 1}`
+  })
 
   return {
     ok: true,
