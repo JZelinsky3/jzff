@@ -164,17 +164,29 @@ function Card({
 type WeekLine = { week: number; mine: number; theirs: number; won: boolean; name: string; paper: number }
 
 /**
- * The fourteen weeks, as a DIVERGING chart around a fixed line.
+ * The fourteen weeks.
  *
- * The line is the zero and it never moves; a bar is the margin. Green above is
- * how far you won by, red below how far you lost by. Before a week is played
- * the same bar carries the projected margin off paper, held back in the
- * accent so a read number never passes for a played one — the encoding stays
- * put and only the certainty changes.
+ * Every bar is grown from the BOTTOM and the line is the opponent — the
+ * height is what you put up measured against what they put up, so the line
+ * sits at parity and never moves. Clear it and the bar is green; fall short
+ * and it is red and simply does not reach, from the same floor as a win.
  *
- * One measure, so no legend: the two hues are the poles of a single axis, and
- * the caption above names them.
+ * That is the whole reason it is drawn this way rather than as margins
+ * hanging off a centre line. A win and a loss are the same kind of week and
+ * should be the same kind of mark; only the height differs, which is exactly
+ * what the reader wants to compare down the row.
+ *
+ * Before a week is played the bar carries the same ratio off paper, which is
+ * why an undrafted board reads as fourteen near-identical bars just over the
+ * line: the opponents are all within a few points of each other, so the
+ * shape only appears once the dice start landing.
+ *
+ * One measure, one hue, no legend. The win/loss colours are the site's
+ * reserved status tokens and mean only what they mean everywhere else.
  */
+const SLATE_LINE = 62 // where parity sits, in % of plot height
+const SLATE_SPAN = 32 // how far the largest deviation reaches from it
+
 function Slate({
   lines,
   myPpg,
@@ -184,8 +196,19 @@ function Slate({
   myPpg: number
   played: number
 }) {
-  const margins = lines.map((l, i) => (i < played ? l.mine - l.theirs : myPpg - l.paper))
-  const scale = Math.max(12, ...margins.map((m) => Math.abs(m))) * 1.08
+  // Your points as a share of theirs. 1 is parity, and the line is drawn at 1.
+  const ratios = lines.map((l, i) =>
+    i < played
+      ? l.theirs > 0
+        ? l.mine / l.theirs
+        : 1
+      : l.paper > 0
+        ? myPpg / l.paper
+        : 1
+  )
+  // Scaled off the biggest deviation actually present, with a floor so a
+  // quiet season doesn't get magnified into a dramatic one.
+  const spread = Math.max(0.1, ...ratios.map((r) => Math.abs(r - 1)))
 
   return (
     <div className={styles.slate}>
@@ -194,11 +217,11 @@ function Slate({
         <span className={styles.slateNote}>
           {played > 0 ? (
             <>
-              margin by week · <b>{played}</b> played
+              you against them · <b>{played}</b> played
             </>
           ) : (
             <>
-              projected margin · your <b>{myPpg.toFixed(1)}</b> against theirs
+              projected · your <b>{myPpg.toFixed(1)}</b> against theirs
             </>
           )}
         </span>
@@ -206,23 +229,25 @@ function Slate({
       <div className={styles.slatePlot} style={{ '--cols': lines.length } as React.CSSProperties}>
         <span className={styles.slateZero} aria-hidden />
         {lines.map((l, i) => {
-          const m = margins[i]
           const done = i < played
+          const height = Math.max(
+            6,
+            Math.min(99, SLATE_LINE + ((ratios[i] - 1) / spread) * SLATE_SPAN)
+          )
           return (
             <span
               key={l.week}
               className={styles.slateCol}
               title={
                 done
-                  ? `Week ${l.week} · ${l.name} · ${l.mine.toFixed(1)} to ${l.theirs.toFixed(1)} (${m > 0 ? '+' : ''}${m.toFixed(1)})`
-                  : `Week ${l.week} · ${l.name} · ${l.paper.toFixed(1)} on paper (${m > 0 ? '+' : ''}${m.toFixed(1)} projected)`
+                  ? `Week ${l.week} · ${l.name} · ${l.mine.toFixed(1)} to ${l.theirs.toFixed(1)}`
+                  : `Week ${l.week} · ${l.name} · ${l.paper.toFixed(1)} on paper`
               }
             >
               <span
                 className={styles.slateBar}
-                data-dir={m >= 0 ? 'up' : 'down'}
                 data-state={done ? (l.won ? 'won' : 'lost') : 'projected'}
-                style={{ height: `${Math.min(50, (Math.abs(m) / scale) * 50)}%` }}
+                style={{ height: `${height}%` }}
               />
               <span className={styles.slateWeek}>{l.week}</span>
             </span>
@@ -230,8 +255,8 @@ function Slate({
         })}
       </div>
       <div className={styles.slateFoot}>
-        <span>Ahead</span>
-        <span>Behind</span>
+        <span>Bars above the line are wins</span>
+        <span>{played > 0 ? `${lines.slice(0, played).filter((l) => l.won).length} so far` : ''}</span>
       </div>
     </div>
   )
@@ -266,6 +291,7 @@ export function MultiverseDraft({
   const [played, setPlayed] = useState(0)
   const [poPlayed, setPoPlayed] = useState(0)
   const [poOpen, setPoOpen] = useState(false)
+  const [poClosed, setPoClosed] = useState(false)
   const [copied, setCopied] = useState(false)
   const [post, setPost] = useState<PostState>({ state: 'idle' })
 
@@ -354,8 +380,11 @@ export function MultiverseDraft({
   )
 
   const seasonOver = played >= WEEKS
-  const postseasonOver = !madeIt || poPlayed >= poLimit
-  const done = seasonOver && postseasonOver && (!madeIt || poOpen)
+  // A postseason has to be CLOSED by the player, not just finished. Deriving
+  // the end from `poPlayed >= poLimit` sent a knocked-out run straight to the
+  // recap the instant the losing game resolved, so the game you lost was the
+  // one game you never saw.
+  const done = seasonOver && (!madeIt || poClosed)
 
   // ── The board ───────────────────────────────────────────────
   // A finished run posts itself. No submit button: the only thing one would
@@ -427,6 +456,7 @@ export function MultiverseDraft({
         setPlayed(0)
         setPoPlayed(0)
         setPoOpen(false)
+        setPoClosed(false)
         setPost({ state: 'idle' })
         setIsShared(false)
       }
@@ -658,8 +688,10 @@ export function MultiverseDraft({
     )
   }
 
-  if (madeIt && poPlayed < poLimit) {
+  if (madeIt && !poClosed) {
     const last = poPlayed > 0 ? poGames[poPlayed - 1] : null
+    const more = poPlayed < poLimit
+    const knockedOut = !more && poWins < PLAYOFF_ROUNDS
     return (
       <div className={styles.board}>
         <div className={styles.strip}>
@@ -669,10 +701,19 @@ export function MultiverseDraft({
             </span>
             <span className={styles.stripLabel}>Regular season</span>
           </div>
-          <div className={styles.stripMid}>{PLAYOFF_ROUND_NAMES[poPlayed]}</div>
+          <div className={styles.stripMid}>
+            {more ? PLAYOFF_ROUND_NAMES[poPlayed] : knockedOut ? 'Knocked out' : 'Champions'}
+            <span className={styles.tierNote}>
+              best {deal.playoffs.keep === 1 ? 'season' : `${deal.playoffs.keep} seasons`} only
+            </span>
+          </div>
           <div className={styles.stripSide}>
-            <span className={styles.stripNum}>{poGames[poPlayed].paper.toFixed(1)}</span>
-            <span className={styles.stripLabel}>{poGames[poPlayed].name} on paper</span>
+            <span className={styles.stripNum}>
+              {more ? poGames[poPlayed].paper.toFixed(1) : `${poWins}-${poPlayed - poWins}`}
+            </span>
+            <span className={styles.stripLabel}>
+              {more ? `${poGames[poPlayed].name} on paper` : 'Postseason'}
+            </span>
           </div>
         </div>
 
@@ -683,6 +724,8 @@ export function MultiverseDraft({
             <div className={styles.resultHead}>
               <span className={styles.resultTag}>
                 {last.won ? 'Won' : 'Lost'} the {PLAYOFF_ROUND_NAMES[poPlayed - 1].toLowerCase()}
+                {' · '}
+                {last.name}
               </span>
               <span className={styles.resultScore}>
                 {last.mine.toFixed(1)} <span className={styles.resultV}>vs</span>{' '}
@@ -706,10 +749,47 @@ export function MultiverseDraft({
           </div>
         )}
 
+        {/* The run ended here, so it says so on the page it ended on rather
+            than on the recap two clicks later. Losing used to drop straight
+            through to the season summary with no account of the game that
+            did it. */}
+        {!more && (
+          <div className={styles.poOut} data-won={knockedOut ? 'no' : 'yes'}>
+            {knockedOut ? (
+              <>
+                <span className={styles.poOutTag}>Out in the {PLAYOFF_ROUND_NAMES[poWins].toLowerCase()}</span>
+                <span className={styles.poOutLine}>
+                  {last ? `${last.name} put up ${last.theirs.toFixed(1)} and you had ${last.mine.toFixed(1)}.` : ''}{' '}
+                  {poWins > 0
+                    ? `${poWins} won before it, on the best years those cards had.`
+                    : 'Eight wins got you here and the best team on the slate was waiting.'}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className={styles.poOutTag}>You won it</span>
+                <span className={styles.poOutLine}>
+                  Three rounds, all of them on your best years, and none of them let you down.
+                </span>
+              </>
+            )}
+          </div>
+        )}
+
         <div className={styles.actions} data-single="yes">
-          <button type="button" className={styles.primary} onClick={() => setPoPlayed((p) => p + 1)}>
-            Play the {PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}
-          </button>
+          {more ? (
+            <button
+              type="button"
+              className={styles.primary}
+              onClick={() => setPoPlayed((p) => p + 1)}
+            >
+              Play the {PLAYOFF_ROUND_NAMES[poPlayed].toLowerCase()}
+            </button>
+          ) : (
+            <button type="button" className={styles.primary} onClick={() => setPoClosed(true)}>
+              See how the season read
+            </button>
+          )}
         </div>
       </div>
     )

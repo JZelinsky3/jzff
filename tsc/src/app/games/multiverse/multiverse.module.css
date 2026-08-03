@@ -221,37 +221,32 @@
   height: 100%;
 }
 
-/* The fixed reference. Recessive: it is the zero, not a series. */
+/* Parity, drawn where the opponent's score falls. Fixed: it is the bar to
+   clear, not a series, so it is a hairline and it never moves. Sits above the
+   bars so a tall green week reads as having crossed it. */
 .slateZero {
   position: absolute;
   left: 0;
   right: 0;
-  top: 50%;
+  bottom: 62%;
   height: 0;
-  border-top: 1px solid var(--mv-line);
+  border-top: 1px dashed var(--mv-soft);
+  opacity: 0.8;
   pointer-events: none;
-  z-index: 2;
+  z-index: 3;
 }
 
+/* Every bar grows from the floor, win or loss. Only the height differs. */
 .slateBar {
   position: absolute;
   left: 0;
   right: 0;
+  bottom: 0;
   background: var(--mv-raise);
-  min-height: 2px;
-}
-
-/* Rounded data end away from the baseline, square against it. */
-.slateBar[data-dir='up'] {
-  bottom: 50%;
-  border-radius: 3px 3px 0 0;
   border-top: 2px solid var(--mv-teal);
-}
-
-.slateBar[data-dir='down'] {
-  top: 50%;
-  border-radius: 0 0 3px 3px;
-  border-bottom: 2px solid var(--mv-teal);
+  border-radius: 3px 3px 0 0;
+  min-height: 3px;
+  transition: height 0.35s ease;
 }
 
 /* Projected weeks are the same encoding, held back so a read number never
@@ -276,7 +271,8 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -0.85rem;
+  bottom: -0.9rem;
+  z-index: 4;
   font-family: var(--mono);
   font-size: 0.5rem;
   text-align: center;
@@ -667,6 +663,36 @@
   color: var(--mv-soft);
   margin: 0.4rem auto 0;
   max-width: 46ch;
+}
+
+/* Where the run ended, said on the page it ended on. */
+.poOut {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+  background: var(--mv-panel);
+  border: 1px solid var(--mv-line);
+  border-left: 3px solid var(--mv-red);
+  margin-bottom: 1rem;
+}
+
+.poOut[data-won='yes'] {
+  border-left-color: var(--mv-teal);
+}
+
+.poOutTag {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mv-cream);
+}
+
+.poOutLine {
+  font-family: var(--serif);
+  font-size: 0.88rem;
+  color: var(--mv-soft);
 }
 
 .poBracket {

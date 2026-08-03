@@ -61,15 +61,33 @@ const SCORABLE = new Set<string>(POSITIONS)
 const MIN_PER_POSITION = 10
 
 /**
- * How wide a slice of a ranked position list one round draws from, as a
- * multiple of an even seventh.
+ * Where each round aims on its position's own scale, 1 being the top of the
+ * pool and 0 the bottom.
  *
- * 1.0 would be seven clean tiers with no overlap at all; this leaves just
- * enough that a good player can slip a round or two, which is where the
- * "how is he still here" pick comes from. It was 1.6 first, which blurred
- * the tiers enough that round one and round three felt like the same board.
+ * Aimed at a TARGET RATE rather than at a slice of the list, because the two
+ * are not the same thing and only the first is what a player sees. Cutting
+ * the list into seven even slices put the late rounds on the literal bottom
+ * of the pool — round seven was dealing 8.6 PPG running backs, which is a
+ * round you click through rather than draft. The curve stops at 0.34, so the
+ * worst card on the board is a low-end starter and not a body.
+ *
+ * On pams this deals running backs at 19.4 / 17.2 / 16.3 / 14.7 / 13.3 /
+ * 11.9 / 11.1 and receivers within a few tenths of that; quarterbacks run
+ * 24.8 down to 17.9, tight ends 13.7 down to 8.9. Those are window averages,
+ * so an individual round-one back lands anywhere from about 16 to 23.
  */
-const TIER_WIDTH = 1.15
+const TIER_CURVE = [1.0, 0.88, 0.76, 0.63, 0.52, 0.42, 0.34]
+
+/**
+ * How many players each round draws from.
+ *
+ * Narrow at the top and wide at the bottom, because that is the shape of the
+ * talent: there are four or five genuinely elite backs in a seven-season
+ * league and thirty interchangeable ones. A constant width had to be wide
+ * enough for the late rounds, which made round one a lottery among fifteen
+ * players and stopped it feeling like a first round.
+ */
+const TIER_SIZES = [6, 7, 9, 11, 13, 15, 17]
 
 /** What each round is drawing from, said plainly in the header. */
 const TIER_NOTES = [
@@ -88,6 +106,13 @@ type PoolPlayer = {
   pos: MvPosition
   playerId: string | null
   seasons: MvTimeline[]
+  /**
+   * Average across every season this league had him, which is what the board
+   * is ranked and tiered on. Deliberately not the average of the three he
+   * happens to be dealt: that is the luck of one board, and the draft should
+   * descend by talent rather than by that.
+   */
+  mean: number
 }
 
 /**
@@ -280,7 +305,7 @@ function collectPlayers(
     // "he didn't get hurt in this one" is the premise rather than a bug. They
     // are 3% of pams player-seasons, so they read as flavour, not noise.
     if (!pos || seasons.length < TIMELINES_SHORT || !display) continue
-    out.push({ name: display, pos, playerId, seasons })
+    out.push({ name: display, pos, playerId, seasons, mean: meanOf(seasons) })
   }
   return out
 }
@@ -354,7 +379,9 @@ async function loadPool(poolId: string): Promise<Pool | null> {
   const newest = await latestRankYear()
   return unstable_cache(
     async () => (poolId === DEMO_POOL_ID ? buildDemoPool() : buildLeaguePool(poolId)),
-    ['minigame-multiverse-pool', 'v2', String(newest), poolId],
+    // v3: PoolPlayer gained `mean`, which the tier windows read. A cached v2
+    // pool would come back without it and sort the whole board on NaN.
+    ['minigame-multiverse-pool', 'v3', String(newest), poolId],
     { tags: ['minigame-pool'], revalidate: 60 * 60 * 12 }
   )()
 }
@@ -453,17 +480,28 @@ function dealRounds(
   /**
    * The slice of a ranked list this round draws from.
    *
-   * Without this the board was flat: every list is ordered by nothing in
-   * particular, so round one dealt the same quality as round seven and the
-   * first pick of the game was a choice between four replacement-level
-   * players. A draft descends, and this makes it descend — round one sees the
-   * top of each position, round seven sees the depth. The windows overlap by
-   * design, so a genuine steal can still fall to round four.
+   * Without this the board was flat: round one dealt the same quality as
+   * round seven, and the first pick of the game was a choice between four
+   * replacement-level players. A draft descends, so this descends — but it
+   * descends towards a TARGET RATE off TIER_CURVE rather than by cutting the
+   * list into equal parts, which is what kept the late rounds playable.
+   *
+   * The window is centred on the first player at or below the round's target
+   * and clamped to the ends, so the top of the pool is always reachable in
+   * round one and the bottom is never the whole of round seven. Windows
+   * overlap, which is where the "how is he still here" pick comes from.
    */
   const window = (list: PoolPlayer[], round: number): PoolPlayer[] => {
-    const size = Math.max(7, Math.ceil((list.length / ROUNDS) * TIER_WIDTH))
+    const size = TIER_SIZES[round] ?? TIER_SIZES[TIER_SIZES.length - 1]
     if (size >= list.length) return list
-    const start = Math.floor((round * (list.length - size)) / (ROUNDS - 1))
+    // A near-top rather than the single best card, so one outlier season
+    // cannot drag the whole curve up behind it.
+    const hi = list[Math.floor(0.04 * list.length)].mean
+    const lo = list[list.length - 1].mean
+    const target = lo + (hi - lo) * (TIER_CURVE[round] ?? 0.34)
+    let idx = list.findIndex((p) => p.mean <= target)
+    if (idx < 0) idx = list.length - 1
+    const start = Math.max(0, Math.min(list.length - size, idx - Math.floor(size / 2)))
     return list.slice(start, start + size)
   }
 
@@ -484,8 +522,14 @@ function dealRounds(
       const p = takeFrom(window(byPosition.get(pos) ?? [], round))
       if (p) picked.push(p)
     }
+    // The wildcard: a second card at ONE position, drawn from that
+    // position's own tier. It used to come off a single all-positions list,
+    // which sounds neutral and is not — quarterbacks outscore everyone, so
+    // the top of that list is nothing but quarterbacks and round one dealt
+    // two of them almost every time.
     while (picked.length < CARDS_PER_ROUND) {
-      const p = takeFrom(window(everyone, round))
+      const pos = POSITIONS[Math.floor(rng() * POSITIONS.length)]
+      const p = takeFrom(window(byPosition.get(pos) ?? everyone, round))
       if (!p) break
       picked.push(p)
     }
@@ -503,8 +547,7 @@ function baselines(players: PoolPlayer[]): Record<MvPosition, number> {
   const sums = {} as Record<MvPosition, number>
   const counts = {} as Record<MvPosition, number>
   for (const p of players) {
-    const mean = p.seasons.reduce((a, s) => a + s.ppg, 0) / p.seasons.length
-    sums[p.pos] = (sums[p.pos] ?? 0) + mean
+    sums[p.pos] = (sums[p.pos] ?? 0) + p.mean
     counts[p.pos] = (counts[p.pos] ?? 0) + 1
   }
   const out = {} as Record<MvPosition, number>
@@ -635,11 +678,7 @@ export async function dealMultiverse(
     // volatile card stays in on the strength of his good years and simply
     // gets resampled when the deal hands him a bad set — see makeCard.
     .filter((p) => meanOf(bestCombination(p, count)) >= MIN_MEAN_PPG[p.pos])
-    .sort(
-      (a, b) =>
-        b.seasons.reduce((x, s) => x + s.ppg, 0) / b.seasons.length -
-        a.seasons.reduce((x, s) => x + s.ppg, 0) / a.seasons.length
-    )
+    .sort((a, b) => b.mean - a.mean)
 
   const byPosition = new Map<MvPosition, PoolPlayer[]>()
   for (const pos of POSITIONS) {
